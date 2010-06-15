@@ -14,16 +14,16 @@ all: PVODE/lib make.config $(srcdirs)
 
 .PHONY:$(srcdirs)
 $(srcdirs):
-	@$(MAKE) -C $@
+	@$(MAKE) --no-print-directory -C $@
 
 config:
 	./configure
 
 clean::
 	@echo Cleaning...
-	@for pp in $(srcdirs); do $(MAKE) -C $$pp clean; done
+	@for pp in $(srcdirs); do $(MAKE) --no-print-directory -C $$pp clean; done
 	@$(RM) include/*
-	@$(MAKE) -C examples clean;
+	@$(MAKE) --no-print-directory -C examples clean;
 
 PVODE/lib:
 	$(MKDIR) $@

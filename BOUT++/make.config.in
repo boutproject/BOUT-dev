@@ -86,7 +86,7 @@ all: $(CONFIG_FILES) $(DIRS) $(OBJ) $(TARGET)
 ####################################
 
 $(DIRS):
-	@$(MAKE) -s -C $@ all
+	@$(MAKE) --no-print-directory -s -C $@ all
 
 # Create 'lib' and 'include' incase they don't exist
 $(BOUT_TOP)/include $(BOUT_TOP)/lib:
@@ -110,7 +110,7 @@ ifneq ("$(SOURCEH)foo", "foo")
 	@cp $(SOURCEH) $(BOUT_TOP)/include
 endif
 else
-$(TARGET): $(BOUT_TOP)/lib/libbout++.a Makefile
+$(TARGET): $(BOUT_TOP)/lib/libbout++.a makefile
 	$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
 endif
 
@@ -123,7 +123,7 @@ endif
 
 %.o: $(CONFIG_FILES) %.cpp
 	@echo "  Compiling " $(@F:.o=.cpp)
-	@$(CXX) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -c $(@F:.o=.cpp) -o $@ $(BOUT_INCLUDE)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -c $(@F:.o=.cpp) -o $@
 
 clean::
 	@-$(RM) $(OBJ) $(TARGET)
