@@ -179,10 +179,8 @@ GLOBAL Datafile dump;
 /// Status message stack. Used for debugging messages
 GLOBAL MsgStack msg_stack;
 
-/// Grid data class containing equilibrium data
-GLOBAL GridData grid;
 /// Define for reading a variable from the grid
-#define GRID_LOAD(var) grid.get(var, #var)
+#define GRID_LOAD(var) mesh->get(var, #var)
 
 // Settings (read from file, bout++.cpp)
 

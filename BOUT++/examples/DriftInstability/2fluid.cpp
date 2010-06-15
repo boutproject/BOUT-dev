@@ -80,16 +80,16 @@ int physics_init()
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
-  grid.get(b0xcv, "bxcv"); // b0xkappa terms
+  mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Load metrics
   GRID_LOAD(Rxy);
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  grid.get(dx,   "dpsi");
-  grid.get(I,    "sinty");
-  grid.get(zShift, "qinty");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);

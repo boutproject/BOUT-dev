@@ -64,7 +64,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  grid.get(dx,   "dpsi");
+  mesh->get(dx,   "dpsi");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
