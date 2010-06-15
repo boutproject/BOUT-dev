@@ -28,7 +28,7 @@
 
 #include "globals.h"
 #include "grid.h"
-#include "topology.h"
+#include "mesh_topology.h"
 #include "utils.h"
 #include "geometry.h"
 

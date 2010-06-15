@@ -1,7 +1,7 @@
 # Makefile for example codes
 # Works in the same way as the root Makefile
 
-testdirs = Advect1D RayleighTaylor highbeta_elm
+testdirs = Advect1D RayleighTaylor DriftInstability
 
 .PHONY: all
 all: $(testdirs)

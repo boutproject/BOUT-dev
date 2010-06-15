@@ -54,7 +54,7 @@
 
 #include "globals.h"
 #include "utils.h"
-#include "topology.h"
+#include "mesh_topology.h"
 #include "comm_group.h" // Gather/scatter operations
 
 #include "lapack_routines.h" // For tridiagonal inversions
