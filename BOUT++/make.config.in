@@ -123,7 +123,7 @@ endif
 
 %.o: $(CONFIG_FILES) %.cpp
 	@echo "  Compiling " $(@F:.o=.cpp)
-	@$(CXX) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -c $(@F:.o=.cpp) -o $@ $(BOUT_INCLUDE)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -c $(@F:.o=.cpp) -o $@
 
 clean::
 	@-$(RM) $(OBJ) $(TARGET)
