@@ -85,7 +85,7 @@ int BoutMesh::load()
   }
   
   /// Get mesh options
-  options.setSection(NULL); // Global options
+/*  options.setSection(NULL); // Global options
   int MZ;
   OPTION(MZ,           65);
   if(!is_pow2(MZ-1)) {
@@ -132,12 +132,24 @@ int BoutMesh::load()
       output.write("FFT\n");
     }else
       output.write("%d-point\n", TwistOrder);
-  }
+  }*/
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
   ngx = MXSUB + 2*MXG;
   ngy = MYSUB + 2*MYG;
   ngz = MZ;
+
+	ncx = ngx-1;
+	ncy = ngy-1;
+	ncz = ngz-1;
+	
+	// Set local index ranges
+  
+  jstart = MYG;
+  jend = MYG + MYSUB - 1;
+
+  xstart = MXG;
+  xend = MXG + MXSUB - 1;
   
   ///////////////////// TOPOLOGY //////////////////////////
   
@@ -166,6 +178,7 @@ int BoutMesh::load()
     jyseps2_2 = ny-1;
     output.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
   }
+
   if(get(ny_inner,"ny_inner")) {
     ny_inner = jyseps2_1;
     output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
@@ -257,6 +270,8 @@ int BoutMesh::load()
 #ifdef CHECK
   msg_stack.pop(msg);
 #endif
+
+	return 0;
 }
 
 /*****************************************************************************
