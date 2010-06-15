@@ -349,8 +349,6 @@ void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false)
 
 void topology()
 {
-  int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
-
   // Default settings
   N_BOUNDARY = 0;   // No boundaries 
 
