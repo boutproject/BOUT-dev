@@ -1,0 +1,6 @@
+*.[oa]
+*.log
+*.status
+*.config
+include/
+lib/

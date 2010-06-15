@@ -59,7 +59,7 @@ CONFIG_FILES	= $(BOUT_TOP)/make.config $(BOUT_TOP)/makefile
 OBJ						= $(SOURCEC:%.cpp=%.o)
 LIB						= $(BOUT_TOP)/lib/libbout++.a
 
-BOUT_INCLUDE	= -I. -I$(BOUT_TOP)/include/ $(EXTRA_INCS) $(INCLUDE)
+BOUT_INCLUDE	= -I. -I$(BOUT_TOP)/include/ $(INCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib/ -lbout++ $(EXTRA_LIBS)
 
 # Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
