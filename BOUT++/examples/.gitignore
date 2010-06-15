@@ -1,0 +1,6 @@
+*.dmp.*
+*.log.*
+*.restart.*
+
+gas_compress
+2fluid
