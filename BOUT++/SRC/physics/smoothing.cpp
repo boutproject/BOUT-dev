@@ -48,17 +48,17 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
   result.Allocate();
   
   // Copy boundary region
-  for(int jy=0;jy<ngy;jy++)
-    for(int jz=0;jz<ngz;jz++) {
+  for(int jy=0;jy<mesh->ngy;jy++)
+    for(int jz=0;jz<mesh->ngz;jz++) {
       result[0][jy][jz] = fs[0][jy][jz];
-      result[ngx-1][jy][jz] = fs[ngx-1][jy][jz];
+      result[mesh->ngx-1][jy][jz] = fs[mesh->ngx-1][jy][jz];
     }
 
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=1;jx<ngx-1;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=1;jx<mesh->ngx-1;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	result[jx][jy][jz] = 0.5*fs[jx][jy][jz] + 0.25*( fs[jx-1][jy][jz] + fs[jx+1][jy][jz] );
       }
 
@@ -81,17 +81,17 @@ const Field3D smooth_y(const Field3D &f)
   result.Allocate();
   
   // Copy boundary region
-  for(int jx=0;jx<ngx;jx++)
-    for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++) {
       result[jx][0][jz] = f[jx][0][jz];
-      result[jx][ngy-1][jz] = f[jx][ngy-1][jz];
+      result[jx][mesh->ngy-1][jz] = f[jx][mesh->ngy-1][jz];
     }
   
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=1;jy<ngy-1;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=1;jy<mesh->ngy-1;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	result[jx][jy][jz] = 0.5*f[jx][jy][jz] + 0.25*( f[jx][jy-1][jz] + f[jx][jy+1][jz] );
       }
 
@@ -109,16 +109,16 @@ void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
     real *rin = (real*) invec;
     real *rinout = (real*) inoutvec;
-    for(int x=0;x<ngx;x++) {
+    for(int x=0;x<mesh->ngx;x++) {
 	real val = 0.;
 	// Sum values
 	for(int y=MYG;y<MYG+MYSUB;y++) {
-	    val += rin[x*ngy + y] + rinout[x*ngy + y];
+	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
 	}
 	// Put into output (spread over y)
 	val /= MYSUB;
-	for(int y=0;y<ngy;y++)
-	    rinout[x*ngy + y] = val;
+	for(int y=0;y<mesh->ngy;y++)
+	    rinout[x*mesh->ngy + y] = val;
     }
 }
 
@@ -143,7 +143,7 @@ const Field2D average_y(const Field2D &f)
   fd = f.getData();
   rd = result.getData();
   
-  MPI_Allreduce(*fd, *rd, ngx*ngy, MPI_DOUBLE, op, comm_y);
+  MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_y);
   
   result /= (real) NYPE;
 
@@ -202,7 +202,7 @@ const Field3D nl_filter_x(const Field3D &f, real w)
   Field3D result;
   rvec v;
   
-  for(int jy=0;jy<ngy;jy++)
+  for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<ncz;jz++) {
       fs.getXarray(jy, jz, v);
       nl_filter(v, w);
@@ -226,7 +226,7 @@ const Field3D nl_filter_y(const Field3D &fs, real w)
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<ngx;jx++)
+  for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<ncz;jz++) {
       fs.getYarray(jx, jz, v);
       nl_filter(v, w);
@@ -248,8 +248,8 @@ const Field3D nl_filter_z(const Field3D &fs, real w)
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++) {
       fs.getZarray(jx, jy, v);
       nl_filter(v, w);
       result.setZarray(jx, jy, v);

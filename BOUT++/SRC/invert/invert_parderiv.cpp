@@ -128,7 +128,7 @@ namespace invpar {
     msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
 #endif
 
-    int tshift = ROUND(ShiftAngle[xpos] / dz); // Nearest neighbour
+    int tshift = ROUND(ShiftAngle[xpos] / mesh->dz); // Nearest neighbour
 
     static int ylen = 0;
     static bool *done; // Record whether a particular location has been inverted
@@ -257,7 +257,7 @@ namespace invpar {
 
     // Decide on x range. Solve in boundary conditions
     int xs = (IDATA_DEST < 0) ? 0 : MXG;
-    int xe = (ODATA_DEST < 0) ? ngx-1 : (ngx-1 - MXG);
+    int xe = (ODATA_DEST < 0) ? mesh->ngx-1 : (mesh->ngx-1 - MXG);
 
     int nxsolve = xe - xs + 1; // Number of X points to solve
     
@@ -287,8 +287,8 @@ namespace invpar {
       // First all the matrix coefficients (2D only in this case)
       for(int j=jstart;j<=jend;j++) {
 	// See Grad2_par2 in difops.cpp for these coefficients
-	real coeff1 = (1./sg[xpos][j+1] - 1./sg[xpos][j-1])/(4.*SQ(dy[xpos][j])) / sg[xpos][j];
-	real coeff2 = 1. / (mesh->g_22[xpos][j] * SQ(dy[xpos][j])); // Second derivative
+	real coeff1 = (1./sg[xpos][j+1] - 1./sg[xpos][j-1])/(4.*SQ(mesh->dy[xpos][j])) / sg[xpos][j];
+	real coeff2 = 1. / (mesh->g_22[xpos][j] * SQ(mesh->dy[xpos][j])); // Second derivative
 	
 	senddata[offset] = B[xpos][j] * (coeff2 - coeff1); // a coefficient (y-1)
 	offset++;

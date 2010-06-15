@@ -59,7 +59,7 @@ void get_profile_opts()
   output.write("Initial profile global options\n");
   options.setSection(NULL);
   OPTION(Ballooning, TwistShift); // Use if have TwistShift
-  OPTION(ShiftInitial, ShiftXderivs && (!Ballooning));
+  OPTION(ShiftInitial, mesh->ShiftXderivs && (!Ballooning));
   output.write("\n");
 }
 
@@ -155,11 +155,11 @@ int initial_profile(const char *name, Field3D &var)
     if(options.getReal("All", "zs_wd", zs_wd))
       zs_wd = 0.2;
 
-  for (jx=0; jx < ngx; jx++) {
+  for (jx=0; jx < mesh->ngx; jx++) {
     lx = XGLOBAL(jx);
     
-    for (jz=0; jz < ngz; jz++) {
-      for (jy=0; jy < ngy; jy++) {
+    for (jz=0; jz < mesh->ngz; jz++) {
+      for (jy=0; jy < mesh->ngy; jy++) {
 	ly = YGLOBAL(jy); // global poloidal index across subdomains
 	
 	int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
@@ -195,12 +195,12 @@ int initial_profile(const char *name, Field3D &var)
 	  for(int i=1; i<= ball_n; i++) {
 	    // y - i * nycore
 	    cy=Prof1D((real) (ly - i*nycore), ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz + ((real) i)*ShiftAngle[jx]/dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((real) jz + ((real) i)*ShiftAngle[jx]/mesh->dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	    
 	    // y + i * nycore
 	    cy=Prof1D((real) (ly + i*nycore), ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz - ((real) i)*ShiftAngle[jx]/dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((real) jz - ((real) i)*ShiftAngle[jx]/mesh->dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	  }
 	}
@@ -302,8 +302,8 @@ int initial_profile(const char *name, Field2D &var)
       ys_wd = 0.2;
   
 
-  for (jx=0; jx < ngx; jx++) {
-    for (jy=0; jy < ngy; jy++) {
+  for (jx=0; jx < mesh->ngx; jx++) {
+    for (jy=0; jy < mesh->ngy; jy++) {
       ly = MYPE*MYSUB+(jy-MYG); // global poloidal index across subdomains
       cx=Prof1D((real) jx, xs_s0, 0., (real) MX, xs_wd, xs_mode, xs_phase, xs_opt);
       cy=Prof1D((real) ly, ys_s0, 0., (real) MY, ys_wd, ys_mode, ys_phase, ys_opt);
@@ -473,10 +473,10 @@ const Field3D genZMode(int n, real phase)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jz=0;jz<ngz;jz++) {
+  for(int jz=0;jz<mesh->ngz;jz++) {
     real val = sin(phase*PI +  TWOPI * ((real) jz)/ ((real) MZ-1) );
-    for(int jx=0;jx<ngx;jx++)
-      for(int jy=0;jy<ngy;jy++)
+    for(int jx=0;jx<mesh->ngx;jx++)
+      for(int jy=0;jy<mesh->ngy;jy++)
 	d[jx][jy][jz] = val;
   }
   return result;

@@ -213,21 +213,12 @@ int main(int argc, char **argv)
     grid_name = DEFAULT_GRID;
   
   OPTION(dump_float,   true);
-  OPTION(ShiftXderivs, false);
   OPTION(IncIntShear,  false);
   OPTION(ShiftOrder,   0);
   OPTION(non_uniform,  false);
 
   options.get("BoundaryOnCell", BoundaryOnCell, false); // Determine location of boundary
   options.get("StaggerGrids",   StaggerGrids,   false); // Stagger grids
-  
-  if(ShiftXderivs) {
-    output.write("Using shifted X derivatives. Interpolation: ");
-    if(ShiftOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", ShiftOrder);
-  }
   
   /// Get file extensions
   if((dump_ext = options.getString("dump_format")) == NULL) {

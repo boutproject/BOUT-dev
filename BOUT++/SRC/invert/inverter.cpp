@@ -63,7 +63,7 @@ int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, in
   int iterations;
   real residual;
   
-  int status = gmres_solve(*(b.getData()), *(x.getData()), ngx*ngz, 
+  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->ngx*mesh->ngz, 
 			   restart, itmax, tol, iterations, residual);
   
   // Iterations and residual now set by GMRES method
@@ -81,7 +81,7 @@ int Inverter::solve(const Field3D &b, Field3D &x,
   if(MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
     ys = 0;
-    ye = ngy-1;
+    ye = mesh->ngy-1;
   }
   
   FieldPerp xperp;

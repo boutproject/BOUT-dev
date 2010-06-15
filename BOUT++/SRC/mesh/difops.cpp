@@ -183,10 +183,10 @@ const Field3D Grad_par_CtoL(const Field3D &var)
   */
   
   // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<ngx;jx++) {
-    for(int jy=1;jy<ngy;jy++) {
-      for(int jz=0;jz<ngz;jz++) {
-	d[jx][jy][jz] = (var[jx][jy][jz] - var[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+  for(int jx=0; jx<mesh->ngx;jx++) {
+    for(int jy=1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	d[jx][jy][jz] = (var[jx][jy][jz] - var[jx][jy-1][jz]) / (mesh->dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
       }
     }
   }
@@ -231,7 +231,7 @@ const Field3D Grad_par_LtoC(const Field &var)
   do {
     var.SetStencil(&f, &bx);
     
-    d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (dy[bx.jx][bx.jy] * sqrt(mesh->g_22[bx.jx][bx.jy]));
+    d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (mesh->dy[bx.jx][bx.jy] * sqrt(mesh->g_22[bx.jx][bx.jy]));
   }while(next_index3(&bx));
 
   return result;
@@ -363,17 +363,17 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
 
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(ngx, ncz/2 + 1);
-    delft = cmatrix(ngx, ncz/2 + 1);
+    ft = cmatrix(mesh->ngx, ncz/2 + 1);
+    delft = cmatrix(mesh->ngx, ncz/2 + 1);
   }
   
   // Loop over all y indices
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take forward FFT
     
-    for(jx=0;jx<ngx;jx++)
-      ZFFT(fd[jx][jy], zShift[jx][jy], ft[jx]);
+    for(jx=0;jx<mesh->ngx;jx++)
+      ZFFT(fd[jx][jy], mesh->zShift[jx][jy], ft[jx]);
 
     // Loop over kz
     for(jz=0;jz<=ncz/2;jz++) {
@@ -381,7 +381,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
       if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((real) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
-      for(jx=2;jx<(ngx-2);jx++) {
+      for(jx=2;jx<(mesh->ngx-2);jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -401,16 +401,16 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
     }
   
     // Reverse FFT
-    for(jx=1;jx<(ngx-1);jx++) {
+    for(jx=1;jx<(mesh->ngx-1);jx++) {
 
-      ZFFT_rev(delft[jx], zShift[jx][jy], rd[jx][jy]);
+      ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
       rd[jx][jy][ncz] = rd[jx][jy][0];
     }
 
     // Boundaries
     for(jz=0;jz<ncz;jz++) {
       rd[0][jy][jz] = 0.0;
-      rd[ngx-1][jy][jz] = 0.0;
+      rd[mesh->ngx-1][jy][jz] = 0.0;
     }
   }
 
@@ -487,9 +487,9 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
   vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
   vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
@@ -525,9 +525,9 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
   vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
   vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
@@ -565,9 +565,9 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
   vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
@@ -603,9 +603,9 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
   vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities

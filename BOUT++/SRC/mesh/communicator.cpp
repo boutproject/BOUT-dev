@@ -210,7 +210,7 @@ void Communicator::post_receive()
   if(UDATA_OUTDEST != -1) {
     inbuff = &umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-	      msg_len(UDATA_XSPLIT, ngx, 0, MYG),
+	      msg_len(UDATA_XSPLIT, mesh->ngx, 0, MYG),
 	      PVEC_REAL_MPI_TYPE,
 	      UDATA_OUTDEST,
 	      OUT_SENT_DOWN,
@@ -235,7 +235,7 @@ void Communicator::post_receive()
   if(DDATA_OUTDEST != -1) {
     inbuff = &dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-	      msg_len(DDATA_XSPLIT, ngx, 0, MYG),
+	      msg_len(DDATA_XSPLIT, mesh->ngx, 0, MYG),
 	      PVEC_REAL_MPI_TYPE,
 	      DDATA_OUTDEST,
 	      OUT_SENT_UP,
@@ -317,7 +317,7 @@ void Communicator::send()
   ////////////////// ALLOCATE BUFFERS //////////////////
 
   /// work out how many reals need to be sent
-  len = msg_len(0, ngx, 0, MYG);
+  len = msg_len(0, mesh->ngx, 0, MYG);
   /// Make sure buffers are the correct size
   if(ybufflen < len) {
     if(ybufflen != 0) {
@@ -389,7 +389,7 @@ void Communicator::send()
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &umsg_sendbuff[len]; // A pointer to the start of the second part
                                    // of the buffer 
-    len = pack_data(UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(UDATA_XSPLIT, mesh->ngx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff, 
@@ -433,7 +433,7 @@ void Communicator::send()
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &dmsg_sendbuff[len]; // A pointer to the start of the second part
 			           // of the buffer
-    len = pack_data(DDATA_XSPLIT, ngx, MYG, 2*MYG, outbuff);
+    len = pack_data(DDATA_XSPLIT, mesh->ngx, MYG, 2*MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if(async_send) {
@@ -538,7 +538,7 @@ void Communicator::receive()
     }
     case 1: { // Up, outer
       len = msg_len(0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &umsg_recvbuff[len]);
+      unpack_data(UDATA_XSPLIT, mesh->ngx, MYSUB+MYG, MYSUB+2*MYG, &umsg_recvbuff[len]);
 #ifdef PRINT_TIME
       output.write(" UO");
 #endif
@@ -553,7 +553,7 @@ void Communicator::receive()
     }
     case 3: { // Down, outer
       len = msg_len(0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(DDATA_XSPLIT, ngx, 0, MYG, &dmsg_recvbuff[len]);
+      unpack_data(DDATA_XSPLIT, mesh->ngx, 0, MYG, &dmsg_recvbuff[len]);
 #ifdef PRINT_TIME
       output.write(" DO");
 #endif
@@ -606,7 +606,7 @@ void Communicator::receive()
       
 	}
 	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+	  for(jx=DDATA_XSPLIT;jx<mesh->ngx; jx++)
 	    for(jy=0;jy != MYG; jy++)
 	      (*it)->ShiftZ(jx, jy, ShiftAngle[jx]);
 	  
@@ -616,13 +616,13 @@ void Communicator::receive()
 	
 	if(TS_up_in && (UDATA_INDEST  != -1)) {
 	  for(jx=0;jx<UDATA_XSPLIT; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
+	    for(jy=mesh->ngy-MYG;jy != mesh->ngy; jy++)
 	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
 	  
 	}
 	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
+	  for(jx=UDATA_XSPLIT;jx<mesh->ngx; jx++)
+	    for(jy=mesh->ngy-MYG;jy != mesh->ngy; jy++)
 	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
 	  
 	}

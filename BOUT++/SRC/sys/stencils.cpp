@@ -716,15 +716,15 @@ const bstencil operator^(const real lhs, const bstencil &rhs)
 void calc_index(bindex *bx)
 {
   bx->jxp = bx->jx+1;
-  if(bx->jxp >= ngx)
-    bx->jxp = ngx-1;
+  if(bx->jxp >= mesh->ngx)
+    bx->jxp = mesh->ngx-1;
   
   bx->jxm = bx->jx-1;
   if(bx->jxm < 0)
     bx->jxm = 0;
 
   if (bx->jx>1) bx->jx2m=bx->jx-2; else bx->jx2m=bx->jxm;
-  if (bx->jx<(ngx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
+  if (bx->jx<(mesh->ngx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
 
   bx->jyp  = bx->jy+1;
   bx->jym  = bx->jy-1;
@@ -745,7 +745,7 @@ void calc_index(bindex *bx)
     if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
 	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
       
-      bx->ym_offset = -ShiftAngle[bx->jx] / dz;
+      bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
       if (bx->jy==jstart) {
 	bx->ym_shift = bx->y2m_shift = true;
 	
@@ -756,7 +756,7 @@ void calc_index(bindex *bx)
     if( (TS_up_in  && (UDATA_INDEST  != -1) && (bx->jx <  UDATA_XSPLIT)) ||
 	(TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
       
-      bx->yp_offset = ShiftAngle[bx->jx] / dz;
+      bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
       if (bx->jy==jend) {
 	bx->yp_shift = bx->y2p_shift = true;
       } else if (bx->jy==jend-1) {
@@ -766,10 +766,10 @@ void calc_index(bindex *bx)
   }
 
   /* shifted z-indices for x differencing */
-  bx->xp_offset = (-zShift[bx->jxp][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->x2p_offset = (-zShift[bx->jx2p][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->xm_offset =  (-zShift[bx->jxm][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->x2m_offset = (-zShift[bx->jx2m][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
+  bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->x2p_offset = (-mesh->zShift[bx->jx2p][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->xm_offset =  (-mesh->zShift[bx->jxm][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->x2m_offset = (-mesh->zShift[bx->jx2m][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
 }
 
 /* Resets the index bx */
@@ -803,13 +803,13 @@ int next_index3(bindex *bx)
       
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
 	// Missing out X boundary
-	if(bx->jx >= (ngx-MXG)) {
+	if(bx->jx >= (mesh->ngx-MXG)) {
 	  bx->jx = MXG;
 	  return(0);
 	}
       }else {
 	// Including X boundary regions
-	if(bx->jx >= ngx) {
+	if(bx->jx >= mesh->ngx) {
 	  bx->jx = 0;
 	  return(0);
 	}
@@ -832,12 +832,12 @@ int next_index2(bindex *bx)
     bx->jx++;
     
     if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-      if(bx->jx >= (ngx-MXG)) {
+      if(bx->jx >= (mesh->ngx-MXG)) {
 	bx->jx = MXG;
 	return(0);
       }
     }else
-      if(bx->jx >= ngx) {
+      if(bx->jx >= mesh->ngx) {
 	bx->jx = 0;
 	return(0);
       }
@@ -852,12 +852,12 @@ int next_index2(bindex *bx)
 int next_indexperp(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= ngz) {
+  if(bx->jz >= mesh->ngz) {
     
     bx->jz = 0;
     bx->jx++;
       
-    if(bx->jx >= (ngx-MXG)) {
+    if(bx->jx >= (mesh->ngx-MXG)) {
       bx->jx = MXG;
       return(0);
     }

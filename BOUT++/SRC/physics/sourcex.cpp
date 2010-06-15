@@ -36,8 +36,8 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
 
   //	    output.write("source, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       {
 	real lx = XGLOBAL(jx)-MXG-length;
 	real dampl = TanH(lx/width);
@@ -69,8 +69,8 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
 
   //	    output.write("source, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       {
 	real lx = XGLOBAL(jx)-MXG-length;
 	real dampl = exp(-lx*lx/width/width);
@@ -109,9 +109,9 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
 
   //	    output.write("sink, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
         real rlx = nx-(XGLOBAL(jx)+1+MXG)-length;
 	real dampr = TanH(rlx/width);
 	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]);
@@ -143,9 +143,9 @@ const Field3D mask_x(const Field3D &f, bool realspace)
   
 // create a radial buffer zone to set jpar zero near radial boundary
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	real lx = XGLOBAL(jx)-MXG;
 	//        real rlx = nx-(XGLOBAL(jx)+1);
         real rlx = nx-(XGLOBAL(jx)+1+MXG);
@@ -194,9 +194,9 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
   real length  = slength*nx;
   real width   = swidth*nx;
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 
 	real lx = XGLOBAL(jx)-MXG-length;
 	real dampl = TanH(lx/width);
@@ -237,9 +237,9 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
   real length  = slength*nx;
   real width   = swidth*nx;
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
         real rlx = nx-(XGLOBAL(jx)+1+MXG)-length;
 	real dampr = TanH(rlx/width);
 
@@ -272,9 +272,9 @@ const Field3D buff_x(const Field3D &f, bool realspace)
   
 // create a radial buffer zone to set jpar zero near radial boundary
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	real lx = XGLOBAL(jx)-MXG;
 	//        real rlx = nx-(XGLOBAL(jx)+1);
         real rlx = nx-(XGLOBAL(jx)+1+MXG);

@@ -161,8 +161,8 @@ const Vector2D Curl(const Vector2D &v)
   result.y = (DDZ(vco.x) - DDX(vco.z))/mesh->J;
   result.z = (DDX(vco.y) - DDY(vco.x))/mesh->J;
   
-  if(ShiftXderivs) {
-    result.z -= ShiftTorsion*vco.z / mesh->J;
+  if(mesh->ShiftXderivs) {
+    result.z -= mesh->ShiftTorsion*vco.z / mesh->J;
   }
 
   result.covariant = false; // result is contravariant
@@ -190,8 +190,8 @@ const Vector3D Curl(const Vector3D &v)
   result.y = (DDZ(vco.x) - DDX(vco.z))/mesh->J;
   result.z = (DDX(vco.y) - DDY(vco.x))/mesh->J;
 
-  if(ShiftXderivs) {
-    result.z -= ShiftTorsion*vco.z / mesh->J;
+  if(mesh->ShiftXderivs) {
+    result.z -= mesh->ShiftTorsion*vco.z / mesh->J;
   }
 
   result.covariant = false; // result is contravariant

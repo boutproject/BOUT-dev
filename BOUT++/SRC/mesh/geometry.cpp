@@ -75,8 +75,8 @@ int geometry(int readJB)
 
   a = rmatrix(3, 3);
 
-  for(jx=0;jx<ngx;jx++) {
-    for(jy=0;jy<ngy;jy++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
       // set elements of g
       a[0][0] = mesh->g11[jx][jy];
       a[1][1] = mesh->g22[jx][jy];

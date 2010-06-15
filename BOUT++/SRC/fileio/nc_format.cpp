@@ -219,7 +219,7 @@ bool NcFormat::openw(const char *name, bool append)
 
     /// Test they're the right size (and t is unlimited)
     
-    if((xDim->size() != ngx) || (yDim->size() != ngy) || (zDim->size() != ngz)
+    if((xDim->size() != mesh->ngx) || (yDim->size() != mesh->ngy) || (zDim->size() != mesh->ngz)
        || (!tDim->is_unlimited()) ) {
       delete dataFile;
       dataFile = NULL;
@@ -240,19 +240,19 @@ bool NcFormat::openw(const char *name, bool append)
 
     /// Add the dimensions
     
-    if(!(xDim = dataFile->add_dim("x", ngx))) {
+    if(!(xDim = dataFile->add_dim("x", mesh->ngx))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
   
-    if(!(yDim = dataFile->add_dim("y", ngy))) {
+    if(!(yDim = dataFile->add_dim("y", mesh->ngy))) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
     
-    if(!(zDim = dataFile->add_dim("z", ngz))) {
+    if(!(zDim = dataFile->add_dim("z", mesh->ngz))) {
       delete dataFile;
       dataFile = NULL;
       return false;

@@ -61,7 +61,7 @@ void bndry_inner_zero(Field2D &var)
     return;
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       var[jx][jy] = 0.0;
 }
 
@@ -73,8 +73,8 @@ void bndry_inner_zero(Field3D &var)
     return;
   
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	var[jx][jy][jz] = 0.0;
 }
 
@@ -86,7 +86,7 @@ void bndry_inner_flat(Field2D &var)
     return;
   
   for(jx=MXG-1;jx>=0;jx--)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       var[jx][jy] = var[jx+1][jy]; // Setting this way for relaxed boundaries
   
 }
@@ -98,15 +98,15 @@ void bndry_inner_flat(Field3D &var)
   if(PE_XIND != 0)
     return;
   
-  if(ShiftXderivs) // Shift into real space
+  if(mesh->ShiftXderivs) // Shift into real space
     var = var.ShiftZ(true);
   
   for(jx=MXG-1;jx>=0;jx--)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	var[jx][jy][jz] = var[MXG][jy][jz];
     
-  if(ShiftXderivs) // Shift back
+  if(mesh->ShiftXderivs) // Shift back
     var = var.ShiftZ(false);
 }
 
@@ -120,7 +120,7 @@ void bndry_outer_zero(Field2D &var)
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       var[jx][jy] = 0.0;
 }
 
@@ -132,8 +132,8 @@ void bndry_outer_zero(Field3D &var)
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--) {
-    for(jy=0;jy<ngy;jy++) {
-      for(jz=0;jz<ngz;jz++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
+      for(jz=0;jz<mesh->ngz;jz++) {
 	var[jx][jy][jz] = 0.0;
       }
     }
@@ -146,13 +146,13 @@ void bndry_outer_zero(Field3D &var)
 #define LOOP_UPPER_BNDRY(code)				      \
   if(UDATA_INDEST < 0) {				      \
     for(jx=0;jx<UDATA_XSPLIT;jx++)			      \
-      for(jy=ngy-MYG-1;jy<ngy;jy++) {			      \
+      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) {			      \
 	code;						      \
       }							      \
   }							      \
   if(UDATA_OUTDEST < 0) {				      \
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++) \
-      for(jy=ngy-MYG-1;jy<ngy;jy++) {			      \
+    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) \
+      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) {			      \
 	code;						      \
       }							      \
   }
@@ -161,7 +161,7 @@ void bndry_yup_flat(Field2D &var)
 {
   int jx, jy;
   
-  LOOP_UPPER_BNDRY(var[jx][jy] = var[jx][ngy-1-MYG]);
+  LOOP_UPPER_BNDRY(var[jx][jy] = var[jx][mesh->ngy-1-MYG]);
 }
 
 void bndry_yup_zero(Field2D &var)
@@ -176,8 +176,8 @@ void bndry_yup_flat(Field3D &var)
   int jx, jy, jz;
   
   LOOP_UPPER_BNDRY(
-		   for(jz=0;jz<ngz;jz++) {
-		     var[jx][jy][jz] = var[jx][ngy-1-MYG][jz];
+		   for(jz=0;jz<mesh->ngz;jz++) {
+		     var[jx][jy][jz] = var[jx][mesh->ngy-1-MYG][jz];
 		   }
 		   );
 }
@@ -187,7 +187,7 @@ void bndry_yup_zero(Field3D &var)
   int jx, jy, jz;
   
   LOOP_UPPER_BNDRY(
-		   for(jz=0;jz<ngz;jz++) {
+		   for(jz=0;jz<mesh->ngz;jz++) {
 		     var[jx][jy][jz] = 0.0;
 		   }
 		   );
@@ -204,7 +204,7 @@ void bndry_yup_zero(Field3D &var)
       }							      \
   }							      \
   if(DDATA_OUTDEST < 0) {				      \
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++) \
+    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) \
       for(jy=0;jy<MYG;jy++) {				      \
 	code;						      \
       }							      \
@@ -229,7 +229,7 @@ void bndry_ydown_flat(Field3D &var)
   int jx, jy, jz;
   
   LOOP_LOWER_BNDRY(
-		   for(jz=0;jz<ngz;jz++) {
+		   for(jz=0;jz<mesh->ngz;jz++) {
 		     var[jx][jy][jz] = var[jx][MYG][jz];
 		   }
 		   );
@@ -240,7 +240,7 @@ void bndry_ydown_zero(Field3D &var)
   int jx, jy, jz;
   
   LOOP_LOWER_BNDRY(
-		   for(jz=0;jz<ngz;jz++) {
+		   for(jz=0;jz<mesh->ngz;jz++) {
 		     var[jx][jy][jz] = 0.0;
 		   }
 		   );
@@ -512,30 +512,30 @@ void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BN
   switch(loc) {
   case INNER_X: {
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
-	for(jz=0;jz<ngz;jz++)
+      for(jy=0;jy<mesh->ngy;jy++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
     break;
   }
   case OUTER_X: {
     for(jx=ncx;jx>ncx-MXG;jx--)
-      for(jy=0;jy<ngy;jy++)
-	for(jz=0;jz<ngz;jz++)
+      for(jy=0;jy<mesh->ngy;jy++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
   }
   case UPPER_Y: {
     if(UDATA_INDEST < 0) {
       // Inner boundary, if not communicating
       for(jx=0;jx<UDATA_XSPLIT;jx++)
-	for(jy=ngy-1;jy > ngy-1-MYG;jy--)
-	  for(jz=0;jz<ngz;jz++)
+	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
+	  for(jz=0;jz<mesh->ngz;jz++)
 	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
     }
     if(UDATA_OUTDEST < 0) {
       // Outer boundary
-      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++)
-	for(jy=ngy-1;jy > ngy-1-MYG;jy--)
-	  for(jz=0;jz<ngz;jz++)
+      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++)
+	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
+	  for(jz=0;jz<mesh->ngz;jz++)
 	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
     }
     break;
@@ -545,13 +545,13 @@ void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BN
       // Inner not communicating
       for(jx=0;jx<DDATA_XSPLIT;jx++)
 	for(jy=0;jy<MYG;jy++)
-	  for(jz=0;jz<ngz;jz++)
+	  for(jz=0;jz<mesh->ngz;jz++)
 	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
     }
     if(DDATA_OUTDEST < 0) {
-      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++)
+      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
 	for(jy=0;jy<MYG;jy++)
-	  for(jz=0;jz<ngz;jz++)
+	  for(jz=0;jz<mesh->ngz;jz++)
 	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
     }
     break;
@@ -581,26 +581,26 @@ void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BN
   switch(loc) {
   case INNER_X: {
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
     break;
   }
   case OUTER_X: {
     for(jx=ncx;jx>ncx-MXG;jx--)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
   }
   case UPPER_Y: {
     if(UDATA_INDEST < 0) {
       // Inner boundary, if not communicating
       for(jx=0;jx<UDATA_XSPLIT;jx++)
-	for(jy=ngy-1;jy > ngy-1-MYG;jy--)
+	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
 	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
     }
     if(UDATA_OUTDEST < 0) {
       // Outer boundary
-      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++)
-	for(jy=ngy-1;jy > ngy-1-MYG;jy--)
+      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++)
+	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
 	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
     }
     break;
@@ -613,7 +613,7 @@ void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BN
 	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
     }
     if(DDATA_OUTDEST < 0) {
-      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++)
+      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
 	for(jy=0;jy<MYG;jy++)
 	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
     }
@@ -1446,7 +1446,7 @@ void bndry_core_zero(Field2D &var)
 
   if((MYPE_IN_CORE == 1) && (PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
   
 }
@@ -1459,8 +1459,8 @@ void bndry_core_zero(Field3D &var)
   
   if((MYPE_IN_CORE == 1) && (PE_XIND == 0)) {
     for(jx=0;jx<MXG;jx++) {
-      for(jy=0;jy<ngy;jy++) {
-	for(jz=0;jz<ngz;jz++) {
+      for(jy=0;jy<mesh->ngy;jy++) {
+	for(jz=0;jz<mesh->ngz;jz++) {
 	  var[jx][jy][jz] = 0.0;
 	}
       }
@@ -1481,7 +1481,7 @@ void bndry_core_flat(Field2D &var)
 
   if((MYPE_IN_CORE == 1) && (PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[MXG][jy];
   
 }
@@ -1491,18 +1491,18 @@ void bndry_core_flat(Field3D &var)
   int jx, jy, jz;
   
   if((MYPE_IN_CORE == 1) && (PE_XIND == 0)) {
-    if(ShiftXderivs)
+    if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
     for(jx=0;jx<MXG;jx++) {
-      for(jy=0;jy<ngy;jy++) {
-	for(jz=0;jz<ngz;jz++) {
+      for(jy=0;jy<mesh->ngy;jy++) {
+	for(jz=0;jz<mesh->ngz;jz++) {
 	  var[jx][jy][jz] = var[MXG][jy][jz];
 	}
       }
     }
     
-    if(ShiftXderivs)
+    if(mesh->ShiftXderivs)
       var = var.ShiftZ(false);
   }
 }
@@ -1533,17 +1533,17 @@ void bndry_core_laplace(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take FFT
-    ZFFT(var[2][jy], zShift[2][jy], c2);
+    ZFFT(var[2][jy], mesh->zShift[2][jy], c2);
 
-    coef1=mesh->g11[1][jy]/(SQ(dx[1][jy]));
+    coef1=mesh->g11[1][jy]/(SQ(mesh->dx[1][jy]));
     coef2=mesh->g33[1][jy];
-    coef3=mesh->g13[1][jy]/(2.0*dx[1][jy]);
+    coef3=mesh->g13[1][jy]/(2.0*mesh->dx[1][jy]);
 
     for(jz=0;jz<=ncz/2;jz++) {
-      kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       a = dcomplex(coef1,-kwave*coef3);
       b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,0.0);
@@ -1554,8 +1554,8 @@ void bndry_core_laplace(Field3D &var)
     }
 
     // Reverse FFT
-    ZFFT_rev(c0, zShift[0][jy], var[0][jy]);
-    ZFFT_rev(c1, zShift[1][jy], var[1][jy]);
+    ZFFT_rev(c0, mesh->zShift[0][jy], var[0][jy]);
+    ZFFT_rev(c1, mesh->zShift[1][jy], var[1][jy]);
     
     var[0][jy][ncz] = var[0][jy][0];
     var[1][jy][ncz] = var[0][jy][0];
@@ -1580,19 +1580,19 @@ void bndry_core_laplace2(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
     for(jx=MXG-1;jx>=0;jx--) {
 
       // Take FFT
-      ZFFT(var[jx+1][jy], zShift[jx+1][jy], c1);
-      ZFFT(var[jx+2][jy], zShift[jx+2][jy], c2);
+      ZFFT(var[jx+1][jy], mesh->zShift[jx+1][jy], c1);
+      ZFFT(var[jx+2][jy], mesh->zShift[jx+2][jy], c2);
 
-      coef1=mesh->g11[jx+1][jy]/(SQ(dx[jx+1][jy]));
+      coef1=mesh->g11[jx+1][jy]/(SQ(mesh->dx[jx+1][jy]));
       coef2=mesh->g33[jx+1][jy];
-      coef3=mesh->g13[jx+1][jy]/(2.0*dx[jx+1][jy]);
+      coef3=mesh->g13[jx+1][jy]/(2.0*mesh->dx[jx+1][jy]);
 
       for(jz=0;jz<=ncz/2;jz++) {
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	
 	a = dcomplex(coef1,-kwave*coef3);
 	b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,0.0);
@@ -1603,7 +1603,7 @@ void bndry_core_laplace2(Field3D &var)
       }
 
       // Reverse FFT
-      ZFFT_rev(c0, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c0, mesh->zShift[jx][jy], var[jx][jy]);
       
       var[jx][jy][ncz] = var[jx][jy][0];
     }
@@ -1618,7 +1618,7 @@ void bndry_pf_zero(Field2D &var)
   
   if((MYPE_IN_CORE == 0) && (PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
   
 }
@@ -1630,8 +1630,8 @@ void bndry_pf_zero(Field3D &var)
   
   if((MYPE_IN_CORE == 0) && (PE_XIND == 0)) {
     for(jx=0;jx<MXG;jx++) {
-      for(jy=0;jy<ngy;jy++) {
-	for(jz=0;jz<ngz;jz++) {
+      for(jy=0;jy<mesh->ngy;jy++) {
+	for(jz=0;jz<mesh->ngz;jz++) {
 	  var[jx][jy][jz] = 0.0;
 	}
       }
@@ -1653,7 +1653,7 @@ void bndry_pf_flat(Field2D &var)
   
   if((MYPE_IN_CORE == 0) && (PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<ngy;jy++)
+      for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[MXG][jy];
   
 }
@@ -1663,18 +1663,18 @@ void bndry_pf_flat(Field3D &var)
   int jx, jy, jz;
 
   if((MYPE_IN_CORE == 0) && (PE_XIND == 0)) {
-    if(ShiftXderivs)
+    if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
     for(jx=0;jx<MXG;jx++) {
-      for(jy=0;jy<ngy;jy++) {
-	for(jz=0;jz<ngz;jz++) {
+      for(jy=0;jy<mesh->ngy;jy++) {
+	for(jz=0;jz<mesh->ngz;jz++) {
 	  var[jx][jy][jz] = var[MXG][jy][jz];
 	}
       }
     }
     
-    if(ShiftXderivs)
+    if(mesh->ShiftXderivs)
       var = var.ShiftZ(false);
   }
 }
@@ -1704,17 +1704,17 @@ void bndry_pf_laplace(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take FFT
-    ZFFT(var[2][jy], zShift[2][jy], c2);
+    ZFFT(var[2][jy], mesh->zShift[2][jy], c2);
 
-    coef1=mesh->g11[1][jy]/(SQ(dx[1][jy]));
+    coef1=mesh->g11[1][jy]/(SQ(mesh->dx[1][jy]));
     coef2=mesh->g33[1][jy];
-    coef3=mesh->g13[1][jy]/(2.0*dx[1][jy]);
+    coef3=mesh->g13[1][jy]/(2.0*mesh->dx[1][jy]);
 
     for(jz=0;jz<=ncz/2;jz++) {
-      kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       a = dcomplex(coef1,-kwave*coef3);
       b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,0.0);
@@ -1725,8 +1725,8 @@ void bndry_pf_laplace(Field3D &var)
     }
 
     // Reverse FFT
-    ZFFT_rev(c0, zShift[0][jy], var[0][jy]);
-    ZFFT_rev(c1, zShift[1][jy], var[1][jy]);
+    ZFFT_rev(c0, mesh->zShift[0][jy], var[0][jy]);
+    ZFFT_rev(c1, mesh->zShift[1][jy], var[1][jy]);
     
     var[0][jy][ncz] = var[0][jy][0];
     var[1][jy][ncz] = var[0][jy][0];
@@ -1765,7 +1765,7 @@ void bndry_sol_zero(Field2D &var)
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       var[jx][jy] = 0.0;
 }
 
@@ -1777,8 +1777,8 @@ void bndry_sol_zero(Field3D &var)
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--) {
-    for(jy=0;jy<ngy;jy++) {
-      for(jz=0;jz<ngz;jz++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
+      for(jz=0;jz<mesh->ngz;jz++) {
 	var[jx][jy][jz] = 0.0;
       }
     }
@@ -1800,7 +1800,7 @@ void bndry_sol_flat(Field2D &var)
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       var[jx][jy] = var[ncx-MXG][jy];
 }
 
@@ -1811,18 +1811,18 @@ void bndry_sol_flat(Field3D &var)
   if(PE_XIND != (NXPE-1))
     return;
   
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
   for(jx=ncx;jx>ncx-MXG;jx--) {
-    for(jy=0;jy<ngy;jy++) {
-      for(jz=0;jz<ngz;jz++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
+      for(jz=0;jz<mesh->ngz;jz++) {
 	var[jx][jy][jz] = var[ncx-MXG][jy][jz];
       }
     }
   }
 
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(false);
 }
 
@@ -1851,19 +1851,19 @@ void bndry_sol_laplace(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
-    for(jx=ngx-MXG;jx<ngx;jx++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
+    for(jx=mesh->ngx-MXG;jx<mesh->ngx;jx++) {
 
       // Take FFT
-      ZFFT(var[jx-2][jy], zShift[jx-2][jy], c0);
-      ZFFT(var[jx-1][jy], zShift[jx-1][jy], c1);
+      ZFFT(var[jx-2][jy], mesh->zShift[jx-2][jy], c0);
+      ZFFT(var[jx-1][jy], mesh->zShift[jx-1][jy], c1);
 
-      coef1=mesh->g11[jx-1][jy]/(SQ(dx[jx-1][jy]));
+      coef1=mesh->g11[jx-1][jy]/(SQ(mesh->dx[jx-1][jy]));
       coef2=mesh->g33[jx-1][jy];
-      coef3=mesh->g13[jx-1][jy]/(2.0*dx[jx-1][jy]);
+      coef3=mesh->g13[jx-1][jy]/(2.0*mesh->dx[jx-1][jy]);
 
       for(jz=0;jz<=ncz/2;jz++) {
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	
 	a = dcomplex(coef1,-kwave*coef3);
 	b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,0.0);
@@ -1874,7 +1874,7 @@ void bndry_sol_laplace(Field3D &var)
       }
 
       // Reverse FFT
-      ZFFT_rev(c2, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c2, mesh->zShift[jx][jy], var[jx][jy]);
       
       var[jx][jy][ncz] = var[jx][jy][0];
     }
@@ -1904,8 +1904,8 @@ void bndry_sol_divcurl(Vector3D &var)
     exit(1);
   }
 
-  jx = ngx - MXG;
-  for(jy=1;jy<ngy-1;jy++) {
+  jx = mesh->ngx - MXG;
+  for(jy=1;jy<mesh->ngy-1;jy++) {
     for(jz=0;jz<ncz;jz++) {
       jzp = (jz+1) % ncz;
       jzm = (jz - 1 + ncz) % ncz;
@@ -1913,40 +1913,40 @@ void bndry_sol_divcurl(Vector3D &var)
       // dB_y / dx = dB_x / dy
       
       // dB_x / dy
-      tmp = (var.x[jx-1][jy+1][jz] - var.x[jx-1][jy-1][jz]) / (dy[jx-1][jy-1] + dy[jx-1][jy]);
+      tmp = (var.x[jx-1][jy+1][jz] - var.x[jx-1][jy-1][jz]) / (mesh->dy[jx-1][jy-1] + mesh->dy[jx-1][jy]);
       
-      var.y[jx][jy][jz] = var.y[jx-2][jy][jz] + (dx[jx-2][jy] + dx[jx-1][jy]) * tmp;
+      var.y[jx][jy][jz] = var.y[jx-2][jy][jz] + (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp;
       if(MXG == 2)
 	// 4th order to get last point
-	var.y[jx+1][jy][jz] = var.y[jx-3][jy][jz] + 4.*dx[jx][jy]*tmp;
+	var.y[jx+1][jy][jz] = var.y[jx-3][jy][jz] + 4.*mesh->dx[jx][jy]*tmp;
 
       // dB_z / dx = dB_x / dz
 
-      tmp = (var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) / (2.*dz);
+      tmp = (var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) / (2.*mesh->dz);
       
-      var.z[jx][jy][jz] = var.z[jx-2][jy][jz] + (dx[jx-2][jy] + dx[jx-1][jy]) * tmp;
+      var.z[jx][jy][jz] = var.z[jx-2][jy][jz] + (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp;
       if(MXG == 2)
-	var.z[jx+1][jy][jz] = var.z[jx-3][jy][jz] + 4.*dx[jx][jy]*tmp;
+	var.z[jx+1][jy][jz] = var.z[jx-3][jy][jz] + 4.*mesh->dx[jx][jy]*tmp;
 
       // d/dx( Jmesh->g11 B_x ) = - d/dx( Jmesh->g12 B_y + Jmesh->g13 B_z) 
       //                    - d/dy( JB^y ) - d/dz( JB^z )
 	
       tmp = -( mesh->J[jx][jy]*mesh->g12[jx][jy]*var.y[jx][jy][jz] + mesh->J[jx][jy]*mesh->g13[jx][jy]*var.z[jx][jy][jz]
 	       - mesh->J[jx-2][jy]*mesh->g12[jx-2][jy]*var.y[jx-2][jy][jz] + mesh->J[jx-2][jy]*mesh->g13[jx-2][jy]*var.z[jx-2][jy][jz] )
-	/ (dx[jx-2][jy] + dx[jx-1][jy]); // First term (d/dx) using vals calculated above
+	/ (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]); // First term (d/dx) using vals calculated above
       tmp -= (mesh->J[jx-1][jy+1]*mesh->g12[jx-1][jy+1]*var.x[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g12[jx-1][jy-1]*var.x[jx-1][jy-1][jz]
 	      + mesh->J[jx-1][jy+1]*mesh->g22[jx-1][jy+1]*var.y[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g22[jx-1][jy-1]*var.y[jx-1][jy-1][jz]
 	      + mesh->J[jx-1][jy+1]*mesh->g23[jx-1][jy+1]*var.z[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g23[jx-1][jy-1]*var.z[jx-1][jy-1][jz])
-	/ (dy[jx-1][jy-1] + dy[jx-1][jy]); // second (d/dy)
+	/ (mesh->dy[jx-1][jy-1] + mesh->dy[jx-1][jy]); // second (d/dy)
       tmp -= (mesh->J[jx-1][jy]*mesh->g13[jx-1][jy]*(var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) +
 	      mesh->J[jx-1][jy]*mesh->g23[jx-1][jy]*(var.y[jx-1][jy][jzp] - var.y[jx-1][jy][jzm]) +
-	      mesh->J[jx-1][jy]*mesh->g33[jx-1][jy]*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*dz);
+	      mesh->J[jx-1][jy]*mesh->g33[jx-1][jy]*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*mesh->dz);
       
       var.x[jx][jy][jz] = ( mesh->J[jx-2][jy]*mesh->g11[jx-2][jy]*var.x[jx-2][jy][jz] + 
-			    (dx[jx-2][jy] + dx[jx-1][jy]) * tmp ) / mesh->J[jx][jy]*mesh->g11[jx][jy];
+			    (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp ) / mesh->J[jx][jy]*mesh->g11[jx][jy];
       if(MXG == 2)
 	var.x[jx+1][jy][jz] = ( mesh->J[jx-3][jy]*mesh->g11[jx-3][jy]*var.x[jx-3][jy][jz] + 
-				4.*dx[jx][jy]*tmp ) / mesh->J[jx+1][jy]*mesh->g11[jx+1][jy];
+				4.*mesh->dx[jx][jy]*tmp ) / mesh->J[jx+1][jy]*mesh->g11[jx+1][jy];
     }
   }
 }
@@ -1975,7 +1975,7 @@ void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real 
   rate = fabs(rate);
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++)
 	F_var[jx][jy][jz] = rate*(value - var[jx][jy][jz]);
 }
@@ -1991,7 +1991,7 @@ void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real
   rate = fabs(rate);
 
   for(jx=MXG-1;jx>=0;jx--)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++) {
 	F_var[jx][jy][jz] = F_var[jx+1][jy][jz] + rate*(value - var[jx][jy][jz]);
       }
@@ -2006,8 +2006,8 @@ void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, real value, real ra
 
   rate = fabs(rate);
 
-  for(jx=ngx-MXG;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=mesh->ngx-MXG;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++)
 	F_var[jx][jy][jz] = rate*(value - var[jx][jy][jz]);
 }
@@ -2021,8 +2021,8 @@ void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, real value, real r
 
   rate = fabs(rate);
 
-  for(jx=ngx-MXG;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=mesh->ngx-MXG;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++) {
 	F_var[jx][jy][jz] = F_var[jx-1][jy][jz] + rate*(value - var[jx][jy][jz]);
       }
@@ -2052,7 +2052,7 @@ void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate)
   rate = fabs(rate);
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++)
 	F_var[jx][jy][jz] = rate*(var[jx+1][jy][jz] - var[jx][jy][jz]);
 }
@@ -2066,8 +2066,8 @@ void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 
   rate = fabs(rate);
 
-  for(jx=ngx-MXG;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=mesh->ngx-MXG;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       for(jz=0;jz<ncz;jz++)
 	F_var[jx][jy][jz] = rate*(var[jx-1][jy][jz] - var[jx][jy][jz]);
 }
@@ -2093,7 +2093,7 @@ void bndry_inner_sym(Field3D &var)
   if(PE_XIND != 0)
     return;
 
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
   xb = 2*MXG;
@@ -2101,11 +2101,11 @@ void bndry_inner_sym(Field3D &var)
     xb--;  // Move boundary to between cells
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	var[jx][jy][jz] = var[xb-jx][jy][jz];
   
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(false);
 }
 
@@ -2116,19 +2116,19 @@ void bndry_sol_sym(Field3D &var)
   if(PE_XIND != (NXPE-1))
     return;
   
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
-  xb = ngx - MXG - 1;
+  xb = mesh->ngx - MXG - 1;
   if(BoundaryOnCell)
     xb--;
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
-	var[ngx-MXG+jx][jy][jz] = var[xb-jx][jy][jz];
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
+	var[mesh->ngx-MXG+jx][jy][jz] = var[xb-jx][jy][jz];
 
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(false);
 }
 
@@ -2157,7 +2157,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 
   Field3D var;
   var = var1;
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
   xb = 2*MXG;
@@ -2165,11 +2165,11 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
     xb--;  // Move boundary to between cells
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	F_var[jx][jy][jz] = rate*(var[xb-jx][jy][jz] - var[jx][jy][jz]);
   
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     F_var = F_var.ShiftZ(false);
 }
 
@@ -2184,19 +2184,19 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
   
   Field3D var;
   var = var1; 
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
-  xb = ngx - MXG - 1;
+  xb = mesh->ngx - MXG - 1;
   if(BoundaryOnCell)
     xb--;
 
   for(jx=0;jx<MXG;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
-	F_var[ngx-MXG+jx][jy][jz] = rate*(var[xb-jx][jy][jz] - var[ngx-MXG+jx][jy][jz]);
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
+	F_var[mesh->ngx-MXG+jx][jy][jz] = rate*(var[xb-jx][jy][jz] - var[mesh->ngx-MXG+jx][jy][jz]);
 
-  if(ShiftXderivs)
+  if(mesh->ShiftXderivs)
     var = var.ShiftZ(false);
 }
 
@@ -2230,7 +2230,7 @@ void bndry_ydown_rotate(Field3D &var, bool reverse)
   if(cv == (dcomplex*) NULL)
     cv = new dcomplex[ncz/2 + 1];
 
-  for(jx=0;jx<ngx;jx++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=(MYG-1); jy >= 0;jy--) {
       jy2 = 2*MYG - jy - 1;
       
@@ -2240,7 +2240,7 @@ void bndry_ydown_rotate(Field3D &var, bool reverse)
 
       for(jz=1;jz<=ncz/2;jz++) {
 	// Rotate by 180 degrees
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	cv[jz] *= dcomplex(cos(kwave*PI) , sin(kwave*PI));
       }
       
@@ -2264,7 +2264,7 @@ void bndry_ydown_zaverage(Field3D &var)
   // centre point is average of last point
   // others are just a linear interpolation
 
-  for(jx=0;jx<ngx;jx++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
     avg = 0.0;
     for(jz=0;jz<ncz;jz++)
       avg += var[jx][MYG][jz];
@@ -2292,14 +2292,14 @@ void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, real value, real 
   if(DDATA_INDEST < 0) {
     for(jx=0;jx<DDATA_XSPLIT;jx++) {
       for(jy=MYG-1;jy>=0;jy--) 
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = F_var[jx][jy+1][jz] + rate*(value - var[jx][jy][jz]);
     }
   }
   if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++) {
+    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) {
       for(jy=MYG-1;jy>=0;jy--) 
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = F_var[jx][jy+1][jz] + rate*(value - var[jx][jy][jz]);
     }
   }
@@ -2314,15 +2314,15 @@ void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, real value, real ra
   // If not communicating with another processor
   if(UDATA_INDEST < 0) {
     for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=ngy-MYG;jy<ngy;jy++) 
-	for(jz=0;jz<ngz;jz++)
+      for(jy=mesh->ngy-MYG;jy<mesh->ngy;jy++) 
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = F_var[jx][jy-1][jz] + rate*(value - var[jx][jy][jz]);
     }
   }
   if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++) {
-      for(jy=ngy-MYG;jy<ngy;jy++) 
-	for(jz=0;jz<ngz;jz++)
+    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
+      for(jy=mesh->ngy-MYG;jy<mesh->ngy;jy++) 
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = F_var[jx][jy-1][jz] + rate*(value - var[jx][jy][jz]);
     }
   }
@@ -2340,14 +2340,14 @@ void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, real rate)
   if(DDATA_INDEST < 0) {
     for(jx=0;jx<DDATA_XSPLIT;jx++) {
       for(jy=0;jy<=MYG;jy++) 
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = rate*(var[jx][jy+1][jz] - var[jx][jy][jz]);
     }
   }
   if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++) {
+    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) {
       for(jy=0;jy<=MYG;jy++) 
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = rate*(var[jx][jy+1][jz] - var[jx][jy][jz]);
     }
   }
@@ -2362,15 +2362,15 @@ void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, real rate)
   // If not communicating with another processor
   if(UDATA_INDEST < 0) {
     for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=ngy-MYG-1;jy<ngy;jy++) 
-	for(jz=0;jz<ngz;jz++)
+      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) 
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = rate*(var[jx][jy-1][jz] - var[jx][jy][jz]);
     }
   }
   if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++) {
-      for(jy=ngy-MYG-1;jy<ngy;jy++) 
-	for(jz=0;jz<ngz;jz++)
+    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
+      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) 
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = rate*(var[jx][jy-1][jz] - var[jx][jy][jz]);
     }
   }
@@ -2390,13 +2390,13 @@ void bndry_ydown_sym(Field3D &var)
   if(DDATA_INDEST < 0) {
     for(jx=0;jx<DDATA_XSPLIT;jx++)
       for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  var[jx][jy][jz] = var[jx][yb-jy][jz];
   }
   if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++)
+    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
       for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  var[jx][jy][jz] = var[jx][yb-jy][jz];
   }
 }
@@ -2405,24 +2405,24 @@ void bndry_yup_sym(Field3D &var)
 {
   int jx, jy, jz, yb;
   
-  yb = ngy - MYG - 1;
+  yb = mesh->ngy - MYG - 1;
   if(BoundaryOnCell)
     yb--;
 
   if(UDATA_INDEST < 0) {
     for(jx=0;jx<UDATA_XSPLIT;jx++) {
       for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<ngz;jz++) {
-	  var[jx][ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
+	for(jz=0;jz<mesh->ngz;jz++) {
+	  var[jx][mesh->ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
 	}
       }
     }
   }
   if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++) {
+    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
       for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<ngz;jz++) {
-	  var[jx][ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
+	for(jz=0;jz<mesh->ngz;jz++) {
+	  var[jx][mesh->ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
 	}
       }
     }
@@ -2445,13 +2445,13 @@ void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
   if(DDATA_INDEST < 0) {
     for(jx=0;jx<DDATA_XSPLIT;jx++)
       for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	  F_var[jx][jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][jy][jz]);
   }
   if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<ngx;jx++)
+    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
       for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<ngz;jz++)
+	for(jz=0;jz<mesh->ngz;jz++)
 	 F_var[jx][jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][jy][jz]);
   }
 }
@@ -2460,7 +2460,7 @@ void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate)
 {
   int jx, jy, jz, yb;
   
-  yb = ngy - MYG - 1;
+  yb = mesh->ngy - MYG - 1;
   if(BoundaryOnCell)
     yb--;
 
@@ -2469,17 +2469,17 @@ void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate)
   if(UDATA_INDEST < 0) {
     for(jx=0;jx<UDATA_XSPLIT;jx++) {
       for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<ngz;jz++) {
-	  F_var[jx][ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][ngy-MYG+jy][jz]);
+	for(jz=0;jz<mesh->ngz;jz++) {
+	  F_var[jx][mesh->ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][mesh->ngy-MYG+jy][jz]);
 	}
       }
     }
   }
   if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<ngx;jx++) {
+    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
       for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<ngz;jz++) {
-	  F_var[jx][ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][ngy-MYG+jy][jz]);
+	for(jz=0;jz<mesh->ngz;jz++) {
+	  F_var[jx][mesh->ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][mesh->ngy-MYG+jy][jz]);
 	}
       }
     }
@@ -2492,8 +2492,8 @@ void bndry_toroidal(Field3D &var)
 {
   int jx, jy;
 
-  for(jx=0; jx<ngx; jx++) {
-    for(jy=0; jy<ngy; jy++) {
+  for(jx=0; jx<mesh->ngx; jx++) {
+    for(jy=0; jy<mesh->ngy; jy++) {
       var[jx][jy][ncz] = var[jx][jy][0];
     }
   }
@@ -2525,11 +2525,11 @@ void bndry_inner_zero_laplace(Field3D &var)
     c3 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take FFT
-    ZFFT(var[2][jy], zShift[2][jy], c2);
-    ZFFT(var[3][jy], zShift[3][jy], c3);
+    ZFFT(var[2][jy], mesh->zShift[2][jy], c2);
+    ZFFT(var[3][jy], mesh->zShift[3][jy], c3);
 
     for(jz=0;jz<=ncz/2;jz++) {
       
@@ -2541,7 +2541,7 @@ void bndry_inner_zero_laplace(Field3D &var)
     }
 
     // Reverse FFT 
-    ZFFT_rev(c1, zShift[1][jy], var[1][jy]);
+    ZFFT_rev(c1, mesh->zShift[1][jy], var[1][jy]);
 
     for(jz=0;jz<ncz;jz++)
       var[0][jy][jz] = 0.; // Innermost point set to zero
@@ -2583,15 +2583,15 @@ void bndry_outer_zero_laplace(Field3D &var)
     c3 = new dcomplex[ncz/2 + 1];
   }
 
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take FFT
-    ZFFT(var[ngx-4][jy], zShift[ngx-4][jy], c1);
-    ZFFT(var[ngx-3][jy], zShift[ngx-3][jy], c2);
+    ZFFT(var[mesh->ngx-4][jy], mesh->zShift[mesh->ngx-4][jy], c1);
+    ZFFT(var[mesh->ngx-3][jy], mesh->zShift[mesh->ngx-3][jy], c2);
     
     for(jz=0;jz<=ncz/2;jz++) {
       
-      laplace_tridag_coefs(ngx-3, jy, jz, d, e, f);
+      laplace_tridag_coefs(mesh->ngx-3, jy, jz, d, e, f);
       
       // d*c1 + e*c2 + f*c3 = 0
       
@@ -2599,13 +2599,13 @@ void bndry_outer_zero_laplace(Field3D &var)
     }
 
     // Reverse FFT to get next-to-last point
-    ZFFT_rev(c3, zShift[ngx-2][jy], var[ngx-2][jy]);
+    ZFFT_rev(c3, mesh->zShift[mesh->ngx-2][jy], var[mesh->ngx-2][jy]);
     
     for(jz=0;jz<ncz;jz++)
-      var[ngx-1][jy][jz] = 0.; // Outermost point set to zero
+      var[mesh->ngx-1][jy][jz] = 0.; // Outermost point set to zero
 
-    var[ngx-1][jy][ncz] = var[ngx-1][jy][0];
-    var[ngx-2][jy][ncz] = var[ngx-2][jy][0];
+    var[mesh->ngx-1][jy][ncz] = var[mesh->ngx-1][jy][0];
+    var[mesh->ngx-2][jy][ncz] = var[mesh->ngx-2][jy][0];
   }
 }
 
@@ -2624,10 +2624,10 @@ void bndry_inner_laplace_decay(Field3D &var)
     c1 = new dcomplex[ncz/2 + 1];
   }
   
-  for(int jy=0;jy<ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of first "real" points
-    ZFFT(var[MXG][jy], zShift[MXG][jy], c0);
-    ZFFT(var[MXG+1][jy], zShift[MXG+1][jy], c1);
+    ZFFT(var[MXG][jy], mesh->zShift[MXG][jy], c0);
+    ZFFT(var[MXG+1][jy], mesh->zShift[MXG+1][jy], c1);
     c1[0] -= c0[0]; // Only need DC component
     
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
@@ -2638,13 +2638,13 @@ void bndry_inner_laplace_decay(Field3D &var)
       c0[0] -= c1[0];  // Straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx][jy] / mesh->g11[jx][jy])*dx[jx][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx][jy] / mesh->g11[jx][jy])*mesh->dx[jx][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
+	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
-      ZFFT_rev(c0, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c0, mesh->zShift[jx][jy], var[jx][jy]);
     }
   }
 }
@@ -2662,27 +2662,27 @@ void bndry_outer_laplace_decay(Field3D &var)
     c1 = new dcomplex[ncz/2 + 1];
   }
   
-  for(int jy=0;jy<ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of final "real" points
-    ZFFT(var[ngx-1-MXG][jy], zShift[ngx-1-MXG][jy], c0);
-    ZFFT(var[ngx-2-MXG][jy], zShift[ngx-2-MXG][jy], c1);
+    ZFFT(var[mesh->ngx-1-MXG][jy], mesh->zShift[mesh->ngx-1-MXG][jy], c0);
+    ZFFT(var[mesh->ngx-2-MXG][jy], mesh->zShift[mesh->ngx-2-MXG][jy], c1);
     c1[0] = c0[0] - c1[0]; // Only used for DC component
     
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
     // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
-    for(int jx=ngx-MXG;jx<ngx;jx++) {
+    for(int jx=mesh->ngx-MXG;jx<mesh->ngx;jx++) {
       // kz = 0 solution
       c0[0] += c1[0]; // Just a straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*dx[jx-1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
+	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
-      ZFFT_rev(c0, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c0, mesh->zShift[jx][jy], var[jx][jy]);
     }
   }
 }
@@ -2703,13 +2703,13 @@ void bndry_inner_const_laplace_decay(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
   
-  for(int jy=0;jy<ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of first three "real" points
-    ZFFT(var[MXG][jy],   zShift[MXG][jy],   c0);
-    ZFFT(var[MXG+1][jy], zShift[MXG+1][jy], c1);
-    ZFFT(var[MXG+2][jy], zShift[MXG+2][jy], c2);
+    ZFFT(var[MXG][jy],   mesh->zShift[MXG][jy],   c0);
+    ZFFT(var[MXG+1][jy], mesh->zShift[MXG+1][jy], c1);
+    ZFFT(var[MXG+2][jy], mesh->zShift[MXG+2][jy], c2);
     
-    dcomplex k0lin = (c1[0] - c0[0])/dx[MXG][jy]; // for kz=0 solution
+    dcomplex k0lin = (c1[0] - c0[0])/mesh->dx[MXG][jy]; // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
     for(int jz=0;jz<=ncz/2;jz++) {
@@ -2723,18 +2723,18 @@ void bndry_inner_const_laplace_decay(Field3D &var)
     real xpos = 0.0;
     for(int jx=MXG-1;jx>=0;jx--) {
       // kz = 0 solution
-      xpos -= dx[jx][jy];
+      xpos -= mesh->dx[jx][jy];
       c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx+1][jy];
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx+1][jy] / mesh->g11[jx+1][jy])*dx[jx+1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx+1][jy] / mesh->g11[jx+1][jy])*mesh->dx[jx+1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
+	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
 	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx+1][jy]*kwave*kwave); 
       }
       // Reverse FFT
-      ZFFT_rev(c2, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c2, mesh->zShift[jx][jy], var[jx][jy]);
     }
   }
 }
@@ -2753,39 +2753,39 @@ void bndry_outer_const_laplace_decay(Field3D &var)
     c2 = new dcomplex[ncz/2 + 1];
   }
   
-  for(int jy=0;jy<ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of last three "real" points
     
-    ZFFT(var[ngx-1-MXG][jy], zShift[ngx-1-MXG][jy], c0);
-    ZFFT(var[ngx-2-MXG][jy], zShift[ngx-2-MXG][jy], c1);
-    ZFFT(var[ngx-3-MXG][jy], zShift[ngx-3-MXG][jy], c1);
+    ZFFT(var[mesh->ngx-1-MXG][jy], mesh->zShift[mesh->ngx-1-MXG][jy], c0);
+    ZFFT(var[mesh->ngx-2-MXG][jy], mesh->zShift[mesh->ngx-2-MXG][jy], c1);
+    ZFFT(var[mesh->ngx-3-MXG][jy], mesh->zShift[mesh->ngx-3-MXG][jy], c1);
     
-    dcomplex k0lin = (c0[0] - c1[0])/dx[ngx-1-MXG][jy]; // for kz=0 solution
+    dcomplex k0lin = (c0[0] - c1[0])/mesh->dx[mesh->ngx-1-MXG][jy]; // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
     for(int jz=0;jz<=ncz/2;jz++) {
       dcomplex d,e,f;
-      laplace_tridag_coefs(ngx-2-MXG, jy, jz, d, e, f);
+      laplace_tridag_coefs(mesh->ngx-2-MXG, jy, jz, d, e, f);
       c1[jz] = d*c2[jz] + e*c1[jz] + f*c0[jz];
     }
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
     // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
     real xpos = 0.0;
-    for(int jx=ngx-MXG;jx<ngx;jx++) {
+    for(int jx=mesh->ngx-MXG;jx<mesh->ngx;jx++) {
       // kz = 0 solution: a + bx + 0.5*jpar*x^2/mesh->g11
-      xpos += dx[jx][jy];
+      xpos += mesh->dx[jx][jy];
       c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx-1][jy]; 
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*dx[jx-1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
+	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
 	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx][jy]*kwave*kwave); 
       }
       // Reverse FFT
-      ZFFT_rev(c2, zShift[jx][jy], var[jx][jy]);
+      ZFFT_rev(c2, mesh->zShift[jx][jy], var[jx][jy]);
     }
   }
 }

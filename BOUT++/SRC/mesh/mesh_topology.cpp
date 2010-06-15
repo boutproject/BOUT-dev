@@ -167,12 +167,12 @@ void add_boundary(int direction, int ypos, int xge, int xlt)
     int loc_xge = XLOCAL(xge);
     int loc_xlt = XLOCAL(xlt);
 
-    if((loc_xge >= ngx) || (loc_xlt <= 0)) {
+    if((loc_xge >= mesh->ngx) || (loc_xlt <= 0)) {
       return; // Not in this x domain
     }
     
     if(loc_xge < 0)   loc_xge = 0;
-    if(loc_xlt > ngx) loc_xlt = ngx;
+    if(loc_xlt > mesh->ngx) loc_xlt = mesh->ngx;
   
     /// Send to routine in local indices
     add_boundary_local(direction, YLOCAL(ypos), loc_xge, loc_xlt);
@@ -286,12 +286,12 @@ void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false)
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
   
-  if(( xge >= ngx ) || ( xlt <= 0 )) {
+  if(( xge >= mesh->ngx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
   
   if(xge < 0)   xge = 0;
-  if(xlt > ngx) xlt = ngx;
+  if(xlt > mesh->ngx) xlt = mesh->ngx;
 
   if(MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -299,7 +299,7 @@ void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false)
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == ngx)
+      if(UDATA_XSPLIT == mesh->ngx)
 	UDATA_OUTDEST = -1;
 
       TS_up_in = ts; // Twist-shift
@@ -323,7 +323,7 @@ void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false)
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
-      if(DDATA_XSPLIT == ngx)
+      if(DDATA_XSPLIT == mesh->ngx)
 	DDATA_OUTDEST = -1;
 
       TS_down_in = ts;

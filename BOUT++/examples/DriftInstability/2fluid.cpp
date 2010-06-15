@@ -89,7 +89,7 @@ int physics_init()
   GRID_LOAD(hthe);
   mesh->get(dx,   "dpsi");
   mesh->get(I,    "sinty");
-  mesh->get(zShift, "qinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -128,7 +128,7 @@ int physics_init()
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -226,11 +226,11 @@ int physics_init()
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
   if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    for(int i=0;i<mesh->ngx;i++)
+      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
   }
   if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -355,9 +355,9 @@ int physics_run(real t)
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
 
     /*
-    for(int jx=MXG;jx<ngx-MXG;jx++) {
-      for(int jy=MYG;jy<ngy-MYG;jy++) {
-	for(int jz=0;jz<ngz;jz++) {
+    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
+      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++) {
 	  jpar[jx][jy][jz] = ( (Te0[jx][jy] * (Ni[jx][jy+1][jz] - Ni[jx][jy][jz]))
 			       - (Ni0[jx][jy] * (phi[jx][jy+1][jz] - phi[jx][jy][jz])) )
 	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
@@ -444,9 +444,9 @@ int physics_run(real t)
     F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
 
     /*
-    for(int jx=MXG;jx<ngx-MXG;jx++) {
-      for(int jy=MYG;jy<ngy-MYG;jy++) {
-	for(int jz=0;jz<ngz;jz++) {
+    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
+      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++) {
 	  F_rho[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	}
       }
@@ -465,9 +465,9 @@ int physics_run(real t)
     //F_Ajpar -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
 
     /*
-    for(int jx=MXG;jx<ngx-MXG;jx++) {
-      for(int jy=MYG;jy<ngy-MYG;jy++) {
-	for(int jz=0;jz<ngz;jz++) {
+    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
+      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++) {
 	  F_Ajpar[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	  F_Ajpar[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	}

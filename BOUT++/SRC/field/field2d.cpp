@@ -106,8 +106,8 @@ Field2D & Field2D::operator=(const Field2D &rhs)
 
   // Copy data across
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = rhs.data[jx][jy];
 
 #ifdef CHECK
@@ -127,8 +127,8 @@ Field2D & Field2D::operator=(const real rhs)
 
   alloc_data(); // Make sure data is allocated
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = rhs;
   return(*this);
 }
@@ -143,8 +143,8 @@ real* Field2D::operator[](int jx) const
     exit(1);
   }
   
-  if((jx < 0) || (jx >= ngx)) {
-    error("Field2D: [] operator out of bounds (%d , %d)\n", jx, ngx);
+  if((jx < 0) || (jx >= mesh->ngx)) {
+    error("Field2D: [] operator out of bounds (%d , %d)\n", jx, mesh->ngx);
     exit(1);
   }
 #endif
@@ -166,8 +166,8 @@ Field2D & Field2D::operator+=(const Field2D &rhs)
   name = "("+name + "+" + rhs.name + ")";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] += rhs.data[jx][jy];
 
 #ifdef CHECK
@@ -191,8 +191,8 @@ Field2D & Field2D::operator+=(const real rhs)
   name = "("+name + "+real)";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] += rhs;
 
   return(*this);
@@ -217,8 +217,8 @@ Field2D & Field2D::operator-=(const Field2D &rhs)
   name = "("+name + "-" + rhs.name + ")";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] -= rhs.data[jx][jy];
 
   return(*this);
@@ -238,8 +238,8 @@ Field2D & Field2D::operator-=(const real rhs)
   name = "("+name + "-real)";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] -= rhs;
 
   return(*this);
@@ -264,8 +264,8 @@ Field2D & Field2D::operator*=(const Field2D &rhs)
   name = "("+name + "*" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] *= rhs.data[jx][jy];
 
   return(*this);
@@ -285,8 +285,8 @@ Field2D & Field2D::operator*=(const real rhs)
   name = "("+name + "*real)";
 #endif
 
-  for(jx=0;jx<ngx;jx++) {
-    for(jy=0;jy<ngy;jy++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] *= rhs;
     }
   }
@@ -313,8 +313,8 @@ Field2D & Field2D::operator/=(const Field2D &rhs)
   name = "("+name + "/" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] /= rhs.data[jx][jy];
 
   return(*this);
@@ -336,8 +336,8 @@ Field2D & Field2D::operator/=(const real rhs)
 
   real inv_rhs = 1. / rhs; // Multiplication faster than division
 
-  for(jx=0;jx<ngx;jx++) {
-    for(jy=0;jy<ngy;jy++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] *= inv_rhs;
     }
   }
@@ -364,8 +364,8 @@ Field2D & Field2D::operator^=(const Field2D &rhs)
   name = "("+name + "^" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = pow(data[jx][jy], rhs.data[jx][jy]);
 
   return(*this);
@@ -385,8 +385,8 @@ Field2D & Field2D::operator^=(const real rhs)
   name = "("+name + "^real)";
 #endif
 
-  for(jx=0;jx<ngx;jx++) {
-    for(jy=0;jy<ngy;jy++) {
+  for(jx=0;jx<mesh->ngx;jx++) {
+    for(jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] = pow(data[jx][jy], rhs);
     }
   }
@@ -508,9 +508,9 @@ const Field3D Field2D::operator-(const Field3D &other) const
   result.name = "(" + name + "-" + other.name + ")";
 #endif  
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = data[jx][jy] - d[jx][jy][jz];
 
   result.setLocation( other.getLocation() );
@@ -543,9 +543,9 @@ const Field3D Field2D::operator/(const Field3D &other) const
   result.name = "(" + name + "/" + other.name + ")";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = data[jx][jy] / d[jx][jy][jz];
 
   result.setLocation( other.getLocation() );
@@ -572,9 +572,9 @@ const Field3D Field2D::operator^(const Field3D &other) const
   result.name = "(" + name + "^" + other.name + ")";
 #endif  
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
-      for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
+      for(jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = pow(data[jx][jy], d[jx][jy][jz]);
 
   result.setLocation( other.getLocation() );
@@ -597,8 +597,8 @@ const FieldPerp Field2D::operator-(const FieldPerp &other) const
 
   jy = result.getIndex();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = data[jx][jy] - d[jx][jz];
   
 #ifdef TRACK
@@ -623,8 +623,8 @@ const FieldPerp Field2D::operator/(const FieldPerp &other) const
 
   jy = result.getIndex();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = data[jx][jy] / d[jx][jz];
 
 #ifdef TRACK
@@ -642,8 +642,8 @@ const FieldPerp Field2D::operator^(const FieldPerp &other) const
 
   jy = result.getIndex();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = pow(data[jx][jy], d[jx][jz]);
 
 #ifdef TRACK
@@ -666,9 +666,9 @@ void Field2D::getXarray(int y, int z, rvec &xv) const
   }
 #endif
 
-  xv.resize(ngx);
+  xv.resize(mesh->ngx);
   
-  for(int x=0;x<ngx;x++)
+  for(int x=0;x<mesh->ngx;x++)
     xv[x] = data[x][y];
 }
 
@@ -682,9 +682,9 @@ void Field2D::getYarray(int x, int z, rvec &yv) const
   }
 #endif
 
-  yv.resize(ngy);
+  yv.resize(mesh->ngy);
   
-  for(int y=0;y<ngy;y++)
+  for(int y=0;y<mesh->ngy;y++)
     yv[y] = data[x][y];
 }
 
@@ -698,9 +698,9 @@ void Field2D::getZarray(int x, int y, rvec &zv) const
   }
 #endif
 
-  zv.resize(ngz-1);
+  zv.resize(mesh->ngz-1);
   
-  for(int z=0;z<ngz-1;z++)
+  for(int z=0;z<mesh->ngz-1;z++)
     zv[z] = data[x][y];
 }
 
@@ -710,13 +710,13 @@ void Field2D::setXarray(int y, int z, const rvec &xv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(xv.capacity() != (unsigned int) ngx) {
+  if(xv.capacity() != (unsigned int) mesh->ngx) {
     error("Field2D: setXarray has incorrect size\n");
     exit(1);
   }
 #endif
 
-  for(int x=0;x<ngx;x++)
+  for(int x=0;x<mesh->ngx;x++)
     data[x][y] = xv[x];
 }
 
@@ -726,13 +726,13 @@ void Field2D::setYarray(int x, int z, const rvec &yv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(yv.capacity() != (unsigned int) ngy) {
+  if(yv.capacity() != (unsigned int) mesh->ngy) {
     error("Field2D: setYarray has incorrect size\n");
     exit(1);
   }
 #endif
 
-  for(int y=0;y<ngy;y++)
+  for(int y=0;y<mesh->ngy;y++)
     data[x][y] = yv[y];
 }
 
@@ -804,8 +804,8 @@ const Field2D Field2D::Sqrt() const
 
 #ifdef CHECK
   // Test values
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] < 0.0) {
 	output.write("Field2D: Sqrt operates on negative value at [%d,%d]\n", jx, jy);
 	exit(1);
@@ -818,8 +818,8 @@ const Field2D Field2D::Sqrt() const
 
   result.Allocate();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = sqrt(data[jx][jy]);
 
   return result;
@@ -844,8 +844,8 @@ const Field2D Field2D::Abs() const
 
   result.Allocate();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = fabs(data[jx][jy]);
 
   return result;
@@ -870,8 +870,8 @@ real Field2D::Min(bool allpe) const
 
   result = data[0][0];
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] < result)
 	result = data[jx][jy];
   
@@ -907,8 +907,8 @@ real Field2D::Max(bool allpe) const
 
   result = data[0][0];
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] > result)
 	result = data[jx][jy];
   
@@ -937,8 +937,8 @@ bool Field2D::Finite() const
   }
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       if(!finite(data[jx][jy]))
 	return false;
 
@@ -1031,8 +1031,8 @@ bool Field2D::check_data(bool vital) const
     // Do full checks
     int jx, jy;
 
-    for(jx=MXG;jx<ngx-MXG;jx++)
-      for(jy=MYG;jy<ngy-MYG;jy++)
+    for(jx=MXG;jx<mesh->ngx-MXG;jx++)
+      for(jy=MYG;jy<mesh->ngy-MYG;jy++)
 	if(!finite(data[jx][jy])) {
 	  error("Field2D: Operation on non-finite data at [%d][%d]\n", jx, jy);
 	}
@@ -1063,7 +1063,7 @@ void Field2D::alloc_data()
   }else {
     // Need to create another block
 
-    data = rmatrix(ngx, ngy);
+    data = rmatrix(mesh->ngx, mesh->ngy);
 
   }
 }
@@ -1128,8 +1128,8 @@ const Field2D operator/(const real lhs, const Field2D &rhs)
   result.name = "(real/"+rhs.name+")";
 #endif
 
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       d[jx][jy] = lhs / d[jx][jy];
 
   return(result);
@@ -1154,8 +1154,8 @@ const Field2D operator^(const real lhs, const Field2D &rhs)
   result.name = "(real^"+rhs.name+")";
 #endif
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       d[jx][jy] = pow(lhs, d[jx][jy]);
 
   return(result);
@@ -1201,8 +1201,8 @@ const Field2D sin(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = sin(f.data[jx][jy]);
 
   return result;
@@ -1219,8 +1219,8 @@ const Field2D cos(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = cos(f.data[jx][jy]);
 
   return result;
@@ -1237,8 +1237,8 @@ const Field2D tan(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = tan(f.data[jx][jy]);
 
   return result;
@@ -1255,8 +1255,8 @@ const Field2D sinh(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = sinh(f.data[jx][jy]);
 
   return result;
@@ -1273,8 +1273,8 @@ const Field2D cosh(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = cosh(f.data[jx][jy]);
 
   return result;
@@ -1291,8 +1291,8 @@ const Field2D tanh(const Field2D &f)
 
   result.Allocate();
   
-  for(jx=0;jx<ngx;jx++)
-    for(jy=0;jy<ngy;jy++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = tanh(f.data[jx][jy]);
 
   return result;

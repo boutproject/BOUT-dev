@@ -115,6 +115,15 @@ int BoutMesh::load()
   }
   OPTION(TwistShift,   false);
   OPTION(TwistOrder,   0);
+  OPTION(ShiftXderivs, false);
+
+  if(mesh->ShiftXderivs) {
+    output.write("Using shifted X derivatives. Interpolation: ");
+    if(ShiftOrder == 0) {
+      output.write("FFT\n");
+    }else
+      output.write("%d-point\n", ShiftOrder);
+  }
 
   if(options.get("zperiod",   zperiod,      1)) {
     options.get("ZMIN",         ZMIN,         0.0);
@@ -135,13 +144,13 @@ int BoutMesh::load()
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
-  ngx = MXSUB + 2*MXG;
-  ngy = MYSUB + 2*MYG;
-  ngz = MZ;
+  mesh->ngx = MXSUB + 2*MXG;
+  mesh->ngy = MYSUB + 2*MYG;
+  mesh->ngz = MZ;
 
-	ncx = ngx-1;
-	ncy = ngy-1;
-	ncz = ngz-1;
+	ncx = mesh->ngx-1;
+	ncy = mesh->ngy-1;
+	ncz = mesh->ngz-1;
 	
 	// Set local index ranges
   
@@ -155,11 +164,11 @@ int BoutMesh::load()
   
   // separatrix location
   if(get(ixseps1, "ixseps1")) {
-    ixseps1 = ngx;
+    ixseps1 = mesh->ngx;
     output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
   }
   if(get(ixseps2, "ixseps2")) {
-    ixseps2 = ngx;
+    ixseps2 = mesh->ngx;
     output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
   }
   if(get(jyseps1_1,"jyseps1_1")) {
@@ -210,8 +219,8 @@ int BoutMesh::load()
     }
   }
   
-  zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/ncz;
+  mesh->zlength = (ZMAX-ZMIN)*TWOPI;
+  dz = mesh->zlength/ncz;
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   
@@ -226,23 +235,23 @@ int BoutMesh::load()
   get(mesh->g23, "mesh->g23", 0.0);
   
   /// Set shift for radial derivatives
-  if(get(zShift, "zShift")) {
+  if(get(mesh->zShift, "mesh->zShift")) {
     output.write("\tWARNING: Z shift for radial derivatives not found\n");
-    ShiftTorsion = zShift = 0.0;
-  }else if(get(ShiftTorsion, "ShiftTorsion")) {
-    output.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
+    mesh->ShiftTorsion = mesh->zShift = 0.0;
+  }else if(get(mesh->ShiftTorsion, "mesh->ShiftTorsion")) {
+    output.write("\tWARNING: No Torsion specified for mesh->zShift. Derivatives may not be correct\n");
+    mesh->ShiftTorsion = 0.0;
   }
   
   if(IncIntShear) {
-    if(get(IntShiftTorsion, "IntShiftTorsion")) {
+    if(get(mesh->IntShiftTorsion, "mesh->IntShiftTorsion")) {
       output.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
+      mesh->IntShiftTorsion = 0.0;
     }
   }
   // Allocate some memory for twist-shift
 
-  ShiftAngle  = rvector(ngx);
+  ShiftAngle  = rvector(mesh->ngx);
 
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
@@ -250,15 +259,15 @@ int BoutMesh::load()
   if(s) {
     s->open("ShiftAngle");
     s->setOrigin(XGLOBAL(0));
-    if(!s->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
+    if(!s->fetch(ShiftAngle,  "ShiftAngle", mesh->ngx)) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
-      for(int i=0;i<ngx;i++)
+      for(int i=0;i<mesh->ngx;i++)
         ShiftAngle[i] = 0.0;
     }
     s->close();
   }else {
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
-    for(int i=0;i<ngx;i++)
+    for(int i=0;i<mesh->ngx;i++)
       ShiftAngle[i] = 0.0;
   }
   
@@ -358,7 +367,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
 		    YGLOBAL(MYG), // Start reading at global index for y=MYG
 		    MYG,          // Insert data starting from y=MYG
 		    MYSUB,        // Length of data is MYSUB
-		    0, ngx,       // All x indices (local indices)
+		    0, mesh->ngx,       // All x indices (local indices)
 		    data)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
@@ -394,13 +403,13 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
       cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
   }
   
-  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
+  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < mesh->ngx)) { 
     
     if(readgrid_2dvar(s, name,
 		      (UDATA_OUTDEST / NXPE)*MYSUB,
 		      MYSUB+MYG,
 		      MYG,
-		      UDATA_XSPLIT, ngx, // the outer cells
+		      UDATA_XSPLIT, mesh->ngx, // the outer cells
 		      data)) {
       output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
       var = def;
@@ -412,7 +421,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
   }else if(UDATA_XSPLIT < MX) {
     // Inner data exists, but has no destination
     for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
+      cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, mesh->ngx, data);
   }
   
   // Read in data for lower boundary
@@ -437,13 +446,13 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
       for(jy=0;jy<MYG;jy++)
         cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
     }
-    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
+    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < mesh->ngx)) {
 
       if(readgrid_2dvar(s, name,
 		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
 		      0,
 		      MYG,
-		      DDATA_XSPLIT, ngx,
+		      DDATA_XSPLIT, mesh->ngx,
 		      data)) {
 	output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
 	var = def;
@@ -452,9 +461,9 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
 #endif
         return 2;
       }
-  }else if(DDATA_XSPLIT < ngx) {
+  }else if(DDATA_XSPLIT < mesh->ngx) {
     for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
+      cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, mesh->ngx, data);
   }
 
 #ifdef TRACK
@@ -521,7 +530,7 @@ int BoutMesh::get(Field3D &var, const char *name)
 		    YGLOBAL(MYG), // Start reading at global index for y=MYG
 		    MYG,          // Insert data starting from y=MYG
 		    MYSUB,        // Length of data is MYSUB
-		    0, ngx,       // All x indices (local indices)
+		    0, mesh->ngx,       // All x indices (local indices)
 		    data)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
     var = 0.0;
@@ -557,13 +566,13 @@ int BoutMesh::get(Field3D &var, const char *name)
       cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
   }
   
-  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
+  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < mesh->ngx)) { 
     
     if(readgrid_3dvar(s, name,
 		      (UDATA_OUTDEST / NXPE)*MYSUB,
 		      MYSUB+MYG,
 		      MYG,
-		      UDATA_XSPLIT, ngx, // the outer cells
+		      UDATA_XSPLIT, mesh->ngx, // the outer cells
 		      data)) {
       output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
       var = 0.0;
@@ -575,7 +584,7 @@ int BoutMesh::get(Field3D &var, const char *name)
   }else if(UDATA_XSPLIT < MX) {
     // Inner data exists, but has no destination
     for(jy=0;jy<MYG;jy++)
-      cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
+      cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, mesh->ngx, data);
   }
   
   // Read in data for lower boundary
@@ -600,13 +609,13 @@ int BoutMesh::get(Field3D &var, const char *name)
      for(jy=0;jy<MYG;jy++)
        cpy_3d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
    }
-  if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
+  if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < mesh->ngx)) {
 
     if(readgrid_3dvar(s, name,
 		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
 		      0,
 		      MYG,
-		      DDATA_XSPLIT, ngx,
+		      DDATA_XSPLIT, mesh->ngx,
 		      data)) {
       output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
       var = 0.0;
@@ -615,9 +624,9 @@ int BoutMesh::get(Field3D &var, const char *name)
 #endif
       return 2;
     }
-  }else if(DDATA_XSPLIT < ngx) {
+  }else if(DDATA_XSPLIT < mesh->ngx) {
     for(jy=0;jy<MYG;jy++)
-      cpy_3d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
+      cpy_3d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, mesh->ngx, data);
   }
   
 #ifdef CHECK
@@ -671,7 +680,7 @@ void BoutMesh::post_receive(CommHandle &ch)
   if(UDATA_OUTDEST != -1) {
     inbuff = &ch.umsg_recvbuff[len]; // pointer to second half of the buffer
     MPI_Irecv(inbuff,
-	      msg_len(ch.var_list, UDATA_XSPLIT, ngx, 0, MYG),
+	      msg_len(ch.var_list, UDATA_XSPLIT, mesh->ngx, 0, MYG),
 	      PVEC_REAL_MPI_TYPE,
 	      UDATA_OUTDEST,
 	      OUT_SENT_DOWN,
@@ -696,7 +705,7 @@ void BoutMesh::post_receive(CommHandle &ch)
   if(DDATA_OUTDEST != -1) {
     inbuff = &ch.dmsg_recvbuff[len];
     MPI_Irecv(inbuff,
-	      msg_len(ch.var_list, DDATA_XSPLIT, ngx, 0, MYG),
+	      msg_len(ch.var_list, DDATA_XSPLIT, mesh->ngx, 0, MYG),
 	      PVEC_REAL_MPI_TYPE,
 	      DDATA_OUTDEST,
 	      OUT_SENT_UP,
@@ -739,7 +748,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
   
   /// Work out length of buffer needed
   int xlen = msg_len(var_list, 0, MXG, 0, MYSUB);
-  int ylen = msg_len(var_list, 0, ngx, 0, MYG);
+  int ylen = msg_len(var_list, 0, mesh->ngx, 0, MYG);
 
   /// Get a communications handle of (at least) the needed size
   CommHandle *ch = get_handle(xlen, ylen);
@@ -778,7 +787,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer 
-    len = pack_data(var_list, UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(var_list, UDATA_XSPLIT, mesh->ngx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff, 
@@ -822,7 +831,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
 			           // of the buffer
-    len = pack_data(var_list, DDATA_XSPLIT, ngx, MYG, 2*MYG, outbuff);
+    len = pack_data(var_list, DDATA_XSPLIT, mesh->ngx, MYG, 2*MYG, outbuff);
     // Send the data to processor DDATA_OUTDEST
 
     if(async_send) {
@@ -928,7 +937,7 @@ int BoutMesh::wait(comm_handle handle)
     }
     case 1: { // Up, outer
       len = msg_len(ch->var_list, 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list, UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
+      unpack_data(ch->var_list, UDATA_XSPLIT, mesh->ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
@@ -937,7 +946,7 @@ int BoutMesh::wait(comm_handle handle)
     }
     case 3: { // Down, outer
       len = msg_len(ch->var_list, 0, DDATA_XSPLIT, 0, MYG);
-      unpack_data(ch->var_list, DDATA_XSPLIT, ngx, 0, MYG, &(ch->dmsg_recvbuff[len]));
+      unpack_data(ch->var_list, DDATA_XSPLIT, mesh->ngx, 0, MYG, &(ch->dmsg_recvbuff[len]));
       break;
     }
     case 4: { // inner
@@ -1252,12 +1261,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
   xge = XLOCAL(xge);
   xlt = XLOCAL(xlt);
   
-  if(( xge >= ngx ) || ( xlt <= 0 )) {
+  if(( xge >= mesh->ngx ) || ( xlt <= 0 )) {
     return; // Not in this x domain
   }
   
   if(xge < 0)   xge = 0;
-  if(xlt > ngx) xlt = ngx;
+  if(xlt > mesh->ngx) xlt = mesh->ngx;
 
   if(MYPE == PROC_NUM(PE_XIND, ypeup)) { /* PROCESSOR SENDING +VE Y */
     /* Set the branch cut x position */
@@ -1265,7 +1274,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       /* Connect on the inside */
       UDATA_XSPLIT = xlt;
       UDATA_INDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == ngx)
+      if(UDATA_XSPLIT == mesh->ngx)
 	UDATA_OUTDEST = -1;
 
       TS_up_in = ts; // Twist-shift
@@ -1289,7 +1298,7 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       /* Connect on the inside */
       DDATA_XSPLIT = xlt;
       DDATA_INDEST = PROC_NUM(PE_XIND, ypeup);
-      if(DDATA_XSPLIT == ngx)
+      if(DDATA_XSPLIT == mesh->ngx)
 	DDATA_OUTDEST = -1;
 
       TS_down_in = ts;
@@ -1732,10 +1741,10 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
       for(int jz=0;jz<=ncz/2;jz++) {
 	real kwave;
 	
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
 	// Multiply by EXP(ik*zoffset)
-	fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
+	fdata[jz] *= dcomplex(cos(kwave*mesh->zShift[jx][jy]) , sin(kwave*mesh->zShift[jx][jy]));
       }
       
       irfft(fdata, ncz, var[jx][ydest+jy]);
@@ -1756,7 +1765,7 @@ void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, real ***var)
 {
   int i, k;
   for(i=xge;i!=xlt;i++)
-    for(k=0;k<ngz;k++)
+    for(k=0;k<mesh->ngz;k++)
       var[i][yto][k] = var[i][yfrom][k];
 }
 
@@ -1859,7 +1868,7 @@ bool BoutSurfaceIter::closed(real &ts)
 void BoutSurfaceIter::first()
 {
   xpos = m->PE_XIND;
-  if(xpos > m->ngx-1)
+  if(xpos > m->mesh->ngx-1)
     xpos = -1; // Nothing to do
 }
 
@@ -1869,7 +1878,7 @@ void BoutSurfaceIter::next()
     return;
   
   xpos += NXPE;
-  if(xpos > m->ngx-1)
+  if(xpos > m->mesh->ngx-1)
     xpos = -1; // Nothing to do 
 }
 

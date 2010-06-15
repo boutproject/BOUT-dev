@@ -205,7 +205,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   de_z = delta_z.getData();
 
   Field3D f = var;
-  if(ShiftXderivs && (ShiftOrder == 0)) {
+  if(mesh->ShiftXderivs && (ShiftOrder == 0)) {
     // Shift in Z using FFT
     f = var.ShiftZ(true); // Shift into real space
   }
@@ -214,8 +214,8 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   r_data = result.getData();
 
   // Loop over output grid points
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<ncz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
@@ -233,15 +233,15 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	if(jxmnew < 0) {
 	  jxmnew = 0;
 	  xs = 0.0;
-	}else if(jxmnew >= (ngx-1)) {
+	}else if(jxmnew >= (mesh->ngx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxmnew = ngx-2; 
+	  jxmnew = mesh->ngx-2; 
 	  xs = 1.0;
 	}
 
 	int jx2mnew = (jxmnew == 0) ? 0 : (jxmnew - 1);
 	int jxpnew = jxmnew + 1;
-	int jx2pnew = (jxmnew == (ngx-2)) ? jxpnew : (jxpnew + 1);
+	int jx2pnew = (jxmnew == (mesh->ngx-2)) ? jxpnew : (jxpnew + 1);
 
 	// Get the 4 Z points
 	jzmnew = ((jzmnew % ncz) + ncz) % ncz;
@@ -278,7 +278,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	r_data[jx][jy][jz] = lagrange_4pt(xvals, xs);
       }
 
-  if(ShiftXderivs && (ShiftOrder == 0))
+  if(mesh->ShiftXderivs && (ShiftOrder == 0))
     result = result.ShiftZ(false); // Shift back
 
 #ifdef CHECK
@@ -308,8 +308,8 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
   r_data = result.getData();
 
   // Loop over output grid points
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<ncz;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
@@ -325,9 +325,9 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
 	if(jxnew < 0) {
 	  jxnew = 0;
 	  xs = 0.0;
-	}else if(jxnew >= (ngx-1)) {
+	}else if(jxnew >= (mesh->ngx-1)) {
 	  // Want to always be able to use [jxnew] and [jxnew+1]
-	  jxnew = ngx-2; 
+	  jxnew = mesh->ngx-2; 
 	  xs = 1.0;
 	}
 	// Interpolate in X

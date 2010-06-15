@@ -89,7 +89,7 @@ int physics_init()
   GRID_LOAD(hthe);
   mesh->get(dx,   "dpsi");
   mesh->get(I,    "sinty");
-  mesh->get(zShift, "qinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -128,7 +128,7 @@ int physics_init()
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -226,11 +226,11 @@ int physics_init()
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
   if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    for(int i=0;i<mesh->ngx;i++)
+      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
   }
   if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   /**************** SET EVOLVING VARIABLES *************/
 

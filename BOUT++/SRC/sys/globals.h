@@ -56,7 +56,6 @@ const real TWOPI = 6.2831853071795;
 GLOBAL int nx, ny;        ///< Size of the grid in the input file
 GLOBAL int MX, MY;        ///< size of the grid excluding boundary regions
 GLOBAL int MYSUB, MXSUB;  ///< Size of the grid on this processor
-GLOBAL int ngx, ngy, ngz; ///< Total domain size on this processor including guard/boundary cells
 GLOBAL int ncx, ncy, ncz;
 
 GLOBAL int xstart, xend, jstart, jend; // local index range
@@ -91,19 +90,6 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
 
 GLOBAL real *ShiftAngle;  // angle a field-line moves in z for a y circuit (radians)
 
-///////////////// SHEARED X DERIVATIVES ///////////////////////
-
-GLOBAL Field2D zShift; // Z shift for each point (radians)
-GLOBAL Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-GLOBAL Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-
-///////////////// DIFFERENCING QUANTITIES /////////////////////
-
-// These used for differential operators 
-GLOBAL Field2D dx, dy;      // Read in grid.cpp
-GLOBAL Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes
-GLOBAL real zlength, dz;    // Derived from options in grid.cpp (in radians)
-
 ////////////////// DIFFERENTIAL GEOMETRY //////////////////////
 
 // rest of these quantities are derived from the metric tensor
@@ -135,7 +121,6 @@ GLOBAL MsgStack msg_stack;
 
 GLOBAL bool restarting;   // Specifies whether code is restarting
 
-GLOBAL bool ShiftXderivs; // Use shifted X derivatives
 GLOBAL bool IncIntShear;  // Include integrated shear (if shifting X)
 GLOBAL bool TwistShift;   // Use a twist-shift condition in core?
 GLOBAL int  ShiftOrder;   // Order of shifted X derivative interpolation
