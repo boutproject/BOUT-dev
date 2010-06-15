@@ -51,6 +51,7 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include "utils.h"
 #include "invert_laplace.h"
 #include "interpolation.h"
+#include "boutmesh.h"
 
 #include "mpi.h"
 #include <stdio.h>
@@ -285,20 +286,23 @@ int main(int argc, char **argv)
   
   ////////////////////////////////////////////
 
+  /// Create the mesh
+  mesh = new BoutMesh();
+  
+
   output.write("Setting grid format\n");
   /// Load the grid
   if((grid_ext = options.getString("grid_format")) == NULL) {
     // Guess format based on grid filename
-    if(!grid_read(data_format(grid_name), grid_name)) {
-      output.write("Failed to read grid. Aborting\n");
-      return(1);
-    }
+    mesh->add_source(new GridFile(data_format(grid_name), grid_name));
   }else {
     // User-specified format
-    if(!grid_read(data_format(grid_ext), grid_name)) {
-      output.write("Failed to read grid. Aborting\n");
-      return(1);
-    }
+    mesh->add_source(new GridFile(data_format(grid_ext), grid_name));
+    
+  }
+  if(mesh->load()) {
+    output << "Failed to read grid. Aborting\n";
+    return 1;
   }
 
   // Check ngz

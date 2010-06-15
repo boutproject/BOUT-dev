@@ -37,6 +37,7 @@
 
 #include "datafile.h"
 #include "grid.h"
+#include "mesh.h"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
@@ -45,6 +46,8 @@
 #define GLOBAL
 #define SETTING(name, val) name = val;
 #endif
+
+GLOBAL Mesh *mesh; ///< The mesh object
 
 const real PI = 3.141592653589793;
 const real TWOPI = 6.2831853071795;

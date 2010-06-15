@@ -31,6 +31,10 @@
  *
  **************************************************************************/
 
+class Mesh;
+class FieldGroup;
+class SurfaceIter;
+
 #ifndef __MESH_H__
 #define __MESH_H__
 
@@ -76,6 +80,7 @@ class SurfaceIter {
 
 class Mesh {
  public:
+  Mesh() { }
   /// Add a data source
   int add_source(GridDataSource &source);
   int add_source(GridDataSource *source);
