@@ -1,0 +1,174 @@
+# File I/O class
+# A wrapper around the NetCDF4 library, used by
+# BOUT++ routines. This allows easily changing
+# methods later.
+#
+# NOTE: NetCDF includes unlimited dimensions,
+# but this library is just for very simple
+# I/O operations. Educated guesses are made
+# for the dimensions.
+
+try:
+    import numpy as np
+except ImportError:
+    print "ERROR: NumPy module not available"
+    raise
+
+try:
+    from netCDF4 import Dataset
+except ImportError:
+    print "ERROR: netcdf4-python module not found"
+    raise
+
+class DataFile:
+    handle = None
+
+    def open(self, filename, write=False, create=False,
+             format='NETCDF3_CLASSIC'):
+        if (not write) and (not create):
+            self.handle = Dataset(filename, "r")
+        elif create:
+            self.handle = Dataset(filename, "w", format=format)
+        else:
+            self.handle = Dataset(filename, "a")
+        
+    def close(self):
+        if self.handle != None:
+            self.handle.close()
+        self.handle = None
+    
+    def __init__(self, filename=None):
+        if filename != None:
+            self.open(filename)
+    
+    def __del__(self):
+        self.close()
+
+    def read(self, name):
+        """Read a variable from the file."""
+        if self.handle == None: return None
+        
+        try:
+            var = self.handle.variables[name]
+        except KeyError:
+            # Not found. Try to find using case-insensitive search
+            var = None
+            for n in self.handle.variables.keys():
+                if n.lower() == name.lower():
+                    print "WARNING: Reading '"+n+"' instead of '"+name+"'"
+                    var = self.handle.variables[n]
+            if var == None:
+                return None
+        ndims = len(var.dimensions)
+        if ndims == 0:
+            data = var.getValue()
+            return data[0]
+        else:
+            return var[:]
+
+    def list(self):
+        """List all variables in the file."""
+        if self.handle == None: return []
+        return self.handle.variables.keys()
+
+    def ndims(self, varname):
+        """Number of dimensions for a variable."""
+        if self.handle == None: return None
+        try:
+            var = self.handle.variables[varname]
+        except KeyError:
+            return None
+        return len(var.dimensions)
+    
+    def size(self, varname):
+        """List of dimension sizes for a variable."""
+        if self.handle == None: return []
+        try:
+            var = self.handle.variables[varname]
+        except KeyError:
+            return []
+        return map(lambda d: len(self.handle.dimensions[d]), var.dimensions)
+
+    def write(self, name, data):
+        """Writes a variable to file, making guesses for the dimensions"""
+        s = np.shape(data)
+
+        # Get the variable type
+        t = type(data).__name__
+
+        if t == 'NoneType':
+            print "DataFile: None passed as data to write. Ignoring"
+            return
+        
+        if t == 'ndarray':
+            # Numpy type
+            t = data.dtype.str
+
+        try:
+            # See if the variable already exists
+            var = self.handle.variables[name]
+
+            # Check the shape of the variable
+            if var.shape != s:
+                print "Datafile: Variable already exists with different size: "+ name
+                raise
+        except KeyError:
+            # Not found, so add.
+
+            # Get dimensions
+            defdims = [(),
+                       ('x',),
+                       ('x','y'),
+                       ('x','y','z'),
+                       ('t','x','y','z')]
+
+            def find_dim(dim):
+                # Find a dimension with given name and size
+                size, name = dim
+
+                # See if it exists already
+                try:
+                    d = self.handle.dimensions[name]
+
+                    # Check if it's the correct size
+                    if len(d) == size:
+                        return name
+
+                    # Find another with the correct size
+                    for dn, d in self.handle.dimensions.iteritems():
+                        if len(d) == size:
+                            return dn
+
+                    # None found, so create a new one
+                    i = 2
+                    while True:
+                        dn = name + str(i)
+                        try:
+                            d = self.handle.dimensions[dn]
+                            # Already exists, so keep going
+                        except KeyError:
+                            # Not found. Create
+                            print "Defining dimension "+ dn + " of size %d" % size
+                            self.handle.createDimension(dn, size)
+                            return dn
+                        i = i + 1
+                    
+                except KeyError:
+                    # Doesn't exist, so add
+                    print "Defining dimension "+ name + " of size %d" % size
+                    self.handle.createDimension(name, size)
+                return name
+                
+            # List of (size, 'name') tuples
+            dlist = zip(s, defdims[len(s)])
+            # Get new list of variables, and turn into a tuple
+            dims = tuple( map(find_dim, dlist) )
+            
+            # Create the variable
+            var = self.handle.createVariable(name, t, dims)
+
+        # Write the data
+        var[:] = data
+
+        
+            

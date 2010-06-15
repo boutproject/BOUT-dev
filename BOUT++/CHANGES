@@ -1,0 +1,62 @@
+Changelog for BOUT++
+
+0.35 (beta) 3/9/2008
+	- Layout altered so BOUT++ now a library which is linked to
+	  the physics modules (see example directory)
+	- Configuration system modified to use autoconf. Can fall back
+ 	  on manual modification of make.conf if needed though.
+	- Submitted to CVS archive on NERSC Jacquard (again) for further
+	  development
+	- Parallelisation in X now produces the same result as serial
+	  (using SPT algorithm for Laplacian inversion). Scaling to
+	  512 processors tested on Franklin for small problem
+	  (~190x speedup)
+	* Still getting occasional segfaults for NXPE > 1
+	* Strange segfault on MPI_Bcast on LLNL grendel. Related?
+
+20/8/2008: 
+	- Implemented option TwistOrder = 0. If set, uses the same
+	  method as ShiftOrder (i.e. usually FFT). This is done
+	  in receive() in communicator.cpp. Modified calc_stencil
+	  in stencils.cpp
+	- Fixed (i think) small bug in the range of twist-shifting
+	  e.g. MXG+DDATA_XSPLIT -> DDATA_XSPLIT. This because DDATA_XSPLIT
+	  is in processor domain index, not global index. Shouldn't make
+	  any difference for current runs (with XSPLIT = 0)
+
+0.3 (July-Aug 2008) release 7th Aug 2008
+	Improvements concentrating on improving parallel performance
+	- Domain decomposition now in 2D (X and Y).
+	  Required changes to communications, boundary conditions, 
+	  solver, topology and Laplacian inversion.
+	- nx, MX, MXSUB, ngx now all different
+	- "Extra" redundant point in Z no longer evolved
+	   (still in data classes for now though)
+	- X,Y boundary regions only evolved (added to CVODE)
+	  if an actual boundary, not if guard cells.
+	- New virtual function interface (FieldData) added to
+	  scalar & vector classes.
+	  Will simplify communicator, solver and datafile classes.
+	  Currently only used by communicator class
+	- Communicator changed to use ISend, rather than Send
+	  depending on input option "async" in section "comms"
+	- Communicator now uses MPI_Waitany rather than MPI_Wait
+	  to receive data in any order and process asap
+	- NPVT removed: Restriction on processor # in inner and outer legs
+	- Laplacian inversion now done in parallel using PDD algorithm
+
+	- New version of datafile almost finished (in new_src)
+	  - Uses FieldData interface to variables
+	  - re-written as a template. Can more easily be adapted
+	    to different file formats.
+	  - PDB class written to wrap around C library
+
+0.2 ( Nov 2007 - Feb 2008 ):
+	- Many bug-fixes
+	- Added shifted radial coordinates
+	- More efficient (reference counting) data objects
+	- Changed FFT routine to use FHT method rather than NR's code
+	  Now only solves for +ve frequencies (1/2 the work previously) 
+
+0.1 ( ):
+	- Initial version

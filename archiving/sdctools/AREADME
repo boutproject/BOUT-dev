@@ -1,0 +1,207 @@
+
+
+Scientific Data Compression Library (SDCLib) Version 1.0
+Ben Dudson, University of York, August 2007
+
+Introduction 
+============
+
+This is a simple compression library, intended for the relatively
+smoothly varying output from simulations such as BOUT.
+Uses polynomial interpolation in time to reduce number of stored
+time-points - If the input is a polynomial in time, then the minimum
+number of points needed will be stored, for example to store a 
+quadratic 3 points will be stored.
+Compression is lossy - some accuracy is sacrificed in order to
+reduce the size of the data, although the level of accuracy can
+be specified and changed mid-way through the data.
+This accuracy is guaranteed - the reconstruction is guaranteed
+to be within the absolute and relative error bounds specified. 
+
+NOTES: 
+1. This library is currently under development and probably still has some bugs. 
+   Please don't use it to store anything you cannot replace. 
+
+2. Currently doesn't take account of different integer/float sizes
+   (e.g. 32 vs 64-bit machines) apart from checking that variables
+   are the correct size for the archive.
+   If you attempt to read using 64-bit code an archive created by 32-bit code,
+   an error will be thrown. 
+
+3. Archives cannot be altered once created. Appending data to files may happen
+   eventually, but modifying files is just too much of a pain. 
+
+Any comments/suggestions/flames to Ben Dudson, bd512@york.ac.uk
+
+
+Operation
+=========
+
+Because this is a compressed format, searching for a given time-point would be difficult
+unless the entire dataset were periodically output in one block.
+As with a video file, these are called i-frames, and a table of their locations is stored
+at the end of the file (like AVI). 
+
+In between these i-frames, different parts of the domain will (probably) change at
+different rates, and so the domain is split into several regions - when creating an
+archive the number of regions must be specified. 
+
+Creating an SDC archive 
+-----------------------
+
+SDC stores data in blocks. The idea is that a file format would be customised for a
+given application, with it's own header describing the data.
+After this would come the SDC header and then the data. 
+
+First you must open a file 
+
+FILE *fp
+fp = fopen("somefile.sdc", "wb");
+
+Write whatever header you want to this file, then call 
+
+SDCfile* sdc_newfile(FILE *fp, int N, int order, int reset, int nregions);
+
+which returns NULL if an error occurs. 
+N is the number of data points in each time-slice 
+order is the maximum order of the interpolation (1 - linear, 2 - quadratic etc) 
+reset is the number of time-points between i-frames where all data is output (like a video, for faster searching) 
+nregions is the number of regions to split the data into. This doesn't have to be a divisor of N. 
+
+This will write the SDC header to the file, allocate memory and prepare to write data. 
+
+To specify the accuracy to be used, call 
+
+void sdc_set_tol(SDCfile *f, float abstol, float reltol, float eta);
+
+which sets the absolute tolerance abstol, the relative tolerance reltol,
+and a small quantity used in the relative tolerance eta.
+The criterion for writing a block of data is to make sure the error e never satisfies: 
+
+( |e| > reltol ) or ( |e| / (|data| + eta) > reltol )
+
+Hence values below eta are ignored for the relative tolerance calculation.
+These tolerances can be changed whilst writing the file to adapt the accuracy if needed.
+Currently the default values for these are abstol = 1.0e-3, reltol = 1.0e-2,
+and eta = 1.0e-10 which seem to give pretty decent results. 
+
+To write a time-slice of the data, call 
+
+int sdc_write(SDCfile *f, float *data);
+
+where data is a pointer to an array of N elements. This will return non-zero
+if an error occurs. When all the data has been written, YOU MUST call: 
+
+int sdc_close(SDCfile *f);
+
+which will write a final i-frame and generally tidy up. If you fail to do this,
+terrible things will happen, and your data may be corrupted too.
+After this, you can do what you want to the file, then close it 
+
+fclose(fp);
+
+Reading an archive 
+------------------
+
+First open the file, read whatever headers you wrote and then call 
+
+SDCfile* sdc_open(FILE *fp);
+
+which will read the SDC data header. To read a time-slice, call 
+
+int sdc_read(SDCfile *f, int t, float *data);
+
+where t is the time-index (counted from zero at the start of the file),
+and data is a pointer to a block of memory. This function will return
+non-zero if an error occurs. Reading is most efficient in order from
+first to last time-point; reading in reverse order is the least efficient. 
+
+Thats it! When finished reading, you can call 
+
+int sdc_close(SDCfile *f);
+
+to free memory etc. As with the writing, you have to close the file itself separately. 
+
+Tricks / Examples 
+=================
+
+Interleaved data
+----------------
+
+Several SDC data sets can be interleaved in a single file, for example with two sets 
+
+FILE *fp
+fp = fopen("somefile.sdc", "wb");
+
+/* Create headers */
+SDCfile *f1, *f2;
+f1 = sdc_newfile(fp, N1, order1, reset1, nregions1);
+f2 = sdc_newfile(fp, N2, order2, reset2, nregions2);
+
+Can now write data to f1 or f2 in any order and then close both of them.
+To read the data, you must read headers in the same order: 
+
+f1 = sdc_open(fp);
+f2 = sdc_open(fp);
+
+but data can then be read in any order from f1 or f2. 
+
+Compress utility
+----------------
+
+The imaginatively named "compress" code takes a set of PDB files, selects a single variable
+and concatenates all the data into a single output SDC file called "output.sdc".
+The data can be any floating-point variable of 1,2,3 or 4 dimensions. The final index of the variable
+is assumed to be time. The variable in each file needs to be the same size in each spatial dimension, but
+not necessarily the same number of time-points.
+
+For example, to take all the collected BOUT data, and compress the density to an output file,
+
+compress ni_xyzt data*.pdb
+
+You will then be asked for the following parameters (decent values for full 4D 50x64x64x<time>
+BOUT data in brackets):
+
+- maximum interpolation order (2)
+- reset period (100)
+- number of regions (1600)
+
+The tolerance is currently left to the library default (relative 1% and absolute 10^-4)
+
+This can take some time - the more the data is compressed the slower it goes, since all time-points
+not yet written are checked to make sure they can be reconstructed to within error bounds.
+
+One side-benefit of this compression is that it tells you if there is much activity in a given
+time-window or variable - quiet periods will result in slow compression and small output file size.
+
+Possible future improvements:
+1. Extend to include more than one variable (using the interleaving trick above)
+2. Improve compression by reducing number of bits used to store values.
+   Currently floats are written directly to the file.
+
+SDC2IDL
+-------
+
+This is a small library for IDL which reads in an SDC file produced by the compress
+utility. Just has a single function:
+
+FUNCTION sdc_read, filename, range=range
+
+where range is an optional time index range [min, max]. Note that time-indices always
+start from zero (file doesn't store any sort of offset).
+
+Details 
+=======
+
+The SDC header consists of: 
+"Magic" string in SDC_MAGIC (sdclib.h), currently "SDC 0.1". When reading, used to test if compatable format 
+char sizeof(int) 
+char sizeof(float) 
+char sizeof(long) 
+int N, the number of data-points 
+int order, the maximum interpolation order 
+int reset, the number of time-points between i-frames 
+int nt, the total number of time-points 
+int niframes, the number of i-frames 
+long ifpos, the offset to the i-frame table (at end of file) 
+int nregions, the number of regions.

@@ -1,0 +1,4 @@
+grid="advect.grd.pdb"
+
+[fft]
+fft_measure = true

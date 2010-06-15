@@ -1,0 +1,7 @@
+
+Codes:
+
+pdbsample     Samples a single PDB file
+ncsample      Sample a netCDF file
+
+dumpsample    Perl script to sample BOUT++ outputs

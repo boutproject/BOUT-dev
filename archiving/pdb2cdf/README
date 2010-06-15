@@ -1,0 +1,25 @@
+PDB2CDF
+=======
+
+Convert Portable Data Binary (PDB) files to netCDF format
+
+PDB:    https://wci.llnl.gov/codes/pact/
+netCDF: http://www.unidata.ucar.edu/software/netcdf/
+
+Handles up to 4-D integers, floats and doubles. Tries to assign the correct
+dimensions to the variables using the following procedure:
+
+1. Find the variable with the largest number of dimensions
+2. Labels the dimensions of this variable 'X', 'Y', 'Z', 'T'
+   (always in that order), and records the index ranges
+3. For each variable, match index ranges to get the dimension,
+   using the first one which matches. Dimensions are assumed
+   to always be in the same order: XZ, YT, XY etc. but NOT ZX, TZ etc.
+4. Variables which cannot be matched to dimensions will currently 
+   cause the code to fall over. Should be improved later.
+
+The ordering of dimensions was chosen for BOUT++ files, but
+apart from this, the code is not specific to BOUT++.
+
+B.Dudson, April 2009
+University of York

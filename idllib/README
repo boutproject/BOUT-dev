@@ -1,0 +1,45 @@
+                     IDL analysis codes for BOUT++
+
+
+General
+-------
+
+pdb2idl.pro       Library to read PDB files into IDL (uses pdb2idl.so)
+
+collect.pro       Reads BOUT++ dump files into IDL
+
+moment_xyzt.pro   Takes moments and RMS of an input variable 
+
+scale_restarts    Multiplies all evolving variables in a set of restart
+                  files by a given number (NOTE: Overwrites files)
+
+gmres.pro         Generalized Minimal Residual (GMRES) iterative inversion
+
+showdata.pro      Animation of 1D and 2D data
+
+zfamp.pro         Calculate FFT amplitudes in Z given 4D [x,y,z,t] variable
+
+Tokamak specific
+----------------
+
+plotpolslice.pro   Plots a slice through the domain at a fixed toroidal angle
+
+mode_structure.pro  Calculates the mode-structure of a variable.
+                    Useful for comparison to linear codes like ELITE
+
+zshift.pro         Shift between real space and field-aligned coordinates
+
+Utilities
+---------
+
+get_yesno      Gets a yes or no answer from the user
+
+get_integer.pro
+get_float.pro
+
+fft_integrate  Integrate a function on a periodic domain
+
+fft_deriv      Differentiate a periodic function using FFTs
+
+safe_colors    Set IDL colors for plotting. White background.
+

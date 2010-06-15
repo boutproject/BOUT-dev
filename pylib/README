@@ -1,0 +1,27 @@
+Analysis routines for Python
+
+Dependencies
+============
+
+Following packages must be installed for these
+routines to work:
+
+o NumPy           for arrays
+o netcdf4-python  for NetCDF file reading
+
+Available routines
+==================
+
+boutdata/         BOUT++ data reading package
+
+	collect   Collect data from BOUT++ dump files
+
+
+Examples
+========
+
+Reading data from dump files:
+
+  from boutdata import *
+  ni = collect("Ni")
+

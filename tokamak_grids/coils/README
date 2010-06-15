@@ -1,0 +1,6 @@
+      MAGNETIC PERTURBATION COILS
+      ===========================
+
+Routines for calculating the field due to external RMP coils
+and adding to existing equilibria
+

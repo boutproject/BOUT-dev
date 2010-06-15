@@ -1,0 +1,12 @@
+Test case for the gas_compress.cpp physics module
+
+Sets up a Rayleigh-Taylor unstable starting point
+taken from 
+
+Journal of Computational Physics 186 (2003) 690–696
+
+Resolution of high order WENO schemes for complicated flow structures
+
+Jing Shi, Yong-Tao Zhang, Chi-Wang Shu
+
+Instability in the y direction, periodic in z

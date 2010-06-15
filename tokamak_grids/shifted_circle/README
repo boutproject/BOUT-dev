@@ -1,0 +1,15 @@
+To generate a shifted circle equilibrium, do the following
+
+IDL> generate
+
+This will go around a loop of asking for parameters and displaying the
+resulting equilibrium. Once you're happy with the result, UEDGE-style
+output files will be produced. 
+
+To convert these files into a BOUT++ input grid, go to the "all" directory,
+and run
+
+IDL> uedge2bout, path="/path/to/files/", output="output_grid.pdb"
+
+This will then ask some more questions and output a BOUT++ grid file.
+

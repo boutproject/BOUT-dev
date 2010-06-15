@@ -1,0 +1,104 @@
+# This file lists all BOUT++ settings (with default values)
+#
+# File is divided into sections which can be in any order.
+# Comments start with either a ';' or a '#'
+
+NOUT = 1           # Number of outputs
+TIMESTEP = 1.0     # Time between outputs
+WALL_LIMIT = -1.0  # Wall clock limit in hours. -ve means no limit
+archive = -1       # Number of outputs between restart archiving
+                   # -ve means no archiving
+
+grid = "data/bout.grd.pdb" # Grid file to use
+
+ShiftXderivs = false   # Use shifted X derivatives
+IncIntShear = false    # 
+ShiftInitial = ShiftXderivs # Shift the initial condition
+TwistShift = false     # Use Twist-Shift condition?
+ShiftOrder = 0         # X shift order (1,4 or 0 = FFT)
+TwistOrder = 0         # Twist-shift order (1,4 or 0 = FFT)
+
+non_uniform = false    # Use corrections for non-uniform meshes
+
+MZ = 65                # Number of points in Z (2^n + 1)
+zperiod = 1            # How many periods in 2pi
+                       # NOTE: Instead of zperiod, ZMIN and ZMAX
+                       # can be specified in units of 2pi
+
+MXG = 2                # # of X guard cells (change with care!)
+MYG = 2                # # of Y guard cells (change with care!)
+
+BoundaryOnCell = false # Location of boundary
+
+StaggerGrids = false   # Use staggered grids
+
+NXPE = 1               # Number of processors in X
+
+dump_float = true      # Output floats to dump file
+                       # (false -> doubles)
+
+dump_format = "pdb"    # Data format for the dump files.
+                       # for NetCDF, set to "cdl", "nc" or "ncdf"
+restart_format = dump_format  # Format for restart files
+
+[comms]
+
+async = true           # Use asyncronous sends
+group_nonblock = true  # Use non-blocking group communications
+
+[fft]
+
+fft_measure = true     # If using FFTW, perform tests to determine
+                       # fastest method
+
+[solver]
+
+# NOTE: Some of these options only apply to some solvers
+
+mudq = n3d*(MXSUB+2)
+mldq = n3d*(MXSUB+2)
+mukeep = 0
+mlkeep = 0
+ATOL = 1.0e-12
+RTOL = 1.0e-5
+
+use_precon = false   # If the physics solver specifies a preconditioner
+                     # then use that, otherwise BBD is used
+
+use_jacobian = false # If the physics solver specifies a Jacobian
+                     # then use that. Otherwise a difference quotient
+                     # method is used internally
+
+precon_dimens = 50   # For BBD preconditioner
+precon_tol = 1.0e-4  # For BBD
+
+adams_moulton = false # Use Adams-Moulton method (default is BDF)
+func_iter = false     # Functional iteration (default is Newton)
+
+[laplace]
+
+filter = 0.2    # Fraction of toroidal modes to filter out
+low_mem = false # For parallel algorithm, use less memory
+                # This is at the expense of communication overlap
+
+use_pdd = false # Use the approximate Parallel Diagonally Dominant solver 
+
+all_terms = false # Include all the extra terms in Delp2 and inversion
+
+[ddx]
+
+first = C4
+second = C4
+upwind = W3
+
+[ddy]
+
+first = C4
+second = C4
+upwind = W3
+
+[ddz]
+
+first = C4
+second = C4
+upwind = W3

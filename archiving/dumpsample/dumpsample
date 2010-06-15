@@ -1,0 +1,51 @@
+#!/usr/bin/perl
+#
+# Reduce the time-resolution of BOUT++ output.
+# 
+
+use File::Basename;
+
+# Check command-line arguments
+$numArgs = $#ARGV + 1;
+
+if( $numArgs != 3 ) {
+    print "Useage: <Input directory> <output dir> <t stride>\n";
+    exit;
+}
+
+$inputdir = $ARGV[0];
+$outputdir = $ARGV[1];
+$ts = $ARGV[2];
+
+if ($inputdir eq $outputdir) {
+    # Input and output directories are the same
+    print "Input and output directories must be different\n";
+    exit;
+}
+
+# Check 3rd argument is an integer
+if($ARGV[2] =~ /^\d+$/) {
+    print "Reducing time resolution by a factor of $ARGV[2]\n";
+}else {
+    print "3rd argument must be an integer\n";
+    exit;
+}
+
+@infiles = <$inputdir/BOUT.dmp.*>;
+    
+foreach $file (@infiles) {
+    $f = $outputdir . "/" . basename($file);
+    
+    if($file =~ m/.pdb$/) {
+	# PDB file
+	print "PDB file: $file -> $f\n";
+	system("pdbsample $file $f $ts") == 0
+	    or die "Could not execute pdbsample\n";
+    }elsif( $file =~ m/(.nc|.cdl|.cdf|.ncdf)$/ ) {
+	# NetCDF file
+	print "NetCDF file\n";
+    }else {
+	print $file . " has unknown file format\n";
+    }
+    
+}

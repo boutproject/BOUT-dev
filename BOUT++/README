@@ -1,0 +1,112 @@
+.______     ______    __    __  .___________.            
+|   _  \   /  __  \  |  |  |  | |           |  _     _   
+|  |_)  | |  |  |  | |  |  |  | `---|  |----`_| |_ _| |_ 
+|   _  <  |  |  |  | |  |  |  |     |  |    |_   _|_   _|
+|  |_)  | |  `--'  | |  `--'  |     |  |      |_|   |_|  
+|______/   \______/   \______/      |__|                 
+
+
+A modular fluid simulation code written in C++.
+Adapted from the original BOUT 3D 2-fluid simulation code.
+Aims to be able to solve a wide variety of fluid models in 
+almost any curvilinear coordinate system.
+
+Developed by B.Dudson (University of York) and M.Umansky (LLNL)
+based on the original BOUT code by X.Xu (LLNL)
+Further development by S.Farley (ANL) for coupling to PETSc and FACETS
+
+License
+=======
+
+Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+
+BOUT++ is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+BOUT++ is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+
+A copy of the LGPL license is in COPYING.LESSER. Since this is based
+on (and refers to) the GPL, this is included in COPYING.
+
+Terms of use
+============
+
+BOUT++ is released under the LGPL, but since BOUT++ is a
+scientific code we also ask that you show professional courtesy
+when using this code:
+
+1. Since you are benefiting from work on BOUT++, we ask that you
+   submit any improvements you make to the code to us by emailing 
+   Ben Dudson at <bd512@york.ac.uk>
+
+2. If you use BOUT++ results in a paper or professional publication,
+   we ask that you send your results to one of the BOUT++ authors
+   first so that we can check them. It is understood that in most cases
+   if one or more of the BOUT++ team are involved in preparing results
+   then they should appear as co-authors.
+
+3. Publications or figures made with the BOUT++ code should acknowledge the
+   BOUT++ code by citing B.Dudson et. al. Comp.Phys.Comm 2009 and/or
+   other BOUT++ papers. See the file CITATION for details.
+
+1. OVERVIEW
+===========
+
+This directory contains
+
+CHANGES	      List of major changes between versions
+LIB/          The PVODE solver library used by BOUT++
+make.config   Settings for building BOUT++ (see next section)
+Makefile      The main makefile. This builds everything
+manual/       Contains the user and reference manuals
+README        This file
+SETTINGS      Lists the settings for input files
+SRC/          The source of BOUT++
+examples/     Some standard test cases and example models
+
+2. INSTALL
+==========
+
+See the INSTALL file for installation instructions. Essentially
+
+./configure
+make
+
+should work on most machines (If you have MPI and PACT)
+
+2.1 AIX
+-------
+
+Make sure the PACT library is built with the same compiler
+(i.e. xlc)
+
+PACT config: ./configure CC=xlc --prefix=/path/to/pact/
+
+3. USING BOUT++
+===============
+
+See the documentation in the manual/ directory
+
+
+4. MODIFYING BOUT++
+===================
+
+Details are given in the user and reference guides, but a few house rules:
+
+* NO FORTRAN. EVER. Please do not include FORTRAN code in BOUT++.
+  It causes no end of headache when compiling on different machines,
+  especially when interfacing to C or C++. 
+
+* Try to minimise the external dependencies for the core BOUT++ code.
+  Extra functionality can go in a different directory which can be
+  optionally compiled. Getting a minimal BOUT++ installation running should
+  be as simple as possible.
+

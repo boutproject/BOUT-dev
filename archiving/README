@@ -1,0 +1,8 @@
+Tools or scripts to help manage & archive BOUT++ data output
+
+mdsplus       Tools to manage BOUT++ runs using MDSplus
+
+pdb2cdf       Convert PDB files to netCDF
+
+sdctools      Simulation Data Compression library
+

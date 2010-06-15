@@ -1,0 +1,5 @@
+Simulation of the Orszag-Tang vortex, a standard test problem for MHD codes.
+Intended to be used with the mhd.cpp physics module
+
+To generate the grid, use generate1d in burgers test (all variables zero)
+

@@ -1,0 +1,50 @@
+% Manual describing the MDSplus interface to BOUT++
+
+\documentclass[12pt]{article}
+\usepackage[nofoot]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+%% SET HEADERS AND FOOTERS
+
+\pagestyle{fancy}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+  \markright{\thesection.\ #1}}
+\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+                                        % pages and right on odd pages 
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
+
+%% commands for boxes with important notes
+\newlength{\notewidth}
+\addtolength{\notewidth}{\textwidth}
+\addtolength{\notewidth}{-3.\parindent}
+\newcommand{\note}[1]{
+\fbox{
+\begin{minipage}{\notewidth}
+{\bf NOTE}: #1
+\end{minipage}
+}}
+
+\begin{document}
+
+\title{MDSplus interface for BOUT++}
+\author{B.Dudson, University of York}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+
+
+\end{document}

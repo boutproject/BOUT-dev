@@ -1,0 +1,69 @@
+# settings file for BOUT++
+# MHD Orszag-Tang vortex problem
+
+##################################################
+# settings used by the core code
+
+NOUT = 1       # number of time-steps
+TIMESTEP = 1.0   # time between outputs
+
+ShiftXderivs = false # use shifted radial derivatives?
+TwistShift = false  # use twist-shift condition?
+
+MZ = 2     # number of points in z direction (2^n + 1)
+ZMIN = 0.0
+ZMAX = 1.0
+
+MXG = 2
+MYG = 2
+
+grid="data/otv.grd.pdb"
+
+NXPE = 1
+
+##################################################
+# derivative methods
+
+[ddx]
+
+first = C4  # order of first x derivatives (options are 2 or 4)
+second = C4 # order of second x derivatives (2 or 4)
+upwind = U1 # order of upwinding method (1, 4, or 0 = TVD)
+
+[ddy]
+
+first = C4
+second = C4
+upwind = W3
+
+[ddz]
+
+first = C2
+second = C2
+upwind = U1
+
+##################################################
+# Solver settings
+
+[solver]
+
+# mudq, mldq, mukeep, mlkeep preconditioner options
+ATOL = 1.0e-10 # absolute tolerance
+RTOL = 1.0e-5  # relative tolerance
+
+##################################################
+# settings for mhd code
+
+[mhd]
+
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# periodic in x
+
+xinner = 10
+xouter = 10
+
+# periodic in y
+

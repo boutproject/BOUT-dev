@@ -1,0 +1,49 @@
+PDB2IDL library
+===============
+
+This library enables IDL to read and write Portable Data Binary (PDB)
+files. 
+
+Requirements
+------------
+
+To install and use this library you will need:
+
+1. A PACT installation, available from http://pact.llnl.gov
+
+2. IDL. Tested on 6.3
+
+Installation
+------------
+
+Make sure you have a PACT environment variable pointing to your PACT
+installation.
+e.g. in BASH
+$ export PACT=/usr/local/
+or CSH
+# setenv PACT /usr/local
+
+IDL includes an automatic compilation tool which should work if you run:
+
+$ idl compile.pro
+
+You should now have a shared library (e.g. pdb2idl.so) in the current directory.
+If this method fails, you can try using
+
+$ ./configure
+$ make
+
+which should work on many UNIX systems, particularly Linux.
+
+At this point you should have a shared library which can be used by IDL.
+This file needs to be put somewhere in your LD_LIBRARY_PATH such as
+/usr/local/lib/ or /usr/lib
+
+To use PDB2IDL from within IDL, you also need the pdb2idl.pro file, which is
+in the idllib directory included with BOUT++. This directory should be included
+in your IDL_PATH environment variable.
+This should be compiled before you can use any of the routines by running
+
+IDL> .r pdb2idl
+
+(I recommend putting this into your IDL startup file)

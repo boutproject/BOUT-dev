@@ -1,0 +1,76 @@
+                   TOKAMAK GRIDS FOR BOUT++
+
+The code here produces input files for tokamak problems such as
+2fluid (BOUT-like), and highbeta_reduced (ELM problems).
+
+Equilibrium conversion
+======================
+
+These codes can be used to take an externally generated 
+Grad-shafranov equilibrium, and use it to generate an input grid for BOUT++.
+
+elite/elite2pdb          Convert from ELITE's .eqin input files
+gato/gato2pdb            Convert from dskgato format
+
+These programs output an intermediate PDB file, which are then converted
+to BOUT++ input using the interactive IDL code
+
+all/pdb2bout.pro
+
+USEAGE:
+
+pdb2bout, "intermediate_file.pdb", output="grid.pdb" [ ,/smooth ]
+
+
+Equilibrium generation
+======================
+
+These codes generate (approximate) equilibria
+
+shifted_circle/          Generate shifted circle equilibria
+
+Intermediate PDB file format
+============================
+
+When converting from dskgato or eqin files, an intermediate PDB format
+is used to store a Grad-Shafranov equilibrium. 
+This file MUST contain the following:
+
+Scalar quantities
+-----------------
+
+nx     Number of flux surfaces
+ny     Number of points per flux-surface
+
+1D arrays (length nx)
+---------------------
+
+psi        Psi on each flux surface
+mu0p       Mu0 * pressure
+mu0pprime
+f
+ffprime
+qsafe      Safety factor
+
+2D arrays (nx by ny)
+--------------------
+
+Rxy     Major radius of each point
+Zxy     Height of each point
+
+
+Optional quantities
+-------------------
+
+If these are not present they can be inferred from the other quantities
+or entered manually.
+
+Bpxy    Poloidal field (2D array)
+Btxy    Toroidal field (2D array)
+Brxy    B field in R direction
+Bzxy    B field in Z direction
+
+Ni      Density  [m^-3]
+Te      Electron temperature [eV]
+Ti      Ion temperature [eV]
+

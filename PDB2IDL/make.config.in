@@ -1,0 +1,19 @@
+# configuration file for PDB2IDL
+
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@
+
+CC = @CC@
+LD = @LD@
+
+# Set the location of the PACT installation
+PACT = @PACT@
+
+# IDL external library
+IDLPATH = @IDLPATH@
+
+####################################
+# Do not need to alter this section
+
+INCLUDE = -I$(PACT)/include -I$(IDLPATH)
+LIB = -L$(PACT)/lib -lpdb -lpml -lscore
