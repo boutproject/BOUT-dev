@@ -161,7 +161,7 @@ int physics_init()
   /************** PRINT Z INFORMATION ******************/
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 

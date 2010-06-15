@@ -158,7 +158,7 @@ int geometry(int readJB)
     // Attempt to read J from the grid file
     
     Field2D Jcalc = J;
-    if(grid_load2d(J, "J")) {
+    if(mesh->get(J, "J")) {
       output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
       J = Jcalc;
     }else {
@@ -185,7 +185,7 @@ int geometry(int readJB)
 
     Field2D Bcalc = Bxy;
 
-    if(grid_load2d(Bxy, "Bxy")) {
+    if(mesh->get(Bxy, "Bxy")) {
       output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
       Bxy = Bcalc;
     }else {

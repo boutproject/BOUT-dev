@@ -149,17 +149,4 @@ class GridData {
   
 };
 
-bool grid_read(DataFormat *format, const char *gridfilename);
-
-int grid_load(real &r, const char *name);
-int grid_load(int &i, const char *name);
-
-int grid_load2d(Field2D &var, const char *name);
-int grid_load2d(Vector2D &var, const char *name);
-int grid_load2d(Vector2D &var, const string &name);
-
-bool grid_load3d(Field3D &var, const char *name);
-bool grid_load3d(Vector3D &var, const char *name);
-bool grid_load3d(Vector3D &var, const string &name);
-
 #endif // __GRID_H__

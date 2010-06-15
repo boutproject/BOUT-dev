@@ -65,24 +65,24 @@ int physics_init()
   /************* LOAD DATA FROM GRID FILE ****************/
 
   // Load 2D profiles (set to zero if not found)
-  grid_load2d(Ni0,    "Ni0");
-  grid_load2d(Ti0,    "Ti0");
-  grid_load2d(Te0,    "Te0");
+  mesh->get(Ni0,    "Ni0");
+  mesh->get(Ti0,    "Ti0");
+  mesh->get(Te0,    "Te0");
 
   // Load metrics
-  grid_load2d(Rxy,  "Rxy");
-  grid_load2d(Bpxy, "Bpxy");
-  grid_load2d(Btxy, "Btxy");
-  grid_load2d(hthe, "hthe");
-  grid_load2d(dx,   "dpsi");
-  grid_load2d(I,    "sinty");
-  grid_load2d(zShift, "qinty");
+  mesh->get(Rxy,  "Rxy");
+  mesh->get(Bpxy, "Bpxy");
+  mesh->get(Btxy, "Btxy");
+  mesh->get(hthe, "hthe");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(zShift, "qinty");
 
   // Load normalisation values
-  grid_load(Te_x, "Te_x");
-  grid_load(Ti_x, "Ti_x");
-  grid_load(Ni_x, "Ni_x");
-  grid_load(bmag, "bmag");
+  mesh->get(Te_x, "Te_x");
+  mesh->get(Ti_x, "Ti_x");
+  mesh->get(Ni_x, "Ni_x");
+  mesh->get(bmag, "bmag");
 
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
@@ -146,7 +146,7 @@ int physics_init()
   /************** PRINT Z INFORMATION ******************/
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 

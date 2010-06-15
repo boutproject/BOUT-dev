@@ -35,13 +35,13 @@ int physics_init()
 
   // Read initial conditions
 
-  grid_load2d(N0, "density");
-  grid_load2d(P0, "pressure");
+  mesh->get(N0, "density");
+  mesh->get(P0, "pressure");
   V0.covariant = false; // Read contravariant components
   V.covariant = false; // Evolve contravariant components
-  grid_load2d(V0, "v");
+  mesh->get(V0, "v");
   g.covariant = false;
-  grid_load2d(g, "g");
+  mesh->get(g, "g");
   
   // read options
   
