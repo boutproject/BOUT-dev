@@ -32,6 +32,16 @@
 
 #include "boutmesh.h"
 
+#include "globals.h"
+#include "utils.h"
+#include "fft.h"
+
+#include "geometry.h"
+
+#include "dcomplex.h"
+
+#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
+
 int BoutMesh::load()
 {
 #ifdef CHECK
@@ -752,7 +762,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
                                    // of the buffer 
-    len = pack_data(UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
+    len = pack_data(var_list, UDATA_XSPLIT, ngx, MYSUB, MYSUB+MYG, outbuff);
     // Send the data to processor UDATA_OUTDEST
     if(async_send) {
       MPI_Isend(outbuff, 
@@ -881,7 +891,7 @@ int BoutMesh::wait(comm_handle handle)
   
   ///////////// WAIT FOR DATA //////////////
   
-  int ind;
+  int ind, len;
   MPI_Status status;
 
   if(ch->var_list.size() == 0) {
@@ -902,7 +912,7 @@ int BoutMesh::wait(comm_handle handle)
     }
     case 1: { // Up, outer
       len = msg_len(ch->var_list, 0, UDATA_XSPLIT, 0, MYG);
-      unpack_data(UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
+      unpack_data(ch->var_list, UDATA_XSPLIT, ngx, MYSUB+MYG, MYSUB+2*MYG, &(ch->umsg_recvbuff[len]));
       break;
     }
     case 2: { // Down, inner
@@ -924,7 +934,7 @@ int BoutMesh::wait(comm_handle handle)
     }
     }
     if(ind != MPI_UNDEFINED)
-      request[ind] = MPI_REQUEST_NULL;
+      ch->request[ind] = MPI_REQUEST_NULL;
     
   }while(ind != MPI_UNDEFINED);
   
@@ -948,7 +958,7 @@ int BoutMesh::wait(comm_handle handle)
 
 #ifdef CHECK
   // Keeping track of whether communications have been done
-  for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != var_list.end(); it++)
+  for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
     (*it)->doneComms();
 #endif
 
@@ -983,7 +993,7 @@ int BoutMesh::send_xout(real *buffer, int size, int tag)
   
   real t = MPI_Wtime();
 
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, $
+  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND+1, PE_YIND),
 	   tag,
 	   MPI_COMM_WORLD);
@@ -1000,7 +1010,7 @@ int BoutMesh::send_xin(real *buffer, int size, int tag)
   
   real t = MPI_Wtime();
 
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE, $
+  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND-1, PE_YIND),
 	   tag,
 	   MPI_COMM_WORLD);
@@ -1013,7 +1023,7 @@ int BoutMesh::send_xin(real *buffer, int size, int tag)
 comm_handle BoutMesh::irecv_xout(real *buffer, int size, int tag)
 {
   if(PE_XIND == NXPE-1)
-    return 1;
+    return NULL;
 
   real t = MPI_Wtime();
   
@@ -1038,7 +1048,7 @@ comm_handle BoutMesh::irecv_xout(real *buffer, int size, int tag)
 comm_handle BoutMesh::irecv_xin(real *buffer, int size, int tag)
 {
   if(PE_XIND == 0)
-    return 1;
+    return NULL;
   
   real t = MPI_Wtime();
 
@@ -1171,7 +1181,7 @@ void BoutMesh::default_connections()
  * Set ypos1 and ypos2 to be neighbours in the range xge <= x < xlt.
  * Optional argument ts sets whether to use twist-shift condition
  */
-void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false)
+void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
 {
   int ype1, ype2; // the two Y processor indices
   int ypeup, ypedown;
@@ -1443,7 +1453,7 @@ void BoutMesh::topology()
  *                     Communication handles
  ****************************************************************/
 
-CommHandle* BoutMesh::get_handle(int xlen, int ylen)
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
 {
   if(comm_list.empty()) {
     // Allocate a new CommHandle
@@ -1496,10 +1506,10 @@ CommHandle* BoutMesh::get_handle(int xlen, int ylen)
   }
   if(ch->xbufflen < xlen) {
     if(ch->ybufflen > 0) {
-      delete[] imsg_sendbuff;
-      delete[] imsg_recvbuff;
-      delete[] omsg_sendbuff;
-      delete[] omsg_recvbuff;
+      delete[] ch->imsg_sendbuff;
+      delete[] ch->imsg_recvbuff;
+      delete[] ch->omsg_sendbuff;
+      delete[] ch->omsg_recvbuff;
     }
     
     ch->imsg_sendbuff = new real[xlen];
@@ -1525,15 +1535,15 @@ void BoutMesh::clear_handles()
 {
   while(!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
-    delete[] umsg_sendbuff;
-    delete[] dmsg_sendbuff;
-    delete[] imsg_sendbuff;
-    delete[] omsg_sendbuff;
+    delete[] ch->umsg_sendbuff;
+    delete[] ch->dmsg_sendbuff;
+    delete[] ch->imsg_sendbuff;
+    delete[] ch->omsg_sendbuff;
     
-    delete[] umsg_recvbuff;
-    delete[] dmsg_recvbuff;
-    delete[] imsg_recvbuff;
-    delete[] omsg_recvbuff;
+    delete[] ch->umsg_recvbuff;
+    delete[] ch->dmsg_recvbuff;
+    delete[] ch->imsg_recvbuff;
+    delete[] ch->omsg_recvbuff;
     
     delete ch;
     
@@ -1545,7 +1555,7 @@ void BoutMesh::clear_handles()
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
+int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
 {
   int jx, jy, jz;
   int len = 0;
@@ -1574,7 +1584,7 @@ int BoutMesh::pack_data(const vector<FieldData*> &var_list, int xge, int xlt, in
   return(len);
 }
 
-int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
+int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
 {
   int jx, jy, jz;
   int len = 0;
@@ -1604,7 +1614,7 @@ int BoutMesh::unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, 
   return(len);
 }
 
-int BoutMesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt)
+int BoutMesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt)
 {
   int len = 0;
 
@@ -1767,55 +1777,69 @@ void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, real **var)
  *                 SURFACE ITERATION
  ****************************************************************/
 
+SurfaceIter* BoutMesh::iterateSurfaces()
+{
+  return new BoutSurfaceIter(this);
+}
+
+BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi)
+{
+  m = mi;
+}
+
 int BoutSurfaceIter::ysize()
 {
-  xglobal = XGLOBAL(xpos);
-  yglobal = YGLOBAL(MYG);
+  int xglobal = m->XGLOBAL(xpos);
+  int yglobal = m->YGLOBAL(MYG);
   
-  if((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
+  if((xglobal < m->ixseps_lower) && ((yglobal <= m->jyseps1_1) || (yglobal > m->jyseps2_2))) {
     // Lower PF region
-    return (jyseps1_1 + 1) + (ny - jyseps2_2);
-  }else if((xglobal < ixseps_upper) && (yglobal > jyseps2_1) && (yglobal >= jyseps1_2)) {
+    return (m->jyseps1_1 + 1) + (ny - m->jyseps2_2);
+    
+  }else if((xglobal < m->ixseps_upper) && (yglobal > m->jyseps2_1) && (yglobal >= m->jyseps1_2)) {
     // Upper PF region
-    return jyseps1_2 - jyseps2_1;
-  }else if(xglobal < ixseps_inner) {
+    return m->jyseps1_2 - m->jyseps2_1;
+    
+  }else if(xglobal < m->ixseps_inner) {
     // Core
-    return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
-  }else if(jyseps2_1 == jyseps1_2) {
+    return (m->jyseps2_1 - m->jyseps1_1) + (m->jyseps2_2 - m->jyseps1_2);
+    
+  }else if(m->jyseps2_1 == m->jyseps1_2) {
     // Single null, so in the SOL
-    return ny;
-  }else if((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
+    return m->ny;
+    
+  }else if((xglobal >= m->ixseps_inner) && (xglobal < m->ixseps_outer)) {
     // Intermediate SOL in DND
     
-    if(ixseps_lower < ixseps_upper) {
+    if(m->ixseps_lower < m->ixseps_upper) {
       // Connects to lower divertor
-      return (jyseps2_1 + 1) + (ny - jyseps1_2);
+      return (m->jyseps2_1 + 1) + (ny - m->jyseps1_2);
     }else {
       // Connects to upper divertor
-      return jyseps2_2 - jyseps1_1;
+      return m->jyseps2_2 - m->jyseps1_1;
     }
-  }else if(yglobal < ny_inner) {
+  }else if(yglobal < m->ny_inner) {
     // Inner SOL
-    return ny_inner;
+    return m->ny_inner;
   }
   // Outer SOL
-  return ny - ny_inner;
+  return m->ny - m->ny_inner;
 }
 
 bool BoutSurfaceIter::closed(real &ts)
 {
-  xglobal = XGLOBAL(xpos);
+  int xglobal = m->XGLOBAL(xpos);
   ts = 0.;
   if(TwistShift) {
     ts = ShiftAngle[xpos];
   }
-  return MYPE_IN_CORE && (xglobal < ixseps_inner);
+  return m->MYPE_IN_CORE && (xglobal < m->ixseps_inner);
 }
 
 void BoutSurfaceIter::first()
 {
-  xpos = PE_XIND;
-  if(xpos > ngx-1)
+  xpos = m->PE_XIND;
+  if(xpos > m->ngx-1)
     xpos = -1; // Nothing to do
 }
 
@@ -1825,7 +1849,7 @@ void BoutSurfaceIter::next()
     return;
   
   xpos += NXPE;
-  if(xpos > ngx-1)
+  if(xpos > m->ngx-1)
     xpos = -1; // Nothing to do 
 }
 
@@ -1836,13 +1860,7 @@ bool BoutSurfaceIter::isDone()
 
 int BoutSurfaceIter::gather(const Field2D &f, real *data)
 {
-  Comm_handle_t *c = new Comm_handle_t;
   
-  // Create a local array
-  
-
-  if(!Comm_gather_start(local, nlocal, PVEC_REAL_MPI, 
-			(void*) data
 }
 
 int BoutSurfaceIter::gather(const Field3D &f, real **data)
@@ -1850,12 +1868,12 @@ int BoutSurfaceIter::gather(const Field3D &f, real **data)
   
 }
 
-int BoutSurfaceIter::scatter(const Field2D &f, real *data)
+int BoutSurfaceIter::scatter(real *data, Field2D &f)
 {
   
 }
 
-int BoutSurfaceIter::scatter(const Field3D &f, real **data)
+int BoutSurfaceIter::scatter(real **data, Field3D &f)
 {
   
 }

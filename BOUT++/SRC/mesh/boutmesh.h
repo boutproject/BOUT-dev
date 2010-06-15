@@ -2,10 +2,17 @@
 #ifndef __BOUTMESH_H__
 #define __BOUTMESH_H__
 
+#include "mpi.h"
+
 #include "mesh.h"
+#include "field3d.h"
 
 #include <list>
 #include <vector>
+#include <cmath>
+
+using std::list;
+using std::vector;
 
 class BoutMesh : public Mesh {
  public: 
@@ -48,13 +55,7 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Y-Z communications
   
-  int surface_ysize(int xpos);
-  bool surface_closed(int xpos, real &twistshift);
-  comm_handle surface_igather(Field2D &f, int xpos, real *data, comm_handle &handle);
-  comm_handle surface_igather(Field3D &f, int xpos, real **data, comm_handle &handle);
-  comm_handle surface_iscatter(real *data, int xpos, Field2D &f, comm_handle &handle);
-  comm_handle surface_iscatter(real **data, int xpos, Field3D &f, comm_handle &handle);
-  
+  SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
 
  private:
@@ -72,6 +73,7 @@ class BoutMesh : public Mesh {
 
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
+  bool IS_MYPROC(int xind, int yind);
   int XGLOBAL(int xloc);
   int XLOCAL(int xglo);
   int YGLOBAL(int yloc);
@@ -118,7 +120,7 @@ class BoutMesh : public Mesh {
     
     /// List of fields being communicated
     vector<FieldData*> var_list;
-  }
+  };
   void free_handle(CommHandle *h);
   CommHandle* get_handle(int xlen, int ylen);
   void clear_handles();
@@ -151,15 +153,16 @@ class BoutMesh : public Mesh {
   void post_receive(CommHandle &ch);
 
   /// Take data from objects and put into a buffer
-  int pack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer);
+  int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer);
   /// Copy data from a buffer back into the fields
-  int unpack_data(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer);
+  int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer);
   /// Calculates the size of a message for a given x and y range
-  int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
+  int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
 };
 
 class BoutSurfaceIter : public SurfaceIter {
  public:
+  BoutSurfaceIter(BoutMesh* mi);
   int ysize(); // Return the size of the current surface
   bool closed(real &ts);
 
@@ -172,6 +175,8 @@ class BoutSurfaceIter : public SurfaceIter {
   
   int scatter(real *data, Field2D &f);
   int scatter(real **data, Field3D &f);
+ private:
+  BoutMesh* m;
 };
 
 #endif // __BOUTMESH_H__

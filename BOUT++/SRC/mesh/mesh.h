@@ -34,6 +34,13 @@
 #ifndef __MESH_H__
 #define __MESH_H__
 
+#include "field_data.h"
+#include "bout_types.h"
+#include "field2d.h"
+#include "field3d.h"
+
+#include "grid.h"  // For griddatasource 
+
 #include <list>
 
 /// Group together fields
@@ -70,11 +77,11 @@ class SurfaceIter {
 class Mesh {
  public:
   /// Add a data source
-  int add_source(const GridDataSource &source);
-  int add_source(const GridDataSource *source);
+  int add_source(GridDataSource &source);
+  int add_source(GridDataSource *source);
   
   virtual int load() = 0; ///< Load from sources
-  int load(const GridDataSource &source); ///< Load from specified source
+  int load(GridDataSource &source); ///< Load from specified source
   
   // Get routines to request data from mesh file
   virtual int get(int &ival, const char *name) = 0; ///< Get an integer

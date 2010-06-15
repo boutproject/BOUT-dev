@@ -1,7 +1,8 @@
 
 #include "mesh.h"
+#include "globals.h"
 
-static Mesh::wtime_comms = 0.0;
+real Mesh::wtime_comms = 0.0;
 
 /**************************************************************************
  * Data sources
@@ -18,7 +19,7 @@ int Mesh::add_source(GridDataSource *source)
   return 0;
 }
 
-int Mesh::load(const GridDataSource &source)
+int Mesh::load(GridDataSource &source)
 {
   std::list<GridDataSource*> old_list;
   
