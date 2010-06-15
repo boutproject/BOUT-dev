@@ -1538,9 +1538,9 @@ void bndry_core_laplace(Field3D &var)
     // Take FFT
     ZFFT(var[2][jy], zShift[2][jy], c2);
 
-    coef1=g11[1][jy]/(SQ(dx[1][jy]));
-    coef2=g33[1][jy];
-    coef3=g13[1][jy]/(2.0*dx[1][jy]);
+    coef1=mesh->g11[1][jy]/(SQ(dx[1][jy]));
+    coef2=mesh->g33[1][jy];
+    coef3=mesh->g13[1][jy]/(2.0*dx[1][jy]);
 
     for(jz=0;jz<=ncz/2;jz++) {
       kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -1587,9 +1587,9 @@ void bndry_core_laplace2(Field3D &var)
       ZFFT(var[jx+1][jy], zShift[jx+1][jy], c1);
       ZFFT(var[jx+2][jy], zShift[jx+2][jy], c2);
 
-      coef1=g11[jx+1][jy]/(SQ(dx[jx+1][jy]));
-      coef2=g33[jx+1][jy];
-      coef3=g13[jx+1][jy]/(2.0*dx[jx+1][jy]);
+      coef1=mesh->g11[jx+1][jy]/(SQ(dx[jx+1][jy]));
+      coef2=mesh->g33[jx+1][jy];
+      coef3=mesh->g13[jx+1][jy]/(2.0*dx[jx+1][jy]);
 
       for(jz=0;jz<=ncz/2;jz++) {
 	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -1709,9 +1709,9 @@ void bndry_pf_laplace(Field3D &var)
     // Take FFT
     ZFFT(var[2][jy], zShift[2][jy], c2);
 
-    coef1=g11[1][jy]/(SQ(dx[1][jy]));
-    coef2=g33[1][jy];
-    coef3=g13[1][jy]/(2.0*dx[1][jy]);
+    coef1=mesh->g11[1][jy]/(SQ(dx[1][jy]));
+    coef2=mesh->g33[1][jy];
+    coef3=mesh->g13[1][jy]/(2.0*dx[1][jy]);
 
     for(jz=0;jz<=ncz/2;jz++) {
       kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -1858,9 +1858,9 @@ void bndry_sol_laplace(Field3D &var)
       ZFFT(var[jx-2][jy], zShift[jx-2][jy], c0);
       ZFFT(var[jx-1][jy], zShift[jx-1][jy], c1);
 
-      coef1=g11[jx-1][jy]/(SQ(dx[jx-1][jy]));
-      coef2=g33[jx-1][jy];
-      coef3=g13[jx-1][jy]/(2.0*dx[jx-1][jy]);
+      coef1=mesh->g11[jx-1][jy]/(SQ(dx[jx-1][jy]));
+      coef2=mesh->g33[jx-1][jy];
+      coef3=mesh->g13[jx-1][jy]/(2.0*dx[jx-1][jy]);
 
       for(jz=0;jz<=ncz/2;jz++) {
 	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
@@ -1928,25 +1928,25 @@ void bndry_sol_divcurl(Vector3D &var)
       if(MXG == 2)
 	var.z[jx+1][jy][jz] = var.z[jx-3][jy][jz] + 4.*dx[jx][jy]*tmp;
 
-      // d/dx( Jg11 B_x ) = - d/dx( Jg12 B_y + Jg13 B_z) 
+      // d/dx( Jmesh->g11 B_x ) = - d/dx( Jmesh->g12 B_y + Jmesh->g13 B_z) 
       //                    - d/dy( JB^y ) - d/dz( JB^z )
 	
-      tmp = -( J[jx][jy]*g12[jx][jy]*var.y[jx][jy][jz] + J[jx][jy]*g13[jx][jy]*var.z[jx][jy][jz]
-	       - J[jx-2][jy]*g12[jx-2][jy]*var.y[jx-2][jy][jz] + J[jx-2][jy]*g13[jx-2][jy]*var.z[jx-2][jy][jz] )
+      tmp = -( mesh->J[jx][jy]*mesh->g12[jx][jy]*var.y[jx][jy][jz] + mesh->J[jx][jy]*mesh->g13[jx][jy]*var.z[jx][jy][jz]
+	       - mesh->J[jx-2][jy]*mesh->g12[jx-2][jy]*var.y[jx-2][jy][jz] + mesh->J[jx-2][jy]*mesh->g13[jx-2][jy]*var.z[jx-2][jy][jz] )
 	/ (dx[jx-2][jy] + dx[jx-1][jy]); // First term (d/dx) using vals calculated above
-      tmp -= (J[jx-1][jy+1]*g12[jx-1][jy+1]*var.x[jx-1][jy+1][jz] - J[jx-1][jy-1]*g12[jx-1][jy-1]*var.x[jx-1][jy-1][jz]
-	      + J[jx-1][jy+1]*g22[jx-1][jy+1]*var.y[jx-1][jy+1][jz] - J[jx-1][jy-1]*g22[jx-1][jy-1]*var.y[jx-1][jy-1][jz]
-	      + J[jx-1][jy+1]*g23[jx-1][jy+1]*var.z[jx-1][jy+1][jz] - J[jx-1][jy-1]*g23[jx-1][jy-1]*var.z[jx-1][jy-1][jz])
+      tmp -= (mesh->J[jx-1][jy+1]*mesh->g12[jx-1][jy+1]*var.x[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g12[jx-1][jy-1]*var.x[jx-1][jy-1][jz]
+	      + mesh->J[jx-1][jy+1]*mesh->g22[jx-1][jy+1]*var.y[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g22[jx-1][jy-1]*var.y[jx-1][jy-1][jz]
+	      + mesh->J[jx-1][jy+1]*mesh->g23[jx-1][jy+1]*var.z[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g23[jx-1][jy-1]*var.z[jx-1][jy-1][jz])
 	/ (dy[jx-1][jy-1] + dy[jx-1][jy]); // second (d/dy)
-      tmp -= (J[jx-1][jy]*g13[jx-1][jy]*(var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) +
-	      J[jx-1][jy]*g23[jx-1][jy]*(var.y[jx-1][jy][jzp] - var.y[jx-1][jy][jzm]) +
-	      J[jx-1][jy]*g33[jx-1][jy]*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*dz);
+      tmp -= (mesh->J[jx-1][jy]*mesh->g13[jx-1][jy]*(var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) +
+	      mesh->J[jx-1][jy]*mesh->g23[jx-1][jy]*(var.y[jx-1][jy][jzp] - var.y[jx-1][jy][jzm]) +
+	      mesh->J[jx-1][jy]*mesh->g33[jx-1][jy]*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*dz);
       
-      var.x[jx][jy][jz] = ( J[jx-2][jy]*g11[jx-2][jy]*var.x[jx-2][jy][jz] + 
-			    (dx[jx-2][jy] + dx[jx-1][jy]) * tmp ) / J[jx][jy]*g11[jx][jy];
+      var.x[jx][jy][jz] = ( mesh->J[jx-2][jy]*mesh->g11[jx-2][jy]*var.x[jx-2][jy][jz] + 
+			    (dx[jx-2][jy] + dx[jx-1][jy]) * tmp ) / mesh->J[jx][jy]*mesh->g11[jx][jy];
       if(MXG == 2)
-	var.x[jx+1][jy][jz] = ( J[jx-3][jy]*g11[jx-3][jy]*var.x[jx-3][jy][jz] + 
-				4.*dx[jx][jy]*tmp ) / J[jx+1][jy]*g11[jx+1][jy];
+	var.x[jx+1][jy][jz] = ( mesh->J[jx-3][jy]*mesh->g11[jx-3][jy]*var.x[jx-3][jy][jz] + 
+				4.*dx[jx][jy]*tmp ) / mesh->J[jx+1][jy]*mesh->g11[jx+1][jy];
     }
   }
 }
@@ -2630,15 +2630,15 @@ void bndry_inner_laplace_decay(Field3D &var)
     ZFFT(var[MXG+1][jy], zShift[MXG+1][jy], c1);
     c1[0] -= c0[0]; // Only need DC component
     
-    // Solve  g11*d2f/dx2 - g33*kz^2f = 0
-    // Assume g11, g33 constant -> exponential growth or decay
+    // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
+    // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
     for(int jx=MXG-1;jx>=0;jx--) {
       // kz = 0 solution
       c0[0] -= c1[0];  // Straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(g33[jx][jy] / g11[jx][jy])*dx[jx][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx][jy] / mesh->g11[jx][jy])*dx[jx][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
 	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
@@ -2668,15 +2668,15 @@ void bndry_outer_laplace_decay(Field3D &var)
     ZFFT(var[ngx-2-MXG][jy], zShift[ngx-2-MXG][jy], c1);
     c1[0] = c0[0] - c1[0]; // Only used for DC component
     
-    // Solve  g11*d2f/dx2 - g33*kz^2f = 0
-    // Assume g11, g33 constant -> exponential growth or decay
+    // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
+    // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
     for(int jx=ngx-MXG;jx<ngx;jx++) {
       // kz = 0 solution
       c0[0] += c1[0]; // Just a straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(g33[jx-1][jy] / g11[jx-1][jy])*dx[jx-1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
 	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
@@ -2717,21 +2717,21 @@ void bndry_inner_const_laplace_decay(Field3D &var)
       laplace_tridag_coefs(MXG+1, jy, jz, d, e, f);
       c1[jz] = d*c0[jz] + e*c1[jz] + f*c2[jz];
     }
-    // Solve  g11*d2f/dx2 - g33*kz^2f = 0
-    // Assume g11, g33 constant -> exponential growth or decay
+    // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
+    // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
     real xpos = 0.0;
     for(int jx=MXG-1;jx>=0;jx--) {
       // kz = 0 solution
       xpos -= dx[jx][jy];
-      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/g11[jx+1][jy];
+      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx+1][jy];
       // kz != 0 solution
-      real coef = -1.0*sqrt(g33[jx+1][jy] / g11[jx+1][jy])*dx[jx+1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx+1][jy] / mesh->g11[jx+1][jy])*dx[jx+1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
 	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
-	c2[jz] = c0[jz] - c1[jz]/(g33[jx+1][jy]*kwave*kwave); 
+	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx+1][jy]*kwave*kwave); 
       }
       // Reverse FFT
       ZFFT_rev(c2, zShift[jx][jy], var[jx][jy]);
@@ -2768,21 +2768,21 @@ void bndry_outer_const_laplace_decay(Field3D &var)
       laplace_tridag_coefs(ngx-2-MXG, jy, jz, d, e, f);
       c1[jz] = d*c2[jz] + e*c1[jz] + f*c0[jz];
     }
-    // Solve  g11*d2f/dx2 - g33*kz^2f = 0
-    // Assume g11, g33 constant -> exponential growth or decay
+    // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
+    // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
     real xpos = 0.0;
     for(int jx=ngx-MXG;jx<ngx;jx++) {
-      // kz = 0 solution: a + bx + 0.5*jpar*x^2/g11
+      // kz = 0 solution: a + bx + 0.5*jpar*x^2/mesh->g11
       xpos += dx[jx][jy];
-      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/g11[jx-1][jy]; 
+      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx-1][jy]; 
       // kz != 0 solution
-      real coef = -1.0*sqrt(g33[jx-1][jy] / g11[jx-1][jy])*dx[jx-1][jy];
+      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
 	real kwave=jz*2.0*PI/zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
-	c2[jz] = c0[jz] - c1[jz]/(g33[jx][jy]*kwave*kwave); 
+	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx][jy]*kwave*kwave); 
       }
       // Reverse FFT
       ZFFT_rev(c2, zShift[jx][jy], var[jx][jy]);

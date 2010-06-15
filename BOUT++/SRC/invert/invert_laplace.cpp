@@ -115,21 +115,21 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   
   kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
   
-  coef1=g11[jx][jy]/(SQ(dx[jx][jy])); ///< X 2nd derivative
-  coef2=g33[jx][jy];                  ///< Z 2nd derivative
-  coef3=2.*g13[jx][jy]/(dx[jx][jy]);  ///< X-Z mixed derivative
+  coef1=mesh->g11[jx][jy]/(SQ(dx[jx][jy])); ///< X 2nd derivative
+  coef2=mesh->g33[jx][jy];                  ///< Z 2nd derivative
+  coef3=2.*mesh->g13[jx][jy]/(dx[jx][jy]);  ///< X-Z mixed derivative
   
   coef4 = 0.0;
   coef5 = 0.0;
   if(laplace_all_terms) {
-    coef4 = G1[jx][jy] / (2.0*dx[jx][jy]); // X 1st derivative
-    coef5 = G3[jx][jy];
+    coef4 = mesh->G1[jx][jy] / (2.0*dx[jx][jy]); // X 1st derivative
+    coef5 = mesh->G3[jx][jy];
   }
 
   if(laplace_nonuniform) {
     // non-uniform mesh correction
     if((jx != 0) && (jx != (ngx-1))) {
-      //coef4 += g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
+      //coef4 += mesh->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
       coef4 -= 0.25*((dx[jx+1][jy] - dx[jx-1][jy])/dx[jx][jy])*coef1; // BOUT-06 term
     }
   }
@@ -138,12 +138,12 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     // A first order derivative term
     
     if((jx > 0) && (jx < (ngx-1)))
-      coef4 += g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / SQ(dx[jx][jy]*((*ccoef)[jx][jy]));
+      coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / SQ(dx[jx][jy]*((*ccoef)[jx][jy]));
   }
 
   if(ShiftXderivs && IncIntShear) {
     // d2dz2 term
-    coef2 += g11[jx][jy] * IntShiftTorsion[jx][jy] * IntShiftTorsion[jx][jy];
+    coef2 += mesh->g11[jx][jy] * IntShiftTorsion[jx][jy] * IntShiftTorsion[jx][jy];
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
@@ -253,9 +253,9 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       for(ix=xstart;ix<=xend;ix++) {
 
 	// Set coefficients
-	coef1 = g11[ix][jy];  // X 2nd derivative
-	coef2 = g33[ix][jy];  // Z 2nd derivative
-	coef3 = g13[ix][jy];  // X-Z mixed derivatives
+	coef1 = mesh->g11[ix][jy];  // X 2nd derivative
+	coef2 = mesh->g33[ix][jy];  // Z 2nd derivative
+	coef3 = mesh->g13[ix][jy];  // X-Z mixed derivatives
 	coef4 = 0.0;          // X 1st derivative
 	coef5 = 0.0;          // Z 1st derivative
 	coef6 = 0.0;          // Constant
@@ -264,21 +264,21 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  coef6 = (*a)[ix][jy];
 	
 	if(laplace_all_terms) {
-	  coef4 = G1[ix][jy];
-	  coef5 = G3[ix][jy];
+	  coef4 = mesh->G1[ix][jy];
+	  coef5 = mesh->G3[ix][jy];
 	}
 
 	if(laplace_nonuniform) {
 	  // non-uniform mesh correction
 	  if((ix != 0) && (ix != (ngx-1)))
-	    coef4 += g11[ix][jy]*( (1.0/dx[ix+1][jy]) - (1.0/dx[ix-1][jy]) )/(2.0*dx[ix][jy]);
+	    coef4 += mesh->g11[ix][jy]*( (1.0/dx[ix+1][jy]) - (1.0/dx[ix-1][jy]) )/(2.0*dx[ix][jy]);
 	}
 
 	if(ccoef != NULL) {
 	  // A first order derivative term (1/c)\nabla_perp c\cdot\nabla_\perp x
     
 	  if((ix > 1) && (ix < (ngx-2)))
-	    coef4 += g11[ix][jy] * ((*ccoef)[ix-2][jy] - 8.*(*ccoef)[ix-1][jy] + 8.*(*ccoef)[ix+1][jy] - (*ccoef)[ix+2][jy]) / (12.*dx[ix][jy]*((*ccoef)[ix][jy]));
+	    coef4 += mesh->g11[ix][jy] * ((*ccoef)[ix-2][jy] - 8.*(*ccoef)[ix-1][jy] + 8.*(*ccoef)[ix+1][jy] - (*ccoef)[ix+2][jy]) / (12.*dx[ix][jy]*((*ccoef)[ix][jy]));
 	}
 
 	// Put into matrix
@@ -300,9 +300,9 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
 	ix = 1;
 
-	coef1=g11[ix][jy]/(SQ(dx[ix][jy]));
-	coef2=g33[ix][jy];
-	coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	coef1=mesh->g11[ix][jy]/(SQ(dx[ix][jy]));
+	coef2=mesh->g33[ix][jy];
+	coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 
 	A[ix][0] = 0.0; // Should never be used
 	A[ix][1] = dcomplex(coef1, -coef3);
@@ -312,9 +312,9 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
 	ix = ncx-1;
 
-	coef1=g11[ix][jy]/(SQ(dx[ix][jy]));
-	coef2=g33[ix][jy];
-	coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	coef1=mesh->g11[ix][jy]/(SQ(dx[ix][jy]));
+	coef2=mesh->g33[ix][jy];
+	coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 
 	A[ix][0] = 0.0;
 	A[ix][1] = dcomplex(coef1, -coef3);
@@ -378,11 +378,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  
 	  ix = 1;
 	  
-	  coef1=g11[ix][jy]/(12.* SQ(dx[ix][jy]));
+	  coef1=mesh->g11[ix][jy]/(12.* SQ(dx[ix][jy]));
 	
-	  coef2=g33[ix][jy];
+	  coef2=mesh->g33[ix][jy];
 	
-	  coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	  coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 	  
 	  coef4 = 0.0;
 	  if(a != (Field2D*) NULL)
@@ -390,14 +390,14 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  
 	  // Combine 4th order at 1 with 2nd order at 0
 	  A[1][0] = 0.0; // Not used
-	  A[1][1] = dcomplex( (14. - SQ(dx[0][jy]*kwave)*g33[0][jy]/g11[0][jy])*coef1  ,  -coef3 );
+	  A[1][1] = dcomplex( (14. - SQ(dx[0][jy]*kwave)*mesh->g33[0][jy]/mesh->g11[0][jy])*coef1  ,  -coef3 );
 	  A[1][2] = dcomplex(-29.*coef1 - SQ(kwave)*coef2 + coef4, 0.0);
 	  A[1][3] = dcomplex( 16.*coef1  , coef3 );
 	  A[1][4] = dcomplex(    -coef1  ,     0.0 );
 	  
-	  coef1=g11[ix][jy]/(SQ(dx[ix][jy]));
-	  coef2=g33[ix][jy];
-	  coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	  coef1=mesh->g11[ix][jy]/(SQ(dx[ix][jy]));
+	  coef2=mesh->g33[ix][jy];
+	  coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 
 	  // Use 2nd order at 1
 	  A[0][0] = 0.0;  // Should never be used
@@ -420,11 +420,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
 	  ix = ncx-1;
 	  
-	  coef1=g11[ix][jy]/(12.* SQ(dx[ix][jy]));
+	  coef1=mesh->g11[ix][jy]/(12.* SQ(dx[ix][jy]));
 	
-	  coef2=g33[ix][jy];
+	  coef2=mesh->g33[ix][jy];
 	
-	  coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	  coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 	  
 	  coef4 = 0.0;
 	  if(a != (Field2D*) NULL)
@@ -434,12 +434,12 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  A[ix][0] = dcomplex(    -coef1  ,     0.0 );
 	  A[ix][1] = dcomplex( 16.*coef1  , -coef3 );
 	  A[ix][2] = dcomplex(-29.*coef1 - SQ(kwave)*coef2 + coef4, 0.0);
-	  A[ix][3] = dcomplex( (14. - SQ(dx[ncx][jy]*kwave)*g33[ncx][jy]/g11[ncx][jy])*coef1  ,  coef3 );
+	  A[ix][3] = dcomplex( (14. - SQ(dx[ncx][jy]*kwave)*mesh->g33[ncx][jy]/mesh->g11[ncx][jy])*coef1  ,  coef3 );
 	  A[ix][4] = 0.0; // Not used
 	  
-	  coef1=g11[ix][jy]/(SQ(dx[ix][jy]));
-	  coef2=g33[ix][jy];
-	  coef3= kwave * g13[ix][jy]/(2. * dx[ix][jy]);
+	  coef1=mesh->g11[ix][jy]/(SQ(dx[ix][jy]));
+	  coef2=mesh->g33[ix][jy];
+	  coef3= kwave * mesh->g13[ix][jy]/(2. * dx[ix][jy]);
 
 	  // Use 2nd order at ncx - 1
 	  A[ncx][0] = dcomplex(coef1, -coef3);
@@ -644,7 +644,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[ix] = 0.0;
 	    bvec[ix] = -1.0;
-	    cvec[ix] = exp(-1.0*sqrt(g33[ix][jy]/g11[ix][jy])*kwave*dx[ix][jy]);
+	    cvec[ix] = exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*dx[ix][jy]);
 	    bk1d[ix] = 0.0;
 	  }
 	}else {
@@ -703,7 +703,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  // Use decaying zero-Laplacian solution in the boundary
 	  real kwave=iz*2.0*PI/zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
-	    avec[ncx-ix] = exp(-1.0*sqrt(g33[ncx-ix][jy]/g11[ncx-ix][jy])*kwave*dx[ncx-ix][jy]);;
+	    avec[ncx-ix] = exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*dx[ncx-ix][jy]);;
 	    bvec[ncx-ix] = -1.0;
 	    cvec[ncx-ix] = 0.0;
 	    bk1d[ncx-ix] = 0.0;
@@ -878,7 +878,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[kz][ix] = 0.0;
 	    bvec[kz][ix] = 1.0;
-	    cvec[kz][ix] = -exp(-1.0*sqrt(g33[ix][jy]/g11[ix][jy])*kwave*dx[ix][jy]);
+	    cvec[kz][ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*dx[ix][jy]);
 	    bk[kz][ix] = 0.0;
 	  }
 	}else {
@@ -929,7 +929,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  // Use decaying zero-Laplacian solution in the boundary
 	  real kwave=kz*2.0*PI/zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
-	    avec[kz][ncx-ix] = -exp(-1.0*sqrt(g33[ncx-ix][jy]/g11[ncx-ix][jy])*kwave*dx[ncx-ix][jy]);;
+	    avec[kz][ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*dx[ncx-ix][jy]);;
 	    bvec[kz][ncx-ix] = 1.0;
 	    cvec[kz][ncx-ix] = 0.0;
 	    bk[kz][ncx-ix] = 0.0;

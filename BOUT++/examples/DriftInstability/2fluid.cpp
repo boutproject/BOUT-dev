@@ -207,21 +207,21 @@ int physics_init()
 
   /**************** CALCULATE METRICS ******************/
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (I^2)*g11 + (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = -I*g11;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = -I*mesh->g11;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
   J = hthe / Bpxy;
   
-  g_11 = 1.0/g11 + ((I*Rxy)^2);
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  g_13 = I*Rxy*Rxy;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
+  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  mesh->g_13 = I*Rxy*Rxy;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
@@ -360,7 +360,7 @@ int physics_run(real t)
 	for(int jz=0;jz<ngz;jz++) {
 	  jpar[jx][jy][jz] = ( (Te0[jx][jy] * (Ni[jx][jy+1][jz] - Ni[jx][jy][jz]))
 			       - (Ni0[jx][jy] * (phi[jx][jy+1][jz] - phi[jx][jy][jz])) )
-	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(g_22[jx][jy]));
+	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 			       
 	}
       }
@@ -447,7 +447,7 @@ int physics_run(real t)
     for(int jx=MXG;jx<ngx-MXG;jx++) {
       for(int jy=MYG;jy<ngy-MYG;jy++) {
 	for(int jz=0;jz<ngz;jz++) {
-	  F_rho[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
+	  F_rho[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	}
       }
     }
@@ -468,8 +468,8 @@ int physics_run(real t)
     for(int jx=MXG;jx<ngx-MXG;jx++) {
       for(int jy=MYG;jy<ngy-MYG;jy++) {
 	for(int jz=0;jz<ngz;jz++) {
-	  F_Ajpar[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
-	  F_Ajpar[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
+	  F_Ajpar[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	  F_Ajpar[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	}
       }
     }

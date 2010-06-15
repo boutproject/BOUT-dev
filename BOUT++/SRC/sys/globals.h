@@ -89,78 +89,27 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
 
 ///////////////// TWIST-SHIFT CONDITION ///////////////////////
 
-#ifndef METRIC3D
 GLOBAL real *ShiftAngle;  // angle a field-line moves in z for a y circuit (radians)
-#else
-GLOBAL FieldPerp ShiftAngle; // X-Z (shift now depends on z)
-#endif
 
 ///////////////// SHEARED X DERIVATIVES ///////////////////////
 
-#ifndef METRIC3D
 GLOBAL Field2D zShift; // Z shift for each point (radians)
 GLOBAL Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
 GLOBAL Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-#else
-// 3D metrics
-GLOBAL Field3D zShift; 
-GLOBAL Field3D ShiftTorsion;
-#endif
 
 ///////////////// DIFFERENCING QUANTITIES /////////////////////
 
 // These used for differential operators 
-#ifndef METRIC3D
 GLOBAL Field2D dx, dy;      // Read in grid.cpp
 GLOBAL Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes
 GLOBAL real zlength, dz;    // Derived from options in grid.cpp (in radians)
-#else
-GLOBAL Field3D dx, dy, dz;
-GLOBAL real zlength;
-#endif
 
 ////////////////// DIFFERENTIAL GEOMETRY //////////////////////
-#ifndef METRIC3D // Normal 2D metric case
-
-// Contravariant metric tensor (g^{ij})
-GLOBAL Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
 
 // rest of these quantities are derived from the metric tensor
 // in geometry.cpp
 
-GLOBAL Field2D J; // Jacobian
 GLOBAL Field2D Bxy; // Magnitude of B = nabla z times nabla x
-
-// Covariant metric tensor
-GLOBAL Field2D g_11, g_22, g_33, g_12, g_13, g_23;
-
-// Christoffel symbol of the second kind (connection coefficients)
-GLOBAL Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-GLOBAL Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-GLOBAL Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-
-GLOBAL Field2D G1, G2, G3;
-
-#else // 3D metric case
-// Contravariant metric tensor (g^{ij})
-GLOBAL Field3D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
-
-// rest of these quantities are derived from the metric tensor
-// in geometry.cpp
-
-GLOBAL Field3D J; // Jacobian
-GLOBAL Field3D Bxy; // Magnitude of B = nabla z times nabla x
-
-// Covariant metric tensor
-GLOBAL Field3D g_11, g_22, g_33, g_12, g_13, g_23;
-
-// Christoffel symbol of the second kind (connection coefficients)
-GLOBAL Field3D G1_11, G1_22, G1_33, G1_12, G1_13;
-GLOBAL Field3D G2_11, G2_22, G2_33, G2_12, G2_23;
-GLOBAL Field3D G3_11, G3_22, G3_33, G3_13, G3_23;
-
-GLOBAL Field3D G1, G2, G3;
-#endif
 
 ///////////////////////////////////////////////////////////////
 

@@ -273,7 +273,7 @@ namespace invpar {
       init_comms();
     }
     
-    Field2D sg = sqrt(g_22); // Needed for first Y derivative
+    Field2D sg = sqrt(mesh->g_22); // Needed for first Y derivative
 
     int x0 = xs; ///< Starting x of this round of inversions
     int offset  = 0; // Location in data array
@@ -288,7 +288,7 @@ namespace invpar {
       for(int j=jstart;j<=jend;j++) {
 	// See Grad2_par2 in difops.cpp for these coefficients
 	real coeff1 = (1./sg[xpos][j+1] - 1./sg[xpos][j-1])/(4.*SQ(dy[xpos][j])) / sg[xpos][j];
-	real coeff2 = 1. / (g_22[xpos][j] * SQ(dy[xpos][j])); // Second derivative
+	real coeff2 = 1. / (mesh->g_22[xpos][j] * SQ(dy[xpos][j])); // Second derivative
 	
 	senddata[offset] = B[xpos][j] * (coeff2 - coeff1); // a coefficient (y-1)
 	offset++;

@@ -53,9 +53,9 @@ void Vector2D::to_covariant()
     Field2D gx, gy, gz;
 
     // multiply by g_{ij}
-    gx = g_11*x + g_12*y + g_13*z;
-    gy = g_12*x + g_22*y + g_23*z;
-    gz = g_13*x + g_23*y + g_33*z;
+    gx = mesh->g_11*x + mesh->g_12*y + mesh->g_13*z;
+    gy = mesh->g_12*x + mesh->g_22*y + mesh->g_23*z;
+    gz = mesh->g_13*x + mesh->g_23*y + mesh->g_33*z;
 
     x = gx;
     y = gy;
@@ -71,9 +71,9 @@ void Vector2D::to_contravariant()
     
     Field2D gx, gy, gz;
 
-    gx = g11*x + g12*y + g13*z;
-    gy = g12*x + g22*y + g23*z;
-    gz = g13*x + g23*y + g33*z;
+    gx = mesh->g11*x + mesh->g12*y + mesh->g13*z;
+    gy = mesh->g12*x + mesh->g22*y + mesh->g23*z;
+    gz = mesh->g13*x + mesh->g23*y + mesh->g33*z;
 
     x = gx;
     y = gy;
@@ -207,9 +207,9 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs)
   to_covariant();
 
   // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/J;
-  result.y = (z*rco.x - x*rco.z)/J;
-  result.z = (x*rco.y - y*rco.x)/J;
+  result.x = (y*rco.z - z*rco.y)/mesh->J;
+  result.y = (z*rco.x - x*rco.z)/mesh->J;
+  result.z = (x*rco.y - y*rco.x)/mesh->J;
   
   result.covariant = false;
 
@@ -314,16 +314,16 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const
     // Both are covariant or contravariant
     if(covariant) {
       // Both covariant
-      result = x*rhs.x*g11 + y*rhs.y*g22 + z*rhs.z*g33;
-      result += (x*rhs.y + y*rhs.x)*g12
-	+ (x*rhs.z + z*rhs.x)*g13
-	+ (y*rhs.z + z*rhs.y)*g23;
+      result = x*rhs.x*mesh->g11 + y*rhs.y*mesh->g22 + z*rhs.z*mesh->g33;
+      result += (x*rhs.y + y*rhs.x)*mesh->g12
+	+ (x*rhs.z + z*rhs.x)*mesh->g13
+	+ (y*rhs.z + z*rhs.y)*mesh->g23;
     }else {
       // Both contravariant
-      result = x*rhs.x*g_11 + y*rhs.y*g_22 + z*rhs.z*g_33;
-      result += (x*rhs.y + y*rhs.x)*g_12
-	+ (x*rhs.z + z*rhs.x)*g_13
-	+ (y*rhs.z + z*rhs.y)*g_23;
+      result = x*rhs.x*mesh->g_11 + y*rhs.y*mesh->g_22 + z*rhs.z*mesh->g_33;
+      result += (x*rhs.y + y*rhs.x)*mesh->g_12
+	+ (x*rhs.z + z*rhs.x)*mesh->g_13
+	+ (y*rhs.z + z*rhs.y)*mesh->g_23;
     }
   }
 

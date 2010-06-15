@@ -216,14 +216,14 @@ int BoutMesh::load()
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   
   // Diagonal components of metric tensor g^{ij} (default to 1)
-  get(g11, "g11", 1.0);
-  get(g22, "g22", 1.0);
-  get(g33, "g33", 1.0);
+  get(mesh->g11, "mesh->g11", 1.0);
+  get(mesh->g22, "mesh->g22", 1.0);
+  get(mesh->g33, "mesh->g33", 1.0);
   
   // Off-diagonal elements. Default to 0
-  get(g12, "g12", 0.0);
-  get(g13, "g13", 0.0);
-  get(g23, "g23", 0.0);
+  get(mesh->g12, "mesh->g12", 0.0);
+  get(mesh->g13, "mesh->g13", 0.0);
+  get(mesh->g23, "mesh->g23", 0.0);
   
   /// Set shift for radial derivatives
   if(get(zShift, "zShift")) {
