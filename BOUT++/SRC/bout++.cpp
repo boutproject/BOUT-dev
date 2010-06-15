@@ -215,54 +215,11 @@ int main(int argc, char **argv)
   OPTION(dump_float,   true);
   OPTION(ShiftXderivs, false);
   OPTION(IncIntShear,  false);
-  OPTION(TwistShift,   false);
   OPTION(ShiftOrder,   0);
-  OPTION(TwistOrder,   0);
   OPTION(non_uniform,  false);
-  OPTION(MZ,           65);
-  if(!is_pow2(MZ-1)) {
-    if(is_pow2(MZ)) {
-      MZ++;
-      output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
-    }else {
-      output.write("Error: Number of toroidal points must be 2^n + 1");
-      return 1;
-    }
-  }
-  if(options.get("zperiod",   zperiod,      1)) {
-    options.get("ZMIN",         ZMIN,         0.0);
-    options.get("ZMAX",         ZMAX,         1.0);
-    
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }else {
-    ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
-  }
-  options.get("MXG", MXG, 2);
-  options.get("MYG", MYG, 2);
+
   options.get("BoundaryOnCell", BoundaryOnCell, false); // Determine location of boundary
   options.get("StaggerGrids",   StaggerGrids,   false); // Stagger grids
-  
-  options.get("NXPE", NXPE, 1); // Decomposition in the radial direction
-  if((NPES % NXPE) != 0) {
-    output.write("Error: Number of processors (%d) not divisible by NPs in x direction (%d). Aborting\n",
-		 NPES, NXPE);
-    return(1);
-  }
-
-  NYPE = NPES / NXPE;
-  
-  /// Get X and Y processor indices
-  PE_YIND = MYPE / NXPE;
-  PE_XIND = MYPE % NXPE;
-
-  if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(TwistOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", TwistOrder);
-  }
   
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
@@ -289,7 +246,6 @@ int main(int argc, char **argv)
   /// Create the mesh
   mesh = new BoutMesh();
   
-
   output.write("Setting grid format\n");
   /// Load the grid
   if((grid_ext = options.getString("grid_format")) == NULL) {
@@ -303,13 +259,6 @@ int main(int argc, char **argv)
   }
   if(mesh->load()) {
     output << "Failed to read grid. Aborting\n";
-    return 1;
-  }
-
-  // Check ngz
-
-  if(!is_pow2(ncz)) {
-    output.write("Error: Number of toroidal points must be 2^n + 1\n");
     return 1;
   }
 

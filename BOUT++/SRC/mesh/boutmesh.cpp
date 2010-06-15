@@ -61,6 +61,22 @@ int BoutMesh::load()
     return 1;
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
+
+  options.get("MXG", MXG, 2);
+  options.get("MYG", MYG, 2);
+  
+  options.get("NXPE", NXPE, 1); // Decomposition in the radial direction
+  if((NPES % NXPE) != 0) {
+    output.write("Error: Number of processors (%d) not divisible by NPs in x direction (%d). Aborting\n",
+		 NPES, NXPE);
+    return(1);
+  }
+
+  NYPE = NPES / NXPE;
+  
+  /// Get X and Y processor indices
+  PE_YIND = MYPE / NXPE;
+  PE_XIND = MYPE % NXPE;
   
   // Work out other grid size quantities
 
@@ -85,8 +101,8 @@ int BoutMesh::load()
   }
   
   /// Get mesh options
-/*  options.setSection(NULL); // Global options
-  int MZ;
+  options.setSection(NULL); // Global options
+  //int MZ;
   OPTION(MZ,           65);
   if(!is_pow2(MZ-1)) {
     if(is_pow2(MZ)) {
@@ -109,22 +125,6 @@ int BoutMesh::load()
     ZMIN = 0.0;
     ZMAX = 1.0 / (double) zperiod;
   }
-  
-  options.get("MXG", MXG, 2);
-  options.get("MYG", MYG, 2);
-  
-  options.get("NXPE", NXPE, 1); // Decomposition in the radial direction
-  if((NPES % NXPE) != 0) {
-    output.write("Error: Number of processors (%d) not divisible by NPs in x direction (%d). Aborting\n",
-		 NPES, NXPE);
-    return(1);
-  }
-
-  NYPE = NPES / NXPE;
-  
-  /// Get X and Y processor indices
-  PE_YIND = MYPE / NXPE;
-  PE_XIND = MYPE % NXPE;
 
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: ");
@@ -132,7 +132,7 @@ int BoutMesh::load()
       output.write("FFT\n");
     }else
       output.write("%d-point\n", TwistOrder);
-  }*/
+  }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
   ngx = MXSUB + 2*MXG;
