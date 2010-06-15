@@ -40,7 +40,7 @@
  *************************************************************************/
 
 #define TOPGLOBORIGIN
-#include "topology.h"
+#include "mesh_topology.h"
 #include "globals.h"
 
 #include <stdlib.h>
