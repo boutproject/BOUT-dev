@@ -37,6 +37,7 @@
 #include "fft.h"
 
 #include "geometry.h"
+#include "mesh_topology.h"
 
 #include "dcomplex.h"
 
@@ -1082,6 +1083,8 @@ comm_handle BoutMesh::irecv_xin(real *buffer, int size, int tag)
 /*!
  * If out of range returns -1 (no processor)
  */
+
+/*
 int BoutMesh::PROC_NUM(int xind, int yind)
 {
   if((xind >= NXPE) || (xind < 0))
@@ -1144,6 +1147,7 @@ int BoutMesh::XPROC(int xind)
 {
   return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 }
+*/
 
 /****************************************************************
  *                       CONNECTIONS
@@ -1779,9 +1783,10 @@ void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, real **var)
 
 SurfaceIter* BoutMesh::iterateSurfaces()
 {
-  return new BoutSurfaceIter(this);
+  //return new BoutSurfaceIter(this);
+  return (SurfaceIter*) NULL;
 }
-
+/*
 BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi)
 {
   m = mi;
@@ -1877,3 +1882,4 @@ int BoutSurfaceIter::scatter(real **data, Field3D &f)
 {
   
 }
+*/

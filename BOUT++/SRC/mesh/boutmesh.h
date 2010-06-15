@@ -59,6 +59,7 @@ class BoutMesh : public Mesh {
   friend class BoutSurfaceIter;
 
  private:
+  /*
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
   int MYSUB, MXSUB;  ///< Size of the grid on this processor
@@ -92,18 +93,19 @@ class BoutMesh : public Mesh {
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
 
   int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
-
-  void default_connections();
-  void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
-  void topology();
-
+  
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
   int  TwistOrder;   // Order of twist-shift interpolation
   int  zperiod; 
   real ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   int  MXG, MYG;     // Boundary sizes
-  
+  */
+
+  void default_connections();
+  void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
+  void topology();
+
   //////////////////////////////////////////////////
   // Communications
   
@@ -160,6 +162,7 @@ class BoutMesh : public Mesh {
   int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
 };
 
+/*
 class BoutSurfaceIter : public SurfaceIter {
  public:
   BoutSurfaceIter(BoutMesh* mi);
@@ -178,5 +181,6 @@ class BoutSurfaceIter : public SurfaceIter {
  private:
   BoutMesh* m;
 };
+*/
 
 #endif // __BOUTMESH_H__
