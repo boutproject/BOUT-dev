@@ -30,11 +30,6 @@ class BoutMesh : public Mesh {
   int get(Field3D &var, const char *name);
   int get(Field3D &var, const string &name);
   
-  int get(Vector2D &var, const char *name);
-  int get(Vector3D &var, const char *name);
-  int get(Vector2D &var, const string &name);
-  int get(Vector3D &var, const string &name);
-  
   /////////////////////////////////////////////
   // Communicate variables
   
