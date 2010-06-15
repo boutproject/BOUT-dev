@@ -80,7 +80,6 @@ class SurfaceIter {
 
 class Mesh {
  public:
-  Mesh() { }
   /// Add a data source
   int add_source(GridDataSource &source);
   int add_source(GridDataSource *source);
@@ -123,7 +122,7 @@ class Mesh {
   virtual comm_handle irecv_xin(real *buffer, int size, int tag) = 0;
 
   // X and Y gather/scatter operations
-  virtual SurfaceIter* iterateSurfaces();
+  virtual SurfaceIter* iterateSurfaces() = 0;
 
   //////////////////////////////////////////////////////////
 
