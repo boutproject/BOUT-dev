@@ -58,6 +58,8 @@ class Field3D : public Field, public FieldData {
   Field3D();
   /// copy constructor
   Field3D(const Field3D& f);
+  /// Constructor from 2D field
+  Field3D(const Field2D& f);
   /// Destructor
   ~Field3D();
 

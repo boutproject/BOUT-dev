@@ -74,6 +74,11 @@ Field3D::Field3D(const Field3D& f)
 #endif
 }
 
+Field3D::Field3D(const Field2D& f)
+{
+  *this = f;
+}
+
 Field3D::~Field3D()
 {
   /// free the block of data if allocated
