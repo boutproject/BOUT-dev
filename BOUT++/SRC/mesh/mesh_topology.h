@@ -46,27 +46,4 @@ int YLOCAL(int yglo, int yproc);
 int YPROC(int yind);
 int XPROC(int xind);
 
-void add_boundary(int direction, int ypos, int xge, int xlt);
-void topology();
-
-// BOUNDARY POSITIONS
-
-typedef struct { // Definition of a boundary
-  int direction; // +1 -> boundary +ve y (e.g. MYPE=NYPE-1) , -1 -> -ve y (e.g. MYPE = 0)
-  int ypos;      // y index of boundary
-  int xge;       // minimum x of boundary
-  int xlt;       // x less than this value   (xge <= x < xlt)
-}TBoundary;
-
-#ifdef TOPGLOBORIGIN
-#define GLOBAL
-#else
-#define GLOBAL extern
-#endif
-
-GLOBAL int N_BOUNDARY;
-GLOBAL TBoundary **BOUNDARY; // Array of pointers to TBoundary structures
-
-#undef GLOBAL
-
 #endif // __TOPOLOGY_H__
