@@ -386,7 +386,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
   restart.add(iteration, "hist_hi", 0);
 
   restart.add(NPES, "NPES", 0);
-  restart.add(NXPE, "NXPE", 0);
+  restart.add(mesh->NXPE, "mesh->NXPE", 0);
 
   /// Add variables to the restart and dump files.
   /// NOTE: Since vector components are already in the field arrays,
@@ -414,7 +414,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
     // Copy processor numbers for comparison after. Very useful for checking
     // that the restart file is for the correct number of processors etc.
     int tmp_NP = NPES;
-    int tmp_NX = NXPE;
+    int tmp_NX = mesh->NXPE;
     
 #ifdef CHECK
     int msg_pt2 = msg_stack.push("Loading restart file");
@@ -430,7 +430,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
       // Old restart file
       output.write("WARNING: Cannot verify processor numbers\n");
       NPES = tmp_NP;
-      NXPE = tmp_NX;
+      mesh->NXPE = tmp_NX;
     }else {
       // Check the processor numbers match
       if(NPES != tmp_NP) {
@@ -438,9 +438,9 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
 		     tmp_NP, NPES);
 	return(1);
       }
-      if(NXPE != tmp_NX) {
+      if(mesh->NXPE != tmp_NX) {
 	output.write("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NX, NXPE);
+		     tmp_NX, mesh->NXPE);
 	return(1);
       }
 

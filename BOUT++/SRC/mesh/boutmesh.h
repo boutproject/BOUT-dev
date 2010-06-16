@@ -60,7 +60,6 @@ class BoutMesh : public Mesh {
   int MYSUB, MXSUB;  ///< Size of the grid on this processor
   
   int PE_YIND; ///< Y index of this processor
-  int PE_XIND; ///< X index
 
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;

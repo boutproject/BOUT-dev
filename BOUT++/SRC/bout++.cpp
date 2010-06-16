@@ -466,7 +466,7 @@ void setup_files()
   dump.add(MXG,   "MXG",   0);
   dump.add(MYG,   "MYG",   0);
   dump.add(MZ,    "MZ",    0);
-  dump.add(NXPE,  "NXPE",  0);
+  dump.add(mesh->NXPE,  "mesh->NXPE",  0);
   dump.add(NYPE,  "NYPE",  0);
   dump.add(ZMAX,  "ZMAX",  0);
   dump.add(ZMIN,  "ZMIN",  0);

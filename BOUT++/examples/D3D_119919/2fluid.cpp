@@ -403,7 +403,7 @@ int physics_init()
   int *ranks = new int[NYPE];
   int npcore = 0;
   for(int p = YPROC(jyseps1_1+1); p <= YPROC(jyseps2_2);p++) {
-    ranks[npcore] = PROC_NUM(PE_XIND, p);
+    ranks[npcore] = PROC_NUM(mesh->PE_XIND, p);
     //output.write("%d: %d, %d\n", npcore, p, ranks[npcore]);
     npcore++;
   }

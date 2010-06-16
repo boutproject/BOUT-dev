@@ -224,7 +224,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
 	
 	int NVARS=n3Dvars()+n2Dvars();
         printf("NVARS=%d\n",NVARS);  
-        printf("NXPE=%d\n", NXPE);
+        printf("mesh->NXPE=%d\n", mesh->NXPE);
         printf("MXSUB=%d\n",MXSUB); 
         printf("NYPE=%d\n",NYPE);   //-number of poloidal subdomains
         printf("MYSUB=%d\n",MYSUB);  //64; //-number of poloidal polongs per subdomain
@@ -232,7 +232,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
         printf("MYG=%d\n",MYG);    //-poloidal guard cells
         printf("MXG=%d\n",MXG);    //-radial guard cells
 
-        stat=jstruc( NVARS,  NXPE,  MXSUB,  NYPE,  MYSUB,  MZ,  MYG,  MXG);
+        stat=jstruc( NVARS,  mesh->NXPE,  MXSUB,  NYPE,  MYSUB,  MZ,  MYG,  MXG);
       }
 
       PetscInt diag;

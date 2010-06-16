@@ -116,6 +116,7 @@ class Mesh {
   // X communications
   virtual bool first_x() = 0;
   virtual bool last_x() = 0;
+  int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
   virtual int send_xout(real *buffer, int size, int tag) = 0;
   virtual int send_xin(real *buffer, int size, int tag) = 0;
   virtual comm_handle irecv_xout(real *buffer, int size, int tag) = 0;
@@ -127,35 +128,37 @@ class Mesh {
   //////////////////////////////////////////////////////////
 
   /// Size of the mesh on this processor including guard/boundary cells
+  int ngx, ngy, ngz;
+  
+  /// Local ranges of data (inclusive), excluding guard cells
+  int xstart, xend, ystart, yend;
 
-	int ngx, ngy, ngz;
-	
-	// These used for differential operators 
-   Field2D dx, dy;      // Read in grid.cpp
-   Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
-	real zlength, dz;    // Derived from options in grid.cpp (in radians)
-	
-	bool ShiftXderivs; // Use shifted X derivatives
-	
-	Field2D zShift; // Z shift for each point (radians)
-	
-   Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-   Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-
-   Field2D J; // Jacobian
- 
+  // These used for differential operators 
+  Field2D dx, dy;      // Read in grid.cpp
+  Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
+  real zlength, dz;    // Derived from options in grid.cpp (in radians)
+  
+  bool ShiftXderivs; // Use shifted X derivatives
+  
+  Field2D zShift; // Z shift for each point (radians)
+  
+  Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
+  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+  
+  Field2D J; // Jacobian
+  
   // Contravariant metric tensor (g^{ij})
-   Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
-
+  Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
+  
   // Covariant metric tensor
   Field2D g_11, g_22, g_33, g_12, g_13, g_23;
-   
-   // Christoffel symbol of the second kind (connection coefficients)
-   Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-   Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-   Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-
-	Field2D G1, G2, G3;
+  
+  // Christoffel symbol of the second kind (connection coefficients)
+  Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
+  Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
+  Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
+  
+  Field2D G1, G2, G3;
 
   //////////////////////////////////////////////////////////
   // Timing

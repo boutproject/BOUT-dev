@@ -57,7 +57,7 @@ void bndry_inner_zero(Field2D &var)
 {
   int jx, jy;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   for(jx=0;jx<MXG;jx++)
@@ -69,7 +69,7 @@ void bndry_inner_zero(Field3D &var)
 {
   int jx, jy,jz;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   for(jx=0;jx<MXG;jx++)
@@ -82,7 +82,7 @@ void bndry_inner_flat(Field2D &var)
 {
   int jx, jy;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   for(jx=MXG-1;jx>=0;jx--)
@@ -95,7 +95,7 @@ void bndry_inner_flat(Field3D &var)
 {
   int jx, jy, jz;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   if(mesh->ShiftXderivs) // Shift into real space
@@ -116,7 +116,7 @@ void bndry_outer_zero(Field2D &var)
 {
   int jx, jy;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
@@ -128,7 +128,7 @@ void bndry_outer_zero(Field3D &var)
 {
   int jx, jy, jz;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--) {
@@ -1444,7 +1444,7 @@ void bndry_core_zero(Field2D &var)
 {
   int jx, jy;
 
-  if((MYPE_IN_CORE == 1) && (PE_XIND == 0))
+  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
@@ -1457,7 +1457,7 @@ void bndry_core_zero(Field3D &var)
   // Set boundary to zero
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 1) && (PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0)) {
     for(jx=0;jx<MXG;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
 	for(jz=0;jz<mesh->ngz;jz++) {
@@ -1479,7 +1479,7 @@ void bndry_core_flat(Field2D &var)
 {
   int jx, jy;
 
-  if((MYPE_IN_CORE == 1) && (PE_XIND == 0))
+  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[MXG][jy];
@@ -1490,7 +1490,7 @@ void bndry_core_flat(Field3D &var)
 {
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 1) && (PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0)) {
     if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
@@ -1523,7 +1523,7 @@ void bndry_core_laplace(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if((MYPE_IN_CORE != 1) || (PE_XIND != 0))
+  if((MYPE_IN_CORE != 1) || (mesh->PE_XIND != 0))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -1570,7 +1570,7 @@ void bndry_core_laplace2(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if((MYPE_IN_CORE != 1) || (PE_XIND != 0))
+  if((MYPE_IN_CORE != 1) || (mesh->PE_XIND != 0))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -1616,7 +1616,7 @@ void bndry_pf_zero(Field2D &var)
   // Set boundary to zero
   int jx, jy;
   
-  if((MYPE_IN_CORE == 0) && (PE_XIND == 0))
+  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
@@ -1628,7 +1628,7 @@ void bndry_pf_zero(Field3D &var)
   // Set boundary to zero
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 0) && (PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0)) {
     for(jx=0;jx<MXG;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
 	for(jz=0;jz<mesh->ngz;jz++) {
@@ -1651,7 +1651,7 @@ void bndry_pf_flat(Field2D &var)
   // Set boundary to zero
   int jx, jy;
   
-  if((MYPE_IN_CORE == 0) && (PE_XIND == 0))
+  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0))
     for(jx=0;jx<MXG;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[MXG][jy];
@@ -1662,7 +1662,7 @@ void bndry_pf_flat(Field3D &var)
 {
   int jx, jy, jz;
 
-  if((MYPE_IN_CORE == 0) && (PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0)) {
     if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
@@ -1694,7 +1694,7 @@ void bndry_pf_laplace(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if((MYPE_IN_CORE != 0) || (PE_XIND != 0))
+  if((MYPE_IN_CORE != 0) || (mesh->PE_XIND != 0))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -1761,7 +1761,7 @@ void bndry_sol_zero(Field2D &var)
 {
   int jx, jy;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
@@ -1773,7 +1773,7 @@ void bndry_sol_zero(Field3D &var)
 {
   int jx, jy, jz;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--) {
@@ -1796,7 +1796,7 @@ void bndry_sol_flat(Field2D &var)
 {
   int jx, jy;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   for(jx=ncx;jx>ncx-MXG;jx--)
@@ -1808,7 +1808,7 @@ void bndry_sol_flat(Field3D &var)
 {
   int jx, jy, jz;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
   
   if(mesh->ShiftXderivs)
@@ -1841,7 +1841,7 @@ void bndry_sol_laplace(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -1894,7 +1894,7 @@ void bndry_sol_divcurl(Vector3D &var)
   int jx, jy, jz, jzp, jzm;
   real tmp;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   var.to_covariant();
@@ -1969,7 +1969,7 @@ void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real 
 {
   int jx, jy, jz;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   rate = fabs(rate);
@@ -1985,7 +1985,7 @@ void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real
 {
   int jx, jy, jz;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   rate = fabs(rate);
@@ -2001,7 +2001,7 @@ void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, real value, real ra
 {
   int jx, jy, jz;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   rate = fabs(rate);
@@ -2016,7 +2016,7 @@ void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, real value, real r
 {
   int jx, jy, jz;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   rate = fabs(rate);
@@ -2046,7 +2046,7 @@ void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 {
   int jx, jy, jz;
   
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
   
   rate = fabs(rate);
@@ -2061,7 +2061,7 @@ void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 {
   int jx, jy, jz;
   
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   rate = fabs(rate);
@@ -2090,7 +2090,7 @@ void bndry_inner_sym(Field3D &var)
 {
   int jx, jy, jz, xb;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   if(mesh->ShiftXderivs)
@@ -2113,7 +2113,7 @@ void bndry_sol_sym(Field3D &var)
 {
   int jx, jy, jz, xb;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
   
   if(mesh->ShiftXderivs)
@@ -2150,7 +2150,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 {
   int jx, jy, jz, xb;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   rate = fabs(rate);
@@ -2177,7 +2177,7 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 {
   int jx, jy, jz, xb;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   rate = fabs(rate);
@@ -2515,7 +2515,7 @@ void bndry_inner_zero_laplace(Field3D &var)
   int jy, jz;
   dcomplex d, e, f;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   if(c1 == (dcomplex*) NULL) {
@@ -2573,7 +2573,7 @@ void bndry_outer_zero_laplace(Field3D &var)
   int jy, jz;
   dcomplex d, e, f;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   if(c1 == (dcomplex*) NULL) {
@@ -2615,7 +2615,7 @@ void bndry_inner_laplace_decay(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -2653,7 +2653,7 @@ void bndry_outer_laplace_decay(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1;
 
-  if(PE_XIND != (NXPE-1))
+  if(mesh->PE_XIND != (mesh->NXPE-1))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -2693,7 +2693,7 @@ void bndry_inner_const_laplace_decay(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -2743,7 +2743,7 @@ void bndry_outer_const_laplace_decay(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
 
-  if(PE_XIND != 0)
+  if(mesh->PE_XIND != 0)
     return;
 
   if(c0 == (dcomplex*) NULL) {

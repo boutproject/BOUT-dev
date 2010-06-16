@@ -11,7 +11,7 @@
  *
  * Parallel inversion done using two methods
  * - Either a simple parallelisation of the serial algorithm (same operations). Reasonably
- *   parallel as long as MYSUB > NXPE
+ *   parallel as long as MYSUB > mesh->NXPE
  * - (EXPERIMENTAL) The Parallel Diagonally Dominant (PDD) algorithm. This doesn't seem
  *   to work properly for some simulations (works ok for some benchmarks).
  *
@@ -79,23 +79,29 @@ int invert_init()
   
   // Inversion options
   options.setSection("laplace");
-  options.get("filter", filter, 0.2);
+  OPTION(filter, 0.2);
   options.get("low_mem", invert_low_mem, false);
   options.get("use_pdd", invert_use_pdd, false);
   options.get("all_terms", laplace_all_terms, false); 
   OPTION(laplace_nonuniform, false);
 
-  if(NXPE > 1) {
+  if(mesh->first_x() && mesh->last_x()) {
+    // This processor is both the first and the last in X
+    // -> No parallelisation needed
+    output.write("\tUsing serial algorithm\n");
+    
+  }else {
+    // Need to use a parallel algorithm
     if(invert_use_pdd) {
       output.write("\tUsing PDD algorithm\n");
     }else
       output.write("\tUsing parallel Thomas algorithm\n");
-  }else
-    output.write("\tUsing serial algorithm\n");
-
-  // convert into an integer
+  }
+  
+  // convert filtering into an integer number of modes
   laplace_maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
 
+  // Can be overriden by max_mode option
   options.get("max_mode", laplace_maxmode, laplace_maxmode);
   
   if(laplace_maxmode < 0) laplace_maxmode = 0;
@@ -160,10 +166,13 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
 /// Perpendicular laplacian inversion (serial)
 /*!
  * Inverts an X-Z slice (FieldPerp) using band-diagonal solvers
- * This code is only for serial i.e. NXPE == 1
+ * This code is only for serial i.e. mesh->NXPE == 1
  */
 int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *ccoef=NULL)
 {
+  int ncx = mesh->ngx-1;
+  int ncz = mesh->ngz-1;
+
   int ix, jy, iz;
   static dcomplex **bk = NULL, *bk1d;
   static dcomplex **xk, *xk1d;
@@ -171,8 +180,8 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   
   real coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, coef5=0.0, coef6=0.0, kwave, flt;
 
-  if(NXPE != 1) {
-    output.write("Error: invert_laplace only works for NXPE = 1\n");
+  if(!mesh->first_x() || !mesh->last_x()) {
+    output.write("Error: invert_laplace only works for mesh->NXPE = 1\n");
     return 1;
   }
   
@@ -191,11 +200,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
     xk1d = new dcomplex[mesh->ngx];
   }
 
-  xbndry = MXG;
+  xbndry = 2;
   if(flags & INVERT_BNDRY_ONE)
     xbndry = 1;
 
-  for(ix=0;ix<=ncx;ix++) {
+  for(ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
     ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
@@ -227,7 +236,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
     // Get range for 4th order: Need at least 2 each side
     if(xbndry > 1) {
       xstart = xbndry;
-      xend = mesh->ngx-1-xbndry;
+      xend = ncx-xbndry;
     }else {
       xstart = 2;
       xend = mesh->ngx-2;
@@ -245,7 +254,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       if (iz>laplace_maxmode) flt=0.0; else flt=1.0;
 
       // set bk1d
-      for(ix=0;ix<=ncx;ix++)
+      for(ix=0;ix<mesh->ngx;ix++)
 	bk1d[ix] = bk[ix][iz]*flt;
 
       // Fill in interior points
@@ -270,7 +279,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
 	if(laplace_nonuniform) {
 	  // non-uniform mesh correction
-	  if((ix != 0) && (ix != (mesh->ngx-1)))
+	  if((ix != 0) && (ix != ncx))
 	    coef4 += mesh->g11[ix][jy]*( (1.0/mesh->dx[ix+1][jy]) - (1.0/mesh->dx[ix-1][jy]) )/(2.0*mesh->dx[ix][jy]);
 	}
 
@@ -819,7 +828,9 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 {
   int ix, kz;
   
-  int xbndry = MXG;
+  int ncx = mesh->ngx-1;
+
+  int xbndry = 2;
   if(flags & INVERT_BNDRY_ONE)
     xbndry = 1;
   
@@ -837,7 +848,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 
     // Boundary conditions
 
-    if(PE_XIND == 0) {
+    if(mesh->first_x()) {
       // INNER BOUNDARY ON THIS PROCESSOR
       
       if(kz == 0) {
@@ -891,7 +902,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  }
 	}
       }
-    }else if(PE_XIND == (NXPE - 1)) {
+    }else if(mesh->last_x()) {
       // OUTER BOUNDARY
       
       if(kz == 0) {
@@ -972,7 +983,7 @@ typedef struct {
   int proc; // Which processor has this reached?
   int dir;  // Which direction is it going?
   
-  MPI_Request send_req, recv_req;
+  comm_handle recv_handle; // Handle for receives
 
   real *buffer;
 }SPT_data;
@@ -1030,8 +1041,8 @@ void spt_tridag_forward(dcomplex *a, dcomplex *b, dcomplex *c,
  * @param[inout] u    Result to be solved (Au = r)
  * @param[in]    n    Size of the problem
  * @param[in]    gam  Intermediate values produced by the forward part
- * @param[inout] gp   gam from the processor PE_XIND + 1, and returned to PE_XIND - 1
- * @param[inout] up   u from processor PE_XIND + 1, and returned to PE_XIND - 1
+ * @param[inout] gp   gam from the processor mesh->PE_XIND + 1, and returned to mesh->PE_XIND - 1
+ * @param[inout] up   u from processor mesh->PE_XIND + 1, and returned to mesh->PE_XIND - 1
  */
 void spt_tridag_back(dcomplex *u, int n,
 		     dcomplex *gam, dcomplex &gp, dcomplex &up)
@@ -1053,12 +1064,12 @@ const int SPT_DATA = 1123; ///< 'magic' number for SPT MPI messages
 /*!
  * This is a reference code which performs the same operations as the serial code.
  * To invert a single XZ slice (FieldPerp object), data must pass from the innermost
- * processor (PE_XIND = 0) to the outermost (PE_XIND = NXPE-1) and back again.
+ * processor (mesh->PE_XIND = 0) to the outermost (mesh->PE_XIND = mesh->NXPE-1) and back again.
  *
  * Some parallelism is achieved by running several inversions simultaneously, so while
  * processor #1 is inverting Y=0, processor #0 is starting on Y=1. This works ok as long
- * as the number of slices to be inverted is greater than the number of X processors (MYSUB > NXPE).
- * If MYSUB < NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
+ * as the number of slices to be inverted is greater than the number of X processors (MYSUB > mesh->NXPE).
+ * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
  *
  * @param[in]    b      RHS values (Ax = b)
  * @param[in]    flags  Inversion settings (see boundary.h for values)
@@ -1068,12 +1079,10 @@ const int SPT_DATA = 1123; ///< 'magic' number for SPT MPI messages
  */
 int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &data, const Field2D *ccoef = NULL)
 {
-  if(NXPE == 1) {
-    output.write("Error: SPT method only works for NXPE > 1\n");
+  if(mesh->NXPE == 1) {
+    output.write("Error: SPT method only works for mesh->NXPE > 1\n");
     return 1;
   }
-
-  data.send_req = data.recv_req = MPI_REQUEST_NULL;
 
   data.jy = b.getIndex();
 
@@ -1114,7 +1123,7 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
   
-  if(PE_XIND == 0) {
+  if(mesh->first_x()) {
     dcomplex bet, u0;
     for(kz = 0; kz <= laplace_maxmode; kz++) {
       // Start tridiagonal solve
@@ -1130,37 +1139,15 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
     }
     
     // Send data
-
-    if(invert_async_send) {
-      MPI_Isend(data.buffer, 
-		4*(laplace_maxmode+1),
-		PVEC_REAL_MPI_TYPE,
-		PROC_NUM(1, PE_YIND),
-		SPT_DATA,
-		MPI_COMM_WORLD,
-		&data.send_req);
-    }else
-      MPI_Send(data.buffer, 
-	       4*(laplace_maxmode+1),
-	       PVEC_REAL_MPI_TYPE,
-	       PROC_NUM(1, PE_YIND),
-	       SPT_DATA,
-	       MPI_COMM_WORLD);
+    mesh->send_xout(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
     
-  }else if(PE_XIND == 1) {
+  }else if(mesh->PE_XIND == 1) {
     // Post a receive
-    
-    MPI_Irecv(data.buffer,
-	      4*(laplace_maxmode+1),
-	      PVEC_REAL_MPI_TYPE,
-	      PROC_NUM(0, PE_YIND),
-	      SPT_DATA,
-	      MPI_COMM_WORLD,
-	      &data.recv_req);
+    data.recv_handle = mesh->irecv_xin(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
   }
   
   data.proc++; // Now moved onto the next processor
-  if(NXPE == 2)	
+  if(mesh->NXPE == 2)	
     data.dir = -1; // Special case. Otherwise reversal handled in spt_continue
 
   return 0;
@@ -1174,18 +1161,16 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
 */
 int invert_spt_continue(SPT_data &data)
 {
-  MPI_Status status;
-
   if(data.proc < 0) // Already finished
     return 1;
   
-  if(PE_XIND == data.proc) {
+  if(mesh->PE_XIND == data.proc) {
     /// This processor's turn to do inversion
 
     // Wait for data to arrive
-    MPI_Wait(&data.recv_req, &status);
+    mesh->wait(data.recv_handle);
 
-    if(PE_XIND == (NXPE - 1)) {
+    if(mesh->last_x()) {
       // Last processor, turn-around
       
       dcomplex bet, u0;
@@ -1227,7 +1212,7 @@ int invert_spt_continue(SPT_data &data)
 	data.buffer[4*kz + 3] = u0.Imag();
       }
       
-    }else if(PE_XIND == 0) {
+    }else if(mesh->first_x()) {
       // Back to the start
       
       dcomplex gp, up;
@@ -1255,50 +1240,27 @@ int invert_spt_continue(SPT_data &data)
       }
     }
 
-    if(PE_XIND != 0) { // If not finished yet
-       /// Send data
-
-      if(invert_async_send) {
-	if(data.send_req != MPI_REQUEST_NULL) // Check the last send finished
-	  MPI_Wait(&data.send_req, &status);
-	
-	MPI_Isend(data.buffer, 
-		  4*(laplace_maxmode+1),
-		  PVEC_REAL_MPI_TYPE,
-		  PROC_NUM(data.proc + data.dir, PE_YIND),
-		  SPT_DATA,
-		  MPI_COMM_WORLD,
-		  &data.send_req);
+    if(mesh->PE_XIND != 0) { // If not finished yet
+      /// Send data
+      
+      if(data.dir > 0) {
+	mesh->send_xout(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
       }else
-	MPI_Send(data.buffer, 
-		 4*(laplace_maxmode+1),
-		 PVEC_REAL_MPI_TYPE,
-		 PROC_NUM(data.proc + data.dir, PE_YIND),
-		 SPT_DATA,
-		 MPI_COMM_WORLD);
+	mesh->send_xin(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
     }
 
-  }else if(PE_XIND == data.proc + data.dir) {
+  }else if(mesh->PE_XIND == data.proc + data.dir) {
     // This processor is next, post receive
     
-    if(invert_async_send && (data.send_req != MPI_REQUEST_NULL)) { 
-      // Check the last send finished
-      MPI_Wait(&data.send_req, &status);
-      data.send_req = MPI_REQUEST_NULL;
-    }
-    
-    MPI_Irecv(data.buffer,
-	      4*(laplace_maxmode+1),
-	      PVEC_REAL_MPI_TYPE,
-	      PROC_NUM(data.proc, PE_YIND),
-	      SPT_DATA,
-	      MPI_COMM_WORLD,
-	      &data.recv_req);
+    if(data.dir > 0) {
+      data.recv_handle = mesh->irecv_xin(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+    }else
+      data.recv_handle = mesh->irecv_xout(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
   }
   
   data.proc += data.dir;
   
-  if(data.proc == NXPE-1)
+  if(data.proc == mesh->NXPE-1)
     data.dir = -1; // Reverses direction at the end
 
   return 0;
@@ -1315,13 +1277,16 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
   int ix, kz;
   MPI_Status status;
   
+  int ncx = mesh->ngx-1;
+  int ncz = mesh->ngz-1;
+
   x.Allocate();
   x.setIndex(data.jy);
 
   // Make sure calculation has finished
   while(invert_spt_continue(data) == 0) {}
 
-   // Have result in Fourier space. Convert back to real space
+  // Have result in Fourier space. Convert back to real space
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
@@ -1330,15 +1295,7 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
     for(kz=0;kz<=ncz/2;kz++)
       xk1d[kz] = 0.0;
   }
-
-  // Make sure all comms finished (necessary to free memory)
-  if(data.send_req != MPI_REQUEST_NULL) {
-    MPI_Wait(&data.send_req, &status);
-    data.send_req = MPI_REQUEST_NULL;
-  }
-
-  //output.write("xk[100][%d][1] = %e,%e\n",data.jy,data.xk[1][100].Real(), data.xk[1][100].Imag());
-
+  
   for(ix=0; ix<=ncx; ix++){
     
     for(kz = 0; kz<= laplace_maxmode; kz++) {
@@ -1353,14 +1310,14 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
     x[ix][ncz] = x[ix][0]; // enforce periodicity
   }
 
-  if(PE_XIND != 0) {
+  if(mesh->PE_XIND != 0) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(ix=0; ix<MXG; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
 	x[ix][kz] = 0.0;
     }
   }
-  if(PE_XIND != (NXPE-1)) {
+  if(mesh->PE_XIND != (mesh->NXPE-1)) {
     // Same for right boundary
     for(ix=mesh->ngx-MXG; ix<mesh->ngx; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
@@ -1396,7 +1353,7 @@ typedef struct {
   real *snd; // send buffer
   real *rcv; // receive buffer
   
-  MPI_Request snd_req, rcv_req; // Send and receive requests
+  comm_handle recv_handle;
 
   dcomplex *y2i;
 }PDD_data;
@@ -1418,9 +1375,12 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
 {
   int ix, kz;
   
+  int ncx = mesh->ngx-1;
+  int ncz = mesh->ngz-1;
+
   data.jy = b.getIndex();
 
-  if(NXPE == 1) {
+  if(mesh->first_x() && mesh->last_x()) {
     output.write("Error: PDD method only works for NXPE > 1\n");
     return 1;
   }
@@ -1482,7 +1442,7 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
 
     dcomplex v0, x0; // Values to be sent to processor i-1
 
-    if(PE_XIND == 0) {
+    if(mesh->first_x()) {
       // Domain includes inner boundary
       tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
 	     data.bk[kz], data.xk[kz], MXG+MXSUB);
@@ -1493,7 +1453,7 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
       tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
 	     e, data.w[kz], MXG+MXSUB);
 
-    }else if(PE_XIND == (NXPE - 1)) {
+    }else if(mesh->last_x()) {
       // Domain includes outer boundary
       tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
 	     data.bk[kz]+MXG, data.xk[kz]+MXG, MXSUB+MXG);
@@ -1533,36 +1493,16 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
   
   // Stage 3: Communicate x0, v0 from node i to i-1
   
-  if(PE_XIND != (NXPE-1)) {
+  if(!mesh->last_x()) {
     // All except the last processor expect to receive data
     // Post async receive
-    MPI_Irecv(data.rcv,
-	      4*(laplace_maxmode+1),
-	      PVEC_REAL_MPI_TYPE,
-	      PROC_NUM(PE_XIND+1, PE_YIND), // from processor + 1
-	      PDD_COMM_XV,
-	      MPI_COMM_WORLD,
-	      &data.rcv_req);
+    data.recv_handle = mesh->irecv_xout(data.rcv, 4*(laplace_maxmode+1), PDD_COMM_XV);
   }
 
-  if(PE_XIND != 0) {
+  if(!mesh->first_x()) {
     // Send the data
     
-    if(invert_async_send) {
-      MPI_Isend(data.snd, 
-		4*(laplace_maxmode+1),
-		PVEC_REAL_MPI_TYPE,
-		PROC_NUM(PE_XIND-1, PE_YIND),
-		PDD_COMM_XV,
-		MPI_COMM_WORLD,
-		&data.snd_req);
-    }else
-      MPI_Send(data.snd, 
-	       4*(laplace_maxmode+1),
-	       PVEC_REAL_MPI_TYPE,
-	       PROC_NUM(PE_XIND-1, PE_YIND),
-	       PDD_COMM_XV,
-	       MPI_COMM_WORLD);
+    mesh->send_xin(data.snd, 4*(laplace_maxmode+1), PDD_COMM_XV);
   }
 
   return 0;
@@ -1573,10 +1513,8 @@ int invert_pdd_continue(PDD_data &data)
 {
   // Wait for x0 and v0 to arrive from processor i+1
   
-  MPI_Status status;
-  
-  if(PE_XIND != (NXPE-1)) {
-    MPI_Wait(&data.rcv_req, &status);
+  if(!mesh->last_x()) {
+    mesh->wait(data.recv_handle);
 
     /*! Now solving on all except the last processor
      * 
@@ -1598,44 +1536,20 @@ int invert_pdd_continue(PDD_data &data)
     }
   }
   
-  if(PE_XIND != 0) {
+  if(!mesh->first_x()) {
     // All except pe=0 receive values from i-1. Posting async receive
-    MPI_Irecv(data.rcv,
-	      2*(laplace_maxmode+1),
-	      PVEC_REAL_MPI_TYPE,
-	      PROC_NUM(PE_XIND-1, PE_YIND), // from processor - 1
-	      PDD_COMM_Y,
-	      MPI_COMM_WORLD,
-	      &data.rcv_req);
+    data.recv_handle = mesh->irecv_xin(data.rcv, 2*(laplace_maxmode+1), PDD_COMM_Y);
   }
-
-
-  if(PE_XIND != (NXPE-1)) {
+  
+  if(mesh->PE_XIND != (mesh->NXPE-1)) {
     // Send value to the (i+1)th processor
-
-    if(invert_async_send && (PE_XIND != 0)) // Wait for the previous send to finish before changing the send buffer
-      MPI_Wait(&data.snd_req, &status);
     
     for(int kz = 0; kz <= laplace_maxmode; kz++) {
       data.snd[2*kz]   = data.y2i[kz].Real();
       data.snd[2*kz+1] = data.y2i[kz].Imag();
     }
     
-    if(invert_async_send) {
-      MPI_Isend(data.snd, 
-		2*(laplace_maxmode+1),
-		PVEC_REAL_MPI_TYPE,
-		PROC_NUM(PE_XIND+1, PE_YIND),
-		PDD_COMM_Y,
-		MPI_COMM_WORLD,
-		&data.snd_req);
-    }else
-      MPI_Send(data.snd, 
-	       2*(laplace_maxmode+1),
-	       PVEC_REAL_MPI_TYPE,
-	       PROC_NUM(PE_XIND+1, PE_YIND),
-	       PDD_COMM_Y,
-	       MPI_COMM_WORLD);
+    mesh->send_xout(data.snd, 2*(laplace_maxmode+1), PDD_COMM_Y);
   }
   
   return 0;
@@ -1645,20 +1559,19 @@ int invert_pdd_continue(PDD_data &data)
 int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
 {
   int ix, kz;
-  MPI_Status status;
 
   x.Allocate();
   x.setIndex(data.jy);
   
-  if(PE_XIND != (NXPE-1)) {
+  if(!mesh->last_x()) {
     for(kz = 0; kz <= laplace_maxmode; kz++) {
       for(ix=0; ix < mesh->ngx; ix++)
 	data.xk[kz][ix] -= data.w[kz][ix] * data.y2i[kz];
     }
   }
 
-  if(PE_XIND != 0) {
-    MPI_Wait(&data.rcv_req, &status);
+  if(!mesh->first_x()) {
+    mesh->wait(data.recv_handle);
   
     for(kz = 0; kz <= laplace_maxmode; kz++) {
       dcomplex y2m = dcomplex(data.rcv[2*kz], data.rcv[2*kz+1]);
@@ -1692,10 +1605,6 @@ int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
     x[ix][ncz] = x[ix][0]; // enforce periodicity
   }
 
-  // Make sure all communication has completed
-  if(invert_async_send)
-    MPI_Wait(&data.snd_req, &status);
-
   return 0;
 }
 
@@ -1706,7 +1615,7 @@ int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
 /// Invert FieldPerp 
 int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c)
 {
-  if(NXPE == 1) {
+  if(mesh->NXPE == 1) {
     // Just use the serial code
     return invert_laplace_ser(b, x, flags, a, c);
   }else {
@@ -1741,7 +1650,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 
 /// Extracts perpendicular slices from 3D fields and inverts separately
 /*!
- * In parallel (NXPE > 1) this tries to overlap computation and communication.
+ * In parallel (mesh->NXPE > 1) this tries to overlap computation and communication.
  * This is done at the expense of more memory useage. Setting low_mem
  * in the config file uses less memory, and less communication overlap
  */
@@ -1764,7 +1673,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
     ye = mesh->ngy-1;
   }
   
-  if((NXPE == 1) || invert_low_mem) {
+  if((mesh->NXPE == 1) || invert_low_mem) {
     
     for(jy=ys; jy <= ye; jy++) {
       if((flags & INVERT_IN_SET) || (flags & INVERT_OUT_SET))

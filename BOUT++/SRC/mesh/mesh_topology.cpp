@@ -59,30 +59,30 @@
  */
 int PROC_NUM(int xind, int yind)
 {
-  if((xind >= NXPE) || (xind < 0))
+  if((xind >= mesh->NXPE) || (xind < 0))
     return -1;
   if((yind >= NYPE) || (yind < 0))
     return -1;
   
-  return yind * NXPE + xind;
+  return yind * mesh->NXPE + xind;
 }
 
 /// Returns true if the given grid-point coordinates are in this processor
 bool IS_MYPROC(int xind, int yind)
 {
-  return ((xind / MXSUB) == PE_XIND) && ((yind / MYSUB) == PE_YIND);
+  return ((xind / MXSUB) == mesh->PE_XIND) && ((yind / MYSUB) == PE_YIND);
 }
 
 /// Returns the global X index given a local index
 int XGLOBAL(int xloc)
 {
-  return xloc + PE_XIND * MXSUB;
+  return xloc + mesh->PE_XIND * MXSUB;
 }
 
 /// Returns a local X index given a global index
 int XLOCAL(int xglo)
 {
-  return xglo - PE_XIND * MXSUB;
+  return xglo - mesh->PE_XIND * MXSUB;
 }
 
 /// Returns the global Y index given a local index

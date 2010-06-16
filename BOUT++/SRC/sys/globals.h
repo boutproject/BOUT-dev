@@ -63,9 +63,7 @@ GLOBAL int xstart, xend, jstart, jend; // local index range
 GLOBAL int NPES; ///< Number of processors (bout++.cpp)
 GLOBAL int MYPE; ///< Rank of this processor (bout++.cpp)
 GLOBAL int PE_YIND; ///< Y index of this processor (bout++.cpp)
-GLOBAL int PE_XIND; ///< X index (bout++.cpp)
 
-GLOBAL int NXPE; ///< Number of processors in X direction (bout++.cpp)
 GLOBAL int NYPE; ///< Number in Y direction (bout++.cpp)
 
 // Communicators

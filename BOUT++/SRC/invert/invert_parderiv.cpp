@@ -82,13 +82,13 @@ namespace invpar {
     
     int ype0 = YPROC(jyseps1_1+1); // The processor at beginning of twist shift
     
-    if(NXPE > 1) {
+    if(mesh->NXPE > 1) {
       /// Create a group and communicator for this X location
       MPI_Group group_world;
       
       MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Get the entire group
       
-      bout_error("SORRY: invert_parderivs can't cope with NXPE > 1 yet\n");
+      bout_error("SORRY: invert_parderivs can't cope with mesh->NXPE > 1 yet\n");
     }else {
       // All processors. May need to re-number 
       

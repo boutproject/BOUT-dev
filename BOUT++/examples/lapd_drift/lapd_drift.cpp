@@ -448,7 +448,7 @@ int physics_run(real t)
 
     }else if(niprofile) {
       // Allowing Ni profile to change
-      if(PE_XIND == 0) {
+      if(mesh->PE_XIND == 0) {
 	// Inner boundary
 	for(int i=0;i<3;i++) {
 	  // Relax upwards (only add density)
@@ -459,7 +459,7 @@ int physics_run(real t)
 	      }
 	    }
       }
-      if(PE_XIND == NXPE-1) {
+      if(mesh->PE_XIND == mesh->NXPE-1) {
 	// Outer boundary
 	for(int i=0;i<3;i++) {
 	  // Relax downwards (only remove density)
