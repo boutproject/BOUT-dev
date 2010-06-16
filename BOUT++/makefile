@@ -20,9 +20,12 @@ config:
 	./configure
 
 clean::
-	@echo Cleaning...
-	@for pp in $(srcdirs); do $(MAKE) --no-print-directory -C $$pp clean; done
+	@for pp in $(srcdirs); do echo Cleaning $$pp; $(MAKE) --no-print-directory -C $$pp clean; done
+	@echo include cleaned
 	@$(RM) include/*
+	@echo lib cleaned
+	@$(RM) lib/*
+	@echo Cleaning examples
 	@$(MAKE) --no-print-directory -C examples clean;
 
 PVODE/lib:

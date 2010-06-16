@@ -131,7 +131,7 @@ endif
 
 clean::
 	@-$(RM) $(OBJ) $(TARGET)
-	@for pp in $(DIRS); do $(MAKE) -C $$pp clean; done
+	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) -C $$pp clean; done
 
 # This automatically generates dependency rules
 

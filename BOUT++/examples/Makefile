@@ -1,15 +1,8 @@
 # Makefile for example codes
 # Works in the same way as the root Makefile
 
-testdirs = Advect1D RayleighTaylor DriftInstability
+BOUT_TOP	= ..
 
-.PHONY: all
-all: $(testdirs)
+DIRS			= Advect1D RayleighTaylor DriftInstability
 
-.PHONY: $(testdirs)
-$(testdirs):
-	$(MAKE) -C $@;
-
-.PHONY: clean
-clean:
-	@for pp in $(testdirs); do $(MAKE) -C $$pp clean; done
+include $(BOUT_TOP)/make.config
