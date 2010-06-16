@@ -2,5 +2,6 @@
 *.log
 *.status
 *.config
+*.d
 include/
 lib/

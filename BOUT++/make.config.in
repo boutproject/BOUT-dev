@@ -14,11 +14,13 @@
 # -DPDBF  PDB format (need to include pdb_format.cpp)
 # -DNCDF  NetCDF format (nc_format.cpp)
 
+# Created this variable so that a user won't overwrite the CFLAGS variable
+# on the command line, just add to this one
 BOUT_FLAGS		= $(CFLAGS) @CFLAGS@
 
 # Specify the MPI C and C++ compilers in CXX and CC respectively
 
-CC						= @CFLAG@ @MPICC@
+CC						= @MPICC@
 CXX						= @MPICXX@
 
 AR						= ar
@@ -30,8 +32,6 @@ MKDIR					= mkdir -p
 ####################################
 
 LD						= $(CXX)
-
-# These are used for compiling physics modules using BOUT++ library
 
 ####################################
 # Extra (optional) source files, includes and libs
@@ -54,13 +54,17 @@ FILEIO_SOURCE	= @FILEIO_SOURCE@
 # These are used for compiling physics modules using BOUT++ library
 ####################################
 
+# Files that are needed by configure and should be dependencies for 'all'
 CONFIG_FILES	= $(BOUT_TOP)/make.config $(BOUT_TOP)/makefile
 
 OBJ						= $(SOURCEC:%.cpp=%.o)
 LIB						= $(BOUT_TOP)/lib/libbout++.a
 
-BOUT_INCLUDE	= -I. -I$(BOUT_TOP)/include $(INCLUDE) $(EXTRA_INCS)
+# This doesn't include '-I$(BOUT_TOP)/include' because of the dependency checking
+BOUT_INCLUDE	= -I. $(INCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
+
+DEPS					= $(SOURCEC:.cpp=.d)
 
 # Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
 # This will set a default if no TARGET is provided
@@ -123,8 +127,26 @@ endif
 
 %.o: $(CONFIG_FILES) %.cpp
 	@echo "  Compiling " $(@F:.o=.cpp)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -c $(@F:.o=.cpp) -o $@
+	@$(CXX) -I$(BOUT_TOP)/include $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
 
 clean::
 	@-$(RM) $(OBJ) $(TARGET)
 	@for pp in $(DIRS); do $(MAKE) -C $$pp clean; done
+
+# This automatically generates dependency rules
+
+%.d : %.cpp
+	$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -MF"$@" -MG -MM -MT"$@" -MT"$(<:.cpp=.o)" "$<"
+	
+depclean:	
+	@-$(RM) $(DEPS)
+	@for pp in $(DIRS); do $(MAKE) -C $$pp depclean; done
+
+# Notes about the different flags:
+# -MF  write the generated dependency rule to a file
+# -MG  assume missing headers will be generated and don't stop with an error
+# -MM  generate dependency rule for prerequisite, skipping system headers
+# -MP  add phony target for each header to prevent errors when header is missing
+# -MT  add a target to the generated dependency
+
+-include $(DEPS)

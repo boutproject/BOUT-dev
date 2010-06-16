@@ -5,6 +5,7 @@ DIRS			= field fileio invert mesh physics precon solver sys
 
 SOURCEC		= bout++.cpp
 SOURCEH		= bout.h
+CFLAGS		= -DMD5SUM=$(CHECKSUM)
 TARGET		= lib
 INCLUDE		= $(foreach DIR,$(DIRS),-I$(DIR))
 
@@ -33,7 +34,7 @@ initial_message:
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 
 	@echo "CXX      = " $(CXX)
-	@echo "CFLAGS   = " $(CFLAGS)
+	@echo "CFLAGS   = " $(BOUT_FLAGS)
 	@echo "CHECKSUM = " $(CHECKSUM)
 	@echo "INCLUDE  = " $(BOUT_INCLUDE)
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
