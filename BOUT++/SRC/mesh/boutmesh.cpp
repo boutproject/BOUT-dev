@@ -274,6 +274,164 @@ int BoutMesh::load()
   /// Call geometry routines to set the rest of the coefficients
   geometry(1);    // Calculate metrics, christoffel symbols
   
+  //////////////////////////////////////////////////////
+  /// Communicators for Y gather/scatter
+  
+  //MPI_Comm comm_inner, comm_middle, comm_outer;
+  
+  MPI_Group group_world;
+  MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Get the entire group
+  
+  MPI_Group group;
+  MPI_Group group_tmp1, group_tmp2;
+  
+  int proc[3]; // Processor range
+  proc[2] = NXPE; // Stride in processor rank
+  
+  MPI_Comm comm_tmp;
+  
+  // Outer SOL regions
+  if(jyseps1_2 == jyseps2_1) {
+    // Single-null. All processors with same PE_XIND
+    
+    for(int i=0;i<NXPE;i++) {
+      proc[0] = PROC_NUM(PE_XIND, 0);
+      proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+      MPI_Group_range_incl(group_world, 1, &proc, &group);
+      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      if(i == PE_XIND) {
+	// Should be part of this communicator
+	if(comm_tmp == MPI_COMM_NULL) {
+	  // error
+	  bout_error("Single null outer SOL not correct\n");
+	}
+	comm_outer = comm_tmp;
+      }else if(comm_tmp != MPI_COMM_NULL) {
+	// Not part of this communicator so should be NULL
+	bout_error("Single null outer SOL not correct\n");
+      }
+      MPI_Group_free(&group);
+    }
+  }else {
+    // Double null
+    
+    for(int i=0;i<NXPE;i++) {
+      // Inner SOL
+      proc[0] = PROC_NUM(PE_XIND, 0);
+      proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+      MPI_Group_range_incl(group_world, 1, &proc, &group);
+      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      if(comm_tmp != MPI_COMM_NULL)
+	comm_outer = comm_tmp;
+      MPI_Group_free(&group);
+
+      // Outer SOL
+      proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
+      proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+      MPI_Group_range_incl(group_world, 1, &proc, &group);
+      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      if(comm_tmp != MPI_COMM_NULL)
+	comm_outer = comm_tmp;
+      MPI_Group_free(&group);
+    }
+  }
+  
+  for(int i=0;i<NXPE;i++) {
+    // Lower PF region
+    
+    proc[0] = PROC_NUM(PE_XIND, 0);
+    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_1));
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_2+1));
+    proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    MPI_Group_union(group_tmp1, group_tmp2, &group);
+    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+    if(comm_tmp != MPI_COMM_NULL) {
+      comm_inner = comm_tmp;
+      if(ixseps_lower == ixseps_outer) {
+	// Between the separatrices is still in the PF region
+	comm_middle = comm_inner;
+      }else
+	comm_middle = comm_outer;
+    }
+    MPI_Group_free(&group);
+    
+    // Upper PF region
+    // Note need to order processors so that a continuous surface is formed
+    
+    proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
+    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_1+1));
+    proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    MPI_Group_union(group_tmp1, group_tmp2, &group);
+    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+    if(comm_tmp != MPI_COMM_NULL) {
+      comm_inner = comm_tmp;
+      if(ixseps_upper == ixseps_outer) {
+	comm_middle = comm_inner;
+      }else
+	comm_middle = comm_outer;
+    }
+    MPI_Group_free(&group);
+    
+    // Core region
+    
+    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_1+1));
+    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_1));
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_2+1));
+    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    MPI_Group_union(group_tmp1, group_tmp2, &group);
+    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+    if(comm_tmp != MPI_COMM_NULL) {
+      comm_inner = comm_tmp;
+      
+      if(ixseps_inner == ixseps_outer)
+	comm_middle = comm_inner;
+    }
+  }
+    
+  if(ixseps_inner != ixseps_outer) {
+    // Need to handle unbalanced double-null case
+    
+    if(ixseps_upper > ixseps_lower) {
+      // middle is connected to the bottom
+	
+      for(int i=0;i<NXPE;i++) {
+	proc[0] = PROC_NUM(PE_XIND, 0);
+	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_1));
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_2+1));
+	proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+	MPI_Group_union(group_tmp1, group_tmp2, &group);
+	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+	if(comm_tmp != MPI_COMM_NULL)
+	  comm_middle = comm_tmp;
+      }
+    }else {
+      // middle is connected to the top
+	
+      for(int i=0;i<NXPE;i++) {
+	proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
+	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_1+1));
+	proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+	MPI_Group_union(group_tmp1, group_tmp2, &group);
+	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+	if(comm_tmp != MPI_COMM_NULL)
+	  comm_middle = comm_tmp;
+      }
+    }
+  }
+  // Now have communicators for all regions.
+  
   output.write("\tdone\n");
   
 #ifdef CHECK

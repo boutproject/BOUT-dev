@@ -155,7 +155,6 @@ class BoutMesh : public Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
 };
-
 /*
 class BoutSurfaceIter : public SurfaceIter {
  public:
@@ -176,5 +175,4 @@ class BoutSurfaceIter : public SurfaceIter {
   BoutMesh* m;
 };
 */
-
 #endif // __BOUTMESH_H__
