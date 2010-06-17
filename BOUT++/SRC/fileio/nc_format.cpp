@@ -535,6 +535,10 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz)
     // Variable not in file, so add it.
     
     var = dataFile->add_var(name, ncInt, nd, dimList);
+    if(var == NULL) {
+      output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
+      return false;
+    }
     if(!var->is_valid()) {
       output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
       return false;

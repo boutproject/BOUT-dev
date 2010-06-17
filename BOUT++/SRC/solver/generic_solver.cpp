@@ -386,7 +386,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
   restart.add(iteration, "hist_hi", 0);
 
   restart.add(NPES, "NPES", 0);
-  restart.add(mesh->NXPE, "mesh->NXPE", 0);
+  restart.add(mesh->NXPE, "NXPE", 0);
 
   /// Add variables to the restart and dump files.
   /// NOTE: Since vector components are already in the field arrays,

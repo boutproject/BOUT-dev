@@ -21,9 +21,6 @@ bool include_viscosity;
 
 Vector2D g; // Acceleration
 
-// Parallel communication object
-Communicator comms;
-
 int physics_init()
 {
   // 2D initial profiles
@@ -67,11 +64,6 @@ int physics_init()
     P += P0;
     V += V0;
   }
-
-  // set communications
-  comms.add(N);
-  comms.add(P);
-  comms.add(V);
   
   return 0;
 }
@@ -79,7 +71,7 @@ int physics_init()
 int physics_run(real t)
 {
   // Run communications
-  comms.run();
+  mesh->communicate(N,P,V);
 
   // Density
   
