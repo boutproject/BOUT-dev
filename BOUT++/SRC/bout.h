@@ -54,8 +54,6 @@
 
 #include "datafile.h"
 
-#include "geometry.h"
-
 #include "where.h"
 
 const real BOUT_VERSION = 0.80;  ///< Version number

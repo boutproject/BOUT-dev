@@ -173,7 +173,15 @@ class Mesh {
   std::list<GridDataSource*> source_list; ///< List of sources
   
   GridDataSource *find_source(const char *name);
-  
+
+  /// Calculate differential geometry quantities from the metric tensor
+  int geometry();
+  int calc_covariant(); ///< Inverts contravatiant metric to get covariant
+  int calc_contravariant(); ///< Invert covariant metric to get contravariant
+  int jacobian(); // Calculate J and Bxy
+
+ private:
+  int gaussj(real **a, int n);
 };
 
 #endif // __MESH_H__

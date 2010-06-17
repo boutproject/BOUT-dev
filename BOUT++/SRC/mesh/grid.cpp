@@ -27,10 +27,8 @@
 #include "mpi.h"
 
 #include "globals.h"
-#include "grid.h"
 #include "mesh_topology.h"
 #include "utils.h"
-#include "geometry.h"
 
 #include "dataformat.h" // Abstract data class
 

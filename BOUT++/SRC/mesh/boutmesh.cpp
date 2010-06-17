@@ -36,7 +36,6 @@
 #include "utils.h"
 #include "fft.h"
 
-#include "geometry.h"
 #include "mesh_topology.h"
 
 #include "dcomplex.h"
@@ -237,6 +236,19 @@ int BoutMesh::load()
   get(g13, "g13", 0.0);
   get(g23, "g23", 0.0);
   
+  // Check input metrics
+  if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
+    output.write("\tERROR: Diagonal metrics are not finite!\n");
+    exit(1);
+  }
+  if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
+    output.write("\tERROR: Diagonal metrics are negative!\n");
+  }
+  if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
+    output.write("\tERROR: Off-diagonal metrics are not finite!\n");
+    exit(1);
+  }
+
   /// Set shift for radial derivatives
   if(get(zShift, "zShift")) {
     output.write("\tWARNING: Z shift for radial derivatives not found\n");
@@ -283,9 +295,47 @@ int BoutMesh::load()
       ShiftAngle[i] = 0.0;
     */
   }
+
+  /// Calculate contravariant metric components
+  if(calc_covariant())
+    return 1;
+
+  /// Calculate Jacobian and Bxy
+  if(jacobian())
+    return 1;
   
-  /// Call geometry routines to set the rest of the coefficients
-  geometry(1);    // Calculate metrics, christoffel symbols
+  // Attempt to read J from the grid file
+  Field2D Jcalc = mesh->J;
+  if(mesh->get(mesh->J, "J")) {
+    output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
+    mesh->J = Jcalc;
+  }else {
+    // Compare calculated and loaded values  
+    output.write("\tMaximum difference in J is %e\n", max(abs(mesh->J - Jcalc)));
+    
+    // Re-evaluate Bxy using new J
+    Bxy = sqrt(mesh->g_22)/mesh->J;
+  }
+
+  // Attempt to read Bxy from the grid file
+  Field2D Bcalc = Bxy;
+  if(mesh->get(Bxy, "Bxy")) {
+    output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
+    Bxy = Bcalc;
+  }else {
+    output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
+    // Check Bxy
+    if(!finite(Bxy)) {
+      output.write("\tERROR: Bxy not finite everywhere!\n");
+      exit(1);
+    }
+  }
+  
+  /// Calculate Christoffel symbols
+  if(geometry()) {
+    output << "  Differential geometry failed\n";
+    return 1;
+  }
   
   //////////////////////////////////////////////////////
   /// Communicators for Y gather/scatter
@@ -332,7 +382,6 @@ int BoutMesh::load()
       // Inner SOL
       proc[0] = PROC_NUM(PE_XIND, 0);
       proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
-      MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
 	comm_outer = comm_tmp;
@@ -348,55 +397,75 @@ int BoutMesh::load()
       MPI_Group_free(&group);
     }
   }
-  
+
   for(int i=0;i<NXPE;i++) {
     // Lower PF region
-    
-    proc[0] = PROC_NUM(PE_XIND, 0);
-    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_1));
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_2+1));
-    proc[1] = PROC_NUM(PE_XIND, NYPE-1);
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-    MPI_Group_union(group_tmp1, group_tmp2, &group);
-    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
-    if(comm_tmp != MPI_COMM_NULL) {
-      comm_inner = comm_tmp;
-      if(ixseps_lower == ixseps_outer) {
-	// Between the separatrices is still in the PF region
-	comm_middle = comm_inner;
+
+    if((jyseps1_1 >= 0) || (jyseps2_2 < ny)) {
+      // A lower PF region exists
+
+      if(jyseps1_1 >= 0) {
+	proc[0] = PROC_NUM(PE_XIND, 0);
+	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_1));
+	//output << "PF1 "<< proc[0] << ", " << proc[1] << endl;
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       }else
-	comm_middle = comm_outer;
-    }
-    MPI_Group_free(&group);
-    
-    // Upper PF region
-    // Note need to order processors so that a continuous surface is formed
-    
-    proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
-    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_1+1));
-    proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
-    MPI_Group_union(group_tmp1, group_tmp2, &group);
-    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
-    if(comm_tmp != MPI_COMM_NULL) {
-      comm_inner = comm_tmp;
-      if(ixseps_upper == ixseps_outer) {
-	comm_middle = comm_inner;
+	group_tmp1 = MPI_GROUP_EMPTY;
+      
+      if(jyseps2_2+1 < ny) {
+	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_2+1));
+	proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+	//output << "PF2 "<< proc[0] << ", " << proc[1] << endl;
+	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       }else
-	comm_middle = comm_outer;
+	group_tmp2 = MPI_GROUP_EMPTY;
+      
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      if(comm_tmp != MPI_COMM_NULL) {
+	comm_inner = comm_tmp;
+	if(ixseps_lower == ixseps_outer) {
+	  // Between the separatrices is still in the PF region
+	  comm_middle = comm_inner;
+	}else
+	  comm_middle = comm_outer;
+      }
+      MPI_Group_free(&group);
     }
-    MPI_Group_free(&group);
+
+    if(jyseps2_1 != jyseps1_2) {
+      // Upper PF region
+      // Note need to order processors so that a continuous surface is formed
+      
+      proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
+      proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_2));
+      //output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+      proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_1+1));
+      proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+      //output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+      MPI_Group_union(group_tmp1, group_tmp2, &group);
+      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      if(comm_tmp != MPI_COMM_NULL) {
+	comm_inner = comm_tmp;
+	if(ixseps_upper == ixseps_outer) {
+	  comm_middle = comm_inner;
+	}else
+	  comm_middle = comm_outer;
+      }
+      MPI_Group_free(&group);
+    }
     
     // Core region
     
     proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_1));
+    //output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
     proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_2+1));
     proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+    //output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
     MPI_Group_union(group_tmp1, group_tmp2, &group);
     MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
@@ -407,7 +476,7 @@ int BoutMesh::load()
 	comm_middle = comm_inner;
     }
   }
-    
+  
   if(ixseps_inner != ixseps_outer) {
     // Need to handle unbalanced double-null case
     
@@ -450,8 +519,8 @@ int BoutMesh::load()
 #ifdef CHECK
   msg_stack.pop(msg);
 #endif
-
-	return 0;
+  
+  return 0;
 }
 
 /*****************************************************************************
@@ -462,13 +531,13 @@ int BoutMesh::load()
 int BoutMesh::get(int &ival, const char *name)
 {
 #ifdef CHECK
-  msg_stack.push("Loading integer: BoutMesh::get(int, %s)", name);
+  int msg_pos = msg_stack.push("Loading integer: BoutMesh::get(int, %s)", name);
 #endif
 
   GridDataSource* s = find_source(name);
   if(s == NULL) {
 #ifdef CHECK
-    msg_stack.pop();
+    msg_stack.pop(msg_pos);
 #endif
     return 1;
   }
@@ -478,7 +547,7 @@ int BoutMesh::get(int &ival, const char *name)
   s->close();
   
 #ifdef CHECK
-  msg_stack.pop();
+  msg_stack.pop(msg_pos);
 #endif
 
   if(!success) {
@@ -509,7 +578,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
     return 1;
   
 #ifdef CHECK
-  msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
+  int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
 #endif
   
   GridDataSource *s = find_source(name);
@@ -517,7 +586,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
 #ifdef CHECK
-    msg_stack.pop();
+    msg_stack.pop(msg_pos);
 #endif
     return 2;
   }
@@ -543,7 +612,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
 #ifdef CHECK
-    msg_stack.pop();
+    msg_stack.pop(msg_pos);
 #endif
     return 1;
   }
@@ -563,7 +632,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
       output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
       var = def;
 #ifdef CHECK
-      msg_stack.pop();
+      msg_stack.pop(msg_pos);
 #endif
       return 2;
     }
@@ -585,7 +654,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
       output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
       var = def;
 #ifdef CHECK
-      msg_stack.pop();
+      msg_stack.pop(msg_pos);
 #endif
       return 2;
     }
@@ -608,7 +677,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
       output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
       var = def;
 #ifdef CHECK
-      msg_stack.pop();
+      msg_stack.pop(msg_pos);
 #endif
       return 2;
     }
@@ -628,7 +697,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
 	output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
 	var = def;
 #ifdef CHECK
-	msg_stack.pop();
+	msg_stack.pop(msg_pos);
 #endif
         return 2;
       }
@@ -645,7 +714,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
   s->close();
   
 #ifdef CHECK
-  msg_stack.pop();
+  msg_stack.pop(msg_pos);
 #endif
   
   return 0;

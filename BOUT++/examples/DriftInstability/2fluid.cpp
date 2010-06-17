@@ -222,7 +222,7 @@ int physics_init()
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
-  geometry();
+  geometry_derivs();
   
   /**************** SET EVOLVING VARIABLES *************/
 
