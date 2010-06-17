@@ -66,9 +66,6 @@ GLOBAL int PE_YIND; ///< Y index of this processor (bout++.cpp)
 
 GLOBAL int NYPE; ///< Number in Y direction (bout++.cpp)
 
-// Communicators
-GLOBAL MPI_Comm comm_x, comm_y;
-
 // separatrix indices (read in grid.cpp)
 GLOBAL int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2; 
 GLOBAL int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;

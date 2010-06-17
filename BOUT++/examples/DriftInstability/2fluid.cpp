@@ -52,13 +52,12 @@ real ShearFactor;
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
-Communicator comms;
-Communicator com_jp;
-
 // Field routines
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
 int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
+
+
+FieldGroup comms; // Group of variables for communications
 
 int physics_init()
 {
@@ -87,7 +86,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -194,7 +193,7 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
@@ -214,7 +213,7 @@ int physics_init()
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
   mesh->g_22 = (Bxy*hthe/Bpxy)^2;
@@ -223,15 +222,8 @@ int physics_init()
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
-  // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
-
-  if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<mesh->ngx;i++)
-      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
-  }
-  if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
-
+  geometry();
+  
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT++ which variables to evolve
@@ -253,7 +245,6 @@ int physics_init()
   if(evolve_te) {
     bout_solve(Te,    F_Te,    "Te");
     comms.add(Te);
-    
     output.write("te\n");
   }else
     initial_profile("Te", Te);
@@ -302,13 +293,6 @@ int physics_init()
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-
-  
-  //dump.add(F_Ni, "F_Ni", 1);
-  //dump.add(F_rho, "F_rho", 1);
-  //dump.add(F_Ajpar, "F_Ajpar", 1);
-
-  com_jp.add(jpar);
   
   return(0);
 }
@@ -330,7 +314,7 @@ int physics_run(real t)
   }
 
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   // zero-gradient Y boundaries (temporary! for interchange test)
 
@@ -373,7 +357,7 @@ int physics_run(real t)
     bndry_toroidal(jpar);
     
     // Need to communicate jpar
-    com_jp.run();
+    mesh->communicate(jpar);
 
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;

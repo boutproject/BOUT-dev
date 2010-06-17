@@ -1163,6 +1163,11 @@ const Field2D operator^(const real lhs, const Field2D &rhs)
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
+const Field2D SQ(const Field2D &f)
+{
+  return f*f;
+}
+
 const Field2D sqrt(const Field2D &f)
 {
   return f.Sqrt();

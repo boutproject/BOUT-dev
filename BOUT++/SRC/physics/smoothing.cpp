@@ -66,9 +66,7 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
     result = result.ShiftZ(false); // Shift back
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -96,62 +94,14 @@ const Field3D smooth_y(const Field3D &f)
       }
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
-
+  mesh->communicate(result);
+  
   return result;
-}
-
-// Define MPI operation to sum 2D fields over y.
-// NB: Don't sum in y boundary regions
-void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
-{
-    real *rin = (real*) invec;
-    real *rinout = (real*) inoutvec;
-    for(int x=0;x<mesh->ngx;x++) {
-	real val = 0.;
-	// Sum values
-	for(int y=MYG;y<MYG+MYSUB;y++) {
-	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
-	}
-	// Put into output (spread over y)
-	val /= MYSUB;
-	for(int y=0;y<mesh->ngy;y++)
-	    rinout[x*mesh->ngy + y] = val;
-    }
 }
 
 const Field2D average_y(const Field2D &f)
 {
-  static MPI_Op op;
-  static bool opdefined = false;
-
-#ifdef CHECK
-  msg_stack.push("average_y(Field2D)");
-#endif
-
-  if(!opdefined) {
-    MPI_Op_create(ysum_op, 1, &op);
-    opdefined = true;
-  }
-
-  Field2D result;
-  result.Allocate();
-  
-  real **fd, **rd;
-  fd = f.getData();
-  rd = result.getData();
-  
-  MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_y);
-  
-  result /= (real) NYPE;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return result;
+  return mesh->average_y(f);
 }
 
 /// Nonlinear filtering to remove grid-scale noise
@@ -267,8 +217,6 @@ const Field3D nl_filter(const Field3D &f, real w)
   /// Perform filtering in Z, Y then X
   result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
   /// Communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
   return result;
 }

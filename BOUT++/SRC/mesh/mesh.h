@@ -65,6 +65,7 @@ class SurfaceIter {
  public:
   int xpos; // X position
   virtual int ysize() = 0; // Return the size of the current surface
+                           // NB: Could be zero if this PE has nothing to do
   virtual bool closed(real &ts) = 0; // Test if the current surface is closed
   
   virtual void first() = 0;
@@ -72,10 +73,11 @@ class SurfaceIter {
   virtual bool isDone() = 0;
   
   virtual int gather(const Field2D &f, real *data) = 0;
-  virtual int gather(const Field3D &f, real **data) = 0;
+  virtual int gather(const Field3D &f, real *data) = 0;
+  virtual int gather(const FieldGroup &f, real *data) = 0; // Interleave fields, going over Z fastest
   
   virtual int scatter(real *data, Field2D &f) = 0;
-  virtual int scatter(real **data, Field3D &f) = 0;
+  virtual int scatter(real *data, Field3D &f) = 0;
 };
 
 class Mesh {
@@ -124,7 +126,8 @@ class Mesh {
 
   // X and Y gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
-
+  virtual const Field2D average_y(const Field2D &f) = 0;
+  
   //////////////////////////////////////////////////////////
 
   /// Size of the mesh on this processor including guard/boundary cells

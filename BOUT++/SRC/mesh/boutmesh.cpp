@@ -159,6 +159,9 @@ int BoutMesh::load()
 
   xstart = MXG;
   xend = MXG + MXSUB - 1;
+
+  ystart = MYG;
+  yend = MYG + MYSUB - 1;
   
   ///////////////////// TOPOLOGY //////////////////////////
   
@@ -266,9 +269,19 @@ int BoutMesh::load()
     }
     s->close();
   }else {
-    output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
+    output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
+
+    if((jyseps2_2 / MYSUB) == MYPE) {
+      for(int i=0;i < ngx;i++)
+	ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    }
+    if(NYPE > 1)
+      MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    
+    /*
     for(int i=0;i<ngx;i++)
       ShiftAngle[i] = 0.0;
+    */
   }
   
   /// Call geometry routines to set the rest of the coefficients
@@ -1266,7 +1279,6 @@ comm_handle BoutMesh::irecv_xin(real *buffer, int size, int tag)
  * If out of range returns -1 (no processor)
  */
 
-/*
 int BoutMesh::PROC_NUM(int xind, int yind)
 {
   if((xind >= NXPE) || (xind < 0))
@@ -1329,7 +1341,6 @@ int BoutMesh::XPROC(int xind)
 {
   return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 }
-*/
 
 /****************************************************************
  *                       CONNECTIONS
@@ -1565,54 +1576,6 @@ void BoutMesh::topology()
   if( (ixseps_inner > 0) && ( ((PE_YIND*MYSUB > jyseps1_1) && (PE_YIND*MYSUB <= jyseps2_1)) || ((PE_YIND*MYSUB > jyseps1_2) && (PE_YIND*MYSUB <= jyseps2_2)) ) ) {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
-  
-  ///////////////////////////////////////////////
-  // Create MPI groups
-  
-  MPI_Group group_world, comm_x_group, comm_y_group;
-  MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Group of all processors
-  
-  int *ranks = new int[NPES];
-  // X communication group.
-  
-  for(int i=0;i<NXPE;i++)
-    ranks[i] = PROC_NUM(i, PE_YIND); // All ranks at this Y
-  MPI_Group_incl(group_world, NXPE, ranks, &comm_x_group);
-  
-  for(int i=0;i<NYPE;i++)
-    ranks[i] = PROC_NUM(PE_XIND, i); // All ranks at this X
-  MPI_Group_incl(group_world, NYPE, ranks, &comm_y_group);
-  
-  /*
-  // Y communication group. Only defined in core; others more complicated
-  if((PE_YIND <= YPROC(jyseps1_1)) || (PE_YIND > YPROC(jyseps2_2))) {
-    // In lower PF region
-    
-    int npf1 = (jyseps1_1+1)/MYSUB;
-    int npf2 = (MY - jyseps2_2 - 1)/MYSUB;
-    
-    ranks = new int[npf1 + npf2];
-    for(int i=0;i<npf1;i++)
-      ranks[i] = PROC_NUM(PE_XIND, i);
-    for(int i=0;i<npf2;i++)
-      ranks[npf1 + i] = PROC_NUM(PE_XIND, YPROC(jyseps2_2+1)+i);
-    
-    MPI_Group_incl(group_world, n, ranks, &comm_y_group);
-    
-  }else if((PE_YIND > YPROC(jyseps1_2)) && (PE_YIND < YPROC(jyseps2_1+1))) {
-    // Upper PF region
-    
-  }else {
-    // In core
-    
-  }
-  */
-  
-  // Create communicators
-  MPI_Comm_create(MPI_COMM_WORLD, comm_x_group, &comm_x);
-  MPI_Comm_create(MPI_COMM_WORLD, comm_y_group, &comm_y);
-
-  delete[] ranks;
 
   // Print out settings
   output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
@@ -1968,6 +1931,58 @@ SurfaceIter* BoutMesh::iterateSurfaces()
   //return new BoutSurfaceIter(this);
   return (SurfaceIter*) NULL;
 }
+
+// Define MPI operation to sum 2D fields over y.
+// NB: Don't sum in y boundary regions
+void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+{
+    real *rin = (real*) invec;
+    real *rinout = (real*) inoutvec;
+    for(int x=0;x<mesh->ngx;x++) {
+	real val = 0.;
+	// Sum values
+	for(int y=MYG;y<MYG+MYSUB;y++) {
+	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
+	}
+	// Put into output (spread over y)
+	val /= MYSUB;
+	for(int y=0;y<mesh->ngy;y++)
+	    rinout[x*mesh->ngy + y] = val;
+    }
+}
+
+const Field2D BoutMesh::average_y(const Field2D &f)
+{
+  static MPI_Op op;
+  static bool opdefined = false;
+
+#ifdef CHECK
+  msg_stack.push("average_y(Field2D)");
+#endif
+
+  if(!opdefined) {
+    MPI_Op_create(ysum_op, 1, &op);
+    opdefined = true;
+  }
+
+  Field2D result;
+  result.Allocate();
+  
+  real **fd, **rd;
+  fd = f.getData();
+  rd = result.getData();
+  
+  MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_inner);
+  
+  result /= (real) NYPE;
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return result;
+}
+
 /*
 BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi)
 {
@@ -2064,4 +2079,5 @@ int BoutSurfaceIter::scatter(real **data, Field3D &f)
 {
   
 }
+
 */

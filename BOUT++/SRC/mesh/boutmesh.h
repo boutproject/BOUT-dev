@@ -52,6 +52,7 @@ class BoutMesh : public Mesh {
   
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
+  const Field2D average_y(const Field2D&);
 
  private:
   /*
@@ -65,7 +66,7 @@ class BoutMesh : public Mesh {
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
   int ny_inner;
-
+  */
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
   bool IS_MYPROC(int xind, int yind);
@@ -77,7 +78,7 @@ class BoutMesh : public Mesh {
   int YLOCAL(int yglo, int yproc);
   int YPROC(int yind);
   int XPROC(int xind);
-  
+  /*
   // Twist-shift switches (topology.cpp)
   bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
 
@@ -155,6 +156,7 @@ class BoutMesh : public Mesh {
   /// Calculates the size of a message for a given x and y range
   int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
 };
+
 /*
 class BoutSurfaceIter : public SurfaceIter {
  public:

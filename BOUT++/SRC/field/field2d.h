@@ -182,10 +182,12 @@ const Field2D operator/(const real lhs, const Field2D &rhs);
 const Field2D operator^(const real lhs, const Field2D &rhs);
 
 // Non-member functions
+const Field2D SQ(const Field2D &f);
 const Field2D sqrt(const Field2D &f);
 const Field2D abs(const Field2D &f);
 real min(const Field2D &f, bool allpe=false);
 real max(const Field2D &f, bool allpe=false);
 bool finite(const Field2D &f);
+
 
 #endif /* __FIELD2D_H__ */
