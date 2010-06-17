@@ -83,7 +83,7 @@ endif
 .PHONY: $(DIRS)
 .PHONY: lib
 
-all: $(CONFIG_FILES) $(DIRS) $(OBJ) $(TARGET) 
+all: $(DIRS) $(TARGET)
 
 ####################################
 # Recursively run make through subdirs
@@ -97,28 +97,6 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 	$(MKDIR) $@
 
 ####################################
-# Builds the library with $(OBJ) which is defined from the SOURCEC variable
-####################################
-
-# A bit of a clever hack that determines wheter the TARGET variable is 'lib'
-# then, if true, adds the .o files to libbout++.a, else, it links the .o's
-# into an executable
-ifeq ("$(TARGET)", "lib")
-lib: $(CONFIG_FILES) $(BOUT_TOP)/include $(BOUT_TOP)/lib
-ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
-	@$(RANLIB) $(LIB)
-endif
-ifneq ("$(SOURCEH)foo", "foo")
-	@cp $(SOURCEH) $(BOUT_TOP)/include
-endif
-else
-$(TARGET): $(BOUT_TOP)/lib/libbout++.a makefile
-	$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
-endif
-
-####################################
 # The prerquisites of any .o file should depend on
 # $(BOUT_TOP)/make.config
 # $(BOUT_TOP)/makefile
@@ -129,24 +107,75 @@ endif
 	@echo "  Compiling " $(@F:.o=.cpp)
 	@$(CXX) -I$(BOUT_TOP)/include $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
 
-clean::
-	@-$(RM) $(OBJ) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) -C $$pp clean; done
+####################################
+# A bit of a clever hack that determines wheter the TARGET variable is 'lib'
+# then, if true, adds the .o files to libbout++.a, else, it links the .o's
+# into an executable
+####################################
+
+ifeq ("$(TARGET)", "lib")
+#BEGIN 'lib'
 
 # This automatically generates dependency rules
-
 %.d : %.cpp
-	$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -MF"$@" -MG -MM -MT"$@" -MT"$(<:.cpp=.o)" "$<"
+	-@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -DMD5SUM=$(CHECKSUM) -MF"$@" -MG -MM -MT"$@" -MT"$(<:.cpp=.o)" "$<"
 	
 depclean:	
-	@-$(RM) $(DEPS)
+	-@$(RM) $(DEPS)
 	@for pp in $(DIRS); do $(MAKE) -C $$pp depclean; done
 
+####################################
 # Notes about the different flags:
 # -MF  write the generated dependency rule to a file
 # -MG  assume missing headers will be generated and don't stop with an error
 # -MM  generate dependency rule for prerequisite, skipping system headers
 # -MP  add phony target for each header to prevent errors when header is missing
 # -MT  add a target to the generated dependency
+####################################
 
 -include $(DEPS)
+
+####################################
+# Builds the library with $(OBJ) which is defined from the SOURCEC variable
+####################################
+
+lib: $(CONFIG_FILES) $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+ifneq ("$(OBJ)foo", "foo")
+	@echo "Adding $(OBJ) to libbout++.a"
+	@$(AR) cru $(LIB) $(OBJ)
+	@$(RANLIB) $(LIB)
+endif
+ifneq ("$(SOURCEH)foo", "foo")
+	@cp $(SOURCEH) $(BOUT_TOP)/include
+endif
+
+#END 'lib'
+else
+
+
+####################################
+# Make libbout++.a if it doesn't exist
+####################################
+
+%.a: $(CONFIG_FILES) 
+	@$(MAKE) -C $(BOUT_TOP) all
+ 
+####################################
+# Make the target (e.g. gas_compress)
+####################################
+
+$(TARGET): makefile $(LIB) $(OBJ)
+	@echo "  Linking" $(TARGET)
+	@$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
+endif
+
+####################################
+# Clean target. Pretty self explanatory.
+# NOTE: See that double colon (::) below? That's signifies a rule that can be added to later
+# See:
+# http://owen.sj.ca.us/~rk/howto/slides/make/slides/makecolon.html
+####################################
+
+clean::
+	@-$(RM) $(OBJ) $(TARGET)
+	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) -C $$pp clean; done
