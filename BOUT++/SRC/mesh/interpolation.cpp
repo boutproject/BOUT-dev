@@ -23,7 +23,6 @@
  *
  **************************************************************************/
 
-#include "communicator.h"
 #include "interpolation.h"
 #include "stencils.h"
 #include "globals.h"
@@ -39,8 +38,6 @@ real interp(const stencil &s)
 {
   return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;
 }
-
-Communicator interp_comm;
 
 /*!
   Interpolate between different cell locations
@@ -115,9 +112,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       if(dir != CELL_ZLOW) {
 	// COMMUNICATION
 	
-	interp_comm.add(result);
-	interp_comm.run();
-	interp_comm.clear();
+	mesh->communicate(result);
 
 	// BOUNDARIES
 

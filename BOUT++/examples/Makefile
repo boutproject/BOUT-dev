@@ -1,7 +1,7 @@
 # Makefile for example codes
 # Works in the same way as the root Makefile
 
-testdirs = Advect1D RayleighTaylor DriftInstability
+testdirs = Advect1D RayleighTaylor DriftInstability Uedge_benchmark
 
 .PHONY: all
 all: $(testdirs)

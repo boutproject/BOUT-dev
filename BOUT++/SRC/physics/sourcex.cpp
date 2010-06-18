@@ -1,8 +1,6 @@
 /**************************************************************
  * radial source and mask operators
  **************************************************************/
-#include "communicator.h"
-
 
 #include "mesh_topology.h"
 #include "globals.h"
@@ -45,9 +43,7 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -78,9 +74,7 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -122,10 +116,8 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
- 
+  mesh->communicate(result);
+  
   return result;
 }
 
@@ -166,9 +158,7 @@ const Field3D mask_x(const Field3D &f, bool realspace)
     result = result.ShiftZ(false); // Shift back
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -209,9 +199,7 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
  
   return result;
 }
@@ -251,9 +239,7 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
  
   return result;
 }
@@ -295,9 +281,7 @@ const Field3D buff_x(const Field3D &f, bool realspace)
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   if(realspace)
     result = result.ShiftZ(false); // Shift back

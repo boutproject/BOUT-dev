@@ -41,10 +41,6 @@ real nu_hat, mui_hat, wci, nueix, nuiix;
 real chi_perp, D_perp, mu_perp;
 real lambda_relax;
 
-// Communication object
-Communicator comms;
-Communicator com_jp;
-
 int physics_init()
 {
   Field2D I; // Shear factor 
@@ -64,7 +60,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -121,7 +117,7 @@ int physics_init()
    // Normalise geometry 
   Rxy /= rho_s;
   hthe /= rho_s;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1e4);
@@ -153,7 +149,7 @@ int physics_init()
   mesh->g13 = 0.0;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11;
   mesh->g_22 = (Bxy*hthe/Bpxy)^2;
@@ -173,11 +169,6 @@ int physics_init()
   bout_solve(Vi,    F_Vi,    "Vi");
   bout_solve(Te,    F_Te,    "Te");
   bout_solve(Ti,    F_Ti,    "Ti");
-
-  comms.add(Ni);
-  comms.add(Vi);
-  comms.add(Te);
-  comms.add(Ti);
 
   /************** SETUP COMMUNICATIONS **************/
   
@@ -217,7 +208,7 @@ int physics_run(real t)
   //real bmk_t = MPI_Wtime();
   
   // Communicate variables
-  comms.run();
+  mesh->communicate(Ni, Vi, Te, Ti);
   
   // Update profiles
   Nit = Ni0  + Ni.DC();

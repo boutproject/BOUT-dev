@@ -30,7 +30,6 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
-#include "communicator.h" // Parallel communication
 #include "globals.h"
 
 #include "field2d.h"

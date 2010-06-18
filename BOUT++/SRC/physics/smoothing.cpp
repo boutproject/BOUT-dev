@@ -29,8 +29,6 @@
 
 #include <math.h>
 
-#include "communicator.h"
-
 #include "smoothing.h"
 #include "globals.h"
 

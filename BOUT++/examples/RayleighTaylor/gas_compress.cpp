@@ -26,9 +26,6 @@ Vector2D V0;
 
 Vector2D g; // Acceleration
 
-// Parallel communication object
-Communicator comms;
-
 int physics_init()
 {
   real v0_multiply;
@@ -75,11 +72,6 @@ int physics_init()
     V += V0;
 
   }
-
-  // set communications
-  comms.add(N);
-  comms.add(P);
-  comms.add(V);
   
   return 0;
 }
@@ -87,8 +79,8 @@ int physics_init()
 int physics_run(real t)
 {
   //output.write("Running %e\n", t);
-  // Run communications
-  comms.run();
+  // Communicate variables
+  mesh->communicate(N,P,V);
 
   // Density
   

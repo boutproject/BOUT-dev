@@ -377,7 +377,7 @@ int bout_monitor(real t, int iter, int NOUT)
   int ncalls = solver.rhs_ncalls;
   real wtime_rhs   = solver.rhs_wtime;
   //real wtime_invert = 0.0; // wtime_invert is a global
-  real wtime_comms = Communicator::wtime;  // Time spent communicating (part of RHS)
+  real wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
   real wtime_io    = Datafile::wtime;      // Time spend on I/O
 
   output.print("\r"); // Only goes to screen
@@ -438,7 +438,7 @@ int bout_monitor(real t, int iter, int NOUT)
 
   /// Reset clocks for next timestep
   
-  Communicator::wtime = 0.0; // Reset communicator clock
+  mesh->wtime_comms = 0.0; // Reset communicator clock
   Datafile::wtime = 0.0;
   wtime_invert = 0.0;
   wtime = MPI_Wtime();

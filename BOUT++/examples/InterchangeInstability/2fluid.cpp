@@ -51,8 +51,8 @@ real ShearFactor;
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
-Communicator comms;
+// Group fields together for communication
+FieldGroup comms;
 
 // Field routines
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
@@ -62,7 +62,7 @@ int physics_init()
 {
   Field2D I; // Shear factor 
   
-  output.write("Solving 6-variable 2-fluid equations\n");
+  output << "Solving 6-variable 2-fluid equations\n";
 
   /************* LOAD DATA FROM GRID FILE ****************/
 
@@ -87,7 +87,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -195,7 +195,7 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
@@ -215,7 +215,7 @@ int physics_init()
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
   mesh->g_22 = (Bxy*hthe/Bpxy)^2;
@@ -303,11 +303,6 @@ int physics_init()
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-
-  
-  //dump.add(F_Ni, "F_Ni", 1);
-  //dump.add(F_rho, "F_rho", 1);
-  //dump.add(F_Ajpar, "F_Ajpar", 1);
   
   return(0);
 }
@@ -329,7 +324,7 @@ int physics_run(real t)
   }
 
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   // zero-gradient Y boundaries (temporary! for interchange test)
   
@@ -340,7 +335,6 @@ int physics_run(real t)
   bndry_ydown_flat(rho);
   bndry_yup_flat(rho);
   
-
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();
   Tit = Ti0; // + Ti.DC();
@@ -368,9 +362,7 @@ int physics_run(real t)
     bndry_toroidal(jpar);
     
     // Need to communicate jpar
-    Communicator com_jp;
-    com_jp.add(jpar);
-    com_jp.run();
+    mesh->communicate(jpar);
 
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
