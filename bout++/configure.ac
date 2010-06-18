@@ -30,17 +30,18 @@
 AC_PREREQ(2.59)
 AC_INIT(BOUT++, 0.8, bd512@york.ac.uk)
 
-AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  Set run-time checking level])
-AC_ARG_WITH(signal, [  --with-signal=no        Disable SEGFAULT handling])
-AC_ARG_WITH(track,  [  --with-track            Enable variable tracking])
-AC_ARG_WITH(pdb,    [  --with-pdb              Enable support for PDB files])
-AC_ARG_WITH(netcdf, [  --with-netcdf           Enable support for netCDF files])
-AC_ARG_WITH(debug,  [  --with-debug            Enable all debugging flags])
-AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida Use SUNDIALS' IDA solver])
-AC_ARG_WITH(cvode,  [  --with-cvode            Use SUNDIALS' CVODE solver])
-AC_ARG_WITH(fftw,   [  --with-fftw             Set directory of FFTW3 library])
-AC_ARG_WITH(lapack, [  --with-lapack           Use the LAPACK library])
-AC_ARG_WITH(petsc,  [  --with-petsc            Enable PETSc interface])
+AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  	   Set run-time checking level])
+AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
+AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
+AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
+AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
+AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
+AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use SUNDIALS' IDA solver])
+AC_ARG_WITH(cvode,  [  --with-cvode            	   Use SUNDIALS' CVODE solver])
+AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
+AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
+AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
+AC_ARG_ENABLE(download_pvode,  [  --download-pvode		Download and build PVODE '98])
 
 EXTRA_INCS="" # Extra includes
 EXTRA_LIBS="" # Extra library flags
@@ -49,6 +50,7 @@ file_formats=""  # Record which file formats are being supported
 
 AC_ARG_VAR(CFLAGS,[Extra compile flags])
 
+AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
 AC_SUBST(EXTRA_LIBS)
 
@@ -99,10 +101,9 @@ then
        CFLAGS="$CFLAGS -DTRACK"
 fi
 
-#####################################################################
+#############################################################
 # PETSc library
-
-# AC_ARG_VAR(PETSC,[Portable, Extensible Toolkit for Scientific Computation])
+#############################################################
 
 if test "$with_petsc" != "" && test "$with_petsc" != "no"
 then
@@ -411,9 +412,9 @@ then
 	echo "NetCDF support disabled"
 fi
 
-#####################################################################
+#############################################################
 # PACT library
-#####################################################################
+#############################################################
 
 AC_ARG_VAR(PACT,[Path to the Portable Application Toolkit library])
 
@@ -502,9 +503,9 @@ fi
 
 
 
-#####################################################################
+#############################################################
 # Check file formats
-#####################################################################
+#############################################################
 
 if test "$file_formats" = ""
 then
@@ -514,21 +515,23 @@ else
 	echo "Supported file formats:$file_formats"
 fi
 
-#####################################################################
+#############################################################
 # Checks for programs
-#####################################################################
+#############################################################
 
 #AC_PROG_CXX
 #AC_PROG_CC
 #AC_PROG_CPP
 CC="gcc"
 CXX="g++"
+MKDIR="mkdir -p"
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 
-########################################################
+#############################################################
 # MPI
+#############################################################
 
 AC_DEFUN([ACX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
@@ -663,6 +666,39 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_FUNC_VPRINTF
 #AC_CHECK_FUNCS([pow sqrt strcasecmp])
+
+#############################################################
+# Download + Build PVODE '98
+#############################################################
+
+if ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
+then
+	# Can there be a function? If so, check for 'externalpackages'
+	if ! [[ -d externalpackages ]]
+	then
+		mkdir externalpackages
+	fi
+	
+	echo "CC: $MPICC"
+	echo "CXX: $MPICXX"
+	echo "CFLAGS: $CFLAGS"
+	echo "RANLIB: $RANLIB"
+	echo "MKDIR: $MKDIR"
+	
+	echo "*************************************************************"
+	if [[ -f $enable_download_pvode ]]
+	then
+		echo "* Building PVODE using supplied file $enable_download_pvode"
+	else
+		echo "* Downloading PVODE"
+	fi	
+	echo "*************************************************************"
+	
+	file=$enable_download_pvode
+	tar zxf $file -C externalpackages
+	CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source
+	CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon
+fi
 
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)

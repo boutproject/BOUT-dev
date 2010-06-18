@@ -5,3 +5,4 @@
 *.d
 include/
 lib/
+externalpackages/
