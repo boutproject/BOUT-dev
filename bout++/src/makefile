@@ -30,6 +30,7 @@ checksum:
 
 # This to make sure build time is always printed correctly
 initial_message:
+ifndef CHECKLIB
 	@touch $(SOURCEC)
 	@echo ""
 	@echo "----- Compiling BOUT++ -----" 
@@ -37,8 +38,11 @@ initial_message:
 	@echo "CFLAGS   = " $(BOUT_FLAGS)
 	@echo "CHECKSUM = " $(CHECKSUM)
 	@echo "INCLUDE  = " $(BOUT_INCLUDE)
+endif
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
 	
 end_message:
-		@echo "Finished"
-		@echo ""
+ifndef CHECKLIB
+	@echo "Finished"
+endif
+	@echo ""
