@@ -748,10 +748,10 @@ void calc_index(bindex *bx)
 	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
       
       bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==jstart) {
+      if (bx->jy==mesh->ystart) {
 	bx->ym_shift = bx->y2m_shift = true;
 	
-      }else if (bx->jy==jstart+1) {
+      }else if (bx->jy==mesh->ystart+1) {
 	bx->y2m_shift = true;
       }
     }
@@ -759,9 +759,9 @@ void calc_index(bindex *bx)
 	(TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
       
       bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==jend) {
+      if (bx->jy==mesh->yend) {
 	bx->yp_shift = bx->y2p_shift = true;
-      } else if (bx->jy==jend-1) {
+      } else if (bx->jy==mesh->yend-1) {
 	bx->y2m_shift = true;
       }
     }
@@ -782,7 +782,7 @@ void start_index(bindex *bx, REGION region)
   }else
     bx->jx = 0;
   
-  bx->jy = jstart;
+  bx->jy = mesh->ystart;
   bx->jz = 0;
 
   bx->region = region;
@@ -829,8 +829,8 @@ int next_index2(bindex *bx)
 {
   bx->jy++;
     
-  if(bx->jy > jend) {
-    bx->jy =jstart;
+  if(bx->jy > mesh->yend) {
+    bx->jy =mesh->ystart;
     bx->jx++;
     
     if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {

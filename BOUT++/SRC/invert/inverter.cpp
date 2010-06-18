@@ -76,7 +76,7 @@ int Inverter::solve(const Field3D &b, Field3D &x,
 		    int restart, int itmax,
 		    real tol)
 {
-  int ys = jstart, ye = jend;
+  int ys = mesh->ystart, ye = mesh->yend;
  
   if(MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS

@@ -149,9 +149,6 @@ int BoutMesh::load()
   
   // Set local index ranges
   
-  jstart = MYG;
-  jend = MYG + MYSUB - 1;
-
   xstart = MXG;
   xend = MXG + MXSUB - 1;
 

@@ -1671,7 +1671,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   
   x.Allocate();
 
-  int ys = jstart, ye = jend;
+  int ys = mesh->ystart, ye = mesh->yend;
  
   if(MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
