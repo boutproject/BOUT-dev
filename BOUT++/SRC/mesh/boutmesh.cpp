@@ -1221,6 +1221,46 @@ int BoutMesh::wait(comm_handle handle)
       MPI_Wait(ch->sendreq+5, &status);
   }
 
+  // TWIST-SHIFT CONDITION
+  if(TwistShift && (TwistOrder == 0)) {
+    int jx, jy;
+    
+    // Perform Twist-shift using shifting method (rather than in SetStencil)
+    for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
+      if((*it)->is3D()) {
+	
+	// Lower boundary
+
+	if(TS_down_in && (DDATA_INDEST  != -1)) {
+	  for(jx=0;jx<DDATA_XSPLIT;jx++)
+	    for(jy=0;jy != MYG; jy++)
+	      (*it)->ShiftZ(jx, jy, ShiftAngle[jx]);
+      
+	}
+	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
+	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+	    for(jy=0;jy != MYG; jy++)
+	      (*it)->ShiftZ(jx, jy, ShiftAngle[jx]);
+	  
+	}
+	
+	// Upper boundary
+	
+	if(TS_up_in && (UDATA_INDEST  != -1)) {
+	  for(jx=0;jx<UDATA_XSPLIT; jx++)
+	    for(jy=ngy-MYG;jy != ngy; jy++)
+	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
+	  
+	}
+	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
+	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
+	    for(jy=ngy-MYG;jy != ngy; jy++)
+	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
+	  
+	}
+      }
+  }
+
 #ifdef CHECK
   // Keeping track of whether communications have been done
   for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
