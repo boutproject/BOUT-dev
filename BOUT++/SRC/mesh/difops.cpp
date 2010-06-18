@@ -123,7 +123,7 @@ const Field2D Div_par(const Field2D &f)
 #endif
 
 
-  Field2D result = Bxy*Grad_par(f/Bxy);
+  Field2D result = mesh->Bxy*Grad_par(f/mesh->Bxy);
 
 
 #ifdef TRACK
@@ -142,7 +142,7 @@ const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 #endif
 
 
-  Field3D result = Bxy*Grad_par(f/Bxy, outloc, method);
+  Field3D result = mesh->Bxy*Grad_par(f/mesh->Bxy, outloc, method);
 
 
 #ifdef TRACK
@@ -239,13 +239,13 @@ const Field3D Grad_par_LtoC(const Field &var)
 
 const Field3D Div_par_LtoC(const Field2D &var)
 {
-  Field3D result = Bxy*Grad_par_LtoC(var/Bxy);
+  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
   return result;
 }
 
 const Field3D Div_par_LtoC(const Field3D &var)
 {
-  Field3D result = Bxy*Grad_par_LtoC(var/Bxy);
+  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
   return result;
 }
 

@@ -82,13 +82,6 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
 
 GLOBAL real *ShiftAngle;  // angle a field-line moves in z for a y circuit (radians)
 
-////////////////// DIFFERENTIAL GEOMETRY //////////////////////
-
-// rest of these quantities are derived from the metric tensor
-// in geometry.cpp
-
-GLOBAL Field2D Bxy; // Magnitude of B = nabla z times nabla x
-
 ///////////////////////////////////////////////////////////////
 
 /// Options file object

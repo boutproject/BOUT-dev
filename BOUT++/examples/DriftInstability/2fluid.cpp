@@ -198,7 +198,7 @@ int physics_init()
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -208,7 +208,7 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
@@ -216,7 +216,7 @@ int physics_init()
   mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
@@ -298,7 +298,7 @@ int physics_init()
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / Bxy )
+#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
 
 int physics_run(real t)
 {
@@ -425,7 +425,7 @@ int physics_run(real t)
     
     //F_rho += 2.0*Bnorm*V_dot_Grad(b0xcv, pei);
 
-    F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+    F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
 
     /*
     for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {

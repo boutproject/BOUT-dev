@@ -149,6 +149,8 @@ class Mesh {
   Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
   
   Field2D J; // Jacobian
+
+  Field2D Bxy; // Magnitude of B = nabla z times nabla x
   
   // Contravariant metric tensor (g^{ij})
   Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
