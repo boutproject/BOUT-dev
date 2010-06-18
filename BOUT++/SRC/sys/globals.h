@@ -56,9 +56,8 @@ const real TWOPI = 6.2831853071795;
 GLOBAL int nx, ny;        ///< Size of the grid in the input file
 GLOBAL int MX, MY;        ///< size of the grid excluding boundary regions
 GLOBAL int MYSUB, MXSUB;  ///< Size of the grid on this processor
-GLOBAL int ncx, ncy, ncz;
 
-GLOBAL int xstart, xend, jstart, jend; // local index range
+GLOBAL int jstart, jend; // local index rangge
 
 GLOBAL int NPES; ///< Number of processors (bout++.cpp)
 GLOBAL int MYPE; ///< Rank of this processor (bout++.cpp)

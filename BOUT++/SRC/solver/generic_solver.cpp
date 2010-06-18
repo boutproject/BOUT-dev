@@ -480,6 +480,8 @@ int GenericSolver::getLocalN()
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
+  int ncz = mesh->ngz-1;
+
   int local_N = MXSUB*MYSUB*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
 
   //////////// Find boundary regions ////////////

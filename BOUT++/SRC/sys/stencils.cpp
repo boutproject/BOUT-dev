@@ -728,9 +728,11 @@ void calc_index(bindex *bx)
 
   bx->jyp  = bx->jy+1;
   bx->jym  = bx->jy-1;
-  if (bx->jy<jend || MYG>1) bx->jy2p = bx->jy+2; else bx->jy2p=bx->jy+1;
-  if (bx->jy>jstart || MYG>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
+  if (bx->jy<mesh->yend || mesh->ystart>1) bx->jy2p = bx->jy+2; else bx->jy2p=bx->jy+1;
+  if (bx->jy>mesh->ystart || mesh->ystart>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
 
+  int ncz = mesh->ngz-1;
+  
   bx->jzp  = (bx->jz+1)%ncz;
   bx->jzm  = (bx->jz+ncz-1)%ncz;
   bx->jz2p = (bx->jz+2)%ncz;
@@ -792,13 +794,13 @@ void start_index(bindex *bx, REGION region)
 int next_index3(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= ncz) {
+  if(bx->jz >= mesh->ngz-1) {
     
     bx->jz = 0;
     bx->jy++;
     
-    if(bx->jy > jend) {
-      bx->jy =jstart;
+    if(bx->jy > mesh->yend) {
+      bx->jy =mesh->ystart;
       bx->jx++;
       
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {

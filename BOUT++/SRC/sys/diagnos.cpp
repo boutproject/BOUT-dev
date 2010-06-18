@@ -131,9 +131,9 @@ real Diagnos::run(const diag_item &i)
     }else {
       // Local index
       
-      if((i.x < 0) || (i.x > ncx) ||
-	 (i.y < 0) || (i.y > ncy) ||
-	 (i.z < 0) || (i.z > ncz)) {
+      if((i.x < 0) || (i.x >= mesh->ngx) ||
+	 (i.y < 0) || (i.y >= mesh->ngy) ||
+	 (i.z < 0) || (i.z >= mesh->ngz)) {
 	return 0.0;
       }
     }

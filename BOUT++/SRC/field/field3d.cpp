@@ -1506,6 +1506,7 @@ real Field3D::interp_z(int jx, int jy, int jz0, real zoffset, int order) const
     zoffset += 1.0;
   }
   
+  int ncz = mesh->ngz - 1;
   jz0 = (((jz0 + zi)%ncz) + ncz) % ncz;
   jzp = (jz0 + 1) % ncz;
   jz2p = (jz0 + 2) % ncz;
@@ -1556,6 +1557,8 @@ void Field3D::ShiftZ(int jx, int jy, double zangle)
     exit(1);
   }
 #endif
+
+  int ncz = mesh->ngz-1;
 
   if(ncz == 1)
     return;
@@ -1771,9 +1774,9 @@ const Field3D Field3D::Sqrt() const
   }
     
   // Test values
-  for(jx=MXG;jx<mesh->ngx-MXG;jx++)
-    for(jy=MYG;jy<mesh->ngy-MYG;jy++) 
-      for(jz=0;jz<ncz;jz++) {
+  for(jx=mesh->xstart;jx<=mesh->xend;jx++)
+    for(jy=mesh->ystart;jy<=mesh->yend;jy++) 
+      for(jz=0;jz<mesh->ngz-1;jz++) {
 	if(block->data[jx][jy][jz] < 0.0) {
 	  error("Field3D: Sqrt operates on negative value at [%d,%d,%d]\n", jx, jy, jz);
 	}
@@ -1916,7 +1919,7 @@ int Field3D::getData(int x, int y, int z, void *vptr) const
   }
   
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -1937,7 +1940,7 @@ int Field3D::getData(int x, int y, int z, real *rptr) const
   }
   
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -1952,7 +1955,7 @@ int Field3D::setData(int x, int y, int z, void *vptr)
   Allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field3D: fillArray (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -1968,7 +1971,7 @@ int Field3D::setData(int x, int y, int z, real *rptr)
   Allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field3D: setData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -1994,9 +1997,9 @@ bool Field3D::check_data(bool vital) const
     
     int jx, jy, jz;
     
-    for(jx=MXG;jx<mesh->ngx-MXG;jx++)
-      for(jy=MYG;jy<mesh->ngy-MYG;jy++)
-	for(jz=0;jz<ncz;jz++)
+    for(jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(jy=mesh->ystart;jy<=mesh->xend;jy++)
+	for(jz=0;jz<mesh->ngz-1;jz++)
 	  if(!finite(block->data[jx][jy][jz])) {
 	    error("Field3D: Operation on non-finite data at [%d][%d][%d]\n", jx, jy, jz);
 	    return true;
@@ -2343,6 +2346,8 @@ const Field3D filter(const Field3D &var, int N0)
   static dcomplex *f = (dcomplex*) NULL;
   int jx, jy, jz;
   
+  int ncz = mesh->ngz-1;
+
   if(f == (dcomplex*) NULL) {
     // Allocate memory
     f = new dcomplex[ncz/2 + 1];
@@ -2475,6 +2480,8 @@ const Field3D low_pass(const Field3D &var, int zmax)
   msg_stack.push("low_pass(Field3D, %d)", zmax);
 #endif
 
+  int ncz = mesh->ngz-1;
+  
   if(!var.isAllocated())
     return var;
 
@@ -2523,6 +2530,8 @@ const Field3D low_pass(const Field3D &var, int zmax, int zmin)
 
   if(!var.isAllocated())
     return var;
+
+  int ncz = mesh->ngz-1;
 
   if(f == NULL)
     f = new dcomplex[ncz/2 + 1];
@@ -2576,7 +2585,7 @@ bool finite(const Field3D &f)
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<ncz;jz++)
+      for(int jz=0;jz<mesh->ngz-1;jz++)
 	if(!finite(f.block->data[jx][jy][jz])) {
 #ifdef CHECK
 	  msg_stack.pop();

@@ -151,7 +151,7 @@ const Field3D nl_filter_x(const Field3D &f, real w)
   rvec v;
   
   for(int jy=0;jy<mesh->ngy;jy++)
-    for(int jz=0;jz<ncz;jz++) {
+    for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getXarray(jy, jz, v);
       nl_filter(v, w);
       result.setXarray(jy, jz, v);
@@ -175,7 +175,7 @@ const Field3D nl_filter_y(const Field3D &fs, real w)
   rvec v;
   
   for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<ncz;jz++) {
+    for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getYarray(jx, jz, v);
       nl_filter(v, w);
       result.setYarray(jx, jz, v);

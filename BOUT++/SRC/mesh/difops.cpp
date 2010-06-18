@@ -361,6 +361,8 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
   fd = f.getData();
   rd = result.getData();
 
+  int ncz = mesh->ngz-1;
+  
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
     ft = cmatrix(mesh->ngx, ncz/2 + 1);

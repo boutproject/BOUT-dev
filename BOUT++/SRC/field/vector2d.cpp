@@ -386,7 +386,7 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx > ncx) || (jy < 0) || (jy > ncy) || (jz < 0) || (jz >= ncz)) {
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -403,7 +403,7 @@ int Vector2D::getData(int jx, int jy, int jz, real *rptr) const
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx > ncx) || (jy < 0) || (jy > ncy) || (jz < 0) || (jz >= ncz)) {
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
     output.write("Vector2D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -420,7 +420,7 @@ int Vector2D::setData(int jx, int jy, int jz, void *vptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx > ncx) || (jy < 0) || (jy > ncy) || (jz < 0) || (jz >= ncz)) {
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }
@@ -437,7 +437,7 @@ int Vector2D::setData(int jx, int jy, int jz, real *rptr)
 {
 #ifdef CHECK
   // check ranges
-  if((jx < 0) || (jx > ncx) || (jy < 0) || (jy > ncy) || (jz < 0) || (jz >= ncz)) {
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
     output.write("Vector2D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
     exit(1);
   }

@@ -798,6 +798,8 @@ real FieldPerp::interp_z(int jx, int jz0, real zoffset, int order) const
     zoffset += 1.0;
   }
   
+  int ncz = mesh->ngz-1;
+  
   jz0 = (((jz0 + zi)%ncz) + ncz) % ncz;
   jzp = (jz0 + 1) % ncz;
   jz2p = (jz0 + 2) % ncz;

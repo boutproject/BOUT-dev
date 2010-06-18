@@ -957,7 +957,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
   }
   
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
     error("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -978,7 +978,7 @@ int Field2D::getData(int x, int y, int z, real *rptr) const
   }
   
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -993,7 +993,7 @@ int Field2D::setData(int x, int y, int z, void *vptr)
   Allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
@@ -1009,7 +1009,7 @@ int Field2D::setData(int x, int y, int z, real *rptr)
   Allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x > ncx) || (y < 0) || (y > ncy) || (z < 0) || (z >= ncz)) {
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     error("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }

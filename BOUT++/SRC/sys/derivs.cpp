@@ -954,6 +954,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       xlt = mesh->ngx;
     }
     
+    int ncz = mesh->ngz-1;
+
     if(cv == (dcomplex*) NULL)
       cv = new dcomplex[ncz/2 + 1];
 
@@ -1294,6 +1296,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
     static dcomplex *cv = (dcomplex*) NULL;
     int jx, jy, jz;
     real kwave;
+
+    int ncz = mesh->ngz-1;
     
     if(cv == (dcomplex*) NULL)
       cv = new dcomplex[ncz/2 + 1];

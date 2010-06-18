@@ -399,7 +399,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
@@ -420,7 +420,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
@@ -441,7 +441,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {

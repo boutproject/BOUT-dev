@@ -89,6 +89,8 @@ namespace invpar {
     static real *avec, *bvec, *cvec; // Matrix coefficients
     static real *rvec, *xvec;
     
+    int ncz = mesh->ngz-1;
+    
     if(ysize > ylen) {
       // Initialise
       if(ylen > 0) {

@@ -146,12 +146,8 @@ int BoutMesh::load()
   ngx = MXSUB + 2*MXG;
   ngy = MYSUB + 2*MYG;
   ngz = MZ;
-
-	ncx = ngx-1;
-	ncy = ngy-1;
-	ncz = ngz-1;
-	
-	// Set local index ranges
+  
+  // Set local index ranges
   
   jstart = MYG;
   jend = MYG + MYSUB - 1;
@@ -222,7 +218,7 @@ int BoutMesh::load()
   }
   
   zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/ncz;
+  dz = zlength/(ngz-1);
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   
@@ -1826,8 +1822,8 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
       if((*it)->is3D()) {
 	// 3D variable
 	
-	for(jy=yge;jy != ylt;jy++)
-	  for(jz=0;jz != ncz;jz++)
+	for(jy=yge;jy < ylt;jy++)
+	  for(jz=0;jz < mesh->ngz-1;jz++)
 	    len += (*it)->getData(jx,jy,jz,buffer+len);
 	
       }else {
@@ -1855,8 +1851,8 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
       if((*it)->is3D()) {
 	// 3D variable
    
-	for(jy=yge;jy != ylt;jy++)
-	  for(jz=0;jz != ncz;jz++) {
+	for(jy=yge;jy < ylt;jy++)
+	  for(jz=0;jz < mesh->ngz-1;jz++) {
 	    len += (*it)->setData(jx,jy,jz,buffer+len);
 	  }
 	
@@ -1879,7 +1875,7 @@ int BoutMesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, i
   /// Loop over variables
   for(std::vector<FieldData*>::iterator it = var_list.begin(); it != var_list.end(); it++) {
     if((*it)->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * ncz * (*it)->realSize();
+      len += (xlt - xge) * (ylt - yge) * (mesh->ngz-1) * (*it)->realSize();
     }else
       len += (xlt - xge) * (ylt - yge) * (*it)->realSize();
   }
@@ -1919,6 +1915,8 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
   }
 
   int maxmode = (size[2] - 1)/2; ///< Maximum mode-number n
+
+  int ncz = mesh->ngz-1;
 
   // Print out which modes are going to be read in
   if(zperiod > maxmode) {

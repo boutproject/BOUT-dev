@@ -98,6 +98,8 @@ int invert_init()
       output.write("\tUsing parallel Thomas algorithm\n");
   }
   
+  int ncz = mesh->ngz-1;
+
   // convert filtering into an integer number of modes
   laplace_maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
 
@@ -809,7 +811,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
     ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);
     
-    x[ix][ncz] = x[ix][0]; // enforce periodicity
+    x[ix][mesh->ngz-1] = x[ix][0]; // enforce periodicity
   }
 
   return 0;
@@ -1106,6 +1108,8 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
   /// Take FFTs of data
   static dcomplex *bk1d = NULL; ///< 1D in Z for taking FFTs
   int ix, kz;
+
+  int ncz = mesh->ngz-1;
 
   if(bk1d == NULL)
     bk1d = new dcomplex[ncz/2 + 1];
@@ -1585,13 +1589,15 @@ int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
+  int ncz = mesh->ngz-1;
+
   if(xk1d == NULL) {
     xk1d = new dcomplex[ncz/2 + 1];
     for(kz=0;kz<=ncz/2;kz++)
       xk1d[kz] = 0.0;
   }
 
-  for(ix=0; ix<=ncx; ix++){
+  for(ix=0; ix<mesh->ngx; ix++){
     
     for(kz = 0; kz<= laplace_maxmode; kz++) {
       xk1d[kz] = data.xk[kz][ix];

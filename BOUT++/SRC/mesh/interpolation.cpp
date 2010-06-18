@@ -211,7 +211,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   // Loop over output grid points
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<ncz;jz++) {
+      for(int jz=0;jz<mesh->ngz-1;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 
@@ -237,6 +237,8 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	int jx2mnew = (jxmnew == 0) ? 0 : (jxmnew - 1);
 	int jxpnew = jxmnew + 1;
 	int jx2pnew = (jxmnew == (mesh->ngx-2)) ? jxpnew : (jxpnew + 1);
+
+	int ncz = mesh->ngz-1;
 
 	// Get the 4 Z points
 	jzmnew = ((jzmnew % ncz) + ncz) % ncz;
@@ -305,7 +307,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
   // Loop over output grid points
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<ncz;jz++) {
+      for(int jz=0;jz<mesh->ngz-1;jz++) {
 	// Need to get value of f at 
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 	

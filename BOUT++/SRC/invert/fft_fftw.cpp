@@ -97,6 +97,7 @@ void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift)
   int jz, ikz;
   real kwave;
   
+  int ncz = mesh->ngz-1;
   if((isign > 0) && (mesh->ShiftXderivs) && shift) {
     // Reverse FFT
     for(jz=0;jz<ncz;jz++) {
@@ -206,6 +207,8 @@ void ZFFT(real *in, real zoffset, dcomplex *cv, bool shift)
   int jz;
   real kwave;
 
+  int ncz = mesh->ngz-1;
+
   rfft(in, ncz, cv);
 
   if((mesh->ShiftXderivs) && shift) {
@@ -223,6 +226,8 @@ void ZFFT_rev(dcomplex *cv, real zoffset, real *out, bool shift)
 {
   int jz;
   real kwave;
+  
+  int ncz = mesh->ngz-1;
   
   if((mesh->ShiftXderivs) && shift) {
     for(jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
