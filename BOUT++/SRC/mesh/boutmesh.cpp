@@ -36,8 +36,6 @@
 #include "utils.h"
 #include "fft.h"
 
-#include "mesh_topology.h"
-
 #include "dcomplex.h"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -2233,4 +2231,33 @@ void BoutRangeIter::next()
 bool BoutRangeIter::isDone()
 {
   return ind > e;
+}
+
+real BoutMesh::GlobalX(int jx)
+{
+  return ((real) XGLOBAL(jx)) / ((real) MX);
+}
+
+real BoutMesh::GlobalY(int jy)
+{
+  int ly = YGLOBAL(jy); // global poloidal index across subdomains
+  int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
+
+  if(MYPE_IN_CORE) {
+    // Turn ly into an index over the core cells only
+    if(ly < jyseps1_2) {
+      ly -= jyseps1_1+1;
+    }else
+      ly -= jyseps1_1+1 + (jyseps2_1 - jyseps1_2);
+  }else {
+    // Not in core. Need to get the last "core" value
+    if(ly <= jyseps1_1) {
+      // Inner lower leg
+      ly = 0;
+    }else if(ly > jyseps2_2) {
+      // Outer lower leg
+      ly = nycore-1;
+    }
+  }
+  return ((real) ly) / ((real) nycore);
 }

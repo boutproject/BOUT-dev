@@ -147,6 +147,9 @@ class Mesh {
   virtual IndexIter *iterateIndexXZ() = 0;
   */
 
+  virtual real GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
+  virtual real GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
+  
   //////////////////////////////////////////////////////////
 
   /// Size of the mesh on this processor including guard/boundary cells
