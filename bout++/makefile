@@ -7,7 +7,7 @@ ifneq ("$(PVODE)foo", "foo")
 	srcdirs = PVODE/source PVODE/precon
 	# manual
 endif
-srcdirs += SRC
+srcdirs += src
 
 
 all: PVODE/lib make.config $(srcdirs)
