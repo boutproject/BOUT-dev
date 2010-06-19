@@ -59,7 +59,7 @@ int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
 FieldGroup comms; // Group of variables for communications
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   

@@ -381,7 +381,7 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
   check_data();
 #endif
 
-  if(StaggerGrids && (rhs.location != location)) {
+  if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
     return (*this) += interp_to(rhs, location);
   }
@@ -512,7 +512,7 @@ Field3D & Field3D::operator-=(const Field3D &rhs)
   check_data();
 #endif
 
-  if(StaggerGrids && (rhs.location != location)) {
+  if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
     return (*this) -= interp_to(rhs, location);
   }
@@ -641,7 +641,7 @@ Field3D & Field3D::operator*=(const Field3D &rhs)
   check_data();
 #endif
 
-  if(StaggerGrids && (rhs.location != location)) {
+  if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
     return (*this) *= interp_to(rhs, location);
   }
@@ -763,7 +763,7 @@ Field3D & Field3D::operator/=(const Field3D &rhs)
 {
   int jx, jy, jz;
 
-  if(StaggerGrids && (rhs.location != location)) {
+  if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
     
 #ifdef CHECK
@@ -911,7 +911,7 @@ Field3D & Field3D::operator^=(const Field3D &rhs)
 {
   int jx, jy, jz;
 
-  if(StaggerGrids && (rhs.location != location)) {
+  if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
     
 #ifdef CHECK
@@ -1296,10 +1296,10 @@ void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
 
   if(need_x) {
     if(mesh->ShiftXderivs) {
-      fval->xp = interp_z(bx->jxp, bx->jy, bx->jz, bx->xp_offset, ShiftOrder);
-      fval->xm = interp_z(bx->jxm, bx->jy, bx->jz, bx->xm_offset, ShiftOrder);
-      fval->x2p = interp_z(bx->jx2p, bx->jy, bx->jz, bx->x2p_offset, ShiftOrder);
-      fval->x2m = interp_z(bx->jx2m, bx->jy, bx->jz, bx->x2m_offset, ShiftOrder);
+      fval->xp = interp_z(bx->jxp, bx->jy, bx->jz, bx->xp_offset, mesh->ShiftOrder);
+      fval->xm = interp_z(bx->jxm, bx->jy, bx->jz, bx->xm_offset, mesh->ShiftOrder);
+      fval->x2p = interp_z(bx->jx2p, bx->jy, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
+      fval->x2m = interp_z(bx->jx2m, bx->jy, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
     }else {
       // No shift in the z direction
       fval->xp = block->data[bx->jxp][bx->jy][bx->jz];
@@ -1311,22 +1311,22 @@ void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
 
   // TWIST-SHIFT CONDITION
   if(bx->yp_shift) {
-    fval->yp = interp_z(bx->jx, bx->jyp, bx->jz, bx->yp_offset, TwistOrder);
+    fval->yp = interp_z(bx->jx, bx->jyp, bx->jz, bx->yp_offset, mesh->TwistOrder);
   }else
     fval->yp = block->data[bx->jx][bx->jyp][bx->jz];
   
   if(bx->ym_shift) {
-    fval->ym = interp_z(bx->jx, bx->jym, bx->jz, bx->ym_offset, TwistOrder);
+    fval->ym = interp_z(bx->jx, bx->jym, bx->jz, bx->ym_offset, mesh->TwistOrder);
   }else
     fval->ym = block->data[bx->jx][bx->jym][bx->jz];
 
   if(bx->y2p_shift) {
-    fval->y2p = interp_z(bx->jx, bx->jy2p, bx->jz, bx->yp_offset, TwistOrder);
+    fval->y2p = interp_z(bx->jx, bx->jy2p, bx->jz, bx->yp_offset, mesh->TwistOrder);
   }else
     fval->y2p = block->data[bx->jx][bx->jy2p][bx->jz];
 
   if(bx->y2m_shift) {
-    fval->y2m = interp_z(bx->jx, bx->jy2m, bx->jz, bx->ym_offset, TwistOrder);
+    fval->y2m = interp_z(bx->jx, bx->jy2m, bx->jz, bx->ym_offset, mesh->TwistOrder);
   }else
     fval->y2m = block->data[bx->jx][bx->jy2m][bx->jz];
 
@@ -1354,11 +1354,11 @@ void Field3D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
 
-  if(mesh->ShiftXderivs && (ShiftOrder != 0)) {
-    fval.p = interp_z(bx.jxp, bx.jy, bx.jz, bx.xp_offset, ShiftOrder);
-    fval.m = interp_z(bx.jxm, bx.jy, bx.jz, bx.xm_offset, ShiftOrder);
-    fval.pp = interp_z(bx.jxp, bx.jy, bx.jz, bx.x2p_offset, ShiftOrder);
-    fval.mm = interp_z(bx.jxm, bx.jy, bx.jz, bx.x2m_offset, ShiftOrder);
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    fval.p = interp_z(bx.jxp, bx.jy, bx.jz, bx.xp_offset, mesh->ShiftOrder);
+    fval.m = interp_z(bx.jxm, bx.jy, bx.jz, bx.xm_offset, mesh->ShiftOrder);
+    fval.pp = interp_z(bx.jxp, bx.jy, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
+    fval.mm = interp_z(bx.jxm, bx.jy, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
   }else {
     // No shift in the z direction
     fval.p = block->data[bx.jxp][bx.jy][bx.jz];
@@ -1367,7 +1367,7 @@ void Field3D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
     fval.mm = block->data[bx.jx2m][bx.jy][bx.jz];
   }
 
-  if(StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
@@ -1403,7 +1403,7 @@ void Field3D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
 
   
-  //if((!TwistShift) || (TwistOrder == 0)) {
+  //if((!TwistShift) || (mesh->TwistOrder == 0)) {
     // Either no twist-shift, or already done in communicator
     
     fval.p = block->data[bx.jx][bx.jyp][bx.jz];
@@ -1414,28 +1414,28 @@ void Field3D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }else {
     // TWIST-SHIFT CONDITION
     if(bx.yp_shift) {
-      fval.p = interp_z(bx.jx, bx.jyp, bx.jz, bx.yp_offset, TwistOrder);
+      fval.p = interp_z(bx.jx, bx.jyp, bx.jz, bx.yp_offset, mesh->TwistOrder);
     }else
       fval.p = block->data[bx.jx][bx.jyp][bx.jz];
     
     if(bx.ym_shift) {
-      fval.m = interp_z(bx.jx, bx.jym, bx.jz, bx.ym_offset, TwistOrder);
+      fval.m = interp_z(bx.jx, bx.jym, bx.jz, bx.ym_offset, mesh->TwistOrder);
     }else
       fval.m = block->data[bx.jx][bx.jym][bx.jz];
     
     if(bx.y2p_shift) {
-      fval.pp = interp_z(bx.jx, bx.jy2p, bx.jz, bx.yp_offset, TwistOrder);
+      fval.pp = interp_z(bx.jx, bx.jy2p, bx.jz, bx.yp_offset, mesh->TwistOrder);
     }else
       fval.pp = block->data[bx.jx][bx.jy2p][bx.jz];
     
     if(bx.y2m_shift) {
-      fval.mm = interp_z(bx.jx, bx.jy2m, bx.jz, bx.ym_offset, TwistOrder);
+      fval.mm = interp_z(bx.jx, bx.jy2m, bx.jz, bx.ym_offset, mesh->TwistOrder);
     }else
       fval.mm = block->data[bx.jx][bx.jy2m][bx.jz];
   }
     */
 
-  if(StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
@@ -1474,7 +1474,7 @@ void Field3D::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.pp = block->data[bx.jx][bx.jy][bx.jz2p];
   fval.mm = block->data[bx.jx][bx.jy][bx.jz2m];
 
-  if(StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil
 
     if((location == CELL_CENTRE) && (loc == CELL_ZLOW)) {

@@ -118,14 +118,18 @@ int BoutMesh::load()
   }
   OPTION(TwistShift,   false);
   OPTION(TwistOrder,   0);
+  OPTION(ShiftOrder,   0);
   OPTION(ShiftXderivs, false);
-
+  OPTION(IncIntShear,  false);
+  OPTION(BoundaryOnCell, false); // Determine location of boundary
+  OPTION(StaggerGrids,   false); // Stagger grids
+  
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
-    if(ShiftOrder == 0) {
+    if(mesh->ShiftOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", ShiftOrder);
+      output.write("%d-point\n", mesh->ShiftOrder);
   }
 
   if(options.get("zperiod",   zperiod,      1)) {
@@ -140,10 +144,10 @@ int BoutMesh::load()
 
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(TwistOrder == 0) {
+    if(mesh->TwistOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", TwistOrder);
+      output.write("%d-point\n", mesh->TwistOrder);
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
@@ -255,7 +259,7 @@ int BoutMesh::load()
     ShiftTorsion = 0.0;
   }
   
-  if(IncIntShear) {
+  if(mesh->IncIntShear) {
     if(get(IntShiftTorsion, "IntShiftTorsion")) {
       output.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
@@ -1219,7 +1223,7 @@ int BoutMesh::wait(comm_handle handle)
   }
 
   // TWIST-SHIFT CONDITION
-  if(TwistShift && (TwistOrder == 0)) {
+  if(TwistShift && (mesh->TwistOrder == 0)) {
     int jx, jy;
     
     // Perform Twist-shift using shifting method (rather than in SetStencil)

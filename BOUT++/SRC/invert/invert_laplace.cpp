@@ -148,7 +148,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
       coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / SQ(mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
   }
 
-  if(mesh->ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // d2dz2 term
     coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
     // Mixed derivative
@@ -508,7 +508,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	if(flags & INVERT_DC_IN_GRAD) {
 	  // Zero gradient at inner boundary
 	  
-	  if((flags & INVERT_IN_SYM) && (xbndry > 1) && BoundaryOnCell) {
+	  if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	    // Use symmetric boundary to set zero-gradient
 	    
 	    for (ix=0;ix<xbndry-1;ix++) {
@@ -542,7 +542,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      bk1d[ix]=0.0;
 	    }
 
-	    if(BoundaryOnCell) {
+	    if(mesh->BoundaryOnCell) {
 	      // Antisymmetric about boundary on cell
 	      avec[xbndry-1]=1.0; bvec[xbndry-1]=0.0; cvec[xbndry-1]= 1.0;
 	      bk1d[xbndry-1]=0.0;
@@ -564,7 +564,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	if(flags & INVERT_DC_OUT_GRAD) {
 	  // Zero gradient at outer boundary
 
-	  if((flags & INVERT_OUT_SYM) && (xbndry > 1) && BoundaryOnCell) {
+	  if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	    // Use symmetric boundary to set zero-gradient
 	    
 	    for (ix=0;ix<xbndry-1;ix++) {
@@ -601,7 +601,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      bk1d[ncx-ix]=0.0;
 	    }
 	    ix = xbndry-1;
-	    if(BoundaryOnCell) {
+	    if(mesh->BoundaryOnCell) {
 	      // Antisymmetric about boundary on cell
 	      avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
 	      bk1d[ncx-ix]=0.0;
@@ -624,7 +624,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	if(flags & INVERT_AC_IN_GRAD) {
 	  // Zero gradient at inner boundary
 	  
-	  if((flags & INVERT_IN_SYM) && (xbndry > 1) && BoundaryOnCell) {
+	  if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	    // Use symmetric boundary to set zero-gradient
 	    
 	    for (ix=0;ix<xbndry-1;ix++) {
@@ -669,7 +669,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      bk1d[ix]=0.0;
 	    }
 
-	    if(BoundaryOnCell) {
+	    if(mesh->BoundaryOnCell) {
 	      // Antisymmetric about boundary on cell
 	      avec[xbndry-1]=1.0; bvec[xbndry-1]=0.0; cvec[xbndry-1]= 1.0;
 	      bk1d[xbndry-1]=0.0;
@@ -691,7 +691,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	if(flags & INVERT_AC_OUT_GRAD) {
 	  // Zero gradient at outer boundary
 	  
-	  if((flags & INVERT_OUT_SYM) && (xbndry > 1) && BoundaryOnCell) {
+	  if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	    // Use symmetric boundary to set zero-gradient
 	    
 	    for (ix=0;ix<xbndry-1;ix++) {
@@ -738,7 +738,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      bk1d[ncx-ix]=0.0;
 	    }
 	    ix = xbndry-1;
-	    if(BoundaryOnCell) {
+	    if(mesh->BoundaryOnCell) {
 	      // Antisymmetric about boundary on cell
 	      avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
 	      bk1d[ncx-ix]=0.0;
@@ -762,7 +762,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       if((flags & INVERT_IN_SYM) && (xbndry > 1)) {
 	// (Anti-)symmetry on inner boundary. Nothing to do if only one boundary cell
 	int xloc = 2*xbndry;
-	if(!BoundaryOnCell)
+	if(!mesh->BoundaryOnCell)
 	  xloc--;
 	
 	if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {
@@ -779,7 +779,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	// (Anti-)symmetry on outer boundary. Nothing to do if only one boundary cell
 	
 	int xloc =  mesh->ngx - 2*xbndry;
-	if(BoundaryOnCell)
+	if(mesh->BoundaryOnCell)
 	  xloc--;
 	
 	if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {

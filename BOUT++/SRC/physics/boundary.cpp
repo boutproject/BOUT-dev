@@ -2055,7 +2055,7 @@ void bndry_inner_sym(Field3D &var)
     var = var.ShiftZ(true);
 
   xb = 2*mesh->xstart;
-  if(!BoundaryOnCell)
+  if(!mesh->BoundaryOnCell)
     xb--;  // Move boundary to between cells
 
   for(jx=0;jx<mesh->xstart;jx++)
@@ -2078,7 +2078,7 @@ void bndry_sol_sym(Field3D &var)
     var = var.ShiftZ(true);
 
   xb = mesh->xend;
-  if(BoundaryOnCell)
+  if(mesh->BoundaryOnCell)
     xb--;
 
   for(jx=0;jx<mesh->xstart;jx++)
@@ -2119,7 +2119,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
     var = var.ShiftZ(true);
 
   xb = 2*mesh->xstart;
-  if(!BoundaryOnCell)
+  if(!mesh->BoundaryOnCell)
     xb--;  // Move boundary to between cells
 
   for(jx=0;jx<mesh->xstart;jx++)
@@ -2146,7 +2146,7 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
     var = var.ShiftZ(true);
 
   xb = mesh->xend;
-  if(BoundaryOnCell)
+  if(mesh->BoundaryOnCell)
     xb--;
 
   for(jx=0;jx<mesh->xstart;jx++)
@@ -2304,7 +2304,7 @@ void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 void bndry_ydown_sym(Field3D &var)
 {
   int yb = 2*mesh->ystart;
-  if(!BoundaryOnCell)
+  if(!mesh->BoundaryOnCell)
     yb--;
   
   RangeIter *xi = mesh->iterateBndryLowerY();
@@ -2318,7 +2318,7 @@ void bndry_ydown_sym(Field3D &var)
 void bndry_yup_sym(Field3D &var)
 {
   int yb = mesh->yend;
-  if(BoundaryOnCell)
+  if(mesh->BoundaryOnCell)
     yb--;
   
   RangeIter *xi = mesh->iterateBndryUpperY();
@@ -2337,7 +2337,7 @@ void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
   rate = fabs(rate);
 
   int yb = 2*mesh->ystart;
-  if(!BoundaryOnCell)
+  if(!mesh->BoundaryOnCell)
     yb--;
   
   RangeIter *xi = mesh->iterateBndryLowerY();
@@ -2353,7 +2353,7 @@ void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
 void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate)
 {
   int yb = mesh->yend;
-  if(BoundaryOnCell)
+  if(mesh->BoundaryOnCell)
     yb--;
 
   rate = fabs(rate);

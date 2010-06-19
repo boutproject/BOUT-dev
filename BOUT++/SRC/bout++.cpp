@@ -213,12 +213,7 @@ int main(int argc, char **argv)
     grid_name = DEFAULT_GRID;
   
   OPTION(dump_float,   true);
-  OPTION(IncIntShear,  false);
-  OPTION(ShiftOrder,   0);
   OPTION(non_uniform,  false);
-
-  options.get("BoundaryOnCell", BoundaryOnCell, false); // Determine location of boundary
-  options.get("StaggerGrids",   StaggerGrids,   false); // Stagger grids
   
   /// Get file extensions
   if((dump_ext = options.getString("dump_format")) == NULL) {
@@ -267,13 +262,18 @@ int main(int argc, char **argv)
   /// initialise Laplacian inversion code
   invert_init();
 
+  // Check if restarting
+  bool restart;
+  OPTION(restart, false);
+  OPTION(append, false);
+
   output.write("Initialising physics module\n");
   /// Initialise physics module
 #ifdef CHECK
   msg_point = msg_stack.push("Initialising physics module");
 #endif
 
-  if(physics_init()) {
+  if(physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");
     return(1);
   }
@@ -282,11 +282,6 @@ int main(int argc, char **argv)
   // Can't trust that the user won't leave messages on the stack
   msg_stack.pop(msg_point);
 #endif
-
-  // Check if restarting
-  bool restart;
-  OPTION(restart, false);
-  OPTION(append, false);
   
   /// Initialise the solver
   solver.setRestartDir(data_dir);

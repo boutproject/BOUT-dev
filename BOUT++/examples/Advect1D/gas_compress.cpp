@@ -21,7 +21,7 @@ bool include_viscosity;
 
 Vector2D g; // Acceleration
 
-int physics_init()
+int physics_init(bool restarting)
 {
   // 2D initial profiles
   Field2D N0, P0;

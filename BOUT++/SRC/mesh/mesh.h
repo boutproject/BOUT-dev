@@ -168,11 +168,16 @@ class Mesh {
   real zlength, dz;    // Derived from options in grid.cpp (in radians)
   
   bool ShiftXderivs; // Use shifted X derivatives
-  
+  int  ShiftOrder;   // Order of shifted X derivative interpolation
   Field2D zShift; // Z shift for each point (radians)
+  
+  int  TwistOrder;   // Order of twist-shift interpolation
+  bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
+  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
   Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+  bool IncIntShear; // Include integrated shear (if shifting X)
   
   Field2D J; // Jacobian
 

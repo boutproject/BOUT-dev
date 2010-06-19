@@ -41,7 +41,7 @@ real nu_hat, mui_hat, wci, nueix, nuiix;
 real chi_perp, D_perp, mu_perp;
 real lambda_relax;
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   

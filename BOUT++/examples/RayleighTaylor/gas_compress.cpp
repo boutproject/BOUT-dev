@@ -26,7 +26,7 @@ Vector2D V0;
 
 Vector2D g; // Acceleration
 
-int physics_init()
+int physics_init(bool restarting)
 {
   real v0_multiply;
 

@@ -74,14 +74,7 @@ GLOBAL MsgStack msg_stack;
 /// Define for reading a variable from the grid
 #define GRID_LOAD(var) mesh->get(var, #var)
 
-// Settings (read from file, bout++.cpp)
-
-GLOBAL bool IncIntShear;  // Include integrated shear (if shifting X)
-GLOBAL int  ShiftOrder;   // Order of shifted X derivative interpolation
-GLOBAL int  TwistOrder;   // Order of twist-shift interpolation
-GLOBAL bool BoundaryOnCell;  ///< Boundary is on the last "real" point. Otherwise between points (old method)
-
-GLOBAL bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+// Settings
 
 // Timing information
 GLOBAL real wtime_invert; //< Time spent performing inversions

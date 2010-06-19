@@ -733,11 +733,11 @@ void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
 {
   fval->cc = data[bx->jx][bx->jz];
 
-  if(mesh->ShiftXderivs && (ShiftOrder != 0)) {
-    fval->xp = interp_z(bx->jxp, bx->jz, bx->xp_offset, ShiftOrder);
-    fval->xm = interp_z(bx->jxm, bx->jz, bx->xm_offset, ShiftOrder);
-    fval->x2p = interp_z(bx->jxp, bx->jz, bx->x2p_offset, ShiftOrder);
-    fval->x2m = interp_z(bx->jxm, bx->jz, bx->x2m_offset, ShiftOrder);
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    fval->xp = interp_z(bx->jxp, bx->jz, bx->xp_offset, mesh->ShiftOrder);
+    fval->xm = interp_z(bx->jxm, bx->jz, bx->xm_offset, mesh->ShiftOrder);
+    fval->x2p = interp_z(bx->jxp, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
+    fval->x2m = interp_z(bx->jxm, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
   }else {
     fval->xp = data[bx->jxp][bx->jz];
     fval->xm = data[bx->jxm][bx->jz];
@@ -758,11 +758,11 @@ void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
 
 void FieldPerp::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
-  if(mesh->ShiftXderivs && (ShiftOrder != 0)) {
-    fval.p = interp_z(bx.jxp, bx.jz, bx.xp_offset, ShiftOrder);
-    fval.m = interp_z(bx.jxm, bx.jz, bx.xm_offset, ShiftOrder);
-    fval.pp = interp_z(bx.jxp, bx.jz, bx.x2p_offset, ShiftOrder);
-    fval.mm = interp_z(bx.jxm, bx.jz, bx.x2m_offset, ShiftOrder);
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    fval.p = interp_z(bx.jxp, bx.jz, bx.xp_offset, mesh->ShiftOrder);
+    fval.m = interp_z(bx.jxm, bx.jz, bx.xm_offset, mesh->ShiftOrder);
+    fval.pp = interp_z(bx.jxp, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
+    fval.mm = interp_z(bx.jxm, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
   }else {
     fval.p = data[bx.jxp][bx.jz];
     fval.m = data[bx.jxm][bx.jz];

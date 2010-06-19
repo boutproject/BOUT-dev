@@ -743,7 +743,7 @@ void calc_index(bindex *bx)
 
   /* Twist-Shift boundary condition */
   /*
-  if(TwistShift && (TwistOrder != 0)) {
+  if(TwistShift && (mesh->TwistOrder != 0)) {
     if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
 	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
       

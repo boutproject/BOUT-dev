@@ -93,7 +93,7 @@ void GenericSolver::add(Field3D &v, Field3D &F_v, const char* name)
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
 
-  if(StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
+  if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
     F_v.setLocation(v.getLocation()); // Make sure both at the same location
   }

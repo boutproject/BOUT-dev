@@ -49,7 +49,7 @@ real interp(const stencil &s)
 */
 const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 {
-  if(StaggerGrids && (var.getLocation() != loc)) {
+  if(mesh->StaggerGrids && (var.getLocation() != loc)) {
     
     //output.write("\nINTERPOLATING %s -> %s\n", strLocation(var.getLocation()), strLocation(loc));
 
@@ -200,7 +200,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   de_z = delta_z.getData();
 
   Field3D f = var;
-  if(mesh->ShiftXderivs && (ShiftOrder == 0)) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     f = var.ShiftZ(true); // Shift into real space
   }
@@ -275,7 +275,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	r_data[jx][jy][jz] = lagrange_4pt(xvals, xs);
       }
 
-  if(mesh->ShiftXderivs && (ShiftOrder == 0))
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
     result = result.ShiftZ(false); // Shift back
 
 #ifdef CHECK

@@ -68,7 +68,7 @@ bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 
 // Physics functions
 
-int physics_init();
+int physics_init(bool restarting);
 int physics_run(real t);
 
 #ifndef GLOBALORIGIN

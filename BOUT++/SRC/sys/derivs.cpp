@@ -494,6 +494,11 @@ int derivs_init()
   msg_stack.push("Initialising derivatives");
 #endif
 
+  /// NOTE: StaggerGrids is also in Mesh, but derivs_init needs to come before Mesh
+  bool StaggerGrids;
+  options.setSection(NULL);
+  OPTION(StaggerGrids,   false);
+
   output.write("Setting X differencing methods\n");
   options.setSection("ddx");
   output.write("\tFirst       : ");
@@ -616,7 +621,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   stencil s;
 
   Field3D vs = var;
-  if(mesh->ShiftXderivs && (ShiftOrder == 0)) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
     vs = var.ShiftZ(true); // Shift into real space
   }
@@ -630,7 +635,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index3(&bx));
   
-  if(mesh->ShiftXderivs && (ShiftOrder == 0))
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
     result = result.ShiftZ(false); // Shift back
 
 #ifdef CHECK
@@ -734,12 +739,12 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   Field3D result;
 
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) ||
@@ -778,7 +783,7 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   result = interp_to(result, outloc); // Interpolate if necessary
   
-  if(mesh->ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // Using BOUT-06 style shifting
     result += mesh->IntShiftTorsion * DDZ(f, outloc);
   }
@@ -813,12 +818,12 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   Field3D result;
 
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     //output.write("\nSHIFTING %s -> %s\n", strLocation(inloc), strLocation(outloc));
@@ -888,12 +893,12 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
 
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_ZLOW)) ||
@@ -931,7 +936,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     // Use FFT
     
     real shift = 0.; // Shifting result in Z?
-    if(StaggerGrids) {
+    if(mesh->StaggerGrids) {
       if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
 	// Shifting down - multiply by exp(-0.5*i*k*dz)
 	shift = -1.;
@@ -969,7 +974,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 
 	  if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
 	  cv[jz] *= dcomplex(0.0, kwave) * flt;
-	  if(StaggerGrids)
+	  if(mesh->StaggerGrids)
 	    cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
 	}
 	
@@ -1064,12 +1069,12 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   
   Field3D result;
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) ||
@@ -1113,15 +1118,15 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   result = interp_to(result, outloc);
 
-  if(mesh->ShiftXderivs && IncIntShear) {
-    IncIntShear = false; // So DDX doesn't try to include I again
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+    mesh->IncIntShear = false; // So DDX doesn't try to include I again
     // Add I^2 d^2/dz^2 term
     result += mesh->IntShiftTorsion^2 * D2DZ2(f, outloc);
     // Mixed derivative
     result += 2.*mesh->IntShiftTorsion * D2DXDZ(f);
     // DDZ term
     result += DDX(mesh->IntShiftTorsion) * DDZ(f, outloc);
-    IncIntShear = true;
+    mesh->IncIntShear = true;
   }
   
   return result;
@@ -1158,12 +1163,12 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   
   Field3D result;
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
@@ -1239,12 +1244,12 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   
   Field3D result;
 
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (outloc != inloc)) {
+  if(mesh->StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_ZLOW)) ||
@@ -1280,7 +1285,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
     // Use FFT
 
     real shift = 0.; // Shifting result in Z?
-    if(StaggerGrids) {
+    if(mesh->StaggerGrids) {
       if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
 	// Shifting down - multiply by exp(-0.5*i*k*dz)
 	shift = -1.;
@@ -1313,7 +1318,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 	  if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
 
 	  cv[jz] *= -SQ(kwave) * flt;
-	  if(StaggerGrids)
+	  if(mesh->StaggerGrids)
 	    cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
 	}
 
@@ -1423,12 +1428,12 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
   
-  if(StaggerGrids && (vloc != inloc)) {
+  if(mesh->StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
     if(vloc == CELL_XLOW) {
       // V staggered w.r.t. variable
@@ -1461,7 +1466,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   Field *vp = v.clone();
   Field *fp = f.clone();
   
-  if(mesh->ShiftXderivs && (ShiftOrder == 0)) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT if needed
     vp->ShiftToReal(true);
     fp->ShiftToReal(true);
@@ -1482,7 +1487,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx[bx.jx][bx.jy];
   }while(next_index3(&bx));
   
-  if(mesh->ShiftXderivs && (ShiftOrder == 0))
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
     result = result.ShiftZ(false); // Shift back
   
   result.setLocation(inloc);
@@ -1516,12 +1521,12 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (vloc != inloc)) {
+  if(mesh->StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
     if(vloc == CELL_YLOW) {
       // V staggered w.r.t. variable
@@ -1589,12 +1594,12 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (vloc != inloc)) {
+  if(mesh->StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
     if(vloc == CELL_YLOW) {
       // V staggered w.r.t. variable
@@ -1680,12 +1685,12 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   CELL_LOC inloc = f.getLocation(); // Input location
   CELL_LOC diffloc = inloc; // Location of differential result
   
-  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(StaggerGrids && (vloc != inloc)) {
+  if(mesh->StaggerGrids && (vloc != inloc)) {
     // Staggered grids enabled, and velocity at different location to value
     if(vloc == CELL_ZLOW) {
       // V staggered w.r.t. variable
