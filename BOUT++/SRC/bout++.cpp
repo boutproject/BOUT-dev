@@ -215,6 +215,11 @@ int main(int argc, char **argv)
   OPTION(dump_float,   true);
   OPTION(non_uniform,  false);
   
+  // Check if restarting
+  bool restart;
+  OPTION(restart, false);
+  OPTION(append, false);
+
   /// Get file extensions
   if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
@@ -261,11 +266,6 @@ int main(int argc, char **argv)
 
   /// initialise Laplacian inversion code
   invert_init();
-
-  // Check if restarting
-  bool restart;
-  OPTION(restart, false);
-  OPTION(append, false);
 
   output.write("Initialising physics module\n");
   /// Initialise physics module

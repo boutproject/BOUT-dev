@@ -65,6 +65,7 @@ int BoutMesh::load()
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
 
+  options.setSection(NULL);
   options.get("MXG", MXG, 2);
   options.get("MYG", MYG, 2);
   
