@@ -73,22 +73,17 @@ char dumpname[512];
 real simtime;
 int iteration;
 
-void setup_files();                 // Adds basic quantities to the output files 
 const string time_to_hms(real t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
 
 int bout_monitor(real t, int iter, int NOUT); // Function called by the solver each timestep
 
-/*!************************************************************************
- * Main function
- **************************************************************************/
 
-int main(int argc, char **argv)
+int bout_init(int argc, char **argv)
 {
   int i, NOUT;
   real TIMESTEP;
   char *grid_name;
-  time_t start_time, end_time;
   bool dump_float; // Output dump files as floats
 
   char *grid_ext, *dump_ext; ///< Extensions for restart and dump files
@@ -187,8 +182,6 @@ int main(int argc, char **argv)
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-  start_time = time((time_t*) NULL);
-  output.write("\nRun started at  : %s\n", ctime(&start_time));
   output.write("Processor number: %d of %d\n\n", MYPE, NPES);
 
   /// Load settings file
@@ -205,9 +198,9 @@ int main(int argc, char **argv)
   
   /// GET GLOBAL OPTIONS
   options.setSection(NULL);
-
-  options.get("NOUT", NOUT, 1);
-  options.get("TIMESTEP", TIMESTEP, 1.0);
+  
+  OPTION(NOUT, 1);
+  OPTION(TIMESTEP, 1.0);
 
   if((grid_name = options.getString("grid")) == (char*) NULL)
     grid_name = DEFAULT_GRID;
@@ -262,7 +255,14 @@ int main(int argc, char **argv)
     dump.setLowPrecision(); // Down-convert to floats
 
   /// Add book-keeping variables to the output files
-  setup_files();
+
+  // This is a temporary hack to get around datafile's limitations (fix soon)
+  static real version = BOUT_VERSION;
+  dump.add(version, "BOUT_VERSION", 0);
+  dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
+  dump.add(iteration, "iteration", 0);
+  
+  mesh->outputVars(dump);
 
   /// initialise Laplacian inversion code
   invert_init();
@@ -306,28 +306,26 @@ int main(int argc, char **argv)
       append = true;
     }
   }
+  
+  return 0;
+}
 
-  //////// MAIN LOOP /////////
-
-  output.write("Running simulation\n\n");
-
+int bout_run()
+{
   /// Run the solver
-  solver.run(bout_monitor);
-
-  // close MPI
-#ifdef PETSC
-  PetscFinalize();
-#else
-  MPI_Finalize();
-#endif
-
-  end_time = time((time_t*) NULL);
+  output.write("Running simulation\n\n");
+  
+  time_t start_time = time((time_t*) NULL);
+  output.write("\nRun started at  : %s\n", ctime(&start_time));
+  
+  int status = solver.run(bout_monitor);
+  
+  time_t end_time = time((time_t*) NULL);
   output.write("\nRun finished at  : %s\n", ctime(&end_time));
   output.write("Run time : ");
-
-  int dt;
-  dt = end_time - start_time;
-  i = (int) (dt / (60.*60.));
+  
+  int dt = end_time - start_time;
+  int i = (int) (dt / (60.*60.));
   if(i > 0) {
     output.write("%d h ", i);
     dt -= i*60*60;
@@ -338,6 +336,36 @@ int main(int argc, char **argv)
     dt -= i*60;
   }
   output.write("%d s\n", dt);
+  
+  return status;
+}
+
+int bout_finish()
+{
+  // close MPI
+#ifdef PETSC
+  PetscFinalize();
+#else
+  MPI_Finalize();
+#endif
+  
+  return 0;
+}
+
+/*!************************************************************************
+ * Main function
+ **************************************************************************/
+
+int main(int argc, char **argv)
+{
+  if(bout_init(argc, argv)) {
+    fprintf(stderr, "ERROR INITIALISING BOUT++. ABORTING\n");
+    return 1;
+  }
+
+  bout_run();
+  
+  bout_finish();
 
   return(0);
 }
@@ -448,23 +476,6 @@ int bout_monitor(real t, int iter, int NOUT)
 #endif
   
   return 0;
-}
-
-/*!*************************************************************************
- * SETUP RESTART & DUMP FILES
- **************************************************************************/
-
-void setup_files()
-{
-  // Setup dump file
-
-  // This is a temporary hack to get around datafile's limitations (fix soon)
-  static real version = BOUT_VERSION;
-  dump.add(version, "BOUT_VERSION", 0);
-  dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-  dump.add(iteration, "iteration", 0);
-  
-  mesh->outputVars(dump);
 }
 
 /*!************************************************************************
