@@ -210,13 +210,15 @@ int OptionFile::command_line(int argc, char** argv)
     }
     
     if(p == -1) {
-      output.write("WARNING: Ignoring command-line option %s. Expecting key=value\n");
+      /// No equality sign. Assume it's a setting which is set to true
+      /// This is so that adding "restart" to the command-line works
+      add(NULL, argv[i], "true", -1);
       continue;
     }
     argv[i][p] = 0;
     
     // Add to the hash table
-    add("", argv[i], &(argv[i][p+1]), -1);
+    add(NULL, argv[i], &(argv[i][p+1]), -1);
   }
   return 0;
 }
@@ -475,7 +477,7 @@ int OptionFile::set(const char *name, const char *str)
  * Private functions
  **************************************************************************/
 
-void OptionFile::add(const char *section, const char *name, char *string, int linenr)
+void OptionFile::add(const char *section, const char *name, const char *string, int linenr)
 {
   int n;
 

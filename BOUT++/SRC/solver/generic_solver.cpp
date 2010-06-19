@@ -384,7 +384,10 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);
   restart.add(iteration, "hist_hi", 0);
-
+  
+  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  
   restart.add(NPES, "NPES", 0);
   restart.add(mesh->NXPE, "NXPE", 0);
 

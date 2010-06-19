@@ -57,6 +57,9 @@ void get_profile_opts()
   
   output.write("Initial profile global options\n");
   options.setSection(NULL);
+  
+  bool TwistShift;
+  OPTION(TwistShift, false);
   OPTION(Ballooning, TwistShift); // Use if have TwistShift
   OPTION(ShiftInitial, mesh->ShiftXderivs && (!Ballooning));
   output.write("\n");
@@ -163,11 +166,12 @@ int initial_profile(const char *name, Field3D &var)
 	
 	cx=Prof1D(xcoord, xs_s0, 0., 1.0, xs_wd, xs_mode, xs_phase, xs_opt);
 	cy=Prof1D(ycoord, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	cz=Prof1D((real) jz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	cz=Prof1D((real) jz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
 	var[jx][jy][jz] = scale*cx*cy*cz;
 	
-	if(TwistShift && Ballooning) {
+	real ts; ///< Twist-shift angle
+	if(mesh->surfaceClosed(jx, ts) && Ballooning) {
 	  // Use a truncated Ballooning transform to enforce periodicity
 	  
 	  int ball_n = 3; // How many times around in each direction
@@ -175,12 +179,12 @@ int initial_profile(const char *name, Field3D &var)
 	  for(int i=1; i<= ball_n; i++) {
 	    // y - i * nycore
 	    cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz + ((real) i)*ShiftAngle[jx]/mesh->dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((real) jz + ((real) i)*ts/mesh->dz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	    
 	    // y + i * nycore
 	    cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz - ((real) i)*ShiftAngle[jx]/mesh->dz, zs_s0, 0., (real) (MZ-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((real) jz - ((real) i)*ts/mesh->dz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	  }
 	}
@@ -283,9 +287,10 @@ int initial_profile(const char *name, Field2D &var)
   
 
   for (jx=0; jx < mesh->ngx; jx++) {
+    real xcoord = mesh->GlobalX(jx);
     for (jy=0; jy < mesh->ngy; jy++) {
       real ycoord = mesh->GlobalY(jy);
-      cx=Prof1D((real) jx, xs_s0, 0., (real) MX, xs_wd, xs_mode, xs_phase, xs_opt);
+      cx=Prof1D(xcoord, xs_s0, 0., 1., xs_wd, xs_mode, xs_phase, xs_opt);
       cy=Prof1D(ycoord, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
       
       var[jx][jy] = scale*cx*cy;
@@ -454,7 +459,7 @@ const Field3D genZMode(int n, real phase)
   real ***d = result.getData();
   
   for(int jz=0;jz<mesh->ngz;jz++) {
-    real val = sin(phase*PI +  TWOPI * ((real) jz)/ ((real) MZ-1) );
+    real val = sin(phase*PI +  TWOPI * ((real) jz)/ ((real) mesh->ngz-1) );
     for(int jx=0;jx<mesh->ngx;jx++)
       for(int jy=0;jy<mesh->ngy;jy++)
 	d[jx][jy][jz] = val;

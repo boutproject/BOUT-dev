@@ -49,6 +49,12 @@ int BoutMesh::load()
   output << "Loading mesh" << endl;
 
   //////////////
+  // Number of processors
+  
+  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+
+  //////////////
   // Grid sizes
   
   if(get(nx, "nx"))
@@ -99,7 +105,7 @@ int BoutMesh::load()
   
   /// Get mesh options
   options.setSection(NULL); // Global options
-  //int MZ;
+  int MZ;
   OPTION(MZ,           65);
   if(!is_pow2(MZ-1)) {
     if(is_pow2(MZ)) {
@@ -2034,6 +2040,17 @@ SurfaceIter* BoutMesh::iterateSurfaces()
   return (SurfaceIter*) NULL;
 }
 
+bool BoutMesh::surfaceClosed(int jx, real &ts)
+{
+  ts = 0.;
+  if(jx < ixseps_inner) {
+    if(TwistShift)
+      ts = ShiftAngle[jx];
+    return true;
+  }
+  return false;
+}
+
 // Define MPI operation to sum 2D fields over y.
 // NB: Don't sum in y boundary regions
 void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
@@ -2268,7 +2285,7 @@ void BoutMesh::outputVars(Datafile &file)
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);
   file.add(MYG,   "MYG",   0);
-  file.add(MZ,    "MZ",    0);
+  file.add(ngz,   "MZ",    0);
   file.add(NXPE,  "NXPE",  0);
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);

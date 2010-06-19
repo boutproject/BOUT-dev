@@ -52,30 +52,7 @@ GLOBAL Mesh *mesh; ///< The mesh object
 const real PI = 3.141592653589793;
 const real TWOPI = 6.2831853071795;
 
-// Grid sizes/indexes set in grid.cpp
-GLOBAL int nx, ny;        ///< Size of the grid in the input file
-GLOBAL int MX, MY;        ///< size of the grid excluding boundary regions
-
-GLOBAL int NPES; ///< Number of processors (bout++.cpp)
-GLOBAL int MYPE; ///< Rank of this processor (bout++.cpp)
-
-// separatrix indices (read in grid.cpp)
-GLOBAL int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2; 
-GLOBAL int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
-GLOBAL int ny_inner;
-
-// Communication parameters calculated by topology
-/*
-GLOBAL int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
-GLOBAL int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
-GLOBAL int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
-*/
-
-GLOBAL int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
-
-///////////////// TWIST-SHIFT CONDITION ///////////////////////
-
-GLOBAL real *ShiftAngle;  // angle a field-line moves in z for a y circuit (radians)
+GLOBAL int MYPE_IN_CORE; // 1 if processor in core
 
 ///////////////////////////////////////////////////////////////
 
@@ -99,18 +76,9 @@ GLOBAL MsgStack msg_stack;
 
 // Settings (read from file, bout++.cpp)
 
-GLOBAL bool restarting;   // Specifies whether code is restarting
-
 GLOBAL bool IncIntShear;  // Include integrated shear (if shifting X)
-GLOBAL bool TwistShift;   // Use a twist-shift condition in core?
 GLOBAL int  ShiftOrder;   // Order of shifted X derivative interpolation
 GLOBAL int  TwistOrder;   // Order of twist-shift interpolation
-GLOBAL int  MZ;           // Number of points in the Z direction
-GLOBAL int  zperiod;      // Number of z domains in 2 pi
-GLOBAL real ZMIN;
-GLOBAL real ZMAX;
-GLOBAL int  MXG;
-GLOBAL int  MYG;
 GLOBAL bool BoundaryOnCell;  ///< Boundary is on the last "real" point. Otherwise between points (old method)
 
 GLOBAL bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).

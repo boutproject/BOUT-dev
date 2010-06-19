@@ -162,9 +162,6 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
   //  real slength = 0.15;
   //  real width = 20.0;
 
-  real length  = slength*nx;
-  real width   = swidth*nx;
-
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {

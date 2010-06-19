@@ -948,7 +948,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     real kwave;
     real flt;
 
-    int xge = MXG, xlt = mesh->ngx-MXG;
+    int xge = mesh->xstart, xlt = mesh->xend+1;
     if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
       xge = 0;
       xlt = mesh->ngx;
@@ -1302,8 +1302,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
     if(cv == (dcomplex*) NULL)
       cv = new dcomplex[ncz/2 + 1];
 
-    for(jx=MXG;jx<(mesh->ngx-MXG);jx++) {
-      for(jy=MYG;jy<(mesh->ngy-MYG);jy++) {
+    for(jx=mesh->xstart;jx<=mesh->xend;jx++) {
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++) {
 
 	rfft(f[jx][jy], ncz, cv); // Forward FFT
 	

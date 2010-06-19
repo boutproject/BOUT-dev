@@ -53,7 +53,8 @@ class BoutMesh : public Mesh {
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
   const Field2D average_y(const Field2D&);
-  
+  bool surfaceClosed(int jx, real &ts);
+
   // Boundary iteration
   RangeIter* iterateBndryLowerY();
   RangeIter* iterateBndryUpperY();
@@ -64,20 +65,24 @@ class BoutMesh : public Mesh {
 
   void outputVars(Datafile &file);
  private:
-  /*
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
-  */
+  
   int MYSUB, MXSUB;  ///< Size of the grid on this processor
   
+  int NPES; ///< Number of processors
+  int MYPE; ///< Rank of this processor
+
   int PE_YIND; ///< Y index of this processor
   int NYPE; // Number of processors in the Y direction
-  /*
+  
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
   int ny_inner;
-  */
+  
+  real *ShiftAngle;  ///< Angle for twist-shift location
+  
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
   bool IS_MYPROC(int xind, int yind);
@@ -97,17 +102,17 @@ class BoutMesh : public Mesh {
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
-
-  /*
-  int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
+  
+  //int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
-  int  TwistOrder;   // Order of twist-shift interpolation
+  //int  TwistOrder;   // Order of twist-shift interpolation
+  
   int  zperiod; 
   real ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
+  
   int  MXG, MYG;     // Boundary sizes
-  */
 
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);

@@ -82,7 +82,11 @@ namespace invpar {
     msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
 #endif
 
-    int tshift = ROUND(ShiftAngle[xpos] / mesh->dz); // Nearest neighbour
+    real ts; // Twist-shift angle
+    if(!mesh->surfaceClosed(xpos,ts))
+      ts = 0.; // Should be an error, but just separate field-lines
+    
+    int tshift = ROUND(ts / mesh->dz); // Nearest neighbour
 
     static int ylen = 0;
     static bool *done; // Record whether a particular location has been inverted

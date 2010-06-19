@@ -122,7 +122,7 @@ int physics_init()
   // Normalise magnetic field
   Bpxy /= (bmag/1e4);
   Btxy /= (bmag/1e4);
-  Bxy  /= (bmag/1e4);
+  mesh->Bxy  /= (bmag/1e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -144,7 +144,7 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (Bxy^2)/mesh->g11;
+  mesh->g33 = (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = 0.0;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
@@ -152,7 +152,7 @@ int physics_init()
   mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11;
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = 0.0;
   mesh->g_13 = 0.0;

@@ -101,7 +101,7 @@ class OptionFile {
   int noptions;
   t_option *option;
   
-  void add(const char *section, const char *name, char *string, int linenr);
+  void add(const char *section, const char *name, const char *string, int linenr);
   int find(const char *name);
   unsigned int hash_string(const char *string);
   int strip_space(char *string);

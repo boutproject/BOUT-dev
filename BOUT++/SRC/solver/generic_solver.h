@@ -101,6 +101,8 @@ class GenericSolver {
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
 protected:
+
+  int NPES, MYPE; ///< Number of processors and this processor's index
   
   /// Calculate the number of evolving variables on this processor
   int getLocalN();

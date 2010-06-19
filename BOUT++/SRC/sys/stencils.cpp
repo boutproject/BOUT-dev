@@ -779,7 +779,7 @@ void calc_index(bindex *bx)
 void start_index(bindex *bx, REGION region)
 {
   if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-    bx->jx = MXG;
+    bx->jx = mesh->xstart;
   }else
     bx->jx = 0;
   
@@ -806,8 +806,8 @@ int next_index3(bindex *bx)
       
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
 	// Missing out X boundary
-	if(bx->jx >= (mesh->ngx-MXG)) {
-	  bx->jx = MXG;
+	if(bx->jx > mesh->xend) {
+	  bx->jx = mesh->xstart;
 	  return(0);
 	}
       }else {
@@ -835,8 +835,8 @@ int next_index2(bindex *bx)
     bx->jx++;
     
     if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-      if(bx->jx >= (mesh->ngx-MXG)) {
-	bx->jx = MXG;
+      if(bx->jx > mesh->xend) {
+	bx->jx = mesh->xstart;
 	return(0);
       }
     }else
@@ -860,8 +860,8 @@ int next_indexperp(bindex *bx)
     bx->jz = 0;
     bx->jx++;
       
-    if(bx->jx >= (mesh->ngx-MXG)) {
-      bx->jx = MXG;
+    if(bx->jx > mesh->xend) {
+      bx->jx = mesh->xstart;
       return(0);
     }
   }

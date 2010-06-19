@@ -67,7 +67,7 @@ using std::string;
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
 
-bool appending = false;
+bool append = false;
 char dumpname[512];
 
 real simtime;
@@ -108,13 +108,8 @@ int main(int argc, char **argv)
   data_dir = DEFAULT_DIR;
 
   /// Check command-line arguments
+  /// NB: "restart" and "append" are now caught by options
   for(i=1;i<argc;i++) {
-    if(strncasecmp(argv[i], "re", 2) == 0) {
-      restarting = true;
-    }
-    if(strncasecmp(argv[i], "ap", 2) == 0) {
-      appending = true;
-    }
     if(strncasecmp(argv[i], "no", 2) == 0) {
       // No output. Used for scaling studies
       Datafile::enabled = false;
@@ -136,6 +131,8 @@ int main(int argc, char **argv)
 #else
   MPI_Init(&argc,&argv);
 #endif
+
+  int NPES, MYPE;
   MPI_Comm_size(MPI_COMM_WORLD, &NPES);
   MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
 
@@ -199,6 +196,9 @@ int main(int argc, char **argv)
     output.write("\tFailed to read settings file. Aborting\n");
     return(1);
   }
+
+  // Get options override from command-line
+  options.command_line(argc, argv);
 
   /////////////////////////////////////////////
   /// Get some settings
@@ -283,14 +283,19 @@ int main(int argc, char **argv)
   msg_stack.pop(msg_point);
 #endif
 
+  // Check if restarting
+  bool restart;
+  OPTION(restart, false);
+  OPTION(append, false);
+  
   /// Initialise the solver
   solver.setRestartDir(data_dir);
-  if(solver.init(physics_run, argc, argv, restarting, NOUT, TIMESTEP)) {
+  if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
     output.write("Failed to initialise solver. Aborting\n");
     return(1);
   }
   
-  if(!restarting) {
+  if(!restart) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
@@ -299,11 +304,11 @@ int main(int argc, char **argv)
       return(1);
     }
 
-    if(appending) {
+    if(append) {
       dump.append(dumpname);
     }else {
       dump.write(dumpname);
-      appending = true;
+      append = true;
     }
   }
 
@@ -366,11 +371,11 @@ int bout_monitor(real t, int iter, int NOUT)
 
   /// Write (append) dump file
   
-  if(appending) {
+  if(append) {
     dump.append(dumpname);
   }else {
     dump.write(dumpname);
-    appending = true;
+    append = true;
   }
   
   /// Collect timing information

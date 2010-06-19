@@ -562,7 +562,7 @@ void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BN
     RangeIter *xi = mesh->iterateBndryLowerY();
     /// Iterate over boundary
     for(xi->first(); !xi->isDone(); xi->next())
-      for(jy=0;jy<MYG;jy++)
+      for(jy=0;jy<mesh->ystart;jy++)
 	F_var[xi->ind][jy] = (tmpvar[xi->ind][jy] - var[xi->ind][jy]) / tconst;
     delete xi;
     break;
@@ -1862,7 +1862,7 @@ void bndry_sol_divcurl(Vector3D &var)
     exit(1);
   }
 
-  jx = mesh->ngx - MXG;
+  jx = mesh->xend+1;
   for(jy=1;jy<mesh->ngy-1;jy++) {
     for(jz=0;jz<ncz;jz++) {
       jzp = (jz+1) % ncz;
@@ -2077,7 +2077,7 @@ void bndry_sol_sym(Field3D &var)
   if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
-  xb = mesh->ngx - MXG - 1;
+  xb = mesh->xend;
   if(BoundaryOnCell)
     xb--;
 
@@ -2145,7 +2145,7 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
   if(mesh->ShiftXderivs)
     var = var.ShiftZ(true);
 
-  xb = mesh->ngx - MXG - 1;
+  xb = mesh->xend;
   if(BoundaryOnCell)
     xb--;
 
@@ -2191,8 +2191,8 @@ void bndry_ydown_rotate(Field3D &var, bool reverse)
     cv = new dcomplex[ncz/2 + 1];
 
   for(jx=0;jx<mesh->ngx;jx++) {
-    for(jy=(MYG-1); jy >= 0;jy--) {
-      jy2 = 2*MYG - jy - 1;
+    for(jy=(mesh->ystart-1); jy >= 0;jy--) {
+      jy2 = 2*mesh->ystart - jy - 1;
       
       // jy2 is rotated 180 degrees and put into jy
       
@@ -2227,13 +2227,13 @@ void bndry_ydown_zaverage(Field3D &var)
   for(jx=0;jx<mesh->ngx;jx++) {
     avg = 0.0;
     for(jz=0;jz<mesh->ngz-1;jz++)
-      avg += var[jx][mesh->xstart][jz];
+      avg += var[jx][mesh->ystart][jz];
     avg /= (real) mesh->ngz-1;
     for(jz=0;jz<mesh->ngz-1;jz++) {
       var[jx][0][jz] = avg;
       for(jy=1;jy<mesh->ystart;jy++) {
         w = ((real) jy) / ((real) mesh->ystart);
-        var[jx][jy][jz] = w*var[jx][MYG][jz] + (1.0 - w)*avg;
+        var[jx][jy][jz] = w*var[jx][mesh->ystart][jz] + (1.0 - w)*avg;
       }
     }
   }
@@ -2554,8 +2554,8 @@ void bndry_outer_laplace_decay(Field3D &var)
   
   for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of final "real" points
-    ZFFT(var[mesh->ngx-1-MXG][jy], mesh->zShift[mesh->ngx-1-MXG][jy], c0);
-    ZFFT(var[mesh->ngx-2-MXG][jy], mesh->zShift[mesh->ngx-2-MXG][jy], c1);
+    ZFFT(var[mesh->xend][jy], mesh->zShift[mesh->xend][jy], c0);
+    ZFFT(var[mesh->xend-1][jy], mesh->zShift[mesh->xend-1][jy], c1);
     c1[0] = c0[0] - c1[0]; // Only used for DC component
     
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
@@ -2650,16 +2650,16 @@ void bndry_outer_const_laplace_decay(Field3D &var)
   for(int jy=0;jy<mesh->ngy;jy++) {
     // Take FFT of last three "real" points
     
-    ZFFT(var[mesh->ngx-1-MXG][jy], mesh->zShift[mesh->ngx-1-MXG][jy], c0);
-    ZFFT(var[mesh->ngx-2-MXG][jy], mesh->zShift[mesh->ngx-2-MXG][jy], c1);
-    ZFFT(var[mesh->ngx-3-MXG][jy], mesh->zShift[mesh->ngx-3-MXG][jy], c1);
+    ZFFT(var[mesh->xend][jy], mesh->zShift[mesh->xend][jy], c0);
+    ZFFT(var[mesh->xend-1][jy], mesh->zShift[mesh->xend-1][jy], c1);
+    ZFFT(var[mesh->xend-2][jy], mesh->zShift[mesh->xend-2][jy], c1);
     
-    dcomplex k0lin = (c0[0] - c1[0])/mesh->dx[mesh->ngx-1-MXG][jy]; // for kz=0 solution
+    dcomplex k0lin = (c0[0] - c1[0])/mesh->dx[mesh->xend][jy]; // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
     for(int jz=0;jz<=ncz/2;jz++) {
       dcomplex d,e,f;
-      laplace_tridag_coefs(mesh->ngx-2-MXG, jy, jz, d, e, f);
+      laplace_tridag_coefs(mesh->xend-1, jy, jz, d, e, f);
       c1[jz] = d*c2[jz] + e*c1[jz] + f*c0[jz];
     }
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0

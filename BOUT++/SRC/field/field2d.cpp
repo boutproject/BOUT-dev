@@ -1031,8 +1031,8 @@ bool Field2D::check_data(bool vital) const
     // Do full checks
     int jx, jy;
 
-    for(jx=MXG;jx<mesh->ngx-MXG;jx++)
-      for(jy=MYG;jy<mesh->ngy-MYG;jy++)
+    for(jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	if(!finite(data[jx][jy])) {
 	  error("Field2D: Operation on non-finite data at [%d][%d]\n", jx, jy);
 	}
