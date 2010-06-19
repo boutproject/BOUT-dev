@@ -1131,7 +1131,7 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
     for(kz = 0; kz <= laplace_maxmode; kz++) {
       // Start tridiagonal solve
       spt_tridag_forward(data.avec[kz], data.bvec[kz], data.cvec[kz],
-			 data.bk[kz], data.xk[kz], MXG+MXSUB,
+			 data.bk[kz], data.xk[kz], mesh->xend,
 			 data.gam[kz],
 			 bet, u0, true);
       // Load intermediate values into buffers
@@ -1181,15 +1181,19 @@ int invert_spt_continue(SPT_data &data)
       for(int kz = 0; kz <= laplace_maxmode; kz++) {
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	spt_tridag_forward(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG,
-			   data.bk[kz]+MXG, data.xk[kz]+MXG, MXG+MXSUB,
-			   data.gam[kz]+MXG,
+	spt_tridag_forward(data.avec[kz]+mesh->xstart,
+			   data.bvec[kz]+mesh->xstart, 
+			   data.cvec[kz]+mesh->xstart,
+			   data.bk[kz]+mesh->xstart, 
+			   data.xk[kz]+mesh->xstart, mesh->xend,
+			   data.gam[kz]+mesh->xstart,
 			   bet, u0);
 	
 	// Back-substitute
 	gp = 0.0;
 	up = 0.0;
-	spt_tridag_back(data.xk[kz]+MXG, MXG+MXSUB, data.gam[kz]+MXG, gp, up);
+	spt_tridag_back(data.xk[kz]+mesh->xstart, mesh->xend, 
+			data.gam[kz]+mesh->xstart, gp, up);
 	data.buffer[4*kz]     = gp.Real();
 	data.buffer[4*kz + 1] = gp.Imag();
 	data.buffer[4*kz + 2] = up.Real();
@@ -1204,9 +1208,13 @@ int invert_spt_continue(SPT_data &data)
 	
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	spt_tridag_forward(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG,
-			   data.bk[kz]+MXG, data.xk[kz]+MXG, MXSUB,
-			   data.gam[kz]+MXG,
+	spt_tridag_forward(data.avec[kz]+mesh->xstart, 
+			   data.bvec[kz]+mesh->xstart, 
+			   data.cvec[kz]+mesh->xstart,
+			   data.bk[kz]+mesh->xstart, 
+			   data.xk[kz]+mesh->xstart, 
+			   mesh->xend - mesh->xstart+1,
+			   data.gam[kz]+mesh->xstart,
 			   bet, u0);
 	// Load intermediate values into buffers
 	data.buffer[4*kz]     = bet.Real();
@@ -1223,7 +1231,7 @@ int invert_spt_continue(SPT_data &data)
 	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	spt_tridag_back(data.xk[kz], MXG+MXSUB, data.gam[kz], gp, up);
+	spt_tridag_back(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
       }
 
     }else {
@@ -1234,7 +1242,9 @@ int invert_spt_continue(SPT_data &data)
 	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	spt_tridag_back(data.xk[kz]+MXG, MXSUB, data.gam[kz]+MXG, gp, up);
+	spt_tridag_back(data.xk[kz]+mesh->xstart, 
+			mesh->xend-mesh->xstart+1, 
+			data.gam[kz]+mesh->xstart, gp, up);
 	
 	data.buffer[4*kz]     = gp.Real();
 	data.buffer[4*kz + 1] = gp.Imag();
@@ -1313,16 +1323,16 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
     x[ix][ncz] = x[ix][0]; // enforce periodicity
   }
 
-  if(mesh->PE_XIND != 0) {
+  if(!mesh->first_x()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
-    for(ix=0; ix<MXG; ix++){
+    for(ix=0; ix<mesh->xstart; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
 	x[ix][kz] = 0.0;
     }
   }
-  if(mesh->PE_XIND != (mesh->NXPE-1)) {
+  if(!mesh->last_x()) {
     // Same for right boundary
-    for(ix=mesh->ngx-MXG; ix<mesh->ngx; ix++){
+    for(ix=mesh->xend+1; ix<mesh->ngx; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
 	x[ix][kz] = 0.0;
     }
@@ -1448,43 +1458,62 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
     if(mesh->first_x()) {
       // Domain includes inner boundary
       tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
-	     data.bk[kz], data.xk[kz], MXG+MXSUB);
+	     data.bk[kz], data.xk[kz], mesh->xend+1);
       
       // Add C (row m-1) from next processor
       
-      e[MXG+MXSUB-1] = data.cvec[kz][MXG+MXSUB-1];
+      e[mesh->xend] = data.cvec[kz][mesh->xend];
       tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
-	     e, data.w[kz], MXG+MXSUB);
+	     e, data.w[kz], mesh->xend+1);
 
     }else if(mesh->last_x()) {
       // Domain includes outer boundary
-      tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
-	     data.bk[kz]+MXG, data.xk[kz]+MXG, MXSUB+MXG);
+      tridag(data.avec[kz]+mesh->xstart, 
+	     data.bvec[kz]+mesh->xstart, 
+	     data.cvec[kz]+mesh->xstart, 
+	     data.bk[kz]+mesh->xstart, 
+	     data.xk[kz]+mesh->xstart, 
+	     mesh->xend - mesh->xend + 1);
       
       // Add A (row 0) from previous processor
-      e[0] = data.avec[kz][MXG];
-      tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
-	     e, data.v[kz]+MXG, MXSUB+MXG);
+      e[0] = data.avec[kz][mesh->xstart];
+      tridag(data.avec[kz]+mesh->xstart, 
+	     data.bvec[kz]+mesh->xstart, 
+	     data.cvec[kz]+mesh->xstart, 
+	     e, data.v[kz]+mesh->xstart,
+	     mesh->xend+1);
       
-      x0 = data.xk[kz][MXG];
-      v0 = data.v[kz][MXG];
+      x0 = data.xk[kz][mesh->xstart];
+      v0 = data.v[kz][mesh->xstart];
 
     }else {
       // No boundaries
-      tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
-	     data.bk[kz]+MXG, data.xk[kz]+MXG, MXSUB);
+      tridag(data.avec[kz]+mesh->xstart,
+	     data.bvec[kz]+mesh->xstart,
+	     data.cvec[kz]+mesh->xstart, 
+	     data.bk[kz]+mesh->xstart, 
+	     data.xk[kz]+mesh->xstart, 
+	     mesh->xend - mesh->xstart + 1);
 
       // Add A (row 0) from previous processor
-      e[0] = data.avec[kz][MXG];
-      tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
-	     e+MXG, data.v[kz]+MXG, MXSUB);
+      e[0] = data.avec[kz][mesh->xstart];
+      tridag(data.avec[kz]+mesh->xstart,
+	     data.bvec[kz]+mesh->xstart,
+	     data.cvec[kz]+mesh->xstart, 
+	     e+mesh->xstart,
+	     data.v[kz]+mesh->xstart,
+	     mesh->xend - mesh->xstart + 1);
       e[0] = 0.0;
       
       // Add C (row m-1) from next processor
-      e[MXG+MXSUB-1] = data.cvec[kz][MXG+MXSUB-1];
-      tridag(data.avec[kz]+MXG, data.bvec[kz]+MXG, data.cvec[kz]+MXG, 
-	     e+MXG, data.v[kz]+MXG, MXSUB);
-      e[MXG+MXSUB-1] = 0.0;
+      e[mesh->xend] = data.cvec[kz][mesh->xend];
+      tridag(data.avec[kz]+mesh->xstart,
+	     data.bvec[kz]+mesh->xstart,
+	     data.cvec[kz]+mesh->xstart, 
+	     e+mesh->xstart,
+	     data.v[kz]+mesh->xstart, 
+	     mesh->xend - mesh->xstart + 1);
+      e[mesh->xend] = 0.0;
     }
     
     // Put values into communication buffers
@@ -1534,7 +1563,7 @@ int invert_pdd_continue(PDD_data &data)
       x0 = dcomplex(data.rcv[4*kz], data.rcv[4*kz+1]);
       v0 = dcomplex(data.rcv[4*kz+2], data.rcv[4*kz+3]);
       
-      data.y2i[kz] = (data.xk[kz][MXG+MXSUB-1] - data.w[kz][MXG+MXSUB-1]*x0) / (1. - data.w[kz][MXG+MXSUB-1]*v0);
+      data.y2i[kz] = (data.xk[kz][mesh->xend] - data.w[kz][mesh->xend]*x0) / (1. - data.w[kz][mesh->xend]*v0);
       
     }
   }

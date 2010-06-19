@@ -481,44 +481,36 @@ int GenericSolver::getLocalN()
   int n3d = n3Dvars();
   
   int ncz = mesh->ngz-1;
+  int MYSUB = mesh->yend - mesh->ystart + 1;
 
-  int local_N = MXSUB*MYSUB*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
+  int local_N = (mesh->xend - mesh->xstart + 1) *
+    (mesh->yend - mesh->ystart + 1)*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
 
   //////////// Find boundary regions ////////////
   
   // Y up
-  if((UDATA_INDEST == -1) && (UDATA_XSPLIT > 0)) {
-    // Boundary for 0 <= x < UDATA_XSPLIT
-    local_N += UDATA_XSPLIT * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region upper Y for 0 <= x < %d\n", UDATA_XSPLIT);
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
   }
-  if((UDATA_OUTDEST == -1) && (UDATA_XSPLIT < MXSUB)) {
-    // Boundary for UDATA_XSPLIT <= x < MXSUB
-    local_N += (MXSUB - UDATA_XSPLIT) * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region upper Y for %d <= x < %d\n", UDATA_XSPLIT, MXSUB);
-  }
+  delete xi;
   
   // Y down
-  if((DDATA_INDEST == -1) && (DDATA_XSPLIT > 0)) {
-    // Boundary for 0 <= x < DDATA_XSPLIT
-    local_N += DDATA_XSPLIT * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region lower Y for 0 <= x < %d\n", DDATA_XSPLIT);
+  xi = mesh->iterateBndryLowerY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    local_N +=  mesh->ystart * (n2d + ncz * n3d);
   }
-  if((DDATA_OUTDEST == -1) && (DDATA_XSPLIT < MXSUB)) {
-    // Boundary for DDATA_XSPLIT <= x < MXSUB
-    local_N += (MXSUB - DDATA_XSPLIT) * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region lower Y for %d <= x < %d\n", DDATA_XSPLIT, MXSUB);
-  }
+  delete xi;
   
   // X inner
-  if(IDATA_DEST == -1) {
-    local_N += MXG * MYSUB * (n2d + ncz * n3d);
+  if(mesh->first_x()) {
+    local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
-  if(ODATA_DEST == -1) {
-    local_N += MXG * MYSUB * (n2d + ncz * n3d);
+  if(mesh->last_x()) {
+    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region outer X\n");
   }
   

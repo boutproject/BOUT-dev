@@ -2043,11 +2043,11 @@ void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
     for(int x=0;x<mesh->ngx;x++) {
 	real val = 0.;
 	// Sum values
-	for(int y=MYG;y<MYG+MYSUB;y++) {
+	for(int y=mesh->ystart;y<=mesh->yend;y++) {
 	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
 	}
 	// Put into output (spread over y)
-	val /= MYSUB;
+	val /= mesh->yend - mesh->ystart + 1;
 	for(int y=0;y<mesh->ngy;y++)
 	    rinout[x*mesh->ngy + y] = val;
     }
@@ -2260,4 +2260,17 @@ real BoutMesh::GlobalY(int jy)
     }
   }
   return ((real) ly) / ((real) nycore);
+}
+
+void BoutMesh::outputVars(Datafile &file)
+{
+  file.add(MXSUB, "MXSUB", 0);
+  file.add(MYSUB, "MYSUB", 0);
+  file.add(MXG,   "MXG",   0);
+  file.add(MYG,   "MYG",   0);
+  file.add(MZ,    "MZ",    0);
+  file.add(NXPE,  "NXPE",  0);
+  file.add(NYPE,  "NYPE",  0);
+  file.add(ZMAX,  "ZMAX",  0);
+  file.add(ZMIN,  "ZMIN",  0);
 }

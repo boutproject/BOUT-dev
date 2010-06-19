@@ -61,13 +61,17 @@ class BoutMesh : public Mesh {
 
   real GlobalX(int jx);
   real GlobalY(int jy);
+
+  void outputVars(Datafile &file);
  private:
   /*
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
-  int MYSUB, MXSUB;  ///< Size of the grid on this processor
   */
+  int MYSUB, MXSUB;  ///< Size of the grid on this processor
+  
   int PE_YIND; ///< Y index of this processor
+  int NYPE; // Number of processors in the Y direction
   /*
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
@@ -88,12 +92,13 @@ class BoutMesh : public Mesh {
   
   // Twist-shift switches
   bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
-  /*
+  
   // Communication parameters calculated by topology
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
 
+  /*
   int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
   
   // Settings

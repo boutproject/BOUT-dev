@@ -461,18 +461,10 @@ void setup_files()
   // This is a temporary hack to get around datafile's limitations (fix soon)
   static real version = BOUT_VERSION;
   dump.add(version, "BOUT_VERSION", 0);
-  dump.add(MXSUB, "MXSUB", 0);
-  dump.add(MYSUB, "MYSUB", 0);
-  dump.add(MXG,   "MXG",   0);
-  dump.add(MYG,   "MYG",   0);
-  dump.add(MZ,    "MZ",    0);
-  dump.add(mesh->NXPE,  "NXPE",  0);
-  dump.add(NYPE,  "NYPE",  0);
-  dump.add(ZMAX,  "ZMAX",  0);
-  dump.add(ZMIN,  "ZMIN",  0);
-
   dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
   dump.add(iteration, "iteration", 0);
+  
+  mesh->outputVars(dump);
 }
 
 /*!************************************************************************

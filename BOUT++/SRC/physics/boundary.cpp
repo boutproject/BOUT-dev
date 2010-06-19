@@ -460,6 +460,7 @@ BNDRY_TYPE BndryLookup2D(BndryLookup *table, const char *label, bool dummy = fal
  *******************************************************************************/
 
 /// Turn an inner boundary condition into a relaxing boundary condition
+/// NOTE: CURRENTLY THIS WON'T WORK AS ADVERTISED
 void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BNDRY_LOC loc)
 {
   Field3D tmpvar;
@@ -495,36 +496,23 @@ void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BN
 	  F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
   }
   case UPPER_Y: {
-    if(UDATA_INDEST < 0) {
-      // Inner boundary, if not communicating
-      for(jx=0;jx<UDATA_XSPLIT;jx++)
-	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
-	  for(jz=0;jz<mesh->ngz;jz++)
-	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
-    }
-    if(UDATA_OUTDEST < 0) {
-      // Outer boundary
-      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++)
-	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
-	  for(jz=0;jz<mesh->ngz;jz++)
-	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
-    }
+    RangeIter *xi = mesh->iterateBndryUpperY();
+    /// Iterate over boundary
+    for(xi->first(); !xi->isDone(); xi->next())
+      for(jy=mesh->ngy-1;jy > mesh->yend;jy--)
+	for(jz=0;jz<mesh->ngz;jz++)
+	  F_var[xi->ind][jy][jz] = (tmpvar[xi->ind][jy][jz] - var[xi->ind][jy][jz]) / tconst;
+    delete xi;
     break;
   }
   case LOWER_Y: {
-    if(DDATA_INDEST < 0) {
-      // Inner not communicating
-      for(jx=0;jx<DDATA_XSPLIT;jx++)
-	for(jy=0;jy<MYG;jy++)
-	  for(jz=0;jz<mesh->ngz;jz++)
-	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
-    }
-    if(DDATA_OUTDEST < 0) {
-      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
-	for(jy=0;jy<MYG;jy++)
-	  for(jz=0;jz<mesh->ngz;jz++)
-	    F_var[jx][jy][jz] = (tmpvar[jx][jy][jz] - var[jx][jy][jz]) / tconst;
-    }
+    RangeIter *xi = mesh->iterateBndryLowerY();
+    /// Iterate over boundary
+    for(xi->first(); !xi->isDone(); xi->next())
+      for(jy=0;jy<mesh->ystart;jy++)
+	for(jz=0;jz<mesh->ngz;jz++)
+	  F_var[xi->ind][jy][jz] = (tmpvar[xi->ind][jy][jz] - var[xi->ind][jy][jz]) / tconst;
+    delete xi;
     break;
   }
   }
@@ -562,32 +550,21 @@ void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BN
 	F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
   }
   case UPPER_Y: {
-    if(UDATA_INDEST < 0) {
-      // Inner boundary, if not communicating
-      for(jx=0;jx<UDATA_XSPLIT;jx++)
-	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
-	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
-    }
-    if(UDATA_OUTDEST < 0) {
-      // Outer boundary
-      for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++)
-	for(jy=mesh->ngy-1;jy > mesh->ngy-1-MYG;jy--)
-	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
-    }
+    RangeIter *xi = mesh->iterateBndryUpperY();
+    /// Iterate over boundary
+    for(xi->first(); !xi->isDone(); xi->next())
+      for(jy=mesh->ngy-1;jy > mesh->xend;jy--)
+	F_var[xi->ind][jy] = (tmpvar[xi->ind][jy] - var[xi->ind][jy]) / tconst;
+    delete xi;
     break;
   }
   case LOWER_Y: {
-    if(DDATA_INDEST < 0) {
-      // Inner not communicating
-      for(jx=0;jx<DDATA_XSPLIT;jx++)
-	for(jy=0;jy<MYG;jy++)
-	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
-    }
-    if(DDATA_OUTDEST < 0) {
-      for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
-	for(jy=0;jy<MYG;jy++)
-	  F_var[jx][jy] = (tmpvar[jx][jy] - var[jx][jy]) / tconst;
-    }
+    RangeIter *xi = mesh->iterateBndryLowerY();
+    /// Iterate over boundary
+    for(xi->first(); !xi->isDone(); xi->next())
+      for(jy=0;jy<MYG;jy++)
+	F_var[xi->ind][jy] = (tmpvar[xi->ind][jy] - var[xi->ind][jy]) / tconst;
+    delete xi;
     break;
   }
   }
@@ -2267,206 +2244,128 @@ void bndry_ydown_zaverage(Field3D &var)
 
 void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
 {
-  int jx, jy, jz;
-  
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
-  // If not communicating with another processor
-  if(DDATA_INDEST < 0) {
-    for(jx=0;jx<DDATA_XSPLIT;jx++) {
-      for(jy=MYG-1;jy>=0;jy--) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = F_var[jx][jy+1][jz] + rate*(value - var[jx][jy][jz]);
-    }
-  }
-  if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=MYG-1;jy>=0;jy--) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = F_var[jx][jy+1][jz] + rate*(value - var[jx][jy][jz]);
-    }
-  }
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->ystart-1;jy>=0;jy--) 
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][jy][jz] = F_var[xi->ind][jy+1][jz] + rate*(value - var[xi->ind][jy][jz]);
+  delete xi;
 }
 
 void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
 {
-  int jx, jy, jz;
-  
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
   // If not communicating with another processor
-  if(UDATA_INDEST < 0) {
-    for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=mesh->ngy-MYG;jy<mesh->ngy;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = F_var[jx][jy-1][jz] + rate*(value - var[jx][jy][jz]);
-    }
-  }
-  if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=mesh->ngy-MYG;jy<mesh->ngy;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = F_var[jx][jy-1][jz] + rate*(value - var[jx][jy][jz]);
-    }
-  }
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->xend+1;jy<mesh->ngy;jy++) 
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][jy][jz] = F_var[xi->ind][jy-1][jz] + rate*(value - var[xi->ind][jy][jz]);
+  delete xi;
 }
 
 /// Relax to zero gradient
 
 void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 {
-  int jx, jy, jz;
-  
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
-  // If not communicating with another processor
-  if(DDATA_INDEST < 0) {
-    for(jx=0;jx<DDATA_XSPLIT;jx++) {
-      for(jy=0;jy<=MYG;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = rate*(var[jx][jy+1][jz] - var[jx][jy][jz]);
-    }
-  }
-  if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=0;jy<=MYG;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = rate*(var[jx][jy+1][jz] - var[jx][jy][jz]);
-    }
-  }
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->xstart-1;jy>=0;jy--) 
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][jy][jz] = F_var[xi->ind][jy+1][jz]
+	  + rate*(var[xi->ind][jy+1][jz] - var[xi->ind][jy][jz]);
+  delete xi;
 }
 
 void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 {
-  int jx, jy, jz;
-  
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
-  // If not communicating with another processor
-  if(UDATA_INDEST < 0) {
-    for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = rate*(var[jx][jy-1][jz] - var[jx][jy][jz]);
-    }
-  }
-  if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) 
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = rate*(var[jx][jy-1][jz] - var[jx][jy][jz]);
-    }
-  }
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->xend+1;jy<mesh->ngy;jy++) 
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][jy][jz] = F_var[xi->ind][jy-1][jz]
+	  + rate*(var[xi->ind][jy-1][jz] - var[xi->ind][jy][jz]);
+  delete xi;
 }
 
 // Symmetric boundary condition
 
 void bndry_ydown_sym(Field3D &var)
 {
-  int jx, jy, jz, yb;
-  
-  yb = 2*MYG;
+  int yb = 2*mesh->ystart;
   if(!BoundaryOnCell)
     yb--;
   
-  // If not communicating with another processor
-  if(DDATA_INDEST < 0) {
-    for(jx=0;jx<DDATA_XSPLIT;jx++)
-      for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
-	  var[jx][jy][jz] = var[jx][yb-jy][jz];
-  }
-  if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
-      for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
-	  var[jx][jy][jz] = var[jx][yb-jy][jz];
-  }
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+	var[xi->ind][jy][jz] = var[xi->ind][yb-jy][jz];
 }
 
 void bndry_yup_sym(Field3D &var)
 {
-  int jx, jy, jz, yb;
-  
-  yb = mesh->ngy - MYG - 1;
+  int yb = mesh->yend;
   if(BoundaryOnCell)
     yb--;
-
-  if(UDATA_INDEST < 0) {
-    for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<mesh->ngz;jz++) {
-	  var[jx][mesh->ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
-	}
-      }
-    }
-  }
-  if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<mesh->ngz;jz++) {
-	  var[jx][mesh->ngy-MYG+jy][jz] = var[jx][yb-jy][jz];
-	}
-      }
-    }
-  }
+  
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+	var[xi->ind][jy][jz] = var[xi->ind][yb-jy+mesh->yend+1][jz];
+  delete xi;
 }
 
 // Relax to symmetric boundaries
 
 void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
 {
-  int jx, jy, jz, yb;
-  
   rate = fabs(rate);
 
-  yb = 2*MYG;
+  int yb = 2*mesh->ystart;
   if(!BoundaryOnCell)
     yb--;
   
-  // If not communicating with another processor
-  if(DDATA_INDEST < 0) {
-    for(jx=0;jx<DDATA_XSPLIT;jx++)
-      for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
-	  F_var[jx][jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][jy][jz]);
-  }
-  if(DDATA_OUTDEST < 0) {
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++)
-      for(jy=0;jy<MYG;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
-	 F_var[jx][jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][jy][jz]);
-  }
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=mesh->ystart-1;jy>=0;jy--)
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][jy][jz] = F_var[xi->ind][jy+1][jz]
+	  + rate*(var[xi->ind][yb-jy][jz] - var[xi->ind][jy][jz]);
+  delete xi;
 }
 
 void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate)
 {
-  int jx, jy, jz, yb;
-  
-  yb = mesh->ngy - MYG - 1;
+  int yb = mesh->yend;
   if(BoundaryOnCell)
     yb--;
 
   rate = fabs(rate);
-
-  if(UDATA_INDEST < 0) {
-    for(jx=0;jx<UDATA_XSPLIT;jx++) {
-      for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<mesh->ngz;jz++) {
-	  F_var[jx][mesh->ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][mesh->ngy-MYG+jy][jz]);
-	}
-      }
-    }
-  }
-  if(UDATA_OUTDEST < 0) {
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) {
-      for(jy=0;jy<MYG;jy++) {
-	for(jz=0;jz<mesh->ngz;jz++) {
-	  F_var[jx][mesh->ngy-MYG+jy][jz] = rate*(var[jx][yb-jy][jz] - var[jx][mesh->ngy-MYG+jy][jz]);
-	}
-      }
-    }
-  }
+  
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  /// Iterate over boundary
+  for(xi->first(); !xi->isDone(); xi->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+	F_var[xi->ind][mesh->yend+1+jy][jz] = F_var[xi->ind][mesh->yend+jy][jz]
+	  + rate*(var[xi->ind][yb-jy][jz] - var[xi->ind][mesh->yend+1+jy][jz]);
+  delete xi;
 }
 
 ////////////////// Z BOUNDARIES ///////////////

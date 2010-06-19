@@ -55,12 +55,9 @@ const real TWOPI = 6.2831853071795;
 // Grid sizes/indexes set in grid.cpp
 GLOBAL int nx, ny;        ///< Size of the grid in the input file
 GLOBAL int MX, MY;        ///< size of the grid excluding boundary regions
-GLOBAL int MYSUB, MXSUB;  ///< Size of the grid on this processor
 
 GLOBAL int NPES; ///< Number of processors (bout++.cpp)
 GLOBAL int MYPE; ///< Rank of this processor (bout++.cpp)
-
-GLOBAL int NYPE; ///< Number in Y direction (bout++.cpp)
 
 // separatrix indices (read in grid.cpp)
 GLOBAL int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2; 
@@ -68,9 +65,11 @@ GLOBAL int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
 GLOBAL int ny_inner;
 
 // Communication parameters calculated by topology
+/*
 GLOBAL int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
 GLOBAL int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
 GLOBAL int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
+*/
 
 GLOBAL int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
 

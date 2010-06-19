@@ -42,6 +42,7 @@ class SurfaceIter;
 #include "bout_types.h"
 #include "field2d.h"
 #include "field3d.h"
+#include "datafile.h"
 
 #include "grid.h"  // For griddatasource 
 
@@ -149,6 +150,8 @@ class Mesh {
 
   virtual real GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
   virtual real GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
+
+  virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
   
   //////////////////////////////////////////////////////////
 
