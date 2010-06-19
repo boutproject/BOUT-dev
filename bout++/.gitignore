@@ -3,6 +3,7 @@
 *.status
 *.config
 *.d
+autom4te.cache/
 include/
 lib/
 externalpackages/

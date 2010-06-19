@@ -199,15 +199,9 @@ else
 			PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
 			EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
 			EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-		else
-			echo "Using PVODE solver"
-			# Using the old version of CVODE supplied with BOUT++
-			SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
-			# Todo: For now, use this PVODE variable until ./configure
-			# compiles the library
-			PVODE="\$(BOUT_TOP)/PVODE"
-			EXTRA_INCS="$EXTRA_INCS -I\$(PVODE)/include -I\$(PVODE)/precon"
-			EXTRA_LIBS="$EXTRA_LIBS -L\$(PVODE)/lib -lpvode -lpvpre"
+		elif ! ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
+		then
+			AC_MSG_ERROR(No solver specified. Perhaps use --enable-download-pvode?)
 		fi
 	fi
 fi
@@ -673,31 +667,53 @@ AC_FUNC_VPRINTF
 
 if ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
 then
-	# Can there be a function? If so, check for 'externalpackages'
-	if ! [[ -d externalpackages ]]
+
+	if ! ( [[ -f externalpackages/PVODE/lib/libpvode.a ]] && [[ -f externalpackages/PVODE/lib/libpvpre.a ]] )
 	then
-		mkdir externalpackages
+		# Can there be a function? If so, check for 'externalpackages'
+		if ! [[ -d externalpackages ]]
+		then
+			mkdir externalpackages
+		fi
+		if ! [[ -d lib ]]
+		then
+			mkdir lib
+		fi
+		if ! [[ -d include ]]
+		then
+			mkdir include
+		fi
+		
+		# This first 'tee' command clears the file out so don't have to delete it if it exists
+		echo "*************************************************************" | tee config-build.log
+		if [[ -f $enable_download_pvode ]]
+		then
+			echo "* Using supplied file $enable_download_pvode"
+		else
+			echo "* Downloading PVODE from ... "
+		fi
+	
+		file=$enable_download_pvode
+		tar zxf $file -C externalpackages
+		
+		echo "* Building PVODE" | tee -a config-build.log
+		echo "*************************************************************" >> config-build.log
+		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+		
+		echo "*************************************************************" >> config-build.log
+		echo "* Successfully built PVODE" | tee -a config-build.log
+		echo "*************************************************************" >> config-build.log
+		echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
+		
+		echo "*************************************************************" | tee -a config-build.log
 	fi
 	
-	echo "CC: $MPICC"
-	echo "CXX: $MPICXX"
-	echo "CFLAGS: $CFLAGS"
-	echo "RANLIB: $RANLIB"
-	echo "MKDIR: $MKDIR"
-	
-	echo "*************************************************************"
-	if [[ -f $enable_download_pvode ]]
-	then
-		echo "* Building PVODE using supplied file $enable_download_pvode"
-	else
-		echo "* Downloading PVODE"
-	fi	
-	echo "*************************************************************"
-	
-	file=$enable_download_pvode
-	tar zxf $file -C externalpackages
-	CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source
-	CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon
+	# Set the correct libraries and copy them to bout
+	cp externalpackages/PVODE/precon/*.h externalpackages/PVODE/include/*.h include/
+	cp externalpackages/PVODE/lib/*.a lib/
+	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
+	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
 fi
 
 # Only make.config is altered by configure

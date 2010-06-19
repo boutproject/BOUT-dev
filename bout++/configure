@@ -621,6 +621,7 @@ SOLVER_SOURCE
 PVODE
 EXTRA_LIBS
 EXTRA_INCS
+MKDIR
 CFLAGS
 target_alias
 host_alias
@@ -674,6 +675,7 @@ with_cvode
 with_fftw
 with_lapack
 with_petsc
+enable_download_pvode
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1296,20 +1298,26 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --download-pvode		Download and build PVODE '98
+
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-checks=no/1/2/3  Set run-time checking level
-  --with-signal=no        Disable SEGFAULT handling
-  --with-track            Enable variable tracking
-  --with-pdb              Enable support for PDB files
-  --with-netcdf           Enable support for netCDF files
-  --with-debug            Enable all debugging flags
-  --with-ida=/path/to/ida Use SUNDIALS' IDA solver
-  --with-cvode            Use SUNDIALS' CVODE solver
-  --with-fftw             Set directory of FFTW3 library
-  --with-lapack           Use the LAPACK library
-  --with-petsc            Enable PETSc interface
+  --with-checks=no/1/2/3  	   Set run-time checking level
+  --with-signal=no        	   Disable SEGFAULT handling
+  --with-track            	   Enable variable tracking
+  --with-pdb              	   Enable support for PDB files
+  --with-netcdf           	   Enable support for netCDF files
+  --with-debug            	   Enable all debugging flags
+  --with-ida=/path/to/ida 	   Use SUNDIALS' IDA solver
+  --with-cvode            	   Use SUNDIALS' CVODE solver
+  --with-fftw             	   Set directory of FFTW3 library
+  --with-lapack           	   Use the LAPACK library
+  --with-petsc            	   Enable PETSc interface
 
 Some influential environment variables:
   CFLAGS      Extra compile flags
@@ -2328,11 +2336,17 @@ if test "${with_petsc+set}" = set; then :
   withval=$with_petsc;
 fi
 
+# Check whether --enable-download_pvode was given.
+if test "${enable_download_pvode+set}" = set; then :
+  enableval=$enable_download_pvode;
+fi
+
 
 EXTRA_INCS="" # Extra includes
 EXTRA_LIBS="" # Extra library flags
 
 file_formats=""  # Record which file formats are being supported
+
 
 
 
@@ -2386,10 +2400,9 @@ then
        CFLAGS="$CFLAGS -DTRACK"
 fi
 
-#####################################################################
+#############################################################
 # PETSc library
-
-# AC_ARG_VAR(PETSC,[Portable, Extensible Toolkit for Scientific Computation])
+#############################################################
 
 if test "$with_petsc" != "" && test "$with_petsc" != "no"
 then
@@ -2508,15 +2521,9 @@ else
 			PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
 			EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
 			EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-		else
-			echo "Using PVODE solver"
-			# Using the old version of CVODE supplied with BOUT++
-			SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
-			# Todo: For now, use this PVODE variable until ./configure
-			# compiles the library
-			PVODE="\$(BOUT_TOP)/PVODE"
-			EXTRA_INCS="$EXTRA_INCS -I\$(PVODE)/include -I\$(PVODE)/precon"
-			EXTRA_LIBS="$EXTRA_LIBS -L\$(PVODE)/lib -lpvode -lpvpre"
+		elif ! ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
+		then
+			as_fn_error "No solver specified. Perhaps use --enable-download-pvode?" "$LINENO" 5
 		fi
 	fi
 fi
@@ -3159,9 +3166,9 @@ then
 	echo "NetCDF support disabled"
 fi
 
-#####################################################################
+#############################################################
 # PACT library
-#####################################################################
+#############################################################
 
 
 
@@ -3746,9 +3753,9 @@ fi
 
 
 
-#####################################################################
+#############################################################
 # Check file formats
-#####################################################################
+#############################################################
 
 if test "$file_formats" = ""
 then
@@ -3758,15 +3765,16 @@ else
 	echo "Supported file formats:$file_formats"
 fi
 
-#####################################################################
+#############################################################
 # Checks for programs
-#####################################################################
+#############################################################
 
 #AC_PROG_CXX
 #AC_PROG_CC
 #AC_PROG_CPP
 CC="gcc"
 CXX="g++"
+MKDIR="mkdir -p"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
 LN_S=$as_ln_s
@@ -3902,8 +3910,9 @@ else
 fi
 
 
-########################################################
+#############################################################
 # MPI
+#############################################################
 
 
 ac_ext=c
@@ -5960,6 +5969,61 @@ done
 
 
 #AC_CHECK_FUNCS([pow sqrt strcasecmp])
+
+#############################################################
+# Download + Build PVODE '98
+#############################################################
+
+if ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
+then
+
+	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
+	then
+		# Can there be a function? If so, check for 'externalpackages'
+		if ! [ -d externalpackages ]
+		then
+			mkdir externalpackages
+		fi
+		if ! [ -d lib ]
+		then
+			mkdir lib
+		fi
+		if ! [ -d include ]
+		then
+			mkdir include
+		fi
+
+		# This first 'tee' command clears the file out so don't have to delete it if it exists
+		echo "*************************************************************" | tee config-build.log
+		if [ -f $enable_download_pvode ]
+		then
+			echo "* Using supplied file $enable_download_pvode"
+		else
+			echo "* Downloading PVODE from ... "
+		fi
+
+		file=$enable_download_pvode
+		tar zxf $file -C externalpackages
+
+		echo "* Building PVODE" | tee -a config-build.log
+		echo "*************************************************************" >> config-build.log
+		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+
+		echo "*************************************************************" >> config-build.log
+		echo "* Successfully built PVODE" | tee -a config-build.log
+		echo "*************************************************************" >> config-build.log
+		echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
+
+		echo "*************************************************************" | tee -a config-build.log
+	fi
+
+	# Set the correct libraries and copy them to bout
+	cp externalpackages/PVODE/precon/*.h externalpackages/PVODE/include/*.h include/
+	cp externalpackages/PVODE/lib/*.a lib/
+	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
+	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+fi
 
 # Only make.config is altered by configure
 ac_config_files="$ac_config_files make.config"
