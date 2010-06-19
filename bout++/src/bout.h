@@ -30,7 +30,6 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
-#include "communicator.h" // Parallel communication
 #include "globals.h"
 
 #include "field2d.h"
@@ -54,8 +53,6 @@
 
 #include "datafile.h"
 
-#include "geometry.h"
-
 #include "where.h"
 
 const real BOUT_VERSION = 0.80;  ///< Version number
@@ -71,7 +68,7 @@ bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 
 // Physics functions
 
-int physics_init();
+int physics_init(bool restarting);
 int physics_run(real t);
 
 #ifndef GLOBALORIGIN

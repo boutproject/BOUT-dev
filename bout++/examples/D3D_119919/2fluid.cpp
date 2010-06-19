@@ -1,4 +1,4 @@
-/*******************************************************************************
+mesh->get/*******************************************************************************
  * 2-fluid turbulence model
  * This version intended to have inputs as similar to BOUT-06 as possible
  * for cross-benchmarking etc.
@@ -114,33 +114,33 @@ int physics_init()
   // LOAD DATA FROM GRID FILE
 
   // Load 2D profiles (set to zero if not found)
-  grid_load2d(Ni0,    "Ni0");
-  grid_load2d(Ti0,    "Ti0");
-  grid_load2d(Te0,    "Te0");
-  grid_load2d(Vi0,    "Vi0");
-  grid_load2d(Ve0,    "Ve0");
-  grid_load2d(phi0,   "phi0");
-  grid_load2d(rho0,   "rho0");
-  grid_load2d(Ajpar0, "Ajpar0");
+  mesh->get(Ni0,    "Ni0");
+  mesh->get(Ti0,    "Ti0");
+  mesh->get(Te0,    "Te0");
+  mesh->get(Vi0,    "Vi0");
+  mesh->get(Ve0,    "Ve0");
+  mesh->get(phi0,   "phi0");
+  mesh->get(rho0,   "rho0");
+  mesh->get(Ajpar0, "Ajpar0");
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
-  grid_load2d(b0xcv, "bxcv"); // b0xkappa terms
+  mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Load metrics
-  grid_load2d(Rxy,  "Rxy");
-  grid_load2d(Bpxy, "Bpxy");
-  grid_load2d(Btxy, "Btxy");
-  grid_load2d(hthe, "hthe");
-  grid_load2d(dx,   "dpsi");
-  grid_load2d(I,    "sinty");
-  grid_load2d(zShift, "qinty");
+  mesh->get(Rxy,  "Rxy");
+  mesh->get(Bpxy, "Bpxy");
+  mesh->get(Btxy, "Btxy");
+  mesh->get(hthe, "hthe");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
-  grid_load(Te_x, "Te_x");
-  grid_load(Ti_x, "Ti_x");
-  grid_load(Ni_x, "Ni_x");
-  grid_load(bmag, "bmag");
+  mesh->get(Te_x, "Te_x");
+  mesh->get(Ti_x, "Ti_x");
+  mesh->get(Ni_x, "Ni_x");
+  mesh->get(bmag, "bmag");
 
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
@@ -262,7 +262,7 @@ int physics_init()
   ////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -298,7 +298,7 @@ int physics_init()
   // PRINT Z INFORMATION
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
@@ -348,49 +348,49 @@ int physics_init()
   ////////////////////////////////////////////////////////
   // CALCULATE METRICS
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (I^2)*g11 + (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = -I*g11;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = -I*mesh->g11;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
   J = hthe / Bpxy;
   
-  g_11 = 1.0/g11 + ((I*Rxy)^2);
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  g_13 = I*Rxy*Rxy;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
+  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  mesh->g_13 = I*Rxy*Rxy;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
   
   ////////////////////////////////////////////////////////
   // Check twist-shift
 
   // Core
   if(YPROC(jyseps2_2) == PE_YIND) {
-    for(int i=0;i<ngx;i++) {
-      ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+    for(int i=0;i<mesh->ngx;i++) {
+      ShiftAngle[i] = mesh->zShift[i][MYG+MYSUB-1] - mesh->zShift[i][MYG+MYSUB]; // Jump across boundary
       //output.write("%d: %e\n", i, ShiftAngle[i]);
     }
   }else if(YPROC(jyseps1_1+1) == PE_YIND) {
-    for(int i=0;i<ngx;i++) {
-      ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+    for(int i=0;i<mesh->ngx;i++) {
+      ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
       //output.write("%d: %e\n", i, ShiftAngle[i]);
     }
   }
   
   // Lower PF. Note by default no Twist-Shift used here, so need to switch on
   if(YPROC(jyseps1_1) == PE_YIND) {
-    for(int i=0;i<ngx;i++) {
-      ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+    for(int i=0;i<mesh->ngx;i++) {
+      ShiftAngle[i] = mesh->zShift[i][MYG+MYSUB-1] - mesh->zShift[i][MYG+MYSUB]; // Jump across boundary
       //output.write("%d: %e\n", i, ShiftAngle[i]);
     }
     TS_up_in = true; // Switch on twist-shift
     
   }else if(YPROC(jyseps2_2+1) == PE_YIND) {
-    for(int i=0;i<ngx;i++) {
-      ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+    for(int i=0;i<mesh->ngx;i++) {
+      ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
       //output.write("%d: %e\n", i, ShiftAngle[i]);
     }
     TS_down_in = true;
@@ -403,7 +403,7 @@ int physics_init()
   int *ranks = new int[NYPE];
   int npcore = 0;
   for(int p = YPROC(jyseps1_1+1); p <= YPROC(jyseps2_2);p++) {
-    ranks[npcore] = PROC_NUM(PE_XIND, p);
+    ranks[npcore] = PROC_NUM(mesh->PE_XIND, p);
     //output.write("%d: %d, %d\n", npcore, p, ranks[npcore]);
     npcore++;
   }
@@ -418,10 +418,10 @@ int physics_init()
   delete[] ranks;
 
   if(MYPE_IN_CORE) {
-    MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
+    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
   }
 
-  //for(int i=0; i<ngx;i++)
+  //for(int i=0; i<mesh->ngx;i++)
   //  output.write("%d -> %e\n", i, ShiftAngle[i]);
 
   //MPI_Comm_free(&core_comm); // crashes
@@ -668,9 +668,9 @@ int physics_run(real t)
       // Use BOUT-06 method, no communications
       
       jpar.Allocate();
-      for(int jx=0;jx<ngx;jx++)
-	for(int jy=0;jy<ngy;jy++)
-	  for(int jz=0;jz<ngz;jz++) {
+      for(int jx=0;jx<mesh->ngx;jx++)
+	for(int jy=0;jy<mesh->ngy;jy++)
+	  for(int jz=0;jz<mesh->ngz;jz++) {
 	    real dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point

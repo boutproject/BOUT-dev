@@ -54,58 +54,12 @@
 
 #include "globals.h"
 #include "utils.h"
-#include "mesh_topology.h"
 #include "comm_group.h" // Gather/scatter operations
 
 #include "lapack_routines.h" // For tridiagonal inversions
 
-#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
+namespace invpar {
 
-namespace invpar { 
-
-  /***********************************************************************
-   *                          COMMUNICATIONS
-   * 
-   * Need to perform a load of gather and scatter operations simultaneously
-   * For now, use MPI_Gather etc. to do each operation in turn.
-   *
-   ***********************************************************************/
-  
-  static bool comms_init = false; ///< Signals whether the comms are set up
-  MPI_Comm comm_in; ///< Communicator
-
-  /// Initialise communicators
-  bool init_comms()
-  {
-    if(comms_init)
-      return true; // Already initialised
-    
-    int ype0 = YPROC(jyseps1_1+1); // The processor at beginning of twist shift
-    
-    if(NXPE > 1) {
-      /// Create a group and communicator for this X location
-      MPI_Group group_world;
-      
-      MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Get the entire group
-      
-      bout_error("SORRY: invert_parderivs can't cope with NXPE > 1 yet\n");
-    }else {
-      // All processors. May need to re-number 
-      
-      if(ype0 == 0) { 
-	comm_in = MPI_COMM_WORLD;
-      }else {
-	// Rotate around so rank0 is at beginning of twist shift
-	
-	bout_error("SORRY: invert_parderivs can't cope with this topology yet\n");
-      }
-    }
-
-    comms_init = true;
-
-    return true;
-  }
-  
   /***********************************************************************
    *                          INVERSION ROUTINES
    * 
@@ -128,12 +82,18 @@ namespace invpar {
     msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
 #endif
 
-    int tshift = ROUND(ShiftAngle[xpos] / dz); // Nearest neighbour
+    real ts; // Twist-shift angle
+    if(!mesh->surfaceClosed(xpos,ts))
+      ts = 0.; // Should be an error, but just separate field-lines
+    
+    int tshift = ROUND(ts / mesh->dz); // Nearest neighbour
 
     static int ylen = 0;
     static bool *done; // Record whether a particular location has been inverted
     static real *avec, *bvec, *cvec; // Matrix coefficients
     static real *rvec, *xvec;
+    
+    int ncz = mesh->ngz-1;
     
     if(ysize > ylen) {
       // Initialise
@@ -243,60 +203,109 @@ namespace invpar {
    ***********************************************************************/
   
   /// Parallel inversion routine
-  const Field3D invert_parderiv(const Field2D &A, const Field2D &B, const Field3D &r)
+  const Field3D invert_parderiv(const Field2D &Ac, const Field2D &Bc, const Field3D &rc)
   {
     static real *senddata;
     static real *recvdata;
+    static int max_size = 0;
     static real *resultdata;
-    static Comm_handle_t *handles; // Gather and scatter handles
-    static bool initialised = false;
 
 #ifdef CHECK
     msg_stack.push("invert_parderiv");
 #endif
 
+    // Copy (to get rid of const)
+    Field2D A = Ac;
+    Field2D B = Bc;
+    Field3D r = rc;
+
     // Decide on x range. Solve in boundary conditions
-    int xs = (IDATA_DEST < 0) ? 0 : MXG;
-    int xe = (ODATA_DEST < 0) ? ngx-1 : (ngx-1 - MXG);
+    int xs = (mesh->first_x()) ? 0 : 2;
+    int xe = (mesh->last_x()) ? mesh->ngx-1 : (mesh->ngx-3);
 
-    int nxsolve = xe - xs + 1; // Number of X points to solve
-    
-    if(!initialised) {
+    int nxsolve = xe - xs + 1; // Number of X points to solve    
+    int nylocal = mesh->yend - mesh->ystart + 1;
+
+    if(max_size == 0) {
       // Allocate working memory
-      senddata = new real[nxsolve * MYSUB * (3 + ncz) ]; // Problem data sent out
-      recvdata = new real[MY * (3+ncz)];  // Problem data received (to be solved)
-      resultdata = new real[MY*ncz];  // Inverted result
-      handles = new Comm_handle_t[NYPE];
-      initialised = true;
-
-      // Initialise communications
-      init_comms();
+      senddata = new real[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
     }
     
-    Field2D sg = sqrt(g_22); // Needed for first Y derivative
-
-    int x0 = xs; ///< Starting x of this round of inversions
-    int offset  = 0; // Location in data array
-    for(int xpos=xs; xpos <= xe; xpos++) {
-      
-      /// Calculate matrix coefficients
-      real *dptr = senddata + offset; // Start of this chunk of data
-      
-      int off0 = offset; // This for debugging only
-
-      // First all the matrix coefficients (2D only in this case)
-      for(int j=jstart;j<=jend;j++) {
+    // coefficients for derivative term
+    Field2D coeff1;
+    coeff1.Allocate();
+    Field2D sg = sqrt(mesh->g_22); // Needed for first Y derivative
+    for(int i=xs;i<=xe;i++)
+      for(int j=mesh->ystart;j<=mesh->yend;j++) {
 	// See Grad2_par2 in difops.cpp for these coefficients
-	real coeff1 = (1./sg[xpos][j+1] - 1./sg[xpos][j-1])/(4.*SQ(dy[xpos][j])) / sg[xpos][j];
-	real coeff2 = 1. / (g_22[xpos][j] * SQ(dy[xpos][j])); // Second derivative
-	
-	senddata[offset] = B[xpos][j] * (coeff2 - coeff1); // a coefficient (y-1)
+	coeff1[i][j] = (1./sg[i][j+1] - 1./sg[i][j-1])/(4.*SQ(mesh->dy[i][j])) / sg[i][j];
+      }
+    
+    Field2D coeff2 = 1. / (mesh->g_22 * SQ(mesh->dy)); // Second derivative
+    
+    // coefficients in tridiagonal matrix
+    Field2D acoeff = B * (coeff2 - coeff1); // a coefficient (y-1)
+    Field2D bcoeff = A + -2.*B*coeff2; // b coefficient (diagonal)
+    Field2D ccoeff = B * (coeff2 + coeff1); // c coefficient (y+1)
+
+    // Create a group of fields to send together
+    FieldGroup sendfields;
+    sendfields.add(acoeff);
+    sendfields.add(bcoeff);
+    sendfields.add(ccoeff);
+    sendfields.add(r);
+    
+    // Create a field for the result
+    Field3D result;
+
+    // Create an iterator over surfaces
+    SurfaceIter* surf = mesh->iterateSurfaces();
+
+    // Iterate over the surfaces
+    for(surf->first(); !surf->isDone(); surf->next()) {
+      int ysize = surf->ysize(); // Size of this surface
+      
+      // Make sure our arrays are big enough
+      if(ysize > max_size) {
+	// Need to allocate more memory
+	if(max_size > 0) {
+	  delete[] recvdata;
+	  delete[] resultdata;
+	}
+	recvdata = new real[ysize * (3+mesh->ngz)];  // Problem data received (to be solved)
+	resultdata = new real[ysize*mesh->ngz];  // Inverted result
+	max_size = ysize;
+      }
+      
+      // Gather data
+      surf->gather(sendfields, recvdata);
+      
+      // Check that this processor still has something to do
+      if(ysize > 0) {
+	// Perform inversion
+	real ts; // Twist-shift matching (if closed)
+	if(surf->closed(ts)) {
+	  cyclic_solve(ysize,  // Number of y locations
+		       surf->xpos,  // The x index being solved
+		       recvdata,    // Interleaved coefficients and data
+		       resultdata);
+	}else {
+	  // Open field-lines
+	  bout_error("Sorry; invert_parderiv can't cope with open field lines yet\n");
+	}
+      }
+      
+      // Scatter the result back
+      surf->scatter(resultdata, result);
+    }
+    /* THIS JUST HERE FOR FIELD ORDER - REMOVE LATER
+	senddata[offset] = B[xpos][j] * (coeff2 - coeff1); 
 	offset++;
 	
-	senddata[offset] = A[xpos][j] + -2.*B[xpos][j]*coeff2;  // b coefficient (diagonal)
+	senddata[offset] = A[xpos][j] + -2.*B[xpos][j]*coeff2;  
 	offset++;
 	
-	senddata[offset] = B[xpos][j] * (coeff2 + coeff1); // c coefficient (y+1);
+	senddata[offset] = B[xpos][j] * (coeff2 + coeff1); 
 	offset++;
 
 	// Then the vector to be inverted (3D)
@@ -304,74 +313,7 @@ namespace invpar {
 	  senddata[offset] = r[xpos][j][k];
 	  offset++;
 	}
-      }
-
-      // Check the amount of data is correct
-      if(offset - off0 != MYSUB * (3 + ncz)) {
-	output.write("In invert_parderiv: wrong amount of data: %d, %d\n", offset - off0, MYSUB * (3 + ncz));
-	bout_error("aborting\n");
-      }
-      
-      /// Gather data onto processors
-      
-      int yproc = (xpos-x0) % NYPE; // the destination processor
-
-      // Start a gather operation (blocking or nonblocking)
-      Comm_gather_start(dptr, MYSUB * (3 + ncz), PVEC_REAL_MPI_TYPE,
-			recvdata,
-			yproc, comm_in,
-			handles+yproc);
-
-      if((yproc == (NYPE-1)) || (xpos == xe)) {
-	// Either each processor has a chunk of data, or run out of data
-	
-	int nsolve = yproc + 1; // Number of x slice being solved
-
-	/// Perform inversion if data is available
-	if(nsolve >= PE_YIND) {
-	  // Wait for the gather to finish
-	  if(!Comm_wait(handles+PE_YIND)) {
-	    bout_error("Gather failed\n");
-	  }
-	  
-	  cyclic_solve(NYPE * MYSUB,  // Number of y locations
-		       x0 + PE_YIND,  // The x index being solved
-		       recvdata,      // Interleaved coefficients and data
-		       resultdata);
-	}
-
-	// Need to wait for all the gathers to finish (frees memory)
-	Comm_wait_all(nsolve, handles);
-
-	// Scatter result back
-	for(int xrec = x0; xrec <= xpos; xrec++) { // Loop over the current range
-	  yproc = (xrec-x0) % NYPE;
-	  Comm_scatter_start(resultdata, MYSUB*ncz, PVEC_REAL_MPI_TYPE,
-			     senddata + (xrec-xs)*MYSUB*ncz, // Put result back into senddata
-			     yproc, comm_in,
-			     handles+yproc);
-	}
-
-	// Wait for scatters to finish
-	Comm_wait_all(nsolve, handles);
-
-	x0 += NYPE; // Shift starting place for next time
-      }
-    }
-    
-    Field3D result;
-    result.Allocate();
-
-    // Result is now in senddata. Copy across
-    int ind = 0;
-    for(int xpos=xs; xpos <= xe; xpos++) {
-      for(int j=jstart;j<=jend;j++) {
-	for(int k=0;k<ncz;k++) {
-	  result[xpos][j][k] = senddata[ind];
-	  ind++;
-	}
-      }
-    }
+    */
     
 #ifdef CHECK
     msg_stack.pop();

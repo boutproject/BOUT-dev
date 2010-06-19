@@ -93,7 +93,7 @@ void GenericSolver::add(Field3D &v, Field3D &F_v, const char* name)
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
 
-  if(StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
+  if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
     F_v.setLocation(v.getLocation()); // Make sure both at the same location
   }
@@ -384,9 +384,12 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);
   restart.add(iteration, "hist_hi", 0);
-
+  
+  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  
   restart.add(NPES, "NPES", 0);
-  restart.add(NXPE, "NXPE", 0);
+  restart.add(mesh->NXPE, "NXPE", 0);
 
   /// Add variables to the restart and dump files.
   /// NOTE: Since vector components are already in the field arrays,
@@ -414,7 +417,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
     // Copy processor numbers for comparison after. Very useful for checking
     // that the restart file is for the correct number of processors etc.
     int tmp_NP = NPES;
-    int tmp_NX = NXPE;
+    int tmp_NX = mesh->NXPE;
     
 #ifdef CHECK
     int msg_pt2 = msg_stack.push("Loading restart file");
@@ -430,7 +433,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
       // Old restart file
       output.write("WARNING: Cannot verify processor numbers\n");
       NPES = tmp_NP;
-      NXPE = tmp_NX;
+      mesh->NXPE = tmp_NX;
     }else {
       // Check the processor numbers match
       if(NPES != tmp_NP) {
@@ -438,9 +441,9 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
 		     tmp_NP, NPES);
 	return(1);
       }
-      if(NXPE != tmp_NX) {
+      if(mesh->NXPE != tmp_NX) {
 	output.write("ERROR: Number of X processors (%d) doesn't match restart file number (%d)\n",
-		     tmp_NX, NXPE);
+		     tmp_NX, mesh->NXPE);
 	return(1);
       }
 
@@ -480,43 +483,37 @@ int GenericSolver::getLocalN()
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
-  int local_N = MXSUB*MYSUB*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
+  int ncz = mesh->ngz-1;
+  int MYSUB = mesh->yend - mesh->ystart + 1;
+
+  int local_N = (mesh->xend - mesh->xstart + 1) *
+    (mesh->yend - mesh->ystart + 1)*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
 
   //////////// Find boundary regions ////////////
   
   // Y up
-  if((UDATA_INDEST == -1) && (UDATA_XSPLIT > 0)) {
-    // Boundary for 0 <= x < UDATA_XSPLIT
-    local_N += UDATA_XSPLIT * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region upper Y for 0 <= x < %d\n", UDATA_XSPLIT);
+  RangeIter *xi = mesh->iterateBndryUpperY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
   }
-  if((UDATA_OUTDEST == -1) && (UDATA_XSPLIT < MXSUB)) {
-    // Boundary for UDATA_XSPLIT <= x < MXSUB
-    local_N += (MXSUB - UDATA_XSPLIT) * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region upper Y for %d <= x < %d\n", UDATA_XSPLIT, MXSUB);
-  }
+  delete xi;
   
   // Y down
-  if((DDATA_INDEST == -1) && (DDATA_XSPLIT > 0)) {
-    // Boundary for 0 <= x < DDATA_XSPLIT
-    local_N += DDATA_XSPLIT * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region lower Y for 0 <= x < %d\n", DDATA_XSPLIT);
+  xi = mesh->iterateBndryLowerY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    local_N +=  mesh->ystart * (n2d + ncz * n3d);
   }
-  if((DDATA_OUTDEST == -1) && (DDATA_XSPLIT < MXSUB)) {
-    // Boundary for DDATA_XSPLIT <= x < MXSUB
-    local_N += (MXSUB - DDATA_XSPLIT) * MYG * (n2d + ncz * n3d);
-    output.write("\tBoundary region lower Y for %d <= x < %d\n", DDATA_XSPLIT, MXSUB);
-  }
+  delete xi;
   
   // X inner
-  if(IDATA_DEST == -1) {
-    local_N += MXG * MYSUB * (n2d + ncz * n3d);
+  if(mesh->first_x()) {
+    local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
-  if(ODATA_DEST == -1) {
-    local_N += MXG * MYSUB * (n2d + ncz * n3d);
+  if(mesh->last_x()) {
+    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region outer X\n");
   }
   

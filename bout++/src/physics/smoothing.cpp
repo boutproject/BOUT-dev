@@ -29,8 +29,6 @@
 
 #include <math.h>
 
-#include "communicator.h"
-
 #include "smoothing.h"
 #include "globals.h"
 
@@ -48,17 +46,17 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
   result.Allocate();
   
   // Copy boundary region
-  for(int jy=0;jy<ngy;jy++)
-    for(int jz=0;jz<ngz;jz++) {
+  for(int jy=0;jy<mesh->ngy;jy++)
+    for(int jz=0;jz<mesh->ngz;jz++) {
       result[0][jy][jz] = fs[0][jy][jz];
-      result[ngx-1][jy][jz] = fs[ngx-1][jy][jz];
+      result[mesh->ngx-1][jy][jz] = fs[mesh->ngx-1][jy][jz];
     }
 
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=1;jx<ngx-1;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=1;jx<mesh->ngx-1;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	result[jx][jy][jz] = 0.5*fs[jx][jy][jz] + 0.25*( fs[jx-1][jy][jz] + fs[jx+1][jy][jz] );
       }
 
@@ -66,9 +64,7 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
     result = result.ShiftZ(false); // Shift back
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -81,77 +77,29 @@ const Field3D smooth_y(const Field3D &f)
   result.Allocate();
   
   // Copy boundary region
-  for(int jx=0;jx<ngx;jx++)
-    for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++) {
       result[jx][0][jz] = f[jx][0][jz];
-      result[jx][ngy-1][jz] = f[jx][ngy-1][jz];
+      result[jx][mesh->ngy-1][jz] = f[jx][mesh->ngy-1][jz];
     }
   
   // Smooth using simple 1-2-1 filter
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=1;jy<ngy-1;jy++)
-      for(int jz=0;jz<ngz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=1;jy<mesh->ngy-1;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 	result[jx][jy][jz] = 0.5*f[jx][jy][jz] + 0.25*( f[jx][jy-1][jz] + f[jx][jy+1][jz] );
       }
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
-
+  mesh->communicate(result);
+  
   return result;
-}
-
-// Define MPI operation to sum 2D fields over y.
-// NB: Don't sum in y boundary regions
-void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
-{
-    real *rin = (real*) invec;
-    real *rinout = (real*) inoutvec;
-    for(int x=0;x<ngx;x++) {
-	real val = 0.;
-	// Sum values
-	for(int y=MYG;y<MYG+MYSUB;y++) {
-	    val += rin[x*ngy + y] + rinout[x*ngy + y];
-	}
-	// Put into output (spread over y)
-	val /= MYSUB;
-	for(int y=0;y<ngy;y++)
-	    rinout[x*ngy + y] = val;
-    }
 }
 
 const Field2D average_y(const Field2D &f)
 {
-  static MPI_Op op;
-  static bool opdefined = false;
-
-#ifdef CHECK
-  msg_stack.push("average_y(Field2D)");
-#endif
-
-  if(!opdefined) {
-    MPI_Op_create(ysum_op, 1, &op);
-    opdefined = true;
-  }
-
-  Field2D result;
-  result.Allocate();
-  
-  real **fd, **rd;
-  fd = f.getData();
-  rd = result.getData();
-  
-  MPI_Allreduce(*fd, *rd, ngx*ngy, MPI_DOUBLE, op, comm_y);
-  
-  result /= (real) NYPE;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return result;
+  return mesh->average_y(f);
 }
 
 /// Nonlinear filtering to remove grid-scale noise
@@ -202,8 +150,8 @@ const Field3D nl_filter_x(const Field3D &f, real w)
   Field3D result;
   rvec v;
   
-  for(int jy=0;jy<ngy;jy++)
-    for(int jz=0;jz<ncz;jz++) {
+  for(int jy=0;jy<mesh->ngy;jy++)
+    for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getXarray(jy, jz, v);
       nl_filter(v, w);
       result.setXarray(jy, jz, v);
@@ -226,8 +174,8 @@ const Field3D nl_filter_y(const Field3D &fs, real w)
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jz=0;jz<ncz;jz++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getYarray(jx, jz, v);
       nl_filter(v, w);
       result.setYarray(jx, jz, v);
@@ -248,8 +196,8 @@ const Field3D nl_filter_z(const Field3D &fs, real w)
   Field3D result;
   rvec v;
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++) {
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++) {
       fs.getZarray(jx, jy, v);
       nl_filter(v, w);
       result.setZarray(jx, jy, v);
@@ -267,8 +215,6 @@ const Field3D nl_filter(const Field3D &f, real w)
   /// Perform filtering in Z, Y then X
   result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
   /// Communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
   return result;
 }

@@ -31,7 +31,6 @@
 #include "fieldperp.h"
 #include "utils.h"
 
-extern int ngx, ngy, ngz;
 extern real** rmatrix(int nx, int ny);
 
 FieldPerp::FieldPerp()
@@ -70,8 +69,8 @@ void FieldPerp::Set(const Field3D &f, int y)
 
   alloc_data();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = d[jx][y][jz];
 }
 
@@ -91,7 +90,7 @@ real* FieldPerp::operator[](int jx) const
     exit(1);
   }
   
-  if((jx < 0) || (jx >= ngx)) {
+  if((jx < 0) || (jx >= mesh->ngx)) {
     error("FieldPerp: [] operator out of bounds\n");
     exit(1);
   }
@@ -119,8 +118,8 @@ FieldPerp& FieldPerp::operator=(const FieldPerp &rhs)
 
   yindex = rhs.getIndex();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = rhs.data[jx][jz];
 
   return(*this);
@@ -132,8 +131,8 @@ FieldPerp & FieldPerp::operator=(const real rhs)
 
   alloc_data();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = rhs;
 
   return(*this);
@@ -155,8 +154,8 @@ FieldPerp & FieldPerp::operator+=(const FieldPerp &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] += rhs.data[jx][jz];
 
   return(*this);
@@ -180,8 +179,8 @@ FieldPerp & FieldPerp::operator+=(const Field3D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] += d[jx][yindex][jz];
 
   return(*this);
@@ -205,8 +204,8 @@ FieldPerp & FieldPerp::operator+=(const Field2D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] += d[jx][yindex];
 
   return(*this);
@@ -221,8 +220,8 @@ FieldPerp & FieldPerp::operator+=(const real rhs)
     return(*this);
   }
   
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] += rhs;
 
   return(*this);
@@ -245,8 +244,8 @@ FieldPerp & FieldPerp::operator-=(const FieldPerp &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] -= rhs.data[jx][jz];
 
   return(*this);
@@ -270,8 +269,8 @@ FieldPerp & FieldPerp::operator-=(const Field3D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] -= d[jx][yindex][jz];
 
   return(*this);
@@ -295,8 +294,8 @@ FieldPerp & FieldPerp::operator-=(const Field2D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] -= d[jx][yindex];
 
   return(*this);
@@ -311,8 +310,8 @@ FieldPerp & FieldPerp::operator-=(const real rhs)
     return(*this);
   }
   
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] -= rhs;
 
   return(*this);
@@ -335,8 +334,8 @@ FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] *= rhs.data[jx][jz];
 
   return(*this);
@@ -360,8 +359,8 @@ FieldPerp & FieldPerp::operator*=(const Field3D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] *= d[jx][yindex][jz];
 
   return(*this);
@@ -385,8 +384,8 @@ FieldPerp & FieldPerp::operator*=(const Field2D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] *= d[jx][yindex];
 
   return(*this);
@@ -401,8 +400,8 @@ FieldPerp & FieldPerp::operator*=(const real rhs)
     return(*this);
   }
   
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] *= rhs;
 
   return(*this);
@@ -425,8 +424,8 @@ FieldPerp & FieldPerp::operator/=(const FieldPerp &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] /= rhs.data[jx][jz];
 
   return(*this);
@@ -450,8 +449,8 @@ FieldPerp & FieldPerp::operator/=(const Field3D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] /= d[jx][yindex][jz];
 
   return(*this);
@@ -475,8 +474,8 @@ FieldPerp & FieldPerp::operator/=(const Field2D &rhs)
     return(*this);
   }
   
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] /= d[jx][yindex];
 
   return(*this);
@@ -491,8 +490,8 @@ FieldPerp & FieldPerp::operator/=(const real rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] /= rhs;
 
   return(*this);
@@ -515,8 +514,8 @@ FieldPerp & FieldPerp::operator^=(const FieldPerp &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = pow(data[jx][jz], rhs.data[jx][jz]);
 
   return(*this);
@@ -540,8 +539,8 @@ FieldPerp & FieldPerp::operator^=(const Field3D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = pow(data[jx][jz], d[jx][yindex][jz]);
 
   return(*this);
@@ -565,8 +564,8 @@ FieldPerp & FieldPerp::operator^=(const Field2D &rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = pow(data[jx][jz], d[jx][yindex]);
 
   return(*this);
@@ -581,8 +580,8 @@ FieldPerp & FieldPerp::operator^=(const real rhs)
     return(*this);
   }
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = pow(data[jx][jz], rhs);
 
   return(*this);
@@ -734,11 +733,11 @@ void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
 {
   fval->cc = data[bx->jx][bx->jz];
 
-  if(ShiftXderivs && (ShiftOrder != 0)) {
-    fval->xp = interp_z(bx->jxp, bx->jz, bx->xp_offset, ShiftOrder);
-    fval->xm = interp_z(bx->jxm, bx->jz, bx->xm_offset, ShiftOrder);
-    fval->x2p = interp_z(bx->jxp, bx->jz, bx->x2p_offset, ShiftOrder);
-    fval->x2m = interp_z(bx->jxm, bx->jz, bx->x2m_offset, ShiftOrder);
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    fval->xp = interp_z(bx->jxp, bx->jz, bx->xp_offset, mesh->ShiftOrder);
+    fval->xm = interp_z(bx->jxm, bx->jz, bx->xm_offset, mesh->ShiftOrder);
+    fval->x2p = interp_z(bx->jxp, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
+    fval->x2m = interp_z(bx->jxm, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
   }else {
     fval->xp = data[bx->jxp][bx->jz];
     fval->xm = data[bx->jxm][bx->jz];
@@ -759,11 +758,11 @@ void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
 
 void FieldPerp::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
-  if(ShiftXderivs && (ShiftOrder != 0)) {
-    fval.p = interp_z(bx.jxp, bx.jz, bx.xp_offset, ShiftOrder);
-    fval.m = interp_z(bx.jxm, bx.jz, bx.xm_offset, ShiftOrder);
-    fval.pp = interp_z(bx.jxp, bx.jz, bx.x2p_offset, ShiftOrder);
-    fval.mm = interp_z(bx.jxm, bx.jz, bx.x2m_offset, ShiftOrder);
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    fval.p = interp_z(bx.jxp, bx.jz, bx.xp_offset, mesh->ShiftOrder);
+    fval.m = interp_z(bx.jxm, bx.jz, bx.xm_offset, mesh->ShiftOrder);
+    fval.pp = interp_z(bx.jxp, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
+    fval.mm = interp_z(bx.jxm, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
   }else {
     fval.p = data[bx.jxp][bx.jz];
     fval.m = data[bx.jxm][bx.jz];
@@ -798,6 +797,8 @@ real FieldPerp::interp_z(int jx, int jz0, real zoffset, int order) const
     zi--;
     zoffset += 1.0;
   }
+  
+  int ncz = mesh->ngz-1;
   
   jz0 = (((jz0 + zi)%ncz) + ncz) % ncz;
   jzp = (jz0 + 1) % ncz;
@@ -858,7 +859,7 @@ void FieldPerp::alloc_data()
   }else {
     // Need to create another block
 
-    data = rmatrix(ngx, ngz);
+    data = rmatrix(mesh->ngx, mesh->ngz);
 
   }
 }
@@ -899,8 +900,8 @@ const FieldPerp operator/(const real lhs, const FieldPerp &rhs)
   FieldPerp result = rhs;
   real **d = result.getData();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = lhs/d[jx][jz];
 
   return(result);
@@ -912,8 +913,8 @@ const FieldPerp operator^(const real lhs, const FieldPerp &rhs)
   FieldPerp result = rhs;
   real **d = result.getData();
 
-  for(jx=0;jx<ngx;jx++)
-    for(jz=0;jz<ngz;jz++)
+  for(jx=0;jx<mesh->ngx;jx++)
+    for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = pow(lhs, d[jx][jz]);
 
   return(result);

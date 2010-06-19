@@ -41,11 +41,7 @@ real nu_hat, mui_hat, wci, nueix, nuiix;
 real chi_perp, D_perp, mu_perp;
 real lambda_relax;
 
-// Communication object
-Communicator comms;
-Communicator com_jp;
-
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
@@ -64,7 +60,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  grid.get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -121,12 +117,12 @@ int physics_init()
    // Normalise geometry 
   Rxy /= rho_s;
   hthe /= rho_s;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1e4);
   Btxy /= (bmag/1e4);
-  Bxy  /= (bmag/1e4);
+  mesh->Bxy  /= (bmag/1e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -146,21 +142,21 @@ int physics_init()
 
   /**************** CALCULATE METRICS ******************/
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = 0.0;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (mesh->Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = 0.0;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
-  g_11 = 1.0/g11;
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = 0.0;
-  g_13 = 0.0;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = 0.0;
+  mesh->g_13 = 0.0;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
 
   /**************** SET EVOLVING VARIABLES *************/
@@ -173,11 +169,6 @@ int physics_init()
   bout_solve(Vi,    F_Vi,    "Vi");
   bout_solve(Te,    F_Te,    "Te");
   bout_solve(Ti,    F_Ti,    "Ti");
-
-  comms.add(Ni);
-  comms.add(Vi);
-  comms.add(Te);
-  comms.add(Ti);
 
   /************** SETUP COMMUNICATIONS **************/
   
@@ -199,8 +190,8 @@ int physics_init()
 /*
 Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
 {
-  Field2D sg = 1./sqrt(g_11);
-  return difVi * D2DX2(Vi)/g_11
+  Field2D sg = 1./sqrt(mesh->g_11);
+  return difVi * D2DX2(Vi)/mesh->g_11
     + DDX( difVi * sg ) * DDX(Vi) * sg;
 }
 */
@@ -217,7 +208,7 @@ int physics_run(real t)
   //real bmk_t = MPI_Wtime();
   
   // Communicate variables
-  comms.run();
+  mesh->communicate(Ni, Vi, Te, Ti);
   
   // Update profiles
   Nit = Ni0  + Ni.DC();

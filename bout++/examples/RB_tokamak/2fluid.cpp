@@ -123,16 +123,16 @@ int physics_init()
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
-  grid.get(b0xcv, "bxcv"); // b0xkappa terms
+  mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Load metrics
   GRID_LOAD(Rxy);
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  grid.get(dx,   "dpsi");
-  grid.get(I,    "sinty");
-  grid.get(zShift, "qinty");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -258,7 +258,7 @@ int physics_init()
   ////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -292,7 +292,7 @@ int physics_init()
   // PRINT Z INFORMATION
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
@@ -342,30 +342,30 @@ int physics_init()
   ////////////////////////////////////////////////////////
   // CALCULATE METRICS
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (I^2)*g11 + (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = -I*g11;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = -I*mesh->g11;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
   J = hthe / Bpxy;
   
-  g_11 = 1.0/g11 + ((I*Rxy)^2);
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  g_13 = I*Rxy*Rxy;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
+  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  mesh->g_13 = I*Rxy*Rxy;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
   if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    for(int i=0;i<mesh->ngx;i++)
+      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
   }
   if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   ////////////////////////////////////////////////////////
   // SET EVOLVING VARIABLES
@@ -562,9 +562,9 @@ int physics_run(real t)
       // Use BOUT-06 method, no communications
       
       jpar.Allocate();
-      for(int jx=0;jx<ngx;jx++)
-	for(int jy=0;jy<ngy;jy++)
-	  for(int jz=0;jz<ngz;jz++) {
+      for(int jx=0;jx<mesh->ngx;jx++)
+	for(int jy=0;jy<mesh->ngy;jy++)
+	  for(int jz=0;jz<mesh->ngz;jz++) {
 	    real dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
@@ -805,11 +805,11 @@ int physics_run(real t)
     //F_Ajpar -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
 
     /*
-    for(int jx=MXG;jx<ngx-MXG;jx++) {
-      for(int jy=MYG;jy<ngy-MYG;jy++) {
-	for(int jz=0;jz<ngz;jz++) {
-	  F_Ajpar[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
-	  F_Ajpar[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
+    for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
+      for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++) {
+	  F_Ajpar[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	  F_Ajpar[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
 	}
       }
     }

@@ -48,7 +48,7 @@ const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method)
 #endif
 
 
-  Field2D result = DDY(var)/sqrt(g_22); // NOTE: 2D functions not implemented yet
+  Field2D result = DDY(var)/sqrt(mesh->g_22); // NOTE: 2D functions not implemented yet
 
 
 #ifdef TRACK
@@ -74,7 +74,7 @@ const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method)
 
   Field3D result;
 
-  result = DDY(var, outloc, method)/sqrt(g_22);
+  result = DDY(var, outloc, method)/sqrt(mesh->g_22);
 
 #ifdef TRACK
   result.name = "Grad_par("+var.name+")";
@@ -98,12 +98,12 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc)
 
 const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f)
 {
-  return VDDY(v, f)/sqrt(g_22);
+  return VDDY(v, f)/sqrt(mesh->g_22);
 }
 
 const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method)
 {
-  return VDDY(v, f, outloc, method)/sqrt(g_22);
+  return VDDY(v, f, outloc, method)/sqrt(mesh->g_22);
 }
 
 const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
@@ -123,7 +123,7 @@ const Field2D Div_par(const Field2D &f)
 #endif
 
 
-  Field2D result = Bxy*Grad_par(f/Bxy);
+  Field2D result = mesh->Bxy*Grad_par(f/mesh->Bxy);
 
 
 #ifdef TRACK
@@ -142,7 +142,7 @@ const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 #endif
 
 
-  Field3D result = Bxy*Grad_par(f/Bxy, outloc, method);
+  Field3D result = mesh->Bxy*Grad_par(f/mesh->Bxy, outloc, method);
 
 
 #ifdef TRACK
@@ -183,10 +183,10 @@ const Field3D Grad_par_CtoL(const Field3D &var)
   */
   
   // NOTE: Need to calculate one more point than centred vars
-  for(int jx=0; jx<ngx;jx++) {
-    for(int jy=1;jy<ngy;jy++) {
-      for(int jz=0;jz<ngz;jz++) {
-	d[jx][jy][jz] = (var[jx][jy][jz] - var[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(g_22[jx][jy]));
+  for(int jx=0; jx<mesh->ngx;jx++) {
+    for(int jy=1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	d[jx][jy][jz] = (var[jx][jy][jz] - var[jx][jy-1][jz]) / (mesh->dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
       }
     }
   }
@@ -231,7 +231,7 @@ const Field3D Grad_par_LtoC(const Field &var)
   do {
     var.SetStencil(&f, &bx);
     
-    d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (dy[bx.jx][bx.jy] * sqrt(g_22[bx.jx][bx.jy]));
+    d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (mesh->dy[bx.jx][bx.jy] * sqrt(mesh->g_22[bx.jx][bx.jy]));
   }while(next_index3(&bx));
 
   return result;
@@ -239,13 +239,13 @@ const Field3D Grad_par_LtoC(const Field &var)
 
 const Field3D Div_par_LtoC(const Field2D &var)
 {
-  Field3D result = Bxy*Grad_par_LtoC(var/Bxy);
+  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
   return result;
 }
 
 const Field3D Div_par_LtoC(const Field3D &var)
 {
-  Field3D result = Bxy*Grad_par_LtoC(var/Bxy);
+  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
   return result;
 }
 
@@ -261,9 +261,9 @@ const Field2D Grad2_par2(const Field2D &f)
 #endif
 
 
-  Field2D sg = sqrt(g_22);
-  Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
-  //Field2D result = D2DY2(f)/g_22;
+  Field2D sg = sqrt(mesh->g_22);
+  Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/mesh->g_22;
+  //Field2D result = D2DY2(f)/mesh->g_22;
 
 #ifdef TRACK
   result.name = "Grad2_par2("+f.name+")";
@@ -280,10 +280,10 @@ const Field3D Grad2_par2(const Field3D &f)
   int msg_pos = msg_stack.push("Grad2_par2( Field3D )");
 #endif
 
-  Field2D sg = sqrt(g_22);
-  Field3D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
+  Field2D sg = sqrt(mesh->g_22);
+  Field3D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/mesh->g_22;
   
-  //Field3D result = D2DY2(f)/g_22;
+  //Field3D result = D2DY2(f)/mesh->g_22;
 #ifdef TRACK
   result.name = "Grad2_par2("+f.name+")";
 #endif
@@ -329,7 +329,7 @@ const Field2D Delp2(const Field2D &f)
   int msg_pos = msg_stack.push("Delp2( Field2D )");
 #endif
 
-  Field2D result =  G1*DDX(f) + g11*D2DX2(f);
+  Field2D result =  mesh->G1*DDX(f) + mesh->g11*D2DX2(f);
 
 #ifdef CHECK
   msg_stack.pop(msg_pos);
@@ -347,7 +347,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
   int msg_pos = msg_stack.push("Delp2( Field3D )");
 #endif
 
-  //return G1*DDX(f) + G3*DDZ(f) + g11*D2DX2(f) + g33*D2DZ2(f); //+ 2.0*g13*D2DXDZ(f)
+  //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
   // NEW: SOLVE USING FFT
 
@@ -361,19 +361,21 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
   fd = f.getData();
   rd = result.getData();
 
+  int ncz = mesh->ngz-1;
+  
   if(ft == (dcomplex**) NULL) {
     // Allocate memory
-    ft = cmatrix(ngx, ncz/2 + 1);
-    delft = cmatrix(ngx, ncz/2 + 1);
+    ft = cmatrix(mesh->ngx, ncz/2 + 1);
+    delft = cmatrix(mesh->ngx, ncz/2 + 1);
   }
   
   // Loop over all y indices
-  for(jy=0;jy<ngy;jy++) {
+  for(jy=0;jy<mesh->ngy;jy++) {
 
     // Take forward FFT
     
-    for(jx=0;jx<ngx;jx++)
-      ZFFT(fd[jx][jy], zShift[jx][jy], ft[jx]);
+    for(jx=0;jx<mesh->ngx;jx++)
+      ZFFT(fd[jx][jy], mesh->zShift[jx][jy], ft[jx]);
 
     // Loop over kz
     for(jz=0;jz<=ncz/2;jz++) {
@@ -381,7 +383,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
       if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((real) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
-      for(jx=2;jx<(ngx-2);jx++) {
+      for(jx=2;jx<(mesh->ngx-2);jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -401,16 +403,16 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
     }
   
     // Reverse FFT
-    for(jx=1;jx<(ngx-1);jx++) {
+    for(jx=1;jx<(mesh->ngx-1);jx++) {
 
-      ZFFT_rev(delft[jx], zShift[jx][jy], rd[jx][jy]);
+      ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
       rd[jx][jy][ncz] = rd[jx][jy][0];
     }
 
     // Boundaries
     for(jz=0;jz<ncz;jz++) {
       rd[0][jy][jz] = 0.0;
-      rd[ngx-1][jy][jz] = 0.0;
+      rd[mesh->ngx-1][jy][jz] = 0.0;
     }
   }
 
@@ -435,9 +437,9 @@ const Field2D Laplacian(const Field2D &f)
   int msg_pos = msg_stack.push("Laplacian( Field2D )");
 #endif
 
-  Field2D result =  G1*DDX(f) + G2*DDY(f)
-      + g11*D2DX2(f) + g22*D2DY2(f);
-  // + 2.0*g12*D2DXDY(f);
+  Field2D result =  mesh->G1*DDX(f) + mesh->G2*DDY(f)
+      + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f);
+  // + 2.0*mesh->g12*D2DXDY(f);
 
 #ifdef CHECK
   msg_stack.pop(msg_pos);
@@ -452,9 +454,9 @@ const Field3D Laplacian(const Field3D &f)
   int msg_pos = msg_stack.push("Laplacian( Field3D )");
 #endif
 
-  Field3D result  = G1*DDX(f) + G2*DDY(f) + G3*DDZ(f)
-      + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f);
-  // + 2.0*(g12*D2DXDY(f) + g13*D2DXDZ(f) + g23*D2DYDZ(f));
+  Field3D result  = mesh->G1*DDX(f) + mesh->G2*DDY(f) + mesh->G3*DDZ(f)
+      + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f) + mesh->g33*D2DZ2(f);
+  // + 2.0*(mesh->g12*D2DXDY(f) + mesh->g13*D2DXDZ(f) + mesh->g23*D2DYDZ(f));
 
 #ifdef CHECK
   msg_stack.pop(msg_pos);
@@ -483,20 +485,20 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
   dpdx = DDX(phi); dpdy = DDY(phi); dpdz = DDZ(phi);
   
   // Calculate advection velocity
-  vx = g_22*dpdz - g_23*dpdy;
-  vy = g_23*dpdx - g_12*dpdz;
-  vz = g_12*dpdy - g_22*dpdx;
+  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
   
   result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
   
-  result /= J*sqrt(g_22);
+  result /= mesh->J*sqrt(mesh->g_22);
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
@@ -521,20 +523,20 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
   dpdx = DDX(phi); dpdy = DDY(phi); dpdz = DDZ(phi);
   
   // Calculate advection velocity
-  vx = g_22*dpdz - g_23*dpdy;
-  vy = g_23*dpdx - g_12*dpdz;
-  vz = g_12*dpdy - g_22*dpdx;
+  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
   
   result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
 
-  result /= J*sqrt(g_22);
+  result /= mesh->J*sqrt(mesh->g_22);
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
@@ -561,20 +563,20 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   dpdz = DDZ(p, outloc);
 
   // Calculate advection velocity
-  vx = g_22*dpdz - g_23*dpdy;
-  vy = g_23*dpdx - g_12*dpdz;
-  vz = g_12*dpdy - g_22*dpdx;
+  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
 
   result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
 
-  result /= J*sqrt(g_22);
+  result /= mesh->J*sqrt(mesh->g_22);
   
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
@@ -599,20 +601,20 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
   dpdx = DDX(phi, outloc); dpdy = DDY(phi, outloc); dpdz = DDZ(phi, outloc);
   
   // Calculate advection velocity
-  vx = g_22*dpdz - g_23*dpdy;
-  vy = g_23*dpdx - g_12*dpdz;
-  vz = g_12*dpdy - g_22*dpdx;
+  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
 
-  if(ShiftXderivs && IncIntShear) {
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += IntShiftTorsion * vx;
+    vz += mesh->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
   
   result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
   
-  result /= J*sqrt(g_22);
+  result /= mesh->J*sqrt(mesh->g_22);
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";

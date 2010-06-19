@@ -97,11 +97,12 @@ void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift)
   int jz, ikz;
   real kwave;
   
-  if((isign > 0) && (ShiftXderivs) && shift) {
+  int ncz = mesh->ngz-1;
+  if((isign > 0) && (mesh->ShiftXderivs) && shift) {
     // Reverse FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
@@ -110,11 +111,11 @@ void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift)
 
   cfft(cv, ncz, isign);
 
-  if((isign < 0) && (ShiftXderivs) && shift) {
+  if((isign < 0) && (mesh->ShiftXderivs) && shift) {
     // Forward FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -206,12 +207,14 @@ void ZFFT(real *in, real zoffset, dcomplex *cv, bool shift)
   int jz;
   real kwave;
 
+  int ncz = mesh->ngz-1;
+
   rfft(in, ncz, cv);
 
-  if((ShiftXderivs) && shift) {
+  if((mesh->ShiftXderivs) && shift) {
     // Forward FFT
     for(jz=0;jz<=ncz/2;jz++) {
-      kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -224,9 +227,11 @@ void ZFFT_rev(dcomplex *cv, real zoffset, real *out, bool shift)
   int jz;
   real kwave;
   
-  if((ShiftXderivs) && shift) {
+  int ncz = mesh->ngz-1;
+  
+  if((mesh->ShiftXderivs) && shift) {
     for(jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
-      kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));

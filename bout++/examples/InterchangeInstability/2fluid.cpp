@@ -51,18 +51,18 @@ real ShearFactor;
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
-Communicator comms;
+// Group fields together for communication
+FieldGroup comms;
 
 // Field routines
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
 int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
-  output.write("Solving 6-variable 2-fluid equations\n");
+  output << "Solving 6-variable 2-fluid equations\n";
 
   /************* LOAD DATA FROM GRID FILE ****************/
 
@@ -78,7 +78,7 @@ int physics_init()
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
-  grid.get(b0xcv, "bxcv"); // b0xkappa terms
+  mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   b0xcv *= -1.0;  // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
@@ -87,9 +87,9 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  grid.get(dx,   "dpsi");
-  grid.get(I,    "sinty");
-  grid.get(zShift, "qinty");
+  mesh->get(mesh->dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -129,7 +129,7 @@ int physics_init()
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -161,7 +161,7 @@ int physics_init()
   /************** PRINT Z INFORMATION ******************/
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
@@ -195,12 +195,12 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -208,30 +208,30 @@ int physics_init()
 
   /**************** CALCULATE METRICS ******************/
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (I^2)*g11 + (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = -I*g11;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = -I*mesh->g11;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
-  g_11 = 1.0/g11 + ((I*Rxy)^2);
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  g_13 = I*Rxy*Rxy;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  mesh->g_13 = I*Rxy*Rxy;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
   if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    for(int i=0;i<mesh->ngx;i++)
+      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
   }
   if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, ngx, MPI_DOUBLE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    MPI_Bcast(ShiftAngle, mesh->ngx, MPI_DOUBLE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -303,17 +303,12 @@ int physics_init()
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-
-  
-  //dump.add(F_Ni, "F_Ni", 1);
-  //dump.add(F_rho, "F_rho", 1);
-  //dump.add(F_Ajpar, "F_Ajpar", 1);
   
   return(0);
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / Bxy )
+#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
 
 int physics_run(real t)
 {
@@ -329,7 +324,7 @@ int physics_run(real t)
   }
 
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   // zero-gradient Y boundaries (temporary! for interchange test)
   
@@ -340,7 +335,6 @@ int physics_run(real t)
   bndry_ydown_flat(rho);
   bndry_yup_flat(rho);
   
-
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();
   Tit = Ti0; // + Ti.DC();
@@ -368,9 +362,7 @@ int physics_run(real t)
     bndry_toroidal(jpar);
     
     // Need to communicate jpar
-    Communicator com_jp;
-    com_jp.add(jpar);
-    com_jp.run();
+    mesh->communicate(jpar);
 
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
@@ -437,7 +429,7 @@ int physics_run(real t)
     */
     
     //F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);
-    F_rho += 2.0*Bxy*b0xcv*Grad(pei);
+    F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);
 
     //F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
   }

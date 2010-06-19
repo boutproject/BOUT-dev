@@ -65,24 +65,24 @@ int physics_init()
   /************* LOAD DATA FROM GRID FILE ****************/
 
   // Load 2D profiles (set to zero if not found)
-  grid_load2d(Ni0,    "Ni0");
-  grid_load2d(Ti0,    "Ti0");
-  grid_load2d(Te0,    "Te0");
+  mesh->get(Ni0,    "Ni0");
+  mesh->get(Ti0,    "Ti0");
+  mesh->get(Te0,    "Te0");
 
   // Load metrics
-  grid_load2d(Rxy,  "Rxy");
-  grid_load2d(Bpxy, "Bpxy");
-  grid_load2d(Btxy, "Btxy");
-  grid_load2d(hthe, "hthe");
-  grid_load2d(dx,   "dpsi");
-  grid_load2d(I,    "sinty");
-  grid_load2d(zShift, "qinty");
+  mesh->get(Rxy,  "Rxy");
+  mesh->get(Bpxy, "Bpxy");
+  mesh->get(Btxy, "Btxy");
+  mesh->get(hthe, "hthe");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
-  grid_load(Te_x, "Te_x");
-  grid_load(Ti_x, "Ti_x");
-  grid_load(Ni_x, "Ni_x");
-  grid_load(bmag, "bmag");
+  mesh->get(Te_x, "Te_x");
+  mesh->get(Ti_x, "Ti_x");
+  mesh->get(Ni_x, "Ni_x");
+  mesh->get(bmag, "bmag");
 
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
@@ -113,7 +113,7 @@ int physics_init()
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
-  if(ShiftXderivs) {
+  if(mesh->ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
   }
 
@@ -146,7 +146,7 @@ int physics_init()
   /************** PRINT Z INFORMATION ******************/
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
@@ -172,30 +172,30 @@ int physics_init()
 
   /**************** CALCULATE METRICS ******************/
 
-  g11 = (Rxy*Bpxy)^2;
-  g22 = 1.0 / (hthe^2);
-  g33 = (I^2)*g11 + (Bxy^2)/g11;
-  g12 = 0.0;
-  g13 = -I*g11;
-  g23 = -Btxy/(hthe*Bpxy*Rxy);
+  mesh->g11 = (Rxy*Bpxy)^2;
+  mesh->g22 = 1.0 / (hthe^2);
+  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g12 = 0.0;
+  mesh->g13 = -I*mesh->g11;
+  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
   J = hthe / Bpxy;
   
-  g_11 = 1.0/g11 + ((I*Rxy)^2);
-  g_22 = (Bxy*hthe/Bpxy)^2;
-  g_33 = Rxy*Rxy;
-  g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  g_13 = I*Rxy*Rxy;
-  g_23 = Btxy*hthe*Rxy/Bpxy;
+  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
+  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_33 = Rxy*Rxy;
+  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  mesh->g_13 = I*Rxy*Rxy;
+  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
   // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
 
   if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    for(int i=0;i<mesh->ngx;i++)
+      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
   }
   if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
+    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
   
 
   /**************** SET EVOLVING VARIABLES *************/

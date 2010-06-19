@@ -1,10 +1,7 @@
 /**************************************************************
  * radial source and mask operators
  **************************************************************/
-#include "communicator.h"
 
-
-#include "mesh_topology.h"
 #include "globals.h"
 #include <math.h>
 
@@ -31,30 +28,25 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
 
   //  real slength = 0.5;
   //  real width = 20.0;
-  real length  = slength*nx;
-  real width   = swidth*nx;
-
-  //	    output.write("source, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
-
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  real length  = slength;
+  real width   = swidth;
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       {
-	real lx = XGLOBAL(jx)-MXG-length;
+	real lx = mesh->GlobalX(jx) - length;
 	real dampl = TanH(lx/width);
 	result[jx][jy] = 0.5*(1.0 - dampl);
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
 const Field2D source_expx2(const Field2D &f,real swidth,real slength)
-//const Field2D source_x(const Field2D &f)
 {
   Field2D  fs, result;
 
@@ -64,23 +56,19 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
 
   //  real slength = 0.5;
   //  real width = 20.0;
-  real length  = slength*nx;
-  real width   = swidth*nx;
 
   //	    output.write("source, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       {
-	real lx = XGLOBAL(jx)-MXG-length;
-	real dampl = exp(-lx*lx/width/width);
+	real lx = mesh->GlobalX(jx) - slength;
+	real dampl = exp(-lx*lx/swidth/swidth);
 	result[jx][jy] = dampl;
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -103,17 +91,12 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
  
   //  real slength = 0.15;
   //  real width = 20.0;
-
-  real length  = slength*nx;
-  real width   = swidth*nx;
-
-  //	    output.write("sink, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
-
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
-        real rlx = nx-(XGLOBAL(jx)+1+MXG)-length;
-	real dampr = TanH(rlx/width);
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+        real rlx = 1. - mesh->GlobalX(jx) - slength;
+	real dampr = TanH(rlx/swidth);
 	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
       }
@@ -122,10 +105,8 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
- 
+  mesh->communicate(result);
+  
   return result;
 }
 
@@ -143,21 +124,13 @@ const Field3D mask_x(const Field3D &f, bool realspace)
   
 // create a radial buffer zone to set jpar zero near radial boundary
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
-	real lx = XGLOBAL(jx)-MXG;
-	//        real rlx = nx-(XGLOBAL(jx)+1);
-        real rlx = nx-(XGLOBAL(jx)+1+MXG);
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	real lx = mesh->GlobalX(jx);
         real dampl = TanH(lx/40.0);
-        real dampr = TanH(rlx/40.0);
-	if(YGLOBAL(jy)==32 && jz==0){
-	  //	  if(lx < 50)
-	  //	    output.write("lx=%e, dampl=%e, rlx=%e, dampr=%e\n", lx, dampl, rlx, dampr);
-
-	  //	  if(rlx < 50)
-	  //	    output.write("lx=%e, dampl=%e, rlx=%e, dampr=%e\n", lx, dampl, rlx, dampr);
-	}
+        real dampr = TanH((1. - lx)/40.0);
+	
 	result[jx][jy][jz] = (1.0 - dampl*dampr)*fs[jx][jy][jz];
 	//	result[jx][jy][jz] = dampl*fs[jx][jy][jz]*dampr;
       }
@@ -166,9 +139,7 @@ const Field3D mask_x(const Field3D &f, bool realspace)
     result = result.ShiftZ(false); // Shift back
 
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   return result;
 }
@@ -191,15 +162,12 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
   //  real slength = 0.15;
   //  real width = 20.0;
 
-  real length  = slength*nx;
-  real width   = swidth*nx;
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
-
-	real lx = XGLOBAL(jx)-MXG-length;
-	real dampl = TanH(lx/width);
+	real lx = mesh->GlobalX(jx) - slength;
+	real dampl = TanH(lx/swidth);
 
 	result[jx][jy][jz] = 0.5*(1.0 - dampl)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
@@ -209,9 +177,7 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
  
   return result;
 }
@@ -233,15 +199,12 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
  
   //  real slength = 0.15;
   //  real width = 20.0;
-
-  real length  = slength*nx;
-  real width   = swidth*nx;
-
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
-        real rlx = nx-(XGLOBAL(jx)+1+MXG)-length;
-	real dampr = TanH(rlx/width);
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+        real rlx = 1. - mesh->GlobalX(jx) - slength;
+	real dampr = TanH(rlx/swidth);
 
 	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
@@ -251,9 +214,7 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
     result = result.ShiftZ(false); // Shift back
  
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
  
   return result;
 }
@@ -270,34 +231,25 @@ const Field3D buff_x(const Field3D &f, bool realspace)
 
   result.Allocate();
   
-// create a radial buffer zone to set jpar zero near radial boundary
+  // create a radial buffer zone to set jpar zero near radial boundary
 
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
-      for(int jz=0;jz<ngz;jz++) {
-	real lx = XGLOBAL(jx)-MXG;
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	real lx = mesh->GlobalX(jx);
 	//        real rlx = nx-(XGLOBAL(jx)+1);
-        real rlx = nx-(XGLOBAL(jx)+1+MXG);
+        real rlx = 1. - lx;
         real dampl = 1.e0;
         real dampr = 1.e0;
-	real deltal = 10.;
-	real deltar = 10.;
-
-	if(YGLOBAL(jy)==32 && jz==0){
-	  //	  if(lx < 50)
-	  //	    output.write("lx=%e, dampl=%e, rlx=%e, dampr=%e\n", lx, dampl, rlx, dampr);
-	  
-	  //	  if(rlx < 50)
-	  //	    output.write("lx=%e, dampl=%e, rlx=%e, dampr=%e\n", lx, dampl, rlx, dampr);
-	}
+	real deltal = 0.05;
+	real deltar = 0.05;
+	
 	result[jx][jy][jz] = (dampl*exp(- (real) (lx*lx)/(deltal*deltal))
 			      +dampr*exp(-(real) ((rlx*rlx))/(deltar*deltar)))*fs[jx][jy][jz];
       }
   
   // Need to communicate boundaries
-  Communicator c;
-  c.add(result);
-  c.run();
+  mesh->communicate(result);
 
   if(realspace)
     result = result.ShiftZ(false); // Shift back
