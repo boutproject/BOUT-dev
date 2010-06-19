@@ -141,6 +141,12 @@ class Mesh {
   virtual RangeIter* iterateBndryLowerY() = 0;
   virtual RangeIter* iterateBndryUpperY() = 0;
   
+  // Indexing. Iterate over the mesh
+  /*  virtual IndexIter *iterateIndexXY() = 0;
+  virtual IndexIter *iterateIndexXYZ() = 0;
+  virtual IndexIter *iterateIndexXZ() = 0;
+  */
+
   //////////////////////////////////////////////////////////
 
   /// Size of the mesh on this processor including guard/boundary cells

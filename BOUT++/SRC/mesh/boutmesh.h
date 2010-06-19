@@ -82,10 +82,10 @@ class BoutMesh : public Mesh {
   int YLOCAL(int yglo, int yproc);
   int YPROC(int yind);
   int XPROC(int xind);
-  /*
-  // Twist-shift switches (topology.cpp)
+  
+  // Twist-shift switches
   bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
-
+  /*
   // Communication parameters calculated by topology
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;

@@ -742,7 +742,7 @@ void calc_index(bindex *bx)
   bx->ym_shift = bx->y2m_shift = false;
 
   /* Twist-Shift boundary condition */
-
+  /*
   if(TwistShift && (TwistOrder != 0)) {
     if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
 	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
@@ -766,6 +766,7 @@ void calc_index(bindex *bx)
       }
     }
   }
+  */
 
   /* shifted z-indices for x differencing */
   bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;

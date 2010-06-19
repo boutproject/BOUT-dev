@@ -68,9 +68,6 @@ GLOBAL int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
 GLOBAL int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
 GLOBAL int ny_inner;
 
-// Twist-shift switches (topology.cpp)
-GLOBAL bool TS_up_in, TS_up_out, TS_down_in, TS_down_out;
-
 // Communication parameters calculated by topology
 GLOBAL int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
 GLOBAL int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
