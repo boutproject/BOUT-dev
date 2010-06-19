@@ -53,7 +53,11 @@ class BoutMesh : public Mesh {
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
   const Field2D average_y(const Field2D&);
-
+  
+  // Boundary iteration
+  RangeIter* iterateBndryLowerY();
+  RangeIter* iterateBndryUpperY();
+  friend class BoutRangeIter;
  private:
   /*
   int nx, ny;        ///< Size of the grid in the input file
@@ -177,4 +181,18 @@ class BoutSurfaceIter : public SurfaceIter {
   BoutMesh* m;
 };
 */
+
+class BoutRangeIter : public RangeIter {
+ public:
+  BoutRangeIter(int start, int end);
+  void first();
+  void next();
+  bool isDone();
+  
+  int ind; // The index
+  
+ private:
+  int s,e;
+};
+
 #endif // __BOUTMESH_H__

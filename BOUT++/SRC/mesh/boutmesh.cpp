@@ -2185,3 +2185,52 @@ int BoutSurfaceIter::scatter(real **data, Field3D &f)
 }
 
 */
+
+/****************************************************************
+ *                 Range iteration
+ ****************************************************************/
+
+RangeIter* BoutMesh::iterateBndryLowerY()
+{
+  int xs = 0;
+  int xe = ngx-1;
+  if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > 0))
+    xs = DDATA_XSPLIT;
+  if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < ngx))
+    xe = DDATA_XSPLIT-1;
+  
+  return new BoutRangeIter(xs, xe);
+}
+
+RangeIter* BoutMesh::iterateBndryUpperY()
+{
+  int xs = 0;
+  int xe = ngx-1;
+  if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > 0))
+    xs = UDATA_XSPLIT;
+  if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < ngx))
+    xe = UDATA_XSPLIT-1;
+  
+  return new BoutRangeIter(xs, xe);
+}
+
+BoutRangeIter::BoutRangeIter(int start, int end)
+{
+  s = start;
+  e = end;
+}
+
+void BoutRangeIter::first()
+{
+  ind = s;
+}
+
+void BoutRangeIter::next()
+{
+  ind++;
+}
+
+bool BoutRangeIter::isDone()
+{
+  return ind > e;
+}

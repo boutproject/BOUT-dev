@@ -131,108 +131,90 @@ void bndry_outer_zero(Field3D &var)
 
 ///////////////////////// UPPER Y ////////////////////////////
 
-/// Can't think of a "good" way to do this, so using the preprocessor
-#define LOOP_UPPER_BNDRY(code)				      \
-  if(UDATA_INDEST < 0) {				      \
-    for(jx=0;jx<UDATA_XSPLIT;jx++)			      \
-      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) {			      \
-	code;						      \
-      }							      \
-  }							      \
-  if(UDATA_OUTDEST < 0) {				      \
-    for(jx=(UDATA_XSPLIT < 0) ? 0 : UDATA_XSPLIT;jx<mesh->ngx;jx++) \
-      for(jy=mesh->ngy-MYG-1;jy<mesh->ngy;jy++) {			      \
-	code;						      \
-      }							      \
-  }
-
 void bndry_yup_flat(Field2D &var)
 {
-  int jx, jy;
-  
-  LOOP_UPPER_BNDRY(var[jx][jy] = var[jx][mesh->ngy-1-MYG]);
+  RangeIter* xr = mesh->iterateBndryUpperY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      
+      var[xr->ind][jy] = var[xr->ind][mesh->yend];
+      
+    }
+  delete xr;
 }
 
 void bndry_yup_zero(Field2D &var)
 {
-  int jx, jy;
-  
-  LOOP_UPPER_BNDRY(var[jx][jy] = 0.0);
+  RangeIter* xr = mesh->iterateBndryUpperY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      var[xr->ind][jy] = 0.0;
+    }
+  delete xr;
 }
 
 void bndry_yup_flat(Field3D &var)
 {
-  int jx, jy, jz;
-  
-  LOOP_UPPER_BNDRY(
-		   for(jz=0;jz<mesh->ngz;jz++) {
-		     var[jx][jy][jz] = var[jx][mesh->ngy-1-MYG][jz];
-		   }
-		   );
+  RangeIter* xr = mesh->iterateBndryUpperY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	var[xr->ind][jy][jz] = var[xr->ind][mesh->yend][jz];
+      }
+  delete xr;
 }
 
 void bndry_yup_zero(Field3D &var)
 {
-  int jx, jy, jz;
-  
-  LOOP_UPPER_BNDRY(
-		   for(jz=0;jz<mesh->ngz;jz++) {
-		     var[jx][jy][jz] = 0.0;
-		   }
-		   );
+  RangeIter* xr = mesh->iterateBndryUpperY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	var[xr->ind][jy][jz] = 0.0;
+      }
+  delete xr;
 }
 
 ///////////////////////// LOWER Y ////////////////////////////
 
-/// Can't think of a "good" way to do this, so using the preprocessor
-#define LOOP_LOWER_BNDRY(code)				      \
-  if(DDATA_INDEST < 0) {				      \
-    for(jx=0;jx<DDATA_XSPLIT;jx++)			      \
-      for(jy=0;jy<MYG;jy++) {				      \
-	code;						      \
-      }							      \
-  }							      \
-  if(DDATA_OUTDEST < 0) {				      \
-    for(jx=(DDATA_XSPLIT < 0) ? 0 : DDATA_XSPLIT;jx<mesh->ngx;jx++) \
-      for(jy=0;jy<MYG;jy++) {				      \
-	code;						      \
-      }							      \
-  }
-
 void bndry_ydown_flat(Field2D &var)
 {
-  int jx, jy;
-  
-  LOOP_LOWER_BNDRY(var[jx][jy] = var[jx][MYG]);
+  RangeIter* xr = mesh->iterateBndryLowerY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      var[xr->ind][jy] = var[xr->ind][mesh->ystart];
+  delete xr;
 }
 
 void bndry_ydown_zero(Field2D &var)
 {
-  int jx, jy;
-  
-  LOOP_LOWER_BNDRY(var[jx][jy] = 0.0);
+  RangeIter* xr = mesh->iterateBndryLowerY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      var[xr->ind][jy] = 0.0;
+  delete xr;
 }
 
 void bndry_ydown_flat(Field3D &var)
 {
-  int jx, jy, jz;
-  
-  LOOP_LOWER_BNDRY(
-		   for(jz=0;jz<mesh->ngz;jz++) {
-		     var[jx][jy][jz] = var[jx][MYG][jz];
-		   }
-		   );
+  RangeIter* xr = mesh->iterateBndryLowerY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	var[xr->ind][jy][jz] = var[xr->ind][mesh->ystart][jz];
+      }
+  delete xr;
 }
 
 void bndry_ydown_zero(Field3D &var)
 {
-  int jx, jy, jz;
-  
-  LOOP_LOWER_BNDRY(
-		   for(jz=0;jz<mesh->ngz;jz++) {
-		     var[jx][jy][jz] = 0.0;
-		   }
-		   );
+  RangeIter* xr = mesh->iterateBndryLowerY();
+  for(xr->first(); !xr->isDone(); xr->next())
+    for(int jy=0;jy<mesh->ystart;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	var[xr->ind][jy][jz] = 0.0;
+      }
+  delete xr;
 }
 
 /*******************************************************************************
@@ -1433,7 +1415,7 @@ void bndry_core_zero(Field2D &var)
 {
   int jx, jy;
 
-  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0))
+  if((MYPE_IN_CORE == 1) && mesh->first_x())
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
@@ -1446,7 +1428,7 @@ void bndry_core_zero(Field3D &var)
   // Set boundary to zero
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 1) && mesh->first_x()) {
     for(jx=0;jx<mesh->xstart;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
 	for(jz=0;jz<mesh->ngz;jz++) {
@@ -1468,7 +1450,7 @@ void bndry_core_flat(Field2D &var)
 {
   int jx, jy;
 
-  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0))
+  if((MYPE_IN_CORE == 1) && mesh->first_x())
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[mesh->xstart][jy];
@@ -1479,7 +1461,7 @@ void bndry_core_flat(Field3D &var)
 {
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 1) && (mesh->PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 1) && mesh->first_x()) {
     if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
@@ -1512,7 +1494,7 @@ void bndry_core_laplace(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if((MYPE_IN_CORE != 1) || (mesh->PE_XIND != 0))
+  if((MYPE_IN_CORE != 1) || mesh->first_x())
     return;
 
   int ncz = mesh->ngz-1;
@@ -1561,7 +1543,7 @@ void bndry_core_laplace2(Field3D &var)
   real coef1, coef2, coef3;
   dcomplex a, b, c;
 
-  if((MYPE_IN_CORE != 1) || (mesh->PE_XIND != 0))
+  if((MYPE_IN_CORE != 1) || mesh->first_x())
     return;
 
   int ncz = mesh->ngz-1;
@@ -1609,7 +1591,7 @@ void bndry_pf_zero(Field2D &var)
   // Set boundary to zero
   int jx, jy;
   
-  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0))
+  if((MYPE_IN_CORE == 0) && mesh->first_x())
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = 0.0;
@@ -1621,7 +1603,7 @@ void bndry_pf_zero(Field3D &var)
   // Set boundary to zero
   int jx, jy, jz;
   
-  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 0) && mesh->first_x()) {
     for(jx=0;jx<mesh->xstart;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
 	for(jz=0;jz<mesh->ngz;jz++) {
@@ -1644,7 +1626,7 @@ void bndry_pf_flat(Field2D &var)
   // Set boundary to zero
   int jx, jy;
   
-  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0))
+  if((MYPE_IN_CORE == 0) && mesh->first_x())
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
 	var[jx][jy] = var[mesh->xstart][jy];
@@ -1655,7 +1637,7 @@ void bndry_pf_flat(Field3D &var)
 {
   int jx, jy, jz;
 
-  if((MYPE_IN_CORE == 0) && (mesh->PE_XIND == 0)) {
+  if((MYPE_IN_CORE == 0) && mesh->first_x()) {
     if(mesh->ShiftXderivs)
       var = var.ShiftZ(true);
 
@@ -1689,7 +1671,7 @@ void bndry_pf_laplace(Field3D &var)
 
   int ncz = mesh->ngz-1;
 
-  if((MYPE_IN_CORE != 0) || (mesh->PE_XIND != 0))
+  if((MYPE_IN_CORE != 0) || (!mesh->first_x()))
     return;
 
   if(c0 == (dcomplex*) NULL) {
@@ -1968,7 +1950,7 @@ void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real 
 {
   int jx, jy, jz;
 
-  if(mesh->PE_XIND != 0)
+  if(!mesh->first_x())
     return;
   
   rate = fabs(rate);
@@ -1984,7 +1966,7 @@ void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real
 {
   int jx, jy, jz;
 
-  if(mesh->PE_XIND != 0)
+  if(!mesh->first_x())
     return;
   
   rate = fabs(rate);
@@ -2045,7 +2027,7 @@ void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 {
   int jx, jy, jz;
   
-  if(mesh->PE_XIND != 0)
+  if(!mesh->first_x())
     return;
   
   rate = fabs(rate);
@@ -2089,7 +2071,7 @@ void bndry_inner_sym(Field3D &var)
 {
   int jx, jy, jz, xb;
 
-  if(mesh->PE_XIND != 0)
+  if(!mesh->first_x())
     return;
 
   if(mesh->ShiftXderivs)
@@ -2149,7 +2131,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 {
   int jx, jy, jz, xb;
 
-  if(mesh->PE_XIND != 0)
+  if(!mesh->first_x())
     return;
 
   rate = fabs(rate);

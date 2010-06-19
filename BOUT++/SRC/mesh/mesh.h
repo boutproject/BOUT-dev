@@ -5,7 +5,7 @@
  * Changelog
  * =========
  *
- * 2010-05 Ben Dudson, Sean Farley
+ * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
  *
@@ -80,6 +80,15 @@ class SurfaceIter {
   virtual int scatter(real *data, Field3D &f) = 0;
 };
 
+class RangeIter {
+ public:
+  virtual void first() = 0;
+  virtual void next() = 0;
+  virtual bool isDone() = 0;
+  
+  int ind; // The index
+};
+
 class Mesh {
  public:
   /// Add a data source
@@ -124,9 +133,13 @@ class Mesh {
   virtual comm_handle irecv_xout(real *buffer, int size, int tag) = 0;
   virtual comm_handle irecv_xin(real *buffer, int size, int tag) = 0;
 
-  // X and Y gather/scatter operations
+  // Y-Z surface gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
   virtual const Field2D average_y(const Field2D &f) = 0;
+  
+  // Boundary region iteration
+  virtual RangeIter* iterateBndryLowerY() = 0;
+  virtual RangeIter* iterateBndryUpperY() = 0;
   
   //////////////////////////////////////////////////////////
 
