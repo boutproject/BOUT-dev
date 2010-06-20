@@ -684,6 +684,13 @@ then
 			mkdir include
 		fi
 		
+		# Get a decent file transfer
+		prog=$(basename "$(which curl)")
+		if test "$prog" == ""
+		then
+			prog=$(basename "$(which wget)")
+		fi		
+		
 		# This first 'tee' command clears the file out so don't have to delete it if it exists
 		echo "*************************************************************" | tee config-build.log
 		if [[ -f $enable_download_pvode ]]
@@ -691,8 +698,21 @@ then
 			echo "* Using supplied file $enable_download_pvode" | tee -a config-build.log
 			file=$enable_download_pvode
 		else
-			echo "* Downloading PVODE from ftp.mcs.anl.gov ... " | tee -a config-build.log
-			ftp -o externalpackages/pvode.tar.gz -a ftp.mcs.anl.gov:/pub/petsc/boutpkgs/pvode.tar.gz 2>&1 >> config-build.log
+			filename=externalpackages/pvode.tar.gz
+			server=ftp.mcs.anl.gov
+			remotename=/pub/petsc/boutpkgs/pvode.tar.gz
+			
+			echo "* Downloading PVODE from $server ... " | tee -a config-build.log
+			if test "$prog" == "curl"
+			then
+				curl -o $filename $server$remotename >> config-build.log 2>&1
+			elif test "$prog" == "wget"
+			then
+				wget -o $filename ftp://$server$remotename >> config-build.log 2>&1
+			else
+				ftp -o $filename -a $servername:$remotename >> config-build.log 2>&1
+			fi
+			
 			if test $? != "0"
 			then
 				AC_MSG_ERROR(Error with downloading pvode.tar.gz. Check config-build.log for errors)

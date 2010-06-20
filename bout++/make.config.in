@@ -149,7 +149,7 @@ else
 ####################################
 %.a:
 	@echo "Rebuilding out-of-date bout++ library"
-	@$(MAKE) -C $(BOUT_TOP)
+	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
  
 ####################################
 # Make the target (e.g. gas_compress)
@@ -163,7 +163,7 @@ $(TARGET): makefile $(BOUT_TOP)/make.config.in $(OBJ)
 checklib:
 ifneq ("$(CHANGED)foo", "foo")
 	@echo "Rebuilding out-of-date bout++ library"
-	@$(MAKE) -C $(BOUT_TOP)
+	@$(MAKE) --no-print-directory -C $(BOUT_TOP)
 endif
 
 endif
@@ -181,7 +181,7 @@ endif
 
 clean::
 	@-$(RM) $(OBJ) $(DEPS) $(TARGET)
-	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) -C $$pp clean; done
+	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 
 distclean: clean
 	@echo include cleaned
