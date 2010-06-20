@@ -688,13 +688,24 @@ then
 		echo "*************************************************************" | tee config-build.log
 		if [[ -f $enable_download_pvode ]]
 		then
-			echo "* Using supplied file $enable_download_pvode"
+			echo "* Using supplied file $enable_download_pvode" | tee -a config-build.log
+			file=$enable_download_pvode
 		else
-			echo "* Downloading PVODE from ... "
+			echo "* Downloading PVODE from ftp.mcs.anl.gov ... " | tee -a config-build.log
+			ftp -o externalpackages/pvode.tar.gz -a ftp.mcs.anl.gov:/pub/petsc/boutpkgs/pvode.tar.gz 2>&1 >> config-build.log
+			if test $? != "0"
+			then
+				AC_MSG_ERROR(Error with downloading pvode.tar.gz. Check config-build.log for errors)
+			fi
+			file=externalpackages/pvode.tar.gz
 		fi
 	
-		file=$enable_download_pvode
-		tar zxf $file -C externalpackages
+		tar zxf $file -C externalpackages >> config-build.log 2>&1
+		if test $? != "0"
+		then
+			AC_MSG_ERROR(Can't extract file: $file)
+		fi
+			
 		
 		echo "* Building PVODE" | tee -a config-build.log
 		echo "*************************************************************" >> config-build.log
