@@ -21,10 +21,7 @@ bool include_viscosity;
 
 Vector2D g; // Acceleration
 
-// Parallel communication object
-Communicator comms;
-
-int physics_init()
+int physics_init(bool restarting)
 {
   // 2D initial profiles
   Field2D N0, P0;
@@ -33,13 +30,13 @@ int physics_init()
 
   // Read initial conditions
 
-  grid_load2d(N0, "density");
-  grid_load2d(P0, "pressure");
+  mesh->get(N0, "density");
+  mesh->get(P0, "pressure");
   V0.covariant = false; // Read contravariant components
   V.covariant = false; // Evolve contravariant components
-  grid_load2d(V0, "v");
+  mesh->get(V0, "v");
   g.covariant = false;
-  grid_load2d(g, "g");
+  mesh->get(g, "g");
   
   // read options
 
@@ -67,11 +64,6 @@ int physics_init()
     P += P0;
     V += V0;
   }
-
-  // set communications
-  comms.add(N);
-  comms.add(P);
-  comms.add(V);
   
   return 0;
 }
@@ -79,7 +71,7 @@ int physics_init()
 int physics_run(real t)
 {
   // Run communications
-  comms.run();
+  mesh->communicate(N,P,V);
 
   // Density
   

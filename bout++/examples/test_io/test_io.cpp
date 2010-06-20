@@ -24,10 +24,10 @@ int physics_init()
   f3d = 0.0;
 
   // Read data from grid file
-  grid_load(ivar, "ivar");
-  grid_load(rvar, "rvar");
-  grid_load2d(f2d, "f2d");
-  grid_load3d(f3d, "f3d");
+  mesh->get(ivar, "ivar");
+  mesh->get(rvar, "rvar");
+  mesh->get(f2d, "f2d");
+  mesh->get(f3d, "f3d");
   
   // Non-evolving variables
   dump.add(ivar, "ivar", 0);

@@ -27,7 +27,6 @@
 
 #include "diagnos.h"
 #include "utils.h"
-#include "mesh_topology.h"
 #include "globals.h"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -94,6 +93,7 @@ const vector< real > Diagnos::run()
 
 real Diagnos::run(const diag_item &i)
 {
+  /*
   switch(i.func) {
   case DIAG_INDX: { ///< Index 
     if(global_vals) {
@@ -131,9 +131,9 @@ real Diagnos::run(const diag_item &i)
     }else {
       // Local index
       
-      if((i.x < 0) || (i.x > ncx) ||
-	 (i.y < 0) || (i.y > ncy) ||
-	 (i.z < 0) || (i.z > ncz)) {
+      if((i.x < 0) || (i.x >= mesh->ngx) ||
+	 (i.y < 0) || (i.y >= mesh->ngy) ||
+	 (i.z < 0) || (i.z >= mesh->ngz)) {
 	return 0.0;
       }
     }
@@ -154,5 +154,7 @@ real Diagnos::run(const diag_item &i)
   default:
     break;
   };
+
+  */
   return 0.0;
 }

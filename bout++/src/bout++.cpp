@@ -51,6 +51,7 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include "utils.h"
 #include "invert_laplace.h"
 #include "interpolation.h"
+#include "boutmesh.h"
 
 #include "mpi.h"
 #include <stdio.h>
@@ -66,28 +67,23 @@ using std::string;
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
 
-bool appending = false;
+bool append = false;
 char dumpname[512];
 
 real simtime;
 int iteration;
 
-void setup_files();                 // Adds basic quantities to the output files 
 const string time_to_hms(real t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
 
 int bout_monitor(real t, int iter, int NOUT); // Function called by the solver each timestep
 
-/*!************************************************************************
- * Main function
- **************************************************************************/
 
-int main(int argc, char **argv)
+int bout_init(int argc, char **argv)
 {
   int i, NOUT;
   real TIMESTEP;
   char *grid_name;
-  time_t start_time, end_time;
   bool dump_float; // Output dump files as floats
 
   char *grid_ext, *dump_ext; ///< Extensions for restart and dump files
@@ -107,13 +103,8 @@ int main(int argc, char **argv)
   data_dir = DEFAULT_DIR;
 
   /// Check command-line arguments
+  /// NB: "restart" and "append" are now caught by options
   for(i=1;i<argc;i++) {
-    if(strncasecmp(argv[i], "re", 2) == 0) {
-      restarting = true;
-    }
-    if(strncasecmp(argv[i], "ap", 2) == 0) {
-      appending = true;
-    }
     if(strncasecmp(argv[i], "no", 2) == 0) {
       // No output. Used for scaling studies
       Datafile::enabled = false;
@@ -135,6 +126,8 @@ int main(int argc, char **argv)
 #else
   MPI_Init(&argc,&argv);
 #endif
+
+  int NPES, MYPE;
   MPI_Comm_size(MPI_COMM_WORLD, &NPES);
   MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
 
@@ -189,8 +182,6 @@ int main(int argc, char **argv)
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-  start_time = time((time_t*) NULL);
-  output.write("\nRun started at  : %s\n", ctime(&start_time));
   output.write("Processor number: %d of %d\n\n", MYPE, NPES);
 
   /// Load settings file
@@ -199,78 +190,29 @@ int main(int argc, char **argv)
     return(1);
   }
 
+  // Get options override from command-line
+  options.command_line(argc, argv);
+
   /////////////////////////////////////////////
   /// Get some settings
   
   /// GET GLOBAL OPTIONS
   options.setSection(NULL);
-
-  options.get("NOUT", NOUT, 1);
-  options.get("TIMESTEP", TIMESTEP, 1.0);
+  
+  OPTION(NOUT, 1);
+  OPTION(TIMESTEP, 1.0);
 
   if((grid_name = options.getString("grid")) == (char*) NULL)
     grid_name = DEFAULT_GRID;
   
   OPTION(dump_float,   true);
-  OPTION(ShiftXderivs, false);
-  OPTION(IncIntShear,  false);
-  OPTION(TwistShift,   false);
-  OPTION(ShiftOrder,   0);
-  OPTION(TwistOrder,   0);
   OPTION(non_uniform,  false);
-  OPTION(MZ,           65);
-  if(!is_pow2(MZ-1)) {
-    if(is_pow2(MZ)) {
-      MZ++;
-      output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
-    }else {
-      output.write("Error: Number of toroidal points must be 2^n + 1");
-      return 1;
-    }
-  }
-  if(options.get("zperiod",   zperiod,      1)) {
-    options.get("ZMIN",         ZMIN,         0.0);
-    options.get("ZMAX",         ZMAX,         1.0);
-    
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }else {
-    ZMIN = 0.0;
-    ZMAX = 1.0 / (double) zperiod;
-  }
-  options.get("MXG", MXG, 2);
-  options.get("MYG", MYG, 2);
-  options.get("BoundaryOnCell", BoundaryOnCell, false); // Determine location of boundary
-  options.get("StaggerGrids",   StaggerGrids,   false); // Stagger grids
   
-  options.get("NXPE", NXPE, 1); // Decomposition in the radial direction
-  if((NPES % NXPE) != 0) {
-    output.write("Error: Number of processors (%d) not divisible by NPs in x direction (%d). Aborting\n",
-		 NPES, NXPE);
-    return(1);
-  }
+  // Check if restarting
+  bool restart;
+  OPTION(restart, false);
+  OPTION(append, false);
 
-  NYPE = NPES / NXPE;
-  
-  /// Get X and Y processor indices
-  PE_YIND = MYPE / NXPE;
-  PE_XIND = MYPE % NXPE;
-
-  if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(TwistOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", TwistOrder);
-  }
-  
-  if(ShiftXderivs) {
-    output.write("Using shifted X derivatives. Interpolation: ");
-    if(ShiftOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", ShiftOrder);
-  }
-  
   /// Get file extensions
   if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
@@ -285,26 +227,20 @@ int main(int argc, char **argv)
   
   ////////////////////////////////////////////
 
+  /// Create the mesh
+  mesh = new BoutMesh();
+  
   output.write("Setting grid format\n");
   /// Load the grid
   if((grid_ext = options.getString("grid_format")) == NULL) {
     // Guess format based on grid filename
-    if(!grid_read(data_format(grid_name), grid_name)) {
-      output.write("Failed to read grid. Aborting\n");
-      return(1);
-    }
+    mesh->add_source(new GridFile(data_format(grid_name), grid_name));
   }else {
     // User-specified format
-    if(!grid_read(data_format(grid_ext), grid_name)) {
-      output.write("Failed to read grid. Aborting\n");
-      return(1);
-    }
+    mesh->add_source(new GridFile(data_format(grid_ext), grid_name));
   }
-
-  // Check ngz
-
-  if(!is_pow2(ncz)) {
-    output.write("Error: Number of toroidal points must be 2^n + 1\n");
+  if(mesh->load()) {
+    output << "Failed to read grid. Aborting\n";
     return 1;
   }
 
@@ -319,7 +255,14 @@ int main(int argc, char **argv)
     dump.setLowPrecision(); // Down-convert to floats
 
   /// Add book-keeping variables to the output files
-  setup_files();
+
+  // This is a temporary hack to get around datafile's limitations (fix soon)
+  static real version = BOUT_VERSION;
+  dump.add(version, "BOUT_VERSION", 0);
+  dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
+  dump.add(iteration, "iteration", 0);
+  
+  mesh->outputVars(dump);
 
   /// initialise Laplacian inversion code
   invert_init();
@@ -330,7 +273,7 @@ int main(int argc, char **argv)
   msg_point = msg_stack.push("Initialising physics module");
 #endif
 
-  if(physics_init()) {
+  if(physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");
     return(1);
   }
@@ -339,15 +282,15 @@ int main(int argc, char **argv)
   // Can't trust that the user won't leave messages on the stack
   msg_stack.pop(msg_point);
 #endif
-
+  
   /// Initialise the solver
   solver.setRestartDir(data_dir);
-  if(solver.init(physics_run, argc, argv, restarting, NOUT, TIMESTEP)) {
+  if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
     output.write("Failed to initialise solver. Aborting\n");
     return(1);
   }
   
-  if(!restarting) {
+  if(!restart) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
@@ -356,35 +299,33 @@ int main(int argc, char **argv)
       return(1);
     }
 
-    if(appending) {
+    if(append) {
       dump.append(dumpname);
     }else {
       dump.write(dumpname);
-      appending = true;
+      append = true;
     }
   }
+  
+  return 0;
+}
 
-  //////// MAIN LOOP /////////
-
-  output.write("Running simulation\n\n");
-
+int bout_run()
+{
   /// Run the solver
-  solver.run(bout_monitor);
-
-  // close MPI
-#ifdef PETSC
-  PetscFinalize();
-#else
-  MPI_Finalize();
-#endif
-
-  end_time = time((time_t*) NULL);
+  output.write("Running simulation\n\n");
+  
+  time_t start_time = time((time_t*) NULL);
+  output.write("\nRun started at  : %s\n", ctime(&start_time));
+  
+  int status = solver.run(bout_monitor);
+  
+  time_t end_time = time((time_t*) NULL);
   output.write("\nRun finished at  : %s\n", ctime(&end_time));
   output.write("Run time : ");
-
-  int dt;
-  dt = end_time - start_time;
-  i = (int) (dt / (60.*60.));
+  
+  int dt = end_time - start_time;
+  int i = (int) (dt / (60.*60.));
   if(i > 0) {
     output.write("%d h ", i);
     dt -= i*60*60;
@@ -395,6 +336,36 @@ int main(int argc, char **argv)
     dt -= i*60;
   }
   output.write("%d s\n", dt);
+  
+  return status;
+}
+
+int bout_finish()
+{
+  // close MPI
+#ifdef PETSC
+  PetscFinalize();
+#else
+  MPI_Finalize();
+#endif
+  
+  return 0;
+}
+
+/*!************************************************************************
+ * Main function
+ **************************************************************************/
+
+int main(int argc, char **argv)
+{
+  if(bout_init(argc, argv)) {
+    fprintf(stderr, "ERROR INITIALISING BOUT++. ABORTING\n");
+    return 1;
+  }
+
+  bout_run();
+  
+  bout_finish();
 
   return(0);
 }
@@ -423,18 +394,18 @@ int bout_monitor(real t, int iter, int NOUT)
 
   /// Write (append) dump file
   
-  if(appending) {
+  if(append) {
     dump.append(dumpname);
   }else {
     dump.write(dumpname);
-    appending = true;
+    append = true;
   }
   
   /// Collect timing information
   int ncalls = solver.rhs_ncalls;
   real wtime_rhs   = solver.rhs_wtime;
   //real wtime_invert = 0.0; // wtime_invert is a global
-  real wtime_comms = Communicator::wtime;  // Time spent communicating (part of RHS)
+  real wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
   real wtime_io    = Datafile::wtime;      // Time spend on I/O
 
   output.print("\r"); // Only goes to screen
@@ -495,7 +466,7 @@ int bout_monitor(real t, int iter, int NOUT)
 
   /// Reset clocks for next timestep
   
-  Communicator::wtime = 0.0; // Reset communicator clock
+  mesh->wtime_comms = 0.0; // Reset communicator clock
   Datafile::wtime = 0.0;
   wtime_invert = 0.0;
   wtime = MPI_Wtime();
@@ -505,31 +476,6 @@ int bout_monitor(real t, int iter, int NOUT)
 #endif
   
   return 0;
-}
-
-/*!*************************************************************************
- * SETUP RESTART & DUMP FILES
- **************************************************************************/
-
-void setup_files()
-{
-  // Setup dump file
-
-  // This is a temporary hack to get around datafile's limitations (fix soon)
-  static real version = BOUT_VERSION;
-  dump.add(version, "BOUT_VERSION", 0);
-  dump.add(MXSUB, "MXSUB", 0);
-  dump.add(MYSUB, "MYSUB", 0);
-  dump.add(MXG,   "MXG",   0);
-  dump.add(MYG,   "MYG",   0);
-  dump.add(MZ,    "MZ",    0);
-  dump.add(NXPE,  "NXPE",  0);
-  dump.add(NYPE,  "NYPE",  0);
-  dump.add(ZMAX,  "ZMAX",  0);
-  dump.add(ZMIN,  "ZMIN",  0);
-
-  dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-  dump.add(iteration, "iteration", 0);
 }
 
 /*!************************************************************************

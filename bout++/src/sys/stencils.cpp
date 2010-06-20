@@ -716,21 +716,23 @@ const bstencil operator^(const real lhs, const bstencil &rhs)
 void calc_index(bindex *bx)
 {
   bx->jxp = bx->jx+1;
-  if(bx->jxp >= ngx)
-    bx->jxp = ngx-1;
+  if(bx->jxp >= mesh->ngx)
+    bx->jxp = mesh->ngx-1;
   
   bx->jxm = bx->jx-1;
   if(bx->jxm < 0)
     bx->jxm = 0;
 
   if (bx->jx>1) bx->jx2m=bx->jx-2; else bx->jx2m=bx->jxm;
-  if (bx->jx<(ngx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
+  if (bx->jx<(mesh->ngx-2)) bx->jx2p=bx->jx+2; else bx->jx2p=bx->jxp;
 
   bx->jyp  = bx->jy+1;
   bx->jym  = bx->jy-1;
-  if (bx->jy<jend || MYG>1) bx->jy2p = bx->jy+2; else bx->jy2p=bx->jy+1;
-  if (bx->jy>jstart || MYG>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
+  if (bx->jy<mesh->yend || mesh->ystart>1) bx->jy2p = bx->jy+2; else bx->jy2p=bx->jy+1;
+  if (bx->jy>mesh->ystart || mesh->ystart>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
 
+  int ncz = mesh->ngz-1;
+  
   bx->jzp  = (bx->jz+1)%ncz;
   bx->jzm  = (bx->jz+ncz-1)%ncz;
   bx->jz2p = (bx->jz+2)%ncz;
@@ -740,47 +742,48 @@ void calc_index(bindex *bx)
   bx->ym_shift = bx->y2m_shift = false;
 
   /* Twist-Shift boundary condition */
-
-  if(TwistShift && (TwistOrder != 0)) {
+  /*
+  if(TwistShift && (mesh->TwistOrder != 0)) {
     if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
 	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
       
-      bx->ym_offset = -ShiftAngle[bx->jx] / dz;
-      if (bx->jy==jstart) {
+      bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
+      if (bx->jy==mesh->ystart) {
 	bx->ym_shift = bx->y2m_shift = true;
 	
-      }else if (bx->jy==jstart+1) {
+      }else if (bx->jy==mesh->ystart+1) {
 	bx->y2m_shift = true;
       }
     }
     if( (TS_up_in  && (UDATA_INDEST  != -1) && (bx->jx <  UDATA_XSPLIT)) ||
 	(TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
       
-      bx->yp_offset = ShiftAngle[bx->jx] / dz;
-      if (bx->jy==jend) {
+      bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
+      if (bx->jy==mesh->yend) {
 	bx->yp_shift = bx->y2p_shift = true;
-      } else if (bx->jy==jend-1) {
+      } else if (bx->jy==mesh->yend-1) {
 	bx->y2m_shift = true;
       }
     }
   }
+  */
 
   /* shifted z-indices for x differencing */
-  bx->xp_offset = (-zShift[bx->jxp][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->x2p_offset = (-zShift[bx->jx2p][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->xm_offset =  (-zShift[bx->jxm][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
-  bx->x2m_offset = (-zShift[bx->jx2m][bx->jy] + zShift[bx->jx][bx->jy]) / dz;
+  bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->x2p_offset = (-mesh->zShift[bx->jx2p][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->xm_offset =  (-mesh->zShift[bx->jxm][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  bx->x2m_offset = (-mesh->zShift[bx->jx2m][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
 }
 
 /* Resets the index bx */
 void start_index(bindex *bx, REGION region)
 {
   if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-    bx->jx = MXG;
+    bx->jx = mesh->xstart;
   }else
     bx->jx = 0;
   
-  bx->jy = jstart;
+  bx->jy = mesh->ystart;
   bx->jz = 0;
 
   bx->region = region;
@@ -792,24 +795,24 @@ void start_index(bindex *bx, REGION region)
 int next_index3(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= ncz) {
+  if(bx->jz >= mesh->ngz-1) {
     
     bx->jz = 0;
     bx->jy++;
     
-    if(bx->jy > jend) {
-      bx->jy =jstart;
+    if(bx->jy > mesh->yend) {
+      bx->jy =mesh->ystart;
       bx->jx++;
       
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
 	// Missing out X boundary
-	if(bx->jx >= (ngx-MXG)) {
-	  bx->jx = MXG;
+	if(bx->jx > mesh->xend) {
+	  bx->jx = mesh->xstart;
 	  return(0);
 	}
       }else {
 	// Including X boundary regions
-	if(bx->jx >= ngx) {
+	if(bx->jx >= mesh->ngx) {
 	  bx->jx = 0;
 	  return(0);
 	}
@@ -827,17 +830,17 @@ int next_index2(bindex *bx)
 {
   bx->jy++;
     
-  if(bx->jy > jend) {
-    bx->jy =jstart;
+  if(bx->jy > mesh->yend) {
+    bx->jy =mesh->ystart;
     bx->jx++;
     
     if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-      if(bx->jx >= (ngx-MXG)) {
-	bx->jx = MXG;
+      if(bx->jx > mesh->xend) {
+	bx->jx = mesh->xstart;
 	return(0);
       }
     }else
-      if(bx->jx >= ngx) {
+      if(bx->jx >= mesh->ngx) {
 	bx->jx = 0;
 	return(0);
       }
@@ -852,13 +855,13 @@ int next_index2(bindex *bx)
 int next_indexperp(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= ngz) {
+  if(bx->jz >= mesh->ngz) {
     
     bx->jz = 0;
     bx->jx++;
       
-    if(bx->jx >= (ngx-MXG)) {
-      bx->jx = MXG;
+    if(bx->jx > mesh->xend) {
+      bx->jx = mesh->xstart;
       return(0);
     }
   }

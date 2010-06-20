@@ -133,6 +133,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
   ///////////// GET OPTIONS /////////////
 
   int pvode_mxstep;
+  int MXSUB = mesh->xend - mesh->xstart + 1;
   
   options.setSection("solver");
   options.get("mudq", mudq, n3d*(MXSUB+2));
@@ -399,7 +400,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
@@ -420,7 +421,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
@@ -441,7 +442,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
       p++;
     }
     
-    for (jz=0; jz < ncz; jz++) {
+    for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
@@ -461,42 +462,41 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   int jx, jy;
   int p = 0; // Counter for location in udata array
 
+  int MYSUB = mesh->yend - mesh->ystart + 1;
+
   // Inner X boundary
-  if(IDATA_DEST == -1) {
-    for(jx=0;jx<MXG;jx++)
+  if(mesh->first_x()) {
+    for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+MYG, udata, p, op);
+	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
   }
 
-  for (jx=MXG; jx < MXSUB+MXG; jx++) {
-    
-    // Lower Y boundary region
-    
-    if( ((DDATA_INDEST == -1) && (jx < DDATA_XSPLIT)) ||
-	((DDATA_OUTDEST == -1) && (jx >= DDATA_XSPLIT)) ) {
-      for(jy=0;jy<MYG;jy++)
-	loop_vars_op(jx, jy, udata, p, op);
-    }
-    
-    for (jy=0; jy < MYSUB; jy++) {
-      // Bulk of points
-      loop_vars_op(jx, jy+MYG, udata, p, op);
-    }
-
-    // Upper Y boundary condition
-
-    if( ((UDATA_INDEST == -1) && (jx < UDATA_XSPLIT)) ||
-	((UDATA_OUTDEST == -1) && (jx >= UDATA_XSPLIT)) ) {
-      for(jy=0;jy<MYG;jy++)
-	loop_vars_op(jx, MYSUB+MYG+jy, udata, p, op);
-    }
+  // Lower Y boundary region
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    for(jy=0;jy<mesh->ystart;jy++)
+      loop_vars_op(xi->ind, jy, udata, p, op);
   }
+  delete xi;
+
+  // Bulk of points
+  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
+      loop_vars_op(jx, jy, udata, p, op);
+  
+  // Upper Y boundary condition
+  xi = mesh->iterateBndryUpperY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      loop_vars_op(xi->ind, jy, udata, p, op);
+  }
+  delete xi;
 
   // Outer X boundary
-  if(ODATA_DEST == -1) {
-    for(jx=0;jx<MXG;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(MXG+MXSUB+jx, jy+MYG, udata, p, op);
+  if(mesh->last_x()) {
+    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
+	loop_vars_op(jx, jy, udata, p, op);
   }
 }
 

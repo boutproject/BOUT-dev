@@ -14,7 +14,7 @@ CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cpp $(DIR)/*.h
 
 
 # This is a little obscure, so here is an explanation:
-# the first all: initial_message sets the prerequisite 'inital_message'
+# the first 'all: initial_message' sets the prerequisite 'inital_message'
 # to be the first one called
 
 all: initial_message

@@ -33,13 +33,13 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(test[jx][jy] > 0.0) {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = gt0[jx][jy][jz];
       }else {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = le0[jx][jy][jz];
       }
   
@@ -53,13 +53,13 @@ const Field3D where(const Field2D &test, const Field3D &gt0, real le0)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(test[jx][jy] > 0.0) {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = gt0[jx][jy][jz];
       }else {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = le0;
       }
   
@@ -73,13 +73,13 @@ const Field3D where(const Field2D &test, real gt0, const Field3D &le0)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(test[jx][jy] > 0.0) {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = gt0;
       }else {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = le0[jx][jy][jz];
       }
   
@@ -93,13 +93,13 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(test[jx][jy] > 0.0) {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = gt0[jx][jy][jz];
       }else {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = le0[jx][jy];
       }
   
@@ -113,13 +113,13 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
   result.Allocate();
   real ***d = result.getData();
   
-  for(int jx=0;jx<ngx;jx++)
-    for(int jy=0;jy<ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(test[jx][jy] > 0.0) {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = gt0[jx][jy];
       }else {
-	for(int jz=0;jz<ngz;jz++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  d[jx][jy][jz] = le0[jx][jy][jz];
       }
   

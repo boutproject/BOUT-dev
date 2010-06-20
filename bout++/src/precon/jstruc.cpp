@@ -27,7 +27,7 @@ int NNEIB=6; //-number of neighbors on stencil
 
 /*--------Parameters set in BOUT.inp---------*/
 //long NVARS=2;  //-number of plasma field variables
-//long NXPE=1;   //-number of radial subdomains
+//long mesh->NXPE=1;   //-number of radial subdomains
 //long MXSUB=4;  //40; //-number of radial polongs per subdomain
 //long NYPE=1;   //-number of poloidal subdomains
 //long MYSUB=8;  //64; //-number of poloidal polongs per subdomain
@@ -36,7 +36,7 @@ int NNEIB=6; //-number of neighbors on stencil
 //long MXG=2;    //-radial guard cells
 
 /*auxiliary parameters*/
-//long NSMX, NSMXY, MX, MY, ngz, neq, local_N;
+//long NSMX, NSMXY, MX, MY, mesh->ngz, neq, local_N;
 
 
 void nrerror(char error_text[])
@@ -181,7 +181,7 @@ void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long
 
 
 
-int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG)
+int jstruc(int NVARS, int mesh->NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG)
 {
   int **jmatr;
   
@@ -197,21 +197,21 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
 
 
   /*calculate auxiliary parametes*/
-  MX=MXSUB*NXPE+4; //-guard cells
+  MX=MXSUB*mesh->NXPE+4; //-guard cells
   MY=MYSUB*NYPE;
-  ngz=MZ;
-  int ncz=ngz-1;
+  mesh->ngz=MZ;
+  int ncz=mesh->ngz-1;
   int NSMX = NVARS*MX;
   int NSMXY = NVARS*MX*MYSUB;
   neq = NVARS*MX*MY*ncz;
-  //local_N = NVARS*MXSUB*MYSUB*ngz;
+  //local_N = NVARS*MXSUB*MYSUB*mesh->ngz;
 
 
   printf("\njstruc(): \n");
   printf("NVARS=%d\n", NVARS);
   printf("MX=%d\n", MX);
   printf("MY=%d\n", MY);
-  printf("ngz=%d\n", ngz);
+  printf("mesh->ngz=%d\n", mesh->ngz);
   printf("neq=%d\n", neq);
 
   //-allocate matrix for the jacobian (use list instead)
