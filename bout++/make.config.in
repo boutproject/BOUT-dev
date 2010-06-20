@@ -82,7 +82,7 @@ endif
 # Phony targets since they are directory names
 .PHONY: $(DIRS) lib
 
-all: $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
+all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
 
 ####################################
 # Recursively run make through subdirs
@@ -185,10 +185,13 @@ clean::
 
 distclean: clean
 	@echo include cleaned
-	@$(RM) -rf include
+	@$(RM) -rf $(BOUT_TOP)/include
 	@echo lib cleaned
-	@$(RM) -rf lib
-	-@$(RM) -rf externalpackages autom4te.cache
+	@$(RM) -rf $(BOUT_TOP)/lib
+	-@$(RM) -rf $(BOUT_TOP)/externalpackages $(BOUT_TOP)/autom4te.cache
+	@echo externalpackages cleaned
+	@touch $(BOUT_TOP)/configure
+	@echo autom4te.cache cleaned
 
 ####################################
 # Automatic re-running of configure if the configure.ac file has changed
@@ -197,7 +200,7 @@ distclean: clean
 $(BOUT_TOP)/configure: $(BOUT_TOP)/configure.ac
 	@cd $(BOUT_TOP) && autoconf
 
-$(BOUT_TOP)/make.config: $(BOUT_TOP)/make.config.in
+$(BOUT_TOP)/make.config: $(BOUT_TOP)/make.config.in $(BOUT_TOP)/config.status
 	@cd $(BOUT_TOP); ./config.status > /dev/null
 	
 $(BOUT_TOP)/config.status: $(BOUT_TOP)/configure
