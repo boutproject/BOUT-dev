@@ -434,9 +434,36 @@ if(mesh->load()) {
 which creates a \code{GridFile} object based on the data format of 
 the grid file name, then adds that as a source of data for Mesh.
 
+For post-processing of the results, it's useful to have 
+mesh quantities in the dump files along with the results. To do this,
+there's the function
+\begin{lstlisting}
+void outputVars(Datafile &file); // Add mesh vars to file
+\end{lstlisting}
+which is called during BOUT++ initialisation.
+
 \subsubsection{Implementation: BoutMesh}
 
+BoutMesh class uses the BOUT indices (which trace back to UEDGE... there's
+heritage here):
+\begin{lstlisting}
+int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
+\end{lstlisting}
+\code{ixseps1} and \code{ixseps2} give the X location of the separatrices,
+and are equal in the case of single-null configurations. The indexing
+is such that all points \code{0 <= x < ixseps1} are inside the separatrix,
+whilst \code{ixseps1 <= x < ngx} are outside.
 
+\subsection{Index ranges}
+
+The Mesh class includes several public members which describe the
+size of the mesh, and are used all over BOUT++ to loop over variables:
+\begin{lstlisting}
+/// Size of the mesh on this processor including guard/boundary cells
+int ngx, ngy, ngz;  
+/// Local ranges of data (inclusive), excluding guard cells
+int xstart, xend, ystart, yend;
+\end{lstlisting}
 
 \subsection{Getting data}
 
@@ -508,6 +535,20 @@ wait(ch); // Wait for all communications to finish
 
 \subsubsection{Implementation: BoutMesh}
 
+In BoutMesh, the communication is controlled by the variables
+\begin{lstlisting}
+int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
+int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
+int IDATA_DEST, ODATA_DEST;
+\end{lstlisting}
+In the Y direction, each boundary region ({\bf U}p and {\bf D}own in Y) 
+can be split into two, with \code{0 <= x < UDATA\_XSPLIT} going to
+the processor index \code{UDATA\_INDEST}, and \code{UDATA\_INDEST <= x < ngx}
+going to \code{UDATA\_OUTDEST}. Similarly for the Down boundary.
+Since there are no branch-cuts in the X direction, there is just one
+destination for the {\bf I}nner and {\bf O}uter boundaries.
+In all cases a negative processor number means that there's a domain boundary.
+
 \subsection{X communications}
 
 For parallel Laplacian inversions, communication is needed in the X
@@ -538,6 +579,11 @@ bool surfaceClosed(int jx, real &ts); // Test if a surface is closed, and if so 
 \end{lstlisting}
 
 \subsection{Boundary regions}
+
+The boundary condition code (see section~\ref{sec:boundaries}) needs
+ways to loop over the boundary regions, without needing to know
+the details of the mesh.
+
 \begin{lstlisting}
 // Boundary region iteration
 RangeIter* iterateBndryLowerY();
@@ -546,39 +592,49 @@ RangeIter* iterateBndryUpperY();
 bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
 \end{lstlisting}
   
+The \code{RangeIter} class is a simple iterator
+\begin{lstlisting}
+class RangeIter {
+ public:
+  virtual void first() = 0;
+  virtual void next() = 0;
+  virtual bool isDone() = 0;
+  
+  int ind; // The index
+};
+\end{lstlisting}
+which allows looping over the X indices in the boundary. For example, in
+\code{boundary.cpp} to loop over the upper Y boundary of a 2D variable
+\code{var}:
+\begin{lstlisting}
+RangeIter* xr = mesh->iterateBndryUpperY(); // Upper boundary
+for(xr->first(); !xr->isDone(); xr->next())
+  for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+    var[xr->ind][jy] = ...
+  }
+\end{lstlisting}
+
 \subsection{Initial profiles}
 
+The initial profiles code needs to construct a solution which is smooth
+everywhere, with a form of perturbation specified in the input file
+for each direction. In order to do this, it needs a continuous function
+to use as an index. This is supplied by the functions:
 \begin{lstlisting}
 real GlobalX(int jx); // Continuous X index between 0 and 1
 real GlobalY(int jy); // Continuous Y index (0 -> 1)
-
-virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
 \end{lstlisting}
+which take a local x or y index and return a globally continuous x or y
+index.
 
+\subsection{Differencing}
 
-
+The mesh spacing is given by the public members
 \begin{lstlisting}
-  /// Size of the mesh on this processor including guard/boundary cells
-  int ngx, ngy, ngz;
-  
-  /// Local ranges of data (inclusive), excluding guard cells
-  int xstart, xend, ystart, yend;
-
-  // These used for differential operators 
-  Field2D dx, dy;      // Read in grid.cpp
-  Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
-  real zlength, dz;    // Derived from options in grid.cpp (in radians)
-  
-  bool ShiftXderivs; // Use shifted X derivatives
-  int  ShiftOrder;   // Order of shifted X derivative interpolation
-  Field2D zShift; // Z shift for each point (radians)
-  
-  int  TwistOrder;   // Order of twist-shift interpolation
-  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
-  
-  Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
-  bool IncIntShear; // Include integrated shear (if shifting X)
+// These used for differential operators 
+Field2D dx, dy;
+Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
+real zlength, dz;    // Derived from options (in radians)
 \end{lstlisting}
 
 \subsection{Metrics}
@@ -617,6 +673,44 @@ Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
 Field2D G1, G2, G3;
 \end{lstlisting}
 
+These quantities are public and accessible everywhere, but this is because
+they are needed in a lot of the code. They shouldn't change
+after initialisation, unless the physics model starts doing fancy things with
+deforming meshes.
+
+\subsection{Miscellaneous}
+
+There are some public members of Mesh which are there for some specific
+task and don't really go anywhere else (yet). 
+
+To perform radial derivatives in tokamak geometry, interpolation is needed
+in the Z direction. This is done by shifting in Z by a phase factor, performing
+the derivatives, then shifting back. The following public variables are currently
+used for this:
+\begin{lstlisting}
+bool ShiftXderivs; // Use shifted X derivatives
+int  ShiftOrder;   // Order of shifted X derivative interpolation
+Field2D zShift;    // Z shift for each point (radians)
+  
+Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
+Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+bool IncIntShear; // Include integrated shear (if shifting X)
+\end{lstlisting}
+
+\begin{lstlisting}
+int  TwistOrder;   // Order of twist-shift interpolation
+\end{lstlisting}
+This determines what order method to use for the interpolation at the twist-shift
+location, with \code{0} meaning FFT during communication. Since this must be 0 at the moment
+it's fairly redundant and should be removed.
+
+A (currently experimental) feature is 
+\begin{lstlisting}
+bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+\end{lstlisting}
+
+\section{Boundary conditions}
+\label{sec:boundaries}
 
 \section{Solver}
 
@@ -640,11 +734,42 @@ void constraint(Field2D &v, Field2D &C_v, const char* name);
 The \code{constraints()} function tests whether or not the current
 solver supports constraints. The format of \code{constraint(...)} is
 the same as \code{add}, except that now the solver will attempt to make
-\code{C\_v} zero.
+\code{C\_v} zero. If \code{constraint} is called when the solver doesn't
+support them then an error should occur.
 
+If the physics model implements a preconditioner or Jacobian-vector
+multiplication routine, these can be passed to the solver during
+initialisation:
 \begin{lstlisting}
+typedef int (*PhysicsPrecon)(real t, real gamma, real delta);
 void setPrecon(PhysicsPrecon f); // Specify a preconditioner
+typedef int (*Jacobian)(real t);
 void setJacobian(Jacobian j); // Specify a Jacobian
+\end{lstlisting}
+If the solver doesn't support these functions then the calls 
+will just be ignored.
+
+Once the problem to be solved has been specified, the solver can be
+initialised using:
+\begin{lstlisting}
+int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+\end{lstlisting}
+which returns an error code (0 on success). This is currently
+called in \file{bout++.cpp}:
+\begin{lstlisting}
+if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
+  output.write("Failed to initialise solver. Aborting\n");
+  return(1);
+}
+\end{lstlisting}
+which passes the (physics module) RHS function \code{physics\_run}
+to the solver along with the number and size of the output steps.
+
+To run the solver using the (already supplied) settings, there is
+the function:
+\begin{lstlisting}
+typedef int (*MonitorFunc)(real simtime, int iter, int NOUT);
+int run(MonitorFunc f);
 \end{lstlisting}
 
 \subsection{Implementation: PVODE}
@@ -675,6 +800,76 @@ a new file format, and switching between formats at run-time,
 relatively straightforward.
 
 
+Access to data in files is provided using a Bridge pattern: The
+\code{Datafile} class provides an interface to the rest of the code
+to read and write variables, whilst file formats implement the
+\code{Dataformat} interface.
+\begin{lstlisting}
+class Datafile {
+ public:
+  Datafile();
+  Datafile(DataFormat *format);
+  ~Datafile();
+  
+  /// Set the file format by passing an interface class
+  void setFormat(DataFormat *format);
+
+  void setLowPrecision(); ///< Only output floats
+
+  void add(var, const char *name, int grow = 0);
+
+  int read(const char *filename, ...);
+  int write(const char *filename, ...);
+  int append(const char *filename, ...);
+  bool write(const string &filename, bool append=false);
+
+  /// Set this to false to switch off all data writing
+  static bool enabled;
+};
+\end{lstlisting}
+
+
+The important bits of the DataFormat interface are:
+\begin{lstlisting}
+class DataFormat {
+ public:
+  bool openr(const char *name);
+  bool openw(const char *name, bool append=false);
+  
+  bool is_valid();
+  
+  void close();
+  
+  const char* filename();
+
+  const vector<int> getSize(const char *var);
+  const vector<int> getSize(const string &var);
+
+  // Set the origin for all subsequent calls
+  bool setOrigin(int x = 0, int y = 0, int z = 0); 
+  bool setRecord(int t); // negative -> latest
+  
+  // Read / Write simple variables up to 3D
+
+  bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool read(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+
+  bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(real *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+
+  // Read / Write record-based variables
+
+  bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool read_rec(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+
+  bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(real *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+
+  // Optional functions
+  
+  void setLowPrecision();
+};
+\end{lstlisting}
 
 \section{Miscellaneous}
 
