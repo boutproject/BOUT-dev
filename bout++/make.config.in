@@ -130,7 +130,7 @@ ifeq ("$(TARGET)", "lib")
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################
 
-lib: $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
+lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
 ifneq ("$(OBJ)foo", "foo")
 	@echo "Adding $(OBJ) to libbout++.a"
 	@$(AR) cru $(LIB) $(OBJ)
@@ -156,7 +156,7 @@ else
 ####################################
 $(TARGET).cpp: checklib
 $(TARGET).o: $(LIB)
-$(TARGET): makefile $(BOUT_TOP)/make.config.in $(OBJ)
+$(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
 	@echo "  Linking" $(TARGET)
 	@$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
 
@@ -168,7 +168,7 @@ endif
 
 endif
 
-%.o: $(BOUT_TOP)/make.config.in %.cpp
+%.o: $(BOUT_TOP)/make.config %.cpp
 	@echo "  Compiling " $(@F:.o=.cpp)
 	@$(CXX) $(BOUT_INCLUDE) -I$(BOUT_TOP)/include $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
 
