@@ -708,7 +708,7 @@ then
 				curl -o $filename $server$remotename >> config-build.log 2>&1
 			elif test "$prog" == "wget"
 			then
-				wget -o $filename ftp://$server$remotename >> config-build.log 2>&1
+				wget -O $filename ftp://$server$remotename >> config-build.log 2>&1
 			else
 				ftp -o $filename -a $servername:$remotename >> config-build.log 2>&1
 			fi
@@ -741,7 +741,7 @@ then
 	fi
 	
 	# Set the correct libraries and copy them to bout
-	cp externalpackages/PVODE/precon/*.h externalpackages/PVODE/include/*.h include/
+	cp -f externalpackages/PVODE/precon/*.h externalpackages/PVODE/include/*.h include/
 	cp externalpackages/PVODE/lib/*.a lib/
 	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
