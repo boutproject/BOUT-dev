@@ -741,7 +741,7 @@ then
 	fi
 	
 	# Set the correct libraries and copy them to bout
-	cp -f externalpackages/PVODE/precon/*.h externalpackages/PVODE/include/*.h include/
+	cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/
 	cp externalpackages/PVODE/lib/*.a lib/
 	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
