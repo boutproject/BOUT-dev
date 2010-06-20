@@ -712,6 +712,48 @@ bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all
 \section{Boundary conditions}
 \label{sec:boundaries}
 
+DESIGN OF NEW BOUNDARY SYSTEM
+
+Types of boundary: During initialisation, and sometimes during a run
+want to apply a boundary condition to a variable. At end of physics\_run
+want to apply boundary conditions to time-derivatives. Relaxing boundaries
+couple variable with its time-derivative. More general boundaries (e.g.
+sheath boundaries) couple fields together.
+
+From physics module's point of view want to be able to create variables
+then in physics\_init do something like:
+\begin{lstlisting}
+var.setBoundary("varname"); // Can't use relaxing conditions
+var.setBoundary("varname", F_var); // Can use relaxing conditions
+var.setBoundary(BoundaryOperation); // Set some custom boundary condition
+var.setBoundary("region", BoundaryOperation); // Only in some region
+\end{lstlisting}
+
+After initialisation, boundary condition should be applied to the variable,
+but after physics\_run it should apply to the time-derivative... hmmm..
+
+If using a simple boundary condition (e.g. 0 or 0 gradient), don't need
+to evolve boundary regions, but can apply to variable instead.
+
+
+How to register a new boundary condition? Something like
+\begin{lstlisting}
+Boundary::register(DirichletBoundary, "dirichlet", BNDRY\_ALL);
+Boundary::register(LaplaceBoundary, "laplace", BNDRY\_XIN | BNDRY\_XOUT);
+\end{lstlisting}
+which puts these into a static table inside boundary. Specify the object, 
+the name (for matching to options) and which boundaries it can be applied to.
+
+Two types of boundary condition:
+\begin{itemize}
+\item Simple boundary condition on one variable. Condition can always be applied
+  to the variable itself and the boundary region doesn't need to be evolved.
+\item Boundary conditions on one variable which couple the time-derivative to the variable
+  such as relaxing boundaries. Boundary regions are evolved, and the condition is applied
+  to the time-derivatives. Something must be applied to the initial state to be
+  consistent.
+\end{itemize}
+
 \section{Solver}
 
 The solver is the interface between BOUT++ and the time-integration code
