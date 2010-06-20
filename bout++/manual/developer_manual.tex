@@ -5,6 +5,34 @@
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+        language=C++,
+	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+	identifierstyle=\ttfamily,
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+	showstringspaces=false,
+	basicstyle=\small,
+	numberstyle=\footnotesize,
+	numbers=left,
+	stepnumber=1,
+	numbersep=10pt,
+	tabsize=2,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	breakatwhitespace=false,
+	aboveskip={1.5\baselineskip},
+        columns=fixed,
+        upquote=true,
+        extendedchars=true,
+}
+
 %% Modify margins
 \addtolength{\oddsidemargin}{-.25in}
 \addtolength{\evensidemargin}{-.25in}
@@ -74,10 +102,37 @@ of the BOUT++ code is the comments and Doxygen tags: running \code{doxygen}
 on the source should produce a set of HTML documentation. See
 \file{www.doxygen.org} for more details.
 
+\subsection{Collaborating on BOUT++}
+
+As of June 2009, the BOUT++ distribution is hosted on Github:
+(\file{http://github.com/bendudson/BOUT/})
+If you're just starting with BOUT++, current developers will want to check
+your changes before submitting them to the repository. In this case
+you should clone (checkout) the git repository, make any changes and
+then submit patches to one of the developers (e.g.
+to \texttt{bd512@york.ac.uk}). Fortunately Git makes this process quite easy:
+The commands to do this are:
+
+First get a copy of BOUT++
+\begin{verbatim}
+$ git clone git://github.com/bendudson/BOUT.git
+\end{verbatim}
+Make changes to the repository, including branching, merging etc. Then create
+a patch:
+\begin{verbatim}
+$ 
+\end{verbatim}
+and then email the patch file to one of the BOUT++ developers. 
+
+If you are doing a lot of development of BOUT++, it will probably make sense
+for you to push changes to the online repository.
+
 \subsection{House rules}
 
-As of Jan $19^{th}$ 2009, the BOUT++ distribution (SVN archive) consists
-of about 28,900 lines of C/C++\footnote{generated using David A. Wheeler's 'SLOCCount'}. Of this, about 16,000 lines is the core BOUT++ code. and the remainder
+BOUT++ consists of about 31,800 lines of C/C++\footnote{generated using
+David A. Wheeler's 'SLOCCount'},
+along with 11,600 lines of IDL. Of this, about 21,100 lines is the core
+BOUT++ code, and the remainder
 a mix of pre- and post-processors, and physics modules. As production codes
 go, this is not particularly huge, but it is definitely large enough that
 keeping the code `clean' and understandable is necessary. This is vital
@@ -93,7 +148,7 @@ much greater.
 
 Here are some rules for editing the core BOUT++ code:
 \begin{itemize}
-\item {\bf NO FORTRAN}. Though it may be tempting for scientific programmers to use
+\item {\bf NO FORTRAN}. EVER. Though it may be tempting for scientific programmers to use
 a little FORTRAN now and then, please please don't put any into BOUT++. 
 Use of FORTRAN, particularly when mixed with C/C++, is the cause of many problems in
 porting and modifying codes. 
@@ -217,7 +272,7 @@ and is illustrated in figure~\ref{fig:diffOverview}.
 
 The differencing methods themselves are independent on direction, and operate on \code{stencil}
 objects. This class is in \file{stencils.h}
-\begin{verbatim} 
+\begin{lstlisting}
 class stencil {
   public:
     int jx, jy, jz;  // Central location
@@ -227,7 +282,7 @@ class stencil {
     Functions
       min, max, abs
 };
-\end{verbatim}
+\end{lstlisting}
 The main purpose of this class is to store a 5-element stencil. To simplify some code
 this class also has a bunch of overloaded operators on reals and other stencil objects. 
 There are also some functions to calculate things like absolute, minimum, and maximum
@@ -345,10 +400,259 @@ This is the Parallel Diagonally Dominant (PDD) algorithm. It's very fast, but
 achieves this by neglecting some cross-processor terms. For ELM simulations, it has
 been found that these terms are important, so this method is not usually used. 
 
-\section{Communication}
+\section{Mesh}
 
-Communication is currently done using the Message Passing Interface (MPI) interface.
-All the details of this is taken care of in the \code{Communicator} class.
+The mesh is used in pretty much all parts of the code, and deals with 
+things like the geometry of the mesh (metric tensors etc.), and how the
+mesh is divided between processors (communications). The Mesh class
+(\file{mesh/mesh.h}) defines an interface, whilst currently BoutMesh
+(\file{mesh/boutmesh.h}) is the only implementation of this interface.
+
+\subsection{Loading a mesh}
+
+To load in a mesh from a file or other source, there are the commands:
+\begin{lstlisting}
+int add_source(GridDataSource);   // Add a data source
+int load();                       // Load from added data sources
+int load(GridDataSource);         // Load from specified data source
+\end{lstlisting}
+all of which return an error code (0 if successful). 
+\code{add\_source} is used to add a set of input data sources which
+inherit from \code{GridDataSource}. \code{load()} loads the mesh
+from these sources, querying each data source in turn for the required
+variables (in the order in which they were added). \code{load(GridDataSource)}
+loads the mesh from only the supplied data source.
+
+In \file{bout++.cpp}, this is used to initialise the mesh:
+\begin{lstlisting}
+mesh->add_source(new GridFile(data_format(grid_name), grid_name));
+if(mesh->load()) {
+  output << "Failed to read grid. Aborting\n";
+  return 1;
+}
+\end{lstlisting}
+which creates a \code{GridFile} object based on the data format of 
+the grid file name, then adds that as a source of data for Mesh.
+
+\subsubsection{Implementation: BoutMesh}
+
+
+
+\subsection{Getting data}
+
+The \code{load()} code above needs to read data for the mesh, and physics
+codes usually need to read their initial profiles during initialisation.
+To do this, Mesh provides an overloaded function \code{get}:
+\begin{lstlisting}
+int get(var, const char *name); // Request data from mesh file
+\end{lstlisting}
+where \code{var} can be just about any BOUT++ datatype (\code{Field2D},
+\code{Vector3D} etc.). 
+
+\subsubsection{Implementation: BoutMesh}
+
+For integers and reals, the implementation is fairly trivial. Uses
+the Mesh protected functions to find a data source and read data from it.
+\begin{lstlisting}
+GridDataSource* s = find_source(name);  // Find a source of data
+s->open(name);                          // Open the source
+bool success = s->fetch(&ival, name);   // Get the data
+s->close();                             // Close the source
+\end{lstlisting}
+
+To read 2D and 3D fields, the branch-cuts need to be taken into account.
+
+\subsection{Communications}
+
+The most common type of communication is to just exchange all
+guard cells with neighboring processors. Mesh provides the following
+commands for doing this:
+\begin{lstlisting}
+int communicate(FieldData, ...); // Communicate one or more fields
+int communicate(FieldGroup);     // Communicate a group of fields
+int communicate(FieldData);      // Returns error code
+comm_handle send(FieldGroup);    // Send data
+int wait(comm_handle);           // Receive data
+\end{lstlisting}
+\code{communicate(FieldData)} can (currently) be used to communicate
+up to 4 variables together, and makes the code quite clear. For example in
+\file{examples/DriftInstability/2fluid.cpp} around line 360:
+\begin{lstlisting}
+// Need to communicate jpar
+mesh->communicate(jpar);
+\end{lstlisting}
+Since this uses the \code{FieldData} interface like Datafile, this can
+be used to communicate all BOUT++ field data types. The limit of 4 is
+because the C-style \code{varargs} system doesn't work with ``non POD''
+variables, i.e. classes. To communicate a larger number of variables,
+create a \code{FieldGroup} object to group fields together, then communicate
+them all together:
+\begin{lstlisting}
+FieldGroup comgrp;  // Group of variables for communication
+Field3D P;
+Vector3D V;
+
+comgrp.add(P); // Add the variables
+comgrp.add(V); // Usually done in physics_init
+
+mesh->communicate(comgrp); // Communicate in physics_run
+\end{lstlisting}
+
+If you want to overlap communications with calculations then
+use the \code{send} and \code{wait} functions instead of \code{communicate}.
+\begin{lstlisting}
+comm_handle ch = mesh->send(comgrp); // Start the communications
+// Calculations which don't need variables in comgrp
+wait(ch); // Wait for all communications to finish
+\end{lstlisting}
+
+\subsubsection{Implementation: BoutMesh}
+
+\subsection{X communications}
+
+For parallel Laplacian inversions, communication is needed in the X
+direction only, and involves quantities which are not in Fields.
+
+\begin{lstlisting}
+bool first_x();  // True if at the inner X boundary
+bool last_x();   // True if at the outer X boundary
+int NXPE, PE_XIND; // Number of processors in X, and X processor index
+int send_xout(real *buffer, int size, int tag);
+send_xin(real *buffer, int size, int tag);
+comm_handle irecv_xout(real *buffer, int size, int tag);
+comm_handle irecv_xin(real *buffer, int size, int tag);
+\end{lstlisting}
+
+The variables \code{NXPE} and \code{PE\_XIND} shouldn't really be there,
+but are currently needed because the SPT algorithm in \file{invert\_laplace.cpp}
+needs to know when it's going to be next and so keep track of which processor
+number is currently working. This logic to pass a problem along a chain in
+X should really be moved into Mesh.
+
+\subsection{Y-Z surface communications}
+
+\begin{lstlisting}
+SurfaceIter* iterateSurfaces();
+const Field2D average_y(const Field2D &f); // Average in Y
+bool surfaceClosed(int jx, real &ts); // Test if a surface is closed, and if so get the twist-shift angle
+\end{lstlisting}
+
+\subsection{Boundary regions}
+\begin{lstlisting}
+// Boundary region iteration
+RangeIter* iterateBndryLowerY();
+RangeIter* iterateBndryUpperY();
+
+bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
+\end{lstlisting}
+  
+\subsection{Initial profiles}
+
+\begin{lstlisting}
+real GlobalX(int jx); // Continuous X index between 0 and 1
+real GlobalY(int jy); // Continuous Y index (0 -> 1)
+
+virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
+\end{lstlisting}
+
+
+
+\begin{lstlisting}
+  /// Size of the mesh on this processor including guard/boundary cells
+  int ngx, ngy, ngz;
+  
+  /// Local ranges of data (inclusive), excluding guard cells
+  int xstart, xend, ystart, yend;
+
+  // These used for differential operators 
+  Field2D dx, dy;      // Read in grid.cpp
+  Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
+  real zlength, dz;    // Derived from options in grid.cpp (in radians)
+  
+  bool ShiftXderivs; // Use shifted X derivatives
+  int  ShiftOrder;   // Order of shifted X derivative interpolation
+  Field2D zShift; // Z shift for each point (radians)
+  
+  int  TwistOrder;   // Order of twist-shift interpolation
+  bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
+  
+  Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
+  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+  bool IncIntShear; // Include integrated shear (if shifting X)
+\end{lstlisting}
+
+\subsection{Metrics}
+
+The contravariant and covariant metric tensor components are
+public members of \code{Mesh}:
+\begin{lstlisting}
+// Contravariant metric tensor (g^{ij})
+Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
+
+// Covariant metric tensor
+Field2D g_11, g_22, g_33, g_12, g_13, g_23;
+
+int calc_covariant();     // Invert contravatiant metric to get covariant
+int calc_contravariant(); // Invert covariant metric to get contravariant
+\end{lstlisting}
+If only one of these sets is modified by an external code, then
+\code{calc\_covariant} and \code{calc\_contravariant} can be used
+to calculate the other (uses Gauss-Jordan currently).
+
+From the metric tensor components, Mesh calculates several other useful
+quantities:
+\begin{lstlisting}
+int jacobian(); // Calculate J and Bxy
+Field2D J; // Jacobian
+Field2D Bxy; // Magnitude of B = nabla z times nabla x
+
+/// Calculate differential geometry quantities from the metric tensor
+int geometry();
+
+// Christoffel symbol of the second kind (connection coefficients)
+Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
+Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
+Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
+  
+Field2D G1, G2, G3;
+\end{lstlisting}
+
+
+\section{Solver}
+
+The solver is the interface between BOUT++ and the time-integration code
+such as SUNDIALS. All solvers implement the \code{GenericSolver} class
+interface (see \file{src/solver/generic\_solver.h}).
+
+First all the fields which are to be evolved need to be added
+to the solver. These are always done in pairs, the first
+specifying the field, and the second the time-derivative:
+\begin{lstlisting}
+void add(Field2D &v, Field2D &F_v, const char* name);
+\end{lstlisting}
+This is normally called in the \code{physics\_init} initialisation routine.
+Some solvers (e.g. IDA) can support constraints, which need to be added
+in the same way as evolving fields:
+\begin{lstlisting}
+bool constraints();
+void constraint(Field2D &v, Field2D &C_v, const char* name);
+\end{lstlisting}
+The \code{constraints()} function tests whether or not the current
+solver supports constraints. The format of \code{constraint(...)} is
+the same as \code{add}, except that now the solver will attempt to make
+\code{C\_v} zero.
+
+\begin{lstlisting}
+void setPrecon(PhysicsPrecon f); // Specify a preconditioner
+void setJacobian(Jacobian j); // Specify a Jacobian
+\end{lstlisting}
+
+\subsection{Implementation: PVODE}
+
+
+\subsection{Implementation: IDA}
+
+\subsection{Implementation: PETSc}
 
 \section{File I/O}
 
