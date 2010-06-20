@@ -20,10 +20,7 @@ real gamma;
 bool include_viscos;
 real viscos;
 
-// communication object
-Communicator comms;
-
-int physics_init()
+int physics_init(bool restarting)
 {
   // 2D initial profiles
   Field2D rho0, p0;
@@ -34,8 +31,7 @@ int physics_init()
   OPTION(gamma,          5.0/3.0);
   OPTION(include_viscos, false);
   OPTION(viscos,         0.1);
-
-
+  
   // Read 2D initial profiles
   GRID_LOAD(rho0);
   GRID_LOAD(p0);
@@ -53,7 +49,8 @@ int physics_init()
   B.covariant = false; // evolve contravariant components
   bout_solve(B, F_B, "B");
 
-  output.write("dx[0,0] = %e, dy[0,0] = %e, dz = %e\n", dx[0][0], dy[0][0], dz);
+  output.write("dx[0,0] = %e, dy[0,0] = %e, dz = %e\n", 
+	       mesh->dx[0][0], mesh->dy[0][0], mesh->dz);
 
   dump.add(divB, "divB", 1);
 
@@ -71,20 +68,13 @@ int physics_init()
     v *= v_fact;
   }
 
-  // Set communications
-  
-  comms.add(rho);
-  comms.add(p);
-  comms.add(v);
-  comms.add(B);
-
   return 0;
 }
 
 int physics_run(real t)
 {
-  // Run communications
-  comms.run();
+  // Communicate variables
+  mesh->communicate(v, B, p, rho);
 
   msg_stack.push("F_rho");
   
@@ -99,9 +89,9 @@ int physics_run(real t)
   F_v = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
 
   if(include_viscos) {
-    F_v.x += viscos * Laplacian(F_v.x);
-    F_v.y += viscos * Laplacian(F_v.y);
-    F_v.z += viscos * Laplacian(F_v.z);
+    F_v.x += viscos * Laplacian(v.x);
+    F_v.y += viscos * Laplacian(v.y);
+    F_v.z += viscos * Laplacian(v.z);
   }
   
   msg_stack.pop(); msg_stack.push("F_B");

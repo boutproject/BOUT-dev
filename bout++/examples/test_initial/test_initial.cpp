@@ -9,7 +9,7 @@
 #include "bout.h"
 #include "initialprofiles.h"
 
-int physics_init()
+int physics_init(bool restarting)
 {
   int status;
   
@@ -93,6 +93,9 @@ int physics_init()
   dump.add(var4_2D, "var4_2D");
   dump.add(var4_3D, "var4_3D");
 
+  int MYPE;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  
   // Write data to file
   dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
   

@@ -73,16 +73,15 @@ Field2D Sn, F_Sn; // Density source (inverse timescale)
 bool input_source; // Read Sn from the input file
 
 // Communication object
-Communicator comms;
-Communicator com_jp;
+FieldGroup comms;
 
 // BOUT-06 L1
 const Field3D Div_par_CtoL(const Field3D &var)
 {
-  return Bxy * Grad_par_CtoL(var / Bxy);
+  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
 }
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
@@ -109,7 +108,7 @@ int physics_init()
   mesh->get(Bpxy, "Bpxy");
   mesh->get(Btxy, "Btxy");
   mesh->get(hthe, "hthe");
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -231,12 +230,12 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -246,28 +245,19 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-
-  // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
-
-  if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<mesh->ngx;i++)
-      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
-  }
-  if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -335,8 +325,6 @@ int physics_init()
   //dump.add(F_Ni, "F_Ni", 1);
   //dump.add(F_rho, "F_rho", 1);
   //dump.add(F_Ajpar, "F_Ajpar", 1);
-
-  com_jp.add(jpar);
   
   return(0);
 }
@@ -375,7 +363,7 @@ int physics_run(real t)
   }
 
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   // Update profiles
   if(nonlinear) {
@@ -417,7 +405,7 @@ int physics_run(real t)
     bndry_toroidal(jpar);
     
     // Need to communicate jpar
-    com_jp.run();
+    mesh->communicate(jpar);
 
     Ve = -jpar/Nit;
     Ajpar = Ve;
@@ -482,8 +470,8 @@ int physics_run(real t)
     if(nonlinear)
       F_rho -= vE_Grad(rho, phi);
 
-    //F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
-    F_rho += Bxy*Bxy*Div_par_CtoL(jpar); // Left hand differencing
+    //F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
+    F_rho += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar); // Left hand differencing
 
     if(nuIonNeutral > 0.0)
       F_rho -= nuIonNeutral * rho;
@@ -550,7 +538,7 @@ const Field2D vE_Grad(const Field2D &f, const Field2D &p)
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -563,7 +551,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
     result = VDDX(DDZ(p), f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -576,7 +564,7 @@ const Field3D vE_Grad(const Field3D &f, const Field2D &p)
     result = VDDZ(-DDX(p), f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -589,7 +577,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p)
     result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }

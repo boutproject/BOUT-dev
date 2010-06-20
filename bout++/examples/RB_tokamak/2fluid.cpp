@@ -93,16 +93,15 @@ int low_pass_z; // Low-pass filter result
 int phi_flags, apar_flags; // Inversion flags
 
 // Communication object
-Communicator comms;
-Communicator com_jp;
+FieldGroup comms;
 
 // BOUT-06 L1
 const Field3D Div_par_CtoL(const Field3D &var)
 {
-  return Bxy * Grad_par_CtoL(var / Bxy);
+  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
 }
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
@@ -130,7 +129,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -328,12 +327,12 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -344,28 +343,19 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-
-  // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
-
-  if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<mesh->ngx;i++)
-      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
-  }
-  if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   ////////////////////////////////////////////////////////
   // SET EVOLVING VARIABLES
@@ -441,8 +431,6 @@ int physics_init()
   dump.add(wci,   "wci", 0);
 
   dump.add(F_rho, "F_rho", 1);
-
-  com_jp.add(jpar);
   
   return(0);
 }
@@ -492,7 +480,7 @@ int physics_run(real t)
   
   ////////////////////////////////////////////////////////
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   ////////////////////////////////////////////////////////
   // Update profiles for calculating nu, mu_i, kapa_Te,i
@@ -556,7 +544,7 @@ int physics_run(real t)
       bndry_toroidal(jpar);
       
       // Need to communicate jpar
-      com_jp.run();
+      mesh->communicate(jpar);
       
     }else {
       // Use BOUT-06 method, no communications
@@ -568,10 +556,10 @@ int physics_run(real t)
 	    real dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
-	    if (jy<jstart){
+	    if (jy<mesh->ystart){
 	      dNi_dpar=-1.5*Ni[jx][jy][jz] + 2.*Ni[jx][jy+1][jz] - 0.5*Ni[jx][jy+2][jz];
 	      dPhi_dpar=-1.5*phi[jx][jy][jz] + 2.*phi[jx][jy+1][jz] - 0.5*phi[jx][jy+2][jz];
-	    }else if (jy>jend){
+	    }else if (jy>mesh->yend){
 	      // parallel derivs at right guard point
 	      dNi_dpar = 1.5*Ni[jx][jy][jz] - 2.*Ni[jx][jy-1][jz] + 0.5*Ni[jx][jy-2][jz];
 	      dPhi_dpar = 1.5*phi[jx][jy][jz] - 2.*phi[jx][jy-1][jz] + 0.5*phi[jx][jy-2][jz];
@@ -580,7 +568,7 @@ int physics_run(real t)
 	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
 	    }
 	    
-	    real c0=((Bpxy[jx][jy]/Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
+	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/mesh->dy[jx][jy];
 	    dNi_dpar = dNi_dpar*c0;
 	    dPhi_dpar = dPhi_dpar*c0;
 	    
@@ -778,16 +766,16 @@ int physics_run(real t)
     
     if(rho_pei1) {
       if(curv_upwind) {
-	F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
+	F_rho += 2.0*mesh->Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
       }else
-	F_rho += 2.0*Bxy*b0xcv*Grad(pei);     // Use central differencing
+	F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);     // Use central differencing
     }    
 
     if(rho_jpar1) {
       if(stagger) {
-	F_rho += Bxy*Bxy*Div_par_CtoL(jpar);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar);
       }else 
-	F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
     }
 
     if(rho_rho1)
@@ -919,7 +907,7 @@ const Field2D vE_Grad(const Field2D &f, const Field2D &p)
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -933,7 +921,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
     //result = DDX(DDZ(p)*f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -947,7 +935,7 @@ const Field3D vE_Grad(const Field3D &f, const Field2D &p)
     //result = DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -961,7 +949,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p)
     //result = DDX(DDZ(p) * f) + DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }

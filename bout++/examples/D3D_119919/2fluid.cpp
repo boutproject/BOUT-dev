@@ -1,4 +1,4 @@
-mesh->get/*******************************************************************************
+/*******************************************************************************
  * 2-fluid turbulence model
  * This version intended to have inputs as similar to BOUT-06 as possible
  * for cross-benchmarking etc.
@@ -94,14 +94,13 @@ int low_pass_z; // Low-pass filter result
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
-Communicator comms;
-Communicator com_jp;
+// Group of objects for communications
+FieldGroup comms;
 
 // BOUT-06 L1
 const Field3D Div_par_CtoL(const Field3D &var)
 {
-  return Bxy * Grad_par_CtoL(var / Bxy);
+  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
 }
 
 int physics_init()
@@ -150,8 +149,8 @@ int physics_init()
 
   // Read some parameters
   options.setSection("2fluid");
-  options.get("AA", AA, 2.0);
-  options.get("ZZ", ZZ, 1.0);
+  OPTION(AA, 2.0);
+  OPTION(ZZ, 1.0);
 
   OPTION(estatic,     false);
   OPTION(ZeroElMass,  false);
@@ -339,7 +338,7 @@ int physics_init()
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -350,7 +349,7 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
@@ -358,7 +357,7 @@ int physics_init()
   J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
@@ -686,7 +685,7 @@ int physics_run(real t)
 	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
 	    }
 	    
-	    real c0=((Bpxy[jx][jy]/Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
+	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
 	    dNi_dpar = dNi_dpar*c0;
 	    dPhi_dpar = dPhi_dpar*c0;
 	    
@@ -884,16 +883,16 @@ int physics_run(real t)
     
     if(rho_pei1) {
       if(curv_upwind) {
-	F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
+	F_rho += 2.0*mesh->Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
       }else
-	F_rho += 2.0*Bxy*b0xcv*Grad(pei);     // Use central differencing
+	F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);     // Use central differencing
     }    
 
     if(rho_jpar1) {
       if(stagger) {
-	F_rho += Bxy*Bxy*Div_par_CtoL(jpar);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar);
       }else 
-	F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
     }
 
     if(rho_rho1)
@@ -1042,7 +1041,7 @@ const Field2D vE_Grad(const Field2D &f, const Field2D &p)
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1056,7 +1055,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
     //result = DDX(DDZ(p)*f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1070,7 +1069,7 @@ const Field3D vE_Grad(const Field3D &f, const Field2D &p)
     //result = DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1084,7 +1083,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p)
     //result = DDX(DDZ(p) * f) + DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
