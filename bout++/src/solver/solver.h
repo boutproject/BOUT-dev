@@ -37,7 +37,7 @@
 // Using a CVODE solver
 #ifdef CVODE
 
-#include "sundials_solver.h"
+#include "cvode_solver.h"
 
 #else
 
@@ -47,7 +47,7 @@
 
 #else
 
-#include "cvode_solver.h"
+#include "pvode_solver.h"
 
 #endif // CVODE
 

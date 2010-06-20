@@ -187,7 +187,7 @@ else
 			EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
 		fi
 		# Compile in the CVODE solver
-		SOLVER_SOURCE="$SOLVER_SOURCE sundials_solver.cpp"
+		SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
 		EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
 		
 		CFLAGS="$CFLAGS -DCVODE" # Used in solver.h. BIT OF A HACK!
@@ -743,7 +743,7 @@ then
 	# Set the correct libraries and copy them to bout
 	cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/
 	cp externalpackages/PVODE/lib/*.a lib/
-	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
+	SOLVER_SOURCE="$SOLVER_SOURCE pvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
 fi
 

@@ -25,7 +25,7 @@
  *
  **************************************************************************/
 
-#include "sundials_solver.h"
+#include "cvode_solver.h"
 
 #include "globals.h"
 #include "boundary.h"
