@@ -1,7 +1,7 @@
 #include "bout.h"
 #include "fft.h"
 
-int physics_init()
+int physics_init(bool restarting)
 {
   // Testing FFT routines
   

@@ -95,16 +95,15 @@ int low_pass_z; // Low-pass filter result
 int phi_flags, apar_flags; // Inversion flags
 
 // Communication object
-Communicator comms;
-Communicator com_jp;
+FieldGroup comms;
 
 // BOUT-06 L1
 const Field3D Div_par_CtoL(const Field3D &var)
 {
-  return Bxy * Grad_par_CtoL(var / Bxy);
+  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
 }
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
@@ -114,33 +113,33 @@ int physics_init()
   // LOAD DATA FROM GRID FILE
 
   // Load 2D profiles (set to zero if not found)
-  grid_load2d(Ni0,    "Ni0");
-  grid_load2d(Ti0,    "Ti0");
-  grid_load2d(Te0,    "Te0");
-  grid_load2d(Vi0,    "Vi0");
-  grid_load2d(Ve0,    "Ve0");
-  grid_load2d(phi0,   "phi0");
-  grid_load2d(rho0,   "rho0");
-  grid_load2d(Ajpar0, "Ajpar0");
+  mesh->get(Ni0,    "Ni0");
+  mesh->get(Ti0,    "Ti0");
+  mesh->get(Te0,    "Te0");
+  mesh->get(Vi0,    "Vi0");
+  mesh->get(Ve0,    "Ve0");
+  mesh->get(phi0,   "phi0");
+  mesh->get(rho0,   "rho0");
+  mesh->get(Ajpar0, "Ajpar0");
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
-  grid_load2d(b0xcv, "bxcv"); // b0xkappa terms
+  mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
   // Load metrics
-  grid_load2d(Rxy,  "Rxy");
-  grid_load2d(Bpxy, "Bpxy");
-  grid_load2d(Btxy, "Btxy");
-  grid_load2d(hthe, "hthe");
-  grid_load2d(dx,   "dpsi");
-  grid_load2d(I,    "sinty");
-  grid_load2d(mesh->zShift, "qinty");
+  mesh->get(Rxy,  "Rxy");
+  mesh->get(Bpxy, "Bpxy");
+  mesh->get(Btxy, "Btxy");
+  mesh->get(hthe, "hthe");
+  mesh->get(dx,   "dpsi");
+  mesh->get(I,    "sinty");
+  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
-  grid_load(Te_x, "Te_x");
-  grid_load(Ti_x, "Ti_x");
-  grid_load(Ni_x, "Ni_x");
-  grid_load(bmag, "bmag");
+  mesh->get(Te_x, "Te_x");
+  mesh->get(Ti_x, "Ti_x");
+  mesh->get(Ni_x, "Ni_x");
+  mesh->get(bmag, "bmag");
 
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
@@ -181,10 +180,10 @@ int physics_init()
   OPTION(laplace_extra_rho_term, false);
   OPTION(vort_include_pi, false);
 
-  options.get("low_pass_z",  low_pass_z,  -1);
+  OPTION(low_pass_z,  -1);
 
-  options.get("phi_flags",   phi_flags,   0);
-  options.get("apar_flags",  apar_flags,  0);
+  OPTION(phi_flags,   0);
+  OPTION(apar_flags,  0);
 
   options.get("rho",   "evolve", evolve_rho,   true);
   options.get("Te",    "evolve", evolve_te,    true);
@@ -298,7 +297,7 @@ int physics_init()
   // PRINT Z INFORMATION
   
   real hthe0;
-  if(grid_load(hthe0, "hthe0") == 0) {
+  if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
@@ -339,7 +338,7 @@ int physics_init()
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -350,7 +349,7 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
@@ -358,7 +357,7 @@ int physics_init()
   J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
@@ -546,8 +545,6 @@ int physics_init()
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
   
-  com_jp.add(jpar);
-  
   return(0);
 }
 
@@ -598,7 +595,7 @@ int physics_run(real t)
   
   ////////////////////////////////////////////////////////
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   ////////////////////////////////////////////////////////
   // Update profiles for calculating nu, mu_i, kapa_Te,i
@@ -662,7 +659,7 @@ int physics_run(real t)
       bndry_toroidal(jpar);
       
       // Need to communicate jpar
-      com_jp.run();
+      mesh->communicate(jpar);
       
     }else {
       // Use BOUT-06 method, no communications
@@ -686,7 +683,7 @@ int physics_run(real t)
 	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
 	    }
 	    
-	    real c0=((Bpxy[jx][jy]/Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
+	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
 	    dNi_dpar = dNi_dpar*c0;
 	    dPhi_dpar = dPhi_dpar*c0;
 	    
@@ -884,16 +881,16 @@ int physics_run(real t)
     
     if(rho_pei1) {
       if(curv_upwind) {
-	F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
+	F_rho += 2.0*mesh->Bxy*V_dot_Grad(b0xcv, pei);  // Use upwinding
       }else
-	F_rho += 2.0*Bxy*b0xcv*Grad(pei);     // Use central differencing
+	F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);     // Use central differencing
     }    
 
     if(rho_jpar1) {
       if(stagger) {
-	F_rho += Bxy*Bxy*Div_par_CtoL(jpar);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar);
       }else 
-	F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+	F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
     }
 
     if(rho_rho1)
@@ -1042,7 +1039,7 @@ const Field2D vE_Grad(const Field2D &f, const Field2D &p)
     result = 0.0;
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1056,7 +1053,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
     //result = DDX(DDZ(p)*f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1070,7 +1067,7 @@ const Field3D vE_Grad(const Field3D &f, const Field2D &p)
     //result = DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }
@@ -1084,7 +1081,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p)
     //result = DDX(DDZ(p) * f) + DDZ(-DDX(p) * f);
   }else {
     // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / Bxy;
+    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
   }
   return result;
 }

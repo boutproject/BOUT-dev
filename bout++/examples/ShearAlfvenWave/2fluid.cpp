@@ -52,13 +52,13 @@ real ShearFactor;
 int phi_flags, apar_flags; // Inversion flags
 
 // Communication object
-Communicator comms;
+FieldGroup comms;
 
 // Field routines
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
 int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
-int physics_init()
+int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
@@ -87,7 +87,7 @@ int physics_init()
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -194,12 +194,12 @@ int physics_init()
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  Bxy  /= (bmag/1.e4);
+  mesh->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -209,28 +209,19 @@ int physics_init()
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (Bxy^2)/mesh->g11;
+  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
   mesh->g12 = 0.0;
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (Bxy*hthe/Bpxy)^2;
+  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
   mesh->g_33 = Rxy*Rxy;
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-
-  // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
-
-  if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<mesh->ngx;i++)
-      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
-  }
-  if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -312,7 +303,7 @@ int physics_init()
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / Bxy )
+#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
 
 int physics_run(real t)
 {
@@ -328,7 +319,7 @@ int physics_run(real t)
   }
 
   // Communicate variables
-  comms.run();
+  mesh->communicate(comms);
 
   // zero-gradient Y boundaries (temporary! for interchange test)
   /*
@@ -367,9 +358,7 @@ int physics_run(real t)
     bndry_toroidal(jpar);
     
     // Need to communicate jpar
-    Communicator com_jp;
-    com_jp.add(jpar);
-    com_jp.run();
+    mesh->communicate(jpar);
 
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
@@ -435,10 +424,10 @@ int physics_run(real t)
     F_rho -= Vpar_Grad_par(Vi, rho0) + Vpar_Grad_par(Vi0, rho) + Vpar_Grad_par(Vi, rho);
     */
     
-    //F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);
-    //F_rho += 2.0*Bxy*b0xcv*Grad(pei);
+    //F_rho += 2.0*mesh->Bxy*V_dot_Grad(b0xcv, pei);
+    //F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);
 
-    F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+    F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
   }
   
 

@@ -224,15 +224,6 @@ int physics_init(bool restarting)
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
-  // Twist-shift. NOTE: Should really use qsafe rather than qinty (small correction)
-
-  if((jyseps2_2 / MYSUB) == MYPE) {
-    for(int i=0;i<mesh->ngx;i++)
-      ShiftAngle[i] = mesh->zShift[i][MYSUB]; // MYSUB+MYG-1
-  }
-  if(NYPE > 1)
-    MPI_Bcast(ShiftAngle, mesh->ngx, MPI_DOUBLE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
-
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT++ which variables to evolve

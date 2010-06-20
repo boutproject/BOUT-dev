@@ -9,7 +9,7 @@
 
 #include "bout.h"
 
-int physics_init()
+int physics_init(bool restarting)
 {
   // Variables to be read and written
   int ivar, ivar_evol;
@@ -19,7 +19,6 @@ int physics_init()
   Vector2D v2d;
   Vector3D v3d;
   
-
   f2d = 0.0;
   f3d = 0.0;
 
@@ -41,6 +40,9 @@ int physics_init()
   dump.add(v2d, "v2d_evol", 1);
   dump.add(v3d, "v3d_evol", 1);
 
+  int MYPE;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  
   for(int i=0;i<3;i++) {
     ivar_evol = ivar + i;
     rvar_evol = rvar + 0.5 * i;
