@@ -2359,6 +2359,8 @@ file_formats=""  # Record which file formats are being supported
 
 
 
+
+
 if test "$with_debug" != ""
 then
 	echo "Enabling all debug options"
@@ -5980,6 +5982,9 @@ then
 	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
 	then
 		# Can there be a function? If so, check for 'externalpackages'
+
+                echo TESTTESTEST: externalpackages
+
 		if ! [ -d externalpackages ]
 		then
 			mkdir externalpackages

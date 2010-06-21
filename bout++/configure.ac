@@ -60,6 +60,14 @@ AC_SUBST(SOLVER_SOURCE)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FILEIO_SOURCE)
 
+AC_DEFUN([CREATE_DIR],
+        [
+                if ! [[ -d $1 ]]
+				then
+					mkdir $1
+				fi
+        ])
+
 if test "$with_debug" != ""
 then
 	echo "Enabling all debug options"
@@ -670,19 +678,10 @@ then
 
 	if ! ( [[ -f externalpackages/PVODE/lib/libpvode.a ]] && [[ -f externalpackages/PVODE/lib/libpvpre.a ]] )
 	then
-		# Can there be a function? If so, check for 'externalpackages'
-		if ! [[ -d externalpackages ]]
-		then
-			mkdir externalpackages
-		fi
-		if ! [[ -d lib ]]
-		then
-			mkdir lib
-		fi
-		if ! [[ -d include ]]
-		then
-			mkdir include
-		fi
+	
+		CREATE_DIR(externalpackages)
+		CREATE_DIR(lib)
+		CREATE_DIR(include)
 		
 		# Get a decent file transfer
 		prog=$(basename "$(which curl)")
