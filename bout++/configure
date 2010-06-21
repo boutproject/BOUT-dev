@@ -5981,22 +5981,25 @@ then
 
 	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
 	then
-		# Can there be a function? If so, check for 'externalpackages'
 
-                echo TESTTESTEST: externalpackages
 
-		if ! [ -d externalpackages ]
-		then
-			mkdir externalpackages
-		fi
-		if ! [ -d lib ]
-		then
-			mkdir lib
-		fi
-		if ! [ -d include ]
-		then
-			mkdir include
-		fi
+                if ! [ -d externalpackages ]
+				then
+					mkdir externalpackages
+				fi
+
+
+                if ! [ -d lib ]
+				then
+					mkdir lib
+				fi
+
+
+                if ! [ -d include ]
+				then
+					mkdir include
+				fi
+
 
 		# Get a decent file transfer
 		prog=$(basename "$(which curl)")
