@@ -19,7 +19,7 @@ ZMAX = 3.0246e-4
 MXG = 2
 MYG = 2
 
-grid="uedge.grd.pdb_Te_10"
+grid="uedge.grd_Te_10.nc"
 
 ##################################################
 # derivative methods

@@ -17,7 +17,7 @@ ZMAX = 0.0318310  # 0.2 NOTE: Length of y is 1 and this *2pi is Z length
 MXG = 2
 MYG = 2
 
-grid="data/rt.grd.pdb"
+grid="data/rt.grd.nc"
 
 NXPE = 1
 

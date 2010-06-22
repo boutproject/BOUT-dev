@@ -18,7 +18,7 @@ ZPERIOD = 20 # Fraction of a torus
 MXG = 2
 MYG = 2
 
-grid="uedge.grd.pdb"
+grid="uedge.grd.nc"
 twistshift_pf = true # Grid has twist-shift in PF region
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)

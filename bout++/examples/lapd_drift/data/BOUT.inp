@@ -20,7 +20,7 @@ ZMAX=3.6198e-2  # Non-integer period for comparison with BOUT-06
 MXG = 2
 MYG = 2
 
-grid="uedge.grd.pdb"
+grid="uedge.grd.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 

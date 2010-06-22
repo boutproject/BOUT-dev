@@ -17,7 +17,7 @@ ZMAX = 1.0
 MXG = 2
 MYG = 2
 
-grid="data/otv.grd.pdb"
+grid="data/otv.grd.nc"
 
 NXPE = 1
 

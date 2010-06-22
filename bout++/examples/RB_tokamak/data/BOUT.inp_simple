@@ -20,7 +20,7 @@ ZPERIOD = 10
 MXG = 2
 MYG = 2
 
-grid="data/uedge.grd.pdb"
+grid="data/uedge.grd.nc"
 
 dump_format = "pdb"   # Set extension for dump files (nc = NetCDF)
 

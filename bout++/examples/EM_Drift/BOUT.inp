@@ -18,7 +18,8 @@ ZMAX = 1.53566e-05
 MXG = 2
 MYG = 2
 
-grid = "uedge.grd.pdb"
+grid = "uedge.grd_beta.nc"
+
 
 ##################################################
 # derivative methods
