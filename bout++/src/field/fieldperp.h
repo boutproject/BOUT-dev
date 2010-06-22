@@ -40,7 +40,7 @@ class FieldPerp : public Field {
 
   FieldPerp* clone() const;
   
-  void Set(const Field3D &f, int y);
+  void set(const Field3D &f, int y);
 
   void setData(real **d) {data = d;}
   real **getData() const { return data; }
@@ -48,7 +48,7 @@ class FieldPerp : public Field {
   int getIndex() const { return yindex; }
   void setIndex(int y) { yindex = y; }
 
-  void Allocate();
+  void allocate();
 
   // operators
 
@@ -109,14 +109,14 @@ class FieldPerp : public Field {
 
   // Stencils
 
-  void SetStencil(bstencil *fval, bindex *bx) const;
-  void SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setStencil(bstencil *fval, bindex *bx) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   
  private:
   
-  real interp_z(int jx, int jz0, real zoffset, int order) const;
+  real interpZ(int jx, int jz0, real zoffset, int order) const;
 
   int yindex;
   
@@ -126,8 +126,8 @@ class FieldPerp : public Field {
   static int nblocks, max_blocks;
   static real ***block; // Pointer to blocks of memory
 
-  void alloc_data();
-  void free_data();
+  void allocData();
+  void freeData();
 };
 
 // Non-member overloaded operators

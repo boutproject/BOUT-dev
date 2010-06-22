@@ -126,7 +126,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
     return(1);
   }
 
-  // Allocate memory, and set problem data, initial values, tolerances
+  //.allocate memory, and set problem data, initial values, tolerances
 
   u = N_VNew(neq, machEnv);
 
@@ -506,9 +506,9 @@ void Solver::load_vars(real *udata)
   
   // Make sure data is allocated
   for(i=0;i<f2d.size();i++)
-    f2d[i].var->Allocate();
+    f2d[i].var->allocate();
   for(i=0;i<f3d.size();i++) {
-    f3d[i].var->Allocate();
+    f3d[i].var->allocate();
     f3d[i].var->setLocation(f3d[i].location);
   }
 
@@ -538,15 +538,15 @@ int Solver::save_vars(real *udata)
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {
     if(v2d[i].covariant) {
-      v2d[i].var->to_covariant();
+      v2d[i].var->toCovariant();
     }else
-      v2d[i].var->to_contravariant();
+      v2d[i].var->toContravariant();
   }
   for(i=0;i<v3d.size();i++) {
     if(v3d[i].covariant) {
-      v3d[i].var->to_covariant();
+      v3d[i].var->toCovariant();
     }else
-      v3d[i].var->to_contravariant();
+      v3d[i].var->toContravariant();
   }
 
   loop_vars(udata, SAVE_VARS);
@@ -561,15 +561,15 @@ void Solver::save_derivs(real *dudata)
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {
     if(v2d[i].covariant) {
-      v2d[i].F_var->to_covariant();
+      v2d[i].F_var->toCovariant();
     }else
-      v2d[i].F_var->to_contravariant();
+      v2d[i].F_var->toContravariant();
   }
   for(i=0;i<v3d.size();i++) {
     if(v3d[i].covariant) {
-      v3d[i].F_var->to_covariant();
+      v3d[i].F_var->toCovariant();
     }else
-      v3d[i].F_var->to_contravariant();
+      v3d[i].F_var->toContravariant();
   }
 
   // Make sure 3D fields are at the correct cell location

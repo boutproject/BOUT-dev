@@ -47,7 +47,7 @@ FieldPerp::FieldPerp(const FieldPerp &f)
 
 FieldPerp::~FieldPerp()
 {
-  free_data();
+  freeData();
 }
 
 FieldPerp* FieldPerp::clone() const
@@ -55,7 +55,7 @@ FieldPerp* FieldPerp::clone() const
   return new FieldPerp(*this);
 }
 
-void FieldPerp::Set(const Field3D &f, int y)
+void FieldPerp::set(const Field3D &f, int y)
 {
   int jx, jz;
   real ***d = f.getData();
@@ -67,16 +67,16 @@ void FieldPerp::Set(const Field3D &f, int y)
 
   yindex = y;
 
-  alloc_data();
+  allocData();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] = d[jx][y][jz];
 }
 
-void FieldPerp::Allocate()
+void FieldPerp::allocate()
 {
-  alloc_data();
+  allocData();
 }
 
 /***************************************************************
@@ -114,7 +114,7 @@ FieldPerp& FieldPerp::operator=(const FieldPerp &rhs)
     return(*this);
   }
 
-  alloc_data();
+  allocData();
 
   yindex = rhs.getIndex();
 
@@ -129,7 +129,7 @@ FieldPerp & FieldPerp::operator=(const real rhs)
 {
   int jx, jz;
 
-  alloc_data();
+  allocData();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
@@ -729,15 +729,15 @@ const FieldPerp FieldPerp::operator^(const real other) const
 
 ////////////////////// STENCILS //////////////////////////
 
-void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
+void FieldPerp::setStencil(bstencil *fval, bindex *bx) const
 {
   fval->cc = data[bx->jx][bx->jz];
 
   if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    fval->xp = interp_z(bx->jxp, bx->jz, bx->xp_offset, mesh->ShiftOrder);
-    fval->xm = interp_z(bx->jxm, bx->jz, bx->xm_offset, mesh->ShiftOrder);
-    fval->x2p = interp_z(bx->jxp, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
-    fval->x2m = interp_z(bx->jxm, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
+    fval->xp = interpZ(bx->jxp, bx->jz, bx->xp_offset, mesh->ShiftOrder);
+    fval->xm = interpZ(bx->jxm, bx->jz, bx->xm_offset, mesh->ShiftOrder);
+    fval->x2p = interpZ(bx->jxp, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
+    fval->x2m = interpZ(bx->jxm, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
   }else {
     fval->xp = data[bx->jxp][bx->jz];
     fval->xm = data[bx->jxm][bx->jz];
@@ -756,13 +756,13 @@ void FieldPerp::SetStencil(bstencil *fval, bindex *bx) const
   fval->z2m = data[bx->jx][bx->jz2m];
 }
 
-void FieldPerp::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    fval.p = interp_z(bx.jxp, bx.jz, bx.xp_offset, mesh->ShiftOrder);
-    fval.m = interp_z(bx.jxm, bx.jz, bx.xm_offset, mesh->ShiftOrder);
-    fval.pp = interp_z(bx.jxp, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
-    fval.mm = interp_z(bx.jxm, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
+    fval.p = interpZ(bx.jxp, bx.jz, bx.xp_offset, mesh->ShiftOrder);
+    fval.m = interpZ(bx.jxm, bx.jz, bx.xm_offset, mesh->ShiftOrder);
+    fval.pp = interpZ(bx.jxp, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
+    fval.mm = interpZ(bx.jxm, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
   }else {
     fval.p = data[bx.jxp][bx.jz];
     fval.m = data[bx.jxm][bx.jz];
@@ -771,12 +771,12 @@ void FieldPerp::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-void FieldPerp::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void FieldPerp::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval = data[bx.jx][bx.jz];
 }
 
-void FieldPerp::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.p = data[bx.jx][bx.jzp];
   fval.m = data[bx.jx][bx.jzm];
@@ -784,7 +784,7 @@ void FieldPerp::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.mm = data[bx.jx][bx.jz2m];
 }
 
-real FieldPerp::interp_z(int jx, int jz0, real zoffset, int order) const
+real FieldPerp::interpZ(int jx, int jz0, real zoffset, int order) const
 {
   int zi;
   real result;
@@ -845,7 +845,7 @@ int FieldPerp::nblocks = 0;
 int FieldPerp::max_blocks = 0;
 real*** FieldPerp::block = (real***) NULL;
 
-void FieldPerp::alloc_data()
+void FieldPerp::allocData()
 {
   if(data != (real**) NULL)
     return; // already allocated
@@ -864,7 +864,7 @@ void FieldPerp::alloc_data()
   }
 }
 
-void FieldPerp::free_data()
+void FieldPerp::freeData()
 {
   // put data block onto stack
 

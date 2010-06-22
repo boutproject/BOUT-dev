@@ -186,13 +186,13 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
     return 1;
   }
   
-  x.Allocate();
+  x.allocate();
 
   jy = b.getIndex();
   x.setIndex(jy);
 
   if(bk == NULL) {
-    // Allocate memory
+    //.allocate memory
 
     bk = cmatrix(mesh->ngx, ncz/2 + 1);
     bk1d = new dcomplex[mesh->ngx];
@@ -1088,7 +1088,7 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
   data.jy = b.getIndex();
 
   if(data.bk == NULL) {
-    /// Allocate memory
+    ///.allocate memory
     
     // RHS vector
     data.bk = cmatrix(laplace_maxmode + 1, mesh->ngx);
@@ -1293,7 +1293,7 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
   int ncx = mesh->ngx-1;
   int ncz = mesh->ngz-1;
 
-  x.Allocate();
+  x.allocate();
   x.setIndex(data.jy);
 
   // Make sure calculation has finished
@@ -1592,7 +1592,7 @@ int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
 {
   int ix, kz;
 
-  x.Allocate();
+  x.allocate();
   x.setIndex(data.jy);
   
   if(!mesh->last_x()) {
@@ -1697,7 +1697,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   
   t = MPI_Wtime();
   
-  x.Allocate();
+  x.allocate();
 
   int ys = mesh->ystart, ye = mesh->yend;
  
@@ -1711,9 +1711,9 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
     
     for(jy=ys; jy <= ye; jy++) {
       if((flags & INVERT_IN_SET) || (flags & INVERT_OUT_SET))
-	xperp = x.Slice(jy); // Using boundary values
+	xperp = x.slice(jy); // Using boundary values
       
-      if((ret = invert_laplace(b.Slice(jy), xperp, flags, a, c)))
+      if((ret = invert_laplace(b.slice(jy), xperp, flags, a, c)))
 	return(ret);
       x = xperp;
     }
@@ -1734,7 +1734,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
       /// PDD algorithm communicates twice, so done in 3 stages
       
       for(jy=ys; jy <= ye; jy++)
-	invert_pdd_start(b.Slice(jy), flags, a, data[jy]);
+	invert_pdd_start(b.slice(jy), flags, a, data[jy]);
       
       for(jy=ys; jy <= ye; jy++)
 	invert_pdd_continue(data[jy]);
@@ -1756,7 +1756,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
       
       for(jy=ys; jy <= ye; jy++) {	
 	// And start another one going
-	invert_spt_start(b.Slice(jy), flags, a, data[jy]);
+	invert_spt_start(b.slice(jy), flags, a, data[jy]);
 
 	// Move each calculation along one processor
 	for(jy2=ys; jy2 < jy; jy2++) 

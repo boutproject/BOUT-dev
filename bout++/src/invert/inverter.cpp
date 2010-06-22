@@ -86,10 +86,10 @@ int Inverter::solve(const Field3D &b, Field3D &x,
   
   FieldPerp xperp;
   for(int jy=ys; jy <= ye; jy++) {
-    xperp = x.Slice(jy); // For starting values
+    xperp = x.slice(jy); // For starting values
     
     int ret;
-    if((ret = solve(b.Slice(jy), xperp, flags, restart, itmax, tol)))
+    if((ret = solve(b.slice(jy), xperp, flags, restart, itmax, tol)))
       return ret;
     x = xperp;
   }
@@ -200,7 +200,7 @@ int Inverter::gmres_solve(real *b, real *x, int n, int m, int itmax, real tol, i
 
   /************************************/
   
-  /* Allocate memory if problem size increased */
+  /*.allocate memory if problem size increased */
   if((size < n) || (msize < m)) {
     if(size != 0) {
       free(y);

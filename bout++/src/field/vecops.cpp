@@ -98,7 +98,7 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc)
   
   // get contravariant components of v
   Vector2D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
   
   result = DDX(mesh->J*vcn.x);
   result += DDY(mesh->J*vcn.y);
@@ -125,7 +125,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
 
   // get contravariant components of v
   Vector3D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
   
   result = DDX(mesh->J*vcn.x, outloc);
   result += DDY(mesh->J*vcn.y, outloc);
@@ -153,7 +153,7 @@ const Vector2D Curl(const Vector2D &v)
 
   // Get covariant components of v
   Vector2D vco = v;
-  vco.to_covariant();
+  vco.toCovariant();
 
   // get components (curl(v))^j
 
@@ -182,7 +182,7 @@ const Vector3D Curl(const Vector3D &v)
 
   // Get covariant components of v
   Vector3D vco = v;
-  vco.to_covariant();
+  vco.toCovariant();
 
   // get components (curl(v))^j
 
@@ -217,7 +217,7 @@ const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f)
 
   // Get contravariant components of v
   Vector2D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
@@ -238,7 +238,7 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f)
 
   // Get contravariant components of v
   Vector2D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
@@ -259,7 +259,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f)
 
   // Get contravariant components of v
   Vector3D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
@@ -280,7 +280,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f)
 
   // Get contravariant components of v
   Vector3D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
   
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
@@ -300,7 +300,7 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a)
 #endif
 
   Vector2D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   if(a.covariant) {
     
@@ -356,7 +356,7 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a)
 #endif
 
   Vector2D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
@@ -410,7 +410,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a)
 #endif
 
   Vector3D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
@@ -464,7 +464,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
 #endif
 
   Vector3D vcn = v;
-  vcn.to_contravariant();
+  vcn.toContravariant();
 
   if(a.covariant) {
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);

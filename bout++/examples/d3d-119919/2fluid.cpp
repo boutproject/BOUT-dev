@@ -89,7 +89,7 @@ bool ti_ti1_phi0, ti_ti0_phi1, ti_ti1_phi1;
 
 bool relax_flat_bndry; // Use relaxing boundary conditions
 
-int low_pass_z; // Low-pass filter result
+int lowPass_z; // Low-pass filter result
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -179,7 +179,7 @@ int physics_init(bool restarting)
   OPTION(laplace_extra_rho_term, false);
   OPTION(vort_include_pi, false);
 
-  options.get("low_pass_z",  low_pass_z,  -1);
+  options.get("lowPass_z",  lowPass_z,  -1);
 
   options.get("phi_flags",   phi_flags,   0);
   options.get("apar_flags",  apar_flags,  0);
@@ -600,7 +600,7 @@ int physics_run(real t)
     }else {
       // Use BOUT-06 method, no communications
       
-      jpar.Allocate();
+      jpar.allocate();
       for(int jx=0;jx<mesh->ngx;jx++)
 	for(int jy=0;jy<mesh->ngy;jy++)
 	  for(int jz=0;jz<mesh->ngz;jz++) {
@@ -697,8 +697,8 @@ int physics_run(real t)
     
     //F_Ni -= Ni0*Div_par(Vi) + Ni*Div_par(Vi0) + Ni*Div_par(Vi);
 
-    if(low_pass_z > 0)
-      F_Ni = low_pass(F_Ni, low_pass_z);
+    if(lowPass_z > 0)
+      F_Ni = lowPass(F_Ni, lowPass_z);
   }
 
   ////////////////////////////////////////////////////////
@@ -739,8 +739,8 @@ int physics_run(real t)
     if(vi_vi1)
       F_Vi -= mu_i*Delp2(Vi);
 
-    if(low_pass_z > 0)
-      F_Vi = low_pass(F_Vi, low_pass_z);
+    if(lowPass_z > 0)
+      F_Vi = lowPass(F_Vi, lowPass_z);
   }
 
   ////////////////////////////////////////////////////////
@@ -763,8 +763,8 @@ int physics_run(real t)
     F_Te += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Te, Te);
 
     */
-    if(low_pass_z > 0)
-      F_Te = low_pass(F_Te, low_pass_z);
+    if(lowPass_z > 0)
+      F_Te = lowPass(F_Te, lowPass_z);
   }
 
   ////////////////////////////////////////////////////////
@@ -787,8 +787,8 @@ int physics_run(real t)
     F_Ti += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Ti, Ti);
     */
 
-    if(low_pass_z > 0)
-      F_Ti = low_pass(F_Ti, low_pass_z);
+    if(lowPass_z > 0)
+      F_Ti = lowPass(F_Ti, lowPass_z);
   }
 
   ////////////////////////////////////////////////////////
@@ -832,8 +832,8 @@ int physics_run(real t)
     if(rho_rho1)
       F_rho += mu_i * Delp2(rho);
 
-    if(low_pass_z > 0)
-      F_rho = low_pass(F_rho, low_pass_z);
+    if(lowPass_z > 0)
+      F_rho = lowPass(F_rho, lowPass_z);
   }
   
   ////////////////////////////////////////////////////////
@@ -858,8 +858,8 @@ int physics_run(real t)
     
     F_Ajpar += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;
 
-    if(low_pass_z > 0)
-      F_Ajpar = low_pass(F_Ajpar, low_pass_z);
+    if(lowPass_z > 0)
+      F_Ajpar = lowPass(F_Ajpar, lowPass_z);
   }
 
   ////////////////////////////////////////////////////////

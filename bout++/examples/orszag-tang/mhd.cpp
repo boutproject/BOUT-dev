@@ -102,9 +102,9 @@ int physics_run(real t)
 
   apply_boundary(F_rho, "density");
   apply_boundary(F_p, "pressure");
-  F_v.to_covariant();
+  F_v.toCovariant();
   apply_boundary(F_v, "v");
-  F_B.to_contravariant();
+  F_B.toContravariant();
   apply_boundary(F_B, "B");
 
   msg_stack.pop(); msg_stack.push("DivB");

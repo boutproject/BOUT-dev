@@ -53,7 +53,7 @@ class Field2D : public Field, public FieldData {
   real **getData() const; // Remove this!
   
   /// Ensure data is allocated
-  void Allocate();
+  void allocate();
   bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
 
   // Operators
@@ -106,25 +106,25 @@ class Field2D : public Field, public FieldData {
     
   // Stencils
 
-  void getXarray(int y, int z, rvec &xv) const;
-  void getYarray(int x, int z, rvec &yv) const;
-  void getZarray(int x, int y, rvec &zv) const;
+  void getXArray(int y, int z, rvec &xv) const;
+  void getYArray(int x, int z, rvec &yv) const;
+  void getZArray(int x, int y, rvec &zv) const;
 
-  void setXarray(int y, int z, const rvec &xv);
-  void setYarray(int x, int z, const rvec &yv);
+  void setXArray(int y, int z, const rvec &xv);
+  void setYArray(int x, int z, const rvec &yv);
 
-  void SetStencil(bstencil *fval, bindex *bx) const;
-  void SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setStencil(bstencil *fval, bindex *bx) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   // Functions
   
-  const Field2D Sqrt() const;
-  const Field2D Abs() const;
-  real Min(bool allpe=false) const;
-  real Max(bool allpe=false) const;
-  bool Finite() const;
+  const Field2D sqrt() const;
+  const Field2D abs() const;
+  real min(bool allpe=false) const;
+  real max(bool allpe=false) const;
+  bool finite() const;
   
   friend const Field2D sin(const Field2D &f);
   friend const Field2D cos(const Field2D &f);
@@ -158,7 +158,7 @@ class Field2D : public Field, public FieldData {
   }
 
 #ifdef CHECK
-  bool check_data(bool vital = true) const; ///< Checks if the data is all valid.
+  bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() {bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
   
@@ -169,8 +169,8 @@ class Field2D : public Field, public FieldData {
   static int nblocks, max_blocks;
   static real ***block; // Pointer to blocks of memory
 
-  void alloc_data();
-  void free_data();
+  void allocData();
+  void freeData();
 };
 
 // Non-member overloaded operators

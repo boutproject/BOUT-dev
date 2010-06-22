@@ -106,7 +106,7 @@ namespace invpar {
 	delete[] xvec;
       }
       done = new bool[ncz];
-      // Allocate largest possible array
+      //.allocate largest possible array
       avec = new real[ysize * ncz];
       bvec = new real[ysize * ncz];
       cvec = new real[ysize * ncz];
@@ -227,13 +227,13 @@ namespace invpar {
     int nylocal = mesh->yend - mesh->ystart + 1;
 
     if(max_size == 0) {
-      // Allocate working memory
+      //.allocate working memory
       senddata = new real[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
     }
     
     // coefficients for derivative term
     Field2D coeff1;
-    coeff1.Allocate();
+    coeff1.allocate();
     Field2D sg = sqrt(mesh->g_22); // Needed for first Y derivative
     for(int i=xs;i<=xe;i++)
       for(int j=mesh->ystart;j<=mesh->yend;j++) {

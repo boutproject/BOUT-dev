@@ -456,7 +456,7 @@ int OptionFile::set(const char *name, const char *str)
     free(option[n].string);
     free(s);
   }else {
-    // Allocate a new option
+    //.allocate a new option
     if(noptions == 0) {
       option = (t_option*) malloc(sizeof(t_option));
     }else {
@@ -510,7 +510,7 @@ void OptionFile::add(const char *section, const char *name, const char *string, 
       return;
     }
   }else {
-    // Allocate memory
+    //.allocate memory
     
     if(noptions == 0) {
       option = (t_option*) malloc(sizeof(t_option));

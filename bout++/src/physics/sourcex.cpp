@@ -22,7 +22,7 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
 {
   Field2D  fs, result;
 
-  result.Allocate();
+  result.allocate();
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
@@ -50,7 +50,7 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
 {
   Field2D  fs, result;
 
-  result.Allocate();
+  result.allocate();
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
@@ -81,11 +81,11 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
   Field2D fs0;
  
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f;
  
-  result.Allocate();
+  result.allocate();
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
@@ -102,7 +102,7 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
       }
  
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -116,11 +116,11 @@ const Field3D mask_x(const Field3D &f, bool realspace)
   Field3D fs, result;
 
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f; 
 
-  result.Allocate();
+  result.allocate();
   
 // create a radial buffer zone to set jpar zero near radial boundary
 
@@ -136,7 +136,7 @@ const Field3D mask_x(const Field3D &f, bool realspace)
       }
   
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
 
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -151,11 +151,11 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
   Field2D fs0;
  
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f;
  
-  result.Allocate();
+  result.allocate();
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
@@ -174,7 +174,7 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
       }
  
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -189,11 +189,11 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
   Field2D fs0;
  
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f;
  
-  result.Allocate();
+  result.allocate();
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
@@ -211,7 +211,7 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
       }
  
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -225,11 +225,11 @@ const Field3D buff_x(const Field3D &f, bool realspace)
   Field3D fs, result;
 
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f; 
 
-  result.Allocate();
+  result.allocate();
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
@@ -252,7 +252,7 @@ const Field3D buff_x(const Field3D &f, bool realspace)
   mesh->communicate(result);
 
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
 
   return result;
 }

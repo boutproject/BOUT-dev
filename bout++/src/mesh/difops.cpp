@@ -168,7 +168,7 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
 const Field3D Grad_par_CtoL(const Field3D &var)
 {
   Field3D result;
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
 
   /*
@@ -176,7 +176,7 @@ const Field3D Grad_par_CtoL(const Field3D &var)
   bstencil f;
   start_index(&bx);
   do {
-    var.SetStencil(&f, &bx);
+    var.setStencil(&f, &bx);
     
     d[bx.jx][bx.jy][bx.jz] = (f.cc - f.ym) / dy[bx.jx][bx.jy];
   }while(next_index3(&bx));
@@ -200,13 +200,13 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f)
   bstencil fval, vval;
   Field3D result;
   
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
 
   start_index(&bx);
   do {
-    f.SetStencil(&fval, &bx);
-    v.SetStencil(&vval, &bx);
+    f.setStencil(&fval, &bx);
+    v.setStencil(&vval, &bx);
     
     // Left side
     d[bx.jx][bx.jy][bx.jz] = (vval.cc >= 0.0) ? vval.cc * fval.ym : vval.cc * fval.cc;
@@ -224,12 +224,12 @@ const Field3D Grad_par_LtoC(const Field &var)
   bstencil f;
   Field3D result;
   
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
 
   start_index(&bx);
   do {
-    var.SetStencil(&f, &bx);
+    var.setStencil(&f, &bx);
     
     d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (mesh->dy[bx.jx][bx.jy] * sqrt(mesh->g_22[bx.jx][bx.jy]));
   }while(next_index3(&bx));
@@ -356,7 +356,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
   real filter;
   dcomplex a, b, c;
 
-  result.Allocate();
+  result.allocate();
 
   fd = f.getData();
   rd = result.getData();
@@ -364,7 +364,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
   int ncz = mesh->ngz-1;
   
   if(ft == (dcomplex**) NULL) {
-    // Allocate memory
+    //.allocate memory
     ft = cmatrix(mesh->ngx, ncz/2 + 1);
     delft = cmatrix(mesh->ngx, ncz/2 + 1);
   }

@@ -95,7 +95,7 @@ int physics_run(real t)
   // Set boundary conditions
   apply_boundary(F_N, "density");
   apply_boundary(F_P, "pressure");
-  F_V.to_contravariant();
+  F_V.toContravariant();
   apply_boundary(F_V, "v");
 
   return 0;

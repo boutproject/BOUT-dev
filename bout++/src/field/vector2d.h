@@ -51,8 +51,8 @@ class Vector2D : public FieldData {
 
   bool covariant; // true if the components are covariant (default)
 
-  void to_covariant();
-  void to_contravariant();
+  void toCovariant();
+  void toContravariant();
 
   // Assignment
 
@@ -140,9 +140,9 @@ class Vector2D : public FieldData {
   void setMark(void *setting) {
     bool *c = (bool*) setting;
     if(*c) {
-      to_covariant();
+      toCovariant();
     }else
-      to_contravariant();
+      toContravariant();
   }
   real *getData(int component) {
     switch(component) {

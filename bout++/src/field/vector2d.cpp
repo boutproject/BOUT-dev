@@ -47,7 +47,7 @@ Vector2D::~Vector2D()
   
 }
 
-void Vector2D::to_covariant()
+void Vector2D::toCovariant()
 {  
   if(!covariant) {
     Field2D gx, gy, gz;
@@ -64,7 +64,7 @@ void Vector2D::to_covariant()
     covariant = true;
   }
 }
-void Vector2D::to_contravariant()
+void Vector2D::toContravariant()
 {  
   if(covariant) {
     // multiply by g^{ij}
@@ -115,9 +115,9 @@ real Vector2D::operator=(const real val)
 Vector2D & Vector2D::operator+=(const Vector2D &rhs)
 {
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
   
   x += rhs.x;
@@ -143,9 +143,9 @@ const Vector2D Vector2D::operator-() const
 Vector2D & Vector2D::operator-=(const Vector2D &rhs)
 {
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
   
   x -= rhs.x;
@@ -203,8 +203,8 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs)
 
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
-  rco.to_covariant();
-  to_covariant();
+  rco.toCovariant();
+  toCovariant();
 
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/mesh->J;

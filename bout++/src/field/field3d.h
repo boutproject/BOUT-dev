@@ -66,7 +66,7 @@ class Field3D : public Field, public FieldData {
   Field3D* clone() const;
 
   /// Ensures that memory is allocated
-  void Allocate() const;
+  void allocate() const;
   /// Returns a pointer to internal data (REMOVE THIS)
   real*** getData() const;
   bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
@@ -149,47 +149,47 @@ class Field3D : public Field, public FieldData {
   // Stencils for differencing
 
   /// Takes a location and fills values in the stencil
-  void SetStencil(bstencil *fval, bindex *bx) const {
-    SetStencil(fval, bx, true);
+  void setStencil(bstencil *fval, bindex *bx) const {
+    setStencil(fval, bx, true);
   }
-  void SetStencil(bstencil *fval, bindex *bx, bool need_x) const;
+  void setStencil(bstencil *fval, bindex *bx, bool need_x) const;
 
-  void SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-  void SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   /// Shifts specified points by angle
-  void ShiftZ(int jx, int jy, double zangle); 
+  void shiftZ(int jx, int jy, double zangle); 
   /// Shift all points in z by specified angle
-  const Field3D ShiftZ(const Field2D zangle) const; 
-  const Field3D ShiftZ(const real zangle) const;
+  const Field3D shiftZ(const Field2D zangle) const; 
+  const Field3D shiftZ(const real zangle) const;
   /// Shifts to/from real-space (using zShift global variable)
-  const Field3D ShiftZ(bool toreal) const; 
+  const Field3D shiftZ(bool toreal) const; 
   /// virtual function to shift between real and shifted space
-  void ShiftToReal(bool toreal) {
-    *this = ShiftZ(toreal);
+  void shiftToReal(bool toreal) {
+    *this = shiftZ(toreal);
   }
   
   // Slicing
 
   // NOTE: No shifting done in z for x array
-  void getXarray(int y, int z, rvec &xv) const;
-  void getYarray(int x, int z, rvec &yv) const;
-  void getZarray(int x, int y, rvec &zv) const;
+  void getXArray(int y, int z, rvec &xv) const;
+  void getYArray(int x, int z, rvec &yv) const;
+  void getZArray(int x, int y, rvec &zv) const;
 
-  void setXarray(int y, int z, const rvec &xv);
-  void setYarray(int x, int z, const rvec &yv);
-  void setZarray(int x, int y, const rvec &zv);
+  void setXArray(int y, int z, const rvec &xv);
+  void setYArray(int x, int z, const rvec &yv);
+  void setZArray(int x, int y, const rvec &zv);
 
   /// Take a slice through the data at constant y
-  const FieldPerp Slice(int y) const;
+  const FieldPerp slice(int y) const;
 
   // Functions
   
-  const Field3D Sqrt() const;
-  const Field3D Abs() const;
-  real Min(bool allpe=false) const;
-  real Max(bool allpe=false) const;
+  const Field3D sqrt() const;
+  const Field3D abs() const;
+  real min(bool allpe=false) const;
+  real max(bool allpe=false) const;
 
   // Friend operators
   friend const Field3D operator-(const real &lhs, const Field3D &rhs);
@@ -206,8 +206,8 @@ class Field3D : public Field, public FieldData {
   friend const Field3D tanh(const Field3D &f);
 
   friend const Field3D filter(const Field3D &var, int N0);
-  friend const Field3D low_pass(const Field3D &var, int zmax);
-  friend const Field3D low_pass(const Field3D &var, int zmax, int zmin);
+  friend const Field3D lowPass(const Field3D &var, int zmax);
+  friend const Field3D lowPass(const Field3D &var, int zmax, int zmin);
 
   friend bool finite(const Field3D &var);
 
@@ -232,14 +232,14 @@ class Field3D : public Field, public FieldData {
   }
 
 #ifdef CHECK
-  bool check_data(bool vital = false) const; ///< Checks if the data is all valid. 
+  bool checkData(bool vital = false) const; ///< Checks if the data is all valid. 
 
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
 
  private:
   /// Interpolates in z using up to 4 points
-  real interp_z(int jx, int jy, int jz0, real zoffset, int order) const;
+  real interpZ(int jx, int jy, int jz0, real zoffset, int order) const;
 
   // NOTE: Data structures mutable, though logically const
 
@@ -254,11 +254,11 @@ class Field3D : public Field, public FieldData {
   static memblock3d *free_block;
   
   /// Get a new block of data, either from free list or allocate
-  memblock3d* new_block() const;
+  memblock3d* newBlock() const;
   /// Makes sure data is allocated and only referenced by this object
-  void alloc_data() const;
+  void allocData() const;
   /// Releases the data array, putting onto global stack
-  void free_data();
+  void freeData();
   
   CELL_LOC location; // Location of the variable in the cell
 };

@@ -592,7 +592,7 @@ int derivs_init()
 const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field2D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
 
   bindex bx;
   stencil s;
@@ -601,7 +601,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
 
   start_index(&bx, RGN_NOX);
   do {
-    var.SetXStencil(s, bx, loc);
+    var.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
 
@@ -616,14 +616,14 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
 const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   
   stencil s;
 
   Field3D vs = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
-    vs = var.ShiftZ(true); // Shift into real space
+    vs = var.shiftZ(true); // Shift into real space
   }
   
   bindex bx;
@@ -631,12 +631,12 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   
   start_index(&bx, RGN_NOX);
   do {
-    vs.SetXStencil(s, bx, loc);
+    vs.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index3(&bx));
   
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -651,7 +651,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field2D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real **r = result.getData();
   
   bindex bx;
@@ -659,7 +659,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
 
   start_index(&bx, RGN_NOY);
   do{
-    var.SetYStencil(s, bx, loc);
+    var.setYStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
   
@@ -674,14 +674,14 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
 const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real ***r = result.getData();
   
   stencil s;
   bindex bx;
   start_index(&bx, RGN_NOY);
   do {
-    var.SetYStencil(s, bx, loc);
+    var.setYStencil(s, bx, loc);
     
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
   
@@ -708,7 +708,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 const Field3D applyZdiff(const Field3D &var, deriv_func func, real dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real ***r = result.getData();
   
   bindex bx;
@@ -716,7 +716,7 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, real dd, CELL_LOC 
 
   start_index(&bx, RGN_NOZ);
   do {
-    var.SetZStencil(s, bx, loc);
+    var.setZStencil(s, bx, loc);
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
   }while(next_index3(&bx));
 
@@ -946,7 +946,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       }
     }
 
-    result.Allocate(); // Make sure data allocated
+    result.allocate(); // Make sure data allocated
 
     static dcomplex *cv = (dcomplex*) NULL;
     int jx, jy, jz;
@@ -1297,7 +1297,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
     real flt;
     
-    result.Allocate(); // Make sure data allocated
+    result.allocate(); // Make sure data allocated
     static dcomplex *cv = (dcomplex*) NULL;
     int jx, jy, jz;
     real kwave;
@@ -1392,15 +1392,15 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   }
 
   Field2D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real **d = result.getData();
 
   bindex bx;
   stencil vs, fs;
   start_index(&bx);
   do {
-    f.SetXStencil(fs, bx);
-    v.SetXStencil(vs, bx);
+    f.setXStencil(fs, bx);
+    v.setXStencil(vs, bx);
     
     d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx[bx.jx][bx.jy];
   }while(next_index2(&bx));
@@ -1468,12 +1468,12 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT if needed
-    vp->ShiftToReal(true);
-    fp->ShiftToReal(true);
+    vp->shiftToReal(true);
+    fp->shiftToReal(true);
   }
   
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real ***d = result.getData();
 
   bindex bx;
@@ -1481,14 +1481,14 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   
   start_index(&bx);
   do {
-    vp->SetXStencil(vval, bx, diffloc);
-    fp->SetXStencil(fval, bx); // Location is always the same as input
+    vp->setXStencil(vval, bx, diffloc);
+    fp->setXStencil(fval, bx); // Location is always the same as input
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx[bx.jx][bx.jy];
   }while(next_index3(&bx));
   
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
   
   result.setLocation(inloc);
 
@@ -1559,13 +1559,13 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   stencil fval, vval;
   
   Field2D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real **d = result.getData();
 
   start_index(&bx);
   do {
-    f.SetYStencil(fval, bx);
-    v.SetYStencil(vval, bx, diffloc);
+    f.setYStencil(fval, bx);
+    v.setYStencil(vval, bx, diffloc);
     d[bx.jx][bx.jy] = func(vval,fval)/mesh->dy[bx.jx][bx.jy];
   }while(next_index2(&bx));
 
@@ -1631,13 +1631,13 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   stencil vval, fval;
   
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real ***d = result.getData();
 
   start_index(&bx);
   do {
-    v.SetYStencil(vval, bx, diffloc);
-    f.SetYStencil(fval, bx);
+    v.setYStencil(vval, bx, diffloc);
+    f.setYStencil(fval, bx);
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dy[bx.jx][bx.jy];
   }while(next_index3(&bx));
@@ -1723,13 +1723,13 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   stencil vval, fval;
   
   Field3D result;
-  result.Allocate(); // Make sure data allocated
+  result.allocate(); // Make sure data allocated
   real ***d = result.getData();
   
   start_index(&bx);
   do {
-    v.SetZStencil(vval, bx, diffloc);
-    f.SetZStencil(fval, bx);
+    v.setZStencil(vval, bx, diffloc);
+    f.setZStencil(fval, bx);
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dz;
   }while(next_index3(&bx));

@@ -31,7 +31,8 @@
 
 #include "utils.h"
 
-#include <math.h>
+
+#include <cmath>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -60,7 +61,7 @@ Field2D::Field2D(real val)
 
 Field2D::~Field2D()
 {
-  free_data();
+  freeData();
 }
 
 Field2D* Field2D::clone() const
@@ -68,9 +69,9 @@ Field2D* Field2D::clone() const
   return new Field2D(*this);
 }
 
-void Field2D::Allocate()
+void Field2D::allocate()
 {
-  alloc_data();
+  allocData();
 }
 
 real **Field2D::getData() const
@@ -95,14 +96,14 @@ Field2D & Field2D::operator=(const Field2D &rhs)
 #ifdef CHECK
   msg_stack.push("Field2D: Assignment from Field2D");
   
-  rhs.check_data(true);
+  rhs.checkData(true);
 #endif
   
 #ifdef TRACK
   name = rhs.name;
 #endif
 
-  alloc_data(); // Make sure data is allocated
+  allocData(); // Make sure data is allocated
 
   // Copy data across
 
@@ -125,7 +126,7 @@ Field2D & Field2D::operator=(const real rhs)
   name = "<r2D>";
 #endif
 
-  alloc_data(); // Make sure data is allocated
+  allocData(); // Make sure data is allocated
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -158,8 +159,8 @@ Field2D & Field2D::operator+=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field2D: += ( Field2D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
   
 #ifdef TRACK
@@ -656,12 +657,12 @@ const FieldPerp Field2D::operator^(const FieldPerp &other) const
 
 ////////////////////// STENCILS //////////////////////////
 
-void Field2D::getXarray(int y, int z, rvec &xv) const
+void Field2D::getXArray(int y, int z, rvec &xv) const
 {
 #ifdef CHECK
   // Check data set
   if(data == (real**) NULL) {
-    error("Field2D: getXarray on an empty data set\n");
+    error("Field2D: getXArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -672,12 +673,12 @@ void Field2D::getXarray(int y, int z, rvec &xv) const
     xv[x] = data[x][y];
 }
 
-void Field2D::getYarray(int x, int z, rvec &yv) const
+void Field2D::getYArray(int x, int z, rvec &yv) const
 {
 #ifdef CHECK
   // Check data set
   if(data == (real**) NULL) {
-    error("Field2D: getYarray on an empty data set\n");
+    error("Field2D: getYArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -688,12 +689,12 @@ void Field2D::getYarray(int x, int z, rvec &yv) const
     yv[y] = data[x][y];
 }
 
-void Field2D::getZarray(int x, int y, rvec &zv) const
+void Field2D::getZArray(int x, int y, rvec &zv) const
 {
 #ifdef CHECK
   // Check data set
   if(data == (real**) NULL) {
-    error("Field2D: getZarray on an empty data set\n");
+    error("Field2D: getZArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -704,14 +705,14 @@ void Field2D::getZarray(int x, int y, rvec &zv) const
     zv[z] = data[x][y];
 }
 
-void Field2D::setXarray(int y, int z, const rvec &xv)
+void Field2D::setXArray(int y, int z, const rvec &xv)
 {
-  alloc_data();
+  allocData();
 
 #ifdef CHECK
   // Check that vector is correct size
   if(xv.capacity() != (unsigned int) mesh->ngx) {
-    error("Field2D: setXarray has incorrect size\n");
+    error("Field2D: setXArray has incorrect size\n");
     exit(1);
   }
 #endif
@@ -720,14 +721,14 @@ void Field2D::setXarray(int y, int z, const rvec &xv)
     data[x][y] = xv[x];
 }
 
-void Field2D::setYarray(int x, int z, const rvec &yv)
+void Field2D::setYArray(int x, int z, const rvec &yv)
 {
-  alloc_data();
+  allocData();
 
 #ifdef CHECK
   // Check that vector is correct size
   if(yv.capacity() != (unsigned int) mesh->ngy) {
-    error("Field2D: setYarray has incorrect size\n");
+    error("Field2D: setYArray has incorrect size\n");
     exit(1);
   }
 #endif
@@ -736,7 +737,7 @@ void Field2D::setYarray(int x, int z, const rvec &yv)
     data[x][y] = yv[y];
 }
 
-void Field2D::SetStencil(bstencil *fval, bindex *bx) const
+void Field2D::setStencil(bstencil *fval, bindex *bx) const
 {
 
   // Check data set
@@ -765,7 +766,7 @@ void Field2D::SetStencil(bstencil *fval, bindex *bx) const
   fval->z2m = data[bx->jx][bx->jy];
 }
 
-void Field2D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.mm = data[bx.jx2m][bx.jy];
   fval.m  = data[bx.jxm][bx.jy];
@@ -774,7 +775,7 @@ void Field2D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.pp = data[bx.jx2p][bx.jy];
 }
 
-void Field2D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.mm = data[bx.jx][bx.jy2m];
   fval.m  = data[bx.jx][bx.jym];
@@ -783,7 +784,7 @@ void Field2D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.pp = data[bx.jx][bx.jy2p];
 }
 
-void Field2D::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval = data[bx.jx][bx.jy];
 }
@@ -791,7 +792,7 @@ void Field2D::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 ///////////////////// MATH FUNCTIONS ////////////////////
 
 
-const Field2D Field2D::Sqrt() const
+const Field2D Field2D::sqrt() const
 {
   int jx, jy;
   Field2D result;
@@ -813,19 +814,19 @@ const Field2D Field2D::Sqrt() const
 #endif
 
 #ifdef TRACK
-  result.name = "Sqrt("+name+")";
+  result.name = "sqrt("+name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = sqrt(data[jx][jy]);
+      result.data[jx][jy] = ::sqrt(data[jx][jy]);
 
   return result;
 }
 
-const Field2D Field2D::Abs() const
+const Field2D Field2D::abs() const
 {
   int jx, jy;
   Field2D result;
@@ -839,10 +840,10 @@ const Field2D Field2D::Abs() const
 #endif
 
 #ifdef TRACK
-  result.name = "Abs("+name+")";
+  result.name = "abs("+name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -851,7 +852,7 @@ const Field2D Field2D::Abs() const
   return result;
 }
 
-real Field2D::Min(bool allpe) const
+real Field2D::min(bool allpe) const
 {
   int jx, jy;
   real result;
@@ -888,7 +889,7 @@ real Field2D::Min(bool allpe) const
   return result;
 }
 
-real Field2D::Max(bool allpe) const
+real Field2D::max(bool allpe) const
 {
   int jx, jy;
   real result;
@@ -925,7 +926,7 @@ real Field2D::Max(bool allpe) const
   return result;
 }
 
-bool Field2D::Finite() const
+bool Field2D::finite() const
 {
   int jx, jy;
 
@@ -939,7 +940,7 @@ bool Field2D::Finite() const
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      if(!finite(data[jx][jy]))
+      if(!::finite(data[jx][jy]))
 	return false;
 
   return true;
@@ -990,7 +991,7 @@ int Field2D::getData(int x, int y, int z, real *rptr) const
 
 int Field2D::setData(int x, int y, int z, void *vptr)
 {
-  Allocate();
+ allocate();
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
@@ -1006,7 +1007,7 @@ int Field2D::setData(int x, int y, int z, void *vptr)
 
 int Field2D::setData(int x, int y, int z, real *rptr)
 {
-  Allocate();
+  allocate();
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
@@ -1021,7 +1022,7 @@ int Field2D::setData(int x, int y, int z, real *rptr)
 
 #ifdef CHECK
 /// Check if the data is valid
-bool Field2D::check_data(bool vital) const
+bool Field2D::checkData(bool vital) const
 {
   if(data == (real**) NULL) {
     error("Field2D: Operation on empty data\n");
@@ -1033,7 +1034,7 @@ bool Field2D::check_data(bool vital) const
 
     for(jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	if(!finite(data[jx][jy])) {
+	if(!::finite(data[jx][jy])) {
 	  error("Field2D: Operation on non-finite data at [%d][%d]\n", jx, jy);
 	}
   }
@@ -1049,7 +1050,7 @@ int Field2D::nblocks = 0;
 int Field2D::max_blocks = 0;
 real*** Field2D::block = (real***) NULL;
 
-void Field2D::alloc_data()
+void Field2D::allocData()
 {
   if(data != (real**) NULL)
     return; // already allocated
@@ -1068,7 +1069,7 @@ void Field2D::alloc_data()
   }
 }
 
-void Field2D::free_data()
+void Field2D::freeData()
 {
   // put data block onto stack
 
@@ -1170,27 +1171,27 @@ const Field2D SQ(const Field2D &f)
 
 const Field2D sqrt(const Field2D &f)
 {
-  return f.Sqrt();
+  return f.sqrt();
 }
 
 const Field2D abs(const Field2D &f)
 {
-  return f.Abs();
+  return f.abs();
 }
 
 real min(const Field2D &f, bool allpe)
 {
-  return f.Min(allpe);
+  return f.min(allpe);
 }
 
 real max(const Field2D &f, bool allpe)
 {
-  return f.Max(allpe);
+  return f.max(allpe);
 }
 
 bool finite(const Field2D &f)
 {
-  return f.Finite();
+  return f.finite();
 }
 
 // Friend functions
@@ -1204,11 +1205,11 @@ const Field2D sin(const Field2D &f)
   result.name = "sin("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = sin(f.data[jx][jy]);
+      result.data[jx][jy] = ::sin(f.data[jx][jy]);
 
   return result;
 }
@@ -1222,11 +1223,11 @@ const Field2D cos(const Field2D &f)
   result.name = "cos("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = cos(f.data[jx][jy]);
+      result.data[jx][jy] = ::cos(f.data[jx][jy]);
 
   return result;
 }
@@ -1240,11 +1241,11 @@ const Field2D tan(const Field2D &f)
   result.name = "tan("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = tan(f.data[jx][jy]);
+      result.data[jx][jy] = ::tan(f.data[jx][jy]);
 
   return result;
 }
@@ -1258,11 +1259,11 @@ const Field2D sinh(const Field2D &f)
   result.name = "sinh("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = sinh(f.data[jx][jy]);
+      result.data[jx][jy] = ::sinh(f.data[jx][jy]);
 
   return result;
 }
@@ -1276,11 +1277,11 @@ const Field2D cosh(const Field2D &f)
   result.name = "cosh("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = cosh(f.data[jx][jy]);
+      result.data[jx][jy] = ::cosh(f.data[jx][jy]);
 
   return result;
 }
@@ -1294,11 +1295,11 @@ const Field2D tanh(const Field2D &f)
   result.name = "tanh("+f.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = tanh(f.data[jx][jy]);
+      result.data[jx][jy] = ::tanh(f.data[jx][jy]);
 
   return result;
 }

@@ -362,7 +362,7 @@ int gmres_solve(real *b, real *x, int n, int m, opfunc1D A, int itmax, real tol,
 
   /************************************/
   
-  /* Allocate memory if problem size increased */
+  /*.allocate memory if problem size increased */
   if((size < n) || (msize < m)) {
     if(size != 0) {
       free(y);

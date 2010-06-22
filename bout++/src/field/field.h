@@ -59,40 +59,40 @@ class Field {
   */
   virtual Field* clone() const = 0;
 
-  virtual void ShiftToReal(bool toreal) {
+  virtual void shiftToReal(bool toreal) {
     // Does nothing by default
   }
 
-  virtual void SetStencil(bstencil *val, bindex *bx) const = 0;
+  virtual void setStencil(bstencil *val, bindex *bx) const = 0;
 
   // These routines only set a stencil in one dimension
   // Should be faster, and replaces the above SetStencil function.
-  virtual void SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
-  virtual void SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
-  virtual void SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
+  virtual void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
+  virtual void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
+  virtual void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const = 0;
 
   virtual void setLocation(CELL_LOC loc) { }
   virtual CELL_LOC getLocation() const {
     return CELL_CENTRE;
   }
 
-  virtual void getXarray(int y, int z, rvec &xv) const {
+  virtual void getXArray(int y, int z, rvec &xv) const {
     error("Field: Base class does not implement getXarray");
   }
-  virtual void getYarray(int x, int z, rvec &yv) const {
+  virtual void getYArray(int x, int z, rvec &yv) const {
     error("Field: Base class does not implement getYarray");
   }
-  virtual void getZarray(int x, int y, rvec &zv) const {
+  virtual void getZArray(int x, int y, rvec &zv) const {
     error("Field: Base class does not implement getZarray");
   }
 
-  virtual void setXarray(int y, int z, const rvec &xv) {
+  virtual void setXArray(int y, int z, const rvec &xv) {
     error("Field: Base class does not implement setXarray");
   }
-  virtual void setYarray(int x, int z, const rvec &yv) {
+  virtual void setYArray(int x, int z, const rvec &yv) {
     error("Field: Base class does not implement setYarray");
   }
-  virtual void setZarray(int x, int y, const rvec &zv) {
+  virtual void setZArray(int x, int y, const rvec &zv) {
     error("Field: Base class does not implement setZarray");
   }
     
@@ -106,7 +106,7 @@ class Field {
 #ifdef CHECK
   // Routines to test guard/boundary cells set
   
-  virtual bool bndry_valid() {
+  virtual bool bndryValid() {
     if(!bndry_xin)
       error("Inner X guard cells not set\n");
     if(!bndry_xout)

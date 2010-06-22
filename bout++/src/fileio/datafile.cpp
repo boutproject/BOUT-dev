@@ -434,7 +434,7 @@ bool Datafile::write(const string &filename, bool append)
     if(it->covar) {
       // Writing covariant vector
       Vector2D v  = *(it->ptr);
-      v.to_covariant();
+      v.toCovariant();
       
       write_f2d(it->name+string("_x"), &(v.x), it->grow);
       write_f2d(it->name+string("_y"), &(v.y), it->grow);
@@ -442,7 +442,7 @@ bool Datafile::write(const string &filename, bool append)
     }else {
       // Writing contravariant vector
       Vector2D v  = *(it->ptr);
-      v.to_contravariant();
+      v.toContravariant();
       
       write_f2d(it->name+string("x"), &(v.x), it->grow);
       write_f2d(it->name+string("y"), &(v.y), it->grow);
@@ -456,7 +456,7 @@ bool Datafile::write(const string &filename, bool append)
     if(it->covar) {
       // Writing covariant vector
       Vector3D v  = *(it->ptr);
-      v.to_covariant();
+      v.toCovariant();
       
       write_f3d(it->name+string("_x"), &(v.x), it->grow);
       write_f3d(it->name+string("_y"), &(v.y), it->grow);
@@ -464,7 +464,7 @@ bool Datafile::write(const string &filename, bool append)
     }else {
       // Writing contravariant vector
       Vector3D v  = *(it->ptr);
-      v.to_contravariant();
+      v.toContravariant();
       
       write_f3d(it->name+string("x"), &(v.x), it->grow);
       write_f3d(it->name+string("y"), &(v.y), it->grow);
@@ -483,7 +483,7 @@ bool Datafile::write(const string &filename, bool append)
 
 bool Datafile::read_f2d(const string &name, Field2D *f, bool grow)
 {
-  f->Allocate();
+  f->allocate();
   
   if(grow) {
     if(!file->read_rec(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
@@ -503,7 +503,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow)
 
 bool Datafile::read_f3d(const string &name, Field3D *f, bool grow)
 {
-  f->Allocate();
+  f->allocate();
   
   if(grow) {
     if(!file->read_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {

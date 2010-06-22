@@ -30,7 +30,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 {
   Field3D result;
   
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -50,7 +50,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, real le0)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -70,7 +70,7 @@ const Field3D where(const Field2D &test, real gt0, const Field3D &le0)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -90,7 +90,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -110,7 +110,7 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)

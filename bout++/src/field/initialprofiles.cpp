@@ -207,7 +207,7 @@ int initial_profile(const char *name, Field3D &var)
   }
 
   if(ShiftInitial)
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 
   return(0);
 }
@@ -455,7 +455,7 @@ const Field3D genZMode(int n, real phase)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   real ***d = result.getData();
   
   for(int jz=0;jz<mesh->ngz;jz++) {

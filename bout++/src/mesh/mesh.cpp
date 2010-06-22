@@ -313,12 +313,12 @@ int Mesh::calc_covariant()
 #endif
   
   // Make sure metric elements are allocated
-  g_11.Allocate();
-  g_22.Allocate();
-  g_33.Allocate();
-  g_12.Allocate();
-  g_13.Allocate();
-  g_23.Allocate();
+  g_11.allocate();
+  g_22.allocate();
+  g_33.allocate();
+  g_12.allocate();
+  g_13.allocate();
+  g_23.allocate();
   
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
@@ -397,12 +397,12 @@ int Mesh::calc_covariant()
 int Mesh::calc_contravariant()
 {
   // Make sure metric elements are allocated
-  g11.Allocate();
-  g22.Allocate();
-  g33.Allocate();
-  g12.Allocate();
-  g13.Allocate();
-  g23.Allocate();
+  g11.allocate();
+  g22.allocate();
+  g33.allocate();
+  g12.allocate();
+  g13.allocate();
+  g23.allocate();
   
   // Perform inversion of g_{ij} to get g^{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects

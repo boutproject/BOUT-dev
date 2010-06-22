@@ -266,7 +266,7 @@ int BoutMesh::load()
       IntShiftTorsion = 0.0;
     }
   }
-  // Allocate some memory for twist-shift
+  //.allocate some memory for twist-shift
 
   ShiftAngle  = rvector(ngx);
 
@@ -1268,7 +1268,7 @@ int BoutMesh::wait(comm_handle handle)
   if(TwistShift && (mesh->TwistOrder == 0)) {
     int jx, jy;
     
-    // Perform Twist-shift using shifting method (rather than in SetStencil)
+    // Perform Twist-shift using shifting method (rather than in setStencil)
     for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
       if((*it)->is3D()) {
 	
@@ -1277,13 +1277,13 @@ int BoutMesh::wait(comm_handle handle)
 	if(TS_down_in && (DDATA_INDEST  != -1)) {
 	  for(jx=0;jx<DDATA_XSPLIT;jx++)
 	    for(jy=0;jy != MYG; jy++)
-	      (*it)->ShiftZ(jx, jy, ShiftAngle[jx]);
+	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
       
 	}
 	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
 	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
 	    for(jy=0;jy != MYG; jy++)
-	      (*it)->ShiftZ(jx, jy, ShiftAngle[jx]);
+	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
 	  
 	}
 	
@@ -1292,13 +1292,13 @@ int BoutMesh::wait(comm_handle handle)
 	if(TS_up_in && (UDATA_INDEST  != -1)) {
 	  for(jx=0;jx<UDATA_XSPLIT; jx++)
 	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
+	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
 	  
 	}
 	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
 	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
 	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->ShiftZ(jx, jy, -ShiftAngle[jx]);
+	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
 	  
 	}
       }
@@ -1757,7 +1757,7 @@ void BoutMesh::topology()
 BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
 {
   if(comm_list.empty()) {
-    // Allocate a new CommHandle
+    //.allocate a new CommHandle
     
     CommHandle* ch = new CommHandle;
     for(int i=0;i<6;i++)
@@ -2131,7 +2131,7 @@ const Field2D BoutMesh::average_y(const Field2D &f)
   }
 
   Field2D result;
-  result.Allocate();
+  result.allocate();
   
   real **fd, **rd;
   fd = f.getData();

@@ -59,7 +59,7 @@ Field3D::Field3D(const Field3D& f)
 
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor");
-  f.check_data();
+  f.checkData();
 #endif
 
   /// Copy a reference to the block
@@ -82,7 +82,7 @@ Field3D::Field3D(const Field2D& f)
 Field3D::~Field3D()
 {
   /// free the block of data if allocated
-  free_data();
+  freeData();
 }
 
 Field3D* Field3D::clone() const
@@ -92,9 +92,9 @@ Field3D* Field3D::clone() const
 
 /// Make sure data is allocated and unique to this object
 /// NOTE: Logically constant, but internals mutable
-void Field3D::Allocate() const
+void Field3D::allocate() const
 {
-  alloc_data();
+  allocData();
 }
 
 real*** Field3D::getData() const
@@ -110,7 +110,7 @@ real*** Field3D::getData() const
 #endif
   
   // User might alter data, so need to make unique
-  Allocate();
+  allocate();
 
   return(block->data);
 }
@@ -123,7 +123,7 @@ const Field2D Field3D::DC()
 
 #ifdef CHECK
   msg_stack.push("Field3D: DC");
-  check_data();
+  checkData();
 #endif
 
 #ifdef TRACK
@@ -185,7 +185,7 @@ real** Field3D::operator[](int jx) const
 #endif
  
   // User might alter data, so need to make unique
-  Allocate();
+ allocate();
  
   return(block->data[jx]);
 }
@@ -222,7 +222,7 @@ Field3D & Field3D::operator=(const Field3D &rhs)
 #ifdef CHECK
 
   msg_stack.push("Field3D: Assignment from Field3D");
-  rhs.check_data(true);
+  rhs.checkData(true);
 
 #endif
 
@@ -231,7 +231,7 @@ Field3D & Field3D::operator=(const Field3D &rhs)
 #endif
 
   if(block != NULL)
-    free_data(); // get rid of the current data
+    freeData(); // get rid of the current data
 
   /// Copy reference, don't copy data
   block = rhs.block;
@@ -253,7 +253,7 @@ Field3D & Field3D::operator=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: Assignment from Field2D");
-  rhs.check_data(true);
+  rhs.checkData(true);
 #endif
 
   d = rhs.getData();
@@ -262,7 +262,7 @@ Field3D & Field3D::operator=(const Field2D &rhs)
   name = "F3D("+rhs.name+")";
 #endif
 
-  Allocate();
+ allocate();
 
   /// Copy data
 
@@ -308,7 +308,7 @@ Field3D & Field3D::operator=(const FieldPerp &rhs)
   name = "F3D("+rhs.name+")";
 #endif
 
-  Allocate();
+ allocate();
 
   /// Copy data
 
@@ -321,7 +321,7 @@ Field3D & Field3D::operator=(const FieldPerp &rhs)
 
 const bvalue & Field3D::operator=(const bvalue &bv)
 {
-  Allocate();
+ allocate();
 
 #ifdef CHECK
   if(!finite(bv.val)) {
@@ -344,7 +344,7 @@ real Field3D::operator=(const real val)
 {
   int jx, jy, jz;
   
-  Allocate();
+ allocate();
 
 #ifdef CHECK
   if(!finite(val)) {
@@ -377,8 +377,8 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
 #ifdef CHECK
   msg_stack.push("Field3D: += Field3D");
   
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
@@ -399,7 +399,7 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
   }else {
     // Need to put result in a new block
 
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -425,8 +425,8 @@ Field3D & Field3D::operator+=(const Field2D &rhs)
 #ifdef CHECK
   msg_stack.push("Field3D: += ( Field2D )");
 
-  check_data();
-  rhs.check_data();
+  checkData();
+  rhs.checkData();
 #endif
 
   d = rhs.getData();
@@ -441,7 +441,7 @@ Field3D & Field3D::operator+=(const Field2D &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] += d[jx][jy];
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -465,7 +465,7 @@ Field3D & Field3D::operator+=(const real &rhs)
 #ifdef CHECK
   msg_stack.push("Field3D: += ( real )");
 
-  check_data();
+  checkData();
 
   if(!finite(rhs)) {
     error("Field3D: += operator passed non-finite real number");
@@ -482,7 +482,7 @@ Field3D & Field3D::operator+=(const real &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] += rhs;
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -508,8 +508,8 @@ Field3D & Field3D::operator-=(const Field3D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: -= ( Field3D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
@@ -527,7 +527,7 @@ Field3D & Field3D::operator-=(const Field3D &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] -= rhs.block->data[jx][jy][jz];
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -552,8 +552,8 @@ Field3D & Field3D::operator-=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: -= ( Field2D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   d = rhs.getData();
@@ -569,7 +569,7 @@ Field3D & Field3D::operator-=(const Field2D &rhs)
 	  block->data[jx][jy][jz] -= d[jx][jy];
 
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -593,7 +593,7 @@ Field3D & Field3D::operator-=(const real &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: -= ( real )");
-  check_data();
+  checkData();
 
   if(!finite(rhs)) {
     error("Field3D: -= operator passed non-finite real number");
@@ -610,7 +610,7 @@ Field3D & Field3D::operator-=(const real &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] -= rhs;
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -637,8 +637,8 @@ Field3D & Field3D::operator*=(const Field3D &rhs)
 #ifdef CHECK
   msg_stack.push("Field3D: *= ( Field3D )");
 
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
@@ -656,7 +656,7 @@ Field3D & Field3D::operator*=(const Field3D &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] *= rhs.block->data[jx][jy][jz];
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -681,8 +681,8 @@ Field3D & Field3D::operator*=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: *= ( Field2D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   d = rhs.getData();
@@ -697,7 +697,7 @@ Field3D & Field3D::operator*=(const Field2D &rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] *= d[jx][jy];
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -721,7 +721,7 @@ Field3D & Field3D::operator*=(const real rhs)
   
 #ifdef CHECK
   msg_stack.push("Field3D: *= ( real )");
-  check_data();
+  checkData();
 
   if(!finite(rhs)) {
     error("Field3D: *= operator passed non-finite real number");
@@ -739,7 +739,7 @@ Field3D & Field3D::operator*=(const real rhs)
 	  block->data[jx][jy][jz] *= rhs;
 
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -778,8 +778,8 @@ Field3D & Field3D::operator/=(const Field3D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: /= ( Field3D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
 #ifdef TRACK
@@ -793,7 +793,7 @@ Field3D & Field3D::operator/=(const Field3D &rhs)
 	  block->data[jx][jy][jz] /= rhs.block->data[jx][jy][jz];
     
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -818,8 +818,8 @@ Field3D & Field3D::operator/=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: /= ( Field2D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   d = rhs.getData();
@@ -841,7 +841,7 @@ Field3D & Field3D::operator/=(const Field2D &rhs)
 	  //block->data[jx][jy][jz] /= d[jx][jy];
       }
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++) {
@@ -868,7 +868,7 @@ Field3D & Field3D::operator/=(const real rhs)
   
 #ifdef CHECK
   msg_stack.push("Field3D: /= ( real )");
-  check_data();
+  checkData();
 
   if(!finite(rhs)) {
     error("Field3D: /= operator passed non-finite real number");
@@ -887,7 +887,7 @@ Field3D & Field3D::operator/=(const real rhs)
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] *= val;
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -926,8 +926,8 @@ Field3D & Field3D::operator^=(const Field3D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: ^= ( Field3D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
 #ifdef TRACK
@@ -941,7 +941,7 @@ Field3D & Field3D::operator^=(const Field3D &rhs)
 	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs.block->data[jx][jy][jz]);
 
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
     
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -966,8 +966,8 @@ Field3D & Field3D::operator^=(const Field2D &rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: ^= ( Field2D )");
-  rhs.check_data();
-  check_data();
+  rhs.checkData();
+  checkData();
 #endif
 
   d = rhs.getData();
@@ -983,7 +983,7 @@ Field3D & Field3D::operator^=(const Field2D &rhs)
 	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], d[jx][jy]);
 
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -1007,7 +1007,7 @@ Field3D & Field3D::operator^=(const real rhs)
 
 #ifdef CHECK
   msg_stack.push("Field3D: ^= ( real )");
-  check_data();
+  checkData();
 
   if(!finite(rhs)) {
     error("Field3D: ^= operator passed non-finite real number");
@@ -1025,7 +1025,7 @@ Field3D & Field3D::operator^=(const real rhs)
 	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs);
 
   }else {
-    memblock3d *nb = new_block();
+    memblock3d *nb = newBlock();
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++)
@@ -1276,9 +1276,9 @@ const Field3D Field3D::operator^(const real rhs) const
 
 /*!
   18 Aug 2008: Added need_x argument to disable Z interpolation when not needed
-  since interp_z is taking ~25% of run time (on single processor)
+  since interpZ is taking ~25% of run time (on single processor)
 */
-void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
+void Field3D::setStencil(bstencil *fval, bindex *bx, bool need_x) const
 {
   fval->jx = bx->jx;
   fval->jy = bx->jy;
@@ -1296,10 +1296,10 @@ void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
 
   if(need_x) {
     if(mesh->ShiftXderivs) {
-      fval->xp = interp_z(bx->jxp, bx->jy, bx->jz, bx->xp_offset, mesh->ShiftOrder);
-      fval->xm = interp_z(bx->jxm, bx->jy, bx->jz, bx->xm_offset, mesh->ShiftOrder);
-      fval->x2p = interp_z(bx->jx2p, bx->jy, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
-      fval->x2m = interp_z(bx->jx2m, bx->jy, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
+      fval->xp = interpZ(bx->jxp, bx->jy, bx->jz, bx->xp_offset, mesh->ShiftOrder);
+      fval->xm = interpZ(bx->jxm, bx->jy, bx->jz, bx->xm_offset, mesh->ShiftOrder);
+      fval->x2p = interpZ(bx->jx2p, bx->jy, bx->jz, bx->x2p_offset, mesh->ShiftOrder);
+      fval->x2m = interpZ(bx->jx2m, bx->jy, bx->jz, bx->x2m_offset, mesh->ShiftOrder);
     }else {
       // No shift in the z direction
       fval->xp = block->data[bx->jxp][bx->jy][bx->jz];
@@ -1311,22 +1311,22 @@ void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
 
   // TWIST-SHIFT CONDITION
   if(bx->yp_shift) {
-    fval->yp = interp_z(bx->jx, bx->jyp, bx->jz, bx->yp_offset, mesh->TwistOrder);
+    fval->yp = interpZ(bx->jx, bx->jyp, bx->jz, bx->yp_offset, mesh->TwistOrder);
   }else
     fval->yp = block->data[bx->jx][bx->jyp][bx->jz];
   
   if(bx->ym_shift) {
-    fval->ym = interp_z(bx->jx, bx->jym, bx->jz, bx->ym_offset, mesh->TwistOrder);
+    fval->ym = interpZ(bx->jx, bx->jym, bx->jz, bx->ym_offset, mesh->TwistOrder);
   }else
     fval->ym = block->data[bx->jx][bx->jym][bx->jz];
 
   if(bx->y2p_shift) {
-    fval->y2p = interp_z(bx->jx, bx->jy2p, bx->jz, bx->yp_offset, mesh->TwistOrder);
+    fval->y2p = interpZ(bx->jx, bx->jy2p, bx->jz, bx->yp_offset, mesh->TwistOrder);
   }else
     fval->y2p = block->data[bx->jx][bx->jy2p][bx->jz];
 
   if(bx->y2m_shift) {
-    fval->y2m = interp_z(bx->jx, bx->jy2m, bx->jz, bx->ym_offset, mesh->TwistOrder);
+    fval->y2m = interpZ(bx->jx, bx->jy2m, bx->jz, bx->ym_offset, mesh->TwistOrder);
   }else
     fval->y2m = block->data[bx->jx][bx->jy2m][bx->jz];
 
@@ -1338,7 +1338,7 @@ void Field3D::SetStencil(bstencil *fval, bindex *bx, bool need_x) const
   fval->z2m = block->data[bx->jx][bx->jy][bx->jz2m];
 }
 
-void Field3D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
@@ -1355,10 +1355,10 @@ void Field3D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
 
   if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    fval.p = interp_z(bx.jxp, bx.jy, bx.jz, bx.xp_offset, mesh->ShiftOrder);
-    fval.m = interp_z(bx.jxm, bx.jy, bx.jz, bx.xm_offset, mesh->ShiftOrder);
-    fval.pp = interp_z(bx.jxp, bx.jy, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
-    fval.mm = interp_z(bx.jxm, bx.jy, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
+    fval.p = interpZ(bx.jxp, bx.jy, bx.jz, bx.xp_offset, mesh->ShiftOrder);
+    fval.m = interpZ(bx.jxm, bx.jy, bx.jz, bx.xm_offset, mesh->ShiftOrder);
+    fval.pp = interpZ(bx.jxp, bx.jy, bx.jz, bx.x2p_offset, mesh->ShiftOrder);
+    fval.mm = interpZ(bx.jxm, bx.jy, bx.jz, bx.x2m_offset, mesh->ShiftOrder);
   }else {
     // No shift in the z direction
     fval.p = block->data[bx.jxp][bx.jy][bx.jz];
@@ -1386,7 +1386,7 @@ void Field3D::SetXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-void Field3D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
@@ -1414,22 +1414,22 @@ void Field3D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }else {
     // TWIST-SHIFT CONDITION
     if(bx.yp_shift) {
-      fval.p = interp_z(bx.jx, bx.jyp, bx.jz, bx.yp_offset, mesh->TwistOrder);
+      fval.p = interpZ(bx.jx, bx.jyp, bx.jz, bx.yp_offset, mesh->TwistOrder);
     }else
       fval.p = block->data[bx.jx][bx.jyp][bx.jz];
     
     if(bx.ym_shift) {
-      fval.m = interp_z(bx.jx, bx.jym, bx.jz, bx.ym_offset, mesh->TwistOrder);
+      fval.m = interpZ(bx.jx, bx.jym, bx.jz, bx.ym_offset, mesh->TwistOrder);
     }else
       fval.m = block->data[bx.jx][bx.jym][bx.jz];
     
     if(bx.y2p_shift) {
-      fval.pp = interp_z(bx.jx, bx.jy2p, bx.jz, bx.yp_offset, mesh->TwistOrder);
+      fval.pp = interpZ(bx.jx, bx.jy2p, bx.jz, bx.yp_offset, mesh->TwistOrder);
     }else
       fval.pp = block->data[bx.jx][bx.jy2p][bx.jz];
     
     if(bx.y2m_shift) {
-      fval.mm = interp_z(bx.jx, bx.jy2m, bx.jz, bx.ym_offset, mesh->TwistOrder);
+      fval.mm = interpZ(bx.jx, bx.jy2m, bx.jz, bx.ym_offset, mesh->TwistOrder);
     }else
       fval.mm = block->data[bx.jx][bx.jy2m][bx.jz];
   }
@@ -1453,7 +1453,7 @@ void Field3D::SetYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-void Field3D::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
+void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
@@ -1493,7 +1493,7 @@ void Field3D::SetZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-real Field3D::interp_z(int jx, int jy, int jz0, real zoffset, int order) const
+real Field3D::interpZ(int jx, int jy, int jz0, real zoffset, int order) const
 {
   int zi;
   real result;
@@ -1546,7 +1546,7 @@ real Field3D::interp_z(int jx, int jy, int jz0, real zoffset, int order) const
   return result;
 }
 
-void Field3D::ShiftZ(int jx, int jy, double zangle)
+void Field3D::shiftZ(int jx, int jy, double zangle)
 {
   static dcomplex *v = (dcomplex*) NULL;
   int jz;
@@ -1565,10 +1565,10 @@ void Field3D::ShiftZ(int jx, int jy, double zangle)
   if(ncz == 1)
     return;
 
-  Allocate();
+ allocate();
 
   if(v == (dcomplex*) NULL) {
-    // Allocate memory
+    //allocate memory
     v = new dcomplex[ncz/2 + 1];
   }
   
@@ -1585,21 +1585,21 @@ void Field3D::ShiftZ(int jx, int jy, double zangle)
   block->data[jx][jy][ncz] = block->data[jx][jy][0];
 }
 
-const Field3D Field3D::ShiftZ(const Field2D zangle) const
+const Field3D Field3D::shiftZ(const Field2D zangle) const
 {
   Field3D result;
   int jx, jy;
 
 #ifdef CHECK
-  msg_stack.push("Field3D: ShiftZ ( Field2D )");
-  check_data();
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
 #endif
 
   result = *this;
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
-      result.ShiftZ(jx, jy, zangle[jx][jy]);
+      result.shiftZ(jx, jy, zangle[jx][jy]);
     }
   }
 
@@ -1610,21 +1610,21 @@ const Field3D Field3D::ShiftZ(const Field2D zangle) const
   return result;
 }
 
-const Field3D Field3D::ShiftZ(const real zangle) const
+const Field3D Field3D::shiftZ(const real zangle) const
 {
   Field3D result;
   int jx, jy;
 
 #ifdef CHECK
-  msg_stack.push("Field3D: ShiftZ ( real )");
-  check_data();
+  msg_stack.push("Field3D: shiftZ ( real )");
+  checkData();
 #endif
 
   result = *this;
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
-      result.ShiftZ(jx, jy, zangle);
+      result.shiftZ(jx, jy, zangle);
     }
   }
 
@@ -1635,12 +1635,12 @@ const Field3D Field3D::ShiftZ(const real zangle) const
   return result;
 }
 
-const Field3D Field3D::ShiftZ(bool toreal) const
+const Field3D Field3D::shiftZ(bool toreal) const
 {
   if(toreal) {
-    return ShiftZ(mesh->zShift);
+    return shiftZ(mesh->zShift);
   }
-  return ShiftZ(-mesh->zShift);
+  return shiftZ(-mesh->zShift);
 }
 
 
@@ -1648,12 +1648,12 @@ const Field3D Field3D::ShiftZ(bool toreal) const
  *                         SLICING
  ***************************************************************/
 
-void Field3D::getXarray(int y, int z, rvec &xv) const
+void Field3D::getXArray(int y, int z, rvec &xv) const
 {
 #ifdef CHECK
   // Check data set
   if(block == NULL) {
-    error("Field3D: getXarray on an empty data set\n");
+    error("Field3D: getXArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -1664,12 +1664,12 @@ void Field3D::getXarray(int y, int z, rvec &xv) const
     xv[x] = block->data[x][y][z];
 }
 
-void Field3D::getYarray(int x, int z, rvec &yv) const
+void Field3D::getYArray(int x, int z, rvec &yv) const
 {
 #ifdef CHECK
   // Check data set
   if(block == NULL) {
-    error("Field3D: getYarray on an empty data set\n");
+    error("Field3D: getYArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -1680,12 +1680,12 @@ void Field3D::getYarray(int x, int z, rvec &yv) const
     yv[y] = block->data[x][y][z];
 }
 
-void Field3D::getZarray(int x, int y, rvec &zv) const
+void Field3D::getZArray(int x, int y, rvec &zv) const
 {
 #ifdef CHECK
   // Check data set
   if(block == NULL) {
-    error("Field3D: getZarray on an empty data set\n");
+    error("Field3D: getZArray on an empty data set\n");
     exit(1);
   }
 #endif
@@ -1696,14 +1696,14 @@ void Field3D::getZarray(int x, int y, rvec &zv) const
     zv[z] = block->data[x][y][z];
 }
 
-void Field3D::setXarray(int y, int z, const rvec &xv)
+void Field3D::setXArray(int y, int z, const rvec &xv)
 {
-  Allocate();
+ allocate();
 
 #ifdef CHECK
   // Check that vector is correct size
   if(xv.capacity() != (unsigned int) mesh->ngx) {
-    error("Field3D: setXarray has incorrect size\n");
+    error("Field3D: setXArray has incorrect size\n");
     exit(1);
   }
 #endif
@@ -1712,14 +1712,14 @@ void Field3D::setXarray(int y, int z, const rvec &xv)
     block->data[x][y][z] = xv[x];
 }
 
-void Field3D::setYarray(int x, int z, const rvec &yv)
+void Field3D::setYArray(int x, int z, const rvec &yv)
 {
-  Allocate();
+  allocate();
 
 #ifdef CHECK
   // Check that vector is correct size
   if(yv.capacity() != (unsigned int) mesh->ngy) {
-    error("Field3D: setYarray has incorrect size\n");
+    error("Field3D: setYArray has incorrect size\n");
     exit(1);
   }
 #endif
@@ -1728,14 +1728,14 @@ void Field3D::setYarray(int x, int z, const rvec &yv)
     block->data[x][y][z] = yv[y];
 }
 
-void Field3D::setZarray(int x, int y, const rvec &zv)
+void Field3D::setZArray(int x, int y, const rvec &zv)
 {
-  Allocate();
+  allocate();
 
 #ifdef CHECK
   // Check that vector is correct size
   if(zv.capacity() != (unsigned int) (mesh->ngz-1)) {
-    error("Field3D: setZarray has incorrect size\n");
+    error("Field3D: setZArray has incorrect size\n");
     exit(1);
   }
 #endif
@@ -1744,11 +1744,11 @@ void Field3D::setZarray(int x, int y, const rvec &zv)
     block->data[x][y][z] = zv[z];
 }
 
-const FieldPerp Field3D::Slice(int y) const
+const FieldPerp Field3D::slice(int y) const
 {
   FieldPerp result;
 
-  result.Set(*this, y);
+  result.set(*this, y);
 
 #ifdef TRACK
   result.name = "Slice("+name+")";
@@ -1761,7 +1761,7 @@ const FieldPerp Field3D::Slice(int y) const
  *                      MATH FUNCTIONS
  ***************************************************************/
 
-const Field3D Field3D::Sqrt() const
+const Field3D Field3D::sqrt() const
 {
   int jx, jy, jz;
   Field3D result;
@@ -1789,12 +1789,12 @@ const Field3D Field3D::Sqrt() const
   result.name = "Sqrt("+name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++) 
       for(jz=0;jz<mesh->ngz;jz++)
-	result.block->data[jx][jy][jz] = sqrt(block->data[jx][jy][jz]);
+	result.block->data[jx][jy][jz] = ::sqrt(block->data[jx][jy][jz]);
 
 #ifdef CHECK
   msg_stack.pop();
@@ -1805,7 +1805,7 @@ const Field3D Field3D::Sqrt() const
   return result;
 }
 
-const Field3D Field3D::Abs() const
+const Field3D Field3D::abs() const
 {
   int jx, jy, jz;
   Field3D result;
@@ -1822,7 +1822,7 @@ const Field3D Field3D::Abs() const
   result.name = "Abs("+name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++) 
@@ -1834,7 +1834,7 @@ const Field3D Field3D::Abs() const
   return result;
 }
 
-real Field3D::Min(bool allpe) const
+real Field3D::min(bool allpe) const
 {
   int jx, jy, jz;
   real result;
@@ -1872,7 +1872,7 @@ real Field3D::Min(bool allpe) const
   return result;
 }
 
-real Field3D::Max(bool allpe) const
+real Field3D::max(bool allpe) const
 {
   int jx, jy, jz;
   real result;
@@ -1954,7 +1954,7 @@ int Field3D::getData(int x, int y, int z, real *rptr) const
 
 int Field3D::setData(int x, int y, int z, void *vptr)
 {
-  Allocate();
+  allocate();
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
@@ -1970,7 +1970,7 @@ int Field3D::setData(int x, int y, int z, void *vptr)
 
 int Field3D::setData(int x, int y, int z, real *rptr)
 {
-  Allocate();
+  allocate();
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
@@ -1985,7 +1985,7 @@ int Field3D::setData(int x, int y, int z, real *rptr)
 
 #ifdef CHECK
 /// Check if the data is valid
-bool Field3D::check_data(bool vital) const
+bool Field3D::checkData(bool vital) const
 {
   if(block ==  NULL) {
     error("Field3D: Operation on empty data\n");
@@ -2023,7 +2023,7 @@ memblock3d* Field3D::blocklist = NULL;
 memblock3d* Field3D::free_block = NULL;
 
 /// Get a new block of data, either from free list or allocate
-memblock3d *Field3D::new_block() const
+memblock3d *Field3D::newBlock() const
 {
   memblock3d *nb;
 
@@ -2045,8 +2045,6 @@ memblock3d *Field3D::new_block() const
     blocklist = nb;
 
     nblocks++;
-
-    //output.write("Allocated: %d\n", nblocks);
   }
 
   return nb;
@@ -2054,7 +2052,7 @@ memblock3d *Field3D::new_block() const
 
 
 /// Makes sure data is allocated and only referenced by this object
-void Field3D::alloc_data() const
+void Field3D::allocData() const
 {
   /// Check if any data associated with this object
   if(block != (memblock3d*) NULL) {
@@ -2064,7 +2062,7 @@ void Field3D::alloc_data() const
     if(block->refs > 1) {
       // Need to get a new block and copy across
 
-      memblock3d* nb = new_block();
+      memblock3d* nb = newBlock();
 
       for(int jx=0;jx<mesh->ngx;jx++)
 	for(int jy=0;jy<mesh->ngy;jy++)
@@ -2077,12 +2075,12 @@ void Field3D::alloc_data() const
   }else {
     // No data - get a new block
 
-    block = new_block();
+    block = newBlock();
     
   }
 }
 
-void Field3D::free_data()
+void Field3D::freeData()
 {
   // put data block onto stack
 
@@ -2114,7 +2112,7 @@ const Field3D operator-(const real &lhs, const Field3D &rhs)
   result.name = "(real-"+rhs.name+")";
 #endif
 
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2196,22 +2194,22 @@ const Field3D operator^(const real lhs, const Field3D &rhs)
 
 const Field3D sqrt(const Field3D &f)
 {
-  return f.Sqrt();
+  return f.sqrt();
 }
 
 const Field3D abs(const Field3D &f)
 {
-  return f.Abs();
+  return f.abs();
 }
 
 real min(const Field3D &f, bool allpe)
 {
-  return f.Min(allpe);
+  return f.min(allpe);
 }
 
 real max(const Field3D &f, bool allpe)
 {
-  return f.Max(allpe);
+  return f.max(allpe);
 }
 
 // Friend functions
@@ -2221,7 +2219,7 @@ const Field3D sin(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2242,7 +2240,7 @@ const Field3D cos(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2263,7 +2261,7 @@ const Field3D tan(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2284,7 +2282,7 @@ const Field3D sinh(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2305,7 +2303,7 @@ const Field3D cosh(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2326,7 +2324,7 @@ const Field3D tanh(const Field3D &f)
   Field3D result;
   int jx, jy, jz;
   
-  result.Allocate();
+  result.allocate();
   
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
@@ -2351,11 +2349,11 @@ const Field3D filter(const Field3D &var, int N0)
   int ncz = mesh->ngz-1;
 
   if(f == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     f = new dcomplex[ncz/2 + 1];
   }
 
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
@@ -2405,7 +2403,7 @@ const Field3D smooth(const Field3D &var, real zmax, real xmax)
     return result;
   }
   
-  result.Allocate();
+  result.allocate();
 
   zmi = ncz/2;
   xmi = mesh->ngx;
@@ -2472,7 +2470,7 @@ const Field3D smooth(const Field3D &var, real zmax, real xmax)
 */
 
 // Fourier filter in z
-const Field3D low_pass(const Field3D &var, int zmax)
+const Field3D lowPass(const Field3D &var, int zmax)
 {
   Field3D result;
   static dcomplex *f = NULL;
@@ -2495,7 +2493,7 @@ const Field3D low_pass(const Field3D &var, int zmax)
     return var;
   }
   
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
@@ -2520,7 +2518,7 @@ const Field3D low_pass(const Field3D &var, int zmax)
   return result;
 }
 // Fourier filter in z with zmin
-const Field3D low_pass(const Field3D &var, int zmax, int zmin)
+const Field3D lowPass(const Field3D &var, int zmax, int zmin)
 {
   Field3D result;
   static dcomplex *f = NULL;
@@ -2543,7 +2541,7 @@ const Field3D low_pass(const Field3D &var, int zmax, int zmin)
     return result;
   }
   
-  result.Allocate();
+  result.allocate();
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {

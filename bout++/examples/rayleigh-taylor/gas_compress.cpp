@@ -62,7 +62,7 @@ int physics_init(bool restarting)
     // Apply boundary conditions
     apply_boundary(N, "density");
     apply_boundary(P, "pressure");
-    V.to_contravariant();
+    V.toContravariant();
     apply_boundary(V, "v");
 
     // Set variables to these values (+ the initial perturbation)
@@ -116,7 +116,7 @@ int physics_run(real t)
   // Set boundary conditions
   apply_boundary(F_N, "density");
   apply_boundary(F_P, "pressure");
-  F_V.to_contravariant();
+  F_V.toContravariant();
   apply_boundary(F_V, "v");
 
   //output.write("finished\n");

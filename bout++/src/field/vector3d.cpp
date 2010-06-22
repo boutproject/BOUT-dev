@@ -47,7 +47,7 @@ Vector3D::~Vector3D()
 
 }
 
-void Vector3D::to_covariant()
+void Vector3D::toCovariant()
 {  
   if(!covariant) {
     Field3D gx, gy, gz;
@@ -64,7 +64,7 @@ void Vector3D::to_covariant()
     covariant = true;
   }
 }
-void Vector3D::to_contravariant()
+void Vector3D::toContravariant()
 {  
   if(covariant) {
     // multiply by g^{ij}
@@ -126,9 +126,9 @@ Vector3D & Vector3D::operator+=(const Vector3D &rhs)
 {
   // Make sure they're of the same type (co/contra-variant)
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
 
   x += rhs.x;
@@ -141,9 +141,9 @@ Vector3D & Vector3D::operator+=(const Vector3D &rhs)
 Vector3D & Vector3D::operator+=(const Vector2D &rhs)
 {
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
 
   x += rhs.x;
@@ -169,9 +169,9 @@ const Vector3D Vector3D::operator-() const
 Vector3D & Vector3D::operator-=(const Vector3D &rhs)
 {
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
   
   x -= rhs.x;
@@ -184,9 +184,9 @@ Vector3D & Vector3D::operator-=(const Vector3D &rhs)
 Vector3D & Vector3D::operator-=(const Vector2D &rhs)
 {
   if(rhs.covariant) {
-    to_covariant();
+    toCovariant();
   }else {
-    to_contravariant();
+    toContravariant();
   }
   
   x -= rhs.x;
@@ -262,8 +262,8 @@ Vector3D & Vector3D::operator^=(const Vector3D &rhs)
 
   // Make sure both vector components are covariant
   Vector3D rco = rhs;
-  rco.to_covariant();
-  to_covariant();
+  rco.toCovariant();
+  toCovariant();
 
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/mesh->J;
@@ -282,8 +282,8 @@ Vector3D & Vector3D::operator^=(const Vector2D &rhs)
   
   // Make sure both vector components are covariant
   Vector2D rco = rhs;
-  rco.to_covariant();
-  to_covariant();
+  rco.toCovariant();
+  toCovariant();
   
   // calculate contravariant components of cross-product
   result.x = (y*rco.z - z*rco.y)/mesh->J;
@@ -458,15 +458,15 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const
  *               Z SHIFTING
  ***************************************************************/
 
-const Vector3D Vector3D::ShiftZ(const real zangle) const
+const Vector3D Vector3D::shiftZ(const real zangle) const
 {
   Vector3D result;
 
   result.covariant = covariant;
 
-  result.x = x.ShiftZ(zangle);
-  result.y = y.ShiftZ(zangle);
-  result.z = z.ShiftZ(zangle);
+  result.x = x.shiftZ(zangle);
+  result.y = y.shiftZ(zangle);
+  result.z = z.shiftZ(zangle);
 
   return result;
 }

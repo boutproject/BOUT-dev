@@ -219,7 +219,7 @@ real operator^(real lhs, const real &rhs)
  * String routines
  **************************************************************************/
 
-/// Allocate memory for a copy of given string
+///.allocate memory for a copy of given string
 char* copy_string(const char* s)
 {
   char *s2;

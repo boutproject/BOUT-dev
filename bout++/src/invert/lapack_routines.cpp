@@ -65,7 +65,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   static fcmplx *dl, *d, *du, *x;
 
   if(n > len) {
-    // Allocate more memory (as a single block)
+    //.allocate more memory (as a single block)
     if(len > 0)
       delete[] dl;
 
@@ -136,7 +136,7 @@ bool tridag(const real *a, const real *b, const real *c, const real *r, real *u,
   static real *dl, *d, *du, *x;
 
   if(n > len) {
-    // Allocate more memory (as a single block)
+    //.allocate more memory (as a single block)
     if(len > 0)
       delete[] dl;
 
@@ -538,7 +538,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 {
   static dcomplex **al;
   static unsigned long *indx;
-  static int an = 0, am1 = 0; // Allocated sizes
+  static int an = 0, am1 = 0; //.allocated sizes
   dcomplex d;
   
   if(an < n) {

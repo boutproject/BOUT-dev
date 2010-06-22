@@ -47,8 +47,8 @@ class Vector3D : public FieldData {
 
   bool covariant; // true if the components are covariant (default)
 
-  void to_covariant();
-  void to_contravariant();
+  void toCovariant();
+  void toContravariant();
 
   // Assignment
   Vector3D & operator=(const Vector3D &rhs);
@@ -97,12 +97,12 @@ class Vector3D : public FieldData {
   const Vector3D operator^(const Vector2D &rhs) const;
 
   // Z shifting
-  void ShiftZ(int jx, int jy, double zangle) {
-      x.ShiftZ(jx, jy, zangle);
-      y.ShiftZ(jx, jy, zangle);
-      z.ShiftZ(jx, jy, zangle);
+  void shiftZ(int jx, int jy, double zangle) {
+      x.shiftZ(jx, jy, zangle);
+      y.shiftZ(jx, jy, zangle);
+      z.shiftZ(jx, jy, zangle);
   }
-  const Vector3D ShiftZ(const real zangle) const;
+  const Vector3D shiftZ(const real zangle) const;
 
   // Non-member functions
   friend const Field3D abs(const Vector3D &v);
@@ -149,9 +149,9 @@ class Vector3D : public FieldData {
   void setMark(void *setting) {
     bool *c = (bool*) setting;
     if(*c) {
-      to_covariant();
+      toCovariant();
     }else
-      to_contravariant();
+      toContravariant();
   }
   real *getData(int component) {
     switch(component) {

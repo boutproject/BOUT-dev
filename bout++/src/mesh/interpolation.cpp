@@ -63,7 +63,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
 
     result = var; // NOTE: This is just for boundaries. FIX!
 
-    result.Allocate();
+    result.allocate();
     real ***d = var.getData();
     
     if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
@@ -80,7 +80,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       case CELL_XLOW: {
 	start_index(&bx, RGN_NOX);
 	do {
-	  var.SetXStencil(s, bx, loc);
+	  var.setXStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
 	}while(next_index3(&bx));
 	break;
@@ -89,7 +89,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       case CELL_YLOW: {
 	start_index(&bx, RGN_NOY);
 	do {
-	  var.SetYStencil(s, bx, loc);
+	  var.setYStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
 	}while(next_index3(&bx));
 	break;
@@ -98,7 +98,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
       case CELL_ZLOW: {
 	start_index(&bx, RGN_NOZ);
 	do {
-	  var.SetZStencil(s, bx, loc);
+	  var.setZStencil(s, bx, loc);
 	  d[bx.jx][bx.jy][bx.jz] = interp(s);
 	}while(next_index3(&bx));
 	break;
@@ -191,7 +191,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 #endif
   
 
-  result.Allocate();
+  result.allocate();
 
   // Get the pointers to the data, to make things a bit quicker
   real ***de_x, ***de_z, ***f_data, ***r_data;
@@ -202,7 +202,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   Field3D f = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
-    f = var.ShiftZ(true); // Shift into real space
+    f = var.shiftZ(true); // Shift into real space
   }
 
   f_data = f.getData();
@@ -276,7 +276,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
       }
 
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
 
 #ifdef CHECK
   msg_stack.pop();
@@ -294,7 +294,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
 
   // Get the pointers to the data, to make things a bit quicker
   real **f_data;

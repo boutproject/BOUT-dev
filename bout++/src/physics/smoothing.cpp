@@ -39,11 +39,11 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
   Field3D fs, result;
 
   if(realspace) {
-    fs = f.ShiftZ(true); // Shift into real space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f; 
 
-  result.Allocate();
+  result.allocate();
   
   // Copy boundary region
   for(int jy=0;jy<mesh->ngy;jy++)
@@ -61,7 +61,7 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
       }
 
   if(realspace)
-    result = result.ShiftZ(false); // Shift back
+    result = result.shiftZ(false); // Shift back
 
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -74,7 +74,7 @@ const Field3D smooth_y(const Field3D &f)
 {
   Field3D result;
 
-  result.Allocate();
+  result.allocate();
   
   // Copy boundary region
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -146,18 +146,18 @@ const Field3D nl_filter_x(const Field3D &f, real w)
 #endif
   
   Field3D fs;
-  fs = f.ShiftZ(true); // Shift into real space
+  fs = f.shiftZ(true); // Shift into real space
   Field3D result;
   rvec v;
   
   for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<mesh->ngz-1;jz++) {
-      fs.getXarray(jy, jz, v);
+      fs.getXArray(jy, jz, v);
       nl_filter(v, w);
-      result.setXarray(jy, jz, v);
+      result.setXArray(jy, jz, v);
     }
   
-  result = result.ShiftZ(false); // Shift back
+  result = result.shiftZ(false); // Shift back
 
 #ifdef CHECK
   msg_stack.pop();
@@ -176,9 +176,9 @@ const Field3D nl_filter_y(const Field3D &fs, real w)
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz-1;jz++) {
-      fs.getYarray(jx, jz, v);
+      fs.getYArray(jx, jz, v);
       nl_filter(v, w);
-      result.setYarray(jx, jz, v);
+      result.setYArray(jx, jz, v);
     }
   
 #ifdef CHECK
@@ -198,9 +198,9 @@ const Field3D nl_filter_z(const Field3D &fs, real w)
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++) {
-      fs.getZarray(jx, jy, v);
+      fs.getZArray(jx, jy, v);
       nl_filter(v, w);
-      result.setZarray(jx, jy, v);
+      result.setZArray(jx, jy, v);
     }
 
 #ifdef CHECK

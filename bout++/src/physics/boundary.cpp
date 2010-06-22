@@ -92,7 +92,7 @@ void bndry_inner_flat(Field3D &var)
     return;
   
   if(mesh->ShiftXderivs) // Shift into real space
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
   
   for(int jx=mesh->xstart-1;jx>=0;jx--)
     for(int jy=0;jy<mesh->ngy;jy++)
@@ -100,7 +100,7 @@ void bndry_inner_flat(Field3D &var)
 	var[jx][jy][jz] = var[mesh->xstart][jy][jz];
     
   if(mesh->ShiftXderivs) // Shift back
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 }
 
 ///////////////////////// OUTER X ////////////////////////////
@@ -1440,7 +1440,7 @@ void bndry_core_flat(Field3D &var)
   
   if((MYPE_IN_CORE == 1) && mesh->first_x()) {
     if(mesh->ShiftXderivs)
-      var = var.ShiftZ(true);
+      var = var.shiftZ(true);
 
     for(jx=0;jx<mesh->xstart;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
@@ -1451,7 +1451,7 @@ void bndry_core_flat(Field3D &var)
     }
     
     if(mesh->ShiftXderivs)
-      var = var.ShiftZ(false);
+      var = var.shiftZ(false);
   }
 }
 
@@ -1477,7 +1477,7 @@ void bndry_core_laplace(Field3D &var)
   int ncz = mesh->ngz-1;
   
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
@@ -1526,7 +1526,7 @@ void bndry_core_laplace2(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
@@ -1616,7 +1616,7 @@ void bndry_pf_flat(Field3D &var)
 
   if((MYPE_IN_CORE == 0) && mesh->first_x()) {
     if(mesh->ShiftXderivs)
-      var = var.ShiftZ(true);
+      var = var.shiftZ(true);
 
     for(jx=0;jx<mesh->xstart;jx++) {
       for(jy=0;jy<mesh->ngy;jy++) {
@@ -1627,7 +1627,7 @@ void bndry_pf_flat(Field3D &var)
     }
     
     if(mesh->ShiftXderivs)
-      var = var.ShiftZ(false);
+      var = var.shiftZ(false);
   }
 }
 
@@ -1652,7 +1652,7 @@ void bndry_pf_laplace(Field3D &var)
     return;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
@@ -1766,7 +1766,7 @@ void bndry_sol_flat(Field3D &var)
     return;
   
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
 
   for(jx=mesh->ngx-1;jx>mesh->xend;jx--) {
     for(jy=0;jy<mesh->ngy;jy++) {
@@ -1777,7 +1777,7 @@ void bndry_sol_flat(Field3D &var)
   }
 
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 }
 
 void bndry_sol_flat(Vector3D &var)
@@ -1801,7 +1801,7 @@ void bndry_sol_laplace(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
@@ -1855,7 +1855,7 @@ void bndry_sol_divcurl(Vector3D &var)
   if(!mesh->last_x())
     return;
 
-  var.to_covariant();
+  var.toCovariant();
 
   if(mesh->xstart > 2) {
     output.write("Error: Div = Curl = 0 boundary condition doesn't work for MXG > 2. Sorry\n");
@@ -2052,7 +2052,7 @@ void bndry_inner_sym(Field3D &var)
     return;
 
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
 
   xb = 2*mesh->xstart;
   if(!mesh->BoundaryOnCell)
@@ -2064,7 +2064,7 @@ void bndry_inner_sym(Field3D &var)
 	var[jx][jy][jz] = var[xb-jx][jy][jz];
   
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 }
 
 void bndry_sol_sym(Field3D &var)
@@ -2075,7 +2075,7 @@ void bndry_sol_sym(Field3D &var)
     return;
   
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
 
   xb = mesh->xend;
   if(mesh->BoundaryOnCell)
@@ -2087,7 +2087,7 @@ void bndry_sol_sym(Field3D &var)
 	var[mesh->xend+1+jx][jy][jz] = var[xb-jx][jy][jz];
 
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 }
 
 // Relax to symmetric boundary
@@ -2116,7 +2116,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
   Field3D var;
   var = var1;
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
 
   xb = 2*mesh->xstart;
   if(!mesh->BoundaryOnCell)
@@ -2128,7 +2128,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 	F_var[jx][jy][jz] = rate*(var[xb-jx][jy][jz] - var[jx][jy][jz]);
   
   if(mesh->ShiftXderivs)
-    F_var = F_var.ShiftZ(false);
+    F_var = F_var.shiftZ(false);
 }
 
 void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
@@ -2143,7 +2143,7 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
   Field3D var;
   var = var1; 
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(true);
+    var = var.shiftZ(true);
 
   xb = mesh->xend;
   if(mesh->BoundaryOnCell)
@@ -2155,7 +2155,7 @@ void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
 	F_var[mesh->xend+1+jx][jy][jz] = rate*(var[xb-jx][jy][jz] - var[mesh->xend+1+jx][jy][jz]);
 
   if(mesh->ShiftXderivs)
-    var = var.ShiftZ(false);
+    var = var.shiftZ(false);
 }
 
 /////////////////// Y BOUNDARIES ////////////////
@@ -2403,7 +2403,7 @@ void bndry_inner_zero_laplace(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c1 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
     c3 = new dcomplex[ncz/2 + 1];
@@ -2463,7 +2463,7 @@ void bndry_outer_zero_laplace(Field3D &var)
   int ncz = mesh->ngz-1;
   
   if(c1 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
     c3 = new dcomplex[ncz/2 + 1];
@@ -2507,7 +2507,7 @@ void bndry_inner_laplace_decay(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
   }
@@ -2547,7 +2547,7 @@ void bndry_outer_laplace_decay(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
   }
@@ -2589,7 +2589,7 @@ void bndry_inner_const_laplace_decay(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
@@ -2641,7 +2641,7 @@ void bndry_outer_const_laplace_decay(Field3D &var)
   int ncz = mesh->ngz-1;
 
   if(c0 == (dcomplex*) NULL) {
-    // Allocate memory
+    //.allocate memory
     c0 = new dcomplex[ncz/2 + 1];
     c1 = new dcomplex[ncz/2 + 1];
     c2 = new dcomplex[ncz/2 + 1];
