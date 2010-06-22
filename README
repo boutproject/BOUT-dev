@@ -15,7 +15,7 @@ CITATION          Contains the paper citation for BOUT++
 COPYING           GPL license
 COPYING.LESSER    LGPL license
 
-BOUT++            The main code directory
+bout++            The main code directory
   |
   |/manual        Contains documentation, in particular the user manual.
   |               Read this if you're new to BOUT / BOUT++.
@@ -25,7 +25,7 @@ BOUT++            The main code directory
 idllib            Analysis codes in IDL. Add this to your IDL_PATH
                   environment variable.
 
-PDB2IDL           Library to read Portable Data Binary (PDB) files into IDL
+pdb2idl           Library to read Portable Data Binary (PDB) files into IDL
 
 pylib             Analysis codes in Python
   |
