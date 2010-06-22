@@ -272,7 +272,7 @@ int BoutMesh::load()
 
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-  GridDataSource* s = find_source("ShiftAngle");
+  GridDataSource* s = findSource("ShiftAngle");
   if(s) {
     s->open("ShiftAngle");
     s->setOrigin(XGLOBAL(0));
@@ -340,7 +340,7 @@ int BoutMesh::load()
   }
 
   /// Calculate contravariant metric components
-  if(calc_covariant())
+  if(calcCovariant())
     return 1;
 
   /// Calculate Jacobian and Bxy
@@ -577,7 +577,7 @@ int BoutMesh::get(int &ival, const char *name)
   int msg_pos = msg_stack.push("Loading integer: BoutMesh::get(int, %s)", name);
 #endif
 
-  GridDataSource* s = find_source(name);
+  GridDataSource* s = findSource(name);
   if(s == NULL) {
 #ifdef CHECK
     msg_stack.pop(msg_pos);
@@ -602,7 +602,7 @@ int BoutMesh::get(int &ival, const char *name)
 /// A real number
 int BoutMesh::get(real &rval, const char *name)
 {
-  GridDataSource* s = find_source(name);
+  GridDataSource* s = findSource(name);
   if(s == NULL)
     return 1;
   
@@ -624,7 +624,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
   int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
 #endif
   
-  GridDataSource *s = find_source(name);
+  GridDataSource *s = findSource(name);
   if(s == NULL) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
@@ -788,7 +788,7 @@ int BoutMesh::get(Field3D &var, const char *name)
   msg_stack.push("Loading 3D field: BoutMesh::get(Field3D, %s)", name);
 #endif
   
-  GridDataSource *s = find_source(name);
+  GridDataSource *s = findSource(name);
   if(s == NULL) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
     var = 0.0;
@@ -1324,17 +1324,17 @@ int BoutMesh::wait(comm_handle handle)
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::first_x()
+bool BoutMesh::firstX()
 {
   return PE_XIND == 0;
 }
 
-bool BoutMesh::last_x()
+bool BoutMesh::lastX()
 {
   return PE_XIND == NXPE-1;
 }
 
-int BoutMesh::send_xout(real *buffer, int size, int tag)
+int BoutMesh::sendXOut(real *buffer, int size, int tag)
 {
   if(PE_XIND == NXPE-1)
     return 1;
@@ -1351,7 +1351,7 @@ int BoutMesh::send_xout(real *buffer, int size, int tag)
   return 0;
 }
 
-int BoutMesh::send_xin(real *buffer, int size, int tag)
+int BoutMesh::sendXIn(real *buffer, int size, int tag)
 {
   if(PE_XIND == 0)
     return 1;
@@ -1368,7 +1368,7 @@ int BoutMesh::send_xin(real *buffer, int size, int tag)
   return 0;
 }
 
-comm_handle BoutMesh::irecv_xout(real *buffer, int size, int tag)
+comm_handle BoutMesh::irecvXOut(real *buffer, int size, int tag)
 {
   if(PE_XIND == NXPE-1)
     return NULL;
@@ -1393,7 +1393,7 @@ comm_handle BoutMesh::irecv_xout(real *buffer, int size, int tag)
   return (void*) ch;
 }
 
-comm_handle BoutMesh::irecv_xin(real *buffer, int size, int tag)
+comm_handle BoutMesh::irecvXIn(real *buffer, int size, int tag)
 {
   if(PE_XIND == 0)
     return NULL;
@@ -2116,13 +2116,13 @@ void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
     }
 }
 
-const Field2D BoutMesh::average_y(const Field2D &f)
+const Field2D BoutMesh::averageY(const Field2D &f)
 {
   static MPI_Op op;
   static bool opdefined = false;
 
 #ifdef CHECK
-  msg_stack.push("average_y(Field2D)");
+  msg_stack.push("averageY(Field2D)");
 #endif
 
   if(!opdefined) {

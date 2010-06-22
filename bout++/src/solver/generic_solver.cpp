@@ -506,13 +506,13 @@ int GenericSolver::getLocalN()
   delete xi;
   
   // X inner
-  if(mesh->first_x()) {
+  if(mesh->firstX()) {
     local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
-  if(mesh->last_x()) {
+  if(mesh->lastX()) {
     local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region outer X\n");
   }

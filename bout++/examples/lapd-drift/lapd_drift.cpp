@@ -429,7 +429,7 @@ int physics_run(real t)
     if(evolve_source || input_source) {
       // Evolve source
       if(evolve_source)
-        F_Sn = average_y(-1. * source_alpha * Ni.DC() / Ni0);
+        F_Sn = averageY(-1. * source_alpha * Ni.DC() / Ni0);
 
       // Add density source/sink
       F_Ni += Sn*where(Sn, Ni0, Nit); // Sn*Ni0 if Sn > 0, Sn*Nit if Sn < 0

@@ -220,8 +220,8 @@ namespace invpar {
     Field3D r = rc;
 
     // Decide on x range. Solve in boundary conditions
-    int xs = (mesh->first_x()) ? 0 : 2;
-    int xe = (mesh->last_x()) ? mesh->ngx-1 : (mesh->ngx-3);
+    int xs = (mesh->firstX()) ? 0 : 2;
+    int xe = (mesh->lastX()) ? mesh->ngx-1 : (mesh->ngx-3);
 
     int nxsolve = xe - xs + 1; // Number of X points to solve    
     int nylocal = mesh->yend - mesh->ystart + 1;

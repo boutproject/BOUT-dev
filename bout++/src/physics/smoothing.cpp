@@ -97,9 +97,9 @@ const Field3D smooth_y(const Field3D &f)
   return result;
 }
 
-const Field2D average_y(const Field2D &f)
+const Field2D averageY(const Field2D &f)
 {
-  return mesh->average_y(f);
+  return mesh->averageY(f);
 }
 
 /// Nonlinear filtering to remove grid-scale noise

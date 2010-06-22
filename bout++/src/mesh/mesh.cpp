@@ -12,12 +12,12 @@ real Mesh::wtime_comms = 0.0;
  * Data sources
  **************************************************************************/
 
-int Mesh::add_source(GridDataSource &source)
+int Mesh::addSource(GridDataSource &source)
 {
-  return add_source(&source);
+  return addSource(&source);
 }
 
-int Mesh::add_source(GridDataSource *source)
+int Mesh::addSource(GridDataSource *source)
 {
   source_list.push_front(source);
   return 0;
@@ -30,13 +30,13 @@ int Mesh::load(GridDataSource &source)
   old_list = source_list;
   source_list.clear();
   
-  if(add_source(source))
+  if(addSource(source))
     return 1;
   
   return load();
 }
 
-GridDataSource* Mesh::find_source(const char *name)
+GridDataSource* Mesh::findSource(const char *name)
 {
 #ifdef CHECK
   msg_stack.push("Finding source");
@@ -306,10 +306,10 @@ int Mesh::geometry()
   return 0;
 }
 
-int Mesh::calc_covariant()
+int Mesh::calcCovariant()
 {
 #ifdef CHECK
-  msg_stack.push("Mesh::calc_covariant");
+  msg_stack.push("Mesh::calcCovariant");
 #endif
   
   // Make sure metric elements are allocated
@@ -394,7 +394,7 @@ int Mesh::calc_covariant()
   return 0;
 }
 
-int Mesh::calc_contravariant()
+int Mesh::calcContravariant()
 {
   // Make sure metric elements are allocated
   g11.allocate();

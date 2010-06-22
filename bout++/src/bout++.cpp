@@ -234,10 +234,10 @@ int bout_init(int argc, char **argv)
   /// Load the grid
   if((grid_ext = options.getString("grid_format")) == NULL) {
     // Guess format based on grid filename
-    mesh->add_source(new GridFile(data_format(grid_name), grid_name));
+    mesh->addSource(new GridFile(data_format(grid_name), grid_name));
   }else {
     // User-specified format
-    mesh->add_source(new GridFile(data_format(grid_ext), grid_name));
+    mesh->addSource(new GridFile(data_format(grid_ext), grid_name));
   }
   if(mesh->load()) {
     output << "Failed to read grid. Aborting\n";

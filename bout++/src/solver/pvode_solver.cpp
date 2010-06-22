@@ -465,7 +465,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   int MYSUB = mesh->yend - mesh->ystart + 1;
 
   // Inner X boundary
-  if(mesh->first_x()) {
+  if(mesh->firstX()) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
 	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
@@ -493,7 +493,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   delete xi;
 
   // Outer X boundary
-  if(mesh->last_x()) {
+  if(mesh->lastX()) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	loop_vars_op(jx, jy, udata, p, op);

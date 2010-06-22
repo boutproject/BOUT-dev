@@ -93,8 +93,8 @@ class RangeIter {
 class Mesh {
  public:
   /// Add a data source
-  int add_source(GridDataSource &source);
-  int add_source(GridDataSource *source);
+  int addSource(GridDataSource &source);
+  int addSource(GridDataSource *source);
   
   virtual int load() = 0; ///< Load from sources
   int load(GridDataSource &source); ///< Load from specified source
@@ -126,17 +126,17 @@ class Mesh {
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
 
   // X communications
-  virtual bool first_x() = 0;
-  virtual bool last_x() = 0;
+  virtual bool firstX() = 0;
+  virtual bool lastX() = 0;
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
-  virtual int send_xout(real *buffer, int size, int tag) = 0;
-  virtual int send_xin(real *buffer, int size, int tag) = 0;
-  virtual comm_handle irecv_xout(real *buffer, int size, int tag) = 0;
-  virtual comm_handle irecv_xin(real *buffer, int size, int tag) = 0;
+  virtual int sendXOut(real *buffer, int size, int tag) = 0;
+  virtual int sendXIn(real *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvXOut(real *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvXIn(real *buffer, int size, int tag) = 0;
 
   // Y-Z surface gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
-  virtual const Field2D average_y(const Field2D &f) = 0;
+  virtual const Field2D averageY(const Field2D &f) = 0;
   virtual bool surfaceClosed(int jx, real &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
@@ -198,8 +198,8 @@ class Mesh {
 
   /// Calculate differential geometry quantities from the metric tensor
   int geometry();
-  int calc_covariant(); ///< Inverts contravatiant metric to get covariant
-  int calc_contravariant(); ///< Invert covariant metric to get contravariant
+  int calcCovariant(); ///< Inverts contravatiant metric to get covariant
+  int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
 
   //////////////////////////////////////////////////////////
@@ -211,7 +211,7 @@ class Mesh {
   
   std::list<GridDataSource*> source_list; ///< List of sources
   
-  GridDataSource *find_source(const char *name);
+  GridDataSource *findSource(const char *name);
 
  private:
   int gaussj(real **a, int n);

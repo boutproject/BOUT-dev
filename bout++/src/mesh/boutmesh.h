@@ -40,19 +40,19 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // X communications
   
-  bool first_x();
-  bool last_x();
-  int send_xout(real *buffer, int size, int tag);
-  int send_xin(real *buffer, int size, int tag);
-  comm_handle irecv_xout(real *buffer, int size, int tag);
-  comm_handle irecv_xin(real *buffer, int size, int tag);
+  bool firstX();
+  bool lastX();
+  int sendXOut(real *buffer, int size, int tag);
+  int sendXIn(real *buffer, int size, int tag);
+  comm_handle irecvXOut(real *buffer, int size, int tag);
+  comm_handle irecvXIn(real *buffer, int size, int tag);
   
   /////////////////////////////////////////////
   // Y-Z communications
   
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
-  const Field2D average_y(const Field2D&);
+  const Field2D averageY(const Field2D&);
   bool surfaceClosed(int jx, real &ts);
 
   // Boundary iteration
