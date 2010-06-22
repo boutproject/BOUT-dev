@@ -210,6 +210,43 @@ it has also changed over time, so some parts could be cleaner.
 The classes outlines in red in figure~\ref{fig:layout2} are data types 
 currently implemented in BOUT++. 
 
+\subsubsection{\code{FieldData}}
+
+All BOUT++ data types implement a standard interface for accessing their
+data, which is then used in communication and file I/O code. This interface
+is in \file{src/field/field\_data.h}. The mandatory (pure virtual) functions are:
+\begin{lstlisting}
+bool isReal(); // Returns true if field consists of real values
+bool is3D() const;   // True if variable is 3D
+  
+int byteSize() const; // Number of bytes for a single point
+int realSize() const; // Number of reals (not implemented if not real)
+  
+int getData(int x, int y, int z, void *vptr) const; // Return number of bytes
+int getData(int x, int y, int z, real *rptr) const; // Return number of reals
+  
+int setData(int x, int y, int z, void *vptr);
+int setData(int x, int y, int z, real *rptr);
+\end{lstlisting}
+
+To support file I/O there are also some additional functions which may be implemented.
+A code can check if they are implemented by calling \code{ioSupport}. If one of them
+is implemented then they all should be.
+\begin{lstlisting}
+bool  ioSupport();  // Return true if these functions are implemented
+const string getSuffix(int component) const; // For vectors e.g. "_x"
+void* getMark() const; // Store current settings (e.g. co/contra-variant)
+void  setMark(void *setting); // Return to the stored settings
+real* getData(int component); 
+void  zeroComponent(int component); // Set a component to zero
+\end{lstlisting}  
+
+For twist-shift conditions, the optional function \code{shiftZ} is called in the communication
+routines.
+\begin{lstlisting}
+void shiftZ(int jx, int jy, double zangle);
+\end{lstlisting}
+
 \subsubsection{\code{Field}}
 
 The two main types are \code{Field2D}, and \code{Field3D}. Their main functions
@@ -423,12 +460,12 @@ mesh is divided between processors (communications). The Mesh class
 
 To load in a mesh from a file or other source, there are the commands:
 \begin{lstlisting}
-int add_source(GridDataSource);   // Add a data source
-int load();                       // Load from added data sources
-int load(GridDataSource);         // Load from specified data source
+int addSource(GridDataSource);   // Add a data source
+int load();                      // Load from added data sources
+int load(GridDataSource);        // Load from specified data source
 \end{lstlisting}
 all of which return an error code (0 if successful). 
-\code{add\_source} is used to add a set of input data sources which
+\code{addSource} is used to add a set of input data sources which
 inherit from \code{GridDataSource}. \code{load()} loads the mesh
 from these sources, querying each data source in turn for the required
 variables (in the order in which they were added). \code{load(GridDataSource)}
@@ -436,7 +473,7 @@ loads the mesh from only the supplied data source.
 
 In \file{bout++.cpp}, this is used to initialise the mesh:
 \begin{lstlisting}
-mesh->add_source(new GridFile(data_format(grid_name), grid_name));
+mesh->addSource(new GridFile(data_format(grid_name), grid_name));
 if(mesh->load()) {
   output << "Failed to read grid. Aborting\n";
   return 1;
@@ -492,7 +529,7 @@ where \code{var} can be just about any BOUT++ datatype (\code{Field2D},
 For integers and reals, the implementation is fairly trivial. Uses
 the Mesh protected functions to find a data source and read data from it.
 \begin{lstlisting}
-GridDataSource* s = find_source(name);  // Find a source of data
+GridDataSource* s = findSource(name);  // Find a source of data
 s->open(name);                          // Open the source
 bool success = s->fetch(&ival, name);   // Get the data
 s->close();                             // Close the source
@@ -566,13 +603,13 @@ For parallel Laplacian inversions, communication is needed in the X
 direction only, and involves quantities which are not in Fields.
 
 \begin{lstlisting}
-bool first_x();  // True if at the inner X boundary
-bool last_x();   // True if at the outer X boundary
+bool firstX();  // True if at the inner X boundary
+bool lastX();   // True if at the outer X boundary
 int NXPE, PE_XIND; // Number of processors in X, and X processor index
-int send_xout(real *buffer, int size, int tag);
-send_xin(real *buffer, int size, int tag);
-comm_handle irecv_xout(real *buffer, int size, int tag);
-comm_handle irecv_xin(real *buffer, int size, int tag);
+int sendXOut(real *buffer, int size, int tag);
+sendXIn(real *buffer, int size, int tag);
+comm_handle irecvXOut(real *buffer, int size, int tag);
+comm_handle irecvXIn(real *buffer, int size, int tag);
 \end{lstlisting}
 
 The variables \code{NXPE} and \code{PE\_XIND} shouldn't really be there,
@@ -585,7 +622,7 @@ X should really be moved into Mesh.
 
 \begin{lstlisting}
 SurfaceIter* iterateSurfaces();
-const Field2D average_y(const Field2D &f); // Average in Y
+const Field2D averageY(const Field2D &f); // Average in Y
 bool surfaceClosed(int jx, real &ts); // Test if a surface is closed, and if so get the twist-shift angle
 \end{lstlisting}
 
@@ -659,8 +696,8 @@ Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
 // Covariant metric tensor
 Field2D g_11, g_22, g_33, g_12, g_13, g_23;
 
-int calc_covariant();     // Invert contravatiant metric to get covariant
-int calc_contravariant(); // Invert covariant metric to get contravariant
+int calcCovariant();     // Invert contravatiant metric to get covariant
+int calcContravariant(); // Invert covariant metric to get contravariant
 \end{lstlisting}
 If only one of these sets is modified by an external code, then
 \code{calc\_covariant} and \code{calc\_contravariant} can be used
