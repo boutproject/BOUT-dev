@@ -156,6 +156,17 @@ porting and modifying codes.
 core code if it is more generally applicable, or cannot be put into the physics module.
 \end{itemize}
 
+\subsection{Naming conventions}
+
+The naming of BOUT++ classes, functions etc. has not been very consistent
+historically, but please try to follow the following rules:
+\begin{itemize}
+\item Directories and files are all lower case (with underscores)
+\item Class names start with a capital letter, and each word is capitalised e.g. \code{BoutMesh}. No underscores.
+\item Class member functions start with a lower case letter with each subsequent word capitalised (e.g. \code{write()}, \code{setSection()}), also without underscores.
+\item Variable names are all lower case, with underscores if you want.
+\end{itemize}
+
 \section{Code layout}
 
 BOUT++ is organised into classes and groups of functions which operate on them: 
