@@ -3,6 +3,6 @@
 
 BOUT_TOP	= ..
 
-DIRS			= Advect1D RayleighTaylor DriftInstability
+DIRS			= advect1d rayleigh-taylor drift-instability
 
 include $(BOUT_TOP)/make.config
