@@ -9,7 +9,6 @@
 #include "derivs.h"
 #include "interpolation.h"
 #include "invert_laplace.h"
-#include "topology.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -94,7 +93,7 @@ int low_pass_z; // Low-pass filter result
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
+// Group of objects for communications
 FieldGroup comms;
 
 // BOUT-06 L1
@@ -131,7 +130,7 @@ int physics_init(bool restarting)
   mesh->get(Bpxy, "Bpxy");
   mesh->get(Btxy, "Btxy");
   mesh->get(hthe, "hthe");
-  mesh->get(dx,   "dpsi");
+  mesh->get(mesh->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -149,8 +148,8 @@ int physics_init(bool restarting)
 
   // Read some parameters
   options.setSection("2fluid");
-  options.get("AA", AA, 2.0);
-  options.get("ZZ", ZZ, 1.0);
+  OPTION(AA, 2.0);
+  OPTION(ZZ, 1.0);
 
   OPTION(estatic,     false);
   OPTION(ZeroElMass,  false);
@@ -180,10 +179,10 @@ int physics_init(bool restarting)
   OPTION(laplace_extra_rho_term, false);
   OPTION(vort_include_pi, false);
 
-  OPTION(low_pass_z,  -1);
+  options.get("low_pass_z",  low_pass_z,  -1);
 
-  OPTION(phi_flags,   0);
-  OPTION(apar_flags,  0);
+  options.get("phi_flags",   phi_flags,   0);
+  options.get("apar_flags",  apar_flags,  0);
 
   options.get("rho",   "evolve", evolve_rho,   true);
   options.get("Te",    "evolve", evolve_te,    true);
@@ -333,7 +332,7 @@ int physics_init(bool restarting)
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  dx /= rho_s*rho_s*(bmag/1e4);
+  mesh->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
@@ -354,7 +353,7 @@ int physics_init(bool restarting)
   mesh->g13 = -I*mesh->g11;
   mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  J = hthe / Bpxy;
+  mesh->J = hthe / Bpxy;
   
   mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
   mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
@@ -362,69 +361,6 @@ int physics_init(bool restarting)
   mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
-  
-  ////////////////////////////////////////////////////////
-  // Check twist-shift
-
-  // Core
-  if(YPROC(jyseps2_2) == PE_YIND) {
-    for(int i=0;i<mesh->ngx;i++) {
-      ShiftAngle[i] = mesh->zShift[i][MYG+MYSUB-1] - mesh->zShift[i][MYG+MYSUB]; // Jump across boundary
-      //output.write("%d: %e\n", i, ShiftAngle[i]);
-    }
-  }else if(YPROC(jyseps1_1+1) == PE_YIND) {
-    for(int i=0;i<mesh->ngx;i++) {
-      ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
-      //output.write("%d: %e\n", i, ShiftAngle[i]);
-    }
-  }
-  
-  // Lower PF. Note by default no Twist-Shift used here, so need to switch on
-  if(YPROC(jyseps1_1) == PE_YIND) {
-    for(int i=0;i<mesh->ngx;i++) {
-      ShiftAngle[i] = mesh->zShift[i][MYG+MYSUB-1] - mesh->zShift[i][MYG+MYSUB]; // Jump across boundary
-      //output.write("%d: %e\n", i, ShiftAngle[i]);
-    }
-    TS_up_in = true; // Switch on twist-shift
-    
-  }else if(YPROC(jyseps2_2+1) == PE_YIND) {
-    for(int i=0;i<mesh->ngx;i++) {
-      ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
-      //output.write("%d: %e\n", i, ShiftAngle[i]);
-    }
-    TS_down_in = true;
-  }
-
-  // In the core, need to set ShiftAngle everywhere for ballooning initial condition
-  MPI_Group group_world;
-  MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Group of all processors
-  
-  int *ranks = new int[NYPE];
-  int npcore = 0;
-  for(int p = YPROC(jyseps1_1+1); p <= YPROC(jyseps2_2);p++) {
-    ranks[npcore] = PROC_NUM(mesh->PE_XIND, p);
-    //output.write("%d: %d, %d\n", npcore, p, ranks[npcore]);
-    npcore++;
-  }
-  
-  MPI_Group grp;
-  int ierr = MPI_Group_incl(group_world, npcore, ranks, &grp); // Create group
-  //output.write("MPI_Group_incl: %d\n", ierr);
-  
-  MPI_Comm core_comm;
-  MPI_Comm_create(MPI_COMM_WORLD, grp, &core_comm); // Create communicator
-  
-  delete[] ranks;
-
-  if(MYPE_IN_CORE) {
-    MPI_Bcast(ShiftAngle, mesh->ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
-  }
-
-  //for(int i=0; i<mesh->ngx;i++)
-  //  output.write("%d -> %e\n", i, ShiftAngle[i]);
-
-  //MPI_Comm_free(&core_comm); // crashes
-  //MPI_Group_free(&grp);
 
   ////////////////////////////////////////////////////////
   // SET EVOLVING VARIABLES
@@ -671,10 +607,10 @@ int physics_run(real t)
 	    real dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
-	    if (jy<jstart){
+	    if (jy<mesh->ystart){
 	      dNi_dpar=-1.5*Ni[jx][jy][jz] + 2.*Ni[jx][jy+1][jz] - 0.5*Ni[jx][jy+2][jz];
 	      dPhi_dpar=-1.5*phi[jx][jy][jz] + 2.*phi[jx][jy+1][jz] - 0.5*phi[jx][jy+2][jz];
-	    }else if (jy>jend){
+	    }else if (jy>mesh->yend){
 	      // parallel derivs at right guard point
 	      dNi_dpar = 1.5*Ni[jx][jy][jz] - 2.*Ni[jx][jy-1][jz] + 0.5*Ni[jx][jy-2][jz];
 	      dPhi_dpar = 1.5*phi[jx][jy][jz] - 2.*phi[jx][jy-1][jz] + 0.5*phi[jx][jy-2][jz];
@@ -683,7 +619,7 @@ int physics_run(real t)
 	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
 	    }
 	    
-	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/dy[jx][jy];
+	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/mesh->dy[jx][jy];
 	    dNi_dpar = dNi_dpar*c0;
 	    dPhi_dpar = dPhi_dpar*c0;
 	    

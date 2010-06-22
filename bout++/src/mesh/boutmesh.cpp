@@ -285,17 +285,58 @@ int BoutMesh::load()
   }else {
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
 
-    if((jyseps2_2 / MYSUB) == MYPE) {
-      for(int i=0;i < ngx;i++)
-	ShiftAngle[i] = zShift[i][MYSUB]; // MYSUB+MYG-1
+    if(YPROC(jyseps2_2) == PE_YIND) {
+      for(int i=0;i<ngx;i++)
+	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+   
+    }else if(YPROC(jyseps1_1+1) == PE_YIND) {
+      for(int i=0;i<mesh->ngx;i++)
+	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
     }
-    if(NYPE > 1)
-      MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE,jyseps2_2/MYSUB, MPI_COMM_WORLD);
     
-    /*
-    for(int i=0;i<ngx;i++)
-      ShiftAngle[i] = 0.0;
-    */
+    // In the core, need to set ShiftAngle everywhere for ballooning initial condition
+    MPI_Group groupw;
+    MPI_Comm_group(MPI_COMM_WORLD, &groupw); // Group of all processors
+    
+    int *ranks = new int[NYPE];
+    int npcore = 0;
+    for(int p = YPROC(jyseps1_1+1); p <= YPROC(jyseps2_2);p++) {
+      ranks[npcore] = PROC_NUM(PE_XIND, p);
+      npcore++;
+    }
+    
+    MPI_Group grp;
+    int ierr = MPI_Group_incl(groupw, npcore, ranks, &grp); // Create group
+    
+    MPI_Comm core_comm;
+    MPI_Comm_create(MPI_COMM_WORLD, grp, &core_comm); // Create communicator
+    
+    delete[] ranks;
+    
+    if(MYPE_IN_CORE)
+      MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
+    
+  }
+
+  /// Can have twist-shift in the private flux regions too
+  bool twistshift_pf;
+  options.setSection(NULL);
+  OPTION(twistshift_pf, false);
+  if(twistshift_pf) {
+    output << "Adding twist-shift in lower PF region" << endl;
+    // Lower PF. Note by default no Twist-Shift used here, so need to switch on
+    if(YPROC(jyseps1_1) == PE_YIND) {
+      for(int i=0;i<ngx;i++) {
+	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+      }
+      TS_up_in = true; // Switch on twist-shift
+      
+    }else if(YPROC(jyseps2_2+1) == PE_YIND) {
+      for(int i=0;i<mesh->ngx;i++) {
+	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
+      }
+      TS_down_in = true;
+    }
   }
 
   /// Calculate contravariant metric components
