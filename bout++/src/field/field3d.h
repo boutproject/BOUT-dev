@@ -71,6 +71,8 @@ class Field3D : public Field, public FieldData {
   real*** getData() const;
   bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
 
+  /// Return a pointer to the time-derivative field
+  Field3D* timeDeriv();
 
   /// Returns DC component
   const Field2D DC();
@@ -261,6 +263,8 @@ class Field3D : public Field, public FieldData {
   void freeData();
   
   CELL_LOC location; // Location of the variable in the cell
+  
+  Field3D *ddt; ///< Time derivative (may be NULL)
 };
 
 // Non-member overloaded operators
@@ -274,5 +278,8 @@ const Field3D sqrt(const Field3D &f);
 const Field3D abs(const Field3D &f);
 real min(const Field3D &f, bool allpe=false);
 real max(const Field3D &f, bool allpe=false);
+
+/// Concise way to write time-derivatives
+#define ddt(f) (*(f.timeDeriv()))
 
 #endif /* __FIELD3D_H__ */

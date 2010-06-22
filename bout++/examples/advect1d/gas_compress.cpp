@@ -11,7 +11,6 @@ Field3D N, P; // Density, Pressure
 Vector3D V;   // velocity
 
 // Time-derivatives
-Field3D F_N, F_P;
 Vector3D F_V;
 
 // parameters
@@ -53,8 +52,8 @@ int physics_init(bool restarting)
 
   // Set evolving variables
   
-  bout_solve(N, F_N, "density");
-  bout_solve(P, F_P, "pressure");
+  bout_solve(N, "density");
+  bout_solve(P, "pressure");
   bout_solve(V, F_V, "v");
 
   if(!restarting) {
@@ -75,7 +74,7 @@ int physics_run(real t)
 
   // Density
   
-  F_N = -V_dot_Grad(V, N) - N*Div(V);
+  ddt(N) = -V_dot_Grad(V, N) - N*Div(V);
   
   // Velocity 
   
@@ -90,11 +89,11 @@ int physics_run(real t)
   
   // Pressure
 
-  F_P = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
+  ddt(P) = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
 
   // Set boundary conditions
-  apply_boundary(F_N, "density");
-  apply_boundary(F_P, "pressure");
+  apply_boundary(ddt(N), "density");
+  apply_boundary(ddt(P), "pressure");
   F_V.toContravariant();
   apply_boundary(F_V, "v");
 

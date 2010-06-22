@@ -490,9 +490,9 @@ void bout_solve(Field2D &var, Field2D &F_var, const char *name)
   solver.add(var, F_var, name);
 }
 
-void bout_solve(Field3D &var, Field3D &F_var, const char *name)
+void bout_solve(Field3D &var, const char *name)
 {
-  solver.add(var, F_var, name);
+  solver.add(var, ddt(var), name);
 }
 
 void bout_solve(Vector2D &var, Vector2D &F_var, const char *name)

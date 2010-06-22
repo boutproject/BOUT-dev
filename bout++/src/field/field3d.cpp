@@ -48,6 +48,8 @@ Field3D::Field3D()
   block = NULL;
 
   location = CELL_CENTRE; // Cell centred variable by default
+  
+  ddt = NULL;
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
@@ -69,6 +71,8 @@ Field3D::Field3D(const Field3D& f)
 
   location = f.location;
 
+  ddt = NULL;
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -77,12 +81,17 @@ Field3D::Field3D(const Field3D& f)
 Field3D::Field3D(const Field2D& f)
 {
   *this = f;
+  ddt = NULL;
 }
 
 Field3D::~Field3D()
 {
   /// free the block of data if allocated
   freeData();
+  
+  /// Delete the time derivative variable if allocated
+  if(ddt != NULL)
+    delete ddt;
 }
 
 Field3D* Field3D::clone() const
@@ -100,10 +109,8 @@ void Field3D::allocate() const
 real*** Field3D::getData() const
 {
 #ifdef CHECK
-  if(block ==  NULL) {
+  if(block ==  NULL)
     error("Field3D: getData() returning null pointer\n");
-    exit(1);
-  }
 
   // NOTE: Can't check data here since may not be set yet.
   //       Using this function circumvents the checking
@@ -113,6 +120,14 @@ real*** Field3D::getData() const
   allocate();
 
   return(block->data);
+}
+
+Field3D* Field3D::timeDeriv()
+{
+  if(ddt == NULL)
+    ddt = new Field3D();
+  
+  return ddt;
 }
 
 const Field2D Field3D::DC()
