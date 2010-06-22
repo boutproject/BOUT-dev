@@ -55,7 +55,7 @@
 
 #include "where.h"
 
-const real BOUT_VERSION = 0.80;  ///< Version number
+const real BOUT_VERSION = 0.85;  ///< Version number
 
 // BOUT++ functions (bout++.cpp). Call to add a variable to evolve
 
