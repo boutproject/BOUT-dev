@@ -190,6 +190,7 @@ int OptionFile::read(const char *format, ...)
 
 int OptionFile::command_line(int argc, char** argv)
 {
+  output << "Checking command-line options\n";
   // Go through command-line arguments
   for(int i=1;i<argc;i++) {
     // Should contain a "key=value" string
@@ -202,10 +203,10 @@ int OptionFile::command_line(int argc, char** argv)
       if(argv[i][j] == '=') {
 	if(p != -1) {
 	  // Multiple inequalities - ignore
-	  output.write("WARNING: Ignoring command-line option %s. Multiple equalities\n");
+	  output.write("\tWARNING: Ignoring option %s. Multiple equalities\n");
 	  continue;
 	}
-	p = i;
+	p = j;
       }
     }
     
@@ -495,32 +496,42 @@ void OptionFile::add(const char *section, const char *name, const char *string, 
   }else
     strcpy(s, name);
 
-  if(find(s) != -1) {
-    output.write("\tVariable '%s' re-defined on line %d. Keeping first occurrence\n", s, linenr);
-    free(s);
-    return;
-  }
-
-  // Allocate memory
-
-  if(noptions == 0) {
-    option = (t_option*) malloc(sizeof(t_option));
+  int id = find(s);
+  if(id != -1) {
+    if(linenr == -1) {
+      // On the command line - override
+      output.write("\tWARNING: Option '%s' over-ridden on command-line to '%s'\n", s, string);
+      // Free the old strings
+      free(option[id].name);
+      free(option[id].string);
+    }else {
+      output.write("\tWARNING: Variable '%s' re-defined on line %d. Keeping first occurrence\n", s, linenr);
+      free(s);
+      return;
+    }
   }else {
-    option = (t_option*) realloc(option, (noptions+1)*sizeof(t_option));
+    // Allocate memory
+    
+    if(noptions == 0) {
+      option = (t_option*) malloc(sizeof(t_option));
+    }else {
+      option = (t_option*) realloc(option, (noptions+1)*sizeof(t_option));
+    }
+    
+    id = noptions;
+    noptions++;
   }
-
+    
   // Copy name across
 
-  option[noptions].name = s;
+  option[id].name = s;
 
   // Calculate hash
 
-  option[noptions].hash = hash_string(s);
+  option[id].hash = hash_string(s);
 
   // Copy string across
-  option[noptions].string = copy_string(string);
-  
-  noptions++;
+  option[id].string = copy_string(string);
 }
 
 int OptionFile::find(const char *name)
