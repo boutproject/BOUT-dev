@@ -41,6 +41,8 @@ Field2D::Field2D()
   data = (real**) NULL;
   is_const = false;
 
+  ddt = NULL;
+
 #ifdef TRACK
   name = "<F2D>";
 #endif
@@ -51,17 +53,23 @@ Field2D::Field2D(const Field2D& f)
   data = (real**) NULL;
   is_const = false;
   *this = f;
+  
+  ddt = NULL;
 }
 
 Field2D::Field2D(real val)
 {
   data = (real**) NULL;
   *this = val;
+  ddt = NULL;
 }
 
 Field2D::~Field2D()
 {
   freeData();
+  
+  if(ddt != NULL)
+    delete ddt;
 }
 
 Field2D* Field2D::clone() const
@@ -72,6 +80,13 @@ Field2D* Field2D::clone() const
 void Field2D::allocate()
 {
   allocData();
+}
+
+Field2D* Field2D::timeDeriv()
+{
+  if(ddt == NULL)
+    ddt = new Field2D();
+  return ddt;
 }
 
 real **Field2D::getData() const

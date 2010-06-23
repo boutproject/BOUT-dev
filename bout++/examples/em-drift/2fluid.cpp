@@ -20,9 +20,6 @@ Field2D Ni0, Ti0, Te0;
 // 3D evolving fields
 Field3D rho, Ni, Ajpar;
 
-// 3D time-derivatives
-Field3D F_rho, F_Ni, F_Ajpar;
-
 // Derived 3D variables
 Field3D phi, Apar, Ve, jpar;
 
@@ -192,14 +189,14 @@ int physics_init(bool restarting)
 
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
-  bout_solve(rho,   F_rho,   "rho");
+  bout_solve(rho, "rho");
   comms.add(rho);
   
-  bout_solve(Ni,    F_Ni,    "Ni");
+  bout_solve(Ni, "Ni");
   comms.add(Ni);
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, F_Ajpar, "Ajpar");
+    bout_solve(Ajpar, "Ajpar");
     comms.add(Ajpar);
     output.write("=> Evolving ajpar\n");
   }else {
@@ -287,32 +284,32 @@ int physics_run(real t)
 
   // DENSITY EQUATION
 
-  F_Ni = -vE_Grad(Ni0, phi);
+  ddt(Ni) = -vE_Grad(Ni0, phi);
 
   // VORTICITY
 
-  F_rho = mesh->Bxy*mesh->Bxy*Div_par(jpar);
+  ddt(rho) = mesh->Bxy*mesh->Bxy*Div_par(jpar);
   
   // AJPAR
 
-  F_Ajpar = 0.0;
+  ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
-    F_Ajpar += (1./fmei)*Grad_par(phi);
-    F_Ajpar -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni);
-    F_Ajpar += 0.51*nu*jpar/Ni0;
+    ddt(Ajpar) += (1./fmei)*Grad_par(phi);
+    ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni);
+    ddt(Ajpar) += 0.51*nu*jpar/Ni0;
   }
 
   // RADIAL BOUNDARY CONDITIONS
 
   // Inner (core and PF) - zero gradient
-  bndry_inner_flat(F_rho);
-  bndry_inner_flat(F_Ni);
-  bndry_inner_flat(F_Ajpar);
+  bndry_inner_flat(ddt(rho));
+  bndry_inner_flat(ddt(Ni));
+  bndry_inner_flat(ddt(Ajpar));
  
   // Outer (SOL) - zero gradient
-  bndry_sol_flat(F_rho);
-  bndry_sol_flat(F_Ni);
-  bndry_sol_flat(F_Ajpar);
+  bndry_sol_flat(ddt(rho));
+  bndry_sol_flat(ddt(Ni));
+  bndry_sol_flat(ddt(Ajpar));
 
   return(0);
 }

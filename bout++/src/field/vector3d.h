@@ -50,6 +50,9 @@ class Vector3D : public FieldData {
   void toCovariant();
   void toContravariant();
 
+  /// Return a pointer to the time-derivative field
+  Vector3D* timeDeriv();
+
   // Assignment
   Vector3D & operator=(const Vector3D &rhs);
   Vector3D & operator=(const Vector2D &rhs);
@@ -176,7 +179,7 @@ class Vector3D : public FieldData {
   }
   
  private:
-  
+  Vector3D *ddt; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators

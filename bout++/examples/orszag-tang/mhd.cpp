@@ -9,10 +9,6 @@
 Field3D rho, p; // density, pressure
 Vector3D v, B;  // velocity, magnetic field
 
-// 3D time-derivatives
-Field3D F_rho, F_p;
-Vector3D F_v, F_B;
-
 Field3D divB; // Divergence of B (for monitoring)
 
 // parameters
@@ -42,12 +38,12 @@ int physics_init(bool restarting)
 
   // tell BOUT which variables to evolve
   
-  bout_solve(rho, F_rho, "density");
-  bout_solve(p, F_p, "pressure");
+  bout_solve(rho, "density");
+  bout_solve(p, "pressure");
   v.covariant = true; // evolve covariant components
-  bout_solve(v, F_v, "v");
+  bout_solve(v, "v");
   B.covariant = false; // evolve contravariant components
-  bout_solve(B, F_B, "B");
+  bout_solve(B, "B");
 
   output.write("dx[0,0] = %e, dy[0,0] = %e, dz = %e\n", 
 	       mesh->dx[0][0], mesh->dy[0][0], mesh->dz);
@@ -78,34 +74,34 @@ int physics_run(real t)
 
   msg_stack.push("F_rho");
   
-  F_rho = -V_dot_Grad(v, rho) - rho*Div(v);
+  ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
 
   msg_stack.pop(); msg_stack.push("F_p");
 
-  F_p = -V_dot_Grad(v, p) - gamma*p*Div(v);
+  ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
   
   msg_stack.pop(); msg_stack.push("F_v");
   
-  F_v = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
+  ddt(v) = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
 
   if(include_viscos) {
-    F_v.x += viscos * Laplacian(v.x);
-    F_v.y += viscos * Laplacian(v.y);
-    F_v.z += viscos * Laplacian(v.z);
+    ddt(v).x += viscos * Laplacian(v.x);
+    ddt(v).y += viscos * Laplacian(v.y);
+    ddt(v).z += viscos * Laplacian(v.z);
   }
   
   msg_stack.pop(); msg_stack.push("F_B");
   
-  F_B = Curl(v^B);
+  ddt(B) = Curl(v^B);
 
   // boundary conditions
 
-  apply_boundary(F_rho, "density");
-  apply_boundary(F_p, "pressure");
-  F_v.toCovariant();
-  apply_boundary(F_v, "v");
-  F_B.toContravariant();
-  apply_boundary(F_B, "B");
+  apply_boundary(ddt(rho), "density");
+  apply_boundary(ddt(p), "pressure");
+  ddt(v).toCovariant();
+  apply_boundary(ddt(v), "v");
+  ddt(B).toContravariant();
+  apply_boundary(ddt(B), "B");
 
   msg_stack.pop(); msg_stack.push("DivB");
   

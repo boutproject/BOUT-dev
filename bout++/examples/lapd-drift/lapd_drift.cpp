@@ -18,10 +18,7 @@ Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
 Vector2D b0xcv; // for curvature terms
 
 // 3D evolving fields
-Field3D rho,Ni, Ajpar;
-
-// 3D time-derivatives
-Field3D F_rho, F_Ni, F_Ajpar;
+Field3D rho, Ni, Ajpar;
 
 // Derived 3D variables
 Field3D phi, Apar, Ve, jpar;
@@ -69,7 +66,7 @@ bool niprofile;
 bool evolve_source; // If true, evolve a source/sink profile
 real source_response;  // Initial source response (inverse timescale) 
 real source_converge;  // Timescale for convergence
-Field2D Sn, F_Sn; // Density source (inverse timescale)
+Field2D Sn; // Density source (inverse timescale)
 bool input_source; // Read Sn from the input file
 
 // Communication object
@@ -264,21 +261,21 @@ int physics_init(bool restarting)
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho,   F_rho,   "rho");
+    bout_solve(rho, "rho");
     comms.add(rho);
     output.write("rho\n");
   }else
     initial_profile("rho", rho);
 
   if(evolve_ni) {
-    bout_solve(Ni,    F_Ni,    "Ni");
+    bout_solve(Ni, "Ni");
     comms.add(Ni);
     output.write("ni\n");
   }else
     initial_profile("Ni", Ni);
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, F_Ajpar, "Ajpar");
+    bout_solve(Ajpar, "Ajpar");
     comms.add(Ajpar);
     output.write("ajpar\n");
   }else {
@@ -288,7 +285,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_source) {
-    bout_solve(Sn, F_Sn, "Sn");
+    bout_solve(Sn, "Sn");
   }
   if(input_source)
     mesh->get(Sn, "Sn");
@@ -320,11 +317,6 @@ int physics_init(bool restarting)
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-
-  
-  //dump.add(F_Ni, "F_Ni", 1);
-  //dump.add(F_rho, "F_rho", 1);
-  //dump.add(F_Ajpar, "F_Ajpar", 1);
   
   return(0);
 }
@@ -417,22 +409,22 @@ int physics_run(real t)
 
   // DENSITY EQUATION
 
-  F_Ni = 0.0;
+  ddt(Ni) = 0.0;
   if(evolve_ni) {
-    F_Ni -= vE_Grad(Ni0, phi);
+    ddt(Ni) -= vE_Grad(Ni0, phi);
     
     if(nonlinear)
-      F_Ni -= vE_Grad(Ni, phi);
+      ddt(Ni) -= vE_Grad(Ni, phi);
     
-    F_Ni += Div_par_CtoL(jpar); // Left hand differencing
+    ddt(Ni) += Div_par_CtoL(jpar); // Left hand differencing
 
     if(evolve_source || input_source) {
       // Evolve source
       if(evolve_source)
-        F_Sn = averageY(-1. * source_alpha * Ni.DC() / Ni0);
+        ddt(Sn) = mesh->averageY(-1. * source_alpha * Ni.DC() / Ni0);
 
       // Add density source/sink
-      F_Ni += Sn*where(Sn, Ni0, Nit); // Sn*Ni0 if Sn > 0, Sn*Nit if Sn < 0
+      ddt(Ni) += Sn*where(Sn, Ni0, Nit); // Sn*Ni0 if Sn > 0, Sn*Nit if Sn < 0
 
     }else if(niprofile) {
       // Allowing Ni profile to change
@@ -443,7 +435,7 @@ int physics_run(real t)
 	  for(int j=0;j<mesh->ngy;j++)
 	    for(int k=0;k<mesh->ngz;k++) {
 	      if(Ni[i][j][k] < 0.0)
-		F_Ni[i][j][k] -= 0.1*Ni[i][j][k];
+		ddt(Ni)[i][j][k] -= 0.1*Ni[i][j][k];
 	      }
 	    }
       }
@@ -454,72 +446,72 @@ int physics_run(real t)
 	  for(int j=0;j<mesh->ngy;j++)
 	    for(int k=0;k<mesh->ngz;k++) {
 	      if(Ni[mesh->ngx-1-i][j][k] > 0.0)
-		F_Ni[mesh->ngx-1-i][j][k] -= 0.1*Ni[mesh->ngx-1-i][j][k];
+		ddt(Ni)[mesh->ngx-1-i][j][k] -= 0.1*Ni[mesh->ngx-1-i][j][k];
 	      }
 	}
       }
     }else
-      F_Ni -= F_Ni.DC(); // REMOVE TOROIDAL AVERAGE DENSITY
+      ddt(Ni) -= ddt(Ni).DC(); // REMOVE TOROIDAL AVERAGE DENSITY
   }
 
   // VORTICITY
 
-  F_rho = 0.0;
+  ddt(rho) = 0.0;
   if(evolve_rho) {
     
     if(nonlinear)
-      F_rho -= vE_Grad(rho, phi);
+      ddt(rho) -= vE_Grad(rho, phi);
 
-    //F_rho += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
-    F_rho += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar); // Left hand differencing
+    //ddt(rho) += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
+    ddt(rho) += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar); // Left hand differencing
 
     if(nuIonNeutral > 0.0)
-      F_rho -= nuIonNeutral * rho;
+      ddt(rho) -= nuIonNeutral * rho;
     
     if(evolve_source || input_source) {
       // Sinks also remove vorticity
-      F_rho += Sn*where(Sn, 0., rho);
+      ddt(rho) += Sn*where(Sn, 0., rho);
     }
   }
   
   // AJPAR
 
-  F_Ajpar = 0.0;
+  ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
 
-    //F_Ajpar += (1./fmei)*Grad_par(phi, CELL_YLOW);
-    F_Ajpar += (1./fmei)*Grad_par_LtoC(phi); // Right-hand differencing
+    //ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
+    ddt(Ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand differencing
 
-    //F_Ajpar -= (1./fmei)*(Tet/Nit)*Grad_par(Ni, CELL_YLOW);
-    F_Ajpar -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(Ni);
+    //ddt(Ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par(Ni, CELL_YLOW);
+    ddt(Ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(Ni);
     
-    F_Ajpar += 0.51*nu*jpar/Ni0;
+    ddt(Ajpar) += 0.51*nu*jpar/Ni0;
   }
 
   // Z filtering
   if(filter_z) {
     // Filter out all except filter_z_mode
     
-    F_rho = filter(F_rho, filter_z_mode);
-    F_Ni = filter(F_Ni, filter_z_mode);
-    F_Ajpar = filter(F_Ajpar, filter_z_mode);
+    ddt(rho) = filter(ddt(rho), filter_z_mode);
+    ddt(Ni) = filter(ddt(Ni), filter_z_mode);
+    ddt(Ajpar) = filter(ddt(Ajpar), filter_z_mode);
   }
 
   // BOUNDARY CONDITIONS
   
   if(relax_flat_bndry) {
-    bndry_inner_relax_flat(F_rho, rho);
-    bndry_sol_relax_flat(F_rho, rho);
+    bndry_inner_relax_flat(ddt(rho), rho);
+    bndry_sol_relax_flat(ddt(rho), rho);
 
-    bndry_inner_relax_flat(F_Ni, Ni);
-    bndry_sol_relax_flat(F_Ni, Ni);
+    bndry_inner_relax_flat(ddt(Ni), Ni);
+    bndry_sol_relax_flat(ddt(Ni), Ni);
 
-    bndry_inner_relax_flat(F_Ajpar, Ajpar);
-    bndry_sol_relax_flat(F_Ajpar, Ajpar);
+    bndry_inner_relax_flat(ddt(Ajpar), Ajpar);
+    bndry_sol_relax_flat(ddt(Ajpar), Ajpar);
   }else {
-    apply_boundary(F_rho, "rho");
-    apply_boundary(F_Ni, "Ni");
-    apply_boundary(F_Ajpar, "Ajpar");
+    apply_boundary(ddt(rho), "rho");
+    apply_boundary(ddt(Ni), "Ni");
+    apply_boundary(ddt(Ajpar), "Ajpar");
   }
 
   return(0);

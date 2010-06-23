@@ -17,9 +17,6 @@ Field2D Ni0, Ti0, Te0, Vi0;
 // 3D evolving fields
 Field3D  Te, Ni, Vi, Ti;
 
-// 3D time-derivatives
-Field3D  F_Te, F_Ni,  F_Vi, F_Ti;
-
 // Non-linear coefficients
 Field3D kapa_Te, kapa_Ti;
 
@@ -165,10 +162,10 @@ int physics_init(bool restarting)
   // add evolving variables to the communication object
 
   Ni = Vi = Te = Ti = 0.0;
-  bout_solve(Ni,    F_Ni,    "Ni");
-  bout_solve(Vi,    F_Vi,    "Vi");
-  bout_solve(Te,    F_Te,    "Te");
-  bout_solve(Ti,    F_Ti,    "Ti");
+  bout_solve(Ni, "Ni");
+  bout_solve(Vi, "Vi");
+  bout_solve(Te, "Te");
+  bout_solve(Ti, "Ti");
 
   /************** SETUP COMMUNICATIONS **************/
   
@@ -224,71 +221,71 @@ int physics_run(real t)
   peit = (Tet+Tit)*Nit;
 
   // DENSITY EQUATION
-  F_Ni = -Vpar_Grad_par(Vit, Nit) 
+  ddt(Ni) = -Vpar_Grad_par(Vit, Nit) 
     -Nit*Div_par(Vit) 
     +Div_X_K_Grad_X(D_perp*(Nit*0.0+1.0), Nit)
     ;
 
 
   // ION VELOCITY
-  //F_Vi = -Grad_par(peit)/Nit -Vpar_Grad_par(Vit, Vit) + mu_perp*Delp2(Nit*Vit)/Nit;
-  F_Vi = (
-	  -Grad_par(peit) 
-	  +Div_X_K_Grad_X(mu_perp*Nit, Vit)
-	  )/Nit 
+  //ddt(Vi) = -Grad_par(peit)/Nit -Vpar_Grad_par(Vit, Vit) + mu_perp*Delp2(Nit*Vit)/Nit;
+  ddt(Vi) = (
+	     -Grad_par(peit) 
+	     +Div_X_K_Grad_X(mu_perp*Nit, Vit)
+	     )/Nit 
     -Vpar_Grad_par(Vit, Nit*Vit)/Nit 
-    - F_Ni*Vit/Nit
+    - ddt(Ni)*Vit/Nit
     ;
 
 
   // ELECTRON TEMPERATURE
-  F_Te = (Div_par_K_Grad_par(kapa_Te, Tet) 
-	  +Div_X_K_Grad_X(chi_perp*Nit, Tet)
-	  )/(1.5*Nit) 
-    - F_Ni*Tet/Nit;
-
+  ddt(Te) = (Div_par_K_Grad_par(kapa_Te, Tet) 
+	     +Div_X_K_Grad_X(chi_perp*Nit, Tet)
+	     )/(1.5*Nit) 
+    - ddt(Ni)*Tet/Nit;
+  
 
   // ION TEMPERATURE
-  F_Ti = (Div_par_K_Grad_par(kapa_Ti, Tit) 
-	  +Div_X_K_Grad_X(chi_perp*Nit, Tit)
-	  )/(1.5*Nit)
-    - F_Ni*Tit/Nit;
-
+  ddt(Ti) = (Div_par_K_Grad_par(kapa_Ti, Tit) 
+	     +Div_X_K_Grad_X(chi_perp*Nit, Tit)
+	     )/(1.5*Nit)
+    - ddt(Ni)*Tit/Nit;
+  
 
   // INNER TARGET PLATE
   
-  bndry_ydown_flat(F_Ni); // Zero-gradient Ni
-  bndry_ydown_relax_val(F_Vi, Vit, -3.095e4/Vi_x);
-  bndry_ydown_relax_val(F_Te, Tet, 10./Te_x);
-  bndry_ydown_relax_val(F_Ti, Tit, 10./Te_x);
+  bndry_ydown_flat(ddt(Ni)); // Zero-gradient Ni
+  bndry_ydown_relax_val(ddt(Vi), Vit, -3.095e4/Vi_x);
+  bndry_ydown_relax_val(ddt(Te), Tet, 10./Te_x);
+  bndry_ydown_relax_val(ddt(Ti), Tit, 10./Te_x);
 
   // OUTER TARGET PLATE
 
-  bndry_yup_flat(F_Ni);
-  bndry_yup_relax_val(F_Vi, Vit, 3.095e4/Vi_x);
-  bndry_yup_relax_val(F_Te, Tet, 10./Te_x);
-  bndry_yup_relax_val(F_Ti, Tit, 10./Te_x);
+  bndry_yup_flat(ddt(Ni));
+  bndry_yup_relax_val(ddt(Vi), Vit, 3.095e4/Vi_x);
+  bndry_yup_relax_val(ddt(Te), Tet, 10./Te_x);
+  bndry_yup_relax_val(ddt(Ti), Tit, 10./Te_x);
   
   // CORE BOUNDARY
 
-  bndry_core_relax_val(F_Ni, Nit, 1e13/Ni_x);
-  bndry_core_flat(F_Vi);
-  bndry_core_relax_val(F_Te, Tet, 100./Te_x, lambda_relax);
-  bndry_core_relax_val(F_Ti, Tit, 100./Te_x, lambda_relax);
+  bndry_core_relax_val(ddt(Ni), Nit, 1e13/Ni_x);
+  bndry_core_flat(ddt(Vi));
+  bndry_core_relax_val(ddt(Te), Tet, 100./Te_x, lambda_relax);
+  bndry_core_relax_val(ddt(Ti), Tit, 100./Te_x, lambda_relax);
   
   // PF BOUNDARY
 
-  bndry_pf_relax_val(F_Ni, Nit, 1e12/Ni_x);
-  bndry_pf_flat(F_Vi);
-  bndry_pf_relax_val(F_Te, Tet, 10./Te_x);
-  bndry_pf_relax_val(F_Ti, Tit, 10./Te_x);
+  bndry_pf_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
+  bndry_pf_flat(ddt(Vi));
+  bndry_pf_relax_val(ddt(Te), Tet, 10./Te_x);
+  bndry_pf_relax_val(ddt(Ti), Tit, 10./Te_x);
   
   // OUTER BOUNDARY
 
-  bndry_sol_relax_val(F_Ni, Nit, 1e12/Ni_x);
-  bndry_sol_flat(F_Vi);
-  bndry_sol_relax_val(F_Te, Tet, 10./Te_x);
-  bndry_sol_relax_val(F_Ti, Tit, 10./Te_x);
+  bndry_sol_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
+  bndry_sol_flat(ddt(Vi));
+  bndry_sol_relax_val(ddt(Te), Tet, 10./Te_x);
+  bndry_sol_relax_val(ddt(Ti), Tit, 10./Te_x);
 
   //output.write("TIMING: %e\n", MPI_Wtime() - bmk_t);
 

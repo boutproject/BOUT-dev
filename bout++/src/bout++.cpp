@@ -484,10 +484,10 @@ int bout_monitor(real t, int iter, int NOUT)
 
 // NOTE: Here bout_solve is for backwards-compatibility. Eventually will be removed
 
-void bout_solve(Field2D &var, Field2D &F_var, const char *name)
+void bout_solve(Field2D &var, const char *name)
 {
   // Add to solver
-  solver.add(var, F_var, name);
+  solver.add(var, ddt(var), name);
 }
 
 void bout_solve(Field3D &var, const char *name)
@@ -495,14 +495,14 @@ void bout_solve(Field3D &var, const char *name)
   solver.add(var, ddt(var), name);
 }
 
-void bout_solve(Vector2D &var, Vector2D &F_var, const char *name)
+void bout_solve(Vector2D &var, const char *name)
 {
-  solver.add(var, F_var, name);
+  solver.add(var, ddt(var), name);
 }
 
-void bout_solve(Vector3D &var, Vector3D &F_var, const char *name)
+void bout_solve(Vector3D &var, const char *name)
 {
-  solver.add(var, F_var, name);
+  solver.add(var, ddt(var), name);
 }
 
 /*!************************************************************************

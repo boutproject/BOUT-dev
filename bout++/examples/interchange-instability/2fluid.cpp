@@ -18,9 +18,6 @@ Vector2D b0xcv; // for curvature terms
 // 3D evolving fields
 Field3D rho, Te, Ni, Ajpar, Vi, Ti;
 
-// 3D time-derivatives
-Field3D F_rho, F_Te, F_Ni, F_Ajpar, F_Vi, F_Ti;
-
 // Derived 3D variables
 Field3D phi, Apar, Ve, jpar;
 
@@ -229,21 +226,21 @@ int physics_init(bool restarting)
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho,   F_rho,   "rho");
+    bout_solve(rho, "rho");
     comms.add(rho);
     output.write("rho\n");
   }else
     initial_profile("rho", rho);
 
   if(evolve_ni) {
-    bout_solve(Ni,    F_Ni,    "Ni");
+    bout_solve(Ni, "Ni");
     comms.add(Ni);
     output.write("ni\n");
   }else
     initial_profile("Ni", Ni);
 
   if(evolve_te) {
-    bout_solve(Te,    F_Te,    "Te");
+    bout_solve(Te, "Te");
     comms.add(Te);
     
     output.write("te\n");
@@ -251,7 +248,7 @@ int physics_init(bool restarting)
     initial_profile("Te", Te);
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, F_Ajpar, "Ajpar");
+    bout_solve(Ajpar, "Ajpar");
     comms.add(Ajpar);
     output.write("ajpar\n");
   }else {
@@ -261,14 +258,14 @@ int physics_init(bool restarting)
   }
 
   if(evolve_vi) {
-    bout_solve(Vi,    F_Vi,    "Vi");
+    bout_solve(Vi, "Vi");
     comms.add(Vi);
     output.write("vi\n");
   }else
     initial_profile("Vi", Vi);
 
   if(evolve_ti) {
-    bout_solve(Ti,    F_Ti,    "Ti");
+    bout_solve(Ti, "Ti");
     comms.add(Ti);
     output.write("ti\n");
   }else
@@ -365,87 +362,87 @@ int physics_run(real t)
 
   // DENSITY EQUATION
 
-  F_Ni = 0.0;
+  ddt(Ni) = 0.0;
   if(evolve_ni) {
-    F_Ni -= vE_Grad(Ni0, phi);
+    ddt(Ni) -= vE_Grad(Ni0, phi);
 
     /*
-      F_Ni -= vE_Grad(Ni, phi0) + vE_Grad(Ni0, phi) + vE_Grad(Ni, phi);
-      F_Ni -= Vpar_Grad_par(Vi, Ni0) + Vpar_Grad_par(Vi0, Ni) + Vpar_Grad_par(Vi, Ni);
-      F_Ni -= Ni0*Div_par(Vi) + Ni*Div_par(Vi0) + Ni*Div_par(Vi);
-      F_Ni += Div_par(jpar);
-      F_Ni += 2.0*V_dot_Grad(b0xcv, pe);
-      F_Ni -= 2.0*(Ni0*V_dot_Grad(b0xcv, phi) + Ni*V_dot_Grad(b0xcv, phi0) + Ni*V_dot_Grad(b0xcv, phi));
+      ddt(Ni) -= vE_Grad(Ni, phi0) + vE_Grad(Ni0, phi) + vE_Grad(Ni, phi);
+      ddt(Ni) -= Vpar_Grad_par(Vi, Ni0) + Vpar_Grad_par(Vi0, Ni) + Vpar_Grad_par(Vi, Ni);
+      ddt(Ni) -= Ni0*Div_par(Vi) + Ni*Div_par(Vi0) + Ni*Div_par(Vi);
+      ddt(Ni) += Div_par(jpar);
+      ddt(Ni) += 2.0*V_dot_Grad(b0xcv, pe);
+      ddt(Ni) -= 2.0*(Ni0*V_dot_Grad(b0xcv, phi) + Ni*V_dot_Grad(b0xcv, phi0) + Ni*V_dot_Grad(b0xcv, phi));
     */
   }
 
   // ION VELOCITY
 
-  F_Vi = 0.0;
+  ddt(Vi) = 0.0;
   if(evolve_vi) {
-    F_Vi -= vE_Grad(Vi0, phi) + vE_Grad(Vi, phi0) + vE_Grad(Vi, phi);
-    F_Vi -= Vpar_Grad_par(Vi0, Vi) + Vpar_Grad_par(Vi, Vi0) + Vpar_Grad_par(Vi, Vi);
-    F_Vi -= Grad_par(pei)/Ni0;
+    ddt(Vi) -= vE_Grad(Vi0, phi) + vE_Grad(Vi, phi0) + vE_Grad(Vi, phi);
+    ddt(Vi) -= Vpar_Grad_par(Vi0, Vi) + Vpar_Grad_par(Vi, Vi0) + Vpar_Grad_par(Vi, Vi);
+    ddt(Vi) -= Grad_par(pei)/Ni0;
   }
 
   // ELECTRON TEMPERATURE
 
-  F_Te = 0.0;
+  ddt(Te) = 0.0;
   if(evolve_te) {
-    F_Te -= vE_Grad(Te0, phi) + vE_Grad(Te, phi0) + vE_Grad(Te, phi);
-    F_Te -= Vpar_Grad_par(Ve, Te0) + Vpar_Grad_par(Ve0, Te) + Vpar_Grad_par(Ve, Te);
-    F_Te += 1.333*Te0*( V_dot_Grad(b0xcv, pe)/Ni0 - V_dot_Grad(b0xcv, phi) );
-    F_Te += 3.333*Te0*V_dot_Grad(b0xcv, Te);
-    F_Te += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Te, Te);
+    ddt(Te) -= vE_Grad(Te0, phi) + vE_Grad(Te, phi0) + vE_Grad(Te, phi);
+    ddt(Te) -= Vpar_Grad_par(Ve, Te0) + Vpar_Grad_par(Ve0, Te) + Vpar_Grad_par(Ve, Te);
+    ddt(Te) += 1.333*Te0*( V_dot_Grad(b0xcv, pe)/Ni0 - V_dot_Grad(b0xcv, phi) );
+    ddt(Te) += 3.333*Te0*V_dot_Grad(b0xcv, Te);
+    ddt(Te) += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Te, Te);
   }
 
   // ION TEMPERATURE
 
-  F_Ti = 0.0;
+  ddt(Ti) = 0.0;
   if(evolve_ti) {
-    F_Ti -= vE_Grad(Ti0, phi) + vE_Grad(Ti, phi0) + vE_Grad(Ti, phi);
-    F_Ti -= Vpar_Grad_par(Vi, Ti0) + Vpar_Grad_par(Vi0, Ti) + Vpar_Grad_par(Vi, Ti);
-    F_Ti += 1.333*( Ti0*V_dot_Grad(b0xcv, pe)/Ni0 - Ti*V_dot_Grad(b0xcv, phi) );
-    F_Ti -= 3.333*Ti0*V_dot_Grad(b0xcv, Ti);
-    F_Ti += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Ti, Ti);
+    ddt(Ti) -= vE_Grad(Ti0, phi) + vE_Grad(Ti, phi0) + vE_Grad(Ti, phi);
+    ddt(Ti) -= Vpar_Grad_par(Vi, Ti0) + Vpar_Grad_par(Vi0, Ti) + Vpar_Grad_par(Vi, Ti);
+    ddt(Ti) += 1.333*( Ti0*V_dot_Grad(b0xcv, pe)/Ni0 - Ti*V_dot_Grad(b0xcv, phi) );
+    ddt(Ti) -= 3.333*Ti0*V_dot_Grad(b0xcv, Ti);
+    ddt(Ti) += (0.6666667/Ni0)*Div_par_K_Grad_par(kapa_Ti, Ti);
   }
 
   // VORTICITY
 
-  F_rho = 0.0;
+  ddt(rho) = 0.0;
   if(evolve_rho) {
     /*
-    F_rho -= vE_Grad(rho0, phi) + vE_Grad(rho, phi0) + vE_Grad(rho, phi);
-    F_rho -= Vpar_Grad_par(Vi, rho0) + Vpar_Grad_par(Vi0, rho) + Vpar_Grad_par(Vi, rho);
+    ddt(rho) -= vE_Grad(rho0, phi) + vE_Grad(rho, phi0) + vE_Grad(rho, phi);
+    ddt(rho) -= Vpar_Grad_par(Vi, rho0) + Vpar_Grad_par(Vi0, rho) + Vpar_Grad_par(Vi, rho);
     */
     
-    //F_rho += 2.0*Bxy*V_dot_Grad(b0xcv, pei);
-    F_rho += 2.0*mesh->Bxy*b0xcv*Grad(pei);
+    //ddt(rho) += 2.0*Bxy*V_dot_Grad(b0xcv, pei);
+    ddt(rho) += 2.0*mesh->Bxy*b0xcv*Grad(pei);
 
-    //F_rho += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
+    //ddt(rho) += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
   }
   
 
   // AJPAR
   
 
-  F_Ajpar = 0.0;
+  ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
-    //F_Ajpar -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
-    F_Ajpar += (1./fmei)*Grad_par(phi, CELL_YLOW);
-    //F_Ajpar -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
-    //F_Ajpar -= (1./fmei)*1.71*Grad_par(Te);
-    F_Ajpar += 0.51*nu*jpar/Ni0;
+    //ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
+    ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
+    //ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni, CELL_YLOW);
+    //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
+    ddt(Ajpar) += 0.51*nu*jpar/Ni0;
   }
 
   // RADIAL BOUNDARY CONDITIONS
 
-  apply_boundary(F_rho, "rho");
-  apply_boundary(F_Te, "Te");
-  apply_boundary(F_Ni, "Ni");
-  apply_boundary(F_Ajpar, "Ajpar");
-  apply_boundary(F_Vi, "Vi");
-  apply_boundary(F_Ti, "Ti");
+  apply_boundary(ddt(rho), "rho");
+  apply_boundary(ddt(Te), "Te");
+  apply_boundary(ddt(Ni), "Ni");
+  apply_boundary(ddt(Ajpar), "Ajpar");
+  apply_boundary(ddt(Vi), "Vi");
+  apply_boundary(ddt(Ti), "Ti");
 
   return(0);
 }

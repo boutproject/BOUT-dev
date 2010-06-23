@@ -10,9 +10,6 @@
 Field3D N, P; // Density, Pressure
 Vector3D V;   // velocity
 
-// Time-derivatives
-Vector3D F_V;
-
 // parameters
 real gamma_ratio;   // Ratio of specific heats
 real nu;      // Viscosity
@@ -39,22 +36,19 @@ int physics_init(bool restarting)
   
   // read options
 
-  if(options.getReal("gas", "gamma", gamma_ratio))
-    gamma_ratio = 5.0 / 3.0;
-  if(options.getReal("gas", "viscosity", nu))
-    nu = 0.1;
-  if(options.getBool("gas", "include_viscosity", include_viscosity))
-    include_viscosity = false;
-  if(options.getReal("gas", "v0_multiply", v0_multiply))
-    v0_multiply = 1.0;
-
+  options.setSection("gas");
+  options.get("gamma", gamma_ratio, 5./3.);
+  options.get("viscosity", nu, 0.1);
+  options.get("include_viscosity", include_viscosity, false);
+  options.get("v0_multiply", v0_multiply, 1.0);
+  
   V0 *= v0_multiply;
 
   // Set evolving variables
   
   bout_solve(N, "density");
   bout_solve(P, "pressure");
-  bout_solve(V, F_V, "v");
+  bout_solve(V, "v");
 
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
@@ -78,13 +72,13 @@ int physics_run(real t)
   
   // Velocity 
   
-  F_V = -V_dot_Grad(V, V) - Grad(P)/N + g;
+  ddt(V) = -V_dot_Grad(V, V) - Grad(P)/N + g;
 
   if(include_viscosity) {
     // Add viscosity
     
-    F_V.y += nu*Laplacian(V.y);
-    F_V.z += nu*Laplacian(V.z);
+    ddt(V).y += nu*Laplacian(V.y);
+    ddt(V).z += nu*Laplacian(V.z);
   }
   
   // Pressure
@@ -94,8 +88,8 @@ int physics_run(real t)
   // Set boundary conditions
   apply_boundary(ddt(N), "density");
   apply_boundary(ddt(P), "pressure");
-  F_V.toContravariant();
-  apply_boundary(F_V, "v");
+  ddt(V).toContravariant();
+  apply_boundary(ddt(V), "v");
 
   return 0;
 }

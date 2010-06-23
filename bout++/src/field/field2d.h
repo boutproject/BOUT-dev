@@ -56,6 +56,9 @@ class Field2D : public Field, public FieldData {
   void allocate();
   bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
 
+  /// Return a pointer to the time-derivative field
+  Field2D* timeDeriv();
+
   // Operators
 
   Field2D & operator=(const Field2D &rhs);
@@ -171,6 +174,8 @@ class Field2D : public Field, public FieldData {
 
   void allocData();
   void freeData();
+  
+  Field2D *ddt; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators

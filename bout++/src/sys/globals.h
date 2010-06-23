@@ -88,4 +88,8 @@ void bout_error(const char *str);
 #undef GLOBAL
 #undef SETTING
 
+
+/// Concise way to write time-derivatives
+#define ddt(f) (*((f).timeDeriv()))
+
 #endif // __GLOBALS_H__

@@ -35,16 +35,19 @@
 Vector3D::Vector3D()
 {
   covariant = true;
+  ddt = NULL;
 }
 
 Vector3D::Vector3D(const Vector3D &f)
 {
   *this = f;
+  ddt = NULL;
 }
 
 Vector3D::~Vector3D()
 {
-
+  if(ddt != NULL)
+    delete ddt;
 }
 
 void Vector3D::toCovariant()
@@ -81,6 +84,13 @@ void Vector3D::toContravariant()
     
     covariant = false;
   }
+}
+
+Vector3D* Vector3D::timeDeriv()
+{
+  if(ddt == NULL)
+    ddt = new Vector3D();
+  return ddt;
 }
 
 /***************************************************************

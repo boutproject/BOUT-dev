@@ -279,7 +279,4 @@ const Field3D abs(const Field3D &f);
 real min(const Field3D &f, bool allpe=false);
 real max(const Field3D &f, bool allpe=false);
 
-/// Concise way to write time-derivatives
-#define ddt(f) (*(f.timeDeriv()))
-
 #endif /* __FIELD3D_H__ */

@@ -35,16 +35,19 @@
 Vector2D::Vector2D()
 {
   covariant = true;
+  ddt = NULL;
 }
 
 Vector2D::Vector2D(const Vector2D &f)
 {
   *this = f;
+  ddt = NULL;
 }
 
 Vector2D::~Vector2D()
 {
-  
+  if(ddt != NULL)
+    delete ddt;
 }
 
 void Vector2D::toCovariant()
@@ -83,6 +86,12 @@ void Vector2D::toContravariant()
   }
 }
 
+Vector2D* Vector2D::timeDeriv()
+{
+  if(ddt == NULL)
+    ddt = new Vector2D();
+  return ddt;
+}
 
 /***************************************************************
  *                         OPERATORS 

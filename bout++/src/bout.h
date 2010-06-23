@@ -59,10 +59,10 @@ const real BOUT_VERSION = 0.85;  ///< Version number
 
 // BOUT++ functions (bout++.cpp). Call to add a variable to evolve
 
-void bout_solve(Field2D &var, Field2D &F_var, const char *name);
+void bout_solve(Field2D &var, const char *name);
 void bout_solve(Field3D &var, const char *name);
-void bout_solve(Vector2D &var, Vector2D &F_var, const char *name);
-void bout_solve(Vector3D &var, Vector3D &F_var, const char *name);
+void bout_solve(Vector2D &var, const char *name);
+void bout_solve(Vector3D &var, const char *name);
 
 bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 

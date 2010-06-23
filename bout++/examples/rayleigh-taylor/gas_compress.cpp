@@ -10,10 +10,6 @@
 Field3D N, P; // Density, Pressure
 Vector3D V;   // velocity
 
-// Time-derivatives
-Field3D F_N, F_P;
-Vector3D F_V;
-
 // parameters
 real gamma_ratio;   // Ratio of specific heats
 real nu;      // Viscosity
@@ -54,9 +50,9 @@ int physics_init(bool restarting)
 
   // Set evolving variables
   
-  bout_solve(N, F_N, "density");
-  bout_solve(P, F_P, "pressure");
-  bout_solve(V, F_V, "v");
+  bout_solve(N, "density");
+  bout_solve(P, "pressure");
+  bout_solve(V, "v");
 
   if(!restarting) {
     // Apply boundary conditions
@@ -70,7 +66,6 @@ int physics_init(bool restarting)
     N += N0;
     P += P0;
     V += V0;
-
   }
   
   return 0;
@@ -78,48 +73,37 @@ int physics_init(bool restarting)
 
 int physics_run(real t)
 {
-  //output.write("Running %e\n", t);
   // Communicate variables
   mesh->communicate(N,P,V);
 
   // Density
   
-  F_N = -V_dot_Grad(V, N) - N*Div(V);
- 
-  //output.write("N ");
+  ddt(N) = -V_dot_Grad(V, N) - N*Div(V);
  
   // Velocity 
   
-  F_V = -V_dot_Grad(V, V) - Grad(P)/N + g;
+  ddt(V) = -V_dot_Grad(V, V) - Grad(P)/N + g;
 
   if(sub_initial) {
-    F_V += Grad(P0)/N0 - g;
+    ddt(V) += Grad(P0)/N0 - g;
   }
-
-  //output.write("V ");
 
   if(include_viscosity) {
     // Add viscosity
     
-    F_V.y += nu*Laplacian(V.y);
-    F_V.z += nu*Laplacian(V.z);
-
-    //output.write("nu ");
+    ddt(V).y += nu*Laplacian(V.y);
+    ddt(V).z += nu*Laplacian(V.z);
   }
   
   // Pressure
 
-  F_P = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
-
-  //output.write("P\n");
+  ddt(P) = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
 
   // Set boundary conditions
-  apply_boundary(F_N, "density");
-  apply_boundary(F_P, "pressure");
-  F_V.toContravariant();
-  apply_boundary(F_V, "v");
-
-  //output.write("finished\n");
+  apply_boundary(ddt(N), "density");
+  apply_boundary(ddt(P), "pressure");
+  ddt(V).toContravariant();
+  apply_boundary(ddt(V), "v");
 
   return 0;
 }
