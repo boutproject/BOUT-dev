@@ -149,7 +149,8 @@ Datafile::Datafile(DataFormat *format)
 
 Datafile::~Datafile()
 {
-  
+  if(file != NULL)
+    delete file;
 }
 
 void Datafile::setFormat(DataFormat *format)
