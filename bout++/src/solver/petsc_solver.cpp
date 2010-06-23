@@ -73,7 +73,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
 #endif
 
   /// Call the generic initialisation first
-  GenericSolver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
+  Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
   

@@ -23,7 +23,7 @@
  * 
  **************************************************************************/
 
-#include "solver.h"
+#include "pvode_solver.h"
 
 #include "globals.h"
 
@@ -39,6 +39,8 @@
 #include "boundary.h"
 #include "interpolation.h" // Cell interpolation
 
+using namespace pvode;
+
 void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data);
 void solver_gloc(integer N, real t, real* u, real* udot, void *f_data);
 void solver_cfn(integer N, real t, N_Vector u, void *f_data);
@@ -51,14 +53,14 @@ static PVBBDData pdata;
 long int iopt[OPT_SIZE];
 real ropt[OPT_SIZE];
 
-Solver::Solver() : GenericSolver()
+PvodeSolver::PvodeSolver() : Solver()
 {
   gfunc = (rhsfunc) NULL;
 
   has_constraints = false; ///< This solver doesn't have constraints
 }
 
-Solver::~Solver()
+PvodeSolver::~PvodeSolver()
 {
   if(initialised) {
     // Free CVODE memory
@@ -74,7 +76,7 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
 {
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
@@ -91,7 +93,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
 #endif
 
   /// Call the generic initialisation first
-  if(GenericSolver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, argc, argv, restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -219,14 +221,14 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
  * Run - Advance time
  **************************************************************************/
 
-int Solver::run(MonitorFunc monitor)
+int PvodeSolver::run(MonitorFunc monitor)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("CVODE Solver::run()");
+  int msg_point = msg_stack.push("PvodeSolver::run()");
 #endif
   
   if(!initialised)
-    bout_error("Solver not initialised\n");
+    bout_error("PvodeSolver not initialised\n");
   
   for(int i=0;i<NOUT;i++) {
     
@@ -272,7 +274,7 @@ int Solver::run(MonitorFunc monitor)
   return 0;
 }
 
-real Solver::run(real tout, int &ncalls, real &rhstime)
+real PvodeSolver::run(real tout, int &ncalls, real &rhstime)
 {
   real *udata;
   int flag;
@@ -319,13 +321,13 @@ real Solver::run(real tout, int &ncalls, real &rhstime)
  * RHS function
  **************************************************************************/
 
-void Solver::rhs(int N, real t, real *udata, real *dudata)
+void PvodeSolver::rhs(int N, real t, real *udata, real *dudata)
 {
   int flag;
   real tstart;
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Solver::rhs(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
 #endif
 
   tstart = MPI_Wtime();
@@ -347,13 +349,13 @@ void Solver::rhs(int N, real t, real *udata, real *dudata)
 #endif
 }
 
-void Solver::gloc(int N, real t, real *udata, real *dudata)
+void PvodeSolver::gloc(int N, real t, real *udata, real *dudata)
 {
   int flag;
   real tstart;
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Solver::gloc(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
 #endif
 
   tstart = MPI_Wtime();
@@ -380,7 +382,7 @@ void Solver::gloc(int N, real t, real *udata, real *dudata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void PvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 {
   real **d2d, ***d3d;
   unsigned int i;
@@ -457,7 +459,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void PvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -500,7 +502,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(real *udata)
+void PvodeSolver::load_vars(real *udata)
 {
   unsigned int i;
   
@@ -523,7 +525,7 @@ void Solver::load_vars(real *udata)
 }
 
 // This function only called during initialisation
-int Solver::save_vars(real *udata)
+int PvodeSolver::save_vars(real *udata)
 {
   unsigned int i;
 
@@ -554,7 +556,7 @@ int Solver::save_vars(real *udata)
   return(0);
 }
 
-void Solver::save_derivs(real *dudata)
+void PvodeSolver::save_derivs(real *dudata)
 {
   unsigned int i;
 
@@ -590,12 +592,12 @@ void Solver::save_derivs(real *dudata)
 void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data)
 {
   real *udata, *dudata;
-  Solver *s;
+  PvodeSolver *s;
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
   
-  s = (Solver*) f_data;
+  s = (PvodeSolver*) f_data;
 
   s->rhs(N, t, udata, dudata);
 }
@@ -603,9 +605,9 @@ void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data)
 // Preconditioner RHS
 void solver_gloc(integer N, real t, real* u, real* udot, void *f_data)
 {
-  Solver *s;
+  PvodeSolver *s;
   
-  s = (Solver*) f_data;
+  s = (PvodeSolver*) f_data;
 
   s->gloc(N, t, u, udot);
 }

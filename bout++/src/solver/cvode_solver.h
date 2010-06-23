@@ -25,7 +25,7 @@
  *
  **************************************************************************/
 
-class Solver;
+class CvodeSolver;
 
 #ifndef __SUNDIAL_SOLVER_H__
 #define __SUNDIAL_SOLVER_H__
@@ -39,7 +39,7 @@ class Solver;
 #include "vector2d.h"
 #include "vector3d.h"
 
-#include "generic_solver.h"
+#include "solver.h"
 
 #include <cvode/cvode_spgmr.h>
 #include <cvode/cvode_bbdpre.h>
@@ -48,48 +48,46 @@ class Solver;
 #include <vector>
 using std::vector;
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SAVE_VARS, SAVE_DERIVS};
+class CvodeSolver : public Solver {
+  public:
+    CvodeSolver();
+    ~CvodeSolver();
 
-class Solver : public GenericSolver {
- public:
-  Solver();
-  ~Solver();
+    void setPrecon(PhysicsPrecon f) {prefunc = f;}
+
+    void setJacobian(Jacobian j) {jacfunc = j; }
+
+    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+
+    int run(MonitorFunc f);
+    real run(real tout, int &ncalls, real &rhstime);
+
+    // These functions used internally (but need to be public)
+    void rhs(real t, real *udata, real *dudata);
+    void pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec);
+    void jac(real t, real *ydata, real *vdata, real *Jvdata);
+  private:
+    int NOUT; // Number of outputs. Specified in init, needed in run
+    real TIMESTEP; // Time between outputs
+
+    rhsfunc func; // RHS function
+    PhysicsPrecon prefunc; // Preconditioner
+    Jacobian jacfunc; // Jacobian - vector function
   
-  void setPrecon(PhysicsPrecon f) {prefunc = f;}
-  
-  void setJacobian(Jacobian j) {jacfunc = j; }
+    N_Vector uvec; // Values
+    void *cvode_mem;
 
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
-  
-  int run(MonitorFunc f);
-  real run(real tout, int &ncalls, real &rhstime);
-  
-  // These functions used internally (but need to be public)
-  void rhs(real t, real *udata, real *dudata);
-  void pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec);
-  void jac(real t, real *ydata, real *vdata, real *Jvdata);
- private:
-  int NOUT; // Number of outputs. Specified in init, needed in run
-  real TIMESTEP; // Time between outputs
+    // Loading data from BOUT++ to/from CVODE
+    void loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op);
+    void loop_vars(real *udata, SOLVER_VAR_OP op);
 
-  rhsfunc func; // RHS function
-  PhysicsPrecon prefunc; // Preconditioner
-  Jacobian jacfunc; // Jacobian - vector function
-  
-  N_Vector uvec; // Values
-  void *cvode_mem;
+    void load_vars(real *udata);
+    void load_derivs(real *udata);
+    int save_vars(real *udata);
+    void save_derivs(real *dudata);
 
-  // Loading data from BOUT++ to/from IDA
-  void loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(real *udata, SOLVER_VAR_OP op);
-
-  void load_vars(real *udata);
-  void load_derivs(real *udata);
-  int save_vars(real *udata);
-  void save_derivs(real *dudata);
-
-  real pre_Wtime; // Time in preconditioner
-  real pre_ncalls; // Number of calls to preconditioner
+    real pre_Wtime; // Time in preconditioner
+    real pre_ncalls; // Number of calls to preconditioner
 };
 
 #endif // __SUNDIAL_SOLVER_H__

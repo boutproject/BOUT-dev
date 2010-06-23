@@ -24,10 +24,10 @@
  * 
  **************************************************************************/
 
-class Solver;
+class PvodeSolver;
 
-#ifndef __CVODE_SOLVER_H__
-#define __CVODE_SOLVER_H__
+#ifndef __PVODE_SOLVER_H__
+#define __PVODE_SOLVER_H__
 
 #include "nvector.h"
 
@@ -36,7 +36,7 @@ class Solver;
 #include "vector2d.h"
 #include "vector3d.h"
 
-#include "generic_solver.h"
+#include "solver.h"
 
 #include "bout_types.h"
 
@@ -44,12 +44,11 @@ class Solver;
 
 using std::vector;
 
-enum SOLVER_VAR_OP {LOAD_VARS, SAVE_VARS, SAVE_DERIVS};
 
-class Solver : public GenericSolver {
+class PvodeSolver : public Solver {
  public:
-  Solver();
-  ~Solver();
+  PvodeSolver();
+  ~PvodeSolver();
 
   void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
@@ -66,8 +65,8 @@ class Solver : public GenericSolver {
   int NOUT; // Number of outputs. Specified in init, needed in run
   real TIMESTEP; // Time between outputs
   
-  N_Vector u;
-  machEnvType machEnv;
+  pvode::N_Vector u;
+  pvode::machEnvType machEnv;
   void *cvode_mem;
   
   rhsfunc func; // RHS function
@@ -82,4 +81,4 @@ class Solver : public GenericSolver {
   void save_derivs(real *dudata);
 };
 
-#endif // __CVODE_SOLVER_H__
+#endif // __PVODE_SOLVER_H__

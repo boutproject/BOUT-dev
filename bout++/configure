@@ -2468,7 +2468,7 @@ MFILE
 
 	rm petscmake$$
 
-	CFLAGS="$CFLAGS -DPETSC"
+	CFLAGS="$CFLAGS -DBOUT_HAS_PETSC"
 
 else
    PETSC=
@@ -2496,7 +2496,7 @@ then
 	SOLVER_SOURCE="$SOLVER_SOURCE ida_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
 
-	CFLAGS="$CFLAGS -DIDA" # Used in solver.h. BIT OF A HACK!
+	CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
 else
 	if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
 	then
@@ -2514,7 +2514,7 @@ else
 		SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
 		EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
 
-		CFLAGS="$CFLAGS -DCVODE" # Used in solver.h. BIT OF A HACK!
+		CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
 	else
 		if test "$PETSC" != ""
 		then
@@ -6046,8 +6046,8 @@ then
 
 		echo "* Building PVODE" | tee -a config-build.log
 		echo "*************************************************************" >> config-build.log
-		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
-		CC="$MPICC $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+		CC="$MPICXX $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+		CC="$MPICXX $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 
 		echo "*************************************************************" >> config-build.log
 		echo "* Successfully built PVODE" | tee -a config-build.log
@@ -6062,6 +6062,7 @@ then
 	cp externalpackages/PVODE/lib/*.a lib/
 	SOLVER_SOURCE="$SOLVER_SOURCE pvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+	CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
 fi
 
 # Only make.config is altered by configure

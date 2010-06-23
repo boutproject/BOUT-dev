@@ -53,7 +53,7 @@ static int ida_pre(real t, N_Vector yy,
 		   real cj, real delta, 
 		   void *user_data, N_Vector tmp);
 
-Solver::Solver() : GenericSolver()
+Solver::Solver() : Solver()
 {
   has_constraints = true; ///< This solver has constraints
   
@@ -82,7 +82,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
 #endif
 
   /// Call the generic initialisation first
-  if(GenericSolver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, argc, argv, restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run

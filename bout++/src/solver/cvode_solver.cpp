@@ -52,7 +52,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp);
 
-Solver::Solver() : GenericSolver()
+CvodeSolver::CvodeSolver() : Solver()
 {
   has_constraints = false; ///< This solver doesn't have constraints
   
@@ -60,7 +60,7 @@ Solver::Solver() : GenericSolver()
   jacfunc = NULL;
 }
 
-Solver::~Solver()
+CvodeSolver::~CvodeSolver()
 {
   
 }
@@ -69,14 +69,14 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising CVODE solver");
 #endif
 
   /// Call the generic initialisation first
-  if(GenericSolver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, argc, argv, restarting, nout, tstep))
     return 1;
 
   // Save nout and tstep for use in run
@@ -231,14 +231,14 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
  * Run - Advance time
  **************************************************************************/
 
-int Solver::run(MonitorFunc monitor)
+int CvodeSolver::run(MonitorFunc monitor)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("CVODE Solver::run()");
+  int msg_point = msg_stack.push("CvodeSolver::run()");
 #endif
   
   if(!initialised)
-    bout_error("Solver not initialised\n");
+    bout_error("CvodeSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
     
@@ -284,7 +284,7 @@ int Solver::run(MonitorFunc monitor)
   return 0;
 }
 
-real Solver::run(real tout, int &ncalls, real &rhstime)
+real CvodeSolver::run(real tout, int &ncalls, real &rhstime)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
@@ -328,10 +328,10 @@ real Solver::run(real tout, int &ncalls, real &rhstime)
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void Solver::rhs(real t, real *udata, real *dudata)
+void CvodeSolver::rhs(real t, real *udata, real *dudata)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Solver::res(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
 
   real tstart = MPI_Wtime();
@@ -357,10 +357,10 @@ void Solver::rhs(real t, real *udata, real *dudata)
  * Preconditioner function
  **************************************************************************/
 
-void Solver::pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec)
+void CvodeSolver::pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: Solver::pre(%e)", t);
+  int msg_point = msg_stack.push("Running preconditioner: CvodeSolver::pre(%e)", t);
 #endif
 
   real tstart = MPI_Wtime();
@@ -397,10 +397,10 @@ void Solver::pre(real t, real gamma, real delta, real *udata, real *rvec, real *
  * Jacobian-vector multiplication function
  **************************************************************************/
 
-void Solver::jac(real t, real *ydata, real *vdata, real *Jvdata)
+void CvodeSolver::jac(real t, real *ydata, real *vdata, real *Jvdata)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running Jacobian: Solver::jac(%e)", t);
+  int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
 #endif
   
   if(jacfunc == NULL)
@@ -428,7 +428,7 @@ void Solver::jac(real t, real *ydata, real *vdata, real *Jvdata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void CvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 {
   real **d2d, ***d3d;
   int i;
@@ -528,7 +528,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void CvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -571,7 +571,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(real *udata)
+void CvodeSolver::load_vars(real *udata)
 {
   unsigned int i;
   
@@ -593,7 +593,7 @@ void Solver::load_vars(real *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void Solver::load_derivs(real *udata)
+void CvodeSolver::load_derivs(real *udata)
 {
   unsigned int i;
   
@@ -616,7 +616,7 @@ void Solver::load_derivs(real *udata)
 }
 
 // This function only called during initialisation
-int Solver::save_vars(real *udata)
+int CvodeSolver::save_vars(real *udata)
 {
   unsigned int i;
 
@@ -647,7 +647,7 @@ int Solver::save_vars(real *udata)
   return(0);
 }
 
-void Solver::save_derivs(real *dudata)
+void CvodeSolver::save_derivs(real *dudata)
 {
   unsigned int i;
 
@@ -687,7 +687,7 @@ static int cvode_rhs(real t,
   real *udata = NV_DATA_P(u);
   real *dudata = NV_DATA_P(du);
   
-  Solver *s = (Solver*) user_data;
+  CvodeSolver *s = (CvodeSolver*) user_data;
 
   // Calculate residuals
   s->rhs(t, udata, dudata);
@@ -713,7 +713,7 @@ static int cvode_pre(real t, N_Vector yy, N_Vector yp,
   real *rdata = NV_DATA_P(rvec);
   real *zdata = NV_DATA_P(zvec);
   
-  Solver *s = (Solver*) user_data;
+  CvodeSolver *s = (CvodeSolver*) user_data;
 
   // Calculate residuals
   s->pre(t, gamma, delta, udata, rdata, zdata);
@@ -730,7 +730,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
   real *vdata = NV_DATA_P(v);   ///< Input vector
   real *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
   
-  Solver *s = (Solver*) user_data;
+  CvodeSolver *s = (CvodeSolver*) user_data;
   
   s->jac(t, ydata, vdata, Jvdata);
   

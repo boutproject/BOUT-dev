@@ -21,17 +21,33 @@
  **************************************************************************/
 
 #include "globals.h"
-#include "generic_solver.h"
+#include "solver.h"
 
 #include "initialprofiles.h"
 #include "boundary.h"
 #include "interpolation.h"
 
+#ifdef BOUT_HAS_CVODE
+#include "cvode_solver.h"
+#endif
+
+#ifdef BOUT_HAS_PETSC
+#include "petsc_solver.h"
+#endif
+
+#ifdef BOUT_HAS_IDA
+#include "ida_solver.h"
+#endif
+
+#ifdef BOUT_HAS_PVODE
+#include "pvode_solver.h"
+#endif
+
 /**************************************************************************
  * Constructor
  **************************************************************************/
 
-GenericSolver::GenericSolver() {
+Solver::Solver() {
   // Set flags to defaults
   has_constraints = false;
   initialised = false;
@@ -48,10 +64,10 @@ GenericSolver::GenericSolver() {
  * Add fields
  **************************************************************************/
 
-void GenericSolver::add(Field2D &v, Field2D &F_v, const char* name)
+void Solver::add(Field2D &v, Field2D &F_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Adding 2D field: GenericSolver::add(%s)", name);
+  int msg_point = msg_stack.push("Adding 2D field: Solver::add(%s)", name);
 #endif
 
   if(initialised) {
@@ -83,10 +99,10 @@ void GenericSolver::add(Field2D &v, Field2D &F_v, const char* name)
 #endif
 }
 
-void GenericSolver::add(Field3D &v, Field3D &F_v, const char* name)
+void Solver::add(Field3D &v, Field3D &F_v, const char* name)
 { 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Adding 3D field: GenericSolver::add(%s)", name);
+  int msg_point = msg_stack.push("Adding 3D field: Solver::add(%s)", name);
 #endif
 
   if(initialised) {
@@ -122,10 +138,10 @@ void GenericSolver::add(Field3D &v, Field3D &F_v, const char* name)
 #endif
 }
 
-void GenericSolver::add(Vector2D &v, Vector2D &F_v, const char* name)
+void Solver::add(Vector2D &v, Vector2D &F_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Adding 2D vector: GenericSolver::add(%s)", name);
+  int msg_point = msg_stack.push("Adding 2D vector: Solver::add(%s)", name);
 #endif
 
   if(initialised) {
@@ -161,10 +177,10 @@ void GenericSolver::add(Vector2D &v, Vector2D &F_v, const char* name)
 #endif
 }
 
-void GenericSolver::add(Vector3D &v, Vector3D &F_v, const char* name)
+void Solver::add(Vector3D &v, Vector3D &F_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Adding 3D vector: GenericSolver::add(%s)", name);
+  int msg_point = msg_stack.push("Adding 3D vector: Solver::add(%s)", name);
 #endif
 
   if(initialised) {
@@ -201,10 +217,10 @@ void GenericSolver::add(Vector3D &v, Vector3D &F_v, const char* name)
  * Constraints
  **************************************************************************/
 
-void GenericSolver::constraint(Field2D &v, Field2D &C_v, const char* name)
+void Solver::constraint(Field2D &v, Field2D &C_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D scalar: GenericSolver::constraint(%s)", name);
+  int msg_point = msg_stack.push("Constrain 2D scalar: Solver::constraint(%s)", name);
 #endif
 
   if(!has_constraints)
@@ -230,10 +246,10 @@ void GenericSolver::constraint(Field2D &v, Field2D &C_v, const char* name)
 #endif
 }
 
-void GenericSolver::constraint(Field3D &v, Field3D &C_v, const char* name)
+void Solver::constraint(Field3D &v, Field3D &C_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D scalar: GenericSolver::constraint(%s)", name);
+  int msg_point = msg_stack.push("Constrain 3D scalar: Solver::constraint(%s)", name);
 #endif
 
   if(!has_constraints)
@@ -260,10 +276,10 @@ void GenericSolver::constraint(Field3D &v, Field3D &C_v, const char* name)
 #endif
 }
 
-void GenericSolver::constraint(Vector2D &v, Vector2D &C_v, const char* name)
+void Solver::constraint(Vector2D &v, Vector2D &C_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 2D vector: GenericSolver::constraint(%s)", name);
+  int msg_point = msg_stack.push("Constrain 2D vector: Solver::constraint(%s)", name);
 #endif
 
   if(!has_constraints)
@@ -301,10 +317,10 @@ void GenericSolver::constraint(Vector2D &v, Vector2D &C_v, const char* name)
 #endif
 }
 
-void GenericSolver::constraint(Vector3D &v, Vector3D &C_v, const char* name)
+void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Constrain 3D vector: GenericSolver::constraint(%s)", name);
+  int msg_point = msg_stack.push("Constrain 3D vector: Solver::constraint(%s)", name);
 #endif
 
   if(!has_constraints)
@@ -346,10 +362,10 @@ void GenericSolver::constraint(Vector3D &v, Vector3D &C_v, const char* name)
  * Initialisation
  **************************************************************************/
 
-int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("GenericSolver::init()");
+  int msg_point = msg_stack.push("Solver::init()");
 #endif
   
   if(initialised)
@@ -469,7 +485,7 @@ int GenericSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int n
   return 0;
 }
 
-void GenericSolver::setRestartDir(const string &dir)
+void Solver::setRestartDir(const string &dir)
 {
   restartdir = dir;
 }
@@ -478,7 +494,7 @@ void GenericSolver::setRestartDir(const string &dir)
  * Useful routines (protected)
  **************************************************************************/
 
-int GenericSolver::getLocalN()
+int Solver::getLocalN()
 {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
@@ -518,4 +534,22 @@ int GenericSolver::getLocalN()
   }
   
   return local_N;
+}
+
+Solver* Solver::Create(SolverType &type)
+{
+  output << "TYPE: " << type << endl;
+  
+  if(!strcasecmp(type, SOLVERCVODE)) {
+    output << "ASDFALSDFKJHASLKDFJALSDKFJALSKDJFALSDKFJ" << endl;
+    return new CvodeSolver;
+  } else if(!strcasecmp(type, SOLVERPVODE)) {
+    return new PvodeSolver;
+  } else if(!strcasecmp(type, SOLVERIDA)) {
+/*    return new IdaSolver;*/
+  } else if(!strcasecmp(type, SOLVERPETSC)) {
+/*    return new PetscSolver;*/
+  }
+
+  return NULL;
 }

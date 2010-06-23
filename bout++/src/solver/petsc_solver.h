@@ -55,7 +55,7 @@ EXTERN PetscErrorCode PreStep(TS);
 EXTERN PetscErrorCode PostStep(TS);
 EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class Solver : public GenericSolver {
+class Solver : public Solver {
  public:
   Solver();
   ~Solver();
@@ -93,5 +93,5 @@ class Solver : public GenericSolver {
 };
 
 
-#endif // __SOLVER_H__
+#endif // __PETSC_SOLVER_H__
 

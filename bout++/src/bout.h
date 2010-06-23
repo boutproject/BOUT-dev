@@ -78,7 +78,7 @@ int physics_run(real t);
 #endif
 
 // Solver object
-GLOBAL Solver solver;    // Interface to PVODE
+GLOBAL Solver *solver;    // Interface to PVODE
 
 #undef GLOBAL
 

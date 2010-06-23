@@ -50,7 +50,7 @@ using std::vector;
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
-class Solver : public GenericSolver {
+class Solver : public Solver {
  public:
   Solver();
   ~Solver();

@@ -275,6 +275,14 @@ int bout_init(int argc, char **argv)
   msg_point = msg_stack.push("Initialising physics module");
 #endif
 
+  /// Create the solver
+  SolverType type = SOLVERPVODE;
+  options.setSection(NULL);
+  const char* asdf = options.getString("solver_type");
+  if(asdf) type = asdf;
+  output.write("TESETASDF: %s\taasdf\t%s\n", asdf, type);
+  solver = Solver::Create(type);
+
   if(physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");
     return(1);
@@ -286,9 +294,9 @@ int bout_init(int argc, char **argv)
 #endif
   
   /// Initialise the solver
-  solver.setRestartDir(data_dir);
-  if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver. Aborting\n");
+  solver->setRestartDir(data_dir);
+  if(solver->init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
+    output.write("Failed to initialise solver-> Aborting\n");
     return(1);
   }
   
@@ -320,7 +328,7 @@ int bout_run()
   time_t start_time = time((time_t*) NULL);
   output.write("\nRun started at  : %s\n", ctime(&start_time));
   
-  int status = solver.run(bout_monitor);
+  int status = solver->run(bout_monitor);
   
   time_t end_time = time((time_t*) NULL);
   output.write("\nRun finished at  : %s\n", ctime(&end_time));
@@ -344,6 +352,9 @@ int bout_run()
 
 int bout_finish()
 {
+	// Delete the solver
+  delete solver;
+
   // Get and delete the mesh data sources
   list<GridDataSource*> source = mesh->getSources();
   for (list<GridDataSource*>::iterator it = source.begin(); it != source.end(); it++)
@@ -415,8 +426,8 @@ int bout_monitor(real t, int iter, int NOUT)
   }
   
   /// Collect timing information
-  int ncalls = solver.rhs_ncalls;
-  real wtime_rhs   = solver.rhs_wtime;
+  int ncalls = solver->rhs_ncalls;
+  real wtime_rhs   = solver->rhs_wtime;
   //real wtime_invert = 0.0; // wtime_invert is a global
   real wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
   real wtime_io    = Datafile::wtime;      // Time spend on I/O
@@ -500,22 +511,22 @@ int bout_monitor(real t, int iter, int NOUT)
 void bout_solve(Field2D &var, const char *name)
 {
   // Add to solver
-  solver.add(var, ddt(var), name);
+  solver->add(var, ddt(var), name);
 }
 
 void bout_solve(Field3D &var, const char *name)
 {
-  solver.add(var, ddt(var), name);
+  solver->add(var, ddt(var), name);
 }
 
 void bout_solve(Vector2D &var, const char *name)
 {
-  solver.add(var, ddt(var), name);
+  solver->add(var, ddt(var), name);
 }
 
 void bout_solve(Vector3D &var, const char *name)
 {
-  solver.add(var, ddt(var), name);
+  solver->add(var, ddt(var), name);
 }
 
 /*!************************************************************************
@@ -525,7 +536,7 @@ void bout_solve(Vector3D &var, const char *name)
 bool bout_constrain(Field3D &var, Field3D &F_var, const char *name)
 {
   // Add to solver
-  solver.constraint(var, F_var, name);
+  solver->constraint(var, F_var, name);
 
   return true;
 }
