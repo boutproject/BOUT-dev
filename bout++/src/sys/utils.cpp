@@ -127,6 +127,13 @@ real ***r3tensor(int nrow, int ncol, int ndep)
   return t;
 }
 
+void free_r3tensor(real ***m)
+{
+  free(m[0][0]);
+  free(m[0]);
+  free(m);
+}
+
 dcomplex **cmatrix(int nrow, int ncol)
 {
   dcomplex **m;

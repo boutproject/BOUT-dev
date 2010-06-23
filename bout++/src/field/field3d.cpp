@@ -2037,6 +2037,23 @@ int Field3D::nblocks = 0;
 memblock3d* Field3D::blocklist = NULL;
 memblock3d* Field3D::free_block = NULL;
 
+void Field3D::cleanup()
+{
+  while(blocklist != NULL) {
+    memblock3d *nb = blocklist->next;
+    
+    // Free the 3D data
+    free_r3tensor(blocklist->data);
+    // Delete the structure
+    delete blocklist;
+    // Move to the next one
+    blocklist = nb;
+  }
+  // Reset to starting
+  nblocks = 0;
+  free_block = NULL;
+}
+
 /// Get a new block of data, either from free list or allocate
 memblock3d *Field3D::newBlock() const
 {
@@ -2054,7 +2071,7 @@ memblock3d *Field3D::newBlock() const
 
     nb->data = r3tensor(mesh->ngx, mesh->ngy, mesh->ngz);
     nb->refs = 1;
-
+    
     // add to the global list
     nb->next = blocklist;
     blocklist = nb;

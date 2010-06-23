@@ -342,6 +342,9 @@ int bout_run()
 
 int bout_finish()
 {
+  // Delete 3D field memory
+  Field3D::cleanup();
+  
   // close MPI
 #ifdef PETSC
   PetscFinalize();

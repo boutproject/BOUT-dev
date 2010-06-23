@@ -38,6 +38,7 @@ int **imatrix(int xsize, int ysize);
 void free_rmatrix(real **m);
 void free_imatrix(int **m);
 real ***r3tensor(int nrow, int ncol, int ndep);
+void free_r3tensor(real ***m);
 
 dcomplex **cmatrix(int nrow, int ncol);
 void free_cmatrix(dcomplex** cm);

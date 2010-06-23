@@ -241,6 +241,8 @@ class Field3D : public Field, public FieldData {
 
   friend class Vector3D;
   
+  static void cleanup(); // Frees all memory
+
  private:
   /// Interpolates in z using up to 4 points
   real interpZ(int jx, int jy, int jz0, real zoffset, int order) const;
@@ -256,7 +258,7 @@ class Field3D : public Field, public FieldData {
   static memblock3d *blocklist;
   /// Linked list of free blocks
   static memblock3d *free_block;
-  
+
   /// Get a new block of data, either from free list or allocate
   memblock3d* newBlock() const;
   /// Makes sure data is allocated and only referenced by this object
