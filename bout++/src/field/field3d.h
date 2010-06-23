@@ -239,6 +239,8 @@ class Field3D : public Field, public FieldData {
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
 
+  friend class Vector3D;
+  
  private:
   /// Interpolates in z using up to 4 points
   real interpZ(int jx, int jy, int jz0, real zoffset, int order) const;

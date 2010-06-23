@@ -46,8 +46,16 @@ Vector2D::Vector2D(const Vector2D &f)
 
 Vector2D::~Vector2D()
 {
-  if(ddt != NULL)
+  if(ddt != NULL) {
+    // The ddt of the components (x.ddt) point to the same place as ddt.x
+    // only delete once
+    x.ddt = NULL;
+    y.ddt = NULL;
+    z.ddt = NULL;
+    
+    // Now delete them as part of the ddt vector
     delete ddt;
+  }
 }
 
 void Vector2D::toCovariant()
@@ -88,8 +96,29 @@ void Vector2D::toContravariant()
 
 Vector2D* Vector2D::timeDeriv()
 {
-  if(ddt == NULL)
+  if(ddt == NULL) {
     ddt = new Vector2D();
+    
+    // Check if the components have a time-derivative
+    // Need to make sure that ddt(v.x) = ddt(v).x
+    
+    if(x.ddt != NULL) {
+      // already set. Copy across then delete
+      ddt->x = *(x.ddt);
+      delete x.ddt;
+    }
+    if(y.ddt != NULL) {
+      ddt->y = *(y.ddt);
+      delete y.ddt;
+    }
+    if(z.ddt != NULL) {
+      ddt->z = *(z.ddt);
+      delete z.ddt;
+    }
+    x.ddt = &(ddt->x);
+    y.ddt = &(ddt->y);
+    z.ddt = &(ddt->z);
+  }
   return ddt;
 }
 

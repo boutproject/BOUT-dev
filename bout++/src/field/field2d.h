@@ -165,6 +165,8 @@ class Field2D : public Field, public FieldData {
   void doneComms() {bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
   
+  friend class Vector2D;
+  
  private:
   real **data;
 
