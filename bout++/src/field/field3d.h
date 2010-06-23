@@ -41,6 +41,9 @@ struct memblock3d {
   
   /// Pointer to next block in linked-list structure
   memblock3d *next;
+  
+  /// Pointer in list of all blocks
+  memblock3d *all_next;
 }; 
 
 

@@ -40,6 +40,12 @@
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+BoutMesh::~BoutMesh()
+{
+  // Delete the communication handles
+  clear_handles();
+}
+
 int BoutMesh::load()
 {
 #ifdef CHECK
@@ -125,6 +131,8 @@ int BoutMesh::load()
   OPTION(BoundaryOnCell, false); // Determine location of boundary
   OPTION(StaggerGrids,   false); // Stagger grids
   
+  OPTION(async_send, false); // Whether to use asyncronous sends
+
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
     if(mesh->ShiftOrder == 0) {
@@ -1757,7 +1765,7 @@ void BoutMesh::topology()
 BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
 {
   if(comm_list.empty()) {
-    //.allocate a new CommHandle
+    //Allocate a new CommHandle
     
     CommHandle* ch = new CommHandle;
     for(int i=0;i<6;i++)

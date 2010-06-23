@@ -55,14 +55,24 @@ GridFile::GridFile()
   isOpen = false;
 }
 
+GridFile::~GridFile()
+{
+  if(file != NULL)
+    delete file;
+}
+
 /// Constructor passing a file format and name
 GridFile::GridFile(DataFormat *format, const char *gridfilename)
 {
+  file = NULL; ///< Signal that the file is invalid
+  isOpen = false;
   setFile(format, gridfilename);
 }
 
 void GridFile::setFile(DataFormat *format, const char *gridfilename)
 {
+  if(file != NULL)
+    delete file;
   file = format;
   filename = string(gridfilename);
   isOpen = false;

@@ -2040,7 +2040,7 @@ memblock3d* Field3D::free_block = NULL;
 void Field3D::cleanup()
 {
   while(blocklist != NULL) {
-    memblock3d *nb = blocklist->next;
+    memblock3d *nb = blocklist->all_next;
     
     // Free the 3D data
     free_r3tensor(blocklist->data);
@@ -2048,7 +2048,9 @@ void Field3D::cleanup()
     delete blocklist;
     // Move to the next one
     blocklist = nb;
+    nblocks--;
   }
+  
   // Reset to starting
   nblocks = 0;
   free_block = NULL;
@@ -2073,9 +2075,9 @@ memblock3d *Field3D::newBlock() const
     nb->refs = 1;
     
     // add to the global list
-    nb->next = blocklist;
+    nb->all_next = blocklist;
     blocklist = nb;
-
+    
     nblocks++;
   }
 
@@ -2116,7 +2118,8 @@ void Field3D::freeData()
 {
   // put data block onto stack
 
-  if(block == NULL)
+  // Need to check for either no data, or all data has been cleared
+  if((block == NULL) || (nblocks == 0))
     return;
 
   block->refs--;

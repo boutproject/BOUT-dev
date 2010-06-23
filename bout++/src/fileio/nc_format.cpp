@@ -72,8 +72,9 @@ NcFormat::NcFormat(const string &name)
 
 NcFormat::~NcFormat()
 {
-  delete[] dimList;
+  delete[] recDimList;
   close();
+  rec_nr.clear();
 }
 
 bool NcFormat::openr(const string &name)

@@ -73,6 +73,7 @@ class GridDataSource {
 class GridFile : public GridDataSource {
  public:
   GridFile();
+  ~GridFile();
   GridFile(DataFormat *format, const char *gridfilename);
   
   void setFile(DataFormat *format, const char *gridfilename);

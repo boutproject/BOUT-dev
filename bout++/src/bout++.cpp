@@ -60,7 +60,9 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include <time.h>
 
 #include <string>
+#include <list>
 using std::string;
+using std::list;
 
 #ifdef SIGHANDLE
 #include <signal.h>
@@ -342,6 +344,14 @@ int bout_run()
 
 int bout_finish()
 {
+  // Get and delete the mesh data sources
+  list<GridDataSource*> source = mesh->getSources();
+  for (list<GridDataSource*>::iterator it = source.begin(); it != source.end(); it++)
+    delete *it;
+  
+  // Delete the mesh
+  delete mesh;
+
   // Delete 3D field memory
   Field3D::cleanup();
   

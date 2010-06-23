@@ -136,12 +136,14 @@ real Datafile::wtime = 0.0;
 Datafile::Datafile()
 {
   low_prec = false;
+  file = NULL;
   setFormat(data_format()); // Set default format
 }
 
 Datafile::Datafile(DataFormat *format)
 {
   low_prec = false;
+  file = NULL;
   setFormat(format);
 }
 
@@ -152,6 +154,9 @@ Datafile::~Datafile()
 
 void Datafile::setFormat(DataFormat *format)
 {
+  if(file != NULL)
+    delete file;
+  
   file = format;
   
   if(low_prec)

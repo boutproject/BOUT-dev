@@ -92,10 +92,12 @@ class RangeIter {
 
 class Mesh {
  public:
+  virtual ~Mesh() { };
   /// Add a data source
   int addSource(GridDataSource &source);
   int addSource(GridDataSource *source);
-  
+  const std::list<GridDataSource*> getSources() const {return source_list;}
+
   virtual int load() = 0; ///< Load from sources
   int load(GridDataSource &source); ///< Load from specified source
   

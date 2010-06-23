@@ -15,7 +15,9 @@ using std::list;
 using std::vector;
 
 class BoutMesh : public Mesh {
- public: 
+ public:
+  ~BoutMesh();
+  
   /// Read in the mesh from data sources
   int load();
   
