@@ -30,18 +30,18 @@ Field3D nu, mu_i;
 Field2D Rxy, Bpxy, Btxy, hthe;
 
 // parameters
-real Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
-real lambda_ei, lambda_ii;
-real nu_hat, mui_hat, wci, nueix, nuiix;
-real beta_p;
+BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
+BoutReal lambda_ei, lambda_ii;
+BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
+BoutReal beta_p;
 
 // settings
 bool estatic, ZeroElMass; // Switch for electrostatic operation (true = no Apar)
 bool AparInEpar;
-real zeff, nu_perp;
+BoutReal zeff, nu_perp;
 bool evolve_ajpar;
-real ShearFactor;
-real nu_factor;
+BoutReal ShearFactor;
+BoutReal nu_factor;
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -141,7 +141,7 @@ int physics_init(bool restarting)
 
   /************** PRINT Z INFORMATION ******************/
   
-  real hthe0;
+  BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
@@ -236,7 +236,7 @@ int physics_init(bool restarting)
 // just define a macro for V_E dot Grad
 #define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Solve EM fields
 

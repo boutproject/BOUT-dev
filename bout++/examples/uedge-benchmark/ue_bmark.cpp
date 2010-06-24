@@ -31,12 +31,12 @@ Field2D pei0, pe0;
 Field2D Rxy, Bpxy, Btxy, hthe;
 
 // parameters
-real Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
-real lambda_ei, lambda_ii;
-real nu_hat, mui_hat, wci, nueix, nuiix;
+BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
+BoutReal lambda_ei, lambda_ii;
+BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
 
-real chi_perp, D_perp, mu_perp;
-real lambda_relax;
+BoutReal chi_perp, D_perp, mu_perp;
+BoutReal lambda_relax;
 
 int physics_init(bool restarting)
 {
@@ -96,7 +96,7 @@ int physics_init(bool restarting)
 
   /************** PRINT Z INFORMATION ******************/
   
-  real hthe0;
+  BoutReal hthe0;
   if(GRID_LOAD(hthe0) == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
@@ -200,9 +200,9 @@ Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
     + (Bpxy / hthe) * DDX( difVi * Rxy * Rxy * Bpxy * hthe ) * DDX(Vi);
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
-  //real bmk_t = MPI_Wtime();
+  //BoutReal bmk_t = MPI_Wtime();
   
   // Communicate variables
   mesh->communicate(Ni, Vi, Te, Ti);
