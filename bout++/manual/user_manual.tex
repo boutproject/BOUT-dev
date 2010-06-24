@@ -5,6 +5,35 @@
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+        language=C++,
+	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+	identifierstyle=\ttfamily,
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+	showstringspaces=false,
+	basicstyle=\small,
+	numberstyle=\footnotesize,
+	numbers=left,
+	stepnumber=1,
+	numbersep=10pt,
+	tabsize=2,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	breakatwhitespace=false,
+	aboveskip={1.5\baselineskip},
+        columns=fixed,
+        upquote=true,
+        extendedchars=true,
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+}
+
 %% Modify margins
 \addtolength{\oddsidemargin}{-.25in}
 \addtolength{\evensidemargin}{-.25in}
@@ -1412,7 +1441,7 @@ you want to change the equations being solved.
 This section uses the ideal MHD equations as an example, demonstrating how
 a BOUT++ physics module is put together. It assumes you have a working knowledge
 of C or C++, but you don't need to be an expert - most of the messy code is hidden away
-from the physics module. There are several good books on C and C++, but i'd recommend online
+from the physics module. There are several good books on C and C++, but I'd recommend online
 tutorials over books because there are a lot more of them, they're quicker to scan through,
 and they're cheaper.
 
@@ -1426,8 +1455,8 @@ is given in the file \file{mhd.cpp} in the BOUT++ examples directory. The equati
 \end{eqnarray*}
 
 To specify a set of equations to solve in BOUT++, two functions need to be written:
-\begin{verbatim}
-int physics_init()
+\begin{lstlisting}
+int physics_init(bool restarting)
 {
   return 0;
 }
@@ -1436,37 +1465,40 @@ int physics_run(real t)
 {
   return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 The first of these is called once at the start of the simulation, and should set up the problem,
-specifying which variables are to be evolved. The second function is called every time-step,
+specifying which variables are to be evolved. The argument \code{restarting} is false the first time a problem is run, and true if loading the state from a
+restart file.
+
+The second function \code{physics\_run} is called every time-step,
 and should calculate the time-derivatives for a given state. In both cases returning non-zero
 tells BOUT++ that an error occurred.
 
 \subsection{Variables}
 
-For each equation to be evolved, global variables are needed both for the variable itself,
-and for the time-derivative calculated by \code{physics\_run}. For ideal MHD, we need
-two 3D scalar fields density $\rho$ and pressure $p$, and two 3D vector fields velocity $v$,
-and magnetic field $B$:
-\begin{verbatim}
+We need to define the variables to evolve as global variables (so they can be used in
+\code{physics\_init} and \code{physics\_run}.
+
+\note{Version 0.85 and earlier needed two variables to be defined, so if you're
+upgrading then you can remove the time-derivative variables}
+
+For ideal MHD, we need two 3D scalar fields density $\rho$ and pressure $p$, and two
+3D vector fields velocity $v$, and magnetic field $B$:
+\begin{lstlisting}
 Field3D rho, p; // 3D scalar fields
 Vector3D v, B;  // 3D vector fields
 
-Field3D F_rho, F_p; // time-derivatives
-Vector3D F_v, F_B; 
-
-int physics_init()
-   .
-   .
-   .
-\end{verbatim}
+int physics_init(bool restarting)
+{
+}
+\end{lstlisting}
 For clarity, variables storing time-derivatives are here prefixed with \code{F\_}, but this is not
 necessary - these variables can be named anything (as long as the name doesn't conflict with existing
 global variables).
 
 Scalar and vector fields behave much as you would expect: Field3D objects can be added, subtracted,
 multiplied, divided and exponentiated, so the following examples are all valid operations:
-\begin{verbatim}
+\begin{lstlisting}
 Field3D a, b, c;
 real r;
 
@@ -1474,10 +1506,10 @@ a = b + c; a = b - c;
 a = b * c; a = r * b;
 a = b / c; a = b / r; a = r / b;
 a = b ^ c; a = b ^ r; a = r ^ b;
-\end{verbatim}
+\end{lstlisting}
 Similarly, vector objects can be added/subtracted from each other, multiplied/divided by scalar
 fields and real numbers, for example:
-\begin{verbatim}
+\begin{lstlisting}
 Vector3D a, b, c;
 Field3D f;
 real r;
@@ -1485,25 +1517,25 @@ real r;
 a = b + c; a = b - c;
 a = b * f; a = b * r;
 a = b / f; a = b / r;
-\end{verbatim}
+\end{lstlisting}
 In addition the dot and cross products are represented by \code{*} and \pow symbols:
-\begin{verbatim}
+\begin{lstlisting}
 Vector3D a, b, c;
 Field3D f;
 
 f = a * b // Dot-product
 a = b ^ c // Cross-product
-\end{verbatim}
+\end{lstlisting}
 
 For both scalar and vector field operations, so long as the result of an operation is of the correct type,
 the usual C/C++ shorthand notation can be used:
-\begin{verbatim}
+\begin{lstlisting}
 Field3D a, b;
 Vector3D v, w;
 
 a += b; v *= a; v -= w; v ^= w; // valid
 v *= w; // NOT valid: result of dot-product is a scalar
-\end{verbatim}
+\end{lstlisting}
 
 %\parbox{\textwidth}
 
@@ -1515,36 +1547,36 @@ To be safe, always put exponentiation and cross-product operations in brackets}
 \subsection{Evolution equations}
 
 At this point we can tell BOUT++ which variables to evolve, and where the state and time-derivatives
-will be stored. This is done using the \code{bout\_solve(variable, derivative, name)} function
+will be stored. This is done using the \code{bout\_solve(variable, name)} function
 in \code{physics\_init}:
-\begin{verbatim}
-int physics_init()
+\begin{lstlisting}
+int physics_init(bool restarting)
 {
-  bout_solve(rho, F_rho, "density");
-  bout_solve(p, F_p, "pressure");
-  bout_solve(v, F_v, "v");
-  bout_solve(B, F_B, "B");
+  bout_solve(rho, "density");
+  bout_solve(p,   "pressure");
+  bout_solve(v,   "v");
+  bout_solve(B,   "B");
   
   return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 The name given to this function will be used in the output and restart data files. These will be
 automatically read and written depending on input options (see section~\ref{subsec:options}).
 Input options based on these names are also used to initialise the variables.
 
 The equations to be solved can now be written in the \code{physics\_run} function. The value
 passed to the function (\code{real t}) is the simulation time - only needed if your
-equations contain time-dependent sources or similar terms. The ideal MHD equations can be written
-as:
-\begin{verbatim}
+equations contain time-dependent sources or similar terms. To refer to the time-derivative
+of a variable \code{var}, use \code{ddt(var)}. The ideal MHD equations can be written as:
+\begin{lstlisting}
 int physics_run(real t)
 {
-  F_rho = -1.0*V_dot_Grad(v, rho) - rho*Div(v);
-  F_p = -1.0*V_dot_Grad(v, p) - gamma*p*Div(v);
-  F_v = -1.0*V_dot_Grad(v, v) + ( (Curl(B)^B) - Grad(p) ) / rho;
-  F_B = Curl(v^B);
+  ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
+  ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
+  ddt(v) = -V_dot_Grad(v, v) + ( (Curl(B)^B) - Grad(p) ) / rho;
+  ddt(B) = Curl(v^B);
 }
-\end{verbatim}
+\end{lstlisting}
 Where the differential operators \code{vector = Grad(scalar)}, \code{scalar = Div(vector)}, and
 \code{vector = Curl(vector)} are used. For the density and pressure equations, 
 the $\mathbf{v}\cdot\nabla\rho$ term could be written as \code{v*Grad(rho)}, but this would then use
@@ -1558,16 +1590,13 @@ on vector objects (since result is neither scalar nor vector), so the $\mathbf{v
 Note that in the above equations the extra parameter \code{gamma} has been used. To enable this to be set
 in the input options file (see section~\ref{sec:options}), we use the \code{options} object in the
 initialisation function:
-\begin{verbatim}
+\begin{lstlisting}
 real gamma;
 
-int physics_init()
+int physics_init(bool restarting)
 {
   options.get("mhd", "gamma", gamma, 5.0/3.0);
-   .
-   .
-   .
-\end{verbatim}
+\end{lstlisting}
 This specifies that an option called ``gamma'' in a section called ``mhd'' should be put into the variable \code{gamma}. If the option could not be found, or was of the wrong type, the variable should be set to a default value of $5/3$.
 The value used will be printed to the output file, so if gamma is not set in the input file the following line will appear:
 \begin{verbatim}
@@ -1577,44 +1606,53 @@ This function can be used to get integers and booleans. To get strings, there
 is the function (\code{char* options.getString(section, name)}.
 To separate options specific to the physics model, these options should be put in a separate
 section, for example here the ``mhd'' section has been specified. To save having to write the section name for every option, there is the \code{setSection} function:
-\begin{verbatim}
+\begin{lstlisting}
 real gamma;
 int someint;
 
-int physics_init()
+int physics_init(bool restarting)
 {
   options.setSection("mhd");
   options.get("gamma",   gamma,   5.0/3.0);
   options.get("someint", someint, 0);
-   .
-   .
-   .
-\end{verbatim}
+\end{lstlisting}
 Most of the time, the name of the variable (e.g. \code{gamma}) will be
 the same as the identifier in the options file (``gamma''). In this case,
 there is the macro
-\begin{verbatim}
+\begin{lstlisting}
 OPTION(gamma, 5.0/3.0);
-\end{verbatim}
+\end{lstlisting}
 which is equivalent to
-\begin{verbatim}
+\begin{lstlisting}
 options.get("gamma",   gamma,   5.0/3.0);
-\end{verbatim}
-See section~\ref{sec:options} for more
-details of how to use the input options.
+\end{lstlisting}
+See section~\ref{sec:options} for more details of how to use the input options.
 
 \subsection{Communication}
 
 If you plan to run BOUT++ on more than one processor, any operations involving y derivatives
 will require knowledge of data stored on other processors. To handle the necessary parallel
-communication, there is the \code{Communicator} object. This takes care of where the data
+communication, there is the \code{mesh->communicate} function. This takes care of where the data
 needs to go to/from, and only needs to be told which variables to transfer.
 
-To do this, first create a \code{Communicator} object, in this case called \code{comms},
+If you only need to communicate a small number (up to 5 currently) of variables then just
+call the \code{mesh->communicate} function directly. For the MHD code, we need to communicate
+the variables \code{rho,p,v,B} at the beginning of the \code{physics\_run} function
+before any derivatives are calculated:
+\begin{lstlisting}
+int physics_run(real t)
+{
+  mesh->communicate(rho, p, v, B);
+\end{lstlisting}
+
+If you need to communicate lots of variables, or want to change at run-time which
+variables are evolved (e.g. depending on input options), then you can create a group
+of variables and communicate them later.
+To do this, first create a \code{FieldGroup} object, in this case called \code{comms},
 then use the add method. This method does no communication, but records which variables to transfer
 when the communication is done later.
-\begin{verbatim}
-Communicator comms;
+\begin{lstlisting}
+FieldGroup comms;
 
 int physics_init()
 {
@@ -1628,58 +1666,45 @@ int physics_init()
 
   return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 
-To perform the actual communication, the \code{run} method can be used. In this case
+To perform the actual communication, call the \code{mesh->communicate} function
+with the group. In this case
 we need to communicate all these variables before performing any calculations, so call
 this function at the start of the \code{physics\_run} routine:
-\begin{verbatim}
+\begin{lstlisting}
 int physics_run(real t)
 {
-  comms.run();
+  mesh->communicate(comms);
   .
   .
   .
-\end{verbatim}
+\end{lstlisting}
 In many situations there may be several groups of variables which can be communicated at
-different times. The function \code{run} consists of a call to \code{send} followed by \code{receive}
+different times. The function \code{mesh->communicate} consists of a call to \code{mesh->send} followed by \code{mesh->wait}
 which can be done separately to interleave calculations and communications. This will speed up the
 code if parallel communication bandwidth is a problem for your simulation.
 
-In our MHD example, the calculation of \code{F\_rho} and \code{F\_p} does not require \code{B}, so
-we could first communicate \code{rho}, \code{p}, and \code{v}, send \code{B} and do some calculations
-whilst communications are performed:
-\begin{verbatim}
-Communicator comms1, comms2;
-
-int physics_init()
-{
-  .
-  .
-  comms1.add(rho);
-  comms1.add(p);
-  comms1.add(v);
-  comms2.add(B);
-  
-  return 0;
-}
-
+In our MHD example, the calculation of \code{ddt(rho)} and \code{ddt(p)} does not require
+\code{B}, so we could first communicate \code{rho}, \code{p}, and \code{v}, send \code{B}
+and do some calculations whilst communications are performed:
+\begin{lstlisting}
 int physics_run(real t)
 {
-  comms1.run(); // sends and receives rho, p and v
-  comms2.send(); // only send B
+  mesh->communicate(rho, p, v); // sends and receives rho, p and v
+  comm_handle ch = mesh->send(B);// only send B
   
-  F_rho = ...
-  F_p = ...
+  ddt(rho) = ...
+  ddt(p) = ...
   
-  comms2.receive(); // now wait for B to arrive
+  mesh->wait(ch); // now wait for B to arrive
   
-  F_v = ...
-  F_B = ...
+  ddt(v) = ...
+  ddt(B) = ...
 
   return 0;
 }
-\end{verbatim}
+\end{lstlisting}
 
 This scheme is not used in \file{mhd.cpp}, partly for clarity, and partly because currently
 communications are not a significant bottleneck (too much inefficiency elsewhere!).
@@ -1703,27 +1728,27 @@ separation into background and perturbed quantities.}
 
 To read in a quantity from a grid file, there is the \code{grid.get} function:
 
-\begin{verbatim}
+\begin{lstlisting}
 Field2D Ni0; // Background density
 
-int physics_init()
+int physics_init(bool restarting)
 {
   ...
-  grid.get(Ni0, "Ni0");
+  mesh->get(Ni0, "Ni0");
   ...
 }
-\end{verbatim}
+\end{lstlisting}
 
 As with the input options, most of the time the name of the variable in the
 physics code will be the same as the name in the grid file to avoid confusion.
 In this case, you can just use
-\begin{verbatim}
+\begin{lstlisting}
 GRID_LOAD(Ni0);
-\end{verbatim}
+\end{lstlisting}
 which is equivalent to
-\begin{verbatim}
-grid.get(Ni0, "Ni0");
-\end{verbatim}
+\begin{lstlisting}
+mesh->get(Ni0, "Ni0");
+\end{lstlisting}
 
 \subsection{Boundary conditions}
 
@@ -1749,19 +1774,19 @@ and people have different tastes in these matters.
 The C-like way (which is the dominant way in BOUT++) is to use the \code{write} function,
 which works just like \code{printf}, and takes all the same codes (it uses \code{sprintf}
 internally). 
-\begin{verbatim}
+\begin{lstlisting}
 output.write(const char *format, ...)
-\end{verbatim}
+\end{lstlisting}
 For example:
-\begin{verbatim}
+\begin{lstlisting}
 output.write("This is an integer: %d, and this a real: %e\n", 5, 2.0)
-\end{verbatim}
+\end{lstlisting}
 
 For those who prefer the C++ way of doing things, a completely equivalent way is to
 treat \code{output} as you would \code{cout}:
-\begin{verbatim}
+\begin{lstlisting}
 output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
-\end{verbatim}
+\end{lstlisting}
 which will produce exactly the same result as the \code{output.write} call above.
 
 On all processors, anything sent to \code{output} will be written to a log file called
@@ -1786,9 +1811,9 @@ inversions are very efficient: $O\left(n_z \log n_z\right)$ for the FFTs, $O\lef
 using the Thomas algorithm \cite{press-1999}, where $n_x$ and $n_z$ are the number of grid-points
 in the $x$ and $z$ directions respectively.
 This routine is:
-\begin{verbatim}
+\begin{lstlisting}
 invert_laplace(b, x, flags, &a);
-\end{verbatim}
+\end{lstlisting}
 where \code{b} and \code{x} are 3D fields, and \code{a} is a pointer to a 2D field (which may be
 NULL). \code{flags} is an \code{int} which determines boundary conditions and other options.
 Its value is calculated by adding the settings given in \code{invert\_laplace.h}, and reproduced in
@@ -1832,13 +1857,13 @@ statements (see section~\ref{sec:printing}). Things get harder when a bug only o
 of running, and/or only occasionally. For this type of problem, a useful tool
 can be the message stack.
 At the start of a section of code, put a message onto the stack:
-\begin{verbatim}
+\begin{lstlisting}
    msg_stack.push("Some message here");
-\end{verbatim}
+\end{lstlisting}
 which can also take arguments in \code{printf} format, as with \code{output.write}. At the end of the section of code, take the message off the stack again:
-\begin{verbatim}
+\begin{lstlisting}
    msg_stack.pop();
-\end{verbatim}
+\end{lstlisting}
 If an error occurs, the message stack is printed out, and this can then
 help track down where the error originated.
 
