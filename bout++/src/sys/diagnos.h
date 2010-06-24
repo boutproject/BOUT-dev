@@ -40,7 +40,7 @@ class Diagnos {
   ~Diagnos();
   void add(FieldData &f, DIAGNOS_FUNC func, int x=-1, int y=-1, int z=-1, int component=-1, const char *label = NULL);
   
-  const vector< real > run();
+  const vector< BoutReal > run();
 
  private:
 
@@ -59,7 +59,7 @@ class Diagnos {
 
   vector< diag_item > item;
 
-  real run(const diag_item &i);
+  BoutReal run(const diag_item &i);
 };
 
 

@@ -34,7 +34,7 @@ class Field3D;
 /// Structure to store blocks of memory for Field3D class
 struct memblock3d {
   /// memory block
-  real ***data;
+  BoutReal ***data;
 
   /// Number of references
   int refs;
@@ -71,7 +71,7 @@ class Field3D : public Field, public FieldData {
   /// Ensures that memory is allocated
   void allocate() const;
   /// Returns a pointer to internal data (REMOVE THIS)
-  real*** getData() const;
+  BoutReal*** getData() const;
   bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
@@ -87,40 +87,40 @@ class Field3D : public Field, public FieldData {
   // Operators
   
   /// Allows access to internal data using square-brackets
-  real** operator[](int jx) const;
-  real& operator[](bindex &bx) const;
+  BoutReal** operator[](int jx) const;
+  BoutReal& operator[](bindex &bx) const;
 
   /// Assignment operators
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
   Field3D & operator=(const FieldPerp &rhs);
   const bvalue & operator=(const bvalue &val);
-  real operator=(const real val);
+  BoutReal operator=(const BoutReal val);
 
   /// Addition operators
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
-  Field3D & operator+=(const real &rhs);
+  Field3D & operator+=(const BoutReal &rhs);
   
   /// Subtraction
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
-  Field3D & operator-=(const real &rhs);
+  Field3D & operator-=(const BoutReal &rhs);
 
   /// Multiplication
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
-  Field3D & operator*=(const real rhs);
+  Field3D & operator*=(const BoutReal rhs);
   
   /// Division
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
-  Field3D & operator/=(const real rhs);
+  Field3D & operator/=(const BoutReal rhs);
 
   /// Exponentiation (use pow() function)
   Field3D & operator^=(const Field3D &rhs);
   Field3D & operator^=(const Field2D &rhs);
-  Field3D & operator^=(const real rhs);
+  Field3D & operator^=(const BoutReal rhs);
   
   // Binary operators
 
@@ -128,28 +128,28 @@ class Field3D : public Field, public FieldData {
   const Field3D operator+(const Field3D &other) const;
   const Field3D operator+(const Field2D &other) const;
   const FieldPerp operator+(const FieldPerp &other) const;
-  const Field3D operator+(const real &rhs) const;
+  const Field3D operator+(const BoutReal &rhs) const;
 
   const Field3D operator-() const;
   const Field3D operator-(const Field3D &other) const;
   const Field3D operator-(const Field2D &other) const;
   const FieldPerp operator-(const FieldPerp &other) const;
-  const Field3D operator-(const real &rhs) const;
+  const Field3D operator-(const BoutReal &rhs) const;
 
   const Field3D operator*(const Field3D &other) const;
   const Field3D operator*(const Field2D &other) const;
   const FieldPerp operator*(const FieldPerp &other) const;
-  const Field3D operator*(const real rhs) const;
+  const Field3D operator*(const BoutReal rhs) const;
 
   const Field3D operator/(const Field3D &other) const;
   const Field3D operator/(const Field2D &other) const;
   const FieldPerp operator/(const FieldPerp &other) const;
-  const Field3D operator/(const real rhs) const;
+  const Field3D operator/(const BoutReal rhs) const;
 
   const Field3D operator^(const Field3D &other) const;
   const Field3D operator^(const Field2D &other) const;
   const FieldPerp operator^(const FieldPerp &other) const;
-  const Field3D operator^(const real rhs) const;
+  const Field3D operator^(const BoutReal rhs) const;
 
   // Stencils for differencing
 
@@ -167,12 +167,12 @@ class Field3D : public Field, public FieldData {
   void shiftZ(int jx, int jy, double zangle); 
   /// Shift all points in z by specified angle
   const Field3D shiftZ(const Field2D zangle) const; 
-  const Field3D shiftZ(const real zangle) const;
-  /// Shifts to/from real-space (using zShift global variable)
-  const Field3D shiftZ(bool toreal) const; 
-  /// virtual function to shift between real and shifted space
-  void shiftToReal(bool toreal) {
-    *this = shiftZ(toreal);
+  const Field3D shiftZ(const BoutReal zangle) const;
+  /// Shifts to/from BoutReal-space (using zShift global variable)
+  const Field3D shiftZ(bool toBoutReal) const; 
+  /// virtual function to shift between BoutReal and shifted space
+  void shiftToReal(bool toBoutReal) {
+    *this = shiftZ(toBoutReal);
   }
   
   // Slicing
@@ -193,12 +193,12 @@ class Field3D : public Field, public FieldData {
   
   const Field3D sqrt() const;
   const Field3D abs() const;
-  real min(bool allpe=false) const;
-  real max(bool allpe=false) const;
+  BoutReal min(bool allpe=false) const;
+  BoutReal max(bool allpe=false) const;
 
   // Friend operators
-  friend const Field3D operator-(const real &lhs, const Field3D &rhs);
-  friend const Field3D operator+(const real &lhs, const Field3D &rhs);
+  friend const Field3D operator-(const BoutReal &lhs, const Field3D &rhs);
+  friend const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
 
   // Friend functions
   
@@ -218,18 +218,18 @@ class Field3D : public Field, public FieldData {
 
   // FieldData virtual functions
   
-  bool isReal() const   { return true; }         // Consists of real values
+  bool isReal() const   { return true; }         // Consists of BoutReal values
   bool is3D() const     { return true; }         // Field is 3D
-  int  byteSize() const { return sizeof(real); } // Just one real
-  int  realSize() const { return 1; }
+  int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const { return 1; }
   int  getData(int x, int y, int z, void *vptr) const;
-  int  getData(int x, int y, int z, real *rptr) const;
+  int  getData(int x, int y, int z, BoutReal *rptr) const;
   int  setData(int x, int y, int z, void *vptr);
-  int  setData(int x, int y, int z, real *rptr);
+  int  setData(int x, int y, int z, BoutReal *rptr);
 
   bool ioSupport() { return true; } ///< This class supports I/O operations
-  real *getData(int component) { 
-    real ***d = getData();
+  BoutReal *getData(int component) { 
+    BoutReal ***d = getData();
     return **d;
   }
   void zeroComponent(int component){
@@ -248,7 +248,7 @@ class Field3D : public Field, public FieldData {
 
  private:
   /// Interpolates in z using up to 4 points
-  real interpZ(int jx, int jy, int jz0, real zoffset, int order) const;
+  BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;
 
   // NOTE: Data structures mutable, though logically const
 
@@ -276,14 +276,14 @@ class Field3D : public Field, public FieldData {
 
 // Non-member overloaded operators
 
-const Field3D operator*(const real lhs, const Field3D &rhs);
-const Field3D operator/(const real lhs, const Field3D &rhs);
-const Field3D operator^(const real lhs, const Field3D &rhs);
+const Field3D operator*(const BoutReal lhs, const Field3D &rhs);
+const Field3D operator/(const BoutReal lhs, const Field3D &rhs);
+const Field3D operator^(const BoutReal lhs, const Field3D &rhs);
 
 // Non-member functions
 const Field3D sqrt(const Field3D &f);
 const Field3D abs(const Field3D &f);
-real min(const Field3D &f, bool allpe=false);
-real max(const Field3D &f, bool allpe=false);
+BoutReal min(const Field3D &f, bool allpe=false);
+BoutReal max(const Field3D &f, bool allpe=false);
 
 #endif /* __FIELD3D_H__ */

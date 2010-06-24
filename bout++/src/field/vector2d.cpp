@@ -139,7 +139,7 @@ Vector2D & Vector2D::operator=(const Vector2D &rhs)
   return *this;
 }
 
-real Vector2D::operator=(const real val)
+BoutReal Vector2D::operator=(const BoutReal val)
 {
   x = val;
   y = val;
@@ -195,7 +195,7 @@ Vector2D & Vector2D::operator-=(const Vector2D &rhs)
 
 //////////////// MULTIPLICATION //////////////////
 
-Vector2D & Vector2D::operator*=(const real rhs)
+Vector2D & Vector2D::operator*=(const BoutReal rhs)
 { 
   x *= rhs;
   y *= rhs;
@@ -215,7 +215,7 @@ Vector2D & Vector2D::operator*=(const Field2D &rhs)
 
 /////////////////// DIVISION /////////////////////
 
-Vector2D & Vector2D::operator/=(const real rhs)
+Vector2D & Vector2D::operator/=(const BoutReal rhs)
 {
   x /= rhs;
   y /= rhs;
@@ -293,7 +293,7 @@ const Vector3D Vector2D::operator-(const Vector3D &rhs) const
 
 /////////////// MULTIPLICATION //////////////////
 
-const Vector2D Vector2D::operator*(const real rhs) const
+const Vector2D Vector2D::operator*(const BoutReal rhs) const
 {
   Vector2D result = *this;
   result *= rhs;
@@ -317,7 +317,7 @@ const Vector3D Vector2D::operator*(const Field3D &rhs) const
 
 /////////////////// DIVISION /////////////////////
 
-const Vector2D Vector2D::operator/(const real rhs) const
+const Vector2D Vector2D::operator/(const BoutReal rhs) const
 {
   Vector2D result = *this;
   result /= rhs;
@@ -391,7 +391,7 @@ const Vector3D Vector2D::operator^(const Vector3D &rhs) const
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-const Vector2D operator*(const real lhs, const Vector2D &rhs)
+const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs)
 {
   return rhs*lhs;
 }
@@ -429,15 +429,15 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   *ptr = x[jx][jy]; ptr++;
   *ptr = y[jx][jy]; ptr++;
   *ptr = z[jx][jy];
   
-  return 3*sizeof(real);
+  return 3*sizeof(BoutReal);
 }
 
-int Vector2D::getData(int jx, int jy, int jz, real *rptr) const
+int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 {
 #ifdef CHECK
   // check ranges
@@ -463,15 +463,15 @@ int Vector2D::setData(int jx, int jy, int jz, void *vptr)
     exit(1);
   }
 #endif
-  real *rptr = (real*) vptr;
+  BoutReal *rptr = (BoutReal*) vptr;
   x[jx][jy] = *rptr; rptr++;
   y[jx][jy] = *rptr; rptr++;
   z[jx][jy] = *rptr;
 
-  return 3*sizeof(real);
+  return 3*sizeof(BoutReal);
 }
 
-int Vector2D::setData(int jx, int jy, int jz, real *rptr)
+int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr)
 {
 #ifdef CHECK
   // check ranges

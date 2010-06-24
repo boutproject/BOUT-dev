@@ -29,29 +29,29 @@
 #include "bout_types.h"
 #include "dcomplex.h"
 
-real *rvector(int size);
-real *rvresize(real *v, int newsize);
+BoutReal *rvector(int size);
+BoutReal *rvresize(BoutReal *v, int newsize);
 int *ivector(int size);
 int *ivresize(int *v, int newsize);
-real **rmatrix(int xsize, int ysize);
+BoutReal **rmatrix(int xsize, int ysize);
 int **imatrix(int xsize, int ysize);
-void free_rmatrix(real **m);
+void free_rmatrix(BoutReal **m);
 void free_imatrix(int **m);
-real ***r3tensor(int nrow, int ncol, int ndep);
-void free_r3tensor(real ***m);
+BoutReal ***r3tensor(int nrow, int ncol, int ndep);
+void free_r3tensor(BoutReal ***m);
 
 dcomplex **cmatrix(int nrow, int ncol);
 void free_cmatrix(dcomplex** cm);
 
-real SQ(real x);
-int ROUND(real x);
-void SWAP(real &a, real &b);
+BoutReal SQ(BoutReal x);
+int ROUND(BoutReal x);
+void SWAP(BoutReal &a, BoutReal &b);
 void SWAP(dcomplex &a, dcomplex &b);
 bool is_pow2(int x); // Check if a number is a power of 2
 
 /*
-real operator^(real lhs, int rhs);
-real operator^(real lhs, const real &rhs);
+BoutReal operator^(BoutReal lhs, int rhs);
+BoutReal operator^(BoutReal lhs, const BoutReal &rhs);
 */
 
 char* copy_string(const char* s);

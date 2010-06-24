@@ -190,7 +190,7 @@ bool PdbFormat::read(int *var, const string &name, int lx, int ly, int lz)
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool PdbFormat::read(real *var, const char *name, int lx, int ly, int lz)
+bool PdbFormat::read(BoutReal *var, const char *name, int lx, int ly, int lz)
 {
   long inds[9];
 
@@ -212,7 +212,7 @@ bool PdbFormat::read(real *var, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool PdbFormat::read(real *var, const string &name, int lx, int ly, int lz)
+bool PdbFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return read(var, name.c_str(), lx, ly, lz);
 }
@@ -250,7 +250,7 @@ bool PdbFormat::write(int *var, const string &name, int lx, int ly, int lz)
   return write(var, name.c_str(), lx, ly, lz);
 }
 
-bool PdbFormat::write(real *var, const char *name, int lx, int ly, int lz)
+bool PdbFormat::write(BoutReal *var, const char *name, int lx, int ly, int lz)
 {
   char *vartype = REALSTR;
   if(lowPrecision)
@@ -282,7 +282,7 @@ bool PdbFormat::write(real *var, const char *name, int lx, int ly, int lz)
   return (PD_write_as_alt(fp, (char*) name, REALSTR, vartype, var, nd, inds) == TRUE);
 }
 
-bool PdbFormat::write(real *var, const string &name, int lx, int ly, int lz)
+bool PdbFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return write(var, name.c_str(), lx, ly, lz);
 }
@@ -328,7 +328,7 @@ bool PdbFormat::read_rec(int *var, const string &name, int lx, int ly, int lz)
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool PdbFormat::read_rec(real *var, const char *name, int lx, int ly, int lz)
+bool PdbFormat::read_rec(BoutReal *var, const char *name, int lx, int ly, int lz)
 {
   if(!is_valid())
     return false;
@@ -360,7 +360,7 @@ bool PdbFormat::read_rec(real *var, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool PdbFormat::read_rec(real *var, const string &name, int lx, int ly, int lz)
+bool PdbFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
@@ -399,7 +399,7 @@ bool PdbFormat::write_rec(int *var, const string &name, int lx, int ly, int lz)
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool PdbFormat::write_rec(real *var, const char *name, int lx, int ly, int lz)
+bool PdbFormat::write_rec(BoutReal *var, const char *name, int lx, int ly, int lz)
 {
   char *vartype = REALSTR;
   if(lowPrecision)
@@ -432,7 +432,7 @@ bool PdbFormat::write_rec(real *var, const char *name, int lx, int ly, int lz)
   return (PD_write_as_alt(fp, (char*) name, REALSTR, vartype, var, nd, inds) == TRUE);
 }
 
-bool PdbFormat::write_rec(real *var, const string &name, int lx, int ly, int lz)
+bool PdbFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }

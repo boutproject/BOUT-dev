@@ -26,18 +26,18 @@
 #include "invert_gmres.h"
 #include "globals.h"
 
-typedef int (*opfunc1D) (real *b, real *x, void* data);
-int gmres_solve(real *b, real *x, int n, int m, opfunc1D A, int itmax, real tol, void* data);
+typedef int (*opfunc1D) (BoutReal *b, BoutReal *x, void* data);
+int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, BoutReal tol, void* data);
 
-int operator_2d(real *b, real *x, void *data);
-int operator_2d_bndry(real *b, real *x, void *data);
+int operator_2d(BoutReal *b, BoutReal *x, void *data);
+int operator_2d_bndry(BoutReal *b, BoutReal *x, void *data);
 
 typedef struct {
   opfunc2D op;
   
   int y;
 
-  real **b2d, **x2d;
+  BoutReal **b2d, **x2d;
   FieldPerp *bp, *xp;
   
   int flags;
@@ -61,11 +61,11 @@ int iter_solve(FieldPerp &b, FieldPerp &x, opfunc2D A, void *extra)
   n = mesh->ngx*mesh->ngz;
   if(size == 0) {
     if(size == 0) {
-      data.b2d = (real**) malloc(sizeof(real*)*mesh->ngx);
-      data.x2d = (real**) malloc(sizeof(real*)*mesh->ngx);
+      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
+      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
     }else {
-      data.b2d = (real**) realloc(data.b2d, sizeof(real*)*mesh->ngx);
-      data.x2d = (real**) realloc(data.x2d, sizeof(real*)*mesh->ngx);
+      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->ngx);
+      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->ngx);
     }
     size = n;
   }
@@ -86,18 +86,18 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
 {
   int n, ret;
   int jx, jz;
-  real dc;
+  BoutReal dc;
   static int size = 0;
   static iter2d data;
 
   n = mesh->ngx*mesh->ngz;
   if(size == 0) {
     if(size == 0) {
-      data.b2d = (real**) malloc(sizeof(real*)*mesh->ngx);
-      data.x2d = (real**) malloc(sizeof(real*)*mesh->ngx);
+      data.b2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
+      data.x2d = (BoutReal**) malloc(sizeof(BoutReal*)*mesh->ngx);
     }else {
-      data.b2d = (real**) realloc(data.b2d, sizeof(real*)*mesh->ngx);
-      data.x2d = (real**) realloc(data.x2d, sizeof(real*)*mesh->ngx);
+      data.b2d = (BoutReal**) BoutRealloc(data.b2d, sizeof(BoutReal*)*mesh->ngx);
+      data.x2d = (BoutReal**) BoutRealloc(data.x2d, sizeof(BoutReal*)*mesh->ngx);
     }
     size = n;
   }
@@ -132,7 +132,7 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
       for(jz=0;jz<ncz;jz++) {
 	dc += b[jx][jz];
       }
-      dc /= (real) ncz;
+      dc /= (BoutReal) ncz;
       for(jz=0;jz<ncz;jz++) {
 	b[jx][jz] -= dc;
       }
@@ -160,7 +160,7 @@ int iter_solve_bndry(Field3D &b, Field3D &x, opfunc2D A, int flags, void *extra)
  * Interface operator functions
  *******************************************************************************/
 
-int operator_2d(real *b, real *x, void *extra)
+int operator_2d(BoutReal *b, BoutReal *x, void *extra)
 { 
   iter2d *data;
   int i;
@@ -188,12 +188,12 @@ int operator_2d(real *b, real *x, void *extra)
   return(ret);
 }
 
-int operator_2d_bndry(real *b, real *x, void *extra)
+int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
 { 
   iter2d *data;
   int ret;
   int i, j;
-  real dc1;
+  BoutReal dc1;
 
   data = (iter2d*) extra;
 
@@ -223,7 +223,7 @@ int operator_2d_bndry(real *b, real *x, void *extra)
       for(j=0;j<ncz;j++) {
 	dc1 += data->b2d[i][j];
       }
-      dc1 /= (real) ncz;
+      dc1 /= (BoutReal) ncz;
       for(j=0;j<ncz;j++) {
 	data->b2d[i][j] -= dc1;
       }
@@ -272,10 +272,10 @@ int operator_2d_bndry(real *b, real *x, void *extra)
  * GMRES Iterative solver
  *******************************************************************************/
 
-real norm_vector(real *b, int n)
+BoutReal norm_vector(BoutReal *b, int n)
 {
   int i;
-  real val = 0.0;
+  BoutReal val = 0.0;
 
   for(i=0;i<n;i++)
     val += b[i]*b[i];
@@ -283,10 +283,10 @@ real norm_vector(real *b, int n)
   return(sqrt(val));
 }
 
-real dot_product(real *a, real *b, int n)
+BoutReal dot_product(BoutReal *a, BoutReal *b, int n)
 {
   int i;
-  real val = 0.0;
+  BoutReal val = 0.0;
 
   for(i=0;i<n;i++)
     val += a[i]*b[i];
@@ -294,7 +294,7 @@ real dot_product(real *a, real *b, int n)
   return(val);
 }
 
-void Update(real *x, int it, real **h, real *s, real *y, real **v, int n)
+void Update(BoutReal *x, int it, BoutReal **h, BoutReal *s, BoutReal *y, BoutReal **v, int n)
 {
   int i, j, p;
   
@@ -318,9 +318,9 @@ void Update(real *x, int it, real **h, real *s, real *y, real **v, int n)
   }
 }
 
-void GeneratePlaneRotation(real dx, real dy, real *cs, real *sn)
+void GeneratePlaneRotation(BoutReal dx, BoutReal dy, BoutReal *cs, BoutReal *sn)
 {
-  real temp;
+  BoutReal temp;
   if(dy == 0.0) {
     *cs = 1.0;
     *sn = 0.0;
@@ -335,27 +335,27 @@ void GeneratePlaneRotation(real dx, real dy, real *cs, real *sn)
   }
 }
 
-void ApplyPlaneRotation(real *dx, real *dy, real cs, real sn)
+void ApplyPlaneRotation(BoutReal *dx, BoutReal *dy, BoutReal cs, BoutReal sn)
 {
-  real temp;
+  BoutReal temp;
 
   temp = *dx;
   *dx = cs * (*dx) + sn * (*dy);
   *dy = cs * (*dy) - sn * temp;
 }
 
-int gmres_solve(real *b, real *x, int n, int m, opfunc1D A, int itmax, real tol, void* data)
+int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, BoutReal tol, void* data)
 {
   int i;
   int it, itt, p;
-  real normb, beta, resid;
+  BoutReal normb, beta, resid;
   
   /* Problem array storage */
   static int size = 0, msize = 0;
-  static real *y, *s, *cs, *sn;
-  static real **H;
-  static real *r, *w;
-  static real **v;
+  static BoutReal *y, *s, *cs, *sn;
+  static BoutReal **H;
+  static BoutReal *r, *w;
+  static BoutReal **v;
   
   if((n < 1) || (m < 1))
     return(1);

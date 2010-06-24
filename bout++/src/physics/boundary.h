@@ -139,22 +139,22 @@ void bndry_ydown_rotate(Field3D &var, bool reverse = false);
 void bndry_ydown_zaverage(Field3D &var);
 
 // Relaxing boundaries
-void bndry_core_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_pf_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
-void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, real value, real rate=10.);
+void bndry_core_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_pf_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
+void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate=10.);
 
 // Relax to zero gradient
-void bndry_core_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_pf_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, real rate=10.);
+void bndry_core_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_pf_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
 
 // Symmetric boundary condition
 void bndry_core_sym(Field3D &var);
@@ -165,12 +165,12 @@ void bndry_ydown_sym(Field3D &var);
 void bndry_yup_sym(Field3D &var);
 
 // Relax to symmetric conditions
-void bndry_core_relax_sym(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_pf_relax_sym(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate=10.);
-void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate=10.);
-void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate=10.);
+void bndry_core_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_pf_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, BoutReal rate=10.);
+void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
+void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate=10.);
 
 // z boundary
 

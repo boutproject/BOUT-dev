@@ -51,16 +51,16 @@ using std::string;
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SAVE_VARS, SAVE_DERIVS};
 
 /// RHS function pointer
-typedef int (*rhsfunc)(real);
+typedef int (*rhsfunc)(BoutReal);
 
 /// User-supplied preconditioner function
-typedef int (*PhysicsPrecon)(real t, real gamma, real delta);
+typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
 
 /// User-supplied Jacobian function
-typedef int (*Jacobian)(real t);
+typedef int (*Jacobian)(BoutReal t);
 
 /// Solution monitor, called each timestep
-typedef int (*MonitorFunc)(real simtime, int iter, int NOUT);
+typedef int (*MonitorFunc)(BoutReal simtime, int iter, int NOUT);
 
 class Solver {
  public:
@@ -91,7 +91,7 @@ class Solver {
   /// Initialise the solver, passing the RHS function
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
-  virtual int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+  virtual int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   /// Run the solver, calling MonitorFunc nout times, at intervals of tstep
   virtual int run(MonitorFunc f) = 0;
@@ -103,7 +103,7 @@ class Solver {
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
 
-  real rhs_wtime; ///< Wall time used in RHS
+  BoutReal rhs_wtime; ///< Wall time used in RHS
   int rhs_ncalls; ///< Number of calls to the RHS function
 
   void setRestartDir(const string &dir);
@@ -144,7 +144,7 @@ protected:
   bool has_constraints; ///< Can this solver handle constraints? Set to true if so.
   bool initialised; ///< Has init been called yet?
 
-  real simtime;  ///< Current simulation time
+  BoutReal simtime;  ///< Current simulation time
   int iteration; ///< Current iteration (output time-step) number
 };
 

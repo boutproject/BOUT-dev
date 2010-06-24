@@ -54,7 +54,7 @@ class Datafile {
   void setLowPrecision(); ///< Only output floats
 
   void add(int &i, const char *name, int grow = 0);
-  void add(real &r, const char *name, int grow = 0);
+  void add(BoutReal &r, const char *name, int grow = 0);
   void add(Field2D &f, const char *name, int grow = 0);
   void add(Field3D &f, const char *name, int grow = 0);
   void add(Vector2D &f, const char *name, int grow = 0);
@@ -73,7 +73,7 @@ class Datafile {
   /// Set this to false to switch off all data writing
   static bool enabled;
   
-  static real wtime; ///< Keep track of wall-time used
+  static BoutReal wtime; ///< Keep track of wall-time used
  private:
   
   bool low_prec;
@@ -91,7 +91,7 @@ class Datafile {
 
   // one set per variable type
   vector< VarStr<int> >      int_arr;
-  vector< VarStr<real> >     real_arr;
+  vector< VarStr<BoutReal> >     BoutReal_arr;
   vector< VarStr<Field2D> >  f2d_arr;
   vector< VarStr<Field3D> >  f3d_arr;
   vector< VarStr<Vector2D> > v2d_arr;

@@ -38,7 +38,7 @@
 
 Field2D::Field2D()
 {
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
   is_const = false;
 
   ddt = NULL;
@@ -50,16 +50,16 @@ Field2D::Field2D()
 
 Field2D::Field2D(const Field2D& f)
 {
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
   is_const = false;
   *this = f;
   
   ddt = NULL;
 }
 
-Field2D::Field2D(real val)
+Field2D::Field2D(BoutReal val)
 {
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
   *this = val;
   ddt = NULL;
 }
@@ -89,7 +89,7 @@ Field2D* Field2D::timeDeriv()
   return ddt;
 }
 
-real **Field2D::getData() const
+BoutReal **Field2D::getData() const
 {
 #ifdef CHECK
   if(data == NULL)
@@ -133,7 +133,7 @@ Field2D & Field2D::operator=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator=(const real rhs)
+Field2D & Field2D::operator=(const BoutReal rhs)
 {
   int jx, jy;
   
@@ -149,12 +149,12 @@ Field2D & Field2D::operator=(const real rhs)
   return(*this);
 }
 
-real* Field2D::operator[](int jx) const
+BoutReal* Field2D::operator[](int jx) const
 {
 
 #ifdef CHECK
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: [] operator on empty data");
     exit(1);
   }
@@ -193,18 +193,18 @@ Field2D & Field2D::operator+=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator+=(const real rhs)
+Field2D & Field2D::operator+=(const BoutReal rhs)
 {
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: += operates on empty data");
   }
 #endif
 
 #ifdef TRACK
-  name = "("+name + "+real)";
+  name = "("+name + "+BoutReal)";
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++)
@@ -219,12 +219,12 @@ Field2D & Field2D::operator-=(const Field2D &rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
     error("Field2D: - operator has invalid Field2D argument");
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: -= operates on empty data");
   }
 #endif
@@ -240,18 +240,18 @@ Field2D & Field2D::operator-=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator-=(const real rhs)
+Field2D & Field2D::operator-=(const BoutReal rhs)
 {
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: -= operates on empty data");
   }
 #endif
 
 #ifdef TRACK
-  name = "("+name + "-real)";
+  name = "("+name + "-BoutReal)";
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++)
@@ -266,12 +266,12 @@ Field2D & Field2D::operator*=(const Field2D &rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
     error("Field2D: * operator has invalid Field2D argument");
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: *= operates on empty data");
   }
 #endif
@@ -287,18 +287,18 @@ Field2D & Field2D::operator*=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator*=(const real rhs)
+Field2D & Field2D::operator*=(const BoutReal rhs)
 {
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: *= operates on empty data");
   }
 #endif
 
 #ifdef TRACK
-  name = "("+name + "*real)";
+  name = "("+name + "*BoutReal)";
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++) {
@@ -315,12 +315,12 @@ Field2D & Field2D::operator/=(const Field2D &rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
     error("Field2D: / operator has invalid Field2D argument");
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: /= operates on empty data");
   }
 #endif
@@ -336,21 +336,21 @@ Field2D & Field2D::operator/=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator/=(const real rhs)
+Field2D & Field2D::operator/=(const BoutReal rhs)
 {
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: /= operates on empty data");
   }
 #endif
 
 #ifdef TRACK
-  name = "("+name + "/real)";
+  name = "("+name + "/BoutReal)";
 #endif
 
-  real inv_rhs = 1. / rhs; // Multiplication faster than division
+  BoutReal inv_rhs = 1. / rhs; // Multiplication faster than division
 
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
@@ -366,12 +366,12 @@ Field2D & Field2D::operator^=(const Field2D &rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
     error("Field2D: ^ operator has invalid Field2D argument");
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: *= operates on empty data");
   }
 #endif
@@ -387,18 +387,18 @@ Field2D & Field2D::operator^=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator^=(const real rhs)
+Field2D & Field2D::operator^=(const BoutReal rhs)
 {
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: *= operates on empty data");
   }
 #endif
 
 #ifdef TRACK
-  name = "("+name + "^real)";
+  name = "("+name + "^BoutReal)";
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++) {
@@ -421,7 +421,7 @@ const Field2D Field2D::operator+(const Field2D &other) const
   return(result);
 }
 
-const Field2D Field2D::operator+(const real rhs) const
+const Field2D Field2D::operator+(const BoutReal rhs) const
 {
   Field2D result = *this;
   result += rhs;
@@ -448,7 +448,7 @@ const Field2D Field2D::operator-(const Field2D &other) const
   return(result);
 }
 
-const Field2D Field2D::operator-(const real rhs) const
+const Field2D Field2D::operator-(const BoutReal rhs) const
 {
   Field2D result = *this;
   result -= rhs;
@@ -462,7 +462,7 @@ const Field2D Field2D::operator*(const Field2D &other) const
   return(result);
 }
 
-const Field2D Field2D::operator*(const real rhs) const
+const Field2D Field2D::operator*(const BoutReal rhs) const
 {
   Field2D result = *this;
   result *= rhs;
@@ -476,7 +476,7 @@ const Field2D Field2D::operator/(const Field2D &other) const
   return(result);
 }
 
-const Field2D Field2D::operator/(const real rhs) const
+const Field2D Field2D::operator/(const BoutReal rhs) const
 {
   Field2D result = *this;
   result /= rhs;
@@ -490,7 +490,7 @@ const Field2D Field2D::operator^(const Field2D &other) const
   return(result);
 }
 
-const Field2D Field2D::operator^(const real rhs) const
+const Field2D Field2D::operator^(const BoutReal rhs) const
 {
   Field2D result = *this;
   result ^= rhs;
@@ -508,15 +508,15 @@ const Field3D Field2D::operator+(const Field3D &other) const
 const Field3D Field2D::operator-(const Field3D &other) const
 {
   Field3D result = other;
-  real ***d;
+  BoutReal ***d;
   int jx, jy, jz;
 
   d = result.getData();
 
 #ifdef CHECK
-  if(d == (real***) NULL)
+  if(d == (BoutReal***) NULL)
     error("Field2D: - operator has invalid Fiel3D argument");
-  if(data == (real**) NULL)
+  if(data == (BoutReal**) NULL)
     error("Field2D: - operates on empty data");
 #endif
 
@@ -543,15 +543,15 @@ const Field3D Field2D::operator*(const Field3D &other) const
 const Field3D Field2D::operator/(const Field3D &other) const
 {
   Field3D result = other;
-  real ***d;
+  BoutReal ***d;
   int jx, jy, jz;
 
   d = result.getData();
 
 #ifdef CHECK
-  if(d == (real***) NULL)
+  if(d == (BoutReal***) NULL)
     error("Field2D: / operator has invalid Fiel3D argument");
-  if(data == (real**) NULL)
+  if(data == (BoutReal**) NULL)
     error("Field2D: / operates on empty data");
 #endif  
 
@@ -572,15 +572,15 @@ const Field3D Field2D::operator/(const Field3D &other) const
 const Field3D Field2D::operator^(const Field3D &other) const
 {
   Field3D result = other;
-  real ***d;
+  BoutReal ***d;
   int jx, jy, jz;
 
   d = result.getData();
 
 #ifdef CHECK
-  if(d == (real***) NULL)
+  if(d == (BoutReal***) NULL)
     error("Field2D: ^ operator has invalid Fiel3D argument");
-  if(data == (real**) NULL)
+  if(data == (BoutReal**) NULL)
     error("Field2D: ^ operates on empty data");
 #endif
 
@@ -608,7 +608,7 @@ const FieldPerp Field2D::operator+(const FieldPerp &other) const
 const FieldPerp Field2D::operator-(const FieldPerp &other) const
 {
   FieldPerp result = other;
-  real **d = result.getData();
+  BoutReal **d = result.getData();
   int jx, jy, jz;
 
   jy = result.getIndex();
@@ -634,7 +634,7 @@ const FieldPerp Field2D::operator*(const FieldPerp &other) const
 const FieldPerp Field2D::operator/(const FieldPerp &other) const
 {
   FieldPerp result = other;
-  real **d = result.getData();
+  BoutReal **d = result.getData();
   int jx, jy, jz;
 
   jy = result.getIndex();
@@ -653,7 +653,7 @@ const FieldPerp Field2D::operator/(const FieldPerp &other) const
 const FieldPerp Field2D::operator^(const FieldPerp &other) const
 {
   FieldPerp result = other;
-  real **d = result.getData();
+  BoutReal **d = result.getData();
   int jx, jy, jz;
 
   jy = result.getIndex();
@@ -676,7 +676,7 @@ void Field2D::getXArray(int y, int z, rvec &xv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: getXArray on an empty data set\n");
     exit(1);
   }
@@ -692,7 +692,7 @@ void Field2D::getYArray(int x, int z, rvec &yv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: getYArray on an empty data set\n");
     exit(1);
   }
@@ -708,7 +708,7 @@ void Field2D::getZArray(int x, int y, rvec &zv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: getZArray on an empty data set\n");
     exit(1);
   }
@@ -756,7 +756,7 @@ void Field2D::setStencil(bstencil *fval, bindex *bx) const
 {
 
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Setting stencil for empty data\n");
     exit(1);
   }
@@ -813,7 +813,7 @@ const Field2D Field2D::sqrt() const
   Field2D result;
 
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Taking sqrt of empty data\n");
     exit(1);
   }
@@ -848,7 +848,7 @@ const Field2D Field2D::abs() const
 
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Taking abs of empty data\n");
     exit(1);
   }
@@ -867,14 +867,14 @@ const Field2D Field2D::abs() const
   return result;
 }
 
-real Field2D::min(bool allpe) const
+BoutReal Field2D::min(bool allpe) const
 {
   int jx, jy;
-  real result;
+  BoutReal result;
 
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Taking min of empty data\n");
     exit(1);
   }
@@ -893,7 +893,7 @@ real Field2D::min(bool allpe) const
   
   if(allpe) {
     // MPI reduce
-    real localresult = result;
+    BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
   }
   
@@ -904,14 +904,14 @@ real Field2D::min(bool allpe) const
   return result;
 }
 
-real Field2D::max(bool allpe) const
+BoutReal Field2D::max(bool allpe) const
 {
   int jx, jy;
-  real result;
+  BoutReal result;
 
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Taking max of empty data\n");
     exit(1);
   }
@@ -930,7 +930,7 @@ real Field2D::max(bool allpe) const
   
   if(allpe) {
     // MPI reduce
-    real localresult = result;
+    BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }
   
@@ -947,7 +947,7 @@ bool Field2D::finite() const
 
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Taking finite of empty data\n");
     exit(1);
   }
@@ -967,7 +967,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: getData on empty data\n");
     exit(1);
   }
@@ -978,17 +978,17 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   *ptr = data[x][y];
   
-  return sizeof(real);
+  return sizeof(BoutReal);
 }
 
-int Field2D::getData(int x, int y, int z, real *rptr) const
+int Field2D::getData(int x, int y, int z, BoutReal *rptr) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: getData on empty data\n");
     exit(1);
   }
@@ -1014,13 +1014,13 @@ int Field2D::setData(int x, int y, int z, void *vptr)
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   data[x][y] = *ptr;
   
-  return sizeof(real);
+  return sizeof(BoutReal);
 }
 
-int Field2D::setData(int x, int y, int z, real *rptr)
+int Field2D::setData(int x, int y, int z, BoutReal *rptr)
 {
   allocate();
 #ifdef CHECK
@@ -1039,7 +1039,7 @@ int Field2D::setData(int x, int y, int z, real *rptr)
 /// Check if the data is valid
 bool Field2D::checkData(bool vital) const
 {
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("Field2D: Operation on empty data\n");
   }
 
@@ -1063,11 +1063,11 @@ bool Field2D::checkData(bool vital) const
 
 int Field2D::nblocks = 0;
 int Field2D::max_blocks = 0;
-real*** Field2D::block = (real***) NULL;
+BoutReal*** Field2D::block = (BoutReal***) NULL;
 
 void Field2D::allocData()
 {
-  if(data != (real**) NULL)
+  if(data != (BoutReal**) NULL)
     return; // already allocated
 
   if(nblocks > 0) {
@@ -1088,15 +1088,15 @@ void Field2D::freeData()
 {
   // put data block onto stack
 
-  if(data == (real**) NULL)
+  if(data == (BoutReal**) NULL)
     return; // No data
 
   if(nblocks == max_blocks) {
     // need to increase size of stack
     if(max_blocks == 0) {
-      block = (real***) malloc(sizeof(real**));
+      block = (BoutReal***) malloc(sizeof(BoutReal**));
     }else {
-      block = (real***) realloc(block, sizeof(real**)*(max_blocks+1));
+      block = (BoutReal***) realloc(block, sizeof(BoutReal**)*(max_blocks+1));
     }
     max_blocks++;
   }
@@ -1104,44 +1104,44 @@ void Field2D::freeData()
   block[nblocks] = data;
   nblocks++;
 
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
 }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-const Field2D operator+(const real lhs, const Field2D &rhs)
+const Field2D operator+(const BoutReal lhs, const Field2D &rhs)
 {
   return rhs+lhs;
 }
 
-const Field2D operator-(const real lhs, const Field2D &rhs)
+const Field2D operator-(const BoutReal lhs, const Field2D &rhs)
 {
   return -1.0*(rhs - lhs);
 }
 
-const Field2D operator*(const real lhs, const Field2D &rhs)
+const Field2D operator*(const BoutReal lhs, const Field2D &rhs)
 {
   // can just turn this operator around
   return(rhs * lhs);
 }
 
-const Field2D operator/(const real lhs, const Field2D &rhs)
+const Field2D operator/(const BoutReal lhs, const Field2D &rhs)
 {
   Field2D result = rhs;
   int jx, jy;
-  real **d;
+  BoutReal **d;
 
   d = result.data;
 
 #ifdef CHECK
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     output.write("Field2D: left / operator has invalid Field2D argument");
     exit(1);
   }
 #endif
   
 #ifdef TRACK
-  result.name = "(real/"+rhs.name+")";
+  result.name = "(BoutReal/"+rhs.name+")";
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++)
@@ -1151,23 +1151,23 @@ const Field2D operator/(const real lhs, const Field2D &rhs)
   return(result);
 }
 
-const Field2D operator^(const real lhs, const Field2D &rhs)
+const Field2D operator^(const BoutReal lhs, const Field2D &rhs)
 {
   Field2D result = rhs;
   int jx, jy;
-  real **d;
+  BoutReal **d;
 
   d = result.data;
 
 #ifdef CHECK
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     output.write("Field2D: left ^ operator has invalid Field2D argument");
     exit(1);
   }
 #endif
 
 #ifdef TRACK
-  result.name = "(real^"+rhs.name+")";
+  result.name = "(BoutReal^"+rhs.name+")";
 #endif
   
   for(jx=0;jx<mesh->ngx;jx++)
@@ -1194,12 +1194,12 @@ const Field2D abs(const Field2D &f)
   return f.abs();
 }
 
-real min(const Field2D &f, bool allpe)
+BoutReal min(const Field2D &f, bool allpe)
 {
   return f.min(allpe);
 }
 
-real max(const Field2D &f, bool allpe)
+BoutReal max(const Field2D &f, bool allpe)
 {
   return f.max(allpe);
 }

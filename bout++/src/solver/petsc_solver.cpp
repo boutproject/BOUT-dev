@@ -33,7 +33,7 @@
 #include "interpolation.h" // Cell interpolation
 
 
-EXTERN PetscErrorCode solver_f(TS ts, real t, Vec globalin, Vec globalout, void *f_data);
+EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 
 Solver::Solver()
 {
@@ -56,13 +56,13 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, real TIMESTEP)
+int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
   int neq;
   int mudq, mldq, mukeep, mlkeep;
   bool use_precon;
   int precon_dimens;
-  real precon_tol;
+  BoutReal precon_tol;
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
@@ -103,7 +103,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
   ////////// SAVE INITIAL STATE TO PETSc VECTOR ///////////
 
   // Set pointer to data array in vector u.
-  real *udata;
+  BoutReal *udata;
   
   VecGetArray(u,&udata);
   if(save_vars(udata)) {
@@ -153,7 +153,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
   options.get("precon_tol", precon_tol, 1.0e-4);
   
   // Set tolerances
-  real abstol, reltol;
+  BoutReal abstol, reltol;
   options.get("ATOL", abstol, 1.0e-12);
   options.get("RTOL", reltol, 1.0e-5);
   TSSundialsSetTolerance(ts, abstol, reltol);
@@ -170,7 +170,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
   }
 
   // Initial timestep. By default just use TIMESTEP
-  real initial_tstep;
+  BoutReal initial_tstep;
   OPTION(initial_tstep, TIMESTEP);
   TSSetInitialTimeStep(ts,0.0,initial_tstep);
 
@@ -210,8 +210,8 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
       MatSetFromOptions(J);
 
       // Get nonzero pattern of J - color_none !!!
-      MatSeqAIJSetPreallocation(J,10,PETSC_NULL);
-      MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);
+      MatSeqAIJSetPBoutReallocation(J,10,PETSC_NULL);
+      MatMPIAIJSetPBoutReallocation(J,10,PETSC_NULL,10,PETSC_NULL);
 
       PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);
       if (J_slowfd){ // create Jacobian matrix by slow fd
@@ -287,7 +287,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, re
 PetscErrorCode Solver::run(MonitorFunc mon)
 {
   integer steps;
-  real ftime;
+  BoutReal ftime;
   
   // Set when the next call to monitor is desired
   next_time = simtime + tstep;
@@ -302,17 +302,17 @@ PetscErrorCode Solver::run(MonitorFunc mon)
  * RHS function
  **************************************************************************/
 
-PetscErrorCode Solver::rhs(TS ts, real t, Vec udata, Vec dudata)
+PetscErrorCode Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
   int flag;
-  real *udata_array, *dudata_array;
+  BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: Solver::rhs(%e)", t);
 #endif
 
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
 
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
@@ -374,9 +374,9 @@ PetscErrorCode Solver::rhs(TS ts, real t, Vec udata, Vec dudata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
-  real **d2d, ***d3d;
+  BoutReal **d2d, ***d3d;
   unsigned int i;
   int jz;
  
@@ -451,7 +451,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -494,7 +494,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(real *udata)
+void Solver::load_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -517,16 +517,16 @@ void Solver::load_vars(real *udata)
 }
 
 // This function only called during initialisation
-int Solver::save_vars(real *udata)
+int Solver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (real**) NULL)
+    if(f2d[i].var->getData() == (BoutReal**) NULL)
       return(1);
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (real***) NULL)
+    if(f3d[i].var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
@@ -548,7 +548,7 @@ int Solver::save_vars(real *udata)
   return(0);
 }
 
-void Solver::save_derivs(real *dudata)
+void Solver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -582,7 +582,7 @@ void Solver::save_derivs(real *dudata)
  **************************************************************************/
 #undef __FUNCT__  
 #define __FUNCT__ "Solver::solver_f"
-PetscErrorCode solver_f(TS ts, real t, Vec globalin, Vec globalout, void *f_data)
+PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
   Solver *s;
   

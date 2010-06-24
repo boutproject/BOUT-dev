@@ -29,14 +29,14 @@
 #include "dcomplex.h"
 
 void cfft(dcomplex *cv, int length, int isign);
-void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift = true);
+void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
-// more optimised code (for reals)
+// more optimised code (for BoutReals)
 
-void rfft(real *in, int length, dcomplex *out);
-void irfft(dcomplex *in, int length, real *out);
+void rfft(BoutReal *in, int length, dcomplex *out);
+void irfft(dcomplex *in, int length, BoutReal *out);
 
-void ZFFT(real *in, real zoffset, dcomplex *cv, bool shift = true);
-void ZFFT_rev(dcomplex *cv, real zoffset, real *out, bool shift = true);
+void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
+void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
 
 #endif // __FFT_H__

@@ -131,7 +131,7 @@ DataFormat *data_format(const char *filename)
 ///////////////////////////////////////
 // Global variables, shared between Datafile objects
 bool Datafile::enabled = true;
-real Datafile::wtime = 0.0;
+BoutReal Datafile::wtime = 0.0;
 
 Datafile::Datafile()
 {
@@ -181,15 +181,15 @@ void Datafile::add(int &i, const char *name, int grow)
   int_arr.push_back(d);
 }
 
-void Datafile::add(real &r, const char *name, int grow)
+void Datafile::add(BoutReal &r, const char *name, int grow)
 {
-  VarStr<real> d;
+  VarStr<BoutReal> d;
 
   d.ptr = &r;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
   
-  real_arr.push_back(d);
+  BoutReal_arr.push_back(d);
 }
 
 void Datafile::add(Field2D &f, const char *name, int grow)
@@ -251,7 +251,7 @@ int Datafile::read(const char *format, ...)
   va_end(ap);
 
   // Record starting time
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   
   // Open the file
   
@@ -281,18 +281,18 @@ int Datafile::read(const char *format, ...)
     }
   }
 
-  // Read reals
+  // Read BoutReals
 
-  for(std::vector< VarStr<real> >::iterator it = real_arr.begin(); it != real_arr.end(); it++) {
+  for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name)) {
-	output.write("\tWARNING: Could not read real %s. Setting to zero\n", it->name.c_str());
+	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
 	*(it->ptr) = 0;
 	continue;
       }
     }else {
       if(!file->read(it->ptr, it->name)) {
-	output.write("\tWARNING: Could not read real %s. Setting to zero\n", it->name.c_str());
+	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
 	*(it->ptr) = 0;
 	continue;
       }
@@ -394,7 +394,7 @@ bool Datafile::write(const string &filename, bool append)
     return true; // Just pretend it worked
   
   // Record starting time
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
 
   if(!file->openw(filename, append))
     return false;
@@ -413,8 +413,8 @@ bool Datafile::write(const string &filename, bool append)
     }
   }
   
-  // Write reals
-  for(std::vector< VarStr<real> >::iterator it = real_arr.begin(); it != real_arr.end(); it++) {
+  // Write BoutReals
+  for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
     if(it->grow) {
       file->write_rec(it->ptr, it->name);
     }else {

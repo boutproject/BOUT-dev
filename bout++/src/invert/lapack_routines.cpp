@@ -41,15 +41,15 @@
 
 /// Complex type for passing data to/from FORTRAN
 struct fcmplx {
-  real r, i;
+  BoutReal r, i;
 };
 
 // LAPACK prototypes
 extern "C" {
   /// Complex tridiagonal inversion
   void zgtsv_(int *n, int *nrhs, fcmplx *dl, fcmplx *d, fcmplx *du, fcmplx * b, int *ldb, int *info);
-  /// real (double) tridiagonal inversion
-  void dgtsv_(int *n, int *nrhs, real *dl, real *d, real *du, real *b, int *ldb, int *info); 
+  /// BoutReal (double) tridiagonal inversion
+  void dgtsv_(int *n, int *nrhs, BoutReal *dl, BoutReal *d, BoutReal *du, BoutReal *b, int *ldb, int *info); 
   /// Complex band solver
   void zgbsv_(int *n, int *kl, int *ku, int *nrhs, fcmplx *ab, int *ldab, int *ipiv, fcmplx *b, int *ldb, int *info);
 };
@@ -126,21 +126,21 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
  * 
  * Returns true on success
  */
-bool tridag(const real *a, const real *b, const real *c, const real *r, real *u, int n)
+bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *u, int n)
 {
   int nrhs = 1;
   int info;
 
   // Lapack routines overwrite their inputs, so need to copy
   static int len = 0;
-  static real *dl, *d, *du, *x;
+  static BoutReal *dl, *d, *du, *x;
 
   if(n > len) {
     //.allocate more memory (as a single block)
     if(len > 0)
       delete[] dl;
 
-    dl = new real[4*n];
+    dl = new BoutReal[4*n];
     d = dl + n;
     du = d + n;
     x = du + n;
@@ -193,29 +193,29 @@ bool tridag(const real *a, const real *b, const real *c, const real *r, real *u,
  * 
  * Uses Sherman-Morrison formula
  */
-void cyclic_tridag(real *a, real *b, real *c, real *r, real *x, int n)
+void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
 {
   if(n <= 2)
     bout_error("ERROR: n too small in cyclic_tridag");
   
   static int len = 0;
-  static real *u, *z;
+  static BoutReal *u, *z;
   
   if(n > len) {
     if(len > 0) {
       delete[] u;
       delete[] z;
     }
-    u = new real[n];
-    z = new real[n];
+    u = new BoutReal[n];
+    z = new BoutReal[n];
     len = n;
   }
   
-  real gamma = -b[0];
+  BoutReal gamma = -b[0];
   
   // Save original values of b (restore after)
-  real b0 = b[0];
-  real bn = b[n-1];
+  BoutReal b0 = b[0];
+  BoutReal bn = b[n-1];
   
   // Modify b
   b[0] = b[0] - gamma;
@@ -234,7 +234,7 @@ void cyclic_tridag(real *a, real *b, real *c, real *r, real *x, int n)
   if(!tridag(a, b, c, u, z, n))
     bout_error("ERROR: second tridag call failed in cyclic_tridag\n");
   
-  real fact = (x[0] + a[0]*x[n-1]/gamma) /
+  BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) /
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 
   
   for(int i=0;i<n;i++)
@@ -371,19 +371,19 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   return 0;
 }
 
-/// Tri-diagonal matrix inversion (real)
-bool tridag(const real *a, const real *b, const real *c, const real *r, real *x, int n)
+/// Tri-diagonal matrix inversion (BoutReal)
+bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n)
 {
   int j;  
   
-  real bet;
-  static real *gam;
+  BoutReal bet;
+  static BoutReal *gam;
   static int len = 0;
   
   if(n > len) {
     if(len > 0)
       delete [] gam;
-    gam = new real[n];
+    gam = new BoutReal[n];
     len = n;
   }
   
@@ -413,29 +413,29 @@ bool tridag(const real *a, const real *b, const real *c, const real *r, real *x,
 }
 
 /// Solve a cyclic tridiagonal matrix
-void cyclic_tridag(real *a, real *b, real *c, real *r, real *x, int n)
+void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
 {
   if(n <= 2)
     bout_error("ERROR: n too small in invpar::cyclic_tridag");
   
   static int len = 0;
-  static real *u, *z;
+  static BoutReal *u, *z;
   
   if(n > len) {
     if(len > 0) {
       delete[] u;
       delete[] z;
     }
-    u = new real[n];
-    z = new real[n];
+    u = new BoutReal[n];
+    z = new BoutReal[n];
     len = n;
   }
   
-  real gamma = -b[0];
+  BoutReal gamma = -b[0];
   
   // Save original values of b (restore after)
-  real b0 = b[0];
-  real bn = b[n-1];
+  BoutReal b0 = b[0];
+  BoutReal bn = b[n-1];
   
   // Modify b
   b[0] = b[0] - gamma;
@@ -454,7 +454,7 @@ void cyclic_tridag(real *a, real *b, real *c, real *r, real *x, int n)
   if(!tridag(a, b, c, u, z, n))
     bout_error("ERROR: second tridag call failed in invpar::cyclic_tridag\n");
   
-  real fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
+  BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 
   
   for(int i=0;i<n;i++)
@@ -466,7 +466,7 @@ void cyclic_tridag(real *a, real *b, real *c, real *r, real *x, int n)
 }
 
 
-const real TINY = 1.0e-20;
+const BoutReal TINY = 1.0e-20;
 
 void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
 	     dcomplex **al, unsigned long indx[], dcomplex *d)

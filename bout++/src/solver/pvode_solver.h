@@ -52,18 +52,18 @@ class PvodeSolver : public Solver {
 
   void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+  int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
-  real run(real tout, int &ncalls, real &rhstime);
+  BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime);
 
   // These functions used internally (but need to be public)
-  void rhs(int N, real t, real *udata, real *dudata);
-  void gloc(int N, real t, real *udata, real *dudata);
+  void rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
+  void gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
 
  private:
   int NOUT; // Number of outputs. Specified in init, needed in run
-  real TIMESTEP; // Time between outputs
+  BoutReal TIMESTEP; // Time between outputs
   
   pvode::N_Vector u;
   pvode::machEnvType machEnv;
@@ -73,12 +73,12 @@ class PvodeSolver : public Solver {
   rhsfunc gfunc; // Preconditioner function
   
   // Loading data from BOUT++ to/from CVODE
-  void loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(real *udata, SOLVER_VAR_OP op);
+  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
   
-  void load_vars(real *udata);
-  int save_vars(real *udata);
-  void save_derivs(real *dudata);
+  void load_vars(BoutReal *udata);
+  int save_vars(BoutReal *udata);
+  void save_derivs(BoutReal *dudata);
 };
 
 #endif // __PVODE_SOLVER_H__

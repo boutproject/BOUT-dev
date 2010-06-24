@@ -37,7 +37,7 @@
  * \brief Complex number class
  *
  * On some machines the standard C++ complex class cannot be used because
- * there is a conflict between PVODE and the library's definition of real
+ * there is a conflict between PVODE and the library's definition of BoutReal
  *
  * \author B.Dudson
  * \date November 2007
@@ -46,62 +46,62 @@ class dcomplex {
  public:
   dcomplex();
   dcomplex(const dcomplex &rhs);
-  dcomplex(real rval, real ival);
+  dcomplex(BoutReal rval, BoutReal ival);
   ~dcomplex();
 
   dcomplex & operator=(const dcomplex &rhs);
-  dcomplex & operator=(const real &rval);
+  dcomplex & operator=(const BoutReal &rval);
 
   dcomplex & operator+=(const dcomplex &rhs);
-  dcomplex & operator+=(const real &rhs);
+  dcomplex & operator+=(const BoutReal &rhs);
 
   dcomplex & operator-=(const dcomplex &rhs);
-  dcomplex & operator-=(const real &rhs);
+  dcomplex & operator-=(const BoutReal &rhs);
 
   dcomplex & operator*=(const dcomplex &rhs);
-  dcomplex & operator*=(const real &rhs);
+  dcomplex & operator*=(const BoutReal &rhs);
 
   dcomplex & operator/=(const dcomplex &rhs);
-  dcomplex & operator/=(const real &rhs);
+  dcomplex & operator/=(const BoutReal &rhs);
 
   const dcomplex operator-() const; // negate
 
   // Binary operators
 
   const dcomplex operator+(const dcomplex &rhs) const;
-  const dcomplex operator+(const real &rhs) const;
+  const dcomplex operator+(const BoutReal &rhs) const;
   
   const dcomplex operator-(const dcomplex &rhs) const;
-  const dcomplex operator-(const real &rhs) const;
+  const dcomplex operator-(const BoutReal &rhs) const;
 
   const dcomplex operator*(const dcomplex &rhs) const;
-  const dcomplex operator*(const real &rhs) const;
+  const dcomplex operator*(const BoutReal &rhs) const;
 
   const dcomplex operator/(const dcomplex &rhs) const;
-  const dcomplex operator/(const real &rhs) const;
+  const dcomplex operator/(const BoutReal &rhs) const;
 
 
-  friend const dcomplex operator+(const real &lhs, const dcomplex &rhs);
-  friend const dcomplex operator-(const real &lhs, const dcomplex &rhs);
-  friend const dcomplex operator*(const real &lhs, const dcomplex &rhs);
-  friend const dcomplex operator/(const real &lhs, const dcomplex &rhs);
+  friend const dcomplex operator+(const BoutReal &lhs, const dcomplex &rhs);
+  friend const dcomplex operator-(const BoutReal &lhs, const dcomplex &rhs);
+  friend const dcomplex operator*(const BoutReal &lhs, const dcomplex &rhs);
+  friend const dcomplex operator/(const BoutReal &lhs, const dcomplex &rhs);
 
   // Boolean operators
 
   bool operator==(const dcomplex &rhs) const;
-  bool operator==(const real &rhs) const;
-  friend bool operator==(const real &lhs, const dcomplex &rhs);
+  bool operator==(const BoutReal &rhs) const;
+  friend bool operator==(const BoutReal &lhs, const dcomplex &rhs);
 
-  friend real abs(const dcomplex &c);
+  friend BoutReal abs(const dcomplex &c);
   friend const dcomplex conj(const dcomplex &c); // Complex conjugate 
 
-  real Real() const;
-  real Imag() const;
+  BoutReal Real() const;
+  BoutReal Imag() const;
 
   // Stream operators
   friend std::ostream &operator<<(std::ostream &stream, dcomplex c);
  private:
-  real r, i;
+  BoutReal r, i;
 
 };
 

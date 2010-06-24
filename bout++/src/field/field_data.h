@@ -41,24 +41,24 @@ class FieldData {
   virtual ~FieldData() { }
 
   // Defines interface which must be implemented
-  virtual bool isReal() const = 0; ///< Returns true if field consists of real values
+  virtual bool isReal() const = 0; ///< Returns true if field consists of BoutReal values
   virtual bool is3D() const = 0;   ///< True if variable is 3D
   
   virtual int byteSize() const = 0; ///< Number of bytes for a single point
-  virtual int realSize() const { return 0; } ///< Number of reals (not implemented if not real)
+  virtual int BoutRealSize() const { return 0; } ///< Number of BoutReals (not implemented if not BoutReal)
 
   virtual int getData(int x, int y, int z, void *vptr) const = 0; ///< Return number of bytes
-  virtual int getData(int x, int y, int z, real *rptr) const = 0; ///< Return number of reals
+  virtual int getData(int x, int y, int z, BoutReal *rptr) const = 0; ///< Return number of BoutReals
   
   virtual int setData(int x, int y, int z, void *vptr) = 0;
-  virtual int setData(int x, int y, int z, real *rptr) = 0;
+  virtual int setData(int x, int y, int z, BoutReal *rptr) = 0;
 
   // This code for inputting/outputting to file (all optional)
   virtual bool  ioSupport() { return false; }  ///< Return true if these functions implemented
   virtual const string getSuffix(int component) const { return string(""); }
   virtual void* getMark() const {return NULL;} ///< Store current settings (e.g. co/contra-variant)
   virtual void  setMark(void *setting) {}      ///< Return to the stored settings
-  virtual real* getData(int component) { return NULL; }
+  virtual BoutReal* getData(int component) { return NULL; }
   virtual void  zeroComponent(int component) { } ///< Set a component to zero
   
   /// Added 20/8/2008 for twist-shifting in communication routine

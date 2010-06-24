@@ -29,7 +29,7 @@
 #include "field3d.h"
 
 /// Smooth in X using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool realspace = true);
+const Field3D smooth_x(const Field3D &f, bool BoutRealspace = true);
 
 /// Smooth in Y using 1-2-1 filter
 const Field3D smooth_y(const Field3D &f);
@@ -38,9 +38,9 @@ const Field3D smooth_y(const Field3D &f);
 const Field2D average_y(const Field2D &f);
 
 /// Non-linear filter to remove grid-scale oscillations
-const Field3D nl_filter_x(const Field3D &f, real w=1.0);
-const Field3D nl_filter_y(const Field3D &f, real w=1.0);
-const Field3D nl_filter_z(const Field3D &f, real w=1.0);
-const Field3D nl_filter(const Field3D &f, real w=1.0);
+const Field3D nl_filter_x(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter_y(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter_z(const Field3D &f, BoutReal w=1.0);
+const Field3D nl_filter(const Field3D &f, BoutReal w=1.0);
 
 #endif // __SMOOTHING_H__

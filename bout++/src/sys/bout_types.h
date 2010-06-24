@@ -28,9 +28,9 @@
 using std::string; // String class 
 using std::vector;
 
-typedef double real;
+typedef double BoutReal;
 
-typedef vector<real> rvec;  // Vector of reals
+typedef vector<BoutReal> rvec;  // Vector of BoutReals
 
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT, CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW, CELL_VSHIFT};

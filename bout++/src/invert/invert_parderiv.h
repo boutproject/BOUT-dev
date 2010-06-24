@@ -45,9 +45,9 @@
 
 namespace invpar {
   const Field3D invert_parderiv(const Field2D &A, const Field2D &B, const Field3D &r);
-  const Field3D invert_parderiv(real val, const Field2D &B, const Field3D &r);
-  const Field3D invert_parderiv(const Field2D &A, real val, const Field3D &r);
-  const Field3D invert_parderiv(real val, real val2, const Field3D &r);
+  const Field3D invert_parderiv(BoutReal val, const Field2D &B, const Field3D &r);
+  const Field3D invert_parderiv(const Field2D &A, BoutReal val, const Field3D &r);
+  const Field3D invert_parderiv(BoutReal val, BoutReal val2, const Field3D &r);
 }
 
 using invpar::invert_parderiv;

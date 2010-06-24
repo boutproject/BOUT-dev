@@ -40,14 +40,14 @@ class Solver;
 
 #include <vector>
 
-typedef PetscScalar real;
+typedef PetscScalar BoutReal;
 typedef PetscInt integer;
 typedef PetscTruth boole;
 #define OPT_SIZE 40
 
 using std::vector;
 
-typedef int (*rhsfunc)(real);
+typedef int (*rhsfunc)(BoutReal);
 
 enum SOLVER_VAR_OP {LOAD_VARS, SAVE_VARS, SAVE_DERIVS};
 
@@ -60,7 +60,7 @@ class Solver : public Solver {
   Solver();
   ~Solver();
   
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, real TIMESTEP);
+  int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
   
   int run(MonitorFunc f);
 
@@ -74,22 +74,22 @@ class Solver : public Solver {
   TS ts; 
 
   int nout;   // The number of outputs
-  real tstep; // Time between outputs
+  BoutReal tstep; // Time between outputs
   MonitorFunc monitor; // Monitor function to call regularly
   
-  real next_time;  // When the monitor should be called next
+  BoutReal next_time;  // When the monitor should be called next
   bool outputnext; // true if the monitor should be called next time 
 
   rhsfunc func; // RHS function
 
   // Looping over variables. This should be in generic, but better...
-  void loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(real *udata, SOLVER_VAR_OP op);
+  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   // Move data between 
-  void load_vars(real *udata);
-  int save_vars(real *udata);
-  void save_derivs(real *dudata);
+  void load_vars(BoutReal *udata);
+  int save_vars(BoutReal *udata);
+  void save_derivs(BoutReal *dudata);
 };
 
 

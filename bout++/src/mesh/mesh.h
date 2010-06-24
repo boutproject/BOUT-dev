@@ -67,18 +67,18 @@ class SurfaceIter {
   int xpos; // X position
   virtual int ysize() = 0; // Return the size of the current surface
                            // NB: Could be zero if this PE has nothing to do
-  virtual bool closed(real &ts) = 0; // Test if the current surface is closed
+  virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
   
   virtual void first() = 0;
   virtual void next() = 0;
   virtual bool isDone() = 0;
   
-  virtual int gather(const Field2D &f, real *data) = 0;
-  virtual int gather(const Field3D &f, real *data) = 0;
-  virtual int gather(const FieldGroup &f, real *data) = 0; // Interleave fields, going over Z fastest
+  virtual int gather(const Field2D &f, BoutReal *data) = 0;
+  virtual int gather(const Field3D &f, BoutReal *data) = 0;
+  virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
   
-  virtual int scatter(real *data, Field2D &f) = 0;
-  virtual int scatter(real *data, Field3D &f) = 0;
+  virtual int scatter(BoutReal *data, Field2D &f) = 0;
+  virtual int scatter(BoutReal *data, Field3D &f) = 0;
 };
 
 class RangeIter {
@@ -103,10 +103,10 @@ class Mesh {
   
   // Get routines to request data from mesh file
   virtual int get(int &ival, const char *name) = 0; ///< Get an integer
-  virtual int get(real &rval, const char *name) = 0; ///< Get a real number
+  virtual int get(BoutReal &rval, const char *name) = 0; ///< Get a BoutReal number
   
-  virtual int get(Field2D &var, const char *name, real def=0.0) = 0;
-  virtual int get(Field2D &var, const string &name, real def=0.0) = 0;
+  virtual int get(Field2D &var, const char *name, BoutReal def=0.0) = 0;
+  virtual int get(Field2D &var, const string &name, BoutReal def=0.0) = 0;
   virtual int get(Field3D &var, const char *name) = 0;
   virtual int get(Field3D &var, const string &name) = 0;
   
@@ -131,15 +131,15 @@ class Mesh {
   virtual bool firstX() = 0;
   virtual bool lastX() = 0;
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
-  virtual int sendXOut(real *buffer, int size, int tag) = 0;
-  virtual int sendXIn(real *buffer, int size, int tag) = 0;
-  virtual comm_handle irecvXOut(real *buffer, int size, int tag) = 0;
-  virtual comm_handle irecvXIn(real *buffer, int size, int tag) = 0;
+  virtual int sendXOut(BoutReal *buffer, int size, int tag) = 0;
+  virtual int sendXIn(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvXOut(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
   // Y-Z surface gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
   virtual const Field2D averageY(const Field2D &f) = 0;
-  virtual bool surfaceClosed(int jx, real &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
+  virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
   virtual RangeIter* iterateBndryLowerY() = 0;
@@ -151,8 +151,8 @@ class Mesh {
   virtual IndexIter *iterateIndexXZ() = 0;
   */
 
-  virtual real GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
-  virtual real GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
+  virtual BoutReal GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
 
   virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
   
@@ -167,7 +167,7 @@ class Mesh {
   // These used for differential operators 
   Field2D dx, dy;      // Read in grid.cpp
   Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
-  real zlength, dz;    // Derived from options in grid.cpp (in radians)
+  BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)
   
   bool ShiftXderivs; // Use shifted X derivatives
   int  ShiftOrder;   // Order of shifted X derivative interpolation
@@ -207,7 +207,7 @@ class Mesh {
   //////////////////////////////////////////////////////////
   // Timing
   
-  static real wtime_comms; // Time spent communicating
+  static BoutReal wtime_comms; // Time spent communicating
 
  protected:
   
@@ -216,7 +216,7 @@ class Mesh {
   GridDataSource *findSource(const char *name);
 
  private:
-  int gaussj(real **a, int n);
+  int gaussj(BoutReal **a, int n);
 };
 
 #endif // __MESH_H__

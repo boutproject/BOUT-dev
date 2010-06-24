@@ -76,13 +76,13 @@ namespace invpar {
    * @param[in]    data     Data to be inverted. Input is interleaved
    * @param[out]   result
    */
-  void cyclic_solve(int ysize, int xpos, real *data, real *result, bool coef3d = false)
+  void cyclic_solve(int ysize, int xpos, BoutReal *data, BoutReal *result, bool coef3d = false)
   {
 #ifdef CHECK
     msg_stack.push("cyclic_solve(%d, %d)", ysize, xpos);
 #endif
 
-    real ts; // Twist-shift angle
+    BoutReal ts; // Twist-shift angle
     if(!mesh->surfaceClosed(xpos,ts))
       ts = 0.; // Should be an error, but just separate field-lines
     
@@ -90,8 +90,8 @@ namespace invpar {
 
     static int ylen = 0;
     static bool *done; // Record whether a particular location has been inverted
-    static real *avec, *bvec, *cvec; // Matrix coefficients
-    static real *rvec, *xvec;
+    static BoutReal *avec, *bvec, *cvec; // Matrix coefficients
+    static BoutReal *rvec, *xvec;
     
     int ncz = mesh->ngz-1;
     
@@ -107,11 +107,11 @@ namespace invpar {
       }
       done = new bool[ncz];
       //.allocate largest possible array
-      avec = new real[ysize * ncz];
-      bvec = new real[ysize * ncz];
-      cvec = new real[ysize * ncz];
-      rvec = new real[ysize * ncz];
-      xvec = new real[ysize * ncz];
+      avec = new BoutReal[ysize * ncz];
+      bvec = new BoutReal[ysize * ncz];
+      cvec = new BoutReal[ysize * ncz];
+      rvec = new BoutReal[ysize * ncz];
+      xvec = new BoutReal[ysize * ncz];
 
       ylen = ysize;
     }
@@ -205,10 +205,10 @@ namespace invpar {
   /// Parallel inversion routine
   const Field3D invert_parderiv(const Field2D &Ac, const Field2D &Bc, const Field3D &rc)
   {
-    static real *senddata;
-    static real *recvdata;
+    static BoutReal *senddata;
+    static BoutReal *recvdata;
     static int max_size = 0;
-    static real *resultdata;
+    static BoutReal *resultdata;
 
 #ifdef CHECK
     msg_stack.push("invert_parderiv");
@@ -228,7 +228,7 @@ namespace invpar {
 
     if(max_size == 0) {
       //.allocate working memory
-      senddata = new real[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
+      senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
     }
     
     // coefficients for derivative term
@@ -272,8 +272,8 @@ namespace invpar {
 	  delete[] recvdata;
 	  delete[] resultdata;
 	}
-	recvdata = new real[ysize * (3+mesh->ngz)];  // Problem data received (to be solved)
-	resultdata = new real[ysize*mesh->ngz];  // Inverted result
+	recvdata = new BoutReal[ysize * (3+mesh->ngz)];  // Problem data received (to be solved)
+	resultdata = new BoutReal[ysize*mesh->ngz];  // Inverted result
 	max_size = ysize;
       }
       
@@ -283,7 +283,7 @@ namespace invpar {
       // Check that this processor still has something to do
       if(ysize > 0) {
 	// Perform inversion
-	real ts; // Twist-shift matching (if closed)
+	BoutReal ts; // Twist-shift matching (if closed)
 	if(surf->closed(ts)) {
 	  cyclic_solve(ysize,  // Number of y locations
 		       surf->xpos,  // The x index being solved
@@ -323,21 +323,21 @@ namespace invpar {
     return result;
   }
 
-  const Field3D invert_parderiv(real val, const Field2D &B, const Field3D &r)
+  const Field3D invert_parderiv(BoutReal val, const Field2D &B, const Field3D &r)
   {
     Field2D A;
     A = val;
     return invert_parderiv(A, B, r);
   }
   
-  const Field3D invert_parderiv(const Field2D &A, real val, const Field3D &r)
+  const Field3D invert_parderiv(const Field2D &A, BoutReal val, const Field3D &r)
   {
     Field2D B;
     B = val;
     return invert_parderiv(A, B, r);
   }
   
-  const Field3D invert_parderiv(real val, real val2, const Field3D &r)
+  const Field3D invert_parderiv(BoutReal val, BoutReal val2, const Field3D &r)
   {
     Field2D A, B;
     A = val;

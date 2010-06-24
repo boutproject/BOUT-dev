@@ -10,15 +10,15 @@
 /* hyperbolic tangent */
 //template<typename TYPE> inline TYPE TanH(TYPE &a)
 
-real TanH(real a)
+BoutReal TanH(BoutReal a)
 {
-  real temp = exp(a);
+  BoutReal temp = exp(a);
   //  TanH = (temp - 1 / temp) / (temp + 1 / temp);
   return ((temp - 1.0 / temp) / (temp + 1.0 / temp));
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
+const Field2D source_tanhx(const Field2D &f,BoutReal swidth,BoutReal slength)
 {
   Field2D  fs, result;
 
@@ -26,16 +26,16 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
-  //  real slength = 0.5;
-  //  real width = 20.0;
-  real length  = slength;
-  real width   = swidth;
+  //  BoutReal slength = 0.5;
+  //  BoutReal width = 20.0;
+  BoutReal length  = slength;
+  BoutReal width   = swidth;
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       {
-	real lx = mesh->GlobalX(jx) - length;
-	real dampl = TanH(lx/width);
+	BoutReal lx = mesh->GlobalX(jx) - length;
+	BoutReal dampl = TanH(lx/width);
 	result[jx][jy] = 0.5*(1.0 - dampl);
       }
   
@@ -46,7 +46,7 @@ const Field2D source_tanhx(const Field2D &f,real swidth,real slength)
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field2D source_expx2(const Field2D &f,real swidth,real slength)
+const Field2D source_expx2(const Field2D &f,BoutReal swidth,BoutReal slength)
 {
   Field2D  fs, result;
 
@@ -54,16 +54,16 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
   
   // create a radial buffer zone to set jpar zero near radial boundary
 
-  //  real slength = 0.5;
-  //  real width = 20.0;
+  //  BoutReal slength = 0.5;
+  //  BoutReal width = 20.0;
 
   //	    output.write("source, swidth=%e, width=%e, slength=%e, length=%e, nx=%d, ny=%d, MXG=%d, MYG=%d\n", swidth, width, slength, length, nx, ny, MXG, MYG);
 
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       {
-	real lx = mesh->GlobalX(jx) - slength;
-	real dampl = exp(-lx*lx/swidth/swidth);
+	BoutReal lx = mesh->GlobalX(jx) - slength;
+	BoutReal dampl = exp(-lx*lx/swidth/swidth);
 	result[jx][jy] = dampl;
       }
   
@@ -74,14 +74,14 @@ const Field2D source_expx2(const Field2D &f,real swidth,real slength)
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real slength, bool realspace)
-//const Field3D sink_tanhx(const Field2D &f0, const Field3D &f, bool realspace)
+const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace)
+//const Field3D sink_tanhx(const Field2D &f0, const Field3D &f, bool BoutRealspace)
 {
   Field3D fs, result;
   Field2D fs0;
  
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f;
  
@@ -89,19 +89,19 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
-  //  real slength = 0.15;
-  //  real width = 20.0;
+  //  BoutReal slength = 0.15;
+  //  BoutReal width = 20.0;
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-        real rlx = 1. - mesh->GlobalX(jx) - slength;
-	real dampr = TanH(rlx/swidth);
+        BoutReal rlx = 1. - mesh->GlobalX(jx) - slength;
+	BoutReal dampr = TanH(rlx/swidth);
 	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
       }
  
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
@@ -111,12 +111,12 @@ const Field3D sink_tanhx(const Field2D &f0, const Field3D &f,real swidth,real sl
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D mask_x(const Field3D &f, bool realspace)
+const Field3D mask_x(const Field3D &f, bool BoutRealspace)
 {
   Field3D fs, result;
 
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f; 
 
@@ -127,15 +127,15 @@ const Field3D mask_x(const Field3D &f, bool realspace)
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	real lx = mesh->GlobalX(jx);
-        real dampl = TanH(lx/40.0);
-        real dampr = TanH((1. - lx)/40.0);
+	BoutReal lx = mesh->GlobalX(jx);
+        BoutReal dampl = TanH(lx/40.0);
+        BoutReal dampr = TanH((1. - lx)/40.0);
 	
 	result[jx][jy][jz] = (1.0 - dampl*dampr)*fs[jx][jy][jz];
 	//	result[jx][jy][jz] = dampl*fs[jx][jy][jz]*dampr;
       }
   
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
 
   // Need to communicate boundaries
@@ -145,13 +145,13 @@ const Field3D mask_x(const Field3D &f, bool realspace)
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real slength, bool realspace)
+const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace)
 {
   Field3D fs, result;
   Field2D fs0;
  
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f;
  
@@ -159,21 +159,21 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
-  //  real slength = 0.15;
-  //  real width = 20.0;
+  //  BoutReal slength = 0.15;
+  //  BoutReal width = 20.0;
 
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
 
-	real lx = mesh->GlobalX(jx) - slength;
-	real dampl = TanH(lx/swidth);
+	BoutReal lx = mesh->GlobalX(jx) - slength;
+	BoutReal dampl = TanH(lx/swidth);
 
 	result[jx][jy][jz] = 0.5*(1.0 - dampl)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
       }
  
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
@@ -183,13 +183,13 @@ const Field3D sink_tanhxl(const Field2D &f0, const Field3D &f,real swidth,real s
 }
 
 // create radial buffer zones to set jpar zero near radial boundaries
-const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real slength, bool realspace)
+const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,BoutReal swidth,BoutReal slength, bool BoutRealspace)
 {
   Field3D fs, result;
   Field2D fs0;
  
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f;
  
@@ -197,20 +197,20 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
  
 // create a radial buffer zone to set jpar zero near radial boundary
  
-  //  real slength = 0.15;
-  //  real width = 20.0;
+  //  BoutReal slength = 0.15;
+  //  BoutReal width = 20.0;
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-        real rlx = 1. - mesh->GlobalX(jx) - slength;
-	real dampr = TanH(rlx/swidth);
+        BoutReal rlx = 1. - mesh->GlobalX(jx) - slength;
+	BoutReal dampr = TanH(rlx/swidth);
 
 	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]);
 	//	result[jx][jy][jz] = 0.5*(1.0 - dampr)*(fs[jx][jy][jz]-fs0[jx][jy]);
       }
  
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
  
   // Need to communicate boundaries
@@ -220,12 +220,12 @@ const Field3D sink_tanhxr(const Field2D &f0, const Field3D &f,real swidth,real s
 }
 
 // create radial buffer zones to damp Psi to zero near radial boundaries
-const Field3D buff_x(const Field3D &f, bool realspace)
+const Field3D buff_x(const Field3D &f, bool BoutRealspace)
 {
   Field3D fs, result;
 
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f; 
 
@@ -236,22 +236,22 @@ const Field3D buff_x(const Field3D &f, bool realspace)
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	real lx = mesh->GlobalX(jx);
-	//        real rlx = nx-(XGLOBAL(jx)+1);
-        real rlx = 1. - lx;
-        real dampl = 1.e0;
-        real dampr = 1.e0;
-	real deltal = 0.05;
-	real deltar = 0.05;
+	BoutReal lx = mesh->GlobalX(jx);
+	//        BoutReal rlx = nx-(XGLOBAL(jx)+1);
+        BoutReal rlx = 1. - lx;
+        BoutReal dampl = 1.e0;
+        BoutReal dampr = 1.e0;
+	BoutReal deltal = 0.05;
+	BoutReal deltar = 0.05;
 	
-	result[jx][jy][jz] = (dampl*exp(- (real) (lx*lx)/(deltal*deltal))
-			      +dampr*exp(-(real) ((rlx*rlx))/(deltar*deltar)))*fs[jx][jy][jz];
+	result[jx][jy][jz] = (dampl*exp(- (BoutReal) (lx*lx)/(deltal*deltal))
+			      +dampr*exp(-(BoutReal) ((rlx*rlx))/(deltar*deltar)))*fs[jx][jy][jz];
       }
   
   // Need to communicate boundaries
   mesh->communicate(result);
 
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
 
   return result;

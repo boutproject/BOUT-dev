@@ -41,17 +41,17 @@
 
 using namespace pvode;
 
-void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data);
-void solver_gloc(integer N, real t, real* u, real* udot, void *f_data);
-void solver_cfn(integer N, real t, N_Vector u, void *f_data);
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data);
+void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data);
+void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data);
 
-const real ZERO = 0.0;
+const BoutReal ZERO = 0.0;
 
-static real abstol, reltol; // addresses passed in init must be preserved
+static BoutReal abstol, reltol; // addresses passed in init must be preserved
 static PVBBDData pdata;
 
 long int iopt[OPT_SIZE];
-real ropt[OPT_SIZE];
+BoutReal ropt[OPT_SIZE];
 
 PvodeSolver::PvodeSolver() : Solver()
 {
@@ -76,14 +76,14 @@ PvodeSolver::~PvodeSolver()
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
   bool use_precon;
   int precon_dimens;
-  real precon_tol;
+  BoutReal precon_tol;
 
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
@@ -160,7 +160,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   ////////// SAVE DATA TO CVODE ///////////
 
   // Set pointer to data array in vector u.
-  real *udata = N_VDATA(u);
+  BoutReal *udata = N_VDATA(u);
   if(save_vars(udata)) {
     bout_error("\tError: Initial variable value not set\n");
     return(1);
@@ -179,7 +179,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
      data    is the pointer to the user-defined data block
      NULL    is the pointer to the error message file
      FALSE   indicates there are no optional inputs in iopt and ropt
-     iopt, ropt  communicate optional integer and real input/output
+     iopt, ropt  communicate optional integer and BoutReal input/output
 
      A pointer to CVODE problem memory is returned and stored in cvode_mem.  */
 
@@ -274,9 +274,9 @@ int PvodeSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-real PvodeSolver::run(real tout, int &ncalls, real &rhstime)
+BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 {
-  real *udata;
+  BoutReal *udata;
   int flag;
 
 #ifdef CHECK
@@ -299,7 +299,7 @@ real PvodeSolver::run(real tout, int &ncalls, real &rhstime)
   load_vars(udata);
   
   // Call rhs function to get extra variables at this time
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   (*func)(simtime);
   rhstime += MPI_Wtime() - tstart;
   ncalls++;
@@ -321,10 +321,10 @@ real PvodeSolver::run(real tout, int &ncalls, real &rhstime)
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int N, real t, real *udata, real *dudata)
+void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 {
   int flag;
-  real tstart;
+  BoutReal tstart;
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
@@ -349,10 +349,10 @@ void PvodeSolver::rhs(int N, real t, real *udata, real *dudata)
 #endif
 }
 
-void PvodeSolver::gloc(int N, real t, real *udata, real *dudata)
+void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 {
   int flag;
-  real tstart;
+  BoutReal tstart;
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
@@ -382,14 +382,14 @@ void PvodeSolver::gloc(int N, real t, real *udata, real *dudata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void PvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void PvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
-  real **d2d, ***d3d;
+  BoutReal **d2d, ***d3d;
   unsigned int i;
   int jz;
 
-  int n2d = n2Dvars();
-  int n3d = n3Dvars();
+  unsigned int n2d = n2Dvars();
+  unsigned int n3d = n3Dvars();
  
   switch(op) {
   case LOAD_VARS: {
@@ -459,7 +459,7 @@ void PvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_O
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void PvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void PvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -502,7 +502,7 @@ void PvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void PvodeSolver::load_vars(real *udata)
+void PvodeSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
   
@@ -525,16 +525,16 @@ void PvodeSolver::load_vars(real *udata)
 }
 
 // This function only called during initialisation
-int PvodeSolver::save_vars(real *udata)
+int PvodeSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (real**) NULL)
+    if(f2d[i].var->getData() == (BoutReal**) NULL)
       return(1);
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (real***) NULL)
+    if(f3d[i].var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
@@ -556,7 +556,7 @@ int PvodeSolver::save_vars(real *udata)
   return(0);
 }
 
-void PvodeSolver::save_derivs(real *dudata)
+void PvodeSolver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -589,9 +589,9 @@ void PvodeSolver::save_derivs(real *dudata)
  * CVODE rhs function
  **************************************************************************/
 
-void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data)
+void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
 {
-  real *udata, *dudata;
+  BoutReal *udata, *dudata;
   PvodeSolver *s;
 
   udata = N_VDATA(u);
@@ -603,7 +603,7 @@ void solver_f(integer N, real t, N_Vector u, N_Vector udot, void *f_data)
 }
 
 // Preconditioner RHS
-void solver_gloc(integer N, real t, real* u, real* udot, void *f_data)
+void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data)
 {
   PvodeSolver *s;
   
@@ -613,7 +613,7 @@ void solver_gloc(integer N, real t, real* u, real* udot, void *f_data)
 }
 
 // Preconditioner communication function
-void solver_cfn(integer N, real t, N_Vector u, void *f_data)
+void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
 {
   // doesn't do anything at the moment
 }

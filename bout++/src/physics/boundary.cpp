@@ -91,7 +91,7 @@ void bndry_inner_flat(Field3D &var)
   if(!mesh->firstX())
     return;
   
-  if(mesh->ShiftXderivs) // Shift into real space
+  if(mesh->ShiftXderivs) // Shift into BoutReal space
     var = var.shiftZ(true);
   
   for(int jx=mesh->xstart-1;jx>=0;jx--)
@@ -339,7 +339,7 @@ bndry_func3d BndryLookup3D(BndryLookup *table, BNDRY_TYPE type)
 
 bndry_func3d BndryLookup3D(BNDRY_LOC loc, BNDRY_TYPE type)
 {
-  BndryLookup *table;
+  BndryLookup *table = NULL;
   
   switch(loc) {
   case INNER_X: {
@@ -391,7 +391,7 @@ bndry_func2d BndryLookup2D(BndryLookup *table, BNDRY_TYPE type)
 
 bndry_func2d BndryLookup2D(BNDRY_LOC loc, BNDRY_TYPE type)
 {
-  BndryLookup *table;
+  BndryLookup *table = NULL;
   
   switch(loc) {
   case INNER_X: {
@@ -461,7 +461,7 @@ BNDRY_TYPE BndryLookup2D(BndryLookup *table, const char *label, bool dummy = fal
 
 /// Turn an inner boundary condition into a relaxing boundary condition
 /// NOTE: CURRENTLY THIS WON'T WORK AS ADVERTISED
-void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BNDRY_LOC loc)
+void BndryRelax(Field3D &var, Field3D &F_var, BoutReal tconst, bndry_func3d func, BNDRY_LOC loc)
 {
   Field3D tmpvar;
 
@@ -518,7 +518,7 @@ void BndryRelax(Field3D &var, Field3D &F_var, real tconst, bndry_func3d func, BN
   }
 }
 
-void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BNDRY_LOC loc)
+void BndryRelax(Field2D &var, Field2D &F_var, BoutReal tconst, bndry_func2d func, BNDRY_LOC loc)
 {
   Field2D tmpvar;
 
@@ -576,7 +576,7 @@ void BndryRelax(Field2D &var, Field2D &F_var, real tconst, bndry_func2d func, BN
  * These take a boundary location and type code, and apply to 2D and 3D fields.
  *******************************************************************************/
 
-void apply_boundary(Field3D &var, Field3D &F_var, BNDRY_LOC loc, BNDRY_TYPE type, real tconst)
+void apply_boundary(Field3D &var, Field3D &F_var, BNDRY_LOC loc, BNDRY_TYPE type, BoutReal tconst)
 {
   if(type == BNDRY_NULL)
     return;
@@ -621,7 +621,7 @@ void apply_boundary(Field3D &var, Field3D &F_var, BNDRY_LOC loc, BNDRY_TYPE type
   BndryRelax(var, F_var, tconst, func, loc);
 }
 
-void apply_boundary(Field2D &var, Field2D &F_var, BNDRY_LOC loc, BNDRY_TYPE type, real tconst)
+void apply_boundary(Field2D &var, Field2D &F_var, BNDRY_LOC loc, BNDRY_TYPE type, BoutReal tconst)
 {
   if(type == BNDRY_NULL)
     return;
@@ -724,9 +724,9 @@ char* getBndryString(const char *name, const char *altname, BndryDesc *bndry, bo
 }
 
 /// Get relaxation constant for the boundary
-real getBndryRelax(const char *name, const char *altname, BndryDesc *bndry, bool verbose = false)
+BoutReal getBndryRelax(const char *name, const char *altname, BndryDesc *bndry, bool verbose = false)
 {
-  real tconst = -1.0;
+  BoutReal tconst = -1.0;
   char *s;
   
   if(options.getReal(name, s = strconcat(bndry->code, "_tconst"), tconst) == 0) {
@@ -761,7 +761,7 @@ void apply_boundary(Field3D &var, Field3D &F_var, const char* name, const char* 
 		    BndryDesc *bndry, bool dummy = false)
 {
   const char *str;
-  real tconst;
+  BoutReal tconst;
   BNDRY_TYPE type;
   
   if(dummy) {
@@ -823,7 +823,7 @@ void apply_boundary(Field2D &var, Field2D &F_var, const char* name, const char* 
 		    BndryDesc *bndry, bool dummy = false)
 {
   const char *str;
-  real tconst;
+  BoutReal tconst;
   BNDRY_TYPE type;
   
   if(dummy) {
@@ -1467,8 +1467,8 @@ void bndry_core_laplace(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
   int jy, jz;
-  real kwave;
-  real coef1, coef2, coef3;
+  BoutReal kwave;
+  BoutReal coef1, coef2, coef3;
   dcomplex a, b, c;
 
   if((MYPE_IN_CORE != 1) || mesh->firstX())
@@ -1516,8 +1516,8 @@ void bndry_core_laplace2(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
   int jx, jy, jz;
-  real kwave;
-  real coef1, coef2, coef3;
+  BoutReal kwave;
+  BoutReal coef1, coef2, coef3;
   dcomplex a, b, c;
 
   if((MYPE_IN_CORE != 1) || mesh->firstX())
@@ -1642,8 +1642,8 @@ void bndry_pf_laplace(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
   int jy, jz;
-  real kwave;
-  real coef1, coef2, coef3;
+  BoutReal kwave;
+  BoutReal coef1, coef2, coef3;
   dcomplex a, b, c;
 
   int ncz = mesh->ngz-1;
@@ -1791,8 +1791,8 @@ void bndry_sol_laplace(Field3D &var)
 {
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
   int jx, jy, jz;
-  real kwave;
-  real coef1, coef2, coef3;
+  BoutReal kwave;
+  BoutReal coef1, coef2, coef3;
   dcomplex a, b, c;
 
   if(!mesh->lastX())
@@ -1848,7 +1848,7 @@ void bndry_inner_divcurl(Vector3D &var)
 void bndry_sol_divcurl(Vector3D &var)
 {
   int jx, jy, jz, jzp, jzm;
-  real tmp;
+  BoutReal tmp;
   
   int ncz = mesh->ngz-1;
 
@@ -1911,19 +1911,19 @@ void bndry_sol_divcurl(Vector3D &var)
 
 // Relaxing X boundary conditions
 
-void bndry_core_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_core_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   if(MYPE_IN_CORE)
     bndry_inner_relax_val(F_var, var, value, rate);
 }
 
-void bndry_pf_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_pf_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   if(!MYPE_IN_CORE)
     bndry_inner_relax_val(F_var, var, value, rate);
 }
 
-void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   int jx, jy, jz;
 
@@ -1939,7 +1939,7 @@ void bndry_inner_relax_val(Field3D &F_var, const Field3D &var, real value, real 
 }
 
 // Combination of relaxing zero-gradient and zero-value
-void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   int jx, jy, jz;
 
@@ -1955,7 +1955,7 @@ void bndry_inner_relax_val2(Field3D &F_var, const Field3D &var, real value, real
       }
 }
 
-void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   int jx, jy, jz;
   
@@ -1970,7 +1970,7 @@ void bndry_sol_relax_val(Field3D &F_var, const Field3D &var, real value, real ra
 	F_var[jx][jy][jz] = rate*(value - var[jx][jy][jz]);
 }
 
-void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   int jx, jy, jz;
   
@@ -1988,19 +1988,19 @@ void bndry_sol_relax_val2(Field3D &F_var, const Field3D &var, real value, real r
 
 /// RELAX TO ZERO-GRADIENT
 
-void bndry_core_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_core_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   if(MYPE_IN_CORE)
     bndry_inner_relax_flat(F_var, var, rate);
 }
 
-void bndry_pf_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_pf_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   if(!MYPE_IN_CORE)
     bndry_inner_relax_flat(F_var, var, rate);
 }
 
-void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   int jx, jy, jz;
   
@@ -2015,7 +2015,7 @@ void bndry_inner_relax_flat(Field3D &F_var, const Field3D &var, real rate)
 	F_var[jx][jy][jz] = rate*(var[jx+1][jy][jz] - var[jx][jy][jz]);
 }
 
-void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_sol_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   int jx, jy, jz;
   
@@ -2092,19 +2092,19 @@ void bndry_sol_sym(Field3D &var)
 
 // Relax to symmetric boundary
 
-void bndry_core_relax_sym(Field3D &F_var, const Field3D &var, real rate)
+void bndry_core_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   if(MYPE_IN_CORE)
     bndry_inner_relax_sym(F_var, var, rate);
 }
 
-void bndry_pf_relax_sym(Field3D &F_var, const Field3D &var, real rate)
+void bndry_pf_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   if(!MYPE_IN_CORE)
     bndry_inner_relax_sym(F_var, var, rate);
 }
 
-void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
+void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, BoutReal rate)
 {
   int jx, jy, jz, xb;
 
@@ -2131,7 +2131,7 @@ void bndry_inner_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
     F_var = F_var.shiftZ(false);
 }
 
-void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, real rate)
+void bndry_sol_relax_sym(Field3D &F_var, const Field3D &var1, BoutReal rate)
 {
   int jx, jy, jz, xb;
 
@@ -2181,7 +2181,7 @@ void bndry_yup_zero(Vector3D &var)
 void bndry_ydown_rotate(Field3D &var, bool reverse)
 {
   int jx, jy, jy2, jz;
-  real kwave;
+  BoutReal kwave;
   
   static dcomplex *cv = (dcomplex*) NULL;
 
@@ -2219,7 +2219,7 @@ void bndry_ydown_rotate(Field3D &var, bool reverse)
 void bndry_ydown_zaverage(Field3D &var)
 {
   int jx, jy, jz;
-  real avg, w;
+  BoutReal avg, w;
 
   // centre point is average of last point
   // others are just a linear interpolation
@@ -2228,11 +2228,11 @@ void bndry_ydown_zaverage(Field3D &var)
     avg = 0.0;
     for(jz=0;jz<mesh->ngz-1;jz++)
       avg += var[jx][mesh->ystart][jz];
-    avg /= (real) mesh->ngz-1;
+    avg /= (BoutReal) mesh->ngz-1;
     for(jz=0;jz<mesh->ngz-1;jz++) {
       var[jx][0][jz] = avg;
       for(jy=1;jy<mesh->ystart;jy++) {
-        w = ((real) jy) / ((real) mesh->ystart);
+        w = ((BoutReal) jy) / ((BoutReal) mesh->ystart);
         var[jx][jy][jz] = w*var[jx][mesh->ystart][jz] + (1.0 - w)*avg;
       }
     }
@@ -2242,7 +2242,7 @@ void bndry_ydown_zaverage(Field3D &var)
 
 // Relax towards a given value
 
-void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
@@ -2255,7 +2255,7 @@ void bndry_ydown_relax_val(Field3D &F_var, const Field3D &var, real value, real 
   delete xi;
 }
 
-void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, real value, real rate)
+void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, BoutReal value, BoutReal rate)
 {
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
@@ -2271,7 +2271,7 @@ void bndry_yup_relax_val(Field3D &F_var, const Field3D &var, real value, real ra
 
 /// Relax to zero gradient
 
-void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
@@ -2285,7 +2285,7 @@ void bndry_ydown_relax_flat(Field3D &F_var, const Field3D &var, real rate)
   delete xi;
 }
 
-void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, real rate)
+void bndry_yup_relax_flat(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   rate = fabs(rate); // RATE IS ALWAYS POSITIVE
 
@@ -2332,7 +2332,7 @@ void bndry_yup_sym(Field3D &var)
 
 // Relax to symmetric boundaries
 
-void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
+void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   rate = fabs(rate);
 
@@ -2350,7 +2350,7 @@ void bndry_ydown_relax_sym(Field3D &F_var, const Field3D &var, real rate)
   delete xi;
 }
 
-void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, real rate)
+void bndry_yup_relax_sym(Field3D &F_var, const Field3D &var, BoutReal rate)
 {
   int yb = mesh->yend;
   if(mesh->BoundaryOnCell)
@@ -2390,7 +2390,7 @@ void bndry_toroidal(Vector3D &var)
 
 /////////////////// ZERO LAPLACE ///////////////
 
-/// Sets innermost point to zero, and sets laplacian = 0 on last "real" point
+/// Sets innermost point to zero, and sets laplacian = 0 on last "BoutReal" point
 void bndry_inner_zero_laplace(Field3D &var)
 {
   static dcomplex *c1 = (dcomplex*) NULL, *c2, *c3;
@@ -2513,7 +2513,7 @@ void bndry_inner_laplace_decay(Field3D &var)
   }
   
   for(int jy=0;jy<mesh->ngy;jy++) {
-    // Take FFT of first "real" points
+    // Take FFT of first "BoutReal" points
     ZFFT(var[mesh->xstart][jy], mesh->zShift[mesh->xstart][jy], c0);
     ZFFT(var[mesh->xstart+1][jy], mesh->zShift[mesh->xstart+1][jy], c1);
     c1[0] -= c0[0]; // Only need DC component
@@ -2526,9 +2526,9 @@ void bndry_inner_laplace_decay(Field3D &var)
       c0[0] -= c1[0];  // Straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx][jy] / mesh->g11[jx][jy])*mesh->dx[jx][jy];
+      BoutReal coef = -1.0*sqrt(mesh->g33[jx][jy] / mesh->g11[jx][jy])*mesh->dx[jx][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+	BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
@@ -2553,7 +2553,7 @@ void bndry_outer_laplace_decay(Field3D &var)
   }
   
   for(int jy=0;jy<mesh->ngy;jy++) {
-    // Take FFT of final "real" points
+    // Take FFT of final "BoutReal" points
     ZFFT(var[mesh->xend][jy], mesh->zShift[mesh->xend][jy], c0);
     ZFFT(var[mesh->xend-1][jy], mesh->zShift[mesh->xend-1][jy], c1);
     c1[0] = c0[0] - c1[0]; // Only used for DC component
@@ -2566,9 +2566,9 @@ void bndry_outer_laplace_decay(Field3D &var)
       c0[0] += c1[0]; // Just a straight line
       
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
+      BoutReal coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+	BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
@@ -2596,7 +2596,7 @@ void bndry_inner_const_laplace_decay(Field3D &var)
   }
   
   for(int jy=0;jy<mesh->ngy;jy++) {
-    // Take FFT of first three "real" points
+    // Take FFT of first three "BoutReal" points
     ZFFT(var[mesh->xstart][jy],   mesh->zShift[mesh->xstart][jy],   c0);
     ZFFT(var[mesh->xstart+1][jy], mesh->zShift[mesh->xstart+1][jy], c1);
     ZFFT(var[mesh->xstart+2][jy], mesh->zShift[mesh->xstart+2][jy], c2);
@@ -2612,15 +2612,15 @@ void bndry_inner_const_laplace_decay(Field3D &var)
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
     // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
-    real xpos = 0.0;
+    BoutReal xpos = 0.0;
     for(int jx=mesh->xstart-1;jx>=0;jx--) {
       // kz = 0 solution
       xpos -= mesh->dx[jx][jy];
       c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx+1][jy];
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx+1][jy] / mesh->g11[jx+1][jy])*mesh->dx[jx+1][jy];
+      BoutReal coef = -1.0*sqrt(mesh->g33[jx+1][jy] / mesh->g11[jx+1][jy])*mesh->dx[jx+1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+	BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
 	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx+1][jy]*kwave*kwave); 
@@ -2648,7 +2648,7 @@ void bndry_outer_const_laplace_decay(Field3D &var)
   }
   
   for(int jy=0;jy<mesh->ngy;jy++) {
-    // Take FFT of last three "real" points
+    // Take FFT of last three "BoutReal" points
     
     ZFFT(var[mesh->xend][jy], mesh->zShift[mesh->xend][jy], c0);
     ZFFT(var[mesh->xend-1][jy], mesh->zShift[mesh->xend-1][jy], c1);
@@ -2665,15 +2665,15 @@ void bndry_outer_const_laplace_decay(Field3D &var)
     // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
     // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
 
-    real xpos = 0.0;
+    BoutReal xpos = 0.0;
     for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
       // kz = 0 solution: a + bx + 0.5*jpar*x^2/mesh->g11
       xpos += mesh->dx[jx][jy];
       c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[jx-1][jy]; 
       // kz != 0 solution
-      real coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
+      BoutReal coef = -1.0*sqrt(mesh->g33[jx-1][jy] / mesh->g11[jx-1][jy])*mesh->dx[jx-1][jy];
       for(int jz=1;jz<=ncz/2;jz++) {
-	real kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+	BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
 	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[jx][jy]*kwave*kwave); 

@@ -34,7 +34,7 @@
   
   @param[in] s  Input stencil. mm -> -3/2, m -> -1/2, p -> +1/2, pp -> +3/2
 */
-real interp(const stencil &s)
+BoutReal interp(const stencil &s)
 {
   return ( 9.*(s.m + s.p) - s.mm - s.pp ) / 16.;
 }
@@ -64,7 +64,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
     result = var; // NOTE: This is just for boundaries. FIX!
 
     result.allocate();
-    real ***d = var.getData();
+    BoutReal ***d = var.getData();
     
     if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
@@ -169,7 +169,7 @@ const char* strLocation(CELL_LOC loc)
 
 // 4-point Lagrangian interpolation
 // offset must be between 0 and 1
-real lagrange_4pt(real v2m, real vm, real vp, real v2p, real offset)
+BoutReal lagrange_4pt(BoutReal v2m, BoutReal vm, BoutReal vp, BoutReal v2p, BoutReal offset)
 {
   return -offset*(offset-1.0)*(offset-2.0)*v2m/6.0
     + 0.5*(offset*offset - 1.0)*(offset-2.0)*vm
@@ -177,7 +177,7 @@ real lagrange_4pt(real v2m, real vm, real vp, real v2p, real offset)
     + offset*(offset*offset - 1.0)*v2p/6.0;
 }
 
-real lagrange_4pt(real v[], real offset)
+BoutReal lagrange_4pt(BoutReal v[], BoutReal offset)
 {
   return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }
@@ -194,7 +194,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   result.allocate();
 
   // Get the pointers to the data, to make things a bit quicker
-  real ***de_x, ***de_z, ***f_data, ***r_data;
+  BoutReal ***de_x, ***de_z, ***f_data, ***r_data;
 
   de_x = delta_x.getData();
   de_z = delta_z.getData();
@@ -202,7 +202,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
   Field3D f = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
-    f = var.shiftZ(true); // Shift into real space
+    f = var.shiftZ(true); // Shift into BoutReal space
   }
 
   f_data = f.getData();
@@ -219,8 +219,8 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	int jxmnew = (int) de_x[jx][jy][jz];
 	int jzmnew = (int) de_z[jx][jy][jz];
 	// and the distance from this point
-	real xs = de_x[jx][jy][jz] - ((real) jxmnew);
-	real zs = de_z[jx][jy][jz] - ((real) jzmnew);
+	BoutReal xs = de_x[jx][jy][jz] - ((BoutReal) jxmnew);
+	BoutReal zs = de_z[jx][jy][jz] - ((BoutReal) jzmnew);
 	// Get new lower index
 	jxmnew += jx; jzmnew += jz;
 	
@@ -249,7 +249,7 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	// Now have 4 indices for X and Z to interpolate
 	
 	// Interpolate in Z first
-	real xvals[4];
+	BoutReal xvals[4];
 	
 	xvals[0] = lagrange_4pt(f_data[jx2mnew][jy][jz2mnew],
 				f_data[jx2mnew][jy][jzmnew],
@@ -297,8 +297,8 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
   result.allocate();
 
   // Get the pointers to the data, to make things a bit quicker
-  real **f_data;
-  real ***de_x, ***r_data;
+  BoutReal **f_data;
+  BoutReal ***de_x, ***r_data;
 
   de_x = delta_x.getData();
   f_data = f.getData();
@@ -314,7 +314,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x)
 	// get lower (rounded down) index
 	int jxnew = (int) de_x[jx][jy][jz];
 	// and the distance from this point
-	real xs = de_x[jx][jy][jz] - ((real) jxnew);
+	BoutReal xs = de_x[jx][jy][jz] - ((BoutReal) jxnew);
 	// Get new lower index
 	jxnew += jx;
 	

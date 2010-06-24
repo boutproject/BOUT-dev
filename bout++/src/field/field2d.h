@@ -45,12 +45,12 @@ class Field2D : public Field, public FieldData {
  public:
   Field2D();
   Field2D(const Field2D& f);
-  Field2D(real val);
+  Field2D(BoutReal val);
   ~Field2D();
 
   Field2D* clone() const;
 
-  real **getData() const; // Remove this!
+  BoutReal **getData() const; // Remove this!
   
   /// Ensure data is allocated
   void allocate();
@@ -62,34 +62,34 @@ class Field2D : public Field, public FieldData {
   // Operators
 
   Field2D & operator=(const Field2D &rhs);
-  Field2D & operator=(const real rhs);
+  Field2D & operator=(const BoutReal rhs);
 
-  real* operator[](int jx) const;
+  BoutReal* operator[](int jx) const;
 
   Field2D & operator+=(const Field2D &rhs);
-  Field2D & operator+=(const real rhs);
+  Field2D & operator+=(const BoutReal rhs);
   Field2D & operator-=(const Field2D &rhs);
-  Field2D & operator-=(const real rhs);
+  Field2D & operator-=(const BoutReal rhs);
   Field2D & operator*=(const Field2D &rhs);
-  Field2D & operator*=(const real rhs);
+  Field2D & operator*=(const BoutReal rhs);
   Field2D & operator/=(const Field2D &rhs);
-  Field2D & operator/=(const real rhs);
+  Field2D & operator/=(const BoutReal rhs);
   Field2D & operator^=(const Field2D &rhs);
-  Field2D & operator^=(const real rhs);
+  Field2D & operator^=(const BoutReal rhs);
   
   // Binary operators
 
   const Field2D operator+(const Field2D &other) const;
-  const Field2D operator+(const real rhs) const;
+  const Field2D operator+(const BoutReal rhs) const;
   const Field2D operator-() const;
   const Field2D operator-(const Field2D &other) const;
-  const Field2D operator-(const real rhs) const;
+  const Field2D operator-(const BoutReal rhs) const;
   const Field2D operator*(const Field2D &other) const;
-  const Field2D operator*(const real rhs) const;
+  const Field2D operator*(const BoutReal rhs) const;
   const Field2D operator/(const Field2D &other) const;
-  const Field2D operator/(const real rhs) const;
+  const Field2D operator/(const BoutReal rhs) const;
   const Field2D operator^(const Field2D &other) const;
-  const Field2D operator^(const real rhs) const;
+  const Field2D operator^(const BoutReal rhs) const;
 
   // Left binary operators
 
@@ -103,9 +103,9 @@ class Field2D : public Field, public FieldData {
   const FieldPerp operator-(const FieldPerp &other) const;
   const FieldPerp operator*(const FieldPerp &other) const;
   const FieldPerp operator/(const FieldPerp &other) const;
-  friend const Field2D operator/(const real lhs, const Field2D &rhs);
+  friend const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
   const FieldPerp operator^(const FieldPerp &other) const;
-  friend const Field2D operator^(const real lhs, const Field2D &rhs);
+  friend const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
     
   // Stencils
 
@@ -125,8 +125,8 @@ class Field2D : public Field, public FieldData {
   
   const Field2D sqrt() const;
   const Field2D abs() const;
-  real min(bool allpe=false) const;
-  real max(bool allpe=false) const;
+  BoutReal min(bool allpe=false) const;
+  BoutReal max(bool allpe=false) const;
   bool finite() const;
   
   friend const Field2D sin(const Field2D &f);
@@ -138,22 +138,22 @@ class Field2D : public Field, public FieldData {
   friend const Field2D tanh(const Field2D &f);
 
   bool is_const;
-  real value;
+  BoutReal value;
 
   // FieldData virtual functions
   
-  bool isReal() const   { return true; }         // Consists of real values
+  bool isReal() const   { return true; }         // Consists of BoutReal values
   bool is3D() const     { return false; }        // Field is 2D
-  int  byteSize() const { return sizeof(real); } // Just one real
-  int  realSize() const { return 1; }
+  int  byteSize() const { return sizeof(BoutReal); } // Just one BoutReal
+  int  BoutRealSize() const { return 1; }
   int  getData(int x, int y, int z, void *vptr) const;
-  int  getData(int x, int y, int z, real *rptr) const;
+  int  getData(int x, int y, int z, BoutReal *rptr) const;
   int  setData(int x, int y, int z, void *vptr);
-  int  setData(int x, int y, int z, real *rptr);
+  int  setData(int x, int y, int z, BoutReal *rptr);
 
   bool ioSupport() { return true; } ///< This class supports I/O operations
-  real *getData(int component) { 
-    real **d = getData();
+  BoutReal *getData(int component) { 
+    BoutReal **d = getData();
     return *d;
   }
   void zeroComponent(int component){
@@ -168,11 +168,11 @@ class Field2D : public Field, public FieldData {
   friend class Vector2D;
   
  private:
-  real **data;
+  BoutReal **data;
 
   // Data stack: Blocks of memory for this class
   static int nblocks, max_blocks;
-  static real ***block; // Pointer to blocks of memory
+  static BoutReal ***block; // Pointer to blocks of memory
 
   void allocData();
   void freeData();
@@ -182,18 +182,18 @@ class Field2D : public Field, public FieldData {
 
 // Non-member overloaded operators
 
-const Field2D operator+(const real lhs, const Field2D &rhs);
-const Field2D operator-(const real lhs, const Field2D &rhs);
-const Field2D operator*(const real lhs, const Field2D &rhs);
-const Field2D operator/(const real lhs, const Field2D &rhs);
-const Field2D operator^(const real lhs, const Field2D &rhs);
+const Field2D operator+(const BoutReal lhs, const Field2D &rhs);
+const Field2D operator-(const BoutReal lhs, const Field2D &rhs);
+const Field2D operator*(const BoutReal lhs, const Field2D &rhs);
+const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
+const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
 
 // Non-member functions
 const Field2D SQ(const Field2D &f);
 const Field2D sqrt(const Field2D &f);
 const Field2D abs(const Field2D &f);
-real min(const Field2D &f, bool allpe=false);
-real max(const Field2D &f, bool allpe=false);
+BoutReal min(const Field2D &f, bool allpe=false);
+BoutReal max(const Field2D &f, bool allpe=false);
 bool finite(const Field2D &f);
 
 

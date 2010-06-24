@@ -151,7 +151,7 @@ Vector3D & Vector3D::operator=(const Vector2D &rhs)
   return *this;
 }
 
-real Vector3D::operator=(const real val)
+BoutReal Vector3D::operator=(const BoutReal val)
 {
   x = val;
   y = val;
@@ -238,7 +238,7 @@ Vector3D & Vector3D::operator-=(const Vector2D &rhs)
 
 //////////////// MULTIPLICATION //////////////////
 
-Vector3D & Vector3D::operator*=(const real rhs)
+Vector3D & Vector3D::operator*=(const BoutReal rhs)
 {
   x *= rhs;
   y *= rhs;
@@ -267,7 +267,7 @@ Vector3D & Vector3D::operator*=(const Field3D &rhs)
 
 /////////////////// DIVISION /////////////////////
 
-Vector3D & Vector3D::operator/=(const real rhs)
+Vector3D & Vector3D::operator/=(const BoutReal rhs)
 {
   x /= rhs;
   y /= rhs;
@@ -374,7 +374,7 @@ const Vector3D Vector3D::operator-(const Vector2D &rhs) const
 
 //////////////// MULTIPLICATION //////////////////
 
-const Vector3D Vector3D::operator*(const real rhs) const
+const Vector3D Vector3D::operator*(const BoutReal rhs) const
 {
   Vector3D result = *this;
   result *= rhs;
@@ -397,7 +397,7 @@ const Vector3D Vector3D::operator*(const Field3D &rhs) const
 
 /////////////////// DIVISION /////////////////////
 
-const Vector3D Vector3D::operator/(const real rhs) const
+const Vector3D Vector3D::operator/(const BoutReal rhs) const
 {
   Vector3D result = *this;
   result /= rhs;
@@ -498,7 +498,7 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const
  *               Z SHIFTING
  ***************************************************************/
 
-const Vector3D Vector3D::shiftZ(const real zangle) const
+const Vector3D Vector3D::shiftZ(const BoutReal zangle) const
 {
   Vector3D result;
 
@@ -515,7 +515,7 @@ const Vector3D Vector3D::shiftZ(const real zangle) const
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-const Vector3D operator*(const real lhs, const Vector3D &rhs)
+const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs)
 {
   return(rhs * lhs);
 }
@@ -553,15 +553,15 @@ int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   *ptr = x[jx][jy][jz]; ptr++;
   *ptr = y[jx][jy][jz]; ptr++;
   *ptr = z[jx][jy][jz];
   
-  return 3*sizeof(real);
+  return 3*sizeof(BoutReal);
 }
 
-int Vector3D::getData(int jx, int jy, int jz, real *rptr) const
+int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 {
 #ifdef CHECK
   // check ranges
@@ -587,15 +587,15 @@ int Vector3D::setData(int jx, int jy, int jz, void *vptr)
     exit(1);
   }
 #endif
-  real *rptr = (real*) vptr;
+  BoutReal *rptr = (BoutReal*) vptr;
   x[jx][jy][jz] = *rptr; rptr++;
   y[jx][jy][jz] = *rptr; rptr++;
   z[jx][jy][jz] = *rptr;
 
-  return 3*sizeof(real);
+  return 3*sizeof(BoutReal);
 }
 
-int Vector3D::setData(int jx, int jy, int jz, real *rptr)
+int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 {
 #ifdef CHECK
   // check ranges

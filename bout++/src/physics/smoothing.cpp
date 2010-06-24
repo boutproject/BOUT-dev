@@ -34,12 +34,12 @@
 
 #include "bout_types.h"
 // Smooth using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool realspace)
+const Field3D smooth_x(const Field3D &f, bool BoutRealspace)
 {
   Field3D fs, result;
 
-  if(realspace) {
-    fs = f.shiftZ(true); // Shift into real space
+  if(BoutRealspace) {
+    fs = f.shiftZ(true); // Shift into BoutReal space
   }else
     fs = f; 
 
@@ -60,7 +60,7 @@ const Field3D smooth_x(const Field3D &f, bool realspace)
 	result[jx][jy][jz] = 0.5*fs[jx][jy][jz] + 0.25*( fs[jx-1][jy][jz] + fs[jx+1][jy][jz] );
       }
 
-  if(realspace)
+  if(BoutRealspace)
     result = result.shiftZ(false); // Shift back
 
   // Need to communicate boundaries
@@ -111,15 +111,15 @@ const Field2D averageY(const Field2D &f)
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-void nl_filter(rvec &f, real w)
+void nl_filter(rvec &f, BoutReal w)
 {
-  for(int i=1; i<f.size()-1; i++) {
+  for(size_t i=1; i<f.size()-1; i++) {
     
-    real dp = f[i+1] - f[i];
-    real dm = f[i-1] - f[i];
+    BoutReal dp = f[i+1] - f[i];
+    BoutReal dm = f[i-1] - f[i];
     if(dp*dm > 0.) {
       // Local extrema - adjust
-      real ep, em, e; // Amount to adjust by
+      BoutReal ep, em, e; // Amount to adjust by
       if(fabs(dp) > fabs(dm)) {
 	ep = w*0.5*dp;
 	em = w*dm;
@@ -139,14 +139,14 @@ void nl_filter(rvec &f, real w)
   }
 }
 
-const Field3D nl_filter_x(const Field3D &f, real w)
+const Field3D nl_filter_x(const Field3D &f, BoutReal w)
 {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
 #endif
   
   Field3D fs;
-  fs = f.shiftZ(true); // Shift into real space
+  fs = f.shiftZ(true); // Shift into BoutReal space
   Field3D result;
   rvec v;
   
@@ -165,7 +165,7 @@ const Field3D nl_filter_x(const Field3D &f, real w)
   return result;
 }
 
-const Field3D nl_filter_y(const Field3D &fs, real w)
+const Field3D nl_filter_y(const Field3D &fs, BoutReal w)
 {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
@@ -187,7 +187,7 @@ const Field3D nl_filter_y(const Field3D &fs, real w)
   return result;
 }
 
-const Field3D nl_filter_z(const Field3D &fs, real w)
+const Field3D nl_filter_z(const Field3D &fs, BoutReal w)
 {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
@@ -209,7 +209,7 @@ const Field3D nl_filter_z(const Field3D &fs, real w)
   return result;
 }
 
-const Field3D nl_filter(const Field3D &f, real w)
+const Field3D nl_filter(const Field3D &f, BoutReal w)
 {
   Field3D result;
   /// Perform filtering in Z, Y then X

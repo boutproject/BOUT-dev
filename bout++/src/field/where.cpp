@@ -31,7 +31,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
   Field3D result;
   
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
@@ -46,12 +46,12 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, const Field3D &gt0, real le0)
+const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0)
 {
   Field3D result;
 
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
@@ -66,12 +66,12 @@ const Field3D where(const Field2D &test, const Field3D &gt0, real le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, real gt0, const Field3D &le0)
+const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0)
 {
   Field3D result;
 
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
@@ -91,7 +91,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
   Field3D result;
 
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
@@ -111,7 +111,7 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
   Field3D result;
 
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)

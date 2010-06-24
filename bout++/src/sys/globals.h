@@ -49,8 +49,8 @@
 
 GLOBAL Mesh *mesh; ///< The mesh object
 
-const real PI = 3.141592653589793;
-const real TWOPI = 6.2831853071795;
+const BoutReal PI = 3.141592653589793;
+const BoutReal TWOPI = 6.2831853071795;
 
 GLOBAL int MYPE_IN_CORE; // 1 if processor in core
 
@@ -77,7 +77,7 @@ GLOBAL MsgStack msg_stack;
 // Settings
 
 // Timing information
-GLOBAL real wtime_invert; //< Time spent performing inversions
+GLOBAL BoutReal wtime_invert; //< Time spent performing inversions
 
 GLOBAL bool non_uniform;  // Use corrections for non-uniform meshes
 

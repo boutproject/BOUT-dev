@@ -49,29 +49,29 @@ class Inverter {
   int solve(const FieldPerp &b, FieldPerp &x,  
 	    int flags=0, 
 	    int restart=10, int itmax=100,
-	    real tol=1.e-7);
+	    BoutReal tol=1.e-7);
   
   /// Solve for a 3D field, one slice at a time
   int solve(const Field3D &b, Field3D &x, 
 	    int flags=0, 
 	    int restart=10, int itmax=100,
-	    real tol=1.e-7);
+	    BoutReal tol=1.e-7);
   
   /// User must implement this function
   virtual const FieldPerp function(const FieldPerp &x) = 0;
   
  private:
   
-  void A(real *b, real *x); ///< Calculates b = Ax
+  void A(BoutReal *b, BoutReal *x); ///< Calculates b = Ax
   
   // GMRES solver code
   
-  real norm_vector(real *b, int n);
-  real dot_product(real *a, real *b, int n);
-  void Update(real *x, int it, real **h, real *s, real *y, real **v, int n);
-  void GeneratePlaneRotation(real dx, real dy, real *cs, real *sn);
-  void ApplyPlaneRotation(real *dx, real *dy, real cs, real sn);
-  int gmres_solve(real *b, real *x, int n, int m, int itmax, real tol, int &iterations, real &residual);
+  BoutReal norm_vector(BoutReal *b, int n);
+  BoutReal dot_product(BoutReal *a, BoutReal *b, int n);
+  void Update(BoutReal *x, int it, BoutReal **h, BoutReal *s, BoutReal *y, BoutReal **v, int n);
+  void GeneratePlaneRotation(BoutReal dx, BoutReal dy, BoutReal *cs, BoutReal *sn);
+  void ApplyPlaneRotation(BoutReal *dx, BoutReal *dy, BoutReal cs, BoutReal sn);
+  int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, BoutReal tol, int &iterations, BoutReal &residual);
 };
 
 // Variable Flags

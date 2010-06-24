@@ -33,12 +33,12 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
   
   int restart=10;
   int itmax=100;
-  real tol=1.e-7;
+  BoutReal tol=1.e-7;
   
   // Call the solver
   Field3D result;
   result = start;
-  int status =  solve(rhs, result,
+  solve(rhs, result,
 		      flags, 
 		      restart, itmax, tol);
   return result;

@@ -28,14 +28,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-real *rvector(int size)
+BoutReal *rvector(int size)
 {
-  return (real*) malloc(sizeof(real)*size);
+  return (BoutReal*) malloc(sizeof(BoutReal)*size);
 }
 
-real *rvresize(real *v, int newsize)
+BoutReal *rvresize(BoutReal *v, int newsize)
 {
-  return (real*) realloc(v, sizeof(real)*newsize);
+  return (BoutReal*) realloc(v, sizeof(BoutReal)*newsize);
 }
 
 int *ivector(int size)
@@ -48,17 +48,17 @@ int *ivresize(int *v, int newsize)
   return (int*) realloc(v, sizeof(int)*newsize);
 }
 
-real **rmatrix(int xsize, int ysize)
+BoutReal **rmatrix(int xsize, int ysize)
 {
   long i;
-  real **m;
+  BoutReal **m;
   
-  if((m = (real**) malloc(xsize*sizeof(real*))) == (real**) NULL) {
+  if((m = (BoutReal**) malloc(xsize*sizeof(BoutReal*))) == (BoutReal**) NULL) {
     printf("Error: could not allocate memory:%d\n", xsize);
     exit(1);
   }
 
-  if((m[0] = (real*) malloc(xsize*ysize*sizeof(real))) == (real*) NULL) {
+  if((m[0] = (BoutReal*) malloc(xsize*ysize*sizeof(BoutReal))) == (BoutReal*) NULL) {
     printf("Error: could not allocate memory\n");
     exit(1);
   }
@@ -90,7 +90,7 @@ int **imatrix(int xsize, int ysize)
   return(m);
 }
 
-void free_rmatrix(real **m)
+void free_rmatrix(BoutReal **m)
 {
   free(m[0]);
   free(m);
@@ -102,19 +102,19 @@ void free_imatrix(int **m)
   free(m);
 }
 
-real ***r3tensor(int nrow, int ncol, int ndep)
+BoutReal ***r3tensor(int nrow, int ncol, int ndep)
 {
   int i,j;
-  real ***t;
+  BoutReal ***t;
 
   /* allocate pointers to pointers to rows */
-  t=(real ***) malloc((size_t)(nrow*sizeof(real**)));
+  t=(BoutReal ***) malloc((size_t)(nrow*sizeof(BoutReal**)));
 
   /* allocate pointers to rows and set pointers to them */
-  t[0]=(real **) malloc((size_t)(nrow*ncol*sizeof(real*)));
+  t[0]=(BoutReal **) malloc((size_t)(nrow*ncol*sizeof(BoutReal*)));
 
   /* allocate rows and set pointers to them */
-  t[0][0]=(real *) malloc((size_t)(nrow*ncol*ndep*sizeof(real)));
+  t[0][0]=(BoutReal *) malloc((size_t)(nrow*ncol*ndep*sizeof(BoutReal)));
 
   for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
   for(i=1;i!=nrow;i++) {
@@ -127,7 +127,7 @@ real ***r3tensor(int nrow, int ncol, int ndep)
   return t;
 }
 
-void free_r3tensor(real ***m)
+void free_r3tensor(BoutReal ***m)
 {
   free(m[0][0]);
   free(m[0]);
@@ -153,19 +153,19 @@ void free_cmatrix(dcomplex** m)
   delete[] m;
 }
 
-real SQ(real x)
+BoutReal SQ(BoutReal x)
 {
   return(x*x);
 }
 
-int ROUND(real x)
+int ROUND(BoutReal x)
 {
   return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
 }
 
-void SWAP(real &a, real &b)
+void SWAP(BoutReal &a, BoutReal &b)
 {
-  real tmp;
+  BoutReal tmp;
   
   tmp = a;
   a = b;
@@ -188,9 +188,9 @@ bool is_pow2(int x)
 
 /*
 // integer power
-real operator^(real lhs, int n)
+BoutReal operator^(BoutReal lhs, int n)
 {
-  real result;
+  BoutReal result;
   
   if(n == 0)
     return 1.0;
@@ -216,7 +216,7 @@ real operator^(real lhs, int n)
   return result;
 }
 
-real operator^(real lhs, const real &rhs)
+BoutReal operator^(BoutReal lhs, const BoutReal &rhs)
 {
   return pow(lhs, rhs);
 }

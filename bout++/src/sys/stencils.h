@@ -31,7 +31,7 @@
 class bvalue {
  public:
   int jx, jy, jz;
-  real val;
+  BoutReal val;
 
   // Operators
   
@@ -40,35 +40,35 @@ class bvalue {
   bvalue & operator+=(const bvalue &rhs);
   bvalue & operator-=(const bvalue &rhs);
   bvalue & operator*=(const bvalue &rhs);
-  bvalue & operator*=(const real rhs);
+  bvalue & operator*=(const BoutReal rhs);
   bvalue & operator/=(const bvalue &rhs);
-  bvalue & operator/=(const real rhs);
+  bvalue & operator/=(const BoutReal rhs);
 
   // Binary operators
   
   const bvalue operator+(const bvalue &other) const;
   const bvalue operator-(const bvalue &other) const;
   const bvalue operator*(const bvalue &other) const;
-  const bvalue operator*(const real rhs) const;
+  const bvalue operator*(const BoutReal rhs) const;
   const bvalue operator/(const bvalue &other) const;
-  const bvalue operator/(const real rhs) const;
+  const bvalue operator/(const BoutReal rhs) const;
 };
 
-const bvalue operator*(const real lhs, const bvalue &rhs);
-const bvalue operator/(const real lhs, const bvalue &rhs);
+const bvalue operator*(const BoutReal lhs, const bvalue &rhs);
+const bvalue operator/(const BoutReal lhs, const bvalue &rhs);
 
 class stencil {
  public:
   int jx, jy, jz; // central location
   
-  real c, p, m, pp, mm; // stencil 2 each side of the centre
+  BoutReal c, p, m, pp, mm; // stencil 2 each side of the centre
   
   /// constructor
   stencil();
   /// Constructor like pre r115 upwind methods (debugging)
-  stencil(real fc);
+  stencil(BoutReal fc);
   /// Constructor like pre r115 derivative methods
-  stencil(real fc, real fm, real fp, real fmm, real fpp);
+  stencil(BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp);
 
   /// Copy constructor
   stencil(const stencil &s);
@@ -76,38 +76,38 @@ class stencil {
   // operators
   
   stencil & operator=(const stencil &rhs);
-  stencil & operator=(const real rhs);
+  stencil & operator=(const BoutReal rhs);
 
   stencil & operator+=(const stencil &rhs);
-  stencil & operator+=(const real &rhs);
+  stencil & operator+=(const BoutReal &rhs);
   stencil & operator-=(const stencil &rhs);
-  stencil & operator-=(const real &rhs);
+  stencil & operator-=(const BoutReal &rhs);
   stencil & operator*=(const stencil &rhs);
-  stencil & operator*=(const real &rhs);
+  stencil & operator*=(const BoutReal &rhs);
   stencil & operator/=(const stencil &rhs);
-  stencil & operator/=(const real &rhs);
+  stencil & operator/=(const BoutReal &rhs);
 
   const stencil operator+(const stencil &other) const;
-  const stencil operator+(const real &other) const;
+  const stencil operator+(const BoutReal &other) const;
   const stencil operator-(const stencil &other) const;
-  const stencil operator-(const real &other) const;
+  const stencil operator-(const BoutReal &other) const;
   const stencil operator*(const stencil &other) const;
-  const stencil operator*(const real &other) const;
+  const stencil operator*(const BoutReal &other) const;
   const stencil operator/(const stencil &other) const;
-  const stencil operator/(const real &other) const;
+  const stencil operator/(const BoutReal &other) const;
 
-  friend const stencil operator+(const real &lhs, const stencil &rhs);
-  friend const stencil operator-(const real &lhs, const stencil &rhs);
-  friend const stencil operator*(const real &lhs, const stencil &rhs);
-  friend const stencil operator/(const real &lhs, const stencil &rhs);
+  friend const stencil operator+(const BoutReal &lhs, const stencil &rhs);
+  friend const stencil operator-(const BoutReal &lhs, const stencil &rhs);
+  friend const stencil operator*(const BoutReal &lhs, const stencil &rhs);
+  friend const stencil operator/(const BoutReal &lhs, const stencil &rhs);
 
-  real min() const;
-  real max() const;
+  BoutReal min() const;
+  BoutReal max() const;
   const stencil abs() const;
 };
 
-real min(const stencil &s);
-real max(const stencil &s);
+BoutReal min(const stencil &s);
+BoutReal max(const stencil &s);
 const stencil abs(const stencil &s);
 
 class bstencil {
@@ -117,7 +117,7 @@ class bstencil {
 
   // Values
 
-  real cc,  // center
+  BoutReal cc,  // center
     
     // 1st order neigbors
     xp, xm, /* (+/-) dx */
@@ -136,31 +136,31 @@ class bstencil {
   bstencil & operator+=(const bstencil &rhs);
   bstencil & operator-=(const bstencil &rhs);
   bstencil & operator*=(const bstencil &rhs);
-  bstencil & operator*=(const real rhs);
+  bstencil & operator*=(const BoutReal rhs);
   bstencil & operator/=(const bstencil &rhs);
-  bstencil & operator/=(const real rhs);
+  bstencil & operator/=(const BoutReal rhs);
   bstencil & operator^=(const bstencil &rhs);
-  bstencil & operator^=(const real rhs);
+  bstencil & operator^=(const BoutReal rhs);
 
   // Binary operators
 
   const bstencil operator+(const bstencil &other) const;
   const bstencil operator-(const bstencil &other) const;
   const bstencil operator*(const bstencil &other) const;
-  const bstencil operator*(const real rhs) const;
+  const bstencil operator*(const BoutReal rhs) const;
   const bstencil operator/(const bstencil &other) const;
-  const bstencil operator/(const real rhs) const;
+  const bstencil operator/(const BoutReal rhs) const;
   const bstencil operator^(const bstencil &other) const;
-  const bstencil operator^(const real rhs) const;
+  const bstencil operator^(const BoutReal rhs) const;
   
  private:
   
   
 };
 
-const bstencil operator*(const real lhs, const bstencil &rhs);
-const bstencil operator/(const real lhs, const bstencil &rhs);
-const bstencil operator^(const real lhs, const bstencil &rhs);
+const bstencil operator*(const BoutReal lhs, const bstencil &rhs);
+const bstencil operator/(const BoutReal lhs, const bstencil &rhs);
+const bstencil operator^(const BoutReal lhs, const bstencil &rhs);
 
 typedef struct {
   int jx,jy,jz, /* center   */
@@ -179,11 +179,11 @@ typedef struct {
   bool yp_shift, y2p_shift;
   bool ym_shift, y2m_shift;
 
-  real yp_offset, ym_offset; // Toroidal offset (In index space)
+  BoutReal yp_offset, ym_offset; // Toroidal offset (In index space)
   
   // Offsets for sheared X derivatives (also in index space)
-  real xp_offset, xm_offset;
-  real x2p_offset, x2m_offset;
+  BoutReal xp_offset, xm_offset;
+  BoutReal x2p_offset, x2m_offset;
 
   // What region is being looped over?
   REGION region;

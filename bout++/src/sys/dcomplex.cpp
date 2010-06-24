@@ -1,7 +1,7 @@
 /**************************************************************************
  * Complex number class
  * On some machines the standard C++ complex class cannot be used because
- * there is a conflict between PVODE and the library's definition of real
+ * there is a conflict between PVODE and the library's definition of BoutReal
  *
  * Changelog:
  * 
@@ -44,7 +44,7 @@ dcomplex::dcomplex(const dcomplex &rhs)
   *this = rhs;
 }
 
-dcomplex::dcomplex(real rval, real ival)
+dcomplex::dcomplex(BoutReal rval, BoutReal ival)
 {
   r = rval, i = ival;
 }
@@ -59,7 +59,7 @@ dcomplex & dcomplex::operator=(const dcomplex &rhs)
   return *this;
 }
 
-dcomplex & dcomplex::operator=(const real &rhs)
+dcomplex & dcomplex::operator=(const BoutReal &rhs)
 {
   r = rhs; i = 0.0;
   return *this;
@@ -72,7 +72,7 @@ dcomplex & dcomplex::operator+=(const dcomplex &rhs)
   return *this;
 }
 
-dcomplex & dcomplex::operator+=(const real &rhs)
+dcomplex & dcomplex::operator+=(const BoutReal &rhs)
 {
   r += rhs;
   return *this;
@@ -85,7 +85,7 @@ dcomplex & dcomplex::operator-=(const dcomplex &rhs)
   return *this;
 }
 
-dcomplex & dcomplex::operator-=(const real &rhs)
+dcomplex & dcomplex::operator-=(const BoutReal &rhs)
 {
   r -= rhs;
   return *this;
@@ -93,7 +93,7 @@ dcomplex & dcomplex::operator-=(const real &rhs)
 
 dcomplex & dcomplex::operator*=(const dcomplex &rhs)
 {
-  real rt;
+  BoutReal rt;
 
   rt = r * rhs.r - i * rhs.i;
 
@@ -102,7 +102,7 @@ dcomplex & dcomplex::operator*=(const dcomplex &rhs)
   return *this;
 }
 
-dcomplex & dcomplex::operator*=(const real &rhs)
+dcomplex & dcomplex::operator*=(const BoutReal &rhs)
 {
   r *= rhs;
   i *= rhs;
@@ -111,7 +111,7 @@ dcomplex & dcomplex::operator*=(const real &rhs)
 
 dcomplex & dcomplex::operator/=(const dcomplex &rhs)
 {
-  real c, rt;
+  BoutReal c, rt;
 
   c = rhs.r*rhs.r + rhs.i*rhs.i;
   
@@ -141,7 +141,7 @@ const dcomplex dcomplex::operator+(const dcomplex &rhs) const
   return result;
 }
 
-const dcomplex dcomplex::operator+(const real &rhs) const
+const dcomplex dcomplex::operator+(const BoutReal &rhs) const
 {
   dcomplex result;
 
@@ -161,7 +161,7 @@ const dcomplex dcomplex::operator-(const dcomplex &rhs) const
   return result;
 }
 
-const dcomplex dcomplex::operator-(const real &rhs) const
+const dcomplex dcomplex::operator-(const BoutReal &rhs) const
 {
   dcomplex result;
 
@@ -181,7 +181,7 @@ const dcomplex dcomplex::operator*(const dcomplex &rhs) const
   return result;
 }
 
-const dcomplex dcomplex::operator*(const real &rhs) const
+const dcomplex dcomplex::operator*(const BoutReal &rhs) const
 {
   dcomplex result;
 
@@ -194,7 +194,7 @@ const dcomplex dcomplex::operator*(const real &rhs) const
 const dcomplex dcomplex::operator/(const dcomplex &rhs) const
 {
   dcomplex result;
-  real c;
+  BoutReal c;
 
   c = rhs.r*rhs.r + rhs.i*rhs.i;
   result.r = (r*rhs.r + i*rhs.i)/c;
@@ -203,7 +203,7 @@ const dcomplex dcomplex::operator/(const dcomplex &rhs) const
   return result;
 }
 
-const dcomplex dcomplex::operator/(const real &rhs) const
+const dcomplex dcomplex::operator/(const BoutReal &rhs) const
 {
   dcomplex result;
   
@@ -215,12 +215,12 @@ const dcomplex dcomplex::operator/(const real &rhs) const
 
 // Non-member overloaded operators
 
-const dcomplex operator+(const real &lhs, const dcomplex &rhs)
+const dcomplex operator+(const BoutReal &lhs, const dcomplex &rhs)
 {
   return rhs+lhs;
 }
 
-const dcomplex operator-(const real &lhs, const dcomplex &rhs)
+const dcomplex operator-(const BoutReal &lhs, const dcomplex &rhs)
 {
   dcomplex result;
 
@@ -230,15 +230,15 @@ const dcomplex operator-(const real &lhs, const dcomplex &rhs)
   return result;
 }
 
-const dcomplex operator*(const real &lhs, const dcomplex &rhs)
+const dcomplex operator*(const BoutReal &lhs, const dcomplex &rhs)
 {
   return rhs*lhs;
 }
 
-const dcomplex operator/(const real &lhs, const dcomplex &rhs)
+const dcomplex operator/(const BoutReal &lhs, const dcomplex &rhs)
 {
   dcomplex result;
-  real c;
+  BoutReal c;
   
   c = rhs.r*rhs.r + rhs.i*rhs.i;
 
@@ -255,17 +255,17 @@ bool dcomplex::operator==(const dcomplex &rhs) const
   return (r == rhs.r) && (i == rhs.i);
 }
 
-bool dcomplex::operator==(const real &rhs) const
+bool dcomplex::operator==(const BoutReal &rhs) const
 {
   return (r == rhs) && (i == 0.0);
 }
 
-bool operator==(const real &lhs, const dcomplex &rhs)
+bool operator==(const BoutReal &lhs, const dcomplex &rhs)
 {
   return (lhs == rhs.r) && (rhs.i == 0);
 }
 
-real abs(const dcomplex &c)
+BoutReal abs(const dcomplex &c)
 {
   return sqrt(SQ(c.r) + SQ(c.i));
 }
@@ -280,12 +280,12 @@ const dcomplex conj(const dcomplex &c)
   return result;
 }
 
-real dcomplex::Real() const
+BoutReal dcomplex::Real() const
 {
   return r;
 }
 
-real dcomplex::Imag() const
+BoutReal dcomplex::Imag() const
 {
   return i;
 }

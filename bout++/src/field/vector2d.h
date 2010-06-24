@@ -60,7 +60,7 @@ class Vector2D : public FieldData {
   // Assignment
 
   Vector2D & operator=(const Vector2D &rhs);
-  real operator=(const real val);
+  BoutReal operator=(const BoutReal val);
 
   // operators
 
@@ -68,10 +68,10 @@ class Vector2D : public FieldData {
   const Vector2D operator-() const;
   Vector2D & operator-=(const Vector2D &rhs);
   
-  Vector2D & operator*=(const real rhs);
+  Vector2D & operator*=(const BoutReal rhs);
   Vector2D & operator*=(const Field2D &rhs);
 
-  Vector2D & operator/=(const real rhs);
+  Vector2D & operator/=(const BoutReal rhs);
   Vector2D & operator/=(const Field2D &rhs);
 
   Vector2D & operator^=(const Vector2D &rhs);
@@ -84,11 +84,11 @@ class Vector2D : public FieldData {
   const Vector2D operator-(const Vector2D &rhs) const;
   const Vector3D operator-(const Vector3D &rhs) const;
 
-  const Vector2D operator*(const real rhs) const;
+  const Vector2D operator*(const BoutReal rhs) const;
   const Vector2D operator*(const Field2D &rhs) const;
   const Vector3D operator*(const Field3D &rhs) const;
 
-  const Vector2D operator/(const real rhs) const;
+  const Vector2D operator/(const BoutReal rhs) const;
   const Vector2D operator/(const Field2D &rhs) const;
   const Vector3D operator/(const Field3D &rhs) const;
 
@@ -105,12 +105,12 @@ class Vector2D : public FieldData {
   
   bool isReal() const   { return true; }
   bool is3D() const     { return false; }
-  int  byteSize() const { return 3*sizeof(real); }
-  int  realSize() const { return 3; }
+  int  byteSize() const { return 3*sizeof(BoutReal); }
+  int  BoutRealSize() const { return 3; }
   int  getData(int jx, int jy, int jz, void *vptr) const;
-  int  getData(int jx, int jy, int jz, real *rptr) const;
+  int  getData(int jx, int jy, int jz, BoutReal *rptr) const;
   int  setData(int jx, int jy, int jz, void *vptr);
-  int  setData(int jx, int jy, int jz, real *rptr);
+  int  setData(int jx, int jy, int jz, BoutReal *rptr);
 
   bool ioSupport() { return true; }
   const string getSuffix(int component) const {
@@ -147,7 +147,7 @@ class Vector2D : public FieldData {
     }else
       toContravariant();
   }
-  real *getData(int component) {
+  BoutReal *getData(int component) {
     switch(component) {
     case 0:
       return *(x.getData());
@@ -175,7 +175,7 @@ class Vector2D : public FieldData {
 
 // Non-member overloaded operators
 
-const Vector2D operator*(const real lhs, const Vector2D &rhs);
+const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
 

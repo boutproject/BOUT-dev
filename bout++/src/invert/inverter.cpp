@@ -58,10 +58,10 @@ Inverter::~Inverter()
  * Solve function
  **************************************************************************/
 
-int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, int itmax, real tol)
+int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, int itmax, BoutReal tol)
 {
   int iterations;
-  real residual;
+  BoutReal residual;
   
   int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->ngx*mesh->ngz, 
 			   restart, itmax, tol, iterations, residual);
@@ -74,7 +74,7 @@ int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, in
 int Inverter::solve(const Field3D &b, Field3D &x, 
 		    int flags, 
 		    int restart, int itmax,
-		    real tol)
+		    BoutReal tol)
 {
   int ys = mesh->ystart, ye = mesh->yend;
  
@@ -96,7 +96,7 @@ int Inverter::solve(const Field3D &b, Field3D &x,
   return 0;
 }
 
-void Inverter::A(real *b, real *x)
+void Inverter::A(BoutReal *b, BoutReal *x)
 {
   FieldPerp Fb, Fx;
   
@@ -110,10 +110,10 @@ void Inverter::A(real *b, real *x)
  * GMRES iterative solver
  **************************************************************************/
 
-real Inverter::norm_vector(real *b, int n)
+BoutReal Inverter::norm_vector(BoutReal *b, int n)
 {
   int i;
-  real val = 0.0;
+  BoutReal val = 0.0;
 
   for(i=0;i<n;i++)
     val += b[i]*b[i];
@@ -121,10 +121,10 @@ real Inverter::norm_vector(real *b, int n)
   return(sqrt(val));
 }
 
-real Inverter::dot_product(real *a, real *b, int n)
+BoutReal Inverter::dot_product(BoutReal *a, BoutReal *b, int n)
 {
   int i;
-  real val = 0.0;
+  BoutReal val = 0.0;
 
   for(i=0;i<n;i++)
     val += a[i]*b[i];
@@ -132,7 +132,7 @@ real Inverter::dot_product(real *a, real *b, int n)
   return(val);
 }
 
-void Inverter::Update(real *x, int it, real **h, real *s, real *y, real **v, int n)
+void Inverter::Update(BoutReal *x, int it, BoutReal **h, BoutReal *s, BoutReal *y, BoutReal **v, int n)
 {
   int i, j, p;
   
@@ -156,9 +156,9 @@ void Inverter::Update(real *x, int it, real **h, real *s, real *y, real **v, int
   }
 }
 
-void Inverter::GeneratePlaneRotation(real dx, real dy, real *cs, real *sn)
+void Inverter::GeneratePlaneRotation(BoutReal dx, BoutReal dy, BoutReal *cs, BoutReal *sn)
 {
-  real temp;
+  BoutReal temp;
   if(dy == 0.0) {
     *cs = 1.0;
     *sn = 0.0;
@@ -173,27 +173,27 @@ void Inverter::GeneratePlaneRotation(real dx, real dy, real *cs, real *sn)
   }
 }
 
-void Inverter::ApplyPlaneRotation(real *dx, real *dy, real cs, real sn)
+void Inverter::ApplyPlaneRotation(BoutReal *dx, BoutReal *dy, BoutReal cs, BoutReal sn)
 {
-  real temp;
+  BoutReal temp;
 
   temp = *dx;
   *dx = cs * (*dx) + sn * (*dy);
   *dy = cs * (*dy) - sn * temp;
 }
 
-int Inverter::gmres_solve(real *b, real *x, int n, int m, int itmax, real tol, int &iterations, real &residual)
+int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, BoutReal tol, int &iterations, BoutReal &residual)
 {
   int i;
   int it, itt, p;
-  real normb, beta, resid;
+  BoutReal normb, beta, resid;
   
   /* Problem array storage */
   static int size = 0, msize = 0;
-  static real *y, *s, *cs, *sn;
-  static real **H;
-  static real *r, *w;
-  static real **v;
+  static BoutReal *y, *s, *cs, *sn;
+  static BoutReal **H;
+  static BoutReal *r, *w;
+  static BoutReal **v;
   
   if((n < 1) || (m < 1))
     return(1);

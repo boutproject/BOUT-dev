@@ -59,7 +59,7 @@ class Field {
   */
   virtual Field* clone() const = 0;
 
-  virtual void shiftToReal(bool toreal) {
+  virtual void shiftToReal(bool toBoutReal) {
     // Does nothing by default
   }
 

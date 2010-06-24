@@ -59,8 +59,8 @@ class OptionFile {
   int getInt(const char *name, int &val);
   int getInt(const char *section, const char *name, int &val);
 
-  int getReal(const char *name, real &val);
-  int getReal(const char *section, const char *name, real &val);
+  int getReal(const char *name, BoutReal &val);
+  int getReal(const char *section, const char *name, BoutReal &val);
 
   char* getString(const char *name);
   char* getString(const char *section, const char *name);
@@ -74,16 +74,16 @@ class OptionFile {
   void setSection(const char *name); // Set the default section
  
   int get(const char *name, int &val, const int def);
-  int get(const char *name, real &val, const real def);
+  int get(const char *name, BoutReal &val, const BoutReal def);
   int get(const char *name, bool &val, const bool def);
 
   int get(const char *section, const char *name, int &val, const int def);
-  int get(const char *section, const char *name, real &val, const real def);
+  int get(const char *section, const char *name, BoutReal &val, const BoutReal def);
   int get(const char *section, const char *name, bool &val, const bool def);
 
   // Set methods to pass in options manually
   int set(const char *name, int val);
-  int set(const char *name, real val);
+  int set(const char *name, BoutReal val);
   int set(const char *name, bool val);
   int set(const char *name, const char *string);
 

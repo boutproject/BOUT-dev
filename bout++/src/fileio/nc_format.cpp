@@ -450,7 +450,7 @@ bool NcFormat::read(int *var, const string &name, int lx, int ly, int lz)
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::read(real *data, const char *name, int lx, int ly, int lz)
+bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz)
 {
   if(!is_valid())
     return false;
@@ -459,7 +459,7 @@ bool NcFormat::read(real *data, const char *name, int lx, int ly, int lz)
     return false;
 
 #ifdef CHECK
-  msg_stack.push("NcFormat::read(real)");
+  msg_stack.push("NcFormat::read(BoutReal)");
 #endif
 
   // Create an error object so netCDF doesn't exit
@@ -503,7 +503,7 @@ bool NcFormat::read(real *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::read(real *var, const string &name, int lx, int ly, int lz)
+bool NcFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return read(var, name.c_str(), lx, ly, lz);
 }
@@ -568,7 +568,7 @@ bool NcFormat::write(int *var, const string &name, int lx, int ly, int lz)
   return write(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write(real *data, const char *name, int lx, int ly, int lz)
+bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
 {
   if(!is_valid())
     return false;
@@ -577,7 +577,7 @@ bool NcFormat::write(real *data, const char *name, int lx, int ly, int lz)
     return false;
   
 #ifdef CHECK
-  msg_stack.push("NcFormat::write(real)");
+  msg_stack.push("NcFormat::write(BoutReal)");
 #endif
 
   int nd = 0; // Number of dimensions
@@ -600,7 +600,7 @@ bool NcFormat::write(real *data, const char *name, int lx, int ly, int lz)
       var = dataFile->add_var(name, ncDouble, nd, dimList);
 
     if(!var->is_valid()) {
-      output.write("ERROR: NetCDF could not add real '%s' to file '%s'\n", name, fname);
+      output.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
       return false;
     }
   }  
@@ -635,7 +635,7 @@ bool NcFormat::write(real *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::write(real *var, const string &name, int lx, int ly, int lz)
+bool NcFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return write(var, name.c_str(), lx, ly, lz);
 }
@@ -684,7 +684,7 @@ bool NcFormat::read_rec(int *var, const string &name, int lx, int ly, int lz)
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::read_rec(real *data, const char *name, int lx, int ly, int lz)
+bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
 {
   if(!is_valid())
     return false;
@@ -719,7 +719,7 @@ bool NcFormat::read_rec(real *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::read_rec(real *var, const string &name, int lx, int ly, int lz)
+bool NcFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
@@ -783,7 +783,7 @@ bool NcFormat::write_rec(int *var, const string &name, int lx, int ly, int lz)
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write_rec(real *data, const char *name, int lx, int ly, int lz)
+bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
 {
   if(!is_valid())
     return false;
@@ -792,7 +792,7 @@ bool NcFormat::write_rec(real *data, const char *name, int lx, int ly, int lz)
     return false;
 
 #ifdef CHECK
-  msg_stack.push("NcFormat::write_rec(real)");
+  msg_stack.push("NcFormat::write_rec(BoutReal)");
 #endif
 
   int nd = 1; // Number of dimensions
@@ -872,7 +872,7 @@ bool NcFormat::write_rec(real *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::write_rec(real *var, const string &name, int lx, int ly, int lz)
+bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }

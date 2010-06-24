@@ -39,13 +39,13 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-static int cvode_rhs(real t, N_Vector u, N_Vector du, void *user_data);
-static int cvode_bbd_rhs(int Nlocal, real t, N_Vector u, N_Vector du, 
+static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
+static int cvode_bbd_rhs(int Nlocal, BoutReal t, N_Vector u, N_Vector du, 
 			 void *user_data);
 
-static int cvode_pre(real t, N_Vector yy, N_Vector yp,
+static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 		     N_Vector rvec, N_Vector zvec,
-		     real gamma, real delta, int lr,
+		     BoutReal gamma, BoutReal delta, int lr,
 		     void *user_data, N_Vector tmp);
 
 static int cvode_jac(N_Vector v, N_Vector Jv,
@@ -69,7 +69,7 @@ CvodeSolver::~CvodeSolver()
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising CVODE solver");
@@ -112,12 +112,12 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   
   /// Get options
 
-  real abstol, reltol;
+  BoutReal abstol, reltol;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
   bool use_precon, use_jacobian;
-  real max_timestep;
+  BoutReal max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
 	int MXSUB = mesh->xend - mesh->xstart + 1;
 
@@ -284,7 +284,7 @@ int CvodeSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-real CvodeSolver::run(real tout, int &ncalls, real &rhstime)
+BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
@@ -307,7 +307,7 @@ real CvodeSolver::run(real tout, int &ncalls, real &rhstime)
   load_vars(NV_DATA_P(uvec));
 
   // Call rhs function to get extra variables at this time
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   (*func)(simtime);
   rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
@@ -328,13 +328,13 @@ real CvodeSolver::run(real tout, int &ncalls, real &rhstime)
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void CvodeSolver::rhs(real t, real *udata, real *dudata)
+void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
 
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   
   // Load state from udata
   load_vars(udata);
@@ -357,13 +357,13 @@ void CvodeSolver::rhs(real t, real *udata, real *dudata)
  * Preconditioner function
  **************************************************************************/
 
-void CvodeSolver::pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec)
+void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running preconditioner: CvodeSolver::pre(%e)", t);
 #endif
 
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
 
   int N = NV_LOCLENGTH_P(uvec);
   
@@ -397,7 +397,7 @@ void CvodeSolver::pre(real t, real gamma, real delta, real *udata, real *rvec, r
  * Jacobian-vector multiplication function
  **************************************************************************/
 
-void CvodeSolver::jac(real t, real *ydata, real *vdata, real *Jvdata)
+void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
@@ -428,9 +428,9 @@ void CvodeSolver::jac(real t, real *ydata, real *vdata, real *Jvdata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void CvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void CvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
-  real **d2d, ***d3d;
+  BoutReal **d2d, ***d3d;
   int i;
   int jz;
  
@@ -528,7 +528,7 @@ void CvodeSolver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_O
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void CvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -571,7 +571,7 @@ void CvodeSolver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void CvodeSolver::load_vars(real *udata)
+void CvodeSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
   
@@ -593,7 +593,7 @@ void CvodeSolver::load_vars(real *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void CvodeSolver::load_derivs(real *udata)
+void CvodeSolver::load_derivs(BoutReal *udata)
 {
   unsigned int i;
   
@@ -616,16 +616,16 @@ void CvodeSolver::load_derivs(real *udata)
 }
 
 // This function only called during initialisation
-int CvodeSolver::save_vars(real *udata)
+int CvodeSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (real**) NULL)
+    if(f2d[i].var->getData() == (BoutReal**) NULL)
       return(1);
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (real***) NULL)
+    if(f3d[i].var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
@@ -647,7 +647,7 @@ int CvodeSolver::save_vars(real *udata)
   return(0);
 }
 
-void CvodeSolver::save_derivs(real *dudata)
+void CvodeSolver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -680,12 +680,12 @@ void CvodeSolver::save_derivs(real *dudata)
  * CVODE RHS functions
  **************************************************************************/
 
-static int cvode_rhs(real t, 
+static int cvode_rhs(BoutReal t, 
 		     N_Vector u, N_Vector du, 
 		     void *user_data)
 {
-  real *udata = NV_DATA_P(u);
-  real *dudata = NV_DATA_P(du);
+  BoutReal *udata = NV_DATA_P(u);
+  BoutReal *dudata = NV_DATA_P(du);
   
   CvodeSolver *s = (CvodeSolver*) user_data;
 
@@ -696,7 +696,7 @@ static int cvode_rhs(real t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(int Nlocal, real t, 
+static int cvode_bbd_rhs(int Nlocal, BoutReal t, 
 			 N_Vector u, N_Vector du, 
 			 void *user_data)
 {
@@ -704,14 +704,14 @@ static int cvode_bbd_rhs(int Nlocal, real t,
 }
 
 /// Preconditioner function
-static int cvode_pre(real t, N_Vector yy, N_Vector yp,
+static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 		     N_Vector rvec, N_Vector zvec,
-		     real gamma, real delta, int lr,
+		     BoutReal gamma, BoutReal delta, int lr,
 		     void *user_data, N_Vector tmp)
 {
-  real *udata = NV_DATA_P(yy);
-  real *rdata = NV_DATA_P(rvec);
-  real *zdata = NV_DATA_P(zvec);
+  BoutReal *udata = NV_DATA_P(yy);
+  BoutReal *rdata = NV_DATA_P(rvec);
+  BoutReal *zdata = NV_DATA_P(zvec);
   
   CvodeSolver *s = (CvodeSolver*) user_data;
 
@@ -726,9 +726,9 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp)
 {
-  real *ydata = NV_DATA_P(y);   ///< System state
-  real *vdata = NV_DATA_P(v);   ///< Input vector
-  real *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
+  BoutReal *ydata = NV_DATA_P(y);   ///< System state
+  BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
+  BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
   
   CvodeSolver *s = (CvodeSolver*) user_data;
   

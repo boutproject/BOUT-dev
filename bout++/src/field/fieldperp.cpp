@@ -31,17 +31,17 @@
 #include "fieldperp.h"
 #include "utils.h"
 
-extern real** rmatrix(int nx, int ny);
+extern BoutReal** rmatrix(int nx, int ny);
 
 FieldPerp::FieldPerp()
 {
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
   yindex = -1;
 }
 
 FieldPerp::FieldPerp(const FieldPerp &f)
 {
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
   *this = f;
 }
 
@@ -58,9 +58,9 @@ FieldPerp* FieldPerp::clone() const
 void FieldPerp::set(const Field3D &f, int y)
 {
   int jx, jz;
-  real ***d = f.getData();
+  BoutReal ***d = f.getData();
 
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     error("FieldPerp: Setting from empty Field3D");
     return;
   }
@@ -83,9 +83,9 @@ void FieldPerp::allocate()
  *                         OPERATORS 
  ***************************************************************/
 
-real* FieldPerp::operator[](int jx) const
+BoutReal* FieldPerp::operator[](int jx) const
 {
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: [] operator on empty data\n");
     exit(1);
   }
@@ -108,7 +108,7 @@ FieldPerp& FieldPerp::operator=(const FieldPerp &rhs)
   if(this == &rhs)
     return(*this); // skip this assignment
 
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: No data in assignment from FieldPerp");
     return(*this);
@@ -125,7 +125,7 @@ FieldPerp& FieldPerp::operator=(const FieldPerp &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator=(const real rhs)
+FieldPerp & FieldPerp::operator=(const BoutReal rhs)
 {
   int jx, jz;
 
@@ -144,12 +144,12 @@ FieldPerp & FieldPerp::operator+=(const FieldPerp &rhs)
 {
   int jx, jz;
   
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: += operates on empty FieldPerp");
     return(*this);
   }
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: += operates on empty data");
     return(*this);
   }
@@ -164,17 +164,17 @@ FieldPerp & FieldPerp::operator+=(const FieldPerp &rhs)
 FieldPerp & FieldPerp::operator+=(const Field3D &rhs)
 {
   int jx, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = rhs.getData();
   
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     // No data
     error("FieldPerp: += operates on empty Field3D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: += operates on empty data");
     return(*this);
   }
@@ -189,17 +189,17 @@ FieldPerp & FieldPerp::operator+=(const Field3D &rhs)
 FieldPerp & FieldPerp::operator+=(const Field2D &rhs)
 {
   int jx, jz;
-  real **d;
+  BoutReal **d;
 
   d = rhs.getData();
   
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: += operates on empty Field2D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: += operates on empty data");
     return(*this);
   }
@@ -211,11 +211,11 @@ FieldPerp & FieldPerp::operator+=(const Field2D &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator+=(const real rhs)
+FieldPerp & FieldPerp::operator+=(const BoutReal rhs)
 {
   int jx, jz;
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: += operates on empty data");
     return(*this);
   }
@@ -233,13 +233,13 @@ FieldPerp & FieldPerp::operator-=(const FieldPerp &rhs)
 {
   int jx, jz;
   
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: -= operates on empty FieldPerp");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: -= operates on empty data");
     return(*this);
   }
@@ -254,17 +254,17 @@ FieldPerp & FieldPerp::operator-=(const FieldPerp &rhs)
 FieldPerp & FieldPerp::operator-=(const Field3D &rhs)
 {
   int jx, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = rhs.getData();
   
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     // No data
     error("FieldPerp: -= operates on empty Field3D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: -= operates on empty data");
     return(*this);
   }
@@ -279,17 +279,17 @@ FieldPerp & FieldPerp::operator-=(const Field3D &rhs)
 FieldPerp & FieldPerp::operator-=(const Field2D &rhs)
 {
   int jx, jz;
-  real **d;
+  BoutReal **d;
 
   d = rhs.getData();
   
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: -= operates on empty Field2D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: -= operates on empty data");
     return(*this);
   }
@@ -301,11 +301,11 @@ FieldPerp & FieldPerp::operator-=(const Field2D &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator-=(const real rhs)
+FieldPerp & FieldPerp::operator-=(const BoutReal rhs)
 {
   int jx, jz;
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: -= operates on empty data");
     return(*this);
   }
@@ -323,13 +323,13 @@ FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
 {
   int jx, jz;
   
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: *= operates on empty FieldPerp");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: *= operates on empty data");
     return(*this);
   }
@@ -344,17 +344,17 @@ FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
 FieldPerp & FieldPerp::operator*=(const Field3D &rhs)
 {
   int jx, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = rhs.getData();
   
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     // No data
     error("FieldPerp: *= operates on empty Field3D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: *= operates on empty data");
     return(*this);
   }
@@ -369,17 +369,17 @@ FieldPerp & FieldPerp::operator*=(const Field3D &rhs)
 FieldPerp & FieldPerp::operator*=(const Field2D &rhs)
 {
   int jx, jz;
-  real **d;
+  BoutReal **d;
 
   d = rhs.getData();
   
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: *= operates on empty Field2D");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: *= operates on empty data");
     return(*this);
   }
@@ -391,11 +391,11 @@ FieldPerp & FieldPerp::operator*=(const Field2D &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator*=(const real rhs)
+FieldPerp & FieldPerp::operator*=(const BoutReal rhs)
 {
   int jx, jz;
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: *= operates on empty data");
     return(*this);
   }
@@ -413,13 +413,13 @@ FieldPerp & FieldPerp::operator/=(const FieldPerp &rhs)
 {
   int jx, jz;
   
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: /= operates on empty FieldPerp");
     return(*this);
   }
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: /= operates on empty data");
     return(*this);
   }
@@ -434,17 +434,17 @@ FieldPerp & FieldPerp::operator/=(const FieldPerp &rhs)
 FieldPerp & FieldPerp::operator/=(const Field3D &rhs)
 {
   int jx, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = rhs.getData();
   
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     // No data
     error("FieldPerp: /= operates on empty Field3D");
     return(*this);
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: /= operates on empty data");
     return(*this);
   }
@@ -459,17 +459,17 @@ FieldPerp & FieldPerp::operator/=(const Field3D &rhs)
 FieldPerp & FieldPerp::operator/=(const Field2D &rhs)
 {
   int jx, jz;
-  real **d;
+  BoutReal **d;
 
   d = rhs.getData();
   
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: /= operates on empty Field2D");
     return(*this);
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: /= operates on empty data");
     return(*this);
   }
@@ -481,11 +481,11 @@ FieldPerp & FieldPerp::operator/=(const Field2D &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator/=(const real rhs)
+FieldPerp & FieldPerp::operator/=(const BoutReal rhs)
 {
   int jx, jz;
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: /= operates on empty data");
     return(*this);
   }
@@ -503,13 +503,13 @@ FieldPerp & FieldPerp::operator^=(const FieldPerp &rhs)
 {
   int jx, jz;
   
-  if(rhs.data == (real**) NULL) {
+  if(rhs.data == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: ^= operates on empty FieldPerp");
     return(*this);
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: ^= operates on empty data");
     return(*this);
   }
@@ -524,17 +524,17 @@ FieldPerp & FieldPerp::operator^=(const FieldPerp &rhs)
 FieldPerp & FieldPerp::operator^=(const Field3D &rhs)
 {
   int jx, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = rhs.getData();
   
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     // No data
     error("FieldPerp: ^= operates on empty Field3D");
     return(*this);
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: ^= operates on empty data");
     return(*this);
   }
@@ -549,17 +549,17 @@ FieldPerp & FieldPerp::operator^=(const Field3D &rhs)
 FieldPerp & FieldPerp::operator^=(const Field2D &rhs)
 {
   int jx, jz;
-  real **d;
+  BoutReal **d;
 
   d = rhs.getData();
   
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("FieldPerp: ^= operates on empty Field2D");
     return(*this);
   }
 
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: ^= operates on empty data");
     return(*this);
   }
@@ -571,11 +571,11 @@ FieldPerp & FieldPerp::operator^=(const Field2D &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator^=(const real rhs)
+FieldPerp & FieldPerp::operator^=(const BoutReal rhs)
 {
   int jx, jz;
   
-  if(data == (real**) NULL) {
+  if(data == (BoutReal**) NULL) {
     error("FieldPerp: ^= operates on empty data");
     return(*this);
   }
@@ -660,7 +660,7 @@ const FieldPerp FieldPerp::operator*(const Field2D &other) const
   return(result);
 }
 
-const FieldPerp FieldPerp::operator*(const real other) const
+const FieldPerp FieldPerp::operator*(const BoutReal other) const
 {
   FieldPerp result = *this;
   result *= other;
@@ -690,7 +690,7 @@ const FieldPerp FieldPerp::operator/(const Field2D &other) const
   return(result);
 }
 
-const FieldPerp FieldPerp::operator/(const real other) const
+const FieldPerp FieldPerp::operator/(const BoutReal other) const
 {
   FieldPerp result = *this;
   result /= other;
@@ -720,7 +720,7 @@ const FieldPerp FieldPerp::operator^(const Field2D &other) const
   return(result);
 }
 
-const FieldPerp FieldPerp::operator^(const real other) const
+const FieldPerp FieldPerp::operator^(const BoutReal other) const
 {
   FieldPerp result = *this;
   result ^= other;
@@ -784,14 +784,14 @@ void FieldPerp::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.mm = data[bx.jx][bx.jz2m];
 }
 
-real FieldPerp::interpZ(int jx, int jz0, real zoffset, int order) const
+BoutReal FieldPerp::interpZ(int jx, int jz0, BoutReal zoffset, int order) const
 {
   int zi;
-  real result;
+  BoutReal result;
   int jzp, jzm, jz2p;
 
   zi = ROUND(zoffset);  // Find the nearest integer
-  zoffset -= (real) zi; // Difference (-0.5 to +0.5)
+  zoffset -= (BoutReal) zi; // Difference (-0.5 to +0.5)
 
   if(zoffset < 0.0) {
     zi--;
@@ -843,11 +843,11 @@ real FieldPerp::interpZ(int jx, int jz0, real zoffset, int order) const
 
 int FieldPerp::nblocks = 0;
 int FieldPerp::max_blocks = 0;
-real*** FieldPerp::block = (real***) NULL;
+BoutReal*** FieldPerp::block = (BoutReal***) NULL;
 
 void FieldPerp::allocData()
 {
-  if(data != (real**) NULL)
+  if(data != (BoutReal**) NULL)
     return; // already allocated
 
   if(nblocks > 0) {
@@ -868,15 +868,15 @@ void FieldPerp::freeData()
 {
   // put data block onto stack
 
-  if(data == (real**) NULL)
+  if(data == (BoutReal**) NULL)
     return; // No data
 
   if(nblocks == max_blocks) {
     // need to increase size of stack
     if(max_blocks == 0) {
-      block = (real***) malloc(sizeof(real**));
+      block = (BoutReal***) malloc(sizeof(BoutReal**));
     }else {
-      block = (real***) realloc(block, sizeof(real**)*(max_blocks+1));
+      block = (BoutReal***) realloc(block, sizeof(BoutReal**)*(max_blocks+1));
     }
     max_blocks++;
   }
@@ -884,21 +884,21 @@ void FieldPerp::freeData()
   block[nblocks] = data;
   nblocks++;
 
-  data = (real**) NULL;
+  data = (BoutReal**) NULL;
 }
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-const FieldPerp operator*(const real lhs, const FieldPerp &rhs)
+const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs)
 {
   return(rhs*lhs);
 }
 
-const FieldPerp operator/(const real lhs, const FieldPerp &rhs)
+const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs)
 {
   int jx,jz;
   FieldPerp result = rhs;
-  real **d = result.getData();
+  BoutReal **d = result.getData();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
@@ -907,11 +907,11 @@ const FieldPerp operator/(const real lhs, const FieldPerp &rhs)
   return(result);
 }
 
-const FieldPerp operator^(const real lhs, const FieldPerp &rhs)
+const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs)
 {
   int jx,jz;
   FieldPerp result = rhs;
-  real **d = result.getData();
+  BoutReal **d = result.getData();
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)

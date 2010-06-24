@@ -54,8 +54,8 @@ class GridDataSource {
   /// Get data from the source
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool fetch(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool fetch(real *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
+  virtual bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
   
   // Optional functions for efficiency
 
@@ -86,8 +86,8 @@ class GridFile : public GridDataSource {
 
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
   virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  virtual bool fetch(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  virtual bool fetch(real *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  virtual bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
   
   virtual void open(const char *name = NULL);
   virtual void close();

@@ -314,7 +314,7 @@ int BoutMesh::load()
     }
     
     MPI_Group grp;
-    int ierr = MPI_Group_incl(groupw, npcore, ranks, &grp); // Create group
+    MPI_Group_incl(groupw, npcore, ranks, &grp); // Create group
     
     MPI_Comm core_comm;
     MPI_Comm_create(MPI_COMM_WORLD, grp, &core_comm); // Create communicator
@@ -607,8 +607,8 @@ int BoutMesh::get(int &ival, const char *name)
   return 0;
 }
 
-/// A real number
-int BoutMesh::get(real &rval, const char *name)
+/// A BoutReal number
+int BoutMesh::get(BoutReal &rval, const char *name)
 {
   GridDataSource* s = findSource(name);
   if(s == NULL)
@@ -623,7 +623,7 @@ int BoutMesh::get(real &rval, const char *name)
   return 0;
 }
 
-int BoutMesh::get(Field2D &var, const char *name, real def)
+int BoutMesh::get(Field2D &var, const char *name, BoutReal def)
 {
   if(name == NULL)
     return 1;
@@ -642,7 +642,7 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
     return 2;
   }
   
-  real **data;
+  BoutReal **data;
   int jy;
   
   var = 0;// Makes sure the memory is allocated
@@ -771,20 +771,20 @@ int BoutMesh::get(Field2D &var, const char *name, real def)
   return 0;
 }
 
-int BoutMesh::get(Field2D &var, const string &name, real def)
+int BoutMesh::get(Field2D &var, const string &name, BoutReal def)
 {
   return get(var, name.c_str());
 }
 
 /// Load a 3D variable from the grid file
 /*!
-  Data stored as toroidal FFTs in real space at each X-Y point.
+  Data stored as toroidal FFTs in BoutReal space at each X-Y point.
   In toroidal direction, array must have an odd number of points.
   Format is:
 
   DC, r1,i1, r2,i2, ... , rn,in
 
-  with the real and imaginary parts of each (positive) frequency
+  with the BoutReal and imaginary parts of each (positive) frequency
   up to the nyquist frequency.
  */
 int BoutMesh::get(Field3D &var, const char *name)
@@ -806,7 +806,7 @@ int BoutMesh::get(Field3D &var, const char *name)
     return 2;
   }
 
-  real ***data;
+  BoutReal ***data;
   int jy;
 
   var = 0.0; // Makes sure the memory is allocated
@@ -952,7 +952,7 @@ int BoutMesh::communicate(FieldGroup &g)
 
 void BoutMesh::post_receive(CommHandle &ch)
 {
-  real *inbuff;
+  BoutReal *inbuff;
   int len;
   
   /// Post receive data from above (y+1)
@@ -1032,7 +1032,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 comm_handle BoutMesh::send(FieldGroup &g)
 { 
   /// Record starting wall-time
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
   
   /// Get the list of variables to send
   vector<FieldData*> var_list = g.get();
@@ -1053,7 +1053,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
   /// Send data going up (y+1)
   
   int len = 0;
-  real *outbuff;
+  BoutReal *outbuff;
   
   if(UDATA_INDEST != -1) { // If there is a destination for inner x data
     len = pack_data(var_list, 0, UDATA_XSPLIT, MYSUB, MYSUB+MYG, ch->umsg_sendbuff);
@@ -1061,7 +1061,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 
     if(async_send) {
       MPI_Isend(ch->umsg_sendbuff,   // Buffer to send
-		len,             // Length of buffer in reals
+		len,             // Length of buffer in BoutReals
 		PVEC_REAL_MPI_TYPE,  // Real variable type
 		UDATA_INDEST,        // Destination processor
 		IN_SENT_UP,          // Label (tag) for the message
@@ -1203,7 +1203,7 @@ int BoutMesh::wait(comm_handle handle)
     return 2;
 
   /// Record starting time
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
   
   ///////////// WAIT FOR DATA //////////////
   
@@ -1342,12 +1342,12 @@ bool BoutMesh::lastX()
   return PE_XIND == NXPE-1;
 }
 
-int BoutMesh::sendXOut(real *buffer, int size, int tag)
+int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag)
 {
   if(PE_XIND == NXPE-1)
     return 1;
   
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND+1, PE_YIND),
@@ -1359,12 +1359,12 @@ int BoutMesh::sendXOut(real *buffer, int size, int tag)
   return 0;
 }
 
-int BoutMesh::sendXIn(real *buffer, int size, int tag)
+int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag)
 {
   if(PE_XIND == 0)
     return 1;
   
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND-1, PE_YIND),
@@ -1376,12 +1376,12 @@ int BoutMesh::sendXIn(real *buffer, int size, int tag)
   return 0;
 }
 
-comm_handle BoutMesh::irecvXOut(real *buffer, int size, int tag)
+comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
 {
   if(PE_XIND == NXPE-1)
     return NULL;
 
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
   
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1401,12 +1401,12 @@ comm_handle BoutMesh::irecvXOut(real *buffer, int size, int tag)
   return (void*) ch;
 }
 
-comm_handle BoutMesh::irecvXIn(real *buffer, int size, int tag)
+comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
 {
   if(PE_XIND == 0)
     return NULL;
   
-  real t = MPI_Wtime();
+  BoutReal t = MPI_Wtime();
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1772,17 +1772,17 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
       ch->request[i] = MPI_REQUEST_NULL;
     
     if(ylen > 0) {
-      ch->umsg_sendbuff = new real[ylen];
-      ch->dmsg_sendbuff = new real[ylen];
-      ch->umsg_recvbuff = new real[ylen];
-      ch->dmsg_recvbuff = new real[ylen];
+      ch->umsg_sendbuff = new BoutReal[ylen];
+      ch->dmsg_sendbuff = new BoutReal[ylen];
+      ch->umsg_recvbuff = new BoutReal[ylen];
+      ch->dmsg_recvbuff = new BoutReal[ylen];
     }
     
     if(xlen > 0) {
-      ch->imsg_sendbuff = new real[xlen];
-      ch->omsg_sendbuff = new real[xlen];
-      ch->imsg_recvbuff = new real[xlen];
-      ch->omsg_recvbuff = new real[xlen];
+      ch->imsg_sendbuff = new BoutReal[xlen];
+      ch->omsg_sendbuff = new BoutReal[xlen];
+      ch->imsg_recvbuff = new BoutReal[xlen];
+      ch->omsg_recvbuff = new BoutReal[xlen];
     }
     
     ch->xbufflen = xlen;
@@ -1806,10 +1806,10 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
       delete[] ch->dmsg_recvbuff;
     }
     
-    ch->umsg_sendbuff = new real[ylen];
-    ch->dmsg_sendbuff = new real[ylen];
-    ch->umsg_recvbuff = new real[ylen];
-    ch->dmsg_recvbuff = new real[ylen];
+    ch->umsg_sendbuff = new BoutReal[ylen];
+    ch->dmsg_sendbuff = new BoutReal[ylen];
+    ch->umsg_recvbuff = new BoutReal[ylen];
+    ch->dmsg_recvbuff = new BoutReal[ylen];
     
     ch->ybufflen = ylen;
   }
@@ -1821,10 +1821,10 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
       delete[] ch->omsg_recvbuff;
     }
     
-    ch->imsg_sendbuff = new real[xlen];
-    ch->omsg_sendbuff = new real[xlen];
-    ch->imsg_recvbuff = new real[xlen];
-    ch->omsg_recvbuff = new real[xlen];
+    ch->imsg_sendbuff = new BoutReal[xlen];
+    ch->omsg_sendbuff = new BoutReal[xlen];
+    ch->imsg_recvbuff = new BoutReal[xlen];
+    ch->omsg_recvbuff = new BoutReal[xlen];
     
     ch->xbufflen = xlen;
   }
@@ -1864,7 +1864,7 @@ void BoutMesh::clear_handles()
  *                   Communication utilities
  ****************************************************************/
 
-int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
+int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
 {
   int jx, jy, jz;
   int len = 0;
@@ -1893,7 +1893,7 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   return(len);
 }
 
-int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, real *buffer)
+int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer)
 {
   int jx, jy, jz;
   int len = 0;
@@ -1930,9 +1930,9 @@ int BoutMesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, i
   /// Loop over variables
   for(std::vector<FieldData*>::iterator it = var_list.begin(); it != var_list.end(); it++) {
     if((*it)->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * (mesh->ngz-1) * (*it)->realSize();
+      len += (xlt - xge) * (ylt - yge) * (mesh->ngz-1) * (*it)->BoutRealSize();
     }else
-      len += (xlt - xge) * (ylt - yge) * (*it)->realSize();
+      len += (xlt - xge) * (ylt - yge) * (*it)->BoutRealSize();
   }
   
   return len;
@@ -1945,7 +1945,7 @@ int BoutMesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, i
 /// Reads in a portion of the X-Y domain
 int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name, 
 	                     int yread, int ydest, int ysize, 
-                             int xge, int xlt, real ***var)
+                             int xge, int xlt, BoutReal ***var)
 {
   /// Check the arguments make sense
   if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
@@ -1991,7 +1991,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 
   /// Data for FFT. Only positive frequencies
   dcomplex* fdata = new dcomplex[ncz/2 + 1];
-  real* zdata = new real[size[2]];
+  BoutReal* zdata = new BoutReal[size[2]];
 
   for(int jx=xge;jx<xlt;jx++) {
     // Set the global X index
@@ -2022,7 +2022,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
       
       // Inverse FFT, shifting in the z direction
       for(int jz=0;jz<=ncz/2;jz++) {
-	real kwave;
+	BoutReal kwave;
 	
 	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
       
@@ -2044,7 +2044,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 }
 
 /// Copies a section of a 3D variable
-void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, real ***var)
+void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var)
 {
   int i, k;
   for(i=xge;i!=xlt;i++)
@@ -2061,7 +2061,7 @@ void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, real ***var)
 */
 int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname, 
                              int yread, int ydest, int ysize, 
-                             int xge, int xlt, real **var)
+                             int xge, int xlt, BoutReal **var)
 {
   for(int i=xge;i!=xlt;i++) { // go through all the x indices 
     // Set the indices to read in this x position 
@@ -2076,7 +2076,7 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
   return 0;
 }
 
-void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, real **var)
+void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var)
 {
   int i;
   for(i=xge;i!=xlt;i++)
@@ -2094,7 +2094,7 @@ SurfaceIter* BoutMesh::iterateSurfaces()
   return (SurfaceIter*) NULL;
 }
 
-bool BoutMesh::surfaceClosed(int jx, real &ts)
+bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
 {
   ts = 0.;
   if(jx < ixseps_inner) {
@@ -2109,10 +2109,10 @@ bool BoutMesh::surfaceClosed(int jx, real &ts)
 // NB: Don't sum in y boundary regions
 void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
-    real *rin = (real*) invec;
-    real *rinout = (real*) inoutvec;
+    BoutReal *rin = (BoutReal*) invec;
+    BoutReal *rinout = (BoutReal*) inoutvec;
     for(int x=0;x<mesh->ngx;x++) {
-	real val = 0.;
+	BoutReal val = 0.;
 	// Sum values
 	for(int y=mesh->ystart;y<=mesh->yend;y++) {
 	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
@@ -2141,13 +2141,13 @@ const Field2D BoutMesh::averageY(const Field2D &f)
   Field2D result;
   result.allocate();
   
-  real **fd, **rd;
+  BoutReal **fd, **rd;
   fd = f.getData();
   rd = result.getData();
   
   MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_inner);
   
-  result /= (real) NYPE;
+  result /= (BoutReal) NYPE;
 
 #ifdef CHECK
   msg_stack.pop();
@@ -2201,7 +2201,7 @@ int BoutSurfaceIter::ysize()
   return m->ny - m->ny_inner;
 }
 
-bool BoutSurfaceIter::closed(real &ts)
+bool BoutSurfaceIter::closed(BoutReal &ts)
 {
   int xglobal = m->XGLOBAL(xpos);
   ts = 0.;
@@ -2233,22 +2233,22 @@ bool BoutSurfaceIter::isDone()
   return xpos < 0;
 }
 
-int BoutSurfaceIter::gather(const Field2D &f, real *data)
+int BoutSurfaceIter::gather(const Field2D &f, BoutReal *data)
 {
   
 }
 
-int BoutSurfaceIter::gather(const Field3D &f, real **data)
+int BoutSurfaceIter::gather(const Field3D &f, BoutReal **data)
 {
   
 }
 
-int BoutSurfaceIter::scatter(real *data, Field2D &f)
+int BoutSurfaceIter::scatter(BoutReal *data, Field2D &f)
 {
   
 }
 
-int BoutSurfaceIter::scatter(real **data, Field3D &f)
+int BoutSurfaceIter::scatter(BoutReal **data, Field3D &f)
 {
   
 }
@@ -2304,12 +2304,12 @@ bool BoutRangeIter::isDone()
   return ind > e;
 }
 
-real BoutMesh::GlobalX(int jx)
+BoutReal BoutMesh::GlobalX(int jx)
 {
-  return ((real) XGLOBAL(jx)) / ((real) MX);
+  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
 }
 
-real BoutMesh::GlobalY(int jy)
+BoutReal BoutMesh::GlobalY(int jy)
 {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
@@ -2330,7 +2330,7 @@ real BoutMesh::GlobalY(int jy)
       ly = nycore-1;
     }
   }
-  return ((real) ly) / ((real) nycore);
+  return ((BoutReal) ly) / ((BoutReal) nycore);
 }
 
 void BoutMesh::outputVars(Datafile &file)

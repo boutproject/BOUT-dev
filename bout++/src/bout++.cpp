@@ -72,19 +72,19 @@ void bout_signal_handler(int sig);  // Handles segmentation faults
 bool append = false;
 char dumpname[512];
 
-real simtime;
+BoutReal simtime;
 int iteration;
 
-const string time_to_hms(real t);   // Converts to h:mm:ss.s format
+const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
 
-int bout_monitor(real t, int iter, int NOUT); // Function called by the solver each timestep
+int bout_monitor(BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
 
 
 int bout_init(int argc, char **argv)
 {
   int i, NOUT;
-  real TIMESTEP;
+  BoutReal TIMESTEP;
   char *grid_name;
   bool dump_float; // Output dump files as floats
 
@@ -259,7 +259,7 @@ int bout_init(int argc, char **argv)
   /// Add book-keeping variables to the output files
 
   // This is a temporary hack to get around datafile's limitations (fix soon)
-  static real version = BOUT_VERSION;
+  static BoutReal version = BOUT_VERSION;
   dump.add(version, "BOUT_VERSION", 0);
   dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
   dump.add(iteration, "iteration", 0);
@@ -400,12 +400,12 @@ int main(int argc, char **argv)
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(real t, int iter, int NOUT)
+int bout_monitor(BoutReal t, int iter, int NOUT)
 {
   // Data used for timing
   static bool first_time = true;
-  static real wtime = 0.0;       ///< Wall-time since last output
-  static real wall_limit, mpi_start_time; // Keep track of remaining wall time
+  static BoutReal wtime = 0.0;       ///< Wall-time since last output
+  static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
 
 #ifdef CHECK
   int msg_point = msg_stack.push("bout_monitor(%e, %d, %d)", t, iter, NOUT);
@@ -427,10 +427,10 @@ int bout_monitor(real t, int iter, int NOUT)
   
   /// Collect timing information
   int ncalls = solver->rhs_ncalls;
-  real wtime_rhs   = solver->rhs_wtime;
-  //real wtime_invert = 0.0; // wtime_invert is a global
-  real wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
-  real wtime_io    = Datafile::wtime;      // Time spend on I/O
+  BoutReal wtime_rhs   = solver->rhs_wtime;
+  //BoutReal wtime_invert = 0.0; // wtime_invert is a global
+  BoutReal wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
+  BoutReal wtime_io    = Datafile::wtime;      // Time spend on I/O
 
   output.print("\r"); // Only goes to screen
   
@@ -467,14 +467,14 @@ int bout_monitor(real t, int iter, int NOUT)
   
   // This bit only to screen, not log file
   
-  real t_elapsed = MPI_Wtime() - mpi_start_time;
+  BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
   output.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
-  output.print(" ETA %s", (time_to_hms(wtime * ((real) (NOUT - iteration - 1)))).c_str());
+  output.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
   
   if(wall_limit > 0.0) {
     // Check if enough time left
     
-    real t_remain = mpi_start_time + wall_limit - MPI_Wtime();
+    BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
     if(t_remain < wtime) {
       // Less than 1 time-step left
       output.write("Only %e seconds left. Quitting\n", t_remain);
@@ -591,12 +591,12 @@ void bout_signal_handler(int sig)
  **************************************************************************/
 
 /// Write a time in h:mm:ss.s format
-const string time_to_hms(real t)
+const string time_to_hms(BoutReal t)
 {
   int h, m;
   
-  h = (int) (t / 3600); t -= 3600.*((real) h);
-  m = (int) (t / 60);   t -= 60 * ((real) m);
+  h = (int) (t / 3600); t -= 3600.*((BoutReal) h);
+  m = (int) (t / 60);   t -= 60 * ((BoutReal) m);
   
   char buffer[256];
   sprintf(buffer,"%d:%02d:%04.1f", h, m, t);

@@ -55,7 +55,7 @@
 
 #include "where.h"
 
-const real BOUT_VERSION = 0.85;  ///< Version number
+const BoutReal BOUT_VERSION = 0.85;  ///< Version number
 
 // BOUT++ functions (bout++.cpp). Call to add a variable to evolve
 
@@ -69,7 +69,7 @@ bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 // Physics functions
 
 int physics_init(bool restarting);
-int physics_run(real t);
+int physics_run(BoutReal t);
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern

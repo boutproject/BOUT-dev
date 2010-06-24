@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-typedef real (*deriv_func)(stencil &); // f
-typedef real (*upwind_func)(stencil &, stencil &); // v, f
+typedef BoutReal (*deriv_func)(stencil &); // f
+typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 
 /*******************************************************************************
  * Basic derivative methods.
@@ -43,28 +43,28 @@ typedef real (*upwind_func)(stencil &, stencil &); // v, f
  * Hence convert cell centred values -> centred values, or left -> left
  *******************************************************************************/
 
-const real WENO_SMALL = 1.0e-8; // Small number for WENO schemes
+const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 
 ////////////////////// FIRST DERIVATIVES /////////////////////
 
 /// central, 2nd order
-real DDX_C2(stencil &f)
+BoutReal DDX_C2(stencil &f)
 {
   return 0.5*(f.p - f.m);
 }
 
 /// central, 4th order
-real DDX_C4(stencil &f)
+BoutReal DDX_C4(stencil &f)
 {
   return (8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
 }
 
 /// Central WENO method, 2nd order (reverts to 1st order near shocks)
-real DDX_CWENO2(stencil &f)
+BoutReal DDX_CWENO2(stencil &f)
 {
-  real isl, isr, isc; // Smoothness indicators
-  real al, ar, ac, sa; // Un-normalised weights
-  real dl, dr, dc; // Derivatives using different stencils
+  BoutReal isl, isr, isc; // Smoothness indicators
+  BoutReal al, ar, ac, sa; // Un-normalised weights
+  BoutReal dl, dr, dc; // Derivatives using different stencils
   
   dc = 0.5*(f.p - f.m);
   dl = f.c - f.m;
@@ -85,13 +85,13 @@ real DDX_CWENO2(stencil &f)
 ///////////////////// SECOND DERIVATIVES ////////////////////
 
 /// Second derivative: Central, 2nd order
-real D2DX2_C2(stencil &f)
+BoutReal D2DX2_C2(stencil &f)
 {
   return f.p + f.m - 2.*f.c;
 }
 
 /// Second derivative: Central, 4th order
-real D2DX2_C4(stencil &f)
+BoutReal D2DX2_C4(stencil &f)
 {
   return (-f.pp + 16.*f.p - 30.*f.c + 16.*f.m - f.mm)/12.;
 }
@@ -99,26 +99,26 @@ real D2DX2_C4(stencil &f)
 //////////////////////// UPWIND METHODS ///////////////////////
 
 /// Upwinding: Central, 2nd order
-real VDDX_C2(stencil &v, stencil &f)
+BoutReal VDDX_C2(stencil &v, stencil &f)
 {
   return v.c*0.5*(f.p - f.m);
 }
 
 /// Upwinding: Central, 4th order
-real VDDX_C4(stencil &v, stencil &f)
+BoutReal VDDX_C4(stencil &v, stencil &f)
 {
   return v.c*(8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
 }
 
 /// upwind, 1st order
-real VDDX_U1(stencil &v, stencil &f)
+BoutReal VDDX_U1(stencil &v, stencil &f)
 {
   return v.c>=0.0 ? v.c*(f.c - f.m): v.c*(f.p - f.c);
 
   /*
   // Velocity at lower end
-  real vs = 0.5*(v.m + v.c);
-  real result = vs >= 0.0 ? vs * f.m : vs * f.c;
+  BoutReal vs = 0.5*(v.m + v.c);
+  BoutReal result = vs >= 0.0 ? vs * f.m : vs * f.c;
   // and at upper 
   vs = 0.5*(v.c + v.p);
   result -= vs >= 0.0 ? vs * f.c : vs * f.p;
@@ -128,23 +128,23 @@ real VDDX_U1(stencil &v, stencil &f)
 }
 
 /// upwind, 4th order
-real VDDX_U4(stencil &v, stencil &f)
+BoutReal VDDX_U4(stencil &v, stencil &f)
 {
   return v.c >= 0.0 ? v.c*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
     : v.c*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
 }
 
 /// Van Leer limiter. Used in TVD code
-real VANLEER(real r) 
+BoutReal VANLEER(BoutReal r) 
 {
   return r + fabs(r)/(1.0 + fabs(r));
 }
 
 /// TVD upwinding (2nd order)
 /// WARNING WARNING : THIS TVD IMPLEMENTATION DOESN'T WORK PROPERLY
-real VDDX_TVD(real vc, real vm, real vp, real fc, real fm, real fp, real fmm, real fpp)
+BoutReal VDDX_TVD(BoutReal vc, BoutReal vm, BoutReal vp, BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp)
 {
-  real denom, res, ri, ri1, ri_1, fluxLeft, fluxRight;
+  BoutReal denom, res, ri, ri1, ri_1, fluxLeft, fluxRight;
 
   if (vc>=0.0){
 
@@ -183,9 +183,9 @@ real VDDX_TVD(real vc, real vm, real vp, real fc, real fm, real fp, real fmm, re
 }
 
 /// 3rd-order WENO scheme
-real VDDX_WENO3(stencil &v, stencil &f)
+BoutReal VDDX_WENO3(stencil &v, stencil &f)
 {
-  real deriv, w, r;
+  BoutReal deriv, w, r;
 
   if(v.c > 0.0) {
     // Left-biased stencil
@@ -208,9 +208,9 @@ real VDDX_WENO3(stencil &v, stencil &f)
 }
 
 /// 3rd-order CWENO. Uses the upwinding code and split flux
-real DDX_CWENO3(stencil &f)
+BoutReal DDX_CWENO3(stencil &f)
 {
-  real a, ma = fabs(f.c);
+  BoutReal a, ma = fabs(f.c);
   // Split flux
   a = fabs(f.m); if(a > ma) ma = a;
   a = fabs(f.p); if(a > ma) ma = a;
@@ -248,12 +248,12 @@ real DDX_CWENO3(stencil &f)
 // Map Centre -> Low or Low -> Centre
 
 // Second order differencing (staggered)
-real DDX_C2_stag(stencil &f)
+BoutReal DDX_C2_stag(stencil &f)
 {
   return f.p - f.m;
 }
 
-real DDX_C4_stag(stencil &f)
+BoutReal DDX_C4_stag(stencil &f)
 {
   //output.write("HERE");
   return ( 27.*(f.p - f.m) - (f.pp - f.mm) ) / 24.;
@@ -262,7 +262,7 @@ real DDX_C4_stag(stencil &f)
 /////////////////////// SECOND DERIVATIVES //////////////////////
 // Map Centre -> Low or Low -> Centre
 
-real D2DX2_C4_stag(stencil &f)
+BoutReal D2DX2_C4_stag(stencil &f)
 {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
 }
@@ -273,10 +273,10 @@ real D2DX2_C4_stag(stencil &f)
 //
 // v.p is v at +1/2, v.m is at -1/2
 
-real VDDX_U1_stag(stencil &v, stencil &f)
+BoutReal VDDX_U1_stag(stencil &v, stencil &f)
 {
   // Lower cell boundary
-  real result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
+  BoutReal result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
   
   // Upper cell boundary
   result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
@@ -597,7 +597,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   bindex bx;
   stencil s;
 
-  real **r = result.getData();
+  BoutReal **r = result.getData();
 
   start_index(&bx, RGN_NOX);
   do {
@@ -623,11 +623,11 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   Field3D vs = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
-    vs = var.shiftZ(true); // Shift into real space
+    vs = var.shiftZ(true); // Shift into BoutReal space
   }
   
   bindex bx;
-  real ***r = result.getData();
+  BoutReal ***r = result.getData();
   
   start_index(&bx, RGN_NOX);
   do {
@@ -652,7 +652,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
 {
   Field2D result;
   result.allocate(); // Make sure data allocated
-  real **r = result.getData();
+  BoutReal **r = result.getData();
   
   bindex bx;
   stencil s;
@@ -675,7 +675,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  real ***r = result.getData();
+  BoutReal ***r = result.getData();
   
   stencil s;
   bindex bx;
@@ -705,11 +705,11 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 
 // Z derivative
 
-const Field3D applyZdiff(const Field3D &var, deriv_func func, real dd, CELL_LOC loc = CELL_DEFAULT)
+const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_LOC loc = CELL_DEFAULT)
 {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  real ***r = result.getData();
+  BoutReal ***r = result.getData();
   
   bindex bx;
   stencil s;
@@ -935,7 +935,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
   if(func == NULL) {
     // Use FFT
     
-    real shift = 0.; // Shifting result in Z?
+    BoutReal shift = 0.; // Shifting result in Z?
     if(mesh->StaggerGrids) {
       if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
 	// Shifting down - multiply by exp(-0.5*i*k*dz)
@@ -950,8 +950,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 
     static dcomplex *cv = (dcomplex*) NULL;
     int jx, jy, jz;
-    real kwave;
-    real flt;
+    BoutReal kwave;
+    BoutReal flt;
 
     int xge = mesh->xstart, xlt = mesh->xend+1;
     if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
@@ -1284,7 +1284,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   if(func == NULL) {
     // Use FFT
 
-    real shift = 0.; // Shifting result in Z?
+    BoutReal shift = 0.; // Shifting result in Z?
     if(mesh->StaggerGrids) {
       if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
 	// Shifting down - multiply by exp(-0.5*i*k*dz)
@@ -1295,12 +1295,12 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
       }
     }
 
-    real flt;
+    BoutReal flt;
     
     result.allocate(); // Make sure data allocated
     static dcomplex *cv = (dcomplex*) NULL;
     int jx, jy, jz;
-    real kwave;
+    BoutReal kwave;
 
     int ncz = mesh->ngz-1;
     
@@ -1393,7 +1393,7 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
 
   Field2D result;
   result.allocate(); // Make sure data allocated
-  real **d = result.getData();
+  BoutReal **d = result.getData();
 
   bindex bx;
   stencil vs, fs;
@@ -1474,7 +1474,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   
   Field3D result;
   result.allocate(); // Make sure data allocated
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
 
   bindex bx;
   stencil vval, fval;
@@ -1560,7 +1560,7 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   
   Field2D result;
   result.allocate(); // Make sure data allocated
-  real **d = result.getData();
+  BoutReal **d = result.getData();
 
   start_index(&bx);
   do {
@@ -1632,7 +1632,7 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   
   Field3D result;
   result.allocate(); // Make sure data allocated
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
 
   start_index(&bx);
   do {
@@ -1724,7 +1724,7 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   
   Field3D result;
   result.allocate(); // Make sure data allocated
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   start_index(&bx);
   do {

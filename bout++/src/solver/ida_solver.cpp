@@ -44,13 +44,13 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-static int idares(real t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_bbd_res(int Nlocal, real t, 
+static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
+static int ida_bbd_res(int Nlocal, BoutReal t, 
 		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_pre(real t, N_Vector yy, 	 
+static int ida_pre(BoutReal t, N_Vector yy, 	 
 		   N_Vector yp, N_Vector rr, 	 
 		   N_Vector rvec, N_Vector zvec, 	 
-		   real cj, real delta, 
+		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
 Solver::Solver() : Solver()
@@ -74,7 +74,7 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
 
 #ifdef CHECK
@@ -134,7 +134,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, re
   /// Get options
 int MXSUB = mesh->xend - mesh->xstart + 1;
 
-  real abstol, reltol;
+  BoutReal abstol, reltol;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
@@ -259,7 +259,7 @@ int Solver::run(MonitorFunc monitor)
   return 0;
 }
 
-real Solver::run(real tout, int &ncalls, real &rhstime)
+BoutReal Solver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 {
   if(!initialised)
     bout_error("ERROR: Running IDA solver without initialisation\n");
@@ -283,7 +283,7 @@ real Solver::run(real tout, int &ncalls, real &rhstime)
   load_vars(NV_DATA_P(uvec));
 
   // Call rhs function to get extra variables at this time
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   (*func)(simtime);
   rhstime += MPI_Wtime() - tstart;
   ncalls++;
@@ -304,13 +304,13 @@ real Solver::run(real tout, int &ncalls, real &rhstime)
  * Residual function F(t, u, du)
  **************************************************************************/
 
-void Solver::res(real t, real *udata, real *dudata, real *rdata)
+void Solver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: Solver::res(%e)", t);
 #endif
 
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
   
   // Load state from udata
   load_vars(udata);
@@ -323,7 +323,7 @@ void Solver::res(real t, real *udata, real *dudata, real *rdata)
   
   // If a differential equation, subtract dudata
   int N = NV_LOCLENGTH_P(id);
-  real *idd = NV_DATA_P(id);
+  BoutReal *idd = NV_DATA_P(id);
   for(int i=0;i<N;i++) {
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
@@ -341,13 +341,13 @@ void Solver::res(real t, real *udata, real *dudata, real *rdata)
  * Preconditioner function
  **************************************************************************/
 
-void Solver::pre(real t, real cj, real delta, real *udata, real *rvec, real *zvec)
+void Solver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running preconditioner: Solver::pre(%e)", t);
 #endif
 
-  real tstart = MPI_Wtime();
+  BoutReal tstart = MPI_Wtime();
 
   int N = NV_LOCLENGTH_P(id);
   
@@ -382,9 +382,9 @@ void Solver::pre(real t, real cj, real delta, real *udata, real *rvec, real *zve
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
-  real **d2d, ***d3d;
+  BoutReal **d2d, ***d3d;
   int i;
   int jz;
  
@@ -510,7 +510,7 @@ void Solver::loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op)
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
+void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -553,7 +553,7 @@ void Solver::loop_vars(real *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(real *udata)
+void Solver::load_vars(BoutReal *udata)
 {
   unsigned int i;
   
@@ -575,7 +575,7 @@ void Solver::load_vars(real *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void Solver::load_derivs(real *udata)
+void Solver::load_derivs(BoutReal *udata)
 {
   unsigned int i;
   
@@ -597,22 +597,22 @@ void Solver::load_derivs(real *udata)
     v3d[i].F_var->covariant = v3d[i].covariant;
 }
 
-void Solver::set_id(real *udata)
+void Solver::set_id(BoutReal *udata)
 {
   loop_vars(udata, SET_ID);
 }
 
 // This function only called during initialisation
-int Solver::save_vars(real *udata)
+int Solver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (real**) NULL)
+    if(f2d[i].var->getData() == (BoutReal**) NULL)
       return(1);
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (real***) NULL)
+    if(f3d[i].var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
@@ -634,7 +634,7 @@ int Solver::save_vars(real *udata)
   return(0);
 }
 
-void Solver::save_derivs(real *dudata)
+void Solver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -667,13 +667,13 @@ void Solver::save_derivs(real *dudata)
  * IDA res function
  **************************************************************************/
 
-static int idares(real t, 
+static int idares(BoutReal t, 
                   N_Vector u, N_Vector du, N_Vector rr, 
                   void *user_data)
 {
-  real *udata = NV_DATA_P(u);
-  real *dudata = NV_DATA_P(du);
-  real *rdata = NV_DATA_P(rr);
+  BoutReal *udata = NV_DATA_P(u);
+  BoutReal *dudata = NV_DATA_P(du);
+  BoutReal *rdata = NV_DATA_P(rr);
   
   Solver *s = (Solver*) user_data;
 
@@ -684,7 +684,7 @@ static int idares(real t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(int Nlocal, real t, 
+static int ida_bbd_res(int Nlocal, BoutReal t, 
 		       N_Vector u, N_Vector du, N_Vector rr, 
 		       void *user_data)
 {
@@ -692,15 +692,15 @@ static int ida_bbd_res(int Nlocal, real t,
 }
 
 // Preconditioner function
-static int ida_pre(real t, N_Vector yy, 	 
+static int ida_pre(BoutReal t, N_Vector yy, 	 
 		   N_Vector yp, N_Vector rr, 	 
 		   N_Vector rvec, N_Vector zvec, 	 
-		   real cj, real delta, 
+		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp)
 {
-  real *udata = NV_DATA_P(yy);
-  real *rdata = NV_DATA_P(rvec);
-  real *zdata = NV_DATA_P(zvec);
+  BoutReal *udata = NV_DATA_P(yy);
+  BoutReal *rdata = NV_DATA_P(rvec);
+  BoutReal *zdata = NV_DATA_P(zvec);
   
   Solver *s = (Solver*) user_data;
 

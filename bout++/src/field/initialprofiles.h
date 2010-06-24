@@ -38,6 +38,6 @@ int initial_profile(const char *name, Vector2D &var);
 int initial_profile(const char *name, Vector3D &var);
 
 // Generate a 3D field with a given Z oscillation
-const Field3D genZMode(int n, real phase = 0.0);
+const Field3D genZMode(int n, BoutReal phase = 0.0);
 
 #endif // __INITIALPROF_H__

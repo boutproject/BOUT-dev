@@ -22,6 +22,7 @@
 
 #include "globals.h"
 #include "solver.h"
+#include <string.h>
 
 #include "initialprofiles.h"
 #include "boundary.h"
@@ -362,7 +363,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name)
  * Initialisation
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep)
+int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
 #ifdef CHECK
   int msg_point = msg_stack.push("Solver::init()");

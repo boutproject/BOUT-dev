@@ -270,7 +270,7 @@ int OptionFile::getInt(const char *section, const char *name, int &val)
   return( getInt(str, val) );
 }
 
-int OptionFile::getReal(const char *name, real &val)
+int OptionFile::getReal(const char *name, BoutReal &val)
 {
   int i;
   double v;
@@ -283,12 +283,12 @@ int OptionFile::getReal(const char *name, real &val)
     return(1);
   }
   
-  val = (real) v;
+  val = (BoutReal) v;
 
   return(0);
 }
 
-int OptionFile::getReal(const char *section, const char *name, real &val)
+int OptionFile::getReal(const char *section, const char *name, BoutReal &val)
 {
   static char *str;
   static int len = 0;
@@ -418,7 +418,7 @@ int OptionFile::set(const char *name, int val)
   return set(name, buffer);
 }
 
-int OptionFile::set(const char *name, real val)
+int OptionFile::set(const char *name, BoutReal val)
 {
   char buffer[128];
   
@@ -710,10 +710,10 @@ int OptionFile::get(const char *name, int &val, const int def)
   return 0;
 }
 
-int OptionFile::get(const char *name, real &val, const real def)
+int OptionFile::get(const char *name, BoutReal &val, const BoutReal def)
 {
   if(name == NULL) {
-    output.write("WARNING: NULL real option requested\n");
+    output.write("WARNING: NULL BoutReal option requested\n");
     return 1;
   }
   
@@ -796,10 +796,10 @@ int OptionFile::get(const char *section, const char *name, int &val, const int d
   return 0;
 }
 
-int OptionFile::get(const char *section, const char *name, real &val, const real def)
+int OptionFile::get(const char *section, const char *name, BoutReal &val, const BoutReal def)
 {
   if(name == NULL) {
-    output.write("WARNING: NULL real option requested\n");
+    output.write("WARNING: NULL BoutReal option requested\n");
     return 1;
   }
   

@@ -64,7 +64,7 @@ void Diagnos::add(FieldData &f, DIAGNOS_FUNC func, int x, int y, int z, int comp
   i.y = y;
   i.z = z;
 
-//  int nr = i.var->realSize(); // Number of reals per point
+//  int nr = i.var->BoutRealSize(); // Number of BoutReals per point
 
   i.component = component;
 
@@ -72,13 +72,13 @@ void Diagnos::add(FieldData &f, DIAGNOS_FUNC func, int x, int y, int z, int comp
 }
 
 /// Calculate the values and return in an array
-const vector< real > Diagnos::run()
+const vector< BoutReal > Diagnos::run()
 {
 #ifdef CHECK
   msg_stack.push("Diagnos::run\n");
 #endif
 
-  vector< real > result;
+  vector< BoutReal > result;
   
   for(std::vector< diag_item >::iterator it = item.begin(); it != item.end(); it++) {
     result.push_back(run(*it));
@@ -91,23 +91,23 @@ const vector< real > Diagnos::run()
   return result;
 }
 
-real Diagnos::run(const diag_item &i)
+BoutReal Diagnos::run(const diag_item &i)
 {
   /*
   switch(i.func) {
   case DIAG_INDX: { ///< Index 
     if(global_vals) {
-      int nr = i.var->realSize(); // Number of reals per point
+      int nr = i.var->BoutRealSize(); // Number of BoutReals per point
       if(nr <= 0)
 	return 0.0;
       
-      static real *rptr;
+      static BoutReal *rptr;
       static int rlen = 0;
       
       if(rlen < nr) {
 	if(rlen > 0)
 	  delete[] rptr;
-	rptr = new real[nr];
+	rptr = new BoutReal[nr];
 	rlen = nr;
       }
 
@@ -116,7 +116,7 @@ real Diagnos::run(const diag_item &i)
       if((np < 0) || (np >= NPES))
 	return 0.0;
       
-      real val = 0.0;
+      BoutReal val = 0.0;
       if(MYPE == np) {
 	i.var->getData(XLOCAL(i.x), YLOCAL(i.y), i.z, rptr);
 	int c = i.component;

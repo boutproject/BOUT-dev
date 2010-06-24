@@ -57,18 +57,18 @@ class CvodeSolver : public Solver {
 
     void setJacobian(Jacobian j) {jacfunc = j; }
 
-    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 
     int run(MonitorFunc f);
-    real run(real tout, int &ncalls, real &rhstime);
+    BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime);
 
     // These functions used internally (but need to be public)
-    void rhs(real t, real *udata, real *dudata);
-    void pre(real t, real gamma, real delta, real *udata, real *rvec, real *zvec);
-    void jac(real t, real *ydata, real *vdata, real *Jvdata);
+    void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
+    void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
+    void jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata);
   private:
     int NOUT; // Number of outputs. Specified in init, needed in run
-    real TIMESTEP; // Time between outputs
+    BoutReal TIMESTEP; // Time between outputs
 
     rhsfunc func; // RHS function
     PhysicsPrecon prefunc; // Preconditioner
@@ -78,16 +78,16 @@ class CvodeSolver : public Solver {
     void *cvode_mem;
 
     // Loading data from BOUT++ to/from CVODE
-    void loop_vars_op(int jx, int jy, real *udata, int &p, SOLVER_VAR_OP op);
-    void loop_vars(real *udata, SOLVER_VAR_OP op);
+    void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+    void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
-    void load_vars(real *udata);
-    void load_derivs(real *udata);
-    int save_vars(real *udata);
-    void save_derivs(real *dudata);
+    void load_vars(BoutReal *udata);
+    void load_derivs(BoutReal *udata);
+    int save_vars(BoutReal *udata);
+    void save_derivs(BoutReal *dudata);
 
-    real pre_Wtime; // Time in preconditioner
-    real pre_ncalls; // Number of calls to preconditioner
+    BoutReal pre_Wtime; // Time in preconditioner
+    BoutReal pre_ncalls; // Number of calls to preconditioner
 };
 
 #endif // __SUNDIAL_SOLVER_H__

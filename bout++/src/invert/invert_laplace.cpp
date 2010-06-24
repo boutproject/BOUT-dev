@@ -68,7 +68,7 @@ bool laplace_nonuniform; // Non-uniform mesh correction
 /// Laplacian inversion initialisation. Called once at the start to get settings
 int invert_init()
 {
-  real filter; ///< Fraction of Z modes to filter out. Between 0 and 1
+  BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
 
   output.write("Initialising Laplacian inversion routines\n");
 
@@ -118,7 +118,7 @@ int invert_init()
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef)
 {
-  real coef1, coef2, coef3, coef4, coef5, kwave;
+  BoutReal coef1, coef2, coef3, coef4, coef5, kwave;
   
   kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
   
@@ -179,7 +179,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   static dcomplex **xk, *xk1d;
   int xbndry; // Width of the x boundary
   
-  real coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, coef5=0.0, coef6=0.0, kwave, flt;
+  BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, coef5=0.0, coef6=0.0, kwave, flt;
 
   if(!mesh->firstX() || !mesh->lastX()) {
     output.write("Error: invert_laplace only works for mesh->NXPE = 1\n");
@@ -650,7 +650,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  }
 	}else if(flags & INVERT_AC_IN_LAP) {
 	  // Use decaying zero-Laplacian solution in the boundary
-	  real kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+	  BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[ix] = 0.0;
 	    bvec[ix] = -1.0;
@@ -711,7 +711,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  }
 	}else if(flags & INVERT_AC_OUT_LAP) {
 	  // Use decaying zero-Laplacian solution in the boundary
-	  real kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+	  BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[ncx-ix] = exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
 	    bvec[ncx-ix] = -1.0;
@@ -886,7 +886,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  }
 	}else if(flags & INVERT_AC_IN_LAP) {
 	  // Use decaying zero-Laplacian solution in the boundary
-	  real kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+	  BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[kz][ix] = 0.0;
 	    bvec[kz][ix] = 1.0;
@@ -939,7 +939,7 @@ void par_tridag_matrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  }
 	}else if(flags & INVERT_AC_OUT_LAP) {
 	  // Use decaying zero-Laplacian solution in the boundary
-	  real kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+	  BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
 	  for (ix=0;ix<xbndry;ix++) {
 	    avec[kz][ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
 	    bvec[kz][ncx-ix] = 1.0;
@@ -986,7 +986,7 @@ typedef struct {
   
   comm_handle recv_handle; // Handle for receives
 
-  real *buffer;
+  BoutReal *buffer;
 }SPT_data;
 
 
@@ -1101,7 +1101,7 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
     data.bvec = cmatrix(laplace_maxmode + 1, mesh->ngx);
     data.cvec = cmatrix(laplace_maxmode + 1, mesh->ngx);
     
-    data.buffer  = new real[4*(laplace_maxmode + 1)];
+    data.buffer  = new BoutReal[4*(laplace_maxmode + 1)];
   }
 
   /// Take FFTs of data
@@ -1288,7 +1288,6 @@ int invert_spt_continue(SPT_data &data)
 void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
 {
   int ix, kz;
-  MPI_Status status;
   
   int ncx = mesh->ngx-1;
   int ncz = mesh->ngz-1;
@@ -1299,7 +1298,7 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
   // Make sure calculation has finished
   while(invert_spt_continue(data) == 0) {}
 
-  // Have result in Fourier space. Convert back to real space
+  // Have result in Fourier space. Convert back to BoutReal space
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
@@ -1363,8 +1362,8 @@ typedef struct {
   dcomplex **xk;
   dcomplex **v, **w;
 
-  real *snd; // send buffer
-  real *rcv; // receive buffer
+  BoutReal *snd; // send buffer
+  BoutReal *rcv; // receive buffer
   
   comm_handle recv_handle;
 
@@ -1388,7 +1387,6 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
 {
   int ix, kz;
   
-  int ncx = mesh->ngx-1;
   int ncz = mesh->ngz-1;
 
   data.jy = b.getIndex();
@@ -1417,8 +1415,8 @@ int invert_pdd_start(const FieldPerp &b, int flags, const Field2D *a, PDD_data &
     data.xk = cmatrix(laplace_maxmode + 1, mesh->ngx);
 
     // Communication buffers. Space for 2 complex values for each kz
-    data.snd = new real[4*(laplace_maxmode+1)];
-    data.rcv = new real[4*(laplace_maxmode+1)];
+    data.snd = new BoutReal[4*(laplace_maxmode+1)];
+    data.rcv = new BoutReal[4*(laplace_maxmode+1)];
 
     data.y2i = new dcomplex[laplace_maxmode + 1];
   }
@@ -1613,7 +1611,7 @@ int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
     }
   }
   
-  // Have result in Fourier space. Convert back to real space
+  // Have result in Fourier space. Convert back to BoutReal space
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
@@ -1693,7 +1691,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   int jy, jy2;
   FieldPerp xperp;
   int ret;
-  real t;
+  BoutReal t;
   
   t = MPI_Wtime();
   

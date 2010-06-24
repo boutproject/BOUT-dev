@@ -140,7 +140,7 @@ bool GridFile::fetch(int *var, const string &name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-bool GridFile::fetch(real *var, const char *name, int lx, int ly, int lz)
+bool GridFile::fetch(BoutReal *var, const char *name, int lx, int ly, int lz)
 {
   if(file == NULL)
     return false;
@@ -150,7 +150,7 @@ bool GridFile::fetch(real *var, const char *name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-bool GridFile::fetch(real *var, const string &name, int lx, int ly, int lz)
+bool GridFile::fetch(BoutReal *var, const string &name, int lx, int ly, int lz)
 {
   if(file == NULL)
     return false;

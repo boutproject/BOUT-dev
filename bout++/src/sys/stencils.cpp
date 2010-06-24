@@ -26,7 +26,7 @@
 
 #include <math.h>
 
-typedef double real;
+typedef double BoutReal;
 
 #include "globals.h"
 #include "stencils.h"
@@ -65,7 +65,7 @@ bvalue & bvalue::operator*=(const bvalue &rhs)
   return(*this);
 }
 
-bvalue & bvalue::operator*=(const real rhs)
+bvalue & bvalue::operator*=(const BoutReal rhs)
 {
   val *= rhs;
   return(*this);
@@ -77,7 +77,7 @@ bvalue & bvalue::operator/=(const bvalue &rhs)
   return(*this);
 }
 
-bvalue & bvalue::operator/=(const real rhs)
+bvalue & bvalue::operator/=(const BoutReal rhs)
 {
   val /= rhs;
   return(*this);
@@ -106,7 +106,7 @@ const bvalue bvalue::operator*(const bvalue &other) const
   return(result);
 }
 
-const bvalue bvalue::operator*(const real rhs) const
+const bvalue bvalue::operator*(const BoutReal rhs) const
 {
   bvalue result = *this;
   result *= rhs;
@@ -120,19 +120,19 @@ const bvalue bvalue::operator/(const bvalue &other) const
   return(result);
 }
 
-const bvalue bvalue::operator/(const real rhs) const
+const bvalue bvalue::operator/(const BoutReal rhs) const
 {
   bvalue result = *this;
   result /= rhs;
   return(result);
 }
 
-const bvalue operator*(const real lhs, const bvalue &rhs)
+const bvalue operator*(const BoutReal lhs, const bvalue &rhs)
 {
   return(rhs * lhs);
 }
 
-const bvalue operator/(const real lhs, const bvalue &rhs)
+const bvalue operator/(const BoutReal lhs, const bvalue &rhs)
 {
   bvalue result = rhs;
   result.val = lhs / result.val;
@@ -154,12 +154,12 @@ stencil::stencil(const stencil &s)
   *this = s;
 }
 
-stencil::stencil(real fc)
+stencil::stencil(BoutReal fc)
 {
   c = p = m = pp = mm = fc;
 }
 
-stencil::stencil(real fc, real fm, real fp, real fmm, real fpp)
+stencil::stencil(BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp)
 {
   c  = fc;
   m  = fm;
@@ -187,7 +187,7 @@ stencil & stencil::operator=(const stencil &s)
   return *this;
 }
 
-stencil & stencil::operator=(const real rhs)
+stencil & stencil::operator=(const BoutReal rhs)
 {
   jx = jy = jz = 0;
 
@@ -214,7 +214,7 @@ stencil & stencil::operator+=(const stencil &s)
   return *this;
 }
 
-stencil & stencil::operator+=(const real &rhs)
+stencil & stencil::operator+=(const BoutReal &rhs)
 {
   c += rhs;
   p += rhs;
@@ -243,7 +243,7 @@ stencil & stencil::operator-=(const stencil &s)
   return *this;
 }
 
-stencil & stencil::operator-=(const real &rhs)
+stencil & stencil::operator-=(const BoutReal &rhs)
 {
   c -= rhs;
   p -= rhs;
@@ -272,7 +272,7 @@ stencil & stencil::operator*=(const stencil &s)
   return *this;
 }
 
-stencil & stencil::operator*=(const real &rhs)
+stencil & stencil::operator*=(const BoutReal &rhs)
 {
   c *= rhs;
   p *= rhs;
@@ -301,7 +301,7 @@ stencil & stencil::operator/=(const stencil &s)
   return *this;
 }
 
-stencil & stencil::operator/=(const real &rhs)
+stencil & stencil::operator/=(const BoutReal &rhs)
 {
   c /= rhs;
   p /= rhs;
@@ -319,7 +319,7 @@ const stencil stencil::operator+(const stencil &other) const
   return result;
 }
 
-const stencil stencil::operator+(const real &other) const
+const stencil stencil::operator+(const BoutReal &other) const
 {
   stencil result = *this;
   result += other;
@@ -333,7 +333,7 @@ const stencil stencil::operator-(const stencil &other) const
   return result;
 }
 
-const stencil stencil::operator-(const real &other) const
+const stencil stencil::operator-(const BoutReal &other) const
 {
   stencil result = *this;
   result -= other;
@@ -347,7 +347,7 @@ const stencil stencil::operator*(const stencil &other) const
   return result;
 }
 
-const stencil stencil::operator*(const real &other) const
+const stencil stencil::operator*(const BoutReal &other) const
 {
   stencil result = *this;
   result *= other;
@@ -361,19 +361,19 @@ const stencil stencil::operator/(const stencil &other) const
   return result;
 }
 
-const stencil stencil::operator/(const real &other) const
+const stencil stencil::operator/(const BoutReal &other) const
 {
   stencil result = *this;
   result /= other;
   return result;
 }
 
-const stencil operator+(const real &lhs, const stencil &rhs)
+const stencil operator+(const BoutReal &lhs, const stencil &rhs)
 {
   return rhs + lhs;
 }
 
-const stencil operator-(const real &lhs, const stencil &rhs)
+const stencil operator-(const BoutReal &lhs, const stencil &rhs)
 {
   stencil result;
   
@@ -386,12 +386,12 @@ const stencil operator-(const real &lhs, const stencil &rhs)
   return result;
 }
 
-const stencil operator*(const real &lhs, const stencil &rhs)
+const stencil operator*(const BoutReal &lhs, const stencil &rhs)
 {
   return rhs * lhs;
 }
 
-const stencil operator/(const real &lhs, const stencil &rhs)
+const stencil operator/(const BoutReal &lhs, const stencil &rhs)
 {
   stencil result;
   
@@ -404,9 +404,9 @@ const stencil operator/(const real &lhs, const stencil &rhs)
   return result;
 }
 
-real stencil::min() const
+BoutReal stencil::min() const
 {
-  real r;
+  BoutReal r;
 
   r = c;
   if(p < r)
@@ -420,9 +420,9 @@ real stencil::min() const
   return r;
 }
 
-real stencil::max() const
+BoutReal stencil::max() const
 {
-  real r;
+  BoutReal r;
 
   r = c;
   if(p > r)
@@ -449,12 +449,12 @@ const stencil stencil::abs() const
   return result;
 }
 
-real min(const stencil &s)
+BoutReal min(const stencil &s)
 {
   return s.min();
 }
 
-real max(const stencil &s)
+BoutReal max(const stencil &s)
 {
   return s.max();
 }
@@ -536,7 +536,7 @@ bstencil & bstencil::operator*=(const bstencil &rhs)
   return(*this);
 }
 
-bstencil & bstencil::operator*=(const real rhs)
+bstencil & bstencil::operator*=(const BoutReal rhs)
 {
   cc *= rhs;
   
@@ -566,7 +566,7 @@ bstencil & bstencil::operator/=(const bstencil &rhs)
   return(*this);
 }
 
-bstencil & bstencil::operator/=(const real rhs)
+bstencil & bstencil::operator/=(const BoutReal rhs)
 {
   cc /= rhs;
   
@@ -596,7 +596,7 @@ bstencil & bstencil::operator^=(const bstencil &rhs)
   return(*this);
 }
 
-bstencil & bstencil::operator^=(const real rhs)
+bstencil & bstencil::operator^=(const BoutReal rhs)
 {
   cc = pow(cc, rhs);
   
@@ -634,7 +634,7 @@ const bstencil bstencil::operator*(const bstencil &other) const
   return(result);
 }
 
-const bstencil bstencil::operator*(const real rhs) const
+const bstencil bstencil::operator*(const BoutReal rhs) const
 {
   bstencil result = *this;
   result *= rhs;
@@ -647,7 +647,7 @@ const bstencil bstencil::operator/(const bstencil &other) const
   return(result);
 }
 
-const bstencil bstencil::operator/(const real rhs) const
+const bstencil bstencil::operator/(const BoutReal rhs) const
 {
   bstencil result = *this;
   result /= rhs;
@@ -661,7 +661,7 @@ const bstencil bstencil::operator^(const bstencil &other) const
   return(result);
 }
 
-const bstencil bstencil::operator^(const real rhs) const
+const bstencil bstencil::operator^(const BoutReal rhs) const
 {
   bstencil result = *this;
   result ^= rhs;
@@ -670,12 +670,12 @@ const bstencil bstencil::operator^(const real rhs) const
 
 /////////////// NON-MEMBER OPERATORS /////////////////////
 
-const bstencil operator*(const real lhs, const bstencil &rhs)
+const bstencil operator*(const BoutReal lhs, const bstencil &rhs)
 {
   return(rhs * lhs);
 }
 
-const bstencil operator/(const real lhs, const bstencil &rhs)
+const bstencil operator/(const BoutReal lhs, const bstencil &rhs)
 {
   bstencil result = rhs;
   result.cc = lhs / rhs.cc;
@@ -691,7 +691,7 @@ const bstencil operator/(const real lhs, const bstencil &rhs)
   return(result);
 }
 
-const bstencil operator^(const real lhs, const bstencil &rhs)
+const bstencil operator^(const BoutReal lhs, const bstencil &rhs)
 {
   bstencil result = rhs;
 

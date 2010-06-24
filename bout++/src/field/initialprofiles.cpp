@@ -39,7 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-real Prof1D(real s, real s0, real sMin, real sMax, real sWidth, int nMode, real phase, int opt);
+BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal sWidth, int nMode, BoutReal phase, int opt);
 
 // Initial profile options
 
@@ -67,14 +67,14 @@ void get_profile_opts()
 
 int initial_profile(const char *name, Field3D &var)
 {
-  real scale;
+  BoutReal scale;
   int xs_opt, ys_opt, zs_opt;
   int xs_mode, ys_mode, zs_mode;
-  real xs_phase, ys_phase, zs_phase;
-  real xs_s0, ys_s0, zs_s0;
-  real xs_wd, ys_wd, zs_wd;
-  int jx, jy, jz, ly, lx;
-  real cx, cy, cz;
+  BoutReal xs_phase, ys_phase, zs_phase;
+  BoutReal xs_s0, ys_s0, zs_s0;
+  BoutReal xs_wd, ys_wd, zs_wd;
+  int jx, jy, jz;
+  BoutReal cx, cy, cz;
 
   var = 0.0;
 
@@ -158,19 +158,19 @@ int initial_profile(const char *name, Field3D &var)
       zs_wd = 0.2;
 
   for (jx=0; jx < mesh->ngx; jx++) {
-    real xcoord = mesh->GlobalX(jx);
+    BoutReal xcoord = mesh->GlobalX(jx);
     
     for (jz=0; jz < mesh->ngz; jz++) {
       for (jy=0; jy < mesh->ngy; jy++) {
-	real ycoord = mesh->GlobalY(jy);
+	BoutReal ycoord = mesh->GlobalY(jy);
 	
 	cx=Prof1D(xcoord, xs_s0, 0., 1.0, xs_wd, xs_mode, xs_phase, xs_opt);
 	cy=Prof1D(ycoord, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	cz=Prof1D((real) jz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
 	var[jx][jy][jz] = scale*cx*cy*cz;
 	
-	real ts; ///< Twist-shift angle
+	BoutReal ts; ///< Twist-shift angle
 	if(mesh->surfaceClosed(jx, ts) && Ballooning) {
 	  // Use a truncated Ballooning transform to enforce periodicity
 	  
@@ -179,12 +179,12 @@ int initial_profile(const char *name, Field3D &var)
 	  for(int i=1; i<= ball_n; i++) {
 	    // y - i * nycore
 	    cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz + ((real) i)*ts/mesh->dz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	    
 	    // y + i * nycore
 	    cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((real) jz - ((real) i)*ts/mesh->dz, zs_s0, 0., (real) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+	    cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	  }
 	}
@@ -195,10 +195,10 @@ int initial_profile(const char *name, Field3D &var)
 	  ly = YGLOBAL(jy);
 	  if(ly <= jyseps1_1) {
 	    // Inner lower
-	    var[jx][jy][jz] *= Prof1D((real) (ly-jyseps1_1-1), ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D(0.0, ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
+	    var[jx][jy][jz] *= Prof1D((BoutReal) (ly-jyseps1_1-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D(0.0, ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
 	  }else if(ly > jyseps2_2) {
 	    // Outer lower
-	    var[jx][jy][jz] *= Prof1D((real) (ly-jyseps2_2+nycore-1), ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D((real) (nycore-1), ys_s0, 0., (real) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
+	    var[jx][jy][jz] *= Prof1D((BoutReal) (ly-jyseps2_2+nycore-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D((BoutReal) (nycore-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
 	  }
 	}
 	*/
@@ -215,14 +215,14 @@ int initial_profile(const char *name, Field3D &var)
 // For 2D variables almost identical, just no z dependence
 int initial_profile(const char *name, Field2D &var)
 {
-  real scale;
+  BoutReal scale;
   int xs_opt, ys_opt;
   int xs_mode, ys_mode;
-  real xs_phase, ys_phase;
-  real xs_s0, ys_s0;
-  real xs_wd, ys_wd;
-  int jx, jy, ly;
-  real cx, cy;
+  BoutReal xs_phase, ys_phase;
+  BoutReal xs_s0, ys_s0;
+  BoutReal xs_wd, ys_wd;
+  int jx, jy;
+  BoutReal cx, cy;
 
   var = 0.0;
 
@@ -287,9 +287,9 @@ int initial_profile(const char *name, Field2D &var)
   
 
   for (jx=0; jx < mesh->ngx; jx++) {
-    real xcoord = mesh->GlobalX(jx);
+    BoutReal xcoord = mesh->GlobalX(jx);
     for (jy=0; jy < mesh->ngy; jy++) {
-      real ycoord = mesh->GlobalY(jy);
+      BoutReal ycoord = mesh->GlobalY(jy);
       cx=Prof1D(xcoord, xs_s0, 0., 1., xs_wd, xs_mode, xs_phase, xs_opt);
       cy=Prof1D(ycoord, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
       
@@ -362,25 +362,25 @@ int initial_profile(const char *name, Vector3D &var)
   return 0;
 }
 
-/// Hash real values to produce a number between -1 and 1
-real hash_reals(real a, real b, real c)
+/// Hash BoutReal values to produce a number between -1 and 1
+BoutReal hash_BoutReals(BoutReal a, BoutReal b, BoutReal c)
 {
   int hash = 0;
   
   unsigned char *p = (unsigned char*) &a;
-  for(int i=0;i<sizeof(real);i++) {
+  for(size_t i=0;i<sizeof(BoutReal);i++) {
     hash += (int) p[i];
     hash += hash << 10;
     hash ^= hash >> 6;
   }
   p = (unsigned char*) &b;
-  for(int i=0;i<sizeof(real);i++) {
+  for(size_t i=0;i<sizeof(BoutReal);i++) {
     hash += (int) p[i];
     hash += hash << 10;
     hash ^= hash >> 6;
   }
   p = (unsigned char*) &c;
-  for(int i=0;i<sizeof(real);i++) {
+  for(size_t i=0;i<sizeof(BoutReal);i++) {
     hash += (int) p[i];
     hash += hash << 10;
     hash ^= hash >> 6;
@@ -391,15 +391,15 @@ real hash_reals(real a, real b, real c)
   hash += hash << 15;
 
   if(hash <= 0) hash += 2147483647;
-  return ((real) hash)/2147483646.0;
+  return ((BoutReal) hash)/2147483646.0;
 }
 
-real Prof1D(real s, real s0, real sMin, real sMax, real sWidth, int nMode, real phase, int opt)
+BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal sWidth, int nMode, BoutReal phase, int opt)
 /*Calculate initial perturbation for given seed parameters*/
 {
   
-  real res;
-  real sNorm=s/(sMax-sMin);
+  BoutReal res;
+  BoutReal sNorm=s/(sMax-sMin);
 
   phase *= PI;
 
@@ -414,26 +414,26 @@ real Prof1D(real s, real s0, real sMin, real sMax, real sWidth, int nMode, real 
       break;
 
     case 3:
-      res=(1./4./4.)*cos(1.*sNorm*TWOPI  + 0.01*hash_reals(sNorm, phase, 1.)*PI)
-	+(1./3./3.)*cos(2*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 2.)*PI)
-	+(1./2./2.)*cos(3*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 3.)*PI)
-	+(1./1.)*cos(4*sNorm*TWOPI       + 0.01*hash_reals(sNorm, phase, 4.)*PI)
-	+(1./2./2.)*cos(5*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 5.)*PI)
-	+(1./3./3.)*cos(6*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 6.)*PI)
-	+(1./4./4.)*cos(7*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 7.)*PI)
-	+(1./5./5.)*cos(8*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 8.)*PI)
-	+(1./6./6.)*cos(9*sNorm*TWOPI    + 0.01*hash_reals(sNorm, phase, 9.)*PI)
-	+(1./7./7.)*cos(10*sNorm*TWOPI   + 0.01*hash_reals(sNorm, phase, 10.)*PI)
-	+(1./8./8.)*cos(11*sNorm*TWOPI   + 0.01*hash_reals(sNorm, phase, 11.)*PI)
-	+(1./9./9.)*cos(12*sNorm*TWOPI   + 0.01*hash_reals(sNorm, phase, 12.)*PI)
-	+(1./10./10.)*cos(13*sNorm*TWOPI + 0.01*hash_reals(sNorm, phase, 13.)*PI)
-	+(1./11./11.)*cos(14*sNorm*TWOPI + 0.01*hash_reals(sNorm, phase, 14.)*PI);
+      res=(1./4./4.)*cos(1.*sNorm*TWOPI  + 0.01*hash_BoutReals(sNorm, phase, 1.)*PI)
+	+(1./3./3.)*cos(2*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 2.)*PI)
+	+(1./2./2.)*cos(3*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 3.)*PI)
+	+(1./1.)*cos(4*sNorm*TWOPI       + 0.01*hash_BoutReals(sNorm, phase, 4.)*PI)
+	+(1./2./2.)*cos(5*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 5.)*PI)
+	+(1./3./3.)*cos(6*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 6.)*PI)
+	+(1./4./4.)*cos(7*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 7.)*PI)
+	+(1./5./5.)*cos(8*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 8.)*PI)
+	+(1./6./6.)*cos(9*sNorm*TWOPI    + 0.01*hash_BoutReals(sNorm, phase, 9.)*PI)
+	+(1./7./7.)*cos(10*sNorm*TWOPI   + 0.01*hash_BoutReals(sNorm, phase, 10.)*PI)
+	+(1./8./8.)*cos(11*sNorm*TWOPI   + 0.01*hash_BoutReals(sNorm, phase, 11.)*PI)
+	+(1./9./9.)*cos(12*sNorm*TWOPI   + 0.01*hash_BoutReals(sNorm, phase, 12.)*PI)
+	+(1./10./10.)*cos(13*sNorm*TWOPI + 0.01*hash_BoutReals(sNorm, phase, 13.)*PI)
+	+(1./11./11.)*cos(14*sNorm*TWOPI + 0.01*hash_BoutReals(sNorm, phase, 14.)*PI);
       break;
     case 4:
       res = sin(nMode*sNorm*TWOPI)
-        + sin(2.*nMode*sNorm*TWOPI + hash_reals(sNorm, phase, nMode)*TWOPI)
-        + sin(3.*nMode*sNorm*TWOPI + hash_reals(sNorm, phase, 2.*nMode)*TWOPI)
-        + sin(4.*nMode*sNorm*TWOPI + hash_reals(sNorm, phase, 3.*nMode)*TWOPI);
+        + sin(2.*nMode*sNorm*TWOPI + hash_BoutReals(sNorm, phase, nMode)*TWOPI)
+        + sin(3.*nMode*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 2.*nMode)*TWOPI)
+        + sin(4.*nMode*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 3.*nMode)*TWOPI);
       break;
 
     default: res=1.0;
@@ -451,15 +451,15 @@ real Prof1D(real s, real s0, real sMin, real sMax, real sWidth, int nMode, real 
   @param[in] n      Mode number. Note that this is mode-number in the domain
   @param[in] phase  Phase shift in units of pi
 */
-const Field3D genZMode(int n, real phase)
+const Field3D genZMode(int n, BoutReal phase)
 {
   Field3D result;
 
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
   
   for(int jz=0;jz<mesh->ngz;jz++) {
-    real val = sin(phase*PI +  TWOPI * ((real) jz)/ ((real) mesh->ngz-1) );
+    BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->ngz-1) );
     for(int jx=0;jx<mesh->ngx;jx++)
       for(int jy=0;jy<mesh->ngy;jy++)
 	d[jx][jy][jz] = val;

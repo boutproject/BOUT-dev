@@ -25,17 +25,17 @@
  *
  */
 
-real norm_vector(const Field3D &b)
+BoutReal norm_vector(const Field3D &b)
 {
   
 }
 
-real dot_product(const Field3D &a, const Field3D &b)
+BoutReal dot_product(const Field3D &a, const Field3D &b)
 {
   
 }
 
-void Update(Field3D &x, int it, real **h, real *s, real *y, Field3D *v)
+void Update(Field3D &x, int it, BoutReal **h, BoutReal *s, BoutReal *y, Field3D *v)
 {
   
 }
@@ -44,7 +44,7 @@ int full_gmres(const Field3D &b, fgfunc A, Field3D &x, void *extra, int m)
 {
   Field3D r, w;
   static Field3D *v = NULL;
-  real normb, beta, resid;
+  BoutReal normb, beta, resid;
   int it;
 
   if(v == NULL) {

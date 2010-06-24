@@ -106,7 +106,7 @@ void Field3D::allocate() const
   allocData();
 }
 
-real*** Field3D::getData() const
+BoutReal*** Field3D::getData() const
 {
 #ifdef CHECK
   if(block ==  NULL)
@@ -134,7 +134,7 @@ const Field2D Field3D::DC()
 {
   Field2D result;
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: DC");
@@ -148,7 +148,7 @@ const Field2D Field3D::DC()
   result = 0.0;
   d = result.getData();
 
-  real inv_n = 1. / (real) (mesh->ngz-1);
+  BoutReal inv_n = 1. / (BoutReal) (mesh->ngz-1);
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++) {
@@ -185,7 +185,7 @@ CELL_LOC Field3D::getLocation() const
  *                         OPERATORS 
  ***************************************************************/
 
-real** Field3D::operator[](int jx) const
+BoutReal** Field3D::operator[](int jx) const
 {
 #ifdef CHECK
   if(block == NULL) {
@@ -205,7 +205,7 @@ real** Field3D::operator[](int jx) const
   return(block->data[jx]);
 }
 
-real& Field3D::operator[](bindex &bx) const
+BoutReal& Field3D::operator[](bindex &bx) const
 {
 #ifdef CHECK
   if(block == NULL) {
@@ -264,7 +264,7 @@ Field3D & Field3D::operator=(const Field3D &rhs)
 Field3D & Field3D::operator=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: Assignment from Field2D");
@@ -299,14 +299,14 @@ Field3D & Field3D::operator=(const Field2D &rhs)
 Field3D & Field3D::operator=(const FieldPerp &rhs)
 {
   int jx, jy, jz; 
-  real **d;
+  BoutReal **d;
   
   jy = rhs.getIndex();
   
   d = rhs.getData();
 
 #ifdef CHECK
-  if(d == (real**) NULL) {
+  if(d == (BoutReal**) NULL) {
     // No data
     error("Field3D: No data in assignment from FieldPerp");
   }
@@ -355,7 +355,7 @@ const bvalue & Field3D::operator=(const bvalue &bv)
   return(bv);
 }
 
-real Field3D::operator=(const real val)
+BoutReal Field3D::operator=(const BoutReal val)
 {
   int jx, jy, jz;
   
@@ -363,7 +363,7 @@ real Field3D::operator=(const real val)
 
 #ifdef CHECK
   if(!finite(val)) {
-    error("Field3D: Assignment from non-finite real\n");
+    error("Field3D: Assignment from non-finite BoutReal\n");
   }
 #endif
 
@@ -435,7 +435,7 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
 Field3D & Field3D::operator+=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: += ( Field2D )");
@@ -474,21 +474,21 @@ Field3D & Field3D::operator+=(const Field2D &rhs)
   return(*this);
 }
 
-Field3D & Field3D::operator+=(const real &rhs)
+Field3D & Field3D::operator+=(const BoutReal &rhs)
 {
   int jx, jy, jz;
 #ifdef CHECK
-  msg_stack.push("Field3D: += ( real )");
+  msg_stack.push("Field3D: += ( BoutReal )");
 
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: += operator passed non-finite real number");
+    error("Field3D: += operator passed non-finite BoutReal number");
   }
 #endif
   
 #ifdef TRACK
-  name = "(" + name + "+real)";
+  name = "(" + name + "+BoutReal)";
 #endif
 
   if(block->refs == 1) {
@@ -563,7 +563,7 @@ Field3D & Field3D::operator-=(const Field3D &rhs)
 Field3D & Field3D::operator-=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: -= ( Field2D )");
@@ -602,21 +602,21 @@ Field3D & Field3D::operator-=(const Field2D &rhs)
   return(*this);
 }
 
-Field3D & Field3D::operator-=(const real &rhs)
+Field3D & Field3D::operator-=(const BoutReal &rhs)
 {
   int jx, jy, jz;
 
 #ifdef CHECK
-  msg_stack.push("Field3D: -= ( real )");
+  msg_stack.push("Field3D: -= ( BoutReal )");
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: -= operator passed non-finite real number");
+    error("Field3D: -= operator passed non-finite BoutReal number");
   }
 #endif
 
 #ifdef TRACK
-  name = "(" + name + "-real)";
+  name = "(" + name + "-BoutReal)";
 #endif
   
   if(block->refs == 1) {
@@ -692,7 +692,7 @@ Field3D & Field3D::operator*=(const Field3D &rhs)
 Field3D & Field3D::operator*=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: *= ( Field2D )");
@@ -730,21 +730,21 @@ Field3D & Field3D::operator*=(const Field2D &rhs)
   return(*this);
 }
 
-Field3D & Field3D::operator*=(const real rhs)
+Field3D & Field3D::operator*=(const BoutReal rhs)
 {
   int jx, jy, jz;
   
 #ifdef CHECK
-  msg_stack.push("Field3D: *= ( real )");
+  msg_stack.push("Field3D: *= ( BoutReal )");
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: *= operator passed non-finite real number");
+    error("Field3D: *= operator passed non-finite BoutReal number");
   }
 #endif
 
 #ifdef TRACK
-  name = "(" + name + "*real)";
+  name = "(" + name + "*BoutReal)";
 #endif
 
   if(block->refs == 1) {
@@ -829,7 +829,7 @@ Field3D & Field3D::operator/=(const Field3D &rhs)
 Field3D & Field3D::operator/=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: /= ( Field2D )");
@@ -850,7 +850,7 @@ Field3D & Field3D::operator/=(const Field2D &rhs)
   if(block->refs == 1) {
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++) {
-	real val = 1.0L / d[jx][jy]; // Because multiplications are faster than divisions
+	BoutReal val = 1.0L / d[jx][jy]; // Because multiplications are faster than divisions
 	for(jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] *= val;
 	  //block->data[jx][jy][jz] /= d[jx][jy];
@@ -860,7 +860,7 @@ Field3D & Field3D::operator/=(const Field2D &rhs)
 
     for(jx=0;jx<mesh->ngx;jx++)
       for(jy=0;jy<mesh->ngy;jy++) {
-	real val = 1.0L / d[jx][jy];
+	BoutReal val = 1.0L / d[jx][jy];
 	for(jz=0;jz<mesh->ngz;jz++)
 	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] * val;
 	//nb->data[jx][jy][jz] = block->data[jx][jy][jz] / d[jx][jy];
@@ -877,24 +877,24 @@ Field3D & Field3D::operator/=(const Field2D &rhs)
   return(*this);
 }
 
-Field3D & Field3D::operator/=(const real rhs)
+Field3D & Field3D::operator/=(const BoutReal rhs)
 {
   int jx, jy, jz;
   
 #ifdef CHECK
-  msg_stack.push("Field3D: /= ( real )");
+  msg_stack.push("Field3D: /= ( BoutReal )");
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: /= operator passed non-finite real number");
+    error("Field3D: /= operator passed non-finite BoutReal number");
   }
 #endif
 
 #ifdef TRACK
-  name = "(" + name + "/real)";
+  name = "(" + name + "/BoutReal)";
 #endif
 
-  real val = 1.0 / rhs; // Because multiplication faster than division
+  BoutReal val = 1.0 / rhs; // Because multiplication faster than division
 
   if(block->refs == 1) {
     for(jx=0;jx<mesh->ngx;jx++)
@@ -977,7 +977,7 @@ Field3D & Field3D::operator^=(const Field3D &rhs)
 Field3D & Field3D::operator^=(const Field2D &rhs)
 {
   int jx, jy, jz;
-  real **d;
+  BoutReal **d;
 
 #ifdef CHECK
   msg_stack.push("Field3D: ^= ( Field2D )");
@@ -1016,21 +1016,21 @@ Field3D & Field3D::operator^=(const Field2D &rhs)
   return(*this);
 }
 
-Field3D & Field3D::operator^=(const real rhs)
+Field3D & Field3D::operator^=(const BoutReal rhs)
 {
   int jx, jy, jz;
 
 #ifdef CHECK
-  msg_stack.push("Field3D: ^= ( real )");
+  msg_stack.push("Field3D: ^= ( BoutReal )");
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: ^= operator passed non-finite real number");
+    error("Field3D: ^= operator passed non-finite BoutReal number");
   }
 #endif
 
 #ifdef TRACK
-  name = "(" + name + "^real)";
+  name = "(" + name + "^BoutReal)";
 #endif
 
   if(block->refs == 1) {
@@ -1098,7 +1098,7 @@ const FieldPerp Field3D::operator+(const FieldPerp &other) const
   return(result);
 }
 
-const Field3D Field3D::operator+(const real &rhs) const
+const Field3D Field3D::operator+(const BoutReal &rhs) const
 {
   Field3D result = *this;
   result += rhs;
@@ -1136,7 +1136,7 @@ const Field3D Field3D::operator-(const Field2D &other) const
 
 const FieldPerp Field3D::operator-(const FieldPerp &other) const
 {
-  real **d;
+  BoutReal **d;
   int jx, jz;
   int jy = other.getIndex();
   FieldPerp result = other;
@@ -1154,7 +1154,7 @@ const FieldPerp Field3D::operator-(const FieldPerp &other) const
   return(result);
 }
 
-const Field3D Field3D::operator-(const real &rhs) const
+const Field3D Field3D::operator-(const BoutReal &rhs) const
 {
   Field3D result = *this;
   result -= rhs;
@@ -1184,7 +1184,7 @@ const FieldPerp Field3D::operator*(const FieldPerp &other) const
   return(result);
 }
 
-const Field3D Field3D::operator*(const real rhs) const
+const Field3D Field3D::operator*(const BoutReal rhs) const
 {
   Field3D result = *this;
   result *= rhs;
@@ -1209,7 +1209,7 @@ const Field3D Field3D::operator/(const Field2D &other) const
 
 const FieldPerp Field3D::operator/(const FieldPerp &other) const
 {
-  real **d;
+  BoutReal **d;
   int jx, jz;
   int jy = other.getIndex();
   FieldPerp result = other;
@@ -1231,7 +1231,7 @@ const FieldPerp Field3D::operator/(const FieldPerp &other) const
   return(result);
 }
 
-const Field3D Field3D::operator/(const real rhs) const
+const Field3D Field3D::operator/(const BoutReal rhs) const
 {
   Field3D result = *this;
   result /= rhs;
@@ -1256,7 +1256,7 @@ const Field3D Field3D::operator^(const Field2D &other) const
 
 const FieldPerp Field3D::operator^(const FieldPerp &other) const
 {
-  real **d;
+  BoutReal **d;
   int jx, jz;
   int jy = other.getIndex();
   FieldPerp result = other;
@@ -1278,7 +1278,7 @@ const FieldPerp Field3D::operator^(const FieldPerp &other) const
   return(result);
 }
 
-const Field3D Field3D::operator^(const real rhs) const
+const Field3D Field3D::operator^(const BoutReal rhs) const
 {
   Field3D result = *this;
   result ^= rhs;
@@ -1508,14 +1508,14 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-real Field3D::interpZ(int jx, int jy, int jz0, real zoffset, int order) const
+BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const
 {
   int zi;
-  real result;
+  BoutReal result;
   int jzp, jzm, jz2p;
 
   zi = ROUND(zoffset);  // Find the nearest integer
-  zoffset -= (real) zi; // Difference (-0.5 to +0.5)
+  zoffset -= (BoutReal) zi; // Difference (-0.5 to +0.5)
 
   if((zoffset < 0.0) && (order > 1)) { // If order = 0 or 1, want closest
     // For higher-order interpolation, expect zoffset > 0
@@ -1565,7 +1565,7 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
 {
   static dcomplex *v = (dcomplex*) NULL;
   int jz;
-  real kwave;
+  BoutReal kwave;
   
 #ifdef CHECK
   // Check data set
@@ -1625,13 +1625,13 @@ const Field3D Field3D::shiftZ(const Field2D zangle) const
   return result;
 }
 
-const Field3D Field3D::shiftZ(const real zangle) const
+const Field3D Field3D::shiftZ(const BoutReal zangle) const
 {
   Field3D result;
   int jx, jy;
 
 #ifdef CHECK
-  msg_stack.push("Field3D: shiftZ ( real )");
+  msg_stack.push("Field3D: shiftZ ( BoutReal )");
   checkData();
 #endif
 
@@ -1650,9 +1650,9 @@ const Field3D Field3D::shiftZ(const real zangle) const
   return result;
 }
 
-const Field3D Field3D::shiftZ(bool toreal) const
+const Field3D Field3D::shiftZ(bool toBoutReal) const
 {
-  if(toreal) {
+  if(toBoutReal) {
     return shiftZ(mesh->zShift);
   }
   return shiftZ(-mesh->zShift);
@@ -1849,10 +1849,10 @@ const Field3D Field3D::abs() const
   return result;
 }
 
-real Field3D::min(bool allpe) const
+BoutReal Field3D::min(bool allpe) const
 {
   int jx, jy, jz;
-  real result;
+  BoutReal result;
 
 #ifdef CHECK
   if(block == NULL) {
@@ -1876,7 +1876,7 @@ real Field3D::min(bool allpe) const
 
   if(allpe) {
     // MPI reduce
-    real localresult = result;
+    BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
   }
 
@@ -1887,10 +1887,10 @@ real Field3D::min(bool allpe) const
   return result;
 }
 
-real Field3D::max(bool allpe) const
+BoutReal Field3D::max(bool allpe) const
 {
   int jx, jy, jz;
-  real result;
+  BoutReal result;
 
 #ifdef CHECK
   if(block == NULL) {
@@ -1913,7 +1913,7 @@ real Field3D::max(bool allpe) const
   
   if(allpe) {
     // MPI reduce
-    real localresult = result;
+    BoutReal localresult = result;
     MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
   }
   
@@ -1941,13 +1941,13 @@ int Field3D::getData(int x, int y, int z, void *vptr) const
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   *ptr = block->data[x][y][z];
   
-  return sizeof(real);
+  return sizeof(BoutReal);
 }
 
-int Field3D::getData(int x, int y, int z, real *rptr) const
+int Field3D::getData(int x, int y, int z, BoutReal *rptr) const
 {
 #ifdef CHECK
   // Check data set
@@ -1977,13 +1977,13 @@ int Field3D::setData(int x, int y, int z, void *vptr)
     exit(1);
   }
 #endif
-  real *ptr = (real*) vptr;
+  BoutReal *ptr = (BoutReal*) vptr;
   block->data[x][y][z] = *ptr;
   
-  return sizeof(real);
+  return sizeof(BoutReal);
 }
 
-int Field3D::setData(int x, int y, int z, real *rptr)
+int Field3D::setData(int x, int y, int z, BoutReal *rptr)
 {
   allocate();
 #ifdef CHECK
@@ -2138,13 +2138,13 @@ void Field3D::freeData()
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-const Field3D operator-(const real &lhs, const Field3D &rhs)
+const Field3D operator-(const BoutReal &lhs, const Field3D &rhs)
 {
   Field3D result;
   int jx, jy, jz;
 
 #ifdef TRACK
-  result.name = "(real-"+rhs.name+")";
+  result.name = "(BoutReal-"+rhs.name+")";
 #endif
 
   result.allocate();
@@ -2159,31 +2159,31 @@ const Field3D operator-(const real &lhs, const Field3D &rhs)
   return result;
 }
 
-const Field3D operator+(const real &lhs, const Field3D &rhs)
+const Field3D operator+(const BoutReal &lhs, const Field3D &rhs)
 {
   return rhs+lhs;
 }
 
-const Field3D operator*(const real lhs, const Field3D &rhs)
+const Field3D operator*(const BoutReal lhs, const Field3D &rhs)
 {
   return(rhs * lhs);
 }
 
-const Field3D operator/(const real lhs, const Field3D &rhs)
+const Field3D operator/(const BoutReal lhs, const Field3D &rhs)
 {
   Field3D result = rhs;
   int jx, jy, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = result.getData();
 #ifdef CHECK
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     bout_error("Field3D: left / operator has invalid Field3D argument");
   }
 #endif
 
 #ifdef TRACK
-  result.name = "(real/"+rhs.name+")";
+  result.name = "(BoutReal/"+rhs.name+")";
 #endif
   
   for(jx=0;jx<mesh->ngx;jx++)
@@ -2196,23 +2196,23 @@ const Field3D operator/(const real lhs, const Field3D &rhs)
   return(result);
 }
 
-const Field3D operator^(const real lhs, const Field3D &rhs)
+const Field3D operator^(const BoutReal lhs, const Field3D &rhs)
 {
   Field3D result = rhs;
   int jx, jy, jz;
-  real ***d;
+  BoutReal ***d;
 
   d = result.getData();
 
 #ifdef CHECK
-  if(d == (real***) NULL) {
+  if(d == (BoutReal***) NULL) {
     output.write("Field3D: left ^ operator has invalid Field3D argument");
     exit(1);
   }
 #endif
 
 #ifdef TRACK
-  result.name = "(real^"+rhs.name+")";
+  result.name = "(BoutReal^"+rhs.name+")";
 #endif
   
   for(jx=0;jx<mesh->ngx;jx++)
@@ -2237,12 +2237,12 @@ const Field3D abs(const Field3D &f)
   return f.abs();
 }
 
-real min(const Field3D &f, bool allpe)
+BoutReal min(const Field3D &f, bool allpe)
 {
   return f.min(allpe);
 }
 
-real max(const Field3D &f, bool allpe)
+BoutReal max(const Field3D &f, bool allpe)
 {
   return f.max(allpe);
 }
@@ -2421,7 +2421,7 @@ const Field3D filter(const Field3D &var, int N0)
 // Smooths a field in Fourier space
 // DOESN'T WORK VERY WELL
 /*
-const Field3D smooth(const Field3D &var, real zmax, real xmax)
+const Field3D smooth(const Field3D &var, BoutReal zmax, BoutReal xmax)
 {
   Field3D result;
   static dcomplex **f = NULL, *fx;
@@ -2444,17 +2444,17 @@ const Field3D smooth(const Field3D &var, real zmax, real xmax)
   xmi = mesh->ngx;
 
   if(zmax > 0.0)
-    zmi = (int) ((1.0 - zmax)*((real) (ncz/2)));
+    zmi = (int) ((1.0 - zmax)*((BoutReal) (ncz/2)));
 
   if(xmax > 0.0)
-    xmi = (int) ((1.0 - xmax)*((real) mesh->ngx));
+    xmi = (int) ((1.0 - xmax)*((BoutReal) mesh->ngx));
 
   //output.write("filter: %d, %d\n", xmi, zmi);
 
   for(jy=0;jy<mesh->ngy;jy++) {
 
     for(jx=0;jx<mesh->ngx;jx++) {
-      // Take FFT in the Z direction, shifting into real space
+      // Take FFT in the Z direction, shifting into BoutReal space
       ZFFT(var.block->data[jx][jy], mesh->zShift[jx][jy], f[jx]);
     }
 

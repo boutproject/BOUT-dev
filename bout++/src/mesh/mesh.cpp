@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-real Mesh::wtime_comms = 0.0;
+BoutReal Mesh::wtime_comms = 0.0;
 
 /**************************************************************************
  * Data sources
@@ -323,7 +323,7 @@ int Mesh::calcCovariant()
   // Perform inversion of g^{ij} to get g_{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
 
-  real** a = rmatrix(3, 3);
+  BoutReal** a = rmatrix(3, 3);
   
   for(int jx=0;jx<ngx;jx++) {
     for(int jy=0;jy<ngy;jy++) {
@@ -355,7 +355,7 @@ int Mesh::calcCovariant()
 
   free_rmatrix(a);
   
-  real maxerr, err;
+  BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
 		     g_12*g12 + 
 		     g_13*g13)- 1 ));
@@ -407,7 +407,7 @@ int Mesh::calcContravariant()
   // Perform inversion of g_{ij} to get g^{ij}
   // NOTE: Currently this bit assumes that metric terms are Field2D objects
   
-  real** a = rmatrix(3, 3);
+  BoutReal** a = rmatrix(3, 3);
   
   for(int jx=0;jx<ngx;jx++) {
     for(int jy=0;jy<ngy;jy++) {
@@ -439,7 +439,7 @@ int Mesh::calcContravariant()
 
   free_rmatrix(a);
 
-  real maxerr, err;
+  BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
 		     g_12*g12 + 
 		     g_13*g13)- 1 ));
@@ -503,11 +503,11 @@ int Mesh::jacobian()
  *******************************************************************************/
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
-int Mesh::gaussj(real **a, int n)
+int Mesh::gaussj(BoutReal **a, int n)
 {
   static int *indxc, *indxr, *ipiv, len = 0;
   int i, icol, irow, j, k, l, ll;
-  float big, dum, pivinv, temp;
+  float big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
   if(n > len) {

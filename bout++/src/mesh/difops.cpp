@@ -169,7 +169,7 @@ const Field3D Grad_par_CtoL(const Field3D &var)
 {
   Field3D result;
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
 
   /*
   bindex bx;
@@ -201,7 +201,7 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f)
   Field3D result;
   
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
 
   start_index(&bx);
   do {
@@ -225,7 +225,7 @@ const Field3D Grad_par_LtoC(const Field &var)
   Field3D result;
   
   result.allocate();
-  real ***d = result.getData();
+  BoutReal ***d = result.getData();
 
   start_index(&bx);
   do {
@@ -338,10 +338,10 @@ const Field2D Delp2(const Field2D &f)
   return result;
 }
 
-const Field3D Delp2(const Field3D &f, real zsmooth)
+const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
 {
   Field3D result;
-  real ***fd, ***rd;
+  BoutReal ***fd, ***rd;
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("Delp2( Field3D )");
@@ -353,7 +353,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
 
   static dcomplex **ft = (dcomplex**) NULL, **delft;
   int jx, jy, jz;
-  real filter;
+  BoutReal filter;
   dcomplex a, b, c;
 
   result.allocate();
@@ -380,7 +380,7 @@ const Field3D Delp2(const Field3D &f, real zsmooth)
     // Loop over kz
     for(jz=0;jz<=ncz/2;jz++) {
 
-      if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((real) ncz)))) filter=0.0; else filter=1.0;
+      if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
       for(jx=2;jx<(mesh->ngx-2);jx++) {

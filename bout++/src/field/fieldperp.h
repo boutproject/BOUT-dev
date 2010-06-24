@@ -42,8 +42,8 @@ class FieldPerp : public Field {
   
   void set(const Field3D &f, int y);
 
-  void setData(real **d) {data = d;}
-  real **getData() const { return data; }
+  void setData(BoutReal **d) {data = d;}
+  BoutReal **getData() const { return data; }
 
   int getIndex() const { return yindex; }
   void setIndex(int y) { yindex = y; }
@@ -52,35 +52,35 @@ class FieldPerp : public Field {
 
   // operators
 
-  real* operator[](int jx) const;
+  BoutReal* operator[](int jx) const;
 
   FieldPerp & operator=(const FieldPerp &rhs);
-  FieldPerp & operator=(const real rhs);
+  FieldPerp & operator=(const BoutReal rhs);
 
   FieldPerp & operator+=(const FieldPerp &rhs);
   FieldPerp & operator+=(const Field3D &rhs);
   FieldPerp & operator+=(const Field2D &rhs);
-  FieldPerp & operator+=(const real rhs);
+  FieldPerp & operator+=(const BoutReal rhs);
   
   FieldPerp & operator-=(const FieldPerp &rhs);
   FieldPerp & operator-=(const Field3D &rhs);
   FieldPerp & operator-=(const Field2D &rhs);
-  FieldPerp & operator-=(const real rhs);
+  FieldPerp & operator-=(const BoutReal rhs);
 
   FieldPerp & operator*=(const FieldPerp &rhs);
   FieldPerp & operator*=(const Field3D &rhs);
   FieldPerp & operator*=(const Field2D &rhs);
-  FieldPerp & operator*=(const real rhs);
+  FieldPerp & operator*=(const BoutReal rhs);
 
   FieldPerp & operator/=(const FieldPerp &rhs);
   FieldPerp & operator/=(const Field3D &rhs);
   FieldPerp & operator/=(const Field2D &rhs);
-  FieldPerp & operator/=(const real rhs);
+  FieldPerp & operator/=(const BoutReal rhs);
 
   FieldPerp & operator^=(const FieldPerp &rhs);
   FieldPerp & operator^=(const Field3D &rhs);
   FieldPerp & operator^=(const Field2D &rhs);
-  FieldPerp & operator^=(const real rhs);
+  FieldPerp & operator^=(const BoutReal rhs);
 
   // Binary operators
 
@@ -95,17 +95,17 @@ class FieldPerp : public Field {
   const FieldPerp operator*(const FieldPerp &other) const;
   const FieldPerp operator*(const Field3D &other) const;
   const FieldPerp operator*(const Field2D &other) const;
-  const FieldPerp operator*(const real rhs) const;
+  const FieldPerp operator*(const BoutReal rhs) const;
 
   const FieldPerp operator/(const FieldPerp &other) const;
   const FieldPerp operator/(const Field3D &other) const;
   const FieldPerp operator/(const Field2D &other) const;
-  const FieldPerp operator/(const real rhs) const;
+  const FieldPerp operator/(const BoutReal rhs) const;
 
   const FieldPerp operator^(const FieldPerp &other) const;
   const FieldPerp operator^(const Field3D &other) const;
   const FieldPerp operator^(const Field2D &other) const;
-  const FieldPerp operator^(const real rhs) const;
+  const FieldPerp operator^(const BoutReal rhs) const;
 
   // Stencils
 
@@ -116,15 +116,15 @@ class FieldPerp : public Field {
   
  private:
   
-  real interpZ(int jx, int jz0, real zoffset, int order) const;
+  BoutReal interpZ(int jx, int jz0, BoutReal zoffset, int order) const;
 
   int yindex;
   
-  real **data;
+  BoutReal **data;
 
   // Data stack: Blocks of memory for this class
   static int nblocks, max_blocks;
-  static real ***block; // Pointer to blocks of memory
+  static BoutReal ***block; // Pointer to blocks of memory
 
   void allocData();
   void freeData();
@@ -132,8 +132,8 @@ class FieldPerp : public Field {
 
 // Non-member overloaded operators
 
-const FieldPerp operator*(const real lhs, const FieldPerp &rhs);
-const FieldPerp operator/(const real lhs, const FieldPerp &rhs);
-const FieldPerp operator^(const real lhs, const FieldPerp &rhs);
+const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs);
+const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
+const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs);
 
 #endif

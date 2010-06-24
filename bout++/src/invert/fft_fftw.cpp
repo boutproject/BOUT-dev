@@ -92,10 +92,10 @@ void cfft(dcomplex *cv, int length, int isign)
   }
 }
 
-void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift)
+void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
 {
   int jz, ikz;
-  real kwave;
+  BoutReal kwave;
   
   int ncz = mesh->ngz-1;
   if((isign > 0) && (mesh->ShiftXderivs) && shift) {
@@ -126,7 +126,7 @@ void ZFFT(dcomplex *cv, real zoffset, int isign, bool shift)
  * Real FFTs
  ***********************************************************/
 
-void rfft(real *in, int length, dcomplex *out)
+void rfft(BoutReal *in, int length, dcomplex *out)
 {
   static double *fin;
   static fftw_complex *fout;
@@ -163,7 +163,7 @@ void rfft(real *in, int length, dcomplex *out)
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
 }
 
-void irfft(dcomplex *in, int length, real *out)
+void irfft(dcomplex *in, int length, BoutReal *out)
 {
   static fftw_complex *fin;
   static double *fout;
@@ -202,10 +202,10 @@ void irfft(dcomplex *in, int length, real *out)
     out[i] = fout[i];
 }
 
-void ZFFT(real *in, real zoffset, dcomplex *cv, bool shift)
+void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 {
   int jz;
-  real kwave;
+  BoutReal kwave;
 
   int ncz = mesh->ngz-1;
 
@@ -222,10 +222,10 @@ void ZFFT(real *in, real zoffset, dcomplex *cv, bool shift)
   }
 }
 
-void ZFFT_rev(dcomplex *cv, real zoffset, real *out, bool shift)
+void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
 {
   int jz;
-  real kwave;
+  BoutReal kwave;
   
   int ncz = mesh->ngz-1;
   
