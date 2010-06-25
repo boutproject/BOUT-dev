@@ -1,7 +1,7 @@
 /*calculate locations of nonzero elelments in the Jacobian*/
 
 #include <stdio.h>
-#include "petsc.h"
+#include <petsc.h>
 #include "globals.h"
 #include "boundary.h"
 #include "interpolation.h" // Cell interpolation

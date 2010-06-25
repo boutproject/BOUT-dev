@@ -57,7 +57,7 @@ OBJ						= $(SOURCEC:%.cpp=%.o)
 LIB						= $(BOUT_TOP)/lib/libbout++.a
 
 # This doesn't include '-I$(BOUT_TOP)/include' because of the dependency checking
-BOUT_INCLUDE	= -I. $(INCLUDE) $(EXTRA_INCS)
+BOUT_INCLUDE	= -I$(BOUT_TOP)/include $(INCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
 
 DEPS					= $(SOURCEC:.cpp=.d)
@@ -130,9 +130,6 @@ ifneq ("$(OBJ)foo", "foo")
 	@$(AR) cru $(LIB) $(OBJ)
 	@$(RANLIB) $(LIB)
 endif
-ifneq ("$(SOURCEH)foo", "foo")
-	@cp $(SOURCEH) $(BOUT_TOP)/include
-endif
 
 #END 'lib'
 else
@@ -164,7 +161,7 @@ endif
 
 %.o: $(BOUT_TOP)/make.config %.cpp
 	@echo "  Compiling " $(@F:.o=.cpp)
-	@$(CXX) $(BOUT_INCLUDE) -I$(BOUT_TOP)/include $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
 
 ####################################
 # Clean target. Pretty self explanatory.
@@ -179,7 +176,8 @@ clean::
 
 distclean: clean
 	@echo include cleaned
-	@$(RM) -rf $(BOUT_TOP)/include
+# Removing the externalpackage installation. When we have more packages, need a better way
+	@$(RM) -rf $(BOUT_TOP)/include/pvode
 	@echo lib cleaned
 	@$(RM) -rf $(BOUT_TOP)/lib
 	-@$(RM) -rf $(BOUT_TOP)/externalpackages $(BOUT_TOP)/autom4te.cache make.config

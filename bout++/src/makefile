@@ -7,7 +7,6 @@ SOURCEC		= bout++.cpp
 SOURCEH		= bout.h
 CFLAGS		= -DMD5SUM=$(CHECKSUM)
 TARGET		= lib
-INCLUDE		= $(foreach DIR,$(DIRS),-I$(DIR))
 
 # Checksum passed to bout++.cpp
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cpp $(DIR)/*.h)) | md5sum | head -c 32)
