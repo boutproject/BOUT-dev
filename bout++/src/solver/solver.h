@@ -48,7 +48,7 @@ using std::string;
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SAVE_VARS, SAVE_DERIVS};
+enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 /// RHS function pointer
 typedef int (*rhsfunc)(BoutReal);
@@ -109,6 +109,7 @@ class Solver {
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
+  static Solver* Create();
   static Solver* Create(SolverType &type);
 protected:
 

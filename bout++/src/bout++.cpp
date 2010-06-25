@@ -276,12 +276,8 @@ int bout_init(int argc, char **argv)
 #endif
 
   /// Create the solver
-  SolverType type = SOLVERPVODE;
-  options.setSection(NULL);
-  const char* asdf = options.getString("solver_type");
-  if(asdf) type = asdf;
-  output.write("TESETASDF: %s\taasdf\t%s\n", asdf, type);
-  solver = Solver::Create(type);
+
+  solver = Solver::Create();
 
   if(physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");

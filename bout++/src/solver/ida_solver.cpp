@@ -1,7 +1,7 @@
 /**************************************************************************
  * Interface to SUNDIALS IDA
  * 
- * Solver for DAE systems (so can handle constraints)
+ * IdaSolver for DAE systems (so can handle constraints)
  *
  * NOTE: Only one solver can currently be compiled in
  *
@@ -53,14 +53,14 @@ static int ida_pre(BoutReal t, N_Vector yy,
 		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
-Solver::Solver() : Solver()
+IdaSolver::IdaSolver() : Solver()
 {
   has_constraints = true; ///< This solver has constraints
   
   prefunc = NULL;
 }
 
-Solver::~Solver()
+IdaSolver::~IdaSolver()
 {
   if(initialised) {
     // Free IDA memory
@@ -74,7 +74,7 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
+int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
 
 #ifdef CHECK
@@ -206,14 +206,14 @@ int MXSUB = mesh->xend - mesh->xstart + 1;
  * Run - Advance time
  **************************************************************************/
 
-int Solver::run(MonitorFunc monitor)
+int IdaSolver::run(MonitorFunc monitor)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("IDA Solver::run()");
+  int msg_point = msg_stack.push("IDA IdaSolver::run()");
 #endif
   
   if(!initialised)
-    bout_error("Solver not initialised\n");
+    bout_error("IdaSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
     
@@ -259,7 +259,7 @@ int Solver::run(MonitorFunc monitor)
   return 0;
 }
 
-BoutReal Solver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
+BoutReal IdaSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 {
   if(!initialised)
     bout_error("ERROR: Running IDA solver without initialisation\n");
@@ -304,10 +304,10 @@ BoutReal Solver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
  * Residual function F(t, u, du)
  **************************************************************************/
 
-void Solver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
+void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Solver::res(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
 #endif
 
   BoutReal tstart = MPI_Wtime();
@@ -341,10 +341,10 @@ void Solver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
  * Preconditioner function
  **************************************************************************/
 
-void Solver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
+void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: Solver::pre(%e)", t);
+  int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
 #endif
 
   BoutReal tstart = MPI_Wtime();
@@ -382,7 +382,7 @@ void Solver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutR
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
+void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
   BoutReal **d2d, ***d3d;
   int i;
@@ -510,7 +510,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
+void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -553,7 +553,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(BoutReal *udata)
+void IdaSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
   
@@ -575,7 +575,7 @@ void Solver::load_vars(BoutReal *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void Solver::load_derivs(BoutReal *udata)
+void IdaSolver::load_derivs(BoutReal *udata)
 {
   unsigned int i;
   
@@ -597,13 +597,13 @@ void Solver::load_derivs(BoutReal *udata)
     v3d[i].F_var->covariant = v3d[i].covariant;
 }
 
-void Solver::set_id(BoutReal *udata)
+void IdaSolver::set_id(BoutReal *udata)
 {
   loop_vars(udata, SET_ID);
 }
 
 // This function only called during initialisation
-int Solver::save_vars(BoutReal *udata)
+int IdaSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -634,7 +634,7 @@ int Solver::save_vars(BoutReal *udata)
   return(0);
 }
 
-void Solver::save_derivs(BoutReal *dudata)
+void IdaSolver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -675,7 +675,7 @@ static int idares(BoutReal t,
   BoutReal *dudata = NV_DATA_P(du);
   BoutReal *rdata = NV_DATA_P(rr);
   
-  Solver *s = (Solver*) user_data;
+  IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals
   s->res(t, udata, dudata, rdata);
@@ -702,7 +702,7 @@ static int ida_pre(BoutReal t, N_Vector yy,
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
   
-  Solver *s = (Solver*) user_data;
+  IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals
   s->pre(t, cj, delta, udata, rdata, zdata);
