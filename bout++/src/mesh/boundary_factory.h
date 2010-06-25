@@ -1,0 +1,46 @@
+
+class BoundaryFactory;
+
+#ifndef __BNDRY_FACTORY_H__
+#define __BNDRY_FACTORY_H__
+
+#include "boundary_op.h"
+#include "boundary_region.h"
+
+#include <string>
+#include <map>
+using std::string;
+using std::map;
+
+/// Create BoundaryOp objects on demand
+class BoundaryFactory {
+ public:
+  /// Return a pointer to the only instance
+  static BoundaryFactory* getInstance();
+  
+  /// Create a boundary operation object
+  BoundaryOp* create(const string &name, BoundaryRegion *region);
+  BoundaryOp* create(const char* name, BoundaryRegion *region);
+
+  // functions to add available boundary conditions and modifiers
+  // Supply an object, the name, and (optionally) which boundaries it can be applied to
+  void add(BoundaryOp* bop, const string &name);
+  void add(BoundaryOp* bop, const char *name);
+  void addMod(BoundaryModifier* bmod, const string &name);
+  void addMod(BoundaryModifier* bmod, const char *name);
+  
+ private:
+  BoundaryFactory() {} // Prevent instantiation of this class
+  static BoundaryFactory* instance; ///< The only instance of this class (Singleton)
+  
+  // Database of available boundary conditions and modifiers
+  map<string, BoundaryOp*> opmap;
+  map<string, BoundaryModifier*> modmap;
+
+  // Functions to look up operations and modifiers
+  BoundaryOp* findBoundaryOp(string s);
+  BoundaryModifier* findBoundaryMod(string s);  
+};
+
+#endif // __BNDRY_FACTORY_H__
+

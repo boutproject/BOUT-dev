@@ -181,6 +181,14 @@ void SWAP(dcomplex &a, dcomplex &b)
   b = tmp;
 }
 
+void SWAP(int &a, int &b)
+{
+  int tmp;
+  tmp = a;
+  a = b;
+  b = tmp;
+}
+
 bool is_pow2(int x)
 {
   return x && !((x-1) & x);

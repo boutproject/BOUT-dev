@@ -47,6 +47,7 @@ BoutReal SQ(BoutReal x);
 int ROUND(BoutReal x);
 void SWAP(BoutReal &a, BoutReal &b);
 void SWAP(dcomplex &a, dcomplex &b);
+void SWAP(int &a, int &b);
 bool is_pow2(int x); // Check if a number is a power of 2
 
 /*
