@@ -24,19 +24,19 @@
  *
  **************************************************************************/
 
-class Solver;
+class PetscSolver;
 
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-#include "petscts.h"
+#include "petsc.h"
 
 #include "field2d.h"
 #include "field3d.h"
 #include "vector2d.h"
 #include "vector3d.h"
 
-#include "generic_solver.h"
+#include "solver.h"
 
 #include <vector>
 
@@ -49,16 +49,14 @@ using std::vector;
 
 typedef int (*rhsfunc)(BoutReal);
 
-enum SOLVER_VAR_OP {LOAD_VARS, SAVE_VARS, SAVE_DERIVS};
-
 EXTERN PetscErrorCode PreStep(TS);
 EXTERN PetscErrorCode PostStep(TS);
 EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class Solver : public Solver {
+class PetscSolver : public Solver {
  public:
-  Solver();
-  ~Solver();
+  PetscSolver();
+  ~PetscSolver();
   
   int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
   

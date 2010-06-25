@@ -30,7 +30,7 @@
 #ifndef __LAPLACE_H__
 #define __LAPLACE_H__
 
-#ifdef PETSC
+#ifdef BOUT_HAS_PETSC
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 #endif
 
