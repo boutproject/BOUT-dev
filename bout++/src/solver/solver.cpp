@@ -29,19 +29,19 @@
 #include "interpolation.h"
 
 #ifdef BOUT_HAS_CVODE
-#include "cvode_solver.h"
+#include "impls/cvode/cvode.h"
 #endif
 
 #ifdef BOUT_HAS_PETSC
-#include "petsc_solver.h"
+#include "impls/petsc/petsc.h"
 #endif
 
 #ifdef BOUT_HAS_IDA
-#include "ida_solver.h"
+#include "impls/ida/ida.h"
 #endif
 
 #ifdef BOUT_HAS_PVODE
-#include "pvode_solver.h"
+#include "impls/pvode/pvode.h"
 #endif
 
 /**************************************************************************

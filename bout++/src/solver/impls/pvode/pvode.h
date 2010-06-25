@@ -5,7 +5,7 @@
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
- * Contact: Ben Dudson, bd512@york.ac.uk
+ * Contact Ben Dudson, bd512@york.ac.uk
  * 
  * This file is part of BOUT++.
  *
@@ -21,15 +21,15 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * 
  **************************************************************************/
 
-class PetscSolver;
+class PvodeSolver;
 
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
+#ifndef __PVODE_SOLVER_H__
+#define __PVODE_SOLVER_H__
 
-#include "petsc.h"
+#include <pvode/nvector.h>
 
 #include "field2d.h"
 #include "field3d.h"
@@ -38,58 +38,47 @@ class PetscSolver;
 
 #include "solver.h"
 
-#include <vector>
+#include "bout_types.h"
 
-typedef PetscScalar BoutReal;
-typedef PetscInt integer;
-typedef PetscTruth boole;
-#define OPT_SIZE 40
+#include <vector>
 
 using std::vector;
 
-typedef int (*rhsfunc)(BoutReal);
 
-EXTERN PetscErrorCode PreStep(TS);
-EXTERN PetscErrorCode PostStep(TS);
-EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
-
-class PetscSolver : public Solver {
+class PvodeSolver : public Solver {
  public:
-  PetscSolver();
-  ~PetscSolver();
+  PvodeSolver();
+  ~PvodeSolver();
+
+  void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
+  BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime);
 
   // These functions used internally (but need to be public)
-  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
-  friend PetscErrorCode PreStep(TS);
-  friend PetscErrorCode PostStep(TS);
+  void rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
+  void gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);
 
  private:
-  Vec u;
-  TS ts; 
-
-  int nout;   // The number of outputs
-  BoutReal tstep; // Time between outputs
-  MonitorFunc monitor; // Monitor function to call regularly
+  int NOUT; // Number of outputs. Specified in init, needed in run
+  BoutReal TIMESTEP; // Time between outputs
   
-  BoutReal next_time;  // When the monitor should be called next
-  bool outputnext; // true if the monitor should be called next time 
-
+  pvode::N_Vector u;
+  pvode::machEnvType machEnv;
+  void *cvode_mem;
+  
   rhsfunc func; // RHS function
-
-  // Looping over variables. This should be in generic, but better...
+  rhsfunc gfunc; // Preconditioner function
+  
+  // Loading data from BOUT++ to/from CVODE
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-
-  // Move data between 
+  
   void load_vars(BoutReal *udata);
   int save_vars(BoutReal *udata);
   void save_derivs(BoutReal *dudata);
 };
 
-
-#endif // __PETSC_SOLVER_H__
-
+#endif // __PVODE_SOLVER_H__

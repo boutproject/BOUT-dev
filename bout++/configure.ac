@@ -55,8 +55,6 @@ AC_SUBST(EXTRA_INCS)
 AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
-AC_SUBST(PVODE)
-AC_SUBST(SOLVER_SOURCE)
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FILEIO_SOURCE)
 
@@ -130,14 +128,14 @@ PETSC_ARCH = ${PETSC_ARCH}
 PETSC_DIR  = ${PETSC_DIR}
 include ${PETSC_DIR}/conf/rules
 include ${PETSC_DIR}/conf/variables
-echo_cc:
-	-@echo \${CC}
 echo_cxx:
 	-@echo \${CXX}
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
-	HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+	CXX="`make -f petscmake$$ echo_cxx`"
+	HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`	
+	HAS_CXX=`echo $CXX | grep -ic mp`
 	
 	if test "$HAS_SUNDIALS" == "0"
 	then
@@ -146,9 +144,13 @@ MFILE
 		exit
 	fi
 	
-	CC="`make -f petscmake$$ echo_cc`"
-	CXX="`make -f petscmake$$ echo_cxx`"
-	MPICC=$CC
+	if test "$HAS_CXX" == "0"
+	then
+		echo "Error - PETSc must have C++ support"
+		rm petscmake$$
+		exit
+	fi
+	
 	MPICXX=$CXX
 	
 	rm petscmake$$
@@ -177,7 +179,6 @@ then
 		EXTRA_LIBS="$EXTRA_LIBS -L$with_ida/lib"
 	fi
 	# Compile in the IDA solver
-	SOLVER_SOURCE="$SOLVER_SOURCE ida_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
 	
 	CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
@@ -196,7 +197,6 @@ then
 		EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
 	fi
 	# Compile in the CVODE solver
-	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
 	
 	CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
@@ -205,15 +205,9 @@ fi
 if test "$PETSC" != ""
 then
 	echo "Using PETSc interface"
-	SOLVER_SOURCE="$SOLVER_SOURCE petsc_solver.cpp"
 	PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
 	EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
 	EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-fi
-
-if ! ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) ) && ( test "$SOLVER_SOURCE" == "")
-then
-	AC_MSG_ERROR(No solver specified. Perhaps use --enable-download-pvode?)
 fi
 
 #############################################################
@@ -523,11 +517,6 @@ fi
 # Checks for programs
 #############################################################
 
-#AC_PROG_CXX
-#AC_PROG_CC
-#AC_PROG_CPP
-CC="gcc"
-CXX="g++"
 MKDIR="mkdir -p"
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -540,65 +529,19 @@ AC_PROG_RANLIB
 AC_DEFUN([ACX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
 
-AC_LANG_CASE([C], [
-	AC_REQUIRE([AC_PROG_CC])
-	AC_ARG_VAR(MPICC,[MPI C compiler command])
-	AC_CHECK_PROGS(MPICC, mpicc hcc mpxlc_r mpxlc mpcc cmpicc cc, $CC)
-	acx_mpi_save_CC="$CC"
-	CC="$MPICC"
-	AC_SUBST(MPICC)
-],
-[C++], [
+AC_LANG_CASE([C++], [
 	AC_REQUIRE([AC_PROG_CXX])
 	AC_ARG_VAR(MPICXX,[MPI C++ compiler command])
 	AC_CHECK_PROGS(MPICXX, mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC, $CXX)
 	acx_mpi_save_CXX="$CXX"
 	CXX="$MPICXX"
 	AC_SUBST(MPICXX)
-],
-[Fortran 77], [
-	AC_REQUIRE([AC_PROG_F77])
-	AC_ARG_VAR(MPIF77,[MPI Fortran 77 compiler command])
-	AC_CHECK_PROGS(MPIF77, mpif77 hf77 mpxlf mpf77 mpif90 mpf90 mpxlf90 mpxlf95 mpxlf_r cmpifc cmpif90c, $F77)
-	acx_mpi_save_F77="$F77"
-	F77="$MPIF77"
-	AC_SUBST(MPIF77)
-],
-[Fortran], [
-	AC_REQUIRE([AC_PROG_FC])
-	AC_ARG_VAR(MPIFC,[MPI Fortran compiler command])
-	AC_CHECK_PROGS(MPIFC, mpif90 hf90 mpxlf90 mpxlf95 mpf90 cmpifc cmpif90c, $FC)
-	acx_mpi_save_FC="$FC"
-	FC="$MPIFC"
-	AC_SUBST(MPIFC)
 ])
 
 if test x = x"$MPILIBS"; then
-	AC_LANG_CASE([C], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])],
-		[C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])],
-		[Fortran 77], [AC_MSG_CHECKING([for MPI_Init])
-			AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      call MPI_Init])],[MPILIBS=" "
-				AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)])],
-		[Fortran], [AC_MSG_CHECKING([for MPI_Init])
-			AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      call MPI_Init])],[MPILIBS=" "
-				AC_MSG_RESULT(yes)], [AC_MSG_RESULT(no)])])
+	AC_LANG_CASE([C++], [AC_CHECK_FUNC(MPI_Init, [MPILIBS=" "])])
 fi
-AC_LANG_CASE([Fortran 77], [
-	if test x = x"$MPILIBS"; then
-		AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
-	fi
-	if test x = x"$MPILIBS"; then
-		AC_CHECK_LIB(fmpich, MPI_Init, [MPILIBS="-lfmpich"])
-	fi
-],
-[Fortran], [
-	if test x = x"$MPILIBS"; then
-		AC_CHECK_LIB(fmpi, MPI_Init, [MPILIBS="-lfmpi"])
-	fi
-	if test x = x"$MPILIBS"; then
-		AC_CHECK_LIB(mpichf90, MPI_Init, [MPILIBS="-lmpichf90"])
-	fi
-])
+
 if test x = x"$MPILIBS"; then
 	AC_CHECK_LIB(mpi, MPI_Init, [MPILIBS="-lmpi"])
 fi
@@ -608,31 +551,13 @@ fi
 
 dnl We have to use AC_TRY_COMPILE and not AC_CHECK_HEADER because the
 dnl latter uses $CPP, not $CC (which may be mpicc).
-AC_LANG_CASE([C], [if test x != x"$MPILIBS"; then
+AC_LANG_CASE([C++], [if test x != x"$MPILIBS"; then
 	AC_MSG_CHECKING([for mpi.h])
 	AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-		AC_MSG_RESULT(no)])
-fi],
-[C++], [if test x != x"$MPILIBS"; then
-	AC_MSG_CHECKING([for mpi.h])
-	AC_TRY_COMPILE([#include &lt;mpi.h&gt;],[],[AC_MSG_RESULT(yes)], [MPILIBS=""
-		AC_MSG_RESULT(no)])
-fi],
-[Fortran 77], [if test x != x"$MPILIBS"; then
-	AC_MSG_CHECKING([for mpif.h])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[      include 'mpif.h'])],[AC_MSG_RESULT(yes)], [MPILIBS=""
-		AC_MSG_RESULT(no)])
-fi],
-[Fortran], [if test x != x"$MPILIBS"; then
-	AC_MSG_CHECKING([for mpif.h])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[      include 'mpif.h'])],[AC_MSG_RESULT(yes)], [MPILIBS=""
 		AC_MSG_RESULT(no)])
 fi])
 
-AC_LANG_CASE([C], [CC="$acx_mpi_save_CC"],
-	[C++], [CXX="$acx_mpi_save_CXX"],
-	[Fortran 77], [F77="$acx_mpi_save_F77"],
-	[Fortran], [FC="$acx_mpi_save_FC"])
+# AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
 
 AC_SUBST(MPILIBS)
 
@@ -646,8 +571,6 @@ else
 fi
 ])dnl ACX_MPI
 
-AC_LANG([C])
-ACX_MPI()
 AC_LANG([C++])
 ACX_MPI()
 
@@ -675,9 +598,13 @@ AC_FUNC_VPRINTF
 # Download + Build PVODE '98
 #############################################################
 
-if ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
+if ( test "$eable_download_pvode" != "no" )
 then
-
+	if ( test "$enable_download_pvode" == "")
+	then
+		enable_download_pvode=yes
+	fi
+	
 	if ! ( [[ -f externalpackages/PVODE/lib/libpvode.a ]] && [[ -f externalpackages/PVODE/lib/libpvpre.a ]] )
 	then
 	
@@ -730,8 +657,8 @@ then
 		
 		echo "* Building PVODE" | tee -a config-build.log
 		echo "*************************************************************" >> config-build.log
-		CC="$MPICXX $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
-		CC="$MPICXX $CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 		
 		echo "*************************************************************" >> config-build.log
 		echo "* Successfully built PVODE" | tee -a config-build.log
@@ -742,9 +669,9 @@ then
 	fi
 	
 	# Set the correct libraries and copy them to bout
-	cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/
+	CREATE_DIR(include/pvode)
+	cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
 	cp externalpackages/PVODE/lib/*.a lib/
-	SOLVER_SOURCE="$SOLVER_SOURCE pvode_solver.cpp"
 	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
 	CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
 fi

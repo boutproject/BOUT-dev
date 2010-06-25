@@ -23,7 +23,8 @@
  *
  **************************************************************************/
 
-#include "petsc_solver.h"
+#ifdef BOUT_HAS_PETSC
+#include "petsc.h"
 
 #include "globals.h"
 
@@ -625,3 +626,5 @@ PetscErrorCode PostStep(TS ts)
 }
 
 #undef __FUNCT__  
+
+#endif

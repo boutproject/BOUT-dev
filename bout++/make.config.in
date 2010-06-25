@@ -44,9 +44,6 @@ EXTRA_LIBS		= @EXTRA_LIBS@
 
 @PETSC@
 
-PVODE					= @PVODE@
-
-SOLVER_SOURCE	= @SOLVER_SOURCE@
 PRECON_SOURCE	= @PRECON_SOURCE@
 FILEIO_SOURCE	= @FILEIO_SOURCE@
 
@@ -68,12 +65,9 @@ CHANGED				= $(shell find $(BOUT_TOP)/src -type f -name \*.cpp -or -name \*.h -n
 
 # Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
 # This will set a default if no TARGET is provided
-
 ifndef TARGET
 TARGET				= $(SOURCEC:%.cpp=%)
 endif
-
-@PETSC@
 
 ####################################
 # Definining stuff for recursive make
@@ -180,7 +174,7 @@ endif
 ####################################
 
 clean::
-	@-$(RM) $(OBJ) $(DEPS) $(TARGET)
+	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 
 distclean: clean
@@ -188,7 +182,7 @@ distclean: clean
 	@$(RM) -rf $(BOUT_TOP)/include
 	@echo lib cleaned
 	@$(RM) -rf $(BOUT_TOP)/lib
-	-@$(RM) -rf $(BOUT_TOP)/externalpackages $(BOUT_TOP)/autom4te.cache
+	-@$(RM) -rf $(BOUT_TOP)/externalpackages $(BOUT_TOP)/autom4te.cache make.config
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
@@ -197,11 +191,11 @@ distclean: clean
 # Automatic re-running of configure if the configure.ac file has changed
 ####################################
 
-$(BOUT_TOP)/configure: $(BOUT_TOP)/configure.ac
-	@cd $(BOUT_TOP) && autoconf
-
-$(BOUT_TOP)/make.config: $(BOUT_TOP)/make.config.in $(BOUT_TOP)/config.status
-	@cd $(BOUT_TOP); ./config.status > /dev/null
-	
-$(BOUT_TOP)/config.status: $(BOUT_TOP)/configure
-	@cd $(BOUT_TOP) && ./config.status --recheck
+# $(BOUT_TOP)/configure: $(BOUT_TOP)/configure.ac
+# 	@cd $(BOUT_TOP) && autoconf
+# 
+# $(BOUT_TOP)/make.config: $(BOUT_TOP)/make.config.in $(BOUT_TOP)/config.status
+# 	@cd $(BOUT_TOP); ./config.status > /dev/null
+# 	
+# $(BOUT_TOP)/config.status: $(BOUT_TOP)/configure
+# 	@cd $(BOUT_TOP) && ./config.status --recheck

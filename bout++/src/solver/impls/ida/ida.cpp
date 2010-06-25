@@ -1,6 +1,8 @@
 /**************************************************************************
- * Interface to SUNDIALS CVODE
+ * Interface to SUNDIALS IDA
  * 
+ * IdaSolver for DAE systems (so can handle constraints)
+ *
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
@@ -25,72 +27,79 @@
  *
  **************************************************************************/
 
-#include "cvode_solver.h"
+#ifdef BOUT_HAS_IDA
+#include "ida.h"
 
 #include "globals.h"
 #include "boundary.h"
 #include "interpolation.h" // Cell interpolation
 
-#include <cvode/cvode.h>
+#include <ida/ida.h>
+#include <ida/ida_spgmr.h>
+#include <ida/ida_bbdpre.h>
 #include <nvector/nvector_parallel.h>
+#include <sundials/sundials_dense.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
-static int cvode_bbd_rhs(int Nlocal, BoutReal t, N_Vector u, N_Vector du, 
-			 void *user_data);
+static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
+static int ida_bbd_res(int Nlocal, BoutReal t, 
+		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
+static int ida_pre(BoutReal t, N_Vector yy, 	 
+		   N_Vector yp, N_Vector rr, 	 
+		   N_Vector rvec, N_Vector zvec, 	 
+		   BoutReal cj, BoutReal delta, 
+		   void *user_data, N_Vector tmp);
 
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp);
-
-static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp);
-
-CvodeSolver::CvodeSolver() : Solver()
+IdaSolver::IdaSolver() : Solver()
 {
-  has_constraints = false; ///< This solver doesn't have constraints
+  has_constraints = true; ///< This solver has constraints
   
   prefunc = NULL;
-  jacfunc = NULL;
 }
 
-CvodeSolver::~CvodeSolver()
+IdaSolver::~IdaSolver()
 {
-  
+  if(initialised) {
+    // Free IDA memory
+    
+    
+    
+  }
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
+int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
+
 #ifdef CHECK
-  int msg_point = msg_stack.push("Initialising CVODE solver");
+  int msg_point = msg_stack.push("Initialising IDA solver");
 #endif
 
   /// Call the generic initialisation first
   if(Solver::init(f, argc, argv, restarting, nout, tstep))
     return 1;
-
+  
   // Save nout and tstep for use in run
   NOUT = nout;
   TIMESTEP = tstep;
-
-  output.write("Initialising SUNDIALS' CVODE solver\n");
-
+  
+  output.write("Initialising IDA solver\n");
+  
   // Set the rhs solver function
   func = f;
 
-  // Calculate number of variables (in generic_solver)
+  // Calculate number of variables
+  int n2d = f2d.size();
+  int n3d = f3d.size();
   int local_N = getLocalN();
-  
+
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
@@ -99,124 +108,92 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, local_N);
+	       n3d, n2d, neq, local_N);
 
   //.allocate memory
   
   if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+  if((duvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+  if((id = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec
   if(save_vars(NV_DATA_P(uvec)))
     bout_error("\tERROR: Initial variable value not set\n");
   
+  // Get the starting time derivative
+  (*func)(simtime);
+  
+  // Put the time-derivatives into duvec
+  save_derivs(NV_DATA_P(duvec));
+  
+  // Set the equation type in id(Differential or Algebraic. This is optional)
+  set_id(NV_DATA_P(id));
+  
   /// Get options
+int MXSUB = mesh->xend - mesh->xstart + 1;
 
   BoutReal abstol, reltol;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
-  bool use_precon, use_jacobian;
-  BoutReal max_timestep;
-  bool adams_moulton, func_iter; // Time-integration method
-	int MXSUB = mesh->xend - mesh->xstart + 1;
-
+  bool use_precon;
+  bool correct_start;
   options.setSection("solver");
-  options.get("mudq", mudq, n3Dvars()*(MXSUB+2));
-  options.get("mldq", mldq, n3Dvars()*(MXSUB+2));
-  options.get("mukeep", mukeep, n3Dvars()+n2Dvars());
-  options.get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
+  OPTION(mudq, n3d*(MXSUB+2));
+  OPTION(mldq, n3d*(MXSUB+2));
+  OPTION(mukeep, n3d);
+  OPTION(mlkeep, n3d);
   options.get("ATOL", abstol, 1.0e-12);
   options.get("RTOL", reltol, 1.0e-5);
-  options.get("maxl", maxl, 5);
-  options.get("use_precon", use_precon, false);
-  options.get("use_jacobian", use_jacobian, false);
-  options.get("max_timestep", max_timestep, -1.);
-  
+  OPTION(maxl, 6*n3d);
+  OPTION(use_precon, false);
+  OPTION(correct_start, true);
   int mxsteps; // Maximum number of steps to take between outputs
   options.get("pvode_mxstep", mxsteps, 500);
-  
-  options.get("adams_moulton", adams_moulton, false);
-  
-  int lmm = CV_BDF;
-  if(adams_moulton) {
-    // By default use functional iteration for Adams-Moulton
-    lmm = CV_ADAMS;
-    output.write("\tUsing Adams-Moulton implicit multistep method\n");
-    options.get("func_iter", func_iter, true); 
-  }else {
-    output.write("\tUsing BDF method\n");
-    // Use Newton iteration for BDF
-    options.get("func_iter", func_iter, false); 
-  }
-  
-  int iter = CV_NEWTON;
-  if(func_iter)
-    iter = CV_FUNCTIONAL;
 
-  // Call CVodeCreate
-  if((cvode_mem = CVodeCreate(lmm, iter)) == NULL)
-    bout_error("ERROR: CVodeCreate failed\n");
-  
-  if( CVodeSetUserData(cvode_mem, this) < 0 ) // For callbacks, need pointer to solver object
-    bout_error("ERROR: CVodeSetUserData failed\n");
+  // Call IDACreate and IDAMalloc to initialise
 
-  if( CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0 )
-    bout_error("ERROR: CVodeInit failed\n");
+  if((idamem = IDACreate()) == NULL)
+    bout_error("ERROR: IDACreate failed\n");
   
-  if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
-    bout_error("ERROR: CVodeSStolerances failed\n");
+  if( IDASetUserData(idamem, this) < 0 ) // For callbacks, need pointer to solver object
+    bout_error("ERROR: IDASetUserData failed\n");
 
-  CVodeSetMaxNumSteps(cvode_mem, mxsteps);
+  if( IDASetId(idamem, id) < 0)
+    bout_error("ERROR: IDASetID failed\n");
 
-  if(max_timestep > 0.0) {
-    // Setting a maximum timestep
-    CVodeSetMaxStep(cvode_mem, max_timestep);
-  }
+  if( IDAInit(idamem, idares, simtime, uvec, duvec) < 0 )
+    bout_error("ERROR: IDAInit failed\n");
   
-  /// Newton method can include Preconditioners and Jacobian function
-  if(!func_iter) {
-    output.write("\tUsing Newton iteration\n");
-    /// Set Preconditioner
-    if(use_precon) {
-      
-      if( CVSpgmr(cvode_mem, PREC_LEFT, maxl) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpgmr failed\n");
-      
-      if(prefunc == NULL) {
-	output.write("\tUsing BBD preconditioner\n");
-	
-	if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
-			  mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
-	  bout_error("ERROR: CVBBDPrecInit failed\n");
-	
-      }else {
-	output.write("\tUsing user-supplied preconditioner\n");
-	
-	if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
-	  bout_error("ERROR: CVSpilsSetPreconditioner failed\n");
-      }
+  if( IDASStolerances(idamem, reltol, abstol) < 0 )
+    bout_error("ERROR: IDASStolerances failed\n");
+
+  IDASetMaxNumSteps(idamem, mxsteps);
+
+  // Call IDASpgmr to specify the IDA linear solver IDASPGMR
+  if( IDASpgmr(idamem, maxl) )
+    bout_error("ERROR: IDASpgmr failed\n");
+
+  if(use_precon) {
+    if(prefunc == NULL) {
+      output.write("\tUsing BBD preconditioner\n");
+      if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
+			 ZERO, ida_bbd_res, NULL) )
+	bout_error("ERROR: IDABBDPrecInit failed\n");
     }else {
-      // Not using preconditioning
-      
-      output.write("\tNo preconditioning\n");
-      
-      if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpgmr failed\n");
+      output.write("\tUsing user-supplied preconditioner\n");
+      if( IDASpilsSetPreconditioner(idamem, NULL, ida_pre) )
+	bout_error("ERROR: IDASpilsSetPreconditioner failed\n");
     }
-    
-    /// Set Jacobian-vector multiplication function
-    
-    if((use_jacobian) && (jacfunc != NULL)) {
-      output.write("\tUsing user-supplied Jacobian function\n");
-      
-      if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpilsSetJacTimesVecFn failed\n");
-    
-    }else 
-      output.write("\tUsing difference quotient approximation for Jacobian\n");
-  }else {
-    output.write("\tUsing Functional iteration\n");
+  }
+
+  // Call IDACalcIC (with default options) to correct the initial values
+  if(correct_start) {
+    if( IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6) )
+      bout_error("ERROR: IDACalcIC failed\n");
   }
 
 #ifdef CHECK
@@ -226,19 +203,18 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   return(0);
 }
 
-
 /**************************************************************************
  * Run - Advance time
  **************************************************************************/
 
-int CvodeSolver::run(MonitorFunc monitor)
+int IdaSolver::run(MonitorFunc monitor)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("CvodeSolver::run()");
+  int msg_point = msg_stack.push("IDA IdaSolver::run()");
 #endif
   
   if(!initialised)
-    bout_error("CvodeSolver not initialised\n");
+    bout_error("IdaSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
     
@@ -252,11 +228,11 @@ int CvodeSolver::run(MonitorFunc monitor)
       output.write("Timestep failed. Aborting\n");
 
       // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+      restart.write("%s/BOUT.failed.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
 
-      bout_error("SUNDIALS timestep failed\n");
+      bout_error("SUNDIALS IDA timestep failed\n");
     }
-
+    
     /// Write the restart file
     restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
     
@@ -284,13 +260,14 @@ int CvodeSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
+BoutReal IdaSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 {
+  if(!initialised)
+    bout_error("ERROR: Running IDA solver without initialisation\n");
+
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
-
-  MPI_Barrier(MPI_COMM_WORLD);
 
   rhs_wtime = 0.0;
   rhs_ncalls = 0;
@@ -298,7 +275,7 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
 
-  int flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
+  int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
   
   ncalls = rhs_ncalls;
   rhstime = rhs_wtime;
@@ -309,11 +286,11 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   // Call rhs function to get extra variables at this time
   BoutReal tstart = MPI_Wtime();
   (*func)(simtime);
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
+  rhstime += MPI_Wtime() - tstart;
+  ncalls++;
   
   if(flag < 0) {
-    output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
+    output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
   
@@ -325,13 +302,13 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 }
 
 /**************************************************************************
- * RHS function du = F(t, u)
+ * Residual function F(t, u, du)
  **************************************************************************/
 
-void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
+void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
 #endif
 
   BoutReal tstart = MPI_Wtime();
@@ -342,8 +319,16 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
   // Call RHS function
   (*func)(t);
   
-  // Save derivatives to dudata
-  save_derivs(dudata);
+  // Save derivatives to rdata (residual)
+  save_derivs(rdata);
+  
+  // If a differential equation, subtract dudata
+  int N = NV_LOCLENGTH_P(id);
+  BoutReal *idd = NV_DATA_P(id);
+  for(int i=0;i<N;i++) {
+    if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
+      rdata[i] -= dudata[i];
+  }
   
   rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
@@ -357,15 +342,15 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
  * Preconditioner function
  **************************************************************************/
 
-void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
+void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
 {
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running preconditioner: CvodeSolver::pre(%e)", t);
+  int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
 #endif
 
   BoutReal tstart = MPI_Wtime();
 
-  int N = NV_LOCLENGTH_P(uvec);
+  int N = NV_LOCLENGTH_P(id);
   
   if(prefunc == NULL) {
     // Identity (but should never happen)
@@ -380,7 +365,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
   
-  (*prefunc)(t, gamma, delta);
+  (*prefunc)(t, cj, delta);
 
   // Save the solution from vars
   save_vars(zvec);
@@ -394,41 +379,11 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 }
 
 /**************************************************************************
- * Jacobian-vector multiplication function
- **************************************************************************/
-
-void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata)
-{
-#ifdef CHECK
-  int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
-#endif
-  
-  if(jacfunc == NULL)
-    bout_error("ERROR: No jacobian function supplied!\n");
-  
-  // Load state from ydate
-  load_vars(ydata);
-  
-  // Load vector to be multiplied into F_vars
-  load_derivs(vdata);
-  
-  // Call function
-  (*jacfunc)(t);
-
-  // Save Jv from vars
-  save_vars(Jvdata);
-
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-}
-
-/**************************************************************************
  * PRIVATE FUNCTIONS
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void CvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
+void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
   BoutReal **d2d, ***d3d;
   int i;
@@ -482,6 +437,34 @@ void CvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_V
     
     break;
   }
+  case SET_ID: {
+    /// Set the type of equation (Differential or Algebraic)
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      if(f2d[i].constraint) {
+	udata[p] = ZERO;
+      }else {
+	udata[p] = ONE;
+      }
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+	if(f3d[i].constraint) {
+	  udata[p] = ZERO;
+	}else {
+	  udata[p] = ONE;
+	}
+	p++;
+      }
+    }
+    
+    break;
+  }
   case SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
@@ -528,7 +511,7 @@ void CvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_V
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
+void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -549,11 +532,6 @@ void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
       loop_vars_op(xi->ind, jy, udata, p, op);
   }
   delete xi;
-
-  // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
   
   // Upper Y boundary condition
   xi = mesh->iterateBndryUpperY();
@@ -563,6 +541,11 @@ void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
   delete xi;
 
+  // Bulk of points
+  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
+      loop_vars_op(jx, jy, udata, p, op);
+
   // Outer X boundary
   if(mesh->lastX()) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
@@ -571,7 +554,7 @@ void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 }
 
-void CvodeSolver::load_vars(BoutReal *udata)
+void IdaSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
   
@@ -593,7 +576,7 @@ void CvodeSolver::load_vars(BoutReal *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void CvodeSolver::load_derivs(BoutReal *udata)
+void IdaSolver::load_derivs(BoutReal *udata)
 {
   unsigned int i;
   
@@ -615,8 +598,13 @@ void CvodeSolver::load_derivs(BoutReal *udata)
     v3d[i].F_var->covariant = v3d[i].covariant;
 }
 
+void IdaSolver::set_id(BoutReal *udata)
+{
+  loop_vars(udata, SET_ID);
+}
+
 // This function only called during initialisation
-int CvodeSolver::save_vars(BoutReal *udata)
+int IdaSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -647,7 +635,7 @@ int CvodeSolver::save_vars(BoutReal *udata)
   return(0);
 }
 
-void CvodeSolver::save_derivs(BoutReal *dudata)
+void IdaSolver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -677,62 +665,50 @@ void CvodeSolver::save_derivs(BoutReal *dudata)
 }
 
 /**************************************************************************
- * CVODE RHS functions
+ * IDA res function
  **************************************************************************/
 
-static int cvode_rhs(BoutReal t, 
-		     N_Vector u, N_Vector du, 
-		     void *user_data)
+static int idares(BoutReal t, 
+                  N_Vector u, N_Vector du, N_Vector rr, 
+                  void *user_data)
 {
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
+  BoutReal *rdata = NV_DATA_P(rr);
   
-  CvodeSolver *s = (CvodeSolver*) user_data;
+  IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals
-  s->rhs(t, udata, dudata);
+  s->res(t, udata, dudata, rdata);
 
   return 0;
 }
 
-/// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(int Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
+/// Residual function for BBD preconditioner
+static int ida_bbd_res(int Nlocal, BoutReal t, 
+		       N_Vector u, N_Vector du, N_Vector rr, 
+		       void *user_data)
 {
-  return cvode_rhs(t, u, du, user_data);
+  return idares(t, u, du, rr, user_data);
 }
 
-/// Preconditioner function
-static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
+// Preconditioner function
+static int ida_pre(BoutReal t, N_Vector yy, 	 
+		   N_Vector yp, N_Vector rr, 	 
+		   N_Vector rvec, N_Vector zvec, 	 
+		   BoutReal cj, BoutReal delta, 
+		   void *user_data, N_Vector tmp)
 {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
   
-  CvodeSolver *s = (CvodeSolver*) user_data;
+  IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals
-  s->pre(t, gamma, delta, udata, rdata, zdata);
+  s->pre(t, cj, delta, udata, rdata, zdata);
 
   return 0;
 }
 
-/// Jacobian-vector multiplication function
-static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
-{
-  BoutReal *ydata = NV_DATA_P(y);   ///< System state
-  BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
-  BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
-  
-  CvodeSolver *s = (CvodeSolver*) user_data;
-  
-  s->jac(t, ydata, vdata, Jvdata);
-  
-  return 0;
-}
+#endif

@@ -23,21 +23,22 @@
  * 
  **************************************************************************/
 
-#include "pvode_solver.h"
+#ifdef BOUT_HAS_PVODE
+#include "pvode.h"
 
 #include "globals.h"
 
-#include "mpi.h"       // MPI data types and prototypes
-#include "nvector.h"
-#include "cvode.h"     // main CVODE header file
-#include "iterativ.h"  // contains the enum for types of preconditioning
-#include "cvspgmr.h"   // use CVSPGMR linear solver each internal step
-#include "pvbbdpre.h"  // band preconditioner function prototypes
+#include <mpi.h>             // MPI data types and prototypes
+#include <pvode/nvector.h>
+#include <pvode/cvode.h>     // main CVODE header file
+#include <pvode/iterativ.h>  // contains the enum for types of preconditioning
+#include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
+#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
 
 #include <stdlib.h>
 
 #include "boundary.h"
-#include "interpolation.h" // Cell interpolation
+#include "interpolation.h"   // Cell interpolation
 
 using namespace pvode;
 
@@ -617,3 +618,5 @@ void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
 {
   // doesn't do anything at the moment
 }
+
+#endif
