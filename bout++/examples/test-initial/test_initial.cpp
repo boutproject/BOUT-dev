@@ -106,7 +106,7 @@ int physics_init(bool restarting)
   return 1;
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Doesn't do anything
   return 1;

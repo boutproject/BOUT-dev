@@ -27,9 +27,8 @@
 
 const char DEFAULT_DIR[] = "data";
 static char DEFAULT_GRID[] = "data/bout.grd.pdb";
-#ifdef PETSC
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-#endif
+
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -66,6 +65,10 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include <list>
 using std::string;
 using std::list;
+
+#ifdef BOUT_HAS_PETSC
+#include <petsc.h>
+#endif
 
 #ifdef SIGHANDLE
 #include <signal.h>
@@ -126,7 +129,7 @@ int bout_init(int argc, char **argv)
   }
   
   /// Start MPI
-#ifdef PETSC
+#ifdef BOUT_HAS_PETSC
   PetscInitialize(&argc,&argv,"../petscopt",help);
 #else
   MPI_Init(&argc,&argv);
@@ -290,12 +293,8 @@ int bout_init(int argc, char **argv)
 #endif
 
   /// Create the solver
-  SolverType type = SOLVERPVODE;
-  options.setSection(NULL);
-  const char* asdf = options.getString("solver_type");
-  if(asdf) type = asdf;
-  output.write("TESETASDF: %s\taasdf\t%s\n", asdf, type);
-  solver = Solver::Create(type);
+
+  solver = Solver::Create();
 
   if(physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");
@@ -381,7 +380,7 @@ int bout_finish()
   Field3D::cleanup();
   
   // close MPI
-#ifdef PETSC
+#ifdef BOUT_HAS_PETSC
   PetscFinalize();
 #else
   MPI_Finalize();

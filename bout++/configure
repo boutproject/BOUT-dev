@@ -2497,37 +2497,39 @@ then
 	EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
 
 	CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
-else
-	if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
-	then
-		if test "$with_cvode" = "yes"
-		then
-			# No path specified
-			echo "Using SUNDIALS' CVODE solver"
-		else
-			# Specified with path
-			echo "Using SUNDIALS' CVODE solver, path $with_cvode"
-			EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
-			EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
-		fi
-		# Compile in the CVODE solver
-		SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
-		EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
+fi
 
-		CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
+then
+	if test "$with_cvode" = "yes"
+	then
+		# No path specified
+		echo "Using SUNDIALS' CVODE solver"
 	else
-		if test "$PETSC" != ""
-		then
-			echo "Using PETSc interface"
-			SOLVER_SOURCE="$SOLVER_SOURCE petsc_solver.cpp"
-			PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
-			EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
-			EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-		elif ! ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) )
-		then
-			as_fn_error "No solver specified. Perhaps use --enable-download-pvode?" "$LINENO" 5
-		fi
+		# Specified with path
+		echo "Using SUNDIALS' CVODE solver, path $with_cvode"
+		EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
+		EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
 	fi
+	# Compile in the CVODE solver
+	SOLVER_SOURCE="$SOLVER_SOURCE cvode_solver.cpp"
+	EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
+
+	CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+fi
+
+if test "$PETSC" != ""
+then
+	echo "Using PETSc interface"
+	SOLVER_SOURCE="$SOLVER_SOURCE petsc_solver.cpp"
+	PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
+	EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
+	EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+fi
+
+if ! ( ( test "$enable_download_pvode" != "" ) && ( test "$enable_download_pvode" != "no" ) ) && ( test "$SOLVER_SOURCE" == "")
+then
+	as_fn_error "No solver specified. Perhaps use --enable-download-pvode?" "$LINENO" 5
 fi
 
 #############################################################

@@ -13,7 +13,7 @@ int physics_init(bool restarting)
 {
   // Variables to be read and written
   int ivar, ivar_evol;
-  real rvar, rvar_evol; 
+  BoutReal rvar, rvar_evol; 
   Field2D f2d;
   Field3D f3d;
   Vector2D v2d;
@@ -62,7 +62,7 @@ int physics_init(bool restarting)
   return 1;
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Doesn't do anything
   return 1;

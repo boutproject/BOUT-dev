@@ -35,12 +35,12 @@
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 
-Solver::Solver()
+PetscSolver::PetscSolver()
 {
   has_constraints = false; // No constraints
 }
 
-Solver::~Solver()
+PetscSolver::~PetscSolver()
 {
   if(initialised) {
     // Free CVODE memory
@@ -56,7 +56,7 @@ Solver::~Solver()
  * Initialise
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
+int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
   int neq;
   int mudq, mldq, mukeep, mlkeep;
@@ -210,8 +210,8 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, Bo
       MatSetFromOptions(J);
 
       // Get nonzero pattern of J - color_none !!!
-      MatSeqAIJSetPBoutReallocation(J,10,PETSC_NULL);
-      MatMPIAIJSetPBoutReallocation(J,10,PETSC_NULL,10,PETSC_NULL);
+      MatSeqAIJSetPreallocation(J,10,PETSC_NULL);
+      MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);
 
       PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);
       if (J_slowfd){ // create Jacobian matrix by slow fd
@@ -284,7 +284,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, Bo
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode Solver::run(MonitorFunc mon)
+PetscErrorCode PetscSolver::run(MonitorFunc mon)
 {
   integer steps;
   BoutReal ftime;
@@ -302,14 +302,14 @@ PetscErrorCode Solver::run(MonitorFunc mon)
  * RHS function
  **************************************************************************/
 
-PetscErrorCode Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
+PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: Solver::rhs(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: PetscSolver::rhs(%e)", t);
 #endif
 
   BoutReal tstart = MPI_Wtime();
@@ -374,7 +374,7 @@ PetscErrorCode Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
+void PetscSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
   BoutReal **d2d, ***d3d;
   unsigned int i;
@@ -451,7 +451,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
+void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -494,7 +494,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 }
 
-void Solver::load_vars(BoutReal *udata)
+void PetscSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -517,7 +517,7 @@ void Solver::load_vars(BoutReal *udata)
 }
 
 // This function only called during initialisation
-int Solver::save_vars(BoutReal *udata)
+int PetscSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -548,7 +548,7 @@ int Solver::save_vars(BoutReal *udata)
   return(0);
 }
 
-void Solver::save_derivs(BoutReal *dudata)
+void PetscSolver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -581,21 +581,21 @@ void Solver::save_derivs(BoutReal *dudata)
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
 #undef __FUNCT__  
-#define __FUNCT__ "Solver::solver_f"
+#define __FUNCT__ "PetscSolver::solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
-  Solver *s;
+  PetscSolver *s;
   
   PetscFunctionBegin;
-  s = (Solver*) f_data;
+  s = (PetscSolver*) f_data;
   PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
 }
 
 #undef __FUNCT__  
-#define __FUNCT__ "Solver::PreUpdate"
+#define __FUNCT__ "PetscSolver::PreUpdate"
 PetscErrorCode PreStep(TS ts) 
 {
-  Solver *s;
+  PetscSolver *s;
 	PetscReal t, dt;
   PetscErrorCode ierr;
   
@@ -618,7 +618,7 @@ PetscErrorCode PreStep(TS ts)
 }
 
 #undef __FUNCT__  
-#define __FUNCT__ "Solver::PostUpdate"
+#define __FUNCT__ "PetscSolver::PostUpdate"
 PetscErrorCode PostStep(TS ts) 
 {
   PetscFunctionReturn(0);

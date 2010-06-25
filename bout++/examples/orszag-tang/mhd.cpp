@@ -12,9 +12,9 @@ Vector3D v, B;  // velocity, magnetic field
 Field3D divB; // Divergence of B (for monitoring)
 
 // parameters
-real gamma;
+BoutReal gamma;
 bool include_viscos;
-real viscos;
+BoutReal viscos;
 
 int physics_init(bool restarting)
 {
@@ -59,7 +59,7 @@ int physics_init(bool restarting)
     B += B0;
     
     // Added this for modifying the Orszag-Tang vortex problem
-    real v_fact;
+    BoutReal v_fact;
     options.get("v_fact",         v_fact,         1.0);
     v *= v_fact;
   }
@@ -67,7 +67,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Communicate variables
   mesh->communicate(v, B, p, rho);

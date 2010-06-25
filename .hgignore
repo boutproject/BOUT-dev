@@ -1,0 +1,22 @@
+syntax:glob
+*.o
+*.a
+*.log
+*.status
+*.config
+*.d
+*.dmp.*
+*.log.*
+*.restart.*
+.tmtags
+
+.DS_Store
+
+autom4te.cache/
+include/
+lib/
+externalpackages/
+
+#example runs
+gas_compress
+2fluid

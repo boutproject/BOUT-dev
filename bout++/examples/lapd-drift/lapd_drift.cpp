@@ -37,20 +37,20 @@ Field2D pei0, pe0;
 Field2D Rxy, Bpxy, Btxy, hthe;
 
 // parameters
-real Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
-real lambda_ei, lambda_ii;
-real nu_hat, mui_hat, wci, nueix, nuiix;
-real beta_p;
-real nuIonNeutral; // Ion-neutral collision rate (normalised by wci)
+BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
+BoutReal lambda_ei, lambda_ii;
+BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
+BoutReal beta_p;
+BoutReal nuIonNeutral; // Ion-neutral collision rate (normalised by wci)
 
 // settings
 bool estatic, ZeroElMass; // Switch for electrostatic operation (true = no Apar)
 
 bool bout_exb;  // Use BOUT-06 expression for ExB velocity
 
-real zeff, nu_perp;
+BoutReal zeff, nu_perp;
 bool evolve_rho,evolve_ni, evolve_ajpar;
-real ShearFactor;
+BoutReal ShearFactor;
 
 bool nonlinear;
 
@@ -64,8 +64,8 @@ bool relax_flat_bndry; // If true, relax the boundaries flat
 bool niprofile;
 
 bool evolve_source; // If true, evolve a source/sink profile
-real source_response;  // Initial source response (inverse timescale) 
-real source_converge;  // Timescale for convergence
+BoutReal source_response;  // Initial source response (inverse timescale) 
+BoutReal source_converge;  // Timescale for convergence
 Field2D Sn; // Density source (inverse timescale)
 bool input_source; // Read Sn from the input file
 
@@ -193,7 +193,7 @@ int physics_init(bool restarting)
 
   /************** PRINT Z INFORMATION ******************/
   
-  real hthe0;
+  BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
@@ -327,7 +327,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p);
 const Field3D vE_Grad(const Field3D &f, const Field2D &p);
 const Field3D vE_Grad(const Field3D &f, const Field3D &p);
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Invert vorticity to get phi
   
@@ -368,7 +368,7 @@ int physics_run(real t)
     Tet = Te0; // + Te.DC();
   }
 
-  real source_alpha;
+  BoutReal source_alpha;
   
   // Calculate source response
   if(source_converge > 0.) {

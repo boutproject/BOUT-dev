@@ -38,16 +38,16 @@ Field2D pei0, pe0;
 Field2D Rxy, Bpxy, Btxy, hthe;
 
 // parameters
-real Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
-real lambda_ei, lambda_ii;
-real nu_hat, mui_hat, wci, nueix, nuiix;
-real beta_p;
+BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
+BoutReal lambda_ei, lambda_ii;
+BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
+BoutReal beta_p;
 
 // settings
 bool estatic, ZeroElMass; // Switch for electrostatic operation (true = no Apar)
-real zeff, nu_perp;
+BoutReal zeff, nu_perp;
 bool evolve_rho, evolve_te, evolve_ni, evolve_ajpar, evolve_vi, evolve_ti;
-real ShearFactor;
+BoutReal ShearFactor;
 
 bool curv_upwind; // Use upwinding methods for curvature terms
 
@@ -61,7 +61,7 @@ bool OhmPe;     // Include the Pe term in Ohm's law
 int bkgd;   // Profile options for coefficients (same options as BOUT-06)
 int iTe_dc; // Profile evolution options
 
-real lambda; // Boundary condition relaxation rate (negative)
+BoutReal lambda; // Boundary condition relaxation rate (negative)
 
 bool stagger; // Use CtoL and LtoC for parallel derivs
 
@@ -287,7 +287,7 @@ int physics_init(bool restarting)
   ////////////////////////////////////////////////////////
   // PRINT Z INFORMATION
   
-  real hthe0;
+  BoutReal hthe0;
   if(mesh->get(hthe0, "hthe0") == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
@@ -436,7 +436,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p);
 const Field3D vE_Grad(const Field3D &f, const Field2D &p);
 const Field3D vE_Grad(const Field3D &f, const Field3D &p);
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   ////////////////////////////////////////////////////////
   // Invert vorticity to get phi
@@ -548,7 +548,7 @@ int physics_run(real t)
       for(int jx=0;jx<mesh->ngx;jx++)
 	for(int jy=0;jy<mesh->ngy;jy++)
 	  for(int jz=0;jz<mesh->ngz;jz++) {
-	    real dNi_dpar, dPhi_dpar;
+	    BoutReal dNi_dpar, dPhi_dpar;
 	  
 	    // parallel derivs at left guard point
 	    if (jy<mesh->ystart){
@@ -563,7 +563,7 @@ int physics_run(real t)
 	      dPhi_dpar = 0.5*phi[jx][jy+1][jz] - 0.5*phi[jx][jy-1][jz];
 	    }
 	    
-	    real c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/mesh->dy[jx][jy];
+	    BoutReal c0=((Bpxy[jx][jy]/mesh->Bxy[jx][jy])/hthe[jx][jy])/mesh->dy[jx][jy];
 	    dNi_dpar = dNi_dpar*c0;
 	    dPhi_dpar = dPhi_dpar*c0;
 	    

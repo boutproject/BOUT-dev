@@ -1,7 +1,7 @@
 /**************************************************************************
  * Interface to SUNDIALS IDA
  * 
- * Solver for DAE systems (so can handle constraints)
+ * IdaSolver for DAE systems (so can handle constraints)
  *
  * NOTE: Only one solver can currently be compiled in
  *
@@ -27,7 +27,7 @@
  *
  **************************************************************************/
 
-class Solver;
+class IdaSolver;
 
 #ifndef __IDA_SOLVER_H__
 #define __IDA_SOLVER_H__
@@ -38,7 +38,7 @@ class Solver;
 #include "vector2d.h"
 #include "vector3d.h"
 
-#include "generic_solver.h"
+#include "solver.h"
 
 // NOTE: MPI must be included before SUNDIALS, otherwise complains
 #include "mpi.h"
@@ -48,12 +48,10 @@ class Solver;
 #include <vector>
 using std::vector;
 
-enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
-
-class Solver : public Solver {
+class IdaSolver : public Solver {
  public:
-  Solver();
-  ~Solver();
+  IdaSolver();
+  ~IdaSolver();
 
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   

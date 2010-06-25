@@ -11,8 +11,8 @@ Field3D N, P; // Density, Pressure
 Vector3D V;   // velocity
 
 // parameters
-real gamma_ratio;   // Ratio of specific heats
-real nu;      // Viscosity
+BoutReal gamma_ratio;   // Ratio of specific heats
+BoutReal nu;      // Viscosity
 bool include_viscosity;
 bool sub_initial;
 
@@ -24,7 +24,7 @@ Vector2D g; // Acceleration
 
 int physics_init(bool restarting)
 {
-  real v0_multiply;
+  BoutReal v0_multiply;
 
   // Read initial conditions
 
@@ -71,7 +71,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   // Communicate variables
   mesh->communicate(N,P,V);

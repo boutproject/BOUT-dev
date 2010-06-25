@@ -537,20 +537,56 @@ int Solver::getLocalN()
   return local_N;
 }
 
-Solver* Solver::Create(SolverType &type)
+Solver* Solver::Create()
 {
-  output << "TYPE: " << type << endl;
+  SolverType type = NULL;
   
-  if(!strcasecmp(type, SOLVERCVODE)) {
-    output << "ASDFALSDFKJHASLKDFJALSDKFJALSKDJFALSDKFJ" << endl;
-    return new CvodeSolver;
-  } else if(!strcasecmp(type, SOLVERPVODE)) {
-    return new PvodeSolver;
-  } else if(!strcasecmp(type, SOLVERIDA)) {
-/*    return new IdaSolver;*/
-  } else if(!strcasecmp(type, SOLVERPETSC)) {
-/*    return new PetscSolver;*/
+  options.setSection(NULL);
+  const char* solver_option = options.getString("solver_type");
+  
+  if(solver_option) type = solver_option;
+  else {
+    #ifdef BOUT_HAS_PVODE
+      type = SOLVERPVODE;
+    #elif defined BOUT_HAS_CVODE
+      type = SOLVERCVODE;
+    #elif defined BOUT_HAS_IDA
+      type = SOLVERIDA;
+    #elif defined BOUT_HAS_PETSC
+      type = SOLVERPETSC;
+    #endif
   }
+  
+  return Solver::Create(type);
+}
 
+Solver* Solver::Create(SolverType &type)
+{  
+  
+  #ifdef BOUT_HAS_PVODE
+    if(!strcasecmp(type, SOLVERPVODE)) {
+      return new PvodeSolver;
+    }
+  #endif
+  
+  #ifdef BOUT_HAS_CVODE
+    if(!strcasecmp(type, SOLVERCVODE)) {
+      return new CvodeSolver;
+    }
+  #endif
+
+  #ifdef BOUT_HAS_IDA
+    if(!strcasecmp(type, SOLVERIDA)) {
+      return new IdaSolver;
+    }
+  #endif
+
+  #ifdef BOUT_HAS_PETSC
+    if(!strcasecmp(type, SOLVERPETSC)) {
+      return new PetscSolver;
+    }  
+  #endif
+
+  // Need to throw an error saying 'Supplied option "type"' was not found
   return NULL;
 }
