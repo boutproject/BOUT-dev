@@ -53,6 +53,9 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include "interpolation.h"
 #include "boutmesh.h"
 
+#include "boundary_factory.h"
+#include "boundary_standard.h"
+
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -245,6 +248,17 @@ int bout_init(int argc, char **argv)
     output << "Failed to read grid. Aborting\n";
     return 1;
   }
+
+  /*
+  /// Setup the boundaries
+  BoundaryFactory* bndry = BoundaryFactory::getInstance();
+  bndry->add(new BoundaryDirichlet(), "dirichlet");
+  bndry->add(new BoundaryNeumann(), "neumann");
+  bndry->addMod(new BoundaryRelax(10.), "relax");
+
+  // Test
+  BoundaryOp *op = bndry->create("relax(neumann)", NULL);
+  */
 
   /// Set the file names
   sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext);
