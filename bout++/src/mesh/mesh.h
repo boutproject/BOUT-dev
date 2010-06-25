@@ -46,6 +46,8 @@ class SurfaceIter;
 
 #include "grid.h"  // For griddatasource 
 
+#include "boundary_region.h"
+
 #include <list>
 
 /// Group together fields
@@ -145,6 +147,9 @@ class Mesh {
   virtual RangeIter* iterateBndryLowerY() = 0;
   virtual RangeIter* iterateBndryUpperY() = 0;
   
+  // Boundary regions
+  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+
   // Indexing. Iterate over the mesh
   /*  virtual IndexIter *iterateIndexXY() = 0;
   virtual IndexIter *iterateIndexXYZ() = 0;

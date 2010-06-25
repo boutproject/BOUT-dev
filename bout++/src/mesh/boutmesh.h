@@ -62,6 +62,9 @@ class BoutMesh : public Mesh {
   RangeIter* iterateBndryUpperY();
   friend class BoutRangeIter;
 
+  // Boundary regions
+  vector<BoundaryRegion*> getBoundaries();
+
   BoutReal GlobalX(int jx);
   BoutReal GlobalY(int jy);
 
@@ -120,6 +123,8 @@ class BoutMesh : public Mesh {
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
   void topology();
 
+  vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  
   //////////////////////////////////////////////////
   // Communications
   

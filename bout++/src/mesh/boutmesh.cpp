@@ -565,6 +565,16 @@ int BoutMesh::load()
   }
   // Now have communicators for all regions.
   
+  //////////////////////////////////////////////////////
+  // Boundary regions
+  if(PE_XIND == 0) {
+    // Inner either core or PF
+    
+  }else if(PE_XIND == (NXPE-1)){
+    // Outer SOL
+    boundary.push_back(new BoundaryRegionXOut(ystart, yend));
+  }
+  
   output.write("\tdone\n");
   
 #ifdef CHECK
@@ -2281,6 +2291,12 @@ RangeIter* BoutMesh::iterateBndryUpperY()
     xe = UDATA_XSPLIT-1;
   
   return new BoutRangeIter(xs, xe);
+}
+
+
+vector<BoundaryRegion*> BoutMesh::getBoundaries()
+{
+  return boundary;
 }
 
 BoutRangeIter::BoutRangeIter(int start, int end)
