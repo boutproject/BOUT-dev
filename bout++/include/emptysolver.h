@@ -42,5 +42,5 @@ public:
 
 };
 
-#endif // __SUNDIAL_SOLVER_H__
+#endif // __EMPTY_SOLVER_H__
 
