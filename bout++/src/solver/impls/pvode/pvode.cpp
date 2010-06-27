@@ -23,8 +23,8 @@
  * 
  **************************************************************************/
 
-#ifdef BOUT_HAS_PVODE
 #include "pvode.h"
+#ifdef BOUT_HAS_PVODE
 
 using namespace pvode;
 

@@ -25,9 +25,9 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_CVODE
-
 #include "cvode.h"
+
+#ifdef BOUT_HAS_CVODE
 
 #include "globals.h"
 #include "boundary.h"

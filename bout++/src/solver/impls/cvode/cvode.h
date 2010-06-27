@@ -25,6 +25,12 @@
  *
  **************************************************************************/
 
+#ifndef BOUT_HAS_CVODE
+
+#include "emptysolver.h"
+typedef EmptySolver CvodeSolver;
+ 
+#else
 class CvodeSolver;
 
 #ifndef __SUNDIAL_SOLVER_H__
@@ -91,4 +97,6 @@ class CvodeSolver : public Solver {
 };
 
 #endif // __SUNDIAL_SOLVER_H__
+
+#endif
 

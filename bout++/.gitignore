@@ -4,6 +4,6 @@
 *.config
 *.d
 autom4te.cache/
-include/
+include/pvode
 lib/
 externalpackages/

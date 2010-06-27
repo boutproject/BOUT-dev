@@ -24,6 +24,12 @@
  *
  **************************************************************************/
 
+#ifndef BOUT_HAS_PETSC
+
+#include "emptysolver.h"
+typedef EmptySolver PetscSolver;
+ 
+#else
 class PetscSolver;
 
 #ifndef __PETSC_SOLVER_H__
@@ -93,3 +99,4 @@ class PetscSolver : public Solver {
 
 #endif // __PETSC_SOLVER_H__
 
+#endif

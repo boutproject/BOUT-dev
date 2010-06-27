@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_PETSC
 #include "petsc.h"
+#ifdef BOUT_HAS_PETSC
 
 #include "globals.h"
 

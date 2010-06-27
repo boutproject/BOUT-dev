@@ -24,6 +24,12 @@
  * 
  **************************************************************************/
 
+#ifndef BOUT_HAS_PVODE
+
+#include "emptysolver.h"
+typedef EmptySolver PvodeSolver;
+ 
+#else
 class PvodeSolver;
 
 #ifndef __PVODE_SOLVER_H__
@@ -89,3 +95,5 @@ class PvodeSolver : public Solver {
 };
 
 #endif // __PVODE_SOLVER_H__
+
+#endif

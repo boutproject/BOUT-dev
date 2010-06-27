@@ -27,6 +27,12 @@
  *
  **************************************************************************/
 
+#ifndef BOUT_HAS_IDA
+
+#include "emptysolver.h"
+typedef EmptySolver IdaSolver;
+ 
+#else
 class IdaSolver;
 
 #ifndef __IDA_SOLVER_H__
@@ -89,3 +95,4 @@ class IdaSolver : public Solver {
 
 #endif // __IDA_SOLVER_H__
 
+#endif

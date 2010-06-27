@@ -598,7 +598,7 @@ AC_FUNC_VPRINTF
 # Download + Build PVODE '98
 #############################################################
 
-if ( test "$eable_download_pvode" != "no" )
+if ( test "$enable_download_pvode" != "no" )
 then
 	if ( test "$enable_download_pvode" == "")
 	then

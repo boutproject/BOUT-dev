@@ -27,22 +27,7 @@
 #include "initialprofiles.h"
 #include "boundary.h"
 #include "interpolation.h"
-
-#ifdef BOUT_HAS_CVODE
-#include "impls/cvode/cvode.h"
-#endif
-
-#ifdef BOUT_HAS_PETSC
-#include "impls/petsc/petsc.h"
-#endif
-
-#ifdef BOUT_HAS_IDA
-#include "impls/ida/ida.h"
-#endif
-
-#ifdef BOUT_HAS_PVODE
-#include "impls/pvode/pvode.h"
-#endif
+#include "solverfactory.h"
 
 /**************************************************************************
  * Constructor
@@ -538,55 +523,6 @@ int Solver::getLocalN()
 }
 
 Solver* Solver::Create()
-{
-  SolverType type = NULL;
-  
-  options.setSection(NULL);
-  const char* solver_option = options.getString("solver_type");
-  
-  if(solver_option) type = solver_option;
-  else {
-    #ifdef BOUT_HAS_PVODE
-      type = SOLVERPVODE;
-    #elif defined BOUT_HAS_CVODE
-      type = SOLVERCVODE;
-    #elif defined BOUT_HAS_IDA
-      type = SOLVERIDA;
-    #elif defined BOUT_HAS_PETSC
-      type = SOLVERPETSC;
-    #endif
-  }
-  
-  return Solver::Create(type);
-}
-
-Solver* Solver::Create(SolverType &type)
 {  
-  
-  #ifdef BOUT_HAS_PVODE
-    if(!strcasecmp(type, SOLVERPVODE)) {
-      return new PvodeSolver;
-    }
-  #endif
-  
-  #ifdef BOUT_HAS_CVODE
-    if(!strcasecmp(type, SOLVERCVODE)) {
-      return new CvodeSolver;
-    }
-  #endif
-
-  #ifdef BOUT_HAS_IDA
-    if(!strcasecmp(type, SOLVERIDA)) {
-      return new IdaSolver;
-    }
-  #endif
-
-  #ifdef BOUT_HAS_PETSC
-    if(!strcasecmp(type, SOLVERPETSC)) {
-      return new PetscSolver;
-    }  
-  #endif
-
-  // Need to throw an error saying 'Supplied option "type"' was not found
-  return NULL;
+  return SolverFactory::getInstance()->createSolver();
 }

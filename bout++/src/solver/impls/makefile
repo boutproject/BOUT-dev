@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../..
 
-DIRS			= pvode cvode ida petsc 
+DIRS			= cvode ida petsc pvode
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

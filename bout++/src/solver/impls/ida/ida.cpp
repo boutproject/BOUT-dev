@@ -27,8 +27,9 @@
  *
  **************************************************************************/
 
-#ifdef BOUT_HAS_IDA
 #include "ida.h"
+
+#ifdef BOUT_HAS_IDA
 
 #include "globals.h"
 #include "boundary.h"
