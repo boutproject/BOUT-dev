@@ -5,7 +5,6 @@
 #include "impls/ida/ida.h"
 #include "impls/pvode/pvode.h"
 
-#include <stdexcept>
 #include "boutexception.h"
 
 SolverFactory* SolverFactory::instance = NULL;
