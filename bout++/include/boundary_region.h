@@ -12,6 +12,8 @@ enum BndryLoc {BNDRY_XIN=1, BNDRY_XOUT=2, BNDRY_YDOWN=4, BNDRY_YUP=8, BNDRY_ALL=
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion {
  public:
+ BoundaryRegion() {}
+ BoundaryRegion(const string &name, int xd, int yd) : label(name),bx(xd), by(yd) {}
   virtual ~BoundaryRegion() {}
   
   string label; // Label for this boundary region
@@ -31,7 +33,6 @@ class BoundaryRegion {
 class BoundaryRegionXIn : public BoundaryRegion {
  public:
   BoundaryRegionXIn(const string &name, int ymin, int ymax);
-  BoundaryRegionXIn(const char *name, int ymin, int ymax);
   
   void first();
   void next();
@@ -45,7 +46,6 @@ class BoundaryRegionXIn : public BoundaryRegion {
 class BoundaryRegionXOut : public BoundaryRegion {
  public:
   BoundaryRegionXOut(const string &name, int ymin, int ymax);
-  BoundaryRegionXOut(const char* name, int ymin, int ymax);
   
   void first();
   void next();
@@ -59,7 +59,6 @@ class BoundaryRegionXOut : public BoundaryRegion {
 class BoundaryRegionYDown : public BoundaryRegion {
  public:
   BoundaryRegionYDown(const string &name, int xmin, int xmax);
-  BoundaryRegionYDown(const char* name, int xmin, int xmax);
   
   void first();
   void next();
@@ -73,7 +72,6 @@ class BoundaryRegionYDown : public BoundaryRegion {
 class BoundaryRegionYUp : public BoundaryRegion {
  public:
   BoundaryRegionYUp(const string &name, int xmin, int xmax);
-  BoundaryRegionYUp(const char* name, int xmin, int xmax);
   
   void first();
   void next();

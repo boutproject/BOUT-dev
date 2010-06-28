@@ -596,14 +596,18 @@ int BoutMesh::load()
   if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
     boundary.push_back(new BoundaryRegionYDown("target", UDATA_XSPLIT, xend));
 
+  if(!boundary.empty()) {
+    output << "Boundary regions in this processor: ";
+    for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
+      output << (*it)->label << ", ";
+    }
+    output << endl;
+  }else {
+    output << "No boundary regions in this processor" << endl;
+  }
+  
   output.write("\tdone\n");
   
-  for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
-    output << "BOUNDARY: " << (*it)->label << ", " << (*it)->location << endl;
-  }
-
-  
-
 #ifdef CHECK
   msg_stack.pop(msg);
 #endif

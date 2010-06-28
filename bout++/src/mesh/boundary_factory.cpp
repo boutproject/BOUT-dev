@@ -1,5 +1,6 @@
 
 #include "boundary_factory.h"
+#include "utils.h"
 
 BoundaryFactory* BoundaryFactory::instance = NULL;
 
@@ -14,7 +15,7 @@ BoundaryFactory* BoundaryFactory::getInstance()
   
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
 {
-  output << "\tSetting " << region->label << " boundary to " << name << endl;
+  output <<  name << endl;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');
@@ -24,7 +25,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
     
     BoundaryOp *op = findBoundaryOp(name);
     if(op == NULL) {
-      output << "ERROR: Could not find boundary condition '" << name << "'" << endl;
+      output << "\tERROR: Could not find boundary condition '" << name << "'" << endl;
       return NULL;
     }
     
@@ -34,7 +35,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
   // Contains a bracket. Find the last bracket and remove
   int pos2 = name.rfind(')');
   if(pos2 == string::npos) {
-    output << "WARNING: Unmatched brackets in boundary condition: " << name << endl; 
+    output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl; 
   }
   
   // Find the modifier
@@ -67,7 +68,7 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   if(region == NULL)
     return NULL;
   
-  output << "Boundary conditions for " << varname << " in region " << region->label << endl;
+  output << "\t" << region->label << " region: ";
   
   string prefix = string("bndry_");
   
@@ -116,7 +117,7 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   if(!(set = options.getString(string("all"), prefix+string("all"))).empty())
     return create(set, region);
   
-  output << "ERROR: No boundary conditions set in input file" << endl;
+  output << "NONE" << endl;
   return NULL;
 }
 
@@ -132,7 +133,7 @@ void BoundaryFactory::add(BoundaryOp* bop, const string &name)
     output << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
   }
-  opmap[name] = bop;
+  opmap[lowercase(name)] = bop;
 }
 
 void BoundaryFactory::add(BoundaryOp* bop, const char *name)
@@ -147,7 +148,7 @@ void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name)
     output << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
     return;
   }
-  modmap[name] = bmod;
+  modmap[lowercase(name)] = bmod;
 }
 
 void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name)
@@ -155,19 +156,19 @@ void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name)
   addMod(bmod, string(name));
 }
 
-BoundaryOp* BoundaryFactory::findBoundaryOp(string s)
+BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s)
 {
   map<string,BoundaryOp*>::iterator it;
-  it = opmap.find(s);
+  it = opmap.find(lowercase(s));
   if(it == opmap.end())
     return NULL;
   return it->second;
 }
 
-BoundaryModifier* BoundaryFactory::findBoundaryMod(string s)
+BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s)
 {
   map<string,BoundaryModifier*>::iterator it;
-  it = modmap.find(s);
+  it = modmap.find(lowercase(s));
   if(it == modmap.end())
     return NULL;
   return it->second;

@@ -92,9 +92,6 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   TIMESTEP = tstep;
   
   output.write("Initialising IDA solver\n");
-  
-  // Set the rhs solver function
-  func = f;
 
   // Calculate number of variables
   int n2d = f2d.size();
@@ -318,7 +315,7 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
   load_vars(udata);
   
   // Call RHS function
-  (*func)(t);
+  run_rhs(t);
   
   // Save derivatives to rdata (residual)
   save_derivs(rdata);

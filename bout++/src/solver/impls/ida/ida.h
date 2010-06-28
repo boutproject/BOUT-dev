@@ -73,7 +73,6 @@ class IdaSolver : public Solver {
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
   
-  rhsfunc func; // RHS function
   PhysicsPrecon prefunc; // Preconditioner
   
   N_Vector uvec, duvec, id; // Values, time-derivatives, and equation type

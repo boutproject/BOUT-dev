@@ -30,6 +30,8 @@ class FieldData;
 #define __FIELD_DATA_H__
 
 #include "bout_types.h"
+#include <string>
+using std::string;
 
 // Including the next line leads to compiler errors
 //#include "boundary_op.h"
@@ -76,7 +78,7 @@ class FieldData {
 #endif
   
   // Boundary conditions
-  void setBoundary(const char *name); ///< Set the boundary conditions
+  void setBoundary(const string &name); ///< Set the boundary conditions
   virtual void applyBoundary() {}
   virtual void applyTDerivBoundary() {};
  protected:

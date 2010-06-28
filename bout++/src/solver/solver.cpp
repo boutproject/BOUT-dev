@@ -60,6 +60,9 @@ void Solver::add(Field2D &v, Field2D &F_v, const char* name)
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
   
+  // Set boundary conditions
+  v.setBoundary(name);
+
   VarStr<Field2D> d;
   
   d.constraint = false;
@@ -79,6 +82,7 @@ void Solver::add(Field2D &v, Field2D &F_v, const char* name)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
   initial_profile(name, v);
+  v.applyBoundary();
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -95,13 +99,13 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name)
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
 
+  // Set boundary conditions
+  v.setBoundary(name);
+
   if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
     F_v.setLocation(v.getLocation()); // Make sure both at the same location
   }
-  
-  // Print the boundary conditions
-  print_boundary(name);
 
   VarStr<Field3D> d;
   
@@ -118,6 +122,7 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name)
 #endif
 
   initial_profile(name, v);
+  v.applyBoundary(); // Make sure initial profile obeys boundary conditions
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -134,6 +139,9 @@ void Solver::add(Vector2D &v, Vector2D &F_v, const char* name)
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
 
+  // Set boundary conditions
+  v.setBoundary(name);
+  
   VarStr<Vector2D> d;
   
   d.constraint = false;
@@ -157,6 +165,9 @@ void Solver::add(Vector2D &v, Vector2D &F_v, const char* name)
     add(v.y, F_v.y, (d.name+"y").c_str());
     add(v.z, F_v.z, (d.name+"z").c_str());
   }
+  
+  /// Make sure initial profile obeys boundary conditions
+  v.applyBoundary();
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -172,6 +183,9 @@ void Solver::add(Vector3D &v, Vector3D &F_v, const char* name)
   if(initialised) {
     bout_error("Error: Cannot add to solver after initialisation\n");
   }
+  
+  // Set boundary conditions
+  v.setBoundary(name);
 
   VarStr<Vector3D> d;
   
@@ -193,6 +207,8 @@ void Solver::add(Vector3D &v, Vector3D &F_v, const char* name)
     add(v.y, F_v.y, (d.name+"y").c_str());
     add(v.z, F_v.z, (d.name+"z").c_str());
   }
+
+  v.applyBoundary();
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -353,9 +369,11 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
 #ifdef CHECK
   int msg_point = msg_stack.push("Solver::init()");
 #endif
-  
+
   if(initialised)
     bout_error("ERROR: Solver is already initialised\n");
+
+  phys_run = f;
 
   output.write("Initialising solver\n");
   
@@ -525,4 +543,41 @@ int Solver::getLocalN()
 Solver* Solver::Create()
 {  
   return SolverFactory::getInstance()->createSolver();
+}
+
+int Solver::run_rhs(BoutReal t)
+{
+  int status = (*phys_run)(t);
+
+  // Make sure vectors in correct basis
+  for(int i=0;i<v2d.size();i++) {
+    if(v2d[i].covariant) {
+      v2d[i].F_var->toCovariant();
+    }else
+      v2d[i].F_var->toContravariant();
+  }
+  for(int i=0;i<v3d.size();i++) {
+    if(v3d[i].covariant) {
+      v3d[i].F_var->toCovariant();
+    }else
+      v3d[i].F_var->toContravariant();
+  }
+
+  // Make sure 3D fields are at the correct cell location
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if((*it).location != ((*it).F_var)->getLocation()) {
+      //output.write("SOLVER: Interpolating\n");
+      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
+    }
+  }
+
+  // Apply boundary conditions to the time-derivatives
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    it->var->applyTDerivBoundary();
+  }
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    it->var->applyTDerivBoundary();
+  }
+  return status;
 }

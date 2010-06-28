@@ -29,6 +29,8 @@
 #include "bout_types.h"
 #include "dcomplex.h"
 
+#include <string>
+
 BoutReal *rvector(int size);
 BoutReal *rvresize(BoutReal *v, int newsize);
 int *ivector(int size);
@@ -57,5 +59,8 @@ BoutReal operator^(BoutReal lhs, const BoutReal &rhs);
 
 char* copy_string(const char* s);
 char *strconcat(const char* left, const char *right);
+
+/// Convert a string to lower case
+const string lowercase(const string &str);
 
 #endif // __UTILS_H__

@@ -84,8 +84,6 @@ class PetscSolver : public Solver {
   BoutReal next_time;  // When the monitor should be called next
   bool outputnext; // true if the monitor should be called next time 
 
-  rhsfunc func; // RHS function
-
   // Looping over variables. This should be in generic, but better...
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);

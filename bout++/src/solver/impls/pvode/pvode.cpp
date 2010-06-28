@@ -323,7 +323,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
   load_vars(udata);
 
   // Call function
-  flag = (*func)(t);
+  flag = run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);

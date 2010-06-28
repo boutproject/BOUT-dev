@@ -77,9 +77,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
-  
-  // Set the rhs solver function
-  func = f;
 
   int n2d = n2Dvars();       // Number of 2D variables
   int n3d = n3Dvars();       // Number of 3D variables
@@ -321,7 +318,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
   VecRestoreArray(udata, &udata_array);
 
   // Call RHS function
-  flag = (*func)(t);
+  flag = run_rhs(t);
 
   // Save derivatives to PETSc
   VecGetArray(dudata, &dudata_array);

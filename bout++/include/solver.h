@@ -147,6 +147,11 @@ protected:
 
   BoutReal simtime;  ///< Current simulation time
   int iteration; ///< Current iteration (output time-step) number
+
+  int run_rhs(BoutReal t); ///< Run the user's RHS function
+  
+ private:
+  rhsfunc phys_run; ///< The user's RHS function
 };
 
 #endif // __SOLVER_H__

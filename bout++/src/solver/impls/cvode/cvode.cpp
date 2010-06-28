@@ -342,7 +342,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
   load_vars(udata);
   
   // Call RHS function
-  (*func)(t);
+  run_rhs(t);
   
   // Save derivatives to dudata
   save_derivs(dudata);

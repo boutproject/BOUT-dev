@@ -252,16 +252,12 @@ int bout_init(int argc, char **argv)
     return 1;
   }
 
-  /*
+  
   /// Setup the boundaries
   BoundaryFactory* bndry = BoundaryFactory::getInstance();
   bndry->add(new BoundaryDirichlet(), "dirichlet");
   bndry->add(new BoundaryNeumann(), "neumann");
   bndry->addMod(new BoundaryRelax(10.), "relax");
-
-  // Test
-  BoundaryOp *op = bndry->create("relax(neumann)", NULL);
-  */
 
   /// Set the file names
   sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext);
@@ -535,6 +531,7 @@ void bout_solve(Field3D &var, const char *name)
 void bout_solve(Vector2D &var, const char *name)
 {
   solver->add(var, ddt(var), name);
+  var.setBoundary(name);
 }
 
 void bout_solve(Vector3D &var, const char *name)

@@ -42,8 +42,8 @@ class BoundaryFactory {
   map<string, BoundaryModifier*> modmap;
 
   // Functions to look up operations and modifiers
-  BoundaryOp* findBoundaryOp(string s);
-  BoundaryModifier* findBoundaryMod(string s);  
+  BoundaryOp* findBoundaryOp(const string &s);
+  BoundaryModifier* findBoundaryMod(const string &s);
 };
 
 #endif // __BNDRY_FACTORY_H__

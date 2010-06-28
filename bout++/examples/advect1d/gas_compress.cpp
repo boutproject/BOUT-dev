@@ -49,11 +49,6 @@ int physics_init(bool restarting)
   bout_solve(N, "density");
   bout_solve(P, "pressure");
   bout_solve(V, "v");
-
-  // Set boundary conditions
-  N.setBoundary("density");
-  P.setBoundary("pressure");
-  V.setBoundary("v");
   
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
@@ -89,13 +84,7 @@ int physics_run(BoutReal t)
   // Pressure
 
   ddt(P) = -V_dot_Grad(V, P) - gamma_ratio*P*Div(V);
-
-  // Set boundary conditions
-  apply_boundary(ddt(N), "density");
-  apply_boundary(ddt(P), "pressure");
-  ddt(V).toContravariant();
-  apply_boundary(ddt(V), "v");
-
+  
   return 0;
 }
 
