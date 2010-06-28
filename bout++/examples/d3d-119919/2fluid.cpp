@@ -368,23 +368,32 @@ int physics_init(bool restarting)
     bout_solve(rho,   "rho");
     comms.add(rho);
     output.write("rho\n");
-  }else
+  }else {
     initial_profile("rho", rho);
+    rho.setBoundary("rho");
+    rho.applyBoundary();
+  }
 
   if(evolve_ni) {
     bout_solve(Ni,    "Ni");
     comms.add(Ni);
     output.write("ni\n");
-  }else
+  }else {
     initial_profile("Ni", Ni);
+    Ni.setBoundary("Ni");
+    Ni.applyBoundary();
+  }
 
   if(evolve_te) {
     bout_solve(Te,    "Te");
     comms.add(Te);
     
     output.write("te\n");
-  }else
+  }else {
     initial_profile("Te", Te);
+    Te.setBoundary("Te");
+    Te.applyBoundary();
+  }
 
   if(evolve_ajpar) {
     bout_solve(Ajpar, "Ajpar");
@@ -394,21 +403,32 @@ int physics_init(bool restarting)
     initial_profile("Ajpar", Ajpar);
     if(ZeroElMass)
       dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+    
+    Ajpar.setBoundary("Ajpar");
+    Ajpar.applyBoundary();
   }
 
   if(evolve_vi) {
     bout_solve(Vi, "Vi");
     comms.add(Vi);
     output.write("vi\n");
-  }else
+  }else {
     initial_profile("Vi", Vi);
+    Vi.setBoundary("Vi");
+    Vi.applyBoundary();
+  }
 
   if(evolve_ti) {
     bout_solve(Ti, "Ti");
     comms.add(Ti);
     output.write("ti\n");
-  }else
+  }else {
     initial_profile("Ti", Ti);
+    Ti.setBoundary("Ti");
+    Ti.applyBoundary();
+  }
+
+  jpar.setBoundary("jpar");
 
   if(!restarting) {
     // Smooth the initial perturbation a few times (includes comms)
@@ -426,34 +446,9 @@ int physics_init(bool restarting)
     rho = smooth_y(rho);
     
     // Make sure initial perturbation obeys boundary condition
-    
-    if(relax_flat_bndry) {
-      // Set all flat
-      bndry_inner_flat(rho);
-      bndry_sol_flat(rho);
-      
-      bndry_inner_flat(Te);
-      bndry_sol_flat(Te);
-      
-      bndry_inner_flat(Ti);
-      bndry_sol_flat(Ti);
-      
-      bndry_inner_flat(Ni);
-      bndry_sol_flat(Ni);
-      
-      bndry_inner_flat(Ajpar);
-      bndry_sol_flat(Ajpar);
-      
-      bndry_inner_flat(Vi);
-      bndry_sol_flat(Vi);
-    }else {
-      apply_boundary(rho, "rho");
-      apply_boundary(Te, "Te");
-      apply_boundary(Ni, "Ni");
-      apply_boundary(Ajpar, "Ajpar");
-      apply_boundary(Vi, "Vi");
-      apply_boundary(Ti, "Ti");
-    }
+    // Normally this is taken care of, but have modified initial
+    rho.applyBoundary();
+    Ni.applyBoundary();
   }
   
   ////////////////////////////////////////////////////////
@@ -627,7 +622,7 @@ int physics_run(BoutReal t)
 	  }
     }
     
-    apply_boundary(jpar, "jpar");
+    jpar.applyBoundary();
     
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
@@ -897,65 +892,6 @@ int physics_run(BoutReal t)
   }
   }
   
-  ////////////////////////////////////////////////////////
-  // RADIAL BOUNDARY CONDITIONS
-
-  if(relax_flat_bndry) {
-    // BOUT-06 style relaxing boundary conditions
-    
-    // Zero-gradient at target plates 
-    
-    if(evolve_rho) {
-      bndry_inner_relax_flat(ddt(rho), rho, lambda);
-      bndry_sol_relax_flat(ddt(rho), rho, lambda);
-      
-      bndry_ydown_flat(ddt(rho));
-      bndry_yup_flat(ddt(rho));
-    }
-      
-    if(evolve_ni) {
-      bndry_inner_relax_flat(ddt(Ni), Ni, lambda);
-      bndry_sol_relax_flat(ddt(Ni), Ni, lambda);
-      
-      bndry_ydown_flat(ddt(Ni));
-      bndry_yup_flat(ddt(Ni));
-    }
-
-    if(evolve_te) {
-      bndry_inner_relax_flat(ddt(Te), Te, lambda);
-      bndry_sol_relax_flat(ddt(Te), Te, lambda);
-
-      bndry_ydown_flat(ddt(Te));
-      bndry_yup_flat(ddt(Te));
-    }
-    
-    if(evolve_ti) {
-      bndry_inner_relax_flat(ddt(Ti), Ti, lambda);
-      bndry_sol_relax_flat(ddt(Ti), Ti, lambda);
-
-      bndry_ydown_flat(ddt(Ti));
-      bndry_yup_flat(ddt(Ti));
-    }
-
-    if(evolve_ajpar) {
-      bndry_inner_relax_flat(ddt(Ajpar), Ajpar, lambda);
-      bndry_sol_relax_flat(ddt(Ajpar), Ajpar, lambda);
-      
-      bndry_ydown_flat(ddt(Ajpar));
-      bndry_yup_flat(ddt(Ajpar));
-    }
-    
-  }else {
-    // Use the boundary condition specified in BOUT.inp
-    
-    apply_boundary(ddt(rho), "rho");
-    apply_boundary(ddt(Te), "Te");
-    apply_boundary(ddt(Ni), "Ni");
-    apply_boundary(ddt(Ajpar), "Ajpar");
-    apply_boundary(ddt(Vi), "Vi");
-    apply_boundary(ddt(Ti), "Ti");
-  }
-
   return(0);
 }
 

@@ -17,5 +17,6 @@ void FieldData::setBoundary(const string &name)
     BoundaryOp* op = bfact->createFromOptions(name, (*it));
     if(op != NULL)
       bndry_op.push_back(op);
+    output << endl;
   }
 }

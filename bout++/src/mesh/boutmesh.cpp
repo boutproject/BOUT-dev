@@ -409,8 +409,8 @@ int BoutMesh::load()
     // Single-null. All processors with same PE_XIND
     
     for(int i=0;i<NXPE;i++) {
-      proc[0] = PROC_NUM(PE_XIND, 0);
-      proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+      proc[0] = PROC_NUM(i, 0);
+      proc[1] = PROC_NUM(i, NYPE-1);
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
       if(i == PE_XIND) {
@@ -431,16 +431,16 @@ int BoutMesh::load()
     
     for(int i=0;i<NXPE;i++) {
       // Inner SOL
-      proc[0] = PROC_NUM(PE_XIND, 0);
-      proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+      proc[0] = PROC_NUM(i, 0);
+      proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
       MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
 	comm_outer = comm_tmp;
       MPI_Group_free(&group);
 
       // Outer SOL
-      proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
-      proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+      proc[0] = PROC_NUM(i, YPROC(ny_inner));
+      proc[1] = PROC_NUM(i, NYPE-1);
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
@@ -456,16 +456,16 @@ int BoutMesh::load()
       // A lower PF region exists
 
       if(jyseps1_1 >= 0) {
-	proc[0] = PROC_NUM(PE_XIND, 0);
-	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_1));
+	proc[0] = PROC_NUM(i, 0);
+	proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
 	//output << "PF1 "<< proc[0] << ", " << proc[1] << endl;
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       }else
 	group_tmp1 = MPI_GROUP_EMPTY;
       
       if(jyseps2_2+1 < ny) {
-	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_2+1));
-	proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+	proc[0] = PROC_NUM(i, YPROC(jyseps2_2+1));
+	proc[1] = PROC_NUM(i, NYPE-1);
 	//output << "PF2 "<< proc[0] << ", " << proc[1] << endl;
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       }else
@@ -488,12 +488,12 @@ int BoutMesh::load()
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
       
-      proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
-      proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps1_2));
+      proc[0] = PROC_NUM(i, YPROC(ny_inner));
+      proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
       //output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-      proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps2_1+1));
-      proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+      proc[0] = PROC_NUM(i, YPROC(jyseps2_1+1));
+      proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
       //output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -510,12 +510,12 @@ int BoutMesh::load()
     
     // Core region
     
-    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_1+1));
-    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_1));
+    proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
+    proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
     //output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-    proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_2+1));
-    proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+    proc[0] = PROC_NUM(i, YPROC(jyseps1_2+1));
+    proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
     //output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
     MPI_Group_union(group_tmp1, group_tmp2, &group);
@@ -535,11 +535,11 @@ int BoutMesh::load()
       // middle is connected to the bottom
 	
       for(int i=0;i<NXPE;i++) {
-	proc[0] = PROC_NUM(PE_XIND, 0);
-	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_1));
+	proc[0] = PROC_NUM(i, 0);
+	proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_2+1));
-	proc[1] = PROC_NUM(PE_XIND, NYPE-1);
+	proc[0] = PROC_NUM(i, YPROC(jyseps1_2+1));
+	proc[1] = PROC_NUM(i, NYPE-1);
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 	MPI_Group_union(group_tmp1, group_tmp2, &group);
 	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
@@ -550,11 +550,11 @@ int BoutMesh::load()
       // middle is connected to the top
 	
       for(int i=0;i<NXPE;i++) {
-	proc[0] = PROC_NUM(PE_XIND, YPROC(ny_inner));
-	proc[1] = PROC_NUM(PE_XIND, YPROC(jyseps2_2));
+	proc[0] = PROC_NUM(i, YPROC(ny_inner));
+	proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
-	proc[0] = PROC_NUM(PE_XIND, YPROC(jyseps1_1+1));
-	proc[1] = PROC_NUM(PE_XIND, YPROC(ny_inner-1));
+	proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
+	proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 	MPI_Group_union(group_tmp1, group_tmp2, &group);
 	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);

@@ -15,7 +15,7 @@ BoundaryFactory* BoundaryFactory::getInstance()
   
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
 {
-  output <<  name << endl;
+  output <<  name;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');
@@ -40,7 +40,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
   
   // Find the modifier
   string modname = name.substr(0,pos);
-  output << "BOUNDARY FACTORY: Looking for modifier " << modname  << endl;
+  //output << "BOUNDARY FACTORY: Looking for modifier " << modname  << endl;
   BoundaryModifier *mod = findBoundaryMod(modname);
   if(mod == NULL) {
     output << "ERROR: Could not find boundary modifier '" << modname << "'" << endl;
@@ -48,12 +48,12 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
   }
 
   // Create the operation inside the brackets
+  output << " -> ";
   BoundaryOp *op = create(name.substr(pos+1, pos2-pos-1), region);
   if(op == NULL) {
     // some error - abort
     return NULL;
   }
-  
   // Clone the modifier, passing in the operator as argument
   return mod->clone(op);
 }

@@ -39,7 +39,7 @@ int Mesh::load(GridDataSource &source)
 GridDataSource* Mesh::findSource(const char *name)
 {
 #ifdef CHECK
-  msg_stack.push("Finding source");
+  int msg_point = msg_stack.push("Finding source");
 #endif
   for(std::list<GridDataSource*>::iterator it = source_list.begin(); 
       it != source_list.end(); it++) {
@@ -48,13 +48,13 @@ GridDataSource* Mesh::findSource(const char *name)
     if((*it) != NULL)
       if((*it)->hasVar(name)) {
 #ifdef CHECK
-	msg_stack.pop();
+	msg_stack.pop(msg_point);
 #endif
 	return *it;
       }
   }
 #ifdef CHECK
-  msg_stack.pop();
+  msg_stack.pop(msg_point);
 #endif
   return NULL;
 }

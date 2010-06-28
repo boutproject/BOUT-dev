@@ -2051,14 +2051,42 @@ void Field3D::cleanup()
 
 void Field3D::applyBoundary()
 {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyBoundary()");
+  
+  if(block == NULL)
+    output << "WARNING: Applying boundary condition to empty data" << endl;
+#endif
+  
+  if(block == NULL)
+    return;
+
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply(*this);
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 }
 
 void Field3D::applyTDerivBoundary()
 {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyTDerivBoundary()");
+
+  if(block == NULL)
+    output << "WARNING: Applying boundary condition to empty data" << endl;
+#endif
+  
+  if(block == NULL)
+    return;
+  
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply_ddt(*this);
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 }
 
 /***************************************************************
