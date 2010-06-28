@@ -31,6 +31,7 @@
 
 #include "utils.h"
 
+#include "boundary_op.h"
 
 #include <cmath>
 #include <stdlib.h>
@@ -1056,6 +1057,20 @@ bool Field2D::checkData(bool vital) const
   return false;
 }
 #endif
+
+///////////////////// BOUNDARY CONDITIONS //////////////////
+
+void Field2D::applyBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply(*this);
+}
+
+void Field2D::applyTDerivBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply_ddt(*this);
+}
 
 ///////////////////// PRIVATE FUNCTIONS ////////////////////
 

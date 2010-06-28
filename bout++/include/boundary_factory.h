@@ -22,6 +22,10 @@ class BoundaryFactory {
   BoundaryOp* create(const string &name, BoundaryRegion *region);
   BoundaryOp* create(const char* name, BoundaryRegion *region);
 
+  /// Create a boundary object using the options file
+  BoundaryOp* createFromOptions(const string &varname, BoundaryRegion *region);
+  BoundaryOp* createFromOptions(const char* varname, BoundaryRegion *region);
+
   // functions to add available boundary conditions and modifiers
   // Supply an object, the name, and (optionally) which boundaries it can be applied to
   void add(BoundaryOp* bop, const string &name);

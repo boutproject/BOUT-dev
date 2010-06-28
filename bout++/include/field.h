@@ -121,12 +121,10 @@ class Field {
   // Status of the 4 boundaries
   bool bndry_xin, bndry_xout, bndry_yup, bndry_ydown;
 #endif
-
  protected:
   /// Supplies an error method. Currently just prints and exits, but
   /// should do something more cunning...
-  void error(const char *s, ...) const; 
-
+  void error(const char *s, ...) const;
 };
 
 

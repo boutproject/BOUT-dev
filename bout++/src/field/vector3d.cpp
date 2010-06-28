@@ -31,6 +31,7 @@
 #include "globals.h"
 
 #include "vector3d.h"
+#include "boundary_op.h"
 
 Vector3D::Vector3D()
 {
@@ -612,3 +613,16 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
   return 3;
 }
 
+///////////////////// BOUNDARY CONDITIONS //////////////////
+
+void Vector3D::applyBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply(*this);
+}
+
+void Vector3D::applyTDerivBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply_ddt(*this);
+}

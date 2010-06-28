@@ -168,6 +168,9 @@ class Vector2D : public FieldData {
       z = 0.0;
     }
   }
+  
+  void applyBoundary();
+  void applyTDerivBoundary();
  private:
   
   Vector2D *ddt; ///< Time-derivative, can be NULL

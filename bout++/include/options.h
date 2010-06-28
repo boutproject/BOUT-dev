@@ -64,6 +64,7 @@ class OptionFile {
 
   char* getString(const char *name);
   char* getString(const char *section, const char *name);
+  const string getString(const string &section, const string &name);
 
   int getBool(const char *name, bool &val);
   int getBool(const char *section, const char *name, bool &val);

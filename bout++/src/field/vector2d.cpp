@@ -31,6 +31,7 @@
 #include "globals.h"
 
 #include "vector2d.h"
+#include "boundary_op.h"
 
 Vector2D::Vector2D()
 {
@@ -487,3 +488,18 @@ int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr)
   
   return 3;
 }
+
+///////////////////// BOUNDARY CONDITIONS //////////////////
+
+void Vector2D::applyBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply(*this);
+}
+
+void Vector2D::applyTDerivBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply_ddt(*this);
+}
+

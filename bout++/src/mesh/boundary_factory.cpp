@@ -14,7 +14,7 @@ BoundaryFactory* BoundaryFactory::getInstance()
   
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
 {
-  output << "BOUNDARY FACTORY: Creating '" << name << "'" << endl;
+  output << "\tSetting " << region->label << " boundary to " << name << endl;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');
@@ -62,6 +62,68 @@ BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region)
   return create(string(name), region);
 }
 
+BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegion *region)
+{
+  if(region == NULL)
+    return NULL;
+  
+  output << "Boundary conditions for " << varname << " in region " << region->label << endl;
+  
+  string prefix = string("bndry_");
+  
+  string side = string("all");
+  switch(region->location) {
+  case BNDRY_XIN: {
+    side = string("xin");
+    break;
+  }
+  case BNDRY_XOUT: {
+    side = string("xout");
+    break;
+  }
+  case BNDRY_YDOWN: {
+    side = string("ydown");
+    break;
+  }
+  case BNDRY_YUP: {
+    side = string("yup");
+    break;
+  }
+  }
+  
+  /// First try looking for (var, region)
+  string set;
+  if(!(set = options.getString(varname, prefix+region->label)).empty())
+    return create(set, region);
+  
+  /// Then (var, side)
+  if(!(set = options.getString(varname, prefix+side)).empty())
+    return create(set, region);
+  
+  /// Then (var, all)
+  if(!(set = options.getString(varname, prefix+string("all"))).empty())
+    return create(set, region);
+  
+  /// Then (all, region)
+  if(!(set = options.getString(string("all"), prefix+region->label)).empty())
+    return create(set, region);
+  
+  /// Then (all, side)
+  if(!(set = options.getString(string("all"), prefix+side)).empty())
+    return create(set, region);
+  
+  /// Then (all, all)
+  if(!(set = options.getString(string("all"), prefix+string("all"))).empty())
+    return create(set, region);
+  
+  output << "ERROR: No boundary conditions set in input file" << endl;
+  return NULL;
+}
+
+BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegion *region)
+{
+  return createFromOptions(string(varname), region);
+}
 
 void BoundaryFactory::add(BoundaryOp* bop, const string &name)
 {

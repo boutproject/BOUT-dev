@@ -33,6 +33,7 @@
 #include "fft.h"
 #include "dcomplex.h"
 #include "interpolation.h"
+#include "boundary_op.h"
 
 /// Constructor
 Field3D::Field3D()
@@ -2027,16 +2028,6 @@ bool Field3D::checkData(bool vital) const
 }
 #endif
 
-/***************************************************************
- *                     PRIVATE FUNCTIONS
- ***************************************************************/
-
-// GLOBAL VARS
-
-int Field3D::nblocks = 0;
-memblock3d* Field3D::blocklist = NULL;
-memblock3d* Field3D::free_block = NULL;
-
 void Field3D::cleanup()
 {
   while(blocklist != NULL) {
@@ -2055,6 +2046,30 @@ void Field3D::cleanup()
   nblocks = 0;
   free_block = NULL;
 }
+
+///////////////////// BOUNDARY CONDITIONS //////////////////
+
+void Field3D::applyBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply(*this);
+}
+
+void Field3D::applyTDerivBoundary()
+{
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    (*it)->apply_ddt(*this);
+}
+
+/***************************************************************
+ *                     PRIVATE FUNCTIONS
+ ***************************************************************/
+
+// GLOBAL VARS
+
+int Field3D::nblocks = 0;
+memblock3d* Field3D::blocklist = NULL;
+memblock3d* Field3D::free_block = NULL;
 
 /// Get a new block of data, either from free list or allocate
 memblock3d *Field3D::newBlock() const

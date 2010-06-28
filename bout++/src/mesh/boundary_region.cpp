@@ -3,8 +3,9 @@
 #include "utils.h"
 #include "globals.h"
 
-BoundaryRegionXIn::BoundaryRegionXIn(int ymin, int ymax)
+BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax)
 {
+  label = name;
   location = BNDRY_XIN;
   x = mesh->xstart-1; // First point inside the boundary
   ys = ymin;
@@ -15,6 +16,11 @@ BoundaryRegionXIn::BoundaryRegionXIn(int ymin, int ymax)
   // Unit vector out of the domain
   bx = -1;
   by =  0;
+}
+
+BoundaryRegionXIn::BoundaryRegionXIn(const char *name, int ymin, int ymax)
+{
+  BoundaryRegionXIn(string(name), ymin, ymax);
 }
 
 void BoundaryRegionXIn::first()
@@ -55,8 +61,10 @@ bool BoundaryRegionXIn::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionXOut::BoundaryRegionXOut(int ymin, int ymax)
+BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax)
 {
+  label = name;
+  output << "LABEL: " << label << endl;
   location = BNDRY_XOUT;
   x = mesh->xend+1; // First point inside the boundary
   ys = ymin;
@@ -67,6 +75,11 @@ BoundaryRegionXOut::BoundaryRegionXOut(int ymin, int ymax)
   // Unit vector out of the domain
   bx = 1;
   by = 0;
+}
+
+BoundaryRegionXOut::BoundaryRegionXOut(const char* name, int ymin, int ymax)
+{
+  BoundaryRegionXOut(string(name), ymin, ymax);
 }
 
 void BoundaryRegionXOut::first()
@@ -107,8 +120,9 @@ bool BoundaryRegionXOut::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYDown::BoundaryRegionYDown(int xmin, int xmax)
+BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax)
 {
+  label = name;
   location = BNDRY_XOUT;
   y = mesh->ystart-1; // First point inside the boundary
   xs = xmin;
@@ -120,6 +134,11 @@ BoundaryRegionYDown::BoundaryRegionYDown(int xmin, int xmax)
   // Unit vector out of the domain
   bx =  0;
   by = -1;
+}
+
+BoundaryRegionYDown::BoundaryRegionYDown(const char* name, int xmin, int xmax)
+{
+  BoundaryRegionYDown(string(name), xmin, xmax);
 }
 
 void BoundaryRegionYDown::first()
@@ -161,8 +180,9 @@ bool BoundaryRegionYDown::isDone()
 ///////////////////////////////////////////////////////////////
 
 
-BoundaryRegionYUp::BoundaryRegionYUp(int xmin, int xmax)
+BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
 {
+  label = name;
   location = BNDRY_XOUT;
   y = mesh->ystart-1; // First point inside the boundary
   xs = xmin;
@@ -174,6 +194,11 @@ BoundaryRegionYUp::BoundaryRegionYUp(int xmin, int xmax)
   // Unit vector out of the domain
   bx = 0;
   by = 1;
+}
+
+BoundaryRegionYUp::BoundaryRegionYUp(const char* name, int xmin, int xmax)
+{
+  BoundaryRegionYUp(string(name), xmin, xmax);
 }
 
 void BoundaryRegionYUp::first()

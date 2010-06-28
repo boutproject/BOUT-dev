@@ -570,13 +570,40 @@ int BoutMesh::load()
   if(PE_XIND == 0) {
     // Inner either core or PF
     
-  }else if(PE_XIND == (NXPE-1)){
+    int yg = YGLOBAL(MYG); // Get a global index in this processor
+    
+    if( ((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
+	((yg > jyseps1_2) && (yg <= jyseps2_2)) ) {
+      // Core
+      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+    }else {
+      // PF region
+      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+    }
+  }
+  if(PE_XIND == (NXPE-1)){
     // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut(ystart, yend));
+    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
   }
   
+  if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
+    boundary.push_back(new BoundaryRegionYUp("target", xstart, UDATA_XSPLIT-1));
+  if((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
+    boundary.push_back(new BoundaryRegionYUp("target", UDATA_XSPLIT, xend));
+  
+  if((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
+    boundary.push_back(new BoundaryRegionYDown("target", xstart, UDATA_XSPLIT-1));
+  if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
+    boundary.push_back(new BoundaryRegionYDown("target", UDATA_XSPLIT, xend));
+
   output.write("\tdone\n");
   
+  for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
+    output << "BOUNDARY: " << (*it)->label << ", " << (*it)->location << endl;
+  }
+
+  
+
 #ifdef CHECK
   msg_stack.pop(msg);
 #endif

@@ -357,6 +357,14 @@ char* OptionFile::getString(const char *section, const char *name)
   return(option[i].string);
 }
 
+const string OptionFile::getString(const string &section, const string &name)
+{
+  char *s = getString(section.c_str(), name.c_str());
+  if(s == NULL)
+    return(string(""));
+  return string(s);
+}
+
 int OptionFile::getBool(const char *name, bool &val)
 {
   int i;

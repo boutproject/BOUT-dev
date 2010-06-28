@@ -31,6 +31,13 @@ class FieldData;
 
 #include "bout_types.h"
 
+// Including the next line leads to compiler errors
+//#include "boundary_op.h"
+class BoundaryOp;
+
+#include <vector>
+using std::vector;
+
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
@@ -67,7 +74,13 @@ class FieldData {
 #ifdef CHECK
   virtual void doneComms() { }; // Notifies that communications done
 #endif
-
+  
+  // Boundary conditions
+  void setBoundary(const char *name); ///< Set the boundary conditions
+  virtual void applyBoundary() {}
+  virtual void applyTDerivBoundary() {};
+ protected:
+  vector<BoundaryOp*> bndry_op; // Boundary conditions
 };
 
 #endif

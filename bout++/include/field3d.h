@@ -246,6 +246,9 @@ class Field3D : public Field, public FieldData {
   
   static void cleanup(); // Frees all memory
 
+  void applyBoundary();
+  void applyTDerivBoundary();
+  
  private:
   /// Interpolates in z using up to 4 points
   BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;

@@ -50,6 +50,11 @@ int physics_init(bool restarting)
   bout_solve(P, "pressure");
   bout_solve(V, "v");
 
+  // Set boundary conditions
+  N.setBoundary("density");
+  P.setBoundary("pressure");
+  V.setBoundary("v");
+  
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
     // NOTE: This must be after the calls to bout_solve

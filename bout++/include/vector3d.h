@@ -178,6 +178,8 @@ class Vector3D : public FieldData {
     }
   }
   
+  void applyBoundary();
+  void applyTDerivBoundary();
  private:
   Vector3D *ddt; ///< Time-derivative, can be NULL
 };
