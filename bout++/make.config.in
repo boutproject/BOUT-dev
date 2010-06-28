@@ -56,7 +56,6 @@ FILEIO_SOURCE	= @FILEIO_SOURCE@
 OBJ						= $(SOURCEC:%.cpp=%.o)
 LIB						= $(BOUT_TOP)/lib/libbout++.a
 
-# This doesn't include '-I$(BOUT_TOP)/include' because of the dependency checking
 BOUT_INCLUDE	= -I$(BOUT_TOP)/include $(INCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
 
@@ -184,16 +183,3 @@ distclean: clean
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned
-
-####################################
-# Automatic re-running of configure if the configure.ac file has changed
-####################################
-
-# $(BOUT_TOP)/configure: $(BOUT_TOP)/configure.ac
-# 	@cd $(BOUT_TOP) && autoconf
-# 
-# $(BOUT_TOP)/make.config: $(BOUT_TOP)/make.config.in $(BOUT_TOP)/config.status
-# 	@cd $(BOUT_TOP); ./config.status > /dev/null
-# 	
-# $(BOUT_TOP)/config.status: $(BOUT_TOP)/configure
-# 	@cd $(BOUT_TOP) && ./config.status --recheck
