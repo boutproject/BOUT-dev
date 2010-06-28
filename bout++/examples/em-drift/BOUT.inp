@@ -20,6 +20,7 @@ MYG = 2
 
 grid = "uedge.grd_beta.nc"
 
+output_format="nc"
 
 ##################################################
 # derivative methods
@@ -104,6 +105,8 @@ ys_mode = 1#
 
 zs_mode = 1 # toroidal mode number
 
+bndry_all = neumann # Zero gradient
+
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
 
@@ -115,3 +118,6 @@ evolve = false
 
 [Ti]
 evolve = false
+
+[jpar]
+bndry_all = neumann # Zero gradient

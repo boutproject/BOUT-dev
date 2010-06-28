@@ -21,6 +21,8 @@ MYG = 2
 
 grid="uedge.grd_Te_10.nc"
 
+dump_format = "nc"
+
 ##################################################
 # derivative methods
 
@@ -105,8 +107,7 @@ zs_mode = 1 # toroidal mode number
 # 3 = laplacian
 # 4 = laplacian with zero-gradient
 
-xinner = 2  # Zero-gradient inner boundary
-xouter = 2  # Zero-gradient outer boundary
+bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
 evolve = false

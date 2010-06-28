@@ -8,14 +8,14 @@ ni=ni[2,*,*,*]
 phi=phi[2,*,*,*] 
 
 
-du=pd_import("uedge.grd.pdb")
-new_zmax=pd_read(path+"/BOUT.dmp.0.pdb", "ZMAX") ;-fraction of 2PI
-rho_s = pd_read(path+"/BOUT.dmp.0.pdb", "rho_s")
-wci  = pd_read(path+"/BOUT.dmp.0.pdb", "wci")
-t_array = pd_read(path+"/BOUT.dmp.0.pdb", "t_array")
+du=file_import("uedge.grd_beta.nc")
+new_zmax=collect(path=path, var="ZMAX");-fraction of 2PI
+rho_s = collect(path=path, var="rho_s")
+wci  = collect(path=path, var="wci")
+t_array = collect(path=path, var="t_array")
 
-zeff = pd_read(path+"/BOUT.dmp.0.pdb", "Zeff")
-AA = pd_read(path+"/BOUT.dmp.0.pdb", "AA")
+zeff = collect(path=path, var="Zeff")
+AA = collect(path=path, var="AA")
 
 old_zmax=new_zmax/(rho_s/du.hthe0)
 print, 'new_zmax=', new_zmax, "; old_zmax=", old_zmax

@@ -110,15 +110,13 @@ ys_mode = 1#
 zs_mode = 1 # toroidal mode number
 
 
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
+# boundary conditions
+# dirichlet = zero value
+# neumann = zero gradient
 # 3 = laplacian
 # 4 = laplacian with zero-gradient
 
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
@@ -131,3 +129,6 @@ evolve = false
 
 [Ti]
 evolve = false
+
+[jpar]
+bndry_all = neumann # Zero-gradient on all boundaries

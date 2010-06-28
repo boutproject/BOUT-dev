@@ -111,4 +111,6 @@ data={zeff:fltarr(9), AA:fltarr(9), gam:fltarr(9), omega:fltarr(9), sparn:fltarr
  ;status=0
  print, 'status=', status
 
-exit, status=status
+STOP
+
+;exit, status=status

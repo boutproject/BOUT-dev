@@ -1,5 +1,5 @@
 
-du=pd_import(fu)
+du=file_import(fu)
 
 wci = collect(var="wci", path=path)
 rho_s = collect(var="rho_s", path=path)
