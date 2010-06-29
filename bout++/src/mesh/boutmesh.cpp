@@ -2308,7 +2308,7 @@ RangeIter* BoutMesh::iterateBndryLowerY()
     xs = DDATA_XSPLIT;
   if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < ngx))
     xe = DDATA_XSPLIT-1;
-  
+
   return new BoutRangeIter(xs, xe);
 }
 
@@ -2320,7 +2320,7 @@ RangeIter* BoutMesh::iterateBndryUpperY()
     xs = UDATA_XSPLIT;
   if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < ngx))
     xe = UDATA_XSPLIT-1;
-  
+
   return new BoutRangeIter(xs, xe);
 }
 

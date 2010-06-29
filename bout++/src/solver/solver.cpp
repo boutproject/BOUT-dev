@@ -100,7 +100,7 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name)
   }
 
   // Set boundary conditions
-  v.setBoundary(name);
+  //v.setBoundary(name);
 
   if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
