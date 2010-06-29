@@ -26,6 +26,25 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 
+/// Zero Laplacian, decaying solution
+class BoundaryZeroLaplace : public BoundaryOp {
+ public:
+  BoundaryZeroLaplace() {}
+ BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
+class BoundaryConstLaplace : public BoundaryOp {
+ public:
+  BoundaryConstLaplace() {}
+ BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
  public:
