@@ -1,6 +1,7 @@
 
 #include "boundary_standard.h"
 #include "globals.h"
+#include "invert_laplace.h"
 #include "fft.h"
 
 ///////////////////////////////////////////////////////////////
@@ -143,7 +144,39 @@ void BoundaryConstLaplace::apply(Field2D &f)
 
 void BoundaryConstLaplace::apply(Field3D &f)
 {
+  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+    // Can't apply this boundary condition to non-X boundaries
+    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+  }
   
+  static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
+  int ncz = mesh->ngz-1;
+  if(c0 == (dcomplex*) NULL) {
+    //allocate memory
+    c0 = new dcomplex[ncz/2 + 1];
+    c1 = new dcomplex[ncz/2 + 1];
+    c2 = new dcomplex[ncz/2 + 1];
+  }
+  
+  int bx = bndry->bx;
+  // Loop over the Y dimension
+  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+    int x = bndry->x;
+    int y = bndry->y;
+    
+    // Take FFT of last 3 points in domain
+    ZFFT(f[x-bx][y], mesh->zShift[x-bx][y], c0);
+    ZFFT(f[x-2*bx][y], mesh->zShift[x-2*bx][y], c1);
+    ZFFT(f[x-3*bx][y], mesh->zShift[x-3*bx][y], c1);
+    dcomplex k0lin = (c1[0] - c0[0])/mesh->dx[x-bx][y]; // for kz=0 solution
+    
+    // Calculate Delp2 on point MXG+1 (and put into c1)
+    for(int jz=0;jz<=ncz/2;jz++) {
+      dcomplex d,e,f;
+      laplace_tridag_coefs(x-2*bx, y, jz, d, e, f);
+      c1[jz] = d*c0[jz] + e*c1[jz] + f*c2[jz];
+    }
+  }
 }
 
 ///////////////////////////////////////////////////////////////
