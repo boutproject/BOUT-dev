@@ -91,11 +91,9 @@
 \begin{document}
 
 \title{Resistive drift-wave instability test}
-\author{M.Umansky, LLNL, \\
-B.Dudson, University of York}
+\author{B.Dudson, University of York \\
+M.Umansky, LLNL}
 \maketitle
-
-\tableofcontents
 
 \section{Introduction}
 
@@ -148,7 +146,68 @@ diamagnetic frequency $\omega_* = k T_{e0} / L_N$ \cite{umansky-2008-tests}.
 
 \section{Input grid}
 
+The input grid file \file{uedge.grd\_std.cdl} was created (by M.Umansky) for
+BOUT-06, so the variables in the file were chosen for tokamak simulations. 
+The following is a list of variables which are read in by this example code. For this drift instability
+problem, most of these quantities are not used since the geometry is very simple.
+\begin{itemize}
+\item \code{nx} and \code{ny} : The size of the grid in X and Y; The size in the Z dimension is specified in the
+options file (see next section). For this test, \code{nx = 5} which consists of 1 ``real'' point, and 2 boundary
+cells either side.
+\item \code{dpsi} : The X grid spacing in poloidal flux $\psi$
+\item \code{dx}, \code{dy}. By default, BOUT++ uses these two for the X and Y grid spacing so reads them in
+  at the beginning. Unfortunately, BOUT uses dpsi for the X spacing so this must be changed in this example code.
+  \code{dy} is just a constant (in radians), as the Y spacing is given by \code{hthe}.
+\item \code{Rxy[x,y]}, \code{Zxy[x,y]} : Major radius and height in meters of each grid point
+\item \code{hthe[x,y]} : The poloidal distance between grid points in Y, divided by the change in poloidal angle
+  \code{dy}.
+\item \code{Bpxy[x,y]}, \code{Btxy[x,y]}, \code{Bxy[x,y]} : The poloidal, toroidal and total magnetic field in Tesla
+\item \code{Jpar0[x,y]} : Equilibrium parallel current density in A/m$^2$
+\item \code{phi0[x,y]} : Equilibrium electrostatic potential in Volts
+\item \code{bxcvx[x,y]}, \code{bxcvy[x,y]}, \code{bxcvz[x,y]} : Components of $\bvec_0\times\kvec_0$ in field-aligned coordinates
+  where $\kappa_0 = \bvec_0\cdot\nabla\bvec_0$ is the field-line curvature
+\item \code{Ni0[x,y]}, \code{Te0[x,y]}, \code{Ti0[x,y]}, \code{Vi0[x,y]}: Equilibrium plasma density, electron and ion temperature
+  profiles in eV, and parallel ion flow velocity in m/s.
+\item \code{Ni\_x}, \code{Te\_x}, \code{Ti\_x}, \code{Vi\_x}, \code{R0}, \code{bmag}: Reference values of density,
+  temperature, velocity, radius and magnetic field. Used to calculate normalisation factors.
+\item \code{ixseps1}, \code{ixseps2} : Number of radial grid points inside two separatrices (for tokamak single
+or double null plasmas). Since this is set to 5 here, all points are inside the ``core'' and so are periodic in Y
+\item \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, \code{jyseps2\_2} : These are poloidal indices
+  of the branch-cuts at x-points. 
+  \begin{itemize}
+  \item \code{jyseps1\_1 + 1} is the number of poloidal points in the inner lower leg (zero in this case)
+  \item \code{jyseps2\_1 - jyseps1\_1} is the number in the inboard part of the core, 
+  \item \code{jyseps2\_2 - jyseps1\_2} is the number in the outboard part of the core
+  \item \code{ny - 1 - jyseps2\_2} is the number of points in the outer lower leg (zero in this case)
+  \end{itemize}
+\item \code{qinty} : The integrated magnetic pitch. Gives the toroidal shift in radians following a field-line
+\item \code{sinty} : Integrated magnetic shear
+\end{itemize}
 
+There are several variables in the grid file which were used by BOUT, but not used by this BOUT++ example:
+\begin{itemize}
+\item \code{Rpsi[x,y]}, \code{Zpsi[x,y]} : \deriv{R}{\psi} and \deriv{Z}{\psi}
+\item \code{Rthe[x,y]}, \code{Zthe[x,y]} : \deriv{R}{\theta} and \deriv{Z}{\theta}
+\item \code{VE0[x,y]} : Toroidal component of the equilibrium ExB flow
+\item \code{kappa\_n[x,y]}, \code{kappa\_g1[x,y]}, \code{kappa\_g2[x,y]} : The normal and geodesic curvature components. These
+  variables are replaced by the \code{bxcv} vector components
+\item \code{Theta[x,y]} : The poloidal angle in radians
+\item \code{psixy[x,y]} : The poloidal flux $\psi$ 
+\item \code{x\_array} : The poloidal flux at the outboard midplane (probably)
+\item \code{simagxg}, \code{sibdryg} : $\psi$ on the magnetic axis and separatrix/boundary.
+\item \code{iNixnorm}, \code{jNixnorm} : Reference indices in x (i) and y (j) where the normalisation factors were
+  taken.
+\item \code{gjy0} : This is the poloidal index of the outboard midplane in tokamak simulations. Mainly useful for
+  post-processing, but not used here at all.
+\item \code{ixlb2} : This determines the number of points in the upper legs in BOUT, but is not used by BOUT++ 
+  (replaced by nyinner). Since this example has no x-points then this value doesn't matter.
+\item \code{dlthe[x,y]} : This is the poloidal distance between grid points in the y direction (\code{hthe} multiplied by
+  \code{dy})
+\item \code{kappaN}, \code{kappaTe}, \code{kappaTi}, \code{kappaV} : Used in the curvature terms in the density,
+  temperature and parallel velocity equations. Now all replaced by the \code{bxcv} components.
+\item \code{q\_safe} : The local field-line pitch $\nu = \Bt\hthe / \left(\Bp R\right)$. Integrated over
+  poloidal angle this gives \code{qinty}, and the integral of $\partial\nu  / \partial\psi$ gives \code{sinty}.
+\end{itemize}
 
 \section{Options file}
 
