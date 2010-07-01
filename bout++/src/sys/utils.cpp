@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <algorithm>
 
 BoutReal *rvector(int size)
 {
@@ -279,8 +280,7 @@ void ludcmp(dcomplex **a, int n, int *indx)
 const string lowercase(const string &str)
 {
   string strlow(str);
-
-  for(int i=0;i<strlow.length();i++)
-    strlow[i] = tolower(strlow[i]);
+  
+  std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
   return strlow;
 }

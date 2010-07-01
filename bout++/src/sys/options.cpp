@@ -50,34 +50,32 @@
 #include "globals.h"
 #include "options.h"
 #include "utils.h"
+#include "boutexception.h"
 
 #include <string.h>
 #include <strings.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <typeinfo>
+#include <sstream>
 
-const char SEC_CHAR='_'; ///< Used to separate sections and keys
-
-OptionFile::OptionFile()
+OptionFile::OptionFile() : sep("_")
 {
-  noptions = 0;
-  def_section = NULL;
 }
 
-OptionFile::OptionFile(const char *filename)
+OptionFile::OptionFile(const string &filename) : sep("_")
 {
-  noptions = 0;
-  read(filename);
-  def_section = NULL;
+  read(filename.c_str());
+}
+
+OptionFile::OptionFile(int &argc, char **argv, const string &filename) : sep("_")
+{
+  read(filename.c_str());
+  commandLineRead(argc, argv);
 }
 
 OptionFile::~OptionFile()
 {
-  if(noptions > 0)
-    free(option);
-
-  if(def_section != NULL)
-    free(def_section);
 }
 
 
@@ -85,331 +83,256 @@ OptionFile::~OptionFile()
  * Read input file
  **************************************************************************/
 
-int OptionFile::read(const char *format, ...)
+void OptionFile::read(const char *format, ...)
 {
-  FILE *fp;
-  int linenr;
-  int i, n, p;
-  char buffer[MAX_LINELEN];
-  char *section; // Current section
-  char *s;
+  ifstream fin;
+
+  string buffer;
+  string section; // Current section
+  
+  size_t startpos, endpos;
 
   va_list ap;  // List of arguments
   char filename[512];
-
+  
   if(format == (const char*) NULL) {
-    output.write("WARNING: OptionFile read passed NULL filename\n");
-    return 1;
+    throw BoutException("ERROR: OptionFile::read passed NULL filename\n");
   }
 
   va_start(ap, format);
-    vsprintf(filename, format, ap);
+  vsprintf(filename, format, ap);
   va_end(ap);
 
   output.write("Reading options file %s\n", filename);
-
-  section = (char*) NULL;
-
-  if((fp = fopen(filename, "rt")) == (FILE*) NULL) {
-    output.write("\tOptions file '%s' not found\n", filename);
-    return(1);
-  }
   
-  if((linenr = get_nextline(fp, buffer, MAX_LINELEN, 1)) == -1) {
-    output.write("\tEmpty option file '%s'\n", filename);
-    return(0);
+  fin.open(filename);
+
+  if(!fin.good()) {
+    throw BoutException("\tOptions file '%s' not found\n", filename);
   }
 
   do {
-    // printf("Line %d:%s:\n", linenr, buffer);
-    n = strlen(buffer);
+    buffer = getNextLine(fin);
     
-    // Check for section
-    if(buffer[0] == '[') {
-      if(buffer[n-1] != ']') {
-	output.write("\t'%s' line %d: Missing ']'\n", filename, linenr);
-	return(2);
-      }
-      buffer[n-1] = 0;
-      s = buffer+1;
-      
-      // Strip lead/trail spaces from the name
-      if((n = strip_space(s)) == 0) {
-	output.write("\t'%s' line %d: Empty section name\n", filename, linenr);
-	return(2);
-      }
+    if(!buffer.empty()) {
 
-      // Set section
-      section = (char*) realloc(section, n+1);
-      strcpy(section, s);
-    }else {
-      // A key/value pair, separated by a '='
-      
-      // Find the position of the equality
-      p = -1;
-      
-      for(i=0;i<n;i++) {
-	if(buffer[i] == '=') {
-	  if(p != -1) {
-	    output.write("\t'%s' line %d: Multiple equalities\n", filename, linenr);
-	    return(2);
-	  }
-	  p = i;
-	}
-      }
+      // Check for section
+      startpos = buffer.find_first_of("[");
+      endpos   = buffer.find_last_of("]");
 
-      if(p == -1) {
-	output.write("\t'%s' line %d: Don't know what this is. Ignoring\n",
-		 filename, linenr);
-      }else {
-      
-	s = &(buffer[p+1]); // Now contains value
-	buffer[p] = 0;   // Now contains key
-      
-	if((n = strip_space(buffer)) == 0) {
-	  output.write("\t'%s' line %d: Empty key\n", filename, linenr);
-	  return(2);
-	}
-      
-	n = strip_space(s);
-	
-	if( ((s[0] == '\'') || (s[0] == '"')) && (s[n-1] == s[0]) ) {
-	  // String in quotes - remove quotes
-	  s[n-1] = 0;
-	  s++;
-	}
-      
-	add(section, buffer, s, linenr);
-      }
-    }
-  }while((linenr = get_nextline(fp, buffer, MAX_LINELEN, 0)) != -1);
+      if( startpos != string::npos ) {
+        if( endpos == string::npos ) {
+          throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename, buffer.c_str());
+        }
 
-  fclose(fp);
-  return(0);
+        trim(buffer, "[]");
+
+        if(!buffer.empty()) {
+          section = buffer;
+        }
+      } else {
+        
+        string key, value;
+        
+        parse(buffer, key, value);
+
+        add(section, key, value);
+      } // section test
+    } // buffer.empty
+  } while(!fin.eof());
+
+  fin.close();
+  
+  if(options.empty()) {
+    throw BoutException("\tEmpty option file '%s'\n", filename);
+  }
+  
+/*  for (map<string,string>::iterator it=options.begin() ; it != options.end(); it++ )
+      cout << (*it).first << " => " << (*it).second << endl;*/
 }
 
-int OptionFile::command_line(int argc, char** argv)
+void OptionFile::commandLineRead(int argc, char** argv)
 {
   output << "Checking command-line options\n";
+
+  string buffer;
+  string key, value;
+
   // Go through command-line arguments
-  for(int i=1;i<argc;i++) {
+  for(size_t i=1;i<argc;i++) {
     // Should contain a "key=value" string
-    
-    // Find the position of the equality
-    int p = -1;
-    
-    int n = strlen(argv[i]);
-    for(int j=0;j<n;j++) {
-      if(argv[i][j] == '=') {
-	if(p != -1) {
-	  // Multiple inequalities - ignore
-	  output.write("\tWARNING: Ignoring option %s. Multiple equalities\n");
-	  continue;
-	}
-	p = j;
-      }
+    buffer = argv[i];
+
+    if(buffer != "restart") {
+      parse(buffer, key, value);
+      add("", key, value);
     }
-    
-    if(p == -1) {
-      /// No equality sign. Assume it's a setting which is set to true
-      /// This is so that adding "restart" to the command-line works
-      add(NULL, argv[i], "true", -1);
-      continue;
-    }
-    argv[i][p] = 0;
-    
-    // Add to the hash table
-    add(NULL, argv[i], &(argv[i][p+1]), -1);
+
+    /// No equality sign. Assume it's a setting which is set to true
+    /// This is so that adding "restart" to the command-line works
+    //  add(NULL, argv[i], "true", -1);
   }
-  return 0;
+
 }
 
 /**************************************************************************
  * Functions to request options
  **************************************************************************/
 
-int OptionFile::getInt(const char *name, int &val)
+void OptionFile::setSection(const string &name) // Set the default section
 {
-  int i;
-
-  if(name == NULL)
-    return 1;
-
-  if((i = find(name)) == -1)
-    return(1);
-
-  if(sscanf(option[i].string, "%d", &val) != 1) {
-    output.write("\tOption '%s': Integer expected\n", name);
-    return(1);
-  }
-
-  return(0);
+  def_section = name;
 }
 
-int OptionFile::getInt(const char *section, const char *name, int &val)
+string OptionFile::getSection() // Set the default section
 {
-  static char *str;
-  static int len = 0;
-  int n;
-  
-  if(name == NULL)
-    return 1;
-
-  if(section == NULL)
-    return getInt(name, val);
-
-  n = strlen(section) + strlen(name);
-
-  if(n > len) {
-    if(len != 0)
-      free(str);
-    str = (char*) malloc(sizeof(char)*(n+2));
-    len = n;
-  }
-  sprintf(str, "%s%c%s", section, SEC_CHAR, name);
-  return( getInt(str, val) );
+  return def_section;
 }
 
-int OptionFile::getReal(const char *name, BoutReal &val)
+void OptionFile::setSectionSep(const string &s)
 {
-  int i;
-  double v;
-  
-  if((i = find(name)) == -1)
-    return(1);
-  
-  if(sscanf(option[i].string, "%lf", &v) != 1) {
-    output.write("\tOption '%s': Float expected\n", name);
-    return(1);
-  }
-  
-  val = (BoutReal) v;
-
-  return(0);
+  sep = s;
 }
 
-int OptionFile::getReal(const char *section, const char *name, BoutReal &val)
+inline const string& OptionFile::getSectionSep()
 {
-  static char *str;
-  static int len = 0;
-  int n;
-  
-  if(name == NULL)
-    return 1;
-
-  if(section == NULL)
-    return getReal(name, val);
-
-  n = strlen(section) + strlen(name);
-
-  if(n > len) {
-    if(len != 0)
-      free(str);
-    str = (char*) malloc(sizeof(char)*(n+2));
-    len = n;
-  }
-  sprintf(str, "%s%c%s", section, SEC_CHAR, name);
-  return( getReal(str, val) );
+  return sep; ///< Used to separate sections and keys
 }
 
-char* OptionFile::getString(const char *name)
+inline string OptionFile::prependSection(const string &section, const string& key)
 {
-  if(name == NULL)
-    return NULL;
-
-  if(def_section == NULL) {
-    int i;
-    if((i = find(name)) == -1)
-      return((char*) NULL);
+  if(!section.empty())
+    return lowercase(section + getSectionSep() + key);
     
-    return(option[i].string);
-  }
-  
-  return getString(def_section, name);
+  return lowercase(key);
 }
 
-char* OptionFile::getString(const char *section, const char *name)
+template <class type>
+void OptionFile::get(const map<string,string>::iterator &it, type &val)
 {
-  static char *str;
-  static int len = 0;
-  int n;
+  if(it != end()) {
+    
+    stringstream ss;
 
-  if(name == NULL)
-    return NULL;
+    if(typeid(type) == typeid(bool)) { // Best way (that I can find) to convert strings to bool
+      char c = toupper((it->second)[0]);
+      if((c == 'Y') || (c == 'T') || (c == '1')) {
+        ss << "1";
+        ss >> val;
+      } else if((c == 'N') || (c == 'F') || (c == '0')) {
+        ss << "0";
+      } else {  
+          output << "\tOption '" << it->first << "': Boolean expected\n";
+      }
 
-  if(section == NULL)
-    return getString(name);
-  
-  n = strlen(section) + strlen(name);
+    } else {
+      ss << it->second;
+      output << "\tOption " << it->first << " = " << val << endl;
+    }
+    
+    ss >> val;
 
-  if(n > len) {
-    if(len != 0)
-      free(str);
-    str = (char*) malloc(sizeof(char)*(n+2));
-    len = n;
   }
-  sprintf(str, "%s%c%s", section, SEC_CHAR, name);
-
-  int i;
-  if((i = find(str)) == -1)
-    return((char*) NULL);
-  
-  return(option[i].string);
 }
 
-const string OptionFile::getString(const string &section, const string &name)
+template<class type>
+void OptionFile::get(const string &key, type &val, const type &def)
 {
-  char *s = getString(section.c_str(), name.c_str());
-  if(s == NULL)
-    return(string(""));
-  return string(s);
-}
+  map<string, string>::iterator it(find(key));
 
-int OptionFile::getBool(const char *name, bool &val)
-{
-  int i;
-  char c;
-
-  if((i = find(name)) == -1) {
-    return(1);
+  if(it != end()) {
+    get<type>(it, val);
+    return;
   }
-
-  c = toupper(option[i].string[0]);
-
-  if((c == 'Y') || (c == 'T') || (c == '1')) {
-    val = true;
-  }else if((c == 'N') || (c == 'F') || (c == '0')) {
-    val = false;
-  }else {
-    output.write("\tOption '%s': Boolean expected\n", name);
-    return(1);
-  }
-
-  return(0);
-}
-
-int OptionFile::getBool(const char *section, const char *name, bool &val)
-{
-  static char *str;
-  static int len = 0;
-  int n;
   
-  if(name == NULL)
-    return 1;
-
-  if(section == NULL)
-    return getBool(name, val);
-
-  n = strlen(section) + strlen(name);
-
-  if(n > len) {
-    if(len != 0)
-      free(str);
-    str = (char*) malloc(sizeof(char)*(n+2));
-    len = n;
+  it = find(prependSection(def_section, key));
+  if(it != end()) {
+    get<type>(it, val);
+    return;
   }
-  sprintf(str, "%s%c%s", section, SEC_CHAR, name);
-  return( getBool(str, val) );
+
+  val = def;
+  output << "\tOption " << key << " = " << def << " (default)" << endl;
+}
+
+template<class type>
+void OptionFile::get(const string &section, const string &key, type &val, const type &def)
+{
+  if(key.empty()) {
+    output.write("WARNING: NULL option requested\n");
+    return;
+  }
+  
+  get<type>(key, val, def);
+  
+  if(val != def) return;
+
+  get<type>(prependSection(section, key), val, def);
+}
+
+template<class type>
+void OptionFile::get(const string &section1, const string &section2, const string &key, type &val, const type &def)
+{
+  
+  get<type>(key, val, def);
+  
+  if(val != def) return;
+  
+  get<type>(prependSection(section1, key), val, def);
+
+  if(val != def) return;
+  
+  get<type>(prependSection(section2, key), val, def);
+}
+
+void OptionFile::get(const string &key, int &val, const int &def)
+{
+  get<int>(key, val, def);
+}
+
+void OptionFile::get(const string &key, BoutReal &val, const BoutReal &def)
+{
+  get<BoutReal>(key, val, def);
+}
+
+void OptionFile::get(const string &key, bool &val, const bool &def)
+{
+  get<bool>(key, val, def);
+}
+
+void OptionFile::get(const string &section, const string &key, int &val, const int &def)
+{
+  get<int>(section, key, val, def);
+}
+
+void OptionFile::get(const string &section1, const string &section2, const string &key, int &val, const int &def)
+{
+  get<int>(section1, section2, key, val, def);
+}
+
+void OptionFile::get(const string &section, const string &key, BoutReal &val, const BoutReal &def)
+{
+  get<BoutReal>(section, key, val, def);
+}
+
+void OptionFile::get(const string &section1, const string &section2, const string &key, BoutReal &val, const BoutReal &def)
+{
+  get<BoutReal>(section1, section2, key, val, def);
+}
+
+void OptionFile::get(const string &section, const string &key, bool &val, const bool &def)
+{
+  get<bool>(section, key, val, def);
+}
+
+void OptionFile::get(const string &key, string &val, const string &def)
+{
+  get<string>(key, val, def);
+}
+
+void OptionFile::get(const string &section, const string &key, string &val, const string &def)
+{
+  get<string>(section, key, val, def);
 }
 
 /**************************************************************************
@@ -418,435 +341,151 @@ int OptionFile::getBool(const char *section, const char *name, bool &val)
  * Convert given options to strings
  **************************************************************************/
 
-int OptionFile::set(const char *name, int val)
+template<class type>
+void OptionFile::set(const string &key, const type &val)
 {
-  char buffer[128];
+  stringstream ss;
   
-  snprintf(buffer, 127, "%d", val);
-  return set(name, buffer);
+  ss << val;
+  
+  options[key] = ss.str();
 }
 
-int OptionFile::set(const char *name, BoutReal val)
+void OptionFile::set(const string &key, const int &val)
 {
-  char buffer[128];
-  
-  snprintf(buffer, 127, "%le", val);
-  return set(name, buffer);
+  set<int>(key, val);
 }
 
-int OptionFile::set(const char *name, bool val)
+void OptionFile::set(const string &key, const BoutReal &val)
 {
-  if(val) {
-    return set(name, "true");
-  }
-  
-  return set(name, "false");
+  set<BoutReal>(key, val);
 }
 
-int OptionFile::set(const char *name, const char *str)
+void OptionFile::set(const string &key, const bool &val)
 {
-  int n = strlen(name)+1;
-  if(def_section != (char*) NULL)
-    n += strlen(def_section) + 1;
+  set<bool>(key, val);
+}
 
-  char* s = (char*) malloc(n);
-  if(def_section != (char*) NULL) {
-    sprintf(s, "%s%c%s", def_section, SEC_CHAR, name);
-  }else
-    strcpy(s, name);
-
-  // See if the name is already set
-  n = find(s);
-  if(n != -1) {
-    output.write("WARNING: set method changing option '%s' from '%s' to '%s'\n", 
-		 s, option[n].string, str);
-    
-    free(option[n].string);
-    free(s);
-  }else {
-    //.allocate a new option
-    if(noptions == 0) {
-      option = (t_option*) malloc(sizeof(t_option));
-    }else {
-      option = (t_option*) realloc(option, (noptions+1)*sizeof(t_option));
-    }
-    n = noptions;
-    noptions++;
-    
-    option[n].name = s;
-    option[n].hash = hash_string(name);
-  }
-  
-  option[n].string = copy_string(str);
-  
-  return 0;
+void OptionFile::set(const string &key, const string &val)
+{
+  set<string>(key, val);
 }
 
 /**************************************************************************
  * Private functions
  **************************************************************************/
 
-void OptionFile::add(const char *section, const char *name, const char *string, int linenr)
+void OptionFile::add(const string &section, const string &key, const string &value)
 {
-  int n;
-
-  char *s;
-
-  if(name == NULL)
-    return;
-
-  n = strlen(name)+1;
-  if(section != (char*) NULL)
-    n += strlen(section) + 1;
-  s = (char*) malloc(n);
-  if(section != (char*) NULL) {
-    sprintf(s, "%s%c%s", section, SEC_CHAR, name);
-  }else
-    strcpy(s, name);
-
-  int id = find(s);
-  if(id != -1) {
-    if(linenr == -1) {
-      // On the command line - override
-      output.write("\tWARNING: Option '%s' over-ridden on command-line to '%s'\n", s, string);
-      // Free the old strings
-      free(option[id].name);
-      free(option[id].string);
-    }else {
-      output.write("\tWARNING: Variable '%s' re-defined on line %d. Keeping first occurrence\n", s, linenr);
-      free(s);
-      return;
-    }
-  }else {
-    //.allocate memory
-    
-    if(noptions == 0) {
-      option = (t_option*) malloc(sizeof(t_option));
-    }else {
-      option = (t_option*) realloc(option, (noptions+1)*sizeof(t_option));
-    }
-    
-    id = noptions;
-    noptions++;
+  if(key.empty()) {
+    throw BoutException("\tEmpty key passed to 'OptionsFile::add!'");
   }
-    
-  // Copy name across
 
-  option[id].name = s;
+  string sectionkey(prependSection(section, key));
 
-  // Calculate hash
-
-  option[id].hash = hash_string(s);
-
-  // Copy string across
-  option[id].string = copy_string(string);
+  options[sectionkey] = value;
 }
 
-int OptionFile::find(const char *name)
+map<string,string>::iterator OptionFile::find(const string &key)
 {
-  int i, n;
-  int hash;
-
-  if(name == NULL)
-    return -1;
-
-  hash = hash_string(name);
-
-  n = -1;
-
-  for(i=0;i<noptions;i++) {
-    if(option[i].hash == hash) {
-      // Compare strings to be sure
-      if(strcasecmp(option[i].name, name) == 0) {
-	n = i;
-	break;
-      }
-    }
-  }
-  
-  return(n);
+  return options.find(key);
 }
 
-unsigned int OptionFile::hash_string(const char *string)
+map<string,string>::iterator OptionFile::find(const string &section, const string &key)
 {
-  int i, n;
-  unsigned int hash;
+  return options.find(prependSection(section, key));
+}
 
-  if(string == NULL)
-    return 0;
-
-  n = strlen(string);
-  hash = 0;
-
-  for(i=0;i<n;i++) {
-    hash += (unsigned int) toupper(string[i]);
-    hash += hash << 10;
-    hash ^= hash >> 6;
-  }
-
-  hash += hash << 3;
-  hash ^= hash >> 11;
-  hash += hash << 15;
-
-  return(hash);
+map<string,string>::iterator OptionFile::end()
+{
+  return options.end();
 }
 
 // Strips leading and trailing spaces from a string
-int OptionFile::strip_space(char *string)
+void OptionFile::trim(string &s, const string &c)
 {
-  int s, i, n;
   
-  if(string == NULL)
-    return 0;
+  // Find the first character position after excluding leading blank spaces
+  size_t startpos = s.find_first_not_of(c);
+  // Find the first character position from reverse af
+  size_t endpos = s.find_last_not_of(c);
 
-  n = strlen(string);
-
-  if(n == 0)
-    return(0);
-
-  // Strip leading space
-  
-  s = 0;
-  while(isspace(string[s]) && (string[s] != 0))
-    s++;
-  
-  if(string[s] == 0) {
-    string[0] = 0;
-    return(0);
+  // if all spaces or empty, then return an empty string
+  if(( startpos == string::npos ) || ( endpos == string::npos ))
+  {
+    s = "";
   }
-
-  // Strip trailing space
-
-  i = n-1;
-  while(isspace(string[i]))
-    i--;
-
-  n = i+1 - s; // Length of new string
-  for(i=0;i<n;i++)
-    string[i] = string[i+s];
-  string[n] = 0;
-
-  return(n);
+  else
+  {
+    s = s.substr(startpos, endpos-startpos+1);
+  }
 }
 
-int OptionFile::get_nextline(FILE *fp, char *buffer, int maxbuffer, int first)
-{
-  // Returns the next useful line, stripped of comments and whitespace
+void OptionFile::trimRight(string &s, const string &c)
+{  
+  // Find the first character position after excluding leading blank spaces
+  size_t startpos = s.find_first_of(c);
 
-  int i, n;
-  static int linenr = 0;
-  
-  if(first)
-    linenr = 0;
-
-  do{
-    buffer[0] = 0;
-    /* Get a line from the file */
-    fgets(buffer, maxbuffer-1, fp);
-    buffer[maxbuffer-1] = 0; // ensure always have terminating zero
-    linenr++;
-
-    n = strlen(buffer);
-
-    // Strip out comments
-    for(i=0;i<n;i++) {
-      if((buffer[i] == COMMENT_CHAR) || (buffer[i] == '#'))
-	buffer[i] = 0;
-    }
-    
-    // Strip out whitespace
-    n = strip_space(buffer);
-
-  }while((feof(fp) == 0) && (n == 0));
-
-  if(n == 0)
-    linenr = -1;
-
-  return(linenr);
+  // if all spaces or empty, then return an empty string
+  if(( startpos != string::npos ) )
+  {
+    s = s.substr(0,startpos);
+  }
 }
 
-
-// New interface
-
-void OptionFile::setSection(const char *name) // Set the default section
+void OptionFile::trimLeft(string &s, const string &c)
 {
-  int n;
-
-  if(def_section != NULL)
-    free(def_section);
-
-  if(name == NULL) {
-    def_section = NULL;
-    return;
-  }
-
-  n = strlen(name);
-  if(n == 0) {
-    def_section = NULL;
-    return;
-  }
-
-  def_section = (char*) malloc(n+1);
   
-  strcpy(def_section, name);
-}
- 
-int OptionFile::get(const char *name, int &val, const int def)
-{
-  if(name == NULL) {
-    output.write("WARNING: NULL integer option requested\n");
-    return 1;
+  // Find the first character position from reverse af
+  size_t endpos = s.find_last_of(c);
+
+  // if all spaces or empty, then return an empty string
+  if(( endpos != string::npos ) )
+  {  
+    s = s.substr(endpos);
   }
-    
-  if(def_section == NULL) {
-    if(getInt(name, val)) {
-      val = def;
-      output.write("\tOption %s = %d (default)\n", name, def);
-      return 1;
-    }else {
-      output.write("\tOption %s = %d\n", name, val);
-    }
-  }else {
-    if(getInt(def_section, name, val)) {
-      val = def;
-      output.write("\tOption %s / %s = %d (default)\n", def_section, name, def);
-      return 1;
-    }else {
-      output.write("\tOption %s / %s = %d\n", def_section, name, val);
-    }
-  }
-  return 0;
 }
 
-int OptionFile::get(const char *name, BoutReal &val, const BoutReal def)
+// Strips the comments from a string
+void OptionFile::trimComments(string &s)
 {
-  if(name == NULL) {
-    output.write("WARNING: NULL BoutReal option requested\n");
-    return 1;
-  }
-  
-  if(def_section == NULL) {
-    if(getReal(name, val)) {
-      val = def;
-      output.write("\tOption %s = %e (default)\n", name, def);
-      return 1;
-    }else {
-      output.write("\tOption %s = %e\n", name, val);
-    }
-  }else {
-    if(getReal(def_section, name, val)) {
-      val = def;
-      output.write("\tOption %s / %s = %e (default)\n", def_section, name, def);
-      return 1;
-    }else {
-      output.write("\tOption %s / %s = %e\n", def_section, name, val);
-    }
-  }
-  return 0;
+  trimRight(s, "#;");
 }
 
-int OptionFile::get(const char *name, bool &val, const bool def)
+// Returns the next useful line, stripped of comments and whitespace
+string OptionFile::getNextLine(ifstream &fin)
 {
-  if(name == NULL) {
-    output.write("WARNING: NULL boolean option requested\n");
-    return 1;
-  }
+  string line("");
+  
+  getline(fin, line);
+  trimComments(line);
+  trim(line);
+  line = lowercase(line);
 
-  if(def_section == NULL) {
-    if(getBool(name, val)) {
-      val = def;
-      if(def) {
-	output.write("\tOption %s = true (default)\n", name);
-      }else
-	output.write("\tOption %s = false (default)\n", name);
-      return 1;
-    }else {
-      if(val) {
-	output.write("\tOption %s = true\n", name);
-      }else
-	output.write("\tOption %s = false\n", name);
-    }
-  }else {
-    if(getBool(def_section, name, val)) {
-      val = def;
-      if(def) {
-	output.write("\tOption %s / %s = true (default)\n", def_section, name);
-      }else
-	output.write("\tOption %s / %s = false (default)\n", def_section, name);
-      return 1;
-    }else {
-      if(val) {
-	output.write("\tOption %s / %s = true\n", def_section, name);
-      }else
-	output.write("\tOption %s / %s = false\n", def_section, name);
-    }
-  }
-  return 0;
+/*  output << "DEBUG: " << line << endl;*/
+  return line;
 }
 
-int OptionFile::get(const char *section, const char *name, int &val, const int def)
+void OptionFile::parse(const string &buffer, string &key, string &value)
 {
-  if(name == NULL) {
-    output.write("WARNING: NULL integer option requested\n");
-    return 1;
+   // A key/value pair, separated by a '='
+
+  size_t startpos = buffer.find_first_of("=");
+  size_t endpos   = buffer.find_last_of("=");
+
+  if( startpos == string::npos && startpos != endpos ) {
+    throw BoutException("\tMissing (or multiple) '=' sign(s)\n\tLine: %s", buffer.c_str());
   }
+
+  key = buffer.substr(0, startpos);
+  value = buffer.substr(startpos+1);
+
+  trim(key, " \t\"");
+  trim(value, " \t\"");
   
-  if(section == NULL)
-    return get(name, val, def);
-  
-  if(getInt(section, name, val)) {
-    val = def;
-    output.write("\tOption %s / %s = %d (default)\n", section, name, def);
-    return 1;
-  }else {
-    output.write("\tOption %s / %s = %d\n", section, name, val);
+/*  output << "DEBUG2: (" << key << "," << value << ")" << endl;*/
+
+  if(key.empty() || value.empty()) {
+    throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
   }
-  return 0;
 }
-
-int OptionFile::get(const char *section, const char *name, BoutReal &val, const BoutReal def)
-{
-  if(name == NULL) {
-    output.write("WARNING: NULL BoutReal option requested\n");
-    return 1;
-  }
-  
-  if(section == NULL)
-    return get(name, val, def);
-
-  if(getReal(section, name, val)) {
-    val = def;
-    output.write("\tOption %s / %s = %e (default)\n", section, name, def);
-    return 1;
-  }else {
-    output.write("\tOption %s / %s = %e\n", section, name, val);
-  }
-  return 0;
-}
-
-int OptionFile::get(const char *section, const char *name, bool &val, const bool def)
-{
-  if(name == NULL) {
-    output.write("WARNING: NULL boolean option requested\n");
-    return 1;
-  }
-  
-  if(section == NULL)
-    return get(name, val, def);
-  
-  if(getBool(section, name, val)) {
-    val = def;
-    if(def) {
-      output.write("\tOption %s / %s = true (default)\n", section, name);
-    }else
-      output.write("\tOption %s / %s = false (default)\n", section, name);
-    return 1;
-  }else {
-    if(val) {
-      output.write("\tOption %s / %s = true\n", section, name);
-    }else
-      output.write("\tOption %s / %s = false\n", section, name);
-  }
-  return 0;
-}
-

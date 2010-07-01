@@ -1,35 +1,35 @@
 /*!************************************************************************
- * Reads in the configuration file, supplying
- * an interface to get options
- * 
- * File is an ini file with sections
- * [section]
- * and variables as
- * name = string ; comment
- * 
- * Ben Dudson, September 2007
- *
- **************************************************************************
- * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
- *
- * Contact: Ben Dudson, bd512@york.ac.uk
- * 
- * This file is part of BOUT++.
- *
- * BOUT++ is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * BOUT++ is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- *
- **************************************************************************/
+* Reads in the configuration file, supplying
+* an interface to get options
+* 
+* File is an ini file with sections
+* [section]
+* and variables as
+* name = string ; comment
+* 
+* Ben Dudson, September 2007
+*
+**************************************************************************
+* Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+*
+* Contact: Ben Dudson, bd512@york.ac.uk
+* 
+* This file is part of BOUT++.
+*
+* BOUT++ is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* BOUT++ is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Lesser General Public License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public License
+* along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+*
+**************************************************************************/
 
 class OptionFile;
 
@@ -40,76 +40,90 @@ class OptionFile;
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <map>
 
 /// Class for reading INI style configuration files
 /*!
- * 
- */
+* 
+*/
+
+using namespace std;
+
 class OptionFile {
- public:
+public:
   OptionFile();
-  OptionFile(const char *filename);
+  OptionFile(const string &filename);
+  OptionFile(int &argc, char **argv, const string &filename);
   ~OptionFile();
-  
+
   /// Read options from grid file
-  int read(const char *filename, ...);
-  
-  int command_line(int argc, char** argv);
+  void read(const char *filename, ...);
 
-  int getInt(const char *name, int &val);
-  int getInt(const char *section, const char *name, int &val);
-
-  int getReal(const char *name, BoutReal &val);
-  int getReal(const char *section, const char *name, BoutReal &val);
-
-  char* getString(const char *name);
-  char* getString(const char *section, const char *name);
-  const string getString(const string &section, const string &name);
-
-  int getBool(const char *name, bool &val);
-  int getBool(const char *section, const char *name, bool &val);
+  void commandLineRead(int argc, char** argv);
 
   // New interface
   // Prints out what values are being assigned
 
-  void setSection(const char *name); // Set the default section
- 
-  int get(const char *name, int &val, const int def);
-  int get(const char *name, BoutReal &val, const BoutReal def);
-  int get(const char *name, bool &val, const bool def);
+  void setSection(const string &name); // Set the default section
+  string getSection(); // Set the default section
 
-  int get(const char *section, const char *name, int &val, const int def);
-  int get(const char *section, const char *name, BoutReal &val, const BoutReal def);
-  int get(const char *section, const char *name, bool &val, const bool def);
+  template <class type> void get(const map<string,string>::iterator &, type &);
+  template <class type> void get(const string &, type &, const type &);
+  template <class type> void get(const string &, const string &, type &, const type &);
+  template <class type> void get(const string &, const string &, const string &, type &, const type &);
+
+  void get(const string &, int &, const int &);
+  void get(const string &, BoutReal &, const BoutReal &);
+  void get(const string &, bool &, const bool &);
+  void get(const string &, string &, const string &);
+
+  void get(const string &, const string &, int &, const int &);
+  void get(const string &, const string &, BoutReal &, const BoutReal &);
+  void get(const string &, const string &, bool &, const bool &);
+  void get(const string &, const string &, string &, const string &);
+
+  void get(const string &, const string &, const string &, int &, const int &);
+  void get(const string &, const string &, const string &, BoutReal &, const BoutReal &);
+  void get(const string &, const string &, const string &, bool &, const bool &);
+  void get(const string &, const string &, const string &, string &, const string &);
+  
+  void get(const string &, const string &, const string &, const string &, int &, const int &);
+  void get(const string &, const string &, const string &, const string &, BoutReal &, const BoutReal &);
+  void get(const string &, const string &, const string &, const string &, bool &, const bool &);
+  void get(const string &, const string &, const string &, const string &, string &, const string &);
 
   // Set methods to pass in options manually
-  int set(const char *name, int val);
-  int set(const char *name, BoutReal val);
-  int set(const char *name, bool val);
-  int set(const char *name, const char *string);
+  template <class type> void set(const string &, const type &);
+  
+  void set(const string &, const int &);
+  void set(const string &, const BoutReal &);
+  void set(const string &, const bool &);
+  void set(const string &, const string &);
+  
+  const string& getSectionSep();
+  void setSectionSep(const string &);
+  
+  map<string,string>::iterator find(const string &);
+  map<string, string>::iterator find(const string &, const string &);
+  
+  map<string,string>::iterator end();
 
- private:
-  
-  static const char COMMENT_CHAR = ';';
-  static const int MAX_LINELEN = 512;
+protected:
 
-  typedef struct {
-    char *name;
-    int hash;
-    char *string;
-  }t_option;
+  void add(const string &, const string &, const string &);
+  void trim(string &, const string &c=" \t");
+  void trimLeft(string &, const string &c=" \t");
+  void trimRight(string &, const string &c=" \t");
+  void trimComments(string &);
+  void parse(const string &, string &, string &);
+  string getNextLine(ifstream &);
+  string prependSection(const string &section, const string& key);
 
-  int noptions;
-  t_option *option;
-  
-  void add(const char *section, const char *name, const char *string, int linenr);
-  int find(const char *name);
-  unsigned int hash_string(const char *string);
-  int strip_space(char *string);
-  int get_nextline(FILE *fp, char *buffer, int maxbuffer, int first);
-  
-  char *def_section; // Default section heading
-  
+  string def_section; // Default section heading
+
+  string sep;
+
+  map<string, string> options;
 };
 
 #endif // __OPTIONS_H__

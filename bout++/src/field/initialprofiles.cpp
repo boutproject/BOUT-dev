@@ -56,7 +56,7 @@ void get_profile_opts()
   gotopts = true;
   
   output.write("Initial profile global options\n");
-  options.setSection(NULL);
+  options.setSection("");
   
   bool TwistShift;
   OPTION(TwistShift, false);
@@ -81,81 +81,49 @@ int initial_profile(const char *name, Field3D &var)
   /////////// get options //////////
   
   get_profile_opts();
+      
+  // Look in the section with the variable name
+  // Otherwise look for global settings
+  options.get(name, "All", "scale", scale, 1.0e-4);
 
-  // Size of the initial perturbation
-  if(options.getReal(name, "scale", scale)) // Look in the section with the variable name
-    if(options.getReal("All", "scale", scale)) // Otherwise look for global settings
-      scale = 1.0e-4;
+  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal  
+  options.get(name, "All", "xs_opt", xs_opt, 1);
 
-  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
-
-  if(options.getInt(name, "xs_opt", xs_opt))
-    if(options.getInt("All", "xs_opt", xs_opt))
-      xs_opt = 1;
-
-  if(options.getInt(name, "ys_opt", ys_opt))
-    if(options.getInt("All", "ys_opt", ys_opt))
-      ys_opt = 0;
+  options.get(name, "All", "ys_opt", ys_opt, 0);
   
-  if(options.getInt(name, "zs_opt", zs_opt))
-    if(options.getInt("All", "zs_opt", zs_opt))
-      zs_opt = 2;
+  options.get(name, "All", "zs_opt", zs_opt, 2);
 
   // Mode number (for sinusoidal)
-
-  if(options.getInt(name, "xs_mode", xs_mode))
-    if(options.getInt("All", "xs_mode", xs_mode))
-      xs_mode = 4;
-
-  if(options.getInt(name, "ys_mode", ys_mode))
-    if(options.getInt("All", "ys_mode", ys_mode))
-      ys_mode = 4;
   
-  if(options.getInt(name, "zs_mode", zs_mode))
-    if(options.getInt("All", "zs_mode", zs_mode))
-      zs_mode = 4;
+    options.get(name, "All", "xs_mode", xs_mode, 4);
+
+    options.get(name, "All", "ys_mode", ys_mode, 4);
+
+    options.get(name, "All", "zs_mode", zs_mode, 4);
 
   // Phase (for sinusoidal), in units of pi
 
-  if(options.getReal(name, "xs_phase", xs_phase))
-    if(options.getReal("All", "xs_phase", xs_phase))
-      xs_phase = 0.;
+    options.get(name, "All", "xs_phase", xs_phase, 0.);
 
-  if(options.getReal(name, "ys_phase", ys_phase))
-    if(options.getReal("All", "ys_phase", ys_phase))
-      ys_phase = 0.;
-  
-  if(options.getReal(name, "zs_phase", zs_phase))
-    if(options.getReal("All", "zs_phase", zs_phase))
-      zs_phase = 0.;
+    options.get(name, "All", "ys_phase", ys_phase, 0.);
+
+    options.get(name, "All", "zs_phase", zs_phase, 0.);
   
   // Gaussian peak location
+      
+    options.get(name, "All", "xs_s0", xs_s0, 0.5);
 
-  if(options.getReal(name, "xs_s0", xs_s0))
-    if(options.getReal("All", "xs_s0", xs_s0))
-      xs_s0 = 0.5;
-
-  if(options.getReal(name, "ys_s0", ys_s0))
-    if(options.getReal("All", "ys_s0", ys_s0))
-      ys_s0 = 0.5;
-  
-  if(options.getReal(name, "zs_s0", zs_s0))
-    if(options.getReal("All", "zs_s0", zs_s0))
-      zs_s0 = 0.5;
+    options.get(name, "All", "ys_s0", ys_s0, 0.5);
+      
+    options.get(name, "All", "zs_s0", zs_s0, 0.5);
 
   // Gaussian width
-  
-  if(options.getReal(name, "xs_wd", xs_wd))
-    if(options.getReal("All", "xs_wd", xs_wd))
-      xs_wd = 0.2;
 
-  if(options.getReal(name, "ys_wd", ys_wd))
-    if(options.getReal("All", "ys_wd", ys_wd))
-      ys_wd = 0.2;
-  
-  if(options.getReal(name, "zs_wd", zs_wd))
-    if(options.getReal("All", "zs_wd", zs_wd))
-      zs_wd = 0.2;
+    options.get(name, "All", "xs_wd", xs_wd, 0.2);
+
+    options.get(name, "All", "ys_wd", ys_wd, 0.2);
+
+    options.get(name, "All", "zs_wd", zs_wd, 0.2);
 
   for (jx=0; jx < mesh->ngx; jx++) {
     BoutReal xcoord = mesh->GlobalX(jx);
@@ -231,59 +199,39 @@ int initial_profile(const char *name, Field2D &var)
   get_profile_opts();
 
   // Size of the initial perturbation
-  if(options.getReal(name, "scale", scale)) // Look in the section with the variable name
-    if(options.getReal("All", "scale", scale)) // Otherwise look for global settings
-      scale = 1.0e-4;
+  // Look in the section with the variable name
+  // Otherwise look for global settings
+  options.get(name, "All", "scale", scale, 1e-4);
 
   // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
 
-  if(options.getInt(name, "xs_opt", xs_opt))
-    if(options.getInt("All", "xs_opt", xs_opt))
-      xs_opt = 1;
+    options.get(name, "All", "xs_opt", xs_opt, 1);
 
-  if(options.getInt(name, "ys_opt", ys_opt))
-    if(options.getInt("All", "ys_opt", ys_opt))
-      ys_opt = 0;
+    options.get(name, "All", "ys_opt", ys_opt, 0);
 
   // Mode number (for sinusoidal)
 
-  if(options.getInt(name, "xs_mode", xs_mode))
-    if(options.getInt("All", "xs_mode", xs_mode))
-      xs_mode = 4;
+    options.get(name, "All", "xs_mode", xs_mode, 4);
 
-  if(options.getInt(name, "ys_mode", ys_mode))
-    if(options.getInt("All", "ys_mode", ys_mode))
-      ys_mode = 4;
+    options.get(name, "All", "ys_mode", ys_mode, 4);
 
   // Phase (for sinusoidal), in units of pi
 
-  if(options.getReal(name, "xs_phase", xs_phase))
-    if(options.getReal("All", "xs_phase", xs_phase))
-      xs_phase = 0.;
+    options.get(name, "All", "xs_phase", xs_phase, 0.);
 
-  if(options.getReal(name, "ys_phase", ys_phase))
-    if(options.getReal("All", "ys_phase", ys_phase))
-      ys_phase = 0.;
+    options.get(name, "All", "ys_phase", ys_phase, 0.);
   
   // Gaussian peak location
 
-  if(options.getReal(name, "xs_s0", xs_s0))
-    if(options.getReal("All", "xs_s0", xs_s0))
-      xs_s0 = 0.5;
+    options.get(name, "All", "xs_s0", xs_s0, 0.5);
 
-  if(options.getReal(name, "ys_s0", ys_s0))
-    if(options.getReal("All", "ys_s0", ys_s0))
-      ys_s0 = 0.5;
+    options.get(name, "All", "ys_s0", ys_s0, 0.5);
 
   // Gaussian width
-  
-  if(options.getReal(name, "xs_wd", xs_wd))
-    if(options.getReal("All", "xs_wd", xs_wd))
-      xs_wd = 0.2;
 
-  if(options.getReal(name, "ys_wd", ys_wd))
-    if(options.getReal("All", "ys_wd", ys_wd))
-      ys_wd = 0.2;
+    options.get(name, "All", "xs_wd", xs_wd, 0.2);
+
+    options.get(name, "All", "ys_wd", ys_wd, 0.2);
   
 
   for (jx=0; jx < mesh->ngx; jx++) {

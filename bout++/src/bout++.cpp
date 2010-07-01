@@ -91,10 +91,10 @@ int bout_init(int argc, char **argv)
 {
   int i, NOUT;
   BoutReal TIMESTEP;
-  char *grid_name;
+  string grid_name;
   bool dump_float; // Output dump files as floats
 
-  char *grid_ext, *dump_ext; ///< Extensions for restart and dump files
+  string grid_ext, dump_ext; ///< Extensions for restart and dump files
   
   const char *data_dir; ///< Directory for data input/output
 
@@ -193,25 +193,23 @@ int bout_init(int argc, char **argv)
   output.write("Processor number: %d of %d\n\n", MYPE, NPES);
 
   /// Load settings file
-  if(options.read("%s/BOUT.inp", data_dir)) {
-    output.write("\tFailed to read settings file. Aborting\n");
-    return(1);
-  }
+  options.read("%s/BOUT.inp", data_dir);
 
   // Get options override from command-line
-  options.command_line(argc, argv);
+  options.commandLineRead(argc, argv);
 
   /////////////////////////////////////////////
   /// Get some settings
   
   /// GET GLOBAL OPTIONS
-  options.setSection(NULL);
+  options.setSection("");
   
   OPTION(NOUT, 1);
   OPTION(TIMESTEP, 1.0);
 
-  if((grid_name = options.getString("grid")) == (char*) NULL)
-    grid_name = DEFAULT_GRID;
+  options.get<string>("grid", grid_name, DEFAULT_GRID);
+/*  if((grid_name = options.getString("grid")) == (char*) NULL)
+    grid_name = DEFAULT_GRID;*/
   
   OPTION(dump_float,   true);
   OPTION(non_uniform,  false);
@@ -222,10 +220,11 @@ int bout_init(int argc, char **argv)
   OPTION(append, false);
 
   /// Get file extensions
-  if((dump_ext = options.getString("dump_format")) == NULL) {
+  options.get<string>("dump_format", dump_ext, DEFAULT_FILE_EXT);
+/*  if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
     dump_ext = DEFAULT_FILE_EXT;
-  }
+  }*/
   
   /// Setup derivative methods
   if(derivs_init()) {
@@ -240,12 +239,13 @@ int bout_init(int argc, char **argv)
   
   output.write("Setting grid format\n");
   /// Load the grid
-  if((grid_ext = options.getString("grid_format")) == NULL) {
+  options.get<string>("grid_format", grid_ext, "");
+  if(grid_ext.empty()) {
     // Guess format based on grid filename
-    mesh->addSource(new GridFile(data_format(grid_name), grid_name));
+    mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str()));
   }else {
     // User-specified format
-    mesh->addSource(new GridFile(data_format(grid_ext), grid_name));
+    mesh->addSource(new GridFile(data_format(grid_ext.c_str()), grid_name.c_str()));
   }
   if(mesh->load()) {
     output << "Failed to read grid. Aborting\n";
@@ -260,7 +260,7 @@ int bout_init(int argc, char **argv)
   bndry->addMod(new BoundaryRelax(10.), "relax");
 
   /// Set the file names
-  sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext);
+  sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext.c_str());
 
   // Set file formats
   output.write("Setting file formats\n");
@@ -447,7 +447,7 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
     /// First time the monitor has been called
     
     /// Get some options
-    options.setSection(NULL);
+    options.setSection("");
     OPTION(wall_limit, -1.0); // Wall time limit. By default, no limit
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
     

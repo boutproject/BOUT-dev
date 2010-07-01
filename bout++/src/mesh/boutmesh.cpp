@@ -71,7 +71,7 @@ int BoutMesh::load()
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
 
-  options.setSection(NULL);
+  options.setSection("");
   options.get("MXG", MXG, 2);
   options.get("MYG", MYG, 2);
   
@@ -111,7 +111,7 @@ int BoutMesh::load()
   }
   
   /// Get mesh options
-  options.setSection(NULL); // Global options
+  options.setSection(""); // Global options
   int MZ;
   OPTION(MZ,           65);
   if(!is_pow2(MZ-1)) {
@@ -141,7 +141,8 @@ int BoutMesh::load()
       output.write("%d-point\n", mesh->ShiftOrder);
   }
 
-  if(options.get("zperiod",   zperiod,      1)) {
+  options.get("zperiod",   zperiod,      1);
+  if(zperiod == 1) {
     options.get("ZMIN",         ZMIN,         0.0);
     options.get("ZMAX",         ZMAX,         1.0);
     
@@ -328,7 +329,7 @@ int BoutMesh::load()
 
   /// Can have twist-shift in the private flux regions too
   bool twistshift_pf;
-  options.setSection(NULL);
+  options.setSection("");
   OPTION(twistshift_pf, false);
   if(twistshift_pf) {
     output << "Adding twist-shift in lower PF region" << endl;
@@ -1563,7 +1564,7 @@ void BoutMesh::default_connections()
 
   /// Check if X is periodic
   bool xperiodic;
-  options.setSection(NULL);
+  options.setSection("");
   options.get("xperiodic", xperiodic, false);
   if(xperiodic) {
     if(PE_XIND == (NXPE-1))

@@ -39,6 +39,7 @@
 #include "fft.h"
 #include "dcomplex.h"
 #include "invert_laplace.h" // For Laplacian coefficients
+#include "boutexception.h"
 
 #include <math.h>
 
@@ -271,9 +272,9 @@ static BndryLookup UpperBndryTable[] = { {BNDRY_Z,          bndry_yup_zero, bndr
 struct BndryDesc {
   BndryLookup *table; ///< The lookup table
   BNDRY_LOC loc;      ///< Boundary location code
-  const char *general; ///< The general name used in BOUT.inp (doesn't change)
-  char *code; ///< Short code for BOUT.inp file
-  char *desc; ///< Longer description
+  const string general; ///< The general name used in BOUT.inp (doesn't change)
+  string code; ///< Short code for BOUT.inp file
+  string desc; ///< Longer description
 };
 
 /// One description for each boundary
@@ -432,12 +433,12 @@ bool isImplemented(BndryLookup *table, BNDRY_TYPE type)
 }
 
 /// Look up a boundary code in the tables
-BNDRY_TYPE BndryLookup3D(BndryLookup *table, const char *label, bool dummy = false)
+BNDRY_TYPE BndryLookup3D(BndryLookup *table, const string &label, bool dummy = false)
 {
-  if(label == NULL)
+  if(label.empty())
     return table[0].type;
-  if(label[0] == '\0')
-    return table[0].type;
+/*  if(label[0] == '\0')
+    return table[0].type;*/
 
   // Loop through the name lookup table
   int i = 0;
@@ -449,7 +450,7 @@ BNDRY_TYPE BndryLookup3D(BndryLookup *table, const char *label, bool dummy = fal
 }
 
 /// Look up a boundary code in the tables
-BNDRY_TYPE BndryLookup2D(BndryLookup *table, const char *label, bool dummy = false)
+BNDRY_TYPE BndryLookup2D(BndryLookup *table, const string &label, bool dummy = false)
 {
   return BNDRY_NULL; // Not implemented yet
 }
@@ -701,55 +702,105 @@ void apply_boundary(Field2D &var, Field2D &F_var, BNDRY_LOC loc, BNDRY_TYPE type
  *******************************************************************************/
 
 /// Get a boundary string from the options file. Starts looking at the very specific, then the general.
-char* getBndryString(const char *name, const char *altname, BndryDesc *bndry, bool verbose = false)
+string getBndryString(const string &name, const string &altname, BndryDesc *bndry, bool verbose = false)
 {
-  char *str;
-  if((str = options.getString(name, bndry->code)) != NULL) {
-    if(verbose) output.write("\tOption %s / %s = %s\n", name, bndry->code, str);
-  }else if((str = options.getString(name, bndry->general)) != NULL) {
-    if(verbose) output.write("\tOption %s / %s = %s\n", name, bndry->general, str);
-
-  }else if((str = options.getString(altname, bndry->code)) != NULL) {
-    if(verbose) output.write("\tOption %s / %s = %s\n", altname, bndry->code, str);
-  }else if((str = options.getString(altname, bndry->general)) != NULL) {
-    if(verbose) output.write("\tOption %s / %s = %s\n", altname, bndry->general, str);
-
-  }else if((str = options.getString("All", bndry->code)) != NULL) {
-    if(verbose) output.write("\tOption All / %s = %s\n", bndry->code, str);
-  }else if((str = options.getString("All", bndry->general)) != NULL) {
-    if(verbose) output.write("\tOption All / %s = %s\n", bndry->general, str);
+  string str;
+  options.get<string>(name, bndry->code, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption " << name << " / " << bndry->code << " = " << str << endl;
+    return str;
+  }
+  
+  options.get<string>(name, bndry->general, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption " << name << " / " << bndry->general << " = " << str << endl;
+    return str;
+  }
+  
+  options.get<string>(altname, bndry->code, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption " << altname << " / " << bndry->code << " = " << str << endl;
+    return str;
+  }
+  
+  options.get<string>(altname, bndry->general, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption " << altname << " / " << bndry->general << " = " << str << endl;
+    return str;
+  }
+  
+  options.get<string>("All", bndry->code, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption All / " << bndry->code << " = " << str << endl;
+    return str;
+  }
+  
+  options.get<string>("All", bndry->general, str, "");
+  if(!str.empty()) {
+    if(verbose) output << "\tOption All / " << bndry->general << " = " << str << endl;
+    return str;
   }
   
   return str;
 }
 
 /// Get relaxation constant for the boundary
-BoutReal getBndryRelax(const char *name, const char *altname, BndryDesc *bndry, bool verbose = false)
+BoutReal getBndryRelax(const string &name, const string &altname, BndryDesc *bndry, bool verbose = false)
 {
-  BoutReal tconst = -1.0;
-  char *s;
+  BoutReal tconst, def = -1.0;
   
-  if(options.getReal(name, s = strconcat(bndry->code, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / %s = %e\n", name, s, tconst);
-  }else if(options.getReal(name, s = strconcat(bndry->general, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / %s = %e\n", name, s, tconst);
-  }else if(options.getReal(name, "bndry_tconst", tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / bndry_tconst = %e\n", name, tconst); 
-
-  }else if(options.getReal(altname, s = strconcat(bndry->code, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / %s = %e\n", altname, s, tconst);
-  }else if(options.getReal(altname, s = strconcat(bndry->general, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / %s = %e\n", altname, s, tconst);
-  }else if(options.getReal(altname, "bndry_tconst", tconst) == 0) {
-    if(verbose) output.write("\t  Option %s / bndry_tconst = %e\n", altname, tconst); 
-
-  }else if(options.getReal("All", s = strconcat(bndry->code, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option All / %s = %e\n", s, tconst);
-  }else if(options.getReal("All", s = strconcat(bndry->general, "_tconst"), tconst) == 0) {
-    if(verbose) output.write("\t  Option All / %s = %e\n", s, tconst);
-  }else if(options.getReal("All", "bndry_tconst", tconst) == 0) {
-    if(verbose) output.write("\t  Option All / bndry_tconst = %e\n", tconst); 
-
+  options.get(name, bndry->code + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << name << " / " << bndry->code << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get(name, bndry->general + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << name << " / " << bndry->general << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get(name, "bndry_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << name << " / bndry_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get(altname, bndry->code + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << altname << " / " << bndry->code << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get(altname, bndry->general + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << altname << " / " << bndry->general << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get(altname, "bndry_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option " << altname << " / bndry_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get("All", bndry->code + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option All / " << bndry->code << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get("All", bndry->general + "_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option All / " << bndry->general << "_tconst = " << tconst << endl;
+    return tconst;
+  }
+  
+  options.get("All", "bndry_tconst", tconst, def);
+  if(tconst != def) {
+    if(verbose) output << "\t  Option All / bndry_tconst = " << tconst << endl;
+    return tconst;
   }
   
   return tconst;
@@ -757,24 +808,24 @@ BoutReal getBndryRelax(const char *name, const char *altname, BndryDesc *bndry, 
 
 //////// 3D fields /////////
 
-void apply_boundary(Field3D &var, Field3D &F_var, const char* name, const char* altname,
+void apply_boundary(Field3D &var, Field3D &F_var, const string &name, const string &altname,
 		    BndryDesc *bndry, bool dummy = false)
 {
-  const char *str;
+  string str;
   BoutReal tconst;
   BNDRY_TYPE type;
   
   if(dummy) {
     // Find a string to refer to this boundary
-    if((str = bndry->desc) == NULL)
-      if((str = bndry->code) == NULL)
-	str = bndry->general;
+    if((str = bndry->desc).empty())
+      if((str = bndry->code).empty())
+        str = bndry->general;
       
-    output.write("\t %s boundary\n", str);
+    output << "\t " << str << " boundary\n";
   }
   
   // Get the boundary condition string from options file
-  if((str = getBndryString(name, altname, bndry, dummy)) == NULL) {
+  if((str = getBndryString(name, altname, bndry, dummy)).empty()) {
     if(dummy) output.write("\t**WARNING: No boundary condition applied\n");
   }else {
     
@@ -819,24 +870,24 @@ void apply_boundary(Field3D &var, Field3D &F_var, const char* name, bool dummy =
 
 //////// 2D fields /////////
 
-void apply_boundary(Field2D &var, Field2D &F_var, const char* name, const char* altname,
+void apply_boundary(Field2D &var, Field2D &F_var, const string &name, const string &altname,
 		    BndryDesc *bndry, bool dummy = false)
 {
-  const char *str;
+  string str;
   BoutReal tconst;
   BNDRY_TYPE type;
   
   if(dummy) {
     // Find a string to refer to this boundary
-    if((str = bndry->desc) == NULL)
-      if((str = bndry->code) == NULL)
-	str = bndry->general;
-      
-    output.write("\t %s boundary\n", str);
+    if((str = bndry->desc).empty())
+      if((str = bndry->code).empty())
+        str = bndry->general;
+    
+    output << "\t " << str << " boundary\n";
   }
   
   // Get the boundary condition string from options file
-  if((str = getBndryString(name, altname, bndry, dummy)) == NULL) {
+  if((str = getBndryString(name, altname, bndry, dummy)).empty()) {
     if(dummy) output.write("\t**WARNING: No boundary condition applied\n");
   }else {
     
@@ -891,150 +942,154 @@ void apply_boundary(Vector3D &var, Vector3D &F_var, const char* name, bool dummy
  *******************************************************************************/
 
 // Dummy run - just prints out the boundary conditions
-void print_boundary(const char* fullname, const char* shortname)
+void print_boundary(const string &fullname, const string &shortname)
 {
   int opt;
 
-  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xinner", opt))
       if(options.getInt("All", "xinner", opt)) // Otherwise look for global settings
-	opt = 0; // Do nothing
+  opt = 0; // Do nothing*/
+	
+  options.get(fullname, shortname, "All", "xinner", opt, 0);
 
   switch(opt) {
   case BNDRY_NONE:
-    output.write("%s inner x boundary: NONE\n", fullname);
+    output << fullname << " inner x boundary: NONE\n";
     break;
   case BNDRY_ZERO: {
-    output.write("%s inner x boundary: Zero value\n", fullname);
+    output << fullname << " inner x boundary: Zero value\n";
     break;
   }case BNDRY_GRADIENT: {
-    output.write("%s inner x boundary: Zero gradient\n", fullname);
+    output << fullname << " inner x boundary: Zero gradient\n";
     break;
   }
   case BNDRY_LAPLACE: {
-    output.write("%s inner x boundary: Zero Laplacian\n", fullname);
+    output << fullname << " inner x boundary: Zero Laplacian\n";
     break;
   }
   case BNDRY_LAPLACE_GRAD: {
-    output.write("%s inner x boundary: Zero Laplacian + zero gradient\n", fullname);
+    output << fullname << " inner x boundary: Zero Laplacian + zero gradient\n";
     break;
   }
   case BNDRY_DIVCURL: {
-    output.write("%s inner x boundary: Div = 0, Curl = 0\n", fullname);
+    output << fullname << " inner x boundary: Div = 0, Curl = 0\n";
     break;
   }
   case BNDRY_LAPLACE_ZERO: {
-    output.write("%s inner x boundary: Zero laplacian + zero value\n", fullname);
+    output << fullname << " inner x boundary: Zero laplacian + zero value\n";
     break;
   }
   case BNDRY_LAPLACE_DECAY: {
-    output.write("%s inner x boundary: Zero Laplacian decaying solution\n", fullname);
+    output << fullname << " inner x boundary: Zero Laplacian decaying solution\n";
     break;
   }
   case BNDRY_C_LAPLACE_DECAY: {
-    output.write("%s inner x boundary: Constant Laplacian decaying solution\n", fullname);
+    output << fullname << " inner x boundary: Constant Laplacian decaying solution\n";
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for inner x boundary\n", opt);
-    bout_error("Aborting\n");
+    throw BoutException("Error: Invalid option %d for inner x boundary\n", opt);
   }
   };
 
   // Get outer x option
-  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xouter", opt))
       if(options.getInt("All", "xouter", opt)) // Otherwise look for global settings
-	opt = 0; // Do nothing
+  opt = 0; // Do nothing*/
+  
+  options.get(fullname, shortname, "All", "xouter", opt, 0);
 
   switch(opt) {
   case BNDRY_NONE:
-    output.write("%s outer x boundary: NONE\n", fullname);
+      output << fullname << " outer x boundary: NONE\n";
     break;
-  case BNDRY_ZERO: { 
-    output.write("%s outer x boundary: Zero value\n", fullname);
+  case BNDRY_ZERO: {
+      output << fullname << " outer x boundary: Zero value\n";
     break;
   }case BNDRY_GRADIENT: {
-    output.write("%s outer x boundary: Zero gradient\n", fullname);
+    output << fullname << " outer x boundary: Zero gradient\n";
     break;
   }
   case BNDRY_LAPLACE: {
-    output.write("%s outer x boundary: Zero Laplacian\n", fullname);
+    output << fullname << " outer x boundary: Zero Laplacian\n";
     break;
   }
   case BNDRY_DIVCURL: {
-    output.write("%s outer x boundary: Div = 0, Curl = 0\n", fullname);
+    output << fullname << " outer x boundary: Div = 0, Curl = 0\n";
     break;
   }
   case BNDRY_LAPLACE_DECAY: {
-    output.write("%s outer x boundary: Zero Laplacian decaying solution\n", fullname);
+    output << fullname << " outer x boundary: Zero Laplacian decaying solution\n";
     break;
   }
   case BNDRY_C_LAPLACE_DECAY: {
-    output.write("%s outer x boundary: Constant Laplacian decaying solution\n", fullname);
+    output << fullname << " outer x boundary: Constant Laplacian decaying solution\n";
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for outer x boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for outer x boundary\n", opt);
   }
   };
 
   // Get lower y option
-  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "ylower", opt))
       if(options.getInt("All", "ylower", opt)) // Otherwise look for global settings
-	opt = 0; // Do nothing
+  opt = 0; // Do nothing*/
+	
+      options.get(fullname, shortname, "All", "ylower", opt, 0);
 
   switch(opt) {
   case BNDRY_NONE:
-    output.write("%s lower y boundary: NONE\n", fullname);
+    output << fullname << " lower y boundary: NONE\n";
     break;
   case BNDRY_ZERO: { 
-    output.write("%s lower y boundary: Zero value\n", fullname);
+    output << fullname << " lower y boundary: Zero value\n";
     break;
   }case BNDRY_GRADIENT: {
-    output.write("%s lower y boundary: Zero Gradient\n", fullname);
+      output << fullname << " outer x boundary: Zero gradient\n";
     break;
   }
   case BNDRY_ROTATE: {
-    output.write("%s lower y boundary: Rotate 180 degrees\n", fullname);
+    output << fullname << " lower y boundary: Rotate 180 degrees\n";
     break;
   }
   case BNDRY_ZAVERAGE: {
-    output.write("%s lower y boundary: Z Average\n", fullname);
+    output << fullname << " lower y boundary: Z Average\n";
     break;
   }
   case BNDRY_ROTATE_NEG: {
-    output.write("%s lower y boundary: Rotate 180 degrees and reverse sign\n", fullname);
+    output << fullname << " lower y boundary: Rotate 180 degrees and reverse sign\n";
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for lower y boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for lower y boundary\n", opt);
   }
   };
 
   // Get upper y option
-  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "yupper", opt))
       if(options.getInt("All", "yupper", opt)) // Otherwise look for global settings
-	opt = 0; // Do nothing
+  opt = 0; // Do nothing*/
+	
+      options.get(fullname, shortname, "All", "yupper", opt, 0);
 
   switch(opt) {
   case BNDRY_NONE:
-    output.write("%s upper y boundary: NONE\n", fullname);
+    output << fullname << " upper y boundary: NONE\n";
     break;
   case BNDRY_ZERO: { 
-    output.write("%s upper y boundary: Zero value\n", fullname);
+    output << fullname << " upper y boundary: Zero value\n";
     break;
   }case BNDRY_GRADIENT: {
-    output.write("%s upper y boundary: Zero gradient\n", fullname);
+    output << fullname << " upper y boundary: Zero gradient\n";
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for upper y boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for upper y boundary\n", opt);
   }
   };
 }
@@ -1085,10 +1140,12 @@ void apply_boundary(Field3D &var, const char* fullname, const char* shortname)
   //output.write("bndry...");
 
   // Get inner x option
-  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xinner", opt))
       if(options.getInt("All", "xinner", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+  
+          options.get(fullname, shortname, "All", "xinner", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1125,16 +1182,17 @@ void apply_boundary(Field3D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for inner x boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for inner x boundary\n", opt);
   }
   };
 
   // Get outer x option
-  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xouter", opt))
       if(options.getInt("All", "xouter", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+	
+          options.get(fullname, shortname, "All", "xouter", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1162,16 +1220,16 @@ void apply_boundary(Field3D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for outer x boundary\n", opt);
-    bout_error("Aborting");
+    throw BoutException("Error: Invalid option %d for outer x boundary\n", opt);
   }
   };
 
   // Get lower y option
-  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "ylower", opt))
       if(options.getInt("All", "ylower", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "ylower", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1196,18 +1254,18 @@ void apply_boundary(Field3D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for lower y boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for lower y boundary\n", opt);
   }
   };
 
   //output.write("ly ");
 
   // Get upper y option
-  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "yupper", opt))
       if(options.getInt("All", "yupper", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "yupper", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1220,8 +1278,7 @@ void apply_boundary(Field3D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for upper y boundary\n", opt);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for upper y boundary\n", opt);
   }
   };
 
@@ -1237,10 +1294,11 @@ void apply_boundary(Field2D &var, const char* fullname, const char* shortname)
   int opt;
 
   // Get inner x option
-  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xinner", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xinner", opt))
       if(options.getInt("All", "xinner", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "xinner", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1253,16 +1311,16 @@ void apply_boundary(Field2D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for inner x boundary of %s\n", opt, fullname);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for inner x boundary of %s\n", opt, fullname);
   }
   };
 
   // Get outer x option
-  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "xouter", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "xouter", opt))
       if(options.getInt("All", "xouter", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "xouter", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1275,16 +1333,16 @@ void apply_boundary(Field2D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for outer x boundary of %s\n", opt, fullname);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for outer x boundary of %s\n", opt, fullname);
   }
   };
   
   // Get lower y option
-  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "ylower", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "ylower", opt))
       if(options.getInt("All", "ylower", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "ylower", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1297,16 +1355,16 @@ void apply_boundary(Field2D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for lower y boundary of %s\n", opt, fullname);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for lower y boundary of %s\n", opt, fullname);
   }
   };
 
   // Get upper y option
-  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
+/*  if(options.getInt(fullname, "yupper", opt)) // Look in the section with the variable name
     if(options.getInt(shortname, "yupper", opt))
       if(options.getInt("All", "yupper", opt)) // Otherwise look for global settings
-	opt = BNDRY_NONE; // Do nothing
+  opt = BNDRY_NONE; // Do nothing*/
+              options.get(fullname, shortname, "All", "yupper", opt, BNDRY_NONE);
 
   switch(opt) {
   case BNDRY_NONE:
@@ -1319,8 +1377,7 @@ void apply_boundary(Field2D &var, const char* fullname, const char* shortname)
     break;
   }
   default: {
-    output.write("Error: Invalid option %d for upper y boundary of %s\n", opt, fullname);
-    exit(1);
+    throw BoutException("Error: Invalid option %d for upper y boundary of %s\n", opt, fullname);
   }
   };
 }
@@ -1368,17 +1425,20 @@ void apply_boundary(Vector3D &var, const char* name)
 
   // Check for vector boundary
 
-  if(options.getInt(name, "xinner", opt))
+/*  if(options.getInt(name, "xinner", opt))
     if(options.getInt("All", "xinner", opt))
-      opt = BNDRY_NONE; // Do nothing
+      opt = BNDRY_NONE; // Do nothing*/
+      
+                  options.get(name, "All", "xinner", opt, BNDRY_NONE);
 
   if(opt == BNDRY_DIVCURL) {
     bndry_inner_divcurl(var);
   }
 
-  if(options.getInt(name, "xouter", opt))
+/*  if(options.getInt(name, "xouter", opt))
     if(options.getInt("All", "xouter", opt))
-      opt = BNDRY_NONE; // Do nothing
+      opt = BNDRY_NONE; // Do nothing*/
+                  options.get(name, "All", "xouter", opt, BNDRY_NONE);
 
   if(opt == BNDRY_DIVCURL) {
     bndry_sol_divcurl(var);

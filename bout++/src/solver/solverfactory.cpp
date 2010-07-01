@@ -37,10 +37,13 @@ inline SolverType SolverFactory::getDefaultSolverType() {
 Solver* SolverFactory::createSolver() {
   SolverType type = getDefaultSolverType();
   
-  options.setSection(NULL);
-  const char* solver_option = options.getString("solver_type");
+  options.setSection("");
+  string solver_option;
+/*  options.get<string>("solver_type", solver_option, type);
+  string solver_option;*/
+  options.get<string>("solver_type", solver_option, "");
   
-  if(solver_option) type = solver_option;
+  if(!solver_option.empty()) type = solver_option.c_str();
   
   
   return createSolver(type);

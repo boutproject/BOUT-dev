@@ -378,27 +378,25 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   output.write("Initialising solver\n");
   
   /// GET GLOBAL OPTIONS
-  options.setSection(NULL);
+  options.setSection("");
 
-  if(options.getInt("archive", archive_restart)) {
-    archive_restart = -1; // Not archiving restart files
-  }else if(archive_restart > 0) {
+  options.get("archive", archive_restart, -1);
+/*    archive_restart = -1; // Not archiving restart files*/
+
+  if(archive_restart > 0) {
     output.write("Archiving restart files every %d iterations\n",
         archive_restart);
   }
 
   /// Get restart file extension
-  const char *dump_ext, *restart_ext;
-  if((dump_ext = options.getString("dump_format")) == NULL) {
-    // Set default extension
-    dump_ext = DEFAULT_FILE_EXT;
-  }
+  string dump_ext, restart_ext;
+
+  options.get<string>("dump_format", dump_ext, DEFAULT_FILE_EXT);
   
-  if((restart_ext = options.getString("restart_format")) == NULL) 
-    restart_ext = dump_ext;
+  options.get<string>("restart_format", restart_ext, dump_ext);
 
   /// Set the restart file format
-  restart.setFormat(data_format(restart_ext));
+  restart.setFormat(data_format(restart_ext.c_str()));
   restartext = string(restart_ext);
 
   /// Add basic variables to the restart file

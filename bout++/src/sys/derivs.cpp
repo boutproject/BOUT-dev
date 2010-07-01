@@ -393,13 +393,11 @@ bool isImplemented(DiffLookup* table, DIFF_METHOD method)
 
 /// This function is used during initialisation only (i.e. doesn't need to be particularly fast)
 /// Returns DIFF_METHOD, rather than function so can be applied to central and upwind tables
-DIFF_METHOD lookupFunc(DiffLookup *table, char *label)
+DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
 {
   DIFF_METHOD matchtype; // code which matches just the first letter ('C', 'U' or 'W')
 
-  if(label == NULL)
-    return table[0].method;
-  if(label[0] == '\0')
+  if(label.empty())
     return table[0].method;
 
   matchtype = DIFF_DEFAULT;
@@ -412,7 +410,7 @@ DIFF_METHOD lookupFunc(DiffLookup *table, char *label)
       matchtype = DiffNameTable[i].method;
       typeind = i;
       
-      if(strcasecmp(label, DiffNameTable[i].label) == 0) {// Whole match
+      if(strcasecmp(label.c_str(), DiffNameTable[i].label) == 0) {// Whole match
 	return matchtype;
       }
     }
@@ -424,9 +422,9 @@ DIFF_METHOD lookupFunc(DiffLookup *table, char *label)
   if(matchtype == DIFF_DEFAULT) {
     // No type match either. Return the first value in the table
     matchtype = table[0].method;
-    output.write(" No match for '%s' -> ", label);
+    output << " No match for '" << label << "' -> ";
   }else
-    output.write(" Type match for '%s' ->", label);
+    output << " Type match for '" << label << "' ->";
 
   return matchtype;
 }
@@ -471,7 +469,9 @@ upwind_func sfVDDX, sfVDDY, sfVDDZ;
 /// Set the derivative method, given a table and option name
 void derivs_set(DiffLookup *table, const char* name, deriv_func &f)
 {
-  char *label = options.getString(name);
+/*  char *label = options.getString(name);*/
+  string label;
+  options.get<string>(name, label, "");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -480,7 +480,9 @@ void derivs_set(DiffLookup *table, const char* name, deriv_func &f)
 
 void derivs_set(DiffLookup *table, const char* name, upwind_func &f)
 {
-  char *label = options.getString(name);
+/*  char *label = options.getString(name);*/
+  string label;
+  options.get<string>(name, label, "");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -496,7 +498,7 @@ int derivs_init()
 
   /// NOTE: StaggerGrids is also in Mesh, but derivs_init needs to come before Mesh
   bool StaggerGrids;
-  options.setSection(NULL);
+  options.setSection("");
   OPTION(StaggerGrids,   false);
 
   output.write("Setting X differencing methods\n");

@@ -70,51 +70,58 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   
   output << "\t" << region->label << " region: ";
   
-  string prefix = string("bndry_");
+  string prefix("bndry_");
   
-  string side = string("all");
+  string side("all");
   switch(region->location) {
   case BNDRY_XIN: {
-    side = string("xin");
+    side = "xin";
     break;
   }
   case BNDRY_XOUT: {
-    side = string("xout");
+    side = "xout";
     break;
   }
   case BNDRY_YDOWN: {
-    side = string("ydown");
+    side = "ydown";
     break;
   }
   case BNDRY_YUP: {
-    side = string("yup");
+    side = "yup";
     break;
   }
   }
   
   /// First try looking for (var, region)
   string set;
-  if(!(set = options.getString(varname, prefix+region->label)).empty())
+  options.get<string>(varname, prefix+region->label, set, "");
+  
+  if(!set.empty())
     return create(set, region);
   
   /// Then (var, side)
-  if(!(set = options.getString(varname, prefix+side)).empty())
+  options.get<string>(varname, prefix+side, set, "");
+  if(!set.empty())
     return create(set, region);
   
   /// Then (var, all)
-  if(!(set = options.getString(varname, prefix+string("all"))).empty())
+  options.get<string>(varname, prefix+"all", set, "");
+  if(!set.empty())
     return create(set, region);
   
   /// Then (all, region)
-  if(!(set = options.getString(string("all"), prefix+region->label)).empty())
+  options.get<string>("all", prefix+region->label, set, "");
+  if(!set.empty())
     return create(set, region);
   
   /// Then (all, side)
-  if(!(set = options.getString(string("all"), prefix+side)).empty())
+  options.get<string>("all", prefix+side, set, "");
+  if(!set.empty())
     return create(set, region);
   
   /// Then (all, all)
-  if(!(set = options.getString(string("all"), prefix+string("all"))).empty())
+  options.get<string>("all", prefix+"all", set, "");
+  if(!set.empty())
     return create(set, region);
   
   output << "NONE" << endl;
