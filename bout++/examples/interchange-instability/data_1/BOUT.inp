@@ -115,8 +115,7 @@ zs_mode = 4 # toroidal mode number
 # 3 = laplacian
 # 4 = laplacian with zero-gradient
 
-xinner = 2  # Zero-gradient inner boundary
-xouter = 2  # Zero-gradient outer boundary
+bndry_all = neumann # Zero-gradient on all boundaries
 
 [Ni]
 scale = 1.0e-4 # only perturbing Ni

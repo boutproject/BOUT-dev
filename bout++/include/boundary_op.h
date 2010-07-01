@@ -56,7 +56,7 @@ class BoundaryOp {
     apply_ddt(f.y);
     apply_ddt(f.z);
   }
- protected:
+  
   BoundaryRegion *bndry;
 };
 

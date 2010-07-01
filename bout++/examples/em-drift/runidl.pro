@@ -12,7 +12,7 @@
 
 WINDOW, 0, XSIZE=500, YSIZE=800
 
-du=pd_import("uedge.grd.pdb")
+du=file_import("uedge.grd_beta.nc")
 
 
 data={zeff:fltarr(9), AA:fltarr(9), gam:fltarr(9), omega:fltarr(9), sparn:fltarr(9)}

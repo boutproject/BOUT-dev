@@ -375,6 +375,16 @@ void PvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_V
   unsigned int i;
   int jz;
 
+#ifdef CHECK
+  //msg_stack.push("loop_vars_op(jx=%d, jy=%d, op=%d)", jx, jy, op);
+  
+  if((jx < 0) || (jx >= mesh->ngx) ||
+     (jy < 0) || (jy >= mesh->ngy)) {
+    output.write("OUT OF DOMAIN: %d, %d", jx, jy);
+    bout_error("ERROR: Out of range in loop_vars_op\n");
+  }
+#endif
+
   unsigned int n2d = n2Dvars();
   unsigned int n3d = n3Dvars();
  
@@ -443,6 +453,9 @@ void PvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_V
     break;
   }
   }
+#ifdef CHECK
+  //msg_stack.pop();
+#endif
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency

@@ -209,8 +209,6 @@ class BoutRangeIter : public RangeIter {
   void next();
   bool isDone();
   
-  int ind; // The index
-  
  private:
   int s,e;
 };

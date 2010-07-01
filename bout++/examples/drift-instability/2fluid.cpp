@@ -270,6 +270,9 @@ int physics_init(bool restarting)
   }else
     initial_profile("Ti", Ti);
   
+  // Set boundary conditions
+  jpar.setBoundary("jpar");
+
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
@@ -348,10 +351,8 @@ int physics_run(BoutReal t)
     }
     */
 
-    // Set radial boundary condition on jpar
-    bndry_inner_flat(jpar);
-    bndry_sol_flat(jpar);
-    bndry_toroidal(jpar);
+    // Set boundary conditions on jpar (in BOUT.inp)
+    jpar.applyBoundary();
     
     // Need to communicate jpar
     mesh->communicate(jpar);
@@ -461,15 +462,6 @@ int physics_run(BoutReal t)
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
     ddt(Ajpar) += 0.51*interp_to(nu, CELL_YLOW)*jpar/Ni0;
   }
-
-  // RADIAL BOUNDARY CONDITIONS
-
-  apply_boundary(ddt(rho), "rho");
-  apply_boundary(ddt(Te), "Te");
-  apply_boundary(ddt(Ni), "Ni");
-  apply_boundary(ddt(Ajpar), "Ajpar");
-  apply_boundary(ddt(Vi), "Vi");
-  apply_boundary(ddt(Ti), "Ti");
 
   return(0);
 }

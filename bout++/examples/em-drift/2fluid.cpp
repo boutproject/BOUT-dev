@@ -206,6 +206,8 @@ int physics_init(bool restarting)
       dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
   }
   
+  jpar.setBoundary("jpar");
+
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
@@ -262,9 +264,8 @@ int physics_run(BoutReal t)
 
     jpar = ((Te0*Grad_par(Ni)) - (Ni0*Grad_par(phi)))/(fmei*0.51*nu);
 
-    // Set radial boundary condition on jpar
-    bndry_inner_flat(jpar);
-    bndry_sol_flat(jpar);
+    // Set boundary conditions on jpar
+    jpar.applyBoundary();
     
     // Need to communicate jpar
     mesh->communicate(jpar);
@@ -298,18 +299,6 @@ int physics_run(BoutReal t)
     ddt(Ajpar) -= (1./fmei)*(Te0/Ni0)*Grad_par(Ni);
     ddt(Ajpar) += 0.51*nu*jpar/Ni0;
   }
-
-  // RADIAL BOUNDARY CONDITIONS
-
-  // Inner (core and PF) - zero gradient
-  bndry_inner_flat(ddt(rho));
-  bndry_inner_flat(ddt(Ni));
-  bndry_inner_flat(ddt(Ajpar));
- 
-  // Outer (SOL) - zero gradient
-  bndry_sol_flat(ddt(rho));
-  bndry_sol_flat(ddt(Ni));
-  bndry_sol_flat(ddt(Ajpar));
 
   return(0);
 }

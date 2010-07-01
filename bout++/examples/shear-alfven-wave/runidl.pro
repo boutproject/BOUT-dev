@@ -14,7 +14,7 @@ tek_color
 
 ;safe_colors, /first
 
- fu='uedge.grd.pdb_Te_10'
+ fu='uedge.grd_Te_10.nc'
  
  path = "data_0.15/"
  @alf_pproc

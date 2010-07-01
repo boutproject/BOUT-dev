@@ -271,6 +271,8 @@ int physics_init(bool restarting)
   }else
     initial_profile("Ti", Ti);
   
+  jpar.setBoundary("jpar");
+
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
@@ -314,6 +316,7 @@ int physics_run(BoutReal t)
   // Communicate variables
   mesh->communicate(comms);
 
+  /*
   // zero-gradient Y boundaries (temporary! for interchange test)
   
   bndry_ydown_flat(Ni);
@@ -322,7 +325,8 @@ int physics_run(BoutReal t)
   bndry_yup_flat(phi);
   bndry_ydown_flat(rho);
   bndry_yup_flat(rho);
-  
+  */
+
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();
   Tit = Ti0; // + Ti.DC();
@@ -342,12 +346,9 @@ int physics_run(BoutReal t)
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
-
-
-    // Set radial boundary condition on jpar
-    bndry_inner_flat(jpar);
-    bndry_sol_flat(jpar);
-    bndry_toroidal(jpar);
+    
+    // Set boundary condition on jpar
+    jpar.applyBoundary();
     
     // Need to communicate jpar
     mesh->communicate(jpar);
@@ -434,15 +435,6 @@ int physics_run(BoutReal t)
     //ddt(Ajpar) -= (1./fmei)*1.71*Grad_par(Te);
     ddt(Ajpar) += 0.51*nu*jpar/Ni0;
   }
-
-  // RADIAL BOUNDARY CONDITIONS
-
-  apply_boundary(ddt(rho), "rho");
-  apply_boundary(ddt(Te), "Te");
-  apply_boundary(ddt(Ni), "Ni");
-  apply_boundary(ddt(Ajpar), "Ajpar");
-  apply_boundary(ddt(Vi), "Vi");
-  apply_boundary(ddt(Ti), "Ti");
 
   return(0);
 }

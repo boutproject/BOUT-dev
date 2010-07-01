@@ -9,14 +9,9 @@ make
 #-run the case       
 echo Running with NP = $NP       
 
-rm uedge.grd.pdb
-
-ln -s uedge.grd.pdb_std uedge.grd.pdb
-
 rm -rf data*
 
 zlist=( 1 2 4 8 16 32 64 128 256 )
-
 
 for zval in ${zlist[@]}
 do
