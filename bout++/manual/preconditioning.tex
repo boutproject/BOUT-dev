@@ -242,7 +242,6 @@ and so the Jacobian is sparse everywhere. The state vector is
 \[
 \Vec{f} = \left(\begin{array}{c}
 N_i \\
-\psi \\
 \Vpar \\
 T_e \\
 T_i \\
@@ -253,9 +252,24 @@ The Jacobian is:
 \begin{equation}
 \mathbb{J} = 
 \left( \begin{array}{c|c|c|c}
-  -\Vpar\partial_{||} - \nabla_{||}\Vpar + \nabla_\psi D_\perp
+  -\Vpar\partial_{||} - \nabla_{||}\Vpar + \nabla_\psi D_\perp\partial_\psi & -\partial_{||}N_i - N_i\nabla_{||} & 0 & 0 \\
+-\frac{1}{N_i}\deriv{\Vpar}{t} - \frac{1}{N_i}\Vpar\Jac_{N_iN_i} & & &
 \end{array}\right)
 \end{equation}
+
+
+If instead the state vector is
+\[
+\Vec{f} = \left(\begin{array}{c}
+N_i \\
+N_i\Vpar \\
+N_iT_e \\
+N_iT_i \\
+\end{array}\right)
+\]
+then the Jacobian is
+
+
 
 \subsection{2-fluid turbulence}
 
@@ -357,6 +371,32 @@ going through the RHS function.
 For each point, keep the value (as usual), plus the non-zero elements in
 that row of $\Jac$ and the constant: result = Ax + b
 Keep track of elements using product rule.
+
+\begin{lstlisting}
+class Field3D {
+  data[ngx][ngy][ngz]; // The data as now
+  
+  int JacIndex; // Variable index in Jacobian
+  SparseMatrix *jac; // Set of rows for indices (JacIndex,*,*,*)
+};
+\end{lstlisting}
+
+JacIndex is set by the solver, so for the system
+\[
+\Vec{f} = \left(\begin{array}{c}
+P \\
+\psi \\
+U
+\end{array}\right)
+\]
+\code{P.JacIndex = 0}, \code{$\psi$.JacIndex = 1} and \code{U.JacIndex = 2}.
+All other fields are given \code{JacIndex = -1}. 
+
+SparseMatrix stores the non-zero Jacobian components for the set of rows
+corresponding to this variable. Evolving variables do not have an associated
+\code{SparseMatrix} object, but any fields which result from operations on
+evolving fields will have one.
+
 
 \bibliography{references}
 \bibliographystyle{unsrt}
