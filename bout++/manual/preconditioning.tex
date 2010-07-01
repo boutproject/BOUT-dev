@@ -214,6 +214,17 @@ X-Z plane. The way to make $\Jac$ sparse is to solve $\phi$ as a constraint
 (using e.g. the IDA solver) which moves the Laplacian inversion to the
 preconditioner.
 
+\subsection{Solving $\phi$ as a constraint}
+
+The evolving state vector becomes
+\[
+\Vec{f} = \left(\begin{array}{c}
+P \\
+\psi \\
+U \\
+\phi
+\end{array}\right)
+\]
 
 \subsection{UEDGE equations}
 
@@ -227,7 +238,24 @@ The UEDGE benchmark is a 4-field model with the following equations:
 \end{eqnarray*}
 
 This set of equations is good in that there is no inversion needed,
-and so the Jacobian is sparse everywhere.
+and so the Jacobian is sparse everywhere. The state vector is
+\[
+\Vec{f} = \left(\begin{array}{c}
+N_i \\
+\psi \\
+\Vpar \\
+T_e \\
+T_i \\
+\end{array}\right)
+\]
+
+The Jacobian is:
+\begin{equation}
+\mathbb{J} = 
+\left( \begin{array}{c|c|c|c}
+  -\Vpar\partial_{||} - \nabla_{||}\Vpar + \nabla_\psi D_\perp
+\end{array}\right)
+\end{equation}
 
 \subsection{2-fluid turbulence}
 
