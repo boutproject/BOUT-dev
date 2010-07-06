@@ -711,6 +711,54 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     IF NOT period THEN jpar0[xi,yi] = 0.0
   ENDREP UNTIL last
+
+  ; Try smoothing jpar0 in psi, preserving zero points and maxima
+  jps = jpar0
+  FOR y=0,ny-1 DO BEGIN
+    j = jpar0[*,y]
+    js = j
+    ma = MAX(ABS(j), ip)
+    IF (ma LT 1.e-4) OR (ip EQ 0) THEN BEGIN
+      jps[*,y] = j
+      CONTINUE
+    ENDIF
+    
+    level = 1.
+    ;i0 = MAX(WHERE(ABS(j[0:ip]) LT level))
+    i1 = MIN(WHERE(ABS(j[ip:*]) LT level))
+    
+    ;IF i0 LE 0 THEN i0 = 1
+    i0 = 1
+    
+    IF i1 EQ -1 THEN i1 = nx-2 ELSE i1 = i1 + ip
+    
+    IF (ip LE i0) OR (ip GE i1) THEN STOP
+
+    ; Now preserve starting and end points, and peak value
+    div = FIX((i1-i0)/10)+1 ; reduce number of points by this factor
+    
+    inds = [i0] ; first point
+    FOR i=i0+div, ip-div, div DO inds = [inds, i]
+    inds = [inds, ip] ; Put in the peak point
+    
+    ; Calculate spline interpolation of inner part
+    js[0:ip] = spline_mono(inds, j[inds], INDGEN(ip+1), $
+                           yp0=(j[i0] - j[i0-1]), ypn_1=0.0)
+    
+    inds = [ip] ; peak point
+    FOR i=ip+div, i1-div, div DO BEGIN
+      inds = [inds, i]
+    ENDFOR
+    
+    inds = [inds, i1] ; Last point
+    js[ip:i1] = spline_mono(inds, j[inds], ip+INDGEN(i1-ip+1), $
+                            yp0=0.0, ypn_1=(j[i1+1]-j[i1]))
+    
+    jps[*,y] = js
+  ENDFOR
+
+  jpar0 = jps ; Use the smoothed profile
+  
   
   j0 = ((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
         - Bxy*DDX(psixy, Btxy*Rxy)) / MU
@@ -938,6 +986,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "jyseps1_2", jyseps1_2)
   s = file_write(handle, "jyseps2_1", jyseps2_1)
   s = file_write(handle, "jyseps2_2", jyseps2_2)
+  s = file_write(handle, "ny_inner", ny_inner);
   
   ; Topology for general configurations
   s = file_write(handle, "yup_xsplit", mesh.yup_xsplit)
