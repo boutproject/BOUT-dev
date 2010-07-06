@@ -692,29 +692,36 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 
 \subsection{Boundary conditions}
 
-Like the variable initialisation, boundary conditions can also be set for
+Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
-\code{[All]}. Most physics modules do use these options, but some physics
-modules may make their own arrangements. 
+\code{[All]}. Boundary conditions are specified for each variable, being 
+applied to variable itself during initialisation, and the time-derivatives
+at each timestep.
 
-Boundary conditions are specified for each {\bf time-derivative} for
-the inner and outer X directions, and the lower and upper Y directions
-using the variables \code{xinner}, \code{xouter}, \code{ylower} and
-\code{yupper}. These can be set to:
-\begin{enumerate}
-\setcounter{enumi}{-1}
-\item Nothing applied (default). This is so that physics modules can set
-their own custom boundary conditions. If nothing is done with the boundary
-conditions then the quantities passed to the solver will be whatever happened
-to be at that point in memory so will produce strange results.
-\item Zero value time-derivative
-\item Zero gradient time-derivative
-\setcounter{enumi}{10}
-\item Zero Laplacian, decaying solution.
-\item Constant Laplacian, decaying solution
-\end{enumerate}
-The other values are experimental, or have been found to not work particularly
-well. The zero- or constant-Laplacian boundary conditions works as follows:
+When finding the boundary condition for a variable \code{var} on a boundary region, 
+the options are checked in order from most to least specific:
+\begin{itemize}
+\item Section \code{var}, \code{bndry\_} + region name. Depending on the mesh file, regions
+  of the grid are given labels. Currently
+  these are \code{core}, \code{sol}, \code{pf} and \code{target} which
+  are intended for tokamak edge simulations. Hence the variables checked
+  are \code{bndry\_core}, \code{bndry\_pf} etc.
+\item Section \code{var}, \code{bndry\_} + boundary side. These names are
+  \code{xin}, \code{xout}, \code{yup} and \code{ydown}. 
+\item Section \code{var}, variable \code{bndry\_all}
+\item The same settings again except in section \code{All}.
+\end{itemize}
+The most general setting is therefore \code{bndry\_all} in the \code{All} 
+section.
+
+Boundary conditions are given names and currently include:
+\begin{itemize}
+\item \code{dirichlet} - Set to zero
+\item \code{neumann} - Zero gradient
+\item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
+\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
+\end{itemize}
+The zero- or constant-Laplacian boundary conditions works as follows:
 \begin{eqnarray*}
 \nabla_\perp^2 f &=& 0 \\
 &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} + g^{zz}\frac{\partial^2 f}{\partial z^2}
@@ -729,6 +736,27 @@ which has the solution
 \]
 Assuming that the solution should decay away from the domain, on the inner
 $x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
+
+\subsection{Relaxing boundaries}
+
+All boundaries can be modified to be ``relaxing'' which are a combination
+of zero-gradient time-derivative, and whatever boundary condition they are
+applied to. The idea is that this prevents sharp discontinuities at boundaries
+during transients, whilst maintaining the desired boundary condition on
+longer timescales. In some cases this can improve the numerical stability
+and timestep.
+
+For example, \code{relax(dirichlet)} will make a field $f$ at point $i$ in the
+boundary follow a point $i-1$ in the domain:
+\[
+\left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
+\]
+where $\tau$ is a timescale for the boundary (currently set to 0.1, but will
+be a global option). S
+When the time-derivatives are slow close to the boundary, the boundary
+relaxes to the desired condition (Dirichlet in this case), but when the
+time-derivatives are large then the boundary approaches Neumann to reduce
+discontinuities.
 
 \section{Running BOUT++}
 \label{sec:running}
