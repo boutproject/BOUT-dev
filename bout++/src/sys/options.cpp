@@ -460,7 +460,7 @@ string OptionFile::getNextLine(ifstream &fin)
   getline(fin, line);
   trimComments(line);
   trim(line);
-  line = lowercase(line);
+  line = lowercasequote(line); // lowercase except for inside quotes
 
 /*  output << "DEBUG: " << line << endl;*/
   return line;

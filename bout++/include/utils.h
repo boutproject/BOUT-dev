@@ -62,5 +62,6 @@ char *strconcat(const char* left, const char *right);
 
 /// Convert a string to lower case
 const string lowercase(const string &str);
+const string lowercasequote(const string &str);
 
 #endif // __UTILS_H__

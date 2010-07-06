@@ -261,26 +261,29 @@ char *strconcat(const char* left, const char *right)
   return buffer;
 }
 
-/**************************************************************************
- * Matrix inversion
- **************************************************************************/
-
-/// LU decomposition 
-/*!
- * LU decompose an nxn complex matrix. Adapted from numerical recipes
- */
-/*
-void ludcmp(dcomplex **a, int n, int *indx)
-{
-  int i, imax, j, k;
-  
-}
-*/
-
+/// Convert a string to lower case
 const string lowercase(const string &str)
 {
   string strlow(str);
   
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
+  return strlow;
+}
+
+/// Convert to lowercase, except for inside strings
+const string lowercasequote(const string &str)
+{
+  string strlow(str);
+  
+  bool quote = false, dquote = false;
+  for(int i=0;i<strlow.length(); i++) {
+    if(strlow[i] == '\'') {
+      quote ^= true;
+    }else if(strlow[i] == '"') {
+      dquote ^= true;
+    }else if( (!quote) && (!dquote) ){
+      strlow[i] = tolower(strlow[i]);
+    }
+  }
   return strlow;
 }

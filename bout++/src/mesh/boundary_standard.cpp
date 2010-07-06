@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "invert_laplace.h"
 #include "fft.h"
+#include "boutexception.h"
 
 ///////////////////////////////////////////////////////////////
 
@@ -58,7 +59,7 @@ void BoundaryZeroLaplace::apply(Field2D &f)
 {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
 
   // Constant X derivative
@@ -90,7 +91,7 @@ void BoundaryZeroLaplace::apply(Field3D &f)
   
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
   
   int bx = bndry->bx;
@@ -141,7 +142,7 @@ void BoundaryConstLaplace::apply(Field2D &f)
 {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
 
   // Constant X second derivative
@@ -172,7 +173,7 @@ void BoundaryConstLaplace::apply(Field3D &f)
 {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
-    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
   
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
@@ -240,7 +241,7 @@ BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region)
 
 void BoundaryDivCurl::apply(Vector2D &f)
 {
-  bout_error("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
+  throw BoutException("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
 }
 
 void BoundaryDivCurl::apply(Vector3D &var)
@@ -251,7 +252,7 @@ void BoundaryDivCurl::apply(Vector3D &var)
   int ncz = mesh->ngz-1;
   
   if(bndry->location != BNDRY_XOUT) {
-    bout_error("ERROR: DivCurl boundary only works for outer X currently\n");
+    throw BoutException("ERROR: DivCurl boundary only works for outer X currently\n");
   }
   var.toCovariant();
   
