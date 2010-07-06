@@ -36,6 +36,7 @@ class BoundaryZeroLaplace : public BoundaryOp {
   void apply(Field3D &f);
 };
 
+/// Constant Laplacian, decaying solution
 class BoundaryConstLaplace : public BoundaryOp {
  public:
   BoundaryConstLaplace() {}
@@ -43,6 +44,18 @@ class BoundaryConstLaplace : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region);
   void apply(Field2D &f);
   void apply(Field3D &f);
+};
+
+/// Vector boundary condition Div(B) = 0, Curl(B) = 0
+class BoundaryDivCurl : public BoundaryOp {
+ public:
+  BoundaryDivCurl() {}
+ BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region);
+  void apply(Field2D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
+  void apply(Vector2D &f);
+  void apply(Vector3D &f);
 };
 
 /// Convert a boundary condition to a relaxing one

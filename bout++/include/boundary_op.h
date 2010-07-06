@@ -47,14 +47,10 @@ class BoundaryOp {
     apply(ddt(f));
   }
   virtual void apply_ddt(Vector2D &f) {
-    apply_ddt(f.x);
-    apply_ddt(f.y);
-    apply_ddt(f.z);
+    apply(ddt(f));
   }
   virtual void apply_ddt(Vector3D &f) {
-    apply_ddt(f.x);
-    apply_ddt(f.y);
-    apply_ddt(f.z);
+    apply(ddt(f));
   }
   
   BoundaryRegion *bndry;

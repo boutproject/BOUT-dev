@@ -4,6 +4,17 @@
 
 BoundaryFactory* BoundaryFactory::instance = NULL;
 
+BoundaryFactory::~BoundaryFactory()
+{
+  // Free any boundaries
+  for(map<string, BoundaryOp*>::iterator it = opmap.begin(); it != opmap.end(); it++) {
+    delete it->second;
+  }
+  for(map<string, BoundaryModifier*>::iterator it = modmap.begin(); it != modmap.end(); it++) {
+    delete it->second;
+  }
+}
+
 BoundaryFactory* BoundaryFactory::getInstance()
 {
   if(instance == NULL) {
@@ -12,7 +23,17 @@ BoundaryFactory* BoundaryFactory::getInstance()
   }
   return instance;
 }
+
+void BoundaryFactory::cleanup()
+{
+  if(instance == NULL)
+    return;
   
+  // Just delete the instance
+  delete instance;
+  instance = NULL;
+}
+
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
 {
   output <<  name;

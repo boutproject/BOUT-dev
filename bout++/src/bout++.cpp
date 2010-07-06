@@ -258,6 +258,7 @@ int bout_init(int argc, char **argv)
   bndry->add(new BoundaryDirichlet(), "dirichlet");
   bndry->add(new BoundaryNeumann(), "neumann");
   bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
+  bndry->add(new BoundaryConstLaplace(), "constlaplace");
   bndry->addMod(new BoundaryRelax(10.), "relax");
 
   /// Set the file names
@@ -362,7 +363,7 @@ int bout_run()
 
 int bout_finish()
 {
-	// Delete the solver
+  // Delete the solver
   delete solver;
 
   // Get and delete the mesh data sources
@@ -376,6 +377,9 @@ int bout_finish()
   // Delete 3D field memory
   Field3D::cleanup();
   
+  // Cleanup boundary factory
+  BoundaryFactory::cleanup();
+
   // close MPI
 #ifdef BOUT_HAS_PETSC
   PetscFinalize();

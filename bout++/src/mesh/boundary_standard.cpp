@@ -139,7 +139,33 @@ BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region)
 
 void BoundaryConstLaplace::apply(Field2D &f)
 {
-  
+  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+    // Can't apply this boundary condition to non-X boundaries
+    bout_error("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+  }
+
+  // Constant X second derivative
+  int bx = bndry->bx;
+  // Loop over the Y dimension
+  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+    int x = bndry->x;
+    int y = bndry->y;
+    // Calculate the Laplacian on the last point
+    dcomplex la,lb,lc;
+    laplace_tridag_coefs(x-2*bx, y, 0, la, lb, lc);
+    dcomplex val = la*f[x-bx-1][y] + lb*f[x-2*bx][y] + lc*f[x-2*bx+1][y];
+    // Loop in X towards edge of domain
+    do {
+      laplace_tridag_coefs(x-bx, y, 0, la, lb, lc);
+      if(bx < 0) { // Lower X
+	f[x][y] = ((val - lb*f[x-bx][y] + lc*f[x-2*bx][y]) / la).Real();
+      }else  // Upper X
+	f[x][y] = ((val - lb*f[x-bx][y] + la*f[x-2*bx][y]) / lc).Real();
+      
+      bndry->next();
+      x = bndry->x; y = bndry->y;
+    }while(!bndry->isDone());
+  }
 }
 
 void BoundaryConstLaplace::apply(Field3D &f)
@@ -167,14 +193,116 @@ void BoundaryConstLaplace::apply(Field3D &f)
     // Take FFT of last 3 points in domain
     ZFFT(f[x-bx][y], mesh->zShift[x-bx][y], c0);
     ZFFT(f[x-2*bx][y], mesh->zShift[x-2*bx][y], c1);
-    ZFFT(f[x-3*bx][y], mesh->zShift[x-3*bx][y], c1);
+    ZFFT(f[x-3*bx][y], mesh->zShift[x-3*bx][y], c2);
     dcomplex k0lin = (c1[0] - c0[0])/mesh->dx[x-bx][y]; // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
     for(int jz=0;jz<=ncz/2;jz++) {
-      dcomplex d,e,f;
-      laplace_tridag_coefs(x-2*bx, y, jz, d, e, f);
-      c1[jz] = d*c0[jz] + e*c1[jz] + f*c2[jz];
+      dcomplex la,lb,lc;
+      laplace_tridag_coefs(x-2*bx, y, jz, la, lb, lc);
+      if(bx < 0) { // Inner X
+	c1[jz] = la*c0[jz] + lb*c1[jz] + lc*c2[jz];
+      }else { // Outer X
+	c1[jz] = la*c2[jz] + lb*c1[jz] + lc*c0[jz];
+      }
+    }
+    // Solve  mesh->g11*d2f/dx2 - mesh->g33*kz^2f = 0
+    // Assume mesh->g11, mesh->g33 constant -> exponential growth or decay
+    BoutReal xpos = 0.0;
+    // Loop in X towards edge of domain
+    do {
+      // kz = 0 solution
+      xpos -= mesh->dx[x][y];
+      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/mesh->g11[x-bx][y];
+      // kz != 0 solution
+      BoutReal coef = -1.0*sqrt(mesh->g33[x-bx][y] / mesh->g11[x-bx][y])*mesh->dx[x-bx][y];
+      for(int jz=1;jz<=ncz/2;jz++) {
+	BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+	c0[jz] *= exp(coef*kwave); // The decaying solution only
+	// Add the particular solution
+	c2[jz] = c0[jz] - c1[jz]/(mesh->g33[x-bx][y]*kwave*kwave); 
+      }
+      // Reverse FFT
+      ZFFT_rev(c2, mesh->zShift[x][y], f[x][y]);
+      
+      bndry->next();
+      x = bndry->x; y = bndry->y;
+    }while(!bndry->isDone());
+  }
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region)
+{
+  return new BoundaryDivCurl(region);
+}
+
+void BoundaryDivCurl::apply(Vector2D &f)
+{
+  bout_error("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
+}
+
+void BoundaryDivCurl::apply(Vector3D &var)
+{
+  int jx, jy, jz, jzp, jzm;
+  BoutReal tmp;
+  
+  int ncz = mesh->ngz-1;
+  
+  if(bndry->location != BNDRY_XOUT) {
+    bout_error("ERROR: DivCurl boundary only works for outer X currently\n");
+  }
+  var.toCovariant();
+  
+  if(mesh->xstart > 2) {
+    output.write("Error: Div = Curl = 0 boundary condition doesn't work for MXG > 2. Sorry\n");
+    exit(1);
+  }
+
+  jx = mesh->xend+1;
+  for(jy=1;jy<mesh->ngy-1;jy++) {
+    for(jz=0;jz<ncz;jz++) {
+      jzp = (jz+1) % ncz;
+      jzm = (jz - 1 + ncz) % ncz;
+
+      // dB_y / dx = dB_x / dy
+      
+      // dB_x / dy
+      tmp = (var.x[jx-1][jy+1][jz] - var.x[jx-1][jy-1][jz]) / (mesh->dy[jx-1][jy-1] + mesh->dy[jx-1][jy]);
+      
+      var.y[jx][jy][jz] = var.y[jx-2][jy][jz] + (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp;
+      if(mesh->xstart == 2)
+	// 4th order to get last point
+	var.y[jx+1][jy][jz] = var.y[jx-3][jy][jz] + 4.*mesh->dx[jx][jy]*tmp;
+
+      // dB_z / dx = dB_x / dz
+
+      tmp = (var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) / (2.*mesh->dz);
+      
+      var.z[jx][jy][jz] = var.z[jx-2][jy][jz] + (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp;
+      if(mesh->xstart == 2)
+	var.z[jx+1][jy][jz] = var.z[jx-3][jy][jz] + 4.*mesh->dx[jx][jy]*tmp;
+
+      // d/dx( Jmesh->g11 B_x ) = - d/dx( Jmesh->g12 B_y + Jmesh->g13 B_z) 
+      //                    - d/dy( JB^y ) - d/dz( JB^z )
+	
+      tmp = -( mesh->J[jx][jy]*mesh->g12[jx][jy]*var.y[jx][jy][jz] + mesh->J[jx][jy]*mesh->g13[jx][jy]*var.z[jx][jy][jz]
+	       - mesh->J[jx-2][jy]*mesh->g12[jx-2][jy]*var.y[jx-2][jy][jz] + mesh->J[jx-2][jy]*mesh->g13[jx-2][jy]*var.z[jx-2][jy][jz] )
+	/ (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]); // First term (d/dx) using vals calculated above
+      tmp -= (mesh->J[jx-1][jy+1]*mesh->g12[jx-1][jy+1]*var.x[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g12[jx-1][jy-1]*var.x[jx-1][jy-1][jz]
+	      + mesh->J[jx-1][jy+1]*mesh->g22[jx-1][jy+1]*var.y[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g22[jx-1][jy-1]*var.y[jx-1][jy-1][jz]
+	      + mesh->J[jx-1][jy+1]*mesh->g23[jx-1][jy+1]*var.z[jx-1][jy+1][jz] - mesh->J[jx-1][jy-1]*mesh->g23[jx-1][jy-1]*var.z[jx-1][jy-1][jz])
+	/ (mesh->dy[jx-1][jy-1] + mesh->dy[jx-1][jy]); // second (d/dy)
+      tmp -= (mesh->J[jx-1][jy]*mesh->g13[jx-1][jy]*(var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) +
+	      mesh->J[jx-1][jy]*mesh->g23[jx-1][jy]*(var.y[jx-1][jy][jzp] - var.y[jx-1][jy][jzm]) +
+	      mesh->J[jx-1][jy]*mesh->g33[jx-1][jy]*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*mesh->dz);
+      
+      var.x[jx][jy][jz] = ( mesh->J[jx-2][jy]*mesh->g11[jx-2][jy]*var.x[jx-2][jy][jz] + 
+			    (mesh->dx[jx-2][jy] + mesh->dx[jx-1][jy]) * tmp ) / mesh->J[jx][jy]*mesh->g11[jx][jy];
+      if(mesh->xstart == 2)
+	var.x[jx+1][jy][jz] = ( mesh->J[jx-3][jy]*mesh->g11[jx-3][jy]*var.x[jx-3][jy][jz] + 
+				4.*mesh->dx[jx][jy]*tmp ) / mesh->J[jx+1][jy]*mesh->g11[jx+1][jy];
     }
   }
 }

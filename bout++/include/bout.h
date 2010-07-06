@@ -43,8 +43,6 @@
 
 #include "vecops.h" // Vector differential operations
 
-#include "boundary.h" // Boundary conditions
-
 #include "smoothing.h" // Smoothing functions
 
 #include "sourcex.h"     // source and mask functions

@@ -33,7 +33,6 @@
 
 #include "globals.h"
 #include "inverter.h"
-#include "boundary.h"
 #include "utils.h"
 
 #include <math.h>

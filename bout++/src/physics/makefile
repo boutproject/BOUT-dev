@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= boundary.cpp smoothing.cpp  sourcex.cpp
+SOURCEC		= smoothing.cpp  sourcex.cpp
 SOURCEH		= $(SOURCEC:%.cpp=%.h)
 TARGET		= lib
 

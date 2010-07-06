@@ -15,8 +15,11 @@ using std::map;
 /// Create BoundaryOp objects on demand
 class BoundaryFactory {
  public:
+  ~BoundaryFactory();
   /// Return a pointer to the only instance
   static BoundaryFactory* getInstance();
+  
+  static void cleanup(); ///< Frees all memory
   
   /// Create a boundary operation object
   BoundaryOp* create(const string &name, BoundaryRegion *region);

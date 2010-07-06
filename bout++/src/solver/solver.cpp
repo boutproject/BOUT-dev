@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "initialprofiles.h"
-#include "boundary.h"
 #include "interpolation.h"
 #include "solverfactory.h"
 
