@@ -87,6 +87,7 @@ FUNCTION int_y, var, mesh, loop=loop
       loop[xi] = lo
     ENDIF ELSE BEGIN
       f[xi,yi] = int_func(var[xi,yi])
+      loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
     ENDELSE
   ENDREP UNTIL last
   
@@ -988,14 +989,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "jyseps2_2", jyseps2_2)
   s = file_write(handle, "ny_inner", ny_inner);
   
-  ; Topology for general configurations
-  s = file_write(handle, "yup_xsplit", mesh.yup_xsplit)
-  s = file_write(handle, "ydown_xsplit", mesh.ydown_xsplit)
-  s = file_write(handle, "yup_xin", mesh.yup_xin)
-  s = file_write(handle, "yup_xout", mesh.yup_xout)
-  s = file_write(handle, "ydown_xin", mesh.ydown_xin)
-  s = file_write(handle, "ydown_xout", mesh.ydown_xout)
-
   ; Grid spacing
   
   s = file_write(handle, "dx", dx)
@@ -1014,6 +1007,16 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "hthe", hthe)
   s = file_write(handle, "sinty", sinty)
   s = file_write(handle, "psixy", psixy)
+
+  ; Topology for general configurations
+  s = file_write(handle, "yup_xsplit", mesh.yup_xsplit)
+  s = file_write(handle, "ydown_xsplit", mesh.ydown_xsplit)
+  s = file_write(handle, "yup_xin", mesh.yup_xin)
+  s = file_write(handle, "yup_xout", mesh.yup_xout)
+  s = file_write(handle, "ydown_xin", mesh.ydown_xin)
+  s = file_write(handle, "ydown_xout", mesh.ydown_xout)
+  s = file_write(handle, "nrad", mesh.nrad)
+  s = file_write(handle, "npol", mesh.npol)
 
   ; plasma profiles
 

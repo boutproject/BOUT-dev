@@ -36,8 +36,8 @@ FUNCTION file_nc_find_dim, handle, name, length
         ; Append a number to the end of name. Check if it exists
         dname = name + STRTRIM(STRING(i),2)
         id = CALL_FUNCTION('NCDF_DIMID', handle.id, dname)
+        i = i + 1
       ENDREP UNTIL id EQ -1
-      
       ; define this dimension
       did = CALL_FUNCTION('NCDF_DIMDEF', handle.id, dname, length)
     ENDIF
