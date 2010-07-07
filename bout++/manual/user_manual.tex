@@ -234,7 +234,7 @@ BOUT++ can use the following libraries:
   \item LAPACK for linear solvers
 \end{itemize}
 
-A bare minimum to get BOUT++ running is an MPI implementation (e.g. MPICH, OpenMPI, LAM), FFTW-3, and one of either NetCDF or PACT. 
+A bare minimum to get BOUT++ running is an MPI implementation (e.g. MPICH, OpenMPI, LAM), FFTW-3, and one (or both) of NetCDF or PACT. 
 To install these libraries in your home directory,  first create a directory ``install'' which is
 going to be used for temporary installation files,  and a directory ``local'' where the libraries are going to be installed:
 \begin{verbatim}
@@ -256,7 +256,7 @@ or for CSH type shells:
 \end{verbatim}
 These two lines should be added to the end of your login scripts (e.g. \file{~/.profile})
 
-Then download the PACT, NetCDF, FFTW and SUNDIALS libraries, and put them into ``install''. This
+Then download the NetCDF, FFTW, SUNDIALS and (optionally) PACT libraries, and put them into ``install''. This
 tutorial is with the following versions:
 \begin{verbatim}
  ~/ $ ls install
@@ -331,6 +331,14 @@ gmake
 This should detect the setting needed automatically. The main things it's
 looking for are
 \begin{itemize}
+\item NetCDF installation. When NetCDF is installed, a script \file{nc-config}
+should be put into somewhere on the path. If this is found then configure
+should have all the settings it needs. If this isn't found then configure
+will search for the NetCDF include and library files. To specify the location
+of these files, use
+\begin{verbatim}
+    ./configure --with-netcdf=/path/to/netcdf/
+\end{verbatim}
 \item A PACT installation (\file{http://pact.llnl.gov}) for PDB file I/O. One of the places configure
   will look is in your home/local directory. If you do not want PDB support, configure with
 \begin{verbatim}
@@ -372,8 +380,16 @@ NOTES:
 
 \subsubsection{Solver library}
 
-The BOUT++ distribution includes a 1998 version of CVODE by Scott D. Cohen and Alan C. Hindmarsh, 
-which is the default time integration solver. Whilst no serious bugs have been found in this code
+As of July 2010, BOUT++ can be compiled with several solver libraries, and the desired one
+selected at runtime (thanks to factory magic by S.Farley).
+
+The BOUT++ distribution used to include a 1998 version of CVODE by Scott D. Cohen and Alan C.
+Hindmarsh, which was the default time integration solver. This is the easiest to install, and
+can be downloaded and compiled automatically by using the option
+\begin{verbatim}
+   ./configure --download-pvode
+\end{verbatim}
+Whilst no serious bugs have been found in this code
 (as far as I am aware), several features such as user-supplied preconditioners and constraints cannot
 be used with this solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE and
 IDA\footnote{available from \code{https://computation.llnl.gov/casc/sundials/main.html}}.

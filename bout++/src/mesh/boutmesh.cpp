@@ -275,7 +275,7 @@ int BoutMesh::load()
       IntShiftTorsion = 0.0;
     }
   }
-  //.allocate some memory for twist-shift
+  // Allocate some memory for twist-shift
 
   ShiftAngle  = rvector(ngx);
 
