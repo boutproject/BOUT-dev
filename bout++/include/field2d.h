@@ -129,6 +129,9 @@ class Field2D : public Field, public FieldData {
   BoutReal max(bool allpe=false) const;
   bool finite() const;
   
+  friend const Field2D exp(const Field2D &f);
+  friend const Field2D log(const Field2D &f);
+  
   friend const Field2D sin(const Field2D &f);
   friend const Field2D cos(const Field2D &f);
   friend const Field2D tan(const Field2D &f);

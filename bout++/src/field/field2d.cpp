@@ -32,6 +32,8 @@
 #include "utils.h"
 
 #include "boundary_op.h"
+#include "boutexception.h"
+
 
 #include <cmath>
 #include <stdlib.h>
@@ -1224,7 +1226,51 @@ bool finite(const Field2D &f)
   return f.finite();
 }
 
+/////////////////////////////////////////////////
 // Friend functions
+
+const Field2D exp(const Field2D &f)
+{
+#ifdef CHECK
+  msg_stack.push("exp(Field2D)");
+#endif
+
+  Field2D result;
+  result.allocate();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      result.data[jx][jy] = ::exp(f.data[jx][jy]);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
+
+const Field2D log(const Field2D &f)
+{
+#ifdef CHECK
+  msg_stack.push("log(Field2D)");
+#endif
+
+  Field2D result;
+  result.allocate();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++) {
+#ifdef CHECK
+      if(f.data[jx][jy] < 0.)
+        throw BoutException("log(Field2D) has negative argument at [%d][%d]\n", jx, jy);
+#endif
+      result.data[jx][jy] = ::log(f.data[jx][jy]);
+    }
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
 
 const Field2D sin(const Field2D &f)
 {

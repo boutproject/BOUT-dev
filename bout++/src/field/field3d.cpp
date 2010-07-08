@@ -34,6 +34,7 @@
 #include "dcomplex.h"
 #include "interpolation.h"
 #include "boundary_op.h"
+#include "boutexception.h"
 
 /// Constructor
 Field3D::Field3D()
@@ -2290,7 +2291,59 @@ BoutReal max(const Field3D &f, bool allpe)
   return f.max(allpe);
 }
 
+/////////////////////////////////////////////////////////////////////
 // Friend functions
+
+const Field3D exp(const Field3D &f)
+{
+#ifdef CHECK
+  msg_stack.push("exp(Field3D)");
+
+  if(f.block == NULL)
+    throw BoutException("Argument to exp(Field3D) is empty\n");
+#endif
+
+  Field3D result;
+  result.allocate();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        result.block->data[jx][jy][jz] = exp(f.block->data[jx][jy][jz]);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
+
+const Field3D log(const Field3D &f)
+{
+#ifdef CHECK
+  msg_stack.push("log(Field3D)");
+
+  if(f.block == NULL)
+    throw BoutException("Argument to log(Field3D) is empty\n");
+#endif
+
+  Field3D result;
+  result.allocate();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+#ifdef CHECK
+        if(f.block->data[jx][jy][jz] < 0.)
+          throw BoutException("log(Field3D) has negative argument at [%d][%d][%d]\n", jx, jy, jz);
+#endif
+        result.block->data[jx][jy][jz] = log(f.block->data[jx][jy][jz]);
+      }
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
 
 const Field3D sin(const Field3D &f)
 {

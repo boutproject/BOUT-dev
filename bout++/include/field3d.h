@@ -201,6 +201,9 @@ class Field3D : public Field, public FieldData {
   friend const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
 
   // Friend functions
+
+  friend const Field3D exp(const Field3D &f);
+  friend const Field3D log(const Field3D &f);
   
   friend const Field3D sin(const Field3D &f);
   friend const Field3D cos(const Field3D &f);
