@@ -46,6 +46,7 @@ BoutReal nuIonNeutral; // Ion-neutral collision rate (normalised by wci)
 // settings
 bool estatic, ZeroElMass; // Switch for electrostatic operation (true = no Apar)
 
+bool arakawa;   // Use Arakawa scheme for ExB advection
 bool bout_exb;  // Use BOUT-06 expression for ExB velocity
 
 BoutReal zeff, nu_perp;
@@ -130,7 +131,8 @@ int physics_init(bool restarting)
   OPTION(zeff,        1.0);
   OPTION(nu_perp,     0.0); 
   OPTION(ShearFactor, 1.0); 
-  OPTION(nuIonNeutral, -1.); 
+  OPTION(nuIonNeutral, -1.);
+  OPTION(arakawa,     false);
   OPTION(bout_exb,    false);
   
   OPTION(niprofile, false);
@@ -540,7 +542,41 @@ const Field2D vE_Grad(const Field2D &f, const Field2D &p)
 const Field3D vE_Grad(const Field2D &f, const Field3D &p)
 {
   Field3D result;
-  if(bout_exb) {
+  if(arakawa) {
+    // Arakawa scheme for perpendicular flow. Here as a test
+    
+    result.allocate();
+    int ncz = mesh->ngz - 1;
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
+          
+          // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
+          BoutReal Jpp = 0.25*( (p[jx][jy][jzp] - p[jx][jy][jzm])*
+                                (f[jx+1][jy] - f[jx-1][jy]) -
+                                (p[jx+1][jy][jz] - p[jx-1][jy][jz])*
+                                (f[jx][jy] - f[jx][jy]) )
+            / (mesh->dx[jx][jy] * mesh->dz);
+
+          // J+x
+          BoutReal Jpx = 0.25*( f[jx+1][jy]*(p[jx+1][jy][jzp]-p[jx+1][jy][jzm]) -
+                                f[jx-1][jy]*(p[jx-1][jy][jzp]-p[jx-1][jy][jzm]) -
+                                f[jx][jy]*(p[jx+1][jy][jzp]-p[jx-1][jy][jzp]) +
+                                f[jx][jy]*(p[jx+1][jy][jzm]-p[jx-1][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          // Jx+
+          BoutReal Jxp = 0.25*( f[jx+1][jy]*(p[jx][jy][jzp]-p[jx+1][jy][jz]) -
+                                f[jx-1][jy]*(p[jx-1][jy][jz]-p[jx][jy][jzm]) -
+                                f[jx-1][jy]*(p[jx][jy][jzp]-p[jx-1][jy][jz]) +
+                                f[jx+1][jy]*(p[jx+1][jy][jz]-p[jx][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          
+          result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+        }
+    
+  }else if(bout_exb) {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDX(DDZ(p), f);
   }else {
@@ -566,7 +602,42 @@ const Field3D vE_Grad(const Field3D &f, const Field2D &p)
 const Field3D vE_Grad(const Field3D &f, const Field3D &p)
 {
   Field3D result;
-  if(bout_exb) {
+  if(arakawa) {
+    // Arakawa scheme for perpendicular flow. Here as a test
+    
+    result.allocate();
+    
+    int ncz = mesh->ngz - 1;
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
+          
+          // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
+          BoutReal Jpp = 0.25*( (p[jx][jy][jzp] - p[jx][jy][jzm])*
+                                (f[jx+1][jy][jz] - f[jx-1][jy][jz]) -
+                                (p[jx+1][jy][jz] - p[jx-1][jy][jz])*
+                                (f[jx][jy][jzp] - f[jx][jy][jzm]) )
+            / (mesh->dx[jx][jy] * mesh->dz);
+
+          // J+x
+          BoutReal Jpx = 0.25*( f[jx+1][jy][jz]*(p[jx+1][jy][jzp]-p[jx+1][jy][jzm]) -
+                                f[jx-1][jy][jz]*(p[jx-1][jy][jzp]-p[jx-1][jy][jzm]) -
+                                f[jx][jy][jzp]*(p[jx+1][jy][jzp]-p[jx-1][jy][jzp]) +
+                                f[jx][jy][jzm]*(p[jx+1][jy][jzm]-p[jx-1][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          // Jx+
+          BoutReal Jxp = 0.25*( f[jx+1][jy][jzp]*(p[jx][jy][jzp]-p[jx+1][jy][jz]) -
+                                f[jx-1][jy][jzm]*(p[jx-1][jy][jz]-p[jx][jy][jzm]) -
+                                f[jx-1][jy][jzp]*(p[jx][jy][jzp]-p[jx-1][jy][jz]) +
+                                f[jx+1][jy][jzm]*(p[jx+1][jy][jz]-p[jx][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          
+          result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+        }
+    
+  }else if(bout_exb) {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);
   }else {

@@ -26,7 +26,7 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 #StaggerGrids = true
 
-NXPE = 2 # Decompose in X direction
+NXPE = 1 # Decompose in X direction
 
 ##################################################
 # derivative methods
@@ -82,11 +82,14 @@ nu_perp = 1.0e-20
 
 nuIonNeutral = -1. # Ion-neutral collision rate, normalised to wci
 
-nonlinear = false
+nonlinear = true
 
 ShearFactor = 0.0
 
-bout_exb = true         # Use the BOUT-06 subset of ExB terms
+arakawa = true     # Use Arakawa scheme for ExB advection   
+bout_exb = false   # Use the BOUT-06 subset of ExB terms
+
+log_density = false # Evolve log(density) rather than density
 
 filter_z = true    # Filter in Z
 filter_z_mode = 1  # Keep this Z harmonic
