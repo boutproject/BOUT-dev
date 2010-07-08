@@ -1661,7 +1661,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 	allocated = true;
       }
       
-      invert_pdd_start(b, flags, a, data);
+      invert_pdd_start(b, flags, a, data, c);
       invert_pdd_continue(data);
       invert_pdd_finish(data, flags, x);
     }else {
