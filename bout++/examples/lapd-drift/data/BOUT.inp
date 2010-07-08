@@ -86,7 +86,6 @@ nonlinear = false
 
 ShearFactor = 0.0
 
-relax_flat_bndry = true # Use BOUT-06 style relaxing boundaries
 bout_exb = true         # Use the BOUT-06 subset of ExB terms
 
 filter_z = true    # Filter in Z
@@ -123,28 +122,26 @@ xs_opt = 2
 ys_opt = 2
 zs_opt = 2
 
-xs_mode = 1
+xs_mode = 1 # Radial mode number
 
-ys_mode = 1#
+ys_mode = 1 # Parallel mode number
 
-zs_mode = 1 # toroidal mode number
+zs_mode = 1 # asimuthal mode number
 
 
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# boundary conditions
+# -------------------
+# dirichlet    - Zero value
+# neumann      - Zero gradient
+# zerolaplace  - Laplacian = 0, decaying solution
+# constlaplace - Laplacian = const, decaying solution
+#
+# relax( )   - Make boundary condition relaxing
 
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_all = relax(neumann)
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni
-
-#xinner = 1
-#xouter = 1
 
 [rho]
 scale = -1.0e-8

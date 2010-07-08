@@ -59,8 +59,6 @@ int filter_z_mode;
 
 int phi_flags, apar_flags; // Inversion flags
 
-bool relax_flat_bndry; // If true, relax the boundaries flat
-
 bool niprofile;
 
 bool evolve_source; // If true, evolve a source/sink profile
@@ -122,14 +120,14 @@ int physics_init(bool restarting)
 
   // Read some parameters
   options.setSection("2fluid");
-  options.get("AA", AA, 2.0);
-  options.get("ZZ", ZZ, 1.0);
+  OPTION(AA, 2.0); // <=> options.get("AA", AA, 1.0);
+  OPTION(ZZ, 1.0);
 
-  options.get("estatic",     estatic,     false);
-  options.get("ZeroElMass",  ZeroElMass,  false);
-  options.get("Zeff",        zeff,        1.0);
-  options.get("nu_perp",     nu_perp,     0.0);
-  OPTION(ShearFactor, 1.0); // <=> options.get("ShearFactor", ShearFactor, 1.0);
+  OPTION(estatic,     false);
+  OPTION(ZeroElMass,  false);
+  OPTION(zeff,        1.0);
+  OPTION(nu_perp,     0.0); 
+  OPTION(ShearFactor, 1.0); 
   OPTION(nuIonNeutral, -1.); 
   OPTION(bout_exb,    false);
   
@@ -140,10 +138,8 @@ int physics_init(bool restarting)
   
   OPTION(input_source, false);
 
-  options.get("phi_flags",   phi_flags,   0);
-  options.get("apar_flags",  apar_flags,  0);
-
-  OPTION(relax_flat_bndry, false);
+  OPTION(phi_flags,   0);
+  OPTION(apar_flags,  0);
 
   OPTION(nonlinear, true);
   
@@ -151,12 +147,13 @@ int physics_init(bool restarting)
   OPTION(filter_z,          false);  // Filter a single n
   OPTION(filter_z_mode,     1);
 
+  // Check for "evolve" inside variable sections
   options.get("rho",   "evolve", evolve_rho,   true);
   options.get("Ni",    "evolve", evolve_ni,    true);
   options.get("Ajpar", "evolve", evolve_ajpar, true);
 
   if(ZeroElMass)
-    evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
+    evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -212,11 +209,11 @@ int physics_init(bool restarting)
   output.write("\tNormalising to rho_s = %e\n", rho_s);
 
   // Normalise profiles
-  Ni0 /= Ni_x/1.0e14;
-  Ti0 /= Te_x;
-  Te0 /= Te_x;
+  Ni0  /= Ni_x/1.0e14;
+  Ti0  /= Te_x;
+  Te0  /= Te_x;
   phi0 /= Te_x;
-  Vi0 /= Vi_x;
+  Vi0  /= Vi_x;
 
   // Normalise curvature term
   b0xcv.x /= (bmag/1e4);
@@ -263,39 +260,32 @@ int physics_init(bool restarting)
   if(evolve_rho) {
     bout_solve(rho, "rho");
     comms.add(rho);
-    output.write("rho\n");
   }else
     initial_profile("rho", rho);
 
   if(evolve_ni) {
     bout_solve(Ni, "Ni");
     comms.add(Ni);
-    output.write("ni\n");
   }else
     initial_profile("Ni", Ni);
 
   if(evolve_ajpar) {
     bout_solve(Ajpar, "Ajpar");
     comms.add(Ajpar);
-    output.write("ajpar\n");
   }else {
     initial_profile("Ajpar", Ajpar);
     if(ZeroElMass)
       dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
   }
 
+  // Set boundary conditions on jpar
+  jpar.setBoundary("jpar");
+
   if(evolve_source) {
     bout_solve(Sn, "Sn");
   }
   if(input_source)
     mesh->get(Sn, "Sn");
-
-  if(!restarting) {
-    // Ensure boundary condition is satisfied for initial condition
-    apply_boundary(rho, "rho");
-    apply_boundary(Ni, "Ni");
-    apply_boundary(Ajpar, "Ajpar");
-  }
   
   /************** SETUP COMMUNICATIONS **************/
 
@@ -391,10 +381,8 @@ int physics_run(BoutReal t)
     //jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
     jpar = ((Tet*Grad_par_LtoC(Ni)) - (Nit*Grad_par_LtoC(phi)))/(fmei*0.51*nu);
     
-    // Set radial boundary condition on jpar
-    bndry_inner_flat(jpar);
-    bndry_sol_flat(jpar);
-    bndry_toroidal(jpar);
+    // Set boundary condition on jpar
+    jpar.applyBoundary();
     
     // Need to communicate jpar
     mesh->communicate(jpar);
@@ -428,7 +416,7 @@ int physics_run(BoutReal t)
 
     }else if(niprofile) {
       // Allowing Ni profile to change
-      if(mesh->PE_XIND == 0) {
+      if(mesh->firstX()) {
 	// Inner boundary
 	for(int i=0;i<3;i++) {
 	  // Relax upwards (only add density)
@@ -439,7 +427,7 @@ int physics_run(BoutReal t)
 	      }
 	    }
       }
-      if(mesh->PE_XIND == mesh->NXPE-1) {
+      if(mesh->lastX()) {
 	// Outer boundary
 	for(int i=0;i<3;i++) {
 	  // Relax downwards (only remove density)
@@ -496,25 +484,8 @@ int physics_run(BoutReal t)
     ddt(Ni) = filter(ddt(Ni), filter_z_mode);
     ddt(Ajpar) = filter(ddt(Ajpar), filter_z_mode);
   }
-
-  // BOUNDARY CONDITIONS
   
-  if(relax_flat_bndry) {
-    bndry_inner_relax_flat(ddt(rho), rho);
-    bndry_sol_relax_flat(ddt(rho), rho);
-
-    bndry_inner_relax_flat(ddt(Ni), Ni);
-    bndry_sol_relax_flat(ddt(Ni), Ni);
-
-    bndry_inner_relax_flat(ddt(Ajpar), Ajpar);
-    bndry_sol_relax_flat(ddt(Ajpar), Ajpar);
-  }else {
-    apply_boundary(ddt(rho), "rho");
-    apply_boundary(ddt(Ni), "Ni");
-    apply_boundary(ddt(Ajpar), "Ajpar");
-  }
-
-  return(0);
+  return 0;
 }
 
 /////////////////////////////////////////////////////////////////
