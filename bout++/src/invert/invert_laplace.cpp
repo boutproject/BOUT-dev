@@ -1754,7 +1754,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
       
       for(jy=ys; jy <= ye; jy++) {	
 	// And start another one going
-	invert_spt_start(b.slice(jy), flags, a, data[jy]);
+	invert_spt_start(b.slice(jy), flags, a, data[jy], c);
 
 	// Move each calculation along one processor
 	for(jy2=ys; jy2 < jy; jy2++) 
