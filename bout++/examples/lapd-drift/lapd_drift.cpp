@@ -52,10 +52,12 @@ BoutReal zeff, nu_perp;
 bool evolve_rho,evolve_ni, evolve_ajpar;
 BoutReal ShearFactor;
 
-bool nonlinear;
+bool nonlinear;    // Include nonlinear terms
 
-bool filter_z;
-int filter_z_mode;
+bool log_density;  // Evolve logarithm of the density
+
+bool filter_z;     // Remove all but a single azimuthal mode-number
+int filter_z_mode; // The azimuthal mode-number to keep
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -142,7 +144,14 @@ int physics_init(bool restarting)
   OPTION(apar_flags,  0);
 
   OPTION(nonlinear, true);
-  
+
+  OPTION(log_density, false);
+  if(log_density) {
+    if(!nonlinear)
+      output << "WARNING: logarithmic density => Nonlinear terms enabled\n";
+    nonlinear = true; // Need to include the nonlinear terms
+  }
+
   // Toroidal filtering
   OPTION(filter_z,          false);  // Filter a single n
   OPTION(filter_z_mode,     1);
@@ -278,6 +287,12 @@ int physics_init(bool restarting)
       dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
   }
 
+  if(log_density) {
+    // Need to evolve the entire Ni, not perturbation
+    Ni += Ni0; // Add background to perturbation
+    Ni = log(Ni); // Take logarithm for starting point
+  }
+
   // Set boundary conditions on jpar
   jpar.setBoundary("jpar");
 
@@ -319,13 +334,21 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p);
 
 int physics_run(BoutReal t)
 {
+  if(log_density) {
+    // Ni contains the logarithm of total density. 
+    Ni = exp(Ni); // Convert to density
+  }
+
   // Invert vorticity to get phi
   
   // Solves \nabla^2_\perp x + (1./c)*\nabla_perp c\cdot\nabla_\perp x + a x = b
   // Arguments are:   (b,   bit-field, a,    c)
   // Passing NULL -> missing term
   if(nonlinear) {
-    phi = invert_laplace(rho/(Ni0+Ni), phi_flags, NULL, &Ni0);
+    if(log_density) {
+      phi = invert_laplace(rho/Ni, phi_flags, NULL, &Ni0); // Ni is total density
+    }else 
+      phi = invert_laplace(rho/(Ni0+Ni), phi_flags, NULL, &Ni0);
   }else
     phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
 
@@ -349,13 +372,16 @@ int physics_run(BoutReal t)
 
   // Update profiles
   if(nonlinear) {
-    Nit = Ni0 + Ni;
+    if(log_density) {
+      Nit = Ni; // Already includes Ni0
+    }else
+      Nit = Ni0 + Ni;
     Tit = Ti0;
     Tet = Te0;
   }else {
-    Nit = Ni0;  //+ Ni.DC();
-    Tit = Ti0; // + Ti.DC();
-    Tet = Te0; // + Te.DC();
+    Nit = Ni0;
+    Tit = Ti0;
+    Tet = Te0;
   }
 
   BoutReal source_alpha;
@@ -440,6 +466,11 @@ int physics_run(BoutReal t)
       }
     }else
       ddt(Ni) -= ddt(Ni).DC(); // REMOVE TOROIDAL AVERAGE DENSITY
+    
+    if(log_density) {
+      // d/dt(ln Ni) = d/dt(Ni) / Ni
+      ddt(Ni) /= Ni;
+    }
   }
 
   // VORTICITY
