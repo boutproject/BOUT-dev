@@ -224,14 +224,12 @@ void OptionFile::get(const map<string,string>::iterator &it, type &val)
       } else {  
           output << "\tOption '" << it->first << "': Boolean expected\n";
       }
-
+      ss >> val;
     } else {
       ss << it->second;
+      ss >> val;
       output << "\tOption " << it->first << " = " << val << endl;
     }
-    
-    ss >> val;
-
   }
 }
 
