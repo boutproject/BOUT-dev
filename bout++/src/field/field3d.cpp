@@ -2051,7 +2051,7 @@ bool Field3D::checkData(bool vital) const
     int jx, jy, jz;
     
     for(jx=mesh->xstart;jx<=mesh->xend;jx++)
-      for(jy=mesh->ystart;jy<=mesh->xend;jy++)
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	for(jz=0;jz<mesh->ngz-1;jz++)
 	  if(!finite(block->data[jx][jy][jz])) {
 	    error("Field3D: Operation on non-finite data at [%d][%d][%d]\n", jx, jy, jz);
@@ -2151,6 +2151,7 @@ memblock3d *Field3D::newBlock() const
 
     nb->data = r3tensor(mesh->ngx, mesh->ngy, mesh->ngz);
     nb->refs = 1;
+    nb->next = NULL;
     
     // add to the global list
     nb->all_next = blocklist;
