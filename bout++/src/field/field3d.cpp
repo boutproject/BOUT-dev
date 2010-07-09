@@ -82,8 +82,21 @@ Field3D::Field3D(const Field3D& f)
 
 Field3D::Field3D(const Field2D& f)
 {
+#ifdef CHECK
+  msg_stack.push("Field3D: Copy constructor from Field2D");
+#endif
+  
+  /// Mark data as unallocated
+  block = NULL;
+
+  location = CELL_CENTRE; // Cell centred variable by default
+  
   *this = f;
   ddt = NULL;
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 }
 
 Field3D::~Field3D()
