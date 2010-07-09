@@ -3,6 +3,13 @@
 #include "boundary_factory.h"
 #include "globals.h"
 
+FieldData::~FieldData()
+{
+  // Delete the boundary operations
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+    delete (*it);
+}
+
 void FieldData::setBoundary(const string &name)
 {
   /// Get the boundary factory (singleton)
@@ -19,4 +26,14 @@ void FieldData::setBoundary(const string &name)
       bndry_op.push_back(op);
     output << endl;
   }
+}
+
+void FieldData::setBoundary(const string &region, BoundaryOp *op)
+{
+  /// First find if we're replacing an existing boundary
+  
+  /// Get the mesh boundary regions
+  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  
+  
 }

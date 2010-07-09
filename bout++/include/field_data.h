@@ -47,7 +47,7 @@ using std::vector;
 */
 class FieldData {
  public:
-  virtual ~FieldData() { }
+  virtual ~FieldData();
 
   // Defines interface which must be implemented
   virtual bool isReal() const = 0; ///< Returns true if field consists of BoutReal values
@@ -79,6 +79,7 @@ class FieldData {
   
   // Boundary conditions
   void setBoundary(const string &name); ///< Set the boundary conditions
+  void setBoundary(const string &region, BoundaryOp *op); ///< Manually set
   virtual void applyBoundary() {}
   virtual void applyTDerivBoundary() {};
  protected:

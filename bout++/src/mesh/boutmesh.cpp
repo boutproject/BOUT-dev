@@ -44,6 +44,10 @@ BoutMesh::~BoutMesh()
 {
   // Delete the communication handles
   clear_handles();
+  
+  // Delete the boundary regions
+  for(vector<BoundaryRegion*>::iterator it = boundary.begin(); it != boundary.end(); it++)
+    delete (*it);
 }
 
 int BoutMesh::load()

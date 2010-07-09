@@ -109,12 +109,12 @@ ys_mode = 1#
 
 zs_mode = 1 # toroidal mode number
 
-
 # boundary conditions
-# dirichlet = zero value
-# neumann = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# -------------------
+# dirichlet    = zero value
+# neumann      = zero gradient
+# zerolaplace  = Laplacian = 0, decaying solution
+# constlaplace = Laplacian = 0, decaying solution
 
 bndry_all = neumann # Zero-gradient on all boundaries
 

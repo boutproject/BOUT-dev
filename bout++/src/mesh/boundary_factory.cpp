@@ -44,6 +44,9 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
     
+    if( (name == "null") || (name == "none") )
+      return NULL;
+
     BoundaryOp *op = findBoundaryOp(name);
     if(op == NULL) {
       output << "\tERROR: Could not find boundary condition '" << name << "'" << endl;

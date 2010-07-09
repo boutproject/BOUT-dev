@@ -16,7 +16,7 @@ void BoundaryDirichlet::apply(Field2D &f)
 {
   // Just loop over all elements and set to zero
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    f[bndry->x][bndry->y] = 0.;
+    f[bndry->x][bndry->y] = val;
 }
 
 void BoundaryDirichlet::apply(Field3D &f)
@@ -24,7 +24,7 @@ void BoundaryDirichlet::apply(Field3D &f)
   // Just loop over all elements and set to zero
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = 0.;
+      f[bndry->x][bndry->y][z] = val;
 }
 
 ///////////////////////////////////////////////////////////////

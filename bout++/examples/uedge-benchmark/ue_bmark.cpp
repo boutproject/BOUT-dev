@@ -254,14 +254,12 @@ int physics_run(BoutReal t)
 
   // INNER TARGET PLATE
   
-  bndry_ydown_flat(ddt(Ni)); // Zero-gradient Ni
   bndry_ydown_relax_val(ddt(Vi), Vit, -3.095e4/Vi_x);
   bndry_ydown_relax_val(ddt(Te), Tet, 10./Te_x);
   bndry_ydown_relax_val(ddt(Ti), Tit, 10./Te_x);
 
   // OUTER TARGET PLATE
 
-  bndry_yup_flat(ddt(Ni));
   bndry_yup_relax_val(ddt(Vi), Vit, 3.095e4/Vi_x);
   bndry_yup_relax_val(ddt(Te), Tet, 10./Te_x);
   bndry_yup_relax_val(ddt(Ti), Tit, 10./Te_x);

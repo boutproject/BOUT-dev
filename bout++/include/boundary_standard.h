@@ -9,11 +9,14 @@
 /// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
  public:
-  BoundaryDirichlet() {}
+  BoundaryDirichlet() : val(0.) {}
+  BoundaryDirichlet(const BoutReal setval): val(setval) {}
  BoundaryDirichlet(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region);
   void apply(Field2D &f);
   void apply(Field3D &f);
+ private:
+  BoutReal val;
 };
 
 /// Neumann (zero-gradient) boundary condition
