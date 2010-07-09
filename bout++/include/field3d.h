@@ -63,6 +63,8 @@ class Field3D : public Field, public FieldData {
   Field3D(const Field3D& f);
   /// Constructor from 2D field
   Field3D(const Field2D& f);
+  /// Constructor from value
+  Field3D(const BoutReal val);
   /// Destructor
   ~Field3D();
 

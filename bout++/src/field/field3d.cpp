@@ -91,8 +91,29 @@ Field3D::Field3D(const Field2D& f)
 
   location = CELL_CENTRE; // Cell centred variable by default
   
-  *this = f;
   ddt = NULL;
+  
+  *this = f;
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+Field3D::Field3D(const BoutReal val)
+{
+#ifdef CHECK
+  msg_stack.push("Field3D: Copy constructor from value");
+#endif
+  
+  /// Mark data as unallocated
+  block = NULL;
+
+  location = CELL_CENTRE; // Cell centred variable by default
+  
+  ddt = NULL;
+  
+  *this = val;
   
 #ifdef CHECK
   msg_stack.pop();
