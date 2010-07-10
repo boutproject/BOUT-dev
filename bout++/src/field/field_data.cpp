@@ -30,10 +30,20 @@ void FieldData::setBoundary(const string &name)
 
 void FieldData::setBoundary(const string &region, BoundaryOp *op)
 {
-  /// First find if we're replacing an existing boundary
-  
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
+ 
+  /// Find the region
+  
+
+  /// Find if we're replacing an existing boundary
+  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++) {
+    if( (*it)->bndry == op->bndry ) {
+      // Replacing this boundary
+      output << "Replacing ";
+    }
+  }
+  
   
   
 }
