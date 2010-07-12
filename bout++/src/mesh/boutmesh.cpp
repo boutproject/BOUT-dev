@@ -807,10 +807,13 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def)
   var.name = copy_string(name);
 #endif
    
-  // Close signal
+  // Close source
   s->close();
   
 #ifdef CHECK
+  // Check that the data is ok
+  var.checkData(true);
+  
   msg_stack.pop(msg_pos);
 #endif
   
@@ -967,7 +970,10 @@ int BoutMesh::get(Field3D &var, const char *name)
   }
   
 #ifdef CHECK
-    msg_stack.pop();
+  // Check that the data is ok
+  var.checkData(true);
+  
+  msg_stack.pop();
 #endif
   
   return 0;

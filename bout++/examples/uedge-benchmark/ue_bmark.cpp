@@ -198,6 +198,7 @@ Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
 
 int physics_run(BoutReal t)
 {
+  output << "Running " << t << endl;
   // Communicate variables
   mesh->communicate(Ni, Vi, Te, Ti);
   
@@ -210,8 +211,7 @@ int physics_run(BoutReal t)
   // Update non-linear coefficients on the mesh
   kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
   kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
-
-  // note: nonlinear terms are not here
+  
   peit = (Tet+Tit)*Nit;
 
   // DENSITY EQUATION
@@ -219,8 +219,7 @@ int physics_run(BoutReal t)
     -Nit*Div_par(Vit) 
     +Div_X_K_Grad_X(D_perp*(Nit*0.0+1.0), Nit)
     ;
-
-
+  
   // ION VELOCITY
   ddt(Vi) = (
 	     -Grad_par(peit) 
@@ -229,23 +228,19 @@ int physics_run(BoutReal t)
     -Vpar_Grad_par(Vit, Nit*Vit)/Nit 
     - ddt(Ni)*Vit/Nit
     ;
-
-
+  
   // ELECTRON TEMPERATURE
   ddt(Te) = (Div_par_K_Grad_par(kapa_Te, Tet) 
 	     +Div_X_K_Grad_X(chi_perp*Nit, Tet)
 	     )/(1.5*Nit) 
     - ddt(Ni)*Tet/Nit;
   
-
   // ION TEMPERATURE
   ddt(Ti) = (Div_par_K_Grad_par(kapa_Ti, Tit) 
 	     +Div_X_K_Grad_X(chi_perp*Nit, Tit)
 	     )/(1.5*Nit)
     - ddt(Ni)*Tit/Nit;
   
-
-
   ////////////////////////
   // Boundaries
   // 
