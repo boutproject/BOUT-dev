@@ -1,4 +1,4 @@
-# settings file for BOUT++
+# settings file for BOUT++ UEDGE benchmark test
 
 ##################################################
 # settings used by the core code
@@ -63,8 +63,6 @@ RTOL = 1.0e-5  # relative tolerance
 AA = 2.0
 ZZ = 1.0
 
-# lambda_relax = 1e-2
-
 estatic = false   # if true, electrostatic (Apar = 0)
 ZeroElMass = FALSE # Use Ohms law without electron inertia
 Zeff = 2.0        # Z effective
@@ -73,21 +71,6 @@ nu_perp = 1.0e-20
 ShearFactor = 0.0
 
 chi_perp = 0.6
-
-# field inversion flags: Add the following
-#  1 - Zero-gradient DC component on inner boundary
-#  2 - Zero-gradient AC component on inner boundary
-#  4 -      "        DC     "      " outer    "
-#  8 -      "        AC     "      " outer    "
-# 16 - Zero all DC components of the result
-# 32 - Don't use previous solution to start iterations
-#      (iterative methods only)
-# 64 - width of X boundary = 1
-# 128 - use 4th order band solver
-# 256 - Set laplacian = 0 on inner bndry (sometimes works)
-# 512 - Set laplacian = 0 on outer boundary (sometimes works)
-phi_flags = 0  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
 
 ##################################################
 # settings for individual variables
@@ -118,29 +101,47 @@ zs_mode = 1 # toroidal mode number
 
 # boundary conditions
 # -------------------
-# dirichlet    = zero value
-# neumann      = zero gradient
-# zerolaplace  = Laplacian = 0, decaying solution
-# constlaplace = Laplacian = 0, decaying solution
+# dirichlet      = zero value
+# dirichlet(val) = Fix at val
+# neumann        = zero gradient
+# zerolaplace    = Laplacian = 0, decaying solution
+# constlaplace   = Laplacian = 0, decaying solution
 #
 # Regions: core, pf, sol, target
 #          xin, xout, ydown, yup, all
+#
+# All boundaries can be made relaxing e.g.
+#    "relax(dirichlet(1.))" will relax towards 1
+# To specify a relaxation rate (1/timescale), pass an argument to relax:
+#    "relax(dirichlet(1.), 10)" sets the rate to 10. (the default).
+#
+# NOTE: The boundary quantities are normalised to
+#       the values set in the grid file:
+# Te_x = 10 eV
+# Ni_x = 1.e13 cm^-3
+# Vi_x = 21850.0 cm/s  NB: Depends on bmag, Te_x, AA and ZZ
 
-bndry_all = neumann
+bndry_all = neumann # Default for all variables, boundaries
 
 [Ni]
 
+bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
+bndry_all  = relax(dirichlet(0.1)) # 1e12 cm^-3 on all other boundaries
+
 [Vi]
-evolve = true
+
+bndry_core = neumann
+bndry_pf   = neumann
+bndry_sol  = neumann
+bndry_ydown = relax(dirichlet(-1.41648))   # -3.095e4/Vi_x
+bndry_yup   = relax(dirichlet( 1.41648))
 
 [Te]
-evolve = false
-scale = 0.0
+
+bndry_core = relax(dirichlet(10.)) # 100eV / Te_x on core boundary
+bndry_all  = relax(dirichlet(1.))  # Relax to 10.eV / Te_x on other boundaries
 
 [Ti]
-scale = 0.0
-evolve = false
 
-[rho]
-scale = 4e-7
-
+bndry_core = relax(dirichlet(10.))
+bndry_all  = relax(dirichlet(1.))

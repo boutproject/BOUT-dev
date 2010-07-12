@@ -2,6 +2,11 @@
 #include "boundary_factory.h"
 #include "utils.h"
 
+#include <list>
+#include <string>
+using std::list;
+using std::string;
+
 BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::~BoundaryFactory()
@@ -47,14 +52,15 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
     if( (name == "null") || (name == "none") )
       return NULL;
 
-    BoundaryOp *op = findBoundaryOp(name);
+    BoundaryOp *op = findBoundaryOp(trim(name));
     if(op == NULL) {
       output << "\tERROR: Could not find boundary condition '" << name << "'" << endl;
       return NULL;
     }
     
-    // Clone the boundary operation, passing the region to operate over
-    return op->clone(region); 
+    // Clone the boundary operation, passing the region to operate over and an empty args list
+    list<string> args;
+    return op->clone(region, args); 
   }
   // Contains a bracket. Find the last bracket and remove
   int pos2 = name.rfind(')');
@@ -62,24 +68,41 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
     output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl; 
   }
   
-  // Find the modifier
-  string modname = name.substr(0,pos);
-  //output << "BOUNDARY FACTORY: Looking for modifier " << modname  << endl;
-  BoundaryModifier *mod = findBoundaryMod(modname);
-  if(mod == NULL) {
-    output << "ERROR: Could not find boundary modifier '" << modname << "'" << endl;
-    return NULL;
+  // Find the function name before the bracket
+  string func = trim(name.substr(0,pos));
+  // And the argument inside the bracket
+  string arg = trim(name.substr(pos+1, pos2-pos-1));
+  // Split the argument on commas
+  list<string> arglist = strsplit(arg, ',');
+  for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
+    // Trim each argument
+    (*it) = trim(*it);
   }
-
-  // Create the operation inside the brackets
-  output << " -> ";
-  BoundaryOp *op = create(name.substr(pos+1, pos2-pos-1), region);
-  if(op == NULL) {
-    // some error - abort
-    return NULL;
+  
+  // Test if func is a modifier
+  BoundaryModifier *mod = findBoundaryMod(func);
+  if(mod != NULL) {
+    // The first argument should be an operation
+    BoundaryOp *op = create(arglist.front(), region);
+    if(op == NULL)
+      return NULL;
+    
+    // Remove the first element (name of operation)
+    arglist.pop_front();
+    
+    // Clone the modifier, passing in the operator and remaining strings as argument
+    return mod->clone(op, arglist);
   }
-  // Clone the modifier, passing in the operator as argument
-  return mod->clone(op);
+  
+  BoundaryOp *op = findBoundaryOp(trim(func));
+  if(op != NULL) {
+    // An operation with arguments
+    return op->clone(region, arglist); 
+  }
+  // Otherwise nothing matches
+  output << "  Boundary setting is neither an operation nor modifier: " << func << endl;
+  
+  return NULL;
 }
 
 BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region)
@@ -159,7 +182,7 @@ BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegi
 
 void BoundaryFactory::add(BoundaryOp* bop, const string &name)
 {
-  if(findBoundaryOp(name) != NULL) {
+  if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
     output << "ERROR: Trying to add an already existing boundary: " << name << endl;
     return;
@@ -174,7 +197,7 @@ void BoundaryFactory::add(BoundaryOp* bop, const char *name)
 
 void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name)
 {
-  if(findBoundaryMod(name) != NULL) {
+  if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
     output << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
     return;
@@ -205,3 +228,23 @@ BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s)
   return it->second;
 }
 
+// Strips leading and trailing spaces from a string
+const string BoundaryFactory::trim(const string &str, const string &c)
+{
+  string s(str);
+  // Find the first character position after excluding leading blank spaces
+  size_t startpos = s.find_first_not_of(c);
+  // Find the first character position from reverse af
+  size_t endpos = s.find_last_not_of(c);
+
+  // if all spaces or empty, then return an empty string
+  if(( startpos == string::npos ) || ( endpos == string::npos ))
+  {
+    s = "";
+  }
+  else
+  {
+    s = s.substr(startpos, endpos-startpos+1);
+  }
+  return s;
+}
