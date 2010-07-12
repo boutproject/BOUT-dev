@@ -96,7 +96,7 @@ BoutReal **Field2D::getData() const
 {
 #ifdef CHECK
   if(data == NULL)
-    error("Field2D::getData returning null pointer\n");
+    throw BoutException("Field2D::getData returning null pointer\n");
 #endif  
   return data;
 }
@@ -157,15 +157,11 @@ BoutReal* Field2D::operator[](int jx) const
 
 #ifdef CHECK
 
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: [] operator on empty data");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: [] operator on empty data");
   
-  if((jx < 0) || (jx >= mesh->ngx)) {
-    error("Field2D: [] operator out of bounds (%d , %d)\n", jx, mesh->ngx);
-    exit(1);
-  }
+  if((jx < 0) || (jx >= mesh->ngx))
+    throw BoutException("Field2D: [] operator out of bounds (%d , %d)\n", jx, mesh->ngx);
 #endif
   
   return(data[jx]);
@@ -201,9 +197,9 @@ Field2D & Field2D::operator+=(const BoutReal rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: += operates on empty data");
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: += (%e) operates on empty data", rhs);
+  
 #endif
 
 #ifdef TRACK
@@ -224,12 +220,11 @@ Field2D & Field2D::operator-=(const Field2D &rhs)
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
-    error("Field2D: - operator has invalid Field2D argument");
+    throw BoutException("Field2D: - operator has invalid Field2D argument");
   }
 
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: -= operates on empty data");
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: -= operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -248,9 +243,8 @@ Field2D & Field2D::operator-=(const BoutReal rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: -= operates on empty data");
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: -= operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -271,12 +265,11 @@ Field2D & Field2D::operator*=(const Field2D &rhs)
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
-    error("Field2D: * operator has invalid Field2D argument");
+    throw BoutException("Field2D: * operator has invalid Field2D argument");
   }
 
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: *= operates on empty data");
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: *= operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -295,9 +288,8 @@ Field2D & Field2D::operator*=(const BoutReal rhs)
   int jx, jy;
 
 #ifdef CHECK
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: *= operates on empty data");
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: *= operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -320,11 +312,11 @@ Field2D & Field2D::operator/=(const Field2D &rhs)
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
-    error("Field2D: / operator has invalid Field2D argument");
+    throw BoutException("Field2D: / operator has invalid Field2D argument");
   }
 
   if(data == (BoutReal**) NULL) {
-    error("Field2D: /= operates on empty data");
+    throw BoutException("Field2D: /= operates on empty data");
   }
 #endif
 
@@ -345,7 +337,7 @@ Field2D & Field2D::operator/=(const BoutReal rhs)
 
 #ifdef CHECK
   if(data == (BoutReal**) NULL) {
-    error("Field2D: /= operates on empty data");
+    throw BoutException("Field2D: /= operates on empty data");
   }
 #endif
 
@@ -371,11 +363,11 @@ Field2D & Field2D::operator^=(const Field2D &rhs)
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
-    error("Field2D: ^ operator has invalid Field2D argument");
+    throw BoutException("Field2D: ^ operator has invalid Field2D argument");
   }
 
   if(data == (BoutReal**) NULL) {
-    error("Field2D: *= operates on empty data");
+    throw BoutException("Field2D: *= operates on empty data");
   }
 #endif
 
@@ -396,7 +388,7 @@ Field2D & Field2D::operator^=(const BoutReal rhs)
 
 #ifdef CHECK
   if(data == (BoutReal**) NULL) {
-    error("Field2D: *= operates on empty data");
+    throw BoutException("Field2D: *= operates on empty data");
   }
 #endif
 
@@ -518,9 +510,9 @@ const Field3D Field2D::operator-(const Field3D &other) const
 
 #ifdef CHECK
   if(d == (BoutReal***) NULL)
-    error("Field2D: - operator has invalid Fiel3D argument");
+    throw BoutException("Field2D: - operator has invalid Fiel3D argument");
   if(data == (BoutReal**) NULL)
-    error("Field2D: - operates on empty data");
+    throw BoutException("Field2D: - operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -553,9 +545,9 @@ const Field3D Field2D::operator/(const Field3D &other) const
 
 #ifdef CHECK
   if(d == (BoutReal***) NULL)
-    error("Field2D: / operator has invalid Fiel3D argument");
+    throw BoutException("Field2D: / operator has invalid Fiel3D argument");
   if(data == (BoutReal**) NULL)
-    error("Field2D: / operates on empty data");
+    throw BoutException("Field2D: / operates on empty data");
 #endif  
 
 #ifdef TRACK
@@ -582,9 +574,9 @@ const Field3D Field2D::operator^(const Field3D &other) const
 
 #ifdef CHECK
   if(d == (BoutReal***) NULL)
-    error("Field2D: ^ operator has invalid Fiel3D argument");
+    throw BoutException("Field2D: ^ operator has invalid Fiel3D argument");
   if(data == (BoutReal**) NULL)
-    error("Field2D: ^ operates on empty data");
+    throw BoutException("Field2D: ^ operates on empty data");
 #endif
 
 #ifdef TRACK
@@ -679,10 +671,8 @@ void Field2D::getXArray(int y, int z, rvec &xv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: getXArray on an empty data set\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: getXArray on an empty data set\n");
 #endif
 
   xv.resize(mesh->ngx);
@@ -695,10 +685,8 @@ void Field2D::getYArray(int x, int z, rvec &yv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: getYArray on an empty data set\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: getYArray on an empty data set\n");
 #endif
 
   yv.resize(mesh->ngy);
@@ -711,10 +699,8 @@ void Field2D::getZArray(int x, int y, rvec &zv) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: getZArray on an empty data set\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: getZArray on an empty data set\n");
 #endif
 
   zv.resize(mesh->ngz-1);
@@ -729,10 +715,8 @@ void Field2D::setXArray(int y, int z, const rvec &xv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(xv.capacity() != (unsigned int) mesh->ngx) {
-    error("Field2D: setXArray has incorrect size\n");
-    exit(1);
-  }
+  if(xv.capacity() != (unsigned int) mesh->ngx)
+    throw BoutException("Field2D: setXArray has incorrect size\n");
 #endif
 
   for(int x=0;x<mesh->ngx;x++)
@@ -745,10 +729,8 @@ void Field2D::setYArray(int x, int z, const rvec &yv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(yv.capacity() != (unsigned int) mesh->ngy) {
-    error("Field2D: setYArray has incorrect size\n");
-    exit(1);
-  }
+  if(yv.capacity() != (unsigned int) mesh->ngy)
+    throw BoutException("Field2D: setYArray has incorrect size\n");
 #endif
 
   for(int y=0;y<mesh->ngy;y++)
@@ -759,10 +741,8 @@ void Field2D::setStencil(bstencil *fval, bindex *bx) const
 {
 
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Setting stencil for empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Setting stencil for empty data\n");
 
   fval->jx = bx->jx;
   fval->jy = bx->jy;
@@ -816,18 +796,15 @@ const Field2D Field2D::sqrt() const
   Field2D result;
 
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Taking sqrt of empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Taking sqrt of empty data\n");
 
 #ifdef CHECK
   // Test values
   for(jx=0;jx<mesh->ngx;jx++)
     for(jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] < 0.0) {
-	output.write("Field2D: Sqrt operates on negative value at [%d,%d]\n", jx, jy);
-	exit(1);
+	throw BoutException("Field2D: Sqrt operates on negative value at [%d,%d]\n", jx, jy);
       }
 #endif
 
@@ -851,10 +828,8 @@ const Field2D Field2D::abs() const
 
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Taking abs of empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Taking abs of empty data\n");
 #endif
 
 #ifdef TRACK
@@ -877,10 +852,8 @@ BoutReal Field2D::min(bool allpe) const
 
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Taking min of empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Taking min of empty data\n");
   if(allpe) {
     msg_stack.push("Field2D::Min() over all PEs");
   }else
@@ -914,10 +887,8 @@ BoutReal Field2D::max(bool allpe) const
 
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Taking max of empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Taking max of empty data\n");
   if(allpe) {
     msg_stack.push("Field2D::Max() over all PEs");
   }else
@@ -950,10 +921,8 @@ bool Field2D::finite() const
 
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
-    error("Field2D: Taking finite of empty data\n");
-    exit(1);
-  }
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: Taking finite of empty data\n");
 #endif
 
   for(jx=0;jx<mesh->ngx;jx++)
@@ -971,13 +940,13 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL) {
-    error("Field2D: getData on empty data\n");
+    throw BoutException("Field2D: getData on empty data\n");
     exit(1);
   }
   
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
-    error("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
+    throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
 #endif
@@ -992,13 +961,13 @@ int Field2D::getData(int x, int y, int z, BoutReal *rptr) const
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL) {
-    error("Field2D: getData on empty data\n");
+    throw BoutException("Field2D: getData on empty data\n");
     exit(1);
   }
   
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
+    throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
 #endif
@@ -1013,7 +982,7 @@ int Field2D::setData(int x, int y, int z, void *vptr)
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
+    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
 #endif
@@ -1029,7 +998,7 @@ int Field2D::setData(int x, int y, int z, BoutReal *rptr)
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
+    throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
     exit(1);
   }
 #endif
@@ -1043,7 +1012,7 @@ int Field2D::setData(int x, int y, int z, BoutReal *rptr)
 bool Field2D::checkData(bool vital) const
 {
   if(data == (BoutReal**) NULL) {
-    error("Field2D: Operation on empty data\n");
+    throw BoutException("Field2D: Operation on empty data\n");
   }
 
   if( vital || ( CHECK > 2 ) ) { 
@@ -1053,7 +1022,7 @@ bool Field2D::checkData(bool vital) const
     for(jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	if(!::finite(data[jx][jy])) {
-	  error("Field2D: Operation on non-finite data at [%d][%d]\n", jx, jy);
+	  throw BoutException("Field2D: Operation on non-finite data at [%d][%d]\n", jx, jy);
 	}
   }
   return false;
@@ -1151,10 +1120,8 @@ const Field2D operator/(const BoutReal lhs, const Field2D &rhs)
   d = result.data;
 
 #ifdef CHECK
-  if(d == (BoutReal**) NULL) {
-    output.write("Field2D: left / operator has invalid Field2D argument");
-    exit(1);
-  }
+  if(d == (BoutReal**) NULL)
+    throw BoutException("Field2D: left / operator has invalid Field2D argument");
 #endif
   
 #ifdef TRACK
@@ -1177,10 +1144,8 @@ const Field2D operator^(const BoutReal lhs, const Field2D &rhs)
   d = result.data;
 
 #ifdef CHECK
-  if(d == (BoutReal**) NULL) {
-    output.write("Field2D: left ^ operator has invalid Field2D argument");
-    exit(1);
-  }
+  if(d == (BoutReal**) NULL)
+    throw BoutException("Field2D: left ^ operator has invalid Field2D argument");
 #endif
 
 #ifdef TRACK
