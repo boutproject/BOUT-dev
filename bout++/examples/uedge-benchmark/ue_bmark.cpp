@@ -4,7 +4,6 @@
  *******************************************************************************/
 
 #include "bout.h"
-#include "initialprofiles.h"
 #include "derivs.h"
 
 #include <math.h>
@@ -70,7 +69,7 @@ int physics_init(bool restarting)
   /*************** READ OPTIONS *************************/
 
   // Read some parameters
-  options.setSection("2fluid");
+  options.setSection("uedge");
   OPTION(AA, 2.0);
   OPTION(ZZ, 1.0);
 
@@ -199,8 +198,6 @@ Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
 
 int physics_run(BoutReal t)
 {
-  //BoutReal bmk_t = MPI_Wtime();
-  
   // Communicate variables
   mesh->communicate(Ni, Vi, Te, Ti);
   
@@ -248,28 +245,19 @@ int physics_run(BoutReal t)
     - ddt(Ni)*Tit/Nit;
   
 
-  // INNER TARGET PLATE
-  
-  bndry_ydown_relax_val(ddt(Vi), Vit, -3.095e4/Vi_x);
 
-  // OUTER TARGET PLATE
+  ////////////////////////
+  // Boundaries
+  // 
+  // We want to apply the relaxing boundries to total density,
+  // temperature etc. Easiest way to do this is to modify
+  // the variables to that the total value is used in setting the
+  // boundaries.
 
-  bndry_yup_relax_val(ddt(Vi), Vit, 3.095e4/Vi_x);
-  
-  // CORE BOUNDARY
-
-  bndry_core_relax_val(ddt(Te), Tet, 100./Te_x, lambda_relax);
-  bndry_core_relax_val(ddt(Ti), Tit, 100./Te_x, lambda_relax);
-  
-  // PF BOUNDARY
-
-  bndry_pf_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
-  
-  // OUTER BOUNDARY
-
-  bndry_sol_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
-
-  //output.write("TIMING: %e\n", MPI_Wtime() - bmk_t);
+  Ni = Nit;
+  Ti = Tit;
+  Te = Tet;
+  Vi = Vit;
 
   return(0);
 }

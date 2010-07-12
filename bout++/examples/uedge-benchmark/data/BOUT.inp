@@ -56,9 +56,9 @@ ATOL = 1.0e-10 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 
 ##################################################
-# settings for 2fluid
+# settings for uedge model
 
-[2fluid]
+[uedge]
 
 AA = 2.0
 ZZ = 1.0
@@ -126,7 +126,7 @@ bndry_all = neumann # Default for all variables, boundaries
 [Ni]
 
 bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
-bndry_all  = relax(dirichlet(0.1)) # 1e12 cm^-3 on all other boundaries
+bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on all other boundaries
 
 [Vi]
 
