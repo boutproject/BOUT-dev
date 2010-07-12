@@ -47,6 +47,8 @@ class BoundaryFactory {
   // Functions to look up operations and modifiers
   BoundaryOp* findBoundaryOp(const string &s);
   BoundaryModifier* findBoundaryMod(const string &s);
+
+  const string trim(const string &s, const string &c = " \t");
 };
 
 #endif // __BNDRY_FACTORY_H__

@@ -6,16 +6,13 @@
  * [section]
  * and variables as
  * name = string ; comment
- * 
- * To Do / Known issues
- * ====================
- *
- *  * Currently uses its own hash function. Probably better to just
- *    use an STL map for this class
  *
  * ChangeLog
  * =========
  * 
+ * 2010-06 Sean Farley 
+ *    * Re-written to use STL maps
+ *
  * 2010-02-10 Ben Dudson <bd512@york.ac.uk>
  *    
  *    * Adding set methods to allow other means to control code

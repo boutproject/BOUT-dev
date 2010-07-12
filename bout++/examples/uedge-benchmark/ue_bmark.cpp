@@ -4,7 +4,6 @@
  *******************************************************************************/
 
 #include "bout.h"
-#include "initialprofiles.h"
 #include "derivs.h"
 
 #include <math.h>
@@ -36,7 +35,6 @@ BoutReal lambda_ei, lambda_ii;
 BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
 
 BoutReal chi_perp, D_perp, mu_perp;
-BoutReal lambda_relax;
 
 int physics_init(bool restarting)
 {
@@ -71,15 +69,13 @@ int physics_init(bool restarting)
   /*************** READ OPTIONS *************************/
 
   // Read some parameters
-  options.setSection("2fluid");
+  options.setSection("uedge");
   OPTION(AA, 2.0);
   OPTION(ZZ, 1.0);
 
   OPTION(chi_perp,  0.6); // Read in m^2 / s 
   OPTION(D_perp,    0.6);
   OPTION(mu_perp,   0.6);
-
-  OPTION(lambda_relax, 10.0);
   
   /************** CALCULATE PARAMETERS *****************/
 
@@ -202,8 +198,6 @@ Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
 
 int physics_run(BoutReal t)
 {
-  //BoutReal bmk_t = MPI_Wtime();
-  
   // Communicate variables
   mesh->communicate(Ni, Vi, Te, Ti);
   
@@ -228,7 +222,6 @@ int physics_run(BoutReal t)
 
 
   // ION VELOCITY
-  //ddt(Vi) = -Grad_par(peit)/Nit -Vpar_Grad_par(Vit, Vit) + mu_perp*Delp2(Nit*Vit)/Nit;
   ddt(Vi) = (
 	     -Grad_par(peit) 
 	     +Div_X_K_Grad_X(mu_perp*Nit, Vit)
@@ -252,40 +245,19 @@ int physics_run(BoutReal t)
     - ddt(Ni)*Tit/Nit;
   
 
-  // INNER TARGET PLATE
-  
-  bndry_ydown_relax_val(ddt(Vi), Vit, -3.095e4/Vi_x);
-  bndry_ydown_relax_val(ddt(Te), Tet, 10./Te_x);
-  bndry_ydown_relax_val(ddt(Ti), Tit, 10./Te_x);
 
-  // OUTER TARGET PLATE
+  ////////////////////////
+  // Boundaries
+  // 
+  // We want to apply the relaxing boundries to total density,
+  // temperature etc. Easiest way to do this is to modify
+  // the variables to that the total value is used in setting the
+  // boundaries.
 
-  bndry_yup_relax_val(ddt(Vi), Vit, 3.095e4/Vi_x);
-  bndry_yup_relax_val(ddt(Te), Tet, 10./Te_x);
-  bndry_yup_relax_val(ddt(Ti), Tit, 10./Te_x);
-  
-  // CORE BOUNDARY
-
-  bndry_core_relax_val(ddt(Ni), Nit, 1e13/Ni_x);
-  bndry_core_flat(ddt(Vi));
-  bndry_core_relax_val(ddt(Te), Tet, 100./Te_x, lambda_relax);
-  bndry_core_relax_val(ddt(Ti), Tit, 100./Te_x, lambda_relax);
-  
-  // PF BOUNDARY
-
-  bndry_pf_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
-  bndry_pf_flat(ddt(Vi));
-  bndry_pf_relax_val(ddt(Te), Tet, 10./Te_x);
-  bndry_pf_relax_val(ddt(Ti), Tit, 10./Te_x);
-  
-  // OUTER BOUNDARY
-
-  bndry_sol_relax_val(ddt(Ni), Nit, 1e12/Ni_x);
-  bndry_sol_flat(ddt(Vi));
-  bndry_sol_relax_val(ddt(Te), Tet, 10./Te_x);
-  bndry_sol_relax_val(ddt(Ti), Tit, 10./Te_x);
-
-  //output.write("TIMING: %e\n", MPI_Wtime() - bmk_t);
+  Ni = Nit;
+  Ti = Tit;
+  Te = Tet;
+  Vi = Vit;
 
   return(0);
 }

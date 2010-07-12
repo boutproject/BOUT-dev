@@ -11,8 +11,8 @@ class BoundaryDirichlet : public BoundaryOp {
  public:
   BoundaryDirichlet() : val(0.) {}
   BoundaryDirichlet(const BoutReal setval): val(setval) {}
- BoundaryDirichlet(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region);
+ BoundaryDirichlet(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
  private:
@@ -24,7 +24,7 @@ class BoundaryNeumann : public BoundaryOp {
  public:
   BoundaryNeumann() {}
  BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
 };
@@ -34,7 +34,7 @@ class BoundaryZeroLaplace : public BoundaryOp {
  public:
   BoundaryZeroLaplace() {}
  BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
 };
@@ -44,7 +44,7 @@ class BoundaryConstLaplace : public BoundaryOp {
  public:
   BoundaryConstLaplace() {}
  BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
 };
@@ -54,7 +54,7 @@ class BoundaryDivCurl : public BoundaryOp {
  public:
   BoundaryDivCurl() {}
  BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
-  BoundaryOp* clone(BoundaryRegion *region);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Vector2D &f);
@@ -65,7 +65,7 @@ class BoundaryDivCurl : public BoundaryOp {
 class BoundaryRelax : public BoundaryModifier {
  public:
   BoundaryRelax(BoutReal rate) {r = fabs(rate);}
-  BoundaryOp* clone(BoundaryOp *op);
+  BoundaryOp* clone(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);
   void apply(Field3D &f);

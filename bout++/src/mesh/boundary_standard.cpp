@@ -5,10 +5,22 @@
 #include "fft.h"
 #include "boutexception.h"
 
+#include <sstream>
+using std::stringstream;
+
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region)
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
 {
+  if(!args.empty()) {
+    // First argument should be a value
+    stringstream ss;
+    ss << args.front();
+    
+    BoutReal val;
+    ss >> val;
+    return new BoundaryDirichlet(region, val);
+  }
   return new BoundaryDirichlet(region);
 }
 
@@ -29,8 +41,11 @@ void BoundaryDirichlet::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region)
+BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args)
 {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
+  }
   return new BoundaryNeumann(region);
 }
 
@@ -50,8 +65,11 @@ void BoundaryNeumann::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region)
+BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args)
 {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
+  }
   return new BoundaryZeroLaplace(region);
 }
 
@@ -133,8 +151,11 @@ void BoundaryZeroLaplace::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region)
+BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args)
 {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
+  }
   return new BoundaryConstLaplace(region);
 }
 
@@ -234,8 +255,11 @@ void BoundaryConstLaplace::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region)
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args)
 {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
+  }
   return new BoundaryDivCurl(region);
 }
 
@@ -310,12 +334,23 @@ void BoundaryDivCurl::apply(Vector3D &var)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRelax::clone(BoundaryOp *operation)
+BoundaryOp* BoundaryRelax::clone(BoundaryOp *operation, const list<string> &args)
 {
   BoundaryRelax* result = new BoundaryRelax(r);
   result->op = operation;
   result->bndry = operation->bndry;
   
+  if(!args.empty()) {
+    // First argument should be the rate
+    stringstream ss;
+    ss << args.front();
+    
+    BoutReal val;
+    ss >> val;
+    val = fabs(val); // Should always be positive
+    result->r = val;
+  }
+
   return result;
 }
   

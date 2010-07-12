@@ -30,6 +30,7 @@
 #include "dcomplex.h"
 
 #include <string>
+#include <list>
 
 BoutReal *rvector(int size);
 BoutReal *rvresize(BoutReal *v, int newsize);
@@ -63,5 +64,9 @@ char *strconcat(const char* left, const char *right);
 /// Convert a string to lower case
 const string lowercase(const string &str);
 const string lowercasequote(const string &str);
+
+/// Split a string on a given delimiter
+std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems);
+std::list<std::string> strsplit(const std::string &s, char delim);
 
 #endif // __UTILS_H__
