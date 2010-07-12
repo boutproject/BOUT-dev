@@ -76,7 +76,6 @@ void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
 
 bool append = false;
-char dumpname[512];
 
 BoutReal simtime;
 int iteration;
@@ -94,6 +93,8 @@ int bout_init(int argc, char **argv)
   string grid_name;
   bool dump_float; // Output dump files as floats
 
+  char dumpname[512];
+  
   string grid_ext, dump_ext; ///< Extensions for restart and dump files
   
   const char *data_dir; ///< Directory for data input/output
@@ -311,6 +312,9 @@ int bout_init(int argc, char **argv)
     return(1);
   }
   
+  /// Set the filename for the dump files
+  dump.setFilename(dumpname);
+
   if(!restart) {
     /// Write initial state as time-point 0
     
@@ -321,9 +325,9 @@ int bout_init(int argc, char **argv)
     }
 
     if(append) {
-      dump.append(dumpname);
+      dump.append();
     }else {
-      dump.write(dumpname);
+      dump.write();
       append = true;
     }
   }
@@ -432,12 +436,8 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
 
   /// Write (append) dump file
   
-  if(append) {
-    dump.append(dumpname);
-  }else {
-    dump.write(dumpname);
-    append = true;
-  }
+  dump.write(append);
+  append = true;
   
   /// Collect timing information
   int ncalls = solver->rhs_ncalls;

@@ -63,18 +63,27 @@ class Datafile {
   /// Read a given file into the added variables
   int read(const char *filename, ...);
   int read(const string &filename) {return read(filename.c_str());}
+  int read() {return read(def_filename); }
   /// Write the variables to the given file (over-writes existing file)
   int write(const char *filename, ...);
+  int write() {return write(def_filename.c_str()); }
   /// Append data to an existing file (error if doesn't exist)
   int append(const char *filename, ...);
-
+  int append() {return append(def_filename.c_str()); }
+  
   bool write(const string &filename, bool append=false);
+  bool write(bool append) {return write(def_filename, append); }
+  
+  /// Set a default filename 
+  void setFilename(const char *format, ...);
+  void setFilename(const string &filename) { def_filename = filename; }
 
   /// Set this to false to switch off all data writing
   static bool enabled;
   
   static BoutReal wtime; ///< Keep track of wall-time used
  private:
+  string def_filename; ///< Default filename
   
   bool low_prec;
 

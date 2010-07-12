@@ -485,6 +485,23 @@ bool Datafile::write(const string &filename, bool append)
   return true;
 }
 
+void Datafile::setFilename(const char *format, ...)
+{
+  va_list ap;  // List of arguments
+  
+  if(format == (const char*) NULL) {
+    def_filename.clear();
+    return;
+  }
+  
+  char filename[512];
+  va_start(ap, format);
+    vsprintf(filename, format, ap);
+  va_end(ap);
+  
+  setFilename(string(filename));
+}
+
 /////////////////////////////////////////////////////////////
 
 bool Datafile::read_f2d(const string &name, Field2D *f, bool grow)
