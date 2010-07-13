@@ -251,10 +251,14 @@ class Field3D : public Field, public FieldData {
   
   static void cleanup(); // Frees all memory
 
+  void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
   void applyBoundary();
   void applyTDerivBoundary();
   
  private:
+  /// Boundary - add a 2D field
+  const Field2D *background;
+  
   /// Interpolates in z using up to 4 points
   BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;
 

@@ -37,7 +37,7 @@
 #include "boutexception.h"
 
 /// Constructor
-Field3D::Field3D()
+Field3D::Field3D() : background(NULL)
 {
 #ifdef MEMDEBUG
   output.write("Field3D %u: constructor\n", (unsigned int) this);
@@ -55,7 +55,7 @@ Field3D::Field3D()
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f)
+Field3D::Field3D(const Field3D& f) : background(NULL)
 {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
@@ -80,7 +80,7 @@ Field3D::Field3D(const Field3D& f)
 #endif
 }
 
-Field3D::Field3D(const Field2D& f)
+Field3D::Field3D(const Field2D& f) : background(NULL)
 {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from Field2D");
@@ -100,7 +100,7 @@ Field3D::Field3D(const Field2D& f)
 #endif
 }
 
-Field3D::Field3D(const BoutReal val)
+Field3D::Field3D(const BoutReal val) : background(NULL)
 {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from value");
@@ -313,7 +313,7 @@ Field3D & Field3D::operator=(const Field2D &rhs)
   name = "F3D("+rhs.name+")";
 #endif
 
- allocate();
+  allocate();
 
   /// Copy data
 
@@ -423,8 +423,6 @@ BoutReal Field3D::operator=(const BoutReal val)
 
 Field3D & Field3D::operator+=(const Field3D &rhs)
 {
-  int jx, jy, jz;
-
 #ifdef CHECK
   msg_stack.push("Field3D: += Field3D");
   
@@ -443,18 +441,18 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
 
   if(block->refs == 1) {
     // This is the only reference to this data
-    for(jx=0;jx<mesh->ngx;jx++)
-      for(jy=0;jy<mesh->ngy;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
+    for(int jx=0;jx<mesh->ngx;jx++)
+      for(int jy=0;jy<mesh->ngy;jy++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  block->data[jx][jy][jz] += rhs.block->data[jx][jy][jz];
   }else {
     // Need to put result in a new block
 
     memblock3d *nb = newBlock();
 
-    for(jx=0;jx<mesh->ngx;jx++)
-      for(jy=0;jy<mesh->ngy;jy++)
-	for(jz=0;jz<mesh->ngz;jz++)
+    for(int jx=0;jx<mesh->ngx;jx++)
+      for(int jy=0;jy<mesh->ngy;jy++)
+	for(int jz=0;jz<mesh->ngz;jz++)
 	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] + rhs.block->data[jx][jy][jz];
 
     block->refs--;
@@ -2084,6 +2082,11 @@ void Field3D::cleanup()
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
+void Field3D::setBackground(const Field2D &f2d)
+{
+  background = &f2d;
+}
+
 void Field3D::applyBoundary()
 {
 #ifdef CHECK
@@ -2095,9 +2098,40 @@ void Field3D::applyBoundary()
   
   if(block == NULL)
     return;
-
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply(*this);
+  
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    
+    Field3D tot = *this + (*background);
+    tot.applyBoundary();
+    *this = tot - (*background);
+  }else {
+    // Apply boundary to this field
+    for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+      (*it)->apply(*this);
+  }
+  
+  // Set the corners to zero
+  for(int jx=0;jx<mesh->xstart;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+  }
+  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+  }
 
 #ifdef CHECK
   msg_stack.pop();
@@ -2116,8 +2150,36 @@ void Field3D::applyTDerivBoundary()
   if(block == NULL)
     return;
   
+  if(background != NULL)
+    *this += *background;
+    
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply_ddt(*this);
+  
+  if(background != NULL)
+    *this -= *background;
+
+  // Set the corners to zero
+  for(int jx=0;jx<mesh->xstart;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        ddt->block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        ddt->block->data[jx][jy][jz] = 0.;
+    }
+  }
+  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        ddt->block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        ddt->block->data[jx][jy][jz] = 0.;
+    }
+  }
 
 #ifdef CHECK
   msg_stack.pop();
@@ -2206,8 +2268,14 @@ void Field3D::freeData()
   if(block->refs == 0) {
     // No more references to this data - put on free list
 
+#ifdef DISABLE_FREELIST
+    // For debugging, free memory
+    free_r3tensor(block->data);
+    delete block;
+#else
     block->next = free_block;
     free_block = block;
+#endif
   }
 
   block = NULL;

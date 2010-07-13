@@ -150,7 +150,15 @@ int physics_init(bool restarting)
   mesh->g_12 = 0.0;
   mesh->g_13 = 0.0;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  
+  //////////////// BOUNDARIES ///////////////////////
+  // 
+  // We want to apply the relaxing boundries to total density,
+  // temperature etc.
 
+  Ni.setBackground(Ni0);
+  Te.setBackground(Te0);
+  Ti.setBackground(Ti0);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -163,7 +171,7 @@ int physics_init(bool restarting)
   bout_solve(Te, "Te");
   bout_solve(Ti, "Ti");
 
-  /************** SETUP COMMUNICATIONS **************/
+  ///////////// SETUP COMMUNICATIONS ////////////////
   
   // Add any other variables to be dumped to file
   dump.add(Ni0, "Ni0", 0);
@@ -176,6 +184,11 @@ int physics_init(bool restarting)
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
 
+  dump.add(ddt(Ni), "ddt_ni", 1);
+  dump.add(ddt(Ti), "ddt_ti", 1);
+  dump.add(ddt(Te), "ddt_te", 1);
+  dump.add(ddt(Vi), "ddt_vi", 1);
+  
   return(0);
 }
 
@@ -190,18 +203,21 @@ Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
 */
 
 // This version the same as in BOUT-06. Note the R's moved,and hthe added
-Field3D Div_X_K_Grad_X(const Field3D &difVi, const Field3D &Vi)
+Field3D Div_X_K_Grad_X(const Field3D &difFi, const Field3D &Fi)
 {
-  return difVi * ( (Rxy*Bpxy)^2 ) * D2DX2(Vi) 
-    + (Bpxy / hthe) * DDX( difVi * Rxy * Rxy * Bpxy * hthe ) * DDX(Vi);
+  Field3D result;
+  
+  result = difFi * ( (Rxy*Bpxy)^2 ) * D2DX2(Fi) 
+    + (Bpxy / hthe) * DDX( difFi * Rxy * Rxy * Bpxy * hthe ) * DDX(Fi);
+
+  return result;
 }
 
 int physics_run(BoutReal t)
 {
-  output << "Running " << t << endl;
   // Communicate variables
   mesh->communicate(Ni, Vi, Te, Ti);
-  
+
   // Update profiles
   Nit = Ni0  + Ni.DC();
   Tit = Ti0  + Ti.DC();
@@ -240,19 +256,6 @@ int physics_run(BoutReal t)
 	     +Div_X_K_Grad_X(chi_perp*Nit, Tit)
 	     )/(1.5*Nit)
     - ddt(Ni)*Tit/Nit;
-  
-  ////////////////////////
-  // Boundaries
-  // 
-  // We want to apply the relaxing boundries to total density,
-  // temperature etc. Easiest way to do this is to modify
-  // the variables to that the total value is used in setting the
-  // boundaries.
-
-  Ni = Nit;
-  Ti = Tit;
-  Te = Tet;
-  Vi = Vit;
 
   return(0);
 }

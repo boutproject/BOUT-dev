@@ -402,8 +402,12 @@ void BoundaryRelax::apply_ddt(Field3D &f)
   // Set time-derivatives
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++) {
-      ddt(f)[bndry->x][bndry->y][z] = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by][z]
-	+ r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
+      BoutReal lim = r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
+      BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by][z] + lim;
+      if((val*lim > 0.) && (fabs(val) > fabs(lim)))
+        val = lim;
+         
+      ddt(f)[bndry->x][bndry->y][z] = val;
     }
 
 #ifdef CHECK

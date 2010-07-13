@@ -22,6 +22,8 @@ grid="uedge.grd_Up_Ni_Tei_2d.nc"
 
 NXPE = 1   # X parallelised if > 1
 
+dump_format = "nc"  # NetCDF format
+
 [comms]
 async = false
 
@@ -125,6 +127,7 @@ bndry_all = neumann # Default for all variables, boundaries
 
 [Ni]
 
+bndry_target = neumann
 bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
 bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on all other boundaries
 

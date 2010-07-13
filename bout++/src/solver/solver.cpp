@@ -419,6 +419,9 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
     dump.add(*(it->var), it->name.c_str(), 1);
     
     /// NOTE: Initial perturbations have already been set in add()
+    
+    /// Make sure boundary condition is satisfied
+    it->var->applyBoundary();
   }  
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
     // Add to restart file (not appending)
@@ -426,6 +429,9 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
     
     // Add to dump file (appending)
     dump.add(*(it->var), it->name.c_str(), 1);
+    
+    /// Make sure boundary condition is satisfied
+    it->var->applyBoundary();
   }
 
   if(restarting) {
@@ -576,5 +582,13 @@ int Solver::run_rhs(BoutReal t)
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
     it->var->applyTDerivBoundary();
   }
+
+#ifdef CHECK
+  msg_stack.push("Solver checking time derivatives");
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+    it->F_var->checkData();
+  msg_stack.pop();
+#endif
+  
   return status;
 }

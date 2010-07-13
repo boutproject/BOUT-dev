@@ -306,6 +306,10 @@ This is particularly useful when returning objects from a routine. Usually this 
 involve copying data from one object to another, and then destroying the original copy. Using
 reference counting this copying is eliminated.
 
+\note{For debugging and Valgrind output, it can be useful to disable
+this memory block handling. To do this, add \code{-DDISABLE_FREELIST} to the
+compile flags}
+
 \section{Derivatives}
 
 This is probably the part of the code most people will want to alter. The main

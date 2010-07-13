@@ -2315,10 +2315,15 @@ RangeIter* BoutMesh::iterateBndryLowerY()
 {
   int xs = 0;
   int xe = ngx-1;
-  if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > 0))
+  if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
     xs = DDATA_XSPLIT;
-  if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < ngx))
+  if((DDATA_OUTDEST >= 0) && (DDATA_XSPLIT < xend+1))
     xe = DDATA_XSPLIT-1;
+
+  if(xs < xstart)
+    xs = xstart;
+  if(xe > xend)
+    xe = xend;
 
   return new BoutRangeIter(xs, xe);
 }
@@ -2327,10 +2332,15 @@ RangeIter* BoutMesh::iterateBndryUpperY()
 {
   int xs = 0;
   int xe = ngx-1;
-  if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > 0))
+  if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
     xs = UDATA_XSPLIT;
-  if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < ngx))
+  if((UDATA_OUTDEST >= 0) && (UDATA_XSPLIT < xend+1))
     xe = UDATA_XSPLIT-1;
+
+  if(xs < xstart)
+    xs = xstart;
+  if(xe > xend)
+    xe = xend;
 
   return new BoutRangeIter(xs, xe);
 }
