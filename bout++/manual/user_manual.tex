@@ -79,7 +79,7 @@
 
 \title{BOUT++ Users Manual}
 \author{B.Dudson, University of York}
-\date{August 7, 2009}
+\date{July 14, 2010}
 \maketitle
 
 \tableofcontents
@@ -269,7 +269,8 @@ Before installing, make sure the correct version of \file{install} is being used
  ~/ $ which install
 \end{verbatim}
 This should point to a system directory like \file{/usr/bin/install}. Sometimes when IDL has been
-installed, this points to the IDL install (e.g. something like \file{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:\begin{verbatim}
+installed, this points to the IDL install (e.g. something like \file{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:
+\begin{verbatim}
  ~/ $ ln -s /usr/bin/install $HOME/local/bin/
 \end{verbatim}
 ``which install'' should now print the install in your local bin directory.
@@ -515,7 +516,8 @@ but the options may be changed frequently.
 The input file \file{BOUT.inp} includes comments and should be fairly
 self-explanatory. The format is the same as a windows INI file, consisting
 of \code{name = value} pairs. Comments are started
-with a semi-colon, which comments out the rest of the line. Values can be:
+with a hash (\#) or semi-colon, which comments out the rest of the line. 
+Values can be:
 \begin{itemize}
 \item Integers
 \item Real values
@@ -523,14 +525,14 @@ with a semi-colon, which comments out the rest of the line. Values can be:
 \item Strings
 \end{itemize}
 Options are also divided into sections, which start with the section name in square brackets.
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 [section1]
 
-something = 132         ; an integer
-another = 5.131         ; a real value
-yetanother = true       ; a boolean
-finally = "some text"   ; a string
-\end{verbatim}
+something = 132         # an integer
+another = 5.131         # a real value
+yetanother = true       # a boolean
+finally = "some text"   # a string
+\end{lstlisting}
 \note{Options are NOT case-sensitive: \code{TwistShift} and \code{twistshift} are the same variable}
 
 Have a look through the examples to see how the options are used.
@@ -540,10 +542,10 @@ Have a look through the examples to see how the options are used.
 At the top of the BOUT.inp file (before any section headers), 
 options which affect the core code are listed. 
 These are common to all physics models, and the most useful of them are:
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 NOUT = 100       # number of time-points output
 TIMESTEP = 1.0   # time between outputs
-\end{verbatim}
+\end{lstlisting}
 which set the number of outputs, and the time step between them. Note that
 this has nothing to do with the internal timestep used to advance the
 equations, which is adjusted automatically. What time-step to use depends
@@ -557,9 +559,9 @@ Most large clusters or supercomputers have a limit on how long a job can
 run for called ``wall time'', because it's the time taken according to a
 clock on the wall, as opposed to the CPU time actually used.
 If this is the case, you can use the option
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 wall_limit = 10 # wall clock limit (in hours)
-\end{verbatim}
+\end{lstlisting}
 BOUT++ will then try to quit cleanly before this time runs out. Setting a
 negative value (default is -1) means no limit.
 
@@ -570,33 +572,33 @@ and so the simulation can only be continued from the end of the last
 simulation. Whilst it is possible to create a restart file from the output
 data afterwards, it's much easier if you have the restart files. Using the
 option
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 archive = 20
-\end{verbatim}
+\end{lstlisting}
 saves a copy of the restart files every 20 timesteps, which can then be used as a starting point.
 
 The X and Y size of the computational grid is set by the grid file, but the
 number of points in the Z (axisymmetric) direction is specified in the options
 file:
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 MZ = 33
-\end{verbatim}
+\end{lstlisting}
 This must be $\texttt{MZ} = 2^n + 1$, and can be $2,3,5,9,\ldots$. The power of 2 is so
 that FFTs can be used in this direction; the $+1$ is for historical reasons (inherited from BOUT)
 and is going to be removed at some point.
 
 Since the Z dimension is periodic, the domain size is specified as multiples or fractions of $2\pi$.
 To specify a fraction of $2\pi$, use
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 ZPERIOD = 10
-\end{verbatim}
+\end{lstlisting}
 This specifies a Z range from $0$ to $2\pi / \code{ZPERIOD}$, and is useful for simulation
 of tokamaks to make sure that the domain is an integer fraction of a torus. If instead you want
 to specify the Z range directly (for example if Z is not an angle), there are the options
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 ZMIN = 0.0
 ZMAX = 0.1
-\end{verbatim}
+\end{lstlisting}
 which specify the range in multiples of $2\pi$.
 
 \note{For users of BOUT, the definition of \code{ZMIN} and \code{ZMAX} has been changed.
@@ -605,15 +607,15 @@ These are now fractions of $2\pi$ radians i.e. $\code{dz} = 2\pi(\code{ZMAX - ZM
 In BOUT++, grids can be split between processors in both X and Y directions. By
 default only Y decomposition is used, and to use X decomposition you must specify
 the number of processors in the X direction:
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 NXPE = 1  # Set number of X processors
-\end{verbatim}
+\end{lstlisting}
 
 The grid file to use is specified relative to the root directory where the simulation
 is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options file)
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 grid = "data/cbm18_8_y064_x260.pdb"
-\end{verbatim}
+\end{lstlisting}
 
 \subsection{Solver options}
 
@@ -675,7 +677,7 @@ The magnitude of the initial value is given by the variable \code{scale}.
 
 Defaults for all variables can be set in a section called \code{[All]},
 so for example the options below:
-\begin{verbatim}
+\begin{lstlisting}[language=bash,numbers=none]
 [All]
 scale = 0.0 # By default set variables to zero
 
@@ -693,7 +695,7 @@ zs_mode = 3 # 3 periods in the Z direction
 
 [U]
 scale = 1.0e-5  # Amplitude for the U variable, overrides default
-\end{verbatim}
+\end{lstlisting}
 
 For field-aligned tokamak simulations, the Y direction is along the
 field and in the core this will have a discontinuity at the twist-shift
@@ -727,12 +729,15 @@ the options are checked in order from most to least specific:
 \item Section \code{var}, variable \code{bndry\_all}
 \item The same settings again except in section \code{All}.
 \end{itemize}
-The most general setting is therefore \code{bndry\_all} in the \code{All} 
-section.
+The default setting for everything is therefore \code{bndry\_all}
+in the \code{All} section.
 
-Boundary conditions are given names and currently include:
+Boundary conditions are given names, with optional arguments in brackets. 
+Currently implemented boundary conditions are:
 \begin{itemize}
 \item \code{dirichlet} - Set to zero
+\item \code{dirichlet(<number>)} - Set to some number e.g. \code{dirichlet(1)}
+sets the boundary to $1.0$
 \item \code{neumann} - Zero gradient
 \item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
 \item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
@@ -753,7 +758,7 @@ which has the solution
 Assuming that the solution should decay away from the domain, on the inner
 $x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
 
-\subsection{Relaxing boundaries}
+\subsubsection{Relaxing boundaries}
 
 All boundaries can be modified to be ``relaxing'' which are a combination
 of zero-gradient time-derivative, and whatever boundary condition they are
@@ -768,11 +773,47 @@ boundary follow a point $i-1$ in the domain:
 \left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
 \]
 where $\tau$ is a timescale for the boundary (currently set to 0.1, but will
-be a global option). S
+be a global option).
 When the time-derivatives are slow close to the boundary, the boundary
 relaxes to the desired condition (Dirichlet in this case), but when the
 time-derivatives are large then the boundary approaches Neumann to reduce
 discontinuities.
+
+By default, the relaxation rate is set to $10$ (i.e. a timescale of $\tau=0.1$).
+To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
+
+\subsubsection{Examples}
+
+This example is taken from the UEDGE benchmark test (in \file{examples/uedge-benchmark}):
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+bndry_all = neumann # Default for all variables, boundaries
+  
+[Ni]
+bndry_target = neumann
+bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
+bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
+
+[Vi]
+bndry_ydown = relax(dirichlet(-1.41648))   # -3.095e4/Vi_x
+bndry_yup   = relax(dirichlet( 1.41648))
+\end{lstlisting}
+
+The variable \code{Ni} (density) is set to a Neumann boundary condition
+on the targets (yup and ydown), relaxes towards $1$ on the core boundary,
+and relaxes to $0.1$ on all other boundaries. Note that the \code{bndry\_target = neumann} needs to be in the \code{Ni} section: If we just had
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+bndry_all = neumann # Default for all variables, boundaries
+
+[Ni]
+bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
+bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
+\end{lstlisting}
+then the ``target'' boundary condition for \code{Ni} would first search
+in the \code{[Ni]} section for \code{bndry\_target}, then for \code{bndry\_all}
+in the \code{[Ni]} section. This is set to \code{relax(dirichlet(0.1))}, not
+the Neumann condition desired.
 
 \section{Running BOUT++}
 \label{sec:running}
