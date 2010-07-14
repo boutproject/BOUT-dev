@@ -85,10 +85,12 @@
 ; 
 ; radial grid
 ;
-; n - number of grid points
-; pin, pout - range of psi
-; seps - locations of separatrices
-; sep_factor - separatrix peaking
+; n             - number of grid points
+; pin, pout     - range of psi
+; seps          - locations of separatrices
+; sep_factor    - separatrix peaking
+; in_dp=in_dp   - Fix the dx on the lower side
+; out_dp=out_dp - Fix the dx on the upper side
 
 FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
          in_dp=in_dp, out_dp=out_dp
@@ -125,7 +127,7 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
     ;c = in_dp/norm
     ;b = 1. - c
   ENDIF ELSE BEGIN
-    ; Only outer set
+    ; Only outer set. Used in PF region
     b = 0
     a = 0.5*(out_dp/norm - 1.)
     c = 1. - a
@@ -135,20 +137,32 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
     ;c = 1. - b
 
     IF 3.*a*c LT b^2 THEN BEGIN
-      ; Could have minima in range
-      d = SQRT(b^2 - 3.*a*c)
-      ip = (-b + d) / (3.*a)
-      im = (-b - d) / (3.*a)
+      ; Could have minima in range. Try fitting to dx = a + b*x^c
       
-      ; Just make it evenly spaced
-      RETURN, pin + (pout - pin)*x
+      dx1 = out_dp/norm
+      
+      mina = 0.5*dx1
+      a = (2. - dx1)
+      IF a LT mina THEN BEGIN
+        c = (dx1 - 1.) / (1. - 0.5*dx1)
+        a = dx1 - (dx1 - 1.)*(c+1.)/c
+      ENDIF ELSE BEGIN
+        c = 1.
+      ENDELSE
+
+      IF c LT 0. THEN BEGIN
+        ; Just return equal spacing
+        RETURN, pin + (pout - pin)*x
+      ENDIF
+
+      b = out_dp/norm - a
+      vals = pin + (pout - pin)*(a*x + b*(x^(c+1.))/(c+1.))
+      STOP
+      RETURN, vals
     ENDIF
 
   ENDELSE
-
-    
-
-
+  
   vals = pin + (pout - pin)*(c*x + b*x^2 + a*x^3)
   ;STOP
   RETURN, vals
@@ -1143,7 +1157,8 @@ END
 FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=boundary, debug=debug, strictbndry=strictbndry, iter=iter, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
-                      nrad_flexible=nrad_flexible, rad_peaking=rad_peaking
+                      nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
+                      single_rad_grid=single_rad_grid
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
   IF NOT KEYWORD_SET(rad_peaking) THEN rad_peaking = 2.0
@@ -1411,17 +1426,18 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     nrad = settings.nrad
     nnrad = N_ELEMENTS(nrad)
 
+    
     IF nnrad NE (critical.n_xpoint + 1) THEN BEGIN
       ; Only given total number of radial points. Decide
       ; distribution automatically
       
       nrad_flexible = 1 ; Flag used later if nrad not fixed
-
+      
       IF nnrad GT 1 THEN BEGIN
         PRINT, "WARNING: nrad has wrong number of elements ("+STR(nnrad)+")"
         PRINT, "         Should have 1 or "+STR(critical.n_xpoint + 1)+" elements"
       ENDIF
-
+      
       PRINT, "Distributing radial points automatically"
       
       n = TOTAL(nrad,/int)
@@ -1432,8 +1448,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       ; Calculate number of grid points
       nrad = LONARR(critical.n_xpoint + 1)
-      nrad[0] = FIX( 2.*(xpt_f[inner_sep] - f_inner) / ( (1.+rad_peaking)*dx0 ) )
-      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0) + 0.5)
+      nrad[0] = FIX( 2.*(xpt_f[inner_sep] - f_inner) / ( (1.+rad_peaking)*dx0 ) + 0.5)
+      FOR i=1, critical.n_xpoint-1 DO nrad[i] = FIX((xpt_f[si[i]] - xpt_f[si[i-1]])/(rad_peaking*dx0)-0.5)
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       
       ;fvals = radial_grid(TOTAL(nrad), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
@@ -1454,51 +1470,36 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     
     ; Now got number of points in each region
     
-    IF critical.n_xpoint GT 1 THEN BEGIN
-      ; Between separatrices
-      fvals = radial_grid(nrad[1], xpt_f[inner_sep], xpt_f[si[1]], 0, 0, xpt_f, rad_peaking)
-      
-      FOR i=2, critical.n_xpoint-1 DO fvals = [fvals, radial_grid(nrad[i], xpt_f[si[i-1]], xpt_f[si[i]], 0, 0, xpt_f, rad_peaking)]
-      ; Core
-      fvals = [radial_grid(nrad[0], f_inner, 2.*xpt_f[inner_sep]-fvals[0], $
-                           1, 1, xpt_f, rad_peaking, $
-                           out_dp=2.*(fvals[0]-xpt_f[inner_sep]), $
-                           in_dp=2.*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
-    ENDIF ELSE BEGIN
-      ; Only a single separatrix
-      dp0 = (xpt_f[inner_sep] - f_inner)*2./ (FLOAT(nrad[0])*(1. + rad_peaking))
-      fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], $
-                          1, 0, xpt_f, rad_peaking, $
-                          out_dp=rad_peaking*dx0, $
-                          in_dp=dx0)
+    IF KEYWORD_SET(single_rad_grid) THEN BEGIN
+      ; Just produce one grid
+      fvals = radial_grid(TOTAL(nrad, /int), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
+    ENDIF ELSE BEGIN 
+      IF critical.n_xpoint GT 1 THEN BEGIN
+        ; Between separatrices
+        fvals = radial_grid(nrad[1], xpt_f[inner_sep], xpt_f[si[1]], 0, 0, xpt_f, rad_peaking)
+        
+        FOR i=2, critical.n_xpoint-1 DO fvals = [fvals, radial_grid(nrad[i], xpt_f[si[i-1]], xpt_f[si[i]], 0, 0, xpt_f, rad_peaking)]
+        ; Core
+        fvals = [radial_grid(nrad[0], f_inner, 2.*xpt_f[inner_sep]-fvals[0], $
+                             1, 1, xpt_f, rad_peaking, $
+                             out_dp=2.*(fvals[0]-xpt_f[inner_sep]), $
+                             in_dp=2.*(fvals[0]-xpt_f[inner_sep])/rad_peaking), fvals]
+      ENDIF ELSE BEGIN
+        ; Only a single separatrix
+        dp0 = (xpt_f[inner_sep] - f_inner)*2./ (FLOAT(nrad[0])*(1. + rad_peaking))
+        fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], $
+                            1, 0, xpt_f, rad_peaking, $
+                            out_dp=rad_peaking*dx0, $
+                            in_dp=dx0)
+      ENDELSE
+
+      ; SOL
+      n = N_ELEMENTS(fvals)
+      dpsi = 2.*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
+      fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
+                                  fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
+                                  in_dp=dpsi, out_dp=dpsi/rad_peaking)]  
     ENDELSE
-
-    ; SOL
-    n = N_ELEMENTS(fvals)
-    dpsi = 2.*(xpt_f[si[critical.n_xpoint-1]] - fvals[n-1])
-    fvals = [fvals, radial_grid(nrad[critical.n_xpoint], $
-                         fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
-                         in_dp=dpsi, out_dp=dpsi/rad_peaking)]
-
-    
-
-    ; Core first. Include first point
-    ;fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], 1, 0, xpt_f, rad_peaking)
-    ; Regions between separatrices. Don't include any end points
-    ;FOR i=1, critical.n_xpoint-1 DO BEGIN
-    ;  n = N_ELEMENTS(fvals)
-    ;  dpsi = fvals[n-1] - fvals[n-2]
-    ;  fvals = [fvals, $
-    ;           radial_grid(nrad[i], fvals[n-1]+dpsi, xpt_f[si[i]], 1, 0, xpt_f, rad_peaking, $
-    ;                       in_dp=dpsi)]
-    ;ENDFOR
-    ; SOL outside all separatrices. End point is included
-    ;n = N_ELEMENTS(fvals)
-    ;dpsi = fvals[n-1] - fvals[n-2]
-    ;fvals = [fvals, $
-    ;         radial_grid(nrad[critical.n_xpoint], $
-    ;                     fvals[n-1]+dpsi, f_outer, 1, 1, xpt_f, rad_peaking, $
-    ;                     in_dp=dpsi)]
     
     psi_vals = (fvals - faxis) / fnorm ; Normalised psi
     
@@ -1696,7 +1697,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                         nrad:nrad, npol:settings.npol, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
-                            boundary=boundary, iter=iter+1)
+                            boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
+                            rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1731,9 +1733,17 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       w = WHERE(psi_vals LT xpt_psi[xind], npf)
       w = WHERE(ci EQ xind)
       id = w[0]
-      dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])
+      
+      IF KEYWORD_SET(single_rad_grid) THEN BEGIN
+        dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
+        pf_psi_out = pf_psi_vals[xind,0,npf] - dpsi
+      ENDIF ELSE BEGIN
+        ; Gridding in multiple regions. Ensure equal spacing around separatrix
+        dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])
+        pf_psi_out = xpt_psi[xind] - 0.5*dpsi
+      ENDELSE
       pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
-                                                  xpt_psi[xind] - 0.5*dpsi, $
+                                                  pf_psi_out, $
                                                   1, 1, $
                                                   [xpt_psi[xind]], settings.rad_peaking, $
                                                   out_dp=dpsi)
@@ -2254,7 +2264,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       PRINT, "psi outer = ", psi_outer
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
-                          iter=iter+1, nrad_flexible=nrad_flexible)
+                          iter=iter+1, nrad_flexible=nrad_flexible, $
+                          rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid)
       
     ENDIF
     

@@ -808,45 +808,58 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; Calculating b x kappa
   
   IF KEYWORD_SET(oldcurv) THEN BEGIN
-      thetaxy = FLTARR(nx, ny)
-      thetaxy[0,*] = 2.0*!PI*findgen(ny)/ny
-      FOR i=1, nx-1 DO thetaxy[i,*] = thetaxy[0,*]
+    
+    PRINT, "*** Calculating curvature in toroidal coordinates"
+    
+    thetaxy = FLTARR(nx, ny)
+    thetaxy[0,*] = 2.0*!PI*findgen(ny)/ny
+    FOR i=1, nx-1 DO thetaxy[i,*] = thetaxy[0,*]
 
-      brxy = FLTARR(nx, ny)
-      bzxy = brxy
+    brxy = FLTARR(nx, ny)
+    bzxy = brxy
 
-      FOR i=0, nx-1 DO BEGIN
-          dr = fft_deriv(REFORM(Rxy[i,*]))
-          dz = fft_deriv(REFORM(Zxy[i,*]))
-          
-          dl = sqrt(dr*dr + dz*dz)
-          dr = dr / dl
-          dz = dz / dl
-          
-          brxy[i,*] = bpxy[i,*]*dr
-          bzxy[i,*] = bpxy[i,*]*dz
-      ENDFOR
+    status = gen_surface(mesh=mesh) ; Start generator
+    REPEAT BEGIN
+      ; Get the next domain
+      yi = gen_surface(period=period, last=last, xi=xi)
       
-      curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), FLOAT(psixy), FLOAT(thetaxy), $
-        bxcv=bxcv
+      IF period THEN BEGIN
+        dr = fft_deriv(REFORM(Rxy[xi,yi]))
+        dz = fft_deriv(REFORM(Zxy[xi,yi]))
+      ENDIF ELSE BEGIN
+        dr = DERIV(REFORM(Rxy[xi,yi]))
+        dz = DERIV(REFORM(Zxy[xi,yi]))
+      ENDELSE
+      dl = sqrt(dr*dr + dz*dz)
+      dr = dr / dl
+      dz = dz / dl
+      
+      brxy[xi,yi] = bpxy[xi,yi]*dr
+      bzxy[xi,yi] = bpxy[xi,yi]*dz
+    ENDREP UNTIL last
+    
+    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), FLOAT(psixy), FLOAT(thetaxy), $
+      bxcv=bxcv
 
-      bxcvx = bxcv.psi 
-      bxcvy = bxcv.theta
-      bxcvz = bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta
+    bxcvx = bxcv.psi 
+    bxcvy = bxcv.theta
+    bxcvz = bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta
 
-      ; x borders
-      bxcvx[0,*] = bxcvx[1,*]
-      bxcvx[nx-1,*] = bxcvx[nx-2,*]
-      
-      bxcvy[0,*] = bxcvy[1,*]
-      bxcvy[nx-1,*] = bxcvy[nx-2,*]
-      
-      bxcvz[0,*] = bxcvz[1,*]
-      bxcvz[nx-1,*] = bxcvz[nx-2,*]
-      
+    ; x borders
+    bxcvx[0,*] = bxcvx[1,*]
+    bxcvx[nx-1,*] = bxcvx[nx-2,*]
+    
+    bxcvy[0,*] = bxcvy[1,*]
+    bxcvy[nx-1,*] = bxcvy[nx-2,*]
+    
+    bxcvz[0,*] = bxcvz[1,*]
+    bxcvz[nx-1,*] = bxcvz[nx-2,*]
+    
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
-
+    
+    PRINT, "*** Calculating curvature in flux coordinates"
+    
     dpb = DBLARR(nx, ny)      ; quantity used for y and z components
     
     FOR i=0, ny-1 DO BEGIN

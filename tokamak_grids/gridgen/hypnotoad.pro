@@ -101,7 +101,8 @@ PRO popup_event, event
       WIDGET_CONTROL, base_info.status, set_value="Generating mesh ..."
       
       mesh = create_grid((*(base_info.rz_grid)).psi, (*(base_info.rz_grid)).r, (*(base_info.rz_grid)).z, settings, $
-                         boundary=boundary, strict=base_info.strict_bndry, rad_peaking=rad_peak)
+                         boundary=boundary, strict=base_info.strict_bndry, rad_peaking=rad_peak, $
+                         single_rad_grid=base_info.single_rad_grid)
       
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
@@ -254,7 +255,8 @@ PRO event_handler, event
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
       mesh = create_grid((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
-                         boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, /nrad_flexible)
+                         boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, /nrad_flexible, $
+                         single_rad_grid=info.single_rad_grid)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -264,7 +266,7 @@ PRO event_handler, event
         info.flux_mesh = PTR_NEW(mesh)
         widget_control, event.top, set_UVALUE=info
       ENDIF ELSE BEGIN
-        a = DIALOG_MESSAGE("Could not generate mesh", /error)
+        a = DIALOG_MESSAGE("Could not generate mesh", /error, dialog_parent=info.draw)
         WIDGET_CONTROL, info.status, set_value="  *** FAILED to generate mesh ***"
       ENDELSE
     END
@@ -280,11 +282,17 @@ PRO event_handler, event
       ENDIF
 
       IF info.rz_grid_valid AND info.flux_mesh_valid THEN BEGIN
+        
+        oldcurv = 1
+        IF info.flux_curv THEN oldcurv=0
+      
+        
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
-                      output=filename, poorquality=poorquality, /gui, parent=info.draw
+                      output=filename, poorquality=poorquality, /gui, parent=info.draw, $
+          oldcurv=oldcurv
         
         IF poorquality THEN BEGIN
-          r = DIALOG_MESSAGE("Poor quality equilibrium")
+          r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
         ENDIF
       ENDIF ELSE BEGIN
         PRINT, "ERROR: Need to generate a mesh first"
@@ -314,6 +322,14 @@ PRO event_handler, event
     'strict': BEGIN
       ; Checkbox with boundary strictness
       info.strict_bndry = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'curv': BEGIN
+      info.flux_curv = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'radgrid': BEGIN
+      info.single_rad_grid = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'draw': BEGIN
@@ -517,7 +533,7 @@ PRO hypnotoad
                              title  = 'Sep. packing:',          $ 
                              uvalue = 'rad_peak',           $ 
                              /floating,                      $ 
-                             value = 2,                    $
+                             value = 1,                    $
                              xsize=8                         $
                            )
 
@@ -525,6 +541,14 @@ PRO hypnotoad
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
                                tooltip="Enforce boundaries strictly")
   Widget_Control, strict_check, Set_Button=1
+
+  curv_check = WIDGET_BUTTON(checkboxbase, VALUE="Flux curvature", uvalue='curv', $
+                             tooltip="Calculate curvature in flux coordinates")
+  Widget_Control, curv_check, Set_Button=0
+  
+  radgrid_check = WIDGET_BUTTON(checkboxbase, VALUE="Single radial grid", uvalue='radgrid', $
+                             tooltip="Grid radially in one")
+  Widget_Control, radgrid_check, Set_Button=0
 
   mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
@@ -567,7 +591,9 @@ PRO hypnotoad
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
            status:status_box, $
-           leftbargeom:leftbargeom $
+           leftbargeom:leftbargeom, $
+           single_rad_grid:0, $
+           flux_curv:0 $
          } 
 
   ; Store this in the base UVALUE
