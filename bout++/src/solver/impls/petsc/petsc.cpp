@@ -30,7 +30,6 @@
 
 #include <stdlib.h>
 
-#include "boundary.h"
 #include "interpolation.h" // Cell interpolation
 
 

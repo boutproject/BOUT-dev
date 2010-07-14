@@ -49,10 +49,6 @@
 #include "utils.h"
 #include "boutexception.h"
 
-#include <string.h>
-#include <strings.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include <typeinfo>
 #include <sstream>
 
@@ -215,18 +211,16 @@ void OptionFile::get(const map<string,string>::iterator &it, type &val)
       char c = toupper((it->second)[0]);
       if((c == 'Y') || (c == 'T') || (c == '1')) {
         ss << "1";
-        ss >> val;
       } else if((c == 'N') || (c == 'F') || (c == '0')) {
         ss << "0";
       } else {  
           output << "\tOption '" << it->first << "': Boolean expected\n";
       }
-      ss >> val;
     } else {
       ss << it->second;
-      ss >> val;
-      output << "\tOption " << it->first << " = " << val << endl;
-    }
+      output << "\tOption " << it->first << " = " << it->second << endl;
+    }  
+    ss >> val;
   }
 }
 

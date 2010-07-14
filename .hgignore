@@ -8,6 +8,7 @@ syntax:glob
 *.dmp.*
 *.log.*
 *.restart.*
+*.pyc
 .tmtags
 
 .DS_Store

@@ -30,7 +30,6 @@
 #ifdef BOUT_HAS_CVODE
 
 #include "globals.h"
-#include "boundary.h"
 #include "interpolation.h" // Cell interpolation
 
 #include <cvode/cvode.h>

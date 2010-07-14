@@ -32,7 +32,6 @@
 #ifdef BOUT_HAS_IDA
 
 #include "globals.h"
-#include "boundary.h"
 #include "interpolation.h" // Cell interpolation
 
 #include <ida/ida.h>
