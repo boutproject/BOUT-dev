@@ -107,7 +107,7 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3d, n2d, neq, local_N);
 
-  //.allocate memory
+  // Allocate memory
   
   if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
@@ -121,7 +121,7 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
     bout_error("\tERROR: Initial variable value not set\n");
   
   // Get the starting time derivative
-  (*func)(simtime);
+  run_rhs(simtime);
   
   // Put the time-derivatives into duvec
   save_derivs(NV_DATA_P(duvec));
@@ -130,7 +130,7 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   set_id(NV_DATA_P(id));
   
   /// Get options
-int MXSUB = mesh->xend - mesh->xstart + 1;
+  int MXSUB = mesh->xend - mesh->xstart + 1;
 
   BoutReal abstol, reltol;
   int maxl;
@@ -282,7 +282,7 @@ BoutReal IdaSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 
   // Call rhs function to get extra variables at this time
   BoutReal tstart = MPI_Wtime();
-  (*func)(simtime);
+  run_rhs(simtime);
   rhstime += MPI_Wtime() - tstart;
   ncalls++;
   
