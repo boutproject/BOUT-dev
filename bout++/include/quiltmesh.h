@@ -26,6 +26,20 @@ class QuiltMesh : public Mesh {
   int get(Field3D &var, const char *name);
   int get(Field3D &var, const string &name);
  private:
+  struct Domain {
+    int region;  // Region number
+    int x0, y0;  // Lower left corner in region
+    int nx, ny;  // Number of x and y points
+    
+    int proc;    // The processor for this domain
+    
+    Domain *xin, *xout;
+    int yup_xsplit;
+    
+  };
+  vector<Domain> domain;
+  Domain *mydomain;
+  
   const vector<int> readInts(const string &name);
 };
 

@@ -84,15 +84,55 @@ int QuiltMesh::load()
   ///////////////////////////////////////////////////////////
   // Each region now has ntot points and nproc processors
   // Divide up each region.
+  int proc = 0; // Processor number
   for(int r = 0; r < nregion; r++) { // Loop over the regions
     // Calculate number of processors in X for a square domain (mxsub = mysub)
-    int nxp = (int) ((BoutReal) nx[r])*sqrt(((BoutReal) nproc[r]) / ((BoutReal) ntot[r]));
-    if(nproc[r] % nxp != 0) {
-      // Change nxp to be factor of nproc[r]
-      
-    }
+    int nxp_sq = (int) ((BoutReal) nx[r])*sqrt(((BoutReal) nproc[r]) / ((BoutReal) ntot[r]));
     
-    if((nx[r] % nxp == 0) && (ny[
+    for(int nxp=nxp_sq; nxp > 0; nxp--) {
+      if(nproc[r] % nxp == 0) {
+        break;
+      }
+    }
+    int nyp = nproc[r] / nxp;
+
+    // Divide up into nyp strips
+    int nyall = (int) ny[r] / nyp;
+    int nyextra = ny[r] % nyp;
+    
+    int nxall = (int) nx[r] / nxp;
+    int nxextra = nx[r] % nxp;
+
+    int x0 = 0;
+    for(int xp = 0; xp < nxp; xp++) {
+      int nxsub = nxall; // nx on these processors
+      if(xp < nxextra)
+        nxsub++;
+      for(int yp = 0; yp < nyp; yp++) {
+        int y0 = 0;
+        int nysub = nyall; // ny on these processors
+        if(yp < nyextra)
+          nysub++;
+
+        // Create a new domain
+        Domain *d = new Domain;
+        d->region = r;
+        d->nx = nxsub;
+        d->ny = nysub;
+        d->x0 = x0;
+        d->y0 = y0;
+        d->proc = proc;
+        if(proc == MYPE)
+          mydomain = d;
+        
+        
+        domain.push_back(d); // Add this domain
+        
+        proc++;
+        y0 += nysub;
+      }
+    }
+    x0 += nxsub;
   }
 }
 
@@ -118,4 +158,3 @@ const vector<int> QuiltMesh::readInts(const string &name, int n)
   
   return result;
 }
-
