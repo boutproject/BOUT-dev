@@ -392,7 +392,7 @@ PRO event_handler, event
                                         title  = 'SOL:',      $ 
                                         uvalue = 'nrad',                $ 
                                         /long,                          $ 
-                                        value = (*info.flux_mesh).nrad[i], $
+                                        value = (*info.flux_mesh).nrad[nnrad-1], $
                                         xsize=8                         $
                                       )
       ENDIF

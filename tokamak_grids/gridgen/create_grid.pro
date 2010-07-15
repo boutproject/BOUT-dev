@@ -137,27 +137,18 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
     ;c = 1. - b
 
     IF 3.*a*c LT b^2 THEN BEGIN
-      ; Could have minima in range. Try fitting to dx = a + b*x^c
+      ; Could have minima in range. Fit to (exp(bx) - 1) / ( exp(b) - 1)
       
-      dx1 = out_dp/norm
+      dx1 = DOUBLE(out_dp / norm)
       
-      mina = 0.5*dx1
-      a = (2. - dx1)
-      IF a LT mina THEN BEGIN
-        c = (dx1 - 1.) / (1. - 0.5*dx1)
-        a = dx1 - (dx1 - 1.)*(c+1.)/c
-      ENDIF ELSE BEGIN
-        c = 1.
-      ENDELSE
-
-      IF c LT 0. THEN BEGIN
-        ; Just return equal spacing
-        RETURN, pin + (pout - pin)*x
-      ENDIF
-
-      b = out_dp/norm - a
-      vals = pin + (pout - pin)*(a*x + b*(x^(c+1.))/(c+1.))
-      STOP
+      ; Need to solve (dx1 - b)*exp(b) - dx1 = 0
+      ; Two solutions: b=0 and b ~ dx1
+      
+      b = DOUBLE(dx1 + 1.)
+      FOR i=0,9 DO b = b - ( (dx1 - b)*exp(b) - dx1 ) / ( (dx1 - b)*exp(b) - exp(b) )
+      
+      vals = pin + (pout - pin)*((exp(b*x) - 1) / ( exp(b) - 1))
+      
       RETURN, vals
     ENDIF
 
