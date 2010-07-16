@@ -839,7 +839,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDREP UNTIL last
     
     curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), FLOAT(psixy), FLOAT(thetaxy), $
-      bxcv=bxcv
+      bxcv=bxcv, mesh=mesh
 
     bxcvx = bxcv.psi 
     bxcvy = bxcv.theta

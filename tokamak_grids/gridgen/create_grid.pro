@@ -128,30 +128,12 @@ FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
     ;b = 1. - c
   ENDIF ELSE BEGIN
     ; Only outer set. Used in PF region
-    b = 0
-    a = 0.5*(out_dp/norm - 1.)
-    c = 1. - a
-    
-    ;a = 0
-    ;b = out_dp/norm - 1
-    ;c = 1. - b
-
-    IF 3.*a*c LT b^2 THEN BEGIN
-      ; Could have minima in range. Fit to (exp(bx) - 1) / ( exp(b) - 1)
-      
-      dx1 = DOUBLE(out_dp / norm)
-      
-      ; Need to solve (dx1 - b)*exp(b) - dx1 = 0
-      ; Two solutions: b=0 and b ~ dx1
-      
-      b = DOUBLE(dx1 + 1.)
-      FOR i=0,9 DO b = b - ( (dx1 - b)*exp(b) - dx1 ) / ( (dx1 - b)*exp(b) - exp(b) )
-      
-      vals = pin + (pout - pin)*((exp(b*x) - 1) / ( exp(b) - 1))
-      
-      RETURN, vals
-    ENDIF
-
+    ; Fit to (1-b)*x^a + bx for fixed b
+    df = out_dp / norm
+    b = 0.25 < df  ; Make sure a > 0
+    a = (df - b) / (1. - b)
+    vals = pin + (pout - pin)*( (1.-b)*x^a + b*x )
+    RETURN, vals
   ENDELSE
   
   vals = pin + (pout - pin)*(c*x + b*x^2 + a*x^3)
@@ -1444,18 +1426,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       nrad[critical.n_xpoint] = n - TOTAL(nrad,/int)
       
       ;fvals = radial_grid(TOTAL(nrad), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
-      ;psi_vals = (fvals - faxis) / fnorm ; Normalised psi
       
-      ; Find out how many grid points were used
-      ;nrad = LONARR(critical.n_xpoint + 1)
-      ;tot = 0
-      ;FOR i=0, critical.n_xpoint-1 DO BEGIN
-      ;  w = WHERE(psi_vals LT xpt_psi[si[i]], count)
-      ;  nrad[i] = count - tot
-      ;  tot = tot + nrad[i]
-      ;ENDFOR
-      ;w = WHERE(psi_vals GT MAX(xpt_psi), count)
-      ;nrad[critical.n_xpoint] = count
       
     ENDIF
     
@@ -1464,6 +1435,19 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     IF KEYWORD_SET(single_rad_grid) THEN BEGIN
       ; Just produce one grid
       fvals = radial_grid(TOTAL(nrad, /int), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
+      psi_vals = (fvals - faxis) / fnorm ; Normalised psi
+      
+      ; Find out how many grid points were used
+      nrad = LONARR(critical.n_xpoint + 1)
+      tot = 0
+      FOR i=0, critical.n_xpoint-1 DO BEGIN
+        w = WHERE(psi_vals LT xpt_psi[si[i]], count)
+        nrad[i] = count - tot
+        tot = tot + nrad[i]
+      ENDFOR
+      w = WHERE(psi_vals GT MAX(xpt_psi), count)
+      nrad[critical.n_xpoint] = count
+      
     ENDIF ELSE BEGIN 
       IF critical.n_xpoint GT 1 THEN BEGIN
         ; Between separatrices
@@ -1726,18 +1710,25 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       id = w[0]
       
       IF KEYWORD_SET(single_rad_grid) THEN BEGIN
+        ; Gridding as one region
         dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
-        pf_psi_out = pf_psi_vals[xind,0,npf] - dpsi
+        pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
+                                                    pf_psi_vals[xind,0,npf], $
+                                                    1, 0, $
+                                                    [xpt_psi[xind]], settings.rad_peaking, $
+                                                    out_dp=dpsi)
       ENDIF ELSE BEGIN
         ; Gridding in multiple regions. Ensure equal spacing around separatrix
         dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])
         pf_psi_out = xpt_psi[xind] - 0.5*dpsi
+        
+        pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
+                                                    pf_psi_out, $
+                                                    1, 1, $
+                                                    [xpt_psi[xind]], settings.rad_peaking, $
+                                                    out_dp=dpsi)
       ENDELSE
-      pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
-                                                  pf_psi_out, $
-                                                  1, 1, $
-                                                  [xpt_psi[xind]], settings.rad_peaking, $
-                                                  out_dp=dpsi)
+      
       pf_psi_vals[xind,1,0:(npf-1)] = pf_psi_vals[xind,0,0:(npf-1)]
       
       
