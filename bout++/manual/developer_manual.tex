@@ -103,30 +103,100 @@ of the BOUT++ code is the comments and Doxygen tags: running \code{doxygen}
 on the source should produce a set of HTML documentation. See
 \file{www.doxygen.org} for more details.
 
-\subsection{Collaborating on BOUT++}
+\subsection{Using the BOUT++ repository}
 
 As of June 2009, the BOUT++ distribution is hosted on Github:
-(\file{http://github.com/bendudson/BOUT/})
+
+\file{http://github.com/bendudson/BOUT/}
+
 If you're just starting with BOUT++, current developers will want to check
 your changes before submitting them to the repository. In this case
 you should clone (checkout) the git repository, make any changes and
 then submit patches to one of the developers (e.g.
 to \texttt{bd512@york.ac.uk}). Fortunately Git makes this process quite easy:
-The commands to do this are:
-
 First get a copy of BOUT++
 \begin{verbatim}
 $ git clone git://github.com/bendudson/BOUT.git
 \end{verbatim}
-Make changes to the repository, including branching, merging etc. Then create
+The BOUT++ repository will now be in a directory called ``BOUT''
+(sorry - github doesn't like '+' in project names). To get the latest
+changes (\code{svn update} equivalent), use
+\begin{verbatim}
+$ git pull
+\end{verbatim}
+To see the status of the repository, commits etc. use 
+\begin{verbatim}
+$ gitk
+\end{verbatim}
+This is also useful for showing what changes you've made which need to be
+committed, or which haven't yet been sent to the main repository.
+
+You can make edits as normal, and commit them using
+\begin{verbatim}
+$ git commit -a
+\end{verbatim}
+which is pretty much the equivalent of \code{svn commit} in that
+it commits all changes, though importantly it doesn't send them to
+a central server. To see which changes will be committed, use
+\begin{verbatim}
+$ git status
+\end{verbatim}
+To choose which files you want to commit, use 
+\begin{verbatim}
+$ git add file1, file2, ...
+$ git commit
+\end{verbatim}
+(Git can actually only commit selected parts of files if you want). To 
+make using Git easier, you can create a config file \file{\$HOME/.gitconfig}
+containing:
+\begin{lstlisting}[language=bash,numbers=none]
+[user]
+	name = Ben Dudson
+	email = bd512@york.ac.uk
+
+[alias]
+	st = status
+	ci = commit
+	br = branch
+	co = checkout
+	df = diff
+	lg = log -p
+	who = shortlog -s --
+\end{lstlisting}
+(though obviously you should change the name and email).
+
+Once you're done making changes, you should first pull the latest changes
+from the server:
+\begin{verbatim}
+$ git pull
+\end{verbatim}
+{\bf Read carefully} what git prints out. If there are conflicts
+then git will try to resolve them, but in some cases you will have 
+to resolve them yourself. To see a list of conflicting changes
+run \code{git status} (or \code{git st} if you're using the above
+\file{.gitconfig} file). Once you've finished resolving conflicts,
+run \code{git commit -a} to commit the merge.
+
+After you've got the latest changes, and resolved conflicts, create
 a patch:
 \begin{verbatim}
-$ 
+$ git format-patch origin/master --stdout > your-patch-file.diff
 \end{verbatim}
-and then email the patch file to one of the BOUT++ developers. 
+Now you can email this patch to someone who can commit to the Git archive
+(e.g. Ben Dudson, bd512@york.ac.uk).
 
 If you are doing a lot of development of BOUT++, it will probably make sense
-for you to push changes to the online repository.
+for you to push changes directly to the online repository. 
+In this case you'll need to sign up for an account on \file{github.com},
+then upload an ssh key and ask to be added. The process is
+then almost identical except that you clone using SSH:
+\begin{verbatim}
+$ git clone git@github.com:bendudson/BOUT.git
+\end{verbatim}
+and rather than creating a patch, you push changes to the repository:
+\begin{verbatim}
+$ git push
+\end{verbatim}
 
 \subsection{House rules}
 
@@ -206,12 +276,19 @@ it has also changed over time, so some parts could be cleaner.
 \label{fig:layout2}
 \end{figure}
 
-\subsection{Data types}
+\subsection{Directories}
+
+The source code for the core of BOUT++ is divided into
+include files (which can be used in physics models) in 
+\file{bout++/include}, and source code and low-level includes
+in \file{bout++/src}.
+
+\section{Data types}
 
 The classes outlines in red in figure~\ref{fig:layout2} are data types 
 currently implemented in BOUT++. 
 
-\subsubsection{\code{FieldData}}
+\subsection{\code{FieldData}}
 
 All BOUT++ data types implement a standard interface for accessing their
 data, which is then used in communication and file I/O code. This interface
@@ -248,7 +325,7 @@ routines.
 void shiftZ(int jx, int jy, double zangle);
 \end{lstlisting}
 
-\subsubsection{\code{Field}}
+\subsection{\code{Field}}
 
 The two main types are \code{Field2D}, and \code{Field3D}. Their main functions
 are to provide an easy way to manipulate data; they take care of all memory management,
@@ -256,12 +333,25 @@ and most looping over grid-points in algebraic expressions. The 2D field impleme
 is relatively simple, but more optimisations are used in the 3D field implementation
 because they are much larger (factor of $\sim 100$).
 
-\subsubsection{\code{Vector}}
+To handle time-derivatives, and enable expressions to be written in the
+following form:
+\begin{lstlisting}
+ddt(Ni) = -b0xGrad_dot_Grad(phi, Ni);
+\end{lstlisting}
+fields (and vectors, see below) have a function:
+\begin{lstlisting}
+Field3D* timeDeriv();
+\end{lstlisting}
+which returns a pointer to the field holding the time-derivative
+of this variable. This function ensures that this field is unique
+using a singleton pattern.
+
+\subsection{\code{Vector}}
 
 Vector classes build on the field classes, just using a field to represent
 each component. 
 
-\subsubsection{\code{dcomplex}}
+\subsection{\code{dcomplex}}
 
 Several parts of the BOUT++ code involve FFTs and are therefore much easier to
 write using complex numbers. Unfortunately, the C++ complex library also tries
@@ -307,7 +397,7 @@ involve copying data from one object to another, and then destroying the origina
 reference counting this copying is eliminated.
 
 \note{For debugging and Valgrind output, it can be useful to disable
-this memory block handling. To do this, add \code{-DDISABLE_FREELIST} to the
+this memory block handling. To do this, add \code{-DDISABLE\_FREELIST} to the
 compile flags}
 
 \section{Derivatives}
