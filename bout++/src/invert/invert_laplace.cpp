@@ -145,7 +145,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     // A first order derivative term
     
     if((jx > 0) && (jx < (mesh->ngx-1)))
-      coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / SQ(mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
+      coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (SQ(mesh->dx[jx][jy])*((*ccoef)[jx][jy]));
   }
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
