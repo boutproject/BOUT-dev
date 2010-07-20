@@ -281,7 +281,108 @@ it has also changed over time, so some parts could be cleaner.
 The source code for the core of BOUT++ is divided into
 include files (which can be used in physics models) in 
 \file{bout++/include}, and source code and low-level includes
-in \file{bout++/src}.
+in \file{bout++/src}. Inside \file{bout++/src}, the current source code
+files are:
+\begin{itemize}
+\item \file{bout++.cpp} : Main file which initialises, runs and finalises
+  BOUT++. Currently contains a \code{main()} function, though this is
+  being removed shortly.
+\item field
+  \begin{itemize}
+  \item \file{field2d.cpp}
+  \item \file{field3d.cpp}
+  \item \file{field\_data.cpp}
+  \item \file{fieldperp.cpp}
+  \item \file{initialprofiles.cpp}
+  \item \file{vecops.cpp}
+  \item \file{vector2d.cpp}
+  \item \file{vector3d.cpp}
+  \item \file{where.cpp}
+  \end{itemize}
+\item fileio
+  \begin{itemize}
+  \item \file{datafile.cpp}
+  \item \file{nc\_format.cpp}
+  \item \file{nc\_format.h}
+  \item \file{pdb\_format.cpp}
+  \item \file{pdb\_format.h}
+  \end{itemize}
+\item invert
+  \begin{itemize}
+  \item \file{fft\_fftw.cpp}
+  \item \file{full\_gmres.cpp}
+  \item \file{inverter.cpp}
+  \item \file{invert\_gmres.cpp}
+  \item \file{invert\_laplace.cpp}
+  \item \file{invert\_laplace\_gmres.cpp}
+  \item \file{invert\_parderiv.cpp}
+  \item \file{lapack\_routines.cpp}
+  \end{itemize}
+\item mesh
+  \begin{itemize}
+  \item \file{boundary\_factory.cpp}
+  \item \file{boundary\_region.cpp}
+  \item \file{boundary\_standard.cpp}
+  \item \file{boutmesh.cpp}
+  \item \file{difops.cpp}
+  \item \file{grid.cpp}
+  \item \file{interpolation.cpp}
+  \item \file{mesh.cpp}
+  \item \file{quiltmesh.cpp}
+  \end{itemize}
+\item physics
+  \begin{itemize}
+  \item \file{smoothing.cpp}
+  \item \file{sourcex.cpp}
+  \end{itemize}
+\item precon
+  \begin{itemize}
+  \item \file{jstruc.cpp}
+  \end{itemize}
+\item solver
+  \begin{itemize}
+  \item \file{solver.cpp}
+  \item \file{solverfactory.cpp}
+  \item \file{solverfactory.h}
+  \item impls
+    \begin{itemize}
+    \item cvode
+      \begin{itemize}
+      \item \file{cvode.cpp}
+      \item \file{cvode.h}
+      \end{itemize}
+    \item ida
+      \begin{itemize}
+      \item \file{ida.cpp}
+      \item \file{ida.h}
+      \end{itemize}
+    \item petsc
+      \begin{itemize}
+      \item \file{petsc.cpp}
+      \item \file{petsc.h}
+      \end{itemize}
+    \item pvode
+      \begin{itemize}
+      \item \file{pvode.cpp}
+      \item \file{pvode.h}
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\item sys
+  \begin{itemize}
+  \item \file{boutexception.cpp}
+  \item \file{comm\_group.cpp}
+  \item \file{dcomplex.cpp}
+  \item \file{derivs.cpp}
+  \item \file{diagnos.cpp}
+  \item \file{msg\_stack.cpp}
+  \item \file{options.cpp}
+  \item \file{stencils.cpp}
+  \item \file{utils.cpp}
+  \end{itemize}
+\end{itemize}
+
+
 
 \section{Data types}
 
