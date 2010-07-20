@@ -558,8 +558,20 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; of hthe
   hthe = FLTARR(nx, ny)
 
-  m = MAX(Rxy[0, *], ymidplane) ; Pick a midplane index
-  
+  ; Pick a midplane index
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    
+    IF period THEN BEGIN
+      ; In the core
+      rmax = MAX(Rxy[xi,yi], ymid)
+      ymidplane = yi[ymid]
+      BREAK
+    ENDIF
+  ENDREP UNTIL last
+
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN
     ; Get the next domain
@@ -796,13 +808,25 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
   ; re-set zshift to be zero at the outboard midplane
-  qm = qinty[*,ymidplane]
-  sm = sinty[*,ymidplane]
   
-  FOR i=0, ny-1 DO BEGIN
-     qinty[*,i] = qinty[*,i] - qm
-     sinty[*,i] = sinty[*,i] - sm
-  ENDFOR
+  PRINT, "MIDPLANE INDEX = ", ymidplane
+
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    
+    w = WHERE(yi EQ ymidplane, count)
+    IF count GT 0 THEN BEGIN
+      ; Crosses the midplane
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi, ymidplane]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi, ymidplane]
+    ENDIF ELSE BEGIN
+      ; Doesn't include a point at the midplane
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
+    ENDELSE
+  ENDREP UNTIL last
   
   ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
   ; Calculating b x kappa
@@ -812,33 +836,18 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
     thetaxy = FLTARR(nx, ny)
-    thetaxy[0,*] = 2.0*!PI*findgen(ny)/ny
-    FOR i=1, nx-1 DO thetaxy[i,*] = thetaxy[0,*]
-
-    brxy = FLTARR(nx, ny)
-    bzxy = brxy
-
     status = gen_surface(mesh=mesh) ; Start generator
     REPEAT BEGIN
       ; Get the next domain
       yi = gen_surface(period=period, last=last, xi=xi)
-      
-      IF period THEN BEGIN
-        dr = fft_deriv(REFORM(Rxy[xi,yi]))
-        dz = fft_deriv(REFORM(Zxy[xi,yi]))
-      ENDIF ELSE BEGIN
-        dr = DERIV(REFORM(Rxy[xi,yi]))
-        dz = DERIV(REFORM(Zxy[xi,yi]))
-      ENDELSE
-      dl = sqrt(dr*dr + dz*dz)
-      dr = dr / dl
-      dz = dz / dl
-      
-      brxy[xi,yi] = bpxy[xi,yi]*dr
-      bzxy[xi,yi] = bpxy[xi,yi]*dz
+      thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
     
-    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), FLOAT(psixy), FLOAT(thetaxy), $
+    brxy = mesh.dpsidR / Rxy
+    bzxy = -mesh.dpsidZ / Rxy
+    
+    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
+      FLOAT(psixy), FLOAT(thetaxy), hthe, $
       bxcv=bxcv, mesh=mesh
 
     bxcvx = bxcv.psi 

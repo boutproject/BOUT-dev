@@ -93,7 +93,7 @@ function dotprod, v1, v2
 return, res
 end
 
-PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy,$
+PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, HTHExy, $
                CURLB=CURLB, JXB=JXB, CURVEC=CURVEC, BXCURVEC=BXCURVEC, BXCV=BXCV,$
                DEBUG=DEBUG, mesh=mesh
 ;
@@ -101,7 +101,7 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy,$
 ;--------------------------------------------------------------------
 
    PRINT, 'Calculating curvature-related quantities...'
-
+   
 ;;-vector quantities are stored as 2D arrays of structures {r,phi,z}
    vec={r:0.,phi:0.,z:0.}
    curlb=REPLICATE(vec,nx,ny) 
@@ -114,11 +114,22 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy,$
 
    status = gen_surface(mesh=mesh) ; Start generator
    REPEAT BEGIN
-     yi = gen_surface(last=last, xi=xi, period=period)
+     yi = gen_surface(last=last, xi=x, period=period)
      nys = N_ELEMENTS(yi)
-     i = xi
+
+     ; Get vector along the surface
+     IF period THEN BEGIN
+       dr = fft_deriv(Rxy[x,yi])
+       dz = fft_deriv(Zxy[x,yi])
+     ENDIF ELSE BEGIN
+       dr = DERIV(Rxy[x,yi])
+       dz = DERIV(Zxy[x,yi])
+     ENDELSE
+     dl = SQRT(dr^2 + dz^2)
+     dr = dr / dl
+     dz = dz / dl
+     
      FOR j=0, nys-1 DO BEGIN
-       x = i
        y = yi[j]
        
        IF period THEN BEGIN
@@ -135,17 +146,16 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy,$
        
        grad_Psi  = pdiff_rz(Rxy, Zxy, PSIxy, x, y, yp, ym)
        
-       IF (j EQ 0) OR (j EQ ny-1) THEN BEGIN
-         grad_Theta= pdiff_rz(Rxy, Zxy, transpose([transpose(THETAxy[*,ny/2:*]), transpose(THETAxy[*,0:ny/2-1])]), x, y, yp, ym)
-       ENDIF ELSE grad_Theta= pdiff_rz(Rxy, Zxy, THETAxy, x, y, yp, ym)
-       
+       ;grad_Theta = pdiff_rz(Rxy, Zxy, THETAxy, x, y, yp, ym)
+       grad_Theta = {r:dr[j]/hthexy[x,y], z:dz[j]/hthexy[x,y], phi:0.0}
+
        grad_Phi={r:0.0,z:0.0,phi:1./Rxy[x,y]} ;-gradient of the toroidal angle
 
        vecR={r:Rxy[x,y],z:Zxy[x,y]}
        vecB={r:BRxy[x,y],z:BZxy[x,y],phi:BPHIxy[x,y]}
        
-       curlb[i,j]=CurlCyl(vecR, vecB, grad_Br, grad_Bphi, grad_Bz)
-       jxb[i,j]=Xprod(curlb[i,j], vecB)
+       curlb[x,y]=CurlCyl(vecR, vecB, grad_Br, grad_Bphi, grad_Bz)
+       jxb[x,y]=Xprod(curlb[x,y], vecB)
        
        ;-magnitude of B at 5 locations in cell
        bstrength = SQRT(BRxy^2 + BZxy^2 + BPHIxy^2)
@@ -166,16 +176,16 @@ PRO curvature, nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy,$
        curlb_unit=CurlCyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)
 
        ;-curvature vector at cell center
-       curvec[i,j]=Xprod(vecB_unit,curlb_unit,/MINUS)
+       curvec[x,y]=Xprod(vecB_unit,curlb_unit,/MINUS)
 
        ;-unit b cross curvature vector at cell center
-       bxcurvec[i,j]=Xprod(vecB_unit,curvec[i,j])
+       bxcurvec[x,y]=Xprod(vecB_unit,curvec[x,y])
 
        
        ;-calculate bxcurvec dotted with grad_psi, grad_theta, and grad_phi
-       bxcv[i,j].psi=Dotprod(bxcurvec[i,j],grad_Psi)
-       bxcv[i,j].theta=Dotprod(bxcurvec[i,j],grad_Theta)
-       bxcv[i,j].phi=Dotprod(bxcurvec[i,j],grad_Phi)
+       bxcv[x,y].psi=Dotprod(bxcurvec[x,y],grad_Psi)
+       bxcv[x,y].theta=Dotprod(bxcurvec[x,y],grad_Theta)
+       bxcv[x,y].phi=Dotprod(bxcurvec[x,y],grad_Phi)
        
      ENDFOR
    ENDREP UNTIL last
