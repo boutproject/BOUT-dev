@@ -81,14 +81,14 @@ FUNCTION int_y, var, mesh, loop=loop
   REPEAT BEGIN
     yi = gen_surface(last=last, xi=xi, period=period)
     
-    IF period THEN BEGIN
-      ; Periodic - use FFT
-      f[xi,yi] = fft_integrate(var[xi,yi], loop=lo)
-      loop[xi] = lo
-    ENDIF ELSE BEGIN
-      f[xi,yi] = int_func(var[xi,yi])
+    ;IF period THEN BEGIN
+    ;  ; Periodic - use FFT
+    ;  f[xi,yi] = REAL_PART(fft_integrate(var[xi,yi], loop=lo))
+    ;  loop[xi] = lo
+    ;ENDIF ELSE BEGIN
+      f[xi,yi] = SMOOTH(SMOOTH(int_func(var[xi,yi]), 5, /edge), 5, /edge)
       loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
-    ENDELSE
+    ;ENDELSE
   ENDREP UNTIL last
   
   RETURN, f
