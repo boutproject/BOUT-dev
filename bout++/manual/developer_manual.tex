@@ -981,6 +981,72 @@ The boundary condition system needs to be very flexible in order to handle:
   boundary system should ensure that these conditions are consistent.
 \end{itemize}
 
+\subsection{Boundary regions}
+
+Different regions of the boundary such as ``core'', ``sol'' etc. are
+labelled by the \code{Mesh} class (i.e. \code{BoutMesh}), which
+implements a member function defined in \file{mesh.h}:
+\begin{lstlisting}[firstnumber=150]
+  // Boundary regions
+  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+\end{lstlisting}
+This returns a vector of pointers to \code{BoundaryRegion} objects,
+each of which describes a boundary region with a label, a \code{BndryLoc} 
+location (i.e. inner x, outer x, lower y, upper y or all), and iterator
+functions for looping over the points. This class is
+defined in \file{boundary\_region.h}:
+\begin{lstlisting}[firstnumber=12]
+/// Describes a region of the boundary, and a means of iterating over it
+class BoundaryRegion {
+  public:
+  BoundaryRegion();
+  BoundaryRegion(const string &name, int xd, int yd);
+  virtual ~BoundaryRegion();
+  
+  string label; // Label for this boundary region
+  
+  BndryLoc location; // Which side of the domain is it on?
+  
+  int x,y; // Indices of the point in the boundary
+  int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
+
+  virtual void first() = 0;
+  virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
+  virtual void nextX() = 0; // Just loop over X
+  virtual void nextY() = 0; // Just loop over Y
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+};
+\end{lstlisting}
+
+{\bf Example:} To loop over all points in \code{BoundaryRegion *bndry} , use
+\begin{lstlisting}[numbers=none]
+  for(bndry->first(); !bndry->isDone(); bndry->next()) {
+    ...
+  }
+\end{lstlisting}
+Inside the loop, \code{bndry->x} and \code{bndry->y} are the indices
+of the point, whilst \code{bndry->bx} and \code{bndry->by} are unit vectors
+out of the domain.
+
+Sometimes it's useful to be able to loop over just one direction along the
+boundary. To do this, it is possible to use \code{nextX()} or \code{nextY()}
+rather than \code{next()}. It is also possible to loop over both dimensions
+using:
+\begin{lstlisting}[numbers=none]
+  for(bndry->first(); !bndry->isDone(); bndry->nextX())
+    for(; !bndry->isDone(); bndry->nextY()) {
+      ...
+    }
+\end{lstlisting}
+
+\subsection{Boundary operations}
+
+On each boundary, conditions must be specified for each variable. 
+The different conditions are imposed by \code{BoundaryOp} objects.
+These set the values in the boundary region such that they obey e.g.
+Dirichlet or Neumann conditions.
+
+
 Types of boundary: During initialisation, and sometimes during a run
 want to apply a boundary condition to a variable. At end of physics\_run
 want to apply boundary conditions to time-derivatives. Relaxing boundaries
