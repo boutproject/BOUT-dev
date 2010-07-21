@@ -9,11 +9,14 @@
 ;    * Modified to allow calls with only one argument
 ;
 
-FUNCTION int_func, x, f
+FUNCTION int_func, xin, fin
    IF N_PARAMS() EQ 1 THEN BEGIN
-     f = x
+     f = xin
      x = FINDGEN(N_ELEMENTS(f))
-   ENDIF
+   ENDIF ELSE BEGIN
+     f = fin
+     x = xin
+   ENDELSE
    n = N_ELEMENTS(f)
 
    n2 = FIX(n/2)
