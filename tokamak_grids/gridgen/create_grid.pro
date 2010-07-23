@@ -985,7 +985,7 @@ FUNCTION increase_xpt_hthe, dctF, R, Z, sep_info, dist0, pf_f, core_f, sol_in_f,
       ENDELSE
     ENDIF
     xd = xpt_hthe(dctF, R, Z, sep_info, dist, pf_f, core_f, sol_in_f, sol_out_f, boundary=boundary)
-  ENDREP UNTIL MIN(xd) GE xd_target
+  ENDREP UNTIL (MIN(xd) GE xd_target) OR ( ABS(MIN(xd) - m) LT 1.e-5 )
   
   ; Reduce spacing until one goes below target
   REPEAT BEGIN
@@ -1317,7 +1317,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     
     IF KEYWORD_SET(single_rad_grid) THEN BEGIN
       ; Just produce one grid
-      fvals = radial_grid(TOTAL(nrad, /int), f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
+      nrad_tot = TOTAL(nrad, /int)
+      fvals = radial_grid(nrad_tot, f_inner, f_outer, 1, 1, xpt_f, rad_peaking)
       psi_vals = (fvals - faxis) / fnorm ; Normalised psi
       
       ; Find out how many grid points were used
@@ -1328,8 +1329,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         nrad[i] = count - tot
         tot = tot + nrad[i]
       ENDFOR
-      w = WHERE(psi_vals GT MAX(xpt_psi), count)
-      nrad[critical.n_xpoint] = count
+      nrad[critical.n_xpoint] = nrad_tot - tot
       
     ENDIF ELSE BEGIN 
       IF critical.n_xpoint GT 1 THEN BEGIN
