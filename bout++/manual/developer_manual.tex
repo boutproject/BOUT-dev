@@ -27,7 +27,7 @@
 	breaklines=true,
 	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
 	breakatwhitespace=false,
-	aboveskip={1.5\baselineskip},
+	aboveskip={0.5\baselineskip},
         columns=fixed,
         upquote=true,
         extendedchars=true,
@@ -1026,7 +1026,9 @@ class BoundaryRegion {
 \end{lstlisting}
 Inside the loop, \code{bndry->x} and \code{bndry->y} are the indices
 of the point, whilst \code{bndry->bx} and \code{bndry->by} are unit vectors
-out of the domain.
+out of the domain. The loop is over all the points from the domain outwards 
+i.e. the point
+\code{[bndry->x - bndry->bx][bndry->y - bndry->by]} will always be defined.
 
 Sometimes it's useful to be able to loop over just one direction along the
 boundary. To do this, it is possible to use \code{nextX()} or \code{nextY()}
@@ -1044,14 +1046,203 @@ using:
 On each boundary, conditions must be specified for each variable. 
 The different conditions are imposed by \code{BoundaryOp} objects.
 These set the values in the boundary region such that they obey e.g.
-Dirichlet or Neumann conditions.
+Dirichlet or Neumann conditions. The \code{BoundaryOp} class is defined
+in \file{boundary\_op.h}:
+\begin{lstlisting}[firstnumber=21]
+/// An operation on a boundary
+class BoundaryOp {
+ public:
+  BoundaryOp() {bndry = NULL;}
+  BoundaryOp(BoundaryRegion *region)
+  
+  // Note: All methods must implement clone, except for modifiers (see below)
+  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  
+  /// Apply a boundary condition on field f
+  virtual void apply(Field2D &f) = 0;
+  virtual void apply(Field3D &f) = 0;
+  
+  virtual void apply(Vector2D &f);
+  
+  virtual void apply(Vector3D &f);
+
+  /// Apply a boundary condition on ddt(f)
+  virtual void apply_ddt(Field2D &f);
+  virtual void apply_ddt(Field3D &f);
+  virtual void apply_ddt(Vector2D &f);
+  virtual void apply_ddt(Vector3D &f);
+  
+  BoundaryRegion *bndry;
+};
+\end{lstlisting}
+(where the implementations have been removed for clarity). 
+Which has a pointer to a \code{BoundaryRegion} object specifying which
+region this boundary is operating on.
+
+Boundary conditions need to be imposed on the initial conditions (after
+\code{physics\_init()}), and on the time-derivatives
+(after \code{physics\_run()}). The \code{apply()} functions are therefore
+called during initialisation and given the evolving variables, whilst the
+\code{apply\_ddt} functions are passed the time-derivatives.
+
+To implement a boundary operation, as a minimum the \code{apply(Field2D)}, 
+\code{apply(Field2D)} and \code{clone()} need to be implemented: By default
+the \code{apply(Vector)} will call the \code{apply(Field)} functions on each
+component individually, and the \code{apply\_ddt()} functions just call
+the \code{apply()} functions.
+
+{\bf Example}: Neumann boundary conditions are defined in
+\file{boundary\_standard.h}:
+\begin{lstlisting}[firstnumber=22]
+/// Neumann (zero-gradient) boundary condition
+class BoundaryNeumann : public BoundaryOp {
+ public:
+  BoundaryNeumann() {}
+ BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+\end{lstlisting}
+and implemented in \file{boundary\_standard.cpp}
+\begin{lstlisting}[firstnumber=52]
+void BoundaryNeumann::apply(Field2D &f)
+{
+  // Loop over all elements and set equal to the next point in
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by];
+}
+
+void BoundaryNeumann::apply(Field3D &f)
+{
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
+}
+\end{lstlisting}
+This is all that's needed in this case since there's no difference between
+applying Neumann conditions to a variable and to its time-derivative, 
+and Neumann conditions for vectors are just Neumann conditions
+on each vector component. 
+
+To create a boundary condition, we need to give it a boundary region
+to operate over:
+\begin{lstlisting}[numbers=none]
+BoundaryRegion *bndry = ...
+BoundaryOp op = new BoundaryOp(bndry);
+\end{lstlisting}
+
+The \code{clone} function is used to create
+boundary operations given a single object as a template
+in \code{BoundaryFactory}. This can take additional arguments
+as a vector of strings - see explanation in section~\ref{sec:BoundaryFactory}.
+
+\subsection{Boundary Modifiers}
+
+To create more complicated boundary conditions from simple ones (such as
+Neumann conditions above), boundary operations can be modified by
+wrapping them up in a \code{BoundaryModifier} object, defined
+in \file{boundary\_op.h}:
+\begin{lstlisting}[firstnumber=63]
+class BoundaryModifier : public BoundaryOp {
+ public:
+  virtual BoundaryOp* clone(BoundaryOp *op, const list<string> &args) = 0;
+ protected:
+  BoundaryOp *op;
+};
+\end{lstlisting}
+Since \code{BoundaryModifier} inherits from \code{BoundaryOp}, 
+modified boundary operations are just a different boundary operation and can
+be treated the same (Decorator pattern). Boundary modifiers could also be
+nested inside each other to create even more complicated boundary operations.
+Note that the \code{clone} function is different to the \code{BoundaryOp} one:
+instead of a \code{BoundaryRegion} to operate on, modifiers are passed a
+\code{BoundaryOp} to modify.
+
+Currently the only modifier is \code{BoundaryRelax}, defined in
+\file{boundary\_standard.h}:
+\begin{lstlisting}[firstnumber=64]
+/// Convert a boundary condition to a relaxing one
+class BoundaryRelax : public BoundaryModifier {
+ public:
+  BoundaryRelax(BoutReal rate) {r = fabs(rate);}
+  BoundaryOp* clone(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoundaryRelax() {} // Must be initialised with a rate
+  BoutReal r;
+};
+\end{lstlisting}
+
+\subsection{Boundary Factory}
+\label{sec:BoundaryFactory}
+
+The boundary factory creates new boundary operations from input strings,
+for example turning "relax(dirichlet)" into a relaxing Dirichlet boundary
+operation on a given region. It is defined in \file{boundary\_factory.h}
+as a Singleton, so to get a pointer to the boundary factory use
+\begin{lstlisting}[numbers=none]
+  BoundaryFactory *bfact = BoundaryFactory::getInstance();
+\end{lstlisting}
+and to delete this singleton, free memory and cleanup at the end use:
+\begin{lstlisting}[numbers=none]
+  BoundaryFactory::cleanup();
+\end{lstlisting}
+
+Because users should be able to add new boundary conditions during
+\code{physics\_init()}, boundary conditions are not hard-wired into
+\code{BoundaryFactory}. Instead, boundary conditions must be registered
+with the factory, passing an instance which can later be cloned. This
+is done in \file{bout++.cpp} for the standard boundary conditions:
+\begin{lstlisting}[firstnumber=258]
+  BoundaryFactory* bndry = BoundaryFactory::getInstance();
+  bndry->add(new BoundaryDirichlet(), "dirichlet");
+  ...
+  bndry->addMod(new BoundaryRelax(10.), "relax");
+\end{lstlisting}
+where the \code{add} function adds BoundaryOp objects, whereas
+\code{addMod} adds \code{BoundaryModifier} objects. {\bf Note}: The
+objects passed to \code{BoundaryFactory} will be deleted when \code{cleanup()}
+is called. 
+
+When a boundary operation is added, it is given a name
+such as ``dirichlet'', and similarly for the modifiers (``relax'' above).
+These labels and object pointers are stored internally in \code{BoundaryFactory}
+in maps defined in \file{boundary\_factory.h}:
+\begin{lstlisting}[firstnumber=43]
+  // Database of available boundary conditions and modifiers
+  map<string, BoundaryOp*> opmap;
+  map<string, BoundaryModifier*> modmap;
+\end{lstlisting}
+These are then used by \code{BoundaryFactory::create()}:
+\begin{lstlisting}[firstnumber=24]
+  /// Create a boundary operation object
+  BoundaryOp* create(const string &name, BoundaryRegion *region);
+  BoundaryOp* create(const char* name, BoundaryRegion *region);
+\end{lstlisting}
+to turn a string such as ``relax(dirichlet)'' and a \code{BoundaryRegion}
+pointer into a BoundaryOp object. These functions are implemented
+in \file{boundary\_factory.cpp}, starting around line 42. The parsing is
+done recursively:
+\begin{verbatim}
+create( name, region )
+  if name contains '('
+    func = name in front of brackets
+    arglist[] = part inside brackets, split by commas
+    
+    if func is a modifier object mod
+      op = create(arglist[0], region)
+      return mod->clone(op, arglist[1:*]
+  else
+    
+\end{verbatim}
 
 
-Types of boundary: During initialisation, and sometimes during a run
-want to apply a boundary condition to a variable. At end of physics\_run
-want to apply boundary conditions to time-derivatives. Relaxing boundaries
-couple variable with its time-derivative. More general boundaries (e.g.
-sheath boundaries) couple fields together.
 
 From physics module's point of view want to be able to create variables
 then in physics\_init do something like:
@@ -1077,15 +1268,6 @@ Boundary::register(LaplaceBoundary, "laplace", BNDRY\_XIN | BNDRY\_XOUT);
 which puts these into a static table inside boundary. Specify the object, 
 the name (for matching to options) and which boundaries it can be applied to.
 
-Two types of boundary condition:
-\begin{itemize}
-\item Simple boundary condition on one variable. Condition can always be applied
-  to the variable itself and the boundary region doesn't need to be evolved.
-\item Boundary conditions on one variable which couple the time-derivative to the variable
-  such as relaxing boundaries. Boundary regions are evolved, and the condition is applied
-  to the time-derivatives. Something must be applied to the initial state to be
-  consistent.
-\end{itemize}
 
 \section{Solver}
 
