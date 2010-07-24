@@ -426,6 +426,72 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   return result;
 }
 
+const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth)
+{
+  FieldPerp result;
+  result.allocate();
+  
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Delp2( FieldPerp )");
+#endif
+
+  static dcomplex **ft = (dcomplex**) NULL, **delft;
+  BoutReal filter;
+  
+  BoutReal **fd = f.getData();
+  BoutReal **rd = result.getData();
+
+  int jy = f.getIndex();
+  result.setIndex(jy);
+  
+  int ncz = mesh->ngz-1;
+  
+  if(ft == (dcomplex**) NULL) {
+    //Allocate memory
+    ft = cmatrix(mesh->ngx, ncz/2 + 1);
+    delft = cmatrix(mesh->ngx, ncz/2 + 1);
+  }
+  
+  // Take forward FFT
+  for(int jx=0;jx<mesh->ngx;jx++)
+    ZFFT(fd[jx], mesh->zShift[jx][jy], ft[jx]);
+
+  // Loop over kz
+  for(int jz=0;jz<=ncz/2;jz++) {
+
+    if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
+    
+    // No smoothing in the x direction
+    for(int jx=2;jx<(mesh->ngx-2);jx++) {
+      // Perform x derivative
+      
+      dcomplex a, b, c;
+      laplace_tridag_coefs(jx, jy, jz, a, b, c);
+      
+      delft[jx][jz] = a*ft[jx-1][jz] + b*ft[jx][jz] + c*ft[jx+1][jz];
+      delft[jx][jz] *= filter;
+    }
+  }
+  
+  // Reverse FFT
+  for(int jx=1;jx<(mesh->ngx-1);jx++) {
+    ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx]);
+    rd[jx][ncz] = rd[jx][0];
+  }
+
+  // Boundaries
+  for(int jz=0;jz<ncz;jz++) {
+    rd[0][jz] = 0.0;
+    rd[mesh->ngx-1][jz] = 0.0;
+  }
+
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
 /*******************************************************************************
  * Laplacian
  * Full Laplacian operator
