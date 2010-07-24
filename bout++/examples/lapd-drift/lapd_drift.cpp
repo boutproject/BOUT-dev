@@ -339,6 +339,7 @@ int physics_run(BoutReal t)
   if(log_density) {
     // Ni contains the logarithm of total density. 
     Ni = exp(Ni); // Convert to density
+    Ni -= Ni0; // Turn into perturbation
   }
 
   // Invert vorticity to get phi
@@ -347,10 +348,7 @@ int physics_run(BoutReal t)
   // Arguments are:   (b,   bit-field, a,    c)
   // Passing NULL -> missing term
   if(nonlinear) {
-    if(log_density) {
-      phi = invert_laplace(rho/Ni, phi_flags, NULL, &Ni0); // Ni is total density
-    }else 
-      phi = invert_laplace(rho/(Ni0+Ni), phi_flags, NULL, &Ni0);
+    phi = invert_laplace(rho/(Ni0+Ni), phi_flags, NULL, &Ni0);
   }else
     phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
 
@@ -374,10 +372,7 @@ int physics_run(BoutReal t)
 
   // Update profiles
   if(nonlinear) {
-    if(log_density) {
-      Nit = Ni; // Already includes Ni0
-    }else
-      Nit = Ni0 + Ni;
+    Nit = Ni0 + Ni;
     Tit = Ti0;
     Tet = Te0;
   }else {
@@ -471,7 +466,7 @@ int physics_run(BoutReal t)
     
     if(log_density) {
       // d/dt(ln Ni) = d/dt(Ni) / Ni
-      ddt(Ni) /= Ni;
+      ddt(Ni) /= Nit;
     }
   }
 
