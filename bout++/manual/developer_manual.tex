@@ -1137,7 +1137,7 @@ boundary operations given a single object as a template
 in \code{BoundaryFactory}. This can take additional arguments
 as a vector of strings - see explanation in section~\ref{sec:BoundaryFactory}.
 
-\subsection{Boundary Modifiers}
+\subsection{Boundary modifiers}
 
 To create more complicated boundary conditions from simple ones (such as
 Neumann conditions above), boundary operations can be modified by
@@ -1179,7 +1179,7 @@ class BoundaryRelax : public BoundaryModifier {
 };
 \end{lstlisting}
 
-\subsection{Boundary Factory}
+\subsection{Boundary factory}
 \label{sec:BoundaryFactory}
 
 The boundary factory creates new boundary operations from input strings,
@@ -1226,47 +1226,65 @@ These are then used by \code{BoundaryFactory::create()}:
   BoundaryOp* create(const char* name, BoundaryRegion *region);
 \end{lstlisting}
 to turn a string such as ``relax(dirichlet)'' and a \code{BoundaryRegion}
-pointer into a BoundaryOp object. These functions are implemented
+pointer into a \code{BoundaryOp} object. These functions are implemented
 in \file{boundary\_factory.cpp}, starting around line 42. The parsing is
-done recursively:
-\begin{verbatim}
-create( name, region )
-  if name contains '('
-    func = name in front of brackets
-    arglist[] = part inside brackets, split by commas
+done recursively by matching the input string to one of:
+\begin{itemize}
+\item \code{modifier(<expression>, arg1, ...)}
+\item \code{modifier(<expression>)}
+\item \code{operation(arg1, ...)}
+\item \code{operation}
+\end{itemize}
+the \code{<expression>} variable is then resolved into a BoundaryOp
+object by calling \code{create(<expression, region)}.
+
+When an operator or modifier is found, it is created from the pointer
+stored in the \code{opmap} or \code{modmap} maps using the
+\code{clone} method, passing
+a \code{list<string>} reference containing any arguments. It's up
+to the operation implementation to ensure that the correct number of
+arguments are passed, and to parse them into floats or other types.
+
+{\bf Example}: The Dirichlet boundary condition can take an optional
+argument to change the value the boundary's set to. In \file{boundary\_standard.cpp}:
+\begin{lstlisting}[firstnumber=13]
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
+{
+  if(!args.empty()) {
+    // First argument should be a value
+    stringstream ss;
+    ss << args.front();
     
-    if func is a modifier object mod
-      op = create(arglist[0], region)
-      return mod->clone(op, arglist[1:*]
-  else
-    
-\end{verbatim}
-
-
-
-From physics module's point of view want to be able to create variables
-then in physics\_init do something like:
-\begin{lstlisting}
-var.setBoundary("varname"); // Can't use relaxing conditions
-var.setBoundary("varname", F_var); // Can use relaxing conditions
-var.setBoundary(BoundaryOperation); // Set some custom boundary condition
-var.setBoundary("region", BoundaryOperation); // Only in some region
+    BoutReal val;
+    ss >> val;
+    return new BoundaryDirichlet(region, val);
+  }
+  return new BoundaryDirichlet(region);
+}
 \end{lstlisting}
+If no arguments are passed i.e. the string was ``dirichlet'' or ``dirichlet()''
+then the \code{args} list is empty, and the default value (0.0) is used.
+If one or more arguments is used then the first argument is parsed into a
+\code{BoutReal} type and used to create a new \code{BoundaryDirichlet} object.
+If more arguments are passed then these are just ignored; probably a warning
+should be printed.
 
-After initialisation, boundary condition should be applied to the variable,
-but after physics\_run it should apply to the time-derivative... hmmm..
-
-If using a simple boundary condition (e.g. 0 or 0 gradient), don't need
-to evolve boundary regions, but can apply to variable instead.
-
-
-How to register a new boundary condition? Something like
+To set boundary conditions on a field, \code{FieldData} methods are
+defined in \file{field\_data.h}:
 \begin{lstlisting}
-Boundary::register(DirichletBoundary, "dirichlet", BNDRY\_ALL);
-Boundary::register(LaplaceBoundary, "laplace", BNDRY\_XIN | BNDRY\_XOUT);
+// Boundary conditions
+  void setBoundary(const string &name); ///< Set the boundary conditions
+  void setBoundary(const string &region, BoundaryOp *op); ///< Manually set
+  virtual void applyBoundary() {}
+  virtual void applyTDerivBoundary() {};
+ protected:
+  vector<BoundaryOp*> bndry_op; // Boundary conditions
 \end{lstlisting}
-which puts these into a static table inside boundary. Specify the object, 
-the name (for matching to options) and which boundaries it can be applied to.
+The \code{setBoundary(const string \&name)} method is implemented in
+\file{field\_data.cpp}. It first gets a vector of pointers to
+\code{BoundaryRegion}s from the mesh, then loops over these calling
+\code{BoundaryFactory::createFromOptions} for each one and adding the resulting
+boundary operator to the \code{bndry\_op} vector.
 
 
 \section{Solver}

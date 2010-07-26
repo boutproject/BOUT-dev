@@ -18,4 +18,7 @@ try:
 except:
     print "Sorry, no pol_slice"
 
-
+try:
+    from gen_surface import gen_surface
+except:
+    print "Sorry, no gen_surface"
