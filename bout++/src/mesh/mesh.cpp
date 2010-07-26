@@ -174,6 +174,28 @@ comm_handle Mesh::send(FieldData &f)
   return send(group);
 }
 
+/// This is a bit of a hack for now to get FieldPerp communications
+/// The FieldData class needs to be changed to accomodate FieldPerp objects
+int Mesh::communicate(FieldPerp &f)
+{
+  comm_handle recv[2];
+  
+  BoutReal **fd = f.getData();
+  
+  int nin = xstart; // Number of x points in inner guard cell
+  int nout = ngx-xend-1; // Number of x points in outer guard cell
+  
+  // Post receives for guard cell regions
+  recv[0] = irecvXIn(fd[0],       nin*ngz, 0);
+  recv[1] = irecvXOut(fd[xend+1], nout*ngz, 1);
+  
+  // Send data
+  sendXIn(fd[xstart], nin*ngz, 1);
+  sendXOut(fd[xend-nout+1], nout*ngz, 0);
+  
+  return 0;
+}
+
 /**************************************************************************
  * Differential geometry
  * Calculates the covariant metric tensor, and christoffel symbol terms

@@ -115,7 +115,7 @@ int QuiltMesh::load()
           nysub++;
 
         // Create a new domain
-        Domain *d = new Domain;
+        MeshDomain *d = new MeshDomain;
         d->region = r;
         d->nx = nxsub;
         d->ny = nysub;

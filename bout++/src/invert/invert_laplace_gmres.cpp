@@ -1,5 +1,7 @@
 #include "invert_laplace_gmres.h"
 #include "invert_laplace.h"
+#include "difops.h"
+#include "globals.h"
 
 const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int inv_flags, bool precon, Field3D *a, Field3D *c)
 {
@@ -46,9 +48,7 @@ const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int i
 
 const FieldPerp LaplaceGMRES::function(const FieldPerp &x)
 {
-  FieldPerp result;
-  
-  //result = Delp2(x); // Need to add this function
+  FieldPerp result = Delp2(x);
   
   return x;
 }

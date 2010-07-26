@@ -34,6 +34,7 @@
 #include "globals.h"
 #include "inverter.h"
 #include "utils.h"
+#include "fft.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -45,7 +46,8 @@
 
 Inverter::Inverter()
 {
-  
+  nxgt1 = !(mesh->firstX() & (mesh->lastX()));
+  parallel = nxgt1;
 }
 
 Inverter::~Inverter()
@@ -75,13 +77,8 @@ int Inverter::solve(const Field3D &b, Field3D &x,
 		    int restart, int itmax,
 		    BoutReal tol)
 {
-  int ys = mesh->ystart, ye = mesh->yend;
- 
-  if(MYPE_IN_CORE == 0) {
-    // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
-    ys = 0;
-    ye = mesh->ngy-1;
-  }
+  int ys = 0, ye = mesh->ngy-1;
+  // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
   
   FieldPerp xperp;
   for(int jy=ys; jy <= ye; jy++) {
@@ -101,9 +98,109 @@ void Inverter::A(BoutReal *b, BoutReal *x)
   
   Fb.setData(&b);
   Fx.setData(&x);
+  
+  if(parallel) {
+    // Communicate Fx
+    mesh->communicate(Fx);
+  }
+  
+  // Need to set boundary conditions on x
+  applyBoundary(Fx, bndry_flags);
 
   Fb = function(Fx);
 }
+
+/**************************************************************************
+ * Protected functions
+ **************************************************************************/
+
+#include "invert_laplace.h"
+
+/// NOTE: This should be changed/merged with Field2D/3D boundary system
+void Inverter::applyBoundary(FieldPerp &f, int flags)
+{ 
+  // Set boundaries in Fourier space (to be compatible with
+  // invert_laplace)
+  
+  int nin = mesh->xstart; // Number of inner points
+  int nout = mesh->ngx-mesh->xend-1; // Number of outer points
+  
+  int ncz = mesh->ngz-1;
+  
+  int jy = f.getIndex();
+
+  // Allocate working memory
+  static dcomplex **cdata = NULL;
+  static BoutReal *h;
+  if(cdata == NULL) {
+    int size = MAX(nin, nout)+2;
+    cdata = cmatrix(size, ncz/2 + 1);
+    h = new BoutReal[size];
+  }
+  
+  //////////////////////////////////////
+  // Inner boundary
+  
+  ZFFT(f[nin+1], mesh->zShift[nin+1][jy], cdata[0]);
+  ZFFT(f[nin], mesh->zShift[nin][jy], cdata[1]);
+  for(int i=0;i<=nin+1;i++)
+    h[i] = mesh->dx[nin+1-i][jy];
+  
+  int mask = INVERT_DC_IN_GRAD | INVERT_AC_IN_GRAD | INVERT_AC_IN_LAP;
+  calcBoundary(cdata, nin, h, flags & mask);
+  
+  for(int i=0;i<nin;i++)
+    ZFFT_rev(cdata[2+i], mesh->zShift[nin-1-i][jy], f[nin-1-i]);
+  
+  //////////////////////////////////////
+  // Outer boundary
+  
+  int xe = mesh->xend;
+  ZFFT(f[xe-1], mesh->zShift[xe-1][jy], cdata[0]);
+  ZFFT(f[xe], mesh->zShift[xe][jy], cdata[1]);
+  for(int i=0;i<=nout+1;i++)
+    h[i] = mesh->dx[xe-1+i][jy];
+  
+  mask = INVERT_DC_OUT_GRAD | INVERT_AC_OUT_GRAD | INVERT_AC_OUT_LAP;
+  calcBoundary(cdata, nout, h, flags & mask);
+  
+  for(int i=0;i<nout;i++)
+    ZFFT_rev(cdata[2+i], mesh->zShift[xe+1+i][jy], f[xe+1+i]);
+}
+
+void Inverter::calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags)
+{
+  int ncz = mesh->ngz-1;
+  
+  // DC component
+  if(flags & (INVERT_DC_IN_GRAD | INVERT_DC_OUT_GRAD)) {
+    // Zero gradient
+    for(int i=0;i<n;i++)
+      cdata[2+i][0] = cdata[1][0];
+  }else {
+    // Zero value
+    for(int i=0;i<n;i++)
+      cdata[2+i][0] = 0.0;
+  }
+  
+  // AC component
+  if(flags & (INVERT_AC_IN_GRAD | INVERT_AC_OUT_GRAD)) {
+    // Zero gradient
+    for(int i=0;i<n;i++)
+      for(int k=1;k<=ncz/2;k++)
+	cdata[2+i][k] = cdata[1][k];
+    
+  }else if(flags & (INVERT_AC_IN_LAP | INVERT_AC_OUT_LAP)) {
+    // Zero Laplacian
+    
+  }else {
+    // Zero value
+    for(int i=0;i<n;i++)
+      for(int k=1;k<=ncz/2;k++)
+	cdata[2+i][k] = 0.0;
+  }
+}
+
 
 /**************************************************************************
  * GMRES iterative solver
@@ -117,6 +214,11 @@ BoutReal Inverter::norm_vector(BoutReal *b, int n)
   for(i=0;i<n;i++)
     val += b[i]*b[i];
   
+  if(parallel) {
+    // Add together across processors in X
+    
+  }
+
   return(sqrt(val));
 }
 
@@ -128,6 +230,11 @@ BoutReal Inverter::dot_product(BoutReal *a, BoutReal *b, int n)
   for(i=0;i<n;i++)
     val += a[i]*b[i];
 
+  if(parallel) {
+    // Add together across processors in X
+    
+  }
+  
   return(val);
 }
 

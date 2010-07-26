@@ -37,6 +37,7 @@ class Inverter;
 #define __INVERTER_H__
 
 #include "fieldperp.h"
+#include "dcomplex.h"
 
 #include <vector>
 
@@ -60,7 +61,20 @@ class Inverter {
   /// User must implement this function
   virtual const FieldPerp function(const FieldPerp &x) = 0;
   
+  void setBoundaryFlags(int flags) {bndry_flags = flags; }
+  void setXCoupling(bool xcouple) {parallel = xcouple & nxgt1; }
+  
+ protected:
+  /// Apply a boundary condition to a FieldPerp variable
+  void applyBoundary(FieldPerp &f, int flags);
+
  private:
+  
+  void calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags);
+
+  bool nxgt1; // True if NXPE > 1
+  bool parallel; // True if need to communicate
+  int bndry_flags; // Boundary condition flags
   
   void A(BoutReal *b, BoutReal *x); ///< Calculates b = Ax
   

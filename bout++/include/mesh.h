@@ -138,6 +138,8 @@ class Mesh {
   virtual comm_handle irecvXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
+  int communicate(FieldPerp &f); // Communicate an X-Z field
+
   // Y-Z surface gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
   virtual const Field2D averageY(const Field2D &f) = 0;

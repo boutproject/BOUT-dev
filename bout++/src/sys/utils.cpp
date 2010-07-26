@@ -193,6 +193,11 @@ void SWAP(int &a, int &b)
   b = tmp;
 }
 
+int MAX(int a, int b)
+{
+  return (a > b) ? a : b;
+}
+
 bool is_pow2(int x)
 {
   return x && !((x-1) & x);
