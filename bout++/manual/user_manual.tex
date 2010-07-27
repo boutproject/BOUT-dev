@@ -1686,7 +1686,7 @@ int physics_init(bool restarting)
 This specifies that an option called ``gamma'' in a section called ``mhd'' should be put into the variable \code{gamma}. If the option could not be found, or was of the wrong type, the variable should be set to a default value of $5/3$.
 The value used will be printed to the output file, so if gamma is not set in the input file the following line will appear:
 \begin{verbatim}
-      Option mhd / gamm = 1.66667 (default)
+      Option mhd / gamma = 1.66667 (default)
 \end{verbatim}
 This function can be used to get integers and booleans. To get strings, there
 is the function (\code{char* options.getString(section, name)}.
@@ -1705,11 +1705,11 @@ int physics_init(bool restarting)
 Most of the time, the name of the variable (e.g. \code{gamma}) will be
 the same as the identifier in the options file (``gamma''). In this case,
 there is the macro
-\begin{lstlisting}
+\begin{lstlisting}[numbers=none]
 OPTION(gamma, 5.0/3.0);
 \end{lstlisting}
 which is equivalent to
-\begin{lstlisting}
+\begin{lstlisting}[numbers=none]
 options.get("gamma",   gamma,   5.0/3.0);
 \end{lstlisting}
 See section~\ref{sec:options} for more details of how to use the input options.

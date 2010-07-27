@@ -289,96 +289,162 @@ files are:
   being removed shortly.
 \item field
   \begin{itemize}
-  \item \file{field2d.cpp}
-  \item \file{field3d.cpp}
-  \item \file{field\_data.cpp}
-  \item \file{fieldperp.cpp}
-  \item \file{initialprofiles.cpp}
-  \item \file{vecops.cpp}
-  \item \file{vector2d.cpp}
-  \item \file{vector3d.cpp}
-  \item \file{where.cpp}
+  \item \file{field2d.cpp} implements the \code{Field2D} class. This is a
+    scalar field which varies only in $x$ and $y$ and is used for things
+    like metric tensor components and initial profiles. It supplies lots
+    of overloaded operators and functions on these objects.
+  \item \file{field3d.cpp} implements the \code{Field3D} class, which varies 
+    in $x$, $y$ and $z$. Since these handle a lot more memory than Field2D
+    objects, the memory management is more complicated and includes reference
+    counting. See section~\ref{sec:memorymanage} for more details.
+  \item \file{field\_data.cpp} Implements some functions in the \code{FieldData} class. This is a mainly pure virtual interface class which is inherited by \code{Field2D} and \code{Field3D}.
+  \item \file{fieldperp.cpp} implements a \code{FieldPerp} class to store
+    slices perpendicular to the magnetic field i.e. they are a function of
+    $x$ and $z$ only. This is mainly used for Laplacian inversion routines,
+    and needs to be integrated with the other fields better.
+  \item \file{initialprofiles.cpp} routines to set the initial values of
+    fields when a simulation first starts. Reads settings from the option
+    file based on the name of the variable.
+  \item \file{vecops.cpp} a collection of function to operate on vectors. 
+    Contains things like \code{Grad}, \code{Div} and \code{Curl}, and uses
+    a combination of field differential operators (in \file{difops.cpp}) and
+    metric tensor components (in \code{Mesh}).
+  \item \file{vector2d.cpp} implements the \code{Vector2D} class, which uses
+    a \code{Field2D} object for each of its 3 components. Overloads operators 
+    to supply things like dot and cross products.
+  \item \file{vector3d.cpp} implements \code{Vector3D} by using a
+    \code{Field3D} object for each component.
+  \item \file{where.cpp} supplies functions for choosing between values
+    based on selection criteria.
   \end{itemize}
 \item fileio
   \begin{itemize}
-  \item \file{datafile.cpp}
-  \item \file{nc\_format.cpp}
-  \item \file{nc\_format.h}
-  \item \file{pdb\_format.cpp}
+  \item \file{datafile.cpp} supplies an abstract \code{DataFile} interface
+    for data input and output. Handles the conversion of data in fields
+    and vectors into blocks of data which are then sent to a specific file
+    format.
+  \item \file{nc\_format.cpp} implements an interface to the NetCDF-4 library
+  \item \file{nc\_format.h} is the header file. This is not in the
+    \file{include/} directory because it should only be used by \code{DataFile}.
+  \item \file{pdb\_format.cpp} implements an interace to Portable Data
+    Binary (PDB) formatted files.
   \item \file{pdb\_format.h}
   \end{itemize}
 \item invert
   \begin{itemize}
-  \item \file{fft\_fftw.cpp}
+  \item \file{fft\_fftw.cpp} implements the \code{fft.h} interface by calling
+    the Fastest Fourier Transform in the West (FFTW) library.
   \item \file{full\_gmres.cpp}
-  \item \file{inverter.cpp}
+  \item \file{inverter.cpp} is a \code{FieldPerp} inversion class currently
+    under development. It is intended to provide a way to solve nonlinear
+    problems using a GMRES iterative method.
   \item \file{invert\_gmres.cpp}
-  \item \file{invert\_laplace.cpp}
-  \item \file{invert\_laplace\_gmres.cpp}
-  \item \file{invert\_parderiv.cpp}
-  \item \file{lapack\_routines.cpp}
+  \item \file{invert\_laplace.cpp} uses Fourier decomposition in $z$ combined
+    with tri- and band-diagonal solvers in $x$ to solve Laplacian problems.
+  \item \file{invert\_laplace\_gmres.cpp} inherits the \code{Inverter} class
+    and will solve more general Laplacian problems, using the
+    \code{invert\_laplace} routines as preconditioners.
+  \item \file{invert\_parderiv.cpp} inverts a problem involving only parallel
+    $y$ derivatives. Intended for use in some preconditioners.
+  \item \file{lapack\_routines.cpp} supplies an interface to the LAPACK linear
+    solvers, which are used by the \code{invert\_laplace} routines.
   \end{itemize}
 \item mesh
   \begin{itemize}
-  \item \file{boundary\_factory.cpp}
-  \item \file{boundary\_region.cpp}
-  \item \file{boundary\_standard.cpp}
-  \item \file{boutmesh.cpp}
-  \item \file{difops.cpp}
-  \item \file{grid.cpp}
-  \item \file{interpolation.cpp}
-  \item \file{mesh.cpp}
-  \item \file{quiltmesh.cpp}
+  \item \file{boundary\_factory.cpp} creates boundary condition operators
+    which can then be applied to fields. Described in
+    section~\ref{sec:BoundaryFactory}.
+  \item \file{boundary\_region.cpp} implements a way to describe and iterate
+    over boundary regions. Created by the mesh, and then used by boundary
+    conditions. See section~\ref{sec:BoundaryRegion} for more details.
+  \item \file{boundary\_standard.cpp} implements some standard boundary
+    operations and modifiers such as \code{Neumann} and \code{Dirichlet}.
+  \item \file{boutmesh.cpp} implements a mesh interface which is compatible
+    with BOUT grid files.
+  \item \file{difops.cpp} is a collection of differential operators on scalar
+    fields. It uses the differential methods in \file{derivs.cpp} and the
+    metric tensor components in \code{Mesh} to compute operators.
+  \item \file{grid.cpp} contains some routines which are used by the \code{Mesh}
+    to read data. 
+  \item \file{interpolation.cpp} contains functions for interpolating fields
+  \item \file{mesh.cpp} is the base class for the \code{Mesh} object. Contains
+    routines useful for all \code{Mesh} implementations.
+  \item \file{quiltmesh.cpp} is an implementation of \code{Mesh} which is
+    currently under development. It is intended to handle more general mesh
+    shapes and topology than the currently used \code{BoutMesh} can handle.
   \end{itemize}
 \item physics
   \begin{itemize}
-  \item \file{smoothing.cpp}
-  \item \file{sourcex.cpp}
+  \item \file{smoothing.cpp} provides smoothing routines on scalar fields
+  \item \file{sourcex.cpp} contains some useful routines for creating
+    sources and sinks in physics equations.
   \end{itemize}
 \item precon
   \begin{itemize}
-  \item \file{jstruc.cpp}
+  \item \file{jstruc.cpp} is an experimental code for preconditioning using
+    PETSc
   \end{itemize}
 \item solver
   \begin{itemize}
-  \item \file{solver.cpp}
-  \item \file{solverfactory.cpp}
+  \item \file{solver.cpp} is the interface for all solvers 
+  \item \file{solverfactory.cpp} creates solver objects
   \item \file{solverfactory.h}
   \item impls
     \begin{itemize}
     \item cvode
       \begin{itemize}
-      \item \file{cvode.cpp}
+      \item \file{cvode.cpp} is the implementation of \code{Solver} which
+        interfaces with the SUNDIALS CVODE library.
       \item \file{cvode.h}
       \end{itemize}
     \item ida
       \begin{itemize}
-      \item \file{ida.cpp}
+      \item \file{ida.cpp} is the implementation which interfaces with the
+        SUNDIALS IDA library
       \item \file{ida.h}
       \end{itemize}
     \item petsc
       \begin{itemize}
-      \item \file{petsc.cpp}
+      \item \file{petsc.cpp} is the interface to the PETSc time integration
+        routines
       \item \file{petsc.h}
       \end{itemize}
     \item pvode
       \begin{itemize}
-      \item \file{pvode.cpp}
+      \item \file{pvode.cpp} interfaces with the 1998 (pre-SUNDIALS) version
+        of PVODE (which became CVODE).
       \item \file{pvode.h}
       \end{itemize}
     \end{itemize}
   \end{itemize}
 \item sys
   \begin{itemize}
-  \item \file{boutexception.cpp}
-  \item \file{comm\_group.cpp}
-  \item \file{dcomplex.cpp}
-  \item \file{derivs.cpp}
-  \item \file{diagnos.cpp}
-  \item \file{msg\_stack.cpp}
-  \item \file{options.cpp}
-  \item \file{stencils.cpp}
-  \item \file{utils.cpp}
+  \item \file{boutexception.cpp} is an exception class which are used
+    for error handling
+  \item \file{comm\_group.cpp} provides routines for non-blocking collective 
+    MPI operations. These are not available in MPI-2, though are planned for
+    MPI-3.
+  \item \file{dcomplex.cpp} provides a \code{dcomplex} complex type. It is here
+    because the original type \code{real} conflicted with the STL definition.
+    This could probably be replaced with the STL implementation now.
+  \item \file{derivs.cpp} contains basic derivative methods such as
+    upwinding, central difference and WENO methods. These are then
+    used by \file{difops.cpp}. Details are given in
+    section~\ref{sec:derivatives}.
+  \item \file{diagnos.cpp} is the start of a diagnostics code which will extract
+    values from fields each timestep and print to the output log file. Not
+    yet finished.
+  \item \file{msg\_stack.cpp} is part of the error handling system. It maintains
+    a stack of messages which can be pushed onto the stack at the start of 
+    a function, then removed (popped) at the end. If an error occurs or 
+    a segmentation fault is caught then this stack is printed out and can
+    help to find errors.
+  \item \file{options.cpp} provides an interface to the BOUT.inp option file
+    and the command-line options. 
+  \item \file{stencils.cpp} contains methods to operate on stencils which are
+    used by differential methods. 
+  \item \file{utils.cpp} contains miscellaneous small useful routines
+    such as allocating and freeing arrays.
   \end{itemize}
 \end{itemize}
 
@@ -462,6 +528,7 @@ it was easier in the end to just implement a new class \code{dcomplex} to
 handle complex numbers.
 
 \subsection{Memory management}
+\label{sec:memorymanage}
 
 This code has been thoroughly tested/debugged, and should only be altered
 with great care, since just about every other part of BOUT++ depends on this code
@@ -502,6 +569,7 @@ this memory block handling. To do this, add \code{-DDISABLE\_FREELIST} to the
 compile flags}
 
 \section{Derivatives}
+\label{sec:derivatives}
 
 This is probably the part of the code most people will want to alter. The main
 task of this module is to map functions on fields like \code{DDX} to direction-independent
@@ -982,6 +1050,7 @@ The boundary condition system needs to be very flexible in order to handle:
 \end{itemize}
 
 \subsection{Boundary regions}
+\label{sec:BoundaryRegion}
 
 Different regions of the boundary such as ``core'', ``sol'' etc. are
 labelled by the \code{Mesh} class (i.e. \code{BoutMesh}), which
