@@ -28,7 +28,7 @@
 # 
 
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, 0.8, bd512@york.ac.uk)
+AC_INIT(BOUT++, 0.85, bd512@york.ac.uk)
 
 AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  	   Set run-time checking level])
 AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
