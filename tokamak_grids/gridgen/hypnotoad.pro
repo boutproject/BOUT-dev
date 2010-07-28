@@ -33,6 +33,7 @@ PRO plot_rz_equil, data
   IF data.nlim GT 2 THEN OPLOT, [data.rlim, data.rlim[0]], $
                                 [data.zlim, data.zlim[0]], $
                                 color = 2, thick=2
+  critical = data.critical
   IF data.nlim GT 2 THEN BEGIN
     OPLOT, [REFORM(data.rlim), data.rlim[0]], [REFORM(data.zlim), data.zlim[0]], $
            thick=2,color=2
@@ -41,7 +42,7 @@ PRO plot_rz_equil, data
     bndryi = FLTARR(2, data.nlim)
     bndryi[0,*] = INTERPOL(FINDGEN(data.nr), data.R, data.rlim)
     bndryi[1,*] = INTERPOL(FINDGEN(data.nz), data.Z, data.zlim)
-    critical = critical_bndry(data.critical, bndryi)
+    critical = critical_bndry(critical, bndryi)
   ENDIF
   ; Overplot the separatrices, O-points
   oplot_critical, data.psi, data.r, data.z, critical
