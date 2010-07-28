@@ -13,6 +13,12 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
   ny = s[1]
   nz = s[2]
   
+  ncore = MIN([grid.ixseps1, grid.ixseps2])
+  IF nx GT ncore THEN BEGIN
+    PRINT, "Only computing modes in the core"
+    nx = ncore
+  ENDIF
+  
   IF NOT is_pow2(nz) THEN BEGIN
      IF is_pow2(nz-1) THEN BEGIN
         ; Remove the final z point
@@ -34,7 +40,8 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
      ENDFOR
   ENDFOR
 
-  dz = 2.0*!PI / FLOAT(period*nz)
+  zlength = 2.0*!PI / FLOAT(period)
+  dz = zlength / FLOAT(nz)
   
   ; GET THE TOROIDAL SHIFT
   tn = TAG_NAMES(grid)
@@ -54,5 +61,59 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
       ENDELSE
   ENDELSE
   
+  ; Apply toroidal shift
+  kwave = mode * period
+  FOR i=0, nx-1 DO BEGIN
+    FOR j=0, ny-1 DO BEGIN
+      varfft[i,j] = varfft[i,j] * COMPLEX(COS(kwave*zshift[i,j]), $
+                                          -SIN(kwave*zshift[i,j]))
+    ENDFOR
+  ENDFOR
   
+  ; Try to get the poloidal angle from the grid file
+  w = WHERE(tn EQ "POL_ANGLE", count)
+  IF count GT 0 THEN BEGIN
+    PRINT, "Using pol_angle from grid file"
+    theta = grid.pol_angle
+  ENDIF ELSE BEGIN
+    ; calculate poloidal angle
+    
+    PRINT, "Sorry: Poloidal angle calculation not implemented yet"
+    RETURN
+  ENDELSE
+
+  ; Now take FFT in poloidal angle
+  
+  nm = FIX(ny/2)-1 ; Number of m frequencies
+  
+  yfft = COMPLEXARR(nx, 2*nm)
+  
+  FOR i=0, nx-1 DO BEGIN
+    yfft[i,*] = fft_irreg(theta[i,*], varfft[i,*], nf=nm)
+  ENDFOR
+  
+  ; Now re-arrange and take absolute value
+  
+  IF ny MOD 2 EQ 0 THEN BEGIN
+    ; Even number of points
+    nm = FIX(ny/2)-1
+    
+    mvals = FLTARR(2*nm + 1)-nm
+    result = FLTARR(nx, 2*nm+1)
+    
+    FOR i=0, nx-1 DO BEGIN
+      result[i,nm] = ABS(varfft[i,0]) ; DC
+      FOR m=0, nm-1 DO BEGIN
+        ; First negative frequencies
+        result[i,m] = ABS(varfft[i, (ny/2)+1+m])
+        ; Positive frequencies
+        result[i,nm+1+i] = ABS(varfft[i, 1+m])
+      ENDFOR
+    ENDFOR
+  ENDIF ELSE BEGIN
+    PRINT, "Sorry: NY odd not implemented yet"
+  ENDELSE
+  
+  contour, result, findgen(nx), mvals
+  STOP
 END

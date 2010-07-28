@@ -70,23 +70,31 @@ FUNCTION AfromLine, p1, p2, current, pos
   COMMON linecom, c1, c2, Ivec, c
   
   ; Convert all coordinates to cartesian
-  c1 = toCart(p1)
-  c2 = toCart(p2)
-  c  = toCart(pos)
+  c1in = toCart(p1)
+  c2in = toCart(p2)
+  cin  = toCart(pos)
   
-  len = distance(c1, c2) ; length of the wire
+  len = distance(c1in, c2in) ; length of the wire
   
-  Ivec = {x:current*(c2.x - c1.x)/len, $
-          y:current*(c2.y - c1.y)/len, $
-          z:current*(c2.z - c1.z)/len}
+  result = cin
+  FOR i=0, N_ELEMENTS(pos)-1 DO BEGIN
+    c1 = {x:c1in.x[i], y:c1in.y[i], z:c1in.z[i]}
+    c2 = {x:c2in.x[i], y:c2in.y[i], z:c2in.z[i]}
+    c = {x:cin.x[i], y:cin.y[i], z:cin.z[i]}
+    Ivec = {x:current*(c2.x - c1.x)/len, $
+            y:current*(c2.y - c1.y)/len, $
+            z:current*(c2.z - c1.z)/len}
+    ; Integrate along the line
+    a0 = [0.,0.,0.]
+    a = LSODE(a0, 0., 1., 'linediff', lstat)
+    a = a * 1.e-7 ; mu_0 / 4pi
+    
+    result.x[i] = a[0]
+    result.y[i] = a[1]
+    result.z[i] = a[2]
+  ENDFOR
   
-  ; Integrate along the line
-  a0 = [0.,0.,0.]
-  a = LSODE(a0, 0., 1., 'linediff', lstat)
-  
-  a = a * 1.e-7 ; mu_0 / 4pi
-  
-  RETURN, {x:a[0], y:a[1], z:a[2]}
+  RETURN, result
 END
 
 FUNCTION AfromArc, p1, phi, current, pos
@@ -96,7 +104,7 @@ FUNCTION AfromArc, p1, phi, current, pos
   pe = p1
   
   n = 10
-  a = {x:0., y:0., z:0.}
+  a = toCart(pos)
   
   dphi = phi / FLOAT(n)
   FOR i=0, n-1 DO BEGIN
@@ -158,46 +166,43 @@ FUNCTION AfromCoilSet, set, current, pos
   RETURN, A
 END
 
-
-PRO coils, file, rest=rest
+PRO coils, file, rest=rest, savefile=savefile
   
   IF NOT KEYWORD_SET(rest) THEN BEGIN
-  ;;;; Define coil sets for MAST
-  lower = {r1:1.311, z1:-0.791, r2:1.426, z2:-0.591, n:6, dphi:2.*!PI/12.}
-  upper = {r1:1.311, z1:0.791, r2:1.426, z2:0.591, n:6, dphi:2.*!PI/12.}
-  
-  ;;;; Read in the grid file
-  g = file_import(file)
-  
-  nz = 32
-  dz = 2.*!PI / FLOAT(nz)
-
-  Ar   = FLTARR(g.nx, g.ny, nz)
-  Aphi = Ar
-  Az   = Ar
-  
-  ;;;; Loop over grid points
-  FOR i=0, g.nx-1 DO BEGIN
-    FOR j=0, g.ny-1 DO BEGIN
-      FOR k=0, nz-1 DO BEGIN
-        phi = FLOAT(k)*dz
-        pos = {r:g.Rxy[i,j], z:g.Zxy[i,j], phi:phi}
-      
-        A = AfromCoilSet(lower, 1., pos)
-        A = addCart(A, AfromCoilSet(upper, 1., pos))
-        
-        ; Convert to polar coordinates
-        
-        Ar[i,j,k]   = A.x * COS(phi) + A.y * SIN(phi)
-        Aphi[i,j,k] = A.y * COS(phi) - A.x * SIN(phi)
-        Az[i,j,k]   = A.z
-      ENDFOR
+    ;;;; Define coil sets for MAST
+    lower = {r1:1.311, z1:-0.791, r2:1.426, z2:-0.591, n:6, dphi:2.*!PI/12.}
+    upper = {r1:1.311, z1:0.791, r2:1.426, z2:0.591, n:6, dphi:2.*!PI/12.}
+    
+    ;;;; Read in the grid file
+    g = file_import(file)
+    
+    nz = 32
+    dz = 2.*!PI / FLOAT(nz)
+    
+    ; Generate grid points
+    r = FLTARR(g.nx, g.ny, nz)
+    z = r
+    phi = r
+    FOR k=0,nz-1 DO BEGIN
+      r[*,*,k] = g.Rxy
+      z[*,*,k] = g.Zxy
+      phi[*,*,k] = FLOAT(k)*dz
     ENDFOR
-  ENDFOR
-  
-ENDIF ELSE BEGIN
-  RESTORE, rest
-ENDELSE
+    
+    pos = {r:r, z:z, phi:phi}
+    A = AfromCoilSet(lower, 1., pos)
+    A = addCart(A, AfromCoilSet(upper, 1., pos))
+          
+    ; Convert to polar coordinates
+          
+    Ar   = A.x * COS(phi) + A.y * SIN(phi)
+    Aphi = A.y * COS(phi) - A.x * SIN(phi)
+    Az   = A.z
+    
+    IF KEYWORD_SET(savefile) THEN SAVE, file=save
+  ENDIF ELSE BEGIN
+    RESTORE, rest
+  ENDELSE
 
   ; Now need to convert to Apar. Get poloidal component
   Apol = FLTARR(g.nx, g.ny, nz)
@@ -234,7 +239,28 @@ ENDELSE
     Apar[*,*,k] = (Apol[*,*,k] * g.Bpxy + Aphi * g.Btxy) / g.Bxy
   ENDFOR
   
+  nk = FIX(nz/2) - 1
   ; Take FFT of Apar
+  Apar_k = FLTARR(g.nx, g.ny, 2*nk + 1)
+  FOR x=0, g.nx-1 DO BEGIN
+    FOR y=0, g.ny-1 DO BEGIN
+      f = FFT(Apar[x,y,*])
+      
+      ; Put into BOUT++ input format
+      Apar_k[x,y,0] = REAL_PART(f[0]) ; DC
+      FOR k=0, nk-1 DO BEGIN
+        ; Real then imaginary part of each 
+        Apar_k[x,y,2*k+1] = REAL_PART(f[k+1])
+        Apar_k[x,y,2*k+2] = IMAGINARY(f[k+1])
+      ENDFOR
+    ENDFOR
+  ENDFOR
+  
+  ; Add this variable to the file
+  
+  f = file_open(file, /write)
+  status = file_write(f, "rmp_A", Apar_k)
+  file_close, f
   
   STOP
 END
