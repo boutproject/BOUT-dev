@@ -647,12 +647,15 @@ then
 			fi
 			file=externalpackages/pvode.tar.gz
 		fi
-	
-		tar zxf $file -C externalpackages >> config-build.log 2>&1
+		gunzip -c $file > externalpackages/tmp.tar
+		cd externalpackages
+		tar -x -f tmp.tar >> ../config-build.log 2>&1
 		if test $? != "0"
 		then
+			cd -
 			AC_MSG_ERROR(Can't extract file: $file)
 		fi
+		cd -
 			
 		
 		echo "* Building PVODE" | tee -a config-build.log
