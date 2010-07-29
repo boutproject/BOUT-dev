@@ -1,6 +1,6 @@
 
-#include "mesh.h"
 #include "globals.h"
+#include "mesh.h"
 #include "utils.h"
 #include "derivs.h"
 

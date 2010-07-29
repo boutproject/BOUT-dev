@@ -23,9 +23,10 @@ class BoundaryOp {
  public:
   BoundaryOp() {bndry = NULL;}
   BoundaryOp(BoundaryRegion *region) {bndry = region;}
+  virtual ~BoundaryOp() {}
   
   // Note: All methods must implement clone, except for modifiers (see below)
-  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) {return NULL;}
+  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args) {return NULL; } 
   
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f) = 0;
@@ -62,7 +63,7 @@ class BoundaryOp {
 
 class BoundaryModifier : public BoundaryOp {
  public:
-  virtual BoundaryOp* clone(BoundaryOp *op, const list<string> &args) = 0;
+  virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
  protected:
   BoundaryOp *op;
 };

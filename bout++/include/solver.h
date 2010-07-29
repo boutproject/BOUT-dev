@@ -32,12 +32,11 @@
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
+#include "globals.h"
 #include "field2d.h"
 #include "field3d.h"
 #include "vector2d.h"
 #include "vector3d.h"
-
-#include "globals.h"
 
 #include <string>
 using std::string;

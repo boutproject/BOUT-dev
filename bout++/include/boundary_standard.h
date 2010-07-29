@@ -65,7 +65,7 @@ class BoundaryDivCurl : public BoundaryOp {
 class BoundaryRelax : public BoundaryModifier {
  public:
   BoundaryRelax(BoutReal rate) {r = fabs(rate);}
-  BoundaryOp* clone(BoundaryOp *op, const list<string> &args);
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);
   void apply(Field3D &f);

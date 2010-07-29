@@ -1,7 +1,7 @@
 
+#include "globals.h"
 #include "field_data.h"
 #include "boundary_factory.h"
-#include "globals.h"
 
 FieldData::~FieldData()
 {

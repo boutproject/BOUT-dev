@@ -1,6 +1,6 @@
 
-#include "boundary_standard.h"
 #include "globals.h"
+#include "boundary_standard.h"
 #include "invert_laplace.h"
 #include "fft.h"
 #include "boutexception.h"
@@ -334,7 +334,7 @@ void BoundaryDivCurl::apply(Vector3D &var)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRelax::clone(BoundaryOp *operation, const list<string> &args)
+BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args)
 {
   BoundaryRelax* result = new BoundaryRelax(r);
   result->op = operation;

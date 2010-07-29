@@ -939,15 +939,12 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
 {
 #ifdef CHECK
   // Check data set
-  if(data == (BoutReal**) NULL) {
+  if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: getData on empty data\n");
-    exit(1);
-  }
   
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngx)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
   }
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
@@ -962,13 +959,11 @@ int Field2D::getData(int x, int y, int z, BoutReal *rptr) const
   // Check data set
   if(data == (BoutReal**) NULL) {
     throw BoutException("Field2D: getData on empty data\n");
-    exit(1);
   }
   
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
   }
 #endif
 
@@ -983,7 +978,6 @@ int Field2D::setData(int x, int y, int z, void *vptr)
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
   }
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
@@ -999,7 +993,6 @@ int Field2D::setData(int x, int y, int z, BoutReal *rptr)
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
     throw BoutException("Field2D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
   }
 #endif
 

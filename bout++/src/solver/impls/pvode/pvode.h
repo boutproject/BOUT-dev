@@ -35,6 +35,8 @@ class PvodeSolver;
 #ifndef __PVODE_SOLVER_H__
 #define __PVODE_SOLVER_H__
 
+#include "globals.h"
+
 #include "field2d.h"
 #include "field3d.h"
 #include "vector2d.h"
@@ -42,7 +44,6 @@ class PvodeSolver;
 
 #include "solver.h"
 #include "bout_types.h"
-#include "globals.h"
 #include "interpolation.h"   // Cell interpolation
 
 #include <mpi.h>             // MPI data types and prototypes

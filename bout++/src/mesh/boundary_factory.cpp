@@ -1,4 +1,5 @@
 
+#include "globals.h"
 #include "boundary_factory.h"
 #include "utils.h"
 
@@ -91,7 +92,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
     arglist.pop_front();
     
     // Clone the modifier, passing in the operator and remaining strings as argument
-    return mod->clone(op, arglist);
+    return mod->cloneMod(op, arglist);
   }
   
   BoundaryOp *op = findBoundaryOp(trim(func));
