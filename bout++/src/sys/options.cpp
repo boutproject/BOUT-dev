@@ -224,6 +224,11 @@ void OptionFile::get(const map<string,string>::iterator &it, type &val)
   }
 }
 
+template void OptionFile::get<int>(const map<string,string>::iterator &it, int &val);
+template void OptionFile::get<BoutReal>(const map<string,string>::iterator &it, BoutReal &val);
+template void OptionFile::get<bool>(const map<string,string>::iterator &it, bool &val);
+template void OptionFile::get<string>(const map<string,string>::iterator &it, string &val);
+
 template<class type>
 void OptionFile::get(const string &key, type &val, const type &def)
 {
@@ -244,6 +249,11 @@ void OptionFile::get(const string &key, type &val, const type &def)
   output << "\tOption " << key << " = " << def << " (default)" << endl;
 }
 
+template void OptionFile::get<int>(const string &key, int &val, const int &def);
+template void OptionFile::get<BoutReal>(const string &key, BoutReal &val, const BoutReal &def);
+template void OptionFile::get<bool>(const string &key, bool &val, const bool &def);
+template void OptionFile::get<string>(const string &key, string &val, const string &def);
+
 template<class type>
 void OptionFile::get(const string &section, const string &key, type &val, const type &def)
 {
@@ -259,6 +269,11 @@ void OptionFile::get(const string &section, const string &key, type &val, const 
   get<type>(prependSection(section, key), val, def);
 }
 
+template void OptionFile::get<int>(const string &section, const string &key, int &val, const int &def);
+template void OptionFile::get<BoutReal>(const string &section, const string &key, BoutReal &val, const BoutReal &def);
+template void OptionFile::get<bool>(const string &section, const string &key, bool &val, const bool &def);
+template void OptionFile::get<string>(const string &section, const string &key, string &val, const string &def);
+
 template<class type>
 void OptionFile::get(const string &section1, const string &section2, const string &key, type &val, const type &def)
 {
@@ -273,6 +288,11 @@ void OptionFile::get(const string &section1, const string &section2, const strin
   
   get<type>(prependSection(section2, key), val, def);
 }
+
+template void OptionFile::get<int>(const string &section1, const string &section2, const string &key, int &val, const int &def);
+template void OptionFile::get<BoutReal>(const string &section1, const string &section2, const string &key, BoutReal &val, const BoutReal &def);
+template void OptionFile::get<bool>(const string &section1, const string &section2, const string &key, bool &val, const bool &def);
+template void OptionFile::get<string>(const string &section1, const string &section2, const string &key, string &val, const string &def);
 
 void OptionFile::get(const string &key, int &val, const int &def)
 {
