@@ -663,12 +663,17 @@ then
 		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
 		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 		
-		echo "*************************************************************" >> config-build.log
-		echo "* Successfully built PVODE" | tee -a config-build.log
-		echo "*************************************************************" >> config-build.log
-		echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
+		if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
+		then
+			echo "*************************************************************" >> config-build.log
+			echo "* Successfully built PVODE" | tee -a config-build.log
+			echo "*	************************************************************" >> config-build.log
+			echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
 		
-		echo "*************************************************************" | tee -a config-build.log
+			echo "*************************************************************" | tee -a config-build.log
+		else
+			AC_MSG_ERROR(Couldn't build PVODE. See config-build.log for errors)
+		fi
 	fi
 	
 	# Set the correct libraries and copy them to bout

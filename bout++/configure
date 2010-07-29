@@ -5138,12 +5138,15 @@ then
 			fi
 			file=externalpackages/pvode.tar.gz
 		fi
-
-		tar zxf $file -C externalpackages >> config-build.log 2>&1
+		gunzip -c $file > externalpackages/tmp.tar
+		cd externalpackages
+		tar -x -f tmp.tar >> ../config-build.log 2>&1
 		if test $? != "0"
 		then
+			cd -
 			as_fn_error "Can't extract file: $file" "$LINENO" 5
 		fi
+		cd -
 
 
 		echo "* Building PVODE" | tee -a config-build.log
@@ -5151,12 +5154,17 @@ then
 		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
 		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 
-		echo "*************************************************************" >> config-build.log
-		echo "* Successfully built PVODE" | tee -a config-build.log
-		echo "*************************************************************" >> config-build.log
-		echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
+		if [ -f externalpackages/PVODE/lib/libpvode.a ]
+		then
+			echo "*************************************************************" >> config-build.log
+			echo "* Successfully built PVODE" | tee -a config-build.log
+			echo "*	************************************************************" >> config-build.log
+			echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
 
-		echo "*************************************************************" | tee -a config-build.log
+			echo "*************************************************************" | tee -a config-build.log
+		else
+			as_fn_error "Couldn't build PVODE. See config-build.log for errors" "$LINENO" 5
+		fi
 	fi
 
 	# Set the correct libraries and copy them to bout
