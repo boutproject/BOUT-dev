@@ -77,9 +77,10 @@ FUNCTION AfromLine, p1, p2, current, pos
   len = distance(c1in, c2in) ; length of the wire
   
   result = cin
-  FOR i=0, N_ELEMENTS(pos)-1 DO BEGIN
-    c1 = {x:c1in.x[i], y:c1in.y[i], z:c1in.z[i]}
-    c2 = {x:c2in.x[i], y:c2in.y[i], z:c2in.z[i]}
+  i = 0L
+  REPEAT BEGIN
+    c1 = {x:c1in.x, y:c1in.y, z:c1in.z}
+    c2 = {x:c2in.x, y:c2in.y, z:c2in.z}
     c = {x:cin.x[i], y:cin.y[i], z:cin.z[i]}
     Ivec = {x:current*(c2.x - c1.x)/len, $
             y:current*(c2.y - c1.y)/len, $
@@ -92,7 +93,9 @@ FUNCTION AfromLine, p1, p2, current, pos
     result.x[i] = a[0]
     result.y[i] = a[1]
     result.z[i] = a[2]
-  ENDFOR
+    
+    i = i + 1L
+  ENDREP UNTIL i EQ N_ELEMENTS(cin.x)
   
   RETURN, result
 END
@@ -166,44 +169,38 @@ FUNCTION AfromCoilSet, set, current, pos
   RETURN, A
 END
 
-PRO coils, file, rest=rest, savefile=savefile
-  
-  IF NOT KEYWORD_SET(rest) THEN BEGIN
-    ;;;; Define coil sets for MAST
-    lower = {r1:1.311, z1:-0.791, r2:1.426, z2:-0.591, n:6, dphi:2.*!PI/12.}
-    upper = {r1:1.311, z1:0.791, r2:1.426, z2:0.591, n:6, dphi:2.*!PI/12.}
-    
-    ;;;; Read in the grid file
-    g = file_import(file)
-    
-    nz = 32
-    dz = 2.*!PI / FLOAT(nz)
-    
-    ; Generate grid points
-    r = FLTARR(g.nx, g.ny, nz)
-    z = r
-    phi = r
-    FOR k=0,nz-1 DO BEGIN
-      r[*,*,k] = g.Rxy
-      z[*,*,k] = g.Zxy
-      phi[*,*,k] = FLOAT(k)*dz
-    ENDFOR
-    
-    pos = {r:r, z:z, phi:phi}
-    A = AfromCoilSet(lower, 1., pos)
-    A = addCart(A, AfromCoilSet(upper, 1., pos))
-          
-    ; Convert to polar coordinates
-          
-    Ar   = A.x * COS(phi) + A.y * SIN(phi)
-    Aphi = A.y * COS(phi) - A.x * SIN(phi)
-    Az   = A.z
-    
-    IF KEYWORD_SET(savefile) THEN SAVE, file=save
-  ENDIF ELSE BEGIN
-    RESTORE, rest
-  ENDELSE
+PRO coils, file, savefile=savefile
 
+  ;;;; Define coil sets for MAST
+  lower = {r1:1.311, z1:-0.791, r2:1.426, z2:-0.591, n:6, dphi:2.*!PI/12.}
+  upper = {r1:1.311, z1:0.791, r2:1.426, z2:0.591, n:6, dphi:2.*!PI/12.}
+  
+  ;;;; Read in the grid file
+  g = file_import(file)
+  
+  nz = 32
+  dz = 2.*!PI / FLOAT(nz)
+  
+  ; Generate grid points
+  r = FLTARR(g.nx, g.ny, nz)
+  z = r
+  phi = r
+  FOR k=0,nz-1 DO BEGIN
+    r[*,*,k] = g.Rxy
+    z[*,*,k] = g.Zxy
+    phi[*,*,k] = FLOAT(k)*dz
+  ENDFOR
+  
+  pos = {r:r, z:z, phi:phi}
+  A = AfromCoilSet(lower, 1., pos)
+  A = addCart(A, AfromCoilSet(upper, 1., pos))
+  
+  ; Convert to polar coordinates
+  
+  Ar   = A.x * COS(phi) + A.y * SIN(phi)
+  Aphi = A.y * COS(phi) - A.x * SIN(phi)
+  Az   = A.z
+  
   ; Now need to convert to Apar. Get poloidal component
   Apol = FLTARR(g.nx, g.ny, nz)
   ; Loop over surfaces
@@ -261,6 +258,8 @@ PRO coils, file, rest=rest, savefile=savefile
   f = file_open(file, /write)
   status = file_write(f, "rmp_A", Apar_k)
   file_close, f
+  
+  IF KEYWORD_SET(savefile) THEN SAVE, file=save
   
   STOP
 END
