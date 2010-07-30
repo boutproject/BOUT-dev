@@ -133,14 +133,16 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift
     ENDELSE
   ENDELSE
   
+  psin = (REFORM(grid.psixy[0:(nx-1),0]) - grid.psi_axis) / (grid.psi_bndry - grid.psi_axis)
+
   qsafe = qsafe[0:(nx-1)] / (2.*!PI)
 
   LOADCT, 39
   DEVICE, decomposed=0
-  CONTOUR, result, mvals, findgen(nx), nlev=50, /fill, $
+  CONTOUR, result, mvals, psin, nlev=50, /fill, $
            title="Mode spectrum, n="+STRTRIM(STRING(mode),2), $
            xtitle="Poloidal mode number m", $
-           ytitle="Radial index"
+           ytitle="Poloidal flux psi"
   
-  OPLOT, qsafe*mode, findgen(nx)
+  OPLOT, qsafe*mode, psin
 END
