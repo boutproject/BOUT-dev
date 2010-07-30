@@ -3,7 +3,7 @@
  ************************************************************/
 
 #include "coils.h"
-#include <math>
+#include <cmath>
 #include <vector>
 #include <netcdfcpp.h>
 #include <iostream>
@@ -112,7 +112,7 @@ const Point AfromLine(Point start, Point end, double current, Point pos)
   
   // Integrate ivec * 1/d over wire
   double integral = 0., last;
-  n = 1
+  int n = 1;
   do {
     last = integral;
     n *= 2;
@@ -121,7 +121,7 @@ const Point AfromLine(Point start, Point end, double current, Point pos)
     double h = len / ((double) n);
     
     integral = 0.;
-    for(int i=0;i<n;i++) {
+    for(int i=0;i<=n;i++) {
       double frac = ((double) i) / ((double) (n-1));
       double d = pos.distanceTo( frac*start + (1.-frac)*end );
       
@@ -131,7 +131,7 @@ const Point AfromLine(Point start, Point end, double current, Point pos)
         integral += 4. / d;
       }else
         integral += 2. / d;
-      integral *= h / 3.
+      integral *= h / 3.;
     }
   }while(abs( (integral - last) / (integral + last) ) > 1.e-3);
   
@@ -155,7 +155,7 @@ const Point AfromCoil(vector<Point> corners, double current, Point pos)
 double** matrix(int nx, int ny)
 {
   double **m;
-  m = new (double*)[nx];
+  m = new double*[nx];
   m[0] = new double[nx*ny];
   for(int i=1;i<nx;i++)
     m[i] = m[i-1] + ny;
@@ -199,8 +199,8 @@ double** readMatrix(NcFile *dataFile, const char *name, int &nx, int &ny)
   xDim = var->get_dim(0);
   yDim = var->get_dim(1);
   
-  nx = xDim.size();
-  ny = yDim.size();
+  nx = xDim->size();
+  ny = yDim->size();
 
   double **m = matrix(nx, ny);
   var->get(m[0], nx, ny);
@@ -212,6 +212,14 @@ int main(int argc, char **argv)
 {
   char *name;
   
+  // Check command-line arguments
+  
+  if(argc == 1) {
+    cout << "Useage: " << string(argv[0]) << " <grid file>" << endl;
+    return 1;
+  }
+  name = argv[1];
+
   NcFile *dataFile;
   NcDim *xDim, *yDim;
   
@@ -240,11 +248,10 @@ int main(int argc, char **argv)
   if(!Zxy)
     return 1;
   
-  
-  int nz = 16  // Number of points to use in Z
+  int nz = 16;  // Number of points to use in Z
 
   // Loop over the grid points
-  for(int x=0; x < nx;x++)
+  for(int x=0; x < nx; x++)
     for(int y=0;y<ny;y++)
       for(int z=0;z<nz;z++) {
         double phi = 2.*PI * ((double) z) / ((double) nz);
@@ -256,4 +263,5 @@ int main(int argc, char **argv)
         
       }
   
+  return 0;
 }

@@ -50,7 +50,7 @@ FUNCTION distance, p1, p2
 END
 
 FUNCTION linediff, I, y
-  COMMON linecom, c1, c2, ivec, c
+  COMMON linecom, c1, c2, c
   
   ; i between 0 and 1
   
@@ -61,46 +61,77 @@ FUNCTION linediff, I, y
   
   d = distance(ipos, c)
   
-  RETURN, [ivec.x/d, ivec.y/d, ivec.z/d]
+  RETURN, [1./d]
 END
 
 ; Wire from p1 to p2, carrying current 
 ; Get A at pos
-FUNCTION AfromLine, p1, p2, current, pos
-  COMMON linecom, c1, c2, Ivec, c
+FUNCTION AfromLine, p1, p2, current, pos, fast=fast 
+  COMMON linecom, c1, c2, c
   
   ; Convert all coordinates to cartesian
-  c1in = toCart(p1)
-  c2in = toCart(p2)
+  c1 = toCart(p1)
+  c2 = toCart(p2)
   cin  = toCart(pos)
   
-  len = distance(c1in, c2in) ; length of the wire
+  len = distance(c1, c2) ; length of the wire
   
-  result = cin
-  i = 0L
-  REPEAT BEGIN
-    c1 = {x:c1in.x, y:c1in.y, z:c1in.z}
-    c2 = {x:c2in.x, y:c2in.y, z:c2in.z}
-    c = {x:cin.x[i], y:cin.y[i], z:cin.z[i]}
-    Ivec = {x:current*(c2.x - c1.x)/len, $
-            y:current*(c2.y - c1.y)/len, $
-            z:current*(c2.z - c1.z)/len}
-    ; Integrate along the line
-    a0 = [0.,0.,0.]
-    a = LSODE(a0, 0., 1., 'linediff', lstat)
-    a = a * 1.e-7 ; mu_0 / 4pi
+  Ivec = {x:current*(c2.x - c1.x)/len, $
+          y:current*(c2.y - c1.y)/len, $
+          z:current*(c2.z - c1.z)/len}
+  
+  IF KEYWORD_SET(fast) THEN BEGIN
+    ; Use a fixed number of Simpson rule steps
     
-    result.x[i] = a[0]
-    result.y[i] = a[1]
-    result.z[i] = a[2]
-    
-    i = i + 1L
-  ENDREP UNTIL i EQ N_ELEMENTS(cin.x)
+    n = 2 ; Must be even
+    h = len / FLOAT(n)
+    FOR i=0, n DO BEGIN
+      f = FLOAT(i) / FLOAT(n)
+      ; Position along wire
+      ipos = {x:( f*c2.x + (1.-f)*c1.x ), $
+              y:( f*c2.y + (1.-f)*c1.y ), $
+              z:( f*c2.z + (1.-f)*c1.z )}
+      
+      ; Distance
+      d = distance(ipos, cin)
+      
+      IF i EQ 0 THEN BEGIN
+        integral = 1. / d
+      ENDIF ELSE IF i EQ n THEN BEGIN
+        integral = integral + 1. / d
+      ENDIF ELSE IF i MOD 2 EQ 1 THEN BEGIN
+        integral = integral + 4. / d
+      ENDIF ELSE BEGIN
+        integral = integral + 2. / d
+      ENDELSE
+    ENDFOR
+    integral = integral * (h / 3.) * 1.e-7
+    result = {x:Ivec.x*integral, $
+              y:Ivec.y*integral, $
+              z:Ivec.z*integral}
+  ENDIF ELSE BEGIN
+    result = cin
+    i = 0L
+    REPEAT BEGIN
+      c = {x:cin.x[i], y:cin.y[i], z:cin.z[i]}
+      
+      ; Integrate along the line
+      a0 = [0.]
+      a = LSODE(a0, 0., 1., 'linediff', lstat)
+      a = a * 1.e-7 ; mu_0 / 4pi
+      
+      result.x[i] = Ivec.x*a[0]
+      result.y[i] = Ivec.y*a[0]
+      result.z[i] = Ivec.z*a[0]
+      
+      i = i + 1L
+    ENDREP UNTIL i EQ N_ELEMENTS(cin.x)
+  ENDELSE
   
   RETURN, result
 END
 
-FUNCTION AfromArc, p1, phi, current, pos
+FUNCTION AfromArc, p1, phi, current, pos, fast=fast 
   ; For now turn into a series of lines
   
   ps = p1
@@ -113,7 +144,7 @@ FUNCTION AfromArc, p1, phi, current, pos
   FOR i=0, n-1 DO BEGIN
     pe.phi = ps.phi + dphi
     
-    a1 = AfromLine(ps, pe, current, pos)
+    a1 = AfromLine(ps, pe, current, pos, fast=fast)
     
     a.x = a.x + a1.x
     a.y = a.y + a1.y
@@ -135,25 +166,25 @@ END
 
 
 ; Add a coil, giving two corners
-FUNCTION AfromCoil, p1, p2, current, pos
+FUNCTION AfromCoil, p1, p2, current, pos, fast=fast
   
   ; Corners
   c0 = toPolar(p1)
   c2 = toPolar(p2)
   dphi = c2.phi - c0.phi
   
-  A = AfromArc(c0, dphi, current, pos) ; Move in phi
-  c0.phi = c2.phi
-  A = addCart(A, AfromLine(c0, c2, current, pos)) ; Line from c0 to c2
-  A = addCart(A, AfromArc(c2, -dphi, current, pos)) ; Back in phi
-  c2.phi = c2.phi - dphi
-  c0.phi = c0.phi - dphi
-  A = addCart(A, AfromLine(c2, c0, current, pos)) ; Back to c0
+  c1 = {r:c0.r, z:c0.z, phi:c2.phi}
+  c3 = {r:c2.r, z:c2.z, phi:c0.phi}
+  
+  A = AfromLine(c0, c1, current, pos, fast=fast)
+  A = addCart(A, AfromLine(c1, c2, current, pos, fast=fast))
+  A = addCart(A, AfromLine(c2, c3, current, pos, fast=fast))
+  A = addCart(A, AfromLine(c3, c0, current, pos, fast=fast))
   
   RETURN, A
 END
 
-FUNCTION AfromCoilSet, set, current, pos
+FUNCTION AfromCoilSet, set, current, pos, fast=fast
   
   shift = 2.*!PI / FLOAT(set.n)
   
@@ -162,7 +193,7 @@ FUNCTION AfromCoilSet, set, current, pos
     c0 = {r:set.r1, z:set.z1, phi:(shift*i)}
     c1 = {r:set.r2, z:set.z2, phi:(c0.phi + set.dphi)}
     
-    dA = AfromCoil(c0, c1, current*(-1.)^i, pos)
+    dA = AfromCoil(c0, c1, current*(-1.)^i, pos, fast=fast)
     IF i EQ 0 THEN A = dA ELSE A = addCart(A, dA)
   ENDFOR
   
@@ -171,6 +202,8 @@ END
 
 PRO coils, file, savefile=savefile
 
+  fast = 1
+  
   ;;;; Define coil sets for MAST
   lower = {r1:1.311, z1:-0.791, r2:1.426, z2:-0.591, n:6, dphi:2.*!PI/12.}
   upper = {r1:1.311, z1:0.791, r2:1.426, z2:0.591, n:6, dphi:2.*!PI/12.}
@@ -192,8 +225,8 @@ PRO coils, file, savefile=savefile
   ENDFOR
   
   pos = {r:r, z:z, phi:phi}
-  A = AfromCoilSet(lower, 1., pos)
-  A = addCart(A, AfromCoilSet(upper, 1., pos))
+  A = AfromCoilSet(lower, 1., pos, fast=fast)
+  A = addCart(A, AfromCoilSet(upper, -1., pos, fast=fast))
   
   ; Convert to polar coordinates
   
@@ -233,7 +266,7 @@ PRO coils, file, savefile=savefile
   Apar = FLTARR(g.nx, g.ny, nz)
   
   FOR k=0, nz-1 DO BEGIN
-    Apar[*,*,k] = (Apol[*,*,k] * g.Bpxy + Aphi * g.Btxy) / g.Bxy
+    Apar[*,*,k] = (Apol[*,*,k] * g.Bpxy + Aphi[*,*,k] * g.Btxy) / g.Bxy
   ENDFOR
   
   nk = FIX(nz/2) - 1
@@ -261,7 +294,8 @@ PRO coils, file, savefile=savefile
   
   IF KEYWORD_SET(savefile) THEN SAVE, file=save
   
-  STOP
+  ; Plot the mode spectrum
+  ergos_plot, apar, g, mode=3, /noshift
 END
 
 

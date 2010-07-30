@@ -20,8 +20,11 @@ class Point {
   
   const Point operator/(double val) const;
   Point & operator/=(const Point &p);
+  Point & operator/=(double val);
+  
   const Point operator*(double val) const;
   Point & operator*=(const Point &p);
+  Point & operator*=(double val);
   
   double x, y, z;
 };

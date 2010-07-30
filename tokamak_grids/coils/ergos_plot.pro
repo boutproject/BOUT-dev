@@ -1,7 +1,7 @@
 ; Produce an ERGOS-style plot of mode structure
 ; 
 
-PRO ergos_plot, var3d, grid, period=period, mode=mode
+PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift
   IF NOT KEYWORD_SET(period) THEN period = 1 ; default = full torus
   IF NOT KEYWORD_SET(mode) THEN mode = 1 ; Lowest harmonic
   s = SIZE(var3d, /DIMEN)
@@ -12,6 +12,9 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
   nx = s[0]
   ny = s[1]
   nz = s[2]
+  
+  tn = TAG_NAMES(grid)
+  tn = STRUPCASE(tn)
   
   ncore = MIN([grid.ixseps1, grid.ixseps2])
   IF nx GT ncore THEN BEGIN
@@ -36,39 +39,39 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
   
   FOR i=0, nx-1 DO BEGIN
      FOR j=0, ny-1 DO BEGIN
-        varfft[i,j] = (FFT(data[i,j,*]))[mode]
+        varfft[i,j] = (FFT(REFORM(data[i,j,*])))[mode]
      ENDFOR
   ENDFOR
 
   zlength = 2.0*!PI / FLOAT(period)
   dz = zlength / FLOAT(nz)
   
-  ; GET THE TOROIDAL SHIFT
-  tn = TAG_NAMES(grid)
-  tn = STRUPCASE(tn)
-  w = WHERE(tn EQ "QINTY", count)
-  IF count GT 0 THEN BEGIN
-     PRINT, "Using qinty as toroidal shift angle"
-     zShift = grid.qinty
-  ENDIF ELSE BEGIN
-     w = WHERE(tn EQ "ZSHIFT", count)
-     IF count GT 0 THEN BEGIN
+  IF NOT KEYWORD_SET(noshift) THEN BEGIN
+    ; GET THE TOROIDAL SHIFT
+    w = WHERE(tn EQ "QINTY", count)
+    IF count GT 0 THEN BEGIN
+      PRINT, "Using qinty as toroidal shift angle"
+      zShift = grid.qinty
+    ENDIF ELSE BEGIN
+      w = WHERE(tn EQ "ZSHIFT", count)
+      IF count GT 0 THEN BEGIN
         PRINT, "Using zShift as toroidal shift angle"
         zShift = grid.zShift
-     ENDIF ELSE BEGIN
+      ENDIF ELSE BEGIN
         PRINT, "ERROR: Can't find qinty or zShift variable"
         RETURN
       ENDELSE
-  ENDELSE
-  
-  ; Apply toroidal shift
-  kwave = mode * period
-  FOR i=0, nx-1 DO BEGIN
-    FOR j=0, ny-1 DO BEGIN
-      varfft[i,j] = varfft[i,j] * COMPLEX(COS(kwave*zshift[i,j]), $
-                                          -SIN(kwave*zshift[i,j]))
+    ENDELSE
+    
+    ; Apply toroidal shift
+    kwave = mode * period
+    FOR i=0, nx-1 DO BEGIN
+      FOR j=0, ny-1 DO BEGIN
+        varfft[i,j] = varfft[i,j] * COMPLEX(COS(kwave*zshift[i,j]), $
+                                            -SIN(kwave*zshift[i,j]))
+      ENDFOR
     ENDFOR
-  ENDFOR
+  ENDIF
   
   ; Try to get the poloidal angle from the grid file
   w = WHERE(tn EQ "POL_ANGLE", count)
@@ -98,22 +101,46 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode
     ; Even number of points
     nm = FIX(ny/2)-1
     
-    mvals = FLTARR(2*nm + 1)-nm
-    result = FLTARR(nx, 2*nm+1)
+    mvals = FINDGEN(2*nm + 1)-nm
+    result = FLTARR(2*nm+1, nx)
     
     FOR i=0, nx-1 DO BEGIN
-      result[i,nm] = ABS(varfft[i,0]) ; DC
+      result[nm, i] = ABS(yfft[i,0]) ; DC
       FOR m=0, nm-1 DO BEGIN
         ; First negative frequencies
-        result[i,m] = ABS(varfft[i, (ny/2)+1+m])
+        result[m, i] = ABS(yfft[i, nm+m])
         ; Positive frequencies
-        result[i,nm+1+i] = ABS(varfft[i, 1+m])
+        result[nm+1+m, i] = ABS(yfft[i, 1+m])
       ENDFOR
     ENDFOR
   ENDIF ELSE BEGIN
     PRINT, "Sorry: NY odd not implemented yet"
   ENDELSE
   
-  contour, result, findgen(nx), mvals
-  STOP
+  ; GET THE TOROIDAL SHIFT
+  w = WHERE(tn EQ "QSAFE", count)
+  IF count GT 0 THEN BEGIN
+    PRINT, "Using qsafe for q profile"
+    qsafe = -grid.qinty
+  ENDIF ELSE BEGIN
+    w = WHERE(tn EQ "SHIFTANGLE", count)
+    IF count GT 0 THEN BEGIN
+      PRINT, "Using shiftangle for q profile"
+      qsafe = -grid.shiftangle
+    ENDIF ELSE BEGIN
+      PRINT, "WARNING: Can't find q profile"
+      qsafe = FLTARR(nx)
+    ENDELSE
+  ENDELSE
+  
+  qsafe = qsafe[0:(nx-1)] / (2.*!PI)
+
+  LOADCT, 39
+  DEVICE, decomposed=0
+  CONTOUR, result, mvals, findgen(nx), nlev=50, /fill, $
+           title="Mode spectrum, n="+STRTRIM(STRING(mode),2), $
+           xtitle="Poloidal mode number m", $
+           ytitle="Radial index"
+  
+  OPLOT, qsafe*mode, findgen(nx)
 END
