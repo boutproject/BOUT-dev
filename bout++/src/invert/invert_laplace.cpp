@@ -1294,6 +1294,7 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
 
   x.allocate();
   x.setIndex(data.jy);
+  BoutReal **xdata = x.getData();
 
   // Make sure calculation has finished
   while(invert_spt_continue(data) == 0) {}
@@ -1317,23 +1318,23 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
     if(flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
-    ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], x[ix]);
+    ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], xdata[ix]);
     
-    x[ix][ncz] = x[ix][0]; // enforce periodicity
+    xdata[ix][ncz] = xdata[ix][0]; // enforce periodicity
   }
 
   if(!mesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(ix=0; ix<mesh->xstart; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
-	x[ix][kz] = 0.0;
+	xdata[ix][kz] = 0.0;
     }
   }
   if(!mesh->lastX()) {
     // Same for right boundary
     for(ix=mesh->xend+1; ix<mesh->ngx; ix++){
       for(kz=0;kz<mesh->ngz;kz++)
-	x[ix][kz] = 0.0;
+	xdata[ix][kz] = 0.0;
     }
   }
 }

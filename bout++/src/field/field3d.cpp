@@ -349,7 +349,7 @@ Field3D & Field3D::operator=(const FieldPerp &rhs)
   
   /// Test rhs values
   for(jx=mesh->xstart;jx<=mesh->xend;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
+    for(jz=0;jz<mesh->ngz-1;jz++)
       if(!finite(d[jx][jz])) {
 	error("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
       }
