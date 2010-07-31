@@ -684,5 +684,21 @@ then
 	CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
 fi
 
+#############################################################
+# Check environment
+#############################################################
+
+if ( test "$CXXINCLUDE" != "" )
+then
+	echo "================================================"
+	echo " WARNING: CXXINCLUDE environment variable set to:"
+	echo $CXXINCLUDE
+	echo " => This will be added to compile commands"
+ 	echo " If this is not intended, then run"
+	echo "   export CXXINCLUDE=''"
+	echo " before making BOUT++"
+	echo "================================================"
+fi
+
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)
