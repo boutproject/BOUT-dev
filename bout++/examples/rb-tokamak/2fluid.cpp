@@ -61,8 +61,6 @@ bool OhmPe;     // Include the Pe term in Ohm's law
 int bkgd;   // Profile options for coefficients (same options as BOUT-06)
 int iTe_dc; // Profile evolution options
 
-BoutReal lambda; // Boundary condition relaxation rate (negative)
-
 bool stagger; // Use CtoL and LtoC for parallel derivs
 
 // Switches for the equation terms
@@ -82,8 +80,6 @@ bool vi_pei1, vi_peit, vi_vi1;
 bool te_te1_phi0, te_te0_phi1, te_te1_phi1;
 
 bool ti_ti1_phi0, ti_ti0_phi1, ti_ti1_phi1;
-
-bool relax_flat_bndry; // Use relaxing boundary conditions
 
 int lowPass_z; // Low-pass filter result
 
@@ -161,14 +157,6 @@ int physics_init(bool restarting)
   OPTION(iTe_dc,    2);
 
   OPTION(stagger, false);
-
-  OPTION(lambda,   -10.);
-  if(lambda > 0.) {
-    output.write("WARNING: lambda should be < 0. Reversing sign\n");
-    lambda *= -1.0;
-  }
-
-  OPTION(relax_flat_bndry, true);
 
   OPTION(laplace_extra_rho_term, false);
   OPTION(vort_include_pi, false);
@@ -404,6 +392,8 @@ int physics_init(bool restarting)
     output.write("ti\n");
   }else
     initial_profile("Ti", Ti);
+
+  jpar.setBoundary("jpar");
   
   ////////////////////////////////////////////////////////
   // SETUP COMMUNICATIONS
@@ -535,9 +525,6 @@ int physics_run(BoutReal t)
 	  jpar += (Te0*Grad_par_LtoC(Ni)) / (fmei*0.51*nu);
       }
       
-      // Set toroidal  boundary condition on jpar
-      bndry_toroidal(jpar);
-      
       // Need to communicate jpar
       mesh->communicate(jpar);
       
@@ -574,7 +561,7 @@ int physics_run(BoutReal t)
 	  }
     }
     
-    apply_boundary(jpar, "jpar");
+    jpar.applyBoundary();
     
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
@@ -845,47 +832,6 @@ int physics_run(BoutReal t)
   }
   }
   
-  ////////////////////////////////////////////////////////
-  // RADIAL BOUNDARY CONDITIONS
-
-  if(relax_flat_bndry) {
-    // BOUT-06 style relaxing boundary conditions
-    
-    if(evolve_rho) {
-      bndry_inner_relax_flat(ddt(rho), rho, lambda);
-      bndry_sol_relax_flat(ddt(rho), rho, lambda);
-    }
-      
-    if(evolve_ni) {
-      bndry_inner_relax_flat(ddt(Ni), Ni, lambda);
-      bndry_sol_relax_flat(ddt(Ni), Ni, lambda);
-    }
-
-    if(evolve_te) {
-      bndry_inner_relax_flat(ddt(Te), Te, lambda);
-      bndry_sol_relax_flat(ddt(Te), Te, lambda);
-    }
-    
-    if(evolve_ti) {
-      bndry_inner_relax_flat(ddt(Ti), Ti, lambda);
-      bndry_sol_relax_flat(ddt(Ti), Ti, lambda);
-    }
-
-    if(evolve_ajpar) {
-      bndry_inner_relax_flat(ddt(Ajpar), Ajpar, lambda);
-      bndry_sol_relax_flat(ddt(Ajpar), Ajpar, lambda);
-    }  
-  }else {
-    // Use the boundary condition specified in BOUT.inp
-    
-    apply_boundary(ddt(rho), "rho");
-    apply_boundary(ddt(Te), "Te");
-    apply_boundary(ddt(Ni), "Ni");
-    apply_boundary(ddt(Ajpar), "Ajpar");
-    apply_boundary(ddt(Vi), "Vi");
-    apply_boundary(ddt(Ti), "Ti");
-  }
-
   return(0);
 }
 

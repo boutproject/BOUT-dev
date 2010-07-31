@@ -49,7 +49,9 @@ int physics_init(bool restarting)
 	       mesh->dx[0][0], mesh->dy[0][0], mesh->dz);
 
   dump.add(divB, "divB", 1);
-
+  
+  divB.setBoundary("DivB"); // Set boundary conditions from options
+  
   if(!restarting) {
     // Set variables to these values (+ the initial perturbation)
     // NOTE: This must be after the calls to bout_solve
@@ -94,20 +96,8 @@ int physics_run(BoutReal t)
   
   ddt(B) = Curl(v^B);
 
-  // boundary conditions
-
-  apply_boundary(ddt(rho), "density");
-  apply_boundary(ddt(p), "pressure");
-  ddt(v).toCovariant();
-  apply_boundary(ddt(v), "v");
-  ddt(B).toContravariant();
-  apply_boundary(ddt(B), "B");
-
   msg_stack.pop(); msg_stack.push("DivB");
   
-  divB = Div(B); // Just for diagnostic
-  bndry_inner_zero(divB);
-  bndry_sol_zero(divB);
 
   return 0;
 }

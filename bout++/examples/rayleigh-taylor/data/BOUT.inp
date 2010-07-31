@@ -80,18 +80,12 @@ ys_wd = 0.2
 
 zs_mode = 1 # toroidal mode number
 
-# default boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# Boundary conditions
+# dirichlet = zero value
+# neumann = zero gradient
 
 # most variables zero-gradient at boundaries
-xinner = 2
-xouter = 2
-ylower = 2
-yupper = 2
+bndry_all = neumann
 
 [v] 
 
@@ -99,5 +93,6 @@ yupper = 2
 scale = 1.0e-3 # initial velocity perturbation
 
 # zero velocity into boundaries
-yupper = 1
-ylower = 1
+bndry_yup = dirichlet
+bndry_ydown = dirichlet
+

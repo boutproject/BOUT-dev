@@ -74,8 +74,6 @@ pvode_mxstep = 50000
 
 nu_perp = 1.0e-20
 
-relax_flat_bndry = false # If true, use BOUT-06 relaxating boundaries
-lambda = -20.            # Boundary relaxation rate
 bkgd = 2    # Profile option for coefficients (ni, mu_i etc.)
 iTe_dc = 2  # Profile evolution option
 
@@ -137,15 +135,15 @@ ys_wd = 0.1
 zs_mode = 1 # toroidal mode number
 
 
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# boundary conditions 
+#
+# dirichlet = Zero value
+# neumann   = Zero gradient
+#
+# relax(neumann) = Relax towards zero gradient
+# relax(neumann, 10) = Relax with a rate (= 1/timescale) of 10
 
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
+bndry_all = relax(neumann,20)
 
 ##################################################
 # DENSITY
