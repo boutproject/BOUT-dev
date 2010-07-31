@@ -146,7 +146,7 @@ BoutReal*** Field3D::getData() const
 {
 #ifdef CHECK
   if(block ==  NULL)
-    error("Field3D: getData() returning null pointer\n");
+    throw BoutException("Field3D: getData() returning null pointer\n");
 
   // NOTE: Can't check data here since may not be set yet.
   //       Using this function circumvents the checking
@@ -202,9 +202,8 @@ const Field2D Field3D::DC()
 
 void Field3D::setLocation(CELL_LOC loc)
 {
-  if(loc == CELL_VSHIFT) {
-    error("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
-  }
+  if(loc == CELL_VSHIFT)
+    throw BoutException("Field3D: CELL_VSHIFT cell location only makes sense for vectors");
   
   if(loc == CELL_DEFAULT)
     loc = CELL_CENTRE;
@@ -224,19 +223,15 @@ CELL_LOC Field3D::getLocation() const
 BoutReal** Field3D::operator[](int jx) const
 {
 #ifdef CHECK
-  if(block == NULL) {
-    error("Field3D: [] operator on empty data");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: [] operator on empty data");
   
-  if((jx < 0) || (jx >= mesh->ngx)) {
-    error("Field3D: [%d] operator out of bounds", jx);
-    exit(1);
-  }
+  if((jx < 0) || (jx >= mesh->ngx))
+    throw BoutException("Field3D: [%d] operator out of bounds", jx);
 #endif
  
   // User might alter data, so need to make unique
- allocate();
+  allocate();
  
   return(block->data[jx]);
 }
@@ -245,17 +240,16 @@ BoutReal& Field3D::operator[](bindex &bx) const
 {
 #ifdef CHECK
   if(block == NULL) {
-    error("Field3D: [bindex] operator on empty data");
-    exit(1);
+    throw BoutException("Field3D: [bindex] operator on empty data");
   }
   if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
-    error("Field3D: [bindex.jx = %d] out of range", bx.jx);
+    throw BoutException("Field3D: [bindex.jx = %d] out of range", bx.jx);
   }
   if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
-    error("Field3D: [bindex.jy = %d] out of range", bx.jy);
+    throw BoutException("Field3D: [bindex.jy = %d] out of range", bx.jy);
   }
   if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
-    error("Field3D: [bindex.jz = %d] out of range", bx.jz);
+    throw BoutException("Field3D: [bindex.jz = %d] out of range", bx.jz);
   }
 #endif
 
@@ -344,14 +338,14 @@ Field3D & Field3D::operator=(const FieldPerp &rhs)
 #ifdef CHECK
   if(d == (BoutReal**) NULL) {
     // No data
-    error("Field3D: No data in assignment from FieldPerp");
+    throw BoutException("Field3D: No data in assignment from FieldPerp");
   }
   
   /// Test rhs values
   for(jx=mesh->xstart;jx<=mesh->xend;jx++)
     for(jz=0;jz<mesh->ngz-1;jz++)
       if(!finite(d[jx][jz])) {
-	error("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
+	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
       }
 #endif
 
@@ -375,11 +369,9 @@ const bvalue & Field3D::operator=(const bvalue &bv)
  allocate();
 
 #ifdef CHECK
-  if(!finite(bv.val)) {
-    output.write("Field3D: assignment from non-finite value at (%d,%d,%d)\n", 
-	   bv.jx, bv.jy,bv.jz);
-    exit(1);
-  }
+  if(!finite(bv.val))
+    throw BoutException("Field3D: assignment from non-finite value at (%d,%d,%d)\n", 
+			bv.jx, bv.jy,bv.jz);
 #endif
 
 #ifdef TRACK
@@ -395,12 +387,11 @@ BoutReal Field3D::operator=(const BoutReal val)
 {
   int jx, jy, jz;
   
- allocate();
+  allocate();
 
 #ifdef CHECK
-  if(!finite(val)) {
-    error("Field3D: Assignment from non-finite BoutReal\n");
-  }
+  if(!finite(val))
+    throw BoutException("Field3D: Assignment from non-finite BoutReal\n");
 #endif
 
 #ifdef TRACK
@@ -516,9 +507,8 @@ Field3D & Field3D::operator+=(const BoutReal &rhs)
 
   checkData();
 
-  if(!finite(rhs)) {
-    error("Field3D: += operator passed non-finite BoutReal number");
-  }
+  if(!finite(rhs))
+    throw BoutException("Field3D: += operator passed non-finite BoutReal number");
 #endif
   
 #ifdef TRACK
@@ -644,9 +634,8 @@ Field3D & Field3D::operator-=(const BoutReal &rhs)
   msg_stack.push("Field3D: -= ( BoutReal )");
   checkData();
 
-  if(!finite(rhs)) {
-    error("Field3D: -= operator passed non-finite BoutReal number");
-  }
+  if(!finite(rhs))
+    throw BoutException("Field3D: -= operator passed non-finite BoutReal number");
 #endif
 
 #ifdef TRACK
@@ -773,7 +762,7 @@ Field3D & Field3D::operator*=(const BoutReal rhs)
   checkData();
 
   if(!finite(rhs)) {
-    error("Field3D: *= operator passed non-finite BoutReal number");
+    throw BoutException("Field3D: *= operator passed non-finite BoutReal number");
   }
 #endif
 
@@ -919,9 +908,8 @@ Field3D & Field3D::operator/=(const BoutReal rhs)
   msg_stack.push("Field3D: /= ( BoutReal )");
   checkData();
 
-  if(!finite(rhs)) {
-    error("Field3D: /= operator passed non-finite BoutReal number");
-  }
+  if(!finite(rhs))
+    throw BoutException("Field3D: /= operator passed non-finite BoutReal number");
 #endif
 
 #ifdef TRACK
@@ -1058,9 +1046,8 @@ Field3D & Field3D::operator^=(const BoutReal rhs)
   msg_stack.push("Field3D: ^= ( BoutReal )");
   checkData();
 
-  if(!finite(rhs)) {
-    error("Field3D: ^= operator passed non-finite BoutReal number");
-  }
+  if(!finite(rhs))
+    throw BoutException("Field3D: ^= operator passed non-finite BoutReal number");
 #endif
 
 #ifdef TRACK
@@ -1177,7 +1164,7 @@ const FieldPerp Field3D::operator-(const FieldPerp &other) const
 
 #ifdef CHECK
   if(block == NULL)
-    error("Field3D: - FieldPerp operates on empty data");
+    throw BoutException("Field3D: - FieldPerp operates on empty data");
 #endif
 
   d = result.getData();
@@ -1250,7 +1237,7 @@ const FieldPerp Field3D::operator/(const FieldPerp &other) const
   
 #ifdef CHECK
   if(block == NULL)
-    error("Field3D: / FieldPerp operates on empty data");
+    throw BoutException("Field3D: / FieldPerp operates on empty data");
 #endif
 
   d = result.getData();
@@ -1297,7 +1284,7 @@ const FieldPerp Field3D::operator^(const FieldPerp &other) const
   
 #ifdef CHECK
   if(block == NULL)
-    error("Field3D: ^ FieldPerp operates on empty data");
+    throw BoutException("Field3D: ^ FieldPerp operates on empty data");
 #endif
 
   d = result.getData();
@@ -1335,10 +1322,8 @@ void Field3D::setStencil(bstencil *fval, bindex *bx, bool need_x) const
   
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Setting stencil for empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Setting stencil for empty data\n");
 #endif
 
   fval->cc = block->data[bx->jx][bx->jy][bx->jz];
@@ -1395,10 +1380,8 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Setting X stencil for empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Setting X stencil for empty data\n");
 #endif
 
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
@@ -1443,10 +1426,8 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Setting Y stencil for empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Setting Y stencil for empty data\n");
 #endif
 
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
@@ -1510,10 +1491,8 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Setting stencil for empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Setting stencil for empty data\n");
 #endif
 
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
@@ -1603,10 +1582,8 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
   
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Shifting in Z an empty data set\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Shifting in Z an empty data set\n");
 #endif
 
   int ncz = mesh->ngz-1;
@@ -1614,7 +1591,7 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
   if(ncz == 1)
     return;
 
- allocate();
+  allocate();
 
   if(v == (dcomplex*) NULL) {
     //allocate memory
@@ -1701,10 +1678,8 @@ void Field3D::getXArray(int y, int z, rvec &xv) const
 {
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: getXArray on an empty data set\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: getXArray on an empty data set\n");
 #endif
 
   xv.resize(mesh->ngx);
@@ -1717,10 +1692,8 @@ void Field3D::getYArray(int x, int z, rvec &yv) const
 {
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: getYArray on an empty data set\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: getYArray on an empty data set\n");
 #endif
 
   yv.resize(mesh->ngy);
@@ -1733,10 +1706,8 @@ void Field3D::getZArray(int x, int y, rvec &zv) const
 {
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: getZArray on an empty data set\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: getZArray on an empty data set\n");
 #endif
 
   zv.resize(mesh->ngz-1);
@@ -1747,14 +1718,12 @@ void Field3D::getZArray(int x, int y, rvec &zv) const
 
 void Field3D::setXArray(int y, int z, const rvec &xv)
 {
- allocate();
+  allocate();
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(xv.capacity() != (unsigned int) mesh->ngx) {
-    error("Field3D: setXArray has incorrect size\n");
-    exit(1);
-  }
+  if(xv.capacity() != (unsigned int) mesh->ngx)
+    throw BoutException("Field3D: setXArray has incorrect size\n");
 #endif
 
   for(int x=0;x<mesh->ngx;x++)
@@ -1767,10 +1736,8 @@ void Field3D::setYArray(int x, int z, const rvec &yv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(yv.capacity() != (unsigned int) mesh->ngy) {
-    error("Field3D: setYArray has incorrect size\n");
-    exit(1);
-  }
+  if(yv.capacity() != (unsigned int) mesh->ngy)
+    throw BoutException("Field3D: setYArray has incorrect size\n");
 #endif
 
   for(int y=0;y<mesh->ngy;y++)
@@ -1783,10 +1750,8 @@ void Field3D::setZArray(int x, int y, const rvec &zv)
 
 #ifdef CHECK
   // Check that vector is correct size
-  if(zv.capacity() != (unsigned int) (mesh->ngz-1)) {
-    error("Field3D: setZArray has incorrect size\n");
-    exit(1);
-  }
+  if(zv.capacity() != (unsigned int) (mesh->ngz-1))
+    throw BoutException("Field3D: setZArray has incorrect size\n");
 #endif
 
   for(int z=0;z<(mesh->ngz-1);z++)
@@ -1819,17 +1784,15 @@ const Field3D Field3D::sqrt() const
   msg_stack.push("Field3D: Sqrt()");
 
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Taking sqrt of empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Taking sqrt of empty data\n");
     
   // Test values
   for(jx=mesh->xstart;jx<=mesh->xend;jx++)
     for(jy=mesh->ystart;jy<=mesh->yend;jy++) 
       for(jz=0;jz<mesh->ngz-1;jz++) {
 	if(block->data[jx][jy][jz] < 0.0) {
-	  error("Field3D: Sqrt operates on negative value at [%d,%d,%d]\n", jx, jy, jz);
+	  throw BoutException("Field3D: Sqrt operates on negative value at [%d,%d,%d]\n", jx, jy, jz);
 	}
       }
 #endif
@@ -1861,10 +1824,8 @@ const Field3D Field3D::abs() const
 
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: Taking abs of empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: Taking abs of empty data\n");
 #endif
 
 #ifdef TRACK
@@ -1889,10 +1850,8 @@ BoutReal Field3D::min(bool allpe) const
   BoutReal result;
 
 #ifdef CHECK
-  if(block == NULL) {
-    error("Field3D: min() method on empty data");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: min() method on empty data");
 
   if(allpe) {
     msg_stack.push("Field3D::Min() over all PEs");
@@ -1927,10 +1886,8 @@ BoutReal Field3D::max(bool allpe) const
   BoutReal result;
 
 #ifdef CHECK
-  if(block == NULL) {
-    error("Field3D: max() method on empty data");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: max() method on empty data");
   if(allpe) {
     msg_stack.push("Field3D::Max() over all PEs");
   }else
@@ -1964,16 +1921,12 @@ int Field3D::getData(int x, int y, int z, void *vptr) const
 {
 #ifdef CHECK
   // Check data set
-  if(block ==  NULL) {
-    error("Field3D: getData on empty data\n");
-    exit(1);
-  }
+  if(block ==  NULL)
+    throw BoutException("Field3D: getData on empty data\n");
   
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
-  }
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz))
+    throw BoutException("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
   *ptr = block->data[x][y][z];
@@ -1985,16 +1938,12 @@ int Field3D::getData(int x, int y, int z, BoutReal *rptr) const
 {
 #ifdef CHECK
   // Check data set
-  if(block == NULL) {
-    error("Field3D: getData on empty data\n");
-    exit(1);
-  }
+  if(block == NULL)
+    throw BoutException("Field3D: getData on empty data\n");
   
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
-  }
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz))
+    throw BoutException("Field3D: getData (%d,%d,%d) out of bounds\n", x, y, z);
 #endif
 
   *rptr = block->data[x][y][z];
@@ -2006,10 +1955,8 @@ int Field3D::setData(int x, int y, int z, void *vptr)
   allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field3D: fillArray (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
-  }
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz))
+    throw BoutException("Field3D: fillArray (%d,%d,%d) out of bounds\n", x, y, z);
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
   block->data[x][y][z] = *ptr;
@@ -2022,10 +1969,8 @@ int Field3D::setData(int x, int y, int z, BoutReal *rptr)
   allocate();
 #ifdef CHECK
   // check ranges
-  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
-    error("Field3D: setData (%d,%d,%d) out of bounds\n", x, y, z);
-    exit(1);
-  }
+  if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz))
+    throw BoutException("Field3D: setData (%d,%d,%d) out of bounds\n", x, y, z);
 #endif
 
   block->data[x][y][z] = *rptr;
@@ -2036,10 +1981,8 @@ int Field3D::setData(int x, int y, int z, BoutReal *rptr)
 /// Check if the data is valid
 bool Field3D::checkData(bool vital) const
 {
-  if(block ==  NULL) {
-    error("Field3D: Operation on empty data\n");
-    return true;
-  }
+  if(block ==  NULL)
+    throw BoutException("Field3D: Operation on empty data\n");
 
   if( vital || ( CHECK > 2 ) ) { 
     // Do full checks
@@ -2051,12 +1994,10 @@ bool Field3D::checkData(bool vital) const
     for(jx=mesh->xstart;jx<=mesh->xend;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	for(jz=0;jz<mesh->ngz-1;jz++)
-	  if(!finite(block->data[jx][jy][jz])) {
-	    error("Field3D: Operation on non-finite data at [%d][%d][%d]\n", jx, jy, jz);
-	    return true;
-	  }
+	  if(!finite(block->data[jx][jy][jz]))
+	    throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", jx, jy, jz);
   }
-    
+
   return false;
 }
 #endif
@@ -2324,9 +2265,8 @@ const Field3D operator/(const BoutReal lhs, const Field3D &rhs)
 
   d = result.getData();
 #ifdef CHECK
-  if(d == (BoutReal***) NULL) {
-    bout_error("Field3D: left / operator has invalid Field3D argument");
-  }
+  if(d == (BoutReal***) NULL)
+    throw BoutException("Field3D: left / operator has invalid Field3D argument");
 #endif
 
 #ifdef TRACK
@@ -2352,10 +2292,8 @@ const Field3D operator^(const BoutReal lhs, const Field3D &rhs)
   d = result.getData();
 
 #ifdef CHECK
-  if(d == (BoutReal***) NULL) {
-    output.write("Field3D: left ^ operator has invalid Field3D argument");
-    exit(1);
-  }
+  if(d == (BoutReal***) NULL)
+    throw BoutException("Field3D: left ^ operator has invalid Field3D argument");
 #endif
 
 #ifdef TRACK
