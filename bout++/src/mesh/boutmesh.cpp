@@ -1866,7 +1866,7 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
     ch->ybufflen = ylen;
   }
   if(ch->xbufflen < xlen) {
-    if(ch->ybufflen > 0) {
+    if(ch->xbufflen > 0) {
       delete[] ch->imsg_sendbuff;
       delete[] ch->imsg_recvbuff;
       delete[] ch->omsg_sendbuff;
