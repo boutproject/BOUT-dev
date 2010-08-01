@@ -50,6 +50,7 @@
 #include <math.h>
 
 #include "lapack_routines.h" // Tridiagonal & band inversion routines
+#include "boutexception.h"
 
 // This was defined in nvector.h
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -192,7 +193,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   x.setIndex(jy);
 
   if(bk == NULL) {
-    //.allocate memory
+    // Allocate memory
 
     bk = cmatrix(mesh->ngx, ncz/2 + 1);
     bk1d = new dcomplex[mesh->ngx];
@@ -1027,10 +1028,9 @@ void spt_tridag_forward(dcomplex *a, dcomplex *b, dcomplex *c,
   for(j=1;j<n;j++) {
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
-    if(bet == 0.0) {
-      printf("Tridag: Zero pivot\n");
-      exit(1);
-    }
+    if(bet == 0.0)
+      throw BoutException("Tridag: Zero pivot\n");
+    
     u[j] = (r[j]-a[j]*u[j-1])/bet;
   }
 
@@ -1080,15 +1080,13 @@ const int SPT_DATA = 1123; ///< 'magic' number for SPT MPI messages
  */
 int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &data, const Field2D *ccoef = NULL)
 {
-  if(mesh->NXPE == 1) {
-    output.write("Error: SPT method only works for mesh->NXPE > 1\n");
-    return 1;
-  }
+  if(mesh->NXPE == 1)
+    throw BoutException("Error: SPT method only works for mesh->NXPE > 1\n");
 
   data.jy = b.getIndex();
 
   if(data.bk == NULL) {
-    ///.allocate memory
+    /// Allocate memory
     
     // RHS vector
     data.bk = cmatrix(laplace_maxmode + 1, mesh->ngx);

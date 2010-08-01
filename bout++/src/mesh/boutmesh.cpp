@@ -1269,6 +1269,8 @@ int BoutMesh::wait(comm_handle handle)
 
     /// Add the time elapsed to the communications wall time
     wtime_comms += MPI_Wtime() - t;
+    
+    return 0;
   }
 
   do {
