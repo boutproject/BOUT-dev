@@ -49,6 +49,12 @@ class OptionFile;
 
 using namespace std;
 
+struct Option {
+  string value;
+  string source;     // Source of the setting
+  bool used;         // Set to true when used
+};
+
 class OptionFile {
 public:
   OptionFile();
@@ -59,15 +65,22 @@ public:
   /// Read options from grid file
   void read(const char *filename, ...);
 
+  /// Parse the command line for options
   void commandLineRead(int argc, char** argv);
-
-  // New interface
-  // Prints out what values are being assigned
-
+  
+  // Set and get default section for subsequent calls
   void setSection(const string &name); // Set the default section
   string getSection(); // Set the default section
 
-  template <class type> void get(const map<string,string>::iterator &, type &);
+  // Set and get section separator
+  const string& getSectionSep();
+  void setSectionSep(const string &);
+  
+  // Test if an option has been set
+  bool isSet(const string &key);
+  bool isSet(const string &section, const string &key);
+
+  // Get an option, setting to default if not set
   template <class type> void get(const string &, type &, const type &);
   template <class type> void get(const string &, const string &, type &, const type &);
   template <class type> void get(const string &, const string &, const string &, type &, const type &);
@@ -87,11 +100,6 @@ public:
   void get(const string &, const string &, const string &, bool &, const bool &);
   void get(const string &, const string &, const string &, string &, const string &);
   
-  void get(const string &, const string &, const string &, const string &, int &, const int &);
-  void get(const string &, const string &, const string &, const string &, BoutReal &, const BoutReal &);
-  void get(const string &, const string &, const string &, const string &, bool &, const bool &);
-  void get(const string &, const string &, const string &, const string &, string &, const string &);
-
   // Set methods to pass in options manually
   template <class type> void set(const string &, const type &);
   
@@ -100,17 +108,17 @@ public:
   void set(const string &, const bool &);
   void set(const string &, const string &);
   
-  const string& getSectionSep();
-  void setSectionSep(const string &);
-  
-  map<string,string>::iterator find(const string &);
-  map<string, string>::iterator find(const string &, const string &);
-  
-  map<string,string>::iterator end();
-
+  /// Print the options which haven't been used
+  void printUnused();
 protected:
-
-  void add(const string &, const string &, const string &);
+  
+  template <class type> void get(const map<string,Option>::iterator &, type &);
+  
+  map<string, Option>::iterator find(const string &);
+  map<string, Option>::iterator find(const string &, const string &);
+  map<string, Option>::iterator end();
+  
+  void add(const string &, const string &, const string &, const string &source="");
   void trim(string &, const string &c=" \t");
   void trimLeft(string &, const string &c=" \t");
   void trimRight(string &, const string &c=" \t");
@@ -123,7 +131,7 @@ protected:
 
   string sep;
 
-  map<string, string> options;
+  map<string, Option> options;
 };
 
 #endif // __OPTIONS_H__

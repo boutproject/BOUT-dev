@@ -139,9 +139,6 @@ void OptionFile::read(const char *format, ...)
   if(options.empty()) {
     throw BoutException("\tEmpty option file '%s'\n", filename);
   }
-  
-/*  for (map<string,string>::iterator it=options.begin() ; it != options.end(); it++ )
-      cout << (*it).first << " => " << (*it).second << endl;*/
 }
 
 void OptionFile::commandLineRead(int argc, char** argv)
@@ -155,21 +152,14 @@ void OptionFile::commandLineRead(int argc, char** argv)
   for(size_t i=1;i<argc;i++) {
     // Should contain a "key=value" string
     buffer = argv[i];
-
-    if(buffer != "restart") {
-      parse(buffer, key, value);
-      add("", key, value);
-    }
-
-    /// No equality sign. Assume it's a setting which is set to true
-    /// This is so that adding "restart" to the command-line works
-    //  add(NULL, argv[i], "true", -1);
+    
+    parse(buffer, key, value);
+    add("", key, value, "command line");
   }
-
 }
 
 /**************************************************************************
- * Functions to request options
+ * Functions related to sections
  **************************************************************************/
 
 void OptionFile::setSection(const string &name) // Set the default section
@@ -200,39 +190,76 @@ inline string OptionFile::prependSection(const string &section, const string& ke
   return lowercase(key);
 }
 
+/**************************************************************************
+ * Test if options have been set
+ **************************************************************************/
+
+bool OptionFile::isSet(const string &key)
+{
+  if(find(key) != end())
+    return true;
+  
+  if(find(prependSection(def_section, key)) != end())
+    return true;
+  
+  return false;
+}
+
+bool OptionFile::isSet(const string &section, const string &key)
+{
+  if(find(prependSection(def_section, key)) != end())
+    return true;
+  
+  return false;
+}
+
+/**************************************************************************
+ * Functions to request options
+ **************************************************************************/
+
 template <class type>
-void OptionFile::get(const map<string,string>::iterator &it, type &val)
+void OptionFile::get(const map<string,Option>::iterator &it, type &val)
 {
   if(it != end()) {
     
     stringstream ss;
 
     if(typeid(type) == typeid(bool)) { // Best way (that I can find) to convert strings to bool
-      char c = toupper((it->second)[0]);
+      char c = toupper((it->second.value)[0]);
       if((c == 'Y') || (c == 'T') || (c == '1')) {
         ss << "1";
+	output << "\tOption " << it->first << " = true";
       } else if((c == 'N') || (c == 'F') || (c == '0')) {
         ss << "0";
-      } else {  
-          output << "\tOption '" << it->first << "': Boolean expected\n";
-      }
+	output << "\tOption " << it->first << " = false";
+      } else
+	throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
+			    it->first.c_str(), it->second.value.c_str());
+      
+      ss >> val;
     } else {
-      ss << it->second;
-      output << "\tOption " << it->first << " = " << it->second << endl;
-    }  
-    ss >> val;
+      ss << it->second.value;
+      ss >> val;
+      output << "\tOption " << it->first << " = " << val;
+    }
+    if(!it->second.source.empty()) {
+      // Specify the source of the setting
+      output << " (" << it->second.source << ")";
+    }
+    
+    output << endl;
   }
 }
 
-template void OptionFile::get<int>(const map<string,string>::iterator &it, int &val);
-template void OptionFile::get<BoutReal>(const map<string,string>::iterator &it, BoutReal &val);
-template void OptionFile::get<bool>(const map<string,string>::iterator &it, bool &val);
-template void OptionFile::get<string>(const map<string,string>::iterator &it, string &val);
+template void OptionFile::get<int>(const map<string,Option>::iterator &it, int &val);
+template void OptionFile::get<BoutReal>(const map<string,Option>::iterator &it, BoutReal &val);
+template void OptionFile::get<bool>(const map<string,Option>::iterator &it, bool &val);
+template void OptionFile::get<string>(const map<string,Option>::iterator &it, string &val);
 
 template<class type>
 void OptionFile::get(const string &key, type &val, const type &def)
 {
-  map<string, string>::iterator it(find(key));
+  map<string, Option>::iterator it(find(key));
 
   if(it != end()) {
     get<type>(it, val);
@@ -262,10 +289,6 @@ void OptionFile::get(const string &section, const string &key, type &val, const 
     return;
   }
   
-  get<type>(key, val, def);
-  
-  if(val != def) return;
-
   get<type>(prependSection(section, key), val, def);
 }
 
@@ -277,14 +300,10 @@ template void OptionFile::get<string>(const string &section, const string &key, 
 template<class type>
 void OptionFile::get(const string &section1, const string &section2, const string &key, type &val, const type &def)
 {
-  
-  get<type>(key, val, def);
-  
-  if(val != def) return;
-  
-  get<type>(prependSection(section1, key), val, def);
-
-  if(val != def) return;
+  if(isSet(prependSection(section1, key))) {
+    get<type>(prependSection(section1, key), val, def);
+    return;
+  }
   
   get<type>(prependSection(section2, key), val, def);
 }
@@ -357,8 +376,13 @@ void OptionFile::set(const string &key, const type &val)
   
   ss << val;
   
-  options[key] = ss.str();
+  add("", key, ss.str(), "set");
 }
+
+template void OptionFile::set<int>(const string &key, const int &val);
+template void OptionFile::set<BoutReal>(const string &key, const BoutReal &val);
+template void OptionFile::set<bool>(const string &key, const bool &val);
+template void OptionFile::set<string>(const string &key, const string &val);
 
 void OptionFile::set(const string &key, const int &val)
 {
@@ -381,10 +405,40 @@ void OptionFile::set(const string &key, const string &val)
 }
 
 /**************************************************************************
+ * Print unused options
+ **************************************************************************/
+
+void OptionFile::printUnused()
+{
+  bool allused = true;
+  // Check if any options are unused
+  for(map<string,Option>::iterator it=options.begin(); it != options.end(); it++) {
+    if(!it->second.used) {
+      allused = false;
+      break;
+    }
+  }
+  if(allused) {
+    output << "All options used\n";
+  }else {
+    output << "Unused options:\n";
+    for(map<string,Option>::iterator it=options.begin(); it != options.end(); it++) {
+      if(!it->second.used) {
+	output << "\t" << it->first << " = " << it->second.value;
+	if(!it->second.source.empty())
+	  output << " (" << it->second.source << ")";
+	output << endl;
+      }
+    }
+  }
+  
+}
+
+/**************************************************************************
  * Private functions
  **************************************************************************/
 
-void OptionFile::add(const string &section, const string &key, const string &value)
+void OptionFile::add(const string &section, const string &key, const string &value, const string &source)
 {
   if(key.empty()) {
     throw BoutException("\tEmpty key passed to 'OptionsFile::add!'");
@@ -392,20 +446,28 @@ void OptionFile::add(const string &section, const string &key, const string &val
 
   string sectionkey(prependSection(section, key));
 
-  options[sectionkey] = value;
+  Option opt;
+  opt.value = value;
+  opt.source = source;
+  opt.used = false;
+
+  options[sectionkey] = opt;
 }
 
-map<string,string>::iterator OptionFile::find(const string &key)
+map<string,Option>::iterator OptionFile::find(const string &key)
 {
-  return options.find(key);
+  map<string,Option>::iterator it(options.find(key));
+  if(it != options.end())
+    it->second.used = true;
+  return it;
 }
 
-map<string,string>::iterator OptionFile::find(const string &section, const string &key)
+map<string,Option>::iterator OptionFile::find(const string &section, const string &key)
 {
-  return options.find(prependSection(section, key));
+  return find(prependSection(section, key));
 }
 
-map<string,string>::iterator OptionFile::end()
+map<string,Option>::iterator OptionFile::end()
 {
   return options.end();
 }
@@ -470,8 +532,7 @@ string OptionFile::getNextLine(ifstream &fin)
   trimComments(line);
   trim(line);
   line = lowercasequote(line); // lowercase except for inside quotes
-
-/*  output << "DEBUG: " << line << endl;*/
+  
   return line;
 }
 
@@ -482,8 +543,12 @@ void OptionFile::parse(const string &buffer, string &key, string &value)
   size_t startpos = buffer.find_first_of("=");
   size_t endpos   = buffer.find_last_of("=");
 
-  if( startpos == string::npos && startpos != endpos ) {
-    throw BoutException("\tMissing (or multiple) '=' sign(s)\n\tLine: %s", buffer.c_str());
+  if(startpos == string::npos) {
+    // Just set a flag to true
+    // e.g. "restart" or "append" on command line
+    key = buffer;
+    value = string("TRUE");
+    return;
   }
 
   key = buffer.substr(0, startpos);
@@ -491,8 +556,6 @@ void OptionFile::parse(const string &buffer, string &key, string &value)
 
   trim(key, " \t\"");
   trim(value, " \t\"");
-  
-/*  output << "DEBUG2: (" << key << "," << value << ")" << endl;*/
 
   if(key.empty() || value.empty()) {
     throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());

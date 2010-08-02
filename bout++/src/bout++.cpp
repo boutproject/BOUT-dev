@@ -121,8 +121,8 @@ int bout_init(int argc, char **argv)
     if(strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if(i+1 >= argc) {
-		output.write("Useage is %s -d <data directory>\n");
-		return 1;
+	output.write("Useage is %s -d <data directory>\n");
+	return 1;
       }
       i++;
       data_dir = argv[i];
