@@ -986,7 +986,9 @@ typedef struct {
   int dir;  // Which direction is it going?
   
   comm_handle recv_handle; // Handle for receives
-
+  
+  int comm_tag; // Tag for communication
+  
   BoutReal *buffer;
 }SPT_data;
 
@@ -1129,7 +1131,7 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
     for(kz = 0; kz <= laplace_maxmode; kz++) {
       // Start tridiagonal solve
       spt_tridag_forward(data.avec[kz], data.bvec[kz], data.cvec[kz],
-			 data.bk[kz], data.xk[kz], mesh->xend,
+			 data.bk[kz], data.xk[kz], mesh->xend+1,
 			 data.gam[kz],
 			 bet, u0, true);
       // Load intermediate values into buffers
@@ -1140,17 +1142,17 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
     }
     
     // Send data
-    mesh->sendXOut(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+    mesh->sendXOut(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
     
   }else if(mesh->PE_XIND == 1) {
     // Post a receive
-    data.recv_handle = mesh->irecvXIn(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+    data.recv_handle = mesh->irecvXIn(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
   }
   
   data.proc++; // Now moved onto the next processor
   if(mesh->NXPE == 2)	
     data.dir = -1; // Special case. Otherwise reversal handled in spt_continue
-
+  
   return 0;
 }
 
@@ -1183,14 +1185,14 @@ int invert_spt_continue(SPT_data &data)
 			   data.bvec[kz]+mesh->xstart, 
 			   data.cvec[kz]+mesh->xstart,
 			   data.bk[kz]+mesh->xstart, 
-			   data.xk[kz]+mesh->xstart, mesh->xend,
+			   data.xk[kz]+mesh->xstart, mesh->xend+1,
 			   data.gam[kz]+mesh->xstart,
 			   bet, u0);
 	
 	// Back-substitute
 	gp = 0.0;
 	up = 0.0;
-	spt_tridag_back(data.xk[kz]+mesh->xstart, mesh->xend, 
+	spt_tridag_back(data.xk[kz]+mesh->xstart, mesh->ngx-mesh->xstart, 
 			data.gam[kz]+mesh->xstart, gp, up);
 	data.buffer[4*kz]     = gp.Real();
 	data.buffer[4*kz + 1] = gp.Imag();
@@ -1255,18 +1257,18 @@ int invert_spt_continue(SPT_data &data)
       /// Send data
       
       if(data.dir > 0) {
-	mesh->sendXOut(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+	mesh->sendXOut(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
       }else
-	mesh->sendXIn(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+	mesh->sendXIn(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
     }
 
   }else if(mesh->PE_XIND == data.proc + data.dir) {
     // This processor is next, post receive
     
     if(data.dir > 0) {
-      data.recv_handle = mesh->irecvXIn(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+      data.recv_handle = mesh->irecvXIn(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
     }else
-      data.recv_handle = mesh->irecvXOut(data.buffer, 4*(laplace_maxmode+1), SPT_DATA);
+      data.recv_handle = mesh->irecvXOut(data.buffer, 4*(laplace_maxmode+1), data.comm_tag);
   }
   
   data.proc += data.dir;
@@ -1297,7 +1299,7 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
   // Make sure calculation has finished
   while(invert_spt_continue(data) == 0) {}
 
-  // Have result in Fourier space. Convert back to BoutReal space
+  // Have result in Fourier space. Convert back to real space
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
 
@@ -1668,6 +1670,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
       static bool allocated = false;
       if(!allocated) {
 	data.bk = NULL;
+        data.comm_tag = SPT_DATA;
 	allocated = true;
       }
       
@@ -1697,7 +1700,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   x.allocate();
 
   int ys = mesh->ystart, ye = mesh->yend;
- 
+  
   if(MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
     ys = 0;
@@ -1746,10 +1749,11 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
       if(data == NULL) {
 	data = new SPT_data[ye - ys + 1];
 	data -= ys; // Re-number indices to start at ys
-	for(jy=ys;jy<=ye;jy++)
+	for(jy=ys;jy<=ye;jy++) {
 	  data[jy].bk = NULL; // Mark as unallocated for PDD routine
+          data[jy].comm_tag = SPT_DATA + jy; // Give each one a different tag
+        }
       }
-      
       
       for(jy=ys; jy <= ye; jy++) {	
 	// And start another one going

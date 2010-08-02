@@ -1263,6 +1263,7 @@ int BoutMesh::wait(comm_handle handle)
   MPI_Status status;
 
   if(ch->var_list.size() == 0) {
+    
     // Just waiting for a single MPI request
     MPI_Wait(ch->request, &status);
     free_handle(ch);
@@ -1424,7 +1425,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag)
 	   PROC_NUM(PE_XIND-1, PE_YIND),
 	   tag,
 	   MPI_COMM_WORLD);
-
+  
   wtime_comms += MPI_Wtime() - t;
 
   return 0;
@@ -1885,6 +1886,8 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
   
   ch->in_progress = false;
   
+  ch->var_list.clear();
+
   return ch;
 }
 
