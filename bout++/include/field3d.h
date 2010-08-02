@@ -255,6 +255,8 @@ class Field3D : public Field, public FieldData {
   void applyBoundary();
   void applyTDerivBoundary();
   
+  void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+  
  private:
   /// Boundary - add a 2D field
   const Field2D *background;

@@ -2034,7 +2034,8 @@ void Field3D::applyBoundary()
   msg_stack.push("Field3D::applyBoundary()");
   
   if(block == NULL)
-    output << "WARNING: Applying boundary condition to empty data" << endl;
+    output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
+  
 #endif
   
   if(block == NULL)
@@ -2084,11 +2085,16 @@ void Field3D::applyTDerivBoundary()
 #ifdef CHECK
   msg_stack.push("Field3D::applyTDerivBoundary()");
 
-  if(block == NULL)
-    output << "WARNING: Applying boundary condition to empty data" << endl;
+  if(ddt == NULL)
+    output << "WARNING: Empty ddt in Field3D::applyTDerivBoundary()" << endl;
+  if((block == NULL) || (ddt->block == NULL))
+    output << "WARNING: Empty data in Field3D::applyTDerivBoundary()" << endl;
 #endif
   
-  if(block == NULL)
+  if(ddt == NULL)
+    return;
+  
+  if((block == NULL) || (ddt->block == NULL))
     return;
   
   if(background != NULL)
@@ -2122,6 +2128,34 @@ void Field3D::applyTDerivBoundary()
     }
   }
 
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::setBoundaryTo(const Field3D &f3d)
+{
+#ifdef CHECK
+  msg_stack.push("Field3D::setBoundary(const Field3D&)");
+
+  if(block == NULL)
+    throw BoutException("Setting boundary condition on empty data\n");
+  
+  if(f3d.block == NULL)
+    throw BoutException("Setting boundary condition to empty data\n");
+#endif
+
+  /// Get the mesh boundary regions
+  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  
+  /// Loop over boundary regions
+  for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
+    BoundaryRegion* bndry= *it;
+    /// Loop within each region
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      for(int z=0;z<mesh->ngz;z++)
+        block->data[bndry->x][bndry->y][z] = f3d.block->data[bndry->x][bndry->y][z];
+  }
 #ifdef CHECK
   msg_stack.pop();
 #endif

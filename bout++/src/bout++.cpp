@@ -550,6 +550,9 @@ void bout_solve(Vector3D &var, const char *name)
 
 bool bout_constrain(Field3D &var, Field3D &F_var, const char *name)
 {
+  if(!solver->constraints()) // Doesn't support constraints
+    return false;
+
   // Add to solver
   solver->constraint(var, F_var, name);
 

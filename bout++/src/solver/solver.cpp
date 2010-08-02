@@ -576,11 +576,13 @@ int Solver::run_rhs(BoutReal t)
 
   // Apply boundary conditions to the time-derivatives
   for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    it->var->applyTDerivBoundary();
+    if(!it->constraint) // If it's not a constraint
+      it->var->applyTDerivBoundary();
   }
   
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    it->var->applyTDerivBoundary();
+    if(!it->constraint)
+      it->var->applyTDerivBoundary();
   }
 
 #ifdef CHECK
