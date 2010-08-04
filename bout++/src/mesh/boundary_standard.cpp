@@ -378,11 +378,16 @@ void BoundaryRelax::apply_ddt(Field2D &f)
   op->apply(g);
   
   bndry->first();
-  exit(0);
+  
   // Set time-derivatives
-  for(bndry->first(); !bndry->isDone(); bndry->next())
-    ddt(f)[bndry->x][bndry->y] = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by] 
-      + r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
+  for(bndry->first(); !bndry->isDone(); bndry->next()) {
+    BoutReal lim = r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
+    BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by] + lim;
+    if((val*lim > 0.) && (fabs(val) > fabs(lim)))
+        val = lim;
+    
+    ddt(f)[bndry->x][bndry->y] = val;
+  }
 
 #ifdef CHECK
   msg_stack.pop();
