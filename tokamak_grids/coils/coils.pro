@@ -200,7 +200,23 @@ FUNCTION AfromCoilSet, set, current, pos, fast=fast
   RETURN, A
 END
 
-PRO coils, file, savefile=savefile
+; Take derivative in y, taking into account branch-cuts
+FUNCTION ddy, var, mesh
+  f = var
+
+  dtheta = 2.*!PI / FLOAT(TOTAL(mesh.ny))
+
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=period)
+    IF period THEN BEGIN
+       f[xi,yi] = fft_deriv(var[xi,yi])
+    ENDIF ELSE f[xi,yi] = DERIV(var[xi,yi])
+  ENDREP UNTIL last
+  RETURN, f / dtheta
+END
+
+PRO coils, file, savefile=savefile, printps=printps
 
   fast = 1
   
@@ -292,10 +308,56 @@ PRO coils, file, savefile=savefile
   status = file_write(f, "rmp_A", Apar_k)
   file_close, f
   
-  IF KEYWORD_SET(savefile) THEN SAVE, file=save
-  
   ; Plot the mode spectrum
   ergos_plot, apar, g, mode=3, /noshift
+  
+  ; Calculate psi component of B
+  nx = g.nx
+  ny = g.ny
+  
+
+  Bpsi = FLTARR(nx, ny, nz)
+  
+  dAdy = FLTARR(nx, ny, nz)
+  dAdz = FLTARR(nx, ny, nz)
+  
+  ; Z derivative
+  dz = 2.*!PI / FLOAT(nz)
+  FOR i=0, nx-1 DO BEGIN
+    FOR j=0, ny-1 DO BEGIN
+      dAdz[i,j,*] = fft_deriv(apar[i,j,*]) / dz
+    ENDFOR
+  ENDFOR
+  
+  ; Theta derivative (branch-cuts)
+  FOR k=0, nz-1 DO BEGIN
+    pitch = g.hthe * g.Btxy / (g.Rxy * g.Bpxy) ; Field-line pitch
+    dAdy[*,*,k] = DDY(REFORM(apar[*,*,k]), g) + pitch * dAdz[*,*,k]
+  ENDFOR
+  
+  FOR k=0,nz-1 DO BEGIN  
+    Bpsi[*,*,k] = (g.Btxy/g.hthe) * (dAdy[*,*,k] / g.Bxy) - ( g.Bxy/(g.Rxy*g.Bpxy) )*dAdz[*,*,k]
+  ENDFOR
+  
+  ergos_plot, Bpsi, g, mode=3, /noshift
+
+
+  IF KEYWORD_SET(savefile) THEN SAVE, file=savefile
+  
+  IF KEYWORD_SET(printps) THEN BEGIN
+    set_plot, 'PS'
+    device, file=printps, /color
+    
+    ergos_plot, Ar, g, mode=3, /noshift, title="Ar", /rev
+    ergos_plot, Az, g, mode=3, /noshift, title="Az", /rev
+    ergos_plot, Aphi, g, mode=3, /noshift, title="Aphi", /rev
+    ergos_plot, Apar, g, mode=3, /noshift, title="Apar", /rev
+    ergos_plot, Bpsi, g, mode=3, /noshift, title="Bpsi from Apar", /rev
+    device, /close
+    set_plot, 'X'
+  ENDIF
+  
+  STOP
 END
 
 

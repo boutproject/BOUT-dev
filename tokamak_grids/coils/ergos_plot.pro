@@ -1,7 +1,7 @@
 ; Produce an ERGOS-style plot of mode structure
 ; 
 
-PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift
+PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=title, _extra=_extra
   IF NOT KEYWORD_SET(period) THEN period = 1 ; default = full torus
   IF NOT KEYWORD_SET(mode) THEN mode = 1 ; Lowest harmonic
   s = SIZE(var3d, /DIMEN)
@@ -137,12 +137,25 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift
 
   qsafe = qsafe[0:(nx-1)] / (2.*!PI)
 
-  LOADCT, 39
-  DEVICE, decomposed=0
-  CONTOUR, result, mvals, psin, nlev=50, /fill, $
-           title="Mode spectrum, n="+STRTRIM(STRING(mode),2), $
+  tit = "Mode spectrum, n="+STRTRIM(STRING(mode),2)
+  IF KEYWORD_SET(title) THEN tit = title + " " + tit
+  LOADCT, 0
+  ;DEVICE, decomposed=0
+  CONTOUR2, result, mvals, SQRT(psin), nlev=50, /fill, $
+           title=tit, $
            xtitle="Poloidal mode number m", $
-           ytitle="Poloidal flux psi"
+           ytitle="SQRT(Poloidal flux psi)", $
+           _extra=_extra ;, /cent, /redblue
   
-  OPLOT, qsafe*mode, psin
+  OPLOT, qsafe*mode, SQRT(psin), color=1, thick=2
+  
+  ; Mark resonant surfaces
+  
+  maxm = FIX(MAX(qsafe)) * mode
+  qreson = (FINDGEN(maxm)+1) / FLOAT(mode)
+  
+  ; get x location for each of these resonances
+  qpsi = INTERPOL(psin, qsafe, qreson)
+  
+  oplot, findgen(maxm)+1., SQRT(qpsi), psym=4, color=1
 END
