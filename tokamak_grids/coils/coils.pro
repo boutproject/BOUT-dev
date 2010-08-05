@@ -204,7 +204,7 @@ END
 FUNCTION ddy, var, mesh
   f = var
 
-  dtheta = 2.*!PI / FLOAT(TOTAL(mesh.ny))
+  dtheta = 2.*!PI / FLOAT(mesh.ny)
 
   status = gen_surface(mesh=mesh) ; Start generator
   REPEAT BEGIN
@@ -216,7 +216,9 @@ FUNCTION ddy, var, mesh
   RETURN, f / dtheta
 END
 
-PRO coils, file, savefile=savefile, printps=printps
+PRO coils, file, savefile=savefile, printps=printps, current=current, odd=odd
+
+  IF NOT KEYWORD_SET(current) THEN current = 1.
 
   fast = 1
   
@@ -241,8 +243,12 @@ PRO coils, file, savefile=savefile, printps=printps
   ENDFOR
   
   pos = {r:r, z:z, phi:phi}
-  A = AfromCoilSet(lower, 1., pos, fast=fast)
-  A = addCart(A, AfromCoilSet(upper, -1., pos, fast=fast))
+  A = AfromCoilSet(lower, current, pos, fast=fast)
+  IF KEYWORD_SET(odd) THEN BEGIN
+    A = addCart(A, AfromCoilSet(upper, current, pos, fast=fast))
+  ENDIF ELSE BEGIN
+    A = addCart(A, AfromCoilSet(upper, -current, pos, fast=fast))
+  ENDELSE
   
   ; Convert to polar coordinates
   

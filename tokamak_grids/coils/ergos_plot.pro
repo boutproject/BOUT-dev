@@ -18,8 +18,25 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=ti
   
   ncore = MIN([grid.ixseps1, grid.ixseps2])
   IF nx GT ncore THEN BEGIN
-    PRINT, "Only computing modes in the core"
+    PRINT, "Only computing modes in the core: "+STR(ncore)+" of "+STR(nx)
     nx = ncore
+  ENDIF
+
+  ; Get number of poloidal points in core
+  ny = 0
+  status = gen_surface(mesh=grid) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=periodic)
+    
+    IF periodic THEN BEGIN
+      ; Found a periodic region. Assume in the core
+      ny = N_ELEMENTS(yi)
+      BREAK
+    ENDIF
+  ENDREP UNTIL last
+  IF ny EQ 0 THEN BEGIN
+    PRINT, "ERROR: No periodic (core) region found!"
+    RETURN
   ENDIF
   
   IF NOT is_pow2(nz) THEN BEGIN
@@ -37,17 +54,9 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=ti
   ; the desired mode
   varfft = COMPLEXARR(nx, ny)
   
-  FOR i=0, nx-1 DO BEGIN
-     FOR j=0, ny-1 DO BEGIN
-        varfft[i,j] = (FFT(REFORM(data[i,j,*])))[mode]
-     ENDFOR
-  ENDFOR
 
-  zlength = 2.0*!PI / FLOAT(period)
-  dz = zlength / FLOAT(nz)
-  
   IF NOT KEYWORD_SET(noshift) THEN BEGIN
-    ; GET THE TOROIDAL SHIFT
+    ; Shifting - need the angle
     w = WHERE(tn EQ "QINTY", count)
     IF count GT 0 THEN BEGIN
       PRINT, "Using qinty as toroidal shift angle"
@@ -62,29 +71,59 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=ti
         RETURN
       ENDELSE
     ENDELSE
-    
-    ; Apply toroidal shift
-    kwave = mode * period
-    FOR i=0, nx-1 DO BEGIN
-      FOR j=0, ny-1 DO BEGIN
-        varfft[i,j] = varfft[i,j] * COMPLEX(COS(kwave*zshift[i,j]), $
-                                            -SIN(kwave*zshift[i,j]))
-      ENDFOR
-    ENDFOR
   ENDIF
+
+  status = gen_surface(mesh=grid) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=periodic)
+    
+    IF periodic THEN BEGIN
+      IF N_ELEMENTS(yi) NE ny THEN BEGIN
+        PRINT, "ERROR: Number of poloidal points in core varies!"
+        RETURN
+      ENDIF
+      
+      FOR j=0, ny-1 DO BEGIN
+        varfft[xi,j] = (FFT(REFORM(data[xi,yi[j],*])))[mode]
+      ENDFOR
+      
+      IF NOT KEYWORD_SET(noshift) THEN BEGIN
+        ; Apply toroidal shift
+        kwave = mode * period
+        FOR j=0, ny-1 DO BEGIN
+          varfft[xi,j] = varfft[xi,j] * COMPLEX(COS(kwave*zshift[xi,yi[j]]), $
+                                                -SIN(kwave*zshift[xi,yi[j]]))
+        ENDFOR
+
+      ENDIF
+    ENDIF
+  ENDREP UNTIL last
+
+  zlength = 2.0*!PI / FLOAT(period)
+  dz = zlength / FLOAT(nz)
   
   ; Try to get the poloidal angle from the grid file
   w = WHERE(tn EQ "POL_ANGLE", count)
   IF count GT 0 THEN BEGIN
     PRINT, "Using pol_angle from grid file"
-    theta = grid.pol_angle
+    theta2D = grid.pol_angle
   ENDIF ELSE BEGIN
     ; calculate poloidal angle
     
     PRINT, "Sorry: Poloidal angle calculation not implemented yet"
     RETURN
   ENDELSE
-
+  
+  theta = FLTARR(nx, ny)
+  status = gen_surface(mesh=grid) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=periodic)
+    
+    IF periodic THEN BEGIN
+      theta[xi,*] = theta2D[xi,yi]
+    ENDIF
+  ENDREP UNTIL last
+  
   ; Now take FFT in poloidal angle
   
   nm = FIX(ny/2)-1 ; Number of m frequencies
@@ -133,7 +172,7 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=ti
     ENDELSE
   ENDELSE
   
-  psin = (REFORM(grid.psixy[0:(nx-1),0]) - grid.psi_axis) / (grid.psi_bndry - grid.psi_axis)
+  psin = (REFORM(grid.psixy[0:(nx-1),grid.jyseps1_1+1]) - grid.psi_axis) / (grid.psi_bndry - grid.psi_axis)
 
   qsafe = qsafe[0:(nx-1)] / (2.*!PI)
 
