@@ -4,7 +4,6 @@
 #----------------------------------------------------------------------------
 
 BOUT_TOP = ../../..
-include $(BOUT_TOP)/make.config
 
 CINCLUDES = -I../include
 FLAGS    = $(CFLAGS) $(CINCLUDES)

@@ -660,8 +660,8 @@ then
 #		
 		echo "* Building PVODE" | tee -a config-build.log
 		echo "*************************************************************" >> config-build.log
-		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
-		CC="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+		CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+		CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 		
 		if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
 		then
