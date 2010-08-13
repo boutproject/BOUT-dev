@@ -416,8 +416,8 @@ FUNCTION grid_newt, data
   Zxy = Rxy
   
   FOR y=0, ny-1 DO BEGIN
-     Rxy[*,y] = INTERPOL(R0[*,y], FINDGEN(nx), xpos[*,y])
-     Zxy[*,y] = INTERPOL(Z0[*,y], FINDGEN(nx), xpos[*,y])
+     Rxy[*,y] = INTERPOL(R0[*,y], FINDGEN(nx), xpos[*,y], /spline)
+     Zxy[*,y] = INTERPOL(Z0[*,y], FINDGEN(nx), xpos[*,y], /spline)
   ENDFOR
 
   ; calculate Bpxy, Btxy and hthe
@@ -486,7 +486,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     yi = gen_surface(period=period, last=last, xi=xi)
     IF period THEN BEGIN
       ; Pressure only given on core surfaces
-      pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi])
+      pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi], /spline)
     ENDIF ELSE BEGIN
       pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
     ENDELSE
@@ -499,6 +499,27 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     pressure = pressure + 1e-2*MAX(pressure)
   ENDIF
   
+  m = MAX(Rxy[0,*],ind)
+  REPEAT BEGIN
+    !P.multi=[0,0,2,0,0]
+    PLOT, pressure[*,ind], xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ind),2), color=1
+    PLOT, DERIV(pressure[*,ind]), xtitle="X index", ytitle="DERIV(pressure)", color=1
+    sm = get_yesno("Smooth pressure profile?")
+    IF sm THEN BEGIN
+      ; Smooth the pressure profile
+      FOR i=0, ny-1 DO BEGIN
+        pressure[*,i] = SMOOTH(pressure[*,i],10)
+      ENDFOR
+      ; Make sure it's still constant on flux surfaces
+      status = gen_surface(mesh=mesh) ; Start generator
+      REPEAT BEGIN
+        ; Get the next domain
+        yi = gen_surface(period=period, last=last, xi=xi)
+        pressure[xi,yi] = MEAN(pressure[xi,yi])
+      ENDREP UNTIL last
+    ENDIF
+  ENDREP UNTIL sm EQ 0
+
   IF MIN(pressure) LT 0.0 THEN BEGIN
     PRINT, ""
     PRINT, "============= WARNING =============="
@@ -542,7 +563,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
     IF period THEN BEGIN
       ; In the core
-      fpol = INTERPOL(rz_grid.fpol, rz_grid.npsigrid, mesh.psixy[xi,yi])
+      fpol = INTERPOL(rz_grid.fpol, rz_grid.npsigrid, mesh.psixy[xi,yi], /spline)
     ENDIF ELSE BEGIN
       ; Outside core. Could be PF or SOL
       fpol = rz_grid.fpol[N_ELEMENTS(rz_grid.fpol)-1]      
