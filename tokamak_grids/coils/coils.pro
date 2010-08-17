@@ -229,7 +229,7 @@ PRO coils, file, savefile=savefile, printps=printps, current=current, odd=odd
   ;;;; Read in the grid file
   g = file_import(file)
   
-  nz = 32
+  nz = 64
   dz = 2.*!PI / FLOAT(nz)
   
   ; Generate grid points
@@ -347,6 +347,16 @@ PRO coils, file, savefile=savefile, printps=printps, current=current, odd=odd
   
   ergos_plot, Bpsi, g, mode=3, /noshift
 
+  ; Convert into contravariant component of B in PEST coordinates
+  q = ABS(g.shiftangle)/(2.*!PI)
+  f = g.Rxy * g.Btxy
+  J = g.Rxy^2 / f
+  FOR i=0,ny-1 DO J[*,i] = J[*,i] * q
+  
+  B1 = FLTARR(g.nx, g.ny, nz)
+  FOR k=0,nz-1 DO B1[*,*,k] = Bpsi[*,*,k] * J
+
+  ergos_plot, B1, g, mode=3, /noshift
 
   IF KEYWORD_SET(savefile) THEN SAVE, file=savefile
   
@@ -359,6 +369,7 @@ PRO coils, file, savefile=savefile, printps=printps, current=current, odd=odd
     ergos_plot, Aphi, g, mode=3, /noshift, title="Aphi", /rev
     ergos_plot, Apar, g, mode=3, /noshift, title="Apar", /rev
     ergos_plot, Bpsi, g, mode=3, /noshift, title="Bpsi from Apar", /rev
+    ergos_plot, B1, g, mode=3, /noshift, title="B1", /rev
     device, /close
     set_plot, 'X'
   ENDIF

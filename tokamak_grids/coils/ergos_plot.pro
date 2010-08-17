@@ -178,7 +178,7 @@ PRO ergos_plot, var3d, grid, period=period, mode=mode, noshift=noshift, title=ti
 
   tit = "Mode spectrum, n="+STRTRIM(STRING(mode),2)
   IF KEYWORD_SET(title) THEN tit = title + " " + tit
-  LOADCT, 0
+  ;LOADCT, 0
   ;DEVICE, decomposed=0
   CONTOUR2, result, mvals, SQRT(psin), nlev=50, /fill, $
            title=tit, $
