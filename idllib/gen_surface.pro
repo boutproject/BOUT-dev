@@ -38,6 +38,11 @@ FUNCTION gen_surface, mesh=mesh, period=period, last=last, xi=xi
     RETURN, 0
   ENDIF
 
+  IF SIZE(m,/TYPE) EQ 0 THEN BEGIN
+    PRINT, "ERROR: mesh not defined in gen_surface"
+    RETURN, 0
+  ENDIF
+
   IF xind GE TOTAL(m.nrad) THEN BEGIN
     last = 1
     RETURN, 1 ; Error
