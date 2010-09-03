@@ -30,6 +30,12 @@
 #ifndef __GYRO_AVERAGE_H__
 #define __GYRO_AVERAGE_H__
 
-const Field3D gyroLocal(const Field3D &f, const Field3D &rho);
+#include "field3d.h"
+
+const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho);
+
+const Field3D gyroPade0(const Field3D &f, const Field3D &rho);
+const Field3D gyroPade1(const Field3D &f, const Field3D &rho);
+const Field3D gyroPade2(const Field3D &f, const Field3D &rho);
 
 #endif // __GYRO_AVERAGE_H__

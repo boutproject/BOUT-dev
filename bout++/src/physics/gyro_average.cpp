@@ -29,9 +29,48 @@
 
 #include "difops.h"
 #include "gyro_average.h"
+#include "invert_laplace.h"
 
-/// Approximate G(f) = f + rho^2*Delp2(f)
-const Field3D gyroLocal(const Field3D &f, const Field3D &rho)
+/// Approximate G(f) = f + rho^2*Delp2(f) using Taylor expansion
+const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho)
 {
   return f + rho^2 * Delp2(f);
+}
+
+/// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
+const Field3D gyroPade0(const Field3D &f, const Field3D &rho)
+{
+  /// Have to use Z average of rho for efficient inversion
+  
+  Field2D rhodc = rho.DC();
+  
+  Field2D a = 1.0;
+  Field2D d = -rhodc*rhodc;
+  
+  /// Invert, leaving boundaries unchanged
+  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+}
+
+/// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
+const Field3D gyroPade1(const Field3D &f, const Field3D &rho)
+{
+  /// Have to use Z average of rho for efficient inversion
+  
+  Field2D rhodc = rho.DC();
+  
+  Field2D a = 1.0;
+  Field2D d = -0.5*rhodc*rhodc;
+  
+  /// Invert, leaving boundaries unchanged
+  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+}
+
+/// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
+const Field3D gyroPade2(const Field3D &f, const Field3D &rho)
+{
+  /// Have to use Z average of rho for efficient inversion
+  
+  Field2D rhodc = rho.DC();
+  
+  return 0.5*rhodc*rhodc*Delp2( gyroPade1(gyroPade1(f, rho), rho) );
 }
