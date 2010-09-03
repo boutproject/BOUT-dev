@@ -34,6 +34,7 @@
 #include "dcomplex.h"
 #include "interpolation.h"
 #include "boundary_op.h"
+#include "boundary_factory.h"
 #include "boutexception.h"
 
 /// Constructor
@@ -2075,6 +2076,66 @@ void Field3D::applyBoundary()
     }
   }
 
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyBoundary(const string &condition)
+{
+#ifdef CHECK
+  msg_stack.push("Field3D::applyBoundary(condition)");
+  
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyBoundary(condition)" << endl;
+#endif
+  
+  if(block == NULL)
+    return;
+  
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    
+    Field3D tot = *this + (*background);
+    tot.applyBoundary(condition);
+    *this = tot - (*background);
+    return;
+  }
+
+  /// Get the boundary factory (singleton)
+  BoundaryFactory *bfact = BoundaryFactory::getInstance();
+  
+  /// Get the mesh boundary regions
+  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  
+  /// Loop over the mesh boundary regions
+  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
+    BoundaryOp* op = bfact->create(condition, (*it));
+    op->apply(*this);
+    delete op;
+  }
+  
+  // Set the corners to zero
+  for(int jx=0;jx<mesh->xstart;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+  }
+  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ystart;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = 0.;
+    }
+  }
 #ifdef CHECK
   msg_stack.pop();
 #endif

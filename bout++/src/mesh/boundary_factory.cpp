@@ -42,7 +42,7 @@ void BoundaryFactory::cleanup()
 
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
 {
-  output <<  name;
+  //output <<  name;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');

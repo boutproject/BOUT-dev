@@ -54,6 +54,18 @@ class SurfaceIter;
 class FieldGroup {
  public:
   void add(FieldData &f) {fvec.push_back(&f);}
+  void add(FieldData &f1, FieldData &f2) {
+    fvec.push_back(&f1); fvec.push_back(&f2);}
+  void add(FieldData &f1, FieldData &f2, FieldData &f3) {
+    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3);}
+  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4) {
+    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); fvec.push_back(&f4);}
+  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4, FieldData &f5) {
+    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); 
+    fvec.push_back(&f4); fvec.push_back(&f5);}
+  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4, FieldData &f5, FieldData &f6) {
+    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); 
+    fvec.push_back(&f4); fvec.push_back(&f5); fvec.push_back(&f6);}
   
   const vector<FieldData*> get() const {return fvec;} 
   void clear() {fvec.clear();}
