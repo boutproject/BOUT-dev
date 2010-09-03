@@ -80,7 +80,7 @@ class Field3D : public Field, public FieldData {
   Field3D* timeDeriv();
 
   /// Returns DC component
-  const Field2D DC();
+  const Field2D DC() const;
 
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location

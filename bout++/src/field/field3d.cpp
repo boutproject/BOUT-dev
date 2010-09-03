@@ -166,7 +166,7 @@ Field3D* Field3D::timeDeriv()
   return ddt;
 }
 
-const Field2D Field3D::DC()
+const Field2D Field3D::DC() const
 {
   Field2D result;
   int jx, jy, jz;
