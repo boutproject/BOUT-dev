@@ -62,6 +62,9 @@ GLOBAL OptionFile options;
 /// Define for reading options which passes the variable name
 #define OPTION(var, def) options.get(#var, var, def)
 
+/// Macro to replace bout_solve, passing variable name
+#define SOLVE_FOR(var) bout_solve(var, #var)
+
 /// Output object
 GLOBAL Output output;
 
