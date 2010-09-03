@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= smoothing.cpp  sourcex.cpp
+SOURCEC		= smoothing.cpp  sourcex.cpp  gyro_average.cpp
 SOURCEH		= $(SOURCEC:%.cpp=%.h)
 TARGET		= lib
 

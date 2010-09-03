@@ -1,0 +1,37 @@
+/**************************************************************
+ * Gyro-averaging operators
+ *
+ *
+ * 2010-09-03 Ben Dudson <bd512@york.ac.uk>
+ *    * Initial version, simple averaging operator
+ * 
+ **************************************************************************
+ * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ * 
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************/
+
+#include "difops.h"
+#include "gyro_average.h"
+
+/// Approximate G(f) = f + rho^2*Delp2(f)
+const Field3D gyroLocal(const Field3D &f, const Field3D &rho)
+{
+  return f + rho^2 * Delp2(f);
+}
