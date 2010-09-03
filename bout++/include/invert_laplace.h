@@ -58,16 +58,19 @@ const int INVERT_IN_SYM   = 1024; // Use symmetry to enforce either zero-value o
 const int INVERT_OUT_SYM  = 2048; // Same for outer boundary
 const int INVERT_IN_SET  = 4096; // Set inner boundary
 const int INVERT_OUT_SET = 8192; // Set outer boundary
+const int INVERT_IN_RHS = 16384; // Use input value in RHS at inner boundary
+const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
 
 int invert_init();
 
-void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL);
+void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c=NULL);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL);
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
+int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a = NULL, const Field2D *c=NULL);
+const Field3D invert_laplace(const Field3D &b, int flags, 
+                             const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
 
 #endif // __LAPLACE_H__
 
