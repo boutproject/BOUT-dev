@@ -71,6 +71,9 @@ GLOBAL Output output;
 /// Dump file object
 GLOBAL Datafile dump;
 
+/// Write this variable once to the grid file
+#define SAVE_ONCE(var) dump.add(var, #var, 0)
+
 /// Status message stack. Used for debugging messages
 GLOBAL MsgStack msg_stack;
 
