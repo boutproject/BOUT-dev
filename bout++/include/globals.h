@@ -64,6 +64,31 @@ GLOBAL OptionFile options;
 
 /// Macro to replace bout_solve, passing variable name
 #define SOLVE_FOR(var) bout_solve(var, #var)
+#define SOLVE_FOR2(var1, var2) { \
+  bout_solve(var1, #var1);        \
+  bout_solve(var2, #var2);}
+#define SOLVE_FOR3(var1, var2, var3) {  \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);}
+#define SOLVE_FOR4(var1, var2, var3, var4) { \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);}
+#define SOLVE_FOR5(var1, var2, var3, var4, var5) {    \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);             \
+  bout_solve(var5, #var5);}
+#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) {      \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);             \
+  bout_solve(var5, #var5);             \
+  bout_solve(var6, #var6);}
 
 /// Output object
 GLOBAL Output output;
