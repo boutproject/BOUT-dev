@@ -690,3 +690,141 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 #endif
   return result;
 }
+
+/*******************************************************************************
+ * Poisson bracket
+ * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
+ *******************************************************************************/
+
+const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method)
+{
+  Field2D result;
+  if(method == BRACKET_SIMPLE) {
+    // Use a subset of terms for comparison to BOUT-06
+    result = 0.0;
+  }else {
+    // Use full expression with all terms
+    result = b0xGrad_dot_Grad(f, g) / mesh->Bxy;
+  }
+  return result;
+}
+
+const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
+{
+  Field3D result;
+  switch(method) {
+  case BRACKET_ARAKAWA: {
+    // Arakawa scheme for perpendicular flow. Here as a test
+    
+    result.allocate();
+    int ncz = mesh->ngz - 1;
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
+          
+          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+          BoutReal Jpp = 0.25*( (f[jx][jy][jzp] - f[jx][jy][jzm])*
+                                (g[jx+1][jy] - g[jx-1][jy]) -
+                                (f[jx+1][jy][jz] - f[jx-1][jy][jz])*
+                                (g[jx][jy] - g[jx][jy]) )
+            / (mesh->dx[jx][jy] * mesh->dz);
+
+          // J+x
+          BoutReal Jpx = 0.25*( g[jx+1][jy]*(f[jx+1][jy][jzp]-f[jx+1][jy][jzm]) -
+                                g[jx-1][jy]*(f[jx-1][jy][jzp]-f[jx-1][jy][jzm]) -
+                                g[jx][jy]*(f[jx+1][jy][jzp]-f[jx-1][jy][jzp]) +
+                                g[jx][jy]*(f[jx+1][jy][jzm]-f[jx-1][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          // Jx+
+          BoutReal Jxp = 0.25*( g[jx+1][jy]*(f[jx][jy][jzp]-f[jx+1][jy][jz]) -
+                                g[jx-1][jy]*(f[jx-1][jy][jz]-f[jx][jy][jzm]) -
+                                g[jx-1][jy]*(f[jx][jy][jzp]-f[jx-1][jy][jz]) +
+                                g[jx+1][jy]*(f[jx+1][jy][jz]-f[jx][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          
+          result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+        }
+    break;
+  }
+  case BRACKET_SIMPLE: {
+    // Use a subset of terms for comparison to BOUT-06
+    result = VDDX(DDZ(f), g);
+    break;
+  }
+  default: {
+    // Use full expression with all terms
+    result = b0xGrad_dot_Grad(f, g) / mesh->Bxy;
+  }
+  }
+  return result;
+}
+
+const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method)
+{
+  Field3D result;
+  switch(method) {
+  case BRACKET_SIMPLE: {
+    // Use a subset of terms for comparison to BOUT-06
+    result = VDDZ(-DDX(f), g);
+  }
+  default: {
+    // Use full expression with all terms
+    result = b0xGrad_dot_Grad(f, g) / mesh->Bxy;
+  }
+  }
+  return result;
+}
+
+const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
+{
+  Field3D result;
+  switch(method) {
+  case BRACKET_ARAKAWA: {
+    // Arakawa scheme for perpendicular flow. Here as a test
+    
+    result.allocate();
+    
+    int ncz = mesh->ngz - 1;
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+      for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+        for(int jz=0;jz<ncz;jz++) {
+          int jzp = (jz + 1) % ncz;
+          int jzm = (jz - 1 + ncz) % ncz;
+          
+          // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
+          BoutReal Jpp = 0.25*( (f[jx][jy][jzp] - f[jx][jy][jzm])*
+                                (g[jx+1][jy][jz] - g[jx-1][jy][jz]) -
+                                (f[jx+1][jy][jz] - f[jx-1][jy][jz])*
+                                (g[jx][jy][jzp] - g[jx][jy][jzm]) )
+            / (mesh->dx[jx][jy] * mesh->dz);
+
+          // J+x
+          BoutReal Jpx = 0.25*( g[jx+1][jy][jz]*(f[jx+1][jy][jzp]-f[jx+1][jy][jzm]) -
+                                g[jx-1][jy][jz]*(f[jx-1][jy][jzp]-f[jx-1][jy][jzm]) -
+                                g[jx][jy][jzp]*(f[jx+1][jy][jzp]-f[jx-1][jy][jzp]) +
+                                g[jx][jy][jzm]*(f[jx+1][jy][jzm]-f[jx-1][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          // Jx+
+          BoutReal Jxp = 0.25*( g[jx+1][jy][jzp]*(f[jx][jy][jzp]-f[jx+1][jy][jz]) -
+                                g[jx-1][jy][jzm]*(f[jx-1][jy][jz]-f[jx][jy][jzm]) -
+                                g[jx-1][jy][jzp]*(f[jx][jy][jzp]-f[jx-1][jy][jz]) +
+                                g[jx+1][jy][jzm]*(f[jx+1][jy][jz]-f[jx][jy][jzm]))
+            / (mesh->dx[jx][jy] * mesh->dz);
+          
+          result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+        }
+    break;
+  }
+  case BRACKET_SIMPLE: {
+    // Use a subset of terms for comparison to BOUT-06
+    result = VDDX(DDZ(f), g) + VDDZ(-DDX(f), g);
+  }
+  default: {
+    // Use full expression with all terms
+    result = b0xGrad_dot_Grad(f, g) / mesh->Bxy;
+  }
+  }
+  return result;
+}
