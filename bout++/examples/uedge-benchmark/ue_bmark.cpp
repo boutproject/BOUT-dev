@@ -1,14 +1,19 @@
 /*******************************************************************************
- * 2-fluid equations
- * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
+ * UEDGE benchmark case
+ *
+ * Solves equations for 
+ *  density Ni
+ *  parallel ion velocity Vi
+ *  electron and ion temperatures Te, Ti
+ * 
+ * Intended to be run for NZ=1 (i.e. X and Y only) for comparison with UEDGE
+ *
  *******************************************************************************/
 
 #include "bout.h"
 #include "derivs.h"
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cmath>
 
 // 2D initial profiles
 Field2D Ni0, Ti0, Te0, Vi0;
@@ -40,9 +45,9 @@ int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
-  output.write("Solving 6-variable 2-fluid equations\n");
+  output.write("Solving transport equations for Ni, Vi, Ti, Te\n");
 
-  /************* LOAD DATA FROM GRID FILE ****************/
+  /////////////// LOAD DATA FROM GRID FILE //////////////
 
   // Load 2D profiles (set to zero if not found)
   GRID_LOAD(Ni0);
@@ -51,10 +56,9 @@ int physics_init(bool restarting)
   GRID_LOAD(Vi0);
 
   // Load metrics
-  GRID_LOAD(Rxy);
-  GRID_LOAD(Bpxy);
-  GRID_LOAD(Btxy);
-  GRID_LOAD(hthe);
+  GRID_LOAD(Rxy);         // Major radius [m]
+  GRID_LOAD2(Bpxy, Btxy); // Poloidal, Toroidal B field [T]
+  GRID_LOAD(hthe);        // Poloidal arc length [m / radian]
   mesh->get(mesh->dx,   "dpsi");
 
   // Load normalisation values
@@ -66,7 +70,7 @@ int physics_init(bool restarting)
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
 
-  /*************** READ OPTIONS *************************/
+  /////////////// READ OPTIONS //////////////////////////
 
   // Read some parameters
   options.setSection("uedge");
@@ -77,7 +81,7 @@ int physics_init(bool restarting)
   OPTION(D_perp,    0.6);
   OPTION(mu_perp,   0.6);
   
-  /************** CALCULATE PARAMETERS *****************/
+  ////////////// CALCULATE PARAMETERS ///////////////////
 
   rho_s = 1.02*sqrt(AA*Te_x)/ZZ/bmag;
   fmei  = 1./1836.2/AA;
@@ -90,14 +94,14 @@ int physics_init(bool restarting)
 
   Vi_x = wci * rho_s;
 
-  /************** PRINT Z INFORMATION ******************/
+  ///////////// PRINT Z INFORMATION /////////////////////
   
   BoutReal hthe0;
   if(GRID_LOAD(hthe0) == 0) {
     output.write("    ****NOTE: input from BOUT, Z length needs to be divided by %e\n", hthe0/rho_s);
   }
 
-  /************** NORMALISE QUANTITIES *****************/
+  ///////////// NORMALISE QUANTITIES ////////////////////
 
   output.write("\tNormalising to rho_s = %e\n", rho_s);
 
@@ -133,7 +137,7 @@ int physics_init(bool restarting)
   output.write("Diffusion coefficients: chi %e D %e Mu %e\n",
 	       chi_perp, D_perp, mu_perp);
 
-  /**************** CALCULATE METRICS ******************/
+  /////////////// CALCULATE METRICS /////////////////
 
   mesh->g11 = (Rxy*Bpxy)^2;
   mesh->g22 = 1.0 / (hthe^2);
@@ -151,44 +155,43 @@ int physics_init(bool restarting)
   mesh->g_13 = 0.0;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
   
+  mesh->geometry(); // Calculate other metrics
+  
   //////////////// BOUNDARIES ///////////////////////
   // 
   // We want to apply the relaxing boundries to total density,
   // temperature etc.
 
+  Ni0.applyBoundary("neumann");
+  Te0.applyBoundary("neumann");
+  Ti0.applyBoundary("neumann");
+
   Ni.setBackground(Ni0);
   Te.setBackground(Te0);
   Ti.setBackground(Ti0);
-
-  /**************** SET EVOLVING VARIABLES *************/
-
+  
+  ///////////// SET EVOLVING VARIABLES //////////////
+  //
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
 
   Ni = Vi = Te = Ti = 0.0;
-  bout_solve(Ni, "Ni");
-  bout_solve(Vi, "Vi");
-  bout_solve(Te, "Te");
-  bout_solve(Ti, "Ti");
-
-  ///////////// SETUP COMMUNICATIONS ////////////////
+  SOLVE_FOR4(Ni, Vi, Te, Ti);
   
+  ///////////// ADD OUTPUT VARIABLES ////////////////
+  //
   // Add any other variables to be dumped to file
-  dump.add(Ni0, "Ni0", 0);
-  dump.add(Te0, "Te0", 0);
-  dump.add(Ti0, "Ti0", 0);
+  
+  SAVE_ONCE3(Ni0, Te0, Ti0);                // Background quantities 
+  SAVE_ONCE5(Te_x, Ti_x, Ni_x, rho_s, wci); // Normalisation factors
 
-  dump.add(Te_x,  "Te_x", 0);
-  dump.add(Ti_x,  "Ti_x", 0);
-  dump.add(Ni_x,  "Ni_x", 0);
-  dump.add(rho_s, "rho_s", 0);
-  dump.add(wci,   "wci", 0);
-
+  /*
   dump.add(ddt(Ni), "ddt_ni", 1);
   dump.add(ddt(Ti), "ddt_ti", 1);
   dump.add(ddt(Te), "ddt_te", 1);
   dump.add(ddt(Vi), "ddt_vi", 1);
-  
+  */
+
   return(0);
 }
 

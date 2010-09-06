@@ -5,6 +5,8 @@
 
 NOUT = 400       # number of time-steps
 TIMESTEP = 1e3   # time between outputs
+#NOUT = 10
+#TIMESTEP  = 1
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
@@ -54,6 +56,7 @@ upwind = U1
 [solver]
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
+pvode_mxstep = 5000 # Maximum number of internal steps
 ATOL = 1.0e-10 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 
