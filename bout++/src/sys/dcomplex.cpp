@@ -30,7 +30,8 @@
  * 
  **************************************************************************/
 
-#include <math.h>
+#include <cmath>
+#include <iostream>
 
 #include "dcomplex.h"
 #include "utils.h"
