@@ -18,8 +18,8 @@ IF NOT KEYWORD_SET(nodata) THEN BEGIN
 
 ;; read time-base
 
-tarr = pd_read(path+"BOUT.dmp.0.pdb", "t_array")
-wci = pd_read(path+"BOUT.dmp.0.pdb", "wci") 
+tarr = collect(path=path, var="t_array")
+wci = collect(path=path, var="wci")
 
 time = tarr*tfactor / wci
 
@@ -34,14 +34,14 @@ te = collect(path=path, var="Te", y=40)
 
 ;; read normalisations
 
-ni_x = pd_read(path+"BOUT.dmp.0.pdb", "Ni_x") 
-rho_s = pd_read(path+"BOUT.dmp.0.pdb", "rho_s") 
+ni_x = collect(path=path, var="Ni_x") 
+rho_s = collect(path=path, var="rho_s") 
 Vi_x = rho_s * wci
-Te_x = pd_read(path+"BOUT.dmp.0.pdb", "Te_x") 
+Te_x = collect(path=path, var="Te_x") 
 
 ;; read grid file
 
-u = pd_import("uedge.grd_Up_Ni_Tei_2d.pdb")
+u = file_import("uedge.grd_Up_Ni_Tei_2d.nc")
 
 ;; Normalise
 
