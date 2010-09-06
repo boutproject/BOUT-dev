@@ -390,9 +390,9 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   /// Get restart file extension
   string dump_ext, restart_ext;
 
-  options.get<string>("dump_format", dump_ext, DEFAULT_FILE_EXT);
+  options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
   
-  options.get<string>("restart_format", restart_ext, dump_ext);
+  options.get("restart_format", restart_ext, dump_ext);
 
   /// Set the restart file format
   restart.setFormat(data_format(restart_ext.c_str()));

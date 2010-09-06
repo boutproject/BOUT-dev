@@ -224,24 +224,10 @@ void OptionFile::get(const map<string,Option>::iterator &it, type &val)
     
     stringstream ss;
 
-    if(typeid(type) == typeid(bool)) { // Best way (that I can find) to convert strings to bool
-      char c = toupper((it->second.value)[0]);
-      if((c == 'Y') || (c == 'T') || (c == '1')) {
-        ss << "1";
-	output << "\tOption " << it->first << " = true";
-      } else if((c == 'N') || (c == 'F') || (c == '0')) {
-        ss << "0";
-	output << "\tOption " << it->first << " = false";
-      } else
-	throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
-			    it->first.c_str(), it->second.value.c_str());
-      
-      ss >> val;
-    } else {
-      ss << it->second.value;
-      ss >> val;
-      output << "\tOption " << it->first << " = " << val;
-    }
+    ss << it->second.value;
+    ss >> val;
+    output << "\tOption " << it->first << " = " << val;
+    
     if(!it->second.source.empty()) {
       // Specify the source of the setting
       output << " (" << it->second.source << ")";
@@ -253,8 +239,49 @@ void OptionFile::get(const map<string,Option>::iterator &it, type &val)
 
 template void OptionFile::get<int>(const map<string,Option>::iterator &it, int &val);
 template void OptionFile::get<BoutReal>(const map<string,Option>::iterator &it, BoutReal &val);
-template void OptionFile::get<bool>(const map<string,Option>::iterator &it, bool &val);
-template void OptionFile::get<string>(const map<string,Option>::iterator &it, string &val);
+
+/// Can't use stringstream as it breaks on whitespace
+void OptionFile::get(const map<string,Option>::iterator &it, string &val)
+{
+  if(it != end()) {
+    
+    val = it->second.value;
+    
+    output << "\tOption " << it->first << " = " << val;
+    
+    if(!it->second.source.empty()) {
+      // Specify the source of the setting
+      output << " (" << it->second.source << ")";
+    }
+    
+    output << endl;
+  }
+}
+
+void OptionFile::get(const map<string,Option>::iterator &it, bool &val)
+{
+  if(it != end()) {
+    
+    char c = toupper((it->second.value)[0]);
+    if((c == 'Y') || (c == 'T') || (c == '1')) {
+      val = true;
+      output << "\tOption " << it->first << " = true";
+    } else if((c == 'N') || (c == 'F') || (c == '0')) {
+      val = false;
+      output << "\tOption " << it->first << " = false";
+    } else
+      throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
+                          it->first.c_str(), it->second.value.c_str());
+    if(!it->second.source.empty()) {
+      // Specify the source of the setting
+      output << " (" << it->second.source << ")";
+    }
+    
+    output << endl;
+  }
+}
+
+////////////////////////////////////////////////////////////////////
 
 template<class type>
 void OptionFile::get(const string &key, type &val, const type &def)
@@ -278,8 +305,49 @@ void OptionFile::get(const string &key, type &val, const type &def)
 
 template void OptionFile::get<int>(const string &key, int &val, const int &def);
 template void OptionFile::get<BoutReal>(const string &key, BoutReal &val, const BoutReal &def);
-template void OptionFile::get<bool>(const string &key, bool &val, const bool &def);
-template void OptionFile::get<string>(const string &key, string &val, const string &def);
+
+void OptionFile::get(const string &key, string &val, const string &def)
+{
+  map<string, Option>::iterator it(find(key));
+
+  if(it != end()) {
+    get(it, val);
+    return;
+  }
+  
+  it = find(prependSection(def_section, key));
+  if(it != end()) {
+    get(it, val);
+    return;
+  }
+
+  val = def;
+  output << "\tOption " << key << " = " << def << " (default)" << endl;
+}
+
+void OptionFile::get(const string &key, bool &val, const bool &def)
+{
+  map<string, Option>::iterator it(find(key));
+
+  if(it != end()) {
+    get(it, val);
+    return;
+  }
+  
+  it = find(prependSection(def_section, key));
+  if(it != end()) {
+    get(it, val);
+    return;
+  }
+
+  val = def;
+  if(def) {
+    output << "\tOption " << key << " = true (default)" << endl;
+  }else
+    output << "\tOption " << key << " = false (default)" << endl;
+}
+
+////////////////////////////////////////////////////////////////////
 
 template<class type>
 void OptionFile::get(const string &section, const string &key, type &val, const type &def)
@@ -294,8 +362,28 @@ void OptionFile::get(const string &section, const string &key, type &val, const 
 
 template void OptionFile::get<int>(const string &section, const string &key, int &val, const int &def);
 template void OptionFile::get<BoutReal>(const string &section, const string &key, BoutReal &val, const BoutReal &def);
-template void OptionFile::get<bool>(const string &section, const string &key, bool &val, const bool &def);
-template void OptionFile::get<string>(const string &section, const string &key, string &val, const string &def);
+
+void OptionFile::get(const string &section, const string &key, string &val, const string &def)
+{
+  if(key.empty()) {
+    output.write("WARNING: NULL option requested\n");
+    return;
+  }
+  
+  get(prependSection(section, key), val, def);
+}
+
+void OptionFile::get(const string &section, const string &key, bool &val, const bool &def)
+{
+  if(key.empty()) {
+    output.write("WARNING: NULL option requested\n");
+    return;
+  }
+  
+  get(prependSection(section, key), val, def);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 template<class type>
 void OptionFile::get(const string &section1, const string &section2, const string &key, type &val, const type &def)
@@ -310,8 +398,28 @@ void OptionFile::get(const string &section1, const string &section2, const strin
 
 template void OptionFile::get<int>(const string &section1, const string &section2, const string &key, int &val, const int &def);
 template void OptionFile::get<BoutReal>(const string &section1, const string &section2, const string &key, BoutReal &val, const BoutReal &def);
-template void OptionFile::get<bool>(const string &section1, const string &section2, const string &key, bool &val, const bool &def);
-template void OptionFile::get<string>(const string &section1, const string &section2, const string &key, string &val, const string &def);
+
+void OptionFile::get(const string &section1, const string &section2, const string &key, string &val, const string &def)
+{
+  if(isSet(prependSection(section1, key))) {
+    get(prependSection(section1, key), val, def);
+    return;
+  }
+  
+  get(prependSection(section2, key), val, def);
+}
+
+void OptionFile::get(const string &section1, const string &section2, const string &key, bool &val, const bool &def)
+{
+  if(isSet(prependSection(section1, key))) {
+    get(prependSection(section1, key), val, def);
+    return;
+  }
+  
+  get(prependSection(section2, key), val, def);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 void OptionFile::get(const string &key, int &val, const int &def)
 {
@@ -321,11 +429,6 @@ void OptionFile::get(const string &key, int &val, const int &def)
 void OptionFile::get(const string &key, BoutReal &val, const BoutReal &def)
 {
   get<BoutReal>(key, val, def);
-}
-
-void OptionFile::get(const string &key, bool &val, const bool &def)
-{
-  get<bool>(key, val, def);
 }
 
 void OptionFile::get(const string &section, const string &key, int &val, const int &def)
@@ -346,21 +449,6 @@ void OptionFile::get(const string &section, const string &key, BoutReal &val, co
 void OptionFile::get(const string &section1, const string &section2, const string &key, BoutReal &val, const BoutReal &def)
 {
   get<BoutReal>(section1, section2, key, val, def);
-}
-
-void OptionFile::get(const string &section, const string &key, bool &val, const bool &def)
-{
-  get<bool>(section, key, val, def);
-}
-
-void OptionFile::get(const string &key, string &val, const string &def)
-{
-  get<string>(key, val, def);
-}
-
-void OptionFile::get(const string &section, const string &key, string &val, const string &def)
-{
-  get<string>(section, key, val, def);
 }
 
 /**************************************************************************

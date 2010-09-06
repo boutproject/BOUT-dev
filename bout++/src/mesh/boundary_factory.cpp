@@ -142,33 +142,33 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   
   /// First try looking for (var, region)
   string set;
-  options.get<string>(varname, prefix+region->label, set, "");
+  options.get(varname, prefix+region->label, set, "");
   
   if(!set.empty())
     return create(set, region);
   
   /// Then (var, side)
-  options.get<string>(varname, prefix+side, set, "");
+  options.get(varname, prefix+side, set, "");
   if(!set.empty())
     return create(set, region);
   
   /// Then (var, all)
-  options.get<string>(varname, prefix+"all", set, "");
+  options.get(varname, prefix+"all", set, "");
   if(!set.empty())
     return create(set, region);
   
   /// Then (all, region)
-  options.get<string>("all", prefix+region->label, set, "");
+  options.get("all", prefix+region->label, set, "");
   if(!set.empty())
     return create(set, region);
   
   /// Then (all, side)
-  options.get<string>("all", prefix+side, set, "");
+  options.get("all", prefix+side, set, "");
   if(!set.empty())
     return create(set, region);
   
   /// Then (all, all)
-  options.get<string>("all", prefix+"all", set, "");
+  options.get("all", prefix+"all", set, "");
   if(!set.empty())
     return create(set, region);
   

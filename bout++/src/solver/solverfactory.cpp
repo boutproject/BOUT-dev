@@ -39,9 +39,9 @@ Solver* SolverFactory::createSolver() {
   
   options.setSection("");
   string solver_option;
-/*  options.get<string>("solver_type", solver_option, type);
+/*  options.get("solver_type", solver_option, type);
   string solver_option;*/
-  options.get<string>("solver_type", solver_option, "");
+  options.get("solver_type", solver_option, "");
   
   if(!solver_option.empty()) type = solver_option.c_str();
   

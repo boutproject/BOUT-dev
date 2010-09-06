@@ -112,8 +112,10 @@ public:
   void printUnused();
 protected:
   
-  template <class type> void get(const map<string,Option>::iterator &, type &);
-  
+  template <class type> void get(const map<string,Option>::iterator &, type &); // Handles many cases
+  void get(const map<string,Option>::iterator &it, string &val); // Special case
+  void get(const map<string,Option>::iterator &it, bool &val);   // Special case
+
   map<string, Option>::iterator find(const string &);
   map<string, Option>::iterator find(const string &, const string &);
   map<string, Option>::iterator end();

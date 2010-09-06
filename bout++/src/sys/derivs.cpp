@@ -471,7 +471,7 @@ void derivs_set(DiffLookup *table, const char* name, deriv_func &f)
 {
 /*  char *label = options.getString(name);*/
   string label;
-  options.get<string>(name, label, "");
+  options.get(name, label, "");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -482,7 +482,7 @@ void derivs_set(DiffLookup *table, const char* name, upwind_func &f)
 {
 /*  char *label = options.getString(name);*/
   string label;
-  options.get<string>(name, label, "");
+  options.get(name, label, "");
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name

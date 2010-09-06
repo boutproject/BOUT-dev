@@ -208,7 +208,7 @@ int bout_init(int argc, char **argv)
   OPTION(NOUT, 1);
   OPTION(TIMESTEP, 1.0);
 
-  options.get<string>("grid", grid_name, DEFAULT_GRID);
+  options.get("grid", grid_name, DEFAULT_GRID);
 /*  if((grid_name = options.getString("grid")) == (char*) NULL)
     grid_name = DEFAULT_GRID;*/
   
@@ -221,7 +221,7 @@ int bout_init(int argc, char **argv)
   OPTION(append, false);
 
   /// Get file extensions
-  options.get<string>("dump_format", dump_ext, DEFAULT_FILE_EXT);
+  options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
 /*  if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
     dump_ext = DEFAULT_FILE_EXT;
@@ -240,7 +240,7 @@ int bout_init(int argc, char **argv)
   
   output.write("Setting grid format\n");
   /// Load the grid
-  options.get<string>("grid_format", grid_ext, "");
+  options.get("grid_format", grid_ext, "");
   if(grid_ext.empty()) {
     // Guess format based on grid filename
     mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str()));
