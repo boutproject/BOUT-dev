@@ -100,7 +100,7 @@ bool BoundaryRegionXOut::isDone()
 BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax)
   : xs(xmin), xe(xmax), BoundaryRegion(name, 0, -1)
 {
-  location = BNDRY_XOUT;
+  location = BNDRY_YDOWN;
   y = mesh->ystart-1; // First point inside the boundary
   if(xe < xs)
     SWAP(xs, xe);
@@ -148,7 +148,7 @@ bool BoundaryRegionYDown::isDone()
 BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
   : xs(xmin), xe(xmax), BoundaryRegion(name, 0, 1)
 {
-  location = BNDRY_XOUT;
+  location = BNDRY_YUP;
   y = mesh->ystart-1; // First point inside the boundary
   if(xe < xs)
     SWAP(xs, xe);

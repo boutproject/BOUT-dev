@@ -659,7 +659,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   bindex bx;
   stencil s;
 
-  start_index(&bx, RGN_NOY);
+  start_index(&bx, RGN_NOBNDRY);
   do{
     var.setYStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
@@ -681,19 +681,19 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   
   stencil s;
   bindex bx;
-  start_index(&bx, RGN_NOY);
+  start_index(&bx, RGN_NOBNDRY);
   do {
     var.setYStencil(s, bx, loc);
     
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
   
 #ifdef CHECK
-      if(!finite(r[bx.jx][bx.jy][bx.jz])) {
-	msg_stack.push("At [%d][%d][%d]: %e, %e, %e, %e, %e",
-		       bx.jx, bx.jy, bx.jz, 
-		       s.mm, s.m, s.c, s.p, s.pp);
-	bout_error("Non-finite value\n");
-      }
+    if(!finite(r[bx.jx][bx.jy][bx.jz])) {
+      msg_stack.push("At [%d][%d][%d]: %e, %e, %e, %e, %e",
+                     bx.jx, bx.jy, bx.jz, 
+                     s.mm, s.m, s.c, s.p, s.pp);
+      bout_error("Non-finite value\n");
+    }
 #endif
   }while(next_index3(&bx));
 
