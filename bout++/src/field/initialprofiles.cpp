@@ -81,7 +81,9 @@ int initial_profile(const char *name, Field3D &var)
   /////////// get options //////////
   
   get_profile_opts();
-      
+  
+  output.write("Setting initial value of %s\n", name);
+  
   // Look in the section with the variable name
   // Otherwise look for global settings
   options.get(name, "All", "scale", scale, 1.0e-4);
@@ -176,6 +178,8 @@ int initial_profile(const char *name, Field3D &var)
 
   if(ShiftInitial)
     var = var.shiftZ(false);
+  
+  output << endl;
 
   return(0);
 }
