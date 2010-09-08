@@ -168,12 +168,10 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
     return create(set, region);
   
   /// Then (all, all)
-  options.get("all", prefix+"all", set, "");
-  if(!set.empty())
-    return create(set, region);
-  
-  output << "NONE" << endl;
-  return NULL;
+  options.get("all", prefix+"all", set, "dirichlet");
+  return create(set, region);
+  // Defaultsto Dirichlet conditions, to prevent undefined boundary
+  // values. If a user want to override, specify "none" or "null"
 }
 
 BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegion *region)
