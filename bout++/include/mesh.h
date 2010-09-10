@@ -185,7 +185,9 @@ class Mesh {
 
   // These used for differential operators 
   Field2D dx, dy;      // Read in grid.cpp
-  Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
+  Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+  
+  
   BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)
   
   bool ShiftXderivs; // Use shifted X derivatives

@@ -35,6 +35,7 @@
 #include "globals.h"
 #include "utils.h"
 #include "fft.h"
+#include "derivs.h"
 
 #include "dcomplex.h"
 
@@ -224,20 +225,24 @@ int BoutMesh::load()
     dy = 1.0;
   }
   
-  if(non_uniform) {
-    // Read correction for non-uniform meshes
-    if(get(d2x, "d2x")) {
-      output.write("\tWARNING: differencing quantity 'd2x' not found. Set to 0.0\n");
-      d2x = 0.0;
-    }
-    if(get(d2y, "d2y")) {
-      output.write("\tWARNING: differencing quantity 'd2y' not found. Set to 0.0\n");
-      d2y = 0.0;
-    }
-  }
-  
   zlength = (ZMAX-ZMIN)*TWOPI;
   dz = zlength/(ngz-1);
+  
+  if(non_uniform) {
+    Field2D d2x, d2y; // d^2 x / d i^2
+    // Read correction for non-uniform meshes
+    if(get(d2x, "d2x")) {
+      output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+      d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
+    }else
+      d1_dx = -d2x / (dx*dx);
+    
+    if(get(d2y, "d2y")) {
+      output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+      d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
+    }else
+      d1_dy = -d2y / (dy*dy);
+  }
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   

@@ -1115,7 +1115,7 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   if(non_uniform) {
     // Correction for non-uniform mesh
-    result += applyXdiff(f, fDDX, mesh->d2x); // CHECK THIS!
+    result += mesh->d1_dx*applyXdiff(f, fDDX, mesh->dx);
   }
 
   result = interp_to(result, outloc);
@@ -1147,7 +1147,7 @@ const Field2D D2DX2(const Field2D &f)
 
   if(non_uniform) {
     // Correction for non-uniform mesh
-    result += applyXdiff(f, fDDX, mesh->d2x);
+    result += mesh->d1_dx * applyXdiff(f, fDDX, mesh->dx);
   }
   
   return(result);
@@ -1209,7 +1209,7 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 
   if(non_uniform) {
     // Correction for non-uniform mesh
-    result += applyYdiff(f, fDDY, mesh->d2y);
+    result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
   }
 
   return interp_to(result, outloc);
@@ -1228,7 +1228,7 @@ const Field2D D2DY2(const Field2D &f)
 
   if(non_uniform) {
     // Correction for non-uniform mesh
-    result += applyYdiff(f, fDDY, mesh->d2y);
+    result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
   }
 
   return(result);

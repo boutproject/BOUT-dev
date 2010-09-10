@@ -1992,6 +1992,29 @@ but the simple 1st-order method has very large artificial diffusion. WENO scheme
 a development of the ENO reconstruction schemes which combine good handling of sharp-gradient
 regions with high accuracy in smooth regions.
 
+\subsection{Non-uniform meshes}
+
+Setting \texttt{non\_uniform = true} in the BOUT.inp options file
+enables corrections to second derivatives in $X$ and $Y$. This correction
+is given by writing derivatives as:
+\[
+\deriv{f}{x} \simeq \frac{1}{\Delta x} \deriv{f}{i}
+\]
+where $i$ is the cell index number. The second derivative is therefore given by
+\[
+\frac{\partial^2 f}{\partial x^2} \simeq \frac{1}{\Delta x^2}\frac{\partial^2 f}{\partial i^2} + \frac{1}{\Delta x}\deriv{f}{x} \cdot \deriv{}{i}\left(\frac{1}{\Delta x}\right)
+\]
+The correction factor $\partial/\partial i\left(1/\Delta x\right)$ can be
+calculated automatically, but you can also specify \texttt{d2x} in the grid file which is
+\[
+\texttt{d2x} = \deriv{\Delta x}{i} = \frac{\partial^2 x}{\partial i^2}
+\]
+The correction factor is then calculated from \texttt{d2x} using
+\[
+\deriv{}{i}\left(\frac{1}{\Delta x}\right) = -\frac{1}{\Delta x^2} \deriv{\Delta x}{i}
+\]
+
+
 \subsection{Operators}
 
 These are differential operators which are independent of the coordinate system used.
