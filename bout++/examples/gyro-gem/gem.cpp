@@ -8,6 +8,7 @@
 
 #include "bout.h"
 #include "gyro_average.h"
+#include "invert_laplace.h"
 
 #include <cmath>
 
@@ -80,10 +81,12 @@ BoutReal nu_perp, nu_par;  // Artificial
 
 const BRACKET_METHOD bm = BRACKET_STD; // Method to use for brackets
 
+int phi_flags, apar_flags; // Inversion flags
+
 //////////////////////////////////////////
 // Normalisation factors
 
-BoutReal Lbar;  // Perpendicular scale length
+BoutReal Lbar;   // Perpendicular scale length
 BoutReal Tenorm; // Typical value of Te for normalisation
 BoutReal Bbar;   // Magnetic field  
 
@@ -111,6 +114,9 @@ int physics_init(bool restarting)
   OPTION(nu_perp, 0.01); // Artificial perpendicular dissipation
   OPTION(nu_par, 3e-3);  // Artificial parallel dissipation
   
+  OPTION(phi_flags,  0);
+  OPTION(apar_flags, 0);
+
   //////////////////////////////////
   // Read profiles
 
@@ -237,7 +243,7 @@ int physics_init(bool restarting)
     
   }
  
-  
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -260,14 +266,48 @@ int physics_run(BoutReal time)
   Field3D phi_G, Phi_G; // Gyro-reduced potential
   Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
   
+  
+  ////////////////////////////////////////////
+  // Adiabatic electrons
+  
+  if(adiabatic_electrons) {
+    // Solve adiabatic electrons using surface-averaged phi
+    
+    Field2D phi_zonal = mesh->averageY(phi.DC()); // Average over Y and Z
+    Ne = phi - phi_zonal;
+    
+    // Need to solve with polarisation!
+  }
+
   ////////////////////////////////////////////
   // Polarisation equation (quasi-neutrality)
+  
+  if(small_rho_e) {
+    // Neglect electron Larmor radius
+    
+    Field3D dn = Ne - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
+    phi = invert_laplace(tau_i * dn / (rho_i * rho_i), phi_flags);
+    phi -= tau_i * dn;
+  }else {
+    Field3D dn = gyroPade1(Ne, rho_e) + gyroPade2(Teperp, rho_e)
+      - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
+    
+    // Neglect electron gyroscreening
+    phi = invert_laplace(tau_i * dn / (rho_i * rho_i), phi_flags);
+    phi -= tau_i * dn;
+  }
   
   ////////////////////////////////////////////
   // Helmholtz equation for Apar
   
-  Jpar = Ui - Ue;
+  Field2D a = beta_e * (1./mu_e - 1./mu_i);
+  Apar = invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
   
+  Ui = (ApUi - beta_e*Apar) / mu_i;
+  Ue = (ApUe - beta_e*Apar) / mu_e;
+  
+  Jpar = Ui - Ue;
+
   ////////////////////////////////////////////
   // Resistivity
   
@@ -277,17 +317,13 @@ int physics_run(BoutReal time)
   ////////////////////////////////////////////
   // Electron equations
   
-  if(adiabatic_electrons) {
-    // Solve adiabatic electrons using surface-averaged phi
-    
-    Field2D phi_zonal = mesh->averageY(phi.DC()); // Average over Y and Z
-    Ne = phi - phi_zonal;
-  }else {
+  if(!adiabatic_electrons) {
     // Electron equations
     
     if(small_rho_e) {
       // No gyro-averaging for small rho_e
-      Phi_G = phi_G = phi;
+      phi_G = phi;
+      Phi_G = 0.0;
     }else {
       phi_G = gyroPade1(phi, rho_e);
       Phi_G = gyroPade2(phi, rho_e);
@@ -394,6 +430,8 @@ int physics_run(BoutReal time)
     - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
     - (1./mu_e)*K_perp
     + (1./mu_e)*K_D;
+
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////

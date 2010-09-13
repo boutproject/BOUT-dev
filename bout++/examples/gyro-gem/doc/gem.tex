@@ -82,5 +82,61 @@
 
 Implementation of B.Scott's GEM gyro-fluid model.
 
+
+\section{Polarisation equation}
+
+Inversion to obtain electrostatic potential $\phi$ from density, temperatures.
+Quasi-neutrality condition, gyro-fluid equivalent to vorticity equation
+
+\subsection{Neglect electron Larmor radius}
+
+A simplified case is to set $\rho_e = 0$. This gives
+\[
+\Gamma_1 \tilde{n}_i + \Gamma_2\tilde{T}_{i\perp} + \frac{\Gamma_0 - 1}{\tau_i}\tilde{\phi} = \tilde{n}_e
+\]
+This rearranges to
+\[
+\tau_i\left(1-\rho_i^2\nabla_\perp^2\right)\left[\tilde{n}_e - \Gamma_1\tilde{n}_i - \Gamma_2\tilde{T}_{i\perp}\right] = \tilde{\phi} - \left(1-\rho_i^2\nabla_\perp^2\right)\tilde{\phi}
+\]
+This in turn simplifies to
+\begin{equation}
+\nabla_\perp^2\left(\phi + \tau_i\delta n\right) = \frac{\tau_i\delta n}{\rho_i^2}
+\end{equation}
+where $\delta n$ is
+\[
+\delta n = \tilde{n}_e - \Gamma_1\tilde{n}_i - \Gamma_2\tilde{T}_{i\perp}
+\]
+
+\subsection{Neglect electron gyroscreening}
+
+The full polarisation equation for singly-charged ions
+\[
+\frac{\Gamma^{\left(i\right)}_0 - 1}{\tau_i}\tilde{\phi} - \frac{\Gamma_0^{\left(e\right)} - 1}{\tau_e}\tilde{\phi} = \Gamma_1^{\left(e\right)}\tilde{n}_e - \Gamma_2^{\left(e\right)}\tilde{T}_{e\perp} - \Gamma_1^{\left(i\right)}\tilde{n}_i - \Gamma_2^{\left(i\right)}\tilde{T}_{i\perp}
+\]
+where the superscripts refer to whether the ion $\left(i\right)$ or $\left(e\right)$ electron Larmor radius is used in the operator.
+
+This can be simplified by neglecting the electron gyroscreening. This
+results in the same equation as before:
+\begin{equation}
+\nabla_\perp^2\left(\phi + \tau_i\delta n\right) = \frac{\tau_i\delta n}{\rho_i^2}
+\end{equation}
+with a modified $\delta n$:
+\[
+\Gamma_1^{\left(e\right)}\tilde{n}_e - \Gamma_2^{\left(e\right)}\tilde{T}_{e\perp} - \Gamma_1^{\left(i\right)}\tilde{n}_i - \Gamma_2^{\left(i\right)}\tilde{T}_{i\perp}
+\]
+
+\section{Amp\'ere's Law}
+
+Evolving $A_{ji} = \beta_eA_{||} + \mu_iU_{i||}$ and $A_{je} = \beta_eA_{||} + \mu_eU_{e||}$. Need to invert a Helmholtz equation to get $A_{||}$
+using
+
+\[
+-\nabla_\perp^2\tilde{A}_{||} = J_{||} = U_{i||} - U_{e||}
+\]
+
+\[
+\nabla_\perp^2\tilde{A}_{||} + \beta_e\left(\frac{1}{\mu_e} - \frac{1}{\mu_i}\right)\tilde{A}_{||} = \frac{A_{je}}{\mu_e} - \frac{A_{ji}}{\mu_i}
+\]
+
 \end{document}
 
