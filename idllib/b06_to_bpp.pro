@@ -100,8 +100,8 @@ PRO b06_to_bpp, cfile, tind=tind, NPES=NPES, path=path
         new_nz = nz + 1
       ENDIF
       
-      var = DBLARR(nx, ny+4, new_nz)
-      var[*,2:(ny+1),0:(nz-1)] = REFORM((data.(copyind[i]))[xmin:xmax, ymin:ymax, *,tind])
+      var = DBLARR(nx, mysub+4, new_nz)
+      var[*,2:(mysub+1),0:(nz-1)] = REFORM((data.(copyind[i]))[xmin:xmax, ymin:ymax, *,tind])
       
       IF is_pow2(nz) THEN var[*,*,nz] = var[*,*,0]
       
