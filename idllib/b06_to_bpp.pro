@@ -6,17 +6,21 @@
 ;    as cfile argument (either a string or a structure)
 ; 3. Enter the names of variables to copy across, "none" to skip
 ;
-; 
-; Currently won't decompose in X, only in Y
+;
+; Doesn't handle Y boundaries (target plates)
 ;
 
-PRO b06_to_bpp, cfile, tind=tind, NPES=NPES, path=path
-  
-  NXPE = 1
+PRO b06_to_bpp, cfile, tind=tind, NPES=NPES, NXPE=NXPE, path=path
   IF NOT KEYWORD_SET(NPES) THEN NPES = 1
+  IF NOT KEYWORD_SET(NXPE) THEN NXPE = 1
   
   IF NOT KEYWORD_SET(path) THEN path = "."
   
+  IF (NPES MOD NXPE) NE 0 THEN BEGIN
+    PRINT, "ERROR: NPES ("+STR(NPES)+") not a multiple of NXPE ("+STR(NXPE)+")"
+    RETURN
+  ENDIF
+
   NYPE = NPES / NXPE
 
   NPES = LONG(NPES)
@@ -37,12 +41,28 @@ PRO b06_to_bpp, cfile, tind=tind, NPES=NPES, path=path
   IF tind GT (nt-1) THEN tind = nt-1
   IF tind LT 0 THEN tind = 0
   
-  IF ny MOD nype NE 0 THEN BEGIN
+  IF (ny MOD nype) NE 0 THEN BEGIN
     PRINT, "ERROR: ny ("+str(ny)+") doesn't divide equally between nype ("+str(nype)+")"
     RETURN
   ENDIF
   
+  IF ((nx - 4) MOD nxpe) NE 0 THEN BEGIN
+    PRINT, "ERROR: nx-4 ("+str(nx-4)+") doesn't divide equally between nxpe ("+str(nxpe)+")"
+    RETURN
+  ENDIF
+  
   mysub = FIX(ny / nype)
+  mxsub = FIX((nx-4) / nxpe)
+  
+  IF mysub LT 2 THEN BEGIN
+    PRINT, "ERROR: MYSUB too small ("+STR(mysub)+")"
+    RETURN
+  ENDIF
+
+  IF mxsub LT 2 THEN BEGIN
+    PRINT, "ERROR: MXSUB too small ("+STR(mxsub)+")"
+    RETURN
+  ENDIF
 
   ; Get list of variables
   tn = TAG_NAMES(data)
@@ -82,32 +102,49 @@ PRO b06_to_bpp, cfile, tind=tind, NPES=NPES, path=path
     ymin = yp*mysub
     ymax = ymin + mysub - 1
     
-    pe = NXPE*yp
-    
-    name = path+"/BOUT.restart."+STR(pe)+".nc"
-    fp = file_open(name, /create)
-    
-    status = file_write(fp, "hist_hi", hist_hi)
-    status = file_write(fp, "tt", tt)
-    status = file_write(fp, "NPES", NPES)
-    status = file_write(fp, "NXPE", NXPE)
-    
-    ; Copy across the data
-    FOR i=0, ncopy-1 DO BEGIN
-      new_nz = nz
-      IF is_pow2(nz) THEN BEGIN
-        ; Need to add an additional point
-        new_nz = nz + 1
+    FOR xp=0, nxpe-1 DO BEGIN
+      xmin = 2+xp*mxsub
+      xmax = 1+mxsub + xp*mxsub
+
+      xi0 = 2
+      xi1 = 1+mxsub
+
+      IF xp EQ 0 THEN BEGIN 
+        xmin = 0
+        xi0 = 0
+      ENDIF
+      IF xp EQ nxpe-1 THEN BEGIN
+        xmax = nx-1
+        xi1 = 3+mxsub
       ENDIF
       
-      var = DBLARR(nx, mysub+4, new_nz)
-      var[*,2:(mysub+1),0:(nz-1)] = REFORM((data.(copyind[i]))[xmin:xmax, ymin:ymax, *,tind])
-      
-      IF is_pow2(nz) THEN var[*,*,nz] = var[*,*,0]
-      
-      status = file_write(fp, copyto[i], var)
-    ENDFOR
+      pe = NXPE*yp + xp
     
-    file_close, fp
+      name = path+"/BOUT.restart."+STR(pe)+".nc"
+      fp = file_open(name, /create)
+      
+      status = file_write(fp, "hist_hi", hist_hi)
+      status = file_write(fp, "tt", tt)
+      status = file_write(fp, "NPES", NPES)
+      status = file_write(fp, "NXPE", NXPE)
+    
+      ; Copy across the data
+      FOR i=0, ncopy-1 DO BEGIN
+        new_nz = nz
+        IF is_pow2(nz) THEN BEGIN
+          ; Need to add an additional point
+          new_nz = nz + 1
+        ENDIF
+      
+        var = DBLARR(mxsub+4, mysub+4, new_nz)
+        var[xi0:xi1,2:(mysub+1),0:(nz-1)] = REFORM((data.(copyind[i]))[xmin:xmax, ymin:ymax, *,tind])
+        
+        IF is_pow2(nz) THEN var[*,*,nz] = var[*,*,0]
+        
+        status = file_write(fp, copyto[i], var)
+      ENDFOR
+    
+      file_close, fp
+    ENDFOR
   ENDFOR
 END
