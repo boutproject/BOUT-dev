@@ -63,7 +63,7 @@ const Field3D interp_to(const Field3D &var, CELL_LOC loc)
     result = var; // NOTE: This is just for boundaries. FIX!
 
     result.allocate();
-    BoutReal ***d = var.getData();
+    BoutReal ***d = result.getData();
     
     if((var.getLocation() == CELL_CENTRE) || (loc == CELL_CENTRE)) {
       // Going between centred and shifted
