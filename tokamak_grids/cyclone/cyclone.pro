@@ -6,13 +6,17 @@
 ; 
 
 ; Integrate 1 / (1 - eps*cos(theta))^2  where eps = r / R
-FUNCTION eps_func
-  
+FUNCTION eps_func, theta, y
+  COMMON eps_com, eps
+  RETURN, 1. / ((1. - eps*COS(theta))^2)
 END
 
 FUNCTION eps_integral, eps, theta=theta
+  COMMON eps_com, ep
+  ep = eps
   IF NOT KEYWORD_SET(theta) THEN theta = 2.*!PI
-  return, LSODE()
+  result = [0.]
+  return, (LSODE(result, 0.0, theta, 'eps_func'))[0]
 END
 
 PRO cyclone, output=output, varyBp=varyBp
@@ -58,11 +62,11 @@ PRO cyclone, output=output, varyBp=varyBp
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  rminor = Rmaj / epsilon  ; Minor radius [m]
+  rminor = Rmaj * epsilon  ; Minor radius [m]
   L_T = Rmaj / Rnorm       ; Temp. length scale [m]
   L_n = eta_i * L_T        ; Density length scale [m]
   rho_i = rho_norm * L_T   ; Ion Larmor radius [m]
-  Bt0 = SQRT(2.*Ti*Mi / 1.602e-19) ; Toroidal field from rho_i [T]
+  Bt0 = SQRT(2.*Ti*Mi / 1.602e-19) / rho_i ; Toroidal field from rho_i [T]
   Bp = rminor * Bt0 * eps_integral(epsilon)/ (q * Rmaj) ; Poloidal field [T]
   
   dr = r_wid * rho_i       ; Width of domain [m]
@@ -83,11 +87,11 @@ PRO cyclone, output=output, varyBp=varyBp
   ; Minor radius offset
   drprof = dr*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
   ; q profile
-  qprof = q + (s*q/r) * drprof
+  qprof = q + (s*q/rminor) * drprof
   PRINT, "q varies from "+STR(MIN(qprof))+" to "+STR(MAX(qprof))
   ShiftAngle = qprof * 2.*!PI
   
-  IF varyBp THEN BEGIN
+  IF KEYWORD_SET(varyBp) THEN BEGIN
     ; Vary Bpxy to get shear
      FOR i=0, ny-1 DO Bpxy[*,i] = Bp * q / qprof
      PRINT, "Poloidal field varies from "+STR(MIN(Bpxy))+" to "+STR(MAX(Bpxy))
@@ -99,10 +103,10 @@ PRO cyclone, output=output, varyBp=varyBp
   dx = Bp * (dr / FLOAT(nx-1)) * Rxy
 
   Bxy = SQRT(Btxy^2 + Bpxy^2)
-
+  
   zShift = FLTARR(nx, ny)
   qint = eps_integral(epsilon)
-  FOR i=0, ny-1 DO zShift[*,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
+  FOR i=1, ny-1 DO zShift[*,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
   
   Ni0 = FLTARR(nx, ny)
   FOR i=0, ny-1 DO Ni0[*,i] = Ni * EXP(-drprof / L_n)
