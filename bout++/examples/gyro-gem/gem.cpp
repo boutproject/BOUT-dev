@@ -137,7 +137,8 @@ int physics_init(bool restarting)
   // Pick normalisation factors
   
   if(mesh->get(Lbar, "Lbar")) // Try to read from grid file
-    Lbar = 1.0;
+    if(mesh->get(Lbar, "rmag"))
+      Lbar = 1.0;
   OPTION(Lbar, Lbar); // Override in options file
   SAVE_ONCE(Lbar);   // Save in output file
 
@@ -150,13 +151,21 @@ int physics_init(bool restarting)
   Cs = sqrt(1.602e-19*Tenorm / (AA*1.67262158e-27)); SAVE_ONCE(Cs); // Sound speed in m/s
   Tbar = Lbar / Cs; SAVE_ONCE(Tbar); // Timescale in seconds
   Bbar = max(Bxy, true); SAVE_ONCE(Bbar);
-  
+
   beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
-  
+
   // Mass to charge ratios
   mu_i = 1. / ZZ;
   mu_e = -1. / (AA * 1860.);
   
+  tau_e = -1;
+  tau_i = 1. /ZZ;
+
+  // Gyro-radii (normalised)
+  BoutReal rho_s = Cs * AA * 1.67e-27 / (1.602e-19 * Bbar) / Lbar;
+  rho_e = rho_s * sqrt(fabs(mu_e * tau_e));
+  rho_i = rho_s * sqrt(fabs(mu_i * tau_i));
+
   BoutReal t_e, t_i; // Braginskii collision times
   
   nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
@@ -171,7 +180,7 @@ int physics_init(bool restarting)
   Btxy /= Bbar;
   Bxy  /= Bbar;
   hthe /= Lbar;
-  mesh->dx   /= Lbar*Lbar*Bbar;
+  mesh->dx /= Lbar*Lbar*Bbar;
   
   // Metric components
   
@@ -266,7 +275,6 @@ int physics_run(BoutReal time)
   Field3D phi_G, Phi_G; // Gyro-reduced potential
   Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
   
-  
   ////////////////////////////////////////////
   // Adiabatic electrons
   
@@ -286,7 +294,7 @@ int physics_run(BoutReal time)
     // Neglect electron Larmor radius
     
     Field3D dn = Ne - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
-    phi = invert_laplace(tau_i * dn / (rho_i * rho_i), phi_flags);
+    phi = invert_laplace(tau_i * dn / SQ(rho_i), phi_flags);
     phi -= tau_i * dn;
   }else {
     Field3D dn = gyroPade1(Ne, rho_e) + gyroPade2(Teperp, rho_e)
