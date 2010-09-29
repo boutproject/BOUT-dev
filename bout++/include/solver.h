@@ -46,6 +46,7 @@ using std::string;
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
+#define SOLVERKARNIADAKIS "karniadakis"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -86,6 +87,12 @@ class Solver {
   
   /// Specify a Jacobian (optional)
   virtual void setJacobian(Jacobian j) {}
+  
+  /// Split operator solves
+  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
+  
+  /// Set a maximum internal timestep (only for explicit schemes)
+  virtual void setMaxTimestep(BoutReal dt) {max_dt = dt;}
 
   /// Initialise the solver, passing the RHS function
   /// NOTE: nout and tstep should be passed to run, not init.
@@ -148,9 +155,27 @@ protected:
   int iteration; ///< Current iteration (output time-step) number
 
   int run_rhs(BoutReal t); ///< Run the user's RHS function
+  int run_convective(BoutReal t); ///< Calculate only the convective parts
+  int run_diffusive(BoutReal t); ///< Calculate only the diffusive parts
   
+  // Loading data from BOUT++ to/from solver
+  void load_vars(BoutReal *udata);
+  void load_derivs(BoutReal *udata);
+  int save_vars(BoutReal *udata);
+  void save_derivs(BoutReal *dudata);
+  
+  BoutReal max_dt; ///< Maximum internal timestep
  private:
   rhsfunc phys_run; ///< The user's RHS function
+  
+  bool split_operator;
+  rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
+  
+  int run_func(BoutReal, rhsfunc f);
+  
+  // Loading data from BOUT++ to/from solver
+  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 };
 
 #endif // __SOLVER_H__

@@ -43,6 +43,10 @@ Solver::Solver() {
 
   // Restart directory
   restartdir = string("data");
+  
+  // Split operator
+  split_operator = false;
+  max_dt = -1.0;
 }
 
 /**************************************************************************
@@ -548,9 +552,304 @@ Solver* Solver::Create()
   return SolverFactory::getInstance()->createSolver();
 }
 
+/**************************************************************************
+ * Looping over variables
+ **************************************************************************/
+
+/// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
+{
+  BoutReal **d2d, ***d3d;
+  int i;
+  int jz;
+ 
+  int n2d = f2d.size();
+  int n3d = f3d.size();
+
+  switch(op) {
+  case LOAD_VARS: {
+    /// Load variables from IDA into BOUT++
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      d2d = f2d[i].var->getData(); // Get pointer to data
+      d2d[jx][jy] = udata[p];
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+	d3d = f3d[i].var->getData(); // Get pointer to data
+	d3d[jx][jy][jz] = udata[p];
+	p++;
+      }  
+    }
+    break;
+  }
+  case LOAD_DERIVS: {
+    /// Load derivatives from IDA into BOUT++
+    /// Used for preconditioner
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      d2d = f2d[i].F_var->getData(); // Get pointer to data
+      d2d[jx][jy] = udata[p];
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+	d3d = f3d[i].F_var->getData(); // Get pointer to data
+	d3d[jx][jy][jz] = udata[p];
+	p++;
+      }  
+    }
+    
+    break;
+  }
+  case SAVE_VARS: {
+    /// Save variables from BOUT++ into IDA (only used at start of simulation)
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      d2d = f2d[i].var->getData(); // Get pointer to data
+      udata[p] = d2d[jx][jy];
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+	d3d = f3d[i].var->getData(); // Get pointer to data
+	udata[p] = d3d[jx][jy][jz];
+	p++;
+      }  
+    }
+    break;
+  }
+    /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
+  case SAVE_DERIVS: {
+    
+    // Loop over 2D variables
+    for(i=0;i<n2d;i++) {
+      d2d = f2d[i].F_var->getData(); // Get pointer to data
+      udata[p] = d2d[jx][jy];
+      p++;
+    }
+    
+    for (jz=0; jz < mesh->ngz-1; jz++) {
+      
+      // Loop over 3D variables
+      for(i=0;i<n3d;i++) {
+	d3d = f3d[i].F_var->getData(); // Get pointer to data
+	udata[p] = d3d[jx][jy][jz];
+	p++;
+      }  
+    }
+    break;
+  }
+  }
+}
+
+/// Loop over variables and domain. Used for all data operations for consistency
+void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
+{
+  int jx, jy;
+  int p = 0; // Counter for location in udata array
+
+  int MYSUB = mesh->yend - mesh->ystart + 1;
+
+  // Inner X boundary
+  if(mesh->firstX()) {
+    for(jx=0;jx<mesh->xstart;jx++)
+      for(jy=0;jy<MYSUB;jy++)
+	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
+  }
+
+  // Lower Y boundary region
+  RangeIter *xi = mesh->iterateBndryLowerY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    for(jy=0;jy<mesh->ystart;jy++)
+      loop_vars_op(xi->ind, jy, udata, p, op);
+  }
+  delete xi;
+
+  // Bulk of points
+  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
+      loop_vars_op(jx, jy, udata, p, op);
+  
+  // Upper Y boundary condition
+  xi = mesh->iterateBndryUpperY();
+  for(xi->first(); !xi->isDone(); xi->next()) {
+    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      loop_vars_op(xi->ind, jy, udata, p, op);
+  }
+  delete xi;
+
+  // Outer X boundary
+  if(mesh->lastX()) {
+    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
+	loop_vars_op(jx, jy, udata, p, op);
+  }
+}
+
+void Solver::load_vars(BoutReal *udata)
+{
+  unsigned int i;
+  
+  // Make sure data is allocated
+  for(i=0;i<f2d.size();i++)
+    f2d[i].var->allocate();
+  for(i=0;i<f3d.size();i++) {
+    f3d[i].var->allocate();
+    f3d[i].var->setLocation(f3d[i].location);
+  }
+
+  loop_vars(udata, LOAD_VARS);
+
+  // Mark each vector as either co- or contra-variant
+
+  for(i=0;i<v2d.size();i++)
+    v2d[i].var->covariant = v2d[i].covariant;
+  for(i=0;i<v3d.size();i++)
+    v3d[i].var->covariant = v3d[i].covariant;
+}
+
+void Solver::load_derivs(BoutReal *udata)
+{
+  unsigned int i;
+  
+  // Make sure data is allocated
+  for(i=0;i<f2d.size();i++)
+    f2d[i].F_var->allocate();
+  for(i=0;i<f3d.size();i++) {
+    f3d[i].F_var->allocate();
+    f3d[i].F_var->setLocation(f3d[i].location);
+  }
+
+  loop_vars(udata, LOAD_DERIVS);
+
+  // Mark each vector as either co- or contra-variant
+
+  for(i=0;i<v2d.size();i++)
+    v2d[i].F_var->covariant = v2d[i].covariant;
+  for(i=0;i<v3d.size();i++)
+    v3d[i].F_var->covariant = v3d[i].covariant;
+}
+
+// This function only called during initialisation
+int Solver::save_vars(BoutReal *udata)
+{
+  unsigned int i;
+
+  for(i=0;i<f2d.size();i++)
+    if(f2d[i].var->getData() == (BoutReal**) NULL)
+      return(1);
+
+  for(i=0;i<f3d.size();i++)
+    if(f3d[i].var->getData() == (BoutReal***) NULL)
+      return(1);
+  
+  // Make sure vectors in correct basis
+  for(i=0;i<v2d.size();i++) {
+    if(v2d[i].covariant) {
+      v2d[i].var->toCovariant();
+    }else
+      v2d[i].var->toContravariant();
+  }
+  for(i=0;i<v3d.size();i++) {
+    if(v3d[i].covariant) {
+      v3d[i].var->toCovariant();
+    }else
+      v3d[i].var->toContravariant();
+  }
+
+  loop_vars(udata, SAVE_VARS);
+
+  return(0);
+}
+
+void Solver::save_derivs(BoutReal *dudata)
+{
+  unsigned int i;
+
+  // Make sure vectors in correct basis
+  for(i=0;i<v2d.size();i++) {
+    if(v2d[i].covariant) {
+      v2d[i].F_var->toCovariant();
+    }else
+      v2d[i].F_var->toContravariant();
+  }
+  for(i=0;i<v3d.size();i++) {
+    if(v3d[i].covariant) {
+      v3d[i].F_var->toCovariant();
+    }else
+      v3d[i].F_var->toContravariant();
+  }
+
+  // Make sure 3D fields are at the correct cell location
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if((*it).location != ((*it).F_var)->getLocation()) {
+      //output.write("SOLVER: Interpolating\n");
+      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
+    }
+  }
+
+  loop_vars(dudata, SAVE_DERIVS);
+}
+
+/**************************************************************************
+ * Running user-supplied functions
+ **************************************************************************/
+
+void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD)
+{
+  split_operator = true;
+  phys_conv = fC;
+  phys_diff = fD;
+}
+
 int Solver::run_rhs(BoutReal t)
 {
-  int status = (*phys_run)(t);
+  if(split_operator) {
+    // Run both parts
+    
+  }else
+    return run_func(t, phys_run);
+}
+
+int Solver::run_convective(BoutReal t)
+{
+  if(split_operator) {
+    return run_func(t, phys_conv);
+  }
+  // Return total
+  return run_func(t, phys_run);
+}
+
+int Solver::run_diffusive(BoutReal t)
+{
+  if(split_operator) {
+    return run_func(t, phys_diff);
+  }
+  // Zero if not split
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+    *((*it).F_var) = 0.0;
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
+    *((*it).F_var) = 0.0;
+  return 0;
+}
+
+int Solver::run_func(BoutReal t, rhsfunc f)
+{
+  int status = (*f)(t);
 
   // Make sure vectors in correct basis
   for(int i=0;i<v2d.size();i++) {

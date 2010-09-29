@@ -4,6 +4,7 @@
 #include "impls/petsc/petsc.h"
 #include "impls/ida/ida.h"
 #include "impls/pvode/pvode.h"
+#include "impls/karniadakis/karniadakis.h"
 
 #include "boutexception.h"
 
@@ -60,7 +61,9 @@ Solver* SolverFactory::createSolver(SolverType &type)
       return new IdaSolver;
     } else if(!strcasecmp(type, SOLVERPETSC)) {
       return new PetscSolver;
-    }  
+    } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
+      return new KarniadakisSolver;
+    }
 
   // Need to throw an error saying 'Supplied option "type"' was not found
     throw BoutException("No such solver exists in this build, type: %s", type);

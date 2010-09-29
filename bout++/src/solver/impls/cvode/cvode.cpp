@@ -102,7 +102,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, local_N);
 
-  //.allocate memory
+  // Allocate memory
   
   if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
