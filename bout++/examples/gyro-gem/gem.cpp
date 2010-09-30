@@ -37,6 +37,8 @@ Field3D Ui, Ue; // Ion and electron parallel velocity
 
 Field3D Jpar;   // Parallel current
 
+Field3D phi_G, Phi_G; // Gyro-reduced potential
+
 //////////////////////////////////////////
 // Equilibrium
 
@@ -79,7 +81,7 @@ BoutReal nu_e, nu_i; // Collisional dissipation
 
 BoutReal nu_perp, nu_par;  // Artificial 
 
-const BRACKET_METHOD bm = BRACKET_STD; // Method to use for brackets
+const BRACKET_METHOD bm = BRACKET_ARAKAWA; //BRACKET_STD; // Method to use for brackets
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -88,6 +90,7 @@ int phi_flags, apar_flags; // Inversion flags
 
 BoutReal Lbar;   // Perpendicular scale length
 BoutReal Tenorm; // Typical value of Te for normalisation
+BoutReal Ninorm; // Typical density value for normalisation
 BoutReal Bbar;   // Magnetic field  
 
 BoutReal Cs;    // Sound speed sqrt(Tenorm / Mi)
@@ -129,7 +132,12 @@ int physics_init(bool restarting)
   GRID_LOAD(hthe);   // Poloidal arc length [m / radian]
   
   GRID_LOAD(Te0); // Electron temperature in eV
-  GRID_LOAD(Ne0); // Electron number density in m^-3
+  GRID_LOAD(Ni0); // Ion number density in 10^20 m^-3
+
+  Ni0 *= 1.e20; // Convert to m^-3
+
+  Ti0 = Te0;
+  Ne0 = Ni0;
 
   Field2D p_e = 1.602e-19 * Te0 * Ne0; // Electron pressure in Pascals
  
@@ -148,11 +156,23 @@ int physics_init(bool restarting)
   OPTION(ZZ, 1.0); 
 
   Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
+  Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
+  
   Cs = sqrt(1.602e-19*Tenorm / (AA*1.67262158e-27)); SAVE_ONCE(Cs); // Sound speed in m/s
-  Tbar = Lbar / Cs; SAVE_ONCE(Tbar); // Timescale in seconds
-  Bbar = max(Bxy, true); SAVE_ONCE(Bbar);
+  
+  Tbar = Lbar / Cs; 
+  OPTION(Tbar, Tbar); // Override in options file
+  SAVE_ONCE(Tbar); // Timescale in seconds
+  
+  if(mesh->get(Bbar, "Bbar"))
+    if(mesh->get(Bbar, "bmag"))
+      Bbar = max(Bxy, true); 
+  OPTION(Bbar, Bbar); // Override in options file
+  SAVE_ONCE(Bbar);
 
   beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
+
+  output << "\tbeta_e = " << beta_e << endl;
 
   // Mass to charge ratios
   mu_i = 1. / ZZ;
@@ -161,16 +181,40 @@ int physics_init(bool restarting)
   tau_e = -1;
   tau_i = 1. /ZZ;
 
-  // Gyro-radii (normalised)
-  BoutReal rho_s = Cs * AA * 1.67e-27 / (1.602e-19 * Bbar) / Lbar;
+  // Gyro-radii (SI units)
+  BoutReal rho_s = Cs * AA * 1.67e-27 / (1.602e-19 * Bbar);
   rho_e = rho_s * sqrt(fabs(mu_e * tau_e));
   rho_i = rho_s * sqrt(fabs(mu_i * tau_i));
 
+  BoutReal delta = rho_s / Lbar; SAVE_ONCE(delta); // This should be small
+  
+  output << "\tdelta = " << delta << endl;
+  
+  ////////////////////////////////////////////////////
+  // Collisional parameters
+  
   BoutReal t_e, t_i; // Braginskii collision times
   
+  t_e = t_i = 1.e-6; // FIX!!!
+
   nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
   nu_i = Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
+
+  ////////////////////////////////////////////////////
+  // Normalise
   
+  Te0 /= Tenorm * delta; SAVE_ONCE(Te0);
+  Ti0 /= Tenorm * delta; SAVE_ONCE(Ti0);
+  
+  Ni0 /= Ninorm * delta; SAVE_ONCE(Ni0);
+  Ne0 /= Ninorm * delta; SAVE_ONCE(Ne0);
+  
+  rho_e /= Lbar;
+  rho_i /= Lbar;
+
+  output << "Normalised rho_e = " << rho_e << endl;
+  output << "Normalised rho_i = " << rho_i << endl;
+
   //////////////////////////////////
   // Metric tensor components
   
@@ -232,6 +276,39 @@ int physics_init(bool restarting)
     comms.add(Ne, ApUe, Tepar, Teperp, qepar, qeperp);
   }
   
+  bool output_ddt;
+  options.setSection("gem");
+  OPTION(output_ddt, false);
+  if(output_ddt) {
+    // Output the time derivatives
+    
+    dump.add(ddt(Ni),     "F_Ni", 1);
+    dump.add(ddt(ApUi),   "F_ApUi", 1);
+    dump.add(ddt(Tipar),  "F_Tipar", 1);
+    dump.add(ddt(Tiperp), "F_Tiperp", 1);
+    dump.add(ddt(qipar),  "F_qipar", 1);
+    dump.add(ddt(qiperp), "F_qiperp", 1);
+    
+    if(!adiabatic_electrons) {
+      dump.add(ddt(Ne),     "F_Ne", 1);
+      dump.add(ddt(ApUe),   "F_ApUe", 1);
+      dump.add(ddt(Tepar),  "F_Tepar", 1);
+      dump.add(ddt(Teperp), "F_Teperp", 1);
+      dump.add(ddt(qepar),  "F_qepar", 1);
+      dump.add(ddt(qeperp), "F_qeperp", 1);
+    }
+  }
+
+  dump.add(phi, "phi", 1);
+  dump.add(Apar, "Apar", 1);
+  dump.add(Ui, "Ui", 1);
+  dump.add(Ue, "Ue", 1);
+  dump.add(Jpar, "Jpar", 1);
+
+  comms.add(phi, Apar, Ui, Ue, Jpar);
+
+  dump.add(phi_G, "phi_G", 1);
+
   //////////////////////////////////
   
   if(!restarting) {
@@ -264,15 +341,22 @@ const Field3D UE_Grad(const Field3D &f, const Field3D &phi);
 const Field3D WE_Grad(const Field3D &f, const Field3D &Phi);
 
 const Field3D Grad_parP(const Field3D &f);
+const Field3D Grad_parP_CtoL(const Field3D &f);
+const Field3D Grad_parP_LtoC(const Field3D &f);
+
 const Field3D Div_parP(const Field3D &f);
+const Field3D Div_parP_CtoL(const Field3D &f);
+const Field3D Div_parP_LtoC(const Field3D &f);
 
 ////////////////////////////////////////////////////////////////////////
 // RHS function
 
 int physics_run(BoutReal time)
 {
+  output << "time = " << time << endl;
+  
   // Quantities which depend on species
-  Field3D phi_G, Phi_G; // Gyro-reduced potential
+  //Field3D phi_G, Phi_G; // Gyro-reduced potential
   Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
   
   ////////////////////////////////////////////
@@ -309,12 +393,17 @@ int physics_run(BoutReal time)
   // Helmholtz equation for Apar
   
   Field2D a = beta_e * (1./mu_e - 1./mu_i);
-  Apar = invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
+  Apar = 0.0; //invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
   
   Ui = (ApUi - beta_e*Apar) / mu_i;
   Ue = (ApUe - beta_e*Apar) / mu_e;
   
   Jpar = Ui - Ue;
+
+  ////////////////////////////////////////////
+  // Communicate
+
+  mesh->communicate(comms);
 
   ////////////////////////////////////////////
   // Resistivity
@@ -335,6 +424,8 @@ int physics_run(BoutReal time)
     }else {
       phi_G = gyroPade1(phi, rho_e);
       Phi_G = gyroPade2(phi, rho_e);
+      
+      mesh->communicate(phi_G, Phi_G);
     }
     
     // Collisional dissipation
@@ -343,34 +434,42 @@ int physics_run(BoutReal time)
     K_perp = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qeperp + 0.4*alpha_e*Jpar);
     K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
     
-    ddt(Ne) = -UE_Grad(Ne0 + Ne, phi_G) 
+    ddt(Ne) = -UE_Grad(Ne0 + Ne, phi_G)
       - WE_Grad(Te0 + Teperp, Phi_G)
-      - Div_parP(Ue)
+      - Div_parP_LtoC(Ue)
       + curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
-    
+
     ddt(ApUe) = -mu_e*UE_Grad(Ue, phi_G)
       - mu_e*WE_Grad(qeperp, Phi_G)
-      - Grad_parP(phi_G + tau_e*(Ne0 + Te0 + Ne + Tepar))
+      - Grad_parP_CtoL(phi_G + tau_e*(Ne0 + Te0 + Ne + Tepar))
       + mu_e * tau_e * curvature(2.*Ue + qepar + 0.5*qeperp)
       - tau_e * (Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
-      + Rei;
+      + Rei
+      ;
+    
+    /*
+    ddt(Tepar) = 0.0;
+    ddt(Teperp) = 0.0;
+    ddt(qepar) = 0.0;
+    ddt(qeperp) = 0.0;
+    */
     
     ddt(Tepar) = - UE_Grad(Te0 + Tepar, phi_G)
-      - 2.*Div_parP(Ue + qepar)
+      - 2.*Div_parP_LtoC(Ue + qepar)
       + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
       - (Ue + qeperp)*Grad_par_logB
       - 2.*S_D;
     
     ddt(Teperp) = - UE_Grad(Te0 + Teperp, phi_G)
       - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
-      - Div_parP(qeperp)
+      - Div_parP_LtoC(qeperp)
       + 0.5*curvature(phi_G + Phi_G + tau_e*(Ne + Teperp) 
                       + 3.*(Phi_G + tau_e*Teperp))
       + (Ue + qeperp)*Grad_par_logB
       + S_D;
     
     ddt(qepar) = - UE_Grad(qepar, phi_G)
-      - 1.5*(1./mu_e)*Grad_parP(tau_e*(Te0 + Tepar))
+      - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*(Te0 + Tepar))
       + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
       - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
       - (1./mu_e)*K_par
@@ -378,7 +477,7 @@ int physics_run(BoutReal time)
     
     ddt(qeperp) = - UE_Grad(qeperp, phi_G)
       - WE_Grad(Ue + 2.*qeperp, Phi_G)
-      - (1./mu_e)*Grad_parP(Phi_G + tau_e*(Te0 + Teperp))
+      - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*(Te0 + Teperp))
       + 0.5*tau_e*curvature(Ue + 6.*qeperp)
       - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
       - (1./mu_e)*K_perp
@@ -393,52 +492,62 @@ int physics_run(BoutReal time)
   phi_G = gyroPade1(phi, rho_i);
   Phi_G = gyroPade2(phi, rho_i);
   
+  mesh->communicate(phi_G, Phi_G);
+
   // Collisional dissipation
   S_D = (nu_i / (3.*pi_i)) * (Tipar - Tiperp);
   K_par = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qipar;
   K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
   K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
 
-  ddt(Ni) = -UE_Grad(Ni0 + Ne, phi_G) 
+  ddt(Ni) = -UE_Grad(Ni0 + Ne, phi_G)
     - WE_Grad(Ti0 + Tiperp, Phi_G)
-    - Div_parP(Ui)
+    - Div_parP_LtoC(Ui)
     + curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_e*Tiperp + Phi_G));
-  
+    
   ddt(ApUi) = -mu_i*UE_Grad(Ui, phi_G)
     - mu_i*WE_Grad(qiperp, Phi_G)
-    - Grad_parP(phi_G + tau_i*(Ni0 + Ti0 + Ni + Tipar))
+    - Grad_parP_CtoL(phi_G + tau_i*(Ni0 + Ti0 + Ni + Tipar))
     + mu_i * tau_i * curvature(2.*Ui + qipar + 0.5*qiperp)
     - tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
-    + Rei;
+    + Rei
+    ;
+  
+  /*
+  ddt(Tipar) = 0.0;
+  ddt(Tiperp) = 0.0;
+  ddt(qipar) = 0.0;
+  ddt(qiperp) = 0.0;
+  */
   
   ddt(Tipar) = - UE_Grad(Ti0 + Tipar, phi_G)
-    - 2.*Div_parP(Ui + qipar)
+    - 2.*Div_parP_LtoC(Ui + qipar)
     + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
     - (Ui + qiperp)*Grad_par_logB
     - 2.*S_D;
   
   ddt(Tiperp) = - UE_Grad(Ti0 + Tiperp, phi_G)
     - WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
-    - Div_parP(qiperp)
+    - Div_parP_LtoC(qiperp)
     + 0.5*curvature(phi_G + Phi_G + tau_i*(Ni + Tiperp) 
                     + 3.*(Phi_G + tau_i*Tiperp))
     + (Ui + qiperp)*Grad_par_logB
     + S_D;
   
   ddt(qipar) = - UE_Grad(qipar, phi_G)
-    - 1.5*(1./mu_i)*Grad_parP(tau_i*(Ti0 + Tipar))
+    - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*(Ti0 + Tipar))
     + 0.5*tau_i*curvature(3.*Ui + 8.*qipar)
     - (1./mu_e)*K_par
     - (1./mu_e)*K_D;
   
   ddt(qiperp) = - UE_Grad(qiperp, phi_G)
     - WE_Grad(Ui + 2.*qiperp, Phi_G)
-    - (1./mu_i)*Grad_parP(Phi_G + tau_i*(Ti0 + Tiperp))
+    - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*(Ti0 + Tiperp))
     + 0.5*tau_i*curvature(Ui + 6.*qiperp)
     - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
     - (1./mu_e)*K_perp
     + (1./mu_e)*K_D;
-
+  
   return 0;
 }
 
@@ -472,8 +581,8 @@ const Field3D UE_Grad(const Field3D &f, const Field3D &phi)
   delp2.applyBoundary("dirichlet");
   mesh->communicate(delp2);
   
-  return bracket(phi, f, bm)
-    + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) )
+  return bracket(phi, f, bm);
+     + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
     - nu_par*Grad2_par2(f); // NB: This should be changed for variable B
 }
 
@@ -490,8 +599,27 @@ const Field3D Grad_parP(const Field3D &f)
   return Grad_par(f) - beta_e*bracket(Apar, f, bm);
 }
 
+const Field3D Grad_parP_CtoL(const Field3D &f)
+{
+  return Grad_par_CtoL(f) - beta_e*bracket(Apar, f, bm);
+}
+
+const Field3D Grad_parP_LtoC(const Field3D &f)
+{
+  return Grad_par_LtoC(f) - beta_e*bracket(Apar, f, bm);
+}
+
 const Field3D Div_parP(const Field3D &f)
 {
   return mesh->Bxy*Grad_parP(f/mesh->Bxy);
 }
 
+const Field3D Div_parP_CtoL(const Field3D &f)
+{
+  return mesh->Bxy*Grad_parP_CtoL(f/mesh->Bxy);
+}
+
+const Field3D Div_parP_LtoC(const Field3D &f)
+{
+  return mesh->Bxy*Grad_parP_LtoC(f/mesh->Bxy);
+}

@@ -3,13 +3,13 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 10       # number of time-steps
-TIMESTEP = 1e-3	   # time between outputs
+NOUT = 100       # number of time-steps
+TIMESTEP = 1e-5	   # time between outputs
 
 archive = 20
 
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+ShiftXderivs = true # use shifted radial derivatives?
+TwistShift = true  # use twist-shift condition?
 
 MZ = 17     # number of points in z direction (2^n + 1)
 ZPERIOD = 7  # Number of periods
@@ -36,8 +36,8 @@ upwind = W3   # U1 = 1st order upwind, W3 = 3rd order WENO
 
 [ddy]
 
-first = C4
-second = C4
+first = C2
+second = C2
 upwind = W3
 
 [ddz]
@@ -77,6 +77,8 @@ Landau = 1.0
 
 nu_perp = 0.01
 nu_par = 3e-3
+
+output_ddt = true  # Save time derivs to file
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
@@ -125,7 +127,7 @@ zs_mode = 1 # asimuthal mode number
 #
 # relax( )   - Make boundary condition relaxing
 
-bndry_all = dirichlet
+bndry_all = neumann
 
 [Ni]
 scale = 1.0e-8 # only perturbing Ni

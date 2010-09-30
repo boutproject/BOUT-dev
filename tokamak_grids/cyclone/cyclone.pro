@@ -76,7 +76,7 @@ PRO cyclone, output=output, varyBp=varyBp
   Rxy = FLTARR(nx, ny)
   FOR i=0, ny-1 DO Rxy[*,i] = Rmaj - rminor*COS(theta[i])
   Zxy = FLTARR(nx, ny)
-  FOR i=0, ny-1 DO Zxy[*,i] = Rmaj + rminor*SIN(theta[i])
+  FOR i=0, ny-1 DO Zxy[*,i] = rminor*SIN(theta[i])
   
   dy = FLTARR(nx, ny) +  2.*!PI / FLOAT(ny)
   hthe = FLTARR(nx, ny) + rminor
@@ -108,6 +108,10 @@ PRO cyclone, output=output, varyBp=varyBp
   qint = eps_integral(epsilon)
   FOR i=1, ny-1 DO zShift[*,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
   
+  y0 = FIX(ny/2)
+  zs0 = zshift[*,y0]
+  FOR i=0, ny-1 DO zshift[*,i] = zshift[*,i] - zs0
+
   Ni0 = FLTARR(nx, ny)
   FOR i=0, ny-1 DO Ni0[*,i] = Ni * EXP(-drprof / L_n)
   Ti0 = FLTARR(nx, ny)
