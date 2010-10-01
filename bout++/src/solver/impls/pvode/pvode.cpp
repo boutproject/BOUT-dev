@@ -310,26 +310,18 @@ BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 
 void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 {
-  int flag;
-  BoutReal tstart;
-
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
 #endif
-
-  tstart = MPI_Wtime();
 
   // Load state from CVODE
   load_vars(udata);
 
   // Call function
-  flag = run_rhs(t);
+  int flag = run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
 #ifdef CHECK
   msg_stack.pop(msg_point);

@@ -47,6 +47,7 @@ using std::string;
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
 #define SOLVERKARNIADAKIS "karniadakis"
+#define SOLVERRK4         "rk4"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 

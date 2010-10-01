@@ -5,6 +5,7 @@
 #include "impls/ida/ida.h"
 #include "impls/pvode/pvode.h"
 #include "impls/karniadakis/karniadakis.h"
+#include "impls/rk4/rk4.h"
 
 #include "boutexception.h"
 
@@ -51,20 +52,21 @@ Solver* SolverFactory::createSolver() {
 }
 
 Solver* SolverFactory::createSolver(SolverType &type)
-{  
-
-    if(!strcasecmp(type, SOLVERPVODE)) {
-      return new PvodeSolver;
-    } else if(!strcasecmp(type, SOLVERCVODE)) {
-      return new CvodeSolver;
-    } else if(!strcasecmp(type, SOLVERIDA)) {
-      return new IdaSolver;
-    } else if(!strcasecmp(type, SOLVERPETSC)) {
-      return new PetscSolver;
-    } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
-      return new KarniadakisSolver;
-    }
-
+{
+  if(!strcasecmp(type, SOLVERPVODE)) {
+    return new PvodeSolver;
+  } else if(!strcasecmp(type, SOLVERCVODE)) {
+    return new CvodeSolver;
+  } else if(!strcasecmp(type, SOLVERIDA)) {
+    return new IdaSolver;
+  } else if(!strcasecmp(type, SOLVERPETSC)) {
+    return new PetscSolver;
+  } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
+    return new KarniadakisSolver;
+  } else if(!strcasecmp(type, SOLVERRK4)) {
+    return new RK4Solver;
+  }
+  
   // Need to throw an error saying 'Supplied option "type"' was not found
-    throw BoutException("No such solver exists in this build, type: %s", type);
+  throw BoutException("No such solver exists in this build, type: %s", type);
 }

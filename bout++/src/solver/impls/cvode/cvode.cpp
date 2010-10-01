@@ -334,8 +334,6 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
-
-  BoutReal tstart = MPI_Wtime();
   
   // Load state from udata
   load_vars(udata);
@@ -345,9 +343,6 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
   
   // Save derivatives to dudata
   save_derivs(dudata);
-  
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
 #ifdef CHECK
   msg_stack.pop(msg_point);

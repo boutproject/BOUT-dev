@@ -818,33 +818,59 @@ void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD)
 
 int Solver::run_rhs(BoutReal t)
 {
+  int status;
+  
+  BoutReal tstart = MPI_Wtime();
+  
   if(split_operator) {
     // Run both parts
     
   }else
-    return run_func(t, phys_run);
+    status = run_func(t, phys_run);
+  
+  rhs_wtime += MPI_Wtime() - tstart;
+  rhs_ncalls++;
+
+  return status;
 }
 
 int Solver::run_convective(BoutReal t)
 {
+  int status;
+  
+  BoutReal tstart = MPI_Wtime();
+  
   if(split_operator) {
-    return run_func(t, phys_conv);
+    status =  run_func(t, phys_conv);
+  }else {
+    // Return total
+    status = run_func(t, phys_run);
   }
-  // Return total
-  return run_func(t, phys_run);
+  
+  rhs_wtime += MPI_Wtime() - tstart;
+  rhs_ncalls++;
 }
 
 int Solver::run_diffusive(BoutReal t)
 {
+  int status = 0;
+  
+  BoutReal tstart = MPI_Wtime();
+
   if(split_operator) {
-    return run_func(t, phys_diff);
+    status = run_func(t, phys_diff);
+  }else {
+    // Zero if not split
+    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+      *((*it).F_var) = 0.0;
+    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
+      *((*it).F_var) = 0.0;
   }
-  // Zero if not split
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
-    *((*it).F_var) = 0.0;
-  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
-    *((*it).F_var) = 0.0;
-  return 0;
+  
+  rhs_wtime += MPI_Wtime() - tstart;
+  //rhs_ncalls++;
+  
+  return status;
 }
 
 int Solver::run_func(BoutReal t, rhsfunc f)
