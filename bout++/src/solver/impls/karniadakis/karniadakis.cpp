@@ -30,6 +30,33 @@ int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, i
     max_dt = tstep;
   }
   
+  // Calculate number of variables
+  int local_N = getLocalN();
+  
+  // Get total problem size
+  int neq;
+  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+    output.write("\tERROR: MPI_Allreduce failed!\n");
+    return 1;
+  }
+  
+  output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
+	       n3Dvars(), n2Dvars(), neq, local_N);
+  
+  // Allocate memory 
+  
+  f1 = new BoutReal[nlocal];
+  f0 = new BoutReal[nlocal];
+  fm1 = new BoutReal[nlocal];
+  fm2 = new BoutReal[nlocal];
+  
+  S0 = new BoutReal[nlocal];
+  Sm1 = new BoutReal[nlocal];
+  Sm2 = new BoutReal[nlocal];
+  
+  D0 = new BoutReal[nlocal];
+  
+  // Save variables
   
 #ifdef CHECK
   msg_stack.pop(msg_point);
