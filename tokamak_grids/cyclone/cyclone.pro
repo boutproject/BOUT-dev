@@ -129,6 +129,25 @@ PRO cyclone, output=output, varyBp=varyBp
   ; q profile   : qprof
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Curvature
+
+  ; Bxy is constant in x, so need to supply logB too
+  
+  logB = FLTARR(nx, ny)
+  
+  FOR y=0, ny-1 DO BEGIN
+    FOR x=0,nx-1 DO BEGIN
+      rpos = (FLOAT(x)/FLOAT(nx-1) - 0.5) * dr
+      R = Rmaj - (rminor + rpos)*COS(theta[y])
+      
+      Bt = Bt0 * Rmaj / R
+      
+      logB[x,y] = ALOG(SQRT(Bt^2 + Bp^2))
+    ENDFOR
+  ENDFOR
+  
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Topology: Just in the core
   
   ixseps1 = nx
@@ -211,6 +230,7 @@ PRO cyclone, output=output, varyBp=varyBp
   s = file_write(handle, "rmag", Rmaj)
 
   ; Curvature
+  s = file_write(handle, "logB", logB)
 ;  s = file_write(handle, "bxcvx", bxcvx)
 ;  s = file_write(handle, "bxcvy", bxcvy)
 ;  s = file_write(handle, "bxcvz", bxcvz)

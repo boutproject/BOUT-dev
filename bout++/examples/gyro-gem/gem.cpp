@@ -43,6 +43,7 @@ Field3D phi_G, Phi_G; // Gyro-reduced potential
 // Equilibrium
 
 Vector3D B0vec; // Equilibrium B field vector
+Field2D logB;   // For curvature
 Field2D Grad_par_logB; // Grad_par(log(B))
 
 Field2D Ni0, Ne0; // Gyro-center densities
@@ -75,15 +76,34 @@ bool adiabatic_electrons;  // Solve adiabatic electrons
 bool small_rho_e;          // Neglect electron gyro-radius
 bool include_grad_par_B;   // Include terms like Grad_par(log(B))
 
+bool curv_logB;
+
 BoutReal Landau; // Multiplier for Landau damping terms
 
 BoutReal nu_e, nu_i; // Collisional dissipation
 
 BoutReal nu_perp, nu_par;  // Artificial 
 
-const BRACKET_METHOD bm = BRACKET_ARAKAWA; //BRACKET_STD; // Method to use for brackets
+const BRACKET_METHOD bm = BRACKET_STD; // Method to use for brackets BRACKET_ARAKAWA
 
 int phi_flags, apar_flags; // Inversion flags
+
+//////////////////////////////////////////
+// Terms in the equations
+
+bool ne_ddt, ne_net, ne_te0, ne_te1, ne_ue, ne_curv;
+bool apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, apue_gradB, apue_Rei;
+bool tepar_ddt;
+bool teperp_ddt;
+bool qepar_ddt;
+bool qeperp_ddt;
+
+bool ni_ddt, ni_nit, ni_ti0, ni_ti1, ni_ui,   ni_curv;
+bool apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, apui_gradB, apui_Rei;
+bool tipar_ddt;
+bool tiperp_ddt;
+bool qipar_ddt;
+bool qiperp_ddt;
 
 //////////////////////////////////////////
 // Normalisation factors
@@ -120,6 +140,8 @@ int physics_init(bool restarting)
   OPTION(phi_flags,  0);
   OPTION(apar_flags, 0);
 
+  OPTION(curv_logB, false); // Read in a separate logB variable
+  
   //////////////////////////////////
   // Read profiles
 
@@ -141,6 +163,10 @@ int physics_init(bool restarting)
 
   Field2D p_e = 1.602e-19 * Te0 * Ne0; // Electron pressure in Pascals
  
+  if(curv_logB) {
+    GRID_LOAD(logB);
+  }
+  
   //////////////////////////////////
   // Pick normalisation factors
   
@@ -153,7 +179,7 @@ int physics_init(bool restarting)
   BoutReal AA; // Ion atomic mass
   BoutReal ZZ; // Ion charge
   OPTION(AA, 2.0); // Deuterium by default
-  OPTION(ZZ, 1.0); 
+  OPTION(ZZ, 1.0);
 
   Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
   Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
@@ -190,6 +216,26 @@ int physics_init(bool restarting)
   
   output << "\tdelta = " << delta << endl;
   
+  ////////////////////////////////////////////////////
+  // Terms in equations
+  
+  options.setSection("");
+  OPTION6(ne_ddt, ne_net, ne_te0, ne_te1, ne_ue, ne_curv, true);
+  OPTION6(apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
+  OPTION2(apue_gradB, apue_Rei, true);
+  OPTION(tepar_ddt, true);
+  OPTION(teperp_ddt, true);
+  OPTION(qepar_ddt, true);
+  OPTION(qeperp_ddt, true);
+  
+  OPTION6(ni_ddt, ni_nit, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
+  OPTION6(apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, true);
+  OPTION2(apui_gradB, apui_Rei, true);
+  OPTION(tipar_ddt, true);
+  OPTION(tiperp_ddt, true);
+  OPTION(qipar_ddt, true);
+  OPTION(qiperp_ddt, true);
+
   ////////////////////////////////////////////////////
   // Collisional parameters
   
@@ -263,8 +309,35 @@ int physics_init(bool restarting)
   //////////////////////////////////
   
   // Add ion equations
-  SOLVE_FOR6(Ni, ApUi, Tipar, Tiperp, qipar, qiperp);
-  comms.add(Ni, ApUi, Tipar, Tiperp, qipar, qiperp);
+  if(ni_ddt) {
+    SOLVE_FOR(Ni);
+    comms.add(Ni);
+  }else Ni = 0.;
+  
+  if(apui_ddt) {
+    SOLVE_FOR(ApUi);
+    comms.add(ApUi);
+  }else ApUi = 0.;
+    
+  if(tipar_ddt) {
+    SOLVE_FOR(Tipar);
+    comms.add(Tipar);
+  }else Tipar = 0.;
+  
+  if(tiperp_ddt) {
+    SOLVE_FOR(Tiperp);
+    comms.add(Tiperp);
+  }else Tiperp = 0.;
+  
+  if(qipar_ddt) {
+    SOLVE_FOR(qipar);
+    comms.add(qipar);
+  }else qipar = 0.;
+  
+  if(qiperp_ddt) {
+    SOLVE_FOR(qiperp);
+    comms.add(qiperp);
+  }else qiperp = 0.;
   
   if(adiabatic_electrons) {
     // Solving with adiabatic electrons
@@ -272,8 +345,35 @@ int physics_init(bool restarting)
   }else {
     // Add electron equations
     
-    SOLVE_FOR6(Ne, ApUe, Tepar, Teperp, qepar, qeperp);
-    comms.add(Ne, ApUe, Tepar, Teperp, qepar, qeperp);
+    if(ne_ddt) {
+      SOLVE_FOR(Ne);
+      comms.add(Ne);
+    }else Ne = 0.;
+    
+    if(apue_ddt) {
+      SOLVE_FOR(ApUe);
+      comms.add(ApUe);
+    }else ApUe = 0.;
+    
+    if(tepar_ddt) {
+      SOLVE_FOR(Tepar);
+      comms.add(Tepar);
+    }else Tepar = 0.;
+    
+    if(teperp_ddt) {
+      SOLVE_FOR(Teperp);
+      comms.add(Teperp);
+    }else Teperp = 0.;
+    
+    if(qepar_ddt) {
+      SOLVE_FOR(qepar);
+      comms.add(qepar);
+    }else qepar = 0.;
+    
+    if(qeperp_ddt) {
+      SOLVE_FOR(qeperp);
+      comms.add(qeperp);
+    }else qeperp = 0.;
   }
   
   bool output_ddt;
@@ -282,20 +382,32 @@ int physics_init(bool restarting)
   if(output_ddt) {
     // Output the time derivatives
     
-    dump.add(ddt(Ni),     "F_Ni", 1);
-    dump.add(ddt(ApUi),   "F_ApUi", 1);
-    dump.add(ddt(Tipar),  "F_Tipar", 1);
-    dump.add(ddt(Tiperp), "F_Tiperp", 1);
-    dump.add(ddt(qipar),  "F_qipar", 1);
-    dump.add(ddt(qiperp), "F_qiperp", 1);
+    if(ni_ddt)
+      dump.add(ddt(Ni),     "F_Ni", 1);
+    if(apui_ddt)
+      dump.add(ddt(ApUi),   "F_ApUi", 1);
+    if(tipar_ddt)
+      dump.add(ddt(Tipar),  "F_Tipar", 1);
+    if(tiperp_ddt)
+      dump.add(ddt(Tiperp), "F_Tiperp", 1);
+    if(qipar_ddt)
+      dump.add(ddt(qipar),  "F_qipar", 1);
+    if(qiperp_ddt)
+      dump.add(ddt(qiperp), "F_qiperp", 1);
     
     if(!adiabatic_electrons) {
-      dump.add(ddt(Ne),     "F_Ne", 1);
-      dump.add(ddt(ApUe),   "F_ApUe", 1);
-      dump.add(ddt(Tepar),  "F_Tepar", 1);
-      dump.add(ddt(Teperp), "F_Teperp", 1);
-      dump.add(ddt(qepar),  "F_qepar", 1);
-      dump.add(ddt(qeperp), "F_qeperp", 1);
+      if(ne_ddt)
+        dump.add(ddt(Ne),     "F_Ne", 1);
+      if(apue_ddt)
+        dump.add(ddt(ApUe),   "F_ApUe", 1);
+      if(tepar_ddt)
+        dump.add(ddt(Tepar),  "F_Tepar", 1);
+      if(teperp_ddt)
+        dump.add(ddt(Teperp), "F_Teperp", 1);
+      if(qepar_ddt)
+        dump.add(ddt(qepar),  "F_qepar", 1);
+      if(qeperp_ddt)
+        dump.add(ddt(qeperp), "F_qeperp", 1);
     }
   }
 
@@ -408,8 +520,8 @@ int physics_run(BoutReal time)
   ////////////////////////////////////////////
   // Resistivity
   
-  Rei = mu_e*nu_e*(eta*Jpar + 
-                   (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
+  Rei = 0.0; //mu_e*nu_e*(eta*Jpar + 
+  //     (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
   
   ////////////////////////////////////////////
   // Electron equations
@@ -434,55 +546,84 @@ int physics_run(BoutReal time)
     K_perp = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qeperp + 0.4*alpha_e*Jpar);
     K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
     
-    ddt(Ne) = -UE_Grad(Ne0 + Ne, phi_G)
-      - WE_Grad(Te0 + Teperp, Phi_G)
-      - Div_parP_LtoC(Ue)
-      + curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
-
-    ddt(ApUe) = -mu_e*UE_Grad(Ue, phi_G)
-      - mu_e*WE_Grad(qeperp, Phi_G)
-      - Grad_parP_CtoL(phi_G + tau_e*(Ne0 + Te0 + Ne + Tepar))
-      + mu_e * tau_e * curvature(2.*Ue + qepar + 0.5*qeperp)
-      - tau_e * (Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
-      + Rei
-      ;
+    if(ne_ddt) {
+      if(ne_net) { // Total Ne
+        ddt(Ne) = -UE_Grad(Ne0 + Ne, phi_G);
+      }else        // Only linear term
+        ddt(Ne) = -UE_Grad(Ne0, phi_G);
+      
+      if(ne_te0)
+        ddt(Ne) -= WE_Grad(Te0, Phi_G);
+      if(ne_te1)
+        ddt(Ne) -= WE_Grad(Teperp, Phi_G);
+      
+      if(ne_ue)
+        ddt(Ne) -= Div_parP_LtoC(Ue);
+      
+      if(ne_curv)
+        ddt(Ne) += curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
+    }
     
-    /*
-    ddt(Tepar) = 0.0;
-    ddt(Teperp) = 0.0;
-    ddt(qepar) = 0.0;
-    ddt(qeperp) = 0.0;
-    */
+    if(apue_ddt) {
+      if(apue_uet) {
+        ddt(ApUe) = -mu_e*UE_Grad(Ue, phi_G);
+      }else
+        ddt(ApUe) = 0.0;
+      
+      if(apue_qe) 
+        ddt(ApUe) -= mu_e*WE_Grad(qeperp, Phi_G);
+      
+      if(apue_phi)
+        ddt(ApUe) -= Grad_parP_CtoL(phi_G);
+      if(apue_parP)
+        ddt(ApUe) -= tau_e*Grad_parP_CtoL(Ne0 + Te0 + Ne + Tepar);
+      
+      if(apue_curv)
+        ddt(ApUe) += mu_e * tau_e * curvature(2.*Ue + qepar + 0.5*qeperp);
+      
+      if(apue_gradB)
+        ddt(ApUe) -= tau_e * (Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB;
+      
+      if(apue_Rei)
+        ddt(ApUe) -= Rei;
+    }
     
-    ddt(Tepar) = - UE_Grad(Te0 + Tepar, phi_G)
-      - 2.*Div_parP_LtoC(Ue + qepar)
-      + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
-      - (Ue + qeperp)*Grad_par_logB
-      - 2.*S_D;
+    if(tepar_ddt) {
+      ddt(Tepar) = - UE_Grad(Te0 + Tepar, phi_G)
+        - 2.*Div_parP_LtoC(Ue + qepar)
+        + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
+        - (Ue + qeperp)*Grad_par_logB
+        - 2.*S_D;
+    }
     
-    ddt(Teperp) = - UE_Grad(Te0 + Teperp, phi_G)
-      - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
-      - Div_parP_LtoC(qeperp)
-      + 0.5*curvature(phi_G + Phi_G + tau_e*(Ne + Teperp) 
-                      + 3.*(Phi_G + tau_e*Teperp))
-      + (Ue + qeperp)*Grad_par_logB
-      + S_D;
+    if(teperp_ddt) {
+      ddt(Teperp) = - UE_Grad(Te0 + Teperp, phi_G)
+        - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
+        - Div_parP_LtoC(qeperp)
+        + 0.5*curvature(phi_G + Phi_G + tau_e*(Ne + Teperp) 
+                        + 3.*(Phi_G + tau_e*Teperp))
+        + (Ue + qeperp)*Grad_par_logB
+        + S_D;
+    }
     
-    ddt(qepar) = - UE_Grad(qepar, phi_G)
-      - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*(Te0 + Tepar))
-      + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
-      - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
-      - (1./mu_e)*K_par
-      - (1./mu_e)*K_D;
+    if(qepar_ddt) {
+      ddt(qepar) = - UE_Grad(qepar, phi_G)
+        - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*(Te0 + Tepar))
+        + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
+        - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
+        - (1./mu_e)*K_par
+        - (1./mu_e)*K_D;
+    }
     
-    ddt(qeperp) = - UE_Grad(qeperp, phi_G)
-      - WE_Grad(Ue + 2.*qeperp, Phi_G)
-      - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*(Te0 + Teperp))
-      + 0.5*tau_e*curvature(Ue + 6.*qeperp)
-      - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
-      - (1./mu_e)*K_perp
-      + (1./mu_e)*K_D;
-    
+    if(qeperp_ddt) {
+      ddt(qeperp) = - UE_Grad(qeperp, phi_G)
+        - WE_Grad(Ue + 2.*qeperp, Phi_G)
+        - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*(Te0 + Teperp))
+        + 0.5*tau_e*curvature(Ue + 6.*qeperp)
+        - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
+        - (1./mu_e)*K_perp
+        + (1./mu_e)*K_D;
+    }
   }
   
   ////////////////////////////////////////////
@@ -500,53 +641,83 @@ int physics_run(BoutReal time)
   K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
   K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
 
-  ddt(Ni) = -UE_Grad(Ni0 + Ne, phi_G)
-    - WE_Grad(Ti0 + Tiperp, Phi_G)
-    - Div_parP_LtoC(Ui)
-    + curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_e*Tiperp + Phi_G));
+  if(ni_ddt) {
+    if(ni_nit) {
+      ddt(Ni) = -UE_Grad(Ni0 + Ni, phi_G);
+    }else
+      ddt(Ni) = -UE_Grad(Ni0, phi_G);
     
-  ddt(ApUi) = -mu_i*UE_Grad(Ui, phi_G)
-    - mu_i*WE_Grad(qiperp, Phi_G)
-    - Grad_parP_CtoL(phi_G + tau_i*(Ni0 + Ti0 + Ni + Tipar))
-    + mu_i * tau_i * curvature(2.*Ui + qipar + 0.5*qiperp)
-    - tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
-    + Rei
-    ;
+    if(ni_ti0)
+      ddt(Ni) -= WE_Grad(Ti0, Phi_G);
+    if(ni_ti1)
+      ddt(Ni) -= WE_Grad(Tiperp, Phi_G);
+    
+    if(ni_ui)
+      ddt(Ni) -= Div_parP_LtoC(Ui);
+    
+    if(ni_curv)
+      ddt(Ni) += curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_i*Tiperp + Phi_G));
+  }
   
-  /*
-  ddt(Tipar) = 0.0;
-  ddt(Tiperp) = 0.0;
-  ddt(qipar) = 0.0;
-  ddt(qiperp) = 0.0;
-  */
+  if(apui_ddt) {
+    if(apui_uit) {
+      ddt(ApUi) = -mu_i*UE_Grad(Ui, phi_G);
+    }else
+      ddt(ApUi) = 0.0;
+    
+    if(apui_qi) 
+      ddt(ApUi) -= mu_i*WE_Grad(qiperp, Phi_G);
+    
+    if(apui_phi)
+      ddt(ApUi) -= Grad_parP_CtoL(phi_G);
+    if(apue_parP)
+      ddt(ApUi) -= tau_i*Grad_parP_CtoL(Ni0 + Ti0 + Ni + Tipar);
+    
+    if(apui_curv)
+      ddt(ApUi) += mu_i * tau_i * curvature(2.*Ui + qipar + 0.5*qiperp);
+    
+    if(apui_gradB)
+      ddt(ApUi) -= tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
+    
+    if(apui_Rei)
+      ddt(ApUi) += Rei;
+  }
   
-  ddt(Tipar) = - UE_Grad(Ti0 + Tipar, phi_G)
-    - 2.*Div_parP_LtoC(Ui + qipar)
-    + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
-    - (Ui + qiperp)*Grad_par_logB
-    - 2.*S_D;
+  if(tipar_ddt) {
+    ddt(Tipar) = - UE_Grad(Ti0 + Tipar, phi_G)
+      - 2.*Div_parP_LtoC(Ui + qipar)
+      + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
+      - (Ui + qiperp)*Grad_par_logB
+      - 2.*S_D;
+  }
   
-  ddt(Tiperp) = - UE_Grad(Ti0 + Tiperp, phi_G)
-    - WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
-    - Div_parP_LtoC(qiperp)
-    + 0.5*curvature(phi_G + Phi_G + tau_i*(Ni + Tiperp) 
-                    + 3.*(Phi_G + tau_i*Tiperp))
-    + (Ui + qiperp)*Grad_par_logB
-    + S_D;
+  if(tiperp_ddt) {
+    ddt(Tiperp) = - UE_Grad(Ti0 + Tiperp, phi_G)
+      - WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
+      - Div_parP_LtoC(qiperp)
+      + 0.5*curvature(phi_G + Phi_G + tau_i*(Ni + Tiperp) 
+                      + 3.*(Phi_G + tau_i*Tiperp))
+      + (Ui + qiperp)*Grad_par_logB
+      + S_D;
+  }
   
-  ddt(qipar) = - UE_Grad(qipar, phi_G)
-    - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*(Ti0 + Tipar))
-    + 0.5*tau_i*curvature(3.*Ui + 8.*qipar)
-    - (1./mu_e)*K_par
-    - (1./mu_e)*K_D;
+  if(qipar_ddt) {
+    ddt(qipar) = - UE_Grad(qipar, phi_G)
+      - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*(Ti0 + Tipar))
+      + 0.5*tau_i*curvature(3.*Ui + 8.*qipar)
+      - (1./mu_e)*K_par
+      - (1./mu_e)*K_D;
+  }
   
-  ddt(qiperp) = - UE_Grad(qiperp, phi_G)
-    - WE_Grad(Ui + 2.*qiperp, Phi_G)
-    - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*(Ti0 + Tiperp))
-    + 0.5*tau_i*curvature(Ui + 6.*qiperp)
-    - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
-    - (1./mu_e)*K_perp
-    + (1./mu_e)*K_D;
+  if(qiperp_ddt) {
+    ddt(qiperp) = - UE_Grad(qiperp, phi_G)
+      - WE_Grad(Ui + 2.*qiperp, Phi_G)
+      - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*(Ti0 + Tiperp))
+      + 0.5*tau_i*curvature(Ui + 6.*qiperp)
+      - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
+      - (1./mu_e)*K_perp
+      + (1./mu_e)*K_D;
+  }
   
   return 0;
 }
@@ -561,34 +732,37 @@ const Field3D curvature(const Field3D &f)
   /*
   Vector3D gradf = Grad(f);
   // Set boundaries to zero-gradient
-  gradf.x.applyBoundary("dirichlet");
-  gradf.y.applyBoundary("dirichlet");
-  gradf.z.applyBoundary("dirichlet");
+  gradf.x.applyBoundary("neumann");
+  gradf.y.applyBoundary("neumann");
+  gradf.z.applyBoundary("neumann");
   // Communicate
   mesh->communicate(gradf);
   
   return Div(B0vec ^ gradf / (mesh->Bxy*mesh->Bxy));
   */
-  return -bracket(log(mesh->Bxy^2), f, bm);
+  if(curv_logB) {
+    return -bracket(2.*logB, f, bm);
+  }else
+    return -bracket(log(mesh->Bxy^2), f, bm);
 }
 
 ////////////////////////////////////////////////////////////////////////
 // Advection terms
 
-const Field3D UE_Grad(const Field3D &f, const Field3D &phi)
+const Field3D UE_Grad(const Field3D &f, const Field3D &p)
 {
   Field3D delp2 = Delp2(f);
   delp2.applyBoundary("dirichlet");
   mesh->communicate(delp2);
   
-  return bracket(phi, f, bm);
+  return bracket(p, f, bm);
      + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
     - nu_par*Grad2_par2(f); // NB: This should be changed for variable B
 }
 
-const Field3D WE_Grad(const Field3D &f, const Field3D &Phi)
+const Field3D WE_Grad(const Field3D &f, const Field3D &p)
 {
-  return bracket(Phi, f, bm);
+  return bracket(p, f, bm);
 }
 
 ////////////////////////////////////////////////////////////////////////
