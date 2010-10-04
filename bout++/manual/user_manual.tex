@@ -380,6 +380,7 @@ NOTES:
 \end{itemize}
 
 \subsubsection{Solver library}
+\label{sec:solverlibrary}
 
 As of July 2010, BOUT++ can be compiled with several solver libraries, and the desired one
 selected at runtime (thanks to factory magic by S.Farley).
@@ -417,6 +418,13 @@ or
 \begin{verbatim}
 ./configure --with-ida=/path/to/ida/
 \end{verbatim}
+
+You can compile in several of these libraries, for example 
+\begin{verbatim}
+./configure --with-cvode --with-ida
+\end{verbatim}
+is valid. This will allow you to select at run-time which solver to use. See section~\ref{sec:timeoptions}
+for more details on how to do this.
 
 \subsubsection{PETSc}
 
@@ -517,7 +525,7 @@ The input file \file{BOUT.inp} includes comments and should be fairly
 self-explanatory. The format is the same as a windows INI file, consisting
 of \code{name = value} pairs. Comments are started
 with a hash (\#) or semi-colon, which comments out the rest of the line. 
-Values can be:
+values can be:
 \begin{itemize}
 \item Integers
 \item Real values
@@ -617,29 +625,90 @@ is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options file)
 grid = "data/cbm18_8_y064_x260.pdb"
 \end{lstlisting}
 
-\subsection{Solver options}
+\subsection{Time integration solver}
+\label{sec:timeoptions}
 
-There are a number of options which affect the core BOUT++ code
-such as choice of differencing methods. These are divided into sections:
-differencing, Laplacian inversion, communications, and CVODE solver.
+BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
+and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
 
+The solver library used is set using the \code{solver\_type} option, so either in BOUT.inp:
+\begin{lstlisting}[language=bash,numbers=none]
+[solver]
+type = rk4  # Set the solver to use
+\end{lstlisting}
+or on the command line by adding \code{solver\_type=pvode} for example:
+\begin{lstlisting}[language=bash,numbers=none]
+mpirun -np 4 ./2fluid solver_type=rk4
+\end{lstlisting}
+{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver\_type =pvode} won't work.
+Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
+options needed to make the solver available.
+\begin{table}[htb!]
+\centering
+\caption{Available time integration solvers}
+\label{tab:solvers}
+\begin{tabular}{c | c | c}
+\hline
+Name & Description & Compile options \\
+\hline
+rk4 & Runge-Kutta 4th-order explicit method & Always available \\
+pvode & 1998 PVODE with BDF method & Always available \\
+cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
+ida & SUNDIALS IDA. DAE solver & --with-ida \\
+petsc & PETSc TS methods & --with-petsc \\
+\hline
+\end{tabular}
+\end{table}
+
+Each solver can have its own settings which work in slightly different ways, but some common
+settings and which solvers they are used in are given in table~\ref{tab:solveropts}.
+\begin{table}[htb!]
+\centering
+\caption{Time integration solver options}
+\label{tab:solveropts}
+\begin{tabular}{c | c | c}
+\hline
+Option & Description & Solvers used \\
+\hline
+atol & Absolute tolerance & rk4, pvode, cvode, ida \\
+rtol & Relative tolerance & rk4, pvode, cvode, ida \\
+mxstep & Maximum internal steps  & rk4 \\
+       & per output step & \\
+max\_timestep & Maxmimum timestep & rk4, cvode \\
+start\_timestep & Starting guess for timestep & rk4 \\
+use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
+mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
+mukeep, mlkeep & & \\
+maxl & & \\
+use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
+adams\_moulton & Use Adams-Moulton method & cvode \\
+ & rather than BDF & \\
+\hline
+\end{tabular}
+\end{table}
+The most commonly changed options are the  absolute and relative solver tolerances,
+\code{ATOL} and \code{RTOL} which should be varied to check convergence.
+
+\subsection{Laplacian inversion}
+
+\subsection{Communications}
+
+The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
+determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
+with machine and problem.
+
+\subsection{Differencing methods}
+
+Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
+for each dimension. 
 \begin{itemize}
-\item Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
-  for each dimension. 
-  \begin{itemize}
-  \item \code{first}, the method used for first derivatives
-  \item \code{second}, method for second derivatives
-  \item \code{upwind}, method for upwinding terms
-  \end{itemize}
-  The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT
-  Apart from FFT, the first letter gives the type of method (U = upwind, C = central, W = WENO), and the number gives
-  the order.
-\item The main solver settings are the absolute and relative solver tolerances, \code{ATOL} and \code{RTOL}.
-  In addition there are \code{mudq} and \code{mldq}, \code{mukeep} and \code{mlkeep}.
-\item The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
-  determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
-  with machine and problem.
+\item \code{first}, the method used for first derivatives
+\item \code{second}, method for second derivatives
+\item \code{upwind}, method for upwinding terms
 \end{itemize}
+The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT
+Apart from FFT, the first letter gives the type of method (U = upwind, C = central, W = WENO), and
+the number gives the order.
 
 \subsection{Model-specific options}
 
@@ -1578,9 +1647,6 @@ int physics_init(bool restarting)
 {
 }
 \end{lstlisting}
-For clarity, variables storing time-derivatives are here prefixed with \code{F\_}, but this is not
-necessary - these variables can be named anything (as long as the name doesn't conflict with existing
-global variables).
 
 Scalar and vector fields behave much as you would expect: Field3D objects can be added, subtracted,
 multiplied, divided and exponentiated, so the following examples are all valid operations:
@@ -1649,6 +1715,25 @@ int physics_init(bool restarting)
 The name given to this function will be used in the output and restart data files. These will be
 automatically read and written depending on input options (see section~\ref{subsec:options}).
 Input options based on these names are also used to initialise the variables.
+
+If the name of the variable in the output file is the same as the variable name, you can use 
+a shorthand macro. In this case, we could use this shorthand for \code{v} and \code{B}:
+\begin{lstlisting}
+SOLVE_FOR(v);
+SOLVE_FOR(B);
+\end{lstlisting}
+To make this even shorter, we can use macros \code{SOLVE\_FOR2}, \code{SOLVE\_FOR3}, ..., \code{SOLVE\_FOR6}
+to shorten our initialisation code to
+\begin{lstlisting}
+int physics_init(bool restarting)
+{
+  bout_solve(rho, "density");
+  bout_solve(p,   "pressure");
+  SOLVE_FOR2(v, B);
+  
+  return 0;
+}
+\end{lstlisting}
 
 The equations to be solved can now be written in the \code{physics\_run} function. The value
 passed to the function (\code{real t}) is the simulation time - only needed if your
