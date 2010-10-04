@@ -134,7 +134,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options.get("use_precon", use_precon, false);
   options.get("precon_dimens", precon_dimens, 50);
   options.get("precon_tol", precon_tol, 1.0e-4);
-  options.get("pvode_mxstep", pvode_mxstep, 500);
+  options.get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
                      solver_gloc, solver_cfn, (void*) this);

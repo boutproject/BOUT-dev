@@ -135,7 +135,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options.get("max_timestep", max_timestep, -1.);
   
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("pvode_mxstep", mxsteps, 500);
+  options.get("mxstep", mxsteps, 500);
   
   options.get("adams_moulton", adams_moulton, false);
   

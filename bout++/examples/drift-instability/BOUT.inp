@@ -58,7 +58,7 @@ upwind = W3
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-12 # absolute tolerance
 RTOL = 1.0e-7  # relative tolerance
-pvode_mxstep = 5000
+mxstep = 5000
 
 ##################################################
 # settings for 2fluid

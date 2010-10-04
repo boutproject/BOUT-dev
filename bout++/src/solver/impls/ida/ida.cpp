@@ -149,7 +149,7 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   OPTION(use_precon, false);
   OPTION(correct_start, true);
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("pvode_mxstep", mxsteps, 500);
+  options.get("mxstep", mxsteps, 500);
 
   // Call IDACreate and IDAMalloc to initialise
 

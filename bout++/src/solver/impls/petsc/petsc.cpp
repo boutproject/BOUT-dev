@@ -172,11 +172,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   TSSetInitialTimeStep(ts,0.0,initial_tstep);
 
   // Maximum number of steps
-  int pvode_mxstep;
-  OPTION(pvode_mxstep, 500); // Number of steps between outputs
-  pvode_mxstep *= NOUT; // Total number of steps
+  int mxstep;
+  OPTION(mxstep, 500); // Number of steps between outputs
+  mxstep *= NOUT; // Total number of steps
   PetscReal tfinal = NOUT*TIMESTEP; // Final output time
-  TSSetDuration(ts,pvode_mxstep,tfinal);
+  TSSetDuration(ts,mxstep,tfinal);
 
   /////////////////////////////////////////////////////
 
