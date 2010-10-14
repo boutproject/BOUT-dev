@@ -11,7 +11,7 @@ archive = 20
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
 
-MZ = 17     # number of points in z direction (2^n + 1)
+MZ = 33     # number of points in z direction (2^n + 1)
 ZPERIOD = 10  # Number of periods
 
 MXG = 2
@@ -92,7 +92,7 @@ curv_logB = true   # For flux-tube, read in logB separately
 #      (iterative methods only)
 
 phi_flags = 0  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
+apar_flags =0 # flags for apar inversion
 
 ##################################################
 # settings for individual variables
@@ -109,13 +109,9 @@ scale = 0.0 # default size of initial perturbations
 # 2 - Sinusoidal
 # 3 - Mix of mode numbers (like original BOUT)
 
-xs_opt = 2
-ys_opt = 2
+xs_opt = 1
+ys_opt = 1
 zs_opt = 2
-
-xs_mode = 1 # Radial mode number
-
-ys_mode = 1 # Parallel mode number
 
 zs_mode = 1 # asimuthal mode number
 
@@ -136,10 +132,10 @@ scale = 1.0e-8 # only perturbing Ni
 
 ddt = true # Evolve Ni
 
-nit = true # nonlinear ExB 
-ti0 = true
-ti1 = true
-ui  = true # Parallel flow
+nit = false # nonlinear ExB 
+ti0 = false
+ti1 = false
+ui  = false # Parallel flow
 curv = true # Curvature
 
 [ApUi]
@@ -168,10 +164,10 @@ ddt = false
 [Ne]
 ddt = true
 
-net = true # nonlinear ExB 
-te0 = true
-te1 = true
-ue  = true # Parallel flow
+net = false # nonlinear ExB 
+te0 = false
+te1 = false
+ue  = false # Parallel flow
 curv = true # Curvature
 
 [ApUe]

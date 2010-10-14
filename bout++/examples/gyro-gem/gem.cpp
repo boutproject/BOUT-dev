@@ -82,9 +82,10 @@ BoutReal Landau; // Multiplier for Landau damping terms
 
 BoutReal nu_e, nu_i; // Collisional dissipation
 
-BoutReal nu_perp, nu_par;  // Artificial 
+BoutReal nu_perp, nu_par;  // Artificial dissipation
 
-const BRACKET_METHOD bm = BRACKET_STD; // Method to use for brackets BRACKET_ARAKAWA
+// Method to use for brackets: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
+const BRACKET_METHOD bm = BRACKET_ARAKAWA;
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -243,8 +244,8 @@ int physics_init(bool restarting)
   
   t_e = t_i = 1.e-6; // FIX!!!
 
-  nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
-  nu_i = Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
+  nu_e = 0.0; //Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
+  nu_i = 0.0; //Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
 
   ////////////////////////////////////////////////////
   // Normalise
@@ -302,7 +303,10 @@ int physics_init(bool restarting)
 
   // Precompute this for use in RHS
   if(include_grad_par_B) {
-    Grad_par_logB = Grad_par(log(mesh->Bxy));
+    if(curv_logB) {
+      Grad_par_logB = Grad_par(logB);
+    }else
+      Grad_par_logB = Grad_par(log(mesh->Bxy));
   }else
     Grad_par_logB = 0.;
   
@@ -490,6 +494,7 @@ int physics_run(BoutReal time)
     // Neglect electron Larmor radius
     
     Field3D dn = Ne - gyroPade1(Ni, rho_i) - gyroPade2(Tiperp, rho_i);
+    
     phi = invert_laplace(tau_i * dn / SQ(rho_i), phi_flags);
     phi -= tau_i * dn;
   }else {
@@ -534,8 +539,9 @@ int physics_run(BoutReal time)
       phi_G = phi;
       Phi_G = 0.0;
     }else {
-      phi_G = gyroPade1(phi, rho_e);
-      Phi_G = gyroPade2(phi, rho_e);
+      // Gyro-reduced potentials
+      phi_G = gyroPade1(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
+      Phi_G = gyroPade2(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
       
       mesh->communicate(phi_G, Phi_G);
     }
@@ -630,8 +636,8 @@ int physics_run(BoutReal time)
   // Ion equations
   
   // Calculate gyroreduced potentials
-  phi_G = gyroPade1(phi, rho_i);
-  Phi_G = gyroPade2(phi, rho_i);
+  phi_G = gyroPade1(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
+  Phi_G = gyroPade2(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
   
   mesh->communicate(phi_G, Phi_G);
 
@@ -751,13 +757,15 @@ const Field3D curvature(const Field3D &f)
 
 const Field3D UE_Grad(const Field3D &f, const Field3D &p)
 {
+  /*
   Field3D delp2 = Delp2(f);
   delp2.applyBoundary("dirichlet");
   mesh->communicate(delp2);
-  
+  */
+
   return bracket(p, f, bm);
-     + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
-    - nu_par*Grad2_par2(f); // NB: This should be changed for variable B
+  // + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
+  // - nu_par*Grad2_par2(f); // NB: This should be changed for variable B
 }
 
 const Field3D WE_Grad(const Field3D &f, const Field3D &p)

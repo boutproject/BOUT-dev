@@ -30,6 +30,7 @@
 #include "difops.h"
 #include "gyro_average.h"
 #include "invert_laplace.h"
+#include "globals.h"
 
 /// Approximate G(f) = f + rho^2*Delp2(f) using Taylor expansion
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho)
@@ -38,7 +39,7 @@ const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho)
 }
 
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
-const Field3D gyroPade0(const Field3D &f, BoutReal rho)
+const Field3D gyroPade0(const Field3D &f, BoutReal rho, int flags)
 {
   /// Have to use Z average of rho for efficient inversion
   
@@ -46,11 +47,11 @@ const Field3D gyroPade0(const Field3D &f, BoutReal rho)
   Field2D d = -rho*rho;
   
   /// Invert, leaving boundaries unchanged
-  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, NULL, &d);
 }
 
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
-const Field3D gyroPade0(const Field3D &f, const Field2D &rho)
+const Field3D gyroPade0(const Field3D &f, const Field2D &rho, int flags)
 {
   /// Have to use Z average of rho for efficient inversion
   
@@ -58,58 +59,62 @@ const Field3D gyroPade0(const Field3D &f, const Field2D &rho)
   Field2D d = -rho*rho;
   
   /// Invert, leaving boundaries unchanged
-  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, NULL, &d);
 }
 
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
-const Field3D gyroPade0(const Field3D &f, const Field3D &rho)
+const Field3D gyroPade0(const Field3D &f, const Field3D &rho, int flags)
 {
   /// Have to use Z average of rho for efficient inversion
-  return gyroPade0(f, rho.DC());
+  return gyroPade0(f, rho.DC(), flags);
 }
 
 /// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade1(const Field3D &f, BoutReal rho)
+const Field3D gyroPade1(const Field3D &f, BoutReal rho, int flags)
 {
   Field2D a = 1.0;
   Field2D d = -0.5*rho*rho;
   
   /// Invert, leaving boundaries unchanged
-  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, NULL, &d);
 }
 
 /// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade1(const Field3D &f, const Field2D &rho)
+const Field3D gyroPade1(const Field3D &f, const Field2D &rho, int flags)
 {
   Field2D a = 1.0;
   Field2D d = -0.5*rho*rho;
   
   /// Invert, leaving boundaries unchanged
-  return invert_laplace(f, INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS, &a, NULL, &d);
+  return invert_laplace(f, flags, &a, NULL, &d);
 }
 
 /// Pade approximation G_1 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade1(const Field3D &f, const Field3D &rho)
+const Field3D gyroPade1(const Field3D &f, const Field3D &rho, int flags)
 {
   /// Have to use Z average of rho for efficient inversion
-  return gyroPade1(f, rho.DC());
+  return gyroPade1(f, rho.DC(), flags);
 }
 
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade2(const Field3D &f, BoutReal rho)
+const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags)
 {
-  return 0.5*rho*rho*Delp2( gyroPade1(gyroPade1(f, rho), rho) );
+  Field3D tmp = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
+  mesh->communicate(tmp);
+  return 0.5*rho*rho*Delp2( tmp );
 }
 
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade2(const Field3D &f, const Field2D &rho)
+const Field3D gyroPade2(const Field3D &f, const Field2D &rho, int flags)
 {
-  return 0.5*rho*rho*Delp2( gyroPade1(gyroPade1(f, rho), rho) );
+  Field3D tmp = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
+  mesh->communicate(tmp);
+  return 0.5*rho*rho*Delp2( tmp );
 }
 
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
-const Field3D gyroPade2(const Field3D &f, const Field3D &rho)
+const Field3D gyroPade2(const Field3D &f, const Field3D &rho, int flags)
 {
   /// Have to use Z average of rho for efficient inversion
-  return gyroPade2(f, rho.DC());
+  return gyroPade2(f, rho.DC(), flags);
 }
