@@ -135,6 +135,7 @@ int BoutMesh::load()
   OPTION(IncIntShear,  false);
   OPTION(BoundaryOnCell, false); // Determine location of boundary
   OPTION(StaggerGrids,   false); // Stagger grids
+  OPTION(periodicX, false); // Periodic in X
   
   OPTION(async_send, false); // Whether to use asyncronous sends
 
@@ -580,23 +581,26 @@ int BoutMesh::load()
   
   //////////////////////////////////////////////////////
   // Boundary regions
-  if(PE_XIND == 0) {
-    // Inner either core or PF
-    
-    int yg = YGLOBAL(MYG); // Get a global index in this processor
-    
-    if( ((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
-	((yg > jyseps1_2) && (yg <= jyseps2_2)) ) {
-      // Core
-      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
-    }else {
-      // PF region
-      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+  if(!periodicX) {
+    // Need boundaries in X
+    if(PE_XIND == 0) {
+      // Inner either core or PF
+      
+      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      
+      if( ((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
+	  ((yg > jyseps1_2) && (yg <= jyseps2_2)) ) {
+	// Core
+	boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+      }else {
+	// PF region
+	boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+      }
     }
-  }
-  if(PE_XIND == (NXPE-1)){
-    // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+    if(PE_XIND == (NXPE-1)){
+      // Outer SOL
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+    }
   }
   
   if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
@@ -1798,6 +1802,17 @@ void BoutMesh::topology()
   MYPE_IN_CORE = 0; // processor not in core
   if( (ixseps_inner > 0) && ( ((PE_YIND*MYSUB > jyseps1_1) && (PE_YIND*MYSUB <= jyseps2_1)) || ((PE_YIND*MYSUB > jyseps1_2) && (PE_YIND*MYSUB <= jyseps2_2)) ) ) {
     MYPE_IN_CORE = 1; /* processor is in the core */
+  }
+
+  if(periodicX) {
+    // Domain is periodic in X
+    
+    if(PE_XIND == 0) {
+      IDATA_DEST = NXPE-1;
+    }
+    if(PE_XIND == (NXPE-1)) {
+      ODATA_DEST = 0;
+    }
   }
 
   // Print out settings

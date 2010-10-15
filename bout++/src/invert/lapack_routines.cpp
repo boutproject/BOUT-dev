@@ -136,7 +136,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   static BoutReal *dl, *d, *du, *x;
 
   if(n > len) {
-    //.allocate more memory (as a single block)
+    // Allocate more memory (as a single block)
     if(len > 0)
       delete[] dl;
 
@@ -568,3 +568,57 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 
 #endif // LAPACK
 
+// Common functions
+
+/// Solve a cyclic tridiagonal matrix
+void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n)
+{
+  if(n <= 2)
+    bout_error("ERROR: n too small in invpar::cyclic_tridag");
+  
+  static int len = 0;
+  static dcomplex *u, *z;
+  
+  if(n > len) {
+    if(len > 0) {
+      delete[] u;
+      delete[] z;
+    }
+    u = new dcomplex[n];
+    z = new dcomplex[n];
+    len = n;
+  }
+  
+  dcomplex gamma = -b[0];
+  
+  // Save original values of b (restore after)
+  dcomplex b0 = b[0];
+  dcomplex bn = b[n-1];
+  
+  // Modify b
+  b[0] = b[0] - gamma;
+  b[n-1] = b[n-1] - c[n-1]*a[0]/gamma;
+  
+  // Solve tridiagonal system Ax=r
+  if(!tridag(a, b, c, r, x, n))
+    bout_error("ERROR: first tridag call failed in invpar::cyclic_tridag\n");
+  
+  u[0] = gamma;
+  u[n-1] = c[n-1];
+  for(int i=1;i<(n-1);i++)
+    u[i] = 0.;
+  
+  // Solve Az = u
+  if(!tridag(a, b, c, u, z, n))
+    bout_error("ERROR: second tridag call failed in invpar::cyclic_tridag\n");
+  
+  dcomplex fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
+    (1.0 + z[0] + a[0]*z[n-1]/gamma); 
+  
+  for(int i=0;i<n;i++)
+    x[i] -= fact*z[i];
+  
+  // Restore coefficients
+  b[0] = b0;
+  b[n-1] = bn;
+}

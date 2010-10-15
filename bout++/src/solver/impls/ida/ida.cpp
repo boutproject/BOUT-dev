@@ -149,7 +149,7 @@ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   OPTION(use_precon, false);
   OPTION(correct_start, true);
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("pvode_mxstep", mxsteps, 500);
+  options.get("mxstep", mxsteps, 500);
 
   // Call IDACreate and IDAMalloc to initialise
 
@@ -307,8 +307,6 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
 #endif
-
-  BoutReal tstart = MPI_Wtime();
   
   // Load state from udata
   load_vars(udata);
@@ -326,9 +324,6 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
     if(idd[i] > 0.5) // 1 -> differential, 0 -> algebraic
       rdata[i] -= dudata[i];
   }
-  
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
 #ifdef CHECK
   msg_stack.pop(msg_point);

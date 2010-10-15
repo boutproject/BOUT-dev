@@ -65,9 +65,9 @@ void Vector3D::toCovariant()
     Field3D gx, gy, gz;
 
     // multiply by g_{ij}
-    gx = mesh->g_11*x + mesh->g_12*y + mesh->g_13*z;
-    gy = mesh->g_12*x + mesh->g_22*y + mesh->g_23*z;
-    gz = mesh->g_13*x + mesh->g_23*y + mesh->g_33*z;
+    gx = x*mesh->g_11 + mesh->g_12*y + mesh->g_13*z;
+    gy = y*mesh->g_22 + mesh->g_12*x + mesh->g_23*z;
+    gz = z*mesh->g_33 + mesh->g_13*x + mesh->g_23*y;
 
     x = gx;
     y = gy;
@@ -83,9 +83,9 @@ void Vector3D::toContravariant()
     
     Field3D gx, gy, gz;
 
-    gx = mesh->g11*x + mesh->g12*y + mesh->g13*z;
-    gy = mesh->g12*x + mesh->g22*y + mesh->g23*z;
-    gz = mesh->g13*x + mesh->g23*y + mesh->g33*z;
+    gx = x*mesh->g11 + mesh->g12*y + mesh->g13*z;
+    gy = y*mesh->g22 + mesh->g12*x + mesh->g23*z;
+    gz = z*mesh->g33 + mesh->g13*x + mesh->g23*y;
 
     x = gx;
     y = gy;

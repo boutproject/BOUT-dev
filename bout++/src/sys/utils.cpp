@@ -176,6 +176,15 @@ void SWAP(BoutReal &a, BoutReal &b)
   b = tmp;
 }
 
+void SWAP(BoutReal* &a, BoutReal* &b)
+{
+  BoutReal *tmp;
+  
+  tmp = a;
+  a = b;
+  b = tmp;
+}
+
 void SWAP(dcomplex &a, dcomplex &b)
 {
   dcomplex tmp;

@@ -49,6 +49,7 @@ void free_cmatrix(dcomplex** cm);
 BoutReal SQ(BoutReal x);
 int ROUND(BoutReal x);
 void SWAP(BoutReal &a, BoutReal &b);
+void SWAP(BoutReal* &a, BoutReal* &b);
 void SWAP(dcomplex &a, dcomplex &b);
 void SWAP(int &a, int &b);
 int MAX(int a, int b);

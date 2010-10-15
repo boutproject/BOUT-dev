@@ -53,7 +53,8 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc)
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
+const Vector3D Grad(const Field3D &f, 
+                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z)
 {
   Vector3D result;
 
@@ -61,19 +62,16 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
   int msg_pos = msg_stack.push("Grad( Field3D )");
 #endif
 
-  if(outloc == CELL_DEFAULT)
-    outloc = f.getLocation();
+  if(outloc_x == CELL_DEFAULT)
+    outloc_x = f.getLocation();
+  if(outloc_y == CELL_DEFAULT)
+    outloc_y = f.getLocation();
+  if(outloc_z == CELL_DEFAULT)
+    outloc_z = f.getLocation();
 
-  if(outloc == CELL_VSHIFT) {
-    // Each vector component is shifted
-    result.x = DDX(f, CELL_XLOW);
-    result.y = DDY(f, CELL_YLOW);
-    result.z = DDZ(f, CELL_ZLOW);
-  }else {
-    result.x = DDX(f);
-    result.y = DDY(f);
-    result.z = DDZ(f);
-  }
+  result.x = DDX(f, outloc_x);
+  result.y = DDY(f, outloc_y);
+  result.z = DDZ(f, outloc_z);
 
   result.covariant = true;
   
@@ -82,6 +80,14 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
 #endif
 
   return result;
+}
+
+const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
+{
+  if(outloc == CELL_VSHIFT)
+    return Grad(f, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
+  
+  return Grad(f, outloc, outloc, outloc);
 }
 
 /**************************************************************************
@@ -143,7 +149,7 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
  * Curl operators
  **************************************************************************/
 
-const Vector2D Curl(const Vector2D &v)
+const Vector2D Curl(const Vector2D &v, CELL_LOC outloc)
 {
   Vector2D result;
 
@@ -172,7 +178,8 @@ const Vector2D Curl(const Vector2D &v)
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v)
+const Vector3D Curl(const Vector3D &v, 
+                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z)
 {
   Vector3D result;
 
@@ -186,9 +193,9 @@ const Vector3D Curl(const Vector3D &v)
 
   // get components (curl(v))^j
 
-  result.x = (DDY(vco.z) - DDZ(vco.y))/mesh->J;
-  result.y = (DDZ(vco.x) - DDX(vco.z))/mesh->J;
-  result.z = (DDX(vco.y) - DDY(vco.x))/mesh->J;
+  result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/mesh->J;
+  result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/mesh->J;
+  result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/mesh->J;
 
   if(mesh->ShiftXderivs) {
     result.z -= mesh->ShiftTorsion*vco.z / mesh->J;
@@ -201,6 +208,14 @@ const Vector3D Curl(const Vector3D &v)
 #endif
 
   return result;
+}
+
+const Vector3D Curl(const Vector3D &v, CELL_LOC outloc)
+{
+  if(outloc == CELL_VSHIFT)
+    return Curl(v, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
+  
+  return Curl(v, outloc, outloc, outloc);
 }
 
 /**************************************************************************

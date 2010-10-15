@@ -172,11 +172,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   TSSetInitialTimeStep(ts,0.0,initial_tstep);
 
   // Maximum number of steps
-  int pvode_mxstep;
-  OPTION(pvode_mxstep, 500); // Number of steps between outputs
-  pvode_mxstep *= NOUT; // Total number of steps
+  int mxstep;
+  OPTION(mxstep, 500); // Number of steps between outputs
+  mxstep *= NOUT; // Total number of steps
   PetscReal tfinal = NOUT*TIMESTEP; // Final output time
-  TSSetDuration(ts,pvode_mxstep,tfinal);
+  TSSetDuration(ts,mxstep,tfinal);
 
   /////////////////////////////////////////////////////
 
@@ -309,8 +309,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
   int msg_point = msg_stack.push("Running RHS: PetscSolver::rhs(%e)", t);
 #endif
 
-  BoutReal tstart = MPI_Wtime();
-
   // Load state from PETSc
   VecGetArray(udata, &udata_array);
   load_vars(udata_array);
@@ -323,10 +321,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
   VecGetArray(dudata, &dudata_array);
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
-
-  // Update the wall time and number of RHS calls
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
   simtime = t; // Update the simulation time
 

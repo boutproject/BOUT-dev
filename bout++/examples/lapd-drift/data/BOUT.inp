@@ -65,7 +65,7 @@ laplace_nonuniform = true
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-12 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
-pvode_mxstep = 50000
+mxstep = 50000
 
 ##################################################
 # settings for 2fluid

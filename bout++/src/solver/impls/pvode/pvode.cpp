@@ -134,7 +134,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options.get("use_precon", use_precon, false);
   options.get("precon_dimens", precon_dimens, 50);
   options.get("precon_tol", precon_tol, 1.0e-4);
-  options.get("pvode_mxstep", pvode_mxstep, 500);
+  options.get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
                      solver_gloc, solver_cfn, (void*) this);
@@ -310,26 +310,18 @@ BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 
 void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 {
-  int flag;
-  BoutReal tstart;
-
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
 #endif
-
-  tstart = MPI_Wtime();
 
   // Load state from CVODE
   load_vars(udata);
 
   // Call function
-  flag = run_rhs(t);
+  int flag = run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
 #ifdef CHECK
   msg_stack.pop(msg_point);

@@ -102,7 +102,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, local_N);
 
-  //.allocate memory
+  // Allocate memory
   
   if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
@@ -135,7 +135,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options.get("max_timestep", max_timestep, -1.);
   
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("pvode_mxstep", mxsteps, 500);
+  options.get("mxstep", mxsteps, 500);
   
   options.get("adams_moulton", adams_moulton, false);
   
@@ -334,8 +334,6 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
-
-  BoutReal tstart = MPI_Wtime();
   
   // Load state from udata
   load_vars(udata);
@@ -345,9 +343,6 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
   
   // Save derivatives to dudata
   save_derivs(dudata);
-  
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
