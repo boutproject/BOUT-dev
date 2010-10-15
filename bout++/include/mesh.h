@@ -144,6 +144,7 @@ class Mesh {
   // X communications
   virtual bool firstX() = 0;
   virtual bool lastX() = 0;
+  bool periodicX; // Domain is periodic in X?
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
   virtual int sendXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual int sendXIn(BoutReal *buffer, int size, int tag) = 0;
