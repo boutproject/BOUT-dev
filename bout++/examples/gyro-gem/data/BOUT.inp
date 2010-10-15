@@ -3,7 +3,7 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100       # number of time-steps
+NOUT = 200       # number of time-steps
 TIMESTEP = 1e-5	   # time between outputs
 
 archive = 20
@@ -22,6 +22,8 @@ grid="cyclone_68x32.nc"
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 #StaggerGrids = true
+
+periodicX = true  # Make domain periodic in X
 
 NXPE = 1 # Decompose in X direction
 
@@ -75,7 +77,7 @@ small_rho_e = true
 include_grad_par_B = true
 Landau = 1.0
 
-nu_perp = 0.01
+nu_perp = 1e-6
 nu_par = 3e-3
 
 output_ddt = true  # Save time derivs to file
@@ -93,6 +95,8 @@ curv_logB = true   # For flux-tube, read in logB separately
 
 phi_flags = 0  # inversion flags for phi
 apar_flags =0 # flags for apar inversion
+
+low_pass_z = 1 # Toroidal filtering
 
 ##################################################
 # settings for individual variables
@@ -132,11 +136,11 @@ scale = 1.0e-8 # only perturbing Ni
 
 ddt = true # Evolve Ni
 
-nit = false # nonlinear ExB 
+ni1 = true # nonlinear ExB 
 ti0 = false
 ti1 = false
 ui  = false # Parallel flow
-curv = true # Curvature
+curv = false # Curvature
 
 [ApUi]
 ddt = false # Evolve parallel ion flow
@@ -164,11 +168,11 @@ ddt = false
 [Ne]
 ddt = true
 
-net = false # nonlinear ExB 
+ne1 = true # nonlinear ExB 
 te0 = false
 te1 = false
 ue  = false # Parallel flow
-curv = true # Curvature
+curv = false # Curvature
 
 [ApUe]
 ddt = false # Evolve parallel ion flow

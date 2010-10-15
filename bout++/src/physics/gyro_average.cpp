@@ -99,17 +99,21 @@ const Field3D gyroPade1(const Field3D &f, const Field3D &rho, int flags)
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade2(const Field3D &f, BoutReal rho, int flags)
 {
-  Field3D tmp = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
-  mesh->communicate(tmp);
-  return 0.5*rho*rho*Delp2( tmp );
+  Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
+  mesh->communicate(result);
+  result = 0.5*rho*rho*Delp2( result );
+  result.applyBoundary("dirichlet");
+  return result;
 }
 
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f
 const Field3D gyroPade2(const Field3D &f, const Field2D &rho, int flags)
 {
-  Field3D tmp = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
-  mesh->communicate(tmp);
-  return 0.5*rho*rho*Delp2( tmp );
+  Field3D result = gyroPade1(gyroPade1(f, rho, flags), rho, flags);
+  mesh->communicate(result);
+  result = 0.5*rho*rho*Delp2( result );
+  result.applyBoundary("dirichlet");
+  return result;
 }
 
 /// Pade approximation G_2 = (1 - 0.5*rho^2*Delp2)g = f

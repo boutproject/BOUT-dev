@@ -89,17 +89,19 @@ const BRACKET_METHOD bm = BRACKET_ARAKAWA;
 
 int phi_flags, apar_flags; // Inversion flags
 
+int low_pass_z; // Toroidal (Z) filtering of all variables
+
 //////////////////////////////////////////
 // Terms in the equations
 
-bool ne_ddt, ne_net, ne_te0, ne_te1, ne_ue, ne_curv;
+bool ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv;
 bool apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, apue_gradB, apue_Rei;
 bool tepar_ddt;
 bool teperp_ddt;
 bool qepar_ddt;
 bool qeperp_ddt;
 
-bool ni_ddt, ni_nit, ni_ti0, ni_ti1, ni_ui,   ni_curv;
+bool ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui,   ni_curv;
 bool apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, apui_gradB, apui_Rei;
 bool tipar_ddt;
 bool tiperp_ddt;
@@ -122,6 +124,8 @@ FieldGroup comms; // Communications
 ////////////////////////////////////////////////////////////////////////
 // Initialisation
 
+//Field3D xzdamp;
+
 int physics_init(bool restarting)
 {
   //////////////////////////////////
@@ -140,6 +144,8 @@ int physics_init(bool restarting)
   
   OPTION(phi_flags,  0);
   OPTION(apar_flags, 0);
+
+  OPTION(low_pass_z, -1); // Default is no filtering
 
   OPTION(curv_logB, false); // Read in a separate logB variable
   
@@ -221,7 +227,7 @@ int physics_init(bool restarting)
   // Terms in equations
   
   options.setSection("");
-  OPTION6(ne_ddt, ne_net, ne_te0, ne_te1, ne_ue, ne_curv, true);
+  OPTION6(ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
   OPTION6(apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
   OPTION2(apue_gradB, apue_Rei, true);
   OPTION(tepar_ddt, true);
@@ -229,7 +235,7 @@ int physics_init(bool restarting)
   OPTION(qepar_ddt, true);
   OPTION(qeperp_ddt, true);
   
-  OPTION6(ni_ddt, ni_nit, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
+  OPTION6(ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
   OPTION6(apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, true);
   OPTION2(apui_gradB, apui_Rei, true);
   OPTION(tipar_ddt, true);
@@ -444,6 +450,8 @@ int physics_init(bool restarting)
     }
     
   }
+  
+  //dump.add(xzdamp, "xzdamp", 1);
  
   return 0;
 }
@@ -453,7 +461,7 @@ int physics_init(bool restarting)
 
 const Field3D curvature(const Field3D &f);
 
-const Field3D UE_Grad(const Field3D &f, const Field3D &phi);
+const Field3D UE_Grad(const Field3D &f, const Field3D &phi, bool damping=true);
 const Field3D WE_Grad(const Field3D &f, const Field3D &Phi);
 
 const Field3D Grad_parP(const Field3D &f);
@@ -553,11 +561,9 @@ int physics_run(BoutReal time)
     K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
     
     if(ne_ddt) {
-      if(ne_net) { // Total Ne
-        ddt(Ne) = -UE_Grad(Ne0 + Ne, phi_G);
-      }else        // Only linear term
-        ddt(Ne) = -UE_Grad(Ne0, phi_G);
-      
+      ddt(Ne) = -UE_Grad(Ne0, phi_G, false);
+      if(ne_ne1)
+        ddt(Ne) -= UE_Grad(Ne, phi_G);
       if(ne_te0)
         ddt(Ne) -= WE_Grad(Te0, Phi_G);
       if(ne_te1)
@@ -568,6 +574,9 @@ int physics_run(BoutReal time)
       
       if(ne_curv)
         ddt(Ne) += curvature(phi_G + tau_e*Ne + 0.5*(tau_e*Tepar + tau_e*Teperp + Phi_G));
+      
+      if(low_pass_z > 0)
+        ddt(Ne) = lowPass(ddt(Ne), low_pass_z);
     }
     
     if(apue_ddt) {
@@ -592,6 +601,9 @@ int physics_run(BoutReal time)
       
       if(apue_Rei)
         ddt(ApUe) -= Rei;
+      
+      if(low_pass_z > 0)
+        ddt(ApUe) = lowPass(ddt(ApUe), low_pass_z);
     }
     
     if(tepar_ddt) {
@@ -600,6 +612,9 @@ int physics_run(BoutReal time)
         + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
         - (Ue + qeperp)*Grad_par_logB
         - 2.*S_D;
+      
+      if(low_pass_z > 0)
+        ddt(Tepar) = lowPass(ddt(Tepar), low_pass_z);
     }
     
     if(teperp_ddt) {
@@ -610,6 +625,9 @@ int physics_run(BoutReal time)
                         + 3.*(Phi_G + tau_e*Teperp))
         + (Ue + qeperp)*Grad_par_logB
         + S_D;
+      
+      if(low_pass_z > 0)
+        ddt(Teperp) = lowPass(ddt(Teperp), low_pass_z);
     }
     
     if(qepar_ddt) {
@@ -619,6 +637,9 @@ int physics_run(BoutReal time)
         - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
         - (1./mu_e)*K_par
         - (1./mu_e)*K_D;
+      
+      if(low_pass_z > 0)
+        ddt(qepar) = lowPass(ddt(qepar), low_pass_z);
     }
     
     if(qeperp_ddt) {
@@ -629,6 +650,9 @@ int physics_run(BoutReal time)
         - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
         - (1./mu_e)*K_perp
         + (1./mu_e)*K_D;
+      
+      if(low_pass_z > 0)
+        ddt(qeperp) = lowPass(ddt(qeperp), low_pass_z);
     }
   }
   
@@ -647,12 +671,18 @@ int physics_run(BoutReal time)
   K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
   K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
 
+  /*
+  Field3D delp2 = Delp2(Ni);
+  delp2.applyBoundary("neumann");
+  mesh->communicate(delp2);
+  xzdamp = nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
+  xzdamp.applyBoundary("dirichlet");
+  */
+
   if(ni_ddt) {
-    if(ni_nit) {
-      ddt(Ni) = -UE_Grad(Ni0 + Ni, phi_G);
-    }else
-      ddt(Ni) = -UE_Grad(Ni0, phi_G);
-    
+    ddt(Ni) = -UE_Grad(Ni0, phi_G, false);
+    if(ni_ni1)
+      ddt(Ni) -= UE_Grad(Ni, phi_G);
     if(ni_ti0)
       ddt(Ni) -= WE_Grad(Ti0, Phi_G);
     if(ni_ti1)
@@ -663,6 +693,9 @@ int physics_run(BoutReal time)
     
     if(ni_curv)
       ddt(Ni) += curvature(phi_G + tau_i*Ni + 0.5*(tau_i*Tipar + tau_i*Tiperp + Phi_G));
+    
+    if(low_pass_z > 0)
+      ddt(Ni) = lowPass(ddt(Ni), low_pass_z);
   }
   
   if(apui_ddt) {
@@ -687,6 +720,9 @@ int physics_run(BoutReal time)
     
     if(apui_Rei)
       ddt(ApUi) += Rei;
+    
+    if(low_pass_z > 0)
+      ddt(ApUi) = lowPass(ddt(ApUi), low_pass_z);
   }
   
   if(tipar_ddt) {
@@ -695,6 +731,9 @@ int physics_run(BoutReal time)
       + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
       - (Ui + qiperp)*Grad_par_logB
       - 2.*S_D;
+    
+    if(low_pass_z > 0)
+      ddt(Tipar) = lowPass(ddt(Tipar), low_pass_z);
   }
   
   if(tiperp_ddt) {
@@ -705,6 +744,9 @@ int physics_run(BoutReal time)
                       + 3.*(Phi_G + tau_i*Tiperp))
       + (Ui + qiperp)*Grad_par_logB
       + S_D;
+    
+    if(low_pass_z > 0)
+      ddt(Tiperp) = lowPass(ddt(Tiperp), low_pass_z);
   }
   
   if(qipar_ddt) {
@@ -713,6 +755,9 @@ int physics_run(BoutReal time)
       + 0.5*tau_i*curvature(3.*Ui + 8.*qipar)
       - (1./mu_e)*K_par
       - (1./mu_e)*K_D;
+    
+    if(low_pass_z > 0)
+      ddt(qipar) = lowPass(ddt(qipar), low_pass_z);
   }
   
   if(qiperp_ddt) {
@@ -723,6 +768,9 @@ int physics_run(BoutReal time)
       - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
       - (1./mu_e)*K_perp
       + (1./mu_e)*K_D;
+    
+    if(low_pass_z > 0)
+      ddt(qiperp) = lowPass(ddt(qiperp), low_pass_z);
   }
   
   return 0;
@@ -755,17 +803,21 @@ const Field3D curvature(const Field3D &f)
 ////////////////////////////////////////////////////////////////////////
 // Advection terms
 
-const Field3D UE_Grad(const Field3D &f, const Field3D &p)
+const Field3D UE_Grad(const Field3D &f, const Field3D &p, bool damping)
 {
-  /*
-  Field3D delp2 = Delp2(f);
-  delp2.applyBoundary("dirichlet");
-  mesh->communicate(delp2);
-  */
-
-  return bracket(p, f, bm);
-  // + nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
-  // - nu_par*Grad2_par2(f); // NB: This should be changed for variable B
+  Field3D result = bracket(p, f, bm);
+  
+  if(damping) {
+    Field3D delp2 = Delp2(f);
+    delp2.applyBoundary("neumann");
+    mesh->communicate(delp2);
+    
+    result += 
+      nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) )
+      - nu_par*Grad2_par2(f) // NB: This should be changed for variable B
+      ;
+  }
+  return result;
 }
 
 const Field3D WE_Grad(const Field3D &f, const Field3D &p)
