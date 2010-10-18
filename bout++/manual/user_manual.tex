@@ -4,6 +4,7 @@
 \usepackage[nofoot]{geometry}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
+\usepackage{hyperref}
 
 \usepackage{listings}
 \usepackage{color}
@@ -50,7 +51,7 @@
 \renewcommand{\headrulewidth}{0.3pt}
 
 \newcommand{\code}[1]{\texttt{#1}}
-\newcommand{\file}[1]{\texttt{\bf #1}}
+\newcommand{\bfile}[1]{\texttt{\bf 1}}
 
 %% commands for boxes with important notes
 \newlength{\notewidth}
@@ -101,7 +102,7 @@ complicated (and error-prone) details such as differential geometry, parallel co
 file input/output from the user-specified equations to be solved. Thus the equations being solved
 are made clear, and can be easily changed with only minimal knowledge of the inner workings of the
 code. As far as possible, this allows the user to concentrate on the physics, rather than worrying
-about the numerics. This doesn't mean that users don't have to think about numerical methods, and so selecting differencing schemes and boundary conditions is discussed in this manual. The generality of the BOUT++ of course also comes with a limitation: Although there is a large class of problems which can be tackled by this code, there be many more problems which require a more specialised solver and which BOUT++ will not be able to handle. Hopefully this manual will enable you to test whether BOUT++ is suitable for your problem as quickly and painlessly as possible.
+about the numerics. This doesn't mean that users don't have to think about numerical methods, and so selecting differencing schemes and boundary conditions is discussed in this manual. The generality of the BOUT++ of course also comes with a limitation: although there is a large class of problems which can be tackled by this code, there are many more problems which require a more specialised solver and which BOUT++ will not be able to handle. Hopefully this manual will enable you to test whether BOUT++ is suitable for your problem as quickly and painlessly as possible.
 
 This manual is written for the user who wants to run (or modify) existing plasma models, or 
 specify a new problem (grid and equations) to be solved. In either case, it's assumed that
@@ -121,7 +122,7 @@ alterations to the physics model requires modifying C++ code.
 Section~\ref{sec:equations} describes how to write a new physics model specifying the equations to be solved,
 using ideal MHD as an example. The remaining sections describe in more detail aspects of using BOUT++:
 section~\ref{sec:diffops} describes the differential operators and methods available; section~\ref{sec:staggergrids}
-covers the new staggered grid system (which doesn't yet work).
+covers the experimental staggered grid system.
 
 \subsection{License and terms of use}
 
@@ -165,22 +166,25 @@ when using this code:
 
 \section{Starting}
 
-This section describes how to install and start using BOUT++. At the time of
-writing, the latest version of the code can be obtained from the NERSC
-subversion repository:
+BOUT++ is now hosted publicly on github (\url{http://github.com/bendudson/BOUT}), and includes
+instructions on downloading and installing BOUT++ in wiki pages. This website also has current issues
+and history of changes. To obtain a copy of the latest version, run
 \begin{verbatim}
-svn co svn+ssh://user@svn.nersc.gov/svn/bout/trunk
+git clone git://github.com/bendudson/BOUT.git
 \end{verbatim}
+which will create a directory \texttt{BOUT} containing the code. To get the latest changes later,
+go into the  \texttt{BOUT} directory and run
+\begin{verbatim}
+git pull
+\end{verbatim}
+For more details on using git to work with BOUT++, see the developer's manual.
 
-However you obtain the distribution, there should be several subdirectories,
-currently \file{BOUT++}, \file{idllib}, and \file{tokamak\_grids}. A description
-of each directory is given in the README file.
-
-Once you have checked out a branch, the core BOUT++ code is in the
-\file{BOUT++} directory (with source in \file{BOUT++/SRC}), and
+Once you have got a copy of BOUT++, see the README files for brief descriptions of 
+each file and directory. The core BOUT++ code is in the
+\texttt{bout++} directory (with source in \texttt{bout++/src}), and
 section~\ref{sec:install} describes how to compile this as a library which
 can then be used by many different fluid models. Some example models and test
-problems are in the \file{BOUT++/examples} directory and are described in
+problems are in the \texttt{bout++/examples} directory and are described in
 section~\ref{sec:examples}.
 
 \subsection{Documentation}
@@ -189,14 +193,12 @@ Various sources of documentation are:
 \begin{itemize}
 \item Most directories in the BOUT++ distribution contain a README file. This should
 describe briefly what the contents of the directory are and how to use them.
-\item This users' manual, which goes through BOUT++ from a users's point of view
+\item This user's manual, which goes through BOUT++ from a user's point of view
 \item The developer's manual, which gives details of the internal working of the code.
 \item The reference guide, which summarises functions, settings etc. Intended more for
 quick reference rather than a guide.
-\item The \file{elm\_reduced} manual describes in great detail running ELM simulations with BOUT++,
-and derivations of the model used.
 \item Most of the code contains Doxygen comment tags (which are slowly getting better). 
-Running doxygen (\file{www.doxygen.org}) on these files should therefore generate an HTML
+Running doxygen (\url{www.doxygen.org}) on these files should therefore generate an HTML
 reference. This is probably going to be the most up-to-date documentation.
 \end{itemize}
 
@@ -206,8 +208,8 @@ reference. This is probably going to be the most up-to-date documentation.
 BOUT++ uses several external libraries, and unless these are already installed, you will need to install them yourself. 
 
 BOUT++ can currently use two different file formats: Portable Data Binary
-(PDB) which is part of PACT\footnote{\code{http://pact.llnl.gov}}, and
-NetCDF-4\footnote{\code{http://www.unidata.ucar.edu/software/netcdf/}}.
+(PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}}, and
+NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}.
 PDB was developed at LLNL, was used in the UEDGE and BOUT codes, and 
 was the original format used by BOUT++. NetCDF is a more widely used
 format and so has many more tools for viewing and manipulating files.
@@ -220,23 +222,31 @@ format, but writing output data in NetCDF format.
 
 \subsubsection{Libraries}
 
-On most large systems (e.g. Franklin, HECToR etc.) you will not be able to install
-libraries into system directories. This is a run-through of how to install the required libraries
-on Franklin, but the same steps should work on most systems.
-
-BOUT++ can use the following libraries:
+It should be possible to install and try out BOUT++ with a minimal number of
+libraries, but BOUT++ can use the following libraries:
 \begin{itemize}
-  \item MPI (Message Passing Interface) {\bf [Required]}. Should work with most implementations, though mostly tested with MPICH.
-  \item FFTW-3 (Fastest Fourier Transform  in the West) {\bf [Required]} \code{http://www.fftw.org/} 
-  \item NetCDF-4 
-  \item PACT \code{http://pact.llnl.gov/} for reading and writing Portable Data Binary (PDB) format files. This is mainly for backwards compatibility with BOUT and UEDGE, and NetCDF-4 is recommended.
-  \item SUNDIALS \code{https://computation.llnl.gov/casc/sundials/main.html}
+  \item MPI (Message Passing Interface) and C++ compiler (e.g. \code{mpiCC} or \code{mpicxx}) {\bf [Required]}. Should work with most implementations, though mostly tested with MPICH and LAM.
+  \item FFTW-3 (Fastest Fourier Transform  in the West) {\bf [Required]} \url{http://www.fftw.org/} 
+  \item NetCDF-4 \url{http://www.unidata.ucar.edu/software/netcdf/} {\bf [Recommended]}. Does not need the HDF5 extensions.
+  \item SUNDIALS \url{https://computation.llnl.gov/casc/sundials/main.html}. An old version (c.1998) of the SUNDIALS CVODE solver (then called PVODE) is included with BOUT++, but the latest CVODE solver is recommended.
+  \item PACT \url{http://pact.llnl.gov/} for reading and writing Portable Data Binary (PDB) format files. This is mainly for backwards compatibility with BOUT and UEDGE, and NetCDF-4 is recommended.
   \item LAPACK for linear solvers
 \end{itemize}
 
 A bare minimum to get BOUT++ running is an MPI implementation (e.g. MPICH, OpenMPI, LAM), FFTW-3, and one (or both) of NetCDF or PACT. 
-To install these libraries in your home directory,  first create a directory ``install'' which is
-going to be used for temporary installation files,  and a directory ``local'' where the libraries are going to be installed:
+
+If you have adminstrator rights (root access) to your computer, then you could use a package manager
+to install these libraries. Alternatively you could ask someone to install these for you. The Debian / Ubuntu
+packages can be installed by running
+\begin{verbatim}
+$ sudo apt-get install mpich-bin libfftw3-dev libnetcdf-dev
+\end{verbatim}
+
+Most large machines / clusters (e.g. NERSC Franklin, HECToR etc) will usually have all these libraries
+already installed (check the available modules, usually by running \texttt{modules avail}). If the 
+libraries are not installed, then you will have to install them in your home directory.
+First go to your home directory, and create a directory ``install'' which is going to be used for temporary
+installation files, and a directory ``local'' where the libraries are going to be installed:
 \begin{verbatim}
  ~/ $ mkdir install
  ~/ $ mkdir local
@@ -249,12 +259,12 @@ Then add your local directories to environment variables. For BASH shells:
  ~/ $ export PATH=$HOME/local/bin:$PATH
  ~/ $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
 \end{verbatim}
-or for CSH type shells:
+or for csh type shells:
 \begin{verbatim}
  ~/ $ setenv PATH $HOME/local/bin:$PATH
  ~/ $ setenv LD_LIBRARY_PATH $HOME/local/lib:$LD_LIBRARY_PATH
 \end{verbatim}
-These two lines should be added to the end of your login scripts (e.g. \file{~/.profile})
+These two lines should be added to the end of your login scripts (e.g. \texttt{~/.profile})
 
 Then download the NetCDF, FFTW, SUNDIALS and (optionally) PACT libraries, and put them into ``install''. This
 tutorial is with the following versions:
@@ -264,12 +274,12 @@ fftw-3.2.1.tar.gz    pact-2.1.0.tar.gz
 netcdf-4.0.1.tar.gz  sundials-2.4.0.tar.gz
 \end{verbatim}
 
-Before installing, make sure the correct version of \file{install} is being used by running
+Before installing, make sure the correct version of \texttt{install} is being used by running
 \begin{verbatim}
  ~/ $ which install
 \end{verbatim}
-This should point to a system directory like \file{/usr/bin/install}. Sometimes when IDL has been
-installed, this points to the IDL install (e.g. something like \file{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:
+This should point to a system directory like \texttt{/usr/bin/install}. Sometimes when IDL has been
+installed, this points to the IDL install (e.g. something like \texttt{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:
 \begin{verbatim}
  ~/ $ ln -s /usr/bin/install $HOME/local/bin/
 \end{verbatim}
@@ -321,7 +331,7 @@ $ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
 \subsubsection{BOUT++}
 
 Once you have the libraries installed, you can install BOUT++.
-In the root directory of the BOUT++ distribution is a file \file{INSTALL} 
+In the root directory of the BOUT++ distribution is a file \texttt{INSTALL} 
 which will contain more details on installation, including troubleshooting.
 For most systems however the installation should consist of running the
 following commands in the BOUT++ root directory:
@@ -332,7 +342,7 @@ gmake
 This should detect the setting needed automatically. The main things it's
 looking for are
 \begin{itemize}
-\item NetCDF installation. When NetCDF is installed, a script \file{nc-config}
+\item NetCDF installation. When NetCDF is installed, a script \texttt{nc-config}
 should be put into somewhere on the path. If this is found then configure
 should have all the settings it needs. If this isn't found then configure
 will search for the NetCDF include and library files. To specify the location
@@ -340,7 +350,7 @@ of these files, use
 \begin{verbatim}
     ./configure --with-netcdf=/path/to/netcdf/
 \end{verbatim}
-\item A PACT installation (\file{http://pact.llnl.gov}) for PDB file I/O. One of the places configure
+\item A PACT installation (\texttt{http://pact.llnl.gov}) for PDB file I/O. One of the places configure
   will look is in your home/local directory. If you do not want PDB support, configure with
 \begin{verbatim}
     ./configure --with-pdb=no
@@ -356,8 +366,8 @@ If you ignored the earlier instructions and installed PACT into a non-standard l
 \end{verbatim}
 \end{itemize}
 
-When the compilation finishes the BOUT++ library should be in \file{lib/libbout++.a}.
-If you have trouble compiling see the \file{INSTALL} file for more details.
+When the compilation finishes the BOUT++ library should be in \texttt{lib/libbout++.a}.
+If you have trouble compiling see the \texttt{INSTALL} file for more details.
 
 To enable NetCDF support, you will need to install NetCDF version 4.0.1 or later. 
 Note that although the NetCDF-4 library is used for the C++ interface, by default
@@ -476,7 +486,7 @@ gmake examples
 in the BOUT++ root directory, but setting {\bf BOUT\_TOP} lets you compile examples in different
 directories, and makes it easier to develop cases.
 
-The \file{examples/} directory contains some test cases for a variety of fluid models. In many cases
+The \texttt{examples/} directory contains some test cases for a variety of fluid models. In many cases
 there are two scripts for running and then an IDL script to plot the results:
 \begin{verbatim}
 ./runcase.sh
@@ -521,7 +531,8 @@ e.g. differencing schemes to use, and boundary conditions.
 In most situations, the grid file will be used in many different simulations,
 but the options may be changed frequently. 
 
-The input file \file{BOUT.inp} includes comments and should be fairly
+The text input file \texttt{BOUT.inp} is always in a subdirectory called \texttt{data}
+for all examples. The files include comments (starting with either ';' or '\#') and should be fairly
 self-explanatory. The format is the same as a windows INI file, consisting
 of \code{name = value} pairs. Comments are started
 with a hash (\#) or semi-colon, which comments out the rest of the line. 
@@ -853,7 +864,7 @@ To change this, give the rate as the second argument e.g. \code{relax(dirichlet,
 
 \subsubsection{Examples}
 
-This example is taken from the UEDGE benchmark test (in \file{examples/uedge-benchmark}):
+This example is taken from the UEDGE benchmark test (in \texttt{examples/uedge-benchmark}):
 \begin{lstlisting}[language=bash,numbers=none]
 [All]
 bndry_all = neumann # Default for all variables, boundaries
@@ -904,7 +915,7 @@ When BOUT++ is run, it produces a lot of output initially, mainly listing
 the options which have been used so you can check that it's doing what you
 think it should be. It's generally a good idea to scan over this
 see if there are any important warnings or errors. Each processor outputs
-its own log file \file{BOUT.log.\#}
+its own log file \texttt{BOUT.log.\#}
 and the log from processor 0 is also sent to the screen. This output may
 look a little different if it's out of date, but the general layout will
 probably be the same.
@@ -1080,7 +1091,7 @@ Initialising physics module
         .
 \end{verbatim}
 This typically lists the options used, and useful/important normalisation factors etc.
-See the \file{elm\_reduced} manual for an explanation of the output from the
+See the \texttt{elm\_reduced} manual for an explanation of the output from the
 high-$\beta$ reduced MHD model.
 
 If BOUT++ is being restarted from a previous point, the restart file is read, 
@@ -1156,17 +1167,19 @@ remaining time.
 \label{sec:output}
 
 The majority of the existing analysis and post-processing code is written
-in IDL. The directory \file{idllib} contains many useful routines for
+in IDL. The directory \texttt{idllib} contains many useful routines for
 reading PDB files and analysing data. A summary of available IDL routines
 is given in Appendix~\ref{apx:idl_routines}.
 
 Post-processing using Python is also possible, and there are some modules
-in the \file{pylib} directory, and a list of routines in Appendix~\ref{apx:py_routines}. This is a more recent addition, and so is
+in the \texttt{pylib} directory, and a list of routines in Appendix~\ref{apx:py_routines}. This is a more recent addition, and so is
 not yet as developed as the IDL support. 
 
-\subsection{IDL routines}
 
-To read PDB files you will need the PDB2IDL library
+\subsection{Note on reading PDB files}
+
+IDL comes with routines to manipulate NetCDF files, but to read PDB files you will need the PDB2IDL library
+supplied with BOUT++:
 \begin{verbatim}
 cd PDB2IDL
 make
@@ -1183,7 +1196,82 @@ IDL> .r pdb2idl
 This can be added to your IDL startup file (which is specified by the
 \code{IDL\_STARTUP} environment variable).
 
-\subsection{IDL file routines}
+\subsection{Reading BOUT++ output into IDL}
+
+There are several routines provided for reading data from BOUT++ output into
+IDL. In the directory containing the BOUT++ output files
+(usually \texttt{data/}), you can list the variables available using
+\begin{verbatim}
+IDL> print, file_list("BOUT.dmp.0.nc")
+Ajpar Apar BOUT_VERSION MXG MXSUB MYG MYSUB MZ NXPE NYPE Ni Ni0 Ni_x Te0 Te_x
+Ti0 Ti_x ZMAX ZMIN iteration jpar phi rho rho_s t_array wci
+\end{verbatim}
+
+The \code{file\_list} procedure just returns an array, listing all the variables in a given file. This
+method (and all the file\_ methods) works for both NetCDF and PDB files.
+
+One thing new users can find confusing is that different simulations may have very different outputs.
+This is because {\bf BOUT++ is not a single physics model}: the variables evolved and written to file
+are determined by the model, and will be very different between (for example) full MHD and reduced Braginskii models.
+There are however some variables which all BOUT++ output files contain:
+\begin{itemize}
+\item \code{BOUT\_VERSION}, which gives the version number of BOUT++ which produced the file. This is mainly to help output processing codes handle changes to the output file format. For example, BOUT++ version 0.30 introduced 2D domain decomposition which needs to be handled when collecting data.
+\item \code{MXG},\code{MYG}. These are the sizes of the X and Y guard cells
+\item \code{MXSUB}, the number of X grid points in each processor. This does not include the guard cells, so the total X size of each field will be \code{MXSUB + 2*MXG}.
+\item \code{MYSUB}, the number of Y grid points per processor (like MXSUB)
+\item \code{MZ}, the number of Z points
+\item \code{NXPE, NYPE}, the number of processors in the X and Y directions. \code{NXPE * MXSUB + 2*MXG= NX}, \code{NYPE * MYSUB = NY}
+\item \code{ZMIN}, \code{ZMAX}, the range of Z in fractions of $2\pi$.
+\item \code{iteration}, the last timestep in the file
+\item \code{t\_array}, an array of times
+\end{itemize}
+Most of these - particularly those concerned with grid size and processor layout - 
+are used by post-processing routines such as \code{collect}, and are seldom needed
+directly.
+To read a single variable from a file, there is the \code{file\_read} function:
+\begin{verbatim}
+IDL> wci = file_read("BOUT.dmp.0.nc", "wci")
+IDL> print, wci
+  9.58000e+06
+\end{verbatim}
+\note{The \code{file\_read} command (and NetCDF/PDB access generally) is case-sensitive: variable \code{Wci} is different to \code{wci}}
+
+To read in all the variables in a file into a structure, use the \code{file\_import} function:
+\begin{verbatim}
+IDL> d = file_import("BOUT.dmp.0.nc")
+IDL> print, d.wci
+  9.58000e+06
+\end{verbatim}
+This is often used to read in the entire grid file at once. Doing this for
+output data files can take a long time and use a lot of memory.
+
+Reading from individual files is fine for scalar quantities and time arrays, but reading arrays
+which are spread across processors (i.e. evolving variables) is tedious
+to do manually. Instead, there is the \code{collect} function to automate this:
+\begin{verbatim}
+IDL> ni = collect(var="ni")
+Variable 'ni' not found
+-> Variables are case-sensitive: Using 'Ni'
+Reading from .//BOUT.dmp.0.nc: [0-35][2-6] -> [0-35][0-4]
+\end{verbatim}
+This function takes care of the case, so that reading ``ni'' is automatically corrected to ``Ni''. The result is a 4D variable:
+\begin{verbatim}
+IDL> help, ni
+NI              FLOAT     = Array[36, 5, 64, 400]
+\end{verbatim}
+with the indices \code{[X, Y, Z, T]}. Note that in the output files,
+these variables are stored in \code{[T, X, Y, Z]} format instead but
+this is changed by \code{collect}.
+Sometimes you don't want to read in the entire array (which may be very large). To read in only a subset, there are several optional keywords with \code{[min,max]}
+ranges:
+\begin{verbatim}
+IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], tind=[300,399])
+Reading from .//BOUT.dmp.0.nc: [10-20][4-4] -> [10-20][2-2]
+IDL> help, ni
+NI              FLOAT     = Array[11, 1, 32, 100]
+\end{verbatim}
+
+\subsection{Summary of IDL file routines}
 
 Functions file\_* can read/write either PDB or NetCDF
 files, depending on the file extension. Hence same
@@ -1245,98 +1333,14 @@ Note that this will mess up the case of the variable names,
 and names may be changed to become valid IDL variable names.
 To convert PDB files to NetCDF there is also pdb2cdf in bout/archiving/
 
-\subsubsection{Reading BOUT++ output}
-
-There are several routines provided for reading data from BOUT++ output into
-IDL. In the directory containing the BOUT++ output files
-(usually \file{data/}), you can list the variables available using
-\begin{verbatim}
-IDL> pd_ls, "BOUT.dmp.0.pdb"
-Contents of file BOUT.dmp.0.pdb : 
- 
-Ajpar Apar BOUT_VERSION MXG MXSUB MYG MYSUB MZ NXPE NYPE Ni Ni0 Ni_x Te0 Te_x
-Ti0 Ti_x ZMAX ZMIN iteration jpar phi rho rho_s t_array wci
-\end{verbatim}
-
-The \code{pd\_ls} procedure just lists all variables in a given PDB file. For more detail, use \code{pd\_desc} instead.
-
-One thing new users can find confusing is that different simulations may have very different outputs.
-This is because {\bf BOUT++ is not a single physics model}: the variables evolved and written to file
-are determined by the model, and will be very different between (for example) full MHD and reduced Braginskii models.
-There are however some variables which all BOUT++ output files contain:
-\begin{itemize}
-\item \code{BOUT\_VERSION}, which gives the version number of BOUT++ which produced the file. This is mainly to help output processing codes handle changes to the output file format. For example, BOUT++ version 0.30 introduced 2D domain decomposition which needs to be handled when collecting data.
-\item \code{MXG},\code{MYG}. These are the sizes of the X and Y guard cells
-\item \code{MXSUB}, the number of X grid points in each processor. This does not include the guard cells, so the total X size of each field will be \code{MXSUB + 2*MXG}.
-\item \code{MYSUB}, the number of Y grid points per processor (like MXSUB)
-\item \code{MZ}, the number of Z points
-\item \code{NXPE, NYPE}, the number of processors in the X and Y directions. \code{NXPE * MXSUB + 2*MXG= NX}, \code{NYPE * MYSUB = NY}
-\item \code{ZMIN}, \code{ZMAX}, the range of Z in fractions of $2\pi$.
-\item \code{iteration}, the last timestep in the file
-\item \code{t\_array}, an array of times
-\end{itemize}
-Most of these - particularly those concerned with grid size and processor layout - 
-are used by post-processing routines such as \code{collect}, and are seldom needed
-directly.
-To read a single variable from a file, there is the \code{pd\_read} function:
-\begin{verbatim}
-IDL> wci = pd_read("BOUT.dmp.0.pdb", "wci")
-IDL> print, wci
-  9.58000e+06
-\end{verbatim}
-\note{The \code{pd\_read} command (and PDB access generally) is case-sensitive: variable \code{Wci} is different to \code{wci}}
-
-To read in all the variables in a file into a structure, use the \code{pd\_import} function:
-\begin{verbatim}
-IDL> d = pd_import("BOUT.dmp.0.pdb")
-IDL> print, d.wci
-  9.58000e+06
-\end{verbatim}
-This is often used to read in the entire grid file at once. Doing this for
-data files can take a long time and use a lot of memory.
-
-Reading from individual files is fine for scalar quantities and time arrays, but reading arrays
-which are spread across processors (i.e. evolving variables) is tedious
-to do manually. Instead, there is the \code{collect} function to automate this:
-\begin{verbatim}
-IDL> ni = collect(var="ni")
-Variable 'ni' not found
--> Variables are case-sensitive: Using 'Ni'
-Reading from .//BOUT.dmp.0.pdb: [0-35][2-6] -> [0-35][0-4]
-\end{verbatim}
-This function takes care of the case, so that reading ``ni'' is automatically corrected to ``Ni''. The result is a 4D variable:
-\begin{verbatim}
-IDL> help, ni
-NI              FLOAT     = Array[36, 5, 64, 400]
-\end{verbatim}
-with the indices \code{[X, Y, Z, T]}. Note that in the PDB files,
-these variables are stored in \code{[T, X, Y, Z]} format instead but
-this is changed by \code{collect}:
-\begin{verbatim}
-IDL> pd_desc, "BOUT.dmp.0.pdb", "Ni"
-Ni: double[0:399][0:35][0:8][0:64]. Elements: 8424000
-\end{verbatim}
-Sometimes you don't want to read in the entire array (which may be very large). To read in only a subset, there are several optional keywords with \code{[min,max]}
-ranges:
-\begin{verbatim}
-IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], tind=[300,399])
-Reading from .//BOUT.dmp.0.pdb: [10-20][4-4] -> [10-20][2-2]
-IDL> help, ni
-NI              FLOAT     = Array[11, 1, 32, 100]
-\end{verbatim}
-
-\subsubsection{Analysis routines}
+\subsection{IDL analysis routines}
 
 Now that the BOUT++ results have been read into IDL, all the usual analysis 
 and plotting routines can be used. In addition, there are many useful routines
-included in the \file{idllib} subdirectory. There is a \file{README}
+included in the \texttt{idllib} subdirectory. There is a \texttt{README}
 file which describes what each of these routines, but some of the most useful
 ones are listed here. All these examples assume there is a variable \code{P}
-(used for pressure in the high-$\beta$ ELM model, which has been read 
-into IDL as a 4D variable:
-\begin{verbatim}
-IDL> p = collect(var="P")
-\end{verbatim}
+which has been read into IDL as a 4D [x,y,z,t] variable:
 
 \begin{itemize}
 \item \code{fft\_deriv} and \code{fft\_integrate} which differentiate and integrate
@@ -1357,12 +1361,12 @@ To show a slice through this at a particular toroidal location (0 here):
 IDL> showdata, p[*,32,0,*]
 \end{verbatim}
 There are a few other options, and ways to show data using this code; see the README
-file, or comments in \file{showdata.pro}. Instead of plotting to screen, showdata can
+file, or comments in \texttt{showdata.pro}. Instead of plotting to screen, showdata can
 produce a series of numbered bitmap images by using the \code{bmp} option
 \begin{verbatim}
 IDL> showdata, p[*,32,*,*], /cont, bmp="result_"
 \end{verbatim}
-which will produce images called \file{result\_0000.bmp}, \file{result\_0001.bmp}
+which will produce images called \texttt{result\_0000.bmp}, \texttt{result\_0001.bmp}
 and so on. Note that the plotting should not be obscured or minimised, since this
 works by plotting to screen, then grabbing an image of the resulting plot.
 
@@ -1371,6 +1375,9 @@ and calculates RMS, DC and AC components in the Z direction.
 \item \code{safe\_colors} A general routine for IDL which arranges the color table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue). Useful for plotting, and
 used by many other routines in this library.
 \end{itemize}
+
+There are many other useful routines in the \texttt{idllib} directory. See the \texttt{idllib/README} file
+for a short description of each one.
 
 \subsection{Python routines}
 
@@ -1424,7 +1431,7 @@ quantities specified, then the coordinates revert to cartesian.
 This section describes how to generate inputs for tokamak equilibria. If you're not interested
 in tokamaks then you can skip to the next section.
 
-The directory \file{tokamak\_grids} contains code to generate input grid files for tokamaks.
+The directory \texttt{tokamak\_grids} contains code to generate input grid files for tokamaks.
 These can be used by the \code{2fluid} and \code{highbeta\_reduced} modules, and are (mostly)
 compatible with inputs to the BOUT-06 code. 
 
@@ -1447,7 +1454,7 @@ These intermediate files are then converted to BOUT++ grids using an interactive
 
 \subsection{Generating equilibria}
 
-The directory \file{tokamak\_grids/shifted\_circle} contains IDL code to generate shifted circle
+The directory \texttt{tokamak\_grids/shifted\_circle} contains IDL code to generate shifted circle
 (large aspect ratio) Grad-Shafranov equilibria.
 
 \subsection{Running pdb2bout}
@@ -1601,7 +1608,7 @@ tutorials over books because there are a lot more of them, they're quicker to sc
 and they're cheaper.
 
 When going through this section, it may help to refer to the finished code, which
-is given in the file \file{mhd.cpp} in the BOUT++ examples directory. The equations to be solved are:
+is given in the file \texttt{mhd.cpp} in the BOUT++ examples directory. The equations to be solved are:
 \begin{eqnarray*}
 \deriv{\rho}{t} &=& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
 \deriv{p}{t} &=& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
@@ -1877,7 +1884,7 @@ int physics_run(real t)
 }
 \end{lstlisting}
 
-This scheme is not used in \file{mhd.cpp}, partly for clarity, and partly because currently
+This scheme is not used in \texttt{mhd.cpp}, partly for clarity, and partly because currently
 communications are not a significant bottleneck (too much inefficiency elsewhere!).
 
 \note{1. Before using the result of a differential operator as input to another differential operator,
@@ -1961,7 +1968,7 @@ output << "This is an integer: " << 5 << ", and this a real: " << 2.0 << endl;
 which will produce exactly the same result as the \code{output.write} call above.
 
 On all processors, anything sent to \code{output} will be written to a log file called
-\file{BOUT.log.\#} with \# replaced by the processor number. On processor 0, anything
+\texttt{BOUT.log.\#} with \# replaced by the processor number. On processor 0, anything
 written to the output will be written to screen (stdout), in addition to the log file.
 Unless there is a really good reason not to, please use this \code{output} object 
 when writing text output.
@@ -2152,7 +2159,7 @@ set
 \begin{verbatim}
 StaggeredGrids = true
 \end{verbatim}
-in the top section of the \file{BOUT.inp} file.
+in the top section of the \texttt{BOUT.inp} file.
 
 There are four possible locations in a grid cell where a quantitity can be defined in BOUT++:
 centre, lower X, lower Y, and lower Z. These are illustrated in figure~\ref{fig:stagLocations}.
@@ -2182,7 +2189,7 @@ This test-case is a simplified simulation of turbulence in a linear plasma devic
 
 \subsection{2-Fluid Braginskii}
 
-The physics code \file{2fluid.cpp} implements a set of reduced Braginskii 2-fluid equations,
+The physics code \texttt{2fluid.cpp} implements a set of reduced Braginskii 2-fluid equations,
 similar to those solved by the original BOUT code.
 This evolves 6 variables: Density, electron and ion temperatures, parallel ion velocity,
 parallel current density and vorticity.
@@ -2191,20 +2198,20 @@ Input grid files are the same as the original BOUT code, but the output format i
 
 \subsection{Reduced MHD}
 
-The file \file{highbeta\_reduced.cpp} solves for a reduced single-fluid MHD similar to that
+The file \texttt{highbeta\_reduced.cpp} solves for a reduced single-fluid MHD similar to that
 derived in \cite{hazeltine-2003} (flute-reduced, page 282), used for linear ELM modelling.
-A separate document \file{elm\_reduced.pdf} in this manual directory derives and explains
+A separate document \texttt{elm\_reduced.pdf} in this manual directory derives and explains
 the model and coordinate system used.
 
 \subsection{Compressible Fluid}
 
-The model in \file{gas\_compress.cpp} solves the compressible gas dynamics equations for
+The model in \texttt{gas\_compress.cpp} solves the compressible gas dynamics equations for
 the density $n$, velocity $\mathbf{V}$, and pressure $P$:
 
 \subsection{MHD}
 
-The file \file{mhd.cpp} solves the full MHD equations for the full values (perturbation + initial),
-whilst the file \file{mhd\_perturb.cpp} solves for a perturbation about the equilibrium.
+The file \texttt{mhd.cpp} solves the full MHD equations for the full values (perturbation + initial),
+whilst the file \texttt{mhd\_perturb.cpp} solves for a perturbation about the equilibrium.
 
 \section{Notes}
 
@@ -2265,7 +2272,7 @@ DSYS, or going with the second method below.
 \subsection{PACT source distribution}
 
 The second method is to use a .tar.gz PACT source file. Here the version used
-is \file{pact-2.1.0.tar.gz}.
+is \texttt{pact-2.1.0.tar.gz}.
 
 \begin{verbatim}
  ~/ $ cd install
