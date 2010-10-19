@@ -51,6 +51,7 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include "invert_laplace.h"
 #include "interpolation.h"
 #include "boutmesh.h"
+#include "boutexception.h"
 
 #include "boundary_factory.h"
 #include "boundary_standard.h"
@@ -191,147 +192,154 @@ int bout_init(int argc, char **argv)
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-  output.write("Processor number: %d of %d\n\n", MYPE, NPES);
+  try {
 
-  /// Load settings file
-  options.read("%s/BOUT.inp", data_dir);
-
-  // Get options override from command-line
-  options.commandLineRead(argc, argv);
-
-  /////////////////////////////////////////////
-  /// Get some settings
+    output.write("Processor number: %d of %d\n\n", MYPE, NPES);
+    
+    /// Load settings file
+    options.read("%s/BOUT.inp", data_dir);
+    
+    // Get options override from command-line
+    options.commandLineRead(argc, argv);
+    
+    /////////////////////////////////////////////
+    /// Get some settings
   
-  /// GET GLOBAL OPTIONS
-  options.setSection("");
+    /// GET GLOBAL OPTIONS
+    options.setSection("");
   
-  OPTION(NOUT, 1);
-  OPTION(TIMESTEP, 1.0);
+    OPTION(NOUT, 1);
+    OPTION(TIMESTEP, 1.0);
 
-  options.get("grid", grid_name, DEFAULT_GRID);
-/*  if((grid_name = options.getString("grid")) == (char*) NULL)
-    grid_name = DEFAULT_GRID;*/
+    options.get("grid", grid_name, DEFAULT_GRID);
+    /*  if((grid_name = options.getString("grid")) == (char*) NULL)
+        grid_name = DEFAULT_GRID;*/
   
-  OPTION(dump_float,   true);
-  OPTION(non_uniform,  false);
+    OPTION(dump_float,   true);
+    OPTION(non_uniform,  false);
   
-  // Check if restarting
-  bool restart;
-  OPTION(restart, false);
-  OPTION(append, false);
+    // Check if restarting
+    bool restart;
+    OPTION(restart, false);
+    OPTION(append, false);
 
-  /// Get file extensions
-  options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
-/*  if((dump_ext = options.getString("dump_format")) == NULL) {
+    /// Get file extensions
+    options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+    /*  if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
     dump_ext = DEFAULT_FILE_EXT;
-  }*/
+    }*/
   
-  /// Setup derivative methods
-  if(derivs_init()) {
-    output.write("Failed to initialise derivative methods. Aborting\n");
-    return(1);
-  }
+    /// Setup derivative methods
+    if(derivs_init()) {
+      output.write("Failed to initialise derivative methods. Aborting\n");
+      return(1);
+    }
   
-  ////////////////////////////////////////////
+    ////////////////////////////////////////////
 
-  /// Create the mesh
-  mesh = new BoutMesh();
+    /// Create the mesh
+    mesh = new BoutMesh();
   
-  output.write("Setting grid format\n");
-  /// Load the grid
-  options.get("grid_format", grid_ext, "");
-  if(grid_ext.empty()) {
-    // Guess format based on grid filename
-    mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str()));
-  }else {
-    // User-specified format
-    mesh->addSource(new GridFile(data_format(grid_ext.c_str()), grid_name.c_str()));
-  }
-  if(mesh->load()) {
-    output << "Failed to read grid. Aborting\n";
+    output.write("Setting grid format\n");
+    /// Load the grid
+    options.get("grid_format", grid_ext, "");
+    if(grid_ext.empty()) {
+      // Guess format based on grid filename
+      mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str()));
+    }else {
+      // User-specified format
+      mesh->addSource(new GridFile(data_format(grid_ext.c_str()), grid_name.c_str()));
+    }
+    if(mesh->load()) {
+      output << "Failed to read grid. Aborting\n";
+      return 1;
+    }
+    
+    /// Setup the boundaries
+    BoundaryFactory* bndry = BoundaryFactory::getInstance();
+    bndry->add(new BoundaryDirichlet(), "dirichlet");
+    bndry->add(new BoundaryNeumann(), "neumann");
+    bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
+    bndry->add(new BoundaryConstLaplace(), "constlaplace");
+    bndry->addMod(new BoundaryRelax(10.), "relax");
+
+    /// Set the file names
+    sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext.c_str());
+
+    // Set file formats
+    output.write("Setting file formats\n");
+    dump.setFormat(data_format(dumpname));
+
+    if(dump_float)
+      dump.setLowPrecision(); // Down-convert to floats
+
+    /// Add book-keeping variables to the output files
+
+    // This is a temporary hack to get around datafile's limitations (fix soon)
+    static BoutReal version = BOUT_VERSION;
+    dump.add(version, "BOUT_VERSION", 0);
+    dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
+    dump.add(iteration, "iteration", 0);
+  
+    mesh->outputVars(dump);
+
+    /// initialise Laplacian inversion code
+    invert_init();
+
+    output.write("Initialising physics module\n");
+    /// Initialise physics module
+#ifdef CHECK
+    msg_point = msg_stack.push("Initialising physics module");
+#endif
+  
+  
+    /// Create the solver
+    solver = Solver::Create();
+
+    if(physics_init(restart)) {
+      output.write("Failed to initialise physics. Aborting\n");
+      return 1;
+    }
+    
+#ifdef CHECK
+    // Can't trust that the user won't leave messages on the stack
+    msg_stack.pop(msg_point);
+#endif
+  
+    /// Initialise the solver
+    solver->setRestartDir(data_dir);
+    if(solver->init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
+      output.write("Failed to initialise solver-> Aborting\n");
+      return 1;
+    }
+  
+    /// Set the filename for the dump files
+    dump.setFilename(dumpname);
+
+    if(!restart) {
+      /// Write initial state as time-point 0
+    
+      // Run RHS once to ensure all variables set
+      if(physics_run(0.0)) {
+        output.write("Physics RHS call failed\n");
+        return 1;
+      }
+
+      if(append) {
+        dump.append();
+      }else {
+        dump.write();
+        append = true;
+      }
+    }
+  
+  }catch(BoutException *e) {
+    output << "Error encountered during initialisation\n";
+    output << e->what() << endl;
     return 1;
   }
 
-  
-  /// Setup the boundaries
-  BoundaryFactory* bndry = BoundaryFactory::getInstance();
-  bndry->add(new BoundaryDirichlet(), "dirichlet");
-  bndry->add(new BoundaryNeumann(), "neumann");
-  bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
-  bndry->add(new BoundaryConstLaplace(), "constlaplace");
-  bndry->addMod(new BoundaryRelax(10.), "relax");
-
-  /// Set the file names
-  sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext.c_str());
-
-  // Set file formats
-  output.write("Setting file formats\n");
-  dump.setFormat(data_format(dumpname));
-
-  if(dump_float)
-    dump.setLowPrecision(); // Down-convert to floats
-
-  /// Add book-keeping variables to the output files
-
-  // This is a temporary hack to get around datafile's limitations (fix soon)
-  static BoutReal version = BOUT_VERSION;
-  dump.add(version, "BOUT_VERSION", 0);
-  dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-  dump.add(iteration, "iteration", 0);
-  
-  mesh->outputVars(dump);
-
-  /// initialise Laplacian inversion code
-  invert_init();
-
-  output.write("Initialising physics module\n");
-  /// Initialise physics module
-#ifdef CHECK
-  msg_point = msg_stack.push("Initialising physics module");
-#endif
-
-  /// Create the solver
-
-  solver = Solver::Create();
-
-  if(physics_init(restart)) {
-    output.write("Failed to initialise physics. Aborting\n");
-    return(1);
-  }
-
-#ifdef CHECK
-  // Can't trust that the user won't leave messages on the stack
-  msg_stack.pop(msg_point);
-#endif
-  
-  /// Initialise the solver
-  solver->setRestartDir(data_dir);
-  if(solver->init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver-> Aborting\n");
-    return(1);
-  }
-  
-  /// Set the filename for the dump files
-  dump.setFilename(dumpname);
-
-  if(!restart) {
-    /// Write initial state as time-point 0
-    
-    // Run RHS once to ensure all variables set
-    if(physics_run(0.0)) {
-      output.write("Physics RHS call failed\n");
-      return(1);
-    }
-
-    if(append) {
-      dump.append();
-    }else {
-      dump.write();
-      append = true;
-    }
-  }
-  
   return 0;
 }
 
@@ -339,29 +347,34 @@ int bout_run()
 {
   /// Run the solver
   output.write("Running simulation\n\n");
-  
-  time_t start_time = time((time_t*) NULL);
-  output.write("\nRun started at  : %s\n", ctime(&start_time));
-  
-  int status = solver->run(bout_monitor);
-  
-  time_t end_time = time((time_t*) NULL);
-  output.write("\nRun finished at  : %s\n", ctime(&end_time));
-  output.write("Run time : ");
-  
-  int dt = end_time - start_time;
-  int i = (int) (dt / (60.*60.));
-  if(i > 0) {
-    output.write("%d h ", i);
-    dt -= i*60*60;
+  int status;
+  try {
+    time_t start_time = time((time_t*) NULL);
+    output.write("\nRun started at  : %s\n", ctime(&start_time));
+    
+    status = solver->run(bout_monitor);
+    
+    time_t end_time = time((time_t*) NULL);
+    output.write("\nRun finished at  : %s\n", ctime(&end_time));
+    output.write("Run time : ");
+    
+    int dt = end_time - start_time;
+    int i = (int) (dt / (60.*60.));
+    if(i > 0) {
+      output.write("%d h ", i);
+      dt -= i*60*60;
+    }
+    i = (int) (dt / 60.);
+    if(i > 0) {
+      output.write("%d m ", i);
+      dt -= i*60;
+    }
+    output.write("%d s\n", dt);
+  }catch(BoutException *e) {
+    output << "Error encountered during initialisation\n";
+    output << e->what() << endl;
+    return 1;
   }
-  i = (int) (dt / 60.);
-  if(i > 0) {
-    output.write("%d m ", i);
-    dt -= i*60;
-  }
-  output.write("%d s\n", dt);
-  
   return status;
 }
 
