@@ -139,6 +139,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   coef5 = 0.0;
   if(laplace_all_terms) {
     coef4 = mesh->G1[jx][jy] / (2.0*mesh->dx[jx][jy]); // X 1st derivative
+    //coef4 = 1. / mesh->dx[jx][jy];
     coef5 = mesh->G3[jx][jy];
   }
 
@@ -156,7 +157,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     if((jx > 0) && (jx < (mesh->ngx-1)))
       coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (SQ(mesh->dx[jx][jy])*((*ccoef)[jx][jy]));
   }
-
+  
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // d2dz2 term
     coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
@@ -164,9 +165,16 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     coef3 = 0.0; // This cancels out
   }
   
-  a = dcomplex(coef1 - coef4,-kwave*coef3);
+  /*
+  if((jy == 4) && (jz == 1)  && (jx > 0) && (jx < (mesh->ngx-1))) {
+    output.write("Lap x=%d : %e, %e, %e, %e\n", jx, 
+                 coef1, coef2, coef4, kwave);
+  }
+  */
+  
+  a = dcomplex(coef1 - coef4,kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
-  c = dcomplex(coef1 + coef4,kwave*coef3);
+  c = dcomplex(coef1 + coef4,-kwave*coef3);
 }
 
 /**********************************************************************************
@@ -782,7 +790,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    }
 	  }
 	}
-	
+        
 	// Call tridiagonal solver
 	tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
 
@@ -1831,7 +1839,7 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
 {
   Field3D x;
   
-  invert_laplace(b, x, flags, a, c);
+  invert_laplace(b, x, flags, a, c, d);
   return x;
 }
 
