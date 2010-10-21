@@ -427,6 +427,9 @@ int physics_init(bool restarting)
   dump.add(Ue, "Ue", 1);
   dump.add(Jpar, "Jpar", 1);
 
+  // To ensure X periodicity
+  mesh->communicate(comms);
+
   comms.add(phi, Apar, Ui, Ue, Jpar);
 
   dump.add(phi_G, "phi_G", 1);
