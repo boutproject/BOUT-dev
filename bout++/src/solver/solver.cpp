@@ -849,6 +849,8 @@ int Solver::run_convective(BoutReal t)
   
   rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
+  
+  return status;
 }
 
 int Solver::run_diffusive(BoutReal t)

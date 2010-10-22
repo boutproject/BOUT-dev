@@ -286,14 +286,16 @@ void OptionFile::get(const map<string,Option>::iterator &it, bool &val)
 template<class type>
 void OptionFile::get(const string &key, type &val, const type &def)
 {
-  map<string, Option>::iterator it(find(key));
-
+  // First try looking in the current section
+  map<string, Option>::iterator it(find(prependSection(def_section, key)));
+  
   if(it != end()) {
     get<type>(it, val);
     return;
   }
   
-  it = find(prependSection(def_section, key));
+  // Then without the section
+  it = find(key);
   if(it != end()) {
     get<type>(it, val);
     return;
@@ -308,14 +310,14 @@ template void OptionFile::get<BoutReal>(const string &key, BoutReal &val, const 
 
 void OptionFile::get(const string &key, string &val, const string &def)
 {
-  map<string, Option>::iterator it(find(key));
+  map<string, Option>::iterator it(find(prependSection(def_section, key)));
 
   if(it != end()) {
     get(it, val);
     return;
   }
   
-  it = find(prependSection(def_section, key));
+  it = find(key);
   if(it != end()) {
     get(it, val);
     return;
@@ -327,14 +329,14 @@ void OptionFile::get(const string &key, string &val, const string &def)
 
 void OptionFile::get(const string &key, bool &val, const bool &def)
 {
-  map<string, Option>::iterator it(find(key));
+  map<string, Option>::iterator it(find(prependSection(def_section, key)));
 
   if(it != end()) {
     get(it, val);
     return;
   }
   
-  it = find(prependSection(def_section, key));
+  it = find(key);
   if(it != end()) {
     get(it, val);
     return;

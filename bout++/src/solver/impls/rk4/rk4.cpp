@@ -62,7 +62,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   options.setSection("solver");
   OPTION(atol, 1.e-5); // Absolute tolerance
   OPTION(rtol, 1.e-3); // Relative tolerance
-  OPTION(max_timestep, -1.); // Maximum timestep
+  OPTION(max_timestep, tstep); // Maximum timestep
   OPTION(start_timestep, -1.); // Starting timestep
   OPTION(mxstep, 500); // Maximum number of steps between outputs
   
