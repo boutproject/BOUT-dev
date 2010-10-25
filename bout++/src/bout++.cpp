@@ -35,6 +35,11 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #define CHECKSUM_(x) CHECKSUM1_(x)
 #define CHECKSUM CHECKSUM_(MD5SUM)
 
+// Revision passed at compile time
+#define REV1_(x) #x
+#define REV_(x) REV1_(x)
+#define REV REV_(REVISION)
+
 #define GLOBALORIGIN
 
 #include "bout.h"
@@ -153,6 +158,9 @@ int bout_init(int argc, char **argv)
 
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
+#ifdef REVISION
+  output.write("Git revision: %s\n", REV);
+#endif
 #ifdef MD5SUM
   output.write("MD5 checksum: %s\n", CHECKSUM);
 #endif

@@ -5,12 +5,14 @@ DIRS			= field fileio invert mesh physics precon solver sys
 
 SOURCEC		= bout++.cpp
 SOURCEH		= bout.h
-CFLAGS		= -DMD5SUM=$(CHECKSUM)
+CFLAGS		= -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
 TARGET		= lib
 
 # Checksum passed to bout++.cpp
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cpp $(DIR)/*.h)) | md5sum | head -c 32)
 
+# Git revision passed to bout++.cpp
+REVISION := $(shell git rev-parse HEAD 2> /dev/null || { echo "Unknown"; } )
 
 # This is a little obscure, so here is an explanation:
 # the first 'all: initial_message' sets the prerequisite 'inital_message'
@@ -37,7 +39,7 @@ initial_message:
 	@echo "CHECKSUM = " $(CHECKSUM)
 	@echo "INCLUDE  = " $(BOUT_INCLUDE)
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
-	
+
 end_message:
 	@echo "Finished"
 	@echo ""
