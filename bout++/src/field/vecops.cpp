@@ -146,6 +146,71 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
 }
 
 /**************************************************************************
+ * Divergence operators for flux methods
+ **************************************************************************/
+
+const Field2D Div(const Vector2D &v, const Field2D &f)
+{
+  Field2D result;
+
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Div( Vector2D, Field2D )");
+#endif
+  
+  // get contravariant components of v
+  Vector2D vcn = v;
+  vcn.toContravariant();
+  
+  result = FDDX(mesh->J*vcn.x, f);
+  result += FDDY(mesh->J*vcn.y, f);
+  result += FDDZ(mesh->J*vcn.z, f);
+  result /= mesh->J;
+
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
+const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+    Field3D result;
+
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Div( Vector3D, Field3D )");
+#endif
+
+  if(outloc == CELL_DEFAULT) 
+    outloc = CELL_CENTRE;
+
+  // get contravariant components of v
+  Vector3D vcn = v;
+  vcn.toContravariant();
+  
+  result = FDDX(mesh->J*vcn.x, f, method, outloc);
+  result += FDDY(mesh->J*vcn.y, f, method, outloc);
+  result += FDDZ(mesh->J*vcn.z, f, method, outloc);
+  result /= mesh->J;
+
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
+const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return Div(v, f, method, outloc);
+}
+
+const Field3D Div(const Vector3D &v, const Field3D &f)
+{
+  return Div(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+/**************************************************************************
  * Curl operators
  **************************************************************************/
 

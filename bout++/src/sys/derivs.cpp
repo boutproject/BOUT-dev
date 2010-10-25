@@ -1,6 +1,21 @@
 /**************************************************************************
  * Basic derivative methods
  *
+ * 
+ * Four kinds of differencing methods:
+ * 
+ * 1. First derivative DD*
+ *    Central differencing e.g. Div(f)
+ *
+ * 2. Second derivatives D2D*2
+ *    Central differencing e.g. Delp2(f)
+ *
+ * 3. Upwinding VDD*
+ *    Terms like v*Grad(f)
+ *
+ * 4. Flux methods FDD* (e.g. flux conserving, limiting)
+ *    Div(v*f)
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -227,6 +242,18 @@ BoutReal DDX_CWENO3(stencil &f)
   return VDDX_WENO3(vp, sp) + VDDX_WENO3(vm, sm);
 }
 
+//////////////////////// FLUX METHODS ///////////////////////
+
+BoutReal FDDX_C2(stencil &v, stencil &f)
+{
+  return 0.5*(v.p*f.p - v.m*f.m);
+}
+
+BoutReal FDDX_C4(stencil &v, stencil &f)
+{
+  return (8.*v.p*f.p - 8.*v.m*f.m + v.mm*f.mm - v.pp*f.pp)/12.;
+}
+
 /*******************************************************************************
  * Staggered differencing methods
  * These expect the output grid cell to be at a different location to the input
@@ -274,6 +301,23 @@ BoutReal D2DX2_C4_stag(stencil &f)
 // v.p is v at +1/2, v.m is at -1/2
 
 BoutReal VDDX_U1_stag(stencil &v, stencil &f)
+{
+  // Lower cell boundary
+  BoutReal result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
+  
+  // Upper cell boundary
+  result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
+
+  return result;
+}
+
+/////////////////////////// FLUX ///////////////////////////
+// Map (Low, Centre) -> Centre  or (Centre, Low) -> Low
+// Hence v contains only (mm, m, p, pp) fields whilst f has 'c' too
+//
+// v.p is v at +1/2, v.m is at -1/2
+
+BoutReal FDDX_U1_stag(stencil &v, stencil &f)
 {
   // Lower cell boundary
   BoutReal result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
@@ -334,6 +378,11 @@ static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
 				    {DIFF_C4, NULL, VDDX_C4},
 				    {DIFF_DEFAULT}};
 
+/// Flux functions lookup table
+static DiffLookup FluxTable[] = { {DIFF_C2, NULL, FDDX_C2},
+                                  {DIFF_C4, NULL, FDDX_C4},
+                                  {DIFF_DEFAULT}};
+
 /// First staggered derivative lookup
 static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, NULL}, 
 					    {DIFF_C4, DDX_C4_stag, NULL},
@@ -346,6 +395,10 @@ static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, NULL},
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, VDDX_U1_stag},
 					{DIFF_DEFAULT} };
+
+/// Flux staggered lookup
+static DiffLookup FluxStagTable[] = { {DIFF_U1, NULL, FDDX_U1_stag},
+                                      {DIFF_DEFAULT}};
 
 /*******************************************************************************
  * Routines to use the above tables to map between function codes, names
@@ -453,14 +506,16 @@ void printFuncName(DIFF_METHOD method)
  *******************************************************************************/
 
 // Central -> Central (or Left -> Left) functions
-deriv_func fDDX, fDDY, fDDZ;     // Differencing methods for each dimension
-deriv_func fD2DX2, fD2DY2, fD2DZ2;  // second differential operators
-upwind_func fVDDX, fVDDY, fVDDZ; // Upwind functions in the three directions
+deriv_func fDDX, fDDY, fDDZ;        ///< Differencing methods for each dimension
+deriv_func fD2DX2, fD2DY2, fD2DZ2;  ///< second differential operators
+upwind_func fVDDX, fVDDY, fVDDZ;    ///< Upwind functions in the three directions
+upwind_func fFDDX, fFDDY, fFDDZ;    ///< Default flux functions
 
 // Central -> Left (or Left -> Central) functions
 deriv_func sfDDX, sfDDY, sfDDZ;
 deriv_func sfD2DX2, sfD2DY2, sfD2DZ2;
 upwind_func sfVDDX, sfVDDY, sfVDDZ;
+upwind_func sfFDDX, sfFDDY, sfFDDZ;
 
 /*******************************************************************************
  * Initialisation
@@ -489,6 +544,39 @@ void derivs_set(DiffLookup *table, const char* name, upwind_func &f)
   f = lookupUpwindFunc(table, method);
 }
 
+/// Initialise derivatives from options
+void derivs_init(bool StaggerGrids,
+                 deriv_func &fdd, deriv_func &sfdd, 
+                 deriv_func &fd2d, deriv_func &sfd2d, 
+                 upwind_func &fu, upwind_func &sfu,
+                 upwind_func &ff, upwind_func &sff)
+{
+  output.write("\tFirst       : ");
+  derivs_set(FirstDerivTable, "first",  fdd);
+  if(StaggerGrids) {
+    output.write("\tStag. First : ");
+    derivs_set(FirstStagDerivTable, "first",  sfdd);
+  }
+  output.write("\tSecond      : ");
+  derivs_set(SecondDerivTable, "second", fd2d);
+  if(StaggerGrids) {
+    output.write("\tStag. Second: ");
+    derivs_set(SecondStagDerivTable, "second", sfd2d);
+  }
+  output.write("\tUpwind      : ");
+  derivs_set(UpwindTable,     "upwind", fu);
+  if(StaggerGrids) {
+    output.write("\tStag. Upwind: ");
+    derivs_set(UpwindStagTable,     "upwind", sfu);
+  }
+  output.write("\tFlux        : ");
+  derivs_set(FluxTable,     "flux", ff);
+  if(StaggerGrids) {
+    output.write("\tStag. Flux  : ");
+    derivs_set(FluxStagTable,     "flux", sff);
+  }
+}
+
 /// Initialise the derivative methods. Must be called before any derivatives are used
 int derivs_init()
 {
@@ -503,77 +591,38 @@ int derivs_init()
 
   output.write("Setting X differencing methods\n");
   options.setSection("ddx");
-  output.write("\tFirst       : ");
-  derivs_set(FirstDerivTable, "first",  fDDX);
-  if(StaggerGrids) {
-    output.write("\tStag. First : ");
-    derivs_set(FirstStagDerivTable, "first",  sfDDX);
-  }
-  output.write("\tSecond      : ");
-  derivs_set(SecondDerivTable, "second", fD2DX2);
-  if(StaggerGrids) {
-    output.write("\tStag. Second: ");
-    derivs_set(SecondDerivTable, "second", sfD2DX2);
-  }
-  output.write("\tUpwind      : ");
-  derivs_set(UpwindTable,     "upwind", fVDDX);
-  if(StaggerGrids) {
-    output.write("\tStag. Upwind: ");
-    derivs_set(UpwindTable,     "upwind", sfVDDX);
-  }
+  derivs_init(StaggerGrids,
+              fDDX, sfDDX, 
+              fD2DX2, sfD2DX2,
+              fVDDX, sfVDDX,
+              fFDDX, sfFDDX);
   
   if((fDDX == NULL) || (fD2DX2 == NULL)) {
     output.write("\t***Error: FFT cannot be used in X\n");
     return 1;
   }
-
+  
   output.write("Setting Y differencing methods\n");
   options.setSection("ddy");
-  output.write("\tFirst       : ");
-  derivs_set(FirstDerivTable, "first",  fDDY);
-  if(StaggerGrids) {
-    output.write("\tStag. First : ");
-    derivs_set(FirstStagDerivTable, "first",  sfDDY);
-  }
-  output.write("\tSecond      : ");
-  derivs_set(SecondDerivTable, "second", fD2DY2);
-  if(StaggerGrids) {
-    output.write("\tStag. Second: ");
-    derivs_set(SecondDerivTable, "second", sfD2DY2);
-  }
-  output.write("\tUpwind      : ");
-  derivs_set(UpwindTable,     "upwind", fVDDY);
-  if(StaggerGrids) {
-    output.write("\tStag. Upwind: ");
-    derivs_set(UpwindTable,     "upwind", sfVDDY);
-  }
-
+  derivs_init(StaggerGrids,
+              fDDY, sfDDY, 
+              fD2DY2, sfD2DY2,
+              fVDDY, sfVDDY,
+              fFDDY, sfFDDY);
+  
   if((fDDY == NULL) || (fD2DY2 == NULL)) {
-    output.write("\tError: FFT cannot be used in Y\n");
+    output.write("\t***Error: FFT cannot be used in Y\n");
     return 1;
   }
-
+  
   output.write("Setting Z differencing methods\n");
   options.setSection("ddz");
-  output.write("\tFirst       : ");
-  derivs_set(FirstDerivTable, "first",  fDDZ);
-  if(StaggerGrids) {
-    output.write("\tStag. First : ");
-    derivs_set(FirstStagDerivTable, "first",  sfDDZ);
-  }
-  output.write("\tSecond      : ");
-  derivs_set(SecondDerivTable, "second", fD2DZ2);
-  if(StaggerGrids) {
-    output.write("\tStag. Second: ");
-    derivs_set(SecondDerivTable, "second", sfD2DZ2);
-  }
-  output.write("\tUpwind      : ");
-  derivs_set(UpwindTable,     "upwind", fVDDZ);
-  if(StaggerGrids) {
-    output.write("\tStag. Upwind: ");
-    derivs_set(UpwindTable,     "upwind", sfVDDZ);
-  }
-
+  derivs_init(StaggerGrids,
+              fDDZ, sfDDZ, 
+              fD2DZ2, sfD2DZ2,
+              fVDDZ, sfVDDZ,
+              fFDDZ, sfFDDZ);
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -1629,6 +1678,7 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     // Lookup function
     func = lookupUpwindFunc(table, method);
   }
+  
   bindex bx;
   stencil vval, fval;
   
@@ -1749,4 +1799,415 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
 const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
 {
   return VDDZ(v, f, outloc, method);
+}
+
+/*******************************************************************************
+ * Flux conserving schemes
+ *******************************************************************************/
+
+const Field2D FDDX(const Field2D &v, const Field2D &f)
+{
+  return FDDX(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDX(v, f, method, outloc);
+}
+
+const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDX(v, f) + f * DDX(v);
+  }
+  
+  upwind_func func = fFDDX;
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(FluxTable, method);
+  }
+  Field2D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal **d = result.getData();
+
+  bindex bx;
+  stencil vs, fs;
+  start_index(&bx);
+  do {
+    f.setXStencil(fs, bx);
+    v.setXStencil(vs, bx);
+    
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx[bx.jx][bx.jy];
+  }while(next_index2(&bx));
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = false;
+#endif
+  
+  return result;
+}
+
+const Field3D FDDX(const Field3D &v, const Field3D &f)
+{
+  return FDDX(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDX(v, f, method, outloc);
+}
+
+const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDX(v, f, outloc) + DDX(v, outloc) * f;
+  }
+  
+  upwind_func func = fFDDX;
+  DiffLookup *table = FluxTable;
+
+  CELL_LOC vloc = v.getLocation();
+  CELL_LOC inloc = f.getLocation(); // Input location
+  CELL_LOC diffloc = inloc; // Location of differential result
+  
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+    // Take care of CELL_DEFAULT case
+    outloc = diffloc; // No shift (i.e. same as no stagger case)
+  }
+  
+  if(mesh->StaggerGrids && (vloc != inloc)) {
+    // Staggered grids enabled, and velocity at different location to value
+    if(vloc == CELL_XLOW) {
+      // V staggered w.r.t. variable
+      func = sfFDDX;
+      table = FluxStagTable;
+      diffloc = CELL_CENTRE;
+    }else if((vloc == CELL_CENTRE) && (inloc == CELL_XLOW)) {
+      // Shifted
+      func = sfFDDX;
+      table = FluxStagTable;
+      diffloc = CELL_XLOW;
+    }else {
+      // More complicated. Deciding what to do here isn't straightforward
+      // For now, interpolate velocity to the same location as f.
+
+      // Should be able to do something like:
+      //return VDDX(interp_to(v, inloc), f, outloc, method);
+      
+      // Instead, pretend it's been shifted FIX THIS
+      diffloc = vloc;
+    }
+  }
+
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(table, method);
+  }
+
+  /// Clone inputs (for shifting)
+  Field3D *vp = v.clone();
+  Field3D *fp = f.clone();
+  
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT if needed
+    vp->shiftToReal(true);
+    fp->shiftToReal(true);
+  }
+  
+  Field3D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal ***d = result.getData();
+
+  bindex bx;
+  stencil vval, fval;
+  
+  start_index(&bx);
+  do {
+    vp->setXStencil(vval, bx, diffloc);
+    fp->setXStencil(fval, bx); // Location is always the same as input
+    
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx[bx.jx][bx.jy];
+  }while(next_index3(&bx));
+  
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
+    result = result.shiftZ(false); // Shift back
+  
+  result.setLocation(inloc);
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+#endif
+  
+  // Delete clones
+  delete vp;
+  delete fp;
+  
+  return interp_to(result, outloc);
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+const Field2D FDDY(const Field2D &v, const Field2D &f)
+{
+  return FDDY(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDY(v, f, method, outloc);
+}
+
+const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDY(v, f) + f * DDY(v);
+  }
+  
+  upwind_func func = fFDDY;
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(FluxTable, method);
+  }
+  Field2D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal **d = result.getData();
+
+  bindex bx;
+  stencil vs, fs;
+  start_index(&bx);
+  do {
+    f.setYStencil(fs, bx);
+    v.setYStencil(vs, bx);
+    
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dy[bx.jx][bx.jy];
+  }while(next_index2(&bx));
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = false;
+#endif
+  
+  return result;
+}
+
+const Field3D FDDY(const Field3D &v, const Field3D &f)
+{
+  return FDDY(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDY(v, f, method, outloc);
+}
+
+const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDY(v, f, outloc) + DDY(v, outloc) * f;
+  }
+  upwind_func func = fFDDY;
+  DiffLookup *table = FluxTable;
+
+  CELL_LOC vloc = v.getLocation();
+  CELL_LOC inloc = f.getLocation(); // Input location
+  CELL_LOC diffloc = inloc; // Location of differential result
+  
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+    // Take care of CELL_DEFAULT case
+    outloc = diffloc; // No shift (i.e. same as no stagger case)
+  }
+  
+  if(mesh->StaggerGrids && (vloc != inloc)) {
+    // Staggered grids enabled, and velocity at different location to value
+    if(vloc == CELL_YLOW) {
+      // V staggered w.r.t. variable
+      func = sfFDDY;
+      table = FluxStagTable;
+      diffloc = CELL_CENTRE;
+    }else if((vloc == CELL_CENTRE) && (inloc == CELL_YLOW)) {
+      // Shifted
+      func = sfFDDY;
+      table = FluxStagTable;
+      diffloc = CELL_YLOW;
+    }else {
+      // More complicated. Deciding what to do here isn't straightforward
+      // For now, interpolate velocity to the same location as f.
+
+      // Should be able to do something like:
+      //return VDDX(interp_to(v, inloc), f, outloc, method);
+      
+      // Instead, pretend it's been shifted FIX THIS
+      diffloc = vloc;
+    }
+  }
+
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(table, method);
+  }
+  
+  Field3D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal ***d = result.getData();
+
+  bindex bx;
+  stencil vval, fval;
+  
+  start_index(&bx);
+  do {
+    v.setYStencil(vval, bx, diffloc);
+    f.setYStencil(fval, bx); // Location is always the same as input
+    
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dy[bx.jx][bx.jy];
+  }while(next_index3(&bx));
+  
+  result.setLocation(inloc);
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+#endif
+  
+  return interp_to(result, outloc);
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+const Field2D FDDZ(const Field2D &v, const Field2D &f)
+{
+  return FDDZ(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDZ(v, f, method, outloc);
+}
+
+const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDZ(v, f) + f * DDZ(v);
+  }
+  
+  upwind_func func = fFDDZ;
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(FluxTable, method);
+  }
+  Field2D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal **d = result.getData();
+
+  bindex bx;
+  stencil vs, fs;
+  start_index(&bx);
+  do {
+    f.setZStencil(fs, bx);
+    v.setZStencil(vs, bx);
+    
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dz;
+  }while(next_index2(&bx));
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = false;
+#endif
+  
+  return result;
+}
+
+const Field3D FDDZ(const Field3D &v, const Field3D &f)
+{
+  return FDDZ(v, f, DIFF_DEFAULT, CELL_DEFAULT);
+}
+
+const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
+{
+  return FDDZ(v, f, method, outloc);
+}
+
+const Field3D FDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
+{
+  if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
+    // Split into an upwind and a central differencing part
+    // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
+    return VDDZ(v, f, outloc) + DDZ(v, outloc) * f;
+  }
+  
+  upwind_func func = fFDDZ;
+  DiffLookup *table = FluxTable;
+
+  CELL_LOC vloc = v.getLocation();
+  CELL_LOC inloc = f.getLocation(); // Input location
+  CELL_LOC diffloc = inloc; // Location of differential result
+  
+  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+    // Take care of CELL_DEFAULT case
+    outloc = diffloc; // No shift (i.e. same as no stagger case)
+  }
+  
+  if(mesh->StaggerGrids && (vloc != inloc)) {
+    // Staggered grids enabled, and velocity at different location to value
+    if(vloc == CELL_ZLOW) {
+      // V staggered w.r.t. variable
+      func = sfFDDZ;
+      table = FluxStagTable;
+      diffloc = CELL_CENTRE;
+    }else if((vloc == CELL_CENTRE) && (inloc == CELL_ZLOW)) {
+      // Shifted
+      func = sfFDDZ;
+      table = FluxStagTable;
+      diffloc = CELL_ZLOW;
+    }else {
+      // More complicated. Deciding what to do here isn't straightforward
+      // For now, interpolate velocity to the same location as f.
+
+      // Should be able to do something like:
+      //return VDDX(interp_to(v, inloc), f, outloc, method);
+      
+      // Instead, pretend it's been shifted FIX THIS
+      diffloc = vloc;
+    }
+  }
+
+  if(method != DIFF_DEFAULT) {
+    // Lookup function
+    func = lookupUpwindFunc(table, method);
+  }
+  
+  Field3D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal ***d = result.getData();
+
+  bindex bx;
+  stencil vval, fval;
+  
+  start_index(&bx);
+  do {
+    v.setZStencil(vval, bx, diffloc);
+    f.setZStencil(fval, bx); // Location is always the same as input
+    
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dz;
+  }while(next_index3(&bx));
+  
+  result.setLocation(inloc);
+
+#ifdef CHECK
+  // Mark boundaries as invalid
+  result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+#endif
+  
+  return interp_to(result, outloc);
 }
