@@ -1,7 +1,10 @@
 /****************************************************************
  * GEM Gyro-fluid model
- * 
+ *
  * 6 moments for each species
+ *
+ * "GEM - An Energy Conserving Electromagnetic Gyrofluid Model"
+ *  by Bruce D Scott. arXiv:physics/0501124v1 23 Jan 2005 
  *
  * This version uses global parameters for collisionality etc.
  ****************************************************************/
@@ -121,6 +124,9 @@ BoutReal Tbar;  // Timescale Lbar / Cs
 
 FieldGroup comms; // Communications
 
+int physics_run(BoutReal time);
+int physics_dissipation(BoutReal time);
+
 ////////////////////////////////////////////////////////////////////////
 // Initialisation
 
@@ -187,9 +193,10 @@ int physics_init(bool restarting)
   BoutReal ZZ; // Ion charge
   OPTION(AA, 2.0); // Deuterium by default
   OPTION(ZZ, 1.0);
-
+  
   Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
   Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
+  
   
   Cs = sqrt(1.602e-19*Tenorm / (AA*1.67262158e-27)); SAVE_ONCE(Cs); // Sound speed in m/s
   
@@ -349,6 +356,9 @@ int physics_init(bool restarting)
     comms.add(qiperp);
   }else qiperp = 0.;
   
+  /// Split operator, with artificial dissipation in second function
+  solver->setSplitOperator(physics_run, physics_dissipation);
+
   if(adiabatic_electrons) {
     // Solving with adiabatic electrons
     
@@ -451,11 +461,8 @@ int physics_init(bool restarting)
     if(mesh->get(phi0, "phi0") == 0) {
       
     }
-    
   }
-  
-  //dump.add(xzdamp, "xzdamp", 1);
- 
+
   return 0;
 }
 
@@ -464,7 +471,8 @@ int physics_init(bool restarting)
 
 const Field3D curvature(const Field3D &f);
 
-const Field3D UE_Grad(const Field3D &f, const Field3D &phi, bool damping=true);
+const Field3D UE_Grad(const Field3D &f, const Field3D &phi);
+const Field3D UE_Grad_D(const Field3D &f, const Field3D &p);
 const Field3D WE_Grad(const Field3D &f, const Field3D &Phi);
 
 const Field3D Grad_parP(const Field3D &f);
@@ -564,7 +572,7 @@ int physics_run(BoutReal time)
     K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
     
     if(ne_ddt) {
-      ddt(Ne) = -UE_Grad(Ne0, phi_G, false);
+      ddt(Ne) = -UE_Grad(Ne0, phi_G);
       if(ne_ne1)
         ddt(Ne) -= UE_Grad(Ne, phi_G);
       if(ne_te0)
@@ -683,7 +691,7 @@ int physics_run(BoutReal time)
   */
 
   if(ni_ddt) {
-    ddt(Ni) = -UE_Grad(Ni0, phi_G, false);
+    ddt(Ni) = -UE_Grad(Ni0, phi_G);
     if(ni_ni1)
       ddt(Ni) -= UE_Grad(Ni, phi_G);
     if(ni_ti0)
@@ -779,6 +787,83 @@ int physics_run(BoutReal time)
   return 0;
 }
 
+// Artificial dissipation terms
+int physics_dissipation(BoutReal time)
+{
+  ////////////////////////////////////////////
+  // Communicate
+
+  mesh->communicate(comms);
+
+  ////////////////////////////////////////////
+  // Electron equations
+  
+  if(!adiabatic_electrons) {
+    if(small_rho_e) {
+      // No gyro-averaging for small rho_e
+      phi_G = phi;
+      Phi_G = 0.0;
+    }else {
+      // Gyro-reduced potentials
+      phi_G = gyroPade1(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
+      Phi_G = gyroPade2(phi, rho_e, INVERT_IN_RHS | INVERT_OUT_RHS);
+      
+      mesh->communicate(phi_G, Phi_G);
+    }
+    
+    if(ne_ddt) {
+      ddt(Ne) = 0.;
+      if(ne_ne1)
+        ddt(Ne) -= UE_Grad_D(Ne, phi_G); 
+    }
+    if(apue_ddt) {
+      ddt(ApUe) = 0.0;
+      if(apue_uet)
+        ddt(ApUe) -= mu_e*UE_Grad_D(Ue, phi_G);
+    }
+    if(tepar_ddt) {
+      ddt(Tepar) = -UE_Grad_D(Tepar, phi_G);
+    }
+    if(teperp_ddt) {
+      ddt(Teperp) = -UE_Grad_D(Teperp, phi_G);
+    }
+    if(qepar_ddt) {
+      ddt(qepar) = -UE_Grad_D(qepar, phi_G);
+    }
+    if(qeperp_ddt) {
+      ddt(qeperp) = -UE_Grad_D(qeperp, phi_G);
+    }
+  }
+  
+  ////////////////////////////////////////////
+  // Ion equations
+  
+  if(ni_ddt) {
+    ddt(Ni) = 0.;
+    if(ni_ni1)
+      ddt(Ni) -= UE_Grad_D(Ni, phi_G);
+  }
+  if(apui_ddt) {
+    ddt(ApUi) = 0.0;
+    if(apui_uit)
+      ddt(ApUi) = -mu_i*UE_Grad_D(Ui, phi_G);
+  }
+  if(tipar_ddt) {
+    ddt(Tipar) = - UE_Grad_D(Tipar, phi_G);
+  }
+  if(tiperp_ddt) {
+    ddt(Tiperp) = - UE_Grad_D(Tiperp, phi_G);
+  }
+  if(qipar_ddt) {
+    ddt(qipar) = - UE_Grad_D(qipar, phi_G);
+  }
+  if(qiperp_ddt) {
+    ddt(qiperp) = - UE_Grad_D(qiperp, phi_G);
+  }
+  
+  return 0;
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Curvature operator
 
@@ -806,21 +891,23 @@ const Field3D curvature(const Field3D &f)
 ////////////////////////////////////////////////////////////////////////
 // Advection terms
 
-const Field3D UE_Grad(const Field3D &f, const Field3D &p, bool damping)
+/// ExB advection
+const Field3D UE_Grad(const Field3D &f, const Field3D &p)
 {
-  Field3D result = bracket(p, f, bm);
+  return bracket(p, f, bm);
+}
+
+/// Artificial dissipation terms in advection
+const Field3D UE_Grad_D(const Field3D &f, const Field3D &p)
+{
+  Field3D delp2 = Delp2(f);
+  delp2.applyBoundary("neumann");
+  mesh->communicate(delp2);
   
-  if(damping) {
-    Field3D delp2 = Delp2(f);
-    delp2.applyBoundary("neumann");
-    mesh->communicate(delp2);
-    
-    result += 
-      nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) )
-      - nu_par*Grad2_par2(f) // NB: This should be changed for variable B
-      ;
-  }
-  return result;
+  return
+    nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) )
+    - nu_par*Grad2_par2(f) // NB: This should be changed for variable B
+    ;
 }
 
 const Field3D WE_Grad(const Field3D &f, const Field3D &p)

@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 200       # number of time-steps
-TIMESTEP = 1e-5	   # time between outputs
+NOUT = 100       # number of time-steps
+TIMESTEP = 1e-6	   # time between outputs
 
 archive = 20
 
@@ -23,7 +23,7 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 #StaggerGrids = true
 
-periodicX = true  # Make domain periodic in X
+periodicX = false  # Make domain periodic in X
 
 NXPE = 1 # Decompose in X direction
 
@@ -66,6 +66,8 @@ upwind = W3
 ATOL = 1.0e-12 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 mxstep = 50000
+type=karniadakis
+timestep=1e-8
 
 ##################################################
 # settings for GEM model
@@ -96,7 +98,7 @@ curv_logB = true   # For flux-tube, read in logB separately
 phi_flags = 0  # inversion flags for phi
 apar_flags =0 # flags for apar inversion
 
-low_pass_z = 1 # Toroidal filtering
+low_pass_z = -1 # Toroidal filtering
 
 ##################################################
 # settings for individual variables
@@ -115,6 +117,7 @@ scale = 0.0 # default size of initial perturbations
 
 xs_opt = 1
 ys_opt = 1
+ys_wd = 0.5
 zs_opt = 2
 
 zs_mode = 1 # asimuthal mode number
@@ -139,19 +142,19 @@ ddt = true # Evolve Ni
 ni1 = true # nonlinear ExB 
 ti0 = false
 ti1 = false
-ui  = false # Parallel flow
-curv = false # Curvature
+ui  = true # Parallel flow
+curv = true # Curvature
 
 [ApUi]
-ddt = false # Evolve parallel ion flow
+ddt = true # Evolve parallel ion flow
 
 uit = true  # Nonlinear ExB
-qi  = true
+qi  = false
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
 gradB = true
-Rei = true
+Rei = false
 
 [Tipar]
 ddt = false
@@ -171,19 +174,19 @@ ddt = true
 ne1 = true # nonlinear ExB 
 te0 = false
 te1 = false
-ue  = false # Parallel flow
-curv = false # Curvature
+ue  = true # Parallel flow
+curv = true # Curvature
 
 [ApUe]
-ddt = false # Evolve parallel ion flow
+ddt = true # Evolve parallel ion flow
 
 uet = true  # Nonlinear ExB
-qe  = true
+qe  = false
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
 gradB = true
-Rei = true
+Rei = false
 
 [Tepar]
 ddt = false
