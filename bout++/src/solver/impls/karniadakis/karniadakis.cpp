@@ -1,5 +1,11 @@
 /**************************************************************************
  * Karniadakis split-operator solver
+ * 
+ * Formulation from:
+ * "GEM - An Energy Conserving Electromagnetic Gyrofluid Model"
+ *  by Bruce D Scott. arXiv:physics/0501124v1 23 Jan 2005 
+ *
+ * Original paper:
  *   J. Comput. Phys. 97 (1991) p414-443
  * 
  * Always available, since doesn't depend on external library
@@ -184,9 +190,8 @@ void KarniadakisSolver::take_step(BoutReal dt)
 
   // f1 = (6./11.) * (3.*f0 - 1.5*fm1 + (1./3.)*fm2 + dt*(3.*S0 - 3.*Sm1 + Sm2))
   
-  // NOTE: SHOULD THE (6/11) FACTOR APPLY TO THE dt? DOESN'T SEEM RIGHT
   for(int i=0;i<nlocal;i++)
-    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i]) + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]);
+    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
   
   // D0 = S(f0)
   load_vars(f0);
