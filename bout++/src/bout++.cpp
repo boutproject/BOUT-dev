@@ -164,7 +164,7 @@ int bout_init(int argc, char **argv)
 #ifdef MD5SUM
   output.write("MD5 checksum: %s\n", CHECKSUM);
 #endif
-  output.write("Code compiled on %s at %s\n", __DATE__, __TIME__);
+  output.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
   output.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 

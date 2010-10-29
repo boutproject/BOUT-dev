@@ -307,7 +307,10 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f)
   
   // Upper cell boundary
   result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
-
+  
+  // result is now d/dx(v*f), but want v*d/dx(f) so subtract f*d/dx(v)
+  result -= f.c*(v.p - v.m);
+  
   return result;
 }
 
