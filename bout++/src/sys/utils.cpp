@@ -31,6 +31,7 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
+#include <cmath>
 
 BoutReal *rvector(int size)
 {
@@ -207,9 +208,30 @@ int MAX(int a, int b)
   return (a > b) ? a : b;
 }
 
+BoutReal MAX(BoutReal a, BoutReal b)
+{
+  return (a > b) ? a : b;
+}
+
+BoutReal MIN(BoutReal a, BoutReal b)
+{
+  return (a < b) ? a : b;
+}
+
 bool is_pow2(int x)
 {
   return x && !((x-1) & x);
+}
+
+BoutReal SIGN(BoutReal a)
+{
+  return (a >= 0) ? 1.0 : -1.0;
+}
+
+
+BoutReal MINMOD(BoutReal a, BoutReal b)
+{
+  return 0.5*(SIGN(a) + SIGN(b)) * MIN(fabs(a), fabs(b));
 }
 
 /*

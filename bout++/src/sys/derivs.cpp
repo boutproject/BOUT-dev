@@ -254,6 +254,43 @@ BoutReal FDDX_C4(stencil &v, stencil &f)
   return (8.*v.p*f.p - 8.*v.m*f.m + v.mm*f.mm - v.pp*f.pp)/12.;
 }
 
+/// Non-oscillatory, containing No free parameters and Dissipative (NND) scheme
+/// http://arxiv.org/abs/1010.4135v1
+BoutReal FDDX_NND(stencil &v, stencil &f)
+{
+  // f{+-} i
+  BoutReal fp = 0.5*(v.c + fabs(v.c))*f.c;
+  BoutReal fm = 0.5*(v.c - fabs(v.c))*f.c;
+  
+  // f{+-} i+1
+  BoutReal fp1 = 0.5*(v.p + fabs(v.p))*f.p;
+  BoutReal fm1 = 0.5*(v.p - fabs(v.p))*f.p;
+  
+  // f{+-} i+2
+  BoutReal fm2 = 0.5*(v.pp - fabs(v.pp))*f.pp;
+
+  // f{+-} i-1
+  BoutReal fp_1 = 0.5*(v.m + fabs(v.m))*f.m;
+  BoutReal fm_1 = 0.5*(v.m - fabs(v.m))*f.m;
+  
+  // f{+-} i-2
+  BoutReal fp_2 = 0.5*(v.mm + fabs(v.mm))*f.mm;
+
+  // f^{LR} {i+1/2}
+  BoutReal flp = fp  + 0.5*MINMOD(fp1 - fp, fp - fp_1);
+  BoutReal frp = fm1 - 0.5*MINMOD(fm1 - fm, fm2 - fm1);
+  
+  // f^{LR} {i-1/2}
+  BoutReal flm = fp_1  + 0.5*MINMOD(fp - fp_1, fp_1 - fp_2);
+  BoutReal frm = fm - 0.5*MINMOD(fm - fm_1, fm1 - fm);
+    
+  // h{+-}
+  BoutReal hp = flp + frp;
+  BoutReal hm = flm + frm; 
+  
+  return hp - hm;
+}
+
 /*******************************************************************************
  * Staggered differencing methods
  * These expect the output grid cell to be at a different location to the input
@@ -357,6 +394,7 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_C4, "C4", "Fourth order central"},
 					  {DIFF_U4, "U4", "Fourth order upwinding"},
 					  {DIFF_FFT, "FFT", "FFT"},
+                                          {DIFF_NND, "NND", "NND"},
 					  {DIFF_DEFAULT}}; // Use to terminate the list
 
 /// First derivative lookup table
@@ -384,6 +422,7 @@ static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
 /// Flux functions lookup table
 static DiffLookup FluxTable[] = { {DIFF_C2, NULL, FDDX_C2},
                                   {DIFF_C4, NULL, FDDX_C4},
+                                  {DIFF_NND, NULL, FDDX_NND},
                                   {DIFF_DEFAULT}};
 
 /// First staggered derivative lookup
