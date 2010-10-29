@@ -424,6 +424,9 @@ Field3D & Field3D::operator+=(const Field3D &rhs)
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return (*this) += interp_to(rhs, location);
   }
 
@@ -554,6 +557,9 @@ Field3D & Field3D::operator-=(const Field3D &rhs)
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return (*this) -= interp_to(rhs, location);
   }
 
@@ -682,6 +688,9 @@ Field3D & Field3D::operator*=(const Field3D &rhs)
 
   if(mesh->StaggerGrids && (rhs.location != location)) {
     // Interpolate and call again
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return (*this) *= interp_to(rhs, location);
   }
 

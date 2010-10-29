@@ -35,7 +35,7 @@
 const Vector2D Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Grad(const Field3D &f, 
-                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z);
+                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z = CELL_DEFAULT);
 
 const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);

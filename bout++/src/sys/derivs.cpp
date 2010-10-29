@@ -129,17 +129,6 @@ BoutReal VDDX_C4(stencil &v, stencil &f)
 BoutReal VDDX_U1(stencil &v, stencil &f)
 {
   return v.c>=0.0 ? v.c*(f.c - f.m): v.c*(f.p - f.c);
-
-  /*
-  // Velocity at lower end
-  BoutReal vs = 0.5*(v.m + v.c);
-  BoutReal result = vs >= 0.0 ? vs * f.m : vs * f.c;
-  // and at upper 
-  vs = 0.5*(v.c + v.p);
-  result -= vs >= 0.0 ? vs * f.c : vs * f.p;
-
-  return result;
-  */
 }
 
 /// upwind, 4th order
@@ -243,6 +232,18 @@ BoutReal DDX_CWENO3(stencil &f)
 }
 
 //////////////////////// FLUX METHODS ///////////////////////
+
+BoutReal FDDX_U1(stencil &v, stencil &f)
+{
+  // Velocity at lower end
+  BoutReal vs = 0.5*(v.m + v.c);
+  BoutReal result = (vs >= 0.0) ? vs * f.m : vs * f.c;
+  // and at upper 
+  vs = 0.5*(v.c + v.p);
+  result -= (vs >= 0.0) ? vs * f.c : vs * f.p;
+
+  return result;
+}
 
 BoutReal FDDX_C2(stencil &v, stencil &f)
 {
@@ -395,6 +396,7 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_U4, "U4", "Fourth order upwinding"},
 					  {DIFF_FFT, "FFT", "FFT"},
                                           {DIFF_NND, "NND", "NND"},
+                                          {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
 					  {DIFF_DEFAULT}}; // Use to terminate the list
 
 /// First derivative lookup table
@@ -420,7 +422,9 @@ static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
 				    {DIFF_DEFAULT}};
 
 /// Flux functions lookup table
-static DiffLookup FluxTable[] = { {DIFF_C2, NULL, FDDX_C2},
+static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL},
+                                  {DIFF_U1, NULL, FDDX_U1},
+                                  {DIFF_C2, NULL, FDDX_C2},
                                   {DIFF_C4, NULL, FDDX_C4},
                                   {DIFF_NND, NULL, FDDX_NND},
                                   {DIFF_DEFAULT}};
@@ -439,7 +443,8 @@ static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, VDDX_U1_stag},
 					{DIFF_DEFAULT} };
 
 /// Flux staggered lookup
-static DiffLookup FluxStagTable[] = { {DIFF_U1, NULL, FDDX_U1_stag},
+static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL},
+                                      {DIFF_U1, NULL, FDDX_U1_stag},
                                       {DIFF_DEFAULT}};
 
 /*******************************************************************************
