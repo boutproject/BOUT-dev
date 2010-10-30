@@ -3,7 +3,7 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 100       # number of time-steps
+NOUT = 200       # number of time-steps
 TIMESTEP = 1e-6	   # time between outputs
 
 archive = 20
@@ -82,7 +82,7 @@ Landau = 1.0
 nu_perp = 1e-6
 nu_par = 3e-3
 
-output_ddt = true  # Save time derivs to file
+output_ddt = false  # Save time derivs to file
 
 curv_logB = true   # For flux-tube, read in logB separately
 
@@ -99,6 +99,8 @@ phi_flags = 0  # inversion flags for phi
 apar_flags =0 # flags for apar inversion
 
 low_pass_z = -1 # Toroidal filtering
+
+fix_profiles = true
 
 ##################################################
 # settings for individual variables
@@ -118,6 +120,7 @@ scale = 0.0 # default size of initial perturbations
 xs_opt = 1
 ys_opt = 1
 ys_wd = 0.5
+xs_wd = 0.2
 zs_opt = 2
 
 zs_mode = 1 # asimuthal mode number
@@ -135,13 +138,13 @@ zs_mode = 1 # asimuthal mode number
 bndry_all = neumann
 
 [Ni]
-scale = 1.0e-8 # only perturbing Ni
+scale = 1.0e1 # only perturbing Ni
 
 ddt = true # Evolve Ni
 
 ni1 = true # nonlinear ExB 
-ti0 = false
-ti1 = false
+ti0 = true
+ti1 = true
 ui  = true # Parallel flow
 curv = true # Curvature
 
@@ -149,7 +152,7 @@ curv = true # Curvature
 ddt = true # Evolve parallel ion flow
 
 uit = true  # Nonlinear ExB
-qi  = false
+qi  = true
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
@@ -157,23 +160,23 @@ gradB = true
 Rei = false
 
 [Tipar]
-ddt = false
+ddt = true
 
 [Tiperp]
-ddt = false
+ddt = true
 
 [qipar]
-ddt = false
+ddt = true
 
 [qiperp]
-ddt = false
+ddt = true
 
 [Ne]
 ddt = true
 
 ne1 = true # nonlinear ExB 
-te0 = false
-te1 = false
+te0 = true
+te1 = true
 ue  = true # Parallel flow
 curv = true # Curvature
 
@@ -181,7 +184,7 @@ curv = true # Curvature
 ddt = true # Evolve parallel ion flow
 
 uet = true  # Nonlinear ExB
-qe  = false
+qe  = true
 phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
@@ -189,13 +192,13 @@ gradB = true
 Rei = false
 
 [Tepar]
-ddt = false
+ddt = true
 
 [Teperp]
-ddt = false
+ddt = true
 
 [qepar]
-ddt = false
+ddt = true
 
 [qeperp]
-ddt = false
+ddt = true

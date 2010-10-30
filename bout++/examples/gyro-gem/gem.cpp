@@ -87,8 +87,10 @@ BoutReal nu_e, nu_i; // Collisional dissipation
 
 BoutReal nu_perp, nu_par;  // Artificial dissipation
 
+bool fix_profiles; // Subtract toroidal averages
+
 // Method to use for brackets: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
-const BRACKET_METHOD bm = BRACKET_ARAKAWA;
+const BRACKET_METHOD bm = BRACKET_SIMPLE; //BRACKET_ARAKAWA;
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -155,6 +157,8 @@ int physics_init(bool restarting)
 
   OPTION(curv_logB, false); // Read in a separate logB variable
   
+  OPTION(fix_profiles, false); // Subtract DC components
+
   //////////////////////////////////
   // Read profiles
 
@@ -488,7 +492,7 @@ const Field3D Div_parP_LtoC(const Field3D &f);
 
 int physics_run(BoutReal time)
 {
-  output << "time = " << time << endl;
+  //output << "time = " << time << endl;
   
   // Quantities which depend on species
   //Field3D phi_G, Phi_G; // Gyro-reduced potential
@@ -529,7 +533,7 @@ int physics_run(BoutReal time)
   // Helmholtz equation for Apar
   
   Field2D a = beta_e * (1./mu_e - 1./mu_i);
-  Apar = 0.0; //invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
+  Apar = invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
   
   Ui = (ApUi - beta_e*Apar) / mu_i;
   Ue = (ApUe - beta_e*Apar) / mu_e;
@@ -588,6 +592,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(Ne) = lowPass(ddt(Ne), low_pass_z);
+      
+      if(fix_profiles)
+        ddt(Ne) -= ddt(Ne).DC();
     }
     
     if(apue_ddt) {
@@ -615,6 +622,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(ApUe) = lowPass(ddt(ApUe), low_pass_z);
+      
+      if(fix_profiles)
+        ddt(ApUe) -= ddt(ApUe).DC();
     }
     
     if(tepar_ddt) {
@@ -626,6 +636,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(Tepar) = lowPass(ddt(Tepar), low_pass_z);
+      
+      if(fix_profiles)
+        ddt(Tepar) -= ddt(Tepar).DC();
     }
     
     if(teperp_ddt) {
@@ -639,6 +652,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(Teperp) = lowPass(ddt(Teperp), low_pass_z);
+
+      if(fix_profiles)
+        ddt(Teperp) -= ddt(Teperp).DC();
     }
     
     if(qepar_ddt) {
@@ -651,6 +667,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(qepar) = lowPass(ddt(qepar), low_pass_z);
+      
+      if(fix_profiles)
+        ddt(qepar) -= ddt(qepar).DC();
     }
     
     if(qeperp_ddt) {
@@ -664,6 +683,9 @@ int physics_run(BoutReal time)
       
       if(low_pass_z > 0)
         ddt(qeperp) = lowPass(ddt(qeperp), low_pass_z);
+      
+      if(fix_profiles)
+        ddt(qeperp) -= ddt(qeperp).DC();
     }
   }
   
@@ -707,6 +729,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(Ni) = lowPass(ddt(Ni), low_pass_z);
+    
+    if(fix_profiles)
+      ddt(Ni) -= ddt(Ni).DC();
   }
   
   if(apui_ddt) {
@@ -734,6 +759,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(ApUi) = lowPass(ddt(ApUi), low_pass_z);
+    
+    if(fix_profiles)
+      ddt(ApUi) -= ddt(ApUi).DC();
   }
   
   if(tipar_ddt) {
@@ -745,6 +773,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(Tipar) = lowPass(ddt(Tipar), low_pass_z);
+
+    if(fix_profiles)
+      ddt(Tipar) -= ddt(Tipar).DC();
   }
   
   if(tiperp_ddt) {
@@ -758,6 +789,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(Tiperp) = lowPass(ddt(Tiperp), low_pass_z);
+    
+    if(fix_profiles)
+      ddt(Tiperp) -= ddt(Tiperp).DC();
   }
   
   if(qipar_ddt) {
@@ -769,6 +803,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(qipar) = lowPass(ddt(qipar), low_pass_z);
+    
+    if(fix_profiles)
+      ddt(qipar) -= ddt(qipar).DC();
   }
   
   if(qiperp_ddt) {
@@ -782,6 +819,9 @@ int physics_run(BoutReal time)
     
     if(low_pass_z > 0)
       ddt(qiperp) = lowPass(ddt(qiperp), low_pass_z);
+    
+    if(fix_profiles)
+      ddt(qiperp) -= ddt(qiperp).DC();
   }
   
   return 0;
