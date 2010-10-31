@@ -92,7 +92,8 @@ PRO cyclone, output=output, varyBp=varyBp
   ShiftAngle = qprof * 2.*!PI
   
   IF KEYWORD_SET(varyBp) THEN BEGIN
-    ; Vary Bpxy to get shear
+     ; Vary Bpxy to get shear
+     Bpxy = FLTARR(nx, ny)
      FOR i=0, ny-1 DO Bpxy[*,i] = Bp * q / qprof
      PRINT, "Poloidal field varies from "+STR(MIN(Bpxy))+" to "+STR(MAX(Bpxy))
   ENDIF ELSE BEGIN
