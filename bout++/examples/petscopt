@@ -5,28 +5,31 @@
 
 # TS
 #---------------
--ts_view tsview.log
-#-ts_monitor
--ts_max_steps 1000
+-ts_type sundials
 -ts_sundials_exact_final_time
+-ts_sundials_monitor_steps
+-ts_sundials_atol 1.e-12
+-ts_sundials_rtol 1.e-12
 
--ts_dt 0.1
+-ts_view tsview.log
+-ts_monitor
+-ts_max_steps 1000
+-ts_dt 0.01
 
 # Coloring Jacobian matrix
 #---------------------------
-#-mat_type aij
 #-J_load data_petsc/J.dat
-#-J_slowfd
+-J_slowfd
 
 #-color_none
 #-mat_no_inode #remove after optimize MatGetColoring() for the 1st color
 
 # Preconditioner
 #---------------
--pc_type none
+#-pc_type none
+-pc_type jacobi
 
 #-pc_type lu
-#-pc_factor_shift_nonzero
 #-pc_factor_mat_solver_package mumps
 #-mat_mumps_icntl_7 2
 
@@ -41,7 +44,8 @@
 #---------------
 #-malloc_dump
 #-start_in_debugger 
-#-debugger_nodes 1
+#-debugger_nodes 0
 #-mat_view_info
 #-J_write
-#-write_solution
+-options_table
+-options_left

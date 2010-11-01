@@ -74,8 +74,10 @@ class PetscSolver : public Solver {
   friend PetscErrorCode PostStep(TS);
 
  private:
-  Vec u;
-  TS ts; 
+  Vec           u;
+  TS            ts; 
+  Mat           J;
+  MatFDColoring matfdcoloring;
 
   int nout;   // The number of outputs
   BoutReal tstep; // Time between outputs
