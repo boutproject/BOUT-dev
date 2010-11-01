@@ -8,8 +8,8 @@
 -ts_type sundials
 -ts_sundials_exact_final_time
 -ts_sundials_monitor_steps
--ts_sundials_atol 1.e-12
--ts_sundials_rtol 1.e-12
+#-ts_sundials_atol 1.e-12
+#-ts_sundials_rtol 1.e-12
 
 -ts_view tsview.log
 -ts_monitor
