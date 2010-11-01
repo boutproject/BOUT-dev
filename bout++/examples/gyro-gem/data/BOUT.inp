@@ -4,7 +4,7 @@
 # settings used by the core code
 
 NOUT = 200       # number of time-steps
-TIMESTEP = 1e-6	   # time between outputs
+TIMESTEP = 1e-5	   # time between outputs
 
 archive = 20
 
@@ -67,7 +67,7 @@ ATOL = 1.0e-12 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 mxstep = 50000
 type=karniadakis
-timestep=1e-8
+timestep=1e-6
 
 ##################################################
 # settings for GEM model
@@ -157,7 +157,7 @@ phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
 gradB = true
-Rei = false
+Rei = true
 
 [Tipar]
 ddt = true
@@ -189,7 +189,7 @@ phi = true  # Parallel gradient of phi
 parP = true # Parallel pressure gradient
 curv = true
 gradB = true
-Rei = false
+Rei = true
 
 [Tepar]
 ddt = true

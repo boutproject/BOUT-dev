@@ -15,6 +15,13 @@
 
 #include <cmath>
 
+/// Fundamental constants
+
+const BoutReal e0 = 8.854e-12; // Permittivity of free space
+const BoutReal qe = 1.602e-19; // Electron charge
+const BoutReal Me = 9.109e-31; // Electron mass
+const BoutReal Mp = 1.67262158e-27; // Proton mass
+
 //////////////////////////////////////////
 // Evolving quantities
 
@@ -178,7 +185,7 @@ int physics_init(bool restarting)
   Ti0 = Te0;
   Ne0 = Ni0;
 
-  Field2D p_e = 1.602e-19 * Te0 * Ne0; // Electron pressure in Pascals
+  Field2D p_e = qe * Te0 * Ne0; // Electron pressure in Pascals
  
   if(curv_logB) {
     GRID_LOAD(logB);
@@ -201,8 +208,7 @@ int physics_init(bool restarting)
   Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
   Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
   
-  
-  Cs = sqrt(1.602e-19*Tenorm / (AA*1.67262158e-27)); SAVE_ONCE(Cs); // Sound speed in m/s
+  Cs = sqrt(qe*Tenorm / (AA*Mp)); SAVE_ONCE(Cs); // Sound speed in m/s
   
   Tbar = Lbar / Cs; 
   OPTION(Tbar, Tbar); // Override in options file
@@ -216,7 +222,7 @@ int physics_init(bool restarting)
 
   beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
 
-  output << "\tbeta_e = " << beta_e << endl;
+  
 
   // Mass to charge ratios
   mu_i = 1. / ZZ;
@@ -226,13 +232,11 @@ int physics_init(bool restarting)
   tau_i = 1. /ZZ;
 
   // Gyro-radii (SI units)
-  BoutReal rho_s = Cs * AA * 1.67e-27 / (1.602e-19 * Bbar);
+  BoutReal rho_s = Cs * AA * Mp / (qe * Bbar);
   rho_e = rho_s * sqrt(fabs(mu_e * tau_e));
   rho_i = rho_s * sqrt(fabs(mu_i * tau_i));
 
   BoutReal delta = rho_s / Lbar; SAVE_ONCE(delta); // This should be small
-  
-  output << "\tdelta = " << delta << endl;
   
   ////////////////////////////////////////////////////
   // Terms in equations
@@ -257,13 +261,26 @@ int physics_init(bool restarting)
   ////////////////////////////////////////////////////
   // Collisional parameters
   
+  /// Coulomb logarithm
+  BoutReal Coulomb = 6.6 - 0.5*log(Ninorm * 1e-20) + 1.5*log(Tenorm);
+
   BoutReal t_e, t_i; // Braginskii collision times
   
-  t_e = t_i = 1.e-6; // FIX!!!
+  t_e = 1. / (2.91e-6 * (Ninorm / 1e6) * Coulomb * pow(Tenorm, -3./2));
 
-  nu_e = 0.0; //Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
-  nu_i = 0.0; //Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
-
+  t_i = pow(ZZ, -4.) * sqrt(AA) / (4.80e-8 * (Ninorm / 1e6) * Coulomb * pow(Tenorm, -3./2));
+  
+  output << "\n\tParameters\n";
+  output.write("\tt_e = %e [s], t_i = %e [s]\n", t_e, t_i);
+  output.write("\tLbar = %e [m], Cs = %e [m/s]\n", 
+               Lbar, Cs);
+  output.write("\tTbar = %e [s]\n", Tbar);
+  nu_e = Lbar / (Cs*t_e); SAVE_ONCE(nu_e);
+  nu_i = Lbar / (Cs*t_i); SAVE_ONCE(nu_i);
+  output.write("\tNormalised nu_e = %e, nu_i = %e\n", nu_e, nu_i);
+  output << "\tbeta_e = " << beta_e << endl;
+  output << "\tdelta = " << delta << endl;
+  
   ////////////////////////////////////////////////////
   // Normalise
   
@@ -273,22 +290,24 @@ int physics_init(bool restarting)
   Ni0 /= Ninorm * delta; SAVE_ONCE(Ni0);
   Ne0 /= Ninorm * delta; SAVE_ONCE(Ne0);
   
-  rho_e /= Lbar;
-  rho_i /= Lbar;
+  rho_e /= rho_s;
+  rho_i /= rho_s;
 
-  output << "Normalised rho_e = " << rho_e << endl;
-  output << "Normalised rho_i = " << rho_i << endl;
+  output << "\tNormalised rho_e = " << rho_e << endl;
+  output << "\tNormalised rho_i = " << rho_i << endl;
 
   //////////////////////////////////
   // Metric tensor components
   
   // Normalise
-  hthe /= Lbar;
+  hthe /= Lbar; // parallel derivatives normalised to Lperp
+  
   Bpxy /= Bbar;
   Btxy /= Bbar;
   Bxy  /= Bbar;
-  hthe /= Lbar;
-  mesh->dx /= Lbar*Lbar*Bbar;
+  
+  Rxy  /= rho_s; // Perpendicular derivatives normalised to rho_s
+  mesh->dx /= rho_s*rho_s*Bbar;
   
   // Metric components
   
@@ -548,8 +567,8 @@ int physics_run(BoutReal time)
   ////////////////////////////////////////////
   // Resistivity
   
-  Rei = 0.0; //mu_e*nu_e*(eta*Jpar + 
-  //     (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
+  Rei = mu_e*nu_e*(eta*Jpar + 
+                   (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
   
   ////////////////////////////////////////////
   // Electron equations
@@ -755,7 +774,7 @@ int physics_run(BoutReal time)
       ddt(ApUi) -= tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
     
     if(apui_Rei)
-      ddt(ApUi) += Rei;
+      ddt(ApUi) -= Rei;
     
     if(low_pass_z > 0)
       ddt(ApUi) = lowPass(ddt(ApUi), low_pass_z);
