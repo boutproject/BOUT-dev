@@ -825,6 +825,22 @@ int Solver::run_rhs(BoutReal t)
   if(split_operator) {
     // Run both parts
     
+    static int nv;
+    static BoutReal *tmp = NULL, *tmp2;
+    if(tmp == NULL) {
+      nv = getLocalN();
+      tmp = new BoutReal[nv];
+      tmp2 = new BoutReal[nv];
+    }
+    save_vars(tmp); // Copy variables into tmp
+    status = run_func(t, phys_conv);
+    load_vars(tmp); // Reset variables
+    save_derivs(tmp); // Save time derivatives
+    status = run_func(t, phys_diff);
+    save_derivs(tmp2); // Save time derivatives
+    for(int i=0;i<nv;i++)
+      tmp[i] += tmp2[i];
+    load_derivs(tmp); // Put back time-derivatives
   }else
     status = run_func(t, phys_run);
   
