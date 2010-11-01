@@ -69,6 +69,8 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
+
+  return 0;
 }
 
 int RK4Solver::run(MonitorFunc monitor)
