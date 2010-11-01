@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../..
 
-SOURCEC = $(PRECON_SOURCE)
+SOURCEC = 
 INCLUDE	= -I../sys -I../solver/impls/petsc
 TARGET	= lib
 

@@ -55,6 +55,7 @@ class BoutMesh : public Mesh {
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
   const Field2D averageY(const Field2D&);
+  bool surfaceClosed(int jx);
   bool surfaceClosed(int jx, BoutReal &ts);
 
   // Boundary iteration
@@ -69,6 +70,9 @@ class BoutMesh : public Mesh {
   BoutReal GlobalY(int jy);
 
   void outputVars(Datafile &file);
+
+  int XGLOBAL(int xloc);
+  int YGLOBAL(int yloc);
  private:
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
@@ -91,9 +95,9 @@ class BoutMesh : public Mesh {
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
   bool IS_MYPROC(int xind, int yind);
-  int XGLOBAL(int xloc);
+/*  int XGLOBAL(int xloc);*/
   int XLOCAL(int xglo);
-  int YGLOBAL(int yloc);
+/*  int YGLOBAL(int yloc);*/
   int YGLOBAL(int yloc, int yproc);
   int YLOCAL(int yglo);
   int YLOCAL(int yglo, int yproc);

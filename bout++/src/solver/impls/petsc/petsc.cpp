@@ -139,6 +139,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
   ///////////// GET OPTIONS /////////////
  	int MXSUB = mesh->xend - mesh->xstart + 1;
+	int MYSUB = mesh->yend - mesh->ystart + 1;
 
   options.setSection("solver");
   options.get("mudq", mudq, n3d*(MXSUB+2));
@@ -202,6 +203,9 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       MatLoad(fd,MATMPIAIJ,&J);
       PetscViewerDestroy(fd);
     } else { // create Jacobian matrix by slow fd
+      /* number of degrees (variables) at each grid point */
+    	PetscInt dof = n3Dvars()+n2Dvars();
+    	
       MatCreate(PETSC_COMM_WORLD,&J);
       MatSetSizes(J,local_N,local_N,PETSC_DECIDE,PETSC_DECIDE);
       MatSetFromOptions(J);
@@ -209,6 +213,13 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       // Get nonzero pattern of J - color_none !!!
       MatSeqAIJSetPreallocation(J,10,PETSC_NULL);
       MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);
+      MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);
+      MatMPIBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);
+      MatSeqSBAIJSetPreallocation(J,dof,10,PETSC_NULL);
+      MatMPISBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);
+      
+      /* Set the block size */
+      MatSetBlockSize(J,dof);
 
       PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);
       if (J_slowfd){ // create Jacobian matrix by slow fd
@@ -216,20 +227,35 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
         TSDefaultComputeJacobian(ts,simtime,u,&J,&J,&J_structure,this);
       } else { // get sparse pattern of the Jacobian
         PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");
-        int stat;
 
-	int MXSUB = mesh->xend - mesh->xstart + 1;	
-	int NVARS=n3Dvars()+n2Dvars();
-        printf("NVARS=%d\n",NVARS);  
-        printf("mesh->NXPE=%d\n", mesh->NXPE);
-        printf("MXSUB=%d\n",MXSUB); 
-/*        printf("NYPE=%d\n",NYPE);   //-number of poloidal subdomains*/
-/*        printf("MYSUB=%d\n",MYSUB);  //64; //-number of poloidal polongs per subdomain*/
-        printf("MZ=%d\n",mesh->ngz);     //65;    // toroidal grid size +1
-        printf("MYG=%d\n",mesh->ystart);    //-poloidal guard cells
-        printf("MXG=%d\n",mesh->xstart);    //-radial guard cells
+        /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
+        PetscInt nz  = mesh->ngz - 1;
+        
+        /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
+        PetscInt sw = 2;
+        
+        /* Testing all the index stuff */
+       	PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
+      	PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
 
-/*        stat=jstruc( NVARS,  mesh->NXPE,  MXSUB,  NYPE,  MYSUB,  MZ,  MYG,  MXG);*/
+        PetscInt jx, jy, jz;
+        
+        for(jz=0;jz<nz;jz++) {
+          cout << "----- " << jz << " -----" << endl;
+          for(jy=mesh->ystart; jy <= mesh->yend; jy++) {
+            cout << "jy " << mesh->YGLOBAL(jy) << ": ";
+            for(jx=mesh->xstart; jx <= mesh->xend; jx++) {
+              /* subtract the stencil width because global X index does not account for that */
+              cout << mesh->XGLOBAL(jx)-sw << "[closed=" << mesh->surfaceClosed(jx) << "] ";
+            }
+            cout << endl;
+          }
+          cout << endl;
+        }
+
+        /* End of test */
+
+        bout_error("stopping");
       }
 
       PetscInt diag;

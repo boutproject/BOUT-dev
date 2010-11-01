@@ -2159,6 +2159,11 @@ SurfaceIter* BoutMesh::iterateSurfaces()
   return (SurfaceIter*) NULL;
 }
 
+bool BoutMesh::surfaceClosed(int jx)
+{
+  return (jx < ixseps_inner);
+}
+
 bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
 {
   ts = 0.;

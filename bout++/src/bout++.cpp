@@ -576,6 +576,8 @@ void bout_error(const char *str)
   if(str != NULL)
     output.write(str);
 
+  output.write("\n");
+
 #ifdef CHECK
   msg_stack.dump();
 #endif
