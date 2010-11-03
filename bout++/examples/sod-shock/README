@@ -1,0 +1,14 @@
+Sod shock tube problem
+======================
+
+Solve the ideal gas equations in 1D, starting with a single
+discontinuity. Common test of the accuracy of shock-capturing schemes
+
+Sod, G. A. (1978) J. Comput. Phys. 27: 1-31. doi:10.1016/0021-9991(78)90023-2.
+
+
+Starting conditions are
+
+Left: rho = 1, p = 1, v = 0
+Right: rho = 0.125, p = 0.1, v = 0
+

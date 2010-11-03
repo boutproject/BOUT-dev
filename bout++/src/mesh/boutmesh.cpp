@@ -39,6 +39,8 @@
 
 #include "dcomplex.h"
 
+#include "boutexception.h"
+
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 BoutMesh::~BoutMesh()
@@ -103,7 +105,7 @@ int BoutMesh::load()
   if((MX % NXPE) != 0) {
     output.write("\tERROR: Cannot split %d X points equally between %d processors\n",
 		 MX, NXPE);
-    return false;
+    return 1;
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -112,7 +114,7 @@ int BoutMesh::load()
   if((MY % NYPE) != 0) {
     output.write("\tERROR: Cannot split %d Y points equally between %d processors\n",
 		 MY, NYPE);
-    return false;
+    return 1;
   }
   
   /// Get mesh options
@@ -135,6 +137,7 @@ int BoutMesh::load()
   OPTION(IncIntShear,  false);
   OPTION(BoundaryOnCell, false); // Determine location of boundary
   OPTION(StaggerGrids,   false); // Stagger grids
+  OPTION(periodicX, false); // Periodic in X
   
   OPTION(async_send, false); // Whether to use asyncronous sends
 
@@ -242,15 +245,13 @@ int BoutMesh::load()
   
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    output.write("\tERROR: Diagonal metrics are not finite!\n");
-    exit(1);
+    throw new BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    output.write("\tERROR: Diagonal metrics are negative!\n");
+    throw new BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
   if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    output.write("\tERROR: Off-diagonal metrics are not finite!\n");
-    exit(1);
+    throw new BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
   /// Set shift for radial derivatives
@@ -370,37 +371,10 @@ int BoutMesh::load()
   }else {
     output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
-    if(!finite(Bxy)) {
-      output.write("\tERROR: Bxy not finite everywhere!\n");
-      exit(1);
-    }
+    if(!finite(Bxy))
+      throw new BoutException("\tERROR: Bxy not finite everywhere!\n");
   }
   
-  /// Calculate Christoffel symbols
-  if(geometry()) {
-    output << "  Differential geometry failed\n";
-    return 1;
-  }
-  
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
-  
-  if(non_uniform) {
-    Field2D d2x, d2y; // d^2 x / d i^2
-    // Read correction for non-uniform meshes
-    if(get(d2x, "d2x")) {
-      output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
-    }else
-      d1_dx = -d2x / (dx*dx);
-    
-    if(get(d2y, "d2y")) {
-      output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
-    }else
-      d1_dy = -d2y / (dy*dy);
-  }
-
   //////////////////////////////////////////////////////
   /// Communicators for Y gather/scatter
   
@@ -416,11 +390,11 @@ int BoutMesh::load()
   proc[2] = NXPE; // Stride in processor rank
   
   MPI_Comm comm_tmp;
-  
+
   // Outer SOL regions
   if(jyseps1_2 == jyseps2_1) {
     // Single-null. All processors with same PE_XIND
-    
+
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, NYPE-1);
@@ -577,26 +551,61 @@ int BoutMesh::load()
     }
   }
   // Now have communicators for all regions.
+
+  //////////////////////////////////////////////////////
+  /// Calculate Christoffel symbols. Needs communication
+  if(geometry()) {
+    output << "  Differential geometry failed\n";
+    return 1;
+  }
+
+  if(periodicX) {
+    FieldGroup g;
+    g.add(zShift, dx);
+    communicate(g);
+  }
+
+  //////////////////////////////////////////////////////
+  /// Non-uniform meshes. Need to use DDX, DDY
   
+  if(non_uniform) {
+    Field2D d2x, d2y; // d^2 x / d i^2
+    // Read correction for non-uniform meshes
+    if(get(d2x, "d2x")) {
+      output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
+      d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
+    }else
+      d1_dx = -d2x / (dx*dx);
+    
+    if(get(d2y, "d2y")) {
+      output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
+      d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
+    }else
+      d1_dy = -d2y / (dy*dy);
+  }
+
   //////////////////////////////////////////////////////
   // Boundary regions
-  if(PE_XIND == 0) {
-    // Inner either core or PF
-    
-    int yg = YGLOBAL(MYG); // Get a global index in this processor
-    
-    if( ((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
-	((yg > jyseps1_2) && (yg <= jyseps2_2)) ) {
-      // Core
-      boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
-    }else {
-      // PF region
-      boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+  if(!periodicX) {
+    // Need boundaries in X if not periodic
+    if(PE_XIND == 0) {
+      // Inner either core or PF
+      
+      int yg = YGLOBAL(MYG); // Get a global index in this processor
+      
+      if( ((yg > jyseps1_1) && (yg <= jyseps2_1)) ||
+	  ((yg > jyseps1_2) && (yg <= jyseps2_2)) ) {
+	// Core
+	boundary.push_back(new BoundaryRegionXIn("core", ystart, yend));
+      }else {
+	// PF region
+	boundary.push_back(new BoundaryRegionXIn("pf", ystart, yend));
+      }
     }
-  }
-  if(PE_XIND == (NXPE-1)){
-    // Outer SOL
-    boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+    if(PE_XIND == (NXPE-1)){
+      // Outer SOL
+      boundary.push_back(new BoundaryRegionXOut("sol", ystart, yend));
+    }
   }
   
   if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
@@ -787,30 +796,52 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def)
       return 2;
     }
     
-    }else if(DDATA_XSPLIT > 0) {
-      for(jy=0;jy<MYG;jy++)
-        cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
-    }
-    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
+  }else if(DDATA_XSPLIT > 0) {
+    for(jy=0;jy<MYG;jy++)
+      cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
+  }
+  if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
 
-      if(readgrid_2dvar(s, name,
+    if(readgrid_2dvar(s, name,
 		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
 		      0,
 		      MYG,
 		      DDATA_XSPLIT, ngx,
 		      data)) {
-	output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-	var = def;
+      output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+      var = def;
 #ifdef CHECK
-	msg_stack.pop(msg_pos);
+      msg_stack.pop(msg_pos);
 #endif
-        return 2;
-      }
+      return 2;
+    }
   }else if(DDATA_XSPLIT < ngx) {
     for(jy=0;jy<MYG;jy++)
       cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
   }
-
+  
+  /*
+  if(IDATA_DEST >= 0) {
+    int xfrom = (IDATA_DEST % NXPE)*MXSUB + MXSUB;
+    int yfrom = (IDATA_DEST/NXPE)*MYSUB;
+    for(int i=0;i<MXG;i++) {
+      output.write("in: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, i, MYG);
+      s->setOrigin(xfrom+i, yfrom);
+      s->fetch(&(data[i][MYG]), name, 1, MYSUB);
+    }
+    s->setOrigin();
+  }
+  if(ODATA_DEST >= 0) {
+    int xfrom = (ODATA_DEST % NXPE)*MXSUB + MXG;
+    int yfrom = (ODATA_DEST/NXPE)*MYSUB;
+    for(int i=0;i<MXG;i++) {
+      output.write("out: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, MXG+MXSUB+i, MYG);
+      s->setOrigin(xfrom+i, yfrom);
+      s->fetch(&(data[MXG+MXSUB+i][MYG]), name, 1, MYSUB);
+    }
+    s->setOrigin();
+  }
+  */
 #ifdef TRACK
   var.name = copy_string(name);
 #endif
@@ -1314,7 +1345,6 @@ int BoutMesh::wait(comm_handle handle)
     }
     if(ind != MPI_UNDEFINED)
       ch->request[ind] = MPI_REQUEST_NULL;
-    
   }while(ind != MPI_UNDEFINED);
   
   if(async_send) {
@@ -1584,10 +1614,7 @@ void BoutMesh::default_connections()
   TS_up_in = TS_up_out = TS_down_in = TS_down_out = false; // No twist-shifts
 
   /// Check if X is periodic
-  bool xperiodic;
-  options.setSection("");
-  options.get("xperiodic", xperiodic, false);
-  if(xperiodic) {
+  if(periodicX) {
     if(PE_XIND == (NXPE-1))
       ODATA_DEST = PROC_NUM(0, PE_YIND);
     
@@ -1634,15 +1661,13 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
     ypeup = ype1;
     ypedown = ype2;
   }else {
-    output.write("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
-    exit(1);
+    throw new BoutException("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
   }
 
   /* check the x ranges are possible */
   if((xge != 0) && (xlt != MX)) {
-    output.write("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
-		 ypos1, ypos2, xge, xlt);
-    exit(1);
+    throw new BoutException("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
+                            ypos1, ypos2, xge, xlt);
   }
 
   output.write("Connection between top of Y processor %d and bottom of %d in range %d <= x < %d\n",
@@ -1719,26 +1744,21 @@ void BoutMesh::topology()
   // Perform checks common to all topologies
 
   if (NPES != NXPE*NYPE) {
-    output.write("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
-		 NPES,NXPE*NYPE);
-    exit(1);
+    throw new BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
+                            NPES,NXPE*NYPE);
   }
   if(MYSUB * NYPE != MY) {
-    output.write("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
-    exit(1);
+    throw new BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
   }
   if(MXSUB * NXPE != MX) {
-    output.write("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
-    exit(1);
+    throw new BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
   }
 
   if((NXPE > 1) && (MXSUB < MXG)) {
-    output.write("\tERROR: Grid X size must be >= guard cell size\n");
-    exit(1);
+    throw new BoutException("\tERROR: Grid X size must be >= guard cell size\n");
   }
   if(MYSUB < MYG) {
-    output.write("\tERROR: Grid Y size must be >= guard cell size\n");
-    exit(1);
+    throw new BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
   
   if(jyseps2_1 == jyseps1_2) {
@@ -1758,8 +1778,7 @@ void BoutMesh::topology()
        other or lower legs, but do have to have an integer number
        of processors */
     if((ny_inner-jyseps2_1-1) % MYSUB != 0) {
-      output.write("\tTopology error: Upper inner leg does not have integer number of processors\n");
-      exit(1);
+      throw new BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
     }
     if((jyseps1_2-ny_inner+1) % MYSUB != 0) {
       output.write("\tTopology error: Upper outer leg does not have integer number of processors\n");
@@ -1828,7 +1847,7 @@ void BoutMesh::topology()
 BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
 {
   if(comm_list.empty()) {
-    //Allocate a new CommHandle
+    // Allocate a new CommHandle
     
     CommHandle* ch = new CommHandle;
     for(int i=0;i<6;i++)

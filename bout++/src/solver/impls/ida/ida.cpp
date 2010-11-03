@@ -75,7 +75,7 @@ IdaSolver::~IdaSolver()
  * Initialise
  **************************************************************************/
 
-int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
+ int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
 {
 
 #ifdef CHECK

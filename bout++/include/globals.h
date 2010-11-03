@@ -62,6 +62,36 @@ GLOBAL OptionFile options;
 /// Define for reading options which passes the variable name
 #define OPTION(var, def) options.get(#var, var, def)
 
+#define OPTION2(var1, var2, def){ \
+    options.get(#var1, var1, def);  \
+    options.get(#var2, var2, def);}
+
+#define OPTION3(var1, var2, var3, def){          \
+    options.get(#var1, var1, def);               \
+    options.get(#var2, var2, def);               \
+    options.get(#var3, var3, def);}
+
+#define OPTION4(var1, var2, var3, var4, def){    \
+    options.get(#var1, var1, def);               \
+    options.get(#var2, var2, def);               \
+    options.get(#var3, var3, def);               \
+    options.get(#var4, var4, def);}
+
+#define OPTION5(var1, var2, var3, var4, var5, def){     \
+    options.get(#var1, var1, def);                      \
+    options.get(#var2, var2, def);                      \
+    options.get(#var3, var3, def);                      \
+    options.get(#var4, var4, def);                      \
+    options.get(#var5, var5, def);}
+
+#define OPTION6(var1, var2, var3, var4, var5, var6, def){        \
+    options.get(#var1, var1, def);                               \
+    options.get(#var2, var2, def);                               \
+    options.get(#var3, var3, def);                               \
+    options.get(#var4, var4, def);                               \
+    options.get(#var5, var5, def);                               \
+    options.get(#var6, var6, def);}
+
 /// Macro to replace bout_solve, passing variable name
 #define SOLVE_FOR(var) bout_solve(var, #var)
 #define SOLVE_FOR2(var1, var2) { \

@@ -53,7 +53,11 @@ void SWAP(BoutReal* &a, BoutReal* &b);
 void SWAP(dcomplex &a, dcomplex &b);
 void SWAP(int &a, int &b);
 int MAX(int a, int b);
+BoutReal MAX(BoutReal a, BoutReal b);
+BoutReal MIN(BoutReal a, BoutReal b);
 bool is_pow2(int x); // Check if a number is a power of 2
+BoutReal SIGN(BoutReal a); // Return +1 or -1 (0 -> +1)
+BoutReal MINMOD(BoutReal a, BoutReal b);
 
 /*
 BoutReal operator^(BoutReal lhs, int rhs);

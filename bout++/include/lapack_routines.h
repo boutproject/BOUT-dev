@@ -45,6 +45,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 
 // Cyclic tridiagonal
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n);
+void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n);
 
 /// Complex band matrix solver
 void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b);

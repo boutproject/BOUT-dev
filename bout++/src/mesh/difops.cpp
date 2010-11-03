@@ -699,7 +699,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method)
 {
   Field2D result;
-  if(method == BRACKET_SIMPLE) {
+  if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
     result = 0.0;
   }else {
@@ -765,9 +765,11 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method)
 {
   Field3D result;
   switch(method) {
+  case BRACKET_ARAKAWA: 
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDZ(-DDX(f), g);
+    break;
   }
   default: {
     // Use full expression with all terms
@@ -820,6 +822,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
     result = VDDX(DDZ(f), g) + VDDZ(-DDX(f), g);
+    break;
   }
   default: {
     // Use full expression with all terms

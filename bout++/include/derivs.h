@@ -76,6 +76,7 @@ const Field2D D2DZ2(const Field2D &f);
 const Field3D D2DXDZ(const Field3D &f);
 
 ///////// UPWINDING METHODS /////////////
+// For terms of form v * grad(f)
 
 const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method);
@@ -96,5 +97,32 @@ const Field2D VDDZ(const Field3D &v, const Field2D &f);
 const Field3D VDDZ(const Field &v, const Field &f, 
 		   CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+///////// FLUX METHODS /////////////
+// for terms of form div(v * f)
+
+const Field2D FDDX(const Field2D &v, const Field2D &f);
+const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field3D FDDX(const Field3D &v, const Field3D &f);
+const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field2D FDDY(const Field2D &v, const Field2D &f);
+const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field3D FDDY(const Field3D &v, const Field3D &f);
+const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field2D FDDZ(const Field2D &v, const Field2D &f);
+const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field3D FDDZ(const Field3D &v, const Field3D &f);
+const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method = DIFF_DEFAULT);
+const Field3D FDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
 #endif // __DERIVS_H__

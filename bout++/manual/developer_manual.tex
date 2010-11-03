@@ -31,7 +31,7 @@
         columns=fixed,
         upquote=true,
         extendedchars=true,
-        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
 }
 
 %% Modify margins
@@ -200,7 +200,7 @@ $ git push
 
 \subsection{House rules}
 
-BOUT++ consists of about 31,800 lines of C/C++\footnote{generated using
+BOUT++ consists of about 32,400 lines of C/C++\footnote{generated using
 David A. Wheeler's 'SLOCCount'},
 along with 11,600 lines of IDL. Of this, about 21,100 lines is the core
 BOUT++ code, and the remainder
@@ -468,10 +468,10 @@ int byteSize() const; // Number of bytes for a single point
 int realSize() const; // Number of reals (not implemented if not real)
   
 int getData(int x, int y, int z, void *vptr) const; // Return number of bytes
-int getData(int x, int y, int z, real *rptr) const; // Return number of reals
+int getData(int x, int y, int z, BoutReal *rptr) const; // Return number of reals
   
 int setData(int x, int y, int z, void *vptr);
-int setData(int x, int y, int z, real *rptr);
+int setData(int x, int y, int z, BoutReal *rptr);
 \end{lstlisting}
 
 To support file I/O there are also some additional functions which may be implemented.
@@ -482,7 +482,7 @@ bool  ioSupport();  // Return true if these functions are implemented
 const string getSuffix(int component) const; // For vectors e.g. "_x"
 void* getMark() const; // Store current settings (e.g. co/contra-variant)
 void  setMark(void *setting); // Return to the stored settings
-real* getData(int component); 
+BoutReal* getData(int component); 
 void  zeroComponent(int component); // Set a component to zero
 \end{lstlisting}  
 
@@ -517,6 +517,13 @@ using a singleton pattern.
 
 Vector classes build on the field classes, just using a field to represent
 each component. 
+
+To handle time-derivatives of vectors, some care is needed to ensure that
+the time-derivative of each vector component points to the same
+field as the corresponding component of the time-derivative of the vector:
+\begin{lstlisting}
+ddt(v.x) = ddt(v).x
+\end{lstlisting}
 
 \subsection{\code{dcomplex}}
 
@@ -571,10 +578,12 @@ compile flags}
 \section{Derivatives}
 \label{sec:derivatives}
 
-This is probably the part of the code most people will want to alter. The main
-task of this module is to map functions on fields like \code{DDX} to direction-independent
-differential methods on stencils such as $4^{th}$-order central differencing. This mapping depends on global settings in \file{BOUT.inp}
-and is illustrated in figure~\ref{fig:diffOverview}.
+This is probably the part of the code most people will want to alter, and is
+in \texttt{bout++/src/sys/derivs.cpp}. The main
+task of this module is to map functions on fields like \code{DDX}
+to direction-independent differential methods on stencils such as
+$4^{th}$-order central differencing. This mapping depends on global
+settings in \file{BOUT.inp} and is illustrated in figure~\ref{fig:diffOverview}.
 \begin{figure}[htb!]
 \centering
 \includegraphics[scale=0.75]{figs/diffOverview.pdf}
@@ -582,13 +591,30 @@ and is illustrated in figure~\ref{fig:diffOverview}.
 \label{fig:diffOverview}
 \end{figure}
 
-The differencing methods themselves are independent on direction, and operate on \code{stencil}
-objects. This class is in \file{stencils.h}
+Four kinds of differencing methods are supported
+\begin{enumerate}
+\item First derivative \code{DDX}, \code{DDY}, \code{DDZ} \\
+  Central differencing type schemes for first-order derivatives
+\item Second derivatives \code{D2DX2}, \code{D2DZ2}, \code{D2DZ2} \\
+  Central differencing second derivatives e.g. for $\nabla^2$
+\item Upwinding \code{VDDX}, \code{VDDY}, \code{VDDZ} \\
+   Terms like $\mathbf{v}\cdot\nabla$
+\item Flux methods \code{FDDX}, \code{FDDY}, \code{FDDZ} \\
+  Flux conserving, limiting methods for terms like $\nabla\cdot\left(\mathbf{v}f\right)$
+\end{enumerate}
+
+The differencing methods themselves are independent on direction, and have
+types defined in \texttt{derivs.cpp}
+\begin{lstlisting}
+typedef BoutReal (*deriv_func)(stencil &); // f
+typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
+\end{lstlisting}
+These operate on \code{stencil} objects. This class is in \file{stencils.h}
 \begin{lstlisting}
 class stencil {
   public:
     int jx, jy, jz;  // Central location
-    real c, p, m, pp, mm; // stencil 2 each side of the centre
+    BoutReal c, p, m, pp, mm; // stencil 2 each side of the centre
     Overloaded operators
       =,+,-,*,/
     Functions
@@ -596,15 +622,82 @@ class stencil {
 };
 \end{lstlisting}
 The main purpose of this class is to store a 5-element stencil. To simplify some code
-this class also has a bunch of overloaded operators on reals and other stencil objects. 
+this class also has a bunch of overloaded operators on BoutReals and other stencil objects. 
 There are also some functions to calculate things like absolute, minimum, and maximum
 values.
 
 \subsection{Lookup tables}
 
-Originally, BOUT++ used a load of \code{case} statements to determine
-which differencing method to use. 
+To convert between short variable names (``C2''), long descriptions 
+(``2nd order Central Differencing''), \texttt{DIFF\_METHOD} enums used to specify methods
+at runtime (DIFF\_C2, defined in \texttt{bout\_types.h}), and function pointers
+(\texttt{DDX\_C2}), taking into account whether
+variables are shifted or not, BOUT++ uses a set of lookup tables.
 
+To find function pointers, tables of the following type are used:
+\begin{lstlisting}
+/// Translate between DIFF_METHOD codes, and functions
+struct DiffLookup {
+  DIFF_METHOD method;
+  deriv_func func;     // Single-argument differencing function
+  upwind_func up_func; // Upwinding function
+};
+\end{lstlisting}
+Because the \texttt{DiffLookup} type contains a \texttt{deriv\_func} and
+\texttt{upwind\_func} pointer, it is used for all function lookup tables. 
+There is a separate table for each type of differencing method, so for example
+the table of non-staggered upwinding methods is
+\begin{lstlisting}
+/// Upwinding functions lookup table
+static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
+				    {DIFF_C2, NULL, VDDX_C2},
+				    {DIFF_U4, NULL, VDDX_U4},
+				    {DIFF_W3, NULL, VDDX_WENO3},
+				    {DIFF_C4, NULL, VDDX_C4},
+				    {DIFF_DEFAULT}};
+\end{lstlisting}
+The \texttt{DIFF\_DEFAULT} at the end is used to terminate the array. 
+These tables are used by functions
+\begin{lstlisting}
+deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method);
+upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method);
+\end{lstlisting}
+which return the function pointer corresponding to the given method. If the
+method isn't in the table, then the first entry in the table is used.
+These functions can be used at run-time to allow a user to specify the method
+to use for specific operators. 
+
+When reading settings from the input file, they are specified as short
+strings like ``C2'', and a longer description
+of the method chosen should be written to the output log. To do this, 
+there is a name lookup table:
+\begin{lstlisting}
+/// Translate between short names, long names and DIFF_METHOD codes
+struct DiffNameLookup {
+  DIFF_METHOD method;
+  const char* label; // Short name
+  const char* name;  // Long name
+};
+
+static DiffNameLookup DiffNameTable[] = { 
+  {DIFF_U1, "U1", "First order upwinding"},
+  {DIFF_C2, "C2", "Second order central"},
+  {DIFF_W2, "W2", "Second order WENO"},
+  {DIFF_W3, "W3", "Third order WENO"},
+  {DIFF_C4, "C4", "Fourth order central"},
+  {DIFF_U4, "U4", "Fourth order upwinding"},
+  {DIFF_FFT, "FFT", "FFT"},
+  {DIFF_DEFAULT}}; // Use to terminate the list
+\end{lstlisting}
+
+To search this table, there is the function
+\begin{lstlisting}
+DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
+\end{lstlisting}
+
+During initialisation, the lookup therefore works in two stages,
+shown in figure~\ref{fig:diffLookup}. First the short description is turned into
+a \texttt{DIFF\_METHOD} enum code, then this code is turned into a function pointer.
 \begin{figure}[htb!]
 \centering
 \includegraphics[scale=0.75]{figs/diffLookup.pdf}
@@ -790,7 +883,7 @@ where \code{var} can be just about any BOUT++ datatype (\code{Field2D},
 
 \subsubsection{Implementation: BoutMesh}
 
-For integers and reals, the implementation is fairly trivial. Uses
+For integers and BoutReals, the implementation is fairly trivial. Uses
 the Mesh protected functions to find a data source and read data from it.
 \begin{lstlisting}
 GridDataSource* s = findSource(name);  // Find a source of data
@@ -870,10 +963,10 @@ direction only, and involves quantities which are not in Fields.
 bool firstX();  // True if at the inner X boundary
 bool lastX();   // True if at the outer X boundary
 int NXPE, PE_XIND; // Number of processors in X, and X processor index
-int sendXOut(real *buffer, int size, int tag);
-sendXIn(real *buffer, int size, int tag);
-comm_handle irecvXOut(real *buffer, int size, int tag);
-comm_handle irecvXIn(real *buffer, int size, int tag);
+int sendXOut(BoutReal *buffer, int size, int tag);
+sendXIn(BoutReal *buffer, int size, int tag);
+comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
+comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
 \end{lstlisting}
 
 The variables \code{NXPE} and \code{PE\_XIND} shouldn't really be there,
@@ -884,11 +977,53 @@ X should really be moved into Mesh.
 
 \subsection{Y-Z surface communications}
 
+Some operations (like parallel inversions in \texttt{bout++/src/invert/invert\_parderiv.cpp}) need to be performed on
+Y-Z surfaces, i.e. slices at constant X. This needs to be able to
+handle open and closed surfaces, and that closed surfaces may need a 
+shift in the Z direction to match one end onto the other (a twist-shift
+condition).
+
+The simplest operation is to average a quantity over Y:
+\begin{lstlisting}
+const Field2D averageY(const Field2D &f); // Average in Y
+\end{lstlisting}
+Currently this is only implemented for 2D fields. More generally a 
+set of FieldData objects could be used.
+
+To test if a particular surface is closed, there is the function
+\begin{lstlisting}
+bool surfaceClosed(int jx, BoutReal &ts); // Test if a surface is closed, and if so get the twist-shift angle
+\end{lstlisting}
+
+The most general way to access data on surfaces is to use an
+iterator, which can be created using:
 \begin{lstlisting}
 SurfaceIter* iterateSurfaces();
-const Field2D averageY(const Field2D &f); // Average in Y
-bool surfaceClosed(int jx, real &ts); // Test if a surface is closed, and if so get the twist-shift angle
 \end{lstlisting}
+This then allows looping over the surfaces in the usual way
+\begin{lstlisting}
+for(surf->first(); !surf->isDone(); surf->next()) {
+  ...
+}
+\end{lstlisting}
+{\bf NB}: This iterator splits the surfaces between processors, so each
+individual processor will iterate over a different set of surfaces. This
+is to allow automatic load balancing when gathering and scattering data
+from an entire surface onto one processor using:
+\begin{lstlisting}
+surf->gather(FieldData, BoutReal *recvbuffer);
+surf->scatter(BoutReal *sendbuffer, Field result);
+\end{lstlisting}
+The buffer is assumed to be large enough to hold all the data. To 
+get the number of points in Y for this surface, use
+\begin{lstlisting}
+int ysize = surf->ysize();
+\end{lstlisting}
+To test if the surface is closed, there's the test
+\begin{lstlisting}
+bool surf->closed(BoutReal &ts)
+\end{lstlisting}
+which returns true if the surface is closed, along with the twist-shift angle.
 
 \subsection{Boundary regions}
 
@@ -933,8 +1068,8 @@ everywhere, with a form of perturbation specified in the input file
 for each direction. In order to do this, it needs a continuous function
 to use as an index. This is supplied by the functions:
 \begin{lstlisting}
-real GlobalX(int jx); // Continuous X index between 0 and 1
-real GlobalY(int jy); // Continuous Y index (0 -> 1)
+BoutReal GlobalX(int jx); // Continuous X index between 0 and 1
+BoutReal GlobalY(int jy); // Continuous Y index (0 -> 1)
 \end{lstlisting}
 which take a local x or y index and return a globally continuous x or y
 index.
@@ -946,7 +1081,7 @@ The mesh spacing is given by the public members
 // These used for differential operators 
 Field2D dx, dy;
 Field2D d2x, d2y;    // 2nd-order correction for non-uniform meshes		
-real zlength, dz;    // Derived from options (in radians)
+BoutReal zlength, dz;    // Derived from options (in radians)
 \end{lstlisting}
 
 \subsection{Metrics}
@@ -1385,9 +1520,9 @@ If the physics model implements a preconditioner or Jacobian-vector
 multiplication routine, these can be passed to the solver during
 initialisation:
 \begin{lstlisting}
-typedef int (*PhysicsPrecon)(real t, real gamma, real delta);
+typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
 void setPrecon(PhysicsPrecon f); // Specify a preconditioner
-typedef int (*Jacobian)(real t);
+typedef int (*Jacobian)(BoutReal t);
 void setJacobian(Jacobian j); // Specify a Jacobian
 \end{lstlisting}
 If the solver doesn't support these functions then the calls 
@@ -1396,7 +1531,7 @@ will just be ignored.
 Once the problem to be solved has been specified, the solver can be
 initialised using:
 \begin{lstlisting}
-int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, real tstep);
+int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 \end{lstlisting}
 which returns an error code (0 on success). This is currently
 called in \file{bout++.cpp}:
@@ -1412,7 +1547,7 @@ to the solver along with the number and size of the output steps.
 To run the solver using the (already supplied) settings, there is
 the function:
 \begin{lstlisting}
-typedef int (*MonitorFunc)(real simtime, int iter, int NOUT);
+typedef int (*MonitorFunc)(BoutReal simtime, int iter, int NOUT);
 int run(MonitorFunc f);
 \end{lstlisting}
 
@@ -1496,18 +1631,18 @@ class DataFormat {
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
 
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write(real *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
 
   // Read / Write record-based variables
 
   bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool read_rec(real *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
 
   bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
-  bool write_rec(real *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
 
   // Optional functions
   

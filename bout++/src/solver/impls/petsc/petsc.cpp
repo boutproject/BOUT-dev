@@ -42,11 +42,14 @@ PetscSolver::PetscSolver()
 
 PetscSolver::~PetscSolver()
 {
+
   if(initialised) {
     // Free CVODE memory
     
-    // VecDestroy(u);
-    // TSDestroy(ts);
+    VecDestroy(u);
+    if (J){MatDestroy(J);}
+    if (matfdcoloring){MatFDColoringDestroy(matfdcoloring);}
+    TSDestroy(ts);
 
     initialised = false;
   }
@@ -58,11 +61,12 @@ PetscSolver::~PetscSolver()
 
 int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
-  int neq;
-  int mudq, mldq, mukeep, mlkeep;
-  bool use_precon;
-  int precon_dimens;
-  BoutReal precon_tol;
+  PetscErrorCode ierr;
+  int            neq;
+  int            mudq, mldq, mukeep, mlkeep;
+  bool           use_precon;
+  int            precon_dimens;
+  BoutReal       precon_tol;
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
@@ -82,7 +86,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   int local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
-
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
@@ -91,44 +94,37 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3d, n2d, neq, local_N);
 
-  //.allocate memory, and set problem data, initial values, tolerances
-
-  VecCreate(MPI_COMM_WORLD, &u);
-  VecSetSizes(u, local_N, neq);
-  VecSetFromOptions(u);
+  ierr = VecCreate(MPI_COMM_WORLD, &u);CHKERRQ(ierr);
+  ierr = VecSetSizes(u, local_N, neq);CHKERRQ(ierr);
+  ierr = VecSetFromOptions(u);CHKERRQ(ierr);
 
   ////////// SAVE INITIAL STATE TO PETSc VECTOR ///////////
-
   // Set pointer to data array in vector u.
   BoutReal *udata;
   
-  VecGetArray(u,&udata);
+  ierr = VecGetArray(u,&udata);CHKERRQ(ierr);
   if(save_vars(udata)) {
     bout_error("\tError: Initial variable value not set\n");
     return(1);
   }
-  VecRestoreArray(u,&udata);
+  ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
 
-  PetscErrorCode  ierr;
-  PC              pc;
-  const PCType    pctype;
-  PetscTruth      pcnone,J_load,flg;
-  Mat             J;
+  PetscTruth      J_load;
   MatStructure    J_structure; 
   PetscMPIInt     rank;
   char            load_file[PETSC_MAX_PATH_LEN];  /* jacobian input file name */
-  PetscInt        M1,N1;
   PetscTruth      J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
+  ISColoring      iscoloring;
   
   // Create timestepper 
-  MPI_Comm_rank(PETSC_COMM_WORLD, &rank);
-  TSCreate(MPI_COMM_WORLD,&ts);
-  TSSetProblemType(ts,TS_NONLINEAR);
-  TSSetType(ts,TSSUNDIALS);
-  TSSetApplicationContext(ts, this);
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);CHKERRQ(ierr);
+  ierr = TSCreate(MPI_COMM_WORLD,&ts);CHKERRQ(ierr);
+  ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
+  ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
+  ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
   // Set user provided RHSFunction
-  TSSetRHSFunction(ts,solver_f,this);
+  ierr = TSSetRHSFunction(ts,solver_f,this);CHKERRQ(ierr);
   
   //Sets the general-purpose update function called at the beginning of every time step. 
   //This function can change the time step.
@@ -139,7 +135,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
   ///////////// GET OPTIONS /////////////
  	int MXSUB = mesh->xend - mesh->xstart + 1;
-	int MYSUB = mesh->yend - mesh->ystart + 1;
 
   options.setSection("solver");
   options.get("mudq", mudq, n3d*(MXSUB+2));
@@ -154,147 +149,133 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   BoutReal abstol, reltol;
   options.get("ATOL", abstol, 1.0e-12);
   options.get("RTOL", reltol, 1.0e-5);
-  TSSundialsSetTolerance(ts, abstol, reltol);
+  ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Adams-Moulton or BDF method
   bool adams_moulton;
   OPTION(adams_moulton, false);
-  if(adams_moulton) {
+  if (adams_moulton) {
     output.write("\tUsing Adams-Moulton implicit multistep method\n");
-    TSSundialsSetType(ts, SUNDIALS_ADAMS);
-  }else {
+    ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
+  } else {
     output.write("\tUsing BDF method\n");
-    TSSundialsSetType(ts, SUNDIALS_BDF);
+    ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
 
-  // Initial timestep. By default just use TIMESTEP
+  // Initial time and timestep. By default just use TIMESTEP
   BoutReal initial_tstep;
   OPTION(initial_tstep, TIMESTEP);
-  TSSetInitialTimeStep(ts,0.0,initial_tstep);
+  ierr = TSSetInitialTimeStep(ts,simtime,initial_tstep);CHKERRQ(ierr);
 
   // Maximum number of steps
   int mxstep;
   OPTION(mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
-  PetscReal tfinal = NOUT*TIMESTEP; // Final output time
-  TSSetDuration(ts,mxstep,tfinal);
+  PetscReal tfinal = NOUT*TIMESTEP; // Final output time'=
+  output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
+  ierr = TSSetDuration(ts,mxstep,tfinal);CHKERRQ(ierr);
 
-  /////////////////////////////////////////////////////
-
-  TSSetTime(ts, simtime); // Set the simulation time
-  TSSetSolution(ts,u);    // Set the current solution
+  // Set the current solution
+  ierr = TSSetSolution(ts,u);CHKERRQ(ierr);    
   
-  TSSetFromOptions(ts);   // Apply PETSc options
-  TSSetUp(ts);
-
   // Create RHSJacobian J
-  TSSundialsGetPC(ts,&pc);
-  PCGetType(pc,&pctype);
-  PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);
-  if (!pcnone){ 
-    output.write("\t Set preconditoner .... tstart %g, J local size %d\n",simtime,local_N);
-    PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);
-    if(J_load){
-      PetscViewer     fd;   
-      if (!rank){
-        PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");
-      }
-      PetscViewerBinaryOpen(PETSC_COMM_WORLD,load_file,FILE_MODE_READ,&fd);
-      MatLoad(fd,MATMPIAIJ,&J);
-      PetscViewerDestroy(fd);
-    } else { // create Jacobian matrix by slow fd
-      /* number of degrees (variables) at each grid point */
-    	PetscInt dof = n3Dvars()+n2Dvars();
-    	
-      MatCreate(PETSC_COMM_WORLD,&J);
-      MatSetSizes(J,local_N,local_N,PETSC_DECIDE,PETSC_DECIDE);
-      MatSetFromOptions(J);
+  output.write("\t Set preconditoner .... tstart %g, J local size %d\n",simtime,local_N);
+  ierr = PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
+  if(J_load){
+    PetscViewer     fd;   
+    if (!rank){
+      ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
+    }
+    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
+    ierr = MatLoad(fd,MATMPIAIJ,&J);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(fd);CHKERRQ(ierr);
+    ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr);
+    
+  } else { // create Jacobian matrix by slow fd
+    /* number of degrees (variables) at each grid point */
+  	PetscInt dof = n3Dvars()+n2Dvars();
+  	
+    ierr = MatCreate(PETSC_COMM_WORLD,&J);CHKERRQ(ierr);
+    ierr = MatSetSizes(J,local_N,local_N,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+    ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
-      // Get nonzero pattern of J - color_none !!!
-      MatSeqAIJSetPreallocation(J,10,PETSC_NULL);
-      MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);
-      MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);
-      MatMPIBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);
-      MatSeqSBAIJSetPreallocation(J,dof,10,PETSC_NULL);
-      MatMPISBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);
+    // Get nonzero pattern of J - color_none !!!
+    ierr = MatSeqAIJSetPreallocation(J,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatMPIBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqSBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatMPISBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
+    
+    /* I don't understand why this is set as TSDefaultComputeJacobian */
+    
+    /* Set the block size */
+    ierr = MatSetBlockSize(J,dof);CHKERRQ(ierr);
+
+    ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
+    if (J_slowfd){ // create Jacobian matrix by slow fd
+      ierr = PetscPrintf(PETSC_COMM_SELF,"compute Jmat by slow fd...\n");CHKERRQ(ierr);
+      ierr = TSDefaultComputeJacobian(ts,simtime,u,&J,&J,&J_structure,this);CHKERRQ(ierr);
+    } else { // get sparse pattern of the Jacobian
+      ierr = PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+
+      /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
+      PetscInt nz  = mesh->ngz - 1;
       
-      /* Set the block size */
-      MatSetBlockSize(J,dof);
+      /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
+      PetscInt sw = 2;
+      
+      /* Testing all the index stuff */
+     	PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
+    	PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
 
-      PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);
-      if (J_slowfd){ // create Jacobian matrix by slow fd
-        PetscPrintf(PETSC_COMM_SELF,"compute Jmat by slow fd...\n");
-        TSDefaultComputeJacobian(ts,simtime,u,&J,&J,&J_structure,this);
-      } else { // get sparse pattern of the Jacobian
-        PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");
-
-        /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
-        PetscInt nz  = mesh->ngz - 1;
-        
-        /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
-        PetscInt sw = 2;
-        
-        /* Testing all the index stuff */
-       	PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
-      	PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
-
-        PetscInt jx, jy, jz;
-        
-        for(jz=0;jz<nz;jz++) {
-          cout << "----- " << jz << " -----" << endl;
-          for(jy=mesh->ystart; jy <= mesh->yend; jy++) {
-            cout << "jy " << mesh->YGLOBAL(jy) << ": ";
-            for(jx=mesh->xstart; jx <= mesh->xend; jx++) {
-              /* subtract the stencil width because global X index does not account for that */
-              cout << mesh->XGLOBAL(jx)-sw << "[closed=" << mesh->surfaceClosed(jx) << "] ";
-            }
-            cout << endl;
+      PetscInt jx, jy, jz;
+      
+      for(jz=0;jz<nz;jz++) {
+        cout << "----- " << jz << " -----" << endl;
+        for(jy=mesh->ystart; jy <= mesh->yend; jy++) {
+          cout << "jy " << mesh->YGLOBAL(jy) << ": ";
+          for(jx=mesh->xstart; jx <= mesh->xend; jx++) {
+            /* subtract the stencil width because global X index does not account for that */
+            cout << mesh->XGLOBAL(jx)-sw << "[closed=" << mesh->surfaceClosed(jx) << "] ";
           }
           cout << endl;
         }
-
-        /* End of test */
-
-        bout_error("stopping");
+        cout << endl;
       }
 
-      PetscInt diag;
-      ierr = MatMissingDiagonal(J,&flg,&diag);CHKERRQ(ierr);
-      if (flg) printf("missing %d -th diagonal!\n",diag);
-    }
+      /* End of test */
 
+      bout_error("stopping");
+    }
+  }
     
-    MatGetSize(J,&M1,&N1);
-    if (!rank){
-      PetscPrintf(PETSC_COMM_SELF,"J size: %d,%d\n",M1,N1);
-    }
-    PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);
-    if (J_write){ /* write J into a binary file for viewing its data structure */
-      PetscViewer    viewer;
-      PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data_petsc/J.dat, size %d...\n",rank,M1);
-      PetscViewerBinaryOpen(PETSC_COMM_WORLD,"data_petsc/J.dat",FILE_MODE_WRITE,&viewer);
-      MatView(J,viewer);
-      PetscViewerDestroy(viewer);
-    }
-
-    ISColoring      iscoloring;
-    MatFDColoring   matfdcoloring = 0;
-
-    // Create coloring context of J to be used during time stepping 
-    ierr = MatGetColoring(J,MATCOLORING_SL,&iscoloring);CHKERRQ(ierr); // error if J is type of mpiaij???
-    ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-    ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
-    ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
-    ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-    ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
-
+  // Write J in binary for study
+  ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
+  if (J_write){ /* write J into a binary file for viewing its data structure */
+    PetscViewer    viewer;
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data_petsc/J.dat...\n",rank);CHKERRQ(ierr);
+    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,"data_petsc/J.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
+    ierr = MatView(J,viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+  }
+   
+  // Create coloring context of J to be used during time stepping 
+  ierr = MatGetColoring(J,MATCOLORING_SL,&iscoloring);CHKERRQ(ierr); 
+  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+  ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
+  ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+    
 #ifdef MYDEBUG     
-    // test TSDefaultComputeJacobianColor()
-    ierr = TSDefaultComputeJacobianColor(ts,0.0,u_petsc,&J,&J,&J_structure,matfdcoloring);CHKERRQ(ierr);
-    ierr = PetscSynchronizedPrintf(data.comm, "[%d] TSDefaultComputeJacobianColor is done\n",rank);
-    ierr = PetscSynchronizedFlush(data.comm);CHKERRQ(ierr);
+  // test TSDefaultComputeJacobianColor()
+  ierr = TSDefaultComputeJacobianColor(ts,0.0,u_petsc,&J,&J,&J_structure,matfdcoloring);CHKERRQ(ierr);
+  ierr = PetscSynchronizedPrintf(data.comm, "[%d] TSDefaultComputeJacobianColor is done\n",rank);
+  ierr = PetscSynchronizedFlush(data.comm);CHKERRQ(ierr);
 #endif
-  } // if (!pcnone)
+
+  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -358,6 +339,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     iteration++; // Increment the 'iteration' number. keeps track of outputs
     
     // Call the monitor function
+    /*
     if(monitor(simtime, iteration, nout)) {
       // User signalled to quit
       
@@ -370,7 +352,8 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
       
       PetscFunctionReturn(1);
     }
-    
+    */
+   
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
     rhs_wtime = 0.0;

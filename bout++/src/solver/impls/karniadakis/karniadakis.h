@@ -59,10 +59,13 @@ class KarniadakisSolver : public Solver {
   BoutReal *S0, *Sm1, *Sm2; // Convective part of the RHS equations
   BoutReal *D0;             // Dissipative part of the RHS
   
+  bool first_time; // Need to initialise values
+
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
   
   BoutReal timestep; // The internal timestep
+  int nsubsteps; // Number of sub steps
   BoutReal time; // The current time
   
   int nlocal; // Number of variables on local processor

@@ -36,7 +36,7 @@ typedef vector<BoutReal> rvec;  // Vector of BoutReals
 enum CELL_LOC {CELL_DEFAULT, CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW, CELL_VSHIFT};
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT};
+enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT, DIFF_SPLIT, DIFF_NND};
 
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};

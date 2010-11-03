@@ -1,3 +1,40 @@
+/**************************************************************************
+ * Karniadakis split-operator solver
+ * 
+ * Formulation from:
+ * "GEM - An Energy Conserving Electromagnetic Gyrofluid Model"
+ *  by Bruce D Scott. arXiv:physics/0501124v1 23 Jan 2005 
+ *
+ * Original paper:
+ *   J. Comput. Phys. 97 (1991) p414-443
+ * 
+ * Always available, since doesn't depend on external library
+ * 
+ * Solves a system df/dt = S(f) + D(f)
+ * 
+ * where S is the RHS of each equation, and D is the diffusion terms
+ * 
+ **************************************************************************
+ * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ * 
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************************/
 
 #include "karniadakis.h"
 
@@ -21,27 +58,23 @@ int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, i
   if(Solver::init(f, argc, argv, restarting, nout, tstep))
     return 1;
   
+  output << "\n\tKarniadakis solver\n";
+  
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
   
-  // Choose timestep
-  if(max_dt < 0.0) {
-    output << "\tWARNING: Starting dt not set\n";
-    max_dt = tstep;
-  }
-  
   // Calculate number of variables
-  int local_N = getLocalN();
+  nlocal = getLocalN();
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, local_N);
+	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory 
   
@@ -56,37 +89,29 @@ int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, i
   
   D0 = new BoutReal[nlocal];
   
-  // Save variables
+  first_time = true;
+
+  // Put starting values into f0
+  save_vars(f0);
+  
+  // Get options
+  options.setSection("solver");
+  OPTION(timestep, tstep);
+  
+  // Make sure timestep divides into tstep
+  
+  // Number of sub-steps, rounded up
+  nsubsteps = (int) (0.5 + tstep / timestep);
+  
+  output.write("\tNumber of substeps: %e / %e -> %d\n", tstep, timestep, nsubsteps);
+
+  timestep = tstep / ((float) nsubsteps);
   
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
 
   return 0;
-}
-
-
-void KarniadakisSolver::take_step(BoutReal dt)
-{
-  // S0 = S(f0)
-  
-  load_vars(f0);
-  run_convective(time);
-  save_derivs(S0);
-  
-  // f1 = (6./11.) * (3.*f0 - 1.5*fm1 + (1./3.)*fm2 + dt*(3.*S0 - 3.*Sm1 + Sm2))
-  
-  for(int i=0;i<nlocal;i++)
-    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
-  
-  // D0 = S(f0)
-  load_vars(f0);
-  run_diffusive(time);
-  save_derivs(D0);
-  
-  // f1 = f1 + dt*D0
-  for(int i=0;i<nlocal;i++)
-    f1[i] += dt*D0[i];
 }
 
 int KarniadakisSolver::run(MonitorFunc monitor)
@@ -96,18 +121,10 @@ int KarniadakisSolver::run(MonitorFunc monitor)
 #endif
   
   for(int i=0;i<nsteps;i++) {
-    BoutReal target = time + out_timestep;
-    
-    // Run until reach target time
-    BoutReal dt;
-    bool running = true;
-    do {
-      dt = timestep;
-      if((time + dt) >= target) {
-	dt = target - time; // Make sure the last timestep is on the output 
-	running = false;
-      }
-      take_step(dt);
+    // Run through a fixed number of steps
+    for(int j=0; j<nsubsteps; j++) {
+      // Advance f0 -> f1
+      take_step(timestep);
       
       // Cycle buffers
       BoutReal *tmp = fm2;
@@ -121,8 +138,8 @@ int KarniadakisSolver::run(MonitorFunc monitor)
       Sm1 = S0;
       S0 = tmp;
       
-      time += dt;
-    }while(running);
+      time += timestep;
+    }
     
     /// Write the restart file
     restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
@@ -142,6 +159,9 @@ int KarniadakisSolver::run(MonitorFunc monitor)
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
+    // Reset iteration and wall-time count
+    rhs_ncalls = 0;
+    rhs_wtime = 0.0;
   }
   
 #ifdef CHECK
@@ -151,3 +171,34 @@ int KarniadakisSolver::run(MonitorFunc monitor)
   return 0;
 }
 
+
+void KarniadakisSolver::take_step(BoutReal dt)
+{
+  // S0 = S(f0)
+  
+  load_vars(f0);
+  run_convective(time);
+  save_derivs(S0);
+  
+  if(first_time) {
+    // Initialise values
+    for(int i=0;i<nlocal;i++) {
+      fm1[i] = fm2[i] = f0[i];
+      Sm1[i] = Sm2[i] = S0[i];
+    }
+  }
+
+  // f1 = (6./11.) * (3.*f0 - 1.5*fm1 + (1./3.)*fm2 + dt*(3.*S0 - 3.*Sm1 + Sm2))
+  
+  for(int i=0;i<nlocal;i++)
+    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
+  
+  // D0 = S(f0)
+  load_vars(f0);
+  run_diffusive(time);
+  save_derivs(D0);
+  
+  // f1 = f1 + dt*D0
+  for(int i=0;i<nlocal;i++)
+    f1[i] += dt*D0[i];
+}
