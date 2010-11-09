@@ -10,6 +10,11 @@ syntax:glob
 *.restart.*
 *.pyc
 .tmtags
+*.swp
+*.out
+tags
+CTAGS
+TAGS
 
 .DS_Store
 
@@ -21,3 +26,4 @@ externalpackages/
 #example runs
 gas_compress
 2fluid
+ue_bmark
