@@ -95,7 +95,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 	       n3d, n2d, neq, local_N);
 
   ierr = VecCreate(MPI_COMM_WORLD, &u);CHKERRQ(ierr);
-  ierr = VecSetSizes(u, local_N, neq);CHKERRQ(ierr);
+  ierr = VecSetSizes(u, local_N, PETSC_DECIDE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(u);CHKERRQ(ierr);
 
   ////////// SAVE INITIAL STATE TO PETSc VECTOR ///////////
@@ -187,13 +187,12 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
     }
     ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
-    ierr = MatLoad(fd,MATMPIAIJ,&J);CHKERRQ(ierr);
+    ierr = MatLoad(fd,MATAIJ,&J);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(fd);CHKERRQ(ierr);
-    ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr);
     
   } else { // create Jacobian matrix by slow fd
     /* number of degrees (variables) at each grid point */
-  	PetscInt dof = n3Dvars()+n2Dvars();
+    PetscInt dof = n3Dvars()+n2Dvars();
   	
     ierr = MatCreate(PETSC_COMM_WORLD,&J);CHKERRQ(ierr);
     ierr = MatSetSizes(J,local_N,local_N,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
@@ -202,15 +201,15 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     // Get nonzero pattern of J - color_none !!!
     ierr = MatSeqAIJSetPreallocation(J,10,PETSC_NULL);CHKERRQ(ierr);
     ierr = MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
-    ierr = MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);
+    
+    ierr = MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);   
     ierr = MatMPIBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
     ierr = MatSeqSBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);
     ierr = MatMPISBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
     
-    /* I don't understand why this is set as TSDefaultComputeJacobian */
-    
     /* Set the block size */
-    ierr = MatSetBlockSize(J,dof);CHKERRQ(ierr);
+    //ierr = MatSetBlockSize(J,dof);CHKERRQ(ierr); /* leads to runtime error in '-J_slowfd' for np=2 - don't know why? must set u? */
+    //ierr = PetscPrintf(PETSC_COMM_SELF,"J has block size %d\n",dof);CHKERRQ(ierr);
 
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
     if (J_slowfd){ // create Jacobian matrix by slow fd
