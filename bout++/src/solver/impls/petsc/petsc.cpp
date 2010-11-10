@@ -145,13 +145,13 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   options.get("precon_dimens", precon_dimens, 50);
   options.get("precon_tol", precon_tol, 1.0e-4);
   
-  // Set tolerances
+  // Set Sundials tolerances
   BoutReal abstol, reltol;
   options.get("ATOL", abstol, 1.0e-12);
   options.get("RTOL", reltol, 1.0e-5);
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
-  // Select Adams-Moulton or BDF method
+  // Select Sundials Adams-Moulton or BDF method
   bool adams_moulton;
   OPTION(adams_moulton, false);
   if (adams_moulton) {
@@ -161,7 +161,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     output.write("\tUsing BDF method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
-
+  
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal initial_tstep;
   OPTION(initial_tstep, TIMESTEP);
@@ -179,7 +179,31 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = TSSetSolution(ts,u);CHKERRQ(ierr);    
   
   // Create RHSJacobian J
-  output.write("\t Set preconditoner .... tstart %g, J local size %d\n",simtime,local_N);
+  SNES            snes;
+  KSP             ksp;
+  PC              pc;
+  const PCType    pctype;
+  PetscTruth      pcnone,sundialstype;
+
+  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);
+  ierr = TSSetUp(ts);CHKERRQ(ierr); // enable correct query of pctype below
+
+  ierr = PetscTypeCompare((PetscObject)ts,TSSUNDIALS,&sundialstype);CHKERRQ(ierr);
+  if (sundialstype){   
+    ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr); // Sundials does not use SNES!
+  } else {
+    ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
+    ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
+    ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+  }
+  ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
+  ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
+  output.write("\tSundialstype %d, PCNONE %d\n",sundialstype,pcnone);
+
+  if (sundialstype && pcnone) return(0);
+
+  //Create Jacobian matrix to be used by preconditioner
+  output.write("\tSet preconditoner .... tstart %g, J localsize %d\n",simtime,local_N);
   ierr = PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
   if(J_load){
     PetscViewer     fd;   
