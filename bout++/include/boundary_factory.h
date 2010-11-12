@@ -48,7 +48,7 @@ class BoundaryFactory {
   BoundaryOp* findBoundaryOp(const string &s);
   BoundaryModifier* findBoundaryMod(const string &s);
 
-  const string trim(const string &s, const string &c = " \t");
+  const string trim(const string &s, const string &c = " \t\n\r");
 };
 
 #endif // __BNDRY_FACTORY_H__
