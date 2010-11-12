@@ -38,6 +38,8 @@ EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, v
 PetscSolver::PetscSolver()
 {
   has_constraints = false; // No constraints
+  this->J = 0;
+  this->matfdcoloring = 0;
 }
 
 PetscSolver::~PetscSolver()
