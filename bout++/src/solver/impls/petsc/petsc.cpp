@@ -63,12 +63,13 @@ PetscSolver::~PetscSolver()
 
 int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
-  PetscErrorCode ierr;
-  int            neq;
-  int            mudq, mldq, mukeep, mlkeep;
-  bool           use_precon;
-  int            precon_dimens;
-  BoutReal       precon_tol;
+  PetscErrorCode  ierr;
+  int             neq;
+  int             mudq, mldq, mukeep, mlkeep;
+  bool            use_precon;
+  int             precon_dimens;
+  BoutReal        precon_tol;
+  MPI_Comm        comm = PETSC_COMM_WORLD;
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
@@ -83,9 +84,9 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
   output.write("Initialising PETSc solver\n");
 
-  int n2d = n2Dvars();       // Number of 2D variables
-  int n3d = n3Dvars();       // Number of 3D variables
-  int local_N = getLocalN(); // Number of evolving variables on this processor
+  PetscInt n2d = n2Dvars();       // Number of 2D variables
+  PetscInt n3d = n3Dvars();       // Number of 3D variables
+  PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
@@ -119,7 +120,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ISColoring      iscoloring;
   
   // Create timestepper 
-  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);CHKERRQ(ierr);
+  ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
   ierr = TSCreate(MPI_COMM_WORLD,&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
@@ -212,66 +213,177 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     if (!rank){
       ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
     }
-    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
+    ierr = PetscViewerBinaryOpen(comm,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
     ierr = MatLoad(fd,MATAIJ,&J);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(fd);CHKERRQ(ierr);
     
   } else { // create Jacobian matrix by slow fd
+
+    PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
+    PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
+
+    PetscInt nx = mesh->xend;//MXSUB;
+    PetscInt ny = mesh->yend;//MYSUB;
+
+    /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
+    PetscInt nz  = mesh->ngz - 1;
+
     /* number of degrees (variables) at each grid point */
-    PetscInt dof = n3Dvars()+n2Dvars();
+    PetscInt dof = n3Dvars()*nz+n2Dvars();
+
+    /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
+    PetscInt n = local_N; //mesh->xend*mesh->yend*nz*dof; //<- that doesn't seem to work. Why is n3Dvars()*nz?
+    // PetscInt n = MXSUB*MYSUB*nz*dof;
+    PetscInt sw = 2;
+    PetscInt dim = 3;
+    PetscInt cols = sw*2*3+1;
+    PetscInt prealloc = cols*dof;
+    PetscInt preallocblock = prealloc*dof;
   	
-    ierr = MatCreate(PETSC_COMM_WORLD,&J);CHKERRQ(ierr);
-    ierr = MatSetSizes(J,local_N,local_N,PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
+    ierr = MatCreate(comm,&J);CHKERRQ(ierr);
+    ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
+    cout << "n: " << n << "\t\t local_N: " << local_N << endl;
+    ierr = MatSetSizes(J,local_N, local_N, PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
     // Get nonzero pattern of J - color_none !!!
-    ierr = MatSeqAIJSetPreallocation(J,10,PETSC_NULL);CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(J,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqAIJSetPreallocation(J,prealloc,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatMPIAIJSetPreallocation(J,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
     
-    ierr = MatSeqBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);   
-    ierr = MatMPIBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
-    ierr = MatSeqSBAIJSetPreallocation(J,dof,10,PETSC_NULL);CHKERRQ(ierr);
-    ierr = MatMPISBAIJSetPreallocation(J,dof,10,PETSC_NULL,10,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
+    ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatSeqSBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);
+    ierr = MatMPISBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
     
-    /* Set the block size */
-    //ierr = MatSetBlockSize(J,dof);CHKERRQ(ierr); /* leads to runtime error in '-J_slowfd' for np=2 - don't know why? must set u? */
-    //ierr = PetscPrintf(PETSC_COMM_SELF,"J has block size %d\n",dof);CHKERRQ(ierr);
-
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
     if (J_slowfd){ // create Jacobian matrix by slow fd
       ierr = PetscPrintf(PETSC_COMM_SELF,"compute Jmat by slow fd...\n");CHKERRQ(ierr);
       ierr = TSDefaultComputeJacobian(ts,simtime,u,&J,&J,&J_structure,this);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+      
+      ISLocalToGlobalMapping ltog, ltogb;
+      PetscInt i, j, k, d, s;
+      PetscInt gi, gj;
 
-      /* number of z points (need to subtract one because of historical reasons that MZ has an extra point) */
-      PetscInt nz  = mesh->ngz - 1;
+      MatStencil stencil[cols];
       
-      /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
-      PetscInt sw = 2;
-      
-      /* Testing all the index stuff */
-     	PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
-    	PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
-
-      PetscInt jx, jy, jz;
-      
-      for(jz=0;jz<nz;jz++) {
-        cout << "----- " << jz << " -----" << endl;
-        for(jy=mesh->ystart; jy <= mesh->yend; jy++) {
-          cout << "jy " << mesh->YGLOBAL(jy) << ": ";
-          for(jx=mesh->xstart; jx <= mesh->xend; jx++) {
-            /* subtract the stencil width because global X index does not account for that */
-            cout << mesh->XGLOBAL(jx)-sw << "[closed=" << mesh->surfaceClosed(jx) << "] ";
-          }
-          cout << endl;
-        }
-        cout << endl;
+      PetscScalar one[preallocblock];
+      for (i = 0; i < preallocblock; i++) {
+        one[i] = 1.0;
       }
 
-      /* End of test */
+      // Change this block for parallel. Currently this is just the identity
+      // map since advect1d has no branch cuts (and we are only testing
+      // single processor now)
+      PetscInt ltog_array[n];
+      for (i = 0; i < n; i++) {
+        ltog_array[i] = i;
+      }
 
-      bout_error("stopping");
+      // Also change this for parallel. This define the 'global stencil'
+      // where starts are the starting index in each dimension and dims
+      // are the size
+      PetscInt starts[3], dims[3];
+      starts[0] = starts[1] = starts[2] = 0;
+      dims[0] = nx;
+      dims[1] = ny;
+      dims[2] = nz;
+
+      // This doesn't need to be changed for parallel if ltog_array, starts, and dims are all correctly set in parallel
+      ierr = ISLocalToGlobalMappingCreate(comm, n, ltog_array, &ltog);CHKERRQ(ierr);
+      ierr = ISLocalToGlobalMappingBlock(ltog, dof, &ltogb);CHKERRQ(ierr);
+
+      ierr = MatSetBlockSize(J, dof);CHKERRQ(ierr);
+      ierr = MatSetLocalToGlobalMapping(J, ltog);CHKERRQ(ierr);
+      ierr = MatSetLocalToGlobalMappingBlock(J, ltogb);CHKERRQ(ierr);
+      ierr = MatSetStencil(J, dim, dims, starts, dof);CHKERRQ(ierr);
+
+      bool xperiodic = false;
+      // Need to figure out how to tell if y is periodic
+      bool yperiodic = true;
+      
+      for(k=0;k<nz;k++) {
+        cout << "----- " << k << " -----" << endl;
+        for(j=mesh->ystart; j <= mesh->yend; j++) {
+          // cout << "j " << mesh->YGLOBAL(j) << ": ";
+          gj = mesh->YGLOBAL(j);
+          for(i=mesh->xstart; i <= mesh->xend; i++) {
+            /* subtract the stencil width because global X index does not account for that */
+            // cout << mesh->XGLOBAL(i)-sw << "[closed=" << mesh->surfaceClosed(i) << "] ";
+            gi = mesh->XGLOBAL(i)-sw;
+            xperiodic = mesh->surfaceClosed(i);
+            d = 0;
+            stencil[d].k = k;
+            stencil[d].j = gj;
+            stencil[d].i = gi;
+            stencil[d].c = dof;
+            for (s = 0; s < sw; s++) {
+              d++;
+              stencil[d].k = k;
+              stencil[d].j = gj;
+              if(xperiodic) {
+                stencil[d].i = (gi+s+1 >= nx) ? s-(nx-1-gi) : gi+s+1;
+              } else {
+                stencil[d].i = (gi+s+1 >= nx) ? -1 : gi+s+1;
+              }
+              stencil[d].c = dof;
+
+              d++;
+              stencil[d].k = k;
+              stencil[d].j = gj;
+              if(xperiodic) {
+                stencil[d].i = (gi-s-1 < 0) ? nx-1-(s-gi) : gi-s-1;
+              } else {
+                stencil[d].i = gi-s-1;
+              }
+              stencil[d].c = dof;
+            }
+            for (s = 0; s < sw; s++) {
+              d++;
+              stencil[d].k = k;
+              if(yperiodic) {
+                stencil[d].j = (gj+s+1 >= ny) ? s-(ny-1-gj) : gj+s+1;
+              } else {
+                stencil[d].j = (gj+s+1 >= ny) ? -1 : gj+s+1;
+              }
+              stencil[d].i = gi;
+              stencil[d].c = dof;
+
+              d++;
+              stencil[d].k = k;
+              if(yperiodic) {
+                stencil[d].j = (gj-s-1 < 0) ? ny-1-(s-gj) : gj-s-1;
+              } else {
+                stencil[d].j = gj-s-1;
+              }
+              stencil[d].i = gi;
+              stencil[d].c = dof;
+            }
+            for (s = 0; s < sw; s++) {
+              d++;
+              stencil[d].k = (k+s+1 >= nz) ? s-(nz-1-k) : k+s+1;
+              stencil[d].j = gj;
+              stencil[d].i = gi;
+              stencil[d].c = dof;
+
+              d++;
+              stencil[d].k = (k-s-1 < 0) ? nz-1-(s-k) : k-s-1;
+              stencil[d].j = gj;
+              stencil[d].i = gi;
+              stencil[d].c = dof;
+            }
+            ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
+
+          }
+          // cout << endl;
+        }
+        // cout << endl;
+      }
+
+      ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+      // bout_error("stopping");
     }
   }
     
@@ -279,8 +391,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
   if (J_write){ /* write J into a binary file for viewing its data structure */
     PetscViewer    viewer;
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data_petsc/J.dat...\n",rank);CHKERRQ(ierr);
-    ierr = PetscViewerBinaryOpen(PETSC_COMM_WORLD,"data_petsc/J.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
+    ierr = PetscPrintf(comm,"[%d] writing J in binary to data_petsc/J.dat...\n",rank);CHKERRQ(ierr);
+    ierr = PetscViewerBinaryOpen(comm,"data_petsc/J.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     ierr = MatView(J,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
