@@ -143,7 +143,7 @@ void BoundaryZeroLaplace::apply(Field3D &f)
       // Reverse FFT
       ZFFT_rev(c0, mesh->zShift[x][y], f[x][y]);
       
-      bndry->next();
+      bndry->nextX();
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
@@ -184,7 +184,7 @@ void BoundaryConstLaplace::apply(Field2D &f)
       }else  // Upper X
 	f[x][y] = ((val - lb*f[x-bx][y] + la*f[x-2*bx][y]) / lc).Real();
       
-      bndry->next();
+      bndry->nextX();
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
@@ -247,7 +247,7 @@ void BoundaryConstLaplace::apply(Field3D &f)
       // Reverse FFT
       ZFFT_rev(c2, mesh->zShift[x][y], f[x][y]);
       
-      bndry->next();
+      bndry->nextX();
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
