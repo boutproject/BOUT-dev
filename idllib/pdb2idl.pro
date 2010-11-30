@@ -395,7 +395,7 @@ FUNCTION PD_import, filename
    s = size(list)
    IF s[N_ELEMENTS(s)-2] NE 7 THEN BEGIN ; check if returned value is an array of strings
        ; an error getting the list
-       pd_close
+       pdb_close
        retstr = {pd_error: 3, errstr: 'Could not list file contents'}
        RETURN, retstr
    ENDIF
