@@ -11,7 +11,7 @@ SPAWN, "printenv BOUT_TOP", BOUT_TOP
 
 
 path="./"
-fdu = path+'data/advect.grd.pdb'
+fdu = path+'data/advect.grd.cdl'
 du=file_import(fdu)
 
 path=path+"/data"
