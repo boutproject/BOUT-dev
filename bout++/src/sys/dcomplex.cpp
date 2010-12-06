@@ -45,11 +45,6 @@ dcomplex::dcomplex(const dcomplex &rhs)
   *this = rhs;
 }
 
-dcomplex::dcomplex(BoutReal rval, BoutReal ival)
-{
-  r = rval, i = ival;
-}
-
 dcomplex::~dcomplex()
 {
 }

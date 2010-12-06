@@ -60,6 +60,7 @@ const int INVERT_IN_SET  = 4096; // Set inner boundary
 const int INVERT_OUT_SET = 8192; // Set outer boundary
 const int INVERT_IN_RHS = 16384; // Use input value in RHS at inner boundary
 const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
+const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
 
 int invert_init();
 

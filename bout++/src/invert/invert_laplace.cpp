@@ -497,11 +497,23 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  A[ncx][4] = 0.0;
 	}
       }
-
+      
       // Perform inversion
       cband_solve(A, mesh->ngx, 2, 2, bk1d);
-      // Fill xk
       
+      if((flags & INVERT_KX_ZERO) && (iz == 0)) {
+        // Set the Kx = 0, n = 0 component to zero. For now just subtract
+        // Should do in the inversion e.g. Sherman-Morrison formula
+        
+        dcomplex offset(0.0);
+        for(ix=0;ix<=ncx;ix++)
+          offset += bk1d[ix];
+        offset /= (BoutReal) (ncx+1);
+        for(ix=0;ix<=ncx;ix++)
+          bk1d[ix] -= offset;
+      }
+      
+      // Fill xk
       for (ix=0; ix<=ncx; ix++)
 	xk[ix][iz]=bk1d[ix];
       
@@ -836,6 +848,15 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  xk1d[ix] = xk1d[mesh->ngx-4+ix];
 	  xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
 	}
+      }
+      
+      if((flags & INVERT_KX_ZERO) && (iz == 0)) {
+        dcomplex offset(0.0);
+        for(ix=0;ix<=ncx;ix++)
+          offset += bk1d[ix];
+        offset /= (BoutReal) (ncx+1);
+        for(ix=0;ix<=ncx;ix++)
+          bk1d[ix] -= offset;
       }
       
       // Fill xk

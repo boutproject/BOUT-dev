@@ -46,7 +46,8 @@ class dcomplex {
  public:
   dcomplex();
   dcomplex(const dcomplex &rhs);
-  dcomplex(BoutReal rval, BoutReal ival);
+ dcomplex(BoutReal rval) : r(rval), i(0.0) {}
+ dcomplex(BoutReal rval, BoutReal ival) : r(rval), i(ival) {}
   ~dcomplex();
 
   dcomplex & operator=(const dcomplex &rhs);
