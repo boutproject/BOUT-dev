@@ -117,6 +117,12 @@ dcomplex & dcomplex::operator/=(const dcomplex &rhs)
   return *this;
 }
 
+dcomplex & dcomplex::operator/=(const BoutReal &rhs) {
+  r /= rhs;
+  i /= rhs;
+  return *this;
+}
+
 const dcomplex dcomplex::operator-() const
 {
   dcomplex result;
