@@ -83,7 +83,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
-
   PetscInt n2d = n2Dvars();       // Number of 2D variables
   PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
@@ -137,7 +136,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   // TSSetPostStep(ts, PostStep);
 
   ///////////// GET OPTIONS /////////////
- 	int MXSUB = mesh->xend - mesh->xstart + 1;
+  int MXSUB = mesh->xend - mesh->xstart + 1;
 
   options.setSection("solver");
   options.get("mudq", mudq, n3d*(MXSUB+2));
@@ -147,7 +146,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   options.get("use_precon", use_precon, false);
   options.get("precon_dimens", precon_dimens, 50);
   options.get("precon_tol", precon_tol, 1.0e-4);
-  
+
   // Set Sundials tolerances
   BoutReal abstol, reltol;
   options.get("ATOL", abstol, 1.0e-12);
@@ -239,7 +238,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     PetscInt cols = sw*2*3+1;
     PetscInt prealloc = cols*dof;
     PetscInt preallocblock = prealloc*dof;
-  	
+
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
     cout << "n: " << n << "\t\t local_N: " << local_N << endl;
@@ -265,6 +264,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
       PetscInt gi, gj;
+
 
       MatStencil stencil[cols];
       
