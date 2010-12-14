@@ -241,20 +241,22 @@ template void OptionFile::get<int>(const map<string,Option>::iterator &it, int &
 template void OptionFile::get<BoutReal>(const map<string,Option>::iterator &it, BoutReal &val);
 
 /// Can't use stringstream as it breaks on whitespace
-void OptionFile::get(const map<string,Option>::iterator &it, string &val)
+void OptionFile::get(const map<string,Option>::iterator &it, string &val, bool print)
 {
   if(it != end()) {
     
     val = it->second.value;
     
-    output << "\tOption " << it->first << " = " << val;
-    
-    if(!it->second.source.empty()) {
-      // Specify the source of the setting
-      output << " (" << it->second.source << ")";
+    if(print) {
+      output << "\tOption " << it->first << " = " << val;
+      
+      if(!it->second.source.empty()) {
+        // Specify the source of the setting
+        output << " (" << it->second.source << ")";
+      }
+      
+      output << endl;
     }
-    
-    output << endl;
   }
 }
 
@@ -308,15 +310,17 @@ void OptionFile::get(const string &key, type &val, const type &def)
 template void OptionFile::get<int>(const string &key, int &val, const int &def);
 template void OptionFile::get<BoutReal>(const string &key, BoutReal &val, const BoutReal &def);
 
-void OptionFile::get(const string &key, string &val, const string &def)
+void OptionFile::get(const string &key, string &val, const string &def, bool print)
 {
   map<string, Option>::iterator it(find(prependSection(def_section, key)));
 
   if(it != end()) {
-    get(it, val);
+    get(it, val, print);
     return;
   }
   
+  
+
   it = find(key);
   if(it != end()) {
     get(it, val);
@@ -324,7 +328,8 @@ void OptionFile::get(const string &key, string &val, const string &def)
   }
 
   val = def;
-  output << "\tOption " << key << " = " << def << " (default)" << endl;
+  if(print)
+    output << "\tOption " << key << " = " << def << " (default)" << endl;
 }
 
 void OptionFile::get(const string &key, bool &val, const bool &def)
@@ -644,8 +649,8 @@ void OptionFile::parse(const string &buffer, string &key, string &value)
   key = buffer.substr(0, startpos);
   value = buffer.substr(startpos+1);
 
-  trim(key, " \t\"");
-  trim(value, " \t\"");
+  trim(key, " \t\r\"");
+  trim(value, " \t\r\"");
 
   if(key.empty() || value.empty()) {
     throw BoutException("\tEmpty key or value\n\tLine: %s", buffer.c_str());
