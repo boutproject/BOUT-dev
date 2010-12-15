@@ -241,22 +241,28 @@ template void OptionFile::get<int>(const map<string,Option>::iterator &it, int &
 template void OptionFile::get<BoutReal>(const map<string,Option>::iterator &it, BoutReal &val);
 
 /// Can't use stringstream as it breaks on whitespace
-void OptionFile::get(const map<string,Option>::iterator &it, string &val, bool print)
+void OptionFile::get(const map<string,Option>::iterator &it, string &val)
 {
   if(it != end()) {
     
     val = it->second.value;
     
-    if(print) {
-      output << "\tOption " << it->first << " = " << val;
-      
-      if(!it->second.source.empty()) {
-        // Specify the source of the setting
-        output << " (" << it->second.source << ")";
-      }
-      
-      output << endl;
+    output << "\tOption " << it->first << " = " << val;
+    
+    if(!it->second.source.empty()) {
+      // Specify the source of the setting
+      output << " (" << it->second.source << ")";
     }
+    
+    output << endl;
+  }
+}
+
+void OptionFile::getQuietly(const map<string,Option>::iterator &it, string &val)
+{
+  if(it != end()) {
+    
+    val = it->second.value;
   }
 }
 
@@ -310,17 +316,14 @@ void OptionFile::get(const string &key, type &val, const type &def)
 template void OptionFile::get<int>(const string &key, int &val, const int &def);
 template void OptionFile::get<BoutReal>(const string &key, BoutReal &val, const BoutReal &def);
 
-void OptionFile::get(const string &key, string &val, const string &def, bool print)
-{
+void OptionFile::get(const string &key, string &val, const string &def) {
   map<string, Option>::iterator it(find(prependSection(def_section, key)));
 
   if(it != end()) {
-    get(it, val, print);
+    get(it, val);
     return;
   }
   
-  
-
   it = find(key);
   if(it != end()) {
     get(it, val);
@@ -328,8 +331,24 @@ void OptionFile::get(const string &key, string &val, const string &def, bool pri
   }
 
   val = def;
-  if(print)
-    output << "\tOption " << key << " = " << def << " (default)" << endl;
+  output << "\tOption " << key << " = " << def << " (default)" << endl;
+}
+
+void OptionFile::getQuietly(const string &key, string &val, const string &def) {
+  map<string, Option>::iterator it(find(prependSection(def_section, key)));
+
+  if(it != end()) {
+    getQuietly(it, val);
+    return;
+  }
+  
+  it = find(key);
+  if(it != end()) {
+    getQuietly(it, val);
+    return;
+  }
+
+  val = def;
 }
 
 void OptionFile::get(const string &key, bool &val, const bool &def)

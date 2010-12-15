@@ -88,8 +88,9 @@ public:
   void get(const string &, int &, const int &);
   void get(const string &, BoutReal &, const BoutReal &);
   void get(const string &, bool &, const bool &);
-  void get(const string &, string &, const string &, bool print=true);
-
+  void get(const string &, string &, const string &);
+  void getQuietly(const string &, string &, const string &);
+  
   void get(const string &, const string &, int &, const int &);
   void get(const string &, const string &, BoutReal &, const BoutReal &);
   void get(const string &, const string &, bool &, const bool &);
@@ -113,7 +114,8 @@ public:
 protected:
   
   template <class type> void get(const map<string,Option>::iterator &, type &); // Handles many cases
-  void get(const map<string,Option>::iterator &it, string &val, bool print=true); // Special case
+  void get(const map<string,Option>::iterator &it, string &val); // Special case
+  void getQuietly(const map<string,Option>::iterator &it, string &val); // Get without printing
   void get(const map<string,Option>::iterator &it, bool &val);   // Special case
 
   map<string, Option>::iterator find(const string &);
