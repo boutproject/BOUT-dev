@@ -16,7 +16,7 @@ TIMESTEP = 1.0e-2   # time between outputs
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 17     # number of points in z direction (2^n + 1)
+MZ = 3     # number of points in z direction (2^n + 1)
 ZMIN = 0.0
 ZMAX = 0.25
 
