@@ -89,7 +89,8 @@ public:
   void get(const string &, BoutReal &, const BoutReal &);
   void get(const string &, bool &, const bool &);
   void get(const string &, string &, const string &);
-
+  void getQuietly(const string &, string &, const string &);
+  
   void get(const string &, const string &, int &, const int &);
   void get(const string &, const string &, BoutReal &, const BoutReal &);
   void get(const string &, const string &, bool &, const bool &);
@@ -114,6 +115,7 @@ protected:
   
   template <class type> void get(const map<string,Option>::iterator &, type &); // Handles many cases
   void get(const map<string,Option>::iterator &it, string &val); // Special case
+  void getQuietly(const map<string,Option>::iterator &it, string &val); // Get without printing
   void get(const map<string,Option>::iterator &it, bool &val);   // Special case
 
   map<string, Option>::iterator find(const string &);
@@ -121,9 +123,9 @@ protected:
   map<string, Option>::iterator end();
   
   void add(const string &, const string &, const string &, const string &source="");
-  void trim(string &, const string &c=" \t");
+  void trim(string &, const string &c=" \t\r");
   void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t");
+  void trimRight(string &, const string &c=" \t\r");
   void trimComments(string &);
   void parse(const string &, string &, string &);
   string getNextLine(ifstream &);

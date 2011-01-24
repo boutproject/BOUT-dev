@@ -156,7 +156,7 @@ class Mesh {
   // Y-Z surface gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
   virtual const Field2D averageY(const Field2D &f) = 0;
-  virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed
+  virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration

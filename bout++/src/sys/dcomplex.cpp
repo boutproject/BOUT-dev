@@ -45,11 +45,6 @@ dcomplex::dcomplex(const dcomplex &rhs)
   *this = rhs;
 }
 
-dcomplex::dcomplex(BoutReal rval, BoutReal ival)
-{
-  r = rval, i = ival;
-}
-
 dcomplex::~dcomplex()
 {
 }
@@ -119,6 +114,12 @@ dcomplex & dcomplex::operator/=(const dcomplex &rhs)
   rt = (r*rhs.r + i*rhs.i)/c;
   i = (i*rhs.r - r*rhs.i)/c;
   r = rt;
+  return *this;
+}
+
+dcomplex & dcomplex::operator/=(const BoutReal &rhs) {
+  r /= rhs;
+  i /= rhs;
   return *this;
 }
 

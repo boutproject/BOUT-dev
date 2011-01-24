@@ -228,7 +228,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     PetscInt nz  = mesh->ngz - 1;
 
     /* number of degrees (variables) at each grid point */
-    PetscInt dof = n3Dvars()*nz+n2Dvars();
+    if(n2Dvars() != 0) {
+      bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
+    }
+    
+    PetscInt dof = n3Dvars();
 
     /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
     PetscInt n = local_N; //mesh->xend*mesh->yend*nz*dof; //<- that doesn't seem to work. Why is n3Dvars()*nz?
@@ -281,7 +285,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
         ltog_array[i] = i;
       }
 
-      // Also change this for parallel. This define the 'global stencil'
+      // Also change this for parallel. This defines the 'global stencil'
       // where starts are the starting index in each dimension and dims
       // are the size
       PetscInt starts[3], dims[3];
@@ -308,11 +312,22 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
         for(j=mesh->ystart; j <= mesh->yend; j++) {
           // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
-          for(i=mesh->xstart; i <= mesh->xend; i++) {
-            /* subtract the stencil width because global X index does not account for that */
-            // cout << mesh->XGLOBAL(i)-sw << "[closed=" << mesh->surfaceClosed(i) << "] ";
-            gi = mesh->XGLOBAL(i)-sw;
-            xperiodic = mesh->surfaceClosed(i);
+          
+          // X range depends on whether there are X boundaries
+          int xmin = mesh->xstart;
+          if(mesh->firstX())
+            xmin = 0; // This processor includes a boundary region
+          int xmax = mesh->xend;
+          if(mesh->lastX())
+            xmax = mesh->ngx-1;
+            
+          for(i=xmin; i <= xmax; i++) {
+            gi = mesh->XGLOBAL(i);
+            
+            // Check if X and Y are periodic
+            yperiodic = mesh->surfaceClosed(i);
+            xperiodic = mesh->periodicX;
+            
             d = 0;
             stencil[d].k = k;
             stencil[d].j = gj;

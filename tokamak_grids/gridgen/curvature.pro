@@ -42,7 +42,7 @@ function curlcyl, vecR, vecV, gradVr, gradVphi, gradVz
 ;-------------------------------------------------
 
 
-  curl={r:-gradVphi.z, phi:gradVr.z-gradVz.r, z:vecV.phi/vecR.r-gradVphi.r}
+  curl={r:-gradVphi.z, phi:gradVr.z-gradVz.r, z:vecV.phi/vecR.r+gradVphi.r}
 ;
 ;
 ;

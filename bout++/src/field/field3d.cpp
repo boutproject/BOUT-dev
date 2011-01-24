@@ -2753,7 +2753,7 @@ const Field3D lowPass(const Field3D &var, int zmax)
   int jx, jy, jz;
 
 #ifdef CHECK
-  msg_stack.push("low_pass(Field3D, %d)", zmax);
+  msg_stack.push("lowPass(Field3D, %d)", zmax);
 #endif
 
   int ncz = mesh->ngz-1;
@@ -2801,7 +2801,7 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin)
   int jx, jy, jz;
 
 #ifdef CHECK
-  msg_stack.push("low_pass(Field3D, %d, %d)", zmax, zmin);
+  msg_stack.push("lowPass(Field3D, %d, %d)", zmax, zmin);
 #endif
 
   if(!var.isAllocated())
@@ -2812,9 +2812,9 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin)
   if(f == NULL)
     f = new dcomplex[ncz/2 + 1];
  
-  if((zmax >= ncz/2) || (zmax < 0)) {
+  if(((zmax >= ncz/2) || (zmax < 0)) && (zmin < 0)) {
     // Removing nothing
-    return result;
+    return var;
   }
   
   result.allocate();
