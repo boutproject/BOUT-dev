@@ -663,6 +663,7 @@ options needed to make the solver available.
 Name & Description & Compile options \\
 \hline
 rk4 & Runge-Kutta 4th-order explicit method & Always available \\
+karniadakis & Karniadakis explicit method & Always available \\
 pvode & 1998 PVODE with BDF method & Always available \\
 cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
 ida & SUNDIALS IDA. DAE solver & --with-ida \\
@@ -785,6 +786,12 @@ initial perturbation:
 \[
 U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + q2\pi i\right)
 \]
+
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_noballoon.png}
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
+\end{figure}
 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
 
@@ -2064,21 +2071,29 @@ differencing methods (such as 4th-order central differencing), and differential 
 
 \subsection{Differencing methods}
 
-Methods used can be divided into central-differencing and upwinding methods. Central
-methods currently implemented are:
+Methods are implemented on 5-point stencils, and are divided into three categories:
 \begin{itemize}
-\item 2nd-order
-\item 4th-order
-\item FFT for Z (symmetry) direction.
+\item Central-differencing methods, for diffusion operators $\frac{df}{dx}$, $\frac{d^2f}{dx^2}$. Each method has a short code, and currently include
+  \begin{itemize}
+  \item \texttt{C2}: 2$^{nd}$ order $f_{-1} - 2f_0 + f_1$
+  \item \texttt{C4}: 4$^{th}$ order $\left(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 - f_2\right)/12$ 
+  \item \texttt{W2}: 2$^{nd}$ order CWENO
+  \item \texttt{W3}: 3$^{rd}$ order CWENO
+  \item \texttt{FFT}: Fourier Transform method in Z (axisymmetric) direction only
+  \end{itemize}
+\item Upwinding methods for advection operators $v_x\frac{df}{dx}$
+  \begin{itemize}
+  \item \texttt{U1}: 1$^{st}$ order upwinding
+  \item \texttt{U4}: 4$^{th}$ order upwinding
+  \item \texttt{W3}: 3$^{rd}$ order Weighted Essentially Non-Oscillatory (WENO)\cite{jiang-1997}
+  \end{itemize}
+\item Flux conserving and limiting methods for terms of the form $\frac{d}{dx}\left(v_x f\right)$
+  \begin{itemize}
+  \item \texttt{SPLIT}: split into upwind and central terms $\frac{d}{dx}\left(v_x f\right) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}$
+  \item \texttt{NND}: Non-oscillatory, containing No free parameters and Dissipative (NND) scheme\cite{nnd-2010}
+  \end{itemize}
 \end{itemize}
-These are used for diffusion-type operators, and almost always the higher-accuracy 4th-order
-and FFT methods are used.
 
-Upwinding methods available for advection-type operators are
-\begin{itemize}
-\item 1st-order upwinding
-\item 3rd-order Weighted Essentially Non-Oscillatory (WENO)\cite{jiang-1997}
-\end{itemize}
 Both of these methods avoid overshoots (Gibbs phenomena) at sharp gradients such as shocks,
 but the simple 1st-order method has very large artificial diffusion. WENO schemes are
 a development of the ENO reconstruction schemes which combine good handling of sharp-gradient
