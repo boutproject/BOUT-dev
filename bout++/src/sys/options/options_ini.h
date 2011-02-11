@@ -1,20 +1,13 @@
 /*!************************************************************************
-* Base class for options file readers
+* Reads in the configuration file, supplying
+* an interface to get options
 * 
-* This code handles most details of looking up variables and just relies on
-* the underlying library to supply a simplified interface
-*
-* Original BOUT++ inp file has the form of a Windows INI file
-* with a format
-*  [section]
-*  name = value  # comments
-*
-* This is compatible with some readers (like Python's ConfigParser), but
-* is quite limited. 
-*
-* To handle more complex data types and make interchange with other
-* codes easier JSON formatted files are planned to be supported
+* File is an ini file with sections
+* [section]
+* and variables as
+* name = string ; comment
 * 
+* Ben Dudson, September 2007
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -38,51 +31,53 @@
 *
 **************************************************************************/
 
-class OptionParser;
+class OptionINI;
 
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
 #include "bout_types.h"
 
-using namespace std;
+#include <stdarg.h>
+#include <stdio.h>
+#include <map>
 
-struct Option {
-  string value;
-  string source;     // Source of the setting
-  bool used;         // Set to true when used
-};
-
-/// Base class for configuration file parsers
+/// Class for reading INI style configuration files
 /*!
 * 
 */
-class OptionParser {
+
+using namespace std;
+
+class OptionINI {
 public:
-  OptionParser();
-  
-  //////////////////////////////////////////////
-  // Functions which must be implemented 
+  OptionINI();
+  OptionINI(const string &filename);
+  OptionINI(int &argc, char **argv, const string &filename);
+  ~OptionFile();
 
-  virtual ~OptionParser() {}
-  /// Read a grid file
+  /// Read options from grid file
   void read(const char *filename, ...);
-
-
-  
 
   /// Parse the command line for options
   void commandLineRead(int argc, char** argv);
   
-  
-
   // Set and get default section for subsequent calls
   void setSection(const string &name); // Set the default section
-  string getSection(); // Get the default section
+  string getSection(); // Set the default section
+
+  // Set and get section separator
+  const string& getSectionSep();
+  void setSectionSep(const string &);
   
   // Test if an option has been set
   bool isSet(const string &key);
   bool isSet(const string &section, const string &key);
+
+  // Get an option, setting to default if not set
+  template <class type> void get(const string &, type &, const type &);
+  template <class type> void get(const string &, const string &, type &, const type &);
+  template <class type> void get(const string &, const string &, const string &, type &, const type &);
 
   void get(const string &, int &, const int &);
   void get(const string &, BoutReal &, const BoutReal &);
@@ -112,6 +107,15 @@ public:
   void printUnused();
 protected:
   
+  template <class type> void get(const map<string,Option>::iterator &, type &); // Handles many cases
+  void get(const map<string,Option>::iterator &it, string &val); // Special case
+  void getQuietly(const map<string,Option>::iterator &it, string &val); // Get without printing
+  void get(const map<string,Option>::iterator &it, bool &val);   // Special case
+
+  map<string, Option>::iterator find(const string &);
+  map<string, Option>::iterator find(const string &, const string &);
+  map<string, Option>::iterator end();
+  
   void add(const string &, const string &, const string &, const string &source="");
   void trim(string &, const string &c=" \t\r");
   void trimLeft(string &, const string &c=" \t");
@@ -120,6 +124,12 @@ protected:
   void parse(const string &, string &, string &);
   string getNextLine(ifstream &);
   string prependSection(const string &section, const string& key);
+
+  string def_section; // Default section heading
+
+  string sep;
+
+  map<string, Option> options;
 };
 
 #endif // __OPTIONS_H__
