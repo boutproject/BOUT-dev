@@ -140,37 +140,50 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   }
   }
   
-  /// First try looking for (var, region)
-  string set;
-  options.get(varname, prefix+region->label, set, "");
+  // Get options
+  Options *options = Options::getRoot();
   
-  if(!set.empty())
+  // Get variable options
+  Options *varOpts = options->getSection(varname);
+  string set;
+  
+  /// First try looking for (var, region)
+  if(varOpts->isSet(prefix+region->label)) {
+    varOpts->get(prefix+region->label, set, "");
     return create(set, region);
+  }
   
   /// Then (var, side)
-  options.get(varname, prefix+side, set, "");
-  if(!set.empty())
+  if(varOpts->isSet(prefix+side)) {
+    varOpts->get(prefix+side, set, "");
     return create(set, region);
+  }
   
   /// Then (var, all)
-  options.get(varname, prefix+"all", set, "");
-  if(!set.empty())
+  if(varOpts->isSet(prefix+"all")) {
+    varOpts->get(prefix+"all", set, "");
     return create(set, region);
+  }
   
+  // Get the "all" options
+  varOpts = options->getSection("All");
+
   /// Then (all, region)
-  options.get("all", prefix+region->label, set, "");
-  if(!set.empty())
+  if(varOpts->isSet(prefix+region->label)) {
+    varOpts->get(prefix+region->label, set, "");
     return create(set, region);
+  }
   
   /// Then (all, side)
-  options.get("all", prefix+side, set, "");
-  if(!set.empty())
+  if(varOpts->isSet(prefix+side)) {
+    varOpts->get(prefix+side, set, "");
     return create(set, region);
+  }
   
   /// Then (all, all)
-  options.get("all", prefix+"all", set, "dirichlet");
+  varOpts->get(prefix+"all", set, "dirichlet");
   return create(set, region);
-  // Defaultsto Dirichlet conditions, to prevent undefined boundary
+  // Defaults to Dirichlet conditions, to prevent undefined boundary
   // values. If a user want to override, specify "none" or "null"
 }
 

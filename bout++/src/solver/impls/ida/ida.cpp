@@ -138,18 +138,19 @@ IdaSolver::~IdaSolver()
   int mukeep, mlkeep;
   bool use_precon;
   bool correct_start;
-  options.setSection("solver");
-  OPTION(mudq, n3d*(MXSUB+2));
-  OPTION(mldq, n3d*(MXSUB+2));
-  OPTION(mukeep, n3d);
-  OPTION(mlkeep, n3d);
-  options.get("ATOL", abstol, 1.0e-12);
-  options.get("RTOL", reltol, 1.0e-5);
-  OPTION(maxl, 6*n3d);
-  OPTION(use_precon, false);
-  OPTION(correct_start, true);
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  OPTION(options, mudq, n3d*(MXSUB+2));
+  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mukeep, n3d);
+  OPTION(options, mlkeep, n3d);
+  options->get("ATOL", abstol, 1.0e-12);
+  options->get("RTOL", reltol, 1.0e-5);
+  OPTION(options, maxl, 6*n3d);
+  OPTION(options, use_precon, false);
+  OPTION(options, correct_start, true);
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("mxstep", mxsteps, 500);
+  options->get("mxstep", mxsteps, 500);
 
   // Call IDACreate and IDAMalloc to initialise
 

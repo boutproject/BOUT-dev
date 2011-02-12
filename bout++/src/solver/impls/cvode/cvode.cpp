@@ -120,35 +120,36 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   bool use_precon, use_jacobian;
   BoutReal max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
-	int MXSUB = mesh->xend - mesh->xstart + 1;
-
-  options.setSection("solver");
-  options.get("mudq", mudq, n3Dvars()*(MXSUB+2));
-  options.get("mldq", mldq, n3Dvars()*(MXSUB+2));
-  options.get("mukeep", mukeep, n3Dvars()+n2Dvars());
-  options.get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
-  options.get("ATOL", abstol, 1.0e-12);
-  options.get("RTOL", reltol, 1.0e-5);
-  options.get("maxl", maxl, 5);
-  options.get("use_precon", use_precon, false);
-  options.get("use_jacobian", use_jacobian, false);
-  options.get("max_timestep", max_timestep, -1.);
+  int MXSUB = mesh->xend - mesh->xstart + 1;
+  
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
+  options->get("mldq", mldq, n3Dvars()*(MXSUB+2));
+  options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
+  options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
+  options->get("ATOL", abstol, 1.0e-12);
+  options->get("RTOL", reltol, 1.0e-5);
+  options->get("maxl", maxl, 5);
+  options->get("use_precon", use_precon, false);
+  options->get("use_jacobian", use_jacobian, false);
+  options->get("max_timestep", max_timestep, -1.);
   
   int mxsteps; // Maximum number of steps to take between outputs
-  options.get("mxstep", mxsteps, 500);
+  options->get("mxstep", mxsteps, 500);
   
-  options.get("adams_moulton", adams_moulton, false);
+  options->get("adams_moulton", adams_moulton, false);
   
   int lmm = CV_BDF;
   if(adams_moulton) {
     // By default use functional iteration for Adams-Moulton
     lmm = CV_ADAMS;
     output.write("\tUsing Adams-Moulton implicit multistep method\n");
-    options.get("func_iter", func_iter, true); 
+    options->get("func_iter", func_iter, true); 
   }else {
     output.write("\tUsing BDF method\n");
     // Use Newton iteration for BDF
-    options.get("func_iter", func_iter, false); 
+    options->get("func_iter", func_iter, false); 
   }
   
   int iter = CV_NEWTON;

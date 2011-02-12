@@ -73,13 +73,14 @@ int physics_init(bool restarting)
   /////////////// READ OPTIONS //////////////////////////
 
   // Read some parameters
-  options.setSection("uedge");
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("uedge");
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(chi_perp,  0.6); // Read in m^2 / s 
-  OPTION(D_perp,    0.6);
-  OPTION(mu_perp,   0.6);
+  OPTION(options, chi_perp,  0.6); // Read in m^2 / s 
+  OPTION(options, D_perp,    0.6);
+  OPTION(options, mu_perp,   0.6);
   
   ////////////// CALCULATE PARAMETERS ///////////////////
 

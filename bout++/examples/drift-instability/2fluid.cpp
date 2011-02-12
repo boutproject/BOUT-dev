@@ -99,28 +99,29 @@ int physics_init(bool restarting)
   /*************** READ OPTIONS *************************/
 
   // Read some parameters
-  options.setSection("2fluid");
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("2fluid");
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(estatic,     false);
-  OPTION(ZeroElMass,  false);
-  OPTION(zeff,        1.0);
-  OPTION(nu_perp,     0.0);
-  OPTION(ShearFactor, 1.0);
+  OPTION(options, estatic,     false);
+  OPTION(options, ZeroElMass,  false);
+  OPTION(options, zeff,        1.0);
+  OPTION(options, nu_perp,     0.0);
+  OPTION(options, ShearFactor, 1.0);
   
-  OPTION(phi_flags,   0);
-  OPTION(apar_flags,  0);
+  OPTION(options, phi_flags,   0);
+  OPTION(options, apar_flags,  0);
   
-  options.get("rho",   "evolve", evolve_rho,   true);
-  options.get("Te",    "evolve", evolve_te,    true);
-  options.get("Ni",    "evolve", evolve_ni,    true);
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
-  options.get("Vi",    "evolve", evolve_vi,    true);
-  options.get("Ti",    "evolve", evolve_ti,    true);
-
+  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
+  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
+  (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
+  (globalOptions->getSection("te"))->get("evolve", evolve_te,   true);
+  (globalOptions->getSection("ti"))->get("evolve", evolve_ti,   true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
+  
   if(ZeroElMass)
-    evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
+    evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
@@ -316,7 +317,6 @@ int physics_run(BoutReal t)
   // Communicate variables
   mesh->communicate(comms);
 
-  // zero-gradient Y boundaries (temporary! for interchange test)
 
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();

@@ -26,6 +26,7 @@
  **************************************************************************/
 
 #include "globals.h"
+#include "options.h"
 #include "fft.h"
 
 #include <fftw3.h>
@@ -39,8 +40,9 @@ void fft_init()
   if(fft_options)
     return;
 
-  options.setSection("fft");
-  options.get("fft_measure", fft_measure, false);
+  Options *opt = Options::getRoot();
+  opt = opt->getSection("fft");
+  opt->get("fft_measure", fft_measure, false);
   fft_options = true;
 }
 

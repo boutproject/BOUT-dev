@@ -84,25 +84,26 @@ int physics_init(bool restarting)
   bmag *= 1.0e4;
 
   /*************** READ OPTIONS *************************/
+  
+  Options *globalOptions = Options::getRoot();
+  Options *options = options->getSection("2fluid");
 
-  options.setSection("2fluid");
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
+  options->get("estatic",     estatic,     false);
+  options->get("ZeroElMass",  ZeroElMass,  false);
+  options->get("AparInEpar",  AparInEpar,  true);
 
-  options.get("estatic",     estatic,     false);
-  options.get("ZeroElMass",  ZeroElMass,  false);
-  options.get("AparInEpar",  AparInEpar,  true);
+  options->get("Zeff",        zeff,        1.0);
+  options->get("nu_perp",     nu_perp,     0.0);
+  options->get("ShearFactor", ShearFactor, 1.0);
+  options->get("nu_factor",   nu_factor,   1.0);
 
-  options.get("Zeff",        zeff,        1.0);
-  options.get("nu_perp",     nu_perp,     0.0);
-  options.get("ShearFactor", ShearFactor, 1.0);
-  options.get("nu_factor",   nu_factor,   1.0);
+  options->get("phi_flags", phi_flags, 0);
+  options->get("apar_flags", apar_flags, 0);
 
-  options.get("phi_flags", phi_flags, 0);
-  options.get("apar_flags", apar_flags, 0);
-
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
 
   if(ZeroElMass)
     evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law

@@ -57,6 +57,7 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 #include "interpolation.h"
 #include "boutmesh.h"
 #include "boutexception.h"
+#include "optionsreader.h"
 
 #include "boundary_factory.h"
 #include "boundary_standard.h"
@@ -200,39 +201,40 @@ int bout_init(int argc, char **argv)
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
+  /// Get the options tree
+  Options *options = Options::getRoot();
+
   try {
 
     output.write("Processor number: %d of %d\n\n", MYPE, NPES);
     
     /// Load settings file
-    options.read("%s/BOUT.inp", data_dir);
+    OptionsReader *reader = OptionsReader::getInstance();
+    reader->read(options, "%s/BOUT.inp", data_dir);
     
     // Get options override from command-line
-    options.commandLineRead(argc, argv);
+    reader->parseCommandLine(options, argc, argv);
     
     /////////////////////////////////////////////
     /// Get some settings
-  
-    /// GET GLOBAL OPTIONS
-    options.setSection("");
-  
-    OPTION(NOUT, 1);
-    OPTION(TIMESTEP, 1.0);
+    
+    OPTION(options, NOUT, 1);
+    OPTION(options, TIMESTEP, 1.0);
 
-    options.get("grid", grid_name, DEFAULT_GRID);
+    options->get("grid", grid_name, DEFAULT_GRID);
     /*  if((grid_name = options.getString("grid")) == (char*) NULL)
         grid_name = DEFAULT_GRID;*/
   
-    OPTION(dump_float,   true);
-    OPTION(non_uniform,  false);
+    OPTION(options, dump_float,   true);
+    OPTION(options, non_uniform,  false);
   
     // Check if restarting
     bool restart;
-    OPTION(restart, false);
-    OPTION(append, false);
+    OPTION(options, restart, false);
+    OPTION(options, append, false);
 
     /// Get file extensions
-    options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+    options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
     /*  if((dump_ext = options.getString("dump_format")) == NULL) {
     // Set default extension
     dump_ext = DEFAULT_FILE_EXT;
@@ -251,7 +253,7 @@ int bout_init(int argc, char **argv)
   
     output.write("Setting grid format\n");
     /// Load the grid
-    options.get("grid_format", grid_ext, "");
+    options->get("grid_format", grid_ext, "");
     if(grid_ext.empty()) {
       // Guess format based on grid filename
       mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str()));
@@ -473,8 +475,8 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
     /// First time the monitor has been called
     
     /// Get some options
-    options.setSection("");
-    OPTION(wall_limit, -1.0); // Wall time limit. By default, no limit
+    Options *options = Options::getRoot();
+    OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
     
     /// Record the starting time
