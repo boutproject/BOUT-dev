@@ -23,10 +23,11 @@ int physics_init(bool restarting)
   Vector2D v0, B0;
 
   // read options
-  options.setSection("mhd");
-  OPTION(gamma,          5.0/3.0);
-  OPTION(include_viscos, false);
-  OPTION(viscos,         0.1);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("mhd");
+  OPTION(options, gamma,          5.0/3.0);
+  OPTION(options, include_viscos, false);
+  OPTION(options, viscos,         0.1);
   
   // Read 2D initial profiles
   GRID_LOAD(rho0);
@@ -62,7 +63,7 @@ int physics_init(bool restarting)
     
     // Added this for modifying the Orszag-Tang vortex problem
     BoutReal v_fact;
-    options.get("v_fact",         v_fact,         1.0);
+    OPTION(options, v_fact, 1.0);
     v *= v_fact;
   }
 

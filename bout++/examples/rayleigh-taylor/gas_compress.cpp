@@ -38,13 +38,14 @@ int physics_init(bool restarting)
   
   // read options
   
-  options.setSection("gas");
+  Options *options = Options::getRoot();
+  options = options->getSection("gas");
   
-  options.get("gamma",  gamma_ratio, 5.0/3.0);
-  options.get("viscosity", nu, 0.1);
-  options.get("include_viscosity", include_viscosity, false);
-  options.get("v0_multiply", v0_multiply, 1.0);
-  options.get("sub_initial", sub_initial, false);
+  options->get("gamma",  gamma_ratio, 5.0/3.0);
+  options->get("viscosity", nu, 0.1);
+  options->get("include_viscosity", include_viscosity, false);
+  options->get("v0_multiply", v0_multiply, 1.0);
+  options->get("sub_initial", sub_initial, false);
 
   V0 *= v0_multiply;
 

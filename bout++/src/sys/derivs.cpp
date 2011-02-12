@@ -569,22 +569,20 @@ upwind_func sfFDDX, sfFDDY, sfFDDZ;
  *******************************************************************************/
 
 /// Set the derivative method, given a table and option name
-void derivs_set(DiffLookup *table, const char* name, deriv_func &f)
+void derivs_set(Options *options, DiffLookup *table, const char* name, deriv_func &f)
 {
-/*  char *label = options.getString(name);*/
   string label;
-  options.getQuietly(name, label, "");
+  options->get(name, label, "", false);
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
   f = lookupFunc(table, method); // Find the function pointer
 }
 
-void derivs_set(DiffLookup *table, const char* name, upwind_func &f)
+void derivs_set(Options *options, DiffLookup *table, const char* name, upwind_func &f)
 {
-/*  char *label = options.getString(name);*/
   string label;
-  options.getQuietly(name, label, "");
+  options->get(name, label, "", false);
 
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
@@ -592,35 +590,35 @@ void derivs_set(DiffLookup *table, const char* name, upwind_func &f)
 }
 
 /// Initialise derivatives from options
-void derivs_init(bool StaggerGrids,
+void derivs_init(Options *options, bool StaggerGrids,
                  deriv_func &fdd, deriv_func &sfdd, 
                  deriv_func &fd2d, deriv_func &sfd2d, 
                  upwind_func &fu, upwind_func &sfu,
                  upwind_func &ff, upwind_func &sff)
 {
   output.write("\tFirst       : ");
-  derivs_set(FirstDerivTable, "first",  fdd);
+  derivs_set(options, FirstDerivTable, "first",  fdd);
   if(StaggerGrids) {
     output.write("\tStag. First : ");
-    derivs_set(FirstStagDerivTable, "first",  sfdd);
+    derivs_set(options, FirstStagDerivTable, "first",  sfdd);
   }
   output.write("\tSecond      : ");
-  derivs_set(SecondDerivTable, "second", fd2d);
+  derivs_set(options, SecondDerivTable, "second", fd2d);
   if(StaggerGrids) {
     output.write("\tStag. Second: ");
-    derivs_set(SecondStagDerivTable, "second", sfd2d);
+    derivs_set(options, SecondStagDerivTable, "second", sfd2d);
   }
   output.write("\tUpwind      : ");
-  derivs_set(UpwindTable,     "upwind", fu);
+  derivs_set(options, UpwindTable,     "upwind", fu);
   if(StaggerGrids) {
     output.write("\tStag. Upwind: ");
-    derivs_set(UpwindStagTable,     "upwind", sfu);
+    derivs_set(options, UpwindStagTable,     "upwind", sfu);
   }
   output.write("\tFlux        : ");
-  derivs_set(FluxTable,     "flux", ff);
+  derivs_set(options, FluxTable,     "flux", ff);
   if(StaggerGrids) {
     output.write("\tStag. Flux  : ");
-    derivs_set(FluxStagTable,     "flux", sff);
+    derivs_set(options, FluxStagTable,     "flux", sff);
   }
 }
 
@@ -633,12 +631,14 @@ int derivs_init()
 
   /// NOTE: StaggerGrids is also in Mesh, but derivs_init needs to come before Mesh
   bool StaggerGrids;
-  options.setSection("");
-  OPTION(StaggerGrids,   false);
+  
+  // Get the options
+  Options *options = Options::getRoot();
+  OPTION(options, StaggerGrids,   false);
 
   output.write("Setting X differencing methods\n");
-  options.setSection("ddx");
-  derivs_init(StaggerGrids,
+  derivs_init(options->getSection("ddx"), 
+              StaggerGrids,
               fDDX, sfDDX, 
               fD2DX2, sfD2DX2,
               fVDDX, sfVDDX,
@@ -650,8 +650,8 @@ int derivs_init()
   }
   
   output.write("Setting Y differencing methods\n");
-  options.setSection("ddy");
-  derivs_init(StaggerGrids,
+  derivs_init(options->getSection("ddy"), 
+              StaggerGrids,
               fDDY, sfDDY, 
               fD2DY2, sfD2DY2,
               fVDDY, sfVDDY,
@@ -663,8 +663,8 @@ int derivs_init()
   }
   
   output.write("Setting Z differencing methods\n");
-  options.setSection("ddz");
-  derivs_init(StaggerGrids,
+  derivs_init(options->getSection("ddz"), 
+              StaggerGrids,
               fDDZ, sfDDZ, 
               fD2DZ2, sfD2DZ2,
               fVDDZ, sfVDDZ,

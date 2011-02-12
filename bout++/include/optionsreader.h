@@ -1,13 +1,11 @@
 /*!************************************************************************
-* Reads in the configuration file, supplying
-* an interface to get options
+* Singleton class for reading options files
+*
+* Uses a bridge pattern to access OptionParser classes to parse
+* different file formats
+*
+* Handles the command-line parsing
 * 
-* File is an ini file with sections
-* [section]
-* and variables as
-* name = string ; comment
-* 
-* Ben Dudson, September 2007
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -31,37 +29,28 @@
 *
 **************************************************************************/
 
-class OptionINI;
+class OptionsReader;
 
-#ifndef __OPTIONS_INI_H__
-#define __OPTIONS_INI_H__
+#ifndef __OPTIONSREADER_H__
+#define __OPTIONSREADER_H__
 
-#include "optionparser.h"
+#include "options.h"
 
-#include <string>
-#include <fstream>
-using namespace std;
+#include <stdarg.h>
+#include <stdio.h>
 
-/// Class for reading INI style configuration files
-/*!
- * 
- */
-class OptionINI : public OptionParser {
-public:
-  OptionINI();
-  ~OptionINI();
-
-  /// Read options from grid file
-  void read(Options *options, const string &filename);
+class OptionsReader {
+ public:
+  static OptionsReader *getInstance();
   
-private:
+  void read(Options *options, const char *file, ...);
   
-  void trim(string &, const string &c=" \t\r");
-  void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t\r");
-  void trimComments(string &);
-  void parse(const string &, string &, string &);
-  string getNextLine(ifstream &);
+  void parseCommandLine(Options *options, int argc, char **argv);
+  
+ private:
+  static OptionsReader *instance;
+  
 };
 
-#endif // __OPTIONS_INI_H__
+#endif // __OPTIONSREADER_H__
+

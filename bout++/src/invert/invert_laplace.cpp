@@ -42,6 +42,7 @@
 #include "invert_laplace.h"
 #include "bout_types.h"
 #include "globals.h"
+#include "options.h"
 #include "fft.h"
 #include "utils.h"
 #include "dcomplex.h"
@@ -73,17 +74,19 @@ int invert_init()
 
   output.write("Initialising Laplacian inversion routines\n");
 
+  Options *options = Options::getRoot();
+  
   // Communication options
-  options.setSection("comms");
-  options.get("async", invert_async_send, true);
+  Options *commOpts = options->getSection("comms");
+  commOpts->get("async", invert_async_send, true);
   
   // Inversion options
-  options.setSection("laplace");
-  OPTION(filter, 0.2);
-  options.get("low_mem", invert_low_mem, false);
-  options.get("use_pdd", invert_use_pdd, false);
-  options.get("all_terms", laplace_all_terms, false); 
-  OPTION(laplace_nonuniform, false);
+  Options *lapOpts = options->getSection("laplace");
+  OPTION(lapOpts, filter, 0.2);
+  lapOpts->get("low_mem", invert_low_mem, false);
+  lapOpts->get("use_pdd", invert_use_pdd, false);
+  lapOpts->get("all_terms", laplace_all_terms, false); 
+  OPTION(lapOpts, laplace_nonuniform, false);
 
   if(mesh->firstX() && mesh->lastX()) {
     // This processor is both the first and the last in X
@@ -104,7 +107,7 @@ int invert_init()
   laplace_maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
 
   // Can be overriden by max_mode option
-  options.get("max_mode", laplace_maxmode, laplace_maxmode);
+  lapOpts->get("max_mode", laplace_maxmode, laplace_maxmode);
   
   if(laplace_maxmode < 0) laplace_maxmode = 0;
   if(laplace_maxmode > ncz/2) laplace_maxmode = ncz/2;

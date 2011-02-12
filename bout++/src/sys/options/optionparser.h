@@ -1,13 +1,19 @@
 /*!************************************************************************
-* Reads in the configuration file, supplying
-* an interface to get options
+* Base class for options file parsers
 * 
-* File is an ini file with sections
-* [section]
-* and variables as
-* name = string ; comment
-* 
-* Ben Dudson, September 2007
+* This code handles most details of looking up variables and just relies on
+* the underlying library to supply a simplified interface
+*
+* Original BOUT++ inp file has the form of a Windows INI file
+* with a format
+*  [section]
+*  name = value  # comments
+*
+* This is compatible with some readers (like Python's ConfigParser), but
+* is quite limited. 
+*
+* To handle more complex data types and make interchange with other
+* codes easier JSON formatted files are planned to be supported
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -31,37 +37,23 @@
 *
 **************************************************************************/
 
-class OptionINI;
+class OptionParser;
 
-#ifndef __OPTIONS_INI_H__
-#define __OPTIONS_INI_H__
+#ifndef __OPTIONPARSER_H__
+#define __OPTIONPARSER_H__
 
-#include "optionparser.h"
+#include "bout_types.h"
+#include "options.h"
 
-#include <string>
-#include <fstream>
 using namespace std;
 
-/// Class for reading INI style configuration files
-/*!
- * 
- */
-class OptionINI : public OptionParser {
-public:
-  OptionINI();
-  ~OptionINI();
-
-  /// Read options from grid file
-  void read(Options *options, const string &filename);
+class OptionParser {
+ public:
+  OptionParser() {}
+  virtual ~OptionParser() {}
   
-private:
-  
-  void trim(string &, const string &c=" \t\r");
-  void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t\r");
-  void trimComments(string &);
-  void parse(const string &, string &, string &);
-  string getNextLine(ifstream &);
+  virtual void read(Options *options, const string &filename) = 0;
+ private:
 };
 
-#endif // __OPTIONS_INI_H__
+#endif // __OPTIONPARSER_H__

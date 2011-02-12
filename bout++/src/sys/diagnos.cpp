@@ -39,8 +39,9 @@ Diagnos::Diagnos()
 {
   if(!init) {
     output.write("Initialising diagnostics\n");
-    options.setSection("diagnos");
-    options.get("global", global_vals, true);
+    Options *options = Options::getRoot();
+    options = options->getSection("diagnos");
+    options->get("global", global_vals, true);
     
     init = true;
   }

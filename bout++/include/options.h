@@ -1,20 +1,15 @@
 /*!************************************************************************
-* Base class for options file readers
+* Option hierarchy representation
 * 
-* This code handles most details of looking up variables and just relies on
-* the underlying library to supply a simplified interface
+* The Options class represents a tree structure of key-value settings.
+* Provides get and set methods on these options.
 *
-* Original BOUT++ inp file has the form of a Windows INI file
-* with a format
-*  [section]
-*  name = value  # comments
+* Internally, all quantities are stored as strings for simplicity
+* and so that option file parsers don't have to do type conversion
+* without knowing the type a priori.
 *
-* This is compatible with some readers (like Python's ConfigParser), but
-* is quite limited. 
-*
-* To handle more complex data types and make interchange with other
-* codes easier JSON formatted files are planned to be supported
-* 
+* There is a singleton object "root" which contains the top-level
+* options and allows access to all sub-sections
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -38,88 +33,65 @@
 *
 **************************************************************************/
 
-class OptionParser;
+class Options;
 
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
 #include "bout_types.h"
 
+#include <map>
+
 using namespace std;
 
-struct Option {
+struct OptionValue {
   string value;
   string source;     // Source of the setting
   bool used;         // Set to true when used
 };
 
-/// Base class for configuration file parsers
+/// Class to represent hierarchy of options
 /*!
 * 
 */
-class OptionParser {
+class Options {
 public:
-  OptionParser();
+ Options() : parent(NULL) {}
+ Options(Options *p, string s) : parent(p), sectionName(s) {};
+  ~Options();
   
-  //////////////////////////////////////////////
-  // Functions which must be implemented 
-
-  virtual ~OptionParser() {}
-  /// Read a grid file
-  void read(const char *filename, ...);
-
-
+  /// Get a pointer to the only root instance
+  static Options* getRoot();
   
-
-  /// Parse the command line for options
-  void commandLineRead(int argc, char** argv);
+  // Setting options
+  void set(const string &key, const int &val, const string &source="");
+  void set(const string &key, const BoutReal &val, const string &source="");
+  void set(const string &key, const bool &val, const string &source="");
+  void set(const string &key, const string &val, const string &source="");
   
-  
-
-  // Set and get default section for subsequent calls
-  void setSection(const string &name); // Set the default section
-  string getSection(); // Get the default section
-  
-  // Test if an option has been set
+  // Testing if set
   bool isSet(const string &key);
-  bool isSet(const string &section, const string &key);
-
-  void get(const string &, int &, const int &);
-  void get(const string &, BoutReal &, const BoutReal &);
-  void get(const string &, bool &, const bool &);
-  void get(const string &, string &, const string &);
-  void getQuietly(const string &, string &, const string &);
   
-  void get(const string &, const string &, int &, const int &);
-  void get(const string &, const string &, BoutReal &, const BoutReal &);
-  void get(const string &, const string &, bool &, const bool &);
-  void get(const string &, const string &, string &, const string &);
-
-  void get(const string &, const string &, const string &, int &, const int &);
-  void get(const string &, const string &, const string &, BoutReal &, const BoutReal &);
-  void get(const string &, const string &, const string &, bool &, const bool &);
-  void get(const string &, const string &, const string &, string &, const string &);
+  // Getting options
+  void get(const string &key, int &val, const int &def, bool log=true);
+  void get(const string &key, BoutReal &val, const BoutReal &def, bool log=true);
+  void get(const string &key, bool &val, const bool &def, bool log=true);
+  void get(const string &key, string &val, const string &def, bool log=true);
   
-  // Set methods to pass in options manually
-  template <class type> void set(const string &, const type &);
-  
-  void set(const string &, const int &);
-  void set(const string &, const BoutReal &);
-  void set(const string &, const bool &);
-  void set(const string &, const string &);
+  /// Creates new section if doesn't exist
+  Options* getSection(const string &name);
+  Options* getParent() {return parent;}
   
   /// Print the options which haven't been used
   void printUnused();
-protected:
+ private:
+  static Options *root; ///< Only instance of the root section
   
-  void add(const string &, const string &, const string &, const string &source="");
-  void trim(string &, const string &c=" \t\r");
-  void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t\r");
-  void trimComments(string &);
-  void parse(const string &, string &, string &);
-  string getNextLine(ifstream &);
-  string prependSection(const string &section, const string& key);
+  Options *parent;
+  string sectionName; // section name (if any), for logging only
+  
+  map<string, OptionValue> options;
+  map<string, Options*> sections;
 };
 
 #endif // __OPTIONS_H__

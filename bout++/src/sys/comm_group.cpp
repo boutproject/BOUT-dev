@@ -42,8 +42,9 @@ namespace comm_group {
       return;
     
     output.write("Initialising group comms\n");
-    options.setSection("comms");
-    options.get("group_nonblock", nonblock, true);
+    Options *options = Options::getRoot();
+    options = options->getSection("comms");
+    options->get("group_nonblock", nonblock, true);
 
     initialised = true;
   }

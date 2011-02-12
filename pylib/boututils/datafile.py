@@ -14,11 +14,34 @@ except ImportError:
     print "ERROR: NumPy module not available"
     raise
 
+library = None # Record which library to use
+
 try:
     from netCDF4 import Dataset
+    library = "netCDF4"
 except ImportError:
-    print "ERROR: netcdf4-python module not found"
-    raise
+    print "netcdf4-python module not found"
+    
+    try:
+        from Scientific.IO.NetCDF import NetCDFFile as Dataset
+        from Scientific.N import Int, Float
+        library = "Scientific"
+    except ImportError:
+        print "ERROR: Scientific.IO.NetCDF module not found"
+        raise
+
+import time
+
+def getUserName():
+    try:
+	import os, pwd, string
+    except ImportError:
+	return 'unknown user'
+    pwd_entry = pwd.getpwuid(os.getuid())
+    name = string.strip(string.splitfields(pwd_entry[4], ',')[0])
+    if name == '':
+	name = pwd_entry[0]
+    return name
 
 class DataFile:
     handle = None
@@ -28,10 +51,15 @@ class DataFile:
         if (not write) and (not create):
             self.handle = Dataset(filename, "r")
         elif create:
-            self.handle = Dataset(filename, "w", format=format)
+            if library == "Scientific":
+                self.handle = Dataset(filename, "w", 
+                                      'Created ' + time.ctime(time.time())
+                                      + ' by ' + getUserName())
+            else:
+                self.handle = Dataset(filename, "w", format=format)
         else:
             self.handle = Dataset(filename, "a")
-        
+    
     def close(self):
         if self.handle != None:
             self.handle.close()
@@ -95,7 +123,7 @@ class DataFile:
 
         # Get the variable type
         t = type(data).__name__
-
+        
         if t == 'NoneType':
             print "DataFile: None passed as data to write. Ignoring"
             return
@@ -103,7 +131,7 @@ class DataFile:
         if t == 'ndarray':
             # Numpy type
             t = data.dtype.str
-
+        
         try:
             # See if the variable already exists
             var = self.handle.variables[name]
@@ -165,10 +193,18 @@ class DataFile:
             dims = tuple( map(find_dim, dlist) )
             
             # Create the variable
-            var = self.handle.createVariable(name, t, dims)
+            if library == "Scientific":
+                if t == 'int':
+                    print "Integer"
+                    tc = Int
+                else:
+                    tc = Float
+                var = self.handle.createVariable(name, tc, dims)
+            else:
+                var = self.handle.createVariable(name, t, dims)
 
         # Write the data
         var[:] = data
-
+        #var = data
         
             

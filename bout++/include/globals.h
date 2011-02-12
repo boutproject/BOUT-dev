@@ -56,48 +56,46 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core
 
 ///////////////////////////////////////////////////////////////
 
-/// Options file object
-GLOBAL OptionFile options;
-
 /// Define for reading options which passes the variable name
-#define OPTION(var, def) options.get(#var, var, def)
+#define OPTION(options, var, def)  \
+  options->get(#var, var, def)
 
-#define OPTION2(var1, var2, def){ \
-    options.get(#var1, var1, def);  \
-    options.get(#var2, var2, def);}
+#define OPTION2(options, var1, var2, def){ \
+    options->get(#var1, var1, def);  \
+    options->get(#var2, var2, def);}
 
-#define OPTION3(var1, var2, var3, def){          \
-    options.get(#var1, var1, def);               \
-    options.get(#var2, var2, def);               \
-    options.get(#var3, var3, def);}
+#define OPTION3(options, var1, var2, var3, def){  \
+    options->get(#var1, var1, def);               \
+    options->get(#var2, var2, def);               \
+    options->get(#var3, var3, def);}
 
-#define OPTION4(var1, var2, var3, var4, def){    \
-    options.get(#var1, var1, def);               \
-    options.get(#var2, var2, def);               \
-    options.get(#var3, var3, def);               \
-    options.get(#var4, var4, def);}
+#define OPTION4(options, var1, var2, var3, var4, def){ \
+    options->get(#var1, var1, def);               \
+    options->get(#var2, var2, def);               \
+    options->get(#var3, var3, def);               \
+    options->get(#var4, var4, def);}
 
-#define OPTION5(var1, var2, var3, var4, var5, def){     \
-    options.get(#var1, var1, def);                      \
-    options.get(#var2, var2, def);                      \
-    options.get(#var3, var3, def);                      \
-    options.get(#var4, var4, def);                      \
-    options.get(#var5, var5, def);}
+#define OPTION5(options, var1, var2, var3, var4, var5, def){ \
+    options->get(#var1, var1, def);                      \
+    options->get(#var2, var2, def);                      \
+    options->get(#var3, var3, def);                      \
+    options->get(#var4, var4, def);                      \
+    options->get(#var5, var5, def);}
 
-#define OPTION6(var1, var2, var3, var4, var5, var6, def){        \
-    options.get(#var1, var1, def);                               \
-    options.get(#var2, var2, def);                               \
-    options.get(#var3, var3, def);                               \
-    options.get(#var4, var4, def);                               \
-    options.get(#var5, var5, def);                               \
-    options.get(#var6, var6, def);}
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
+    options->get(#var1, var1, def);                               \
+    options->get(#var2, var2, def);                               \
+    options->get(#var3, var3, def);                               \
+    options->get(#var4, var4, def);                               \
+    options->get(#var5, var5, def);                               \
+    options->get(#var6, var6, def);}
 
 /// Macro to replace bout_solve, passing variable name
 #define SOLVE_FOR(var) bout_solve(var, #var)
 #define SOLVE_FOR2(var1, var2) { \
-  bout_solve(var1, #var1);        \
+  bout_solve(var1, #var1);       \
   bout_solve(var2, #var2);}
-#define SOLVE_FOR3(var1, var2, var3) {  \
+#define SOLVE_FOR3(var1, var2, var3) { \
   bout_solve(var1, #var1);             \
   bout_solve(var2, #var2);             \
   bout_solve(var3, #var3);}
@@ -106,13 +104,13 @@ GLOBAL OptionFile options;
   bout_solve(var2, #var2);             \
   bout_solve(var3, #var3);             \
   bout_solve(var4, #var4);}
-#define SOLVE_FOR5(var1, var2, var3, var4, var5) {    \
+#define SOLVE_FOR5(var1, var2, var3, var4, var5) { \
   bout_solve(var1, #var1);             \
   bout_solve(var2, #var2);             \
   bout_solve(var3, #var3);             \
   bout_solve(var4, #var4);             \
   bout_solve(var5, #var5);}
-#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) {      \
+#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) { \
   bout_solve(var1, #var1);             \
   bout_solve(var2, #var2);             \
   bout_solve(var3, #var3);             \
@@ -170,7 +168,7 @@ GLOBAL MsgStack msg_stack;
     mesh->get(var1, #var1); \
     mesh->get(var2, #var2); \
     mesh->get(var3, #var3); \
-    mesh->get(var4, #var4);}
+    mesh->get(var4, #var4); }
 #define GRID_LOAD5(var1, var2, var3, var4, var5) {\
     mesh->get(var1, #var1); \
     mesh->get(var2, #var2); \
@@ -190,7 +188,7 @@ GLOBAL MsgStack msg_stack;
 // Timing information
 GLOBAL BoutReal wtime_invert; //< Time spent performing inversions
 
-GLOBAL bool non_uniform;  // Use corrections for non-uniform meshes
+GLOBAL bool non_uniform; // Use corrections for non-uniform meshes
 
 // Error handling (bout++.cpp)
 void bout_error();
@@ -198,7 +196,6 @@ void bout_error(const char *str);
 
 #undef GLOBAL
 #undef SETTING
-
 
 /// Concise way to write time-derivatives
 #define ddt(f) (*((f).timeDeriv()))
