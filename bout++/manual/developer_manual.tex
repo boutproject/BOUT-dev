@@ -31,7 +31,7 @@
         columns=fixed,
         upquote=true,
         extendedchars=true,
-        morekeywords={Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
+        morekeywords={string,Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
 }
 
 %% Modify margins
@@ -1650,17 +1650,129 @@ class DataFormat {
 };
 \end{lstlisting}
 
+\section{Options}
+
+To control the behaviour of BOUT++ a set of options is used, with
+options organised into sections which can be nested. To represent this
+tree structure there is the \lstinline!Options! class defined in
+\file{bout++/include/options.h}
+\begin{lstlisting}
+class Options {
+ public:
+  // Setting options
+  void set(const string &key,const int &val,const string &source="");
+  ...
+  // Testing if set
+  bool isSet(const string &key);
+  // Getting options
+  void get(const string &key,int &val,const int &def,bool log=true);
+  ...
+  // Get a subsection. Creates if doesn't exist
+  Options* getSection(const string &name);
+};
+\end{lstlisting}
+
+To access the options, there is a static function (singleton)
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+\end{lstlisting}
+which gives the top-level (root) options class. Setting options
+is done using the \lstinline!set()! methods which are currently
+defined for \lstinline!int!, \lstinline!BoutReal!, \lstinline!bool! and
+\lstinline!string!. For example:
+\begin{lstlisting}
+  options->set("nout", 10);      // Set an integer
+  options->set("restart", true); // A bool
+\end{lstlisting}
+Often it's useful to see where an option setting has come from
+e.g. the name of the options file or ``command line''. To specify
+a source, pass it as a third argument:
+\begin{lstlisting}
+  options->set("nout", 10, "manual");
+\end{lstlisting}
+To create a section, just use \lstinline!getSection!: if it doesn't
+exist it will be created.
+\begin{lstlisting}
+  Options *section = options->getSection("mysection");
+  section->set("myswitch", true);
+\end{lstlisting}
+
+To get options, use the \lstinline!get()! method which take 
+the name of the option, the variable to set, and the default value.
+\begin{lstlisting}
+  int nout;
+  options->get("nout", nout, 1);
+\end{lstlisting}
+Internally, \lstinline!Options! converts all types to strings
+and does type conversion when needed, so the following code would work:
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  options->set("test", "123");
+  int val;
+  options->get("test", val, 1);
+\end{lstlisting}
+This is because often the type of the option is not known
+at the time when it's set, but only when it's requested.
+
+By default, the \lstinline!get! methods output a message to
+the log files giving the value used and the source of that value.
+To suppress this, set the \lstinline!log! argument to \lstinline!false!:
+\begin{lstlisting}
+  options->get("test", val, 1, false);
+\end{lstlisting}
+
+\subsection{Reading options}
+
+To allow different input file formats, each file parser implements
+the \lstinline!OptionParser! interface defined in
+\file{bout++/src/sys/options/optionparser.h}
+
+\begin{lstlisting}
+class OptionParser {
+ public:
+  virtual void read(Options *options, const string &filename) = 0;
+ private:
+};
+\end{lstlisting}
+and so just needs to implement a single function which reads a
+given file name and inserts the options into the given \lstinline!Options!
+object.
+
+To use these parsers and read in a file, there is the
+\lstinline!OptionsReader! class defined in
+\file{bout++/include/optionsreader.h}
+\begin{lstlisting}
+class OptionsReader {
+ public:
+ void read(Options *options, const char *file, ...);
+ void parseCommandLine(Options *options, int argc, char **argv);
+};
+\end{lstlisting}
+This is a singleton object which is accessed using
+\begin{lstlisting}
+  OptionsReader *reader = OptionsReader::getInstance();
+\end{lstlisting}
+so to read a file \file{BOUT.inp} in a directory given in a variable
+\lstinline!data_dir! the following code is used in \file{bout++.cpp}:
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  OptionsReader *reader = OptionsReader::getInstance();
+  reader->read(options, "%s/BOUT.inp", data_dir);
+\end{lstlisting}
+
+To parse command line arguments as options, the \lstinline!OptionsReader!
+class has a method:
+\begin{lstlisting}
+  reader->parseCommandLine(options, argc, argv);
+\end{lstlisting}
+This is currently quite rudimentary and needs improving.
+
 \section{Miscellaneous}
 
 Other small modules which don't really fit into any system, but are needed.
 
 
 \subsection{Printing messages}
-
-
-
-\subsection{Reading input options}
-
 
 
 \subsection{Error handling}
