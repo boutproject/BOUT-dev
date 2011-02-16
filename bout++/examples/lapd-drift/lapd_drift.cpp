@@ -308,23 +308,22 @@ int physics_init(bool restarting)
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
-  comms.add(phi);
-  comms.add(Apar);
+  comms.add(phi, Apar);
 
   // Add any other variables to be dumped to file
   dump.add(phi,  "phi",  1);
   dump.add(Apar, "Apar", 1);
   dump.add(jpar, "jpar", 1);
 
-  dump.add(Ni0, "Ni0", 0);
-  dump.add(Te0, "Te0", 0);
-  dump.add(Ti0, "Ti0", 0);
+  SAVE_ONCE(Ni0);
+  SAVE_ONCE(Te0);
+  SAVE_ONCE(Ti0);
 
-  dump.add(Te_x,  "Te_x", 0);
-  dump.add(Ti_x,  "Ti_x", 0);
-  dump.add(Ni_x,  "Ni_x", 0);
-  dump.add(rho_s, "rho_s", 0);
-  dump.add(wci,   "wci", 0);
+  SAVE_ONCE(Te_x);
+  SAVE_ONCE(Ti_x);
+  SAVE_ONCE(Ni_x);
+  SAVE_ONCE(rho_s);
+  SAVE_ONCE(wci);
   
   return(0);
 }
@@ -551,9 +550,7 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
           
           // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
           BoutReal Jpp = 0.25*( (p[jx][jy][jzp] - p[jx][jy][jzm])*
-                                (f[jx+1][jy] - f[jx-1][jy]) -
-                                (p[jx+1][jy][jz] - p[jx-1][jy][jz])*
-                                (f[jx][jy] - f[jx][jy]) )
+                                (f[jx+1][jy] - f[jx-1][jy]) )
             / (mesh->dx[jx][jy] * mesh->dz);
 
           // J+x

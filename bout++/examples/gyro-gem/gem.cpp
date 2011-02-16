@@ -722,15 +722,7 @@ int physics_run(BoutReal time)
   K_par = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qipar;
   K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
   K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
-
-  /*
-  Field3D delp2 = Delp2(Ni);
-  delp2.applyBoundary("neumann");
-  mesh->communicate(delp2);
-  xzdamp = nu_perp*Delp2( delp2 * ( (1./mesh->Bxy)^4 ) );
-  xzdamp.applyBoundary("dirichlet");
-  */
-
+  
   if(ni_ddt) {
     ddt(Ni) = -UE_Grad(Ni0, phi_G);
     if(ni_ni1)
