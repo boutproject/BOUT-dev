@@ -38,6 +38,7 @@
 
 #include "globals.h"
 #include "initialprofiles.h"
+#include "boutexception.h"
 
 #include <math.h>
 #include <string.h>
@@ -124,14 +125,14 @@ int initial_profile(const char *name, Field3D &var)
   // Gaussian peak location
   
   FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "ys_s0", xs_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "zs_s0", xs_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "zs_s0", zs_s0, 0.5);
 
   // Gaussian width
 
   FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "ys_wd", xs_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "zs_wd", xs_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "zs_wd", zs_wd, 0.2);
 
   for (jx=0; jx < mesh->ngx; jx++) {
     BoutReal xcoord = mesh->GlobalX(jx);
@@ -145,7 +146,12 @@ int initial_profile(const char *name, Field3D &var)
 	cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
 	var[jx][jy][jz] = scale*cx*cy*cz;
-	
+        if(!finite(var[jx][jy][jz])) {
+	  output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var[jx][jy][jz]);
+          output.write("%e, %e, %e, %e, %e, %e\n",
+             ycoord, ys_s0, ys_wd, ys_mode, ys_phase, ys_opt);
+          throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
+        }
 	BoutReal ts; ///< Twist-shift angle
 	if(mesh->surfaceClosed(jx, ts) && Ballooning) {
 	  // Use a truncated Ballooning transform to enforce periodicity
@@ -237,12 +243,12 @@ int initial_profile(const char *name, Field2D &var)
   // Gaussian peak location
 
   FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "ys_s0", xs_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
 
   // Gaussian width
   
   FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "ys_wd", xs_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
   
   for (jx=0; jx < mesh->ngx; jx++) {
     BoutReal xcoord = mesh->GlobalX(jx);
