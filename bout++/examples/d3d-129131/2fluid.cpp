@@ -144,49 +144,51 @@ int physics_init(bool restarting)
   // READ OPTIONS
 
   // Read some parameters
-  options.setSection("2fluid");
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("2fluid");
+  
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(estatic,     false);
-  OPTION(ZeroElMass,  false);
-  OPTION(zeff,        1.0);
-  OPTION(nu_perp,     0.0);
-  OPTION(ShearFactor, 1.0);
-  OPTION(OhmPe,       true);
-  OPTION(bout_jpar,   false);
-  OPTION(bout_exb,    false);
-  OPTION(curv_upwind, false);
+  OPTION(options, estatic,     false);
+  OPTION(options, ZeroElMass,  false);
+  OPTION(options, zeff,        1.0);
+  OPTION(options, nu_perp,     0.0);
+  OPTION(options, ShearFactor, 1.0);
+  OPTION(options, OhmPe,       true);
+  OPTION(options, bout_jpar,   false);
+  OPTION(options, bout_exb,    false);
+  OPTION(options, curv_upwind, false);
 
-  OPTION(nuIonNeutral, -1.); 
+  OPTION(options, nuIonNeutral, -1.); 
 
-  OPTION(bkgd,      2);
-  OPTION(iTe_dc,    2);
+  OPTION(options, bkgd,      2);
+  OPTION(options, iTe_dc,    2);
 
-  OPTION(stagger, false);
+  OPTION(options, stagger, false);
 
-  OPTION(lambda,   -10.);
+  OPTION(options, lambda,   -10.);
   if(lambda > 0.) {
     output.write("WARNING: lambda should be < 0. Reversing sign\n");
     lambda *= -1.0;
   }
 
-  OPTION(relax_flat_bndry, true);
+  OPTION(options, relax_flat_bndry, true);
 
-  OPTION(laplace_extra_rho_term, false);
-  OPTION(vort_include_pi, false);
+  OPTION(options, laplace_extra_rho_term, false);
+  OPTION(options, vort_include_pi, false);
 
-  options.get("lowPass_z",  lowPass_z,  -1);
+  options->get("lowPass_z",  lowPass_z,  -1);
 
-  options.get("phi_flags",   phi_flags,   0);
-  options.get("apar_flags",  apar_flags,  0);
-
-  options.get("rho",   "evolve", evolve_rho,   true);
-  options.get("Te",    "evolve", evolve_te,    true);
-  options.get("Ni",    "evolve", evolve_ni,    true);
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
-  options.get("Vi",    "evolve", evolve_vi,    true);
-  options.get("Ti",    "evolve", evolve_ti,    true);
+  options->get("phi_flags",   phi_flags,   0);
+  options->get("apar_flags",  apar_flags,  0);
+  
+  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
+  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
+  (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
+  (globalOptions->getSection("te"))->get("evolve", evolve_te,   true);
+  (globalOptions->getSection("ti"))->get("evolve", evolve_ti,   true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
   
   if(ZeroElMass)
     evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
@@ -195,63 +197,63 @@ int physics_init(bool restarting)
   // Equation terms
 
   if(evolve_ni) {
-    options.setSection("Ni");
-    options.get("ni1_phi0", ni_ni1_phi0, false);
-    options.get("ni0_phi1", ni_ni0_phi1, false);
-    options.get("ni1_phi1", ni_ni1_phi1, false);
-    options.get("nit_phit", ni_nit_phit, false);
-    options.get("vi1_ni0",  ni_vi1_ni0, false);
-    options.get("vi0_ni1",  ni_vi0_ni1, false);
-    options.get("vi1_ni1",  ni_vi1_ni1, false);
-    options.get("vit_nit",  ni_vit_nit, false);
-    options.get("jpar1",    ni_jpar1,  false);
-    options.get("pe1",      ni_pe1,    false);
-    options.get("ni0_curv_phi1", ni_ni0_curv_phi1, false);
-    options.get("ni1_curv_phi0", ni_ni1_curv_phi0, false);
-    options.get("ni1_curv_phi1", ni_ni1_curv_phi1, false);
-    options.get("nit_curv_phit", ni_nit_curv_phit, false);
+    options = globalOptions->getSection("Ni");
+    options->get("ni1_phi0", ni_ni1_phi0, false);
+    options->get("ni0_phi1", ni_ni0_phi1, false);
+    options->get("ni1_phi1", ni_ni1_phi1, false);
+    options->get("nit_phit", ni_nit_phit, false);
+    options->get("vi1_ni0",  ni_vi1_ni0, false);
+    options->get("vi0_ni1",  ni_vi0_ni1, false);
+    options->get("vi1_ni1",  ni_vi1_ni1, false);
+    options->get("vit_nit",  ni_vit_nit, false);
+    options->get("jpar1",    ni_jpar1,  false);
+    options->get("pe1",      ni_pe1,    false);
+    options->get("ni0_curv_phi1", ni_ni0_curv_phi1, false);
+    options->get("ni1_curv_phi0", ni_ni1_curv_phi0, false);
+    options->get("ni1_curv_phi1", ni_ni1_curv_phi1, false);
+    options->get("nit_curv_phit", ni_nit_curv_phit, false);
   }    
 
   if(evolve_rho) {
-    options.setSection("rho");
-    options.get("rho0_phi1", rho_rho0_phi1, false);
-    options.get("rho1_phi0", rho_rho1_phi0, false);
-    options.get("rho1_phi1", rho_rho1_phi1, false);
-    options.get("vi1_rho0",  rho_vi1_rho0, false);
-    options.get("vi0_rho1",  rho_vi0_rho1, false);
-    options.get("vi1_rho1",  rho_vi1_rho1, false);
-    options.get("pei1",   rho_pei1, false);
-    options.get("jpar1",  rho_jpar1, false);
-    options.get("rho1",   rho_rho1, false);
+    options = globalOptions->getSection("rho");
+    options->get("rho0_phi1", rho_rho0_phi1, false);
+    options->get("rho1_phi0", rho_rho1_phi0, false);
+    options->get("rho1_phi1", rho_rho1_phi1, false);
+    options->get("vi1_rho0",  rho_vi1_rho0, false);
+    options->get("vi0_rho1",  rho_vi0_rho1, false);
+    options->get("vi1_rho1",  rho_vi1_rho1, false);
+    options->get("pei1",   rho_pei1, false);
+    options->get("jpar1",  rho_jpar1, false);
+    options->get("rho1",   rho_rho1, false);
   }
   
   if(evolve_vi) {
-    options.setSection("vi");
-    options.get("vi0_phi1", vi_vi0_phi1, false);
-    options.get("vi1_phi0", vi_vi1_phi0, false);
-    options.get("vi1_phi1", vi_vi1_phi1, false);
-    options.get("vit_phit", vi_vit_phit, false);
-    options.get("vi1_vi0", vi_vi1_vi0, false);
-    options.get("vi0_vi1", vi_vi0_vi1, false);
-    options.get("vi1_vi1", vi_vi1_vi1, false);
-    options.get("vit_vit", vi_vit_vit, false);
-    options.get("pei1", vi_pei1, false);
-    options.get("peit", vi_peit, false);
-    options.get("vi1", vi_vi1, false);
+    options = globalOptions->getSection("vi");
+    options->get("vi0_phi1", vi_vi0_phi1, false);
+    options->get("vi1_phi0", vi_vi1_phi0, false);
+    options->get("vi1_phi1", vi_vi1_phi1, false);
+    options->get("vit_phit", vi_vit_phit, false);
+    options->get("vi1_vi0", vi_vi1_vi0, false);
+    options->get("vi0_vi1", vi_vi0_vi1, false);
+    options->get("vi1_vi1", vi_vi1_vi1, false);
+    options->get("vit_vit", vi_vit_vit, false);
+    options->get("pei1", vi_pei1, false);
+    options->get("peit", vi_peit, false);
+    options->get("vi1", vi_vi1, false);
   }
 
   if(evolve_te) {
-    options.setSection("te");
-    options.get("te1_phi0", te_te1_phi0, false);
-    options.get("te0_phi1", te_te0_phi1, false);
-    options.get("te1_phi1", te_te1_phi1, false);
+    options = globalOptions->getSection("te");
+    options->get("te1_phi0", te_te1_phi0, false);
+    options->get("te0_phi1", te_te0_phi1, false);
+    options->get("te1_phi1", te_te1_phi1, false);
   }
 
   if(evolve_ti) {
-    options.setSection("ti");
-    options.get("ti1_phi0", ti_ti1_phi0, false);
-    options.get("ti0_phi1", ti_ti0_phi1, false);
-    options.get("ti1_phi1", ti_ti1_phi1, false);
+    options = globalOptions->getSection("ti");
+    options->get("ti1_phi0", ti_ti1_phi0, false);
+    options->get("ti0_phi1", ti_ti0_phi1, false);
+    options->get("ti1_phi1", ti_ti1_phi1, false);
   }
 
   ////////////////////////////////////////////////////////
@@ -365,26 +367,35 @@ int physics_init(bool restarting)
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho, "rho");
+    bout_solve(rho,   "rho");
     comms.add(rho);
     output.write("rho\n");
-  }else
+  }else {
     initial_profile("rho", rho);
+    rho.setBoundary("rho");
+    rho.applyBoundary();
+  }
 
   if(evolve_ni) {
-    bout_solve(Ni, "Ni");
+    bout_solve(Ni,    "Ni");
     comms.add(Ni);
     output.write("ni\n");
-  }else
+  }else {
     initial_profile("Ni", Ni);
+    Ni.setBoundary("Ni");
+    Ni.applyBoundary();
+  }
 
   if(evolve_te) {
-    bout_solve(Te, "Te");
+    bout_solve(Te,    "Te");
     comms.add(Te);
     
     output.write("te\n");
-  }else
+  }else {
     initial_profile("Te", Te);
+    Te.setBoundary("Te");
+    Te.applyBoundary();
+  }
 
   if(evolve_ajpar) {
     bout_solve(Ajpar, "Ajpar");
@@ -394,21 +405,32 @@ int physics_init(bool restarting)
     initial_profile("Ajpar", Ajpar);
     if(ZeroElMass)
       dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+    
+    Ajpar.setBoundary("Ajpar");
+    Ajpar.applyBoundary();
   }
 
   if(evolve_vi) {
     bout_solve(Vi, "Vi");
     comms.add(Vi);
     output.write("vi\n");
-  }else
+  }else {
     initial_profile("Vi", Vi);
+    Vi.setBoundary("Vi");
+    Vi.applyBoundary();
+  }
 
   if(evolve_ti) {
     bout_solve(Ti, "Ti");
     comms.add(Ti);
     output.write("ti\n");
-  }else
+  }else {
     initial_profile("Ti", Ti);
+    Ti.setBoundary("Ti");
+    Ti.applyBoundary();
+  }
+
+  jpar.setBoundary("jpar");
 
   if(!restarting) {
     // Smooth the initial perturbation a few times (includes comms)
@@ -426,34 +448,9 @@ int physics_init(bool restarting)
     rho = smooth_y(rho);
     
     // Make sure initial perturbation obeys boundary condition
-    
-    if(relax_flat_bndry) {
-      // Set all flat
-      bndry_inner_flat(rho);
-      bndry_sol_flat(rho);
-      
-      bndry_inner_flat(Te);
-      bndry_sol_flat(Te);
-      
-      bndry_inner_flat(Ti);
-      bndry_sol_flat(Ti);
-      
-      bndry_inner_flat(Ni);
-      bndry_sol_flat(Ni);
-      
-      bndry_inner_flat(Ajpar);
-      bndry_sol_flat(Ajpar);
-      
-      bndry_inner_flat(Vi);
-      bndry_sol_flat(Vi);
-    }else {
-      apply_boundary(rho, "rho");
-      apply_boundary(Te, "Te");
-      apply_boundary(Ni, "Ni");
-      apply_boundary(Ajpar, "Ajpar");
-      apply_boundary(Vi, "Vi");
-      apply_boundary(Ti, "Ti");
-    }
+    // Normally this is taken care of, but have modified initial
+    rho.applyBoundary();
+    Ni.applyBoundary();
   }
   
   ////////////////////////////////////////////////////////
@@ -588,9 +585,6 @@ int physics_run(BoutReal t)
 	  jpar += (Te0*Grad_par_LtoC(Ni)) / (fmei*0.51*nu);
       }
       
-      // Set toroidal  boundary condition on jpar
-      bndry_toroidal(jpar);
-      
       // Need to communicate jpar
       mesh->communicate(jpar);
       
@@ -627,7 +621,7 @@ int physics_run(BoutReal t)
 	  }
     }
     
-    apply_boundary(jpar, "jpar");
+    jpar.applyBoundary();
     
     Ve = Vi - jpar/Ni0;
     Ajpar = Ve;
@@ -897,65 +891,6 @@ int physics_run(BoutReal t)
   }
   }
   
-  ////////////////////////////////////////////////////////
-  // RADIAL BOUNDARY CONDITIONS
-
-  if(relax_flat_bndry) {
-    // BOUT-06 style relaxing boundary conditions
-    
-    // Zero-gradient at target plates 
-    
-    if(evolve_rho) {
-      bndry_inner_relax_flat(ddt(rho), rho, lambda);
-      bndry_sol_relax_flat(ddt(rho), rho, lambda);
-      
-      bndry_ydown_flat(ddt(rho));
-      bndry_yup_flat(ddt(rho));
-    }
-      
-    if(evolve_ni) {
-      bndry_inner_relax_flat(ddt(Ni), Ni, lambda);
-      bndry_sol_relax_flat(ddt(Ni), Ni, lambda);
-      
-      bndry_ydown_flat(ddt(Ni));
-      bndry_yup_flat(ddt(Ni));
-    }
-
-    if(evolve_te) {
-      bndry_inner_relax_flat(ddt(Te), Te, lambda);
-      bndry_sol_relax_flat(ddt(Te), Te, lambda);
-
-      bndry_ydown_flat(ddt(Te));
-      bndry_yup_flat(ddt(Te));
-    }
-    
-    if(evolve_ti) {
-      bndry_inner_relax_flat(ddt(Ti), Ti, lambda);
-      bndry_sol_relax_flat(ddt(Ti), Ti, lambda);
-
-      bndry_ydown_flat(ddt(Ti));
-      bndry_yup_flat(ddt(Ti));
-    }
-
-    if(evolve_ajpar) {
-      bndry_inner_relax_flat(ddt(Ajpar), Ajpar, lambda);
-      bndry_sol_relax_flat(ddt(Ajpar), Ajpar, lambda);
-      
-      bndry_ydown_flat(ddt(Ajpar));
-      bndry_yup_flat(ddt(Ajpar));
-    }
-    
-  }else {
-    // Use the boundary condition specified in BOUT.inp
-    
-    apply_boundary(ddt(rho), "rho");
-    apply_boundary(ddt(Te), "Te");
-    apply_boundary(ddt(Ni), "Ni");
-    apply_boundary(ddt(Ajpar), "Ajpar");
-    apply_boundary(ddt(Vi), "Vi");
-    apply_boundary(ddt(Ti), "Ti");
-  }
-
   return(0);
 }
 

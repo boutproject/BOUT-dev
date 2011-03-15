@@ -3,6 +3,10 @@
  *
  * ChangeLog
  * =========
+ * 
+ * 2011-02-12 Ben Dudson <bd512@york.ac.uk>
+ *    * Changed to use new options system. For now the structure of the
+ *      options is the same, but this could be modified more easily in future
  *
  * 2010-05-12 Ben Dudson <bd512@york.ac.uk>
  *    
@@ -34,6 +38,7 @@
 
 #include "globals.h"
 #include "initialprofiles.h"
+#include "boutexception.h"
 
 #include <math.h>
 #include <string.h>
@@ -47,7 +52,7 @@ bool ShiftInitial; // Shift initial profile? (default true if shifting in X)
 bool Ballooning;   // Use ballooning transform to enforce periodicity
 
 // Get initial profile options
-void get_profile_opts()
+void get_profile_opts(Options *opt)
 {
   static bool gotopts = false;
 
@@ -56,14 +61,20 @@ void get_profile_opts()
   gotopts = true;
   
   output.write("Initial profile global options\n");
-  options.setSection("");
   
   bool TwistShift;
-  OPTION(TwistShift, false);
-  OPTION(Ballooning, TwistShift); // Use if have TwistShift
-  OPTION(ShiftInitial, mesh->ShiftXderivs && (!Ballooning));
+  OPTION(opt, TwistShift, false);
+  OPTION(opt, Ballooning, TwistShift); // Use if have TwistShift
+  OPTION(opt, ShiftInitial, mesh->ShiftXderivs && (!Ballooning));
   output.write("\n");
 }
+
+// Macro which looks first in one section then another for an option
+#define FIND_OPT(opt1, opt2, name, var, def) {  \
+    if(opt1->isSet(name)) {                     \
+      opt1->get(name, var, def);                \
+    }else                                       \
+      opt2->get(name, var, def);}
 
 int initial_profile(const char *name, Field3D &var)
 {
@@ -80,52 +91,48 @@ int initial_profile(const char *name, Field3D &var)
 
   /////////// get options //////////
   
-  get_profile_opts();
+  Options *globalOpts = Options::getRoot();
+  get_profile_opts(globalOpts);
   
   output.write("Setting initial value of %s\n", name);
   
-  // Look in the section with the variable name
-  // Otherwise look for global settings
-  options.get(name, "All", "scale", scale, 1.0e-4);
-
-  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal  
-  options.get(name, "All", "xs_opt", xs_opt, 1);
-
-  options.get(name, "All", "ys_opt", ys_opt, 0);
+  // Get the section for all variables
+  Options *allOpts = globalOpts->getSection("All");
   
-  options.get(name, "All", "zs_opt", zs_opt, 2);
+  // Get the section for this specific variable 
+  Options *varOpts = globalOpts->getSection(name);
+  
+  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
+
+  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
+  
+  FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
+  FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
+  FIND_OPT(varOpts, allOpts, "zs_opt", zs_opt, 2);
 
   // Mode number (for sinusoidal)
   
-    options.get(name, "All", "xs_mode", xs_mode, 4);
-
-    options.get(name, "All", "ys_mode", ys_mode, 4);
-
-    options.get(name, "All", "zs_mode", zs_mode, 4);
+  FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
+  FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
+  FIND_OPT(varOpts, allOpts, "zs_mode", zs_mode, 4);
 
   // Phase (for sinusoidal), in units of pi
 
-    options.get(name, "All", "xs_phase", xs_phase, 0.);
-
-    options.get(name, "All", "ys_phase", ys_phase, 0.);
-
-    options.get(name, "All", "zs_phase", zs_phase, 0.);
+  FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
+  FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
+  FIND_OPT(varOpts, allOpts, "zs_phase", zs_phase, 0.);
   
   // Gaussian peak location
-      
-    options.get(name, "All", "xs_s0", xs_s0, 0.5);
-
-    options.get(name, "All", "ys_s0", ys_s0, 0.5);
-      
-    options.get(name, "All", "zs_s0", zs_s0, 0.5);
+  
+  FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "zs_s0", zs_s0, 0.5);
 
   // Gaussian width
 
-    options.get(name, "All", "xs_wd", xs_wd, 0.2);
-
-    options.get(name, "All", "ys_wd", ys_wd, 0.2);
-
-    options.get(name, "All", "zs_wd", zs_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "zs_wd", zs_wd, 0.2);
 
   for (jx=0; jx < mesh->ngx; jx++) {
     BoutReal xcoord = mesh->GlobalX(jx);
@@ -139,7 +146,12 @@ int initial_profile(const char *name, Field3D &var)
 	cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
 	var[jx][jy][jz] = scale*cx*cy*cz;
-	
+        if(!finite(var[jx][jy][jz])) {
+	  output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var[jx][jy][jz]);
+          output.write("%e, %e, %e, %e, %e, %e\n",
+             ycoord, ys_s0, ys_wd, ys_mode, ys_phase, ys_opt);
+          throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
+        }
 	BoutReal ts; ///< Twist-shift angle
 	if(mesh->surfaceClosed(jx, ts) && Ballooning) {
 	  // Use a truncated Ballooning transform to enforce periodicity
@@ -200,44 +212,44 @@ int initial_profile(const char *name, Field2D &var)
 
   /////////// get options //////////
   
-  get_profile_opts();
-
+  Options *globalOpts = Options::getRoot();
+  get_profile_opts(globalOpts);
+  
+  // Get the section for all variables
+  Options *allOpts = globalOpts->getSection("All");
+  
+  // Get the section for this specific variable 
+  Options *varOpts = globalOpts->getSection(name);
+  
   // Size of the initial perturbation
-  // Look in the section with the variable name
-  // Otherwise look for global settings
-  options.get(name, "All", "scale", scale, 1e-4);
+  
+  FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
 
   // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
-
-    options.get(name, "All", "xs_opt", xs_opt, 1);
-
-    options.get(name, "All", "ys_opt", ys_opt, 0);
+  
+  FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
+  FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
 
   // Mode number (for sinusoidal)
-
-    options.get(name, "All", "xs_mode", xs_mode, 4);
-
-    options.get(name, "All", "ys_mode", ys_mode, 4);
-
+  
+  FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
+  FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
+  
   // Phase (for sinusoidal), in units of pi
 
-    options.get(name, "All", "xs_phase", xs_phase, 0.);
-
-    options.get(name, "All", "ys_phase", ys_phase, 0.);
+  FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
+  FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
   
   // Gaussian peak location
 
-    options.get(name, "All", "xs_s0", xs_s0, 0.5);
-
-    options.get(name, "All", "ys_s0", ys_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
+  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
 
   // Gaussian width
-
-    options.get(name, "All", "xs_wd", xs_wd, 0.2);
-
-    options.get(name, "All", "ys_wd", ys_wd, 0.2);
   
-
+  FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
+  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
+  
   for (jx=0; jx < mesh->ngx; jx++) {
     BoutReal xcoord = mesh->GlobalX(jx);
     for (jy=0; jy < mesh->ngy; jy++) {

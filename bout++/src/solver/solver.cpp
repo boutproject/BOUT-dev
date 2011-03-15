@@ -381,9 +381,9 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   output.write("Initialising solver\n");
   
   /// GET GLOBAL OPTIONS
-  options.setSection("");
+  Options *options = Options::getRoot();
 
-  options.get("archive", archive_restart, -1);
+  options->get("archive", archive_restart, -1);
 /*    archive_restart = -1; // Not archiving restart files*/
 
   if(archive_restart > 0) {
@@ -394,9 +394,9 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   /// Get restart file extension
   string dump_ext, restart_ext;
 
-  options.get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+  options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
   
-  options.get("restart_format", restart_ext, dump_ext);
+  options->get("restart_format", restart_ext, dump_ext);
 
   /// Set the restart file format
   restart.setFormat(data_format(restart_ext.c_str()));

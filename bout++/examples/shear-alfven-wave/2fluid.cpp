@@ -48,7 +48,7 @@ BoutReal ShearFactor;
 
 int phi_flags, apar_flags; // Inversion flags
 
-// Communication object
+// Group fields together for communication
 FieldGroup comms;
 
 // Field routines
@@ -59,7 +59,7 @@ int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
   
-  output.write("Solving 6-variable 2-fluid equations\n");
+  output << "Solving 6-variable 2-fluid equations\n";
 
   /************* LOAD DATA FROM GRID FILE ****************/
 
@@ -72,7 +72,7 @@ int physics_init(bool restarting)
   GRID_LOAD(phi0);
   GRID_LOAD(rho0);
   GRID_LOAD(Ajpar0);
-  
+
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
   mesh->get(b0xcv, "bxcv"); // b0xkappa terms
@@ -100,26 +100,27 @@ int physics_init(bool restarting)
   /*************** READ OPTIONS *************************/
 
   // Read some parameters
-  options.setSection("2fluid");
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("2fluid");
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(estatic,     false);
-  OPTION(ZeroElMass,  false);
-  OPTION(zeff,        1.0);
-  OPTION(nu_perp,     0.0);
-  OPTION(ShearFactor, 1.0);
+  OPTION(options, estatic,     false);
+  OPTION(options, ZeroElMass,  false);
+  OPTION(options, zeff,        1.0);
+  OPTION(options, nu_perp,     0.0);
+  OPTION(options, ShearFactor, 1.0);
   
-  OPTION(phi_flags,   0);
-  OPTION(apar_flags,  0);
-
-  options.get("rho",   "evolve", evolve_rho,   true);
-  options.get("Te",    "evolve", evolve_te,    true);
-  options.get("Ni",    "evolve", evolve_ni,    true);
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
-  options.get("Vi",    "evolve", evolve_vi,    true);
-  options.get("Ti",    "evolve", evolve_ti,    true);
-
+  OPTION(options, phi_flags,   0);
+  OPTION(options, apar_flags,  0);
+  
+  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
+  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
+  (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
+  (globalOptions->getSection("te"))->get("evolve", evolve_te,   true);
+  (globalOptions->getSection("ti"))->get("evolve", evolve_ti,   true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
+  
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
@@ -220,6 +221,8 @@ int physics_init(bool restarting)
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
+  mesh->geometry();
+  
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT++ which variables to evolve
@@ -270,6 +273,7 @@ int physics_init(bool restarting)
   }else
     initial_profile("Ti", Ti);
   
+  // Set boundary conditions
   jpar.setBoundary("jpar");
 
   /************** SETUP COMMUNICATIONS **************/
@@ -314,7 +318,8 @@ int physics_run(BoutReal t)
 
   // Communicate variables
   mesh->communicate(comms);
-  
+
+
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();
   Tit = Ti0; // + Ti.DC();
@@ -334,9 +339,8 @@ int physics_run(BoutReal t)
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
     jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
-
-
-    // Set boundary conditions on jpar
+    
+    // Set boundary condition on jpar
     jpar.applyBoundary();
     
     // Need to communicate jpar

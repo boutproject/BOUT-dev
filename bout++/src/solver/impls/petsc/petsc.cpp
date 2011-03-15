@@ -83,6 +83,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
+
   PetscInt n2d = n2Dvars();       // Number of 2D variables
   PetscInt n3d = n3Dvars();       // Number of 3D variables
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
@@ -138,24 +139,25 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ///////////// GET OPTIONS /////////////
   int MXSUB = mesh->xend - mesh->xstart + 1;
 
-  options.setSection("solver");
-  options.get("mudq", mudq, n3d*(MXSUB+2));
-  options.get("mldq", mldq, n3d*(MXSUB+2));
-  options.get("mukeep", mukeep, 0);
-  options.get("mlkeep", mlkeep, 0);
-  options.get("use_precon", use_precon, false);
-  options.get("precon_dimens", precon_dimens, 50);
-  options.get("precon_tol", precon_tol, 1.0e-4);
-
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  OPTION(options, mudq, n3d*(MXSUB+2));
+  OPTION(options, mldq, n3d*(MXSUB+2));
+  OPTION(options, mukeep, 0);
+  OPTION(options, mlkeep, 0);
+  OPTION(options, use_precon, false);
+  OPTION(options, precon_dimens, 50);
+  OPTION(options, precon_tol, 1.0e-4);
+  
   // Set Sundials tolerances
   BoutReal abstol, reltol;
-  options.get("ATOL", abstol, 1.0e-12);
-  options.get("RTOL", reltol, 1.0e-5);
+  options->get("ATOL", abstol, 1.0e-12);
+  options->get("RTOL", reltol, 1.0e-5);
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
   bool adams_moulton;
-  OPTION(adams_moulton, false);
+  OPTION(options, adams_moulton, false);
   if (adams_moulton) {
     output.write("\tUsing Adams-Moulton implicit multistep method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
@@ -166,12 +168,12 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal initial_tstep;
-  OPTION(initial_tstep, TIMESTEP);
+  OPTION(options, initial_tstep, TIMESTEP);
   ierr = TSSetInitialTimeStep(ts,simtime,initial_tstep);CHKERRQ(ierr);
 
   // Maximum number of steps
   int mxstep;
-  OPTION(mxstep, 500); // Number of steps between outputs
+  OPTION(options, mxstep, 500); // Number of steps between outputs
   mxstep *= NOUT; // Total number of steps
   PetscReal tfinal = NOUT*TIMESTEP; // Final output time'=
   output.write("\tSet mxstep %d, tfinal %g, simtime %g\n",mxstep,tfinal,simtime);
@@ -268,7 +270,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
       PetscInt gi, gj;
-
 
       MatStencil stencil[cols];
       

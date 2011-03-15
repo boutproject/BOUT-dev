@@ -146,25 +146,26 @@ int physics_init(bool restarting)
   //////////////////////////////////
   // Read options
 
-  options.setSection("gem");
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("gem");
   
-  OPTION(adiabatic_electrons, false);
-  OPTION(small_rho_e, true);
-  OPTION(include_grad_par_B, true);
+  OPTION(options, adiabatic_electrons, false);
+  OPTION(options, small_rho_e, true);
+  OPTION(options, include_grad_par_B, true);
   
-  OPTION(Landau, 1.0);
+  OPTION(options, Landau, 1.0);
   
-  OPTION(nu_perp, 0.01); // Artificial perpendicular dissipation
-  OPTION(nu_par, 3e-3);  // Artificial parallel dissipation
+  OPTION(options, nu_perp, 0.01); // Artificial perpendicular dissipation
+  OPTION(options, nu_par, 3e-3);  // Artificial parallel dissipation
   
-  OPTION(phi_flags,  0);
-  OPTION(apar_flags, 0);
+  OPTION(options, phi_flags,  0);
+  OPTION(options, apar_flags, 0);
 
-  OPTION(low_pass_z, -1); // Default is no filtering
+  OPTION(options, low_pass_z, -1); // Default is no filtering
 
-  OPTION(curv_logB, false); // Read in a separate logB variable
+  OPTION(options, curv_logB, false); // Read in a separate logB variable
   
-  OPTION(fix_profiles, false); // Subtract DC components
+  OPTION(options, fix_profiles, false); // Subtract DC components
 
   //////////////////////////////////
   // Read profiles
@@ -197,13 +198,13 @@ int physics_init(bool restarting)
   if(mesh->get(Lbar, "Lbar")) // Try to read from grid file
     if(mesh->get(Lbar, "rmag"))
       Lbar = 1.0;
-  OPTION(Lbar, Lbar); // Override in options file
+  OPTION(options, Lbar, Lbar); // Override in options file
   SAVE_ONCE(Lbar);   // Save in output file
 
   BoutReal AA; // Ion atomic mass
   BoutReal ZZ; // Ion charge
-  OPTION(AA, 2.0); // Deuterium by default
-  OPTION(ZZ, 1.0);
+  OPTION(options, AA, 2.0); // Deuterium by default
+  OPTION(options, ZZ, 1.0);
   
   Tenorm = max(Te0,true); SAVE_ONCE(Tenorm); // Maximum value over the grid
   Ninorm = max(Ni0, true); SAVE_ONCE(Ninorm);
@@ -211,13 +212,13 @@ int physics_init(bool restarting)
   Cs = sqrt(qe*Tenorm / (AA*Mp)); SAVE_ONCE(Cs); // Sound speed in m/s
   
   Tbar = Lbar / Cs; 
-  OPTION(Tbar, Tbar); // Override in options file
+  OPTION(options, Tbar, Tbar); // Override in options file
   SAVE_ONCE(Tbar); // Timescale in seconds
   
   if(mesh->get(Bbar, "Bbar"))
     if(mesh->get(Bbar, "bmag"))
       Bbar = max(Bxy, true); 
-  OPTION(Bbar, Bbar); // Override in options file
+  OPTION(options, Bbar, Bbar); // Override in options file
   SAVE_ONCE(Bbar);
 
   beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
@@ -241,7 +242,6 @@ int physics_init(bool restarting)
   ////////////////////////////////////////////////////
   // Terms in equations
   
-  options.setSection("");
   OPTION6(ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
   OPTION6(apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
   OPTION2(apue_gradB, apue_Rei, true);

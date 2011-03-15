@@ -38,13 +38,12 @@
 #include "derivs.h"
 
 #include "dcomplex.h"
-
+#include "options.h"
 #include "boutexception.h"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-BoutMesh::~BoutMesh()
-{
+BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
   
@@ -53,8 +52,7 @@ BoutMesh::~BoutMesh()
     delete (*it);
 }
 
-int BoutMesh::load()
-{
+int BoutMesh::load() {
 #ifdef CHECK
   int msg = msg_stack.push("BoutMesh::load()");
 #endif
@@ -78,15 +76,14 @@ int BoutMesh::load()
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
 
-  options.setSection("");
-  options.get("MXG", MXG, 2);
-  options.get("MYG", MYG, 2);
+  Options *options = Options::getRoot();
+  options->get("MXG", MXG, 2);
+  options->get("MYG", MYG, 2);
   
-  options.get("NXPE", NXPE, 1); // Decomposition in the radial direction
+  options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
   if((NPES % NXPE) != 0) {
-    output.write("Error: Number of processors (%d) not divisible by NPs in x direction (%d). Aborting\n",
-		 NPES, NXPE);
-    return(1);
+    throw new BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
+                            NPES, NXPE);
   }
 
   NYPE = NPES / NXPE;
@@ -103,9 +100,8 @@ int BoutMesh::load()
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if((MX % NXPE) != 0) {
-    output.write("\tERROR: Cannot split %d X points equally between %d processors\n",
-		 MX, NXPE);
-    return 1;
+    throw new BoutException("Cannot split %d X points equally between %d processors\n",
+                            MX, NXPE);
   }
 
   /// NOTE: No grid data reserved for Y boundary cells - copy from neighbours
@@ -118,9 +114,8 @@ int BoutMesh::load()
   }
   
   /// Get mesh options
-  options.setSection(""); // Global options
   int MZ;
-  OPTION(MZ,           65);
+  OPTION(options, MZ,           65);
   if(!is_pow2(MZ-1)) {
     if(is_pow2(MZ)) {
       MZ++;
@@ -130,16 +125,16 @@ int BoutMesh::load()
       return 1;
     }
   }
-  OPTION(TwistShift,   false);
-  OPTION(TwistOrder,   0);
-  OPTION(ShiftOrder,   0);
-  OPTION(ShiftXderivs, false);
-  OPTION(IncIntShear,  false);
-  OPTION(BoundaryOnCell, false); // Determine location of boundary
-  OPTION(StaggerGrids,   false); // Stagger grids
-  OPTION(periodicX, false); // Periodic in X
+  OPTION(options, TwistShift,   false);
+  OPTION(options, TwistOrder,   0);
+  OPTION(options, ShiftOrder,   0);
+  OPTION(options, ShiftXderivs, false);
+  OPTION(options, IncIntShear,  false);
+  OPTION(options, BoundaryOnCell, false); // Determine location of boundary
+  OPTION(options, StaggerGrids,   false); // Stagger grids
+  OPTION(options, periodicX, false); // Periodic in X
   
-  OPTION(async_send, false); // Whether to use asyncronous sends
+  OPTION(options, async_send, false); // Whether to use asyncronous sends
 
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
@@ -148,16 +143,16 @@ int BoutMesh::load()
     }else
       output.write("%d-point\n", mesh->ShiftOrder);
   }
-
-  options.get("zperiod",   zperiod,      1);
-  if(zperiod == 1) {
-    options.get("ZMIN",         ZMIN,         0.0);
-    options.get("ZMAX",         ZMAX,         1.0);
-    
-    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
-  }else {
+  
+  if(options->isSet("zperiod")) {
+    OPTION(options, zperiod, 1);
     ZMIN = 0.0;
     ZMAX = 1.0 / (double) zperiod;
+  }else {
+    OPTION(options, ZMIN, 0.0);
+    OPTION(options, ZMAX, 1.0);
+    
+    zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
 
   if(TwistShift) {
@@ -323,8 +318,7 @@ int BoutMesh::load()
 
   /// Can have twist-shift in the private flux regions too
   bool twistshift_pf;
-  options.setSection("");
-  OPTION(twistshift_pf, false);
+  OPTION(options, twistshift_pf, false);
   if(twistshift_pf) {
     output << "Adding twist-shift in lower PF region" << endl;
     // Lower PF. Note by default no Twist-Shift used here, so need to switch on
@@ -642,8 +636,7 @@ int BoutMesh::load()
  *****************************************************************************/
 
 /// Get an integer
-int BoutMesh::get(int &ival, const char *name)
-{
+int BoutMesh::get(int &ival, const char *name) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Loading integer: BoutMesh::get(int, %s)", name);
 #endif
@@ -671,8 +664,7 @@ int BoutMesh::get(int &ival, const char *name)
 }
 
 /// A BoutReal number
-int BoutMesh::get(BoutReal &rval, const char *name)
-{
+int BoutMesh::get(BoutReal &rval, const char *name) {
   GridDataSource* s = findSource(name);
   if(s == NULL)
     return 1;
@@ -686,8 +678,7 @@ int BoutMesh::get(BoutReal &rval, const char *name)
   return 0;
 }
 
-int BoutMesh::get(Field2D &var, const char *name, BoutReal def)
-{
+int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   if(name == NULL)
     return 1;
   
@@ -859,8 +850,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def)
   return 0;
 }
 
-int BoutMesh::get(Field2D &var, const string &name, BoutReal def)
-{
+int BoutMesh::get(Field2D &var, const string &name, BoutReal def) {
   return get(var, name.c_str());
 }
 
@@ -875,8 +865,7 @@ int BoutMesh::get(Field2D &var, const string &name, BoutReal def)
   with the BoutReal and imaginary parts of each (positive) frequency
   up to the nyquist frequency.
  */
-int BoutMesh::get(Field3D &var, const char *name)
-{
+int BoutMesh::get(Field3D &var, const char *name) {
   if(name == NULL)
     return 1;
   
@@ -1018,8 +1007,7 @@ int BoutMesh::get(Field3D &var, const char *name)
   return 0;
 }
 
-int BoutMesh::get(Field3D &var, const string &name)
-{
+int BoutMesh::get(Field3D &var, const string &name) {
   return get(var, name.c_str());
 }
 

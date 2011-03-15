@@ -122,32 +122,33 @@ int physics_init(bool restarting)
   /*************** READ OPTIONS *************************/
 
   // Read some parameters
-  options.setSection("2fluid");
-  OPTION(AA, 2.0); // <=> options.get("AA", AA, 1.0);
-  OPTION(ZZ, 1.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("2fluid");
+  OPTION(options, AA, 2.0); // <=> options.get("AA", AA, 1.0);
+  OPTION(options, ZZ, 1.0);
 
-  OPTION(estatic,     false);
-  OPTION(ZeroElMass,  false);
-  OPTION(zeff,        1.0);
-  OPTION(nu_perp,     0.0); 
-  OPTION(ShearFactor, 1.0); 
-  OPTION(nuIonNeutral, -1.);
-  OPTION(arakawa,     false);
-  OPTION(bout_exb,    false);
+  OPTION(options, estatic,     false);
+  OPTION(options, ZeroElMass,  false);
+  OPTION(options, zeff,        1.0);
+  OPTION(options, nu_perp,     0.0); 
+  OPTION(options, ShearFactor, 1.0); 
+  OPTION(options, nuIonNeutral, -1.);
+  OPTION(options, arakawa,     false);
+  OPTION(options, bout_exb,    false);
   
-  OPTION(niprofile, false);
-  OPTION(evolve_source, false);
-  OPTION(source_response, 1.0);
-  OPTION(source_converge, 100.);
+  OPTION(options, niprofile, false);
+  OPTION(options, evolve_source, false);
+  OPTION(options, source_response, 1.0);
+  OPTION(options, source_converge, 100.);
   
-  OPTION(input_source, false);
+  OPTION(options, input_source, false);
 
-  OPTION(phi_flags,   0);
-  OPTION(apar_flags,  0);
+  OPTION(options, phi_flags,   0);
+  OPTION(options, apar_flags,  0);
 
-  OPTION(nonlinear, true);
+  OPTION(options, nonlinear, true);
 
-  OPTION(log_density, false);
+  OPTION(options, log_density, false);
   if(log_density) {
     if(!nonlinear)
       output << "WARNING: logarithmic density => Nonlinear terms enabled\n";
@@ -155,13 +156,13 @@ int physics_init(bool restarting)
   }
 
   // Toroidal filtering
-  OPTION(filter_z,          false);  // Filter a single n
-  OPTION(filter_z_mode,     1);
+  OPTION(options, filter_z,          false);  // Filter a single n
+  OPTION(options, filter_z_mode,     1);
 
   // Check for "evolve" inside variable sections
-  options.get("rho",   "evolve", evolve_rho,   true);
-  options.get("Ni",    "evolve", evolve_ni,    true);
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
+  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
+  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
 
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law

@@ -124,17 +124,18 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   int pvode_mxstep;
   int MXSUB = mesh->xend - mesh->xstart + 1;
   
-  options.setSection("solver");
-  options.get("mudq", mudq, n3d*(MXSUB+2));
-  options.get("mldq", mldq, n3d*(MXSUB+2));
-  options.get("mukeep", mukeep, 0);
-  options.get("mlkeep", mlkeep, 0);
-  options.get("ATOL", abstol, 1.0e-12);
-  options.get("RTOL", reltol, 1.0e-5);
-  options.get("use_precon", use_precon, false);
-  options.get("precon_dimens", precon_dimens, 50);
-  options.get("precon_tol", precon_tol, 1.0e-4);
-  options.get("mxstep", pvode_mxstep, 500);
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  options->get("mudq", mudq, n3d*(MXSUB+2));
+  options->get("mldq", mldq, n3d*(MXSUB+2));
+  options->get("mukeep", mukeep, 0);
+  options->get("mlkeep", mlkeep, 0);
+  options->get("ATOL", abstol, 1.0e-12);
+  options->get("RTOL", reltol, 1.0e-5);
+  options->get("use_precon", use_precon, false);
+  options->get("precon_dimens", precon_dimens, 50);
+  options->get("precon_tol", precon_tol, 1.0e-4);
+  options->get("mxstep", pvode_mxstep, 500);
 
   pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
                      solver_gloc, solver_cfn, (void*) this);

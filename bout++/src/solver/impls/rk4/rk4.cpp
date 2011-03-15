@@ -59,12 +59,13 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   save_vars(f0);
   
   // Get options
-  options.setSection("solver");
-  OPTION(atol, 1.e-5); // Absolute tolerance
-  OPTION(rtol, 1.e-3); // Relative tolerance
-  OPTION(max_timestep, tstep); // Maximum timestep
-  OPTION(start_timestep, -1.); // Starting timestep
-  OPTION(mxstep, 500); // Maximum number of steps between outputs
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  OPTION(options, atol, 1.e-5); // Absolute tolerance
+  OPTION(options, rtol, 1.e-3); // Relative tolerance
+  OPTION(options, max_timestep, tstep); // Maximum timestep
+  OPTION(options, start_timestep, -1.); // Starting timestep
+  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   
 #ifdef CHECK
   msg_stack.pop(msg_point);

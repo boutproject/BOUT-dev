@@ -139,39 +139,41 @@ int physics_init(bool restarting)
   // READ OPTIONS
 
   // Read some parameters
-  options.setSection("2fluid");
-  OPTION(AA, 2.0);
-  OPTION(ZZ, 1.0);
-
-  OPTION(estatic,     false);
-  OPTION(ZeroElMass,  false);
-  OPTION(zeff,        1.0);
-  OPTION(nu_perp,     0.0);
-  OPTION(ShearFactor, 1.0);
-  OPTION(OhmPe,       true);
-  OPTION(bout_jpar,   false);
-  OPTION(bout_exb,    false);
-  OPTION(curv_upwind, false);
-
-  OPTION(bkgd,      2);
-  OPTION(iTe_dc,    2);
-
-  OPTION(stagger, false);
-
-  OPTION(laplace_extra_rho_term, false);
-  OPTION(vort_include_pi, false);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("2fluid");
   
-  OPTION(lowPass_z,  -1);
-  
-  OPTION(phi_flags,   0);
-  OPTION(apar_flags,  0);
+  OPTION(options, AA, 2.0);
+  OPTION(options, ZZ, 1.0);
 
-  options.get("rho",   "evolve", evolve_rho,   true);
-  options.get("Te",    "evolve", evolve_te,    true);
-  options.get("Ni",    "evolve", evolve_ni,    true);
-  options.get("Ajpar", "evolve", evolve_ajpar, true);
-  options.get("Vi",    "evolve", evolve_vi,    true);
-  options.get("Ti",    "evolve", evolve_ti,    true);
+  OPTION(options, estatic,     false);
+  OPTION(options, ZeroElMass,  false);
+  OPTION(options, zeff,        1.0);
+  OPTION(options, nu_perp,     0.0);
+  OPTION(options, ShearFactor, 1.0);
+  OPTION(options, OhmPe,       true);
+  OPTION(options, bout_jpar,   false);
+  OPTION(options, bout_exb,    false);
+  OPTION(options, curv_upwind, false);
+
+  OPTION(options, bkgd,      2);
+  OPTION(options, iTe_dc,    2);
+
+  OPTION(options, stagger, false);
+
+  OPTION(options, laplace_extra_rho_term, false);
+  OPTION(options, vort_include_pi, false);
+  
+  OPTION(options, lowPass_z,  -1);
+  
+  OPTION(options, phi_flags,   0);
+  OPTION(options, apar_flags,  0);
+
+  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
+  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
+  (globalOptions->getSection("vi"))->get("evolve", evolve_vi,   true);
+  (globalOptions->getSection("te"))->get("evolve", evolve_te,   true);
+  (globalOptions->getSection("ti"))->get("evolve", evolve_ti,   true);
+  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
   
   if(ZeroElMass)
     evolve_ajpar = 0; // Don't need ajpar - calculated from ohm's law
@@ -180,63 +182,63 @@ int physics_init(bool restarting)
   // Equation terms
 
   if(evolve_ni) {
-    options.setSection("Ni");
-    options.get("ni1_phi0", ni_ni1_phi0, false);
-    options.get("ni0_phi1", ni_ni0_phi1, false);
-    options.get("ni1_phi1", ni_ni1_phi1, false);
-    options.get("nit_phit", ni_nit_phit, false);
-    options.get("vi1_ni0",  ni_vi1_ni0, false);
-    options.get("vi0_ni1",  ni_vi0_ni1, false);
-    options.get("vi1_ni1",  ni_vi1_ni1, false);
-    options.get("vit_nit",  ni_vit_nit, false);
-    options.get("jpar1",    ni_jpar1,  false);
-    options.get("pe1",      ni_pe1,    false);
-    options.get("ni0_curv_phi1", ni_ni0_curv_phi1, false);
-    options.get("ni1_curv_phi0", ni_ni1_curv_phi0, false);
-    options.get("ni1_curv_phi1", ni_ni1_curv_phi1, false);
-    options.get("nit_curv_phit", ni_nit_curv_phit, false);
+    options = globalOptions->getSection("Ni");
+    options->get("ni1_phi0", ni_ni1_phi0, false);
+    options->get("ni0_phi1", ni_ni0_phi1, false);
+    options->get("ni1_phi1", ni_ni1_phi1, false);
+    options->get("nit_phit", ni_nit_phit, false);
+    options->get("vi1_ni0",  ni_vi1_ni0, false);
+    options->get("vi0_ni1",  ni_vi0_ni1, false);
+    options->get("vi1_ni1",  ni_vi1_ni1, false);
+    options->get("vit_nit",  ni_vit_nit, false);
+    options->get("jpar1",    ni_jpar1,  false);
+    options->get("pe1",      ni_pe1,    false);
+    options->get("ni0_curv_phi1", ni_ni0_curv_phi1, false);
+    options->get("ni1_curv_phi0", ni_ni1_curv_phi0, false);
+    options->get("ni1_curv_phi1", ni_ni1_curv_phi1, false);
+    options->get("nit_curv_phit", ni_nit_curv_phit, false);
   }    
 
   if(evolve_rho) {
-    options.setSection("rho");
-    options.get("rho0_phi1", rho_rho0_phi1, false);
-    options.get("rho1_phi0", rho_rho1_phi0, false);
-    options.get("rho1_phi1", rho_rho1_phi1, false);
-    options.get("vi1_rho0",  rho_vi1_rho0, false);
-    options.get("vi0_rho1",  rho_vi0_rho1, false);
-    options.get("vi1_rho1",  rho_vi1_rho1, false);
-    options.get("pei1",   rho_pei1, false);
-    options.get("jpar1",  rho_jpar1, false);
-    options.get("rho1",   rho_rho1, false);
+    options = globalOptions->getSection("rho");
+    options->get("rho0_phi1", rho_rho0_phi1, false);
+    options->get("rho1_phi0", rho_rho1_phi0, false);
+    options->get("rho1_phi1", rho_rho1_phi1, false);
+    options->get("vi1_rho0",  rho_vi1_rho0, false);
+    options->get("vi0_rho1",  rho_vi0_rho1, false);
+    options->get("vi1_rho1",  rho_vi1_rho1, false);
+    options->get("pei1",   rho_pei1, false);
+    options->get("jpar1",  rho_jpar1, false);
+    options->get("rho1",   rho_rho1, false);
   }
   
   if(evolve_vi) {
-    options.setSection("vi");
-    options.get("vi0_phi1", vi_vi0_phi1, false);
-    options.get("vi1_phi0", vi_vi1_phi0, false);
-    options.get("vi1_phi1", vi_vi1_phi1, false);
-    options.get("vit_phit", vi_vit_phit, false);
-    options.get("vi1_vi0", vi_vi1_vi0, false);
-    options.get("vi0_vi1", vi_vi0_vi1, false);
-    options.get("vi1_vi1", vi_vi1_vi1, false);
-    options.get("vit_vit", vi_vit_vit, false);
-    options.get("pei1", vi_pei1, false);
-    options.get("peit", vi_peit, false);
-    options.get("vi1", vi_vi1, false);
+    options = globalOptions->getSection("vi");
+    options->get("vi0_phi1", vi_vi0_phi1, false);
+    options->get("vi1_phi0", vi_vi1_phi0, false);
+    options->get("vi1_phi1", vi_vi1_phi1, false);
+    options->get("vit_phit", vi_vit_phit, false);
+    options->get("vi1_vi0", vi_vi1_vi0, false);
+    options->get("vi0_vi1", vi_vi0_vi1, false);
+    options->get("vi1_vi1", vi_vi1_vi1, false);
+    options->get("vit_vit", vi_vit_vit, false);
+    options->get("pei1", vi_pei1, false);
+    options->get("peit", vi_peit, false);
+    options->get("vi1", vi_vi1, false);
   }
 
   if(evolve_te) {
-    options.setSection("te");
-    options.get("te1_phi0", te_te1_phi0, false);
-    options.get("te0_phi1", te_te0_phi1, false);
-    options.get("te1_phi1", te_te1_phi1, false);
+    options = globalOptions->getSection("te");
+    options->get("te1_phi0", te_te1_phi0, false);
+    options->get("te0_phi1", te_te0_phi1, false);
+    options->get("te1_phi1", te_te1_phi1, false);
   }
 
   if(evolve_ti) {
-    options.setSection("ti");
-    options.get("ti1_phi0", ti_ti1_phi0, false);
-    options.get("ti0_phi1", ti_ti0_phi1, false);
-    options.get("ti1_phi1", ti_ti1_phi1, false);
+    options = globalOptions->getSection("ti");
+    options->get("ti1_phi0", ti_ti1_phi0, false);
+    options->get("ti0_phi1", ti_ti0_phi1, false);
+    options->get("ti1_phi1", ti_ti1_phi1, false);
   }
 
   ////////////////////////////////////////////////////////

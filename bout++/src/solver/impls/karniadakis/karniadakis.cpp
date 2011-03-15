@@ -95,8 +95,9 @@ int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, i
   save_vars(f0);
   
   // Get options
-  options.setSection("solver");
-  OPTION(timestep, tstep);
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  OPTION(options, timestep, tstep);
   
   // Make sure timestep divides into tstep
   

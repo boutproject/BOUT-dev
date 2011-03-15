@@ -27,8 +27,8 @@ inline SolverType SolverFactory::getDefaultSolverType() {
     type = SOLVERCVODE;
   #elif defined BOUT_HAS_IDA
     type = SOLVERIDA;
-  #elif defined BOUT_HAS_PETSC
-    type = SOLVERPETSC;
+    //#elif defined BOUT_HAS_PETSC
+    //type = SOLVERPETSC;
   #else
     type = SOLVERPVODE;
   #endif
@@ -39,11 +39,12 @@ inline SolverType SolverFactory::getDefaultSolverType() {
 Solver* SolverFactory::createSolver() {
   SolverType type = getDefaultSolverType();
   
-  options.setSection("");
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
   string solver_option;
 /*  options.get("solver_type", solver_option, type);
   string solver_option;*/
-  options.get("solver_type", solver_option, "");
+  options->get("type", solver_option, "");
   
   if(!solver_option.empty()) type = solver_option.c_str();
   

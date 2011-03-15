@@ -1,13 +1,15 @@
 /*!************************************************************************
-* Reads in the configuration file, supplying
-* an interface to get options
+* Option hierarchy representation
 * 
-* File is an ini file with sections
-* [section]
-* and variables as
-* name = string ; comment
-* 
-* Ben Dudson, September 2007
+* The Options class represents a tree structure of key-value settings.
+* Provides get and set methods on these options.
+*
+* Internally, all quantities are stored as strings for simplicity
+* and so that option file parsers don't have to do type conversion
+* without knowing the type a priori.
+*
+* There is a singleton object "root" which contains the top-level
+* options and allows access to all sub-sections
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -31,111 +33,65 @@
 *
 **************************************************************************/
 
-class OptionFile;
+class Options;
 
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
 #include "bout_types.h"
 
-#include <stdarg.h>
-#include <stdio.h>
 #include <map>
-
-/// Class for reading INI style configuration files
-/*!
-* 
-*/
 
 using namespace std;
 
-struct Option {
+struct OptionValue {
   string value;
   string source;     // Source of the setting
   bool used;         // Set to true when used
 };
 
-class OptionFile {
+/// Class to represent hierarchy of options
+/*!
+* 
+*/
+class Options {
 public:
-  OptionFile();
-  OptionFile(const string &filename);
-  OptionFile(int &argc, char **argv, const string &filename);
-  ~OptionFile();
-
-  /// Read options from grid file
-  void read(const char *filename, ...);
-
-  /// Parse the command line for options
-  void commandLineRead(int argc, char** argv);
+ Options() : parent(NULL) {}
+ Options(Options *p, string s) : parent(p), sectionName(s) {};
+  ~Options();
   
-  // Set and get default section for subsequent calls
-  void setSection(const string &name); // Set the default section
-  string getSection(); // Set the default section
-
-  // Set and get section separator
-  const string& getSectionSep();
-  void setSectionSep(const string &);
+  /// Get a pointer to the only root instance
+  static Options* getRoot();
   
-  // Test if an option has been set
+  // Setting options
+  void set(const string &key, const int &val, const string &source="");
+  void set(const string &key, const BoutReal &val, const string &source="");
+  void set(const string &key, const bool &val, const string &source="");
+  void set(const string &key, const string &val, const string &source="");
+  
+  // Testing if set
   bool isSet(const string &key);
-  bool isSet(const string &section, const string &key);
-
-  // Get an option, setting to default if not set
-  template <class type> void get(const string &, type &, const type &);
-  template <class type> void get(const string &, const string &, type &, const type &);
-  template <class type> void get(const string &, const string &, const string &, type &, const type &);
-
-  void get(const string &, int &, const int &);
-  void get(const string &, BoutReal &, const BoutReal &);
-  void get(const string &, bool &, const bool &);
-  void get(const string &, string &, const string &);
-  void getQuietly(const string &, string &, const string &);
   
-  void get(const string &, const string &, int &, const int &);
-  void get(const string &, const string &, BoutReal &, const BoutReal &);
-  void get(const string &, const string &, bool &, const bool &);
-  void get(const string &, const string &, string &, const string &);
-
-  void get(const string &, const string &, const string &, int &, const int &);
-  void get(const string &, const string &, const string &, BoutReal &, const BoutReal &);
-  void get(const string &, const string &, const string &, bool &, const bool &);
-  void get(const string &, const string &, const string &, string &, const string &);
+  // Getting options
+  void get(const string &key, int &val, const int &def, bool log=true);
+  void get(const string &key, BoutReal &val, const BoutReal &def, bool log=true);
+  void get(const string &key, bool &val, const bool &def, bool log=true);
+  void get(const string &key, string &val, const string &def, bool log=true);
   
-  // Set methods to pass in options manually
-  template <class type> void set(const string &, const type &);
-  
-  void set(const string &, const int &);
-  void set(const string &, const BoutReal &);
-  void set(const string &, const bool &);
-  void set(const string &, const string &);
+  /// Creates new section if doesn't exist
+  Options* getSection(const string &name);
+  Options* getParent() {return parent;}
   
   /// Print the options which haven't been used
   void printUnused();
-protected:
+ private:
+  static Options *root; ///< Only instance of the root section
   
-  template <class type> void get(const map<string,Option>::iterator &, type &); // Handles many cases
-  void get(const map<string,Option>::iterator &it, string &val); // Special case
-  void getQuietly(const map<string,Option>::iterator &it, string &val); // Get without printing
-  void get(const map<string,Option>::iterator &it, bool &val);   // Special case
-
-  map<string, Option>::iterator find(const string &);
-  map<string, Option>::iterator find(const string &, const string &);
-  map<string, Option>::iterator end();
+  Options *parent;
+  string sectionName; // section name (if any), for logging only
   
-  void add(const string &, const string &, const string &, const string &source="");
-  void trim(string &, const string &c=" \t\r");
-  void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t\r");
-  void trimComments(string &);
-  void parse(const string &, string &, string &);
-  string getNextLine(ifstream &);
-  string prependSection(const string &section, const string& key);
-
-  string def_section; // Default section heading
-
-  string sep;
-
-  map<string, Option> options;
+  map<string, OptionValue> options;
+  map<string, Options*> sections;
 };
 
 #endif // __OPTIONS_H__
