@@ -73,7 +73,7 @@ endif
 ####################################################################
 
 # Phony targets since they are directory names
-.PHONY: $(DIRS) lib
+.PHONY: $(DIRS) lib install
 
 all: $(BOUT_TOP)/config.status $(BOUT_TOP)/make.config $(DIRS) $(TARGET)
 
@@ -87,6 +87,20 @@ $(DIRS):
 # Create 'lib' and 'include' incase they don't exist
 $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 	$(MKDIR) $@
+
+####################################################################
+# Install header files and libraries
+####################################################################
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+install:
+	@$(MKDIR) $(DESTDIR)${prefix}
+	@$(MKDIR) $(DESTDIR)${prefix}/include
+	@$(MKDIR) $(DESTDIR)${prefix}/lib
+	@echo "Installing header files"
+	@cp include/*.h $(DESTDIR)@includedir@
+	@echo "Installing library files"
+	@cp lib/*.a $(DESTDIR)@libdir@
 
 ####################################################################
 # A bit of a clever hack that determines wheter the TARGET variable is 'lib'
