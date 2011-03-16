@@ -38,6 +38,7 @@ AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF fil
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use SUNDIALS' IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use SUNDIALS' CVODE solver])
+AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
@@ -57,6 +58,7 @@ AC_SUBST(EXTRA_LIBS)
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
 AC_SUBST(FILEIO_SOURCE)
+AC_SUBST(FACETS_SOURCE)
 
 AC_DEFUN([CREATE_DIR],
         [
@@ -65,6 +67,10 @@ AC_DEFUN([CREATE_DIR],
 					mkdir $1
 				fi
         ])
+
+#############################################################
+# General Options
+#############################################################
 
 if test "$with_debug" != ""
 then
@@ -105,6 +111,31 @@ fi
 if test "$with_track" != ""
 then   
        CFLAGS="$CFLAGS -DTRACK"
+fi
+
+#############################################################
+# FACETS
+#############################################################
+
+if test "$with_facets" != ""
+then
+  if test "$with_facets" != "yes"
+  then
+    FACETS="$with_facets"
+  else
+	AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
+	AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
+	AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
+	AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
+	AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
+	)))))
+  fi
+  if test $FIFCPATH != ""
+  then
+    echo "Enabling FACETS interface"
+    EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
+    FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cpp"
+  fi
 fi
 
 #############################################################

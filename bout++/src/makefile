@@ -3,7 +3,7 @@ BOUT_TOP	= ..
 
 DIRS			= field fileio invert mesh physics precon solver sys
 
-SOURCEC		= bout++.cpp
+SOURCEC		= bout++.cpp $(FACETS_SOURCE)
 SOURCEH		= bout.h
 CFLAGS		= -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
 TARGET		= lib
@@ -12,7 +12,7 @@ TARGET		= lib
 CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cpp $(DIR)/*.h)) | md5sum | head -c 32)
 
 # Git revision passed to bout++.cpp
-REVISION := $(shell git rev-parse HEAD 2> /dev/null || { echo "Unknown"; } )
+REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
 
 # This is a little obscure, so here is an explanation:
 # the first 'all: initial_message' sets the prerequisite 'inital_message'

@@ -45,6 +45,7 @@ EXTRA_LIBS		= @EXTRA_LIBS@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
 FILEIO_SOURCE	= @FILEIO_SOURCE@
+FACETS_SOURCE   = @FACETS_SOURCE@
 
 ####################################################################
 # These are used for compiling physics modules using BOUT++ library

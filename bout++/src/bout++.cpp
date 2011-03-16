@@ -417,24 +417,6 @@ int bout_finish()
   return 0;
 }
 
-/*!************************************************************************
- * Main function
- **************************************************************************/
-
-int main(int argc, char **argv)
-{
-  if(bout_init(argc, argv)) {
-    fprintf(stderr, "ERROR INITIALISING BOUT++. ABORTING\n");
-    return 1;
-  }
-
-  bout_run();
-  
-  bout_finish();
-
-  return(0);
-}
-
 /*!*************************************************************************
  * SOLUTION MONITOR FUNCTION
  *
