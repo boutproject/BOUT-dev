@@ -62,12 +62,13 @@ when using this code:
 
 This directory contains
 
+ABOUT         This file
 CHANGES	      List of major changes between versions
 LIB/          The PVODE solver library used by BOUT++
 make.config   Settings for building BOUT++ (see next section)
 Makefile      The main makefile. This builds everything
 manual/       Contains the user and reference manuals
-README        This file
+README        Important license information
 SETTINGS      Lists the settings for input files
 SRC/          The source of BOUT++
 examples/     Some standard test cases and example models
