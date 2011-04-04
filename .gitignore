@@ -1,3 +1,12 @@
 .tmtags
 *~
 *.pyc
+*.[oa]
+*.log
+*.status
+*.config
+*.d
+autom4te.cache/
+include/pvode
+lib/
+externalpackages/
