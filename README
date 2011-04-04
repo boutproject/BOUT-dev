@@ -20,7 +20,6 @@ manual                Contains documentation, in particular the user manual.
 
 examples              Example models and test codes
 
-
 tools                 Tools for helping with analysis, mesh generation, and data managment
   |/archiving         Routines for managing input/output files
   |                   e.g. compressing data, converting formats, and managing runs
