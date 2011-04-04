@@ -146,6 +146,7 @@ bool include_viscosity;
 
 Vector2D g; // Acceleration
 
+// This is physics from advect1d, just an example
 int physics_init(bool restarting)
 {
   // 2D initial profiles

@@ -97,9 +97,9 @@ install:
 	@$(MKDIR) $(DESTDIR)${prefix}
 	@$(MKDIR) $(DESTDIR)${prefix}/include
 	@$(MKDIR) $(DESTDIR)${prefix}/lib
-	@echo "Installing header files"
+	@echo "Installing header files into $(DESTDIR)@includedir@"
 	@cp include/*.h $(DESTDIR)@includedir@
-	@echo "Installing library files"
+	@echo "Installing library files into $(DESTDIR)@libdir@"
 	@cp lib/*.a $(DESTDIR)@libdir@
 
 ####################################################################

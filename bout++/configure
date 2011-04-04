@@ -1307,7 +1307,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --download-pvode		Download and build PVODE '98
+  --download-pvode		Download and build PVODE 98
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2269,11 +2269,28 @@ fi
 
 if test "$with_facets" != ""
 then
-  if test "$with_facets" != "yes"
-  then
     FACETS="$with_facets"
-  else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/FacetsIfc.h" >&5
+	as_ac_File=`$as_echo "ac_cv_file_$FACETS/include/FacetsIfc.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FACETS/include/FacetsIfc.h" >&5
+$as_echo_n "checking for $FACETS/include/FacetsIfc.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$FACETS/include/FacetsIfc.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  FIFCPATH=$FACETS
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/FacetsIfc.h" >&5
 $as_echo_n "checking for /usr/include/FacetsIfc.h... " >&6; }
 if ${ac_cv_file__usr_include_FacetsIfc_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -2376,12 +2393,16 @@ fi
 
 fi
 
-  fi
-  if test $FIFCPATH != ""
+fi
+
+  if test "$FIFCPATH" != ""
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
     FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cpp"
+  else
+    echo "--with-facets was specified but could not find the FACETS interface"
+    exit
   fi
 fi
 

@@ -42,7 +42,7 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
-AC_ARG_ENABLE(download_pvode,  [  --download-pvode		Download and build PVODE '98])
+AC_ARG_ENABLE(download_pvode,  [  --download-pvode		Download and build PVODE 98])
 
 EXTRA_INCS="" # Extra includes
 EXTRA_LIBS="" # Extra library flags
@@ -119,22 +119,22 @@ fi
 
 if test "$with_facets" != ""
 then
-  if test "$with_facets" != "yes"
-  then
     FACETS="$with_facets"
-  else
+	AC_CHECK_FILE($FACETS/include/FacetsIfc.h, FIFCPATH=$FACETS,
 	AC_CHECK_FILE(/usr/include/FacetsIfc.h, FIFCPATH=/usr,
 	AC_CHECK_FILE(/usr/local/include/FacetsIfc.h, FIFCPATH=/usr/local,
 	AC_CHECK_FILE(/opt/local/include/FacetsIfc.h, FIFCPATH=/opt/local,
 	AC_CHECK_FILE($HOME/local/include/FacetsIfc.h, FIFCPATH=$HOME/local,
 	AC_CHECK_FILE($HOME/software/facetsifc/include/FacetsIfc.h, FIFCPATH=$HOME/software/facetsifc,
-	)))))
-  fi
-  if test $FIFCPATH != ""
+	))))))
+  if test "$FIFCPATH" != ""
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
     FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cpp"
+  else
+    echo "--with-facets was specified but could not find the FACETS interface"
+    exit
   fi
 fi
 
