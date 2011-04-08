@@ -21,7 +21,6 @@ TAGS
 autom4te.cache/
 include/pvode
 lib/
-externalpackages/
 
 #example runs
 gas_compress
