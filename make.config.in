@@ -93,7 +93,7 @@ $(BOUT_TOP)/include $(BOUT_TOP)/lib:
 ####################################################################
 prefix = @prefix@
 exec_prefix = @exec_prefix@
-install:
+install: all
 	@$(MKDIR) $(DESTDIR)${prefix}
 	@$(MKDIR) $(DESTDIR)${prefix}/include
 	@$(MKDIR) $(DESTDIR)${prefix}/lib

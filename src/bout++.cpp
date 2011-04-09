@@ -26,6 +26,7 @@
  **************************************************************************/
 
 const char DEFAULT_DIR[] = "data";
+const char DEFAULT_OPT[] = "BOUT.inp";
 static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
@@ -105,6 +106,7 @@ int bout_init(int argc, char **argv)
   string grid_ext, dump_ext; ///< Extensions for restart and dump files
   
   const char *data_dir; ///< Directory for data input/output
+  const char *opt_file; ///< Filename for the options file
 
 #ifdef CHECK
   int msg_point; ///< Used to return the message stack to a fixed point
@@ -117,6 +119,7 @@ int bout_init(int argc, char **argv)
 
   // Set default data directory
   data_dir = DEFAULT_DIR;
+  opt_file = DEFAULT_OPT;
 
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
@@ -134,13 +137,22 @@ int bout_init(int argc, char **argv)
       i++;
       data_dir = argv[i];
     }
+    if(strncasecmp(argv[i], "-f", 2) == 0) {
+      // Set data directory
+      if(i+1 >= argc) {
+	output.write("Useage is %s -f <options filename>\n");
+	return 1;
+      }
+      i++;
+      opt_file = argv[i];
+    }
   }
   
   /// Start MPI
 #ifdef BOUT_HAS_PETSC
   PetscInitialize(&argc,&argv,"../petscopt",help);
 #else
-  MPI_Init(&argc,&argv);
+  // MPI_Init(&argc,&argv);
 #endif
 
   int NPES, MYPE;
@@ -210,7 +222,7 @@ int bout_init(int argc, char **argv)
     
     /// Load settings file
     OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/BOUT.inp", data_dir);
+    reader->read(options, "%s/%s", data_dir, opt_file);
     
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
@@ -411,7 +423,7 @@ int bout_finish()
 #ifdef BOUT_HAS_PETSC
   PetscFinalize();
 #else
-  MPI_Finalize();
+  // MPI_Finalize();
 #endif
   
   return 0;

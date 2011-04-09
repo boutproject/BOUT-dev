@@ -34,7 +34,8 @@ BoutIfc::setLogFile(const std::string& fname) {
 
 int
 BoutIfc::initialize() {
-  return bout_init(1, (char**)"");
+  char* argv[5] = {"","-d",".","-f",(char*)paramFile.c_str()};
+  return bout_init(5, argv);
 }
 
 int
@@ -46,6 +47,8 @@ BoutIfc::setMpiComm(long fint) {
 int
 BoutIfc::readParams(const std::string& name) {
 /** UNIMPLEMENTED ***/
+  std::cerr << "paramFile: " << name << std::endl;
+  paramFile = name;
   return 1;
 }
 

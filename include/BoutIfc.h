@@ -215,6 +215,9 @@ class BoutIfc : public FacetsIfc,
  */
     virtual int complete();
 
+  protected:
+    std::string paramFile;
+
 };
 
 #endif // BOUT_IFC
