@@ -1,6 +1,6 @@
 /*!************************************************************************
 * Option hierarchy representation
-* 
+*
 * The Options class represents a tree structure of key-value settings.
 * Provides get and set methods on these options.
 *
@@ -15,7 +15,7 @@
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 *
 * Contact: Ben Dudson, bd512@york.ac.uk
-* 
+*
 * This file is part of BOUT++.
 *
 * BOUT++ is free software: you can redistribute it and/or modify
@@ -59,37 +59,37 @@ public:
  Options() : parent(NULL) {}
  Options(Options *p, string s) : parent(p), sectionName(s) {};
   ~Options();
-  
+
   /// Get a pointer to the only root instance
   static Options* getRoot();
-  
+
   // Setting options
   void set(const string &key, const int &val, const string &source="");
   void set(const string &key, const BoutReal &val, const string &source="");
   void set(const string &key, const bool &val, const string &source="");
   void set(const string &key, const string &val, const string &source="");
-  
+
   // Testing if set
   bool isSet(const string &key);
-  
+
   // Getting options
   void get(const string &key, int &val, const int &def, bool log=true);
   void get(const string &key, BoutReal &val, const BoutReal &def, bool log=true);
   void get(const string &key, bool &val, const bool &def, bool log=true);
   void get(const string &key, string &val, const string &def, bool log=true);
-  
+
   /// Creates new section if doesn't exist
   Options* getSection(const string &name);
   Options* getParent() {return parent;}
-  
+
   /// Print the options which haven't been used
   void printUnused();
  private:
   static Options *root; ///< Only instance of the root section
-  
+
   Options *parent;
   string sectionName; // section name (if any), for logging only
-  
+
   map<string, OptionValue> options;
   map<string, Options*> sections;
 };

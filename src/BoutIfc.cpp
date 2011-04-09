@@ -34,7 +34,7 @@ BoutIfc::setLogFile(const std::string& fname) {
 
 int
 BoutIfc::initialize() {
-  char* argv[5] = {"","-d",".","-f",(char*)paramFile.c_str()};
+  char* argv[5] = {(char*)"",(char*)"-d",(char*)".",(char*)"-f",(char*)paramFile.c_str()};
   return bout_init(5, argv);
 }
 

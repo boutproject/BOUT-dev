@@ -152,7 +152,7 @@ int bout_init(int argc, char **argv)
 #ifdef BOUT_HAS_PETSC
   PetscInitialize(&argc,&argv,"../petscopt",help);
 #else
-  // MPI_Init(&argc,&argv);
+  MPI_Init(&argc,&argv);
 #endif
 
   int NPES, MYPE;
@@ -423,7 +423,7 @@ int bout_finish()
 #ifdef BOUT_HAS_PETSC
   PetscFinalize();
 #else
-  // MPI_Finalize();
+  MPI_Finalize();
 #endif
   
   return 0;
