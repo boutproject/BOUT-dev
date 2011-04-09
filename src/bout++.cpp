@@ -152,7 +152,10 @@ int bout_init(int argc, char **argv)
 #ifdef BOUT_HAS_PETSC
   PetscInitialize(&argc,&argv,"../petscopt",help);
 #else
-  MPI_Init(&argc,&argv);
+  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
+  // but might need to revisit if that isn't the case
+  if(!BoutComm::getInstance()->isSet())
+    MPI_Init(&argc,&argv);
 #endif
 
   int NPES, MYPE;
@@ -423,7 +426,10 @@ int bout_finish()
 #ifdef BOUT_HAS_PETSC
   PetscFinalize();
 #else
-  MPI_Finalize();
+  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
+  // but might need to revisit if that isn't the case
+  if(!BoutComm::getInstance()->isSet())
+    MPI_Finalize();
 #endif
   
   return 0;

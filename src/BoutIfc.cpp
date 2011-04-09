@@ -40,13 +40,13 @@ BoutIfc::initialize() {
 
 int
 BoutIfc::setMpiComm(long fint) {
-/** UNIMPLEMENTED ***/
-  return 1;
+  BoutComm::getInstance()->setComm(fint);
+  return 0;
 }
 
+// Only quasi-implemented. Still need to break-out the reading of params from bout_init
 int
 BoutIfc::readParams(const std::string& name) {
-/** UNIMPLEMENTED ***/
   std::cerr << "paramFile: " << name << std::endl;
   paramFile = name;
   return 1;
@@ -134,9 +134,11 @@ BoutIfc::revert() {
 int
 BoutIfc::complete() {
   bout_finish();
-/** Need to try catch ***/
   return 0;
 }
+
+// This is physics from advect1d, just an example
+// If different physics is wanted, place it here
 
 // Evolving variables 
 Field3D N, P; // Density, Pressure
@@ -149,7 +151,6 @@ bool include_viscosity;
 
 Vector2D g; // Acceleration
 
-// This is physics from advect1d, just an example
 int physics_init(bool restarting)
 {
   // 2D initial profiles

@@ -2,15 +2,20 @@
 
 BoutComm* BoutComm::instance = NULL;
 
-BoutComm::BoutComm() : comm(MPI_COMM_WORLD) {
+BoutComm::BoutComm() : comm(MPI_COMM_WORLD), hasBeenSet(false) {
 }
 
 void BoutComm::setComm(MPI_Comm c) {
+  hasBeenSet = true;
   this->comm = c;
 }
 
 MPI_Comm BoutComm::getComm() {
   return this->comm;
+}
+
+bool BoutComm::isSet() {
+  return hasBeenSet;
 }
 
 // Static functions below. Must use getInstance()

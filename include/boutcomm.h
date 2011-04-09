@@ -52,9 +52,12 @@ public:
   // Setting options
   void setComm(MPI_Comm c);
 
+  // Getters
   MPI_Comm getComm();
+  bool isSet();
 
  private:
+  bool hasBeenSet;
   BoutComm();
   static BoutComm* instance; ///< The only instance of this class (Singleton)
 
