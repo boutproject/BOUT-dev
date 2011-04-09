@@ -15,8 +15,8 @@ int QuiltMesh::load()
 {
   // Get number of processors
   int NPES, MYPE;
-  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
   
   // Get number of regions
   int nregions;

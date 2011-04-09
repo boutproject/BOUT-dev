@@ -39,6 +39,8 @@
 #include "grid.h"
 #include "mesh.h"
 
+#include "boutcomm.h"
+
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
 #define SETTING(name, val) extern name;

@@ -7,6 +7,7 @@
  */
 
 #include "bout.h"
+#include "boutmain.h"
 #include "initialprofiles.h"
 
 int physics_init(bool restarting)
@@ -94,13 +95,13 @@ int physics_init(bool restarting)
   dump.add(var4_3D, "var4_3D");
 
   int MYPE;
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
   
   // Write data to file
   dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
   
   // Need to wait for all processes to finish writing
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(BoutComm::get());
 
   // Send an error code so quits
   return 1;

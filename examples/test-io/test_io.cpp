@@ -8,6 +8,7 @@
  */
 
 #include "bout.h"
+#include "boutmain.h"
 
 int physics_init(bool restarting)
 {
@@ -41,7 +42,7 @@ int physics_init(bool restarting)
   dump.add(v3d, "v3d_evol", 1);
 
   int MYPE;
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
   
   for(int i=0;i<3;i++) {
     ivar_evol = ivar + i;
@@ -56,7 +57,7 @@ int physics_init(bool restarting)
   }
   
   // Need to wait for all processes to finish writing
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(BoutComm::get());
 
   // Send an error code so quits
   return 1;

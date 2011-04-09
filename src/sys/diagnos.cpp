@@ -126,7 +126,7 @@ BoutReal Diagnos::run(const diag_item &i)
 	val = rptr[c];
       }
       
-      MPI_Bcast ( &val, 1, PVEC_REAL_MPI_TYPE, np, MPI_COMM_WORLD); 
+      MPI_Bcast ( &val, 1, PVEC_REAL_MPI_TYPE, np, BoutComm::get()); 
       
       return val;
     }else {

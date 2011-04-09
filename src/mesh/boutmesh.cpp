@@ -62,8 +62,8 @@ int BoutMesh::load() {
   //////////////
   // Number of processors
   
-  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
 
   //////////////
   // Grid sizes
@@ -294,7 +294,7 @@ int BoutMesh::load() {
     
     // In the core, need to set ShiftAngle everywhere for ballooning initial condition
     MPI_Group groupw;
-    MPI_Comm_group(MPI_COMM_WORLD, &groupw); // Group of all processors
+    MPI_Comm_group(BoutComm::get(), &groupw); // Group of all processors
     
     int *ranks = new int[NYPE];
     int npcore = 0;
@@ -307,7 +307,7 @@ int BoutMesh::load() {
     MPI_Group_incl(groupw, npcore, ranks, &grp); // Create group
     
     MPI_Comm core_comm;
-    MPI_Comm_create(MPI_COMM_WORLD, grp, &core_comm); // Create communicator
+    MPI_Comm_create(BoutComm::get(), grp, &core_comm); // Create communicator
     
     delete[] ranks;
     
@@ -375,7 +375,7 @@ int BoutMesh::load() {
   //MPI_Comm comm_inner, comm_middle, comm_outer;
   
   MPI_Group group_world;
-  MPI_Comm_group(MPI_COMM_WORLD, &group_world); // Get the entire group
+  MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
   
   MPI_Group group;
   MPI_Group group_tmp1, group_tmp2;
@@ -393,7 +393,7 @@ int BoutMesh::load() {
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, NYPE-1);
       MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(i == PE_XIND) {
 	// Should be part of this communicator
 	if(comm_tmp == MPI_COMM_NULL) {
@@ -414,7 +414,7 @@ int BoutMesh::load() {
       // Inner SOL
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
-      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
 	comm_outer = comm_tmp;
       MPI_Group_free(&group);
@@ -423,7 +423,7 @@ int BoutMesh::load() {
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, NYPE-1);
       MPI_Group_range_incl(group_world, 1, &proc, &group);
-      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
 	comm_outer = comm_tmp;
       MPI_Group_free(&group);
@@ -453,7 +453,7 @@ int BoutMesh::load() {
 	group_tmp2 = MPI_GROUP_EMPTY;
       
       MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
 	if(ixseps_lower == ixseps_outer) {
@@ -478,7 +478,7 @@ int BoutMesh::load() {
       //output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       MPI_Group_union(group_tmp1, group_tmp2, &group);
-      MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+      MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
 	if(ixseps_upper == ixseps_outer) {
@@ -500,7 +500,7 @@ int BoutMesh::load() {
     //output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
     MPI_Group_union(group_tmp1, group_tmp2, &group);
-    MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+    MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
     if(comm_tmp != MPI_COMM_NULL) {
       comm_inner = comm_tmp;
       
@@ -523,7 +523,7 @@ int BoutMesh::load() {
 	proc[1] = PROC_NUM(i, NYPE-1);
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 	MPI_Group_union(group_tmp1, group_tmp2, &group);
-	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+	MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
       }
@@ -538,7 +538,7 @@ int BoutMesh::load() {
 	proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
 	MPI_Group_union(group_tmp1, group_tmp2, &group);
-	MPI_Comm_create(MPI_COMM_WORLD, group, &comm_tmp);
+	MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
       }
@@ -1044,7 +1044,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      UDATA_INDEST,
 	      IN_SENT_DOWN,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[0]);
   }
   if(UDATA_OUTDEST != -1) {
@@ -1054,7 +1054,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      UDATA_OUTDEST,
 	      OUT_SENT_DOWN,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[1]);
   }
   
@@ -1069,7 +1069,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      DDATA_INDEST,
 	      IN_SENT_UP,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[2]);
   }
   if(DDATA_OUTDEST != -1) {
@@ -1079,7 +1079,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      DDATA_OUTDEST,
 	      OUT_SENT_UP,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[3]);
   }
 
@@ -1091,7 +1091,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      IDATA_DEST,
 	      OUT_SENT_IN,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[4]);
   }
 
@@ -1103,7 +1103,7 @@ void BoutMesh::post_receive(CommHandle &ch)
 	      PVEC_REAL_MPI_TYPE,
 	      ODATA_DEST,
 	      IN_SENT_OUT,
-	      MPI_COMM_WORLD,
+	      BoutComm::get(),
 	      &ch.request[5]);
   }
 }
@@ -1144,7 +1144,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,  // Real variable type
 		UDATA_INDEST,        // Destination processor
 		IN_SENT_UP,          // Label (tag) for the message
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[0]));
     }else
       MPI_Send(ch->umsg_sendbuff,
@@ -1152,7 +1152,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       UDATA_INDEST,
 	       IN_SENT_UP,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
   if(UDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->umsg_sendbuff[len]); // A pointer to the start of the second part
@@ -1165,7 +1165,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,
 		UDATA_OUTDEST,
 		OUT_SENT_UP,
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[1]));
     }else
       MPI_Send(outbuff, 
@@ -1173,7 +1173,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       UDATA_OUTDEST,
 	       OUT_SENT_UP,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
     
   /// Send data going down (y-1)
@@ -1188,7 +1188,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,
 		DDATA_INDEST,
 		IN_SENT_DOWN,
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[2]));
     }else
       MPI_Send(ch->dmsg_sendbuff, 
@@ -1196,7 +1196,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       DDATA_INDEST,
 	       IN_SENT_DOWN,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
   if(DDATA_OUTDEST != -1) { // if destination for outer x data
     outbuff = &(ch->dmsg_sendbuff[len]); // A pointer to the start of the second part
@@ -1210,7 +1210,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,
 		DDATA_OUTDEST,
 		OUT_SENT_DOWN,
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[3]));
     }else
       MPI_Send(outbuff,
@@ -1218,7 +1218,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       DDATA_OUTDEST,
 	       OUT_SENT_DOWN,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
 
   /// Send to the left (x-1)
@@ -1231,7 +1231,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,
 		IDATA_DEST,
 		IN_SENT_OUT,
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[4]));
     }else
       MPI_Send(ch->imsg_sendbuff,
@@ -1239,7 +1239,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       IDATA_DEST,
 	       IN_SENT_OUT,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
 
   /// Send to the right (x+1)
@@ -1252,7 +1252,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 		PVEC_REAL_MPI_TYPE,
 		ODATA_DEST,
 		OUT_SENT_IN,
-		MPI_COMM_WORLD,
+		BoutComm::get(),
 		&(ch->sendreq[5]));
     }else
       MPI_Send(ch->omsg_sendbuff,
@@ -1260,7 +1260,7 @@ comm_handle BoutMesh::send(FieldGroup &g)
 	       PVEC_REAL_MPI_TYPE,
 	       ODATA_DEST,
 	       OUT_SENT_IN,
-	       MPI_COMM_WORLD);
+	       BoutComm::get());
   }
   
   /// Mark communication handle as in progress
@@ -1433,7 +1433,7 @@ int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag)
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND+1, PE_YIND),
 	   tag,
-	   MPI_COMM_WORLD);
+	   BoutComm::get());
   
   wtime_comms += MPI_Wtime() - t;
 
@@ -1450,7 +1450,7 @@ int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag)
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND-1, PE_YIND),
 	   tag,
-	   MPI_COMM_WORLD);
+	   BoutComm::get());
   
   wtime_comms += MPI_Wtime() - t;
 
@@ -1472,7 +1472,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
 	    PVEC_REAL_MPI_TYPE,
 	    PROC_NUM(PE_XIND+1, PE_YIND),
 	    tag,
-	    MPI_COMM_WORLD,
+	    BoutComm::get(),
 	    ch->request);
   
   ch->in_progress = true;
@@ -1497,7 +1497,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
 	    PVEC_REAL_MPI_TYPE,
 	    PROC_NUM(PE_XIND-1, PE_YIND),
 	    tag,
-	    MPI_COMM_WORLD,
+	    BoutComm::get(),
 	    ch->request);
   
   ch->in_progress = true;

@@ -94,7 +94,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
@@ -104,7 +104,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
 
   // Allocate memory
   
-  if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+  if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec
@@ -292,7 +292,7 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(BoutComm::get());
 
   rhs_wtime = 0.0;
   rhs_ncalls = 0;

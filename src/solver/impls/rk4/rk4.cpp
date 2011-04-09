@@ -42,7 +42,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }

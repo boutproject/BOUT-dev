@@ -156,8 +156,8 @@ int bout_init(int argc, char **argv)
 #endif
 
   int NPES, MYPE;
-  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
 
   /// Set up the output
   if(MYPE == 0) {
@@ -599,7 +599,7 @@ void bout_error(const char *str)
   msg_stack.dump();
 #endif
 
-  MPI_Abort(MPI_COMM_WORLD, 1);
+  MPI_Abort(BoutComm::get(), 1);
 
   exit(1);
 }

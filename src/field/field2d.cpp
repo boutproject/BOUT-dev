@@ -871,7 +871,7 @@ BoutReal Field2D::min(bool allpe) const
   if(allpe) {
     // MPI reduce
     BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
   }
   
 #ifdef CHECK
@@ -906,7 +906,7 @@ BoutReal Field2D::max(bool allpe) const
   if(allpe) {
     // MPI reduce
     BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
   }
   
 #ifdef CHECK

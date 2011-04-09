@@ -98,7 +98,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
@@ -107,7 +107,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(MPI_COMM_WORLD, local_N, neq, &argc, &argv);
+  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, &argc, &argv);
 
   if (machEnv == NULL) {
     if(MYPE == 0)

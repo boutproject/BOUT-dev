@@ -89,7 +89,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   PetscInt local_N = getLocalN(); // Number of evolving variables on this processor
 
   /********** Get total problem size **********/
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
@@ -97,7 +97,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3d, n2d, neq, local_N);
 
-  ierr = VecCreate(MPI_COMM_WORLD, &u);CHKERRQ(ierr);
+  ierr = VecCreate(BoutComm::get(), &u);CHKERRQ(ierr);
   ierr = VecSetSizes(u, local_N, PETSC_DECIDE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(u);CHKERRQ(ierr);
 
@@ -121,7 +121,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   
   // Create timestepper 
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
-  ierr = TSCreate(MPI_COMM_WORLD,&ts);CHKERRQ(ierr);
+  ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
   ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);

@@ -114,7 +114,7 @@ int invert_init()
   
   // Broadcast this since rounding errors could cause mismatch across processors
   // THIS LINE CAUSES SEGFAULT ON LLNL GRENDEL
-  //MPI_Bcast(&laplace_maxmode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  //MPI_Bcast(&laplace_maxmode, 1, MPI_INT, 0, BoutComm::get());
 
   return 0;
 }

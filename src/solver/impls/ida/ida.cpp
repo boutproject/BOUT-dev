@@ -99,7 +99,7 @@ IdaSolver::~IdaSolver()
 
   // Get total problem size
   int neq;
-  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD)) {
+  if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
@@ -109,11 +109,11 @@ IdaSolver::~IdaSolver()
 
   // Allocate memory
   
-  if((uvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+  if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
-  if((duvec = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+  if((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
-  if((id = N_VNew_Parallel(MPI_COMM_WORLD, local_N, neq)) == NULL)
+  if((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec

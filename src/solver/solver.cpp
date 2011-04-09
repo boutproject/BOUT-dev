@@ -406,8 +406,8 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   restart.add(simtime,  "tt",    0);
   restart.add(iteration, "hist_hi", 0);
   
-  MPI_Comm_size(MPI_COMM_WORLD, &NPES);
-  MPI_Comm_rank(MPI_COMM_WORLD, &MYPE);
+  MPI_Comm_size(BoutComm::get(), &NPES);
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
   
   restart.add(NPES, "NPES", 0);
   restart.add(mesh->NXPE, "NXPE", 0);
