@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= cvode.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
+SOURCEC		= cvode.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h)
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= test.cpp
+SOURCEC		= test.cxx
 
 include $(BOUT_TOP)/make.config

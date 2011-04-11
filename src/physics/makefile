@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= smoothing.cpp  sourcex.cpp  gyro_average.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
+SOURCEC		= smoothing.cxx  sourcex.cxx  gyro_average.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h)
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

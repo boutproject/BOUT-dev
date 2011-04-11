@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= karniadakis.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
+SOURCEC		= karniadakis.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h)
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

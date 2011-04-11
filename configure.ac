@@ -131,7 +131,7 @@ then
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cpp"
+    FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cxx"
   else
     echo "--with-facets was specified but could not find the FACETS interface"
     exit
@@ -236,7 +236,7 @@ fi
 if test "$PETSC" != ""
 then
 	echo "Using PETSc interface"
-	PRECON_SOURCE="$PRECON_SOURCE jstruc.cpp"
+	PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
 	EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
 	EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 fi
@@ -356,7 +356,7 @@ then
 		CFLAGS="$CFLAGS -DNCDF"
 	
 		# Add extra sources
-		FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cpp"
+		FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 			      
 		NCINC=`nc-config --cflags`
 		EXTRA_INCS="$EXTRA_INCS $NCINC"
@@ -418,7 +418,7 @@ then
 			CFLAGS="$CFLAGS -DNCDF"
 	
 			# Add extra sources
-			FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cpp"
+			FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 			      
 			if test "$NCPATH" != ""; then
 				echo " -> path $NCPATH"
@@ -518,7 +518,7 @@ else
 	if test "$with_pdb" = "yes"
 	then
 
-		FILEIO_SOURCE="$FILEIO_SOURCE pdb_format.cpp"
+		FILEIO_SOURCE="$FILEIO_SOURCE pdb_format.cxx"
 		EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
 		# Set a compile-time flag. PDBF because PDB already used in score.h

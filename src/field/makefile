@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= field.cpp field2d.cpp field3d.cpp fieldperp.cpp field_data.cpp initialprofiles.cpp vecops.cpp vector2d.cpp vector3d.cpp where.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h) field_data.h
+SOURCEC		= field.cxx field2d.cxx field3d.cxx fieldperp.cxx field_data.cxx initialprofiles.cxx vecops.cxx vector2d.cxx vector3d.cxx where.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h) field_data.h
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

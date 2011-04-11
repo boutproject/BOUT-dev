@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= gem.cpp
+SOURCEC		= gem.cxx
 
 include $(BOUT_TOP)/make.config

@@ -10,8 +10,8 @@
 # for SSE2: -msse2 -mfpmath=sse
 # 
 # This must also specify one or more file formats
-# -DPDBF  PDB format (need to include pdb_format.cpp)
-# -DNCDF  NetCDF format (nc_format.cpp)
+# -DPDBF  PDB format (need to include pdb_format.cxx)
+# -DNCDF  NetCDF format (nc_format.cxx)
 
 # Created this variable so that a user won't overwrite the CFLAGS variable
 # on the command line, just add to this one
@@ -34,8 +34,8 @@ LD			= $(CXX)
 
 ####################################################################
 # Extra (optional) source files, includes and libs
-# NOTE: EXTRA_SRC must include a solver (solver.cpp or ida_solver.cpp)
-#       and a file format (nc_format.cpp or pdb_format.cpp)
+# NOTE: EXTRA_SRC must include a solver (solver.cxx or ida_solver.cxx)
+#       and a file format (nc_format.cxx or pdb_format.cxx)
 ####################################################################
 
 EXTRA_INCS		= @EXTRA_INCS@
@@ -53,19 +53,19 @@ FACETS_SOURCE   = @FACETS_SOURCE@
 
 # Files that are needed by configure and should be dependencies for 'all'
 
-OBJ						= $(SOURCEC:%.cpp=%.o)
+OBJ						= $(SOURCEC:%.cxx=%.o)
 LIB						= $(BOUT_TOP)/lib/libbout++.a
 
 BOUT_INCLUDE	= -I$(BOUT_TOP)/include $(CXXINCLUDE) $(EXTRA_INCS)
 BOUT_LIBS			= -lm -L$(BOUT_TOP)/lib -lbout++ $(EXTRA_LIBS)
 
-DEPS					= $(SOURCEC:.cpp=.d)
-CHANGED				= $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cpp -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
+DEPS					= $(SOURCEC:.cxx=.d)
+CHANGED				= $(shell find -f $(BOUT_TOP)/include $(BOUT_TOP)/src -type f \( -name \*.cxx -or -name \*.h \) -newer $(LIB) -print 2> /dev/null)
 
 # Need to use ifndef because TARGET could be set in a file (as opposed to the command line or environment variable)
 # This will set a default if no TARGET is provided
 ifndef TARGET
-TARGET				= $(SOURCEC:%.cpp=%)
+TARGET				= $(SOURCEC:%.cxx=%)
 endif
 
 ####################################################################
@@ -121,8 +121,8 @@ ifeq ("$(TARGET)", "lib")
 -include $(DEPS)
 
 # This automatically generates dependency rules
-%.d : %.cpp
-	-@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF"$@" -MG -MP -MM -MT"$(<:.cpp=.o)" "$<"
+%.d : %.cxx
+	-@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF"$@" -MG -MP -MM -MT"$(<:.cxx=.o)" "$<"
 
 ####################################################################
 # Notes about the different flags:
@@ -158,7 +158,7 @@ else
 ####################################################################
 # Make the target (e.g. gas_compress)
 ####################################################################
-$(TARGET).cpp: checklib
+$(TARGET).cxx: checklib
 $(TARGET).o: $(LIB)
 $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
 	@echo "  Linking" $(TARGET)
@@ -172,9 +172,9 @@ endif
 
 endif
 
-%.o: $(BOUT_TOP)/make.config %.cpp
-	@echo "  Compiling " $(@F:.o=.cpp)
-	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cpp) -o $@
+%.o: $(BOUT_TOP)/make.config %.cxx
+	@echo "  Compiling " $(@F:.o=.cxx)
+	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
 
 ####################################################################
 # Clean target. Pretty self explanatory.

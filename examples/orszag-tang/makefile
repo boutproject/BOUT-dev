@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= mhd.cpp
+SOURCEC		= mhd.cxx
 
 include $(BOUT_TOP)/make.config

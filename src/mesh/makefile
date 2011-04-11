@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= difops.cpp grid.cpp interpolation.cpp mesh.cpp boutmesh.cpp boundary_standard.cpp boundary_factory.cpp boundary_region.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
+SOURCEC		= difops.cxx grid.cxx interpolation.cxx mesh.cxx boutmesh.cxx boundary_standard.cxx boundary_factory.cxx boundary_region.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h)
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

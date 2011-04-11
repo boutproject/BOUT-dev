@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= ida.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
+SOURCEC		= ida.cxx
+SOURCEH		= $(SOURCEC:%.cxx=%.h)
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

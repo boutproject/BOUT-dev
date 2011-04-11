@@ -3,15 +3,15 @@ BOUT_TOP	= ..
 
 DIRS			= field fileio invert mesh physics precon solver sys
 
-SOURCEC		= bout++.cpp $(FACETS_SOURCE)
+SOURCEC		= bout++.cxx $(FACETS_SOURCE)
 SOURCEH		= bout.h
 CFLAGS		= -DMD5SUM=$(CHECKSUM) -DREVISION="$(REVISION)"
 TARGET		= lib
 
-# Checksum passed to bout++.cpp
-CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cpp $(DIR)/*.h)) | md5sum | head -c 32)
+# Checksum passed to bout++.cxx
+CHECKSUM := $(shell cat $(foreach DIR,$(DIRS),$(wildcard $(DIR)/*.cxx $(DIR)/*.h)) | md5sum | head -c 32)
 
-# Git revision passed to bout++.cpp
+# Git revision passed to bout++.cxx
 REVISION := $(shell git rev-parse HEAD 2> /dev/null || hg id -n 2> /dev/null || { echo "Unknown"; } )
 
 # This is a little obscure, so here is an explanation:
