@@ -2398,7 +2398,7 @@ fi
   then
     echo "Enabling FACETS interface"
     EXTRA_INCS="$EXTRA_INCS -I$FIFCPATH/include"
-    FACETS_SOURCE="$FACETS_SOURCE BoutIfc.cxx"
+    FACETS_SOURCE="$FACETS_SOURCE bout_facets.cxx"
   else
     echo "--with-facets was specified but could not find the FACETS interface"
     exit
@@ -5205,16 +5205,6 @@ done
 # Download + Build PVODE '98
 #############################################################
 
-if ( test "$enable_download_pvode" != "no" )
-then
-	if ( test "$enable_download_pvode" == "")
-	then
-		enable_download_pvode=yes
-	fi
-
-	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
-	then
-
 
                 if ! [ -d externalpackages ]
 				then
@@ -5233,6 +5223,16 @@ then
 					mkdir include
 				fi
 
+
+if ( test "$enable_download_pvode" != "no" )
+then
+	if ( test "$enable_download_pvode" == "")
+	then
+		enable_download_pvode=yes
+	fi
+
+	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
+        then
 
 #		# Get a decent file transfer
 #		prog=$(basename "$(which curl)")

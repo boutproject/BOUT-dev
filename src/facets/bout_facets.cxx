@@ -13,7 +13,7 @@
 // #include <TxDebugExcept.h>
 
 // interface includes
-#include <BoutIfc.hxx>
+#include <bout_facets.hxx>
 
 // bout includes
 #include <bout.hxx>

@@ -1,7 +1,7 @@
 
-BOUT_TOP = ../../../..
+BOUT_TOP = ../..
 
-SOURCEC		= rk4.cxx
+SOURCEC		= $(FACETS_SOURCE)
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 

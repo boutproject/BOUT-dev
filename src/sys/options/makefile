@@ -1,7 +1,7 @@
 BOUT_TOP = ../../..
 SOURCEC		= options_ini.cxx
 
-SOURCEH		= $(SOURCEC:%.cxx=%.h) globals.h bout_types.h multiostream.h
+SOURCEH		= $(SOURCEC:%.cxx=%.hxx) globals.hxx bout_types.hxx multiostream.hxx
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

@@ -5,7 +5,7 @@ SOURCEC		= boutexception.cxx comm_group.cxx dcomplex.cxx derivs.cxx \
 		  diagnos.cxx msg_stack.cxx options.cxx output.cxx \
 		  stencils.cxx utils.cxx optionsreader.cxx boutcomm.cxx
 
-SOURCEH		= $(SOURCEC:%.cxx=%.h) globals.h bout_types.h multiostream.h
+SOURCEH		= $(SOURCEC:%.cxx=%.hxx) globals.hxx bout_types.hxx multiostream.hxx
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

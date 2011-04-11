@@ -175,7 +175,7 @@ int bout_init(int argc, char **argv)
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
 #ifdef REVISION
-  output.write("Git revision: %s\n", REV);
+  output.write("Revision: %s\n", REV);
 #endif
 #ifdef MD5SUM
   output.write("MD5 checksum: %s\n", CHECKSUM);

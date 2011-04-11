@@ -192,7 +192,10 @@ distclean: clean
 # Removing the externalpackage installation. When we have more packages, need a better way
 	@$(RM) -rf $(BOUT_TOP)/include/pvode
 	@echo lib cleaned
-	@$(RM) -rf $(BOUT_TOP)/lib
+	@$(RM) -rf $(BOUT_TOP)/lib/*
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/lib/*.a
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/source/obj/*.o
+	-@$(RM) $(BOUT_TOP)/externalpackages/PVODE/precon/obj/*.o
 	-@$(RM) -rf $(BOUT_TOP)/autom4te.cache make.config
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
