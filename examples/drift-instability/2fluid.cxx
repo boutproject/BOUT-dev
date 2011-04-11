@@ -3,10 +3,10 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include "bout.h"
-#include "initialprofiles.h"
-#include "derivs.h"
-#include "interpolation.h"
+#include "bout.hxx"
+#include "initialprofiles.hxx"
+#include "derivs.hxx"
+#include "interpolation.hxx"
 
 #include <math.h>
 #include <stdio.h>
@@ -470,7 +470,7 @@ int physics_run(BoutReal t)
  *                       FAST LINEAR FIELD SOLVERS
  *******************************************************************************/
 
-#include "invert_laplace.h"
+#include "invert_laplace.hxx"
 
 // Performs inversion of rho (r) to get phi (p)
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags)

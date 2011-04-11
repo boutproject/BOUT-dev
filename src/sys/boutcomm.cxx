@@ -1,4 +1,4 @@
-#include "boutcomm.h"
+#include "boutcomm.hxx"
 
 BoutComm* BoutComm::instance = NULL;
 

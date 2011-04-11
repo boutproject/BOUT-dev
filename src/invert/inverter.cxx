@@ -31,10 +31,10 @@
  *
  **************************************************************************/
 
-#include "globals.h"
-#include "inverter.h"
-#include "utils.h"
-#include "fft.h"
+#include "globals.hxx"
+#include "inverter.hxx"
+#include "utils.hxx"
+#include "fft.hxx"
 
 #include <math.h>
 #include <stdlib.h>
@@ -114,7 +114,7 @@ void Inverter::A(BoutReal *b, BoutReal *x)
  * Protected functions
  **************************************************************************/
 
-#include "invert_laplace.h"
+#include "invert_laplace.hxx"
 
 /// NOTE: This should be changed/merged with Field2D/3D boundary system
 void Inverter::applyBoundary(FieldPerp &f, int flags)

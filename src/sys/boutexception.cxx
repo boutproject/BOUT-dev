@@ -1,5 +1,5 @@
-#include "globals.h"
-#include "boutexception.h"
+#include "globals.hxx"
+#include "boutexception.hxx"
 #include <iostream>
 
 BoutException::~BoutException() throw()

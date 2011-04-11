@@ -1,8 +1,8 @@
 
-#include "globals.h"
-#include "invert_laplace_gmres.h"
-#include "invert_laplace.h"
-#include "difops.h"
+#include "globals.hxx"
+#include "invert_laplace_gmres.hxx"
+#include "invert_laplace.hxx"
+#include "difops.hxx"
 
 const Field3D LaplaceGMRES::invert(const Field3D &b, const Field3D &start, int inv_flags, bool precon, Field3D *a, Field3D *c)
 {

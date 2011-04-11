@@ -25,9 +25,9 @@
  * 
  **************************************************************************/
 
-#include "globals.h"
-#include "options.h"
-#include "fft.h"
+#include "globals.hxx"
+#include "options.hxx"
+#include "fft.hxx"
 
 #include <fftw3.h>
 #include <math.h>

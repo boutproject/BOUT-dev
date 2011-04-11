@@ -39,19 +39,19 @@
 
 #include "mpi.h"
 
-#include "invert_laplace.h"
-#include "bout_types.h"
-#include "globals.h"
-#include "options.h"
-#include "fft.h"
-#include "utils.h"
-#include "dcomplex.h"
+#include "invert_laplace.hxx"
+#include "bout_types.hxx"
+#include "globals.hxx"
+#include "options.hxx"
+#include "fft.hxx"
+#include "utils.hxx"
+#include "dcomplex.hxx"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#include "lapack_routines.h" // Tridiagonal & band inversion routines
-#include "boutexception.h"
+#include "lapack_routines.hxx" // Tridiagonal & band inversion routines
+#include "boutexception.hxx"
 
 // This was defined in nvector.h
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE

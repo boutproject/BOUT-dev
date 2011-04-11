@@ -6,9 +6,9 @@
  *
  */
 
-#include "bout.h"
-#include "boutmain.h"
-#include "initialprofiles.h"
+#include "bout.hxx"
+#include "boutmain.hxx"
+#include "initialprofiles.hxx"
 
 int physics_init(bool restarting)
 {

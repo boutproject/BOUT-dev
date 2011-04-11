@@ -1,4 +1,4 @@
-#include "quiltmesh.h"
+#include "quiltmesh.hxx"
 #include "bout_exception.h"
 
 #include <algorithm>

@@ -9,9 +9,9 @@
  * This version uses global parameters for collisionality etc.
  ****************************************************************/
 
-#include "bout.h"
-#include "gyro_average.h"
-#include "invert_laplace.h"
+#include "bout.hxx"
+#include "gyro_average.hxx"
+#include "invert_laplace.hxx"
 
 #include <cmath>
 

@@ -25,9 +25,9 @@
 
 #include "mpi.h"
 
-#include "diagnos.h"
-#include "utils.h"
-#include "globals.h"
+#include "diagnos.hxx"
+#include "utils.hxx"
+#include "globals.hxx"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 

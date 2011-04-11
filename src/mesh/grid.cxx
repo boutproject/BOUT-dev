@@ -26,19 +26,19 @@
 
 #include "mpi.h"
 
-#include "globals.h"
-#include "utils.h"
+#include "globals.hxx"
+#include "utils.hxx"
 
-#include "dataformat.h" // Abstract data class
+#include "dataformat.hxx" // Abstract data class
 
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 
-#include "fft.h" // For reading 3D variables
-#include "dcomplex.h"
+#include "fft.hxx" // For reading 3D variables
+#include "dcomplex.hxx"
 
-#include "bout_types.h"
+#include "bout_types.hxx"
 
 /*******************************************************************************
  * GridFile class

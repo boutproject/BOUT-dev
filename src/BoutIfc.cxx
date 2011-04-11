@@ -13,10 +13,10 @@
 // #include <TxDebugExcept.h>
 
 // interface includes
-#include <BoutIfc.h>
+#include <BoutIfc.hxx>
 
 // bout includes
-#include <bout.h>
+#include <bout.hxx>
 
 BoutIfc::BoutIfc(int petsc, int mpi) {
   std::cerr << "BoutIfc ctor called with petsc = " << petsc <<

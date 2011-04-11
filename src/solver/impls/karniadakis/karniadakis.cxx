@@ -36,7 +36,7 @@
  *
  **************************************************************************/
 
-#include "karniadakis.h"
+#include "karniadakis.hxx"
 
 KarniadakisSolver::KarniadakisSolver() : Solver()
 {

@@ -27,10 +27,10 @@
  *
  **************************************************************/
 
-#include "globals.h"
-#include "difops.h"
-#include "gyro_average.h"
-#include "invert_laplace.h"
+#include "globals.hxx"
+#include "difops.hxx"
+#include "gyro_average.hxx"
+#include "invert_laplace.hxx"
 
 /// Approximate G(f) = f + rho^2*Delp2(f) using Taylor expansion
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho)

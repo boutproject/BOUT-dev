@@ -1,7 +1,7 @@
 
-#include "globals.h"
-#include "boundary_factory.h"
-#include "utils.h"
+#include "globals.hxx"
+#include "boundary_factory.hxx"
+#include "utils.hxx"
 
 #include <list>
 #include <string>

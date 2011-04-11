@@ -33,8 +33,8 @@
 #include <cmath>
 #include <iostream>
 
-#include "dcomplex.h"
-#include "utils.h"
+#include "dcomplex.hxx"
+#include "utils.hxx"
 
 dcomplex::dcomplex()
 {

@@ -193,7 +193,7 @@ distclean: clean
 	@$(RM) -rf $(BOUT_TOP)/include/pvode
 	@echo lib cleaned
 	@$(RM) -rf $(BOUT_TOP)/lib
-	-@$(RM) -rf $(BOUT_TOP)/externalpackages $(BOUT_TOP)/autom4te.cache make.config
+	-@$(RM) -rf $(BOUT_TOP)/autom4te.cache make.config
 	@echo externalpackages cleaned
 	@touch $(BOUT_TOP)/configure
 	@echo autom4te.cache cleaned

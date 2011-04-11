@@ -1,5 +1,5 @@
-#include "bout.h"
-#include "fft.h"
+#include "bout.hxx"
+#include "fft.hxx"
 
 int physics_init(bool restarting)
 {

@@ -25,12 +25,12 @@
  *
  **************************************************************************/
 
-#include "cvode.h"
+#include "cvode.hxx"
 
 #ifdef BOUT_HAS_CVODE
 
-#include "globals.h"
-#include "interpolation.h" // Cell interpolation
+#include "globals.hxx"
+#include "interpolation.hxx" // Cell interpolation
 
 #include <cvode/cvode.h>
 #include <nvector/nvector_parallel.h>

@@ -47,9 +47,9 @@
  * 
  **************************************************************************/
 
-#include "options_ini.h"
-#include "utils.h"
-#include "boutexception.h"
+#include "options_ini.hxx"
+#include "utils.hxx"
+#include "boutexception.hxx"
 
 OptionINI::OptionINI() {
   

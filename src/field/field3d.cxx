@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include "globals.h"
+#include "globals.hxx"
 
 #include "mpi.h"
 
@@ -28,14 +28,14 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "field3d.h"
-#include "utils.h"
-#include "fft.h"
-#include "dcomplex.h"
-#include "interpolation.h"
-#include "boundary_op.h"
-#include "boundary_factory.h"
-#include "boutexception.h"
+#include "field3d.hxx"
+#include "utils.hxx"
+#include "fft.hxx"
+#include "dcomplex.hxx"
+#include "interpolation.hxx"
+#include "boundary_op.hxx"
+#include "boundary_factory.hxx"
+#include "boutexception.hxx"
 
 /// Constructor
 Field3D::Field3D() : background(NULL)

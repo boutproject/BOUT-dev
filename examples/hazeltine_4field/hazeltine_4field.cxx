@@ -5,7 +5,7 @@
  * B.Dudson, University of York, Aug 2010 
  **************************************************************/
 
-#include "bout.h"
+#include "bout.hxx"
 
 // Evolving fields
 Field3D U, Psi, v, p;

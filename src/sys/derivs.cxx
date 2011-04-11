@@ -38,12 +38,12 @@
  * 
  **************************************************************************/
 
-#include "globals.h"
-#include "derivs.h"
-#include "stencils.h"
-#include "utils.h"
-#include "fft.h"
-#include "interpolation.h"
+#include "globals.hxx"
+#include "derivs.hxx"
+#include "stencils.hxx"
+#include "utils.hxx"
+#include "fft.hxx"
+#include "interpolation.hxx"
 
 #include <math.h>
 #include <string.h>

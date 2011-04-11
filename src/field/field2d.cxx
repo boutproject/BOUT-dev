@@ -25,16 +25,16 @@
 
 #include "mpi.h"
 
-#include "globals.h"
+#include "globals.hxx"
 
-#include "field2d.h"
+#include "field2d.hxx"
 
-#include "utils.h"
+#include "utils.hxx"
 
-#include "boundary_op.h"
-#include "boundary_factory.h"
+#include "boundary_op.hxx"
+#include "boundary_factory.hxx"
 
-#include "boutexception.h"
+#include "boutexception.hxx"
 
 #include <cmath>
 #include <stdlib.h>

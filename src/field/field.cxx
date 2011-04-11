@@ -23,13 +23,13 @@
  *
  **************************************************************************/
 
-#include "globals.h"
+#include "globals.hxx"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "field.h"
+#include "field.hxx"
 
 Field::Field()
 {

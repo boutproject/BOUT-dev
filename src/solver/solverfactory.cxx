@@ -1,13 +1,13 @@
-#include "solverfactory.h"
+#include "solverfactory.hxx"
 
-#include "impls/cvode/cvode.h"
-#include "impls/petsc/petsc.h"
-#include "impls/ida/ida.h"
-#include "impls/pvode/pvode.h"
-#include "impls/karniadakis/karniadakis.h"
-#include "impls/rk4/rk4.h"
+#include "impls/cvode/cvode.hxx"
+#include "impls/petsc/petsc.hxx"
+#include "impls/ida/ida.hxx"
+#include "impls/pvode/pvode.hxx"
+#include "impls/karniadakis/karniadakis.hxx"
+#include "impls/rk4/rk4.hxx"
 
-#include "boutexception.h"
+#include "boutexception.hxx"
 
 SolverFactory* SolverFactory::instance = NULL;
 

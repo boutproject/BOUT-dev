@@ -1,13 +1,13 @@
 
-#include "optionsreader.h"
-#include "boutexception.h"
-#include "globals.h"
+#include "optionsreader.hxx"
+#include "boutexception.hxx"
+#include "globals.hxx"
 
 // Interface for option file parsers
-#include "options/optionparser.h"
+#include "options/optionparser.hxx"
 
 // Individual parsers
-#include "options/options_ini.h"
+#include "options/options_ini.hxx"
 
 OptionsReader* OptionsReader::instance = NULL;
 

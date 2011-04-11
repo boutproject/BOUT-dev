@@ -27,12 +27,12 @@
  *
  **************************************************************************/
 
-#include "ida.h"
+#include "ida.hxx"
 
 #ifdef BOUT_HAS_IDA
 
-#include "globals.h"
-#include "interpolation.h" // Cell interpolation
+#include "globals.hxx"
+#include "interpolation.hxx" // Cell interpolation
 
 #include <ida/ida.h>
 #include <ida/ida_spgmr.h>

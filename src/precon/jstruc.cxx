@@ -2,8 +2,8 @@
 
 #include <stdio.h>
 #include <petsc.h>
-#include "globals.h"
-#include "interpolation.h" // Cell interpolation
+#include "globals.hxx"
+#include "interpolation.hxx" // Cell interpolation
 
 //#define NR_END 1
 

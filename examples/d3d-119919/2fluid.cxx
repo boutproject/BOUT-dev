@@ -4,11 +4,11 @@
  * for cross-benchmarking etc.
  *******************************************************************************/
 
-#include "bout.h"
-#include "initialprofiles.h"
-#include "derivs.h"
-#include "interpolation.h"
-#include "invert_laplace.h"
+#include "bout.hxx"
+#include "initialprofiles.hxx"
+#include "derivs.hxx"
+#include "interpolation.hxx"
+#include "invert_laplace.hxx"
 
 #include <math.h>
 #include <stdio.h>

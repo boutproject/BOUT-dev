@@ -1,7 +1,7 @@
-#include "options.h"
-#include "globals.h"
-#include "boutexception.h"
-#include "utils.h"
+#include "options.hxx"
+#include "globals.hxx"
+#include "boutexception.hxx"
+#include "utils.hxx"
 #include <sstream>
 
 Options::~Options() {

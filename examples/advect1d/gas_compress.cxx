@@ -4,8 +4,8 @@
  * B.Dudson, December 2007
  *******************************************************************/
 
-#include <bout.h>
-#include <boutmain.h>
+#include <bout.hxx>
+#include <boutmain.hxx>
 
 // Evolving variables 
 Field3D N, P; // Density, Pressure

@@ -36,17 +36,17 @@
 #include "mpi.h" // For MPI_Wtime()
 
 #define DATAFILE_ORIGIN
-#include "datafile.h"
+#include "datafile.hxx"
 #undef DATAFILE_ORIGIN
 
-#include "globals.h"
+#include "globals.hxx"
 
 #ifdef PDBF
 #include "pdb_format.h"
 #endif
 
 #ifdef NCDF
-#include "nc_format.h"
+#include "nc_format.hxx"
 #endif
 
 #include <string.h>

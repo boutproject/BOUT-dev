@@ -1,8 +1,8 @@
 
-#include "globals.h"
-#include "mesh.h"
-#include "utils.h"
-#include "derivs.h"
+#include "globals.hxx"
+#include "mesh.hxx"
+#include "utils.hxx"
+#include "derivs.hxx"
 
 #include <cmath>
 

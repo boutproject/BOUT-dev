@@ -1,8 +1,8 @@
 
-#include "rk4.h"
+#include "rk4.hxx"
 
-#include "utils.h"
-#include "boutexception.h"
+#include "utils.hxx"
+#include "boutexception.hxx"
 
 #include <cmath>
 

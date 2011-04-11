@@ -3,11 +3,11 @@
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
  *******************************************************************************/
 
-#include "bout.h"
-#include "initialprofiles.h"
-#include "derivs.h"
-#include "interpolation.h"
-#include "invert_laplace.h"
+#include "bout.hxx"
+#include "initialprofiles.hxx"
+#include "derivs.hxx"
+#include "interpolation.hxx"
+#include "invert_laplace.hxx"
 
 #include <math.h>
 #include <stdio.h>

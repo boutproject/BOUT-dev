@@ -20,10 +20,10 @@
  *
  **************************************************************************/
 
-#include "globals.h"
-#include "nc_format.h"
+#include "globals.hxx"
+#include "nc_format.hxx"
 
-#include "utils.h"
+#include "utils.hxx"
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE

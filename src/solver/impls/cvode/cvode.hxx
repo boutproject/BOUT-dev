@@ -1,0 +1,102 @@
+/**************************************************************************
+ * Interface to SUNDIALS CVODE
+ * 
+ * NOTE: Only one solver can currently be compiled in
+ *
+ **************************************************************************
+ * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ * 
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ **************************************************************************/
+
+#ifndef BOUT_HAS_CVODE
+
+#include "emptysolver.hxx"
+typedef EmptySolver CvodeSolver;
+ 
+#else
+class CvodeSolver;
+
+#ifndef __SUNDIAL_SOLVER_H__
+#define __SUNDIAL_SOLVER_H__
+
+// NOTE: MPI must be included before SUNDIALS, otherwise complains
+#include "mpi.h"
+
+#include "bout_types.hxx"
+#include "field2d.hxx"
+#include "field3d.hxx"
+#include "vector2d.hxx"
+#include "vector3d.hxx"
+
+#include "solver.hxx"
+
+#include <cvode/cvode_spgmr.h>
+#include <cvode/cvode_bbdpre.h>
+#include <nvector/nvector_parallel.h>
+
+#include <vector>
+using std::vector;
+
+class CvodeSolver : public Solver {
+  public:
+    CvodeSolver();
+    ~CvodeSolver();
+
+    void setPrecon(PhysicsPrecon f) {prefunc = f;}
+
+    void setJacobian(Jacobian j) {jacfunc = j; }
+
+    int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+
+    int run(MonitorFunc f);
+    BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime);
+
+    // These functions used internally (but need to be public)
+    void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
+    void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
+    void jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata);
+  private:
+    int NOUT; // Number of outputs. Specified in init, needed in run
+    BoutReal TIMESTEP; // Time between outputs
+
+    rhsfunc func; // RHS function
+    PhysicsPrecon prefunc; // Preconditioner
+    Jacobian jacfunc; // Jacobian - vector function
+  
+    N_Vector uvec; // Values
+    void *cvode_mem;
+
+    // Loading data from BOUT++ to/from CVODE
+    void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+    void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
+
+    void load_vars(BoutReal *udata);
+    void load_derivs(BoutReal *udata);
+    int save_vars(BoutReal *udata);
+    void save_derivs(BoutReal *dudata);
+
+    BoutReal pre_Wtime; // Time in preconditioner
+    BoutReal pre_ncalls; // Number of calls to preconditioner
+};
+
+#endif // __SUNDIAL_SOLVER_H__
+
+#endif
+

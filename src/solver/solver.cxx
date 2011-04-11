@@ -20,13 +20,13 @@
  *
  **************************************************************************/
 
-#include "globals.h"
-#include "solver.h"
+#include "globals.hxx"
+#include "solver.hxx"
 #include <string.h>
 
-#include "initialprofiles.h"
-#include "interpolation.h"
-#include "solverfactory.h"
+#include "initialprofiles.hxx"
+#include "interpolation.hxx"
+#include "solverfactory.hxx"
 
 /**************************************************************************
  * Constructor

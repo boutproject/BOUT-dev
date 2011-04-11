@@ -2,10 +2,10 @@
  * radial source and mask operators
  **************************************************************/
 
-#include "globals.h"
+#include "globals.hxx"
 #include <math.h>
 
-#include "sourcex.h"
+#include "sourcex.hxx"
 
 /* hyperbolic tangent */
 //template<typename TYPE> inline TYPE TanH(TYPE &a)

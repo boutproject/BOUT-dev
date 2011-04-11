@@ -29,9 +29,9 @@
 
 #include <math.h>
 
-#include "globals.h"
-#include "smoothing.h"
-#include "bout_types.h"
+#include "globals.hxx"
+#include "smoothing.hxx"
+#include "bout_types.hxx"
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f, bool BoutRealspace)
