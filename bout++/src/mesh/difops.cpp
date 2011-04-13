@@ -25,6 +25,7 @@
 
 #include "globals.h"
 #include "difops.h"
+#include "vecops.h"
 #include "utils.h"
 #include "derivs.h"
 #include "fft.h"
@@ -313,9 +314,17 @@ const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f)
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f)
-{
+const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
+}
+
+/*******************************************************************************
+ * Div_K_perp_Grad_perp
+ * Divergence of perpendicular diffusive flux kperp*Grad_perp
+ *******************************************************************************/
+
+const Field3D Div_K_perp_Grad_perp(const Field2D &kperp, const Field3D &f) {
+  
 }
 
 /*******************************************************************************
