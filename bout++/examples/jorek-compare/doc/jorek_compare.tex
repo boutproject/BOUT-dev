@@ -1,0 +1,153 @@
+%% Manual / derivations for preconditioning in BOUT++
+
+\documentclass[12pt]{article}
+\usepackage[nofoot]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{amsfonts}
+
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+        language=C++,
+	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+	identifierstyle=\ttfamily,
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+	showstringspaces=false,
+	basicstyle=\small,
+	numberstyle=\footnotesize,
+	numbers=left,
+	stepnumber=1,
+	numbersep=10pt,
+	tabsize=2,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	breakatwhitespace=false,
+	aboveskip={1.5\baselineskip},
+        columns=fixed,
+        upquote=true,
+        extendedchars=true,
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+%% SET HEADERS AND FOOTERS
+
+\pagestyle{fancy}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+  \markright{\thesection.\ #1}}
+\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+                                        % pages and right on odd pages 
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
+
+%% commands for boxes with important notes
+\newlength{\notewidth}
+\addtolength{\notewidth}{\textwidth}
+\addtolength{\notewidth}{-3.\parindent}
+\newcommand{\note}[1]{
+\fbox{
+\begin{minipage}{\notewidth}
+{\bf NOTE}: #1
+\end{minipage}
+}}
+
+\newcommand{\pow}{\ensuremath{\wedge} }
+
+\newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
+\newcommand{\Vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
+\newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
+\newcommand{\Bvec}{\ensuremath{\underline{B}}}
+
+\begin{document}
+
+\title{JOREK-like reduced MHD equations}
+
+\maketitle
+
+\section{Overview}
+
+Implementation of G.Huysmanns' equations used in JOREK for ELM simulations
+
+\section{Starting equations}
+
+From PPCF {\bf 51} (2009) 124012, the {\bf normalised} equations are:
+\begin{eqnarray*}
+  \deriv{\rho}{t} &=& -\nabla\left(\rho\underline{v}\right) + \nabla\left(D_\perp\nabla_\perp\rho\right) + S_\rho \\
+  \rho\deriv{T}{t} &=& -\rho\underline{v}\cdot\nabla T - \left(\gamma - 1\right)\rho T\nabla\cdot\underline{v} + \nabla\cdot\left(\chi_\perp\nabla_\perp T + \chi_{||}\nabla_{||}T\right) + S_T \\
+  \underline{e}_\phi\cdot\nabla\times\left(\rho\deriv{\underline{v}}{t}\right) &=& \underline{e}_\phi\cdot\nabla\times\left(-\rho\left(\underline{v}\cdot\nabla\right)\underline{v} - \nabla\left(\rho T\right) + \underline{J}\times\underline{B} + \mu\nabla^2\underline{v}\right) \\
+  \underline{B}\cdot\left(\rho\deriv{\underline{v}}{t}\right) &=& \underline{B}\cdot\left(-\rho\left(\underline{v}\cdot\nabla\right)\underline{v} - \nabla\left(\rho T\right) + \underline{J}\times\underline{B} + \mu\nabla^2\underline{v}\right) \\
+  \frac{1}{R^2}\deriv{\psi}{t} &=& \eta\left(T\right)\nabla\cdot\left(\frac{1}{R^2}\nabla_\perp\psi\right) - \underline{B}\cdot\nabla \phi
+\end{eqnarray*}
+where the velocity $\underline{v} = -R\nabla\phi\times\underline{e}_\phi + v_{||}\underline{B}$
+
+\subsection{Normalisation}
+
+The normalisation used in the above equations uses $\mu_0$ and 
+a typical mass density $\rho_0$. Here normalised quantities are given hats
+(which were omitted in the above equations). Time is normalised as:
+\[
+\hat{t} = \frac{t}{\sqrt{\mu_0\rho_0}}
+\]
+and so velocity is normalised to
+\[
+\hat{v} = v\sqrt{\mu_0\rho_0}
+\]
+
+Pressure and current are normalised to $\mu_0$
+\[
+\hat{p} = \mu_0 p \qquad \hat{j} = \mu_0 j
+\]
+The normalised pressure here is given by $\hat{p} = \hat{\rho}\hat{T}$.
+Since the pressure in Pascals is given by $p = enT$ where $n$ is the number
+density and $T$ is in eV, this gives
+\[
+\frac{1}{\mu_0}\hat{p} = e\frac{\rho_0\hat{rho}}{m_i} T_0\hat{T}
+\]
+where $m_i$ is the ion mass. The temperature must therefore be normalised to
+\[
+T_0 = \frac{m_i}{\mu_0 e \rho_0}
+\]
+which for $n_0=10^{20}$ gives $T_0\simeq 5\times 10^4$.
+
+The diffusion coefficients are normalised to:
+\begin{eqnarray*}
+\hat{\eta} &=& \eta\sqrt{\rho_0 / \mu_0} \\
+\hat{\mu} &=& \mu\sqrt{\mu_0/\rho_0} \\
+\hat{D_\perp} &=& D_\perp\sqrt{\mu_0\rho_0} \\
+\hat{\chi_\perp} &=& \chi_\perp\sqrt{\mu_0/\rho_0}
+\end{eqnarray*}
+
+\section{Equations solved in BOUT++ model}
+
+Rather than evolving the poloidal flux, the BOUT++ model evolves
+the parallel vector potential $\psi = A_{||} / B_0$. The total magnetic field
+is therefore given by:
+\[
+\Bvec = \Bvec_0 + \nabla\times\left(\Bvec_0\psi\right) \simeq \Bvec_0 + \nabla\psi \times\Bvec_0
+\]
+Either of these expressions can be used, depending on the value of the \texttt{full\_bfield} option. The parallel current is given by
+\[
+j_{||} = j_{||0} - \frac{B_0}{\mu_0}\nabla_\perp^2\psi
+\]
+which since $j_{||}$ is normalised to $\mu_0$, and $\psi$ is not normalised gives
+\[
+\hat{j_{||}} = \hat{j_{||0}} - B_0\nabla_\perp^2\psi
+\]
+
+\end{document}
+
