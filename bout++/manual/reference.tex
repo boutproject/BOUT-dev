@@ -37,7 +37,7 @@
 
 \section{Introduction}
 
-This is the reference manual for the BOUT++ code, a C++ development of the
+This is the reference manual for the BOUT++ code\cite{Dudson2009,dudson-2008-arxiv}, a C++ development of the
 BOUT code developed by X.Xu and M.Umansky at LLNL. This document describes
 the inner workings of the code. Users of the code who want to modify 
 the equations solved should read the users manual first.
@@ -468,5 +468,8 @@ Significant changes
 need a factor of hthe0. zlength and dz are in radians, and ZMIN/ZMAX are
 fractions of $2\pi$, so to simulate $1/5^{th}$ of a torus, $ZMAX-ZMIN = 0.2$.
 \end{itemize}
+
+\bibliography{references}
+\bibliographystyle{unsrt}
 
 \end{document}
