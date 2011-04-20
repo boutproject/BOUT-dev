@@ -2156,6 +2156,18 @@ in Clebsh form as
 \mathbf{b}_0\cdot\nabla\phi\times\nabla A &=& \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} - g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x} - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} + \left(g_{xy}\deriv{\phi}{y} - g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
 \end{eqnarray*}
 
+\[
+\nabla_\perp \equiv \nabla - \underline{b}\left(\underline{b}\cdot\nabla\right) \qquad \underline{b}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
+\]
+\[
+\underline{b} = \frac{1}{JB}\underline{e}_y = \frac{1}{JB}\left[g_{xy}\nabla x + g_{yy}\nabla y + g_{yz}\nabla z\right]
+\]
+In a Clebsch coordinate system $\underline{B} = \nabla z \times \nabla x = \frac{1}{J}\underline{e}_y$, $g_{yy} = \underline{e}_y\cdot\underline{e}_y = J^2B^2$, and so the $\nabla y$ term cancels out:
+\begin{eqnarray*}
+\nabla_\perp &=& \nabla x\left(\deriv{}{x} - \frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) \\
+&+& \nabla z\left(\deriv{}{z} - \frac{g_{yz}}{\left(JB\right)^2}\deriv{}{y}\right)
+\end{eqnarray*}
+
 \subsection{Setting differencing method}
 
 \section{Staggered grids}
@@ -2191,8 +2203,6 @@ centre, lower X, lower Y, and lower Z. These are illustrated in figure~\ref{fig:
 \caption{How the cell location of an arithmetic operation (\code{+,-,*,/,\pow}) is decided}
 \label{fig:stagArith}
 \end{figure}
-
-
 
 
 \section{Examples}
@@ -2263,6 +2273,44 @@ efficient implementation of the Fields classes}.
 \bibliographystyle{unsrt}
 
 \appendix
+
+\section{Useful quantities}
+
+\subsection{Divergence of ExB velocity}
+
+\[
+\underline{v}_{ExB} = \frac{\underline{b}\times\nabla\phi}{B}
+\]
+Using
+\[
+\nabla\cdot\left(\underline{F}\times\underline{G}\right) = \left(\nabla\times\underline{F}\right)\cdot\underline{G} - \underline{F}\cdot\left(\nabla\times\underline{G}\right)
+\]
+the divergence of the $\underline{E}\times\underline{B}$ velocity
+can be written as 
+\begin{equation}
+\nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = \left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi - \frac{1}{B}\underline{b}\cdot\nabla\times\nabla\phi
+\label{eq:exb1}
+\end{equation}
+The second term on the right is identically zero (curl of a gradient). The first term on the right can be expanded as
+\[
+\left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi = \left[\nabla\left(\frac{1}{B}\right)\times\underline{b} + \frac{1}{B}\nabla\times\underline{b}\right]\cdot\nabla\phi
+\]
+Using
+\[
+\underline{b}\times\underline{\kappa} = \nabla\times\underline{b} - \underline{b}\left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]
+\]
+this becomes:
+\begin{eqnarray*}
+  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = &-&\underline{b}\times\nabla\left(\frac{1}{B}\right)\cdot\nabla\phi \\
+  &+& \frac{1}{B}\underline{b}\times\underline{\kappa}\cdot\nabla\phi \\
+  &+& \left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]\underline{b}\cdot\nabla\phi
+\end{eqnarray*}
+
+Alternatively, equation~\ref{eq:exb1} can be expanded as
+\begin{eqnarray*}
+  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\nabla\times\underline{B}\cdot\nabla\phi \\
+  &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\underline{J}\cdot\nabla\phi
+\end{eqnarray*}
 
 \section{Installing PACT}
 \label{apx:pact}

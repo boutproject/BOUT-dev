@@ -2,27 +2,12 @@
 
 .PHONY:all
 
-all: user_manual.pdf reference.pdf developer_manual.pdf preconditioning.pdf
+all: user_manual.pdf reference.pdf developer_manual.pdf preconditioning.pdf coordinates.pdf
 
-user_manual.pdf: user_manual.tex references.bib
-	pdflatex user_manual
-	bibtex user_manual
-	pdflatex user_manual
-	pdflatex user_manual
-
-reference.pdf: reference.tex
-	pdflatex reference.tex
-	pdflatex reference.tex
-
-developer_manual.pdf: developer_manual.tex
-	pdflatex developer_manual.tex
-	pdflatex developer_manual.tex
-
-preconditioning.pdf: preconditioning.tex references.bib
-	pdflatex preconditioning
-	bibtex preconditioning
-	pdflatex preconditioning
-	pdflatex preconditioning
+%.pdf: %.tex references.bib
+	pdflatex $(@F:.pdf=)
+	bibtex $(@F:.pdf=)
+	pdflatex $(@F:.pdf=)
 
 .PHONY:clean
 
