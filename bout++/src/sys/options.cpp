@@ -1,5 +1,5 @@
-#include "options.h"
 #include "globals.h"
+#include "options.h"
 #include "boutexception.h"
 #include "utils.h"
 #include <sstream>

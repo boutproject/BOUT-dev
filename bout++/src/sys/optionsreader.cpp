@@ -1,7 +1,6 @@
-
+#include "globals.h"
 #include "optionsreader.h"
 #include "boutexception.h"
-#include "globals.h"
 
 // Interface for option file parsers
 #include "options/optionparser.h"
