@@ -5,31 +5,36 @@
 
 #include <bout.h>
 #include <invert_laplace.h>
+#include <math.h>
 
 // Evolving quantities
-Field3D rho, T, u, vpar, psi;
+Field3D rho, Te, Ti, u, vpar, psi;
 // Derived quantities
 Field3D Jpar, phi; // Parallel current, electric potential
 
-Field2D D_perp, chi_perp, chi_par; // Particle and heat diffusion coefficients
-Field2D eta0;  // Resistivity
-Field3D eta;
-BoutReal viscos_par, viscos_perp; // Viscosity coefficients
-
-Field2D rho0, T0; // Equilibrium mass density and temperature
+// Equilibrium quantities
+Field2D rho0, Te0, Ti0; // Equilibrium mass density, electron and ion temperature
 Field2D B0, J0, P0;
 Vector2D b0xcv; // Curvature term
 Vector2D B0vec; // B0 field vector
 
+// Dissipation coefficients
+Field2D D_perp; // Particle diffusion coefficient
+Field2D chi_eperp, chi_epar; // Electron heat diffusion coefficients
+Field2D chi_iperp, chi_ipar; // Ion heat diffusion coefficients
+Field2D eta0;  // Resistivity
+Field3D eta;
+BoutReal viscos_par, viscos_perp; // Viscosity coefficients
+
 int phi_flags;
 
+// Constants
 const BoutReal MU0 = 4.0e-7*PI;
 const BoutReal Charge = 1.602e-19; // electron charge e (C)
 const BoutReal Mi = 2.0*1.6726e-27; // Ion mass
 
 // Normalisation factors
-BoutReal Bnorm, Tnorm;
-BoutReal wci, cs, rho_s;
+BoutReal Tnorm, rhonorm; // Partial normalisation to rho and MU0. Temperature normalised
 
 // options
 
@@ -49,18 +54,96 @@ int physics_init(bool restarting) {
   output.write("\tFile    : %s\n", __FILE__);
   output.write("\tCompiled: %s at %s\n", __DATE__, __TIME__);
 
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("jorek");
+
   //////////////////////////////////////////////////////////////
   // Load data from the grid
 
   // Load 2D profiles
-  mesh->get(J0, "Jpar0");    // A / m^2
-  mesh->get(P0, "pressure"); // Pascals
+  if(mesh->get(J0, "Jpar0"));    // A / m^2
+  
+  if(mesh->get(rho0, "Ni0")) {
+    output << "Warning: No density profile available\n";
+    BoutReal d0;
+    options->get("density", d0, 1e20);
+    rho0 = d0;
+  }
+  
+  // Read temperature
+  mesh->get(Te0, "Te0");
+  mesh->get(Ti0, "Ti0");
+
+  // Try reading pressure profile (in Pascals)
+  if(mesh->get(P0, "pressure")) {
+    // Just calculate from Temp and density
+    P0 = Charge * (Ti0 + Te0) * rho0;
+  }else {
+    // Make sure that density and temperature are consistent with pressure
+    
+    Field2D factor = P0 / (Charge * (Ti0 + Te0) * rho0);
+    
+    output.write("\tPressure factor %e -> %e\n", min(factor,true), max(factor, true));
+    
+    // Multiply temperatures by this factor
+    Te0 *= factor;
+    Ti0 *= factor;
+  }
+  rho0 *= Mi; // Convert density to mass density [kg / m^3]
+
+  // Load dissipation coefficients, override in options file
+  if(options->isSet("D_perp")) {
+    BoutReal tmp;
+    options->get("D_perp", tmp, 0.0);
+    D_perp = tmp;
+  }else mesh->get(D_perp, "D_perp");
+
+  if(options->isSet("chi_eperp")) {
+    BoutReal tmp;
+    options->get("chi_eperp", tmp, 0.0);
+    chi_eperp = tmp;
+  }else mesh->get(chi_eperp, "chi_eperp");
+
+  if(options->isSet("chi_iperp")) {
+    BoutReal tmp;
+    options->get("chi_iperp", tmp, 0.0);
+    chi_iperp = tmp;
+  }else mesh->get(chi_iperp, "chi_iperp");
+
+  if(options->isSet("chi_epar")) {
+    BoutReal tmp;
+    options->get("chi_epar", tmp, 0.0);
+    chi_epar = tmp;
+  }else mesh->get(chi_epar, "chi_epar");
+
+  if(options->isSet("chi_ipar")) {
+    BoutReal tmp;
+    options->get("chi_ipar", tmp, 0.0);
+    chi_ipar = tmp;
+  }else mesh->get(chi_ipar, "chi_ipar");
+
+  if(options->isSet("eta")) {
+    BoutReal tmp;
+    options->get("eta", tmp, 0.0);
+    eta0 = tmp;
+  }else mesh->get(eta, "eta");
+
+  if(options->isSet("viscos_perp")) {
+    BoutReal tmp;
+    options->get("viscos_perp", tmp, 0.0);
+    viscos_perp = tmp;
+  }else mesh->get(viscos_perp, "viscos_perp");
+
+  if(options->isSet("viscos_par")) {
+    BoutReal tmp;
+    options->get("viscos_par", tmp, 0.0);
+    viscos_par = tmp;
+  }else mesh->get(viscos_par, "viscos_par");
 
   // Load curvature term
   b0xcv.covariant = false; // Read contravariant components
   mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
-
-  // Load metrics
+  
   // Metric coefficients
   Field2D Rxy, Bpxy, Btxy, hthe;
   Field2D I; // Shear factor
@@ -77,9 +160,6 @@ int physics_init(bool restarting) {
   mesh->get(B0,   "Bxy");  // T
   mesh->get(hthe, "hthe"); // m
   mesh->get(I,    "sinty");// m^-2 T^-1
-
-  Options *globalOptions = Options::getRoot();
-  Options *options = globalOptions->getSection("jorek");
   
   OPTION(options, nonlinear,           false);
   OPTION(options, full_bfield,         false);
@@ -104,16 +184,27 @@ int physics_init(bool restarting) {
   //////////////////////////////////////////////////////////////
   // NORMALISE QUANTITIES
   
-  if(mesh->get(Bnorm, "bmag")) // Typical magnetic field (T)
-    Bnorm = 1.0;
+  rhonorm = max(rho0, true); // Maximum over all grid
+  Tnorm = Mi / (MU0 * Charge * rhonorm); // Temperature normalisation
+
+  SAVE_ONCE2(rhonorm, Tnorm); // Save normalisation factors to file
+
+  // Normalise quantities
   
-  wci = Charge * Bnorm / Mi; // Cyclotron angular frequency
-  cs = sqrt(Charge * Tnorm / Mi); // Sound speed
-  rho_s = cs / wci; // Larmor radius
+  P0 *= MU0;
+  J0 *= MU0;
+  rho0 /= rhonorm;
+  Te0 /= Tnorm;
+  Ti0 /= Tnorm;
   
-  // Normalising times to 1/wci and length to rho_s
-  
-  
+  eta0        *= sqrt(rhonorm / MU0);
+  viscos_perp *= sqrt(MU0 / rhonorm);
+  viscos_par  *= sqrt(MU0 / rhonorm);
+  D_perp      *= sqrt(MU0 * rhonorm);
+  chi_eperp   *= sqrt(MU0 / rhonorm);
+  chi_epar    *= sqrt(MU0 / rhonorm);
+  chi_iperp   *= sqrt(MU0 / rhonorm);
+  chi_ipar    *= sqrt(MU0 / rhonorm);
   
   //////////////////////////////////////////////////////////////
   // CALCULATE METRICS
@@ -150,10 +241,11 @@ int physics_init(bool restarting) {
 
   // SET EVOLVING VARIABLES
 
-  SOLVE_FOR5(rho, T, u, vpar, psi);
+  SOLVE_FOR6(rho, Te, Ti, u, vpar, psi);
   
   comms.add(rho);
-  comms.add(T);
+  comms.add(Te);
+  comms.add(Ti);
   comms.add(u);
   comms.add(phi);
   comms.add(vpar);
@@ -196,14 +288,16 @@ int physics_run(BoutReal t) {
   mesh->communicate(Jpar);
   
   Field3D rhot = rho0;
-  Field3D Tt = T0;
-  Field3D P = rho*T0 + T*rho0; // Perturbed pressure
+  Field3D Tet = Te0;
+  Field3D Tit = Ti0;
+  Field3D P = rho*(Te0+Ti0) + (Te+Ti)*rho0; // Perturbed pressure
   if(nonlinear) {
     rhot += rho;
-    Tt += T;
-    P += rho*T;
+    Tet += Te;
+    Tit += Ti;
+    P += rho*(Te+Ti);
     
-    eta = eta0*((Tt/Tnorm)^(-1.5)); // Update resistivity
+    eta = eta0*((Tet/Te0)^(-1.5)); // Update resistivity based on Te
   }
 
   if(flux_method) {
@@ -219,15 +313,24 @@ int physics_run(BoutReal t) {
     
     ddt(rho) = -Div(vExB + vD, rhot);
     
-    ////////// Temperature equation ////////////
+    ////////// Temperature equations ////////////
   
-    vD = -chi_perp * Grad_perp(T);
+    vD = -chi_eperp * Grad_perp(Te);
     vD.applyBoundary();
     
-    ddt(T) = 
-      - b0xGrad_dot_Grad(phi, Tt)
-      - (2./3.)*Tt*Div(vExB)
-      - (Div(vD, T) - Div_par_K_Grad_par(chi_par, T))/rhot
+    ddt(Te) = 
+      - b0xGrad_dot_Grad(phi, Tet)
+      - (2./3.)*Tet*Div(vExB)
+      - (Div(vD, Te) - Div_par_K_Grad_par(chi_epar, Te))/rhot
+      ;
+    
+    vD = -chi_iperp * Grad_perp(Ti);
+    vD.applyBoundary();
+    
+    ddt(Ti) = 
+      - b0xGrad_dot_Grad(phi, Tit)
+      - (2./3.)*Tit*Div(vExB)
+      - (Div(vD, Ti) - Div_par_K_Grad_par(chi_ipar, Ti))/rhot
       ;
   }else {
     // Use analytic expressions, expand terms
@@ -238,8 +341,15 @@ int physics_run(BoutReal t) {
     ddt(rho) = -b0xGrad_dot_Grad(phi, rhot) // Advection 
       - divExB*rhot; // Compression
     
-    ddt(T) = -b0xGrad_dot_Grad(phi, Tt) 
-      - (2./3.)*Tt*divExB;
+    ddt(Te) = 
+      -b0xGrad_dot_Grad(phi, Tet) 
+      - (2./3.)*Tet*divExB
+      ;
+
+    ddt(Ti) = 
+      -b0xGrad_dot_Grad(phi, Tit) 
+      - (2./3.)*Tit*divExB
+      ;
   }
   
   if(full_v_method) {
@@ -274,7 +384,7 @@ int physics_run(BoutReal t) {
     
     ////////// Parallel velocity equation ////////////
     
-    ddt(vpar) = -Grad_parP(P + rho0*T0, CELL_YLOW);
+    ddt(vpar) = -Grad_parP(P + P0, CELL_YLOW);
     if(nonlinear)
       ddt(vpar) -= b0xGrad_dot_Grad(phi, vpar); // Advection
   }
