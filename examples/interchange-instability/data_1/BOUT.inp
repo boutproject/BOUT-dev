@@ -27,6 +27,8 @@ grid = "slab.6b5.r1.cdl"
 
 dump_format = "nc" # Output format. nc = NetCDF
 
+non_uniform = false
+
 ##################################################
 # derivative methods
 

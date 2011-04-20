@@ -1,9 +1,9 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion using FFT and Tridiagonal solver
  *
- * Equation solved is: \nabla^2_\perp x + \nabla_perp c\cdot\nabla_\perp x + a x = b
+ * Equation solved is: d*\nabla^2_\perp x + (1/c)\nabla_perp c\cdot\nabla_\perp x + a x = b
  * 
- * Where a and c are functions of x and y (not z)
+ * Where a, c and d are functions of x and y only (not z)
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -54,11 +54,11 @@ const int INVERT_4TH_ORDER   = 128; // Use band solver for 4th order in x
 const int INVERT_AC_IN_LAP   = 256;
 const int INVERT_AC_OUT_LAP  = 512;
 
-const int INVERT_IN_SYM   = 1024; // Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_OUT_SYM  = 2048; // Same for outer boundary
-const int INVERT_IN_SET  = 4096; // Set inner boundary
-const int INVERT_OUT_SET = 8192; // Set outer boundary
-const int INVERT_IN_RHS = 16384; // Use input value in RHS at inner boundary
+const int INVERT_IN_SYM  =  1024; // Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_OUT_SYM =  2048; // Same for outer boundary
+const int INVERT_IN_SET  =  4096; // Set inner boundary
+const int INVERT_OUT_SET =  8192; // Set outer boundary
+const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
 const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
 const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
 

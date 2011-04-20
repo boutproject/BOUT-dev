@@ -90,6 +90,35 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
   return Grad(f, outloc, outloc, outloc);
 }
 
+const Vector3D Grad_perp(const Field3D &f, 
+			 CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
+  Vector3D result;
+
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Grad_perp( Field3D )");
+#endif
+
+  if(outloc_x == CELL_DEFAULT)
+    outloc_x = f.getLocation();
+  if(outloc_z == CELL_DEFAULT)
+    outloc_z = f.getLocation();
+
+  Field3D parcoef = 1./ (mesh->J * mesh->Bxy);
+  parcoef *= parcoef;
+
+  result.x = DDX(f, outloc_x) - parcoef*mesh->g_12*DDY(f, outloc_x);
+  result.y = 0.0;
+  result.z = DDZ(f, outloc_z) - parcoef*mesh->g_23*DDY(f, outloc_z);
+
+  result.covariant = true;
+  
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
 /**************************************************************************
  * Divergence operators
  **************************************************************************/

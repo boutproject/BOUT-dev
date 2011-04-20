@@ -77,6 +77,9 @@ const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f);
 const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f);
 const Field3D Div_par_K_Grad_par(Field3D &kY, Field3D &f);
 
+// Divergence of perpendicular diffusive flux kperp*Grad_perp
+const Field3D Div_K_perp_Grad_perp(const Field2D &kperp, const Field3D &f);
+
 // perpendicular Laplacian operator
 const Field2D Delp2(const Field2D &f);
 const Field3D Delp2(const Field3D &f, BoutReal zsmooth=0.4);

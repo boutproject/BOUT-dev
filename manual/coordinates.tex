@@ -1,0 +1,603 @@
+%% Users manual for C++ BOUT code
+
+\documentclass[12pt]{article}
+\usepackage[nofoot]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+        language=C++,
+	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+	identifierstyle=\ttfamily,
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+	showstringspaces=false,
+	basicstyle=\small,
+	numberstyle=\footnotesize,
+	numbers=left,
+	stepnumber=1,
+	numbersep=10pt,
+	tabsize=2,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	breakatwhitespace=false,
+	aboveskip={0.5\baselineskip},
+        columns=fixed,
+        upquote=true,
+        extendedchars=true,
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+%% SET HEADERS AND FOOTERS
+
+\pagestyle{fancy}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+  \markright{\thesection.\ #1}}
+\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+                                        % pages and right on odd pages 
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\bfile}[1]{\texttt{\bf 1}}
+
+%% commands for boxes with important notes
+\newlength{\notewidth}
+\addtolength{\notewidth}{\textwidth}
+\addtolength{\notewidth}{-3.\parindent}
+\newcommand{\note}[1]{
+\fbox{
+\begin{minipage}{\notewidth}
+{\bf NOTE}: #1
+\end{minipage}
+}}
+
+
+\newcommand{\rbtsq}{\ensuremath{\left(RB_\theta\right)^2}}
+\newcommand{\sbt}{\ensuremath{\sigma_{B\theta}}}
+\newcommand{\apar}{\ensuremath{A_{||}}}
+\newcommand{\Bthe}{\ensuremath{B_\theta}}
+\newcommand{\Bzeta}{\ensuremath{B_\zeta}}
+
+\newcommand{\pow}{\ensuremath{\wedge} }
+\newcommand{\poweq}{\ensuremath{\wedge =} }
+
+\newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
+\newcommand{\Vpar}{\ensuremath{V_{||}}}
+\newcommand{\Gradpar}{\ensuremath{\partial_{||}}}
+\newcommand{\Divpar}{\ensuremath{\nabla_{||}}}
+\newcommand{\DivXgradX}[2]{\ensuremath{\nabla_\psi\left(#1\partial_\psi #2\right)}}
+\newcommand{\DivParGradPar}[2]{\ensuremath{\nabla_{||}\left(#1\partial_{||} #2\right)}}
+
+\newcommand{\hthe}{\ensuremath{h_\theta}}
+\newcommand{\Bp}{\ensuremath{B_\theta}}
+\newcommand{\Bt}{\ensuremath{B_\zeta}}
+
+\newcommand{\Vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\bvec}{\Vec{b}}
+\newcommand{\kvec}{\Vec{\kappa}}
+\newcommand{\bxk}{\bvec\times\kvec\cdot\nabla}
+\newcommand{\Bvec}{\Vec{B}}
+\newcommand{\Bbar}{\overline{B}}
+\newcommand{\Lbar}{\overline{L}}
+\newcommand{\Tbar}{\overline{T}}
+\newcommand{\Jvec}{\Vec{J}}
+\newcommand{\Jpar}{J_{||}}
+\newcommand{\delp}{\nabla_\perp^2}
+\newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
+\newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
+\newcommand{\rbp}{\ensuremath{R\Bp}}
+\newcommand{\rbpsq}{\ensuremath{\left(\rbp\right)^2}}
+
+\begin{document}
+
+\title{Field-aligned coordinates}
+\author{B.Dudson, Department of Physics, University of York}
+\date{15$^{th}$ April 2011}
+\maketitle
+
+\section{Introduction}
+
+This manual covers the field-aligned coordinate system used in many BOUT++
+tokamak models, and useful derivations and expressions.
+
+
+\section{Orthogonal toroidal coordinates}
+\label{sec:coordinates}
+
+Starting with an orthogonal toroidal coordinate system $\left(\psi, \theta, \zeta\right)$, where $\psi$ is the poloidal flux, $\theta$ the poloidal angle (from $0$ to $2\pi$), and $\zeta$ the toroidal angle (also $0$ to $2\pi$). The magnitudes of the unit vectors are
+\begin{equation}
+\left|\mathbf{e}_\psi\right| = \frac{1}{R\left|B_p\right|} \qquad
+\left|\mathbf{e}_\theta\right| = \hthe \qquad
+\left|\mathbf{e}_\zeta\right| = R
+\label{eq:fluxmags}
+\end{equation}
+where $\hthe$ is the poloidal arc length per radian. 
+The coordinate system is right handed, so $\mathbf{\hat{e}_\psi\times\hat{e}_\theta = \hat{e}_\zeta}$,
+$\mathbf{\hat{e}_\psi\times\hat{e}_\zeta = -\hat{e}_\theta}$ and $\mathbf{\hat{e}_\theta\times\hat{e}_\zeta = \hat{e}_\psi}$. The covariant metric coefficients are
+\begin{equation}
+g_{\psi\psi} = \frac{1}{\left(R\left|B_p\right|\right)^2} \qquad
+g_{\theta\theta} = h_\theta^2 \qquad
+g_{\zeta\zeta} = R^2
+\end{equation}
+and the magnitudes of the reciprocal vectors are therefore
+\begin{equation}
+\left|\nabla\psi\right| = R\left|B_p\right| \qquad
+\left|\nabla\theta\right| = \frac{1}{h_\theta} \qquad
+\left|\nabla\zeta\right| = \frac{1}{R}
+\label{eq:fluxmags2}
+\end{equation}
+
+Because the coordinate system is orthogonal, $g^{ii} = 1/g_{ii}$ and so the cross-products can be calculated as
+\begin{eqnarray*}
+\nabla\psi\times\nabla\theta = &\mathbf{e^\psi\times e^\theta} = 
+g^{\psi\psi}\mathbf{e}_\psi\times g^{\theta\theta}\mathbf{e}_\theta \nonumber \\
+= & g^{\psi\psi}g^{\theta\theta}h_\psi h_\theta\mathbf{\hat{e}_\psi\times\hat{e}_\theta} \nonumber \\
+= &\frac{1}{h_\psi h_\theta}\mathbf{\hat{e}}_\zeta 
+= \frac{R\left|B_p\right|}{h_\theta}\mathbf{\hat{e}}_\zeta
+\end{eqnarray*}
+Similarly, 
+\[
+\nabla\psi\times\nabla\zeta = -\left|B_p\right|\mathbf{\hat{e}}_\theta \qquad
+\nabla\theta\times\nabla\zeta = \frac{R}{h_\theta}\mathbf{\hat{e}}_\psi
+\]
+
+\section{Field-aligned coordinates}
+
+In order to efficiently simulate (predominantly) field-aligned structures, grid-points
+are placed in a field-aligned coordinate system defined by:
+\begin{equation}
+x = \psi - \psi_0 \qquad y = \theta \qquad z = \zeta - \int_{\theta_0}^{\theta}\nu\left(\psi, \theta\right)d\theta
+\label{eq:coordtransform}
+\end{equation}
+Where $\nu$ is the local field-line pitch given by
+\begin{equation}
+\nu\left(\psi, \theta\right) = \frac{\mathbf{B}\cdot\nabla\zeta}{\mathbf{B}\cdot\nabla\theta} = \frac{\Bt\hthe}{\Bp R}
+\end{equation}
+The coordinate system is chosen so that $\psi$ increases radially outwards, and 
+$\Bp$ is positive. The sign of the toroidal field $\Bt$ can then be either +ve or -ve.
+
+The contravariant basis vectors are therefore
+\[
+\nabla x = \nabla \psi \qquad \nabla y = \nabla \theta \qquad \nabla z = \nabla\zeta - \left[\int_{\theta_0}^\theta\deriv{\nu\left(\psi, \theta\right)}{\psi} d\theta\right] \nabla\psi - \nu\left(\psi, \theta\right)\nabla\theta
+\]
+
+The term in square brackets is the integrated local shear:
+\[
+I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy
+\]
+
+\subsection{Magnetic field}
+
+Magnetic field is given in Clebsch form by:
+\[
+\mathbf{B} = \nabla z\times \nabla x = \frac{1}{J}\underline{e}_y
+\]
+The contravariant components of this are then
+\begin{equation}
+B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
+\label{eq:B_contravariant}
+\end{equation}
+i.e. $\Bvec$ can be written as
+\begin{equation}
+\Bvec = \frac{\Bp}{\hthe}\mathbf{e}_y
+\label{eq:Bvec_cont}
+\end{equation}
+and the covariant components calculated using $g_{ij}$ as
+\begin{equation}
+B_x = \Bt I R \qquad B_y = \frac{B^2 \hthe}{\Bp} \qquad B_z = \Bt R
+\label{eq:B_covariant}
+\end{equation}
+
+The unit vector in the direction of equilibrium $\Bvec$ is therefore
+\[
+\underline{b} = \frac{1}{JB}\underline{e}_y = \frac{1}{JB}\left[g_{xy}\nabla x + g_{yy}\nabla y + g_{yz}\nabla z\right]
+\]
+
+\subsection{Jacobian and metric tensors}
+
+The Jacobian of this coordinate system is
+\[
+J^{-1} \equiv \left(\nabla x\times\nabla y\right)\cdot\nabla z = \Bp / \hthe
+\]
+
+The contravariant metric tensor is given by:
+\[
+g^{ij} \equiv \Vec{e}^i \cdot\Vec{e}^j \equiv \nabla u^i \cdot \nabla u^j = \left(\begin{array}{ccc}
+\left(R\Bp\right)^2 & 0 & -I\left(R\Bp\right)^2 \\
+0 & 1 / \hthe^2 & -\nu / \hthe^2 \\
+-I\left(R\Bp\right)^2 & -\nu / \hthe^2 & I^2\left(R\Bp\right)^2 + B^2 / \left(R\Bp\right)^2 \end{array} \right)
+\]
+and the covariant metric tensor:
+\[
+g_{ij} \equiv \Vec{e}_i \cdot\Vec{e}_j = \left(\begin{array}{ccc}
+I^2 R^2 + 1 / \rbpsq & \Bt\hthe I R / \Bp & I R^2 \\
+\Bt\hthe I R / \Bp & B^2\hthe^2 / \Bp^2 & \Bt\hthe R / \Bp \\
+I R^2 & \Bt\hthe R / \Bp & R^2 \end{array} \right)
+\]
+
+\subsection{Differential operators}
+
+The derivative of a scalar field $F$ along the unperturbed magnetic
+field is given by
+\[
+\partial^0_{||}F \equiv \Vec{b}_0 \cdot\nabla F = \frac{1}{\sqrt{g_{yy}}}\deriv{F}{y} = \frac{\Bp}{B\hthe}\deriv{F}{y}
+\]
+whilst the parallel divergence is given by
+\[
+\nabla^0_{||}F = B_0\partial^0_{||}\left(\frac{F}{B_0}\right)
+\]
+Using equation (\ref{eq:general_laplacian}), the laplacian operator is given by
+\begin{eqnarray}
+\nabla^2 = &\frac{\partial^2}{\partial x^2}\left|\nabla x\right|^2 + 
+\frac{\partial^2}{\partial y^2}\left|\nabla y\right|^2 + 
+\frac{\partial^2}{\partial z^2}\left|\nabla z\right|^2 \nonumber \\
+&-2\frac{\partial^2}{\partial x\partial z}I\left(RB_p\right)^2 - 2\frac{\partial^2}{\partial y\partial z}\frac{\nu}{h_\theta^2}\\
+&+\frac{\partial}{\partial x}\nabla^2x + \frac{\partial}{\partial y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber
+\end{eqnarray}
+Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = -\Gamma^x$ etc, the values are
+\begin{equation}
+\nabla^2x = \frac{B_p}{h_\theta}\frac{\partial}{\partial x}\left(h_\theta R^2B_p\right) \qquad
+\nabla^2y = \frac{B_p}{h_\theta}\frac{\partial}{\partial y}\left(\frac{1}{B_ph_\theta}\right)
+\end{equation}
+\[
+\nabla^2z = -\frac{B_p}{h_\theta}\left[\frac{\partial}{\partial x}\left(IR^2B_ph_\theta\right) + \frac{\partial}{\partial y}\left(\frac{\nu}{B_ph_\theta}\right)\right]
+\]
+
+Neglecting some parallel derivative terms, the perpendicular Laplacian can be written:
+\[
+\delp = \rbpsq\left[\dderiv{}{x} - 2I\frac{\partial^2}{\partial z\partial x} + \left(I^2 + \frac{B^2}{\left(\rbp\right)^4}\right)\dderiv{}{z}\right] + \nabla^2 x \deriv{}{x} + \nabla^2 z\deriv{}{z} 
+\]
+
+The second derivative along the equilibrium field
+\[
+\partial^2_{||}\phi = \partial^0_{||}\left(\partial^0_{||}\phi\right) = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}
+\]
+A common expression (Poisson bracket in reduced MHD) is:
+\[
+\mathbf{b}_0\cdot\nabla\phi\times\nabla A = \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} - g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x} - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} + \left(g_{xy}\deriv{\phi}{y} - g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
+\]
+The perpendicular gradient operator:
+\begin{eqnarray*}
+\nabla_\perp &\equiv& \nabla - \underline{b}\left(\underline{b}\cdot\nabla\right) \\
+ &=& \nabla x\left(\deriv{}{x} - \frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) + \nabla z\left(\deriv{}{z} - \frac{g_{yz}}{\left(JB\right)^2}\deriv{}{y}\right)
+\end{eqnarray*}
+
+\section{Useful quantities in field-aligned coordinates}
+\subsection{$J\times B$}
+
+Components of the magnetic field in field-aligned coordinates:
+\[
+B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
+\]
+and
+\[
+B_x = \Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \Bt R
+\]
+
+Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
+
+\[
+\left(\Curl{\Bvec}\right)^x = \frac{1}{J}\left(\deriv{B_z}{y} - \deriv{B_y}{z}\right) = 0
+\]
+since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric.
+\begin{eqnarray*}
+\left(\Curl{\Bvec}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
+\left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \deriv{}{y}\left(\Bt I R\right)\right]
+\end{eqnarray*}
+The second term can be simplified, again using $\Bt R$ constant on flux-surfaces:
+\[
+\deriv{}{y}\left(\Bt I R\right) = \Bt R\deriv{\nu}{x} \qquad \nu = \frac{\hthe\Bt}{R\Bp}
+\]
+From these, calculate covariant components:
+\begin{eqnarray}
+\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber\\
+\left(\Curl{\Bvec}\right)_y &=& -\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
+\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber
+\end{eqnarray}
+Calculate $\Jvec\times\Bvec$:
+\begin{eqnarray*}
+\mu_0 \left(\Jvec\times\Bvec\right)^x = -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]
+\end{eqnarray*}
+
+Covariant components of $\nabla P$:
+\[
+\left(\nabla P\right)_x = \deriv{P}{x} \qquad \left(\nabla P\right)_y = \left(\nabla P\right)_z = 0
+\]
+and contravariant:
+\[
+\left(\nabla P\right)^x = \rbpsq\deriv{P}{x} \qquad \left(\nabla P\right)^y = 0 \qquad \left(\nabla P\right)^z = -I\rbpsq\deriv{P}{x}
+\]
+Hence equating contravariant x components of $\Jvec\times\Bvec = \nabla P$,
+\begin{equation}
+\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+\label{eq:xbalance}
+\end{equation}
+
+\subsection{Parallel current}
+
+\[
+J_{||} = \mathbf{b}\cdot\Jvec \qquad b^y = \frac{\Bp}{B\hthe}
+\]
+and from equation \ref{eq:curlb_y}:
+\[
+J_y = \frac{1}{\mu_0}\left\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]\right\}
+\]
+since $J_{||} = b^yJ_y$,
+\[
+\mu_0 J_{||} =\frac{\Bp\Bt R}{B\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] - B\deriv{}{x}\left(\Bt R\right)
+\]
+
+\subsection{Curvature}
+
+For reduced MHD, need to calculate curvature term $\mathbf{b}\times\mathbf{\kappa}$, where
+$\mathbf{\kappa} = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arranging, this becomes:
+\[
+\mathbf{b}\times\mathbf{\kappa} = \nabla\times\mathbf{b} - \mathbf{b}\left(\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right)\right)
+\]
+Components of $\nabla\times\mathbf{b}$ are:
+\begin{eqnarray*}
+\left(\nabla\times\mathbf{b}\right)^x &=& \frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
+\left(\nabla\times\mathbf{b}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{\Bt R}{B}\right) \\
+\left(\nabla\times\mathbf{b}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
+\end{eqnarray*}
+
+\[
+\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right) = -B\deriv{}{x}\left(\frac{\Bt R}{B}\right) + \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
+\]
+
+therefore,
+\begin{eqnarray*}
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^x &=& \frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) = -\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \frac{\Bp^2\Bt^2 R^2}{B^3\hthe^2}\deriv{\nu}{x} - \frac{\Bp^2\Bt R}{B^2\hthe^2}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
+\end{eqnarray*}
+Using equation~\ref{eq:xbalance}:
+\[
+B\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) + \frac{B\hthe}{\Bp}\deriv{B}{x} - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+\]
+we can re-write the above components as:
+\begin{eqnarray*}
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \frac{\Bp\Bt R}{B^2\hthe}\left[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\right] \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& -\frac{\mu_0}{B}\deriv{P}{x} - \deriv{B}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
+\end{eqnarray*}
+
+\section{Shifted radial derivatives}
+\label{sec:shiftcoords}
+
+The coordinate system given by equation~\ref{eq:coordtransform} and used in the
+above sections has a problem: There is a special poloidal location $\theta_0$
+where the radial basis vector $\Vec{e}_x$ is purely in the $\nabla\psi$ direction.
+Moving away from this location, the coordinate system becomes sheared in the toroidal
+direction. 
+
+Making the substitution
+\begin{equation}
+\deriv{}{x} = \deriv{}{\psi} + I\deriv{}{z}
+\label{eq:ddx_identity}
+\end{equation}
+we also get the mixed derivative
+\begin{eqnarray}
+\frac{\partial}{\partial z\partial x} &=& \deriv{}{z}\deriv{}{\psi} + \deriv{I}{z}\deriv{}{z} + I\frac{\partial^2}{\partial z^2} \nonumber \\
+&=& \frac{\partial^2}{\partial z\partial \psi} + I\frac{\partial^2}{\partial z^2}
+\end{eqnarray}
+and second-order $x$ derivative
+\begin{eqnarray}
+\frac{\partial^2}{\partial x^2} &=& \frac{\partial^2}{\partial \psi^2} + \deriv{}{\psi}\left(I\deriv{}{z}\right) + I\deriv{}{z}\left(\deriv{}{\psi} + I\deriv{}{z}\right) \nonumber \\
+&=& \frac{\partial^2}{\partial \psi^2} + I^2\frac{\partial^2}{\partial z^2} + 2I\frac{\partial^2}{\partial z\partial \psi} + \deriv{I}{\psi}\deriv{}{z}
+\end{eqnarray}
+
+\subsection{Perpendicular Laplacian}
+
+\[
+\delp = \rbpsq\left[\dderiv{}{x} - 2I\frac{\partial^2}{\partial z\partial x} + \left(I^2 + \frac{B^2}{\left(\rbp\right)^4}\right)\dderiv{}{z}\right]
+\]
+
+transforms to
+
+\begin{equation}
+\delp = \rbpsq\left[\dderiv{}{\psi} + \deriv{I}{\psi}\deriv{}{z} + \frac{B^2}{\left(\rbp\right)^4}\dderiv{}{z}\right]
+\label{eq:delp}
+\end{equation}
+
+The extra term involving $I$ disappears, but only if {\bf  both} the $x$ and $z$ first derivatives are taken into account:
+\[
+\delp = \rbpsq\left[\dderiv{}{x} - 2I\frac{\partial^2}{\partial z\partial x} + \left(I^2 + \frac{B^2}{\left(\rbp\right)^4}\right)\dderiv{}{z}\right] + \nabla^2 x \deriv{}{x} + \nabla^2 z\deriv{}{z} 
+\]
+with
+\[
+\nabla^2 x = \frac{1}{J}\deriv{}{x}\left[J\rbpsq\right]
+\]
+\begin{eqnarray}
+\nabla^2 z &=& \frac{1}{J}\left[-\deriv{}{x}\left(JI\rbpsq\right) - \deriv{}{y}\left(\frac{\Bt}{\Bp^2R}\right)\right] \nonumber \\
+&=& \frac{1}{J}\left[-I\deriv{}{x}\left(J\rbpsq\right) - \deriv{I}{x}J\rbpsq - \deriv{}{y}\left(\frac{\Bt}{\Bp^2R}\right)\right] \label{eq:delpz}
+\end{eqnarray}
+where $J=\hthe / \Bp$ is the Jacobian. Transforming into $\psi$ derivatives, the middle term of equation~\ref{eq:delpz} cancels the $I$ term in equation~\ref{eq:delp}, but introduces another $I$ term (first term in equation~\ref{eq:delpz}). This term cancels with the $\nabla^2 x$ term when $\deriv{}{x}$ is expanded, so the full expression for $\delp$ using $\psi$ derivatives is:
+
+\begin{eqnarray}
+\delp &=& \rbpsq\left[\dderiv{}{\psi} + \frac{B^2}{\left(\rbp\right)^4}\dderiv{}{z}\right] \nonumber \\
+&+& \frac{1}{J}\deriv{}{\psi}\left[J\rbpsq\right]\deriv{}{\psi} - \frac{1}{J}\deriv{}{y}\left(\frac{\Bt}{\Bp^2R}\right)\deriv{}{z}
+\label{eq:delp_shift}
+\end{eqnarray}
+
+
+\subsubsection{In orthogonal $\left(\psi, \theta, \zeta\right)$ flux coordinates}
+For comparison, the perpendicular Laplacian can be derived in orthogonal ``flux'' coordinates
+\[
+\left|\nabla\psi\right| = \rbp \qquad \left|\nabla\theta\right| = 1/\hthe \qquad \left|\nabla\zeta\right| = 1/R
+\]
+The Laplacian operator is given by
+\begin{eqnarray}
+\nabla^2 A &=& \rbpsq\dderiv{A}{\psi} + \frac{1}{\hthe^2}\dderiv{A}{\theta} + \frac{1}{R^2}\dderiv{A}{\zeta} \nonumber \\
+&+& \frac{1}{J}\deriv{}{\psi}\left[J\rbpsq\right]\deriv{A}{\psi} + \frac{1}{J}\deriv{}{\theta}\left(J/\hthe^2\right)\deriv{A}{\theta} 
+\end{eqnarray}
+parallel derivative by
+\begin{equation}
+\partial_{||} \equiv \bvec\cdot\nabla = \frac{\Bp}{B\hthe}\deriv{}{\theta} + \frac{\Bt}{RB}\deriv{}{\zeta}
+\end{equation}
+and so
+\begin{eqnarray}
+\partial^2_{||}A \equiv \partial_{||}\left(\partial_{||}A\right) &=& \left(\frac{\Bp}{B\hthe}\right)^2\dderiv{A}{\theta} + \left(\frac{\Bt}{RB}\right)^2\dderiv{A}{\zeta} \nonumber \\
+&+& 2\frac{\Bp\Bt}{B^2\hthe R}\frac{\partial^2 A}{\partial\theta\partial\zeta} \nonumber \\
+&+& \deriv{}{\theta}\left(\frac{\Bp}{B\hthe}\right)\deriv{A}{\theta} + \deriv{}{\theta}\left(\frac{\Bt}{RB}\right)\deriv{A}{\zeta}
+\end{eqnarray}
+
+Hence in orthogonal flux coordinates, the perpendicular Laplacian is:
+\begin{equation}
+\delp \equiv \nabla^2 - \partial_{||}^2 = \rbpsq\left[\dderiv{}{\psi} + \frac{1}{R^4B^2}\dderiv{}{\zeta^2}\right] + \frac{\Bt^2}{\hthe^2B^2}\dderiv{}{\theta} + \cdots
+\label{eq:delp_flux}
+\end{equation} 
+where the neglected terms are first-order derivatives. The coefficient for the second-order $z$
+derivative differs from equation~\ref{eq:delp_shift}, and equation~\ref{eq:delp_flux} still contains a derivative in $\theta$. This shows that the transformation made to get equation~\ref{eq:delp_shift} doesn't result in the same answer as orthogonal flux coordinates: equation~\ref{eq:delp_shift} is in field-aligned coordinates.
+
+Note that in the limit of $B_\theta = B$, both equations~\ref{eq:delp_shift} and \ref{eq:delp_flux} are the same, as they should be.
+
+\subsection{Operator $\Bvec\times\nabla\phi\cdot\nabla A$}
+
+\begin{eqnarray*}
+\Bvec\times\nabla\phi\cdot\nabla A &=& \left(\deriv{\phi}{x}\deriv{A}{y} - \deriv{\phi}{y}\deriv{A}{x}\right)\left(-\Bt\frac{\rbp}{\hthe}\right) \\
+&+& \left(\deriv{\phi}{x}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{x}\right)\left(-B^2\right) \\
+&-& \left(\deriv{\phi}{y}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{y}\right)\left(I\Bt\frac{\rbp}{\hthe}\right)
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\Bvec\times\nabla\phi\cdot\nabla A &=& \left(\deriv{\phi}{\psi}\deriv{A}{y} + I \deriv{\phi}{z}\deriv{A}{y} - \deriv{\phi}{y}\deriv{A}{\psi} - I\deriv{\phi}{y}\deriv{A}{z}\right)\left(-\Bt\frac{\rbp}{\hthe}\right) \\
+&+& \left(\deriv{\phi}{\psi}\deriv{A}{z} + I\deriv{\phi}{z}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{\psi} - I\deriv{\phi}{z}\deriv{A}{z}\right)\left(-B^2\right) \\
+&-& \left(\deriv{\phi}{y}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{y}\right)\left(I\Bt\frac{\rbp}{\hthe}\right)
+\end{eqnarray*}
+
+\begin{eqnarray}
+\Bvec\times\nabla\phi\cdot\nabla A &=& \left(\deriv{\phi}{\psi}\deriv{A}{y} - \deriv{\phi}{y}\deriv{A}{\psi}\right)\left(-\Bt\frac{\rbp}{\hthe}\right) \nonumber \\
+&+& \left(\deriv{\phi}{\psi}\deriv{A}{z} - \deriv{\phi}{z}\deriv{A}{\psi} \right)\left(-B^2\right)
+\end{eqnarray}
+
+\bibliography{references}
+\bibliographystyle{unsrt}
+
+\appendix
+
+\section{Differential geometry}
+
+The following is notes from \cite{hazeltine-2003}.
+
+Sets of vectors $\left\{\mathbf{A, B, C}\right\}$ and $\left\{\mathbf{a, b, c}\right\}$ are {\bf reciprocal} if
+
+\begin{eqnarray}
+\mathbf{A\cdot a} = \mathbf{B\cdot b} = \mathbf{C\cdot c} = 1\\
+\mathbf{A\cdot b} = \mathbf{A\cdot c} = \mathbf{B\cdot a} = \mathbf{B\cdot c} = \mathbf{C\cdot a} = \mathbf{C\cdot b} = 0 \\
+\end{eqnarray}
+
+which implies that $\left\{\mathbf{A, B, C}\right\}$ and $\left\{\mathbf{a, b, c}\right\}$ are each linearly independent.
+Equivalently,
+
+\begin{equation}
+\mathbf{a} = \frac{\mathbf{B\times C}}{\mathbf{A\cdot\left(B\times C\right)}}\qquad
+\mathbf{b} = \frac{\mathbf{C\times A}}{\mathbf{B\cdot\left(C\times A\right)}}\qquad
+\mathbf{c} = \frac{\mathbf{A\times B}}{\mathbf{C\cdot\left(A\times B\right)}}
+\end{equation}
+
+Either of these sets can be used as a basis, and any vector $\mathbf{w}$ can be represented as
+$\mathbf{w} = \left(\mathbf{w\cdot a}\right)\mathbf{A} + \left(\mathbf{w\cdot b}\right)\mathbf{B} +
+\left(\mathbf{w\cdot c}\right)\mathbf{C}$ or as $\mathbf{w} = \left(\mathbf{w\cdot A}\right)\mathbf{a} +
+\left(\mathbf{w\cdot B}\right)\mathbf{b} + \left(\mathbf{w\cdot C}\right)\mathbf{c}$. In the cartesian
+coordinate system, the basis vectors are reciprocal to themselves so this distinction is not needed.
+For a general set of coordinates $\left\{u^1, u^2, u^3\right\}$, {\bf tangent basis vectors} can be defined. If
+the cartesian coordinates of a point are given by $\left(x, y, z\right) = \mathbf{R}\left(u^1, u^2, u^3\right)$
+then the tangent basis vectors are:
+
+\begin{equation}
+\mathbf{e}_i = \frac{\partial\mathbf{R}}{\partial u^i}
+\end{equation}
+
+\noindent and in general these will vary from point to point. The {\bf scale factor} or {\bf metric coefficient}
+$h_i =\left|\mathbf{e}_i\right| $ is the distance moved for a unit change in $u^i$. The unit vector
+$\mathbf{\hat{e}}_i = \mathbf{e}_i/h_i$. Definitiion of {\bf grad operator}:
+
+\begin{center}
+\framebox{$\nabla\Phi$ of a function $\Phi$ is defined so that $d\Phi = \nabla\Phi\cdot d{\mathbf{R}}$}
+\end{center}
+
+\noindent From the chain rule, $d\mathbf{R} = \frac{\partial\mathbf{R}}{\partial u^i}du^i = \mathbf{e}_idu^i$
+and substituting $\Phi = u^i$
+
+\[
+du^i = \nabla u^i\cdot\mathbf{e}_jdu^j
+\]
+
+which can only be true if $\nabla u^i\cdot\mathbf{e}_j = \delta^i_j$ i.e. if
+
+\begin{center}
+\framebox{Sets of vectors $\mathbf{e}^i\equiv\nabla u^i$ and $\mathbf{e}_j$ are reciprocal}
+\end{center}
+
+Since the sets of vectors $\left\{\mathbf{e}^i\right\}$ and $\left\{\mathbf{e}_i\right\}$ are reciprocal,
+any vector $\mathbf{D}$ can be written as $\mathbf{D} = D_i\mathbf{e}^i = D^i\mathbf{e}_i$ where
+$D_i = \mathbf{D\cdot e}_i$ are the {\bf covariant components} and $D^i = \mathbf{D\cdot e}^i$ are the
+{\bf contravariant components}. To convert between covariant and contravariant components, define the
+{\bf metric coefficients} $g_{ij} = \mathbf{e_i\cdot e_j}$ and $g^{ij} = \mathbf{e^i\cdot e^j}$ so that
+$\mathbf{e}_i = g_{ij}\mathbf{e}^j$. $g_{ij}$ and $g^{ij}$ are symmetric and if the basis is orthogonal
+then $g_{ij}=g^{ij} = 0$ for $i\neq j$ i.e. the metric is diagonal.
+
+\begin{center}
+\framebox{$g_{ij} = h_ih_j\mathbf{\hat{e}}_i\cdot\mathbf{\hat{e}}_j$ and so $g_{ii} = h_i^2$}
+\end{center}
+
+For a general set of coordinates, the grad operator can be expressed as
+
+\[
+\nabla = \frac{\partial}{\partial u_i}\nabla u_i
+\]
+
+\noindent and for a general set of (differentiable) coordinates $\left\{u^i\right\}$, the laplacian is given by
+
+\begin{equation}
+\nabla^2\phi = \frac{1}{J}\frac{\partial}{\partial u^i}\left(Jg^{ij}\frac{\partial\phi}{\partial u^j}\right)
+\label{eq:laplacegen}
+\end{equation}
+
+\noindent which can be expanded as
+
+\begin{equation}
+\nabla^2\phi = g^{ij}\frac{\partial^2\phi}{\partial u^i\partial u^j} + 
+\underbrace{\frac{1}{J}\frac{\partial}{\partial u^i}\left(Jg^{ij}\right)}_{-\Gamma^j}\frac{\partial\phi}{\partial u^j}
+\label{eq:laplace_expand}
+\end{equation}
+
+\noindent where $\Gamma^j$ are the {\bf connection coefficients}. Setting $\phi = u^k$ in equation (\ref{eq:laplacegen})
+gives $\nabla^2u^k = -\Gamma^k$. Expanding (\ref{eq:laplacegen}) and setting $\left\{u^i\right\} = \left\{x, y, z\right\}$ gives
+
+\begin{eqnarray}
+\nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\left(\frac{\partial}{\partial x}\nabla x + \frac{\partial}{\partial y}\nabla y + \frac{\partial}{\partial z}\nabla z\right) \nonumber \\
+\label{eq:general_laplacian}
+= \frac{\partial^2 f}{\partial x^2}\left|\nabla x\right|^2 + \frac{\partial^2 f}{\partial y^2}\left|\nabla y\right|^2 + \frac{\partial^2 f}{\partial z^2}\left|\nabla z\right|^2 \\
++2\frac{\partial^2 f}{\partial x\partial y}\left(\nabla x\cdot\nabla y\right)
++2\frac{\partial^2 f}{\partial x\partial z}\left(\nabla x\cdot\nabla z\right)
++2\frac{\partial^2 f}{\partial y\partial z}\left(\nabla y\cdot\nabla z\right) \nonumber \\
++\nabla^2x\frac{\partial f}{\partial x} +\nabla^2y\frac{\partial f}{\partial y} + \nabla^2z\frac{\partial f}{\partial z} \nonumber
+\end{eqnarray}
+
+Curl defined as:
+\begin{equation}
+\nabla\times\mathbf{A} = \frac{1}{\sqrt{g}}\sum_k\left(\frac{\partial A_j}{\partial u_i} - \frac{\partial A_i}{\partial u_j}\right)\mathbf{e}_k \qquad i,j,k \texttt{ cyc } 1,2,3
+\label{eq:curl_def}
+\end{equation}
+Cross-product relation between contravariant and covariant vectors:
+\begin{equation}
+\mathbf{e}^i = \frac{1}{J}\left(\mathbf{e}_j \times \mathbf{e}_k\right) \qquad \mathbf{e}_i = J\left(\mathbf{e}^j \times \mathbf{e}^k\right) \qquad i,j,k \texttt{ cyc } 1,2,3
+\label{eq:cross_relation}
+\end{equation}
+
+\end{document}
