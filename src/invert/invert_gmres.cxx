@@ -23,8 +23,8 @@
  *
  *******************************************************************************/
 
-#include "invert_gmres.hxx"
-#include "globals.hxx"
+#include <invert_gmres.hxx>
+#include <globals.hxx>
 
 typedef int (*opfunc1D) (BoutReal *b, BoutReal *x, void* data);
 int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, BoutReal tol, void* data);

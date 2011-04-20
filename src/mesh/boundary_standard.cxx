@@ -1,9 +1,9 @@
 
-#include "globals.hxx"
-#include "boundary_standard.hxx"
-#include "invert_laplace.hxx"
-#include "fft.hxx"
-#include "boutexception.hxx"
+#include <globals.hxx>
+#include <boundary_standard.hxx>
+#include <invert_laplace.hxx>
+#include <fft.hxx>
+#include <boutexception.hxx>
 
 #include <sstream>
 using std::stringstream;

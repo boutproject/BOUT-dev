@@ -7,7 +7,7 @@
 #include "impls/karniadakis/karniadakis.hxx"
 #include "impls/rk4/rk4.hxx"
 
-#include "boutexception.hxx"
+#include <boutexception.hxx>
 
 SolverFactory* SolverFactory::instance = NULL;
 

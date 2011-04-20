@@ -3,7 +3,7 @@
  * This version evolves the entire quantity (initial + perturbed)
  **************************************************************************/
 
-#include "bout.hxx"
+#include <bout.hxx>
 
 // 3D evolving variables
 Field3D rho, p; // density, pressure

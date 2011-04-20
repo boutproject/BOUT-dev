@@ -24,8 +24,8 @@
  * 
  ***********************************************************************/
 
-#include "comm_group.hxx"
-#include "globals.hxx"
+#include <comm_group.hxx>
+#include <globals.hxx>
 #include <string.h>
 #include <stdlib.h>
 

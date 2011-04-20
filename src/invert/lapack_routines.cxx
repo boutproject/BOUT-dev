@@ -34,9 +34,9 @@
  *
  */
 
-#include "globals.hxx"
-#include "dcomplex.hxx"
-#include "boutexception.hxx"
+#include <globals.hxx>
+#include <dcomplex.hxx>
+#include <boutexception.hxx>
 
 #ifdef LAPACK
 
@@ -329,7 +329,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 // NOTE: THESE MUST BE REMOVED FOR PUBLIC RELEASE
 ///////////////////////////////////////////////////////////////////////
 
-#include "utils.hxx"
+#include <utils.hxx>
 
 /// Tri-diagonal complex matrix inversion
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)

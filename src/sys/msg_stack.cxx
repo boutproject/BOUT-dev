@@ -24,8 +24,8 @@
  *
  **************************************************************************/
 
-#include "globals.hxx" // For the output object
-#include "msg_stack.hxx"
+#include <globals.hxx> // For the output object
+#include <msg_stack.hxx>
 #include <string.h>
 #include <stdarg.h>
 

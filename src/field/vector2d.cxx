@@ -28,10 +28,10 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
+#include <globals.hxx>
 
-#include "vector2d.hxx"
-#include "boundary_op.hxx"
+#include <vector2d.hxx>
+#include <boundary_op.hxx>
 
 Vector2D::Vector2D()
 {

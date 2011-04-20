@@ -50,13 +50,13 @@
 
 #include "mpi.h"
 
-#include "invert_parderiv.hxx"
+#include <invert_parderiv.hxx>
 
-#include "globals.hxx"
-#include "utils.hxx"
-#include "comm_group.hxx" // Gather/scatter operations
+#include <globals.hxx>
+#include <utils.hxx>
+#include <comm_group.hxx> // Gather/scatter operations
 
-#include "lapack_routines.hxx" // For tridiagonal inversions
+#include <lapack_routines.hxx> // For tridiagonal inversions
 
 namespace invpar {
 

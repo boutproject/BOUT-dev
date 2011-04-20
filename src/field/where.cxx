@@ -23,8 +23,8 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "where.hxx"
+#include <globals.hxx>
+#include <where.hxx>
 
 const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
 {

@@ -24,13 +24,14 @@
  **************************************************************************/
 
 #include "petsc.hxx"
+
 #ifdef BOUT_HAS_PETSC
 
-#include "globals.hxx"
+#include <globals.hxx>
 
 #include <stdlib.h>
 
-#include "interpolation.hxx" // Cell interpolation
+#include <interpolation.hxx> // Cell interpolation
 
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);

@@ -28,10 +28,10 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
+#include <globals.hxx>
 
-#include "vector3d.hxx"
-#include "boundary_op.hxx"
+#include <vector3d.hxx>
+#include <boundary_op.hxx>
 
 Vector3D::Vector3D()
 {

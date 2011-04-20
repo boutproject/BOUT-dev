@@ -29,8 +29,8 @@
 
 #ifdef BOUT_HAS_CVODE
 
-#include "globals.hxx"
-#include "interpolation.hxx" // Cell interpolation
+#include <globals.hxx>
+#include <interpolation.hxx> // Cell interpolation
 
 #include <cvode/cvode.h>
 #include <nvector/nvector_parallel.h>

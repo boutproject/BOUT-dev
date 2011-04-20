@@ -1,7 +1,7 @@
 
-#include "globals.hxx"
-#include "boundary_region.hxx"
-#include "utils.hxx"
+#include <globals.hxx>
+#include <boundary_region.hxx>
+#include <utils.hxx>
 
 BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax)
   : ys(ymin), ye(ymax), BoundaryRegion(name, -1, 0)

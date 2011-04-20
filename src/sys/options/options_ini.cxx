@@ -47,9 +47,9 @@
  * 
  **************************************************************************/
 
+#include <utils.hxx>
+#include <boutexception.hxx>
 #include "options_ini.hxx"
-#include "utils.hxx"
-#include "boutexception.hxx"
 
 OptionINI::OptionINI() {
   

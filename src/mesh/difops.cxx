@@ -23,15 +23,15 @@
  * 
  **************************************************************************/
 
-#include "globals.hxx"
-#include "difops.hxx"
-#include "utils.hxx"
-#include "derivs.hxx"
-#include "fft.hxx"
+#include <globals.hxx>
+#include <difops.hxx>
+#include <utils.hxx>
+#include <derivs.hxx>
+#include <fft.hxx>
 
-#include "invert_laplace.hxx" // Delp2 uses same coefficients as inversion code
+#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
-#include "interpolation.hxx"
+#include <interpolation.hxx>
 
 #include <math.h>
 #include <stdlib.h>

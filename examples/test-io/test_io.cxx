@@ -7,8 +7,8 @@
  * Test evolving and non-evolving variables
  */
 
-#include "bout.hxx"
-#include "boutmain.hxx"
+#include <bout.hxx>
+#include <boutmain.hxx>
 
 int physics_init(bool restarting)
 {

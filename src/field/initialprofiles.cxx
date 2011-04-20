@@ -36,9 +36,9 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "initialprofiles.hxx"
-#include "boutexception.hxx"
+#include <globals.hxx>
+#include <initialprofiles.hxx>
+#include <boutexception.hxx>
 
 #include <math.h>
 #include <string.h>

@@ -30,16 +30,16 @@
  *
  **************************************************************************/
 
-#include "boutmesh.hxx"
+#include <boutmesh.hxx>
 
-#include "globals.hxx"
-#include "utils.hxx"
-#include "fft.hxx"
-#include "derivs.hxx"
+#include <globals.hxx>
+#include <utils.hxx>
+#include <fft.hxx>
+#include <derivs.hxx>
 
-#include "dcomplex.hxx"
-#include "options.hxx"
-#include "boutexception.hxx"
+#include <dcomplex.hxx>
+#include <options.hxx>
+#include <boutexception.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 

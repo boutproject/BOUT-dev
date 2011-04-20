@@ -20,12 +20,13 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "solver.hxx"
+#include <globals.hxx>
+#include <solver.hxx>
 #include <string.h>
 
-#include "initialprofiles.hxx"
-#include "interpolation.hxx"
+#include <initialprofiles.hxx>
+#include <interpolation.hxx>
+
 #include "solverfactory.hxx"
 
 /**************************************************************************

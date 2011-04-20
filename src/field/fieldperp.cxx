@@ -23,13 +23,13 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
+#include <globals.hxx>
 
 #include <stdlib.h>
 #include <math.h>
 
-#include "fieldperp.hxx"
-#include "utils.hxx"
+#include <fieldperp.hxx>
+#include <utils.hxx>
 
 extern BoutReal** rmatrix(int nx, int ny);
 

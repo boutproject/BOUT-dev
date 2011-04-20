@@ -31,8 +31,8 @@
 
 #ifdef BOUT_HAS_IDA
 
-#include "globals.hxx"
-#include "interpolation.hxx" // Cell interpolation
+#include <globals.hxx>
+#include <interpolation.hxx> // Cell interpolation
 
 #include <ida/ida.h>
 #include <ida/ida_spgmr.h>

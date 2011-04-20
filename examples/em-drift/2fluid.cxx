@@ -6,9 +6,9 @@
  *  - AparInEpar
  *******************************************************************************/
 
-#include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "derivs.hxx"
+#include <bout.hxx>
+#include <initialprofiles.hxx>
+#include <derivs.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -308,7 +308,7 @@ int physics_run(BoutReal t)
  *                       FAST LINEAR FIELD SOLVERS
  *******************************************************************************/
 
-#include "invert_laplace.hxx"
+#include <invert_laplace.hxx>
 
 // Performs inversion of rho (r) to get phi (p)
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags)

@@ -20,8 +20,9 @@
  *
  **************************************************************************/
 
-#include "pdb_format.h"
-#include "utils.hxx"
+#include "pdb_format.hxx"
+
+#include <utils.hxx>
 
 static char* REALSTR = (char*)"double";
 static char* LOWPRECSTR = (char*)"float";

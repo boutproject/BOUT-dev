@@ -28,8 +28,8 @@
 
 typedef double BoutReal;
 
-#include "globals.hxx"
-#include "stencils.hxx"
+#include <globals.hxx>
+#include <stencils.hxx>
 
 /**************************************************************************
  * bvalue class

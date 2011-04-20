@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "interpolation.hxx"
-#include "stencils.hxx"
+#include <globals.hxx>
+#include <interpolation.hxx>
+#include <stencils.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

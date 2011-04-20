@@ -24,6 +24,7 @@
  **************************************************************************/
 
 #include "pvode.hxx"
+
 #ifdef BOUT_HAS_PVODE
 
 using namespace pvode;

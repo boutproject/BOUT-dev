@@ -24,9 +24,9 @@
  *
  **************************************************************************/
 
-#include "globals.hxx"
-#include "vecops.hxx"
-#include "derivs.hxx"
+#include <globals.hxx>
+#include <vecops.hxx>
+#include <derivs.hxx>
 
 /**************************************************************************
  * Gradient operators
