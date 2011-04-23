@@ -6,6 +6,7 @@
 *.status
 *.config
 *.d
+*.dSYM/
 autom4te.cache/
 include/pvode
 lib/

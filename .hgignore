@@ -17,6 +17,7 @@ CTAGS
 TAGS
 
 .DS_Store
+*.dSYM
 
 autom4te.cache/
 include/pvode
