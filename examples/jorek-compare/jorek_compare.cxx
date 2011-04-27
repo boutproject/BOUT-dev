@@ -68,9 +68,10 @@ int physics_init(bool restarting) {
   if(mesh->get(rho0, "Ni0")) {
     output << "Warning: No density profile available\n";
     BoutReal d0;
-    options->get("density", d0, 1e20);
+    options->get("density", d0, 1.0);
     rho0 = d0;
   }
+  rho0 *= 1e20; // Convert to m^[-3]
   
   // Read temperature
   mesh->get(Te0, "Te0");
@@ -239,6 +240,8 @@ int physics_init(bool restarting) {
   vExB.setBoundary("v");
   vD.setBoundary("v");
   
+  Jpar.setBoundary("Jpar");
+
   eta = eta0;
 
   // SET EVOLVING VARIABLES
@@ -252,7 +255,9 @@ int physics_init(bool restarting) {
   comms.add(phi);
   comms.add(vpar);
   comms.add(psi);
-
+  
+  SAVE_REPEAT2(phi, Jpar); // Save each timestep
+  
   return 0;
 }
 
@@ -275,6 +280,8 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
 }
 
 int physics_run(BoutReal t) {
+  
+  int sp = msg_stack.push("Started physics_run(%e)", t);
   
   // Invert laplacian for phi
   phi = invert_laplace(u, phi_flags, NULL);
@@ -303,20 +310,28 @@ int physics_run(BoutReal t) {
   }
 
   if(flux_method) {
+    msg_stack.push("Flux vExB");
     // ExB velocity
     vExB = (B0vec ^ Grad_perp(phi))/(B0*B0);
     vExB.applyBoundary();
-    
+    msg_stack.pop();
+      
     ////////// Density equation ////////////////
     
+    msg_stack.push("Flux Density");
+      
     // Diffusive flux (perpendicular)
     vD = -D_perp * Grad_perp(rho);
     vD.applyBoundary();
     
     ddt(rho) = -Div(vExB + vD, rhot);
     
+    msg_stack.pop();
+
     ////////// Temperature equations ////////////
   
+    msg_stack.push("Flux Te");
+
     vD = -chi_eperp * Grad_perp(Te);
     vD.applyBoundary();
     
@@ -326,6 +341,10 @@ int physics_run(BoutReal t) {
       - (Div(vD, Te) - Div_par_K_Grad_par(chi_epar, Te))/rhot
       ;
     
+    msg_stack.pop();
+    
+    msg_stack.push("Flux Ti");
+    
     vD = -chi_iperp * Grad_perp(Ti);
     vD.applyBoundary();
     
@@ -334,24 +353,35 @@ int physics_run(BoutReal t) {
       - (2./3.)*Tit*Div(vExB)
       - (Div(vD, Ti) - Div_par_K_Grad_par(chi_ipar, Ti))/rhot
       ;
+
+    msg_stack.pop();
   }else {
     // Use analytic expressions, expand terms
     
     // Divergence of ExB velocity (neglecting parallel term)
+    msg_stack.push("divExB");
     Field3D divExB = b0xcv*Grad(phi)/B0 - b0xGrad_dot_Grad(1./B0, phi);
+    msg_stack.pop();
     
+    
+    msg_stack.push("density");
     ddt(rho) = -b0xGrad_dot_Grad(phi, rhot) // Advection 
       - divExB*rhot; // Compression
+    msg_stack.pop();
     
+    msg_stack.push("Te");
     ddt(Te) = 
       -b0xGrad_dot_Grad(phi, Tet) 
       - (2./3.)*Tet*divExB
       ;
-
+    msg_stack.pop();
+    
+    msg_stack.push("Ti");
     ddt(Ti) = 
       -b0xGrad_dot_Grad(phi, Tit) 
       - (2./3.)*Tit*divExB
       ;
+    msg_stack.pop();
   }
   
   if(full_v_method) {
@@ -366,7 +396,8 @@ int physics_run(BoutReal t) {
     // Split into vorticity and parallel velocity equations analytically
     
     ////////// Vorticity equation ////////////
-
+    
+    msg_stack.push("Vorticity");
     ddt(u) = (
 	      (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE)
 	      - (B0^2) * b0xGrad_dot_Grad(psi, J0/B0, CELL_CENTRE) 
@@ -384,16 +415,25 @@ int physics_run(BoutReal t) {
     if(viscos_perp > 0.0)
       ddt(u) += viscos_perp * Delp2(u);     // Perpendicular viscosity
     
+    
+    msg_stack.pop();
+
     ////////// Parallel velocity equation ////////////
+    
+    msg_stack.push("Vpar");
     
     ddt(vpar) = -Grad_parP(P + P0, CELL_YLOW);
     if(nonlinear)
       ddt(vpar) -= b0xGrad_dot_Grad(phi, vpar); // Advection
+    
+    msg_stack.pop();
   }
 
   ////////// Magnetic potential equation ////////////
-
+  
+  msg_stack.push("Psi");
   ddt(psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 + eta*Jpar;
   
+  msg_stack.pop(sp);
   return 0;
 }

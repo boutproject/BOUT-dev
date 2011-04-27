@@ -4,24 +4,25 @@
 # settings used by the core code
 
 NOUT = 10     # number of time-steps
-TIMESTEP = 0.1   # time between outputs
+TIMESTEP = 0.01   # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
 
 MZ = 16     # number of points in z direction (2^n + 1)
 
-ZPERIOD = 20 # Fraction of a torus
+ZPERIOD = 10 # Fraction of a torus
 
 MXG = 2
 MYG = 2
 
-grid="d3d_119919.nc"
-twistshift_pf = true # Grid has twist-shift in PF region
+#grid="d3d_119919.nc"
+grid = "cbm18_8_y064_x516_090309.nc"
+#twistshift_pf = true # Grid has twist-shift in PF region
 
 dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
-NXPE = 2 
+NXPE = 1 
 
 ##################################################
 # derivative methods
@@ -88,8 +89,12 @@ viscos_par = 1e-5   # Parallel viscosity
 # 16 - Zero all DC components of the result
 # 32 - Don't use previous solution to start iterations
 #      (iterative methods only)
-phi_flags = 1  # inversion flags for phi
-apar_flags = 0 # flags for apar inversion
+# 64 - Set the width of the boundary layer to 1
+# 128 - use 4th order differencing
+# 256 - Laplacian = 0 inner boundary (combine 2nd & 4th-order)
+# 512 - Laplacian = 0 outer boundary ( sometimes works )
+
+phi_flags = 769  # inversion flags for phi
 
 ##################################################
 # settings for individual variables
@@ -114,81 +119,44 @@ xs_wd = 0.25
 xs_s0 = 0.5
 ys_mode = 1 
 ys_wd = 0.6 
-zs_mode = 2 # toroidal mode number
+zs_mode = 1 # toroidal mode number
 zs_wd = 0.2
 
 # boundary conditions
-# dirichlet = zero value
-# neumann = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# -------------------
+# dirichlet    - Zero value
+# neumann      - Zero gradient
+# zerolaplace  - Laplacian = 0, decaying solution
+# constlaplace - Laplacian = const, decaying solution
+#
+# relax( )   - Make boundary condition relaxing
 
-# All variables and all regions to zero-gradient
-bndry_all = relax(neumann)
-
-##################################################
-# DENSITY
-# NOTE: By default all terms are off (false) so
-#       any unused options can just be removed
-
-[Ni]
-scale = 1.0e-3 # Initial perturbation size
-
-# ExB advection terms
-ni1_phi0 = false
-ni0_phi1 = true
-ni1_phi1 = true
-nit_phit = false
-
-# Parallel advection
-vi1_ni0 = false
-vi0_ni1 = false
-vi1_ni1 = false
-vit_nit = false
-
-jpar1 = true  # Div_par(Jpar) linear term
-pe1   = false  # b0xkappa_Grad(Pe) linear term
-ni1   = false  # Perpendicular ion viscosity
-
-# Ni * b0xkappa_Grad(phi) terms
-ni0_curv_phi1 = false
-ni1_curv_phi0 = false
-ni1_curv_phi1 = false
-nit_curv_phit = false
-
-[Vi]
-evolve = false
-
-[Te]
-evolve = false
-
-[Ti]
-evolve = false
-
-##################################################
-# VORTICITY
+bndry_all = dirichlet # Default zero value
 
 [rho]
-#scale = 1.0e-3
+
+bndry_all=relax(neumann)
+scale=1.e-3
+
+[Vpar]
+
+[Te]
+
+bndry_all=relax(neumann)
+
+[Ti]
+
+bndry_all=relax(neumann)
+
+[u] # Vorticity
+#scale = 1.0e-3 # Initial perturbation size
 
 bndry_xin = relax(dirichlet)
 bndry_xout = relax(dirichlet)
 
-# ExB advection terms
-rho0_phi1 = false
-rho1_phi0 = false
-rho1_phi1 = true
+[psi]
+bndry_xin = constlaplace
+bndry_xout = zerolaplace
 
-# Parallel advection
-vi1_rho0 = false
-vi0_rho1 = false
-vi1_rho1 = false
-
-pei1 = true   # b0xkappa_Grad(Pei) linear curvature drive
-jpar1 = true   # Div_par(Jpar)   linear drive
-rho1 = false    # Perpendicular ion viscosity
-
-[jpar]
-
-#bndry_yup = relax(dirichlet)
-#bndry_ydown = relax(dirichlet)
+[Jpar]
+bndry_core = neumann
