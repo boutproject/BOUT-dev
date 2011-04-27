@@ -127,9 +127,9 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   
   kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
   
-  coef1=mesh->g11[jx][jy]/(SQ(mesh->dx[jx][jy])); ///< X 2nd derivative
-  coef2=mesh->g33[jx][jy];                  ///< Z 2nd derivative
-  coef3=2.*mesh->g13[jx][jy]/(mesh->dx[jx][jy]);  ///< X-Z mixed derivative
+  coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
+  coef2=mesh->g33[jx][jy];     ///< Z 2nd derivative coefficient
+  coef3=2.*mesh->g13[jx][jy];  ///< X-Z mixed derivative coefficient
   
   if(d != (Field2D*) NULL) {
     // Multiply Delp2 component by a factor
@@ -143,7 +143,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   if(laplace_all_terms) {
     coef4 = mesh->G1[jx][jy] / (2.0*mesh->dx[jx][jy]); // X 1st derivative
     //coef4 = 1. / mesh->dx[jx][jy];
-    coef5 = mesh->G3[jx][jy];
+    coef5 = mesh->G3[jx][jy]; // Z 1st derivative
   }
 
   if(laplace_nonuniform) {
@@ -175,9 +175,12 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   }
   */
   
-  a = dcomplex(coef1 - coef4,kwave*coef3);
+  coef1 /= SQ(mesh->dx[jx][jy]);
+  coef3 /= 2.*mesh->dx[jx][jy];
+  
+  a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
-  c = dcomplex(coef1 + coef4,-kwave*coef3);
+  c = dcomplex(coef1 + coef4,kwave*coef3);
 }
 
 /**********************************************************************************
