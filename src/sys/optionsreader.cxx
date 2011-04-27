@@ -1,6 +1,6 @@
+#include <globals.hxx>
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
-#include <globals.hxx>
 
 // Interface for option file parsers
 #include "options/optionparser.hxx"

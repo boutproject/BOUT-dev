@@ -3,8 +3,10 @@
  * 
  **************************************************************************/
 
-#include <bout.h>
-#include <invert_laplace.h>
+#include <bout.hxx>
+#include <boutmain.hxx>
+
+#include <invert_laplace.hxx>
 #include <math.h>
 
 // Evolving quantities

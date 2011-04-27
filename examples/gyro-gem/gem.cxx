@@ -10,6 +10,8 @@
  ****************************************************************/
 
 #include <bout.hxx>
+#include <boutmain.hxx>
+
 #include <gyro_average.hxx>
 #include <invert_laplace.hxx>
 
@@ -242,21 +244,21 @@ int physics_init(bool restarting)
   ////////////////////////////////////////////////////
   // Terms in equations
   
-  OPTION6(ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
-  OPTION6(apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
-  OPTION2(apue_gradB, apue_Rei, true);
-  OPTION(tepar_ddt, true);
-  OPTION(teperp_ddt, true);
-  OPTION(qepar_ddt, true);
-  OPTION(qeperp_ddt, true);
+  OPTION6(options, ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
+  OPTION6(options, apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
+  OPTION2(options, apue_gradB, apue_Rei, true);
+  OPTION(options, tepar_ddt, true);
+  OPTION(options, teperp_ddt, true);
+  OPTION(options, qepar_ddt, true);
+  OPTION(options, qeperp_ddt, true);
   
-  OPTION6(ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
-  OPTION6(apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, true);
-  OPTION2(apui_gradB, apui_Rei, true);
-  OPTION(tipar_ddt, true);
-  OPTION(tiperp_ddt, true);
-  OPTION(qipar_ddt, true);
-  OPTION(qiperp_ddt, true);
+  OPTION6(options, ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
+  OPTION6(options, apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, true);
+  OPTION2(options, apui_gradB, apui_Rei, true);
+  OPTION(options, tipar_ddt, true);
+  OPTION(options, tiperp_ddt, true);
+  OPTION(options, qipar_ddt, true);
+  OPTION(options, qiperp_ddt, true);
 
   ////////////////////////////////////////////////////
   // Collisional parameters
@@ -420,8 +422,7 @@ int physics_init(bool restarting)
   }
   
   bool output_ddt;
-  options.setSection("gem");
-  OPTION(output_ddt, false);
+  OPTION(options, output_ddt, false);
   if(output_ddt) {
     // Output the time derivatives
     
