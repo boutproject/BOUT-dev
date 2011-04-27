@@ -496,6 +496,22 @@ const Vector3D Vector3D::operator^(const Vector2D &rhs) const
 }
 
 /***************************************************************
+ *       Set variable location for staggered meshes
+ ***************************************************************/
+
+void Vector3D::setLocation(CELL_LOC loc) {
+  if(loc == CELL_VSHIFT) {
+    x.setLocation(CELL_XLOW);
+    y.setLocation(CELL_YLOW);
+    z.setLocation(CELL_ZLOW);
+  }else {
+    x.setLocation(loc);
+    y.setLocation(loc);
+    z.setLocation(loc);
+  }
+}
+
+/***************************************************************
  *               Z SHIFTING
  ***************************************************************/
 

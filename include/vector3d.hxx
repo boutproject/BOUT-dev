@@ -98,7 +98,9 @@ class Vector3D : public FieldData {
   
   const Vector3D operator^(const Vector3D &rhs) const; // Cross product
   const Vector3D operator^(const Vector2D &rhs) const;
-
+  
+  void setLocation(CELL_LOC loc); // Set variable location
+  
   // Z shifting
   void shiftZ(int jx, int jy, double zangle) {
       x.shiftZ(jx, jy, zangle);
