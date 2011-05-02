@@ -1317,8 +1317,8 @@ Optional Packages:
   --with-pdb              	   Enable support for PDB files
   --with-netcdf           	   Enable support for netCDF files
   --with-debug            	   Enable all debugging flags
-  --with-ida=/path/to/ida 	   Use SUNDIALS' IDA solver
-  --with-cvode            	   Use SUNDIALS' CVODE solver
+  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
+  --with-cvode            	   Use the SUNDIALS CVODE solver
   --with-facets           	   Build the interface to FACETS
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library
@@ -2223,38 +2223,38 @@ file_formats=""  # Record which file formats are being supported
 
 if test "$with_debug" != ""
 then
-	echo "Enabling all debug options"
-	with_checks="3"
-	CFLAGS="$CFLAGS -g"
+  echo "Enabling all debug options"
+  with_checks="3"
+  CFLAGS="$CFLAGS -g"
 else
-	CFLAGS="$CFLAGS -O"
+  CFLAGS="$CFLAGS -O"
 fi
 
 if test "$with_checks" != "no"
 then
-	echo "Run-time checking enabled"
-	if test "$with_checks" = "1"
-	then
-		echo " -> Level 1 (Basic checking)"
-		CFLAGS="$CFLAGS -DCHECK=1"
-	elif test "$with_checks" = "3"
-	then
-		CFLAGS="$CFLAGS -DCHECK=3"
-		echo " -> Level 3 (Full checking + stack tracing)"
-	else
-		echo " -> Level 2 (Basic checking + stack tracing)"
-		CFLAGS="$CFLAGS -DCHECK=2"
-	fi
+  echo "Run-time checking enabled"
+  if test "$with_checks" = "1"
+  then
+    echo " -> Level 1 (Basic checking)"
+    CFLAGS="$CFLAGS -DCHECK=1"
+  elif test "$with_checks" = "3"
+  then
+    CFLAGS="$CFLAGS -DCHECK=3"
+    echo " -> Level 3 (Full checking + stack tracing)"
+  else
+    echo " -> Level 2 (Basic checking + stack tracing)"
+    CFLAGS="$CFLAGS -DCHECK=2"
+  fi
 else
-	echo "Run-time checking disabled"
+  echo "Run-time checking disabled"
 fi
 
 if test "$with_signal" != "no"
 then
-	echo "Segmentation fault handling enabled"
-	CFLAGS="$CFLAGS -DSIGHANDLE"
+  echo "Segmentation fault handling enabled"
+  CFLAGS="$CFLAGS -DSIGHANDLE"
 else
-	echo "Segmentation fault handling disabled"
+  echo "Segmentation fault handling disabled"
 fi
 
 if test "$with_track" != ""
@@ -2269,7 +2269,7 @@ fi
 if test "$with_facets" != ""
 then
     FACETS="$with_facets"
-	as_ac_File=`$as_echo "ac_cv_file_$FACETS/include/FacetsIfc.h" | $as_tr_sh`
+      as_ac_File=`$as_echo "ac_cv_file_$FACETS/include/FacetsIfc.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FACETS/include/FacetsIfc.h" >&5
 $as_echo_n "checking for $FACETS/include/FacetsIfc.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2412,11 +2412,11 @@ fi
 if test "$with_petsc" != "" && test "$with_petsc" != "no"
 then
 ### This still needs to check for PETSC_ARCH
-	if test "$with_petsc" != "yes"
-	then
-	PETSC="$with_petsc"
-	else
-	as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
+  if test "$with_petsc" != "yes"
+  then
+    PETSC="$with_petsc"
+  else
+    as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
 $as_echo_n "checking for $PETSC_DIR/$PETSC_ARCH/conf... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2437,10 +2437,10 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
   PETSC="include \$(PETSC_DIR)/conf/variables"
 else
   echo "Error - can't find PETSc distribution"
-	exit
+    exit
 fi
 
-	fi
+  fi
 
 cat <<MFILE > petscmake$$
 PETSC_ARCH = ${PETSC_ARCH}
@@ -2452,29 +2452,30 @@ echo_cxx:
 echo_sundials:
 	-@echo \${SUNDIALS_LIB}
 MFILE
-	CXX="`make -f petscmake$$ echo_cxx`"
-	HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
-	HAS_CXX=`echo $CXX | grep -ic mp`
 
-	if test "$HAS_SUNDIALS" == "0"
-	then
-		echo "Error - PETSc must have SUNDIALS support"
-		rm petscmake$$
-		exit
-	fi
+  CXX="`make -f petscmake$$ echo_cxx`"
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
+  HAS_CXX=`echo $CXX | grep -ic mp`
 
-	if test "$HAS_CXX" == "0"
-	then
-		echo "Error - PETSc must have C++ support"
-		rm petscmake$$
-		exit
-	fi
+  if test "$HAS_SUNDIALS" == "0"
+  then
+    echo "Error - PETSc must have SUNDIALS support"
+    rm petscmake$$
+    exit
+  fi
 
-	MPICXX=$CXX
+  if test "$HAS_CXX" == "0"
+  then
+    echo "Error - PETSc must have C++ support"
+    rm petscmake$$
+    exit
+  fi
 
-	rm petscmake$$
+  MPICXX=$CXX
 
-	CFLAGS="$CFLAGS -DBOUT_HAS_PETSC"
+  rm petscmake$$
+
+  CFLAGS="$CFLAGS -DBOUT_HAS_PETSC"
 
 else
    PETSC=
@@ -2488,46 +2489,46 @@ PETSC=$PETSC
 
 if ( ( test "$with_ida" != "" ) && ( test "$with_ida" != "no" ) )
 then
-	if test "$with_ida" = "yes"
-	then
-		# No path specified
-		echo "SUNDIALS IDA solver enabled"
-	else
-		# Specified with path
-		echo "SUNDIALS IDA solver enabled, path $with_ida"
-		EXTRA_INCS="$EXTRA_INCS -I$with_ida/include"
-		EXTRA_LIBS="$EXTRA_LIBS -L$with_ida/lib"
-	fi
-	# Compile in the IDA solver
-	EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
+  if test "$with_ida" = "yes"
+  then
+    # No path specified
+    echo "SUNDIALS IDA solver enabled"
+  else
+    # Specified with path
+    echo "SUNDIALS IDA solver enabled, path $with_ida"
+    EXTRA_INCS="$EXTRA_INCS -I$with_ida/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$with_ida/lib"
+  fi
+  # Compile in the IDA solver
+  EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
 
-	CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
+  CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
 fi
 
 if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
 then
-	if test "$with_cvode" = "yes"
-	then
-		# No path specified
-		echo "Using SUNDIALS' CVODE solver"
-	else
-		# Specified with path
-		echo "Using SUNDIALS' CVODE solver, path $with_cvode"
-		EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
-		EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
-	fi
-	# Compile in the CVODE solver
-	EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
+  if test "$with_cvode" = "yes"
+  then
+    # No path specified
+    echo "Using SUNDIALS' CVODE solver"
+  else
+    # Specified with path
+    echo "Using SUNDIALS' CVODE solver, path $with_cvode"
+    EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
+  fi
+  # Compile in the CVODE solver
+  EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
 
-	CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+  CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
 fi
 
 if test "$PETSC" != ""
 then
-	echo "Using PETSc interface"
-	PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-	EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
-	EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+  echo "Using PETSc interface"
+  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
+  EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 fi
 
 #############################################################
@@ -2538,12 +2539,12 @@ echo "Searching for FFTW library"
 
 if test "$with_fftw" = ""
 then
-	# No path specified
-	FFTPATH=""
-	echo " -> Path not given. Searching for library..."
+  # No path specified
+  FFTPATH=""
+  echo " -> Path not given. Searching for library..."
 else
-	FFTPATH=$with_fftw
-	as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/include/fftw3.h" | $as_tr_sh`
+  FFTPATH=$with_fftw
+  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/include/fftw3.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/include/fftw3.h" >&5
 $as_echo_n "checking for $FFTPATH/include/fftw3.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2568,8 +2569,9 @@ _ACEOF
 
 else
 
-	echo " -> Given path not correct. Finding..."
-	FFTPATH=""
+    echo " -> Given path not correct. Finding..."
+    FFTPATH=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib/libfftw3.a" >&5
@@ -2596,8 +2598,9 @@ _ACEOF
 
 else
 
-	echo " -> Given path not correct. Finding..."
-	FFTPATH=""
+    echo " -> Given path not correct. Finding..."
+    FFTPATH=""
+
 fi
 
 fi
@@ -2605,7 +2608,7 @@ fi
 # Try some known paths
 if test "$FFTPATH" = ""
 then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/fftw3.h" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/fftw3.h" >&5
 $as_echo_n "checking for /usr/include/fftw3.h... " >&6; }
 if ${ac_cv_file__usr_include_fftw3_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -2687,12 +2690,12 @@ fi
 fi
 
 
-	if test "$FFTPATH" != ""
-	then
-		# Check for the rest of the files
+  if test "$FFTPATH" != ""
+  then
+    # Check for the rest of the files
 
-		# NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
-		as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
+    # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
+    as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib/libfftw3.a" >&5
 $as_echo_n "checking for $FFTPATH/lib/libfftw3.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2719,17 +2722,17 @@ else
   FFTPATH=""
 fi
 
-	fi
+    fi
 fi
 
 if test "$FFTPATH" = ""
 then
-	echo "ERROR: FFTW not found. Required by BOUT++"
-	exit
+  echo "ERROR: FFTW not found. Required by BOUT++"
+  exit
 else
-	echo " -> path $FFTPATH"
-	EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-	EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
+  echo " -> path $FFTPATH"
+  EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
 fi
 echo ""
 
@@ -2739,9 +2742,9 @@ echo ""
 
 if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
-	echo "Using LAPACK"
-	EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-	CFLAGS="$CFLAGS -DLAPACK"
+  echo "Using LAPACK"
+  EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
+  CFLAGS="$CFLAGS -DLAPACK"
 fi
 
 #############################################################
@@ -2750,75 +2753,75 @@ fi
 
 if test "$with_netcdf" != "no"
 then
-	# Try to find a valid NetCDF installation
+  # Try to find a valid NetCDF installation
 
-	echo "Searching for NetCDF library"
+  echo "Searching for NetCDF library"
 
-	if test "$with_netcdf" = "yes"
-	then
-		# No path specified. Try using nc-config
-		if type nc-config > /dev/null 2>&1; then
-			NCPATH=`nc-config --prefix`
-		else
-			NCPATH=""
-		fi
-	else
-		NCPATH="$with_netcdf"
-	fi
+  if test "$with_netcdf" = "yes"
+  then
+    # No path specified. Try using nc-config
+    if type nc-config > /dev/null 2>&1; then
+      NCPATH=`nc-config --prefix`
+    else
+      NCPATH=""
+    fi
+  else
+    NCPATH="$with_netcdf"
+  fi
 
-	# Test if C++ support is included
-	if type nc-config > /dev/null 2>&1; then
-		if test `nc-config --has-c++` = "yes"
-		then
-			echo " -> C++ support included"
-		else
-			echo " -> NO C++ SUPPORT"
-			with_netcdf = "no"
-		fi
-	else
-		if type $NCPATH/bin/nc-config > /dev/null 2>&1; then
-			if test `$NCPATH/bin/nc-config --has-c++` = "yes"
-			then
-				echo " -> C++ support included"
-			else
-				echo " -> NO C++ SUPPORT"
-				with_netcdf = "no"
-			fi
-		else
-			echo " -> nc-config not found. Can't check C++ support"
-		fi
-	fi
+  # Test if C++ support is included
+  if type nc-config > /dev/null 2>&1; then
+    if test `nc-config --has-c++` = "yes"
+    then
+      echo " -> C++ support included"
+    else
+      echo " -> NO C++ SUPPORT"
+      with_netcdf = "no"
+    fi
+  else
+    if type $NCPATH/bin/nc-config > /dev/null 2>&1; then
+      if test `$NCPATH/bin/nc-config --has-c++` = "yes"
+      then
+        echo " -> C++ support included"
+      else
+        echo " -> NO C++ SUPPORT"
+        with_netcdf = "no"
+      fi
+    else
+      echo " -> nc-config not found. Can't check C++ support"
+    fi
+  fi
 fi
 
 if test "$with_netcdf" != "no"
 then
-	if type nc-config > /dev/null 2>&1
-	then
-		NCP=`which nc-config`
-		echo " -> Using $NCP for configuration settings"
-		# Can use nc-config to get configuration options
-	 	# Set a compile-time flag
-		CFLAGS="$CFLAGS -DNCDF"
+  if type nc-config > /dev/null 2>&1
+  then
+    NCP=`which nc-config`
+    echo " -> Using $NCP for configuration settings"
+    # Can use nc-config to get configuration options
+    # Set a compile-time flag
+    CFLAGS="$CFLAGS -DNCDF"
 
-		# Add extra sources
-		FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
+    # Add extra sources
+    FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
-		NCINC=`nc-config --cflags`
-		EXTRA_INCS="$EXTRA_INCS $NCINC"
-		NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-		EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    NCINC=`nc-config --cflags`
+    EXTRA_INCS="$EXTRA_INCS $NCINC"
+    NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
 
-		file_formats="$file_formats netCDF"
+    file_formats="$file_formats netCDF"
 
-		echo " -> NetCDF support enabled"
-		echo ""
-	else
-		# No nc-config. Check the NetCDF path manually
+    echo " -> NetCDF support enabled"
+    echo ""
+  else
+  # No nc-config. Check the NetCDF path manually
 
-		if test "$NCPATH" != ""
-		then
-			# Path set, so check if libraries present
-			as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
+  if test "$NCPATH" != ""
+  then
+    # Path set, so check if libraries present
+    as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/include/netcdfcpp.h" >&5
 $as_echo_n "checking for $NCPATH/include/netcdfcpp.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2843,8 +2846,9 @@ _ACEOF
 
 else
 
-			echo " -> Given path not correct. Finding..."
-			NCPATH=""
+      echo " -> Given path not correct. Finding..."
+      NCPATH=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf_c++.a" >&5
@@ -2871,8 +2875,9 @@ _ACEOF
 
 else
 
-			echo " -> Given path not correct. Finding..."
-			NCPATH=""
+      echo " -> Given path not correct. Finding..."
+      NCPATH=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf.a" >&5
@@ -2899,18 +2904,19 @@ _ACEOF
 
 else
 
-			echo " -> Given path not correct. Finding..."
-			NCPATH=""
+      echo " -> Given path not correct. Finding..."
+      NCPATH=""
+
 fi
 
-			else
-			echo " -> Path not given. Searching for library..."
-		fi
+    else
+      echo " -> Path not given. Searching for library..."
+    fi
 
-		# Try some known paths
-		if test "$NCPATH" = ""
-		then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/netcdfcpp.h" >&5
+    # Try some known paths
+    if test "$NCPATH" = ""
+    then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/netcdfcpp.h" >&5
 $as_echo_n "checking for /usr/include/netcdfcpp.h... " >&6; }
 if ${ac_cv_file__usr_include_netcdfcpp_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -2972,10 +2978,10 @@ fi
 fi
 
 
-			if test "$NCPATH" != ""
-			then
-				# Check for the rest of the files
-				as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
+      if test "$NCPATH" != ""
+      then
+        # Check for the rest of the files
+        as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf_c++.a" >&5
 $as_echo_n "checking for $NCPATH/lib/libnetcdf_c++.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3028,18 +3034,18 @@ else
   NCPATH=""
 fi
 
-			fi
-		fi
+      fi
+    fi
 
-		# Try to find using locate
-		if test	"$NCPATH" = ""
-		then
-			NCFILE=`locate netcdfcpp.h | head -n 1`
-			if test "$NCFILE" != ""
-			then
-				NCFILE=`dirname $NCFILE`
-				NCFILE=$NCFILE/..
-				as_ac_File=`$as_echo "ac_cv_file_$NCFILE/include/netcdfcpp.h" | $as_tr_sh`
+    # Try to find using locate
+    if test	"$NCPATH" = ""
+    then
+      NCFILE=`locate netcdfcpp.h | head -n 1`
+      if test "$NCFILE" != ""
+      then
+        NCFILE=`dirname $NCFILE`
+        NCFILE=$NCFILE/..
+        as_ac_File=`$as_echo "ac_cv_file_$NCFILE/include/netcdfcpp.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/include/netcdfcpp.h" >&5
 $as_echo_n "checking for $NCFILE/include/netcdfcpp.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3118,41 +3124,41 @@ else
   with_netcdf="no"
 fi
 
-			else
-				echo "checking locate... no"
-				with_netcdf="no"
-			fi
-		fi
+      else
+        echo "checking locate... no"
+        with_netcdf="no"
+      fi
+    fi
 
-		# Finally, if found, add to BOUT++
+    # Finally, if found, add to BOUT++
 
-		if test "$with_netcdf" != "no"
-		then
-			# Set a compile-time flag
-			CFLAGS="$CFLAGS -DNCDF"
+    if test "$with_netcdf" != "no"
+    then
+      # Set a compile-time flag
+      CFLAGS="$CFLAGS -DNCDF"
 
-			# Add extra sources
-			FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
+      # Add extra sources
+      FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
-			if test "$NCPATH" != ""; then
-				echo " -> path $NCPATH"
-				EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
-				EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
-			fi
+      if test "$NCPATH" != ""; then
+        echo " -> path $NCPATH"
+        EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
+        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+      fi
 
-			EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
+      EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
 
-			file_formats="$file_formats netCDF"
+      file_formats="$file_formats netCDF"
 
-			echo " -> NetCDF support enabled"
-			echo ""
-		fi
-	fi
+      echo " -> NetCDF support enabled"
+      echo ""
+    fi
+  fi
 fi
 
 if test "$with_netcdf" = "no"
 then
-	echo "NetCDF support disabled"
+  echo "NetCDF support disabled"
 fi
 
 #############################################################
@@ -3163,14 +3169,14 @@ fi
 
 if test "$with_pdb" = "no"
 then
-	echo "PDB support disabled"
+  echo "PDB support disabled"
 else
-	echo "Searching for PDB library"
+  echo "Searching for PDB library"
 
-	if test "$PACT" != ""
-	then
-		# Path set, check it's correct
-		as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
+  if test "$PACT" != ""
+  then
+    # Path set, check it's correct
+    as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/include/pdb.h" >&5
 $as_echo_n "checking for $PACT/include/pdb.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3195,8 +3201,9 @@ _ACEOF
 
 else
 
-		echo "PACT library location not correct. Finding..."
-		PACT=""
+      echo "PACT library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpdb.a" >&5
@@ -3223,8 +3230,9 @@ _ACEOF
 
 else
 
-		echo "PACT library location not correct. Finding..."
-		PACT=""
+      echo "PACT library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpml.a" >&5
@@ -3251,8 +3259,9 @@ _ACEOF
 
 else
 
-		echo "PACT library location not correct. Finding..."
-		PACT=""
+      echo "PACT library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libscore.a" >&5
@@ -3279,20 +3288,21 @@ _ACEOF
 
 else
 
-		echo "PACT library location not correct. Finding..."
-		PACT=""
+      echo "PACT library location not correct. Finding..."
+      PACT=""
+
 fi
 
-	else
-		echo "PACT variable not set. Searching for library..."
-	fi
+  else
+    echo "PACT variable not set. Searching for library..."
+  fi
 
-	if ( test "$with_pdb" != "" ) && ( test "$with_pdb" != "yes" ) && ( test "$with_pdb" != "no" )
-	then
-		# could be a path
-		PACT=$with_pdb
+  if ( test "$with_pdb" != "" ) && ( test "$with_pdb" != "yes" ) && ( test "$with_pdb" != "no" )
+  then
+    # could be a path
+    PACT=$with_pdb
 
-		as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
+    as_ac_File=`$as_echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/include/pdb.h" >&5
 $as_echo_n "checking for $PACT/include/pdb.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3317,8 +3327,9 @@ _ACEOF
 
 else
 
-		echo "with-pdb library location not correct. Finding..."
-		PACT=""
+      echo "with-pdb library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpdb.a" >&5
@@ -3345,8 +3356,9 @@ _ACEOF
 
 else
 
-		echo "with-pdb library location not correct. Finding..."
-		PACT=""
+      echo "with-pdb library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpml.a" >&5
@@ -3373,8 +3385,9 @@ _ACEOF
 
 else
 
-		echo "with-pdb library location not correct. Finding..."
-		PACT=""
+      echo "with-pdb library location not correct. Finding..."
+      PACT=""
+
 fi
 as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libscore.a" >&5
@@ -3401,16 +3414,17 @@ _ACEOF
 
 else
 
-		echo "with-pdb library location not correct. Finding..."
-		PACT=""
+      echo "with-pdb library location not correct. Finding..."
+      PACT=""
+
 fi
 
-	fi
+  fi
 
-	## Try some known paths
-	if test "$PACT" = ""
-	then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/pdb.h" >&5
+  ## Try some known paths
+  if test "$PACT" = ""
+  then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/pdb.h" >&5
 $as_echo_n "checking for /usr/include/pdb.h... " >&6; }
 if ${ac_cv_file__usr_include_pdb_h+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -3494,10 +3508,10 @@ fi
 fi
 
 
-		if test "$PACT" != ""
-		then
-			# Check the rest of the PACT libraries exist
-			as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
+  if test "$PACT" != ""
+  then
+    # Check the rest of the PACT libraries exist
+    as_ac_File=`$as_echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACT/lib/libpdb.a" >&5
 $as_echo_n "checking for $PACT/lib/libpdb.a... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3576,18 +3590,18 @@ else
   PACT=""
 fi
 
-		fi
-	fi
+    fi
+  fi
 
-	## Try to find using locate
-	if test "$PACT" = ""
-	then
-		PACTFILE=`locate pdb.h | head -n 1`
-		if test "$PACTFILE" != ""
-		then
-			PACTFILE=`dirname $PACTFILE`
-			PACTFILE=$PACTFILE/..
-			as_ac_File=`$as_echo "ac_cv_file_$PACTFILE/include/pdb.h" | $as_tr_sh`
+  ## Try to find using locate
+  if test "$PACT" = ""
+  then
+    PACTFILE=`locate pdb.h | head -n 1`
+    if test "$PACTFILE" != ""
+    then
+      PACTFILE=`dirname $PACTFILE`
+      PACTFILE=$PACTFILE/..
+      as_ac_File=`$as_echo "ac_cv_file_$PACTFILE/include/pdb.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $PACTFILE/include/pdb.h" >&5
 $as_echo_n "checking for $PACTFILE/include/pdb.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -3692,35 +3706,35 @@ else
   PACT=""
 fi
 
-		else
-			echo "checking locate... no"
-		fi
-	fi
+    else
+      echo "checking locate... no"
+    fi
+  fi
 
-	# Test if PACT is set
-	if test "$PACT" != ""
-	then
-		with_pdb="yes"
+  # Test if PACT is set
+  if test "$PACT" != ""
+  then
+    with_pdb="yes"
 
-		# Set include and library paths
-		EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
-		EXTRA_LIBS="$EXTRA_LIBS -L$PACT/lib"
-	fi
+    # Set include and library paths
+    EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/lib"
+  fi
 
-	## Add PDB support if available
-	if test "$with_pdb" = "yes"
-	then
+  ## Add PDB support if available
+  if test "$with_pdb" = "yes"
+  then
 
-		FILEIO_SOURCE="$FILEIO_SOURCE pdb_format.cxx"
-		EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
+    FILEIO_SOURCE="$FILEIO_SOURCE pdb_format.cxx"
+    EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
-		# Set a compile-time flag. PDBF because PDB already used in score.h
-		CFLAGS="$CFLAGS -DPDBF"
+    # Set a compile-time flag. PDBF because PDB already used in score.h
+    CFLAGS="$CFLAGS -DPDBF"
 
-		file_formats="$file_formats PDB"
-	else
-		echo "PDB support not available"
-	fi
+    file_formats="$file_formats PDB"
+  else
+    echo "PDB support not available"
+  fi
 fi
 
 
@@ -3731,10 +3745,10 @@ fi
 
 if test "$file_formats" = ""
 then
-	echo "ERROR: At least one file format must be supported"
-	exit
+  echo "ERROR: At least one file format must be supported"
+  exit
 else
-	echo "Supported file formats:$file_formats"
+  echo "Supported file formats:$file_formats"
 fi
 
 #############################################################
@@ -4401,7 +4415,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
-	for ac_prog in mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC
+  for ac_prog in mpicxx mpiCC mpic++ hcp mpxlC_r mpxlC mpCC cmpic++ CC
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4444,13 +4458,13 @@ fi
 done
 test -n "$MPICXX" || MPICXX="$CXX"
 
-	acx_mpi_save_CXX="$CXX"
-	CXX="$MPICXX"
+  acx_mpi_save_CXX="$CXX"
+  CXX="$MPICXX"
 
 
 
 if test x = x"$MPILIBS"; then
-	ac_fn_cxx_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
+  ac_fn_cxx_check_func "$LINENO" "MPI_Init" "ac_cv_func_MPI_Init"
 if test "x$ac_cv_func_MPI_Init" = xyes; then :
   MPILIBS=" "
 fi
@@ -4458,7 +4472,7 @@ fi
 fi
 
 if test x = x"$MPILIBS"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
 $as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
 if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -4500,7 +4514,7 @@ fi
 
 fi
 if test x = x"$MPILIBS"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpich" >&5
 $as_echo_n "checking for MPI_Init in -lmpich... " >&6; }
 if ${ac_cv_lib_mpich_MPI_Init+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -4542,10 +4556,12 @@ fi
 
 fi
 
-if test x != x"$MPILIBS"; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
+
+  if test x != x"$MPILIBS";
+  then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mpi.h" >&5
 $as_echo_n "checking for mpi.h... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include &lt;mpi.h&gt;
 int
@@ -4561,11 +4577,12 @@ if ac_fn_cxx_try_compile "$LINENO"; then :
 $as_echo "yes" >&6; }
 else
   MPILIBS=""
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
+  fi
+
 
 # AC_LANG_CASE[C++], [CXX="$acx_mpi_save_CXX"])
 
@@ -4574,12 +4591,12 @@ fi
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x = x"$MPILIBS"; then
 
-        :
+  :
 else
 
 $as_echo "#define HAVE_MPI 1" >>confdefs.h
 
-        :
+  :
 fi
 
 
@@ -5206,109 +5223,108 @@ done
 #############################################################
 
 
-                if ! [ -d externalpackages ]
-				then
-					mkdir externalpackages
-				fi
+          if ! [ -d externalpackages ]
+          then
+            mkdir externalpackages
+          fi
 
 
-                if ! [ -d lib ]
-				then
-					mkdir lib
-				fi
+          if ! [ -d lib ]
+          then
+            mkdir lib
+          fi
 
 
-                if ! [ -d include ]
-				then
-					mkdir include
-				fi
+          if ! [ -d include ]
+          then
+            mkdir include
+          fi
 
 
 if ( test "$enable_download_pvode" != "no" )
 then
-	if ( test "$enable_download_pvode" == "")
-	then
-		enable_download_pvode=yes
-	fi
+  if ( test "$enable_download_pvode" == "")
+  then
+    enable_download_pvode=yes
+  fi
 
-	if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
-        then
+  if ! ( [ -f externalpackages/PVODE/lib/libpvode.a ] && [ -f externalpackages/PVODE/lib/libpvpre.a ] )
+  then
 
-#		# Get a decent file transfer
-#		prog=$(basename "$(which curl)")
-#		if test "$prog" == ""
-#		then
-#			prog=$(basename "$(which wget)")
-#		fi
+#    # Get a decent file transfer
+#    prog=$(basename "$(which curl)")
+#    if test "$prog" == ""
+#    then
+#      prog=$(basename "$(which wget)")
+#    fi
 #
-#		# This first 'tee' command clears the file out so don't have to delete it if it exists
-#		echo "*************************************************************" | tee config-build.log
-#		if [[ -f $enable_download_pvode ]]
-#		then
-#			echo "* Using supplied file $enable_download_pvode" | tee -a config-build.log
-#			file=$enable_download_pvode
-#		else
-#			filename=externalpackages/pvode.tar.gz
-#			server=ftp.mcs.anl.gov
-#			remotename=/pub/petsc/boutpkgs/pvode.tar.gz
+#    # This first 'tee' command clears the file out so don't have to delete it if it exists
+#    echo "*************************************************************" | tee config-build.log
+#    if [[ -f $enable_download_pvode ]]
+#    then
+#      echo "* Using supplied file $enable_download_pvode" | tee -a config-build.log
+#      file=$enable_download_pvode
+#    else
+#      filename=externalpackages/pvode.tar.gz
+#      server=ftp.mcs.anl.gov
+#      remotename=/pub/petsc/boutpkgs/pvode.tar.gz
 #
-#			echo "* Downloading PVODE from $server ... " | tee -a config-build.log
-#			if test "$prog" == "curl"
-#			then
-#				curl -o $filename $server$remotename >> config-build.log 2>&1
-#			elif test "$prog" == "wget"
-#			then
-#				wget -O $filename ftp://$server$remotename >> config-build.log 2>&1
-#			else
-#				ftp -o $filename -a $servername:$remotename >> config-build.log 2>&1
-#			fi
+#      echo "* Downloading PVODE from $server ... " | tee -a config-build.log
+#    if test "$prog" == "curl"
+#    then
+#      curl -o $filename $server$remotename >> config-build.log 2>&1
+#    elif test "$prog" == "wget"
+#    then
+#      wget -O $filename ftp://$server$remotename >> config-build.log 2>&1
+#    else
+#      ftp -o $filename -a $servername:$remotename >> config-build.log 2>&1
+#    fi
 #
-#			if test $? != "0"
-#			then
-#				AC_MSG_ERROR(Error with downloading pvode.tar.gz. Check config-build.log for errors)
-#			fi
-#			file=externalpackages/pvode.tar.gz
-#		fi
-#		gunzip -c $file > externalpackages/tmp.tar
-#		cd externalpackages
-#		tar -x -f tmp.tar >> ../config-build.log 2>&1
-#		if test $? != "0"
-#		then
-#			cd -
-#			AC_MSG_ERROR(Can't extract file: $file)
-#		fi
-#		cd -
-#
-#
-		echo "* Building PVODE" | tee -a config-build.log
-		echo "*************************************************************" >> config-build.log
-		CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
-		CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+#    if test $? != "0"
+#    then
+#      AC_MSG_ERROR(Error with downloading pvode.tar.gz. Check config-build.log for errors)
+#    fi
+#    file=externalpackages/pvode.tar.gz
+#  fi
+#  gunzip -c $file > externalpackages/tmp.tar
+#  cd externalpackages
+#  tar -x -f tmp.tar >> ../config-build.log 2>&1
+#  if test $? != "0"
+#  then
+#    cd -
+#    AC_MSG_ERROR([Cannot extract file: $file])
+#  fi
+#  cd -
 
-		if [ -f externalpackages/PVODE/lib/libpvode.a ]
-		then
-			echo "*************************************************************" >> config-build.log
-			echo "* Successfully built PVODE" | tee -a config-build.log
-			echo "*	************************************************************" >> config-build.log
-			echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
+    echo "* Building PVODE" | tee -a config-build.log
+    echo "*************************************************************" >> config-build.log
+    CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
+    CXX="$MPICXX" CFLAGS="$CFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
 
-			echo "*************************************************************" | tee -a config-build.log
-		else
-			as_fn_error $? "Couldn't build PVODE. See config-build.log for errors" "$LINENO" 5
-		fi
-	fi
+    if [ -f externalpackages/PVODE/lib/libpvode.a ]
+    then
+      echo "*************************************************************" >> config-build.log
+      echo "* Successfully built PVODE" | tee -a config-build.log
+      echo "*	************************************************************" >> config-build.log
+      echo "* Installing PVODE into bout++ sourcetree" | tee -a config-build.log
 
-	# Set the correct libraries and copy them to bout
+      echo "*************************************************************" | tee -a config-build.log
+    else
+      as_fn_error $? "Could not build PVODE. See config-build.log for errors" "$LINENO" 5
+    fi
+  fi
 
-                if ! [ -d include/pvode ]
-				then
-					mkdir include/pvode
-				fi
+  # Set the correct libraries and copy them to bout
 
-	cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
-	cp externalpackages/PVODE/lib/*.a lib/
-	EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
-	CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
+          if ! [ -d include/pvode ]
+          then
+            mkdir include/pvode
+          fi
+
+  cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
+  cp externalpackages/PVODE/lib/*.a lib/
+  EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
+  CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
 fi
 
 #############################################################
@@ -5317,14 +5333,14 @@ fi
 
 if ( test "$CXXINCLUDE" != "" )
 then
-	echo "================================================"
-	echo " WARNING: CXXINCLUDE environment variable set to:"
-	echo $CXXINCLUDE
-	echo " => This will be added to compile commands"
- 	echo " If this is not intended, then run"
-	echo "   export CXXINCLUDE=''"
-	echo " before making BOUT++"
-	echo "================================================"
+  echo "================================================"
+  echo " WARNING: CXXINCLUDE environment variable set to:"
+  echo $CXXINCLUDE
+  echo " => This will be added to compile commands"
+  echo " If this is not intended, then run"
+  echo "   export CXXINCLUDE=''"
+  echo " before making BOUT++"
+  echo "================================================"
 fi
 
 # Only make.config is altered by configure
