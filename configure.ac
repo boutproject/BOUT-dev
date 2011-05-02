@@ -166,7 +166,7 @@ echo_sundials:
 MFILE
 
   CXX="`make -f petscmake$$ echo_cxx`"
-  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`	
+  HAS_SUNDIALS=`make -f petscmake$$ echo_sundials | grep -c sundials`
   HAS_CXX=`echo $CXX | grep -ic mp`
 
   if test "$HAS_SUNDIALS" == "0"
@@ -187,7 +187,26 @@ MFILE
 
   rm petscmake$$
 
-  CFLAGS="$CFLAGS -DBOUT_HAS_PETSC"
+  PETSC_VERSION_MAJOR="0"
+  PETSC_VERSION_MAJOR=`grep 'define PETSC_VERSION_MAJOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_MINOR="0"
+  PETSC_VERSION_MINOR=`grep 'define PETSC_VERSION_MINOR' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+  PETSC_VERSION_RELEASE="0"
+  PETSC_VERSION_RELEASE=`grep 'define PETSC_VERSION_RELEASE' $PETSC_DIR/include/petscversion.h | awk '{print \$3;}'`
+
+  if test $PETSC_VERSION_MAJOR != "3"
+  then
+    echo "PETSc must be at least version 3"
+    exit
+  fi
+
+  if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC_3_1"
+  elif test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "0"
+  then
+    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC_DEV"
+  fi
 
 else
    PETSC=
