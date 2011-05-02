@@ -6,6 +6,7 @@
  **************************************************************/
 
 #include <bout.hxx>
+#include <boutmain.hxx>
 
 // Evolving fields
 Field3D U, Psi, v, p;
@@ -90,8 +91,6 @@ int physics_init(bool restarting)
   return 0;
 }
 
-const Field3D bracket(const Field3D &f, const Field3D &g);
-
 const Field3D Grad_parP(const Field3D &f)
 {
   return Grad_par(f) - bracket(Psi, f);
@@ -150,9 +149,4 @@ int physics_run(BoutReal t)
              );
     
   return 0;
-}
-
-const Field3D bracket(const Field3D &f, const Field3D &g)
-{
-  
 }

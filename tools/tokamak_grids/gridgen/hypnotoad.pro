@@ -128,6 +128,15 @@ PRO popup_event, event
       ; Delete the window, as number of fields may change
       WIDGET_CONTROL, event.top, /destroy
       
+      ; Check if a simplified boundary should be used
+      IF base_info.simple_bndry THEN BEGIN
+        ; Simplify the boundary to a square box
+        boundary = TRANSPOSE([ [MIN(boundary[0,*]), MAX(boundary[0,*]), $
+                                MAX(boundary[0,*]), MIN(boundary[0,*])], $
+                               [MIN(boundary[1,*]), MIN(boundary[1,*]), $
+                                MAX(boundary[1,*]), MAX(boundary[1,*])] ])
+      ENDIF
+      
       ; Create the mesh
       mesh = create_grid((*(base_info.rz_grid)).psi, (*(base_info.rz_grid)).r, (*(base_info.rz_grid)).z, $
                          settings, $
@@ -288,6 +297,16 @@ PRO event_handler, event
         settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
       ENDELSE
       
+
+      ; Check if a simplified boundary should be used
+      IF info.simple_bndry THEN BEGIN
+        ; Simplify the boundary to a square box
+        boundary = TRANSPOSE([ [MIN(boundary[0,*]), MAX(boundary[0,*]), $
+                                MAX(boundary[0,*]), MIN(boundary[0,*])], $
+                               [MIN(boundary[1,*]), MIN(boundary[1,*]), $
+                                MAX(boundary[1,*]), MAX(boundary[1,*])] ])
+      ENDIF
+        
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
       mesh = create_grid((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
@@ -360,6 +379,11 @@ PRO event_handler, event
     'strict': BEGIN
       ; Checkbox with boundary strictness
       info.strict_bndry = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'simplebndry': BEGIN
+      ; Simplify the boundary
+      info.simple_bndry = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'curv': BEGIN
@@ -671,6 +695,10 @@ PRO hypnotoad
                                tooltip="Enforce boundaries strictly")
   Widget_Control, strict_check, Set_Button=1
 
+  simple_check = WIDGET_BUTTON(checkboxbase, VALUE="Simplify boundary", uvalue='simplebndry', $
+                               tooltip="Simplify the boundary to a square")
+  Widget_Control, simple_check, Set_Button=0
+
   curv_check = WIDGET_BUTTON(checkboxbase, VALUE="Flux curvature", uvalue='curv', $
                              tooltip="Calculate curvature in flux coordinates")
   Widget_Control, curv_check, Set_Button=0
@@ -717,6 +745,7 @@ PRO hypnotoad
            draw:draw, $ ; Drawing widget
            detail_set:0, $ ; 1 if using detailed settings
            strict_bndry:1, $ ; 1 if boundaries should be strict
+           simple_bndry:0, $ ; Use simplified boundary?
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
            status:status_box, $

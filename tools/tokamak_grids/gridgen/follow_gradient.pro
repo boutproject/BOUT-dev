@@ -98,8 +98,12 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
     rzold = [ri0, zi0]
     rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
     CATCH, /CANCEL
+    IF lstat LT 0 THEN BEGIN
+      PRINT, "Error in LSODE routine when following psi gradient."
+      PRINT, "LSODE status: ", lstat
+      STOP
+    ENDIF
     
-    IF lstat LT 0 THEN STOP
     ri = rznew[0]
     zi = rznew[1]
     

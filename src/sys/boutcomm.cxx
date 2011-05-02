@@ -1,4 +1,5 @@
 #include <boutcomm.hxx>
+#include <bout_types.hxx>
 
 BoutComm* BoutComm::instance = NULL;
 

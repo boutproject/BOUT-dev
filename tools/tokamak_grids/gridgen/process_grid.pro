@@ -768,7 +768,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       
       IF i1 EQ -1 THEN i1 = nx-2 ELSE i1 = i1 + ip
       
-      IF (ip LE i0) OR (ip GE i1) THEN STOP
+      IF (ip LE i0) OR (ip GE i1) THEN CONTINUE
       
       ; Now preserve starting and end points, and peak value
       div = FIX((i1-i0)/10)+1 ; reduce number of points by this factor

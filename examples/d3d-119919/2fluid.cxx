@@ -5,6 +5,8 @@
  *******************************************************************************/
 
 #include <bout.hxx>
+#include <boutmain.hxx>
+
 #include <initialprofiles.hxx>
 #include <derivs.hxx>
 #include <interpolation.hxx>

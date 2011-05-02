@@ -1,5 +1,5 @@
 BOUT_TOP	= ../..
 
-SOURCEC		= 2fluid.cxx
+SOURCEC		= hazeltine_4field.cxx
 
 include $(BOUT_TOP)/make.config

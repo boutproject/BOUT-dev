@@ -1347,8 +1347,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         dp0 = (xpt_f[inner_sep] - f_inner)*2./ (FLOAT(nrad[0])*(1. + rad_peaking))
         fvals = radial_grid(nrad[0], f_inner, xpt_f[inner_sep], $
                             1, 0, xpt_f, rad_peaking, $
-                            out_dp=rad_peaking*dx0, $
-                            in_dp=dx0)
+                            out_dp=rad_peaking*dp0, $
+                            in_dp=dp0)
       ENDELSE
 
       ; SOL
