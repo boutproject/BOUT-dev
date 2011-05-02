@@ -1027,6 +1027,11 @@ bool Field2D::checkData(bool vital) const
 
 void Field2D::applyBoundary()
 {
+#ifdef CHECK
+  msg_stack.push("Field2D::applyBoundary()");
+  if(bndry_op.size() == 0)
+    output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+#endif
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply(*this);
 }
