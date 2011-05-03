@@ -42,6 +42,7 @@ PRO plot_rz_equil, data
     bndryi = FLTARR(2, data.nlim)
     bndryi[0,*] = INTERPOL(FINDGEN(data.nr), data.R, data.rlim)
     bndryi[1,*] = INTERPOL(FINDGEN(data.nz), data.Z, data.zlim)
+    
     critical = critical_bndry(critical, bndryi)
   ENDIF
   ; Overplot the separatrices, O-points

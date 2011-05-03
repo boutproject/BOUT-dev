@@ -82,6 +82,13 @@ FUNCTION analyse_equil, F, R, Z
     ENDFOR
   ENDFOR
   
+  ; Check for points too close to the edges
+  w = WHERE((rex GT 2) AND (rex LT nx-3) $
+            (zex GT 2) AND (zex LT nx-3), nextrema)
+  
+  rex = rex[w]
+  zex = zex[w]
+  
   rex = ROUND(rex)
   zex = ROUND(zex)
   
@@ -118,7 +125,12 @@ FUNCTION analyse_equil, F, R, Z
     valid = 1
 
     localf = FLTARR(6)
-    FOR i=0, 5 DO localf[i] = F[rex[e]+rio[i], zex[e]+zio[i]]
+    FOR i=0, 5 DO BEGIN
+      ; Get the f value in a stencil around this point
+      xi = ((rex[e]+rio[i]) > 0) < (nx-1) ; Zero-gradient at edges
+      yi = ((zex[e]+zio[i]) > 0) < (ny-1)
+      localf[i] = F[xi, yi]
+    ENDFOR
     res=SVSOL(U,W,V,localf)
     
     ; Res now contains [a,b,c,d,e,f]
@@ -233,14 +245,14 @@ FUNCTION analyse_equil, F, R, Z
 
   PRINT, "Number of O-points: "+STR(n_opoint)
   PRINT, "Number of X-points: "+STR(n_xpoint)
-  
+
   ;;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
   ; Find the O-point closest to the middle of the grid
   
-  mind = (opt_ri[0] - (FLOAT(nx)/2.))^2 + (opt_zi[0] - (FLOAT(ny)/2.))
+  mind = (opt_ri[0] - (FLOAT(nx)/2.))^2 + (opt_zi[0] - (FLOAT(ny)/2.))^2
   ind = 0
   FOR i=1, n_opoint-1 DO BEGIN
-    d = (opt_ri[i] - (FLOAT(nx)/2.))^2 + (opt_zi[i] - (FLOAT(ny)/2.))
+    d = (opt_ri[i] - (FLOAT(nx)/2.))^2 + (opt_zi[i] - (FLOAT(ny)/2.))^2
     IF d LT mind THEN BEGIN
       ind = i
       mind = d
@@ -284,10 +296,12 @@ FUNCTION analyse_equil, F, R, Z
       ENDIF
     ENDFOR
     
-    PRINT, "Keeping x-points ", keep
-    xpt_ri = xpt_ri[keep]
-    xpt_zi = xpt_zi[keep]
-    xpt_f = xpt_f[keep]
+    IF nkeep GT 0 THEN BEGIN
+      PRINT, "Keeping x-points ", keep
+      xpt_ri = xpt_ri[keep]
+      xpt_zi = xpt_zi[keep]
+      xpt_f = xpt_f[keep]
+    ENDIF ELSE PRINT, "No x-points kept"
     n_xpoint = nkeep
 
     ; Now find x-point closest to primary O-point
