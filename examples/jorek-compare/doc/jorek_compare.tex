@@ -74,6 +74,7 @@
 \newcommand{\Bvec}{\ensuremath{\underline{B}}}
 \newcommand{\bvec}{\ensuremath{\underline{b}}}
 \newcommand{\kvec}{\ensuremath{\underline{\kappa}}}
+\newcommand{\apar}{\ensuremath{A_{||}}}
 
 \begin{document}
 
@@ -138,42 +139,50 @@ For $n_0=10^{20}$m$^{-3}$, these factors are $\sqrt{\rho_0 / \mu_0} = 0.52$, $\s
 
 \section{Equations solved in BOUT++ model}
 
-Rather than evolving the poloidal flux, the BOUT++ model evolves
-the parallel vector potential $\psi = A_{||} / B_0$. The total magnetic field
-is therefore given by:
+The total magnetic field is given by:
 \[
-\Bvec = \Bvec_0 + \nabla\times\left(\Bvec_0\psi\right) \simeq \Bvec_0 + \nabla\psi \times\Bvec_0
+\Bvec = \Bvec_0 + \nabla\times\left(\bvec_0\apar\right) \simeq \Bvec_0 + \nabla\apar \times\bvec_0
 \]
 Either of these expressions can be used, depending on the value of the \texttt{full\_bfield} option. The parallel current is given by
 \[
-j_{||} = j_{||0} - \frac{B_0}{\mu_0}\nabla_\perp^2\psi
+j_{||} = j_{||0} - \frac{1}{\mu_0}\nabla_\perp^2\apar
 \]
-which since $j_{||}$ is normalised to $\mu_0$, and $\psi$ is not normalised gives
+which since $j_{||}$ is normalised to $\mu_0$, and $\apar$ is not normalised gives
 \[
-\hat{j_{||}} = \hat{j_{||0}} - B_0\nabla_\perp^2\psi
+\hat{j_{||}} = \hat{j_{||0}} - \nabla_\perp^2\apar
+\]
+The $E\times B$ velocity is given by:
+\[
+\Vec{v}_{ExB} = \frac{1}{B^2}\Bvec\times\nabla\phi
+\]
+Vorticity $U$ is defined as 
+\begin{eqnarray*}
+U \equiv \Curl{\Vec{v}_{ExB}} &=& \frac{\bvec}{B}\Div{\nabla\phi} - \nabla\phi\left(\Div{\frac{\bvec}{B}}\right) + \left(\nabla\phi\cdot\nabla\right)\frac{\bvec}{B} - \left(\frac{\bvec}{B}\cdot\nabla\right)\nabla\phi \\
+&\simeq& \frac{\bvec}{B}\nabla_\perp^2\phi
+\end{eqnarray*}
+where only the first term has been kept, and parallel derivatives neglected (flute assumption). Electrostatic potential can therefore be related to 
+vorticity by:
+\[
+U \simeq \frac{1}{B_0}\nabla_\perp^2\phi
 \]
 
 The normalised evolution equations solved are:
 
 \begin{eqnarray*}
-  \deriv{\rho}{t} &=& -\bvec_0\times\nabla\phi\cdot\nabla\left(\rho + \rho_0\right) + \left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(\rho + \rho_0\right) + D_\perp\nabla_\perp^2\rho \\
-  \deriv{T_s}{t} &=& -\bvec_0\times\nabla\phi\cdot\nabla\left(T_s + T_{s0}\right) - \frac{2}{3}\left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(T_s + T_{s0}\right) + \frac{1}{\rho + \rho_0}\left[ \nabla_{||}\cdot\left(\chi_{s||}\partial_{||}T_s\right) + \chi_\perp\nabla_\perp^2T_s\right] \\
-  \deriv{u}{t} &=& -\bvec_0\times\nabla\phi\cdot\nabla u + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P\right] + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u \\
-\deriv{v_{||}}{t} &=& -\bvec_0\times\nabla\phi\cdot\nabla v_{||} - \nabla_{||} P \\
-\deriv{\psi}{t} &=& -\frac{1}{B_0}\nabla_{||}\left(B_0\phi\right) - \eta J_{||}
+  \deriv{\rho}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(\rho + \rho_0\right) + \left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(\rho + \rho_0\right) + D_\perp\nabla_\perp^2\rho \\
+  \deriv{T_s}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(T_s + T_{s0}\right) - \frac{2}{3}\left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(T_s + T_{s0}\right) + \frac{1}{\rho + \rho_0}\left[ \nabla_{||}\cdot\left(\chi_{s||}\partial_{||}T_s\right) + \chi_\perp\nabla_\perp^2T_s\right] \\
+  \deriv{U}{t} &=& -\Vec{v}_{ExB}\cdot\nabla U + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P\right] + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u \\
+\deriv{v_{||}}{t} &=& -\Vec{v}_{ExB}\cdot\nabla v_{||} - \nabla_{||} P \\
+\deriv{\apar}{t} &=& -\nabla_{||}\phi - \eta J_{||} \\
+P &=& \rho\left(T_e + T_i\right)
 \end{eqnarray*}
 where there is a separate equation for electron and ion temperatures which
-differ only in conductivity coefficients. {\bf NOTE} There should be an
+differ only in conductivity coefficients. All quantities with subscript '0'
+are (constant) equilibrium quantites, everything else is evolving.
+
+ {\bf NOTE} There should be an
 electron-ion collision term to transfer energy between the two, but this
 is not included yet.
-
-The auxilliary equations are
-\[
-J_{||} = -B_0\nabla_\perp^2\psi \qquad u = \nabla_\perp^2\phi
-\]
-All quantities with subscript '0' are (constant) equilibrium quantites, everything else is evolving.
-
-{\bf NOTE}: Factors of $B_0$ floating around or missing need to be sorted out. For example, factor of $1/B_0$ in divergence expression (see next section), but not in advection term...
  
 \subsection{Divergence of $E\times B$ flow}
 
