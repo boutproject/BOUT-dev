@@ -171,7 +171,7 @@ The normalised evolution equations solved are:
 \begin{eqnarray*}
   \deriv{\rho}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(\rho + \rho_0\right) + \left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(\rho + \rho_0\right) + D_\perp\nabla_\perp^2\rho \\
   \deriv{T_s}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(T_s + T_{s0}\right) - \frac{2}{3}\left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(T_s + T_{s0}\right) + \frac{1}{\rho + \rho_0}\left[ \nabla_{||}\cdot\left(\chi_{s||}\partial_{||}T_s\right) + \chi_\perp\nabla_\perp^2T_s\right] \\
-  \deriv{U}{t} &=& -\Vec{v}_{ExB}\cdot\nabla U + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P\right] + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u \\
+  \deriv{U}{t} &=& -\Vec{v}_{ExB}\cdot\nabla U + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u\right] \\
 \deriv{v_{||}}{t} &=& -\Vec{v}_{ExB}\cdot\nabla v_{||} - \nabla_{||} P \\
 \deriv{\apar}{t} &=& -\nabla_{||}\phi - \eta J_{||} \\
 P &=& \rho\left(T_e + T_i\right)
