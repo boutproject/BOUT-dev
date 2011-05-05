@@ -96,13 +96,38 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
   IF theError EQ 0 THEN BEGIN
     ; Call LSODE to follow gradient
     rzold = [ri0, zi0]
-    rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
-    CATCH, /CANCEL
+    rcount = 0
+    REPEAT BEGIN
+      rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
+      IF lstat EQ -1 THEN BEGIN
+        PRINT, "  -> Excessive work "+STR(f)+" to "+STR(ftarget)+" Trying to continue..."
+        lstat = 2 ; continue
+        rcount = rcount + 1
+        IF rcount GT 10 THEN BEGIN
+          PRINT, "   -> Too many repeats. Giving Up."
+          STOP
+        ENDIF
+        ; Get f at this new location
+        g = local_gradient(dctF, rznew[0], rznew[1], status=status)
+        IF status EQ 1 THEN BEGIN
+          ri = ri0
+          zi = zi0
+          status = 1
+          RETURN
+        ENDIF
+        rzold = rznew
+        f0 = g.f
+  
+        CONTINUE
+      ENDIF ELSE BREAK
+    ENDREP UNTIL 0
+    
     IF lstat LT 0 THEN BEGIN
       PRINT, "Error in LSODE routine when following psi gradient."
       PRINT, "LSODE status: ", lstat
-      STOP
+      ;STOP
     ENDIF
+    CATCH, /CANCEL
     
     ri = rznew[0]
     zi = rznew[1]

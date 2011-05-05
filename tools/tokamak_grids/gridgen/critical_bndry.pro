@@ -46,8 +46,10 @@ FUNCTION critical_bndry, critical, bndryi
                         0, $
                         bndryi[0,*], bndryi[1,*], 1, $
                         ncross=ncross)
-    IF ncross EQ 0 THEN BEGIN
-      ; hasn't crossed -> inside boundary. Add index to w
+    
+    IF (ncross MOD 2) EQ 0 THEN BEGIN
+      ; hasn't crossed or crosses an even number of times
+      ;  -> inside boundary. Add index to w
       IF n_xpoint EQ 0 THEN w = [i] ELSE w = [w,i]
       n_xpoint = n_xpoint + 1
     ENDIF

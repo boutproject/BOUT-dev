@@ -2046,6 +2046,8 @@ void Field3D::applyBoundary()
   if(block == NULL)
     output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
   
+  if(bndry_op.size() == 0)
+    output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
 #endif
   
   if(block == NULL)
