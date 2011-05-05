@@ -46,6 +46,7 @@ using std::string;
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
+#define SOLVERPETSC31     "petsc-3.1"
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
 
