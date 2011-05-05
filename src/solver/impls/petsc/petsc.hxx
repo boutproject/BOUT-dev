@@ -24,7 +24,7 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_PETSC
+#ifndef BOUT_HAS_PETSC_DEV
 
 #include "emptysolver.hxx"
 typedef EmptySolver PetscSolver;

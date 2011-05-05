@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include "petsc.hxx"
+#include "petsc-3.1.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#ifdef BOUT_HAS_PETSC_3_1
 
 #include <globals.hxx>
 
@@ -36,19 +36,19 @@
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 
-PetscSolver::PetscSolver()
+Petsc31Solver::Petsc31Solver()
 {
   has_constraints = false; // No constraints
   this->J = 0;
   this->matfdcoloring = 0;
 }
 
-PetscSolver::~PetscSolver()
+Petsc31Solver::~Petsc31Solver()
 {
 
   if(initialised) {
     // Free CVODE memory
-    
+
     VecDestroy(u);
     if (J){MatDestroy(J);}
     if (matfdcoloring){MatFDColoringDestroy(matfdcoloring);}
@@ -62,7 +62,7 @@ PetscSolver::~PetscSolver()
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
+int Petsc31Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
   PetscErrorCode  ierr;
   int             neq;
@@ -94,7 +94,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3d, n2d, neq, local_N);
 
@@ -442,7 +442,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode PetscSolver::run(MonitorFunc mon)
+PetscErrorCode Petsc31Solver::run(MonitorFunc mon)
 {
   integer steps;
   BoutReal ftime;
@@ -460,14 +460,14 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon)
  * RHS function
  **************************************************************************/
 
-PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
+PetscErrorCode Petsc31Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
   int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
 #ifdef CHECK
-  int msg_point = msg_stack.push("Running RHS: PetscSolver::rhs(%e)", t);
+  int msg_point = msg_stack.push("Running RHS: Petsc31Solver::rhs(%e)", t);
 #endif
 
   // Load state from PETSc
@@ -528,7 +528,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void PetscSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
+void Petsc31Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
 {
   BoutReal **d2d, ***d3d;
   unsigned int i;
@@ -605,7 +605,7 @@ void PetscSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_V
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
+void Petsc31Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
 {
   int jx, jy;
   int p = 0; // Counter for location in udata array
@@ -648,7 +648,7 @@ void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 }
 
-void PetscSolver::load_vars(BoutReal *udata)
+void Petsc31Solver::load_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -671,7 +671,7 @@ void PetscSolver::load_vars(BoutReal *udata)
 }
 
 // This function only called during initialisation
-int PetscSolver::save_vars(BoutReal *udata)
+int Petsc31Solver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
@@ -702,7 +702,7 @@ int PetscSolver::save_vars(BoutReal *udata)
   return(0);
 }
 
-void PetscSolver::save_derivs(BoutReal *dudata)
+void Petsc31Solver::save_derivs(BoutReal *dudata)
 {
   unsigned int i;
 
@@ -735,21 +735,21 @@ void PetscSolver::save_derivs(BoutReal *dudata)
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
 #undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::solver_f"
+#define __FUNCT__ "Petsc31Solver::solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
-  PetscSolver *s;
+  Petsc31Solver *s;
   
   PetscFunctionBegin;
-  s = (PetscSolver*) f_data;
+  s = (Petsc31Solver*) f_data;
   PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
 }
 
 #undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::PreUpdate"
+#define __FUNCT__ "Petsc31Solver::PreUpdate"
 PetscErrorCode PreStep(TS ts) 
 {
-  PetscSolver *s;
+  Petsc31Solver *s;
 	PetscReal t, dt;
   PetscErrorCode ierr;
   
@@ -772,7 +772,7 @@ PetscErrorCode PreStep(TS ts)
 }
 
 #undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::PostUpdate"
+#define __FUNCT__ "Petsc31Solver::PostUpdate"
 PetscErrorCode PostStep(TS ts) 
 {
   PetscFunctionReturn(0);

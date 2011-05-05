@@ -25,7 +25,7 @@
 
 #include "petsc.hxx"
 
-#ifdef BOUT_HAS_PETSC
+#ifdef BOUT_HAS_PETSC_DEV
 
 #include <globals.hxx>
 

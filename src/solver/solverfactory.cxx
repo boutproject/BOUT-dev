@@ -1,6 +1,7 @@
 #include "solverfactory.hxx"
 
 #include "impls/cvode/cvode.hxx"
+#include "impls/petsc-3.1/petsc-3.1.hxx"
 #include "impls/petsc/petsc.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/pvode/pvode.hxx"
@@ -60,8 +61,8 @@ Solver* SolverFactory::createSolver(SolverType &type)
     return new CvodeSolver;
   } else if(!strcasecmp(type, SOLVERIDA)) {
     return new IdaSolver;
-  } else if(!strcasecmp(type, SOLVERPETSC)) {
-    return new PetscSolver;
+  } else if(!strcasecmp(type, SOLVERPETSC31)) {
+    return new Petsc31Solver;
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
     return new KarniadakisSolver;
   } else if(!strcasecmp(type, SOLVERRK4)) {

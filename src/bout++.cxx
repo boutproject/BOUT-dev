@@ -140,17 +140,42 @@ int bout_init(int argc, char **argv)
     if(strncasecmp(argv[i], "-f", 2) == 0) {
       // Set data directory
       if(i+1 >= argc) {
-	output.write("Useage is %s -f <options filename>\n");
-	return 1;
+        output.write("Useage is %s -f <options filename>\n");
+        return 1;
       }
       i++;
       opt_file = argv[i];
     }
   }
+  //
+  /// Get the options tree
+  Options *options = Options::getRoot();
+
+  try {
+      /// Load settings file
+    OptionsReader *reader = OptionsReader::getInstance();
+    reader->read(options, "%s/%s", data_dir, opt_file);
+    
+    // Get options override from command-line
+    reader->parseCommandLine(options, argc, argv);
+  }catch(BoutException *e) {
+    output << "Error encountered during initialisation\n";
+    output << e->what() << endl;
+    return 1;
+  }
   
   /// Start MPI
+  //Dirty, dirty hack
 #ifdef BOUT_HAS_PETSC
-  PetscInitialize(&argc,&argv,"../petscopt",help);
+  SolverType type("");
+  string solver_option;
+  Options *solver_options = options->getSection("solver");
+  solver_options->get("type", solver_option, "", false);
+  if(!solver_option.empty()) type = solver_option.c_str();
+  if(!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC)))
+    PetscInitialize(&argc,&argv,"../petscopt",help);
+  else if(!BoutComm::getInstance()->isSet())
+    MPI_Init(&argc,&argv);
 #else
   // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
   // but might need to revisit if that isn't the case
@@ -216,30 +241,20 @@ int bout_init(int argc, char **argv)
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
 
-  /// Get the options tree
-  Options *options = Options::getRoot();
-
   try {
 
     output.write("Processor number: %d of %d\n\n", MYPE, NPES);
-    
-    /// Load settings file
-    OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", data_dir, opt_file);
-    
-    // Get options override from command-line
-    reader->parseCommandLine(options, argc, argv);
-    
+
     /////////////////////////////////////////////
     /// Get some settings
-    
+
     OPTION(options, NOUT, 1);
     OPTION(options, TIMESTEP, 1.0);
 
     options->get("grid", grid_name, DEFAULT_GRID);
     /*  if((grid_name = options.getString("grid")) == (char*) NULL)
         grid_name = DEFAULT_GRID;*/
-  
+
     OPTION(options, dump_float,   true);
     OPTION(options, non_uniform,  false);
   
@@ -423,8 +438,21 @@ int bout_finish()
   BoundaryFactory::cleanup();
 
   // close MPI
+  //Dirty, dirty hack
 #ifdef BOUT_HAS_PETSC
-  PetscFinalize();
+  SolverType type("");
+  string solver_option;
+  Options *options = Options::getRoot();
+  options = options->getSection("solver");
+  options->get("type", solver_option, "", false);
+  if(!solver_option.empty()) type = solver_option.c_str();
+
+  if(!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC)))
+    PetscFinalize();
+  else if(!BoutComm::getInstance()->isSet())
+    MPI_Finalize();
+
+  options = Options::getRoot();
 #else
   // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
   // but might need to revisit if that isn't the case

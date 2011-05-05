@@ -24,16 +24,16 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_PETSC
+#ifndef BOUT_HAS_PETSC_3_1
 
 #include "emptysolver.hxx"
-typedef EmptySolver PetscSolver;
- 
-#else
-class PetscSolver;
+typedef EmptySolver Petsc31Solver;
 
-#ifndef __PETSC_SOLVER_H__
-#define __PETSC_SOLVER_H__
+#else
+class Petsc31Solver;
+
+#ifndef __PETSC31_SOLVER_H__
+#define __PETSC31_SOLVER_H__
 
 #include <petscts.h>
 
@@ -59,32 +59,32 @@ EXTERN PetscErrorCode PreStep(TS);
 EXTERN PetscErrorCode PostStep(TS);
 EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class PetscSolver : public Solver {
+class Petsc31Solver : public Solver {
  public:
-  PetscSolver();
-  ~PetscSolver();
-  
+  Petsc31Solver();
+  ~Petsc31Solver();
+
   int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
-  
+
   int run(MonitorFunc f);
 
   // These functions used internally (but need to be public)
-  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
+  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);
   friend PetscErrorCode PreStep(TS);
   friend PetscErrorCode PostStep(TS);
 
  private:
   Vec           u;
-  TS            ts; 
+  TS            ts;
   Mat           J;
   MatFDColoring matfdcoloring;
 
   int nout;   // The number of outputs
   BoutReal tstep; // Time between outputs
   MonitorFunc monitor; // Monitor function to call regularly
-  
+
   BoutReal next_time;  // When the monitor should be called next
-  bool outputnext; // true if the monitor should be called next time 
+  bool outputnext; // true if the monitor should be called next time
 
   // Looping over variables. This should be in generic, but better...
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
@@ -97,6 +97,6 @@ class PetscSolver : public Solver {
 };
 
 
-#endif // __PETSC_SOLVER_H__
+#endif // __PETSC31_SOLVER_H__
 
 #endif

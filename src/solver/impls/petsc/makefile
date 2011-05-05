@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= petsc-dev.cxx
+SOURCEC		= petsc.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
 
