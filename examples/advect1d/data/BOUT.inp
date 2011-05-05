@@ -94,3 +94,6 @@ bndry_all = neumann # Set all boundaries to Neumann
 
 [density]
 scale = 0.5
+
+# [solver]
+# type=petsc

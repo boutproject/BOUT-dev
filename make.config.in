@@ -122,7 +122,7 @@ ifeq ("$(TARGET)", "lib")
 
 # This automatically generates dependency rules
 %.d : %.cxx
-	-@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF"$@" -MG -MP -MM -MT"$(<:.cxx=.o)" "$<"
+	-@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -MF"$@" -MG -MP -MM -MT"$(<:.cxx=.o)" -fsyntax-only "$<" 2> /dev/null
 
 ####################################################################
 # Notes about the different flags:
