@@ -3,8 +3,8 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 10     # number of time-steps
-TIMESTEP = 0.01   # time between outputs
+NOUT = 100     # number of time-steps
+TIMESTEP = 0.1   # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
@@ -24,6 +24,8 @@ dump_format = "nc"   # Set extension for dump files (nc = NetCDF)
 
 NXPE = 1 
 
+#StaggerGrids = true
+
 ##################################################
 # derivative methods
 
@@ -32,18 +34,21 @@ NXPE = 1
 first = C4
 second = C4
 upwind = W3
+flux = U1
 
 [ddy]
 
 first = C4
 second = C4
 upwind = W3
+flux = U1
 
 [ddz]
 
 first = C4
 second = C4
 upwind = W3
+flux = U1
 
 ##################################################
 # Laplacian inversion settings
@@ -63,6 +68,9 @@ ATOL = 1.0e-10 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 mxstep = 50000
 
+#type=karniadakis
+#timestep=1e-3
+
 ##################################################
 # settings for JOREK comparison model
 
@@ -70,16 +78,27 @@ mxstep = 50000
 
 D_perp = 10   # Density perpendicular diffusion [m^2/s]
 
-chi_eperp = 2.5e-6
+chi_eperp = 1e-7
 chi_iperp = 2.5e-6
 
-chi_epar = 5  # Electron parallel diffusion
-chi_ipar = 5  # Ion parallel diffusion
+chi_epar = 30  # Electron parallel diffusion 
+chi_ipar = 5   # Ion parallel diffusion
 
-eta = 1e-5  # Starting resistivity (Te dependent)
+eta = 1.0   # Resistivity relative to Spitzer. 
+            # Comment-out to use value from grid file
+Wei = 1.0   # Electron-ion energy exchange relative to collisional
+
+ohmic_heating = true # Include Ohmic heating in Te equation
 
 viscos_perp = 1e-5  # Perpendicular viscosity
 viscos_par = 1e-5   # Parallel viscosity
+
+jpar_bndry_width=4  # Set Jpar to zero in boundary regions
+
+full_bfield = false
+flux_method = false  # Use flux methods for fluid quantities
+
+nonlinear = false
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
@@ -136,7 +155,7 @@ bndry_all = dirichlet # Default zero value
 [rho]
 
 bndry_all=relax(neumann)
-scale=1.e-3
+#scale=1.e-3
 
 [Vpar]
 
@@ -149,12 +168,12 @@ bndry_all=relax(neumann)
 bndry_all=relax(neumann)
 
 [u] # Vorticity
-#scale = 1.0e-3 # Initial perturbation size
+scale = 1.0e-3 # Initial perturbation size
 
 bndry_xin = relax(dirichlet)
 bndry_xout = relax(dirichlet)
 
-[psi]
+[Apar]
 bndry_xin = constlaplace
 bndry_xout = zerolaplace
 

@@ -10,7 +10,7 @@
 #include <math.h>
 
 // Evolving quantities
-Field3D rho, Te, Ti, u, vpar, psi;
+Field3D rho, Te, Ti, U, Vpar, Apar;
 // Derived quantities
 Field3D Jpar, phi; // Parallel current, electric potential
 
@@ -24,16 +24,24 @@ Vector2D B0vec; // B0 field vector
 Field2D D_perp; // Particle diffusion coefficient
 Field2D chi_eperp, chi_epar; // Electron heat diffusion coefficients
 Field2D chi_iperp, chi_ipar; // Ion heat diffusion coefficients
+
+// Collisional terms
+BoutReal tau_enorm;
+Field3D tau_e; // electron collision time
+
 Field2D eta0;  // Resistivity
 Field3D eta;
+
 BoutReal viscos_par, viscos_perp; // Viscosity coefficients
 
 int phi_flags;
 
 // Constants
 const BoutReal MU0 = 4.0e-7*PI;
-const BoutReal Charge = 1.602e-19; // electron charge e (C)
-const BoutReal Mi = 2.0*1.6726e-27; // Ion mass
+const BoutReal Charge = 1.60217646e-19; // electron charge e (C)
+const BoutReal Mi = 2.0*1.67262158e-27; // Ion mass
+const BoutReal Me = 9.1093816e-31;  // Electron mass
+const BoutReal Me_Mi = Me / Mi; // Electron mass / Ion mass
 
 // Normalisation factors
 BoutReal Tnorm, rhonorm; // Partial normalisation to rho and MU0. Temperature normalised
@@ -44,8 +52,13 @@ bool nonlinear;
 bool full_bfield;   // If true, use divergence-free expression for B
 bool flux_method;   // Use flux methods in rho and T equations
 bool full_v_method; // Calculate full velocity equation
+int  jpar_bndry_width; // Set jpar = 0 in a boundary region
 
 Vector3D vExB, vD; // Velocities
+Field3D divExB;    // Divergence of ExB flow
+
+BoutReal Wei;  // Factor for the electron-ion collision term
+bool ohmic_heating;
 
 // Communication objects
 FieldGroup comms;
@@ -125,21 +138,15 @@ int physics_init(bool restarting) {
     chi_ipar = tmp;
   }else mesh->get(chi_ipar, "chi_ipar");
 
-  if(options->isSet("eta")) {
-    BoutReal tmp;
-    options->get("eta", tmp, 0.0);
-    eta0 = tmp;
-  }else mesh->get(eta, "eta");
-
   if(options->isSet("viscos_perp")) {
     BoutReal tmp;
-    options->get("viscos_perp", tmp, 0.0);
+    options->get("viscos_perp", tmp, -1.0);
     viscos_perp = tmp;
   }else mesh->get(viscos_perp, "viscos_perp");
 
   if(options->isSet("viscos_par")) {
     BoutReal tmp;
-    options->get("viscos_par", tmp, 0.0);
+    options->get("viscos_par", tmp, -1.0);
     viscos_par = tmp;
   }else mesh->get(viscos_par, "viscos_par");
 
@@ -169,6 +176,12 @@ int physics_init(bool restarting) {
   OPTION(options, flux_method,         false);
   OPTION(options, full_v_method,       false);
   
+  OPTION(options, jpar_bndry_width,    -1);
+
+  OPTION(options, Wei, 1.0);
+  
+  OPTION(options, ohmic_heating, true);
+
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
 
@@ -188,6 +201,7 @@ int physics_init(bool restarting) {
   // NORMALISE QUANTITIES
   
   rhonorm = max(rho0, true); // Maximum over all grid
+  BoutReal Temax = max(Te0,true); // Maximum Te value
   Tnorm = Mi / (MU0 * Charge * rhonorm); // Temperature normalisation
 
   SAVE_ONCE2(rhonorm, Tnorm); // Save normalisation factors to file
@@ -200,7 +214,6 @@ int physics_init(bool restarting) {
   Te0 /= Tnorm;
   Ti0 /= Tnorm;
   
-  eta0        *= sqrt(rhonorm / MU0);
   viscos_perp *= sqrt(MU0 / rhonorm);
   viscos_par  *= sqrt(MU0 / rhonorm);
   D_perp      *= sqrt(MU0 * rhonorm);
@@ -209,6 +222,29 @@ int physics_init(bool restarting) {
   chi_iperp   *= sqrt(MU0 / rhonorm);
   chi_ipar    *= sqrt(MU0 / rhonorm);
   
+  // Coulomb logarithm
+  BoutReal CoulombLog = 6.6 - 0.5*log(rhonorm/(Mi*1e20)) + 1.5*log(Temax);
+  output << "\tCoulomb logarithm = " << CoulombLog << endl;
+  
+  // Factor in front of tau_e expression
+  // tau_e = tau_enorm * Tet^1.5 / rhot
+  tau_enorm = 3.44e11*(Mi/rhonorm)*Tnorm*sqrt(Tnorm) / CoulombLog;
+  output << "\ttau_enorm = " << tau_enorm ;
+  tau_enorm /= sqrt(MU0*rhonorm); // Normalise
+  output << "\tNormalised tau_enorm = " << tau_enorm << endl;
+  
+  // Calculate or read in the resistivity
+  if(options->isSet("eta")) {
+    BoutReal etafactor;
+    options->get("eta", etafactor, 0.0);
+    // Calculate in normalised units
+    eta0 = etafactor * Me*Mi/(1.96*MU0*rhonorm*Charge*Charge*tau_enorm*rho0);
+  }else {
+    mesh->get(eta0, "eta0");     // Read in SI units
+    eta0 *= sqrt(rhonorm / MU0); // Normalise
+  }
+
+
   //////////////////////////////////////////////////////////////
   // CALCULATE METRICS
   
@@ -242,22 +278,39 @@ int physics_init(bool restarting) {
   
   Jpar.setBoundary("Jpar");
 
+  // Set starting dissipation terms
   eta = eta0;
+  tau_e = tau_enorm * (Te0^1.5)/rho0;
+
+  output.write("\tNormalised tau_e = %e -> %e\n", min(tau_e, true), max(tau_e, true));
+
+  // Set locations for staggered grids
+  vD.setLocation(CELL_VSHIFT);
 
   // SET EVOLVING VARIABLES
 
-  SOLVE_FOR6(rho, Te, Ti, u, vpar, psi);
+  SOLVE_FOR6(rho, Te, Ti, U, Vpar, Apar);
   
   comms.add(rho);
   comms.add(Te);
   comms.add(Ti);
-  comms.add(u);
+  comms.add(U);
   comms.add(phi);
-  comms.add(vpar);
-  comms.add(psi);
+  comms.add(Vpar);
+  comms.add(Apar);
   
+  SAVE_ONCE5(P0, J0, rho0, Te0, Ti0); // Save normalised profiles
+
+  if(nonlinear) {
+    SAVE_REPEAT(eta);
+  }else {
+    SAVE_ONCE(eta);
+  }
+
   SAVE_REPEAT2(phi, Jpar); // Save each timestep
   
+  SAVE_REPEAT(divExB);
+
   return 0;
 }
 
@@ -269,11 +322,11 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
   if(nonlinear) {
     if(full_bfield) {
       // Use full expression for perturbed B
-      Vector3D Btilde = Curl(B0vec * psi);
+      Vector3D Btilde = Curl(B0vec * Apar / B0);
       result += Btilde * Grad(f) / B0;
     }else {
       // Simplified expression
-      result -= b0xGrad_dot_Grad(psi, f);
+      result -= b0xGrad_dot_Grad(Apar, f) / B0;
     }
   }
   return result;
@@ -284,7 +337,7 @@ int physics_run(BoutReal t) {
   int sp = msg_stack.push("Started physics_run(%e)", t);
   
   // Invert laplacian for phi
-  phi = invert_laplace(u, phi_flags, NULL);
+  phi = invert_laplace(B0*U, phi_flags, NULL);
   // Apply a boundary condition on phi for target plates
   phi.applyBoundary();
   
@@ -292,14 +345,32 @@ int physics_run(BoutReal t) {
   mesh->communicate(comms);
   
   // Get J from Psi
-  Jpar = -B0*Delp2(psi);
+  Jpar = -Delp2(Apar);
   Jpar.applyBoundary();
+
+  if(jpar_bndry_width > 0) {
+    // Zero j in boundary regions. Prevents vorticity drive
+    // at the boundary
+    
+    for(int i=0;i<jpar_bndry_width;i++)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+	  if(mesh->firstX())
+	    Jpar[i][j][k] = 0.0;
+	  if(mesh->lastX())
+	    Jpar[mesh->ngx-1-i][j][k] = 0.0;
+	}
+  }
+  
   mesh->communicate(Jpar);
   
+  //Jpar = smooth_x(Jpar); // Smooth in x direction
+
   Field3D rhot = rho0;
   Field3D Tet = Te0;
   Field3D Tit = Ti0;
   Field3D P = rho*(Te0+Ti0) + (Te+Ti)*rho0; // Perturbed pressure
+  
   if(nonlinear) {
     rhot += rho;
     Tet += Te;
@@ -307,6 +378,8 @@ int physics_run(BoutReal t) {
     P += rho*(Te+Ti);
     
     eta = eta0*((Tet/Te0)^(-1.5)); // Update resistivity based on Te
+    
+    tau_e = tau_enorm*(Tet^1.5)/rhot; // Update electron collision rate
   }
 
   if(flux_method) {
@@ -332,26 +405,26 @@ int physics_run(BoutReal t) {
   
     msg_stack.push("Flux Te");
 
-    vD = -chi_eperp * Grad_perp(Te);
+    vD = -chi_eperp * Grad_perp(Te) - Grad_par(Te, CELL_YLOW)*chi_epar*B0vec;
     vD.applyBoundary();
     
     ddt(Te) = 
-      - b0xGrad_dot_Grad(phi, Tet)
+      - b0xGrad_dot_Grad(phi, Tet)/B0
       - (2./3.)*Tet*Div(vExB)
-      - (Div(vD, Te) - Div_par_K_Grad_par(chi_epar, Te))/rhot
+      - Div(vD, Te)/rhot
       ;
     
     msg_stack.pop();
     
     msg_stack.push("Flux Ti");
     
-    vD = -chi_iperp * Grad_perp(Ti);
+    vD = -chi_iperp * Grad_perp(Ti) - Grad_par(Ti, CELL_YLOW)*chi_ipar*B0vec;
     vD.applyBoundary();
     
     ddt(Ti) = 
-      - b0xGrad_dot_Grad(phi, Tit)
+      - b0xGrad_dot_Grad(phi, Tit)/B0
       - (2./3.)*Tit*Div(vExB)
-      - (Div(vD, Ti) - Div_par_K_Grad_par(chi_ipar, Ti))/rhot
+      - Div(vD, Ti)/rhot
       ;
 
     msg_stack.pop();
@@ -360,28 +433,50 @@ int physics_run(BoutReal t) {
     
     // Divergence of ExB velocity (neglecting parallel term)
     msg_stack.push("divExB");
-    Field3D divExB = b0xcv*Grad(phi)/B0 - b0xGrad_dot_Grad(1./B0, phi);
+    divExB = b0xcv*Grad(phi)/B0 - b0xGrad_dot_Grad(1./B0, phi);
     msg_stack.pop();
     
     
     msg_stack.push("density");
-    ddt(rho) = -b0xGrad_dot_Grad(phi, rhot) // Advection 
-      - divExB*rhot; // Compression
+    ddt(rho) = 
+      - b0xGrad_dot_Grad(phi, rhot)/B0 // ExB advection 
+      - divExB*rhot                    // Divergence of ExB (compression)
+      + D_perp * Delp2(rho)            // Perpendicular diffusion
+      ;
+    
     msg_stack.pop();
     
     msg_stack.push("Te");
     ddt(Te) = 
-      -b0xGrad_dot_Grad(phi, Tet) 
-      - (2./3.)*Tet*divExB
+      -b0xGrad_dot_Grad(phi, Tet)/B0 // ExB advection
+      - (2./3.)*Tet*divExB           // Divergence of ExB
+      + Div_par_K_Grad_par(chi_epar, Te) / rhot  // Parallel diffusion
+      + chi_eperp*Delp2(Te) / rhot   // Perpendicular diffusion
       ;
+    
+    if(ohmic_heating)
+      ddt(Te) += (2./3)*eta*Jpar*Jpar / rhot; // Ohmic heating
+
     msg_stack.pop();
     
     msg_stack.push("Ti");
     ddt(Ti) = 
-      -b0xGrad_dot_Grad(phi, Tit) 
+      -b0xGrad_dot_Grad(phi, Tit)/B0 
       - (2./3.)*Tit*divExB
+      + Div_par_K_Grad_par(chi_ipar, Ti) / rhot
+      + chi_iperp*Delp2(Ti) / rhot
       ;
     msg_stack.pop();
+    
+    
+    if(Wei > 0.0) {
+      // electron-ion collision term
+      // Calculate Wi * (2/3)/rho term. Wei is a scaling factor from options
+      Field3D Tei = Wei * 2.*Me_Mi*(Te - Ti) / tau_e;
+      
+      ddt(Ti) += Tei;
+      ddt(Te) -= Tei;
+    }
   }
   
   if(full_v_method) {
@@ -390,30 +485,37 @@ int physics_run(BoutReal t) {
     ddt(vExB) = (-Grad(P))/rho;
     
     // Use this to calculate a vorticity and parallel velocity
-    ddt(u) = B0vec * Curl(ddt(vExB));
-    ddt(vpar) = B0vec * ddt(vExB);
+    ddt(U) = B0vec * Curl(ddt(vExB));
+    ddt(Vpar) = B0vec * ddt(vExB);
   }else {
     // Split into vorticity and parallel velocity equations analytically
     
     ////////// Vorticity equation ////////////
     
     msg_stack.push("Vorticity");
-    ddt(u) = (
-	      (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE)
-	      - (B0^2) * b0xGrad_dot_Grad(psi, J0/B0, CELL_CENTRE) 
+    ddt(U) = (
+	      (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE) // (b0+b) dot Grad(J)
 	      + 2.*b0xcv*Grad(P)  // curvature term
 	      ) / rhot;
     
+    // b dot J0
+    if(full_bfield) {
+      Vector3D Btilde = Curl(B0vec * Apar / B0);
+      ddt(U) += B0*Btilde * Grad(J0/B0) / rhot;
+    }else {
+      ddt(U) -= B0 * b0xGrad_dot_Grad(Apar, J0/B0, CELL_CENTRE) / rhot;
+    }
+
     if(nonlinear) {
-      ddt(u) -= b0xGrad_dot_Grad(phi, u);    // Advection
+      ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
     }
     
-    // Viscosity terms 
+    // Viscosity terms
     if(viscos_par > 0.0)
-      ddt(u) += viscos_par * Grad2_par2(u); // Parallel viscosity
+      ddt(U) += viscos_par * Grad2_par2(U) / rhot; // Parallel viscosity
     
     if(viscos_perp > 0.0)
-      ddt(u) += viscos_perp * Delp2(u);     // Perpendicular viscosity
+      ddt(U) += viscos_perp * Delp2(U) / rhot;     // Perpendicular viscosity
     
     
     msg_stack.pop();
@@ -422,17 +524,17 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Vpar");
     
-    ddt(vpar) = -Grad_parP(P + P0, CELL_YLOW);
+    ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
     if(nonlinear)
-      ddt(vpar) -= b0xGrad_dot_Grad(phi, vpar); // Advection
+      ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
     
     msg_stack.pop();
   }
 
   ////////// Magnetic potential equation ////////////
   
-  msg_stack.push("Psi");
-  ddt(psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 + eta*Jpar;
+  msg_stack.push("Apar");
+  ddt(Apar) = -Grad_parP(phi, CELL_CENTRE) - eta*Jpar;
   
   msg_stack.pop(sp);
   return 0;
