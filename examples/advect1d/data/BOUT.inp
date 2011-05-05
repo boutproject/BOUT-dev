@@ -96,4 +96,4 @@ bndry_all = neumann # Set all boundaries to Neumann
 scale = 0.5
 
 # [solver]
-# type=petsc-3.1
+# type=petsc

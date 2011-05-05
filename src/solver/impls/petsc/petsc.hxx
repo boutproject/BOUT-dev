@@ -35,7 +35,7 @@ class PetscSolver;
 #ifndef __PETSC_SOLVER_H__
 #define __PETSC_SOLVER_H__
 
-#include <petscts.h>
+#include <petsc.h>
 
 #include "field2d.hxx"
 #include "field3d.hxx"
@@ -48,16 +48,16 @@ class PetscSolver;
 
 typedef PetscScalar BoutReal;
 typedef PetscInt integer;
-typedef PetscTruth boole;
+typedef PetscBool boole;
 #define OPT_SIZE 40
 
 using std::vector;
 
 typedef int (*rhsfunc)(BoutReal);
 
-EXTERN PetscErrorCode PreStep(TS);
-EXTERN PetscErrorCode PostStep(TS);
-EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
+extern PetscErrorCode PreStep(TS);
+extern PetscErrorCode PostStep(TS);
+extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
 class PetscSolver : public Solver {
  public:

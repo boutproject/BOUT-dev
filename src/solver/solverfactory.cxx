@@ -63,6 +63,8 @@ Solver* SolverFactory::createSolver(SolverType &type)
     return new IdaSolver;
   } else if(!strcasecmp(type, SOLVERPETSC31)) {
     return new Petsc31Solver;
+  } else if(!strcasecmp(type, SOLVERPETSC)) {
+    return new PetscSolver;
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
     return new KarniadakisSolver;
   } else if(!strcasecmp(type, SOLVERRK4)) {

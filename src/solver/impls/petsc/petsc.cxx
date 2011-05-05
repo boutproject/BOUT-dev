@@ -34,7 +34,7 @@
 #include <interpolation.hxx> // Cell interpolation
 
 
-EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
+extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 
 PetscSolver::PetscSolver()
 {
@@ -49,10 +49,10 @@ PetscSolver::~PetscSolver()
   if(initialised) {
     // Free CVODE memory
     
-    VecDestroy(u);
-    if (J){MatDestroy(J);}
-    if (matfdcoloring){MatFDColoringDestroy(matfdcoloring);}
-    TSDestroy(ts);
+    VecDestroy(&u);
+    if (J) {MatDestroy(&J);}
+    if (matfdcoloring){MatFDColoringDestroy(&matfdcoloring);}
+    TSDestroy(&ts);
 
     initialised = false;
   }
@@ -113,11 +113,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   }
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
 
-  PetscTruth      J_load;
+  PetscBool       J_load;
   MatStructure    J_structure; 
   PetscMPIInt     rank;
   char            load_file[PETSC_MAX_PATH_LEN];  /* jacobian input file name */
-  PetscTruth      J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
+  PetscBool       J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
   ISColoring      iscoloring;
   
   // Create timestepper 
@@ -188,7 +188,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   KSP             ksp;
   PC              pc;
   const PCType    pctype;
-  PetscTruth      pcnone,sundialstype;
+  PetscBool       pcnone,sundialstype;
 
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);
   ierr = TSSetUp(ts);CHKERRQ(ierr); // enable correct query of pctype below
@@ -216,8 +216,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
     }
     ierr = PetscViewerBinaryOpen(comm,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
-    ierr = MatLoad(fd,MATAIJ,&J);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(fd);CHKERRQ(ierr);
+    ierr = MatLoad(J, fd);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&fd);CHKERRQ(ierr);
     
   } else { // create Jacobian matrix by slow fd
 
@@ -297,12 +297,14 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       dims[2] = nz;
 
       // This doesn't need to be changed for parallel if ltog_array, starts, and dims are all correctly set in parallel
-      ierr = ISLocalToGlobalMappingCreate(comm, n, ltog_array, &ltog);CHKERRQ(ierr);
+      // CHECK PETSC_COPY_VALUES
+      ierr = ISLocalToGlobalMappingCreate(comm, n, ltog_array, PETSC_COPY_VALUES, &ltog);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingBlock(ltog, dof, &ltogb);CHKERRQ(ierr);
 
       ierr = MatSetBlockSize(J, dof);CHKERRQ(ierr);
-      ierr = MatSetLocalToGlobalMapping(J, ltog);CHKERRQ(ierr);
-      ierr = MatSetLocalToGlobalMappingBlock(J, ltogb);CHKERRQ(ierr);
+      // CHECK WITH HONG ABOUT THE BELOW CALL
+      ierr = MatSetLocalToGlobalMapping(J, ltog, ltog);CHKERRQ(ierr);
+      ierr = MatSetLocalToGlobalMappingBlock(J, ltogb, ltogb);CHKERRQ(ierr);
       ierr = MatSetStencil(J, dim, dims, starts, dof);CHKERRQ(ierr);
 
       bool xperiodic = false;
@@ -411,13 +413,13 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = PetscPrintf(comm,"[%d] writing J in binary to data_petsc/J.dat...\n",rank);CHKERRQ(ierr);
     ierr = PetscViewerBinaryOpen(comm,"data_petsc/J.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     ierr = MatView(J,viewer);CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+    ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
    
   // Create coloring context of J to be used during time stepping 
-  ierr = MatGetColoring(J,MATCOLORING_SL,&iscoloring);CHKERRQ(ierr); 
+  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
   ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-  ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
+  ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
   ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
@@ -735,7 +737,7 @@ void PetscSolver::save_derivs(BoutReal *dudata)
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
 #undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::solver_f"
+#define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
   PetscSolver *s;
