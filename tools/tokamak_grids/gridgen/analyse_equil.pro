@@ -83,8 +83,8 @@ FUNCTION analyse_equil, F, R, Z
   ENDFOR
   
   ; Check for points too close to the edges
-  w = WHERE((rex GT 2) AND (rex LT nx-3) $
-            (zex GT 2) AND (zex LT nx-3), nextrema)
+  w = WHERE((rex GT 2) AND (rex LT nx-3) AND $
+            (zex GT 2) AND (zex LT ny-3), nextrema)
   
   rex = rex[w]
   zex = zex[w]
@@ -245,6 +245,11 @@ FUNCTION analyse_equil, F, R, Z
 
   PRINT, "Number of O-points: "+STR(n_opoint)
   PRINT, "Number of X-points: "+STR(n_xpoint)
+
+  IF n_opoint EQ 0 THEN BEGIN
+    PRINT, "No O-points! Giving up on this equilibrium"
+    RETURN, {n_opoint:0, n_xpoint:0, primary_opt:-1}
+  ENDIF
 
   ;;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
   ; Find the O-point closest to the middle of the grid
