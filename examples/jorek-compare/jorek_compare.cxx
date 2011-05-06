@@ -278,6 +278,8 @@ int physics_init(bool restarting) {
   
   Jpar.setBoundary("Jpar");
 
+  phi.setBoundary("phi");
+
   // Set starting dissipation terms
   eta = eta0;
   tau_e = tau_enorm * (Te0^1.5)/rho0;
