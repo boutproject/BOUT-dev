@@ -53,6 +53,8 @@ Field3D::Field3D() : background(NULL)
   location = CELL_CENTRE; // Cell centred variable by default
   
   ddt = NULL;
+
+  boundaryIsSet = false;
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
@@ -75,7 +77,9 @@ Field3D::Field3D(const Field3D& f) : background(NULL)
   location = f.location;
 
   ddt = NULL;
-  
+ 
+  boundaryIsSet = false;
+ 
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -94,6 +98,8 @@ Field3D::Field3D(const Field2D& f) : background(NULL)
   
   ddt = NULL;
   
+  boundaryIsSet = false;
+
   *this = f;
   
 #ifdef CHECK
@@ -113,6 +119,8 @@ Field3D::Field3D(const BoutReal val) : background(NULL)
   location = CELL_CENTRE; // Cell centred variable by default
   
   ddt = NULL;
+
+  boundaryIsSet = false;
   
   *this = val;
   
@@ -2046,7 +2054,7 @@ void Field3D::applyBoundary()
   if(block == NULL)
     output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
   
-  if(bndry_op.size() == 0)
+  if(!boundaryIsSet)
     output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
 #endif
   

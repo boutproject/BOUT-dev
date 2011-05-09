@@ -47,6 +47,8 @@ Field2D::Field2D()
 
   ddt = NULL;
 
+  boundaryIsSet = false;
+
 #ifdef TRACK
   name = "<F2D>";
 #endif
@@ -56,14 +58,16 @@ Field2D::Field2D(const Field2D& f)
 {
   data = (BoutReal**) NULL;
   is_const = false;
+  boundaryIsSet = false;
   *this = f;
-  
+
   ddt = NULL;
 }
 
 Field2D::Field2D(BoutReal val)
 {
   data = (BoutReal**) NULL;
+  boundaryIsSet = false;
   *this = val;
   ddt = NULL;
 }
@@ -1029,7 +1033,7 @@ void Field2D::applyBoundary()
 {
 #ifdef CHECK
   msg_stack.push("Field2D::applyBoundary()");
-  if(bndry_op.size() == 0)
+  if(!boundaryIsSet)
     output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
 #endif
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)

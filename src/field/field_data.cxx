@@ -26,6 +26,8 @@ void FieldData::setBoundary(const string &name)
       bndry_op.push_back(op);
     output << endl;
   }
+
+  boundaryIsSet = true;
 }
 
 void FieldData::setBoundary(const string &region, BoundaryOp *op)

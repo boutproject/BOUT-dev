@@ -84,6 +84,8 @@ class FieldData {
   virtual void applyTDerivBoundary() {};
  protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
+
+  bool boundaryIsSet; // Set to true when setBoundary called
 };
 
 #endif
