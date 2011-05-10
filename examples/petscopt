@@ -48,6 +48,8 @@
 
 # Debugging
 #---------------
+-malloc
+-malloc_debug
 -malloc_dump
 #-start_in_debugger 
 #-debugger_nodes 0
