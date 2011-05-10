@@ -5,7 +5,7 @@
 
 # TS
 #---------------
--ts_type sundials
+#-ts_type sundials
 -ts_sundials_exact_final_time
 -ts_sundials_monitor_steps
 #-ts_sundials_atol 1.e-12
@@ -26,27 +26,33 @@
 
 # Preconditioner
 #---------------
-#-pc_type none
+-pc_type none
 #-pc_type jacobi
 
 #-pc_type lu
 #-pc_factor_mat_solver_package mumps
 #-mat_mumps_icntl_7 2
 
--pc_type bjacobi
+#-pc_type bjacobi
 #-sub_pc_type ilu
 #-sub_pc_type lu 
 
 #-pc_type asm
 #-pc_asm_overlap 1
 
+# KSP & SNES
+#---------------
+-ksp_type ibcgs
+-ksp_atol 1.e-4
+-snes_mf_operator
+
 # Debugging
 #---------------
-#-malloc_dump
+-malloc_dump
 #-start_in_debugger 
 #-debugger_nodes 0
 #-mat_view_info
 #-J_write
 -options_table
 -options_left
--draw_pause -1
+#-draw_pause -1
