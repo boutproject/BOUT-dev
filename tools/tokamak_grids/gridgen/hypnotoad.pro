@@ -328,6 +328,61 @@ PRO event_handler, event
         WIDGET_CONTROL, info.status, set_value="  *** FAILED to generate mesh ***"
       ENDELSE
     END
+    'mesh2': BEGIN
+      ; Create a non-orthogonal mesh
+      IF info.rz_grid_valid EQ 0 THEN BEGIN
+        PRINT, "ERROR: No valid equilibrium data. Read from file first"
+        a = DIALOG_MESSAGE("No valid equilibrium data. Read from file first", /error)
+        RETURN
+      ENDIF
+      
+      boundary = TRANSPOSE([[(*info.rz_grid).rlim], [(*info.rz_grid).zlim]])
+      
+      IF info.detail_set THEN BEGIN
+        settings = {dummy:0}
+      ENDIF ELSE BEGIN
+        ; Get settings
+        widget_control, info.nrad_field, get_value=nrad
+        widget_control, info.npol_field, get_value=npol
+
+        widget_control, info.psi_inner_field, get_value=psi_inner
+        widget_control, info.psi_outer_field, get_value=psi_outer
+
+        widget_control, info.rad_peak_field, get_value=rad_peak
+
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
+      ENDELSE
+      
+
+      ; Check if a simplified boundary should be used
+      IF info.simple_bndry THEN BEGIN
+        ; Simplify the boundary to a square box
+        boundary = TRANSPOSE([ [MIN(boundary[0,*]), MAX(boundary[0,*]), $
+                                MAX(boundary[0,*]), MIN(boundary[0,*])], $
+                               [MIN(boundary[1,*]), MIN(boundary[1,*]), $
+                                MAX(boundary[1,*]), MAX(boundary[1,*])] ])
+      ENDIF
+        
+      WIDGET_CONTROL, info.status, set_value="Generating non-orthogonal mesh ..."
+      
+      mesh = create_nonorthogonal((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
+                         boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, $
+                         /nrad_flexible, $
+                         single_rad_grid=info.single_rad_grid, $
+                         critical=(*(info.rz_grid)).critical)
+      IF mesh.error EQ 0 THEN BEGIN
+        PRINT, "Successfully generated non-orthogonal mesh"
+        WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
+        oplot_mesh, *info.rz_grid, mesh
+        
+        info.flux_mesh_valid = 1
+        info.flux_mesh = PTR_NEW(mesh)
+        widget_control, event.top, set_UVALUE=info
+      ENDIF ELSE BEGIN
+        a = DIALOG_MESSAGE("Could not generate non-orthogonal mesh", /error, dialog_parent=info.draw)
+        WIDGET_CONTROL, info.status, set_value="  *** FAILED to generate non-orthogonal mesh ***"
+      ENDELSE
+    END
     'process': BEGIN
       ; Process mesh to produce output
       PRINT, "Write output file"
@@ -710,6 +765,9 @@ PRO hypnotoad
 
   mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
+
+  mesh2_button = WIDGET_BUTTON(bar, VALUE='Nonorthogonal mesh', $
+                              uvalue='mesh2', tooltip="Generate a new nonorthogonal mesh")
   
   detail_button = WIDGET_BUTTON(bar, VALUE='Detailed settings', $
                                 uvalue='detail', $
