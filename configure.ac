@@ -653,6 +653,13 @@ AC_FUNC_REALLOC
 AC_FUNC_VPRINTF
 #AC_CHECK_FUNCS([pow sqrt strcasecmp])
 
+# Check for OpenMP support
+: ${enable_openmp=no}  # Disable by default
+AC_OPENMP
+# Add the flag to both compile and link stages
+CFLAGS="$CFLAGS $OPENMP_CXXFLAGS"
+EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
+
 #############################################################
 # Download + Build PVODE '98
 #############################################################
