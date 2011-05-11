@@ -32,6 +32,10 @@
 #include <fftw3.h>
 #include <math.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 bool fft_options = false;
 bool fft_measure;
 
@@ -39,13 +43,19 @@ void fft_init()
 {
   if(fft_options)
     return;
-
-  Options *opt = Options::getRoot();
-  opt = opt->getSection("fft");
-  opt->get("fft_measure", fft_measure, false);
-  fft_options = true;
+  output << "FFT_INIT\n";
+  //#pragma omp critical
+  {
+    Options *opt = Options::getRoot();
+    opt = opt->getSection("fft");
+    opt->get("fft_measure", fft_measure, false);
+    fft_options = true;
+  }
+  output << "FFT_INIT DONE\n";
 }
 
+#ifndef _OPENMP
+// Serial code
 void cfft(dcomplex *cv, int length, int isign)
 {
   static fftw_complex *in, *out;
@@ -58,8 +68,7 @@ void cfft(dcomplex *cv, int length, int isign)
       fftw_destroy_plan(pb);
       fftw_free(in);
       fftw_free(out);
-    }
-    
+    } 
     fft_init();
 
     in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length);
@@ -93,6 +102,78 @@ void cfft(dcomplex *cv, int length, int isign)
       cv[i] = dcomplex(out[i][0], out[i][1]);
   }
 }
+#else
+// Parallel thread-safe version of cfft
+void cfft(dcomplex *cv, int length, int isign)
+{
+  static fftw_complex *inall, *outall;
+  static fftw_plan *pf, *pb;
+  static int size = 0, nthreads;
+  
+  int th_id = omp_get_thread_num();
+  #pragma omp critical
+  {
+    // Sort out memory. Also, FFTW planning routines not thread safe
+    int n_th = omp_get_num_threads(); // Number of threads
+    output << "Num threads = " << n_th << "id = " << th_id << endl;
+    if((size != length) || (nthreads < n_th)) {
+      if(size > 0) {
+        // Free all memory
+        for(int i=0;i<nthreads;i++) {
+          fftw_destroy_plan(pf[i]);
+          fftw_destroy_plan(pb[i]);
+        }
+        delete[] pf;
+        delete[] pb;
+        fftw_free(inall);
+        fftw_free(outall);
+      }
+      
+      inall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
+      outall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * length * n_th);
+      
+      pf = new fftw_plan[n_th];
+      pb = new fftw_plan[n_th];
+      
+      unsigned int flags = FFTW_ESTIMATE;
+      if(fft_measure)
+        flags = FFTW_MEASURE;
+      
+      for(int i=0;i<n_th;i++) {
+        pf[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length, 
+                                 FFTW_FORWARD, flags);
+        pb[i] = fftw_plan_dft_1d(length, inall+i*length, outall+i*length,
+                                 FFTW_BACKWARD, flags);
+      }
+      
+      nthreads = n_th;
+      size = length;
+    }
+  }
+  // Get working arrays for this thread
+  fftw_complex *in = inall+th_id*length;
+  fftw_complex *out = outall+th_id*length;
+  
+  // Load input data
+  for(int i=0;i<length;i++) {
+    in[i][0] = cv[i].Real();
+    in[i][1] = cv[i].Imag();
+  }
+  
+  if(isign < 0) {
+    // Forward transform
+    fftw_execute(pf[th_id]);
+    for(int i=0;i<length;i++)
+      cv[i] = dcomplex(out[i][0], out[i][1]) / ((double) length); // Normalise
+  }else {
+    // Backward
+    fftw_execute(pb[th_id]);
+    for(int i=0;i<length;i++)
+      cv[i] = dcomplex(out[i][0], out[i][1]);
+  }
+}
+#endif
+
 
 void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
 {
@@ -128,8 +209,9 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
  * Real FFTs
  ***********************************************************/
 
-void rfft(BoutReal *in, int length, dcomplex *out)
-{
+#ifndef _OPENMP
+// Serial code
+void rfft(BoutReal *in, int length, dcomplex *out) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;
@@ -203,6 +285,125 @@ void irfft(dcomplex *in, int length, BoutReal *out)
   for(int i=0;i<n;i++)
     out[i] = fout[i];
 }
+
+#else
+// Parallel thread-safe version of rfft and irfft
+void rfft(BoutReal *in, int length, dcomplex *out) {
+  static double *finall;
+  static fftw_complex *foutall;
+  static fftw_plan *p;
+  static int size = 0, nthreads;
+  
+  int th_id = omp_get_thread_num();
+#pragma omp critical(rfft)
+  {
+    // Sort out memory. Also, FFTW planning routines not thread safe
+    int n_th = omp_get_num_threads(); // Number of threads
+    //output << "Num threads = " << n_th << " id = " << th_id << endl;
+    
+    if((size != length) || (nthreads < n_th)) {
+      output << "rfft allocating: " << th_id << " / " << n_th << endl;
+      if(size > 0) {
+        // Free all memory
+        for(int i=0;i<nthreads;i++)
+          fftw_destroy_plan(p[i]);
+        delete[] p;
+        fftw_free(finall);
+        fftw_free(foutall);
+      }
+    
+      fft_init();
+      
+      finall = (double*) fftw_malloc(sizeof(double) * length * n_th);
+      foutall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
+      p = new fftw_plan[n_th];
+      
+      unsigned int flags = FFTW_ESTIMATE;
+      if(fft_measure)
+        flags = FFTW_MEASURE;
+      
+      for(int i=0;i<n_th;i++)
+        p[i] = fftw_plan_dft_r2c_1d(length, finall+i*length, 
+                                    foutall+i*(length/2 + 1), flags);
+      size = length;
+      nthreads = n_th;
+      output << "rfft alloc done\n";
+    }
+  }
+  
+  // Get working arrays for this thread
+  double *fin = finall + th_id * length;
+  fftw_complex *fout = foutall + th_id * (length/2 + 1);
+  
+  for(int i=0;i<length;i++)
+    fin[i] = in[i];
+  
+  fftw_execute(p[th_id]);
+
+  for(int i=0;i<(length/2)+1;i++)
+    out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) length); // Normalise
+}
+
+void irfft(dcomplex *in, int length, BoutReal *out)
+{
+  static fftw_complex *finall;
+  static double *foutall;
+  static fftw_plan *p;
+  static int size = 0, nthreads;
+  
+  int th_id = omp_get_thread_num();
+#pragma omp critical(irfft)
+  {
+    // Sort out memory. Also, FFTW planning routines not thread safe
+    int n_th = omp_get_num_threads(); // Number of threads
+    //output << "Num threads = " << n_th << " id = " << th_id << endl;
+    
+    if((size != length) || (nthreads < n_th)) {
+      output << "irfft allocating: " << th_id << " / " << n_th << endl;
+      if(size > 0) {
+        // Free all memory
+        for(int i=0;i<nthreads;i++)
+          fftw_destroy_plan(p[i]);
+        delete[] p;
+        fftw_free(finall);
+        fftw_free(foutall);
+      }
+    
+      fft_init();
+      
+      finall = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1) * n_th);
+      foutall = (double*) fftw_malloc(sizeof(double) * length * n_th);
+      
+      p = new fftw_plan[n_th];
+      
+      unsigned int flags = FFTW_ESTIMATE;
+      if(fft_measure)
+        flags = FFTW_MEASURE;
+      
+      for(int i=0;i<n_th;i++)
+        p[i] = fftw_plan_dft_c2r_1d(length, finall+i*(length/2 + 1), 
+                                    foutall+i*length, flags);
+      size = length;
+      nthreads = n_th;
+      output << "irfft alloc done\n";
+    }
+  }
+  
+  // Get working arrays for this thread
+  fftw_complex *fin = finall + th_id * (length/2 + 1);
+  double *fout = foutall + th_id * length;
+  
+  for(int i=0;i<(length/2)+1;i++) {
+    fin[i][0] = in[i].Real();
+    fin[i][1] = in[i].Imag();
+  }
+  
+  fftw_execute(p[th_id]);
+
+  for(int i=0;i<length;i++)
+    out[i] = fout[i];
+}
+#endif
 
 void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 {

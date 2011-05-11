@@ -49,6 +49,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 typedef BoutReal (*deriv_func)(stencil &); // f
 typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 
@@ -63,20 +67,17 @@ const BoutReal WENO_SMALL = 1.0e-8; // Small number for WENO schemes
 ////////////////////// FIRST DERIVATIVES /////////////////////
 
 /// central, 2nd order
-BoutReal DDX_C2(stencil &f)
-{
+BoutReal DDX_C2(stencil &f) {
   return 0.5*(f.p - f.m);
 }
 
 /// central, 4th order
-BoutReal DDX_C4(stencil &f)
-{
+BoutReal DDX_C4(stencil &f) {
   return (8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
 }
 
 /// Central WENO method, 2nd order (reverts to 1st order near shocks)
-BoutReal DDX_CWENO2(stencil &f)
-{
+BoutReal DDX_CWENO2(stencil &f) {
   BoutReal isl, isr, isc; // Smoothness indicators
   BoutReal al, ar, ac, sa; // Un-normalised weights
   BoutReal dl, dr, dc; // Derivatives using different stencils
@@ -100,54 +101,46 @@ BoutReal DDX_CWENO2(stencil &f)
 ///////////////////// SECOND DERIVATIVES ////////////////////
 
 /// Second derivative: Central, 2nd order
-BoutReal D2DX2_C2(stencil &f)
-{
+BoutReal D2DX2_C2(stencil &f) {
   return f.p + f.m - 2.*f.c;
 }
 
 /// Second derivative: Central, 4th order
-BoutReal D2DX2_C4(stencil &f)
-{
+BoutReal D2DX2_C4(stencil &f) {
   return (-f.pp + 16.*f.p - 30.*f.c + 16.*f.m - f.mm)/12.;
 }
 
 //////////////////////// UPWIND METHODS ///////////////////////
 
 /// Upwinding: Central, 2nd order
-BoutReal VDDX_C2(stencil &v, stencil &f)
-{
+BoutReal VDDX_C2(stencil &v, stencil &f) {
   return v.c*0.5*(f.p - f.m);
 }
 
 /// Upwinding: Central, 4th order
-BoutReal VDDX_C4(stencil &v, stencil &f)
-{
+BoutReal VDDX_C4(stencil &v, stencil &f) {
   return v.c*(8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
 }
 
 /// upwind, 1st order
-BoutReal VDDX_U1(stencil &v, stencil &f)
-{
+BoutReal VDDX_U1(stencil &v, stencil &f) {
   return v.c>=0.0 ? v.c*(f.c - f.m): v.c*(f.p - f.c);
 }
 
 /// upwind, 4th order
-BoutReal VDDX_U4(stencil &v, stencil &f)
-{
+BoutReal VDDX_U4(stencil &v, stencil &f) {
   return v.c >= 0.0 ? v.c*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
     : v.c*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
 }
 
 /// Van Leer limiter. Used in TVD code
-BoutReal VANLEER(BoutReal r) 
-{
+BoutReal VANLEER(BoutReal r) {
   return r + fabs(r)/(1.0 + fabs(r));
 }
 
 /// TVD upwinding (2nd order)
 /// WARNING WARNING : THIS TVD IMPLEMENTATION DOESN'T WORK PROPERLY
-BoutReal VDDX_TVD(BoutReal vc, BoutReal vm, BoutReal vp, BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp)
-{
+BoutReal VDDX_TVD(BoutReal vc, BoutReal vm, BoutReal vp, BoutReal fc, BoutReal fm, BoutReal fp, BoutReal fmm, BoutReal fpp) {
   BoutReal denom, res, ri, ri1, ri_1, fluxLeft, fluxRight;
 
   if (vc>=0.0){
@@ -187,8 +180,7 @@ BoutReal VDDX_TVD(BoutReal vc, BoutReal vm, BoutReal vp, BoutReal fc, BoutReal f
 }
 
 /// 3rd-order WENO scheme
-BoutReal VDDX_WENO3(stencil &v, stencil &f)
-{
+BoutReal VDDX_WENO3(stencil &v, stencil &f) {
   BoutReal deriv, w, r;
 
   if(v.c > 0.0) {
@@ -212,8 +204,7 @@ BoutReal VDDX_WENO3(stencil &v, stencil &f)
 }
 
 /// 3rd-order CWENO. Uses the upwinding code and split flux
-BoutReal DDX_CWENO3(stencil &f)
-{
+BoutReal DDX_CWENO3(stencil &f) {
   BoutReal a, ma = fabs(f.c);
   // Split flux
   a = fabs(f.m); if(a > ma) ma = a;
@@ -233,8 +224,7 @@ BoutReal DDX_CWENO3(stencil &f)
 
 //////////////////////// FLUX METHODS ///////////////////////
 
-BoutReal FDDX_U1(stencil &v, stencil &f)
-{
+BoutReal FDDX_U1(stencil &v, stencil &f) {
   // Velocity at lower end
   BoutReal vs = 0.5*(v.m + v.c);
   BoutReal result = (vs >= 0.0) ? vs * f.m : vs * f.c;
@@ -245,20 +235,17 @@ BoutReal FDDX_U1(stencil &v, stencil &f)
   return result;
 }
 
-BoutReal FDDX_C2(stencil &v, stencil &f)
-{
+BoutReal FDDX_C2(stencil &v, stencil &f) {
   return 0.5*(v.p*f.p - v.m*f.m);
 }
 
-BoutReal FDDX_C4(stencil &v, stencil &f)
-{
+BoutReal FDDX_C4(stencil &v, stencil &f) {
   return (8.*v.p*f.p - 8.*v.m*f.m + v.mm*f.mm - v.pp*f.pp)/12.;
 }
 
 /// Non-oscillatory, containing No free parameters and Dissipative (NND) scheme
 /// http://arxiv.org/abs/1010.4135v1
-BoutReal FDDX_NND(stencil &v, stencil &f)
-{
+BoutReal FDDX_NND(stencil &v, stencil &f) {
   // f{+-} i
   BoutReal fp = 0.5*(v.c + fabs(v.c))*f.c;
   BoutReal fm = 0.5*(v.c - fabs(v.c))*f.c;
@@ -313,22 +300,18 @@ BoutReal FDDX_NND(stencil &v, stencil &f)
 // Map Centre -> Low or Low -> Centre
 
 // Second order differencing (staggered)
-BoutReal DDX_C2_stag(stencil &f)
-{
+BoutReal DDX_C2_stag(stencil &f) {
   return f.p - f.m;
 }
 
-BoutReal DDX_C4_stag(stencil &f)
-{
-  //output.write("HERE");
+BoutReal DDX_C4_stag(stencil &f) {
   return ( 27.*(f.p - f.m) - (f.pp - f.mm) ) / 24.;
 }
 
 /////////////////////// SECOND DERIVATIVES //////////////////////
 // Map Centre -> Low or Low -> Centre
 
-BoutReal D2DX2_C4_stag(stencil &f)
-{
+BoutReal D2DX2_C4_stag(stencil &f) {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
 }
 
@@ -338,8 +321,7 @@ BoutReal D2DX2_C4_stag(stencil &f)
 //
 // v.p is v at +1/2, v.m is at -1/2
 
-BoutReal VDDX_U1_stag(stencil &v, stencil &f)
-{
+BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
   // Lower cell boundary
   BoutReal result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
   
@@ -358,8 +340,7 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f)
 //
 // v.p is v at +1/2, v.m is at -1/2
 
-BoutReal FDDX_U1_stag(stencil &v, stencil &f)
-{
+BoutReal FDDX_U1_stag(stencil &v, stencil &f) {
   // Lower cell boundary
   BoutReal result = (v.m >= 0) ? v.m * f.m : v.m * f.c;
   
@@ -452,8 +433,7 @@ static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL},
  * and pointers
  *******************************************************************************/
 
-deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method)
-{
+deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method) {
   int i = 0;
   do {
     if(table[i].method == method)
@@ -465,8 +445,7 @@ deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method)
   return table[0].func;
 }
 
-upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method)
-{
+upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
   int i = 0;
   do {
     if(table[i].method == method)
@@ -479,8 +458,7 @@ upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method)
 }
 
 /// Test if a given DIFF_METHOD exists in a table
-bool isImplemented(DiffLookup* table, DIFF_METHOD method)
-{
+bool isImplemented(DiffLookup* table, DIFF_METHOD method) {
   int i = 0;
   do {
     if(table[i].method == method)
@@ -493,8 +471,7 @@ bool isImplemented(DiffLookup* table, DIFF_METHOD method)
 
 /// This function is used during initialisation only (i.e. doesn't need to be particularly fast)
 /// Returns DIFF_METHOD, rather than function so can be applied to central and upwind tables
-DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
-{
+DIFF_METHOD lookupFunc(DiffLookup *table, const string &label) {
   DIFF_METHOD matchtype; // code which matches just the first letter ('C', 'U' or 'W')
 
   if(label.empty())
@@ -529,8 +506,7 @@ DIFF_METHOD lookupFunc(DiffLookup *table, const string &label)
   return matchtype;
 }
 
-void printFuncName(DIFF_METHOD method)
-{
+void printFuncName(DIFF_METHOD method) {
   // Find this entry
 
   int i = 0;
@@ -569,8 +545,7 @@ upwind_func sfFDDX, sfFDDY, sfFDDZ;
  *******************************************************************************/
 
 /// Set the derivative method, given a table and option name
-void derivs_set(Options *options, DiffLookup *table, const char* name, deriv_func &f)
-{
+void derivs_set(Options *options, DiffLookup *table, const char* name, deriv_func &f) {
   string label;
   options->get(name, label, "", false);
 
@@ -579,8 +554,7 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, deriv_fun
   f = lookupFunc(table, method); // Find the function pointer
 }
 
-void derivs_set(Options *options, DiffLookup *table, const char* name, upwind_func &f)
-{
+void derivs_set(Options *options, DiffLookup *table, const char* name, upwind_func &f) {
   string label;
   options->get(name, label, "", false);
 
@@ -594,8 +568,7 @@ void derivs_init(Options *options, bool StaggerGrids,
                  deriv_func &fdd, deriv_func &sfdd, 
                  deriv_func &fd2d, deriv_func &sfd2d, 
                  upwind_func &fu, upwind_func &sfu,
-                 upwind_func &ff, upwind_func &sff)
-{
+                 upwind_func &ff, upwind_func &sff) {
   output.write("\tFirst       : ");
   derivs_set(options, FirstDerivTable, "first",  fdd);
   if(StaggerGrids) {
@@ -623,8 +596,7 @@ void derivs_init(Options *options, bool StaggerGrids,
 }
 
 /// Initialise the derivative methods. Must be called before any derivatives are used
-int derivs_init()
-{
+int derivs_init() {
 #ifdef CHECK
   msg_stack.push("Initialising derivatives");
 #endif
@@ -693,15 +665,51 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   result.allocate(); // Make sure data allocated
 
   bindex bx;
-  stencil s;
 
   BoutReal **r = result.getData();
 
   start_index(&bx, RGN_NOX);
+#ifdef _OPENMP
+  // Parallel version. Needs another variable for each thread
+  
+  bindex bxstart = bx; // Copy to avoid race condition on first index
+  bool workToDoGlobal; // Shared loop control
+  #pragma omp parallel
+  {
+    bindex bxlocal; // Index for each thread
+    stencil s;
+    bool workToDo;  // Does this thread have work to do?
+    
+    #pragma omp single
+    {
+      // First index done once
+      var.setXStencil(s, bxstart, loc);
+      r[bxstart.jx][bxstart.jy] = func(s) / dd[bxstart.jx][bxstart.jy];
+    }
+    
+    do {
+      #pragma omp critical
+      {
+        // Get the next index
+        workToDo = next_index2(&bx);
+        bxlocal = bx; // Make a local copy
+        workToDoGlobal = workToDo;
+      }
+      if(workToDo) { // Here workToDo could be different to workToDoGlobal
+        var.setXStencil(s, bxlocal, loc);
+        r[bxlocal.jx][bxlocal.jy] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+      }
+    }while(workToDoGlobal);
+  }
+#else
+  // Serial version
+  
+  stencil s;
   do {
     var.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
+#endif // _OPENMP
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -715,8 +723,6 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  
-  stencil s;
 
   Field3D vs = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
@@ -728,11 +734,48 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   BoutReal ***r = result.getData();
   
   start_index(&bx, RGN_NOX);
+#ifdef _OPENMP
+  bindex bxstart = bx; // Copy to avoid race condition on first index
+  bool workToDoGlobal; // Shared loop control
+  #pragma omp parallel
+  {
+    bindex bxlocal; // Index for each thread
+    stencil s;
+    bool workToDo;  // Does this thread have work to do?
+    
+    #pragma omp single
+    {
+      // First index done by single thread
+      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+        vs.setXStencil(s, bxstart, loc);
+        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd[bxstart.jx][bxstart.jy];
+      }
+    }
+    
+    do {
+      #pragma omp critical
+      {
+        // Get the next index
+        workToDo = next_index2(&bx); // Only in 2D
+        bxlocal = bx; // Make a local copy
+        workToDoGlobal = workToDo;
+      }
+      if(workToDo) { // Here workToDo could be different to workToDoGlobal
+        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+          vs.setXStencil(s, bxlocal, loc);
+          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+        }
+      }
+    }while(workToDoGlobal);
+  }
+#else
+  stencil s;
   do {
     vs.setXStencil(s, bx, loc);
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index3(&bx));
-  
+#endif  
+
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
     result = result.shiftZ(false); // Shift back
 
@@ -753,14 +796,46 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   BoutReal **r = result.getData();
   
   bindex bx;
-  stencil s;
-
+  
   start_index(&bx, RGN_NOBNDRY);
+#ifdef _OPENMP
+  bindex bxstart = bx; // Copy to avoid race condition on first index
+  bool workToDoGlobal; // Shared loop control
+  #pragma omp parallel
+  {
+    bindex bxlocal; // Index for each thread
+    stencil s;
+    bool workToDo;  // Does this thread have work to do?
+    
+    #pragma omp single
+    {
+      // First index done once
+      var.setYStencil(s, bxstart, loc);
+      r[bxstart.jx][bxstart.jy] = func(s) / dd[bxstart.jx][bxstart.jy];
+    }
+    
+    do {
+      #pragma omp critical
+      {
+        // Get the next index
+        workToDo = next_index2(&bx);
+        bxlocal = bx; // Make a local copy
+        workToDoGlobal = workToDo;
+      }
+      if(workToDo) { // Here workToDo could be different to workToDoGlobal
+        var.setYStencil(s, bxlocal, loc);
+        r[bxlocal.jx][bxlocal.jy] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+      }
+    }while(workToDoGlobal);
+  }
+#else
+  stencil s;
   do{
     var.setYStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
-  
+#endif  
+
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_yup = result.bndry_ydown = false;
@@ -775,9 +850,47 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
   
-  stencil s;
   bindex bx;
+  
   start_index(&bx, RGN_NOBNDRY);
+  
+#ifdef _OPENMP
+  // Parallel version
+  bindex bxstart = bx; // Copy to avoid race condition on first index
+  bool workToDoGlobal; // Shared loop control
+  #pragma omp parallel
+  {
+    bindex bxlocal; // Index for each thread
+    stencil s;
+    bool workToDo;  // Does this thread have work to do?
+    
+    #pragma omp single
+    {
+      // First index done by single thread
+      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+        var.setYStencil(s, bxstart, loc);
+        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd[bxstart.jx][bxstart.jy];
+      }
+    }
+    
+    do {
+      #pragma omp critical
+      {
+        // Get the next index
+        workToDo = next_index2(&bx); // Only in 2D
+        bxlocal = bx; // Make a local copy
+        workToDoGlobal = workToDo;
+      }
+      if(workToDo) { // Here workToDo could be different to workToDoGlobal
+        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+          var.setYStencil(s, bxlocal, loc);
+          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+        }
+      }
+    }while(workToDoGlobal);
+  }
+#else 
+  stencil s;
   do {
     var.setYStencil(s, bx, loc);
     
@@ -792,6 +905,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
     }
 #endif
   }while(next_index3(&bx));
+#endif
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -810,13 +924,50 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
   BoutReal ***r = result.getData();
   
   bindex bx;
-  stencil s;
 
   start_index(&bx, RGN_NOZ);
+#ifdef _OPENMP
+  // Parallel version
+  bindex bxstart = bx; // Copy to avoid race condition on first index
+  bool workToDoGlobal; // Shared loop control
+  #pragma omp parallel
+  {
+    bindex bxlocal; // Index for each thread
+    stencil s;
+    bool workToDo;  // Does this thread have work to do?
+    
+    #pragma omp single
+    {
+      // First index done by single thread
+      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
+        var.setZStencil(s, bxstart, loc);
+        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd;
+      }
+    }
+    
+    do {
+      #pragma omp critical
+      {
+        // Get the next index
+        workToDo = next_index2(&bx); // Only in 2D
+        bxlocal = bx; // Make a local copy
+        workToDoGlobal = workToDo;
+      }
+      if(workToDo) { // Here workToDo could be different to workToDoGlobal
+        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
+          var.setZStencil(s, bxlocal, loc);
+          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd;
+        }
+      }
+    }while(workToDoGlobal);
+  }
+#else
+  stencil s;
   do {
     var.setZStencil(s, bx, loc);
     r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
   }while(next_index3(&bx));
+#endif
 
   return result;
 }
@@ -1046,11 +1197,6 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 
     result.allocate(); // Make sure data allocated
 
-    static dcomplex *cv = (dcomplex*) NULL;
-    int jx, jy, jz;
-    BoutReal kwave;
-    BoutReal flt;
-
     int xge = mesh->xstart, xlt = mesh->xend+1;
     if(inc_xbndry) { // Include x boundary region (for mixed XZ derivatives)
       xge = 0;
@@ -1058,28 +1204,55 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     }
     
     int ncz = mesh->ngz-1;
+    
+#ifndef _OPENMP
+    static dcomplex *cv = (dcomplex*) NULL;
+#else
+    static dcomplex *globalcv = (dcomplex*) NULL;
+#endif
 
-    if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1];
-
-    for(jx=xge;jx<xlt;jx++) {
-      for(jy=0;jy<mesh->ngy;jy++) {
-	
-	rfft(f[jx][jy], ncz, cv); // Forward FFT
-
-	for(jz=0;jz<=ncz/2;jz++) {
-	  kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-
-	  if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-	  cv[jz] *= dcomplex(0.0, kwave) * flt;
-	  if(mesh->StaggerGrids)
-	    cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
-	}
-	
-	irfft(cv, ncz, result[jx][jy]); // Reverse FFT
-
-	result[jx][jy][ncz] = result[jx][jy][0];
-	
+    #pragma omp parallel
+    {
+#ifndef _OPENMP
+      // Serial, so can have a single static array
+      if(cv == (dcomplex*) NULL)
+        cv = new dcomplex[ncz/2 + 1];
+#else
+      // Parallel, so allocate a separate array for each thread
+      
+      int th_id = omp_get_thread_num(); // thread ID
+      if(globalcv == (dcomplex*) NULL) {
+        if(th_id == 0) {
+          // Allocate memory in thread zero
+          int n_th = omp_get_num_threads();
+          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+        }
+        // Wait for memory to be allocated
+        #pragma omp barrier
+      }
+      
+      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
+#endif
+      #pragma omp for
+      for(int jx=xge;jx<xlt;jx++) {
+        for(int jy=0;jy<mesh->ngy;jy++) {
+          
+          rfft(f[jx][jy], ncz, cv); // Forward FFT
+          
+          for(int jz=0;jz<=ncz/2;jz++) {
+            BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+            
+            BoutReal flt;
+            if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
+            cv[jz] *= dcomplex(0.0, kwave) * flt;
+            if(mesh->StaggerGrids)
+              cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
+          }
+          
+          irfft(cv, ncz, result[jx][jy]); // Reverse FFT
+          
+          result[jx][jy][ncz] = result[jx][jy][0];
+        }
       }
     }
     
@@ -1392,39 +1565,61 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 	shift = 1.;
       }
     }
-
-    BoutReal flt;
     
     result.allocate(); // Make sure data allocated
-    static dcomplex *cv = (dcomplex*) NULL;
-    int jx, jy, jz;
-    BoutReal kwave;
 
     int ncz = mesh->ngz-1;
     
-    if(cv == (dcomplex*) NULL)
-      cv = new dcomplex[ncz/2 + 1];
-
-    for(jx=mesh->xstart;jx<=mesh->xend;jx++) {
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++) {
-
-	rfft(f[jx][jy], ncz, cv); // Forward FFT
-	
-	for(jz=0;jz<=ncz/2;jz++) {
-	  kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	  
-	  if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-
-	  cv[jz] *= -SQ(kwave) * flt;
-	  if(mesh->StaggerGrids)
-	    cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
-	}
-
-	irfft(cv, ncz, result[jx][jy]); // Reverse FFT
-	
-	result[jx][jy][ncz] = result[jx][jy][0];
+#ifndef _OPENMP
+    static dcomplex *cv = (dcomplex*) NULL;
+#else
+    static dcomplex *globalcv = (dcomplex*) NULL;
+#endif
+    
+    #pragma omp parallel
+    {
+#ifndef _OPENMP
+      // Serial, so can have a single static array
+      if(cv == (dcomplex*) NULL)
+        cv = new dcomplex[ncz/2 + 1];
+#else
+      // Parallel, so allocate a separate array for each thread
+      
+      int th_id = omp_get_thread_num(); // thread ID
+      if(globalcv == (dcomplex*) NULL) {
+        if(th_id == 0) {
+          // Allocate memory in thread zero
+          int n_th = omp_get_num_threads();
+          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+        }
+        // Wait for memory to be allocated
+        #pragma omp barrier
       }
-    }
+      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
+#endif
+      #pragma omp for
+      for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
+        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+          
+          rfft(f[jx][jy], ncz, cv); // Forward FFT
+	
+          for(int jz=0;jz<=ncz/2;jz++) {
+            BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+            
+            BoutReal flt;
+            if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
+
+            cv[jz] *= -SQ(kwave) * flt;
+            if(mesh->StaggerGrids)
+              cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
+          }
+
+          irfft(cv, ncz, result[jx][jy]); // Reverse FFT
+	
+          result[jx][jy][ncz] = result[jx][jy][0];
+        }
+      }
+    } // End of parallel section
 
 #ifdef CHECK
     // Mark boundaries as invalid

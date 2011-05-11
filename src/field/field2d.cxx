@@ -108,10 +108,7 @@ BoutReal **Field2D::getData() const
 
 ///////////// OPERATORS ////////////////
 
-Field2D & Field2D::operator=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator=(const Field2D &rhs) {
   // Check for self-assignment
   if(this == &rhs)
     return(*this); // skip this assignment
@@ -129,9 +126,10 @@ Field2D & Field2D::operator=(const Field2D &rhs)
   allocData(); // Make sure data is allocated
 
   // Copy data across
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = rhs.data[jx][jy];
 
 #ifdef CHECK
@@ -141,18 +139,16 @@ Field2D & Field2D::operator=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator=(const BoutReal rhs)
-{
-  int jx, jy;
-  
+Field2D & Field2D::operator=(const BoutReal rhs) {
 #ifdef TRACK
   name = "<r2D>";
 #endif
 
   allocData(); // Make sure data is allocated
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = rhs;
   return(*this);
 }
@@ -172,10 +168,7 @@ BoutReal* Field2D::operator[](int jx) const
   return(data[jx]);
 }
 
-Field2D & Field2D::operator+=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator+=(const Field2D &rhs) {
 #ifdef CHECK
   msg_stack.push("Field2D: += ( Field2D )");
   rhs.checkData();
@@ -185,9 +178,10 @@ Field2D & Field2D::operator+=(const Field2D &rhs)
 #ifdef TRACK
   name = "("+name + "+" + rhs.name + ")";
 #endif
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] += rhs.data[jx][jy];
 
 #ifdef CHECK
@@ -197,10 +191,7 @@ Field2D & Field2D::operator+=(const Field2D &rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator+=(const BoutReal rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator+=(const BoutReal rhs) {
 #ifdef CHECK
   if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: += (%e) operates on empty data", rhs);
@@ -210,18 +201,16 @@ Field2D & Field2D::operator+=(const BoutReal rhs)
 #ifdef TRACK
   name = "("+name + "+BoutReal)";
 #endif
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] += rhs;
 
   return(*this);
 }
 
-Field2D & Field2D::operator-=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator-=(const Field2D &rhs) {
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
@@ -236,17 +225,15 @@ Field2D & Field2D::operator-=(const Field2D &rhs)
   name = "("+name + "-" + rhs.name + ")";
 #endif
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] -= rhs.data[jx][jy];
 
   return(*this);
 }
 
-Field2D & Field2D::operator-=(const BoutReal rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator-=(const BoutReal rhs) {
 #ifdef CHECK
   if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: -= operates on empty data");
@@ -256,17 +243,15 @@ Field2D & Field2D::operator-=(const BoutReal rhs)
   name = "("+name + "-BoutReal)";
 #endif
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] -= rhs;
 
   return(*this);
 }
 
-Field2D & Field2D::operator*=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator*=(const Field2D &rhs) {
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
@@ -281,17 +266,15 @@ Field2D & Field2D::operator*=(const Field2D &rhs)
   name = "("+name + "*" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] *= rhs.data[jx][jy];
 
   return(*this);
 }
 
-Field2D & Field2D::operator*=(const BoutReal rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator*=(const BoutReal rhs) {
 #ifdef CHECK
   if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: *= operates on empty data");
@@ -301,8 +284,9 @@ Field2D & Field2D::operator*=(const BoutReal rhs)
   name = "("+name + "*BoutReal)";
 #endif
 
-  for(jx=0;jx<mesh->ngx;jx++) {
-    for(jy=0;jy<mesh->ngy;jy++) {
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] *= rhs;
     }
   }
@@ -310,10 +294,7 @@ Field2D & Field2D::operator*=(const BoutReal rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator/=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator/=(const Field2D &rhs) {
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
@@ -329,17 +310,15 @@ Field2D & Field2D::operator/=(const Field2D &rhs)
   name = "("+name + "/" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] /= rhs.data[jx][jy];
 
   return(*this);
 }
 
-Field2D & Field2D::operator/=(const BoutReal rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator/=(const BoutReal rhs) {
 #ifdef CHECK
   if(data == (BoutReal**) NULL) {
     throw BoutException("Field2D: /= operates on empty data");
@@ -351,9 +330,10 @@ Field2D & Field2D::operator/=(const BoutReal rhs)
 #endif
 
   BoutReal inv_rhs = 1. / rhs; // Multiplication faster than division
-
-  for(jx=0;jx<mesh->ngx;jx++) {
-    for(jy=0;jy<mesh->ngy;jy++) {
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] *= inv_rhs;
     }
   }
@@ -361,10 +341,7 @@ Field2D & Field2D::operator/=(const BoutReal rhs)
   return(*this);
 }
 
-Field2D & Field2D::operator^=(const Field2D &rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator^=(const Field2D &rhs) {
 #ifdef CHECK
   if(rhs.data == (BoutReal**) NULL) {
     // Invalid data
@@ -380,17 +357,15 @@ Field2D & Field2D::operator^=(const Field2D &rhs)
   name = "("+name + "^" + rhs.name + ")";
 #endif
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       data[jx][jy] = pow(data[jx][jy], rhs.data[jx][jy]);
 
   return(*this);
 }
 
-Field2D & Field2D::operator^=(const BoutReal rhs)
-{
-  int jx, jy;
-
+Field2D & Field2D::operator^=(const BoutReal rhs) {
 #ifdef CHECK
   if(data == (BoutReal**) NULL) {
     throw BoutException("Field2D: *= operates on empty data");
@@ -400,9 +375,10 @@ Field2D & Field2D::operator^=(const BoutReal rhs)
 #ifdef TRACK
   name = "("+name + "^BoutReal)";
 #endif
-
-  for(jx=0;jx<mesh->ngx;jx++) {
-    for(jy=0;jy<mesh->ngy;jy++) {
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy;jy++) {
       data[jx][jy] = pow(data[jx][jy], rhs);
     }
   }
@@ -414,22 +390,19 @@ Field2D & Field2D::operator^=(const BoutReal rhs)
 ///////////////// BINARY OPERATORS ////////////////////
 
 
-const Field2D Field2D::operator+(const Field2D &other) const
-{
+const Field2D Field2D::operator+(const Field2D &other) const {
   Field2D result = *this;
   result += other;
   return(result);
 }
 
-const Field2D Field2D::operator+(const BoutReal rhs) const
-{
+const Field2D Field2D::operator+(const BoutReal rhs) const {
   Field2D result = *this;
   result += rhs;
   return result;
 }
 
-const Field2D Field2D::operator-() const
-{
+const Field2D Field2D::operator-() const {
   Field2D result = *this;
 
   result *= -1.0;
@@ -441,57 +414,49 @@ const Field2D Field2D::operator-() const
   return result;
 }
 
-const Field2D Field2D::operator-(const Field2D &other) const
-{
+const Field2D Field2D::operator-(const Field2D &other) const {
   Field2D result = *this;
   result -= other;
   return(result);
 }
 
-const Field2D Field2D::operator-(const BoutReal rhs) const
-{
+const Field2D Field2D::operator-(const BoutReal rhs) const {
   Field2D result = *this;
   result -= rhs;
   return result;
 }
 
-const Field2D Field2D::operator*(const Field2D &other) const
-{
+const Field2D Field2D::operator*(const Field2D &other) const {
   Field2D result = *this;
   result *= other;
   return(result);
 }
 
-const Field2D Field2D::operator*(const BoutReal rhs) const
-{
+const Field2D Field2D::operator*(const BoutReal rhs) const {
   Field2D result = *this;
   result *= rhs;
   return(result);
 }
 
-const Field2D Field2D::operator/(const Field2D &other) const
-{
+const Field2D Field2D::operator/(const Field2D &other) const {
   Field2D result = *this;
   result /= other;
   return(result);
 }
 
-const Field2D Field2D::operator/(const BoutReal rhs) const
-{
+const Field2D Field2D::operator/(const BoutReal rhs) const {
   Field2D result = *this;
   result /= rhs;
   return(result);
 }
 
-const Field2D Field2D::operator^(const Field2D &other) const
-{
+const Field2D Field2D::operator^(const Field2D &other) const {
   Field2D result = *this;
   result ^= other;
   return(result);
 }
 
-const Field2D Field2D::operator^(const BoutReal rhs) const
-{
+const Field2D Field2D::operator^(const BoutReal rhs) const {
   Field2D result = *this;
   result ^= rhs;
   return(result);
@@ -499,17 +464,14 @@ const Field2D Field2D::operator^(const BoutReal rhs) const
 
 ///////////// Left binary operators ////////////////
 
-const Field3D Field2D::operator+(const Field3D &other) const
-{
+const Field3D Field2D::operator+(const Field3D &other) const {
   // just turn operator around
   return(other + (*this));
 }
 
-const Field3D Field2D::operator-(const Field3D &other) const
-{
+const Field3D Field2D::operator-(const Field3D &other) const {
   Field3D result = other;
   BoutReal ***d;
-  int jx, jy, jz;
 
   d = result.getData();
 
@@ -524,9 +486,10 @@ const Field3D Field2D::operator-(const Field3D &other) const
   result.name = "(" + name + "-" + other.name + ")";
 #endif  
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      for(jz=0;jz<mesh->ngz;jz++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = data[jx][jy] - d[jx][jy][jz];
 
   result.setLocation( other.getLocation() );
@@ -534,17 +497,14 @@ const Field3D Field2D::operator-(const Field3D &other) const
   return(result);
 }
 
-const Field3D Field2D::operator*(const Field3D &other) const
-{
+const Field3D Field2D::operator*(const Field3D &other) const {
   // turn operator around
   return(other * (*this));
 }
 
-const Field3D Field2D::operator/(const Field3D &other) const
-{
+const Field3D Field2D::operator/(const Field3D &other) const {
   Field3D result = other;
   BoutReal ***d;
-  int jx, jy, jz;
 
   d = result.getData();
 
@@ -559,9 +519,10 @@ const Field3D Field2D::operator/(const Field3D &other) const
   result.name = "(" + name + "/" + other.name + ")";
 #endif
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      for(jz=0;jz<mesh->ngz;jz++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = data[jx][jy] / d[jx][jy][jz];
 
   result.setLocation( other.getLocation() );
@@ -569,11 +530,9 @@ const Field3D Field2D::operator/(const Field3D &other) const
   return(result);
 }
 
-const Field3D Field2D::operator^(const Field3D &other) const
-{
+const Field3D Field2D::operator^(const Field3D &other) const {
   Field3D result = other;
   BoutReal ***d;
-  int jx, jy, jz;
 
   d = result.getData();
 
@@ -587,10 +546,11 @@ const Field3D Field2D::operator^(const Field3D &other) const
 #ifdef TRACK
   result.name = "(" + name + "^" + other.name + ")";
 #endif  
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      for(jz=0;jz<mesh->ngz;jz++)
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++)
 	d[jx][jy][jz] = pow(data[jx][jy], d[jx][jy][jz]);
 
   result.setLocation( other.getLocation() );
@@ -598,23 +558,21 @@ const Field3D Field2D::operator^(const Field3D &other) const
   return(result);
 }
 
-const FieldPerp Field2D::operator+(const FieldPerp &other) const
-{
+const FieldPerp Field2D::operator+(const FieldPerp &other) const {
   FieldPerp result = other;
   result += (*this);
   return(result);
 }
 
-const FieldPerp Field2D::operator-(const FieldPerp &other) const
-{
+const FieldPerp Field2D::operator-(const FieldPerp &other) const {
   FieldPerp result = other;
   BoutReal **d = result.getData();
-  int jx, jy, jz;
 
-  jy = result.getIndex();
+  int jy = result.getIndex();
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = data[jx][jy] - d[jx][jz];
   
 #ifdef TRACK
@@ -624,23 +582,21 @@ const FieldPerp Field2D::operator-(const FieldPerp &other) const
   return(result);
 }
 
-const FieldPerp Field2D::operator*(const FieldPerp &other) const
-{
+const FieldPerp Field2D::operator*(const FieldPerp &other) const {
   FieldPerp result = other;
   result *= (*this);
   return(result);
 }
 
-const FieldPerp Field2D::operator/(const FieldPerp &other) const
-{
+const FieldPerp Field2D::operator/(const FieldPerp &other) const {
   FieldPerp result = other;
   BoutReal **d = result.getData();
-  int jx, jy, jz;
 
-  jy = result.getIndex();
+  int jy = result.getIndex();
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = data[jx][jy] / d[jx][jz];
 
 #ifdef TRACK
@@ -650,16 +606,15 @@ const FieldPerp Field2D::operator/(const FieldPerp &other) const
   return(result);
 }
 
-const FieldPerp Field2D::operator^(const FieldPerp &other) const
-{
+const FieldPerp Field2D::operator^(const FieldPerp &other) const {
   FieldPerp result = other;
   BoutReal **d = result.getData();
-  int jx, jy, jz;
 
-  jy = result.getIndex();
+  int jy = result.getIndex();
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = pow(data[jx][jy], d[jx][jz]);
 
 #ifdef TRACK
@@ -672,8 +627,7 @@ const FieldPerp Field2D::operator^(const FieldPerp &other) const
 
 ////////////////////// STENCILS //////////////////////////
 
-void Field2D::getXArray(int y, int z, rvec &xv) const
-{
+void Field2D::getXArray(int y, int z, rvec &xv) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -686,8 +640,7 @@ void Field2D::getXArray(int y, int z, rvec &xv) const
     xv[x] = data[x][y];
 }
 
-void Field2D::getYArray(int x, int z, rvec &yv) const
-{
+void Field2D::getYArray(int x, int z, rvec &yv) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -700,8 +653,7 @@ void Field2D::getYArray(int x, int z, rvec &yv) const
     yv[y] = data[x][y];
 }
 
-void Field2D::getZArray(int x, int y, rvec &zv) const
-{
+void Field2D::getZArray(int x, int y, rvec &zv) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -714,8 +666,7 @@ void Field2D::getZArray(int x, int y, rvec &zv) const
     zv[z] = data[x][y];
 }
 
-void Field2D::setXArray(int y, int z, const rvec &xv)
-{
+void Field2D::setXArray(int y, int z, const rvec &xv) {
   allocData();
 
 #ifdef CHECK
@@ -728,8 +679,7 @@ void Field2D::setXArray(int y, int z, const rvec &xv)
     data[x][y] = xv[x];
 }
 
-void Field2D::setYArray(int x, int z, const rvec &yv)
-{
+void Field2D::setYArray(int x, int z, const rvec &yv) {
   allocData();
 
 #ifdef CHECK
@@ -742,8 +692,7 @@ void Field2D::setYArray(int x, int z, const rvec &yv)
     data[x][y] = yv[y];
 }
 
-void Field2D::setStencil(bstencil *fval, bindex *bx) const
-{
+void Field2D::setStencil(bstencil *fval, bindex *bx) const {
 
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -769,8 +718,7 @@ void Field2D::setStencil(bstencil *fval, bindex *bx) const
   fval->z2m = data[bx->jx][bx->jy];
 }
 
-void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
+void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.mm = data[bx.jx2m][bx.jy];
   fval.m  = data[bx.jxm][bx.jy];
   fval.c  = data[bx.jx][bx.jy];
@@ -778,8 +726,7 @@ void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.pp = data[bx.jx2p][bx.jy];
 }
 
-void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
+void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.mm = data[bx.jx][bx.jy2m];
   fval.m  = data[bx.jx][bx.jym];
   fval.c  = data[bx.jx][bx.jy];
@@ -787,50 +734,44 @@ void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   fval.pp = data[bx.jx][bx.jy2p];
 }
 
-void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
+void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval = data[bx.jx][bx.jy];
 }
 
 ///////////////////// MATH FUNCTIONS ////////////////////
 
 
-const Field2D Field2D::sqrt() const
-{
-  int jx, jy;
-  Field2D result;
-
+const Field2D Field2D::sqrt() const {
   // Check data set
   if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: Taking sqrt of empty data\n");
 
 #ifdef CHECK
   // Test values
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] < 0.0) {
 	throw BoutException("Field2D: Sqrt operates on negative value at [%d,%d]\n", jx, jy);
       }
 #endif
+  
+  Field2D result;
+  result.allocate();
+
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      result.data[jx][jy] = ::sqrt(data[jx][jy]);
 
 #ifdef TRACK
   result.name = "sqrt("+name+")";
 #endif
-
-  result.allocate();
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::sqrt(data[jx][jy]);
 
   return result;
 }
 
 const Field2D Field2D::abs() const
 {
-  int jx, jy;
-  Field2D result;
-
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -841,20 +782,18 @@ const Field2D Field2D::abs() const
   result.name = "abs("+name+")";
 #endif
 
+  Field2D result;
   result.allocate();
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = fabs(data[jx][jy]);
 
   return result;
 }
 
-BoutReal Field2D::min(bool allpe) const
-{
-  int jx, jy;
-  BoutReal result;
-
+BoutReal Field2D::min(bool allpe) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -865,10 +804,10 @@ BoutReal Field2D::min(bool allpe) const
     msg_stack.push("Field2D::Min()");
 #endif
 
-  result = data[0][0];
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  BoutReal result = data[0][0];
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] < result)
 	result = data[jx][jy];
   
@@ -885,11 +824,7 @@ BoutReal Field2D::min(bool allpe) const
   return result;
 }
 
-BoutReal Field2D::max(bool allpe) const
-{
-  int jx, jy;
-  BoutReal result;
-
+BoutReal Field2D::max(bool allpe) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -900,10 +835,10 @@ BoutReal Field2D::max(bool allpe) const
     msg_stack.push("Field2D::Max()");
 #endif
 
-  result = data[0][0];
+  BoutReal result = data[0][0];
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(data[jx][jy] > result)
 	result = data[jx][jy];
   
@@ -920,18 +855,15 @@ BoutReal Field2D::max(bool allpe) const
   return result;
 }
 
-bool Field2D::finite() const
-{
-  int jx, jy;
-
+bool Field2D::finite() const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
     throw BoutException("Field2D: Taking finite of empty data\n");
 #endif
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       if(!::finite(data[jx][jy]))
 	return false;
 
@@ -940,8 +872,7 @@ bool Field2D::finite() const
 
 ///////////////////// FieldData VIRTUAL FUNCTIONS //////////
 
-int Field2D::getData(int x, int y, int z, void *vptr) const
-{
+int Field2D::getData(int x, int y, int z, void *vptr) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL)
@@ -958,8 +889,7 @@ int Field2D::getData(int x, int y, int z, void *vptr) const
   return sizeof(BoutReal);
 }
 
-int Field2D::getData(int x, int y, int z, BoutReal *rptr) const
-{
+int Field2D::getData(int x, int y, int z, BoutReal *rptr) const {
 #ifdef CHECK
   // Check data set
   if(data == (BoutReal**) NULL) {
@@ -976,9 +906,8 @@ int Field2D::getData(int x, int y, int z, BoutReal *rptr) const
   return 1;
 }
 
-int Field2D::setData(int x, int y, int z, void *vptr)
-{
- allocate();
+int Field2D::setData(int x, int y, int z, void *vptr) {
+  allocate();
 #ifdef CHECK
   // check ranges
   if((x < 0) || (x >= mesh->ngx) || (y < 0) || (y >= mesh->ngy) || (z < 0) || (z >= mesh->ngz)) {
@@ -991,8 +920,7 @@ int Field2D::setData(int x, int y, int z, void *vptr)
   return sizeof(BoutReal);
 }
 
-int Field2D::setData(int x, int y, int z, BoutReal *rptr)
-{
+int Field2D::setData(int x, int y, int z, BoutReal *rptr) {
   allocate();
 #ifdef CHECK
   // check ranges
@@ -1007,8 +935,7 @@ int Field2D::setData(int x, int y, int z, BoutReal *rptr)
 
 #ifdef CHECK
 /// Check if the data is valid
-bool Field2D::checkData(bool vital) const
-{
+bool Field2D::checkData(bool vital) const {
   if(data == (BoutReal**) NULL) {
     throw BoutException("Field2D: Operation on empty data\n");
   }
@@ -1029,8 +956,7 @@ bool Field2D::checkData(bool vital) const
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Field2D::applyBoundary()
-{
+void Field2D::applyBoundary() {
 #ifdef CHECK
   msg_stack.push("Field2D::applyBoundary()");
   if(!boundaryIsSet)
@@ -1040,8 +966,7 @@ void Field2D::applyBoundary()
     (*it)->apply(*this);
 }
 
-void Field2D::applyBoundary(const string &condition)
-{
+void Field2D::applyBoundary(const string &condition) {
 #ifdef CHECK
   msg_stack.push("Field2D::applyBoundary(condition)");
   
@@ -1087,8 +1012,7 @@ void Field2D::applyBoundary(const string &condition)
 #endif
 }
 
-void Field2D::applyTDerivBoundary()
-{
+void Field2D::applyTDerivBoundary() {
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply_ddt(*this);
 }
@@ -1101,8 +1025,7 @@ int Field2D::nblocks = 0;
 int Field2D::max_blocks = 0;
 BoutReal*** Field2D::block = (BoutReal***) NULL;
 
-void Field2D::allocData()
-{
+void Field2D::allocData() {
   if(data != (BoutReal**) NULL)
     return; // already allocated
 
@@ -1120,8 +1043,7 @@ void Field2D::allocData()
   }
 }
 
-void Field2D::freeData()
-{
+void Field2D::freeData() {
   // put data block onto stack
 
   if(data == (BoutReal**) NULL)
@@ -1145,26 +1067,21 @@ void Field2D::freeData()
 
 ////////////// NON-MEMBER OVERLOADED OPERATORS //////////////
 
-const Field2D operator+(const BoutReal lhs, const Field2D &rhs)
-{
+const Field2D operator+(const BoutReal lhs, const Field2D &rhs) {
   return rhs+lhs;
 }
 
-const Field2D operator-(const BoutReal lhs, const Field2D &rhs)
-{
+const Field2D operator-(const BoutReal lhs, const Field2D &rhs) {
   return -1.0*(rhs - lhs);
 }
 
-const Field2D operator*(const BoutReal lhs, const Field2D &rhs)
-{
+const Field2D operator*(const BoutReal lhs, const Field2D &rhs) {
   // can just turn this operator around
   return(rhs * lhs);
 }
 
-const Field2D operator/(const BoutReal lhs, const Field2D &rhs)
-{
+const Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   Field2D result = rhs;
-  int jx, jy;
   BoutReal **d;
 
   d = result.data;
@@ -1178,17 +1095,16 @@ const Field2D operator/(const BoutReal lhs, const Field2D &rhs)
   result.name = "(BoutReal/"+rhs.name+")";
 #endif
 
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       d[jx][jy] = lhs / d[jx][jy];
 
   return(result);
 }
 
-const Field2D operator^(const BoutReal lhs, const Field2D &rhs)
-{
+const Field2D operator^(const BoutReal lhs, const Field2D &rhs) {
   Field2D result = rhs;
-  int jx, jy;
   BoutReal **d;
 
   d = result.data;
@@ -1202,8 +1118,9 @@ const Field2D operator^(const BoutReal lhs, const Field2D &rhs)
   result.name = "(BoutReal^"+rhs.name+")";
 #endif
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       d[jx][jy] = pow(lhs, d[jx][jy]);
 
   return(result);
@@ -1211,41 +1128,34 @@ const Field2D operator^(const BoutReal lhs, const Field2D &rhs)
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-const Field2D SQ(const Field2D &f)
-{
+const Field2D SQ(const Field2D &f) {
   return f*f;
 }
 
-const Field2D sqrt(const Field2D &f)
-{
+const Field2D sqrt(const Field2D &f) {
   return f.sqrt();
 }
 
-const Field2D abs(const Field2D &f)
-{
+const Field2D abs(const Field2D &f) {
   return f.abs();
 }
 
-BoutReal min(const Field2D &f, bool allpe)
-{
+BoutReal min(const Field2D &f, bool allpe) {
   return f.min(allpe);
 }
 
-BoutReal max(const Field2D &f, bool allpe)
-{
+BoutReal max(const Field2D &f, bool allpe) {
   return f.max(allpe);
 }
 
-bool finite(const Field2D &f)
-{
+bool finite(const Field2D &f) {
   return f.finite();
 }
 
 /////////////////////////////////////////////////
 // Friend functions
 
-const Field2D exp(const Field2D &f)
-{
+const Field2D exp(const Field2D &f) {
 #ifdef CHECK
   msg_stack.push("exp(Field2D)");
 #endif
@@ -1253,6 +1163,7 @@ const Field2D exp(const Field2D &f)
   Field2D result;
   result.allocate();
   
+  #pragma omp parallel for
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::exp(f.data[jx][jy]);
@@ -1263,8 +1174,7 @@ const Field2D exp(const Field2D &f)
   return result;
 }
 
-const Field2D log(const Field2D &f)
-{
+const Field2D log(const Field2D &f) {
 #ifdef CHECK
   msg_stack.push("log(Field2D)");
 #endif
@@ -1287,10 +1197,8 @@ const Field2D log(const Field2D &f)
   return result;
 }
 
-const Field2D sin(const Field2D &f)
-{
+const Field2D sin(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "sin("+f.name+")";
@@ -1298,17 +1206,16 @@ const Field2D sin(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::sin(f.data[jx][jy]);
 
   return result;
 }
 
-const Field2D cos(const Field2D &f)
-{
+const Field2D cos(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "cos("+f.name+")";
@@ -1316,17 +1223,16 @@ const Field2D cos(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::cos(f.data[jx][jy]);
 
   return result;
 }
 
-const Field2D tan(const Field2D &f)
-{
+const Field2D tan(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "tan("+f.name+")";
@@ -1334,17 +1240,16 @@ const Field2D tan(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::tan(f.data[jx][jy]);
 
   return result;
 }
 
-const Field2D sinh(const Field2D &f)
-{
+const Field2D sinh(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "sinh("+f.name+")";
@@ -1352,17 +1257,16 @@ const Field2D sinh(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::sinh(f.data[jx][jy]);
 
   return result;
 }
 
-const Field2D cosh(const Field2D &f)
-{
+const Field2D cosh(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "cosh("+f.name+")";
@@ -1370,17 +1274,16 @@ const Field2D cosh(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::cosh(f.data[jx][jy]);
 
   return result;
 }
 
-const Field2D tanh(const Field2D &f)
-{
+const Field2D tanh(const Field2D &f) {
   Field2D result;
-  int jx, jy;
   
 #ifdef TRACK
   result.name = "tanh("+f.name+")";
@@ -1388,8 +1291,9 @@ const Field2D tanh(const Field2D &f)
 
   result.allocate();
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
       result.data[jx][jy] = ::tanh(f.data[jx][jy]);
 
   return result;
