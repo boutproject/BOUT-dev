@@ -2,18 +2,21 @@
 #-----------------
 #-info petsc.info
 #-log_summary petsc.log
+-ts_monitor
+#-snes_monitor
+#-ksp_monitor
 
 # TS
 #---------------
+#-ts_type gl
 #-ts_type sundials
 -ts_sundials_exact_final_time
 -ts_sundials_monitor_steps
 #-ts_sundials_atol 1.e-12
 #-ts_sundials_rtol 1.e-12
 
--ts_view tsview.log
--ts_monitor
--ts_max_steps 1000
+#-ts_view tsview.log
+-ts_max_steps 10
 -ts_dt 0.01
 
 # Coloring Jacobian matrix
@@ -42,8 +45,11 @@
 
 # KSP & SNES
 #---------------
--ksp_type ibcgs
--ksp_atol 1.e-4
+-ksp_type gmres
+#-ksp_type ibcgs
+-ksp_atol 1.e-4 # must be large for ibcgs - zero iterations! This
+#matrix type does not have a multiply tranpose defined!
+
 -snes_mf_operator
 
 # Debugging
