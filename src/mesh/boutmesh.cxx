@@ -608,10 +608,10 @@ int BoutMesh::load() {
     boundary.push_back(new BoundaryRegionYUp("target", UDATA_XSPLIT, xend));
   
   if((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
-    boundary.push_back(new BoundaryRegionYDown("target", xstart, UDATA_XSPLIT-1));
+    boundary.push_back(new BoundaryRegionYDown("target", xstart, DDATA_XSPLIT-1));
   if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-    boundary.push_back(new BoundaryRegionYDown("target", UDATA_XSPLIT, xend));
-
+    boundary.push_back(new BoundaryRegionYDown("target", DDATA_XSPLIT, xend));
+    
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";
     for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
@@ -2168,13 +2168,13 @@ SurfaceIter* BoutMesh::iterateSurfaces()
 
 bool BoutMesh::surfaceClosed(int jx)
 {
-  return (jx < ixseps_inner);
+  return (jx < ixseps_inner) && MYPE_IN_CORE;
 }
 
 bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
 {
   ts = 0.;
-  if(jx < ixseps_inner) {
+  if( (jx < ixseps_inner) && MYPE_IN_CORE) {
     if(TwistShift)
       ts = ShiftAngle[jx];
     return true;
