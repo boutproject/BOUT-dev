@@ -868,8 +868,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
     
-    brxy = mesh.dpsidR / Rxy
-    bzxy = -mesh.dpsidZ / Rxy
+    brxy = -mesh.dpsidZ / Rxy
+    bzxy = mesh.dpsidR / Rxy
     
     curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
       FLOAT(psixy), FLOAT(thetaxy), hthe, $
