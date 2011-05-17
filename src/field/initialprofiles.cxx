@@ -169,6 +169,9 @@ int initial_profile(const char *name, Field3D &var)
 	    cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	    var[jx][jy][jz] += scale*cx*cy*cz;
 	  }
+	}else if(Ballooning) {
+	  // Open surfaces. Not sure what to do, so set to zero
+	  var[jx][jy][jz] = 0.;
 	}
 	
 	/*
