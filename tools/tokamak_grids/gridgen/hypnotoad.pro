@@ -335,7 +335,7 @@ PRO event_handler, event
         a = DIALOG_MESSAGE("No valid equilibrium data. Read from file first", /error)
         RETURN
       ENDIF
-      
+
       boundary = TRANSPOSE([[(*info.rz_grid).rlim], [(*info.rz_grid).zlim]])
       
       IF info.detail_set THEN BEGIN
@@ -396,13 +396,9 @@ PRO event_handler, event
 
       IF info.rz_grid_valid AND info.flux_mesh_valid THEN BEGIN
         
-        oldcurv = 1
-        IF info.flux_curv THEN oldcurv=0
-      
-        
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
-                      oldcurv=oldcurv
+                      curv=info.curv_ind
         
         IF poorquality THEN BEGIN
           r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
@@ -432,6 +428,11 @@ PRO event_handler, event
         WIDGET_CONTROL, info.status, set_value="  *** Need to generate mesh first ***"
       ENDELSE
     END
+    'curv': BEGIN
+      ; Combo box with curvature options
+      info.curv_ind = event.index
+      widget_control, event.top, set_UVALUE=info
+    END
     'strict': BEGIN
       ; Checkbox with boundary strictness
       info.strict_bndry = event.select
@@ -440,10 +441,6 @@ PRO event_handler, event
     'simplebndry': BEGIN
       ; Simplify the boundary
       info.simple_bndry = event.select
-      widget_control, event.top, set_UVALUE=info
-    END
-    'curv': BEGIN
-      info.flux_curv = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'radgrid': BEGIN
@@ -745,6 +742,13 @@ PRO hypnotoad
                              value = 1,                    $
                              xsize=8                         $
                            )
+  
+  w = WIDGET_LABEL(bar, value="Curvature method")
+  curv_select = WIDGET_COMBOBOX(bar, VALUE=["Toroidal, SVD method", $
+                                            "Cylindrical+interpol", $
+                                            "Field-aligned coords"], $
+                                EVENT_PRO = 'event_handler', $
+                                UVALUE="curv")
 
   checkboxbase = WIDGET_BASE(bar, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
@@ -754,10 +758,6 @@ PRO hypnotoad
   simple_check = WIDGET_BUTTON(checkboxbase, VALUE="Simplify boundary", uvalue='simplebndry', $
                                tooltip="Simplify the boundary to a square")
   Widget_Control, simple_check, Set_Button=0
-
-  curv_check = WIDGET_BUTTON(checkboxbase, VALUE="Flux curvature", uvalue='curv', $
-                             tooltip="Calculate curvature in flux coordinates")
-  Widget_Control, curv_check, Set_Button=0
   
   radgrid_check = WIDGET_BUTTON(checkboxbase, VALUE="Single radial grid", uvalue='radgrid', $
                              tooltip="Grid radially in one")
@@ -810,7 +810,7 @@ PRO hypnotoad
            status:status_box, $
            leftbargeom:leftbargeom, $
            single_rad_grid:0, $
-           flux_curv:0 $
+           curv_ind:0 $
          } 
 
   ; Store this in the base UVALUE

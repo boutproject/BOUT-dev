@@ -454,7 +454,8 @@ END
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
-                  gui=gui, parent=parent, oldcurv=oldcurv, reverse_bt=reverse_bt
+                  gui=gui, parent=parent, reverse_bt=reverse_bt, $
+                  curv=curv
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -856,7 +857,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
   ; Calculating b x kappa
   
-  IF KEYWORD_SET(oldcurv) THEN BEGIN
+  IF NOT KEYWORD_SET(curv) THEN BEGIN
     
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
@@ -889,6 +890,38 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     bxcvz[0,*] = bxcvz[1,*]
     bxcvz[nx-1,*] = bxcvz[nx-2,*]
     
+  ENDIF ELSE IF curv EQ 1 THEN BEGIN
+    ; Calculate on R-Z mesh and then interpolate onto grid
+    ; ( cylindrical coordinates)
+
+    PRINT, "*** Calculating curvature in cylindrical coordinates"
+    PRINT, "    This might take some time... "
+    
+    bxcv = rz_curvature(rz_grid, ny)
+    
+    ; Now interpolate onto grid points
+    DCT2Dslow, bxcv.psi, dctpsi
+    DCT2Dslow, bxcv.theta, dcttheta
+    DCT2Dslow, bxcv.phi, dctphi
+
+    bxcv_psi   = DBLARR(nx, ny)
+    bxcv_theta = DBLARR(nx, ny)
+    bxcv_phi   = DBLARR(nx, ny)
+
+    FOR x=0, nx-1 DO BEGIN
+      FOR y=0, ny-1 DO BEGIN
+        ri = mesh.Rixy[x,y]
+        zi = mesh.Zixy[x,y]
+        bxcv_psi[x,y] = (EvalCosPfast(dctpsi, x0=ri, y0=zi))[0]
+        bxcv_theta[x,y] = (EvalCosPfast(dcttheta, x0=ri, y0=zi))[0] / hthe[x,y]
+        bxcv_phi[x,y] = (EvalCosPfast(dctphi, x0=ri, y0=zi))[0]
+      ENDFOR
+    ENDFOR
+
+    bxcvx = bxcv_psi 
+    bxcvy = bxcv_theta
+    bxcvz = bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta
+
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
     
