@@ -769,10 +769,17 @@ void calc_index(bindex *bx)
   */
 
   /* shifted z-indices for x differencing */
-  bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-  bx->x2p_offset = (-mesh->zShift[bx->jx2p][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-  bx->xm_offset =  (-mesh->zShift[bx->jxm][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-  bx->x2m_offset = (-mesh->zShift[bx->jx2m][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+    bx->x2p_offset = (-mesh->zShift[bx->jx2p][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+    bx->xm_offset =  (-mesh->zShift[bx->jxm][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+    bx->x2m_offset = (-mesh->zShift[bx->jx2m][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+  }else {
+    bx->xp_offset = 0.0;
+    bx->x2p_offset = 0.0;
+    bx->xm_offset = 0.0;
+    bx->x2m_offset = 0.0;
+  }
 }
 
 /* Resets the index bx */

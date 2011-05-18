@@ -771,9 +771,11 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 #else
   stencil s;
   do {
-    vs.setXStencil(s, bx, loc);
-    r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
-  }while(next_index3(&bx));
+    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+      vs.setXStencil(s, bx, loc);
+      r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
+    }
+  }while(next_index2(&bx));
 #endif  
 
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
@@ -892,19 +894,11 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 #else 
   stencil s;
   do {
-    var.setYStencil(s, bx, loc);
-    
-    r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
-  
-#ifdef CHECK
-    if(!finite(r[bx.jx][bx.jy][bx.jz])) {
-      msg_stack.push("At [%d][%d][%d]: %e, %e, %e, %e, %e",
-                     bx.jx, bx.jy, bx.jz, 
-                     s.mm, s.m, s.c, s.p, s.pp);
-      bout_error("Non-finite value\n");
+    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+      var.setYStencil(s, bx, loc);
+      r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
     }
-#endif
-  }while(next_index3(&bx));
+  }while(next_index2(&bx));
 #endif
 
 #ifdef CHECK
