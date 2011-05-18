@@ -136,7 +136,7 @@ FUNCTION rz_curvature, mesh, ny
   curlb_unit = CurlCyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)
   
   ; Cross product with b to get curvature vector
-  curvec   = Xprod(vecB_unit,curlb_unit,/MINUS)
+  curvec   = Xprod(vecB_unit,curlb_unit)
   ;-unit b cross curvature vector at cell center
   bxcurvec = Xprod(vecB_unit,curvec)
 
