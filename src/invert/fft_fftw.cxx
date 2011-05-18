@@ -43,7 +43,6 @@ void fft_init()
 {
   if(fft_options)
     return;
-  output << "FFT_INIT\n";
   //#pragma omp critical
   {
     Options *opt = Options::getRoot();
@@ -51,7 +50,6 @@ void fft_init()
     opt->get("fft_measure", fft_measure, false);
     fft_options = true;
   }
-  output << "FFT_INIT DONE\n";
 }
 
 #ifndef _OPENMP
