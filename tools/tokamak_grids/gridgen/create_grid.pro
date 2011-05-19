@@ -1198,13 +1198,20 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       IF KEYWORD_SET(single_rad_grid) THEN BEGIN
         ; Gridding as one region
-        dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
-        pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5*dpsi) < xpt_psi[xind]
-        pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
-                                                    pf_psi_out, $
-                                                    1, 0, $
-                                                    [xpt_psi[xind]], settings.rad_peaking, $
-                                                    out_dp=dpsi)
+        IF (npf+1) LT TOTAL(nrad,/int) THEN BEGIN
+          dpsi = pf_psi_vals[xind,0,npf+1] - pf_psi_vals[xind,0,npf]
+          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5*dpsi) < xpt_psi[xind]
+          pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
+                                                      pf_psi_out, $
+                                                      1, 0, $
+                                                      [xpt_psi[xind]], settings.rad_peaking, $
+                                                      out_dp=dpsi)
+        ENDIF ELSE BEGIN
+          pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
+                                                      pf_psi_out, $
+                                                      1, 0, $
+                                                      [xpt_psi[xind]], settings.rad_peaking)
+        ENDELSE
       ENDIF ELSE BEGIN
         ; Gridding in multiple regions. Ensure equal spacing around separatrix
         dpsi = 2.*(pf_psi_vals[xind,0,npf] - xpt_psi[xind])

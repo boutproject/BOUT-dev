@@ -12,6 +12,10 @@
 FUNCTION radial_grid, n, pin, pout, include_in, include_out, seps, sep_factor, $
          in_dp=in_dp, out_dp=out_dp
 
+  IF n EQ 1 THEN BEGIN
+    RETURN, [0.5*(pin+pout)]
+  ENDIF
+
   x = FINDGEN(n)
   m = FLOAT(n-1)
   IF NOT include_in THEN BEGIN
