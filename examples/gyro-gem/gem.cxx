@@ -98,6 +98,8 @@ BoutReal nu_perp, nu_par;  // Artificial dissipation
 
 bool fix_profiles; // Subtract toroidal averages
 
+int  jpar_bndry_width; // Set jpar = 0 in a boundary region
+
 // Method to use for brackets: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 const BRACKET_METHOD bm = BRACKET_SIMPLE; //BRACKET_ARAKAWA;
 
@@ -244,6 +246,8 @@ int physics_init(bool restarting)
   ////////////////////////////////////////////////////
   // Terms in equations
   
+  OPTION(options, jpar_bndry_width,    -1);
+
   OPTION6(options, ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
   OPTION6(options, apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
   OPTION2(options, apue_gradB, apue_Rei, true);
@@ -558,6 +562,24 @@ int physics_run(BoutReal time)
   Ui = (ApUi - beta_e*Apar) / mu_i;
   Ue = (ApUe - beta_e*Apar) / mu_e;
   
+  if(jpar_bndry_width > 0) {
+    // Zero j in boundary regions. Prevents vorticity drive
+    // at the boundary
+    
+    for(int i=0;i<jpar_bndry_width;i++)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+	  if(mesh->firstX()) {
+	    Ui[i][j][k] = 0.0;
+            Ue[i][j][k] = 0.0;
+          }
+	  if(mesh->lastX()) {
+	    Ui[mesh->ngx-1-i][j][k] = 0.0;
+            Ue[mesh->ngx-1-i][j][k] = 0.0;
+          }
+	}
+  }
+
   Jpar = Ui - Ue;
 
   ////////////////////////////////////////////
