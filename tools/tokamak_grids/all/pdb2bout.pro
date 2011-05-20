@@ -897,7 +897,8 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
               a = CREATE_STRUCT(a, "Ti", a.Te)
               
               PRINT, "Maximum temperature (eV):", max(a.Te)
-          ENDELSE
+         ENDELSE
+         gotprof = 1   
       ENDIF
   ENDIF
   

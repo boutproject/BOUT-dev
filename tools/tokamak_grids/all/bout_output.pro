@@ -954,8 +954,6 @@ PRO bout_output, data, output=output, $
     title="Parallel current at midplane. Black line is from equilibrium", color=1
   oplot, j0[*,0], psym=1, color=2
   oplot, j0[*,0], color=2
-  PRINT, "CLICK TO CONTINUE"
-  cursor, x, y, /down
   
   IF got_jpar THEN BEGIN
       IF NOT KEYWORD_SET(default) THEN BEGIN ;; by default keep existing jpar
@@ -963,6 +961,8 @@ PRO bout_output, data, output=output, $
       ENDIF
   ENDIF ELSE BEGIN
       PRINT, "Using this new Jpar"
+      PRINT, "CLICK TO CONTINUE"
+      cursor, x, y, /down
       jpar = j0
   ENDELSE
 
@@ -1014,8 +1014,8 @@ PRO bout_output, data, output=output, $
       plot, ShiftAngle/(2.0*!PI), title="Safety factor. Solid is from input q", color=1
       oplot, qloop/(2.0*!PI), psym=1, color=2
       
-      PRINT, "CLICK TO CONTINUE"
-      cursor, x, y, /down
+      ;PRINT, "CLICK TO CONTINUE"
+      ;cursor, x, y, /down
 
       IF NOT KEYWORD_SET(default) THEN BEGIN ;; by default keep existing qsafe
           IF get_yesno("Use new qsafe?") THEN ShiftAngle = qloop
@@ -1025,8 +1025,8 @@ PRO bout_output, data, output=output, $
       PRINT, "Using loop integral for qsafe"
       
       plot, qsafe / (2.0*!PI), title="Safety factor", color=2
-      PRINT, "CLICK TO CONTINUE"
-      cursor, x, y, /down
+      ;PRINT, "CLICK TO CONTINUE"
+      ;cursor, x, y, /down
 
       ShiftAngle = qsafe
 
@@ -1109,13 +1109,22 @@ PRO bout_output, data, output=output, $
   
   P = Ni * (Te + Ti)*1.602e-19*1.0e20
 
-  IF MIN(P) LT 1.0e-2*MAX(P) THEN BEGIN
+  IF MIN(P) LT 1.0e-4*MAX(P) THEN BEGIN
       PRINT, "****Minimum pressure is very small:", MIN(P)
-      PRINT, "****Setting minimum pressure to 1% of maximum"
+      PRINT, "****Setting minimum pressure to 1e-4 of maximum"
 
-      P = P + 1e-2*MAX(P)
+      pmin = 1e-4*MAX(P)
+      P = P + pmin
 
-      Ni = Ni + 1e-2*MAX(Ni)
+      nimin = 1e-2*MAX(Ni)
+      Ni = Ni + nimin
+      
+      tnew = P / (Ni*1.602e-19*1.0e20) ; Te + Ti
+      told = Te + Ti
+      tmin = 0.5*pmin / (nimin*1.602e-19*1.0e20)
+      
+      Te = tnew * (Te + tmin) / (told + 2.*tmin)
+      Ti = tnew * (Ti + tmin) / (told + 2.*tmin)
   ENDIF
 
   Ni_x = MAX(Ni)
