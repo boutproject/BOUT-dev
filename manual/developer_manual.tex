@@ -31,7 +31,7 @@
         columns=fixed,
         upquote=true,
         extendedchars=true,
-        morekeywords={string,Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
+        morekeywords={string,Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup,dcomplex},
 }
 
 %% Modify margins
@@ -773,25 +773,62 @@ Any & Any & Interpolate to centre, use central stencil, then interpolate \\
 
 \note{This part of the code needs some algorithm improvement (better parallel tridiagonal solver).}
 
+
+The code in \file{invert\_laplace.cxx} solves the equation:
+\[
+d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
+\]
+where $x$ and $b$ are 3D variables, whilst $a$, $c$ and $d$ are 2D variables.
 Several different algorithms are implemented for Laplacian inversion, and
 they differ between serial and parallel versions.
 Serial inversion can currently either be done using a tridiagonal solver
 (Thomas algorithm), or a band-solver (allowing $4^{th}$-order differencing).
 
-\subsection{Thomas algorithm (serial)}
+The coefficients of the tridiagonal matrix are calculated in a subroutine:
+\begin{lstlisting}
+void laplace_tridag_coefs(int jx, int jy, int jz, 
+                          dcomplex &a, dcomplex &b, dcomplex &c, 
+                          const Field2D *ccoef, const Field2D *d);
+\end{lstlisting}
+$c$ and $d$ are optional. Note: this is also used by \texttt{Delp2}. 
 
-\subsection{Band solver (serial)}
+\subsection{Serial algorithms}
+
+\subsubsection{Tridiagonal solver}
+
+
+\subsubsection{Band solver}
 
 This is band-solver which performs a $4^{th}$-order inversion. Currently this
 is only available when \code{NXPE=1}; when more than one processor is used in $x$,
 the Laplacian algorithm currently reverts to $3^{rd}$-order.
 
-\subsection{Thomas algorithm (parallel)}
+\subsection{Parallel algorithms}
 
-The current parallel code is a simple parallelisation of the Thomas algorithm
-(so only 2nd order). The operations performed are the same as for the
-serial code (useful for testing), but this means it is very inefficient.
-Figure~\ref{fig:par_laplace} shows the useage of 4 processors inverting a set of 3 poloidal slices
+\begin{lstlisting}
+void par_tridag_matrix(dcomplex **avec,dcomplex **bvec,
+                       dcomplex **cvec,
+                       dcomplex **bk, int jy, int flags, 
+                       const Field2D *a = NULL, 
+                       const Field2D *ccoef=NULL,
+                       const Field2D *d=NULL)
+\end{lstlisting}
+
+\subsubsection{Simple Parallelisation}
+
+This is a reference code which performs the same operations as the serial code.
+To invert a single XZ slice (\lstinline!FieldPerp! object), data must pass
+from the innermost processor (\lstinline!mesh->PE_XIND = 0!) to the outermost
+\lstinline!mesh->PE_XIND = mesh->NXPE-1! and back again.
+
+Some parallelism is achieved by running several inversions simultaneously,
+so while processor 1 is inverting Y=0, processor 0 is starting on Y=1.
+This works ok as long as the number of slices to be inverted is greater than
+the number of X processors (\lstinline!MYSUB > mesh->NXPE!). If
+\lstinline!MYSUB < mesh->NXPE! then
+not all processors can be busy at once, and so efficiency will fall sharply.
+Figure~\ref{fig:par_laplace} shows the useage of 4 processors inverting a set
+of 3 poloidal slices
 (i.e. MYSUB=3)
 \begin{figure}[htbp!]
 \centering
@@ -800,11 +837,12 @@ Figure~\ref{fig:par_laplace} shows the useage of 4 processors inverting a set of
 \label{fig:par_laplace}
 \end{figure}
 
-\subsection{PDD algorithm (parallel)}
+\subsubsection{PDD algorithm}
 
 This is the Parallel Diagonally Dominant (PDD) algorithm. It's very fast, but
-achieves this by neglecting some cross-processor terms. For ELM simulations, it has
-been found that these terms are important, so this method is not usually used. 
+achieves this by neglecting some cross-processor terms. For ELM simulations, 
+it has been found that these terms are important, so this method is not
+usually used. 
 
 \section{Mesh}
 

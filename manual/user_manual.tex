@@ -32,7 +32,7 @@
         columns=fixed,
         upquote=true,
         extendedchars=true,
-        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
 }
 
 %% Modify margins
@@ -202,10 +202,11 @@ Running doxygen (\url{www.doxygen.org}) on these files should therefore generate
 reference. This is probably going to be the most up-to-date documentation.
 \end{itemize}
 
-\subsection{Installation}
+\subsection{Installing libraries}
 \label{sec:install}
 
-BOUT++ uses several external libraries, and unless these are already installed, you will need to install them yourself. 
+BOUT++ uses several external libraries, and unless these are already installed,
+you will need to install them yourself. 
 
 BOUT++ can currently use two different file formats: Portable Data Binary
 (PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}}, and
@@ -218,9 +219,7 @@ NetCDF3 ``classic'' format, which is backwards-compatible with NetCDF
 libraries since 1992, or in the newer NetCDF4 format, which is based
 on (and compatible with) HDF5. If you have both libraries installed then
 BOUT++ can use both simultaneously, for example reading in grid files in PDB
-format, but writing output data in NetCDF format.
-
-\subsubsection{Libraries}
+format, but writing output data in NetCDF format. 
 
 It should be possible to install and try out BOUT++ with a minimal number of
 libraries, but BOUT++ can use the following libraries:
@@ -328,7 +327,8 @@ use
 $ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
 \end{verbatim}
 
-\subsubsection{BOUT++}
+\subsection{Installing BOUT++}
+\label{sec:installbout}
 
 Once you have the libraries installed, you can install BOUT++.
 In the root directory of the BOUT++ distribution is a file \texttt{INSTALL} 
@@ -356,7 +356,7 @@ of these files, use
     ./configure --with-pdb=no
 \end{verbatim}
 If you do this, you will need to enable NetCDF support (see below).
-If you ignored the earlier instructions and installed PACT into a non-standard location, you can specify this using
+If you installed PACT into a non-standard location, you can specify this using
 \begin{verbatim}
     ./configure PACT=/path/to/pact/
 \end{verbatim}
@@ -458,14 +458,12 @@ specify the path to the installation:
 
 \subsubsection{LAPACK}
 
-As with FFT routines, the TRUNK branch does contain fall-back routines
-for solving tri- and band-diagonal complex and real matrices. These
-are however descended from Numerical Recipes code, and so are removed
-from RELEASE.
+BOUT++ comes with linear solvers for tridiagonal and band-diagonal systems,
+but these are not particularly optimised and are in any case descended from Numerical Recipes code (hence NOT covered by LGPL license).
 
 To replace these routines, BOUT++ can use the LAPACK library. This is
-written in FORTRAN 77, which can cause linking headaches.
-To enable these routines in TRUNK (always enabled in RELEASE), use
+however written in FORTRAN 77, which can cause linking headaches.
+To enable these routines use
 \begin{verbatim}
 ./configure --with-lapack
 \end{verbatim}
@@ -688,6 +686,7 @@ mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
 max\_timestep & Maxmimum timestep & rk4, cvode \\
 start\_timestep & Starting guess for timestep & rk4 \\
+timestep & Fixed timestep & karniadakis \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
 mukeep, mlkeep & & \\
@@ -703,6 +702,32 @@ The most commonly changed options are the  absolute and relative solver toleranc
 
 \subsection{Laplacian inversion}
 
+A common problem in plasma models is to solve an equation of the form
+\[
+d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
+\]
+where $x$ and $b$ are 3D variables, whilst $a$, $c$ and $d$ are 2D variables.
+BOUT++ includes several routines for solving this equation; see the
+developer's manual for details.
+
+\begin{table}[htbp!]
+\caption{Global Laplacian options}
+\label{tab:lapopts}
+\centering
+\begin{tabular}[c]{c c c}
+\hline
+Option & Description & Default \\
+\hline
+\texttt{low\_mem} & Reduces memory usage & \texttt{false} \\
+\texttt{use\_pdd} & Use the PDD algorithm & \texttt{false} \\
+\texttt{all\_terms} & Include all terms & \texttt{false} \\
+\texttt{laplace\_nonuniform} & Non-uniform mesh corrections & \texttt{false} \\
+\texttt{filter} & Fraction of modes to filter & 0.2 \\
+\texttt{max\_mode} & Maximum Z mode & filter \\ 
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Communications}
 
 The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
@@ -717,6 +742,7 @@ for each dimension.
 \item \code{first}, the method used for first derivatives
 \item \code{second}, method for second derivatives
 \item \code{upwind}, method for upwinding terms
+\item \code{flux}, for conservation law terms
 \end{itemize}
 The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT
 Apart from FFT, the first letter gives the type of method (U = upwind, C = central, W = WENO), and
@@ -796,6 +822,7 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
 
 \subsection{Boundary conditions}
+\label{sec:bndryopts}
 
 Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
@@ -929,133 +956,154 @@ probably be the same.
 
 First comes the introductory blurb:
 \begin{verbatim}
-BOUT++ version 0.70
-MD5 checksum: 9703e3588ef9e66cc89a893e4706d8ac
-Code compiled on Aug  8 2009 at 14:21:26
+BOUT++ version 0.85
+Revision: c8794400adc256480f72c651dcf186fb6ea1da49
+MD5 checksum: 8419adb752f9c23b90eb50ea2261963c
+Code compiled on May 11 2011 at 18:22:37
+
 B.Dudson (University of York), M.Umansky (LLNL) 2007
 Based on BOUT by Xueqiao Xu, 1999
-
-Compile-time options:
-        Checking enabled, level 2
-        Signal handling enabled
-        PDB support enabled
-        netCDF support disabled
-
-Run started at  : Sat Aug  8 14:22:58 2009
-
-Processor number: 0 of 4
 \end{verbatim}
-The version number (0.70 here) gets increased occasionally after some major feature has been added.
-To help match simulations to code versions, there's also the timestamps when the core BOUT++ code
-was compiled and when the run was started. This helps work out later if a given feature or bug-fix
-was implemented when a simulation was run. When compiled, the core
-part of BOUT++ calculates an MD5 checksum of all its code. This makes it
-possible to verify precisely which version of the code was used for any given
-run.
+The version number (0.85 here) gets increased occasionally after
+some major feature has been added. To help match simulations to code versions,
+the Git revision of the core BOUT++ code and the date and time it was
+compiled is recorded. Because code could be modified from the revision,
+an MD5 checksum of all the code is also calculated. This information
+makes it possible to verify precisely which version of the code was used
+for any given run.
 
-Then comes those options which affect the core BOUT++ code:
+Next comes the compile-time options, which depend on how
+BOUT++ was configured (see section~\ref{sec:installbout})
 \begin{verbatim}
-Reading options file data/BOUT.inp
-	Option NOUT = 50
-	Option TIMESTEP = 1.000000e+02
-	Option WALL_LIMIT = -1.000000e+00 (default)
-Archiving restart files every 20 iterations
-	Option dump_float = true (default)
-	Option ShiftXderivs = false
-	Option IncIntShear = false (default)
-	Option ShiftInitial = false (default)
-	Option TwistShift = false
-	Option ShiftOrder = 0 (default)
-	Option TwistOrder = 0 (default)
-	Option non_uniform = false (default)
-	Option MZ = 65
-	Option zperiod = 1 (default)
-	Option ZMIN = 0.000000e+00
-	Option ZMAX = 2.850500e-03
-	Option MXG = 2
-	Option MYG = 2
-	Option BoundaryOnCell = false (default)
-	Option StaggerGrids = false (default)
-	Option NXPE = 1 (default)
+Compile-time options:
+	Checking enabled, level 2
+	Signal handling enabled
+	PDB support disabled
+	netCDF support enabled
+\end{verbatim}
+Thisn says that some run-time checking of values is enabled,
+that the code will try to catch segmentation faults to print a useful
+error, that PDB files aren't supported, but that NetCDF files are.
+
+The processor number comes next:
+\begin{verbatim}
+Processor number: 0 of 1
+\end{verbatim}
+This will always be processor number '0' on screen as only the output
+from processor '0' is sent to the terminal. After this comes some
+the core BOUT++ code reads some options:
+\begin{verbatim}
+	Option /nout = 50 (data/BOUT.inp)
+	Option /timestep = 100 (data/BOUT.inp)
+	Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
+	Option /dump_float = true   (default)
+	Option /non_uniform = false (data/BOUT.inp)
+	Option /restart = false  (default)
+	Option /append = false  (default)
+	Option /dump_format = nc (data/BOUT.inp)
+	Option /StaggerGrids = false  (default)
 \end{verbatim}
 This lists each option and the value it has been assigned.
-Anything not specified in the input
-file is given its default value and has \code{(default)} after it.
+For every option the source of the value being used is also given.
+If a value had been given on the command line then \texttt{(command line)}
+would appear after the option.
 
 \begin{verbatim}
-Applying Twist-Shift condition. Interpolation: FFT
+Setting X differencing methods
+	First       :  Second order central (C2)
+	Second      :  Second order central (C2)
+	Upwind      :  Third order WENO (W3)
+	Flux        :  Split into upwind and central (SPLIT)
+Setting Y differencing methods
+	First       :  Fourth order central (C4)
+	Second      :  Fourth order central (C4)
+	Upwind      :  Third order WENO (W3)
+	Flux        :  Split into upwind and central (SPLIT)
+Setting Z differencing methods
+	First       :  FFT (FFT)
+	Second      :  FFT (FFT)
+	Upwind      :  Third order WENO (W3)
+	Flux        :  Split into upwind and central (SPLIT)
 \end{verbatim}
-Matching twisting flux-tubes back onto themselves requires some form of interpolation. 
-This should always be set to FFT.
+
+This is a list of the differential methods for each direction. These are set in the 
+BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but can be overridden
+for individual operators. For each direction, numerical methods can be specified for
+first and second central difference terms, upwinding terms of the form
+$\deriv{\partial f}{\partial t} = \underline{v}\cdot\nabla f$,
+and flux terms of the form $\deriv{\partial f}{\partial t} = \nabla\cdot\left(\underline{v}f\right)$.
+By default the flux terms are just split into a central and an upwinding term.
+
+In brackets are the code used to specify the method in BOUT.inp. A list
+of available methods is given in section~\ref{sec:diffmethod} on page~\pageref{sec:diffmethod}.
 
 \begin{verbatim}
-Using shifted X derivatives. Interpolation: FFT
+Setting grid format
+	Option /grid_format =  (default)
+	Using NetCDF format for file 'slab.6b5.r1.cdl'
+Loading mesh
+	Grid size: 10 by 64
+	Option /mxg = 2 (data/BOUT.inp)
+	Option /myg = 2 (data/BOUT.inp)
+	Option /NXPE = 1 (default)
+	Option /mz = 65 (data/BOUT.inp)
+	Option /twistshift = false (data/BOUT.inp)
+	Option /TwistOrder = 0 (default)
+	Option /ShiftOrder = 0 (default)
+	Option /shiftxderivs = false (data/BOUT.inp)
+	Option /IncIntShear = false  (default)
+	Option /BoundaryOnCell = false  (default)
+	Option /StaggerGrids = false  (default)
+	Option /periodicX = false  (default)
+	Option /async_send = false  (default)
+	Option /zmin = 0 (data/BOUT.inp)
+	Option /zmax = 0.0028505 (data/BOUT.inp)
+\end{verbatim}
+
+\begin{verbatim}
+WARNING: Number of inner y points 'ny_inner' not found. Setting to 32
+\end{verbatim}
+Optional quantities (such as \code{ny\_inner} in this case) which
+are not specified are given a default (best-guess) value, and a warning is printed.
+\begin{verbatim}
+	EQUILIBRIUM IS SINGLE NULL (SND) 
+	MYPE_IN_CORE = 0
+	DXS = 0, DIN = -1. DOUT = -1
+	UXS = 0, UIN = -1. UOUT = -1
+	XIN = -1, XOUT = -1
+	Twist-shift: 
+\end{verbatim}
+At this point, BOUT++ reads the grid file, and works out the topology of the grid,
+and connections between processors.
+BOUT++ then tries to read the metric coefficients from the grid file:
+\begin{verbatim}
+	WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
+	WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
+	WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
+	WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
+	WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
+	WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
+\end{verbatim}
+
+These warnings are printed because the coefficients have not been specified in the 
+grid file, and so the metric tensor is set to the default identity matrix.
+
+\begin{verbatim}
+	WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
+	WARNING: Z shift for radial derivatives not found
 \end{verbatim}
 To get radial derivatives, the quasi-ballooning coordinate method is used (see
 section~\ref{sec:shiftcoords}). The upshot of this is that to get radial derivatives,
 interpolation in Z is needed. This should also always be set to FFT.
 
 \begin{verbatim}
-Setting X differencing methods
-        First       :  Fourth order central (C4)
-        Second      :  Fourth order central (C4)
-        Upwind      :  Third order WENO (W3)
-Setting Y differencing methods
-        First       :  Fourth order central (C4)
-        Second      :  Fourth order central (C4)
-        Upwind      :  Third order WENO (W3)
-Setting Z differencing methods
-        First       :  Fourth order central (C4)
-        Second      :  Fourth order central (C4)
-        Upwind      :  Third order WENO (W3)
+	WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
+	Option /twistshift_pf = false  (default)
 \end{verbatim}
 
-This is a list of the differential methods for each direction. These are set in the 
-BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but can be overridden
-for individual operators. In brackets are the code used to specify the method in BOUT.inp.
-
-At this point, BOUT++ reads the grid file, and works out the topology of the grid,
-and connections between processors.
 \begin{verbatim}
-Setting grid format
-	File extension not recognised for 'data/uedge.grd.pdb_slab.6b5.r1'
-Grid: Reading file 'cbm18_8_y064_x260.pdb'
-	WARNING: Number of inner y points 'ny_inner' not found. Setting to 32
-	EQUILIBRIUM IS SINGLE NULL (SND) 
-	Option xperiodic = false (default)
-Connection between top of Y processor 3 and bottom of 0 in range 0 <= x < 260
-=> This processor sending in down
-WARNING adding connection: poloidal index -1 out of range
-\end{verbatim}
-
-Optional quantities (such as \code{ny\_inner} in this case) which
-are not specified are given a default (best-guess) value, and a warning is printed.
-
-
-\begin{verbatim}
-        MYPE_IN_CORE = 1
-        DXS = 260, DIN = 3. DOUT = -1
-        UXS = 0, UIN = -1. UOUT = 1
-        XIN = -1, XOUT = -1
-        Twist-shift: DI 
-\end{verbatim}
-
-BOUT++ then tries to read the metric coefficients from the grid file:
-\begin{verbatim}
-        WARNING: Metric coefficient 'g11' not found
-        WARNING: Metric coefficient 'g22' not found
-        WARNING: Metric coefficient 'g33' not found
-        WARNING: Metric coefficient 'g12' not found
-        WARNING: Metric coefficient 'g13' not found
-        WARNING: Metric coefficient 'g23' not found
-\end{verbatim}
-These warnings are printed because the coefficients have not been specified in the 
-grid file, and so the metric tensor is set to the default identity matrix.
-
-\begin{verbatim}
-Calculating differential geometry terms
-        Maximum error in diagonal inversion is 0.000000e+00
-        Maximum error in off-diagonal inversion is 0.000000e+00
+	Maximum error in diagonal inversion is 0.000000e+00
+	Maximum error in off-diagonal inversion is 0.000000e+00
 \end{verbatim}
 If only the contravariant components (\code{g11} etc.) of the metric tensor are specified,
 the covariant components (\code{g\_11} etc.) are calculated by inverting the metric tensor matrix. 
@@ -1063,83 +1111,97 @@ Error estimates are then calculated by calculating $g_{ij}g^{jk}$ as a check.
 Since no metrics were specified in the input, the metric tensor was set to the identity
 matrix, making inversion easy and the error tiny.
 \begin{verbatim}
-       	WARNING: Could not read 'J' from grid. Setting to zero
-        WARNING: Jacobian 'J' not found. Calculating from metric tensor
-       	Maximum difference in Bxy is 2.120668e+00
-       	Communicating connection terms
-       	Option comms / async = false
-        Option comms / pre_post = false (default)
-       	done
+	WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
+	WARNING: Jacobian 'J' not found. Calculating from metric tensor
+\end{verbatim}
+
+\begin{verbatim}
+	Maximum difference in Bxy is 1.444077e-02
+Calculating differential geometry terms
+	Communicating connection terms
+Boundary regions in this processor: core, sol, target, target, 
+	done
 \end{verbatim}
 
 \begin{verbatim}
 Setting file formats
-        Using PDB format for file 'data/BOUT.dmp.0.pdb'
-        Using PDB format for file 'data/BOUT.restart.0.pdb'
+	Using NetCDF format for file 'data/BOUT.dmp.0.nc'
 \end{verbatim}
 
 The laplacian inversion code is initialised, and prints out the options used.
 \begin{verbatim}
 Initialising Laplacian inversion routines
-       	Option comms / async = false
-       	Option laplace / filter = 2.000000e-01 (default)
-       	Option laplace / low_mem = false (default)
-       	Option laplace / use_pdd = false (default)
-       	Option laplace / all_terms = false (default)
-       	Using serial algorithm
-       	Option laplace / max_mode = 26 (default)
+	Option comms/async = true   (default)
+	Option laplace/filter = 0.2 (default)
+	Option laplace/low_mem = false  (default)
+	Option laplace/use_pdd = false  (default)
+	Option laplace/all_terms = false  (default)
+	Option laplace/laplace_nonuniform = false  (default)
+	Using serial algorithm
+	Option laplace/max_mode = 26 (default)
 \end{verbatim}
 
 After this comes the physics module-specific output:
 \begin{verbatim}
 Initialising physics module
+	Option solver/type =  (default)
         .
         .
         .
 \end{verbatim}
 This typically lists the options used, and useful/important normalisation factors etc.
-See the \texttt{elm\_reduced} manual for an explanation of the output from the
-high-$\beta$ reduced MHD model.
-
-If BOUT++ is being restarted from a previous point, the restart file is read, 
-and the time printed:
-\begin{verbatim}
-Datafile: Reading file 'data/BOUT.restart.0.pdb'
-Restarting at iteration 200, simulation time 1.100000e+02
-\end{verbatim}
 
 Finally, once the physics module has been initialised, 
 and the current values loaded, the solver can be started
 \begin{verbatim}
 Initialising solver
-       	Boundary region inner X
-       	Boundary region outer X
-       	3d fields = 3, 2d fields = 0 neq=3194880, local_N=798720
+	Option /archive = -1 (default)
+	Option /dump_format = nc (data/BOUT.inp)
+	Option /restart_format = nc (default)
+	Using NetCDF format for file 'nc'
 \end{verbatim}
-This last line gives the number of equations being evolved (in this case 3,194,880),
-and the number of these on this processor (here 798,720).
+
 \begin{verbatim}
-       	Option solver / mudq = 774 (default)
-       	Option solver / mldq = 774 (default)
-       	Option solver / mukeep = 0 (default)
-       	Option solver / mlkeep = 0 (default)
+Initialising PVODE solver
+	Boundary region inner X
+	Boundary region outer X
+	3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
+\end{verbatim}
+This last line gives the number of equations being evolved (in this case 84992),
+and the number of these on this processor (here 84992).
+\begin{verbatim}
+	Option solver/mudq = 16 (default)
+	Option solver/mldq = 16 (default)
+	Option solver/mukeep = 0 (default)
+	Option solver/mlkeep = 0 (default)
 \end{verbatim}
 
 The absolute and relative tolerances come next:
 \begin{verbatim}
-       	Option solver / ATOL = 1.000000e-12
-       	Option solver / RTOL = 1.000000e-07
-       	Option solver / use_precon = false (default)
-       	Option solver / precon_dimens = 50 (default)
-       	Option solver / precon_tol = 1.000000e-04 (default)
+	Option solver/atol = 1e-10 (data/BOUT.inp)
+	Option solver/rtol = 1e-05 (data/BOUT.inp)
+\end{verbatim}
+
+\begin{verbatim}
+	Option solver/use_precon = false  (default)
+	Option solver/precon_dimens = 50 (default)
+	Option solver/precon_tol = 0.0001 (default)
+	Option solver/mxstep = 500 (default)
+\end{verbatim}
+
+
+\begin{verbatim}
+	Option fft/fft_measure = false  (default)
 \end{verbatim}
 This next option specifies the maximum number of internal timesteps which CVODE
 will take between outputs.
 \begin{verbatim}
-       	Option solver / pvode_mxstep = 5000
-COMMS: Allocated room for 133120 reals per Y buffer
-COMMS: Allocated room for 33280 reals per Y buffer
+	Option fft/fft_measure = false  (default)
 Running simulation
+
+Run started at  : Wed May 11 18:23:20 2011
+
+	Option /wall_limit = -1 (default)
 \end{verbatim}
 
 \subsection{Per-timestep output}
@@ -1147,7 +1209,7 @@ Running simulation
 At the beginning of a run, just after the last line in the previous section,
 a header is printed out as a guide
 \begin{verbatim}
-Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   PVODE
+Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER
 \end{verbatim}
 
 Each timestep (the one specified in BOUT.inp, not the internal timestep), 
@@ -1164,7 +1226,7 @@ the wall-time this took to run, and percentages for the time spent in different 
 which may be needed to do the inversion.
 \item \code{Comm} is the time spent communicating variables (outside the inversion routine)
 \item \code{I/O} is the time spent writing dump and restart files to disk. Most of the time this should not be an issue
-\item \code{PVODE} is the time spent in the implicit solver code.
+\item \code{SOLVER} is the time spent in the implicit solver code.
 \end{itemize}
 
 The output sent to the terminal (not the log files) also includes a run time, and estimated
@@ -1615,7 +1677,7 @@ tutorials over books because there are a lot more of them, they're quicker to sc
 and they're cheaper.
 
 When going through this section, it may help to refer to the finished code, which
-is given in the file \texttt{mhd.cpp} in the BOUT++ examples directory. The equations to be solved are:
+is given in the file \texttt{mhd.cxx} in the BOUT++ examples directory. The equations to be solved are:
 \begin{eqnarray*}
 \deriv{\rho}{t} &=& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
 \deriv{p}{t} &=& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
@@ -1630,7 +1692,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   return 0;
 }
@@ -1666,7 +1728,7 @@ Scalar and vector fields behave much as you would expect: Field3D objects can be
 multiplied, divided and exponentiated, so the following examples are all valid operations:
 \begin{lstlisting}
 Field3D a, b, c;
-real r;
+BoutReal r;
 
 a = b + c; a = b - c;
 a = b * c; a = r * b;
@@ -1678,7 +1740,7 @@ fields and real numbers, for example:
 \begin{lstlisting}
 Vector3D a, b, c;
 Field3D f;
-real r;
+BoutReal r;
 
 a = b + c; a = b - c;
 a = b * f; a = b * r;
@@ -1750,11 +1812,11 @@ int physics_init(bool restarting)
 \end{lstlisting}
 
 The equations to be solved can now be written in the \code{physics\_run} function. The value
-passed to the function (\code{real t}) is the simulation time - only needed if your
+passed to the function (\code{BoutReal t}) is the simulation time - only needed if your
 equations contain time-dependent sources or similar terms. To refer to the time-derivative
 of a variable \code{var}, use \code{ddt(var)}. The ideal MHD equations can be written as:
 \begin{lstlisting}
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
   ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
@@ -1766,7 +1828,7 @@ Where the differential operators \code{vector = Grad(scalar)}, \code{scalar = Di
 \code{vector = Curl(vector)} are used. For the density and pressure equations, 
 the $\mathbf{v}\cdot\nabla\rho$ term could be written as \code{v*Grad(rho)}, but this would then use
 central differencing in the Grad operator. Instead, the function \code{V\_dot\_Grad} uses upwinding
-methods specifically for these advection terms. In addition, the \code{Grad} function will not operate
+methods for these advection terms. In addition, the \code{Grad} function will not operate
 on vector objects (since result is neither scalar nor vector), so the $\mathbf{v}\cdot\nabla\mathbf{v}$ term CANNOT be written as \code{v*Grad(v)}. 
 
 \subsection{Input options}
@@ -1776,11 +1838,14 @@ Note that in the above equations the extra parameter \code{gamma} has been used.
 in the input options file (see section~\ref{sec:options}), we use the \code{options} object in the
 initialisation function:
 \begin{lstlisting}
-real gamma;
+BoutReal gamma;
 
 int physics_init(bool restarting)
 {
-  options.get("mhd", "gamma", gamma, 5.0/3.0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("mhd");
+
+  options->get("gamma", gamma, 5.0/3.0);
 \end{lstlisting}
 This specifies that an option called ``gamma'' in a section called ``mhd'' should be put into the variable \code{gamma}. If the option could not be found, or was of the wrong type, the variable should be set to a default value of $5/3$.
 The value used will be printed to the output file, so if gamma is not set in the input file the following line will appear:
@@ -1792,24 +1857,26 @@ is the function (\code{char* options.getString(section, name)}.
 To separate options specific to the physics model, these options should be put in a separate
 section, for example here the ``mhd'' section has been specified. To save having to write the section name for every option, there is the \code{setSection} function:
 \begin{lstlisting}
-real gamma;
+BoutReal gamma;
 int someint;
 
 int physics_init(bool restarting)
 {
-  options.setSection("mhd");
-  options.get("gamma",   gamma,   5.0/3.0);
-  options.get("someint", someint, 0);
+  Options *globalOptions = Options::getRoot();
+  Options *options = globalOptions->getSection("mhd");
+
+  options->get("gamma", gamma, 5.0/3.0);
+  options->get("someint", someint, 0);
 \end{lstlisting}
 Most of the time, the name of the variable (e.g. \code{gamma}) will be
 the same as the identifier in the options file (``gamma''). In this case,
 there is the macro
 \begin{lstlisting}[numbers=none]
-OPTION(gamma, 5.0/3.0);
+OPTION(options, gamma, 5.0/3.0);
 \end{lstlisting}
 which is equivalent to
 \begin{lstlisting}[numbers=none]
-options.get("gamma",   gamma,   5.0/3.0);
+options->get("gamma", gamma, 5.0/3.0);
 \end{lstlisting}
 See section~\ref{sec:options} for more details of how to use the input options.
 
@@ -1825,7 +1892,7 @@ call the \code{mesh->communicate} function directly. For the MHD code, we need t
 the variables \code{rho,p,v,B} at the beginning of the \code{physics\_run} function
 before any derivatives are calculated:
 \begin{lstlisting}
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   mesh->communicate(rho, p, v, B);
 \end{lstlisting}
@@ -1853,12 +1920,29 @@ int physics_init()
 }
 \end{lstlisting}
 
+The \lstinline!comms.add()! routine can be given up to 6 variables at once (there's no practical
+limit on the total number of variables which are added to a \lstinline!FieldGroup!), so this can be
+shortened to
+\begin{lstlisting}
+FieldGroup comms;
+
+int physics_init()
+{
+  .
+  .
+  .
+  comms.add(rho, p, v, B);
+
+  return 0;
+}
+\end{lstlisting}
+
 To perform the actual communication, call the \code{mesh->communicate} function
 with the group. In this case
 we need to communicate all these variables before performing any calculations, so call
 this function at the start of the \code{physics\_run} routine:
 \begin{lstlisting}
-int physics_run(real t)
+int physics_run(BoutReal t)
 {
   mesh->communicate(comms);
   .
@@ -1874,7 +1958,7 @@ In our MHD example, the calculation of \code{ddt(rho)} and \code{ddt(p)} does no
 \code{B}, so we could first communicate \code{rho}, \code{p}, and \code{v}, send \code{B}
 and do some calculations whilst communications are performed:
 \begin{lstlisting}
-int physics_run(real t)
+int physics_run(BoutReal t) 
 {
   mesh->communicate(rho, p, v); // sends and receives rho, p and v
   comm_handle ch = mesh->send(B);// only send B
@@ -1891,14 +1975,63 @@ int physics_run(real t)
 }
 \end{lstlisting}
 
-This scheme is not used in \texttt{mhd.cpp}, partly for clarity, and partly because currently
+This scheme is not used in \texttt{mhd.cxx}, partly for clarity, and partly because currently
 communications are not a significant bottleneck (too much inefficiency elsewhere!).
 
-\note{1. Before using the result of a differential operator as input to another differential operator,
-communications must be performed for the intermediate result \\
-2. Currently communicator objects cannot overlap: Only one communicator object can be in the middle of a
-send-receive pair at any given time. Calling \code{comms1.send(); comms2.send();} will cause
-chaos. This is a bug which will be fixed in future.}
+\note{Before using the result of a differential operator as input to another differential operator,
+communications must be performed for the intermediate result}
+
+When a differential is calculated, points on neighbouring cells are assumed to be in the guard cells.
+There is no way to calculate the result of the differential in the guard cells, and so after every 
+differential operator the values in the guard cells are invalid. Therefore, if you take
+the output of one differential operator and use it as input to another differential operator, you must 
+perform communications (and set boundary conditions) first. See section~\ref{sec:diffops}.
+
+\subsection{Boundary conditions}
+
+All evolving variables have boundary conditions applied automatically after
+the \lstinline!physics_run! has finished. Which condition is applied depends on the options file
+settings (see section~\ref{sec:bndryopts}). Quite often however it's necessary to impose
+boundary conditions on other quantities.
+
+The simplest way to do this is to specify a boundary condition as text, so to apply a Dirichlet boundary
+condition:
+\begin{lstlisting}
+  Field3D var;
+  ...
+  var.applyBoundary("dirichlet");
+\end{lstlisting}
+The format is exactly the same as in the options file. Each time this is called it must
+parse the text, create and destroy boundary objects. To avoid this overhead and have different
+boundary conditions for each region, it's better to set the boundary conditions you want to use
+first in \code{physics\_init}, then just apply them every time:
+\begin{lstlisting}
+Field3D var;
+
+int physics_init() {
+  ...
+  var.setBoundary("myVar");
+  ...
+}
+
+int physics_run(BoutReal t) {
+  ...
+  var.applyBoundary(); 
+  ...
+}
+\end{lstlisting}
+This will look in the options file for a section called \code{"[myvar]"}  (upper or lower case
+doesn't matter) in the same way that evolving variables are handled. In fact this is precisely what
+is done: inside \code{bout\_solve} (or \code{SOLVE\_FOR}) the \code{setBoundary} method is called,
+and then after \code{physics\_run} the applyBoundary() method is called on each evolving variable.
+
+Finally, another way to set the boundaries is to copy them from another variable:
+\begin{lstlisting}
+Field3D a, b;
+  ...
+  a.setBoundaryTo(b); // Copy b's boundaries into a
+  ...
+\end{lstlisting}
 
 \subsection{Initial profiles}
 
@@ -1935,20 +2068,46 @@ which is equivalent to
 mesh->get(Ni0, "Ni0");
 \end{lstlisting}
 
-\subsection{Boundary conditions}
+\subsection{Output variables}
 
-In addition to the equations to be solved, we need to specify the boundary conditions
-for each of the variables. The simplest way to do this is to use the \code{apply\_boundary}
-function, and then set the condition to be used in the input file.
+BOUT++ always writes the evolving variables to file, but often it's useful to add other variables
+to the output. For convenience you might want to write the normalised starting profiles or other
+non-evolving values to file. For example:
+\begin{lstlisting}
+  Field2D Ni0;
+  ...
+  GRID_LOAD(Ni0);
+  dump.add(Ni0, "Ni0", 0); 
+\end{lstlisting}
+where the '0' at the end means the variable should only be written to file once at the start of the
+simulation. For convenience there are some macros e.g.
+\begin{lstlisting}
+  SAVE_ONCE(Ni0); 
+\end{lstlisting}
+is equivalent to
+\begin{lstlisting}
+  dump.add(Ni0, "Ni0", 0); 
+\end{lstlisting}
 
 
-\subsection{Other components}
+\section{Fluid equations 2: reduced MHD}
 
-The MHD example presented previously covered many of the functions available in BOUT++,
+The MHD example presented previously covered some of the functions available in BOUT++,
 which can be used for a wide variety of models. There are however several other significant
-functions and classes which deserve a mention here. For a full listing, see the reference manual.
+functions and classes which are commonly used, which will be illustrated using another example
 
-\subsubsection{Printing messages/warnings}
+\begin{lstlisting}
+Field3D 
+int physics_init(bool restarting) {
+  
+}
+
+int physics_run(BoutReal t) {
+  
+}
+\end{lstlisting}
+
+\subsection{Printing messages/warnings}
 \label{sec:printing}
 
 In order to print to screen and/or a log file, the object \code{output} is provided. 
@@ -1980,7 +2139,7 @@ written to the output will be written to screen (stdout), in addition to the log
 Unless there is a really good reason not to, please use this \code{output} object 
 when writing text output.
 
-\subsubsection{Laplacian inversion}
+\subsection{Laplacian inversion}
 
 Quite a common problem in plasma simulation codes is to invert an equation of the form
 \[
@@ -2001,7 +2160,7 @@ invert_laplace(b, x, flags, &a);
 \end{lstlisting}
 where \code{b} and \code{x} are 3D fields, and \code{a} is a pointer to a 2D field (which may be
 NULL). \code{flags} is an \code{int} which determines boundary conditions and other options.
-Its value is calculated by adding the settings given in \code{invert\_laplace.h}, and reproduced in
+Its value is calculated by adding the settings given in \code{invert\_laplace.hxx}, and reproduced in
 table~\ref{tab:laplaceflags}.
 \begin{table}[htbp!]
 \caption{Laplacian inversion flags: add the required quantities together.}
@@ -2029,7 +2188,7 @@ Flag & Meaning \\
 \end{tabular}
 \end{table}
 
-\subsubsection{Error handling}
+\subsection{Error handling}
 
 Finding where bugs have occurred in a (fairly large) parallel code is a difficult problem.
 This is more of a concern for developers of BOUT++ (see the developers manual), but it is still
@@ -2070,6 +2229,7 @@ differencing methods (such as 4th-order central differencing), and differential 
 (such as $\nabla_{||}$).
 
 \subsection{Differencing methods}
+\label{sec:diffmethod}
 
 Methods are implemented on 5-point stencils, and are divided into three categories:
 \begin{itemize}
@@ -2208,35 +2368,46 @@ centre, lower X, lower Y, and lower Z. These are illustrated in figure~\ref{fig:
 \section{Examples}
 \label{sec:examples}
 
-\subsection{Linear device}
+The code and input files in the \texttt{examples/} subdirectory are for research, demonstrating BOUT++, 
+and to check for broken functionality. Some proper unit tests have been implemented, but this
+is something which needs improving. The examples which were published in \cite{Dudson2009,dudson-2008-arxiv}
+were \texttt{drift-instability}, \texttt{interchange-instability} and \texttt{orszag-tang}.
 
-This test-case is a simplified simulation of turbulence in a linear plasma device. 
 
-\subsection{2-Fluid Braginskii}
+\subsection{advect1d}
 
-The physics code \texttt{2fluid.cpp} implements a set of reduced Braginskii 2-fluid equations,
+The model in \texttt{gas\_compress.cxx} solves the compressible gas dynamics equations for
+the density $n$, velocity $\mathbf{V}$, and pressure $P$:
+
+\subsection{drift-instability}
+
+The physics code \texttt{2fluid.cxx} implements a set of reduced Braginskii 2-fluid equations,
 similar to those solved by the original BOUT code.
 This evolves 6 variables: Density, electron and ion temperatures, parallel ion velocity,
 parallel current density and vorticity.
 
 Input grid files are the same as the original BOUT code, but the output format is different.
 
-\subsection{Reduced MHD}
+\subsection{em-drift}
 
-The file \texttt{highbeta\_reduced.cpp} solves for a reduced single-fluid MHD similar to that
-derived in \cite{hazeltine-2003} (flute-reduced, page 282), used for linear ELM modelling.
-A separate document \texttt{elm\_reduced.pdf} in this manual directory derives and explains
-the model and coordinate system used.
+\subsection{gyro-gem}
 
-\subsection{Compressible Fluid}
+\subsection{interchange-instability}
 
-The model in \texttt{gas\_compress.cpp} solves the compressible gas dynamics equations for
-the density $n$, velocity $\mathbf{V}$, and pressure $P$:
+\subsection{jorek-compare}
 
-\subsection{MHD}
+\subsection{lapd-drift}
 
-The file \texttt{mhd.cpp} solves the full MHD equations for the full values (perturbation + initial),
-whilst the file \texttt{mhd\_perturb.cpp} solves for a perturbation about the equilibrium.
+\subsection{orszag-tang}
+
+The file \texttt{mhd.cxx} solves the full MHD equations for the full values (perturbation + initial),
+whilst the file \texttt{mhd\_perturb.cxx} solves for a perturbation about the equilibrium.
+
+\subsection{shear-alfven-wave}
+
+\subsection{sod-shock}
+
+\subsection{uedge-benchmark}
 
 \section{Notes}
 
@@ -2531,19 +2702,19 @@ DOxygen documentation, and source code.
   \item \texttt{Vector = {\bf Grad}(Field)}
   \item \texttt{Field = {\bf Grad\_par}(Field)}
   \item \texttt{Field = {\bf Grad2\_par2}(Field)}
-  \item \texttt{{\bf grid\_load}(real, ``name'')} \\
+  \item \texttt{{\bf grid\_load}(BoutReal, ``name'')} \\
     Load a scalar real from the grid file
   \item \texttt{{\bf grid\_load2d}(Field2D, ``name'')} \\
     Load a 2D scalar field from the grid file
   \item \texttt{{\bf grid\_load3d}(Field3D, ``name'')} \\
     Load a 3D scalar field from the grid file
   \item \texttt{{\bf invert\_laplace}(Field input, Field output, flags, Field2D *A)}
-  \item \texttt{Field = {\bf invert\_parderiv}(Field2D|real A, Field2D|real B, Field3D r)} \\
+  \item \texttt{Field = {\bf invert\_parderiv}(Field2D|BoutReal A, Field2D|BoutReal B, Field3D r)} \\
     Inverts an equation  \code{A*x + B*Grad2\_par2(x) = r}
   \item \texttt{Field = {\bf Laplacian}(Field)}
   \item \texttt{Field3D = {\bf low\_pass}(Field3D, max\_modenr)}
-  \item \texttt{real = {\bf max}(Field)}
-  \item \texttt{real = {\bf min}(Field)}
+  \item \texttt{BoutReal = {\bf max}(Field)}
+  \item \texttt{BoutReal = {\bf min}(Field)}
   \item \texttt{{\bf msg\_stack.pop}( |int)} \\
     Remove a message from the top of the stack. If a message ID is passed,
     removes all messages back to that point.
@@ -2580,16 +2751,48 @@ DOxygen documentation, and source code.
   \item \texttt{Vector = {\bf V\_dot\_Grad}(Vector v, Vector u)} \\
     Advection term $\mathbf{v}\cdot\nabla\mathbf{u}$
   \item \texttt{Field = {\bf Vpar\_Grad\_par}(Field v, Field f)}
-  \item \texttt{Field3D = {\bf where}(Field2D test, Field|real gt0, Field|real lt0)} \\
+  \item \texttt{Field3D = {\bf where}(Field2D test, Field|BoutReal gt0, Field|BoutReal lt0)} \\
     Chooses between two values, depending on sign of \code{test}.
 \end{itemize}
 
-\section{IDL routines (alphabetical)}
+\section{IDL routines}
 \label{apx:idl_routines}
 
-List of IDL routines available in idllib
+List of IDL routines available in idllib. There are broadly three categories
+of routine:
+\begin{itemize}
+\item Completely general routines which could be useful outside BOUT++ work
+  \begin{itemize}
+  \item Data plotting and animation: {\bf contour2} and {\bf showdata}
+  \item File reading and writing: {\bf file\_open}, {\bf file\_read} etc.
+  \item User input and output: {\bf get\_float}, {\bf get\_integer}, {\bf get\_yesno} and {\bf str}
+  \item FFT routines for integrating, differentiating and filtering: {\bf fft\_integrate}, {\bf fft\_deriv}, {\bf fft\_filter} 
+  \end{itemize}
+\item Routines for BOUT++, but not specific to any application
+  \begin{itemize}
+  \item Modifying restart files: {\bf expand\_restarts}, {\bf scale\_restarts} and {\bf split\_restarts}
+  \item Processing 3D variables for input grid: {\bf bout3dvar}
+  \end{itemize}
+\item Routines specifically for tokamak simulations
+  \begin{itemize}
+  \item Reading A- and G-EQDSK format files into IDL: {\bf read\_aeqdsk} and {\bf read\_neqdsk}
+  \item Plotting results: {\bf polslice}, {\bf plotpolslice}
+  \end{itemize}
+\end{itemize}
+
+Here the format is
+
+{\bf name}, arguments, [optional arguments]
 
 \begin{itemize}
+\item var = {\bf bout3dvar} ( var ) \\
+  Converts 3D variables to and from BOUT++'s Fourier representation
+  which is used for input grids. By default converts from [x,y,z] to [x,y,f]
+  \begin{itemize}
+  \item {\bf /reverse}  Convert from [x,y,f] to [x,y,z]
+  \item {\bf nf}=nf Set number of frequencies in the result
+  \item {\bf nz}=nz When using /reverse, set number of Z points in the result
+  \end{itemize}
 \item var = {\bf collect}() \\
   Read in data from a set of BOUT++ dump files
   \begin{itemize}
@@ -2598,9 +2801,41 @@ List of IDL routines available in idllib
     \item {\bf xind}, {\bf yind}, {\bf zind}, {\bf tind}  = [min, max] index pairs
     \item {\bf t\_array} = Output 1D array of times
   \end{itemize}
-\item {\bf contour2}
-\item result = {\bf fft\_deriv} ( var1d )
+\item {\bf contour2}, data [, x, y] \\
+  This is a replacement for the IDL contour which includes
+  a scale color bar.
+  \begin{itemize}
+  \item {\bf data} can be either 2D (x,y) or 3D (x,y,t). If data
+    is 3D then the color is scaled to the entire range.
+  \item {\bf x} is an optional 2D (x,y) array of X coordinates
+  \item {\bf y} is an optional 2D (x,y) array of Y coordinates
+  \item {\bf t}=t is a time index for 3D data
+  \item {\bf nlev}=nlev
+  \item {\bf centre}=centre  Make zero the middle of the color
+    range (white if redblue)
+  \item {\bf redblue}=redblue  Use a blue-white-red color scheme
+  \item {\bf revcolor}=revcolor  Reverse color scheme
+  \end{itemize}
+\item {\bf expand\_restarts}, newz \\
+  Increases the number of Z points in restart files. Together with
+  scale\_restarts and split\_restarts, this makes it easier to modify a
+  linear simulation as a start for nonlinear runs.
+  \begin{itemize}
+  \item {\bf newz} is the new value of NZ
+  \item {\bf path}=path      Input path
+  \item {\bf output}=output  Output path
+  \item {\bf format}=format  File extension of output
+  \end{itemize}
+\item result = {\bf fft\_deriv} ( var1d ) \\
+  Calculates the derivative of a variable on a periodic domain.
+\item result = {\bf fft\_filter} (var, nf)
+  Fourier filter a variable on a periodic domain. Arguments are a
+  1D variable and the number of Fourier components to keep
 \item result = {\bf fft\_integrate} ( var1d )
+  Integrates a variable on a periodic domain.
+  \begin{itemize}
+  \item {\bf loop}=loop  The loop integral is returned in this variable
+  \end{itemize}
 \item {\bf file\_close}, handle \\
   Close a file opened using file\_open()
 \item list = {\bf file\_list} ( handle ) \\
@@ -2623,12 +2858,123 @@ List of IDL routines available in idllib
   Ask the user for an integer
 \item integer = {\bf get\_yesno} ( ``prompt'' ) \\
   Ask for a yes (1) or no (0) answer
-\item {\bf gmres}
-\item {\bf int\_func}
-\item {\bf is\_pow2}
-\item {\bf reverse\_inds}
-\item {\bf safe\_colors}
-\item {\bf showdata}
+\item result = {\bf gmres} ( x0, operator, b ) \\
+  General Minimal Residual (GMRES)
+   \begin{itemize}
+    \item {\bf x0} is the starting guess at the solution
+    \item {\bf operator} 
+    \item {\bf b}
+   \end{itemize}
+   Optional arguments
+   \begin{itemize}
+   \item {\bf restart}=restart 
+   \item {\bf max\_iter}=max\_iter
+   \item {\bf tol}=tol
+   \item {\bf stats}=stats
+   \item {\bf show}=show
+   \item {\bf output}=output
+   \end{itemize}
+\item result = {\bf int\_func} ( [x,] f ) \\
+  Integrate a function, always using the maximum
+  number of grid-points possible for highest accuracy
+\item bool = {\bf is\_pow2} ( value ) \\
+  Returns 1 (true) if the given number is a power of 2, 0 (false) otherwise
+\item {\bf plotpolslice}, var3d, grid \\
+  Takes a slice through a field-aligned tokamak domain, showing a poloidal cross-section.
+  \begin{itemize}
+  \item {\bf var3d} is a 3D (x,y,z) variable to plot. Needs all of the points to work properly.
+  \item {\bf grid} is a structure from importing a grid file
+  \end{itemize}
+  Optional arguments:
+  \begin{itemize}
+  \item {\bf period}=period
+  \item {\bf zangle}=zangle
+  \item {\bf nlev}=nlev
+  \item {\bf yr}=yr
+  \item {\bf profile}=profile
+  \item {\bf output}=output
+  \item {\bf lines}=lines
+  \item {\bf linecol}=linecol
+  \item {\bf filter}=filter
+  \end{itemize}
+\item {\bf polslice}, data, gridfile \\
+  Plots a 2D poloidal contour for single or double-null configurations, including color bar.
+  \begin{itemize}
+    \item {\bf xstart}=xstart  X index where the data begins. Useful if only part of the domain has been collected
+    \item {\bf ystart}=ystart  Y index where data begins
+  \end{itemize}
+\item struct = {\bf read\_aeqdsk} ( "filename" ) \\
+  Reads an A-EQDSK file. Format is specified here: 
+  \url{https://fusion.gat.com/THEORY/efit/a_eqdsk.html}
+\item struct = {\bf read\_neqdsk} ( "filename" ) \\
+  Reads in an 'neqdsk' or G-EQDSK formatted tokamak equilibrium file.
+  Format of G-EQDSK file is specified here:
+  \url{https://fusion.gat.com/THEORY/efit/g_eqdsk.html}
+\item stringarray = {\bf regex\_extract} ( line, pattern ) \\
+  Extract all matches to Regular Expression pattern contained in line. 
+  Useful for extracting numbers from FORTRAN-formatted text files.
+  \begin{itemize}
+  \item {\bf line} Input string
+  \item {\bf pattern} Regular expression pattern to match 
+  \item {\bf nmatch}=nmatch
+  \end{itemize}
+\item var = {\bf reverse\_inds} ( var ) \\
+  Reverse array indices e.g. \code{arr[t,z,y,x] -> arr[x,y,z,t]}. Works on up to 5 dimensional variables
+\item {\bf safe\_colors} \\
+  Sets the color table to useful values for plotting.
+  \begin{itemize}
+  \item {\bf /first}   Sets the first 10 colors to specific values, otherwise sets last 7
+  \end{itemize}
+\item {\bf scale\_restarts}, factor
+  \begin{itemize}
+  \item {\bf path}=path  Path to the restart files (default is current directory '.')
+  \item {\bf format}=format  Specify what the file format is, otherwise goes on the file name
+  \end{itemize}
+\item {\bf showdata}, data \\
+  Display animations of 1D,2D and 3D data. Defaults:
+  \begin{itemize}
+  \item 2D data   Animate a line plot
+  \item 3D data   Animate a surface plot
+  \item 4D data   Animate a poloidal cross-section (tokamaks only)
+  \end{itemize}
+  Optional arguments:
+  \begin{itemize}
+  \item {\bf /addsym}   For 2D data (1D plots), add symbols to mark data points
+  \item {\bf az}=angle       Rotate surface plots
+  \item {\bf /bw} Make contour plots greyscale
+  \item {\bf chars}=size character size
+  \item {\bf /contour}  For 3D input, show color contour plot
+  \item {\bf delay}=time     Time delay between plots (default 0.2 seconds)
+  \item {\bf /noscale}       By default, all plots are on the same scale. 
+    This changes the scale for each plot's range
+  \item {\bf profile}=array  Background profile. Data is 3D: profile is 1D (X). 
+    Data is 4D -> profile is 2D (X,Y)
+  \item {\bf yr}=[min,max]   Y range
+  \end{itemize}
+\item result = {\bf sign} ( var ) \\
+  This returns +1 if the variable is $> 0$, -1 otherwise
+\item {\bf spectrum}
+\item {\bf split\_restarts}, [nxpe], nype \\
+  split restart files between a different number of processors
+  \begin{itemize}
+  \item {\bf nxpe} is an optional argument giving the number of
+    processors in the X direction
+  \item {\bf nype} is the number of processors in the Y direction
+  \item {\bf path}=path      Input path
+  \item {\bf output}=output  Output path
+  \item {\bf format}=format  File extension of output
+  \end{itemize}
+\item string = {\bf str} ( value ) \\
+  Convert a value to a string with whitespace trimmed. Arrays are
+  converted to a comma-separated list in brackets.
+\item result = {\bf zfamp} ( var4d )\\
+  Given a 4D variable [x,y,z,t], returns the Fourier amplitudes in [x,y,f,t]
+\item var = {\bf zshift} ( var, shift ) \\
+  Shifts a variable in the Z direction, useful for mapping between field-aligned and orthogonal
+  coordinates. 
+  \begin{itemize}
+  \item {\bf period}=period  How many domains fit in $2\pi$. Default is 1 (full torus)
+  \end{itemize}
 \end{itemize}
 
 \section{Python routines (alphabetical)}
