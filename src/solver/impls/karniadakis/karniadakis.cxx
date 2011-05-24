@@ -139,8 +139,9 @@ int KarniadakisSolver::run(MonitorFunc monitor)
       Sm1 = S0;
       S0 = tmp;
       
-      time += timestep;
+      simtime += timestep;
     }
+    iteration++;
     
     /// Write the restart file
     restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
@@ -151,7 +152,7 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     
     /// Call the monitor function
     
-    if(monitor(time, i, nsteps)) {
+    if(monitor(simtime, i, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file
@@ -172,13 +173,12 @@ int KarniadakisSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-
 void KarniadakisSolver::take_step(BoutReal dt)
 {
   // S0 = S(f0)
   
   load_vars(f0);
-  run_convective(time);
+  run_convective(simtime);
   save_derivs(S0);
   
   if(first_time) {
@@ -196,7 +196,7 @@ void KarniadakisSolver::take_step(BoutReal dt)
   
   // D0 = S(f0)
   load_vars(f0);
-  run_diffusive(time);
+  run_diffusive(simtime);
   save_derivs(D0);
   
   // f1 = f1 + dt*D0
