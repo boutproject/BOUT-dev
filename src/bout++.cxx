@@ -131,7 +131,7 @@ int bout_init(int argc, char **argv)
     if(strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if(i+1 >= argc) {
-	output.write("Useage is %s -d <data directory>\n");
+	fprintf(stderr, "Useage is %s -d <data directory>\n", argv[0]);
 	return 1;
       }
       i++;
@@ -140,48 +140,19 @@ int bout_init(int argc, char **argv)
     if(strncasecmp(argv[i], "-f", 2) == 0) {
       // Set data directory
       if(i+1 >= argc) {
-        output.write("Useage is %s -f <options filename>\n");
+        fprintf(stderr, "Useage is %s -f <options filename>\n", argv[0]);
         return 1;
       }
       i++;
       opt_file = argv[i];
     }
   }
-  //
-  /// Get the options tree
-  Options *options = Options::getRoot();
-
-  try {
-      /// Load settings file
-    OptionsReader *reader = OptionsReader::getInstance();
-    reader->read(options, "%s/%s", data_dir, opt_file);
-    
-    // Get options override from command-line
-    reader->parseCommandLine(options, argc, argv);
-  }catch(BoutException *e) {
-    output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
-    return 1;
-  }
   
-  /// Start MPI
-  //Dirty, dirty hack
-#ifdef BOUT_HAS_PETSC
-  SolverType type("");
-  string solver_option;
-  Options *solver_options = options->getSection("solver");
-  solver_options->get("type", solver_option, "", false);
-  if(!solver_option.empty()) type = solver_option.c_str();
-  if(!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC)))
-    PetscInitialize(&argc,&argv,"../petscopt",help);
-  else if(!BoutComm::getInstance()->isSet())
-    MPI_Init(&argc,&argv);
-#else
-  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
-  // but might need to revisit if that isn't the case
+  // If no communicator is supplied, initialise MPI
   if(!BoutComm::getInstance()->isSet())
     MPI_Init(&argc,&argv);
-#endif
+  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
+  // but might need to revisit if that isn't the case
 
   int NPES, MYPE;
   MPI_Comm_size(BoutComm::get(), &NPES);
@@ -208,6 +179,8 @@ int bout_init(int argc, char **argv)
   output.write("Code compiled on %s at %s\n\n", __DATE__, __TIME__);
   output.write("B.Dudson (University of York), M.Umansky (LLNL) 2007\n");
   output.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
+
+  output.write("Processor number: %d of %d\n\n", MYPE, NPES);
 
   /// Print compile-time options
 
@@ -240,10 +213,36 @@ int bout_init(int argc, char **argv)
 #ifdef METRIC3D
   output.write("\tRUNNING IN 3D-METRIC MODE\n");
 #endif
+  
+  /// Get the options tree
+  Options *options = Options::getRoot();
 
   try {
-
-    output.write("Processor number: %d of %d\n\n", MYPE, NPES);
+      /// Load settings file
+    OptionsReader *reader = OptionsReader::getInstance();
+    reader->read(options, "%s/%s", data_dir, opt_file);
+    
+    // Get options override from command-line
+    reader->parseCommandLine(options, argc, argv);
+  }catch(BoutException *e) {
+    output << "Error encountered during initialisation\n";
+    output << e->what() << endl;
+    return 1;
+  }
+  
+  /// Start MPI
+  //Dirty, dirty hack
+#ifdef BOUT_HAS_PETSC
+  SolverType type("");
+  string solver_option;
+  Options *solver_options = options->getSection("solver");
+  solver_options->get("type", solver_option, "", false);
+  if(!solver_option.empty()) type = solver_option.c_str();
+  if(!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC)))
+    PetscInitialize(&argc,&argv,"../petscopt",help);
+#endif
+  
+  try {
 
     /////////////////////////////////////////////
     /// Get some settings
