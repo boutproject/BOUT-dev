@@ -250,6 +250,18 @@ const Field3D Div_par_LtoC(const Field3D &var)
   return result;
 }
 
+const Field3D Div_par_CtoL(const Field2D &var)
+{
+  Field3D result = mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
+  return result;
+}
+
+const Field3D Div_par_CtoL(const Field3D &var)
+{
+  Field3D result = mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
+  return result;
+}
+
 /*******************************************************************************
  * Grad2_par2
  * second parallel derivative

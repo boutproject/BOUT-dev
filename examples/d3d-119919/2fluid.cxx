@@ -95,12 +95,6 @@ int phi_flags, apar_flags; // Inversion flags
 // Group of objects for communications
 FieldGroup comms;
 
-// BOUT-06 L1
-const Field3D Div_par_CtoL(const Field3D &var)
-{
-  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
-}
-
 int physics_init(bool restarting)
 {
   Field2D I; // Shear factor 
