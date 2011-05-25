@@ -51,8 +51,13 @@ BoutReal Tnorm, rhonorm; // Partial normalisation to rho and MU0. Temperature no
 bool nonlinear;
 bool full_bfield;   // If true, use divergence-free expression for B
 bool flux_method;   // Use flux methods in rho and T equations
-bool full_v_method; // Calculate full velocity equation
 int  jpar_bndry_width; // Set jpar = 0 in a boundary region
+
+bool electron_density; // Solve Ne rather than Ni (adds Jpar term to density)
+
+bool vorticity_momentum; // Vorticity is curl of momentum, rather than velocity
+
+bool include_profiles; // Include zero-order equilibrium terms
 
 Vector3D vExB, vD; // Velocities
 Field3D divExB;    // Divergence of ExB flow
@@ -174,9 +179,12 @@ int physics_init(bool restarting) {
   OPTION(options, nonlinear,           false);
   OPTION(options, full_bfield,         false);
   OPTION(options, flux_method,         false);
-  OPTION(options, full_v_method,       false);
   
   OPTION(options, jpar_bndry_width,    -1);
+
+  OPTION(options, electron_density,    false);
+  OPTION(options, vorticity_momentum,  false);
+  OPTION(options, include_profiles,    false);
 
   OPTION(options, Wei, 1.0);
   
@@ -339,7 +347,14 @@ int physics_run(BoutReal t) {
   int sp = msg_stack.push("Started physics_run(%e)", t);
   
   // Invert laplacian for phi
-  phi = invert_laplace(B0*U, phi_flags, NULL);
+  if(vorticity_momentum) {
+    // Vorticity is b dot curl(rho * v)
+    Field2D rprof = rho0 + rho.DC(); // Axisymmetric rho only
+    phi = invert_laplace(B0*U/rho, phi_flags, NULL, &rprof);
+  }else {
+    // Vorticity is b dot curl(v)
+    phi = invert_laplace(B0*U, phi_flags);
+  }
   // Apply a boundary condition on phi for target plates
   phi.applyBoundary();
   
@@ -447,6 +462,11 @@ int physics_run(BoutReal t) {
       + D_perp * Delp2(rho)            // Perpendicular diffusion
       ;
     
+    if(electron_density) {
+      // Using electron parallel velocity rather than ion
+      ddt(rho) += (Mi/(Charge*sqrt(MU0*rhonorm)))* Div_par_LtoC(Jpar);
+    }
+    
     msg_stack.pop();
     
     msg_stack.push("Te");
@@ -482,26 +502,58 @@ int physics_run(BoutReal t) {
     }
   }
   
-  if(full_v_method) {
-    vExB = (B0vec ^ Grad_perp(phi))/(B0*B0);
+  ////////// Vorticity equation ////////////
     
-    ddt(vExB) = (-Grad(P))/rho;
+  msg_stack.push("Vorticity");
+  if(vorticity_momentum) {
+    // Vorticity is b dot curl(rho * v)
     
-    // Use this to calculate a vorticity and parallel velocity
-    ddt(U) = B0vec * Curl(ddt(vExB));
-    ddt(Vpar) = B0vec * ddt(vExB);
+    ddt(U) = 
+      (B0^2)*Grad_par_LtoC(Jpar/B0)  // b0 dot J
+      + 2.*b0xcv*Grad(P)
+      - rhot*(divExB + Div_par_LtoC(Vpar)) * Delp2(phi)/B0   // drho/dt term
+      ;
+
+    // b dot J0
+    if(full_bfield) {
+      Vector3D Btilde = Curl(B0vec * Apar / B0);
+      ddt(U) += B0*Btilde * Grad(J0/B0);
+    }else {
+      ddt(U) -= B0 * b0xGrad_dot_Grad(Apar, J0/B0, CELL_CENTRE);
+    }
+    
+    if(electron_density) {
+      // drho/dt jpar term
+      ddt(U) += (Mi/(Charge*sqrt(MU0*rhonorm)))* rhot*Div_par_LtoC(Jpar/rhot) * Delp2(phi)/B0;
+    }
+    
+    if(include_profiles) {
+      ddt(U) +=
+        (B0^2)*Grad_par_LtoC(J0/B0) // b0 dot J0
+        + 2.*b0xcv*Grad(P0)
+        ;
+    }
+    
+    if(nonlinear) {
+      ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
+      ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
+      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0);  // b dot Grad J
+    }
+
+    // Viscosity terms
+    if(viscos_par > 0.0)
+      ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
+    
+    if(viscos_perp > 0.0)
+      ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
+    
   }else {
-    // Split into vorticity and parallel velocity equations analytically
-    
-    ////////// Vorticity equation ////////////
-    
-    msg_stack.push("Vorticity");
+    // Vorticity is b dot curl(v)
     ddt(U) = (
-	      //(B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE) // (b0+b) dot Grad(J)
               (B0^2)*Grad_par_LtoC(Jpar/B0)
-	      + 2.*b0xcv*Grad(P)  // curvature term
-	      ) / rhot;
-    
+              + 2.*b0xcv*Grad(P)  // curvature term
+              ) / rhot;
+  
     // b dot J0
     if(full_bfield) {
       Vector3D Btilde = Curl(B0vec * Apar / B0);
@@ -509,36 +561,42 @@ int physics_run(BoutReal t) {
     }else {
       ddt(U) -= B0 * b0xGrad_dot_Grad(Apar, J0/B0, CELL_CENTRE) / rhot;
     }
+  
+    if(include_profiles) {
+      ddt(U) += (
+                 (B0^2)*Grad_par_LtoC(J0/B0) // b0 dot J0
+                 + 2.*b0xcv*Grad(P0)
+                 ) / rhot;
+    }
 
     if(nonlinear) {
       ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
-      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0);
-      ddt(U) -= Vpar_Grad_par(Vpar, U); // Parallel advection
+      ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
+      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0) / rhot;  // b dot Grad J
     }
-    
+  
     // Viscosity terms
     if(viscos_par > 0.0)
       ddt(U) += viscos_par * Grad2_par2(U) / rhot; // Parallel viscosity
     
     if(viscos_perp > 0.0)
       ddt(U) += viscos_perp * Delp2(U) / rhot;     // Perpendicular viscosity
-    
-    
-    msg_stack.pop();
-
-    ////////// Parallel velocity equation ////////////
-    
-    msg_stack.push("Vpar");
-    
-    //ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
-    ddt(Vpar) = -Grad_par_CtoL(P) + b0xGrad_dot_Grad(Apar, P0) / B0;
-    if(nonlinear) {
-      ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
-      ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
-    }
-    
-    msg_stack.pop();
   }
+    
+  msg_stack.pop();
+
+  ////////// Parallel velocity equation ////////////
+    
+  msg_stack.push("Vpar");
+    
+  //ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
+  ddt(Vpar) = -Grad_par_CtoL(P) + b0xGrad_dot_Grad(Apar, P0) / B0;
+  if(nonlinear) {
+    ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
+    ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
+  }
+    
+  msg_stack.pop();
 
   ////////// Magnetic potential equation ////////////
   
