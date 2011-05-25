@@ -73,7 +73,6 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar
   gparj = -kp * data.hthe / (data.Bxy * data.Bpxy)
   ps = data.Bxy * int_y(gparj, data, /nosmooth) * data.dy
   
-  STOP
   
   ; In core region add divergence-free parallel current to match input at
   ; outboard midplane
