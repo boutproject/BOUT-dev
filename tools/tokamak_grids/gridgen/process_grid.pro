@@ -445,7 +445,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   m = MAX(Rxy[0,*],ind)
   REPEAT BEGIN
-    STOP
     !P.multi=[0,0,2,0,0]
     PLOT, pressure[*,ind], xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ind),2), color=1
     PLOT, DERIV(pressure[*,ind]), xtitle="X index", ytitle="DERIV(pressure)", color=1
@@ -805,8 +804,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
-    nxc = FIX(nx / 5)
-    
     thetaxy = FLTARR(nx, ny)
     status = gen_surface(mesh=mesh) ; Start generator
     REPEAT BEGIN
@@ -814,15 +811,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       yi = gen_surface(period=period, last=last, xi=xi)
       thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
-
-    IF nxc LT nx THEN BEGIN
-      ; Use a coarser mesh to calculate curvature
-      
-      xinds = ROUND( findgen(nxc)/FLOAT(nxc-1) * (nx-1))
-    ENDIF ELSE BEGIN
-      nxc = nx
-      
-    ENDELSE
     
     brxy = -mesh.dpsidZ / Rxy
     bzxy = mesh.dpsidR / Rxy
