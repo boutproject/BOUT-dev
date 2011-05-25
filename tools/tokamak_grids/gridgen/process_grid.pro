@@ -38,63 +38,6 @@ FUNCTION surface_average, var, mesh
 END
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Derivatives in X and Y
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-; calculates x (psi) derivative for 2D variable
-FUNCTION ddx, psi, var
-  s = SIZE(var, /dimensions)
-  nx = s[0]
-  ny = s[1]
-
-  dv = DBLARR(nx, ny)
-  FOR i=0, ny-1 DO dv[*,i] = DERIV(psi[*,i], var[*,i])
-
-  RETURN, dv
-END
-
-; Take derivative in y, taking into account branch-cuts
-FUNCTION ddy, var, mesh
-  f = var
-
-  dtheta = 2.*!PI / FLOAT(TOTAL(mesh.npol))
-
-  status = gen_surface(mesh=mesh) ; Start generator
-  REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
-    IF period THEN BEGIN
-       f[xi,yi] = fft_deriv(var[xi,yi])
-    ENDIF ELSE f[xi,yi] = DERIV(var[xi,yi])
-  ENDREP UNTIL last
-  RETURN, f / dtheta
-END
-
-; Integrate a function over y
-FUNCTION int_y, var, mesh, loop=loop
-  f = var
-  
-  s = SIZE(var, /dim)
-  nx = s[0]
-  loop = FLTARR(nx)
-  
-  status = gen_surface(mesh=mesh) ; Start generator
-  REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
-    
-    ;IF period THEN BEGIN
-    ;  ; Periodic - use FFT
-    ;  f[xi,yi] = REAL_PART(fft_integrate(var[xi,yi], loop=lo))
-    ;  loop[xi] = lo
-    ;ENDIF ELSE BEGIN
-      f[xi,yi] = SMOOTH(SMOOTH(int_func(var[xi,yi]), 5, /edge), 5, /edge)
-      loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
-    ;ENDELSE
-  ENDREP UNTIL last
-  
-  RETURN, f
-END
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Calculate f = R * Bt
 ; Using LSODE method
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -502,6 +445,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   m = MAX(Rxy[0,*],ind)
   REPEAT BEGIN
+    STOP
     !P.multi=[0,0,2,0,0]
     PLOT, pressure[*,ind], xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ind),2), color=1
     PLOT, DERIV(pressure[*,ind]), xtitle="X index", ytitle="DERIV(pressure)", color=1
@@ -861,6 +805,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
+    nxc = FIX(nx / 5)
+    
     thetaxy = FLTARR(nx, ny)
     status = gen_surface(mesh=mesh) ; Start generator
     REPEAT BEGIN
@@ -868,6 +814,15 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       yi = gen_surface(period=period, last=last, xi=xi)
       thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
+
+    IF nxc LT nx THEN BEGIN
+      ; Use a coarser mesh to calculate curvature
+      
+      xinds = ROUND( findgen(nxc)/FLOAT(nxc-1) * (nx-1))
+    ENDIF ELSE BEGIN
+      nxc = nx
+      
+    ENDELSE
     
     brxy = -mesh.dpsidZ / Rxy
     bzxy = mesh.dpsidR / Rxy
