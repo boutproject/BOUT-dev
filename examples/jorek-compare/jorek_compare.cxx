@@ -438,11 +438,12 @@ int physics_run(BoutReal t) {
     divExB = b0xcv*Grad(phi)/B0 - b0xGrad_dot_Grad(1./B0, phi);
     msg_stack.pop();
     
-    
     msg_stack.push("density");
     ddt(rho) = 
       - b0xGrad_dot_Grad(phi, rhot)/B0 // ExB advection 
       - divExB*rhot                    // Divergence of ExB (compression)
+      - Vpar_Grad_par(Vpar, rho)       // Parallel advection
+      - rhot*Div_par_LtoC(Vpar)        // Parallel compression
       + D_perp * Delp2(rho)            // Perpendicular diffusion
       ;
     
@@ -450,9 +451,9 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Te");
     ddt(Te) = 
-      -b0xGrad_dot_Grad(phi, Tet)/B0 // ExB advection
-      - (2./3.)*Tet*divExB           // Divergence of ExB
-      + Div_par_K_Grad_par(chi_epar, Te) / rhot  // Parallel diffusion
+      -b0xGrad_dot_Grad(phi, Tet)/B0 - Vpar_Grad_par(Vpar, Tet) // advection
+      - (2./3.)*Tet*(divExB  + Div_par_LtoC(Vpar)) // Divergence of flow
+      + Div_par_K_Grad_par(chi_epar, Te) / rhot    // Parallel diffusion
       + chi_eperp*Delp2(Te) / rhot   // Perpendicular diffusion
       ;
     
@@ -463,8 +464,8 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Ti");
     ddt(Ti) = 
-      -b0xGrad_dot_Grad(phi, Tit)/B0 
-      - (2./3.)*Tit*divExB
+      -b0xGrad_dot_Grad(phi, Tit)/B0 - Vpar_Grad_par(Vpar, Tit)
+      - (2./3.)*Tit*(divExB + Div_par_LtoC(Vpar))
       + Div_par_K_Grad_par(chi_ipar, Ti) / rhot
       + chi_iperp*Delp2(Ti) / rhot
       ;
@@ -496,7 +497,8 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Vorticity");
     ddt(U) = (
-	      (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE) // (b0+b) dot Grad(J)
+	      //(B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE) // (b0+b) dot Grad(J)
+              (B0^2)*Grad_par_LtoC(Jpar/B0)
 	      + 2.*b0xcv*Grad(P)  // curvature term
 	      ) / rhot;
     
@@ -510,6 +512,8 @@ int physics_run(BoutReal t) {
 
     if(nonlinear) {
       ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
+      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0);
+      ddt(U) -= Vpar_Grad_par(Vpar, U); // Parallel advection
     }
     
     // Viscosity terms
@@ -526,9 +530,12 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Vpar");
     
-    ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
-    if(nonlinear)
+    //ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
+    ddt(Vpar) = -Grad_par_CtoL(P) + b0xGrad_dot_Grad(Apar, P0) / B0;
+    if(nonlinear) {
       ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
+      ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
+    }
     
     msg_stack.pop();
   }
@@ -536,8 +543,13 @@ int physics_run(BoutReal t) {
   ////////// Magnetic potential equation ////////////
   
   msg_stack.push("Apar");
-  ddt(Apar) = -Grad_parP(phi, CELL_CENTRE) - eta*Jpar;
-  
+  ddt(Apar) = 
+            // -Grad_parP(phi, CELL_CENTRE)
+             -Grad_par_CtoL(phi)
+             - eta*Jpar;
+  if(nonlinear)
+    ddt(Apar) += b0xGrad_dot_Grad(Apar, phi) / B0;
+
   msg_stack.pop(sp);
   return 0;
 }
