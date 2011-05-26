@@ -75,9 +75,9 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar
   
   
   ; In core region add divergence-free parallel current to match input at
-  ; outboard midplane
+  ; inboard midplane. Using inboard as if the outboard is matched then
+  ; unphysical overshoots in jpar can result on the inboard side
   
-
   ; Need to make sure this bootstrap current is always in the same
   ; direction 
   dj = data.jpar0[*,mid_ind] - ps[*,mid_ind]
