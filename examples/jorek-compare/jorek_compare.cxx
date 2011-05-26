@@ -349,8 +349,10 @@ int physics_run(BoutReal t) {
   // Invert laplacian for phi
   if(vorticity_momentum) {
     // Vorticity is b dot curl(rho * v)
-    Field2D rprof = rho0 + rho.DC(); // Axisymmetric rho only
-    phi = invert_laplace(B0*U/rho, phi_flags, NULL, &rprof);
+    Field2D rprof = rho0;
+    if(nonlinear)
+      rprof += rho.DC(); // Axisymmetric rho only
+    phi = invert_laplace(B0*U/rprof, phi_flags, NULL, &rprof);
   }else {
     // Vorticity is b dot curl(v)
     phi = invert_laplace(B0*U, phi_flags);
@@ -361,6 +363,7 @@ int physics_run(BoutReal t) {
   // Communicate variables
   mesh->communicate(comms);
   
+
   // Get J from Psi
   Jpar = -Delp2(Apar);
   Jpar.applyBoundary();
