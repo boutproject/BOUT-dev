@@ -749,6 +749,8 @@ PRO hypnotoad
                                             "Field-aligned coords"], $
                                 EVENT_PRO = 'event_handler', $
                                 UVALUE="curv")
+  curv_index = 1 ; Default index
+  WIDGET_CONTROL, curv_select, set_combobox_select=curv_index
 
   checkboxbase = WIDGET_BASE(bar, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
@@ -810,7 +812,7 @@ PRO hypnotoad
            status:status_box, $
            leftbargeom:leftbargeom, $
            single_rad_grid:0, $
-           curv_ind:0 $
+           curv_ind:curv_index $
          } 
 
   ; Store this in the base UVALUE

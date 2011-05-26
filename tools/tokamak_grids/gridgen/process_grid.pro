@@ -838,28 +838,14 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; ( cylindrical coordinates)
 
     PRINT, "*** Calculating curvature in cylindrical coordinates"
-    PRINT, "    This might take some time... "
     
-    bxcv = rz_curvature(rz_grid, ny)
+    bxcv = rz_curvature(rz_grid)
     
-    ; Now interpolate onto grid points
-    DCT2Dslow, bxcv.psi, dctpsi
-    DCT2Dslow, bxcv.theta, dcttheta
-    DCT2Dslow, bxcv.phi, dctphi
-
-    bxcv_psi   = DBLARR(nx, ny)
-    bxcv_theta = DBLARR(nx, ny)
-    bxcv_phi   = DBLARR(nx, ny)
-
-    FOR x=0, nx-1 DO BEGIN
-      FOR y=0, ny-1 DO BEGIN
-        ri = mesh.Rixy[x,y]
-        zi = mesh.Zixy[x,y]
-        bxcv_psi[x,y] = (EvalCosPfast(dctpsi, x0=ri, y0=zi))[0]
-        bxcv_theta[x,y] = (EvalCosPfast(dcttheta, x0=ri, y0=zi))[0] / hthe[x,y]
-        bxcv_phi[x,y] = (EvalCosPfast(dctphi, x0=ri, y0=zi))[0]
-      ENDFOR
-    ENDFOR
+    ; DCT methods cause spurious oscillations
+    ; Linear interpolation seems to be more robust
+    bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy)
+    bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy)
+    bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy)
 
     bxcvx = bxcv_psi 
     bxcvy = bxcv_theta
