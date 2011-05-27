@@ -430,7 +430,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     yi = gen_surface(period=period, last=last, xi=xi)
     IF period THEN BEGIN
       ; Pressure only given on core surfaces
-      pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi])
+      pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi[0]], /spline)
+      ; Use monotonic cubic spline
+      ;pressure[xi,yi] = spline_mono(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]])
     ENDIF ELSE BEGIN
       pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
     ENDELSE
