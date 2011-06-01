@@ -398,7 +398,7 @@ END
 
 PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
                   gui=gui, parent=parent, reverse_bt=reverse_bt, $
-                  curv=curv
+                  curv=curv, smoothpressure=smoothpressure
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -424,19 +424,54 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   psixy = mesh.psixy*mesh.fnorm + mesh.faxis ; Non-normalised psi
 
   pressure = FLTARR(nx, ny)
-  status = gen_surface(mesh=mesh) ; Start generator
-  REPEAT BEGIN
-    ; Get the next domain
-    yi = gen_surface(period=period, last=last, xi=xi)
-    IF period THEN BEGIN
-      ; Pressure only given on core surfaces
-      pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi[0]], /spline)
-      ; Use monotonic cubic spline
-      ;pressure[xi,yi] = spline_mono(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]])
-    ENDIF ELSE BEGIN
-      pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-    ENDELSE
-  ENDREP UNTIL last
+  
+  IF KEYWORD_SET(smoothpressure) THEN BEGIN
+    ; Interpolate to produce a smooth pressure profile
+    ; with continuous derivatives. Interpolation not quite exact
+    
+    ; Find the midplane
+    ymid = 0
+    status = gen_surface(mesh=mesh) ; Start generator
+    REPEAT BEGIN
+      yi = gen_surface(period=period, last=last, xi=xi)
+      IF period THEN BEGIN
+        rm = MAX(mesh.Rxy[xi,yi], ymid)
+        BREAK
+      ENDIF
+    ENDREP UNTIL last
+    w = WHERE(mesh.psixy[*,ymid] LT 1.)
+    p2 = interp_smooth(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[w,ymid])
+    status = gen_surface(mesh=mesh) ; Start generator
+    REPEAT BEGIN
+      yi = gen_surface(period=period, last=last, xi=xi)
+      IF period THEN BEGIN
+        pressure[xi,yi] = p2[xi]
+      ENDIF ELSE BEGIN
+        pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
+      ENDELSE
+    ENDREP UNTIL last
+  ENDIF ELSE BEGIN
+    ; Interpolate to match input pressure. Exact interpolation
+    ; at input points, but result may not be so well behaved
+    
+    status = gen_surface(mesh=mesh) ; Start generator
+    REPEAT BEGIN
+      ; Get the next domain
+      yi = gen_surface(period=period, last=last, xi=xi)
+      IF period THEN BEGIN
+        ; Pressure only given on core surfaces
+        pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi[0]], /spline)
+        ; Use monotonic cubic spline
+        ;pressure[xi,yi] = spline_mono(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]])
+      ENDIF ELSE BEGIN
+        pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
+      ENDELSE
+    ENDREP UNTIL last
+  ENDELSE
+
+
+  
+  
 
   ; Add a minimum amount
   IF MIN(pressure) LT 1.0e-2*MAX(pressure) THEN BEGIN
