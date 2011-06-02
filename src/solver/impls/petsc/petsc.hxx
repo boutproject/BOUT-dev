@@ -76,7 +76,7 @@ class PetscSolver : public Solver {
  private:
   Vec           u;
   TS            ts; 
-  Mat           J;
+  Mat           J,Jmf;
   MatFDColoring matfdcoloring;
 
   int nout;   // The number of outputs
