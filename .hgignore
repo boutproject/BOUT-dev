@@ -15,6 +15,11 @@ syntax:glob
 tags
 CTAGS
 TAGS
+*.aux
+*.bbl
+*.blg
+*.pdf
+*.toc
 
 .DS_Store
 *.dSYM
