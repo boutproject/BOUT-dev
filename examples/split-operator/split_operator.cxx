@@ -45,20 +45,26 @@ int physics_init(bool restarting) {
   initial_profile("phi", phi);
   phi.applyBoundary();
   
+  // Save phi to file for reference
+  SAVE_ONCE(phi);
+
   // Just solving one variable, U
   SOLVE_FOR(U);
-  
+
   return 0;
 }
 
 int physics_run(BoutReal time) {
+  // Need communication
+  mesh->communicate(U);
+
   // Form of advection operator for reduced MHD type models
-  ddt(U) = b0xGrad_dot_Grad(phi, U);
+  ddt(U) = bracket(phi, U, BRACKET_ARAKAWA);
   
   return 0;
 }
 
 int reaction(BoutReal time) {
-  // A simple reaction operator
-  ddt(U) = rate * U*(1.-U);
+  // A simple reaction operator. No communication needed
+  ddt(U) = rate * (1.-U);
 }
