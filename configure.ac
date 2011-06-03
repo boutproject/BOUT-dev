@@ -203,15 +203,26 @@ MFILE
   if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
+    echo "Using PETSc 3.1 interface"
   elif test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    echo "Using PETSc-dev interface"
   fi
 
 else
    PETSC=
 fi
 AC_SUBST(PETSC, $PETSC)
+
+if test "$PETSC" != ""
+then
+  echo "Using PETSC_DIR = $PETSC_DIR"
+  echo "Using PETSC_ARCH = $PETSC_ARCH"
+  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
+  EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
+  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+fi
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
@@ -253,13 +264,7 @@ then
   CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
 fi
 
-if test "$PETSC" != ""
-then
-  echo "Using PETSc interface"
-  PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
-  EXTRA_INCS="$EXTRA_INCS \$(PETSC_INCLUDE)"
-  EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-fi
+
 
 #############################################################
 # FFT routines
