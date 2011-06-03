@@ -32,3 +32,4 @@ lib/
 gas_compress
 2fluid
 ue_bmark
+split_operator
