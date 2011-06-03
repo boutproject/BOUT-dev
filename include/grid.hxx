@@ -84,6 +84,7 @@ class GridFile : public GridDataSource {
 
   virtual bool setOrigin(int x = 0, int y = 0, int z = 0);
 
+  // Fetch the data. Returns true on success
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
   virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
   virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);

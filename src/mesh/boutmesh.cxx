@@ -706,6 +706,46 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   // Send an open signal to the source
   s->open(name);
   
+  // Get the size of the variable
+  vector<int> size = s->getSize(name);
+  switch(size.size()) {
+  case 1: {
+    // 0 or 1 dimension
+    if(size[0] != 1) {
+      output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
+      s->close();
+      return 1;
+    }
+    BoutReal val;
+    if(!s->fetch(&val, name)) {
+      output.write("Couldn't read 0D variable '%s'\n", name);
+      s->close();
+      return 1;
+    }
+    
+    var = val;
+    
+    // Close source
+    s->close();
+    return 0;
+  }
+  case 2: {
+    if((size[0] != nx) || (size[1] != ny)) {
+      output.write("Error: Variable '%s' has dimensions [%d,%d]. Expecting [%d,%d]\n",
+                   name, size[0], size[1], nx, ny);
+      s->close();
+      return 1;
+    }
+    break;
+  }
+  default: {
+    output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
+                 name, size.size());
+    s->close();
+    return 1;
+  }
+  }
+  
   // Read in data for bulk of points
   
   if(readgrid_2dvar(s, name,
