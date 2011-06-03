@@ -534,13 +534,13 @@ int Solver::getLocalN()
   delete xi;
   
   // X inner
-  if(mesh->firstX()) {
+  if(mesh->firstX() && !mesh->periodicX) {
     local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
-  if(mesh->lastX()) {
+  if(mesh->lastX() && !mesh->periodicX) {
     local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
     output.write("\tBoundary region outer X\n");
   }
@@ -666,7 +666,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   int MYSUB = mesh->yend - mesh->ystart + 1;
 
   // Inner X boundary
-  if(mesh->firstX()) {
+  if(mesh->firstX() && !mesh->periodicX) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
 	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
@@ -694,7 +694,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   delete xi;
 
   // Outer X boundary
-  if(mesh->lastX()) {
+  if(mesh->lastX() && !mesh->periodicX) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
 	loop_vars_op(jx, jy, udata, p, op);

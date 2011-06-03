@@ -143,6 +143,10 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     }
     iteration++;
     
+    // Call RHS to communicate and get auxilliary variables
+    load_vars(f0);
+    run_rhs(simtime);
+
     /// Write the restart file
     restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
     
