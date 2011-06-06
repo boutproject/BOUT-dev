@@ -123,18 +123,30 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   PetscMPIInt     rank;
   char            load_file[PETSC_MAX_PATH_LEN];  /* jacobian input file name */
   PetscBool       J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
+  PetscBool       use_petscts=PETSC_TRUE,use_sundials=PETSC_FALSE;
   ISColoring      iscoloring;
   
   // Create timestepper 
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-use_PetscSundials",&use_sundials,PETSC_NULL);CHKERRQ(ierr);
+  if (use_sundials){
+    use_petscts=PETSC_FALSE;
+    if (!rank) printf("        use PETSc Sundials ...\n");
+  } else {
+    if (!rank) printf("        use PETSc TS ...\n");
+  }
+ 
   ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
-  ierr = TSSetType(ts,TSGL);CHKERRQ(ierr);
-  //ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
 
   // Set user provided RHSFunction
-  ierr = TSSetRHSFunction(ts,solver_f,this);CHKERRQ(ierr); // needed for ts_type=sundials
-  ierr = TSSetIFunction(ts,solver_if,this);CHKERRQ(ierr);
+  if (use_petscts){
+    ierr = TSSetType(ts,TSGL);CHKERRQ(ierr);
+    ierr = TSSetIFunction(ts,solver_if,this);CHKERRQ(ierr);
+  } else {
+    ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
+    ierr = TSSetRHSFunction(ts,solver_f,this);CHKERRQ(ierr); // needed for ts_type=sundials
+  }
   
   //Sets the general-purpose update function called at the beginning of every time step. 
   //This function can change the time step.
@@ -157,20 +169,22 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   OPTION(options, precon_tol, 1.0e-4);
   
   // Set Sundials tolerances
-  BoutReal abstol, reltol;
-  options->get("ATOL", abstol, 1.0e-12);
-  options->get("RTOL", reltol, 1.0e-5);
-  ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
+  if (use_sundials){
+    BoutReal abstol, reltol;
+    options->get("ATOL", abstol, 1.0e-12);
+    options->get("RTOL", reltol, 1.0e-5);
+    ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
  
-  // Select Sundials Adams-Moulton or BDF method
-  bool adams_moulton;
-  OPTION(options, adams_moulton, false);
-  if (adams_moulton) {
-    output.write("\tUsing Adams-Moulton implicit multistep method\n");
-    ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
-  } else {
-    output.write("\tUsing BDF method\n");
-    ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
+    // Select Sundials Adams-Moulton or BDF method
+    bool adams_moulton;
+    OPTION(options, adams_moulton, false);
+    if (adams_moulton) {
+      output.write("\tUsing Adams-Moulton implicit multistep method\n");
+      ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
+    } else {
+      output.write("\tUsing BDF method\n");
+      ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
+    }
   }
   
   // Initial time and timestep. By default just use TIMESTEP
@@ -194,14 +208,19 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   KSP             ksp;
   PC              pc;
   const PCType    pctype;
-  PetscBool       pcnone=PETSC_FALSE,UseSundials=PETSC_FALSE;
+  PetscBool       pcnone=PETSC_FALSE;
 
   // set default ksp and pc 
-  ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
-  ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
-  ierr = KSPSetType(ksp,KSPGMRES);CHKERRQ(ierr);
-  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
-  ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr); 
+  if (use_petscts){
+    ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
+    ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
+    ierr = KSPSetType(ksp,KSPGMRES);CHKERRQ(ierr);
+    ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+    ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr); 
+  } else {
+    ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr);
+    ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr); 
+  }
 
   // Create Jacobian matrix to be used by preconditioner
   output.write("\tGet Jacobian matrix .... tstart %g, J localsize %d\n",simtime,local_N);
@@ -257,25 +276,26 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
-    ierr = TSSetIJacobian(ts,J,J,solver_ijacobian,this);CHKERRQ(ierr); //set dummy Jacobian
-    ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
-    ierr = TSSetUp(ts);CHKERRQ(ierr);            // enables queries and MatCreateSNESMF() below
-
-    // use -snes_mf_operator for mat*vec in KSP iterations
-    ierr = PetscTypeCompare((PetscObject)ts,TSSUNDIALS,&UseSundials);CHKERRQ(ierr);
-    if (!UseSundials){ 
+    if (use_petscts){
+      ierr = TSSetIJacobian(ts,J,J,solver_ijacobian,this);CHKERRQ(ierr); //set dummy Jacobian
+   
+      // use -snes_mf_operator for mat*vec in KSP iterations - current using runtime option
+      ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
+      ierr = TSSetUp(ts);CHKERRQ(ierr);            // enables queries and MatCreateSNESMF() below
       ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
       ierr = TSSetIJacobian(ts,Jmf,J,solver_ijacobian,this);CHKERRQ(ierr);
+    } else {
+      ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
     }
     ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
     if (pcnone) return(0);
    
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
     if (J_slowfd){ // create Jacobian matrix by slow fd
-      
-      ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr);
+      //ierr = TSSetIJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); //set dummy Jacobian
+      //ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr);
       if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute rhs Jmat by slow fd...\n");CHKERRQ(ierr);}
-      //ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr); // this J is correct!
+      ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr); // this J is correct!
 
       //ierr = TSSetIJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); // needs new TSDefaultComputeJacobian!
 
