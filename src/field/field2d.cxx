@@ -128,9 +128,8 @@ Field2D & Field2D::operator=(const Field2D &rhs) {
   // Copy data across
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] = rhs.data[jx][jy];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      data[0][j] = rhs.data[0][j];
 
 #ifdef CHECK
   msg_stack.pop();
@@ -147,9 +146,8 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
   allocData(); // Make sure data is allocated
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] = rhs;
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] = rhs;
   return(*this);
 }
 
@@ -180,9 +178,8 @@ Field2D & Field2D::operator+=(const Field2D &rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] += rhs.data[jx][jy];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] += rhs.data[0][j];
 
 #ifdef CHECK
   msg_stack.pop();
@@ -203,9 +200,8 @@ Field2D & Field2D::operator+=(const BoutReal rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] += rhs;
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] += rhs;
 
   return(*this);
 }
@@ -226,9 +222,8 @@ Field2D & Field2D::operator-=(const Field2D &rhs) {
 #endif
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] -= rhs.data[jx][jy];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] -= rhs.data[0][j];
 
   return(*this);
 }
@@ -244,9 +239,8 @@ Field2D & Field2D::operator-=(const BoutReal rhs) {
 #endif
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] -= rhs;
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] -= rhs;
 
   return(*this);
 }
@@ -267,9 +261,8 @@ Field2D & Field2D::operator*=(const Field2D &rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] *= rhs.data[jx][jy];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] *= rhs.data[0][j];
 
   return(*this);
 }
@@ -285,10 +278,8 @@ Field2D & Field2D::operator*=(const BoutReal rhs) {
 #endif
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      data[jx][jy] *= rhs;
-    }
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+    data[0][j] *= rhs;
   }
   
   return(*this);
@@ -311,9 +302,8 @@ Field2D & Field2D::operator/=(const Field2D &rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] /= rhs.data[jx][jy];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] /= rhs.data[0][j];
 
   return(*this);
 }
@@ -332,10 +322,8 @@ Field2D & Field2D::operator/=(const BoutReal rhs) {
   BoutReal inv_rhs = 1. / rhs; // Multiplication faster than division
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      data[jx][jy] *= inv_rhs;
-    }
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+    data[0][j] *= inv_rhs;
   }
   
   return(*this);
@@ -358,9 +346,8 @@ Field2D & Field2D::operator^=(const Field2D &rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      data[jx][jy] = pow(data[jx][jy], rhs.data[jx][jy]);
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    data[0][j] = pow(data[0][j], rhs.data[0][j]);
 
   return(*this);
 }
@@ -377,10 +364,8 @@ Field2D & Field2D::operator^=(const BoutReal rhs) {
 #endif
   
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      data[jx][jy] = pow(data[jx][jy], rhs);
-    }
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+    data[0][j] = pow(data[0][j], rhs);
   }
   
   return(*this);
@@ -487,10 +472,9 @@ const Field3D Field2D::operator-(const Field3D &other) const {
 #endif  
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	d[jx][jy][jz] = data[jx][jy] - d[jx][jy][jz];
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      d[0][j][jz] = data[0][j] - d[0][j][jz];
 
   result.setLocation( other.getLocation() );
 
@@ -759,9 +743,8 @@ const Field2D Field2D::sqrt() const {
   result.allocate();
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::sqrt(data[jx][jy]);
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    result.data[0][j] = ::sqrt(data[0][j]);
 
 #ifdef TRACK
   result.name = "sqrt("+name+")";
@@ -786,9 +769,8 @@ const Field2D Field2D::abs() const
   result.allocate();
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = fabs(data[jx][jy]);
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    result.data[0][j] = fabs(data[0][j]);
 
   return result;
 }

@@ -194,13 +194,12 @@ const Field2D Field3D::DC() const
 
   BoutReal inv_n = 1. / (BoutReal) (mesh->ngz-1);
 
-  #pragma omp parallel for  // Only parallelises in X (first loop)
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      for(int jz=0;jz<(mesh->ngz-1);jz++)
-	d[jx][jy] += block->data[jx][jy][jz];
-      d[jx][jy] *= inv_n;
-    }
+  #pragma omp parallel for
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+    for(int jz=0;jz<(mesh->ngz-1);jz++)
+      d[0][j] += block->data[0][j][jz];
+    d[0][j] *= inv_n;
+  }
   
 #ifdef CHECK
   msg_stack.pop();
@@ -318,11 +317,10 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   /// Copy data
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	block->data[jx][jy][jz] = d[jx][jy];
-
+  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[0][j][jz] = d[0][j];
+  
   /// Only 3D fields have locations
   //location = CELL_CENTRE;
 
@@ -358,14 +356,18 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
   name = "F3D("+rhs.name+")";
 #endif
 
- allocate();
+  allocate();
 
   /// Copy data
-
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz;jz++)
-      block->data[jx][jy][jz] = d[jx][jz];
+  
+  #pragma omp parallel
+  {
+    for(int jx=0;jx<mesh->ngx;jx++) {
+      #pragma omp for
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] = d[jx][jz];
+    }
+  }
 
   return(*this);
 }
@@ -402,10 +404,8 @@ BoutReal Field3D::operator=(const BoutReal val) {
 #endif
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	block->data[jx][jy][jz] = val;
+  for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+    block->data[0][0][j] = val;
 
   // Only 3D fields have locations
   //location = CELL_CENTRE;
@@ -479,19 +479,17 @@ Field3D & Field3D::operator+=(const Field2D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] += d[jx][jy];
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[0][j][jz] += d[0][j];
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] + d[jx][jy];
-
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        nb->data[0][j][jz] = block->data[0][j][jz] + d[0][j];
+    
     block->refs--;
     block = nb;
   }
@@ -519,18 +517,14 @@ Field3D & Field3D::operator+=(const BoutReal &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] += rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] += rhs;
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] + rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] + rhs;
 
     block->refs--;
     block = nb;
@@ -566,18 +560,14 @@ Field3D & Field3D::operator-=(const Field3D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] -= rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] -= rhs.block->data[0][0][j];
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] - rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] - rhs.block->data[0][0][j];
 
     block->refs--;
     block = nb;
@@ -607,19 +597,17 @@ Field3D & Field3D::operator-=(const Field2D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] -= d[jx][jy];
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[0][j][jz] -= d[0][j];
 
   }else {
     memblock3d *nb = newBlock();
 
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] - d[jx][jy];
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        nb->data[0][j][jz] = block->data[0][j][jz] - d[0][j];
 
     block->refs--;
     block = nb;
@@ -647,18 +635,14 @@ Field3D & Field3D::operator-=(const BoutReal &rhs) {
   
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] -= rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] -= rhs;
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] - rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] - rhs;
 
     block->refs--;
     block = nb;
@@ -695,18 +679,14 @@ Field3D & Field3D::operator*=(const Field3D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] *= rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] *= rhs.block->data[0][0][j];
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] * rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] * rhs.block->data[0][0][j];
 
     block->refs--;
     block = nb;
@@ -736,10 +716,9 @@ Field3D & Field3D::operator*=(const Field2D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] *= d[jx][jy];
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[0][j][jz] *= d[0][j];
   }else {
     memblock3d *nb = newBlock();
 
@@ -775,19 +754,15 @@ Field3D & Field3D::operator*=(const BoutReal rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] *= rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] *= rhs;
 
   }else {
     memblock3d *nb = newBlock();
 
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] * rhs;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] * rhs;
 
     block->refs--;
     block = nb;
@@ -828,19 +803,15 @@ Field3D & Field3D::operator/=(const Field3D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] /= rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] /= rhs.block->data[0][0][j];
     
   }else {
     memblock3d *nb = newBlock();
 
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] / rhs.block->data[jx][jy][jz];
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] / rhs.block->data[0][0][j];
 
     block->refs--;
     block = nb;
@@ -868,30 +839,22 @@ Field3D & Field3D::operator/=(const Field2D &rhs) {
   name = "(" + name + "/" + rhs.name+")";
 #endif
 
-  /// NOTE: The faster version of this uses multiplications rather than division
-  /// This seems to be enough to make a difference to the number of CVODE steps
-  /// Hence for now straight division is used
-
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++) {
-	BoutReal val = 1.0L / d[jx][jy]; // Because multiplications are faster than divisions
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] *= val;
-	  //block->data[jx][jy][jz] /= d[jx][jy];
-      }
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+      BoutReal val = 1.0L / d[0][j]; // Because multiplications are faster than divisions
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[0][j][jz] *= val;
+    }
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++) {
-	BoutReal val = 1.0L / d[jx][jy];
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] * val;
-	//nb->data[jx][jy][jz] = block->data[jx][jy][jz] / d[jx][jy];
-      }
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
+      BoutReal val = 1.0L / d[0][j];
+      for(int jz=0;jz<mesh->ngz;jz++)
+        nb->data[0][j][jz] = block->data[0][j][jz] * val;
+    }
 
     block->refs--;
     block = nb;
@@ -921,18 +884,14 @@ Field3D & Field3D::operator/=(const BoutReal rhs) {
   
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] *= val;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] *= val;
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = block->data[jx][jy][jz] * val;
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = block->data[0][0][j] * val;
 
     block->refs--;
     block = nb;
@@ -973,19 +932,15 @@ Field3D & Field3D::operator^=(const Field3D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs.block->data[jx][jy][jz]);
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] = pow(block->data[0][0][j], rhs.block->data[0][0][j]);
 
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs.block->data[jx][jy][jz]);
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = pow(block->data[0][0][j], rhs.block->data[0][0][j]);
     
     block->refs--;
     block = nb;
@@ -1015,19 +970,17 @@ Field3D & Field3D::operator^=(const Field2D &rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], d[jx][jy]);
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[0][j][jz] = pow(block->data[0][j][jz], d[0][j]);
 
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = pow(block->data[jx][jy][jz], d[jx][jy]);
+    for(int j=0;j<mesh->ngx*mesh->ngy;j++)
+      for(int jz=0;jz<mesh->ngz;jz++)
+        nb->data[0][j][jz] = pow(block->data[0][j][jz], d[0][j]);
 
     block->refs--;
     block = nb;
@@ -1055,19 +1008,15 @@ Field3D & Field3D::operator^=(const BoutReal rhs) {
 
   if(block->refs == 1) {
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs);
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      block->data[0][0][j] = pow(block->data[0][0][j], rhs);
 
   }else {
     memblock3d *nb = newBlock();
     
     #pragma omp parallel for
-    for(int jx=0;jx<mesh->ngx;jx++)
-      for(int jy=0;jy<mesh->ngy;jy++)
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  nb->data[jx][jy][jz] = pow(block->data[jx][jy][jz], rhs);
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      nb->data[0][0][j] = pow(block->data[0][0][j], rhs);
 
     block->refs--;
     block = nb;
