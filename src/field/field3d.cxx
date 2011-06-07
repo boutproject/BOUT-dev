@@ -2203,6 +2203,8 @@ memblock3d *Field3D::newBlock() const
 /// Makes sure data is allocated and only referenced by this object
 void Field3D::allocData() const
 {
+  #pragma omp critical (alloc)
+  {
   /// Check if any data associated with this object
   if(block != (memblock3d*) NULL) {
     // Already has a block of data
@@ -2213,7 +2215,6 @@ void Field3D::allocData() const
 
       memblock3d* nb = newBlock();
 
-      #pragma omp parallel for
       for(int jx=0;jx<mesh->ngx;jx++)
 	for(int jy=0;jy<mesh->ngy;jy++)
 	  for(int jz=0;jz<mesh->ngz;jz++)
@@ -2228,15 +2229,19 @@ void Field3D::allocData() const
     block = newBlock();
     
   }
+  } // End of OMP critical section
 }
 
 void Field3D::freeData()
 {
   // put data block onto stack
-
+  
   // Need to check for either no data, or all data has been cleared
   if((block == NULL) || (nblocks == 0))
     return;
+
+  #pragma omp critical (alloc)
+  {
 
   block->refs--;
 
@@ -2254,6 +2259,7 @@ void Field3D::freeData()
   }
 
   block = NULL;
+  } // End of OMP critical section
 }
 
 /***************************************************************

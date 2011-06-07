@@ -1202,7 +1202,8 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 #ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
 #else
-    static dcomplex *globalcv = (dcomplex*) NULL;
+    static dcomplex *globalcv;
+    static int nthreads = 0;
 #endif
 
     #pragma omp parallel
@@ -1215,38 +1216,39 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       // Parallel, so allocate a separate array for each thread
       
       int th_id = omp_get_thread_num(); // thread ID
-      if(globalcv == (dcomplex*) NULL) {
-        if(th_id == 0) {
+
+      if(th_id == 0) {
+        int n_th = omp_get_num_threads();
+        if(nthreads < n_th) {
           // Allocate memory in thread zero
-          int n_th = omp_get_num_threads();
+          if(nthreads > 0)
+            delete[] globalcv;
           globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+          nthreads = n_th;
         }
-        // Wait for memory to be allocated
-        #pragma omp barrier
       }
+      // Wait for memory to be allocated
+      #pragma omp barrier
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
       #pragma omp for
-      for(int jx=xge;jx<xlt;jx++) {
-        for(int jy=0;jy<mesh->ngy;jy++) {
+      for(int jy=0;jy<mesh->ngy*(xlt-xge);jy++) {
+        rfft(f[xge][jy], ncz, cv); // Forward FFT
           
-          rfft(f[jx][jy], ncz, cv); // Forward FFT
-          
-          for(int jz=0;jz<=ncz/2;jz++) {
-            BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+        for(int jz=0;jz<=ncz/2;jz++) {
+          BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
             
-            BoutReal flt;
-            if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
-            cv[jz] *= dcomplex(0.0, kwave) * flt;
-            if(mesh->StaggerGrids)
-              cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
-          }
-          
-          irfft(cv, ncz, result[jx][jy]); // Reverse FFT
-          
-          result[jx][jy][ncz] = result[jx][jy][0];
+          BoutReal flt;
+          if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
+          cv[jz] *= dcomplex(0.0, kwave) * flt;
+          if(mesh->StaggerGrids)
+            cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
         }
+          
+        irfft(cv, ncz, result[xge][jy]); // Reverse FFT
+         
+        result[xge][jy][ncz] = result[xge][jy][0];
       }
     }
     
@@ -1567,7 +1569,8 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
 #ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
 #else
-    static dcomplex *globalcv = (dcomplex*) NULL;
+    static dcomplex *globalcv;
+    static int nthreads = 0;
 #endif
     
     #pragma omp parallel
@@ -1580,15 +1583,19 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
       // Parallel, so allocate a separate array for each thread
       
       int th_id = omp_get_thread_num(); // thread ID
-      if(globalcv == (dcomplex*) NULL) {
-        if(th_id == 0) {
+      int n_th = omp_get_num_threads();
+      if(th_id == 0) {
+        if(nthreads < n_th) {
           // Allocate memory in thread zero
-          int n_th = omp_get_num_threads();
+          if(nthreads > 0)
+            delete[] globalcv;
           globalcv = new dcomplex[n_th*(ncz/2 + 1)];
+          nthreads = n_th;
         }
-        // Wait for memory to be allocated
-        #pragma omp barrier
       }
+      // Wait for memory to be allocated
+      #pragma omp barrier
+      
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
       #pragma omp for

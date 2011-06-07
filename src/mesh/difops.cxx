@@ -298,8 +298,10 @@ const Field3D Grad2_par2(const Field3D &f)
   #pragma omp parallel sections
   {
     #pragma omp section
-    sg = sqrt(mesh->g_22);
-    sg = DDY(1./sg) / sg;
+    {
+      sg = sqrt(mesh->g_22);
+      sg = DDY(1./sg) / sg;
+    }
     
     #pragma omp section
     result = DDY(f);
