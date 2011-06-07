@@ -387,9 +387,6 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   // NEW: SOLVE USING FFT
 
   static dcomplex **ft = (dcomplex**) NULL, **delft;
-  int jx, jy, jz;
-  BoutReal filter;
-  dcomplex a, b, c;
 
   result.allocate();
 
@@ -405,20 +402,24 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   }
   
   // Loop over all y indices
-  for(jy=0;jy<mesh->ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
 
     // Take forward FFT
     
-    for(jx=0;jx<mesh->ngx;jx++)
+    #pragma omp parallel for
+    for(int jx=0;jx<mesh->ngx;jx++)
       ZFFT(fd[jx][jy], mesh->zShift[jx][jy], ft[jx]);
 
     // Loop over kz
-    for(jz=0;jz<=ncz/2;jz++) {
-
+    #pragma omp parallel for
+    for(int jz=0;jz<=ncz/2;jz++) {
+      BoutReal filter;
+      dcomplex a, b, c;
+      
       if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
-      for(jx=2;jx<(mesh->ngx-2);jx++) {
+      for(int jx=2;jx<(mesh->ngx-2);jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -438,14 +439,15 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
     }
   
     // Reverse FFT
-    for(jx=1;jx<(mesh->ngx-1);jx++) {
+    #pragma omp parallel for
+    for(int jx=1;jx<(mesh->ngx-1);jx++) {
 
       ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
       rd[jx][jy][ncz] = rd[jx][jy][0];
     }
 
     // Boundaries
-    for(jz=0;jz<ncz;jz++) {
+    for(int jz=0;jz<ncz;jz++) {
       rd[0][jy][jz] = 0.0;
       rd[mesh->ngx-1][jy][jz] = 0.0;
     }

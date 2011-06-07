@@ -85,7 +85,7 @@ int invert_init()
   OPTION(lapOpts, filter, 0.2);
   lapOpts->get("low_mem", invert_low_mem, false);
   lapOpts->get("use_pdd", invert_use_pdd, false);
-  lapOpts->get("all_terms", laplace_all_terms, false); 
+  lapOpts->get("all_terms", laplace_all_terms, false);
   OPTION(lapOpts, laplace_nonuniform, false);
 
   if(mesh->firstX() && mesh->lastX()) {
@@ -1182,16 +1182,15 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
 
   /// Take FFTs of data
   static dcomplex *bk1d = NULL; ///< 1D in Z for taking FFTs
-  int ix, kz;
 
   int ncz = mesh->ngz-1;
 
   if(bk1d == NULL)
     bk1d = new dcomplex[ncz/2 + 1];
-
-  for(ix=0; ix < mesh->ngx; ix++) {
+  
+  for(int ix=0; ix < mesh->ngx; ix++) {
     ZFFT(b[ix], mesh->zShift[ix][data.jy], bk1d);
-    for(kz = 0; kz <= laplace_maxmode; kz++)
+    for(int kz = 0; kz <= laplace_maxmode; kz++)
       data.bk[kz][ix] = bk1d[kz];
   }
   
@@ -1204,7 +1203,8 @@ int invert_spt_start(const FieldPerp &b, int flags, const Field2D *a, SPT_data &
   
   if(mesh->firstX()) {
     dcomplex bet, u0;
-    for(kz = 0; kz <= laplace_maxmode; kz++) {
+    #pragma omp parallel for
+    for(int kz = 0; kz <= laplace_maxmode; kz++) {
       // Start tridiagonal solve
       spt_tridag_forward(data.avec[kz], data.bvec[kz], data.cvec[kz],
 			 data.bk[kz], data.xk[kz], mesh->xend+1,
@@ -1252,9 +1252,10 @@ int invert_spt_continue(SPT_data &data)
     if(mesh->lastX()) {
       // Last processor, turn-around
       
-      dcomplex bet, u0;
-      dcomplex gp, up;
+      #pragma omp parallel for
       for(int kz = 0; kz <= laplace_maxmode; kz++) {
+        dcomplex bet, u0;
+        dcomplex gp, up;
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 	spt_tridag_forward(data.avec[kz]+mesh->xstart,
@@ -1279,9 +1280,9 @@ int invert_spt_continue(SPT_data &data)
     }else if(data.dir > 0) {
       // In the middle of X, forward direction
 
-      dcomplex bet, u0;
+      #pragma omp parallel for
       for(int kz = 0; kz <= laplace_maxmode; kz++) {
-	
+	dcomplex bet, u0;
 	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
 	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 	spt_tridag_forward(data.avec[kz]+mesh->xstart, 
@@ -1313,10 +1314,10 @@ int invert_spt_continue(SPT_data &data)
     }else {
       // Middle of X, back-substitution stage
 
-      dcomplex gp, up;
+      #pragma omp parallel for
       for(int kz = 0; kz <= laplace_maxmode; kz++) {
-	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+	dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+	dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
 	spt_tridag_back(data.xk[kz]+mesh->xstart, 
 			mesh->xend-mesh->xstart+1, 
@@ -1363,8 +1364,6 @@ int invert_spt_continue(SPT_data &data)
 */
 void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
 {
-  int ix, kz;
-  
   int ncx = mesh->ngx-1;
   int ncz = mesh->ngz-1;
 
@@ -1381,13 +1380,13 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
 
   if(xk1d == NULL) {
     xk1d = new dcomplex[ncz/2 + 1];
-    for(kz=0;kz<=ncz/2;kz++)
+    for(int kz=0;kz<=ncz/2;kz++)
       xk1d[kz] = 0.0;
   }
   
-  for(ix=0; ix<=ncx; ix++){
+  for(int ix=0; ix<=ncx; ix++){
     
-    for(kz = 0; kz<= laplace_maxmode; kz++) {
+    for(int kz = 0; kz<= laplace_maxmode; kz++) {
       xk1d[kz] = data.xk[kz][ix];
     }
 
@@ -1401,15 +1400,15 @@ void invert_spt_finish(SPT_data &data, int flags, FieldPerp &x)
 
   if(!mesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
-    for(ix=0; ix<mesh->xstart; ix++){
-      for(kz=0;kz<mesh->ngz;kz++)
+    for(int ix=0; ix<mesh->xstart; ix++){
+      for(int kz=0;kz<mesh->ngz;kz++)
 	xdata[ix][kz] = 0.0;
     }
   }
   if(!mesh->lastX()) {
     // Same for right boundary
-    for(ix=mesh->xend+1; ix<mesh->ngx; ix++){
-      for(kz=0;kz<mesh->ngz;kz++)
+    for(int ix=mesh->xend+1; ix<mesh->ngx; ix++){
+      for(int kz=0;kz<mesh->ngz;kz++)
 	xdata[ix][kz] = 0.0;
     }
   }

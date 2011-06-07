@@ -1741,10 +1741,8 @@ const Field3D Field3D::sqrt() const {
   result.allocate();
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++) 
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result.block->data[jx][jy][jz] = ::sqrt(block->data[jx][jy][jz]);
+  for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+    result.block->data[0][0][j] = ::sqrt(block->data[0][0][j]);
 
 #ifdef CHECK
   msg_stack.pop();
@@ -1771,10 +1769,8 @@ const Field3D Field3D::abs() const {
   result.allocate();
 
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++) 
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result.block->data[jx][jy][jz] = fabs(block->data[jx][jy][jz]);
+  for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+    result.block->data[0][0][j] = fabs(block->data[0][0][j]);
 
   result.location = location;
 
@@ -1783,9 +1779,6 @@ const Field3D Field3D::abs() const {
 
 BoutReal Field3D::min(bool allpe) const
 {
-  int jx, jy, jz;
-  BoutReal result;
-
 #ifdef CHECK
   if(block == NULL)
     throw BoutException("Field3D: min() method on empty data");
@@ -1796,13 +1789,21 @@ BoutReal Field3D::min(bool allpe) const
     msg_stack.push("Field3D::Min()");
 #endif
 
-  result = block->data[0][0][0];
+  BoutReal result = block->data[0][0][0];
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      for(jz=0;jz<mesh->ngz;jz++)
-	if(block->data[jx][jy][jz] < result)
-	  result = block->data[jx][jy][jz];
+  #pragma omp parallel 
+  {
+    BoutReal r = result;
+    #pragma omp for nowait
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      if(block->data[0][0][j] < r)
+        r = block->data[0][0][j];
+    #pragma omp critical
+    {
+      if(r < result)
+        result = r;
+    }
+  }
 
   if(allpe) {
     // MPI reduce
@@ -1819,9 +1820,6 @@ BoutReal Field3D::min(bool allpe) const
 
 BoutReal Field3D::max(bool allpe) const
 {
-  int jx, jy, jz;
-  BoutReal result;
-
 #ifdef CHECK
   if(block == NULL)
     throw BoutException("Field3D: max() method on empty data");
@@ -1831,14 +1829,22 @@ BoutReal Field3D::max(bool allpe) const
     msg_stack.push("Field3D::Max()");
 #endif
   
-  result = block->data[0][0][0];
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jy=0;jy<mesh->ngy;jy++)
-      for(jz=0;jz<mesh->ngz;jz++)
-	if(block->data[jx][jy][jz] > result)
-	  result = block->data[jx][jy][jz];
+  BoutReal result = block->data[0][0][0];
   
+  #pragma omp parallel 
+  {
+    BoutReal r = result;
+    #pragma omp for nowait
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
+      if(block->data[0][0][j] > r)
+        r = block->data[0][0][j];
+    #pragma omp critical
+    {
+      if(r > result)
+        result = r;
+    }
+  }
+
   if(allpe) {
     // MPI reduce
     BoutReal localresult = result;
