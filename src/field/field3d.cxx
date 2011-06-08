@@ -2180,28 +2180,29 @@ memblock3d* Field3D::free_block = NULL;
 memblock3d *Field3D::newBlock() const
 {
   memblock3d *nb;
+  #pragma omp critical
+  {
+    if(free_block != NULL) {
+      // just pop off the top of the stack
+      nb = free_block;
+      free_block = nb->next;
+      nb->next = NULL;
+      nb->refs = 1;
+    }else {
+      // No more blocks left - allocate a new block
+      nb = new memblock3d;
 
-  if(free_block != NULL) {
-    // just pop off the top of the stack
-    nb = free_block;
-    free_block = nb->next;
-    nb->next = NULL;
-    nb->refs = 1;
-  }else {
-    // No more blocks left - allocate a new block
-    nb = new memblock3d;
-
-    nb->data = r3tensor(mesh->ngx, mesh->ngy, mesh->ngz);
-    nb->refs = 1;
-    nb->next = NULL;
+      nb->data = r3tensor(mesh->ngx, mesh->ngy, mesh->ngz);
+      nb->refs = 1;
+      nb->next = NULL;
     
-    // add to the global list
-    nb->all_next = blocklist;
-    blocklist = nb;
+      // add to the global list
+      nb->all_next = blocklist;
+      blocklist = nb;
     
-    nblocks++;
-  }
-
+      nblocks++;
+    }
+  } // End of critical section
   return nb;
 }
 

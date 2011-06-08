@@ -193,17 +193,13 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
  * This code is only for serial i.e. mesh->NXPE == 1
  */
 int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a,
-                       const Field2D *ccoef=NULL, const Field2D *d=NULL)
-{
+                       const Field2D *ccoef=NULL, const Field2D *d=NULL) {
   int ncx = mesh->ngx-1;
   int ncz = mesh->ngz-1;
-
-  int ix, jy, iz;
+  
   static dcomplex **bk = NULL, *bk1d;
   static dcomplex **xk, *xk1d;
   int xbndry; // Width of the x boundary
-  
-  BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, coef5=0.0, coef6=0.0, kwave, flt;
 
   if(!mesh->firstX() || !mesh->lastX()) {
     output.write("Error: invert_laplace only works for mesh->NXPE = 1\n");
@@ -212,7 +208,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   
   x.allocate();
 
-  jy = b.getIndex();
+  int jy = b.getIndex();
   x.setIndex(jy);
 
   if(bk == NULL) {
@@ -229,7 +225,8 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   if(flags & INVERT_BNDRY_ONE)
     xbndry = 1;
   
-  for(ix=0;ix<mesh->ngx;ix++) {
+  #pragma omp parallel for
+  for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
     ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
@@ -238,15 +235,15 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
   if(!mesh->periodicX) {
     if(flags & INVERT_IN_SET) {
       // Setting the inner boundary from x
-      
-      for(ix=0;ix<xbndry;ix++)
+      #pragma omp parallel for
+      for(int ix=0;ix<xbndry;ix++)
 	ZFFT(x[ix], mesh->zShift[ix][jy], xk[ix]);
     }
     
     if(flags & INVERT_OUT_SET) {
       // Setting the outer boundary from x
-      
-      for(ix=0;ix<xbndry;ix++)
+      #pragma omp parallel for
+      for(int ix=0;ix<xbndry;ix++)
 	ZFFT(x[ncx-ix], mesh->zShift[ncx-ix][jy], xk[ncx-ix]);
     }
   }
@@ -268,11 +265,12 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       xstart = 2;
       xend = mesh->ngx-2;
     }
-
-    for(iz=0;iz<=ncz/2;iz++) {
+    
+    for(int iz=0;iz<=ncz/2;iz++) {
       // solve differential equation in x
     
-
+      BoutReal coef1=0.0, coef2=0.0, coef3=0.0, coef4=0.0, 
+        coef5=0.0, coef6=0.0, kwave, flt;
       ///////// PERFORM INVERSION /////////
       
       // shift freqs according to FFT convention
@@ -281,12 +279,12 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       if (iz>laplace_maxmode) flt=0.0; else flt=1.0;
 
       // set bk1d
-      for(ix=0;ix<mesh->ngx;ix++)
+      for(int ix=0;ix<mesh->ngx;ix++)
 	bk1d[ix] = bk[ix][iz]*flt;
 
       // Fill in interior points
 
-      for(ix=xstart;ix<=xend;ix++) {
+      for(int ix=xstart;ix<=xend;ix++) {
 
 	// Set coefficients
 	coef1 = mesh->g11[ix][jy];  // X 2nd derivative
@@ -341,7 +339,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       if(xbndry < 2) {
 	// Use 2nd order near edges
 
-	ix = 1;
+	int ix = 1;
 
 	coef1=mesh->g11[ix][jy]/(SQ(mesh->dx[ix][jy]));
 	coef2=mesh->g33[ix][jy];
@@ -375,7 +373,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
       // Boundary conditions
 
-      for(ix=0;ix<xbndry;ix++) {
+      for(int ix=0;ix<xbndry;ix++) {
 	// Set zero-value. Change to zero-gradient if needed
 
         if(!(flags & INVERT_IN_RHS))
@@ -392,13 +390,13 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
       if(flags & INVERT_IN_SET) {
 	// Set values of inner boundary from X
-	for(ix=0;ix<xbndry;ix++)
+	for(int ix=0;ix<xbndry;ix++)
 	  bk1d[ix] = xk[ix][iz];
       }
       
       if(flags & INVERT_OUT_SET) {
 	// Set values of outer boundary from X
-	for(ix=0;ix<xbndry;ix++)
+	for(int ix=0;ix<xbndry;ix++)
 	  bk1d[ncx-ix] = xk[ncx-ix][iz];
       }
 
@@ -408,14 +406,14 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	// Inner boundary
 	if(flags & INVERT_DC_IN_GRAD) {
 	  // Zero gradient at inner boundary
-	  for (ix=0;ix<xbndry;ix++)
+	  for (int ix=0;ix<xbndry;ix++)
 	    A[ix][3] = -1.0;
 	}
 	
 	// Outer boundary
 	if(flags & INVERT_DC_OUT_GRAD) {
 	  // Zero gradient at outer boundary
-	  for (ix=0;ix<xbndry;ix++)
+	  for (int ix=0;ix<xbndry;ix++)
 	    A[ncx-ix][1] = -1.0;
 	}
 	
@@ -425,12 +423,12 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	// Inner boundarySQ(kwave)*coef2
 	if(flags & INVERT_AC_IN_GRAD) {
 	  // Zero gradient at inner boundary
-	  for (ix=0;ix<xbndry;ix++)
+	  for (int ix=0;ix<xbndry;ix++)
 	    A[ix][3] = -1.0;
 	}else if(flags & INVERT_AC_IN_LAP) {
 	  // Enforce zero laplacian for 2nd and 4th-order
 	  
-	  ix = 1;
+	  int ix = 1;
 	  
 	  coef1=mesh->g11[ix][jy]/(12.* SQ(mesh->dx[ix][jy]));
 	
@@ -465,14 +463,14 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	// Outer boundary
 	if(flags & INVERT_AC_OUT_GRAD) {
 	  // Zero gradient at outer boundary
-	  for (ix=0;ix<xbndry;ix++)
+	  for (int ix=0;ix<xbndry;ix++)
 	    A[ncx-ix][1] = -1.0;
 	}else if(flags & INVERT_AC_OUT_LAP) {
 	  // Enforce zero laplacian for 2nd and 4th-order
 	  // NOTE: Currently ignoring XZ term and coef4 assumed zero on boundary
 	  // FIX THIS IF IT WORKS
 
-	  ix = ncx-1;
+	  int ix = ncx-1;
 	  
 	  coef1=mesh->g11[ix][jy]/(12.* SQ(mesh->dx[ix][jy]));
 	
@@ -512,15 +510,15 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
         // Should do in the inversion e.g. Sherman-Morrison formula
         
         dcomplex offset(0.0);
-        for(ix=0;ix<=ncx;ix++)
+        for(int ix=0;ix<=ncx;ix++)
           offset += bk1d[ix];
         offset /= (BoutReal) (ncx+1);
-        for(ix=0;ix<=ncx;ix++)
+        for(int ix=0;ix<=ncx;ix++)
           bk1d[ix] -= offset;
       }
       
       // Fill xk
-      for (ix=0; ix<=ncx; ix++)
+      for (int ix=0; ix<=ncx; ix++)
 	xk[ix][iz]=bk1d[ix];
       
     }
@@ -535,19 +533,19 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       cvec = new dcomplex[mesh->ngx];
     }
 
-    for(iz=0;iz<=ncz/2;iz++) {
+    for(int iz=0;iz<=ncz/2;iz++) {
       // solve differential equation in x
 
       // set bk1d
-      
+      BoutReal flt;
       if (iz>laplace_maxmode) flt=0.0; else flt=1.0;
       
-      for(ix=0;ix<=ncx;ix++)
+      for(int ix=0;ix<=ncx;ix++)
 	bk1d[ix] = bk[ix][iz] * flt;
 
       ///////// PERFORM INVERSION /////////
       
-      for(ix=xbndry;ix<=ncx-xbndry;ix++) {
+      for(int ix=xbndry;ix<=ncx-xbndry;ix++) {
 	laplace_tridag_coefs(ix, jy, iz, avec[ix], bvec[ix], cvec[ix], ccoef, d);
 	
 	if(a != (Field2D*) NULL)
@@ -558,11 +556,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	// Need boundary conditions
 	/// By default, set RHS to zero, unless INVERT_*_RHS set
 	if(!(flags & INVERT_IN_RHS)) {
-	  for(ix=0;ix<xbndry;ix++)
+	  for(int ix=0;ix<xbndry;ix++)
 	    bk1d[ix] = 0.;
 	}
 	if(!(flags & INVERT_OUT_RHS)) {
-	  for(ix=mesh->ngx-xbndry;ix<mesh->ngx;ix++)
+	  for(int ix=mesh->ngx-xbndry;ix<mesh->ngx;ix++)
 	    bk1d[ix] = 0.;
 	}
 	
@@ -578,20 +576,20 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	      // Use symmetric boundary to set zero-gradient
 	      
-	      for (ix=0;ix<xbndry-1;ix++) {
+	      for (int ix=0;ix<xbndry-1;ix++) {
 		avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
 	      }
 	      // Symmetric on last point
 	      avec[xbndry-1] = 1.0; bvec[xbndry-1] = 0.0; cvec[xbndry-1] = -1.0;
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		avec[ix]=dcomplex(0.0,0.0);
 		bvec[ix]=dcomplex(1.,0.);
 		cvec[ix]=dcomplex(-1.,0.);
 	      }
 	    }
 	  }else if(flags & INVERT_IN_SET) {
-	    for(ix=0;ix<xbndry;ix++) {
+	    for(int ix=0;ix<xbndry;ix++) {
 	      avec[ix] = 0.0;
 	      bvec[ix] = 1.0;
 	      cvec[ix] = 0.0;
@@ -603,7 +601,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      // Use anti-symmetric boundary to set zero-value
 	    
 	      // Zero-gradient for first point(s)
-	      for(ix=0;ix<xbndry-1;ix++) {
+	      for(int ix=0;ix<xbndry-1;ix++) {
 		avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
 	      }
 
@@ -616,7 +614,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      }
 	    
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		avec[ix]=dcomplex(0.,0.);
 		bvec[ix]=dcomplex(1.,0.);
 		cvec[ix]=dcomplex(0.,0.);
@@ -631,15 +629,15 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	      // Use symmetric boundary to set zero-gradient
 	    
-	      for (ix=0;ix<xbndry-1;ix++) {
+	      for (int ix=0;ix<xbndry-1;ix++) {
 		avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
 	      // Symmetric on last point
-	      ix = xbndry-1;
+	      int ix = xbndry-1;
 	      avec[ncx-ix] = 1.0; bvec[ncx-ix] = 0.0; cvec[ncx-ix] = -1.0;
 	    
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		cvec[ncx-ix]=dcomplex(0.,0.);
 		bvec[ncx-ix]=dcomplex(1.,0.);
 		avec[ncx-ix]=dcomplex(-1.,0.);
@@ -647,7 +645,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    }
 	  }else if(flags & INVERT_OUT_SET) {
 	    // Setting the values in the outer boundary
-	    for(ix=0;ix<xbndry;ix++) {
+	    for(int ix=0;ix<xbndry;ix++) {
 	      avec[ncx-ix] = 0.0;
 	      bvec[ncx-ix] = 1.0;
 	      cvec[ncx-ix] = 0.0;
@@ -659,10 +657,10 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      // Use anti-symmetric boundary to set zero-value
 	    
 	      // Zero-gradient for first point(s)
-	      for(ix=0;ix<xbndry-1;ix++) {
+	      for(int ix=0;ix<xbndry-1;ix++) {
 		avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
-	      ix = xbndry-1;
+	      int ix = xbndry-1;
 	      if(mesh->BoundaryOnCell) {
 		// Antisymmetric about boundary on cell
 		avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
@@ -671,7 +669,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 		avec[ncx-ix]=1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		cvec[ncx-ix]=dcomplex(0.,0.);
 		bvec[ncx-ix]=dcomplex(1.,0.);
 		avec[ncx-ix]=dcomplex(0.,0.);
@@ -688,13 +686,13 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	      // Use symmetric boundary to set zero-gradient
 	    
-	      for (ix=0;ix<xbndry-1;ix++) {
+	      for (int ix=0;ix<xbndry-1;ix++) {
 		avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
 	      }
 	      // Symmetric on last point
 	      avec[xbndry-1] = 1.0; bvec[xbndry-1] = 0.0; cvec[xbndry-1] = -1.0;
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		avec[ix]=dcomplex(0.,0.);
 		bvec[ix]=dcomplex(1.,0.);
 		cvec[ix]=dcomplex(-1.,0.);
@@ -702,7 +700,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    }
 	  }else if(flags & INVERT_IN_SET) {
 	    // Setting the values in the boundary
-	    for(ix=0;ix<xbndry;ix++) {
+	    for(int ix=0;ix<xbndry;ix++) {
 	      avec[ix] = 0.0;
 	      bvec[ix] = 1.0;
 	      cvec[ix] = 0.0;
@@ -711,7 +709,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  }else if(flags & INVERT_AC_IN_LAP) {
 	    // Use decaying zero-Laplacian solution in the boundary
 	    BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<xbndry;ix++) {
+	    for (int ix=0;ix<xbndry;ix++) {
 	      avec[ix] = 0.0;
 	      bvec[ix] = -1.0;
 	      cvec[ix] = exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
@@ -723,7 +721,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      // Use anti-symmetric boundary to set zero-value
 	    
 	      // Zero-gradient for first point(s)
-	      for(ix=0;ix<xbndry-1;ix++) {
+	      for(int ix=0;ix<xbndry-1;ix++) {
 		avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
 	      }
 
@@ -736,7 +734,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      }
 	    
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		avec[ix]=dcomplex(0.,0.);
 		bvec[ix]=dcomplex(1.,0.);
 		cvec[ix]=dcomplex(0.,0.);
@@ -751,15 +749,15 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	    if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
 	      // Use symmetric boundary to set zero-gradient
 	    
-	      for (ix=0;ix<xbndry-1;ix++) {
+	      for (int ix=0;ix<xbndry-1;ix++) {
 		avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
 	      // Symmetric on last point
-	      ix = xbndry-1;
+	      int ix = xbndry-1;
 	      avec[ncx-ix] = 1.0; bvec[ncx-ix] = 0.0; cvec[ncx-ix] = -1.0;
 	    
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		cvec[ncx-ix]=dcomplex(0.,0.);
 		bvec[ncx-ix]=dcomplex(1.,0.);
 		avec[ncx-ix]=dcomplex(-1.,0.);
@@ -768,14 +766,14 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  }else if(flags & INVERT_AC_OUT_LAP) {
 	    // Use decaying zero-Laplacian solution in the boundary
 	    BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<xbndry;ix++) {
+	    for (int ix=0;ix<xbndry;ix++) {
 	      avec[ncx-ix] = exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
 	      bvec[ncx-ix] = -1.0;
 	      cvec[ncx-ix] = 0.0;
 	    }
 	  }else if(flags & INVERT_OUT_SET) {
 	    // Setting the values in the outer boundary
-	    for(ix=0;ix<xbndry;ix++) {
+	    for(int ix=0;ix<xbndry;ix++) {
 	      avec[ncx-ix] = 0.0;
 	      bvec[ncx-ix] = 1.0;
 	      cvec[ncx-ix] = 0.0;
@@ -788,10 +786,10 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	      // Use anti-symmetric boundary to set zero-value
 	    
 	      // Zero-gradient for first point(s)
-	      for(ix=0;ix<xbndry-1;ix++) {
+	      for(int ix=0;ix<xbndry-1;ix++) {
 		avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
-	      ix = xbndry-1;
+	      int ix = xbndry-1;
 	      if(mesh->BoundaryOnCell) {
 		// Antisymmetric about boundary on cell
 		avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
@@ -800,7 +798,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 		avec[ncx-ix]=1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
 	      }
 	    }else {
-	      for (ix=0;ix<xbndry;ix++){
+	      for (int ix=0;ix<xbndry;ix++){
 		cvec[ncx-ix]=dcomplex(0.,0.);
 		bvec[ncx-ix]=dcomplex(1.,0.);
 		avec[ncx-ix]=dcomplex(0.,0.);
@@ -820,11 +818,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	  
 	  if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {
 	    // Inner gradient zero - symmetric
-	    for(ix=0;ix<xbndry-1;ix++)
+	    for(int ix=0;ix<xbndry-1;ix++)
 	      xk1d[ix] = xk1d[xloc-ix];
 	  }else {
 	    // Inner value zero - antisymmetric
-	    for(ix=0;ix<xbndry-1;ix++)
+	    for(int ix=0;ix<xbndry-1;ix++)
 	      xk1d[ix] = -xk1d[xloc-ix];
 	  }
 	}
@@ -837,11 +835,11 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	
 	  if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {
 	    // Outer gradient zero - symmetric
-	    for(ix=0;ix<xbndry-1;ix++)
+	    for(int ix=0;ix<xbndry-1;ix++)
 	      xk1d[ncx-ix] = xk1d[xloc + ix];
 	  }else {
 	    // Outer value zero - antisymmetric
-	    for(ix=0;ix<xbndry-1;ix++)
+	    for(int ix=0;ix<xbndry-1;ix++)
 	      xk1d[ncx-ix] = -xk1d[xloc + ix];
 	  }
 	}
@@ -850,7 +848,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 	cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->ngx-4);
 	
 	// Copy boundary regions
-	for(ix=0;ix<2;ix++) {
+	for(int ix=0;ix<2;ix++) {
 	  xk1d[ix] = xk1d[mesh->ngx-4+ix];
 	  xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
 	}
@@ -858,16 +856,16 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
       
       if((flags & INVERT_KX_ZERO) && (iz == 0)) {
         dcomplex offset(0.0);
-        for(ix=0;ix<=ncx;ix++)
+        for(int ix=0;ix<=ncx;ix++)
           offset += bk1d[ix];
         offset /= (BoutReal) (ncx+1);
-        for(ix=0;ix<=ncx;ix++)
+        for(int ix=0;ix<=ncx;ix++)
           bk1d[ix] -= offset;
       }
       
       // Fill xk
       
-      for (ix=0; ix<=ncx; ix++){
+      for (int ix=0; ix<=ncx; ix++){
 	xk[ix][iz]=xk1d[ix];
       }
     }
@@ -875,7 +873,7 @@ int invert_laplace_ser(const FieldPerp &b, FieldPerp &x, int flags, const Field2
 
   // Done inversion, transform back
 
-  for(ix=0; ix<=ncx; ix++){
+  for(int ix=0; ix<=ncx; ix++){
     
     if(flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;

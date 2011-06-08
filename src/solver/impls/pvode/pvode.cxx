@@ -289,7 +289,7 @@ BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   
   // Call rhs function to get extra variables at this time
   BoutReal tstart = MPI_Wtime();
-  (*func)(simtime);
+  run_rhs(simtime);
   rhstime += MPI_Wtime() - tstart;
   ncalls++;
 

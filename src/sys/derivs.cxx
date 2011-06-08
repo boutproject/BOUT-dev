@@ -49,6 +49,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+//#undef _OPENMP
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -917,45 +919,24 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
   
+#ifdef _OPENMP
+  // Parallel version
+
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
+      for(int jz=0;jz<mesh->ngz-1;jz++) {
+        bindex bx;
+        bx.jx=jx; bx.jy=jy; bx.jz=jz;
+        calc_index(&bx);
+        stencil s;
+        var.setZStencil(s, bx, loc);
+        r[jx][jy][jz] = func(s) / dd;
+      }
+#else
   bindex bx;
 
   start_index(&bx, RGN_NOZ);
-#ifdef _OPENMP
-  // Parallel version
-  bindex bxstart = bx; // Copy to avoid race condition on first index
-  bool workToDoGlobal; // Shared loop control
-  #pragma omp parallel
-  {
-    bindex bxlocal; // Index for each thread
-    stencil s;
-    bool workToDo;  // Does this thread have work to do?
-    
-    #pragma omp single
-    {
-      // First index done by single thread
-      for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
-        var.setZStencil(s, bxstart, loc);
-        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd;
-      }
-    }
-    
-    do {
-      #pragma omp critical
-      {
-        // Get the next index
-        workToDo = next_index2(&bx); // Only in 2D
-        bxlocal = bx; // Make a local copy
-        workToDoGlobal = workToDo;
-      }
-      if(workToDo) { // Here workToDo could be different to workToDoGlobal
-        for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
-          var.setZStencil(s, bxlocal, loc);
-          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd;
-        }
-      }
-    }while(workToDoGlobal);
-  }
-#else
   stencil s;
   do {
     var.setZStencil(s, bx, loc);
@@ -1204,7 +1185,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
 #else
     static dcomplex *globalcv;
     static int nthreads = 0;
-#endif
+#endif 
 
     #pragma omp parallel
     {
@@ -1232,7 +1213,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
-      #pragma omp for
+       #pragma omp for
       for(int jy=0;jy<mesh->ngy*(xlt-xge);jy++) {
         rfft(f[xge][jy], ncz, cv); // Forward FFT
           
