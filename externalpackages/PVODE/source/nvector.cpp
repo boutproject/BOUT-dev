@@ -184,7 +184,7 @@ void N_VFree(N_Vector x)
 
 void N_VLinearSum(real a, N_Vector x, real b, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real c, *xd, *yd, *zd;
   N_Vector v, v1, v2;
   boole test;
@@ -261,21 +261,33 @@ void N_VLinearSum(real a, N_Vector x, real b, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++) 
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++) 
     *zd++ = a * (*xd++) + b * (*yd++);
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = a * xd[i] + b * yd[i];
+#endif
 }
 
 
 void N_VConst(real c, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *zd;
 
   N = z->length;
   zd = z->data;
 
-  for (i=0; i < N; i++) 
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++) 
     *zd++ = c;
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++) 
+    zd[i] = c;
+#endif
 }
 
 
@@ -296,7 +308,7 @@ void N_VProd(N_Vector x, N_Vector y, N_Vector z)
 
 void N_VDiv(N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -304,14 +316,20 @@ void N_VDiv(N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++)
     *zd++ = (*xd++) / (*yd++);
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = xd[i] / yd[i];
+#endif
 }
 
 
 void N_VScale(real c, N_Vector x, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
 
   if (z == x) {       /* BLAS usage: scale x <- cx */
@@ -327,55 +345,79 @@ void N_VScale(real c, N_Vector x, N_Vector z)
     N = x->length;
     xd = x->data;
     zd = z->data;
-    for (i=0; i < N; i++) *zd++ = c * (*xd++);
+#ifndef _OPENMP
+    for (integer i=0; i < N; i++) *zd++ = c * (*xd++);
+#else
+    #pragma omp parallel for
+    for (integer i=0; i < N; i++)
+      zd[i] = c * xd[i];
+#endif
   }
 }
 
 
 void N_VAbs(N_Vector x, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
 
   N = x->length;
   xd = x->data;
   zd = z->data;
 
-  for (i=0; i < N; i++, xd++, zd++)
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++, xd++, zd++)
     *zd = ABS(*xd);
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = ABS(xd[i]);
+#endif
 }
 
 
 void N_VInv(N_Vector x, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
 
   N = x->length;
   xd = x->data;
   zd = z->data;
-
-  for (i=0; i < N; i++)
+  
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++)
     *zd++ = ONE / (*xd++);
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = ONE / xd[i];
+#endif
 }
 
 
 void N_VAddConst(N_Vector x, real b, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
   
   N = x->length;
   xd = x->data;
   zd = z->data;
   
-  for (i=0; i < N; i++) *zd++ = (*xd++) + b; 
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++) *zd++ = (*xd++) + b; 
+#else
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = xd[i] + b;
+#endif
 }
 
 
 real N_VDotProd(N_Vector x, N_Vector y)
 {
-  integer i, loclen;
+  integer loclen;
   real sum = ZERO, *xd, *yd, gsum;
   machEnvType machenv;
 
@@ -383,9 +425,11 @@ real N_VDotProd(N_Vector x, N_Vector y)
   xd = x->data;
   yd = y->data;
   machenv = x->machEnv;
-
-  for (i=0; i < loclen; i++) sum += xd[i] * yd[i];
-
+  
+  #pragma omp parallel for reduction(+: sum)
+  for (integer i=0; i < loclen; i++)
+    sum += xd[i] * yd[i];
+  
   gsum = PVecAllReduce(sum, 1, machenv);
   return(gsum);
 }
@@ -393,7 +437,7 @@ real N_VDotProd(N_Vector x, N_Vector y)
 
 real N_VMaxNorm(N_Vector x)
 {
-  integer i, N;
+  integer N;
   real max = ZERO, *xd, gmax;
   machEnvType machenv;
 
@@ -401,10 +445,26 @@ real N_VMaxNorm(N_Vector x)
   xd = x->data;
   machenv = x->machEnv;
 
-  for (i=0; i < N; i++, xd++) {
+#ifndef _OPENMP
+  for (integer i=0; i < N; i++, xd++) {
     if (ABS(*xd) > max) max = ABS(*xd);
   }
-   
+#else
+  #pragma omp parallel 
+  {
+    real max2 = ZERO;
+    #pragma omp for nowait
+    for (integer i=0; i < N; i++) {
+      if (ABS(xd[i]) > max2)
+        max2 = ABS(xd[i]);
+    }
+    #pragma omp critical
+    {
+      if(max2 > max)
+        max = max2;
+    }
+  }
+#endif  
   gmax = PVecAllReduce(max, 2, machenv);
   return(gmax);
 }
@@ -412,8 +472,8 @@ real N_VMaxNorm(N_Vector x)
 
 real N_VWrmsNorm(N_Vector x, N_Vector w)
 {
-  integer i, N, N_global;
-  real sum = ZERO, prodi, *xd, *wd, gsum;
+  integer N, N_global;
+  real sum = ZERO, *xd, *wd, gsum;
   machEnvType machenv;
 
   N = x->length;
@@ -422,8 +482,9 @@ real N_VWrmsNorm(N_Vector x, N_Vector w)
   wd = w->data;
   machenv = x->machEnv;
 
-  for (i=0; i < N; i++) {
-    prodi = (*xd++) * (*wd++);
+  #pragma omp parallel for reduction(+: sum)
+  for (integer i=0; i < N; i++) {
+    real prodi = xd[i] * wd[i];
     sum += prodi * prodi;
   }
 
@@ -433,7 +494,7 @@ real N_VWrmsNorm(N_Vector x, N_Vector w)
 
 real N_VMin(N_Vector x)
 {
-  integer i, N;
+  integer N;
   real min, *xd, gmin;
   machEnvType machenv;
 
@@ -442,9 +503,25 @@ real N_VMin(N_Vector x)
   min = xd[0];
   machenv = x->machEnv;
 
-  for (i=1; i < N; i++, xd++) {
+#ifndef _OPENMP
+  for (integer i=1; i < N; i++, xd++) {
     if ((*xd) < min) min = *xd;
   }
+#else
+  #pragma omp parallel 
+  {
+    real min2 = min;
+    #pragma omp for nowait
+    for (integer i=0; i < N; i++) {
+      if (xd[i] < min) min = xd[i];
+    }
+    #pragma omp critical
+    {
+      if(min2 < min)
+        min = min2;
+    }
+  }
+#endif
 
   gmin = PVecAllReduce(min, 3, machenv);
   return(gmin);
@@ -453,8 +530,8 @@ real N_VMin(N_Vector x)
 
 real N_VWL2Norm(N_Vector x, N_Vector w)
 {
-  integer i, N, N_global;
-  real sum = ZERO, prodi, *xd, *wd, gsum;
+  integer N, N_global;
+  real sum = ZERO, *xd, *wd, gsum;
   machEnvType machenv;
 
   N = x->length;
@@ -462,9 +539,10 @@ real N_VWL2Norm(N_Vector x, N_Vector w)
   xd = x->data;
   wd = w->data;
   machenv = x->machEnv;
-
-  for (i=0; i < N; i++) {
-    prodi = (*xd++) * (*wd++);
+  
+  #pragma omp parallel for reduction(+: sum)
+  for (integer i=0; i < N; i++) {
+    real prodi = xd[i] * wd[i];
     sum += prodi * prodi;
   }
 
@@ -475,7 +553,7 @@ real N_VWL2Norm(N_Vector x, N_Vector w)
 
 real N_VL1Norm(N_Vector x)
 {
-  integer i, N;
+  integer N;
   real sum = ZERO, gsum, *xd;
   machEnvType machenv;
 
@@ -484,7 +562,8 @@ real N_VL1Norm(N_Vector x)
   xd = x->data;
   machenv = x->machEnv;
 
-  for (i=0; i<N; i++,xd++) sum += ABS(*xd);
+  #pragma omp parallel for reduction(+: sum)
+  for (integer i=0; i<N; i++) sum += ABS(xd[i]);
 
   gsum = PVecAllReduce(sum, 1, machenv);
 
@@ -501,8 +580,9 @@ void N_VCompare(real c, N_Vector x, N_Vector z)
   xd = x->data;
   zd = z->data;
   
-  for (i=0; i < N; i++, xd++, zd++) {
-    *zd = (ABS(*xd) >= c) ? ONE : ZERO;
+  #pragma omp parallel for
+  for (i=0; i < N; i++) {
+    zd[i] = (ABS(xd[i]) >= c) ? ONE : ZERO;
   }
 }
 
@@ -608,21 +688,22 @@ static real PVecAllReduce(real d, int op, machEnvType machEnv)
 
 static void VCopy(N_Vector x, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
 
   N = x->length;
   xd = x->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = *xd++; 
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = xd[i]; 
 }
 
 
 static void VSum(N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -630,14 +711,15 @@ static void VSum(N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = (*xd++) + (*yd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = xd[i] + yd[i];
 }
 
 
 static void VDiff(N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
  
   N = x->length;
@@ -645,28 +727,30 @@ static void VDiff(N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = (*xd++) - (*yd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = xd[i] - yd[i];
 }
 
 
 static void VNeg(N_Vector x, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *zd;
 
   N = x->length;
   xd = x->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = -(*xd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = -xd[i];
 }
 
 
 static void VScaleSum(real c, N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -674,14 +758,15 @@ static void VScaleSum(real c, N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = c * ((*xd++) + (*yd++));
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = c * (xd[i] + yd[i]);
 }
 
 
 static void VScaleDiff(real c, N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -689,14 +774,15 @@ static void VScaleDiff(real c, N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = c * ((*xd++) - (*yd++));
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = c * (xd[i] - yd[i]);
 }
 
 
 static void VLin1(real a, N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -704,14 +790,15 @@ static void VLin1(real a, N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = a * (*xd++) + (*yd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = a * xd[i] + yd[i];
 }
 
 
 static void VLin2(real a, N_Vector x, N_Vector y, N_Vector z)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd, *zd;
 
   N = x->length;
@@ -719,13 +806,14 @@ static void VLin2(real a, N_Vector x, N_Vector y, N_Vector z)
   yd = y->data;
   zd = z->data;
 
-  for (i=0; i < N; i++)
-    *zd++ = a * (*xd++) - (*yd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    zd[i] = a * xd[i] - yd[i];
 }
 
 static void Vaxpy(real a, N_Vector x, N_Vector y)
 {
-  integer i, N;
+  integer N;
   real *xd, *yd;
 
   N = x->length;
@@ -733,31 +821,35 @@ static void Vaxpy(real a, N_Vector x, N_Vector y)
   yd = y->data;
 
   if (a == ONE) {
-    for (i=0; i < N; i++)
-      *yd++ += (*xd++);
+    #pragma omp parallel for
+    for (integer i=0; i < N; i++)
+      yd[i] += xd[i];
     return;
   }
 
   if (a == -ONE) {
-    for (i=0; i < N; i++)
-      *yd++ -= (*xd++);
+    #pragma omp parallel for
+    for (integer i=0; i < N; i++)
+      yd[i] -= xd[i];
     return;
   }    
 
-  for (i=0; i < N; i++)
-    *yd++ += a * (*xd++);
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    yd[i] += a * xd[i];
 }
 
 static void VScaleBy(real a, N_Vector x)
 {
-  integer i, N;
+  integer N;
   real *xd;
 
   N = x->length;
   xd = x->data;
 
-  for (i=0; i < N; i++)
-    *xd++ *= a;
+  #pragma omp parallel for
+  for (integer i=0; i < N; i++)
+    xd[i] *= a;
 }
 
 } //namespace
