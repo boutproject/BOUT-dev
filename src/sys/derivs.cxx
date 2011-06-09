@@ -921,18 +921,26 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
   
 #ifdef _OPENMP
   // Parallel version
-
+  
+  int ny = mesh->yend-mesh->ystart+1;
+  int ncz = mesh->ngz-1;
   #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=mesh->ystart;jy<=mesh->yend;jy++)
-      for(int jz=0;jz<mesh->ngz-1;jz++) {
-        bindex bx;
-        bx.jx=jx; bx.jy=jy; bx.jz=jz;
-        calc_index(&bx);
-        stencil s;
-        var.setZStencil(s, bx, loc);
-        r[jx][jy][jz] = func(s) / dd;
-      }
+  for(int j=0;j<mesh->ngx*ny*ncz;j++) {
+    int jz = j % (mesh->ngz-1);
+    int rem = j / (mesh->ngz-1);
+    int jy = (rem % ny) + mesh->ystart; 
+    int jx = rem / ny;
+    
+    bindex bx;
+    bx.jx=jx; bx.jy=jy; bx.jz=jz;
+    bx.jzp  = (bx.jz+1)%ncz;
+    bx.jzm  = (bx.jz+ncz-1)%ncz;
+    bx.jz2p = (bx.jzp+1)%ncz;
+    bx.jz2m = (bx.jzm+ncz-1)%ncz;
+    stencil s;
+    var.setZStencil(s, bx, loc);
+    r[jx][jy][jz] = func(s) / dd;
+  }
 #else
   bindex bx;
 
