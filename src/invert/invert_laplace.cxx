@@ -177,7 +177,8 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   
   coef1 /= SQ(mesh->dx[jx][jy]);
   coef3 /= 2.*mesh->dx[jx][jy];
-  
+  coef4 /= SQ(mesh->dx[jx][jy]);
+
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
   c = dcomplex(coef1 + coef4,kwave*coef3);
