@@ -130,27 +130,28 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
   coef2=mesh->g33[jx][jy];     ///< Z 2nd derivative coefficient
   coef3=2.*mesh->g13[jx][jy];  ///< X-Z mixed derivative coefficient
-  
+
+  coef4 = 0.0;
+  coef5 = 0.0;
+  if(laplace_all_terms) {
+    coef4 = mesh->G1[jx][jy]; // X 1st derivative
+    coef5 = mesh->G3[jx][jy]; // Z 1st derivative
+  }
+
   if(d != (Field2D*) NULL) {
     // Multiply Delp2 component by a factor
     coef1 *= (*d)[jx][jy];
     coef2 *= (*d)[jx][jy];
     coef3 *= (*d)[jx][jy];
-  }
-
-  coef4 = 0.0;
-  coef5 = 0.0;
-  if(laplace_all_terms) {
-    coef4 = mesh->G1[jx][jy] / (2.0*mesh->dx[jx][jy]); // X 1st derivative
-    //coef4 = 1. / mesh->dx[jx][jy];
-    coef5 = mesh->G3[jx][jy]; // Z 1st derivative
+    coef4 *= (*d)[jx][jy];
+    coef5 *= (*d)[jx][jy];
   }
 
   if(laplace_nonuniform) {
     // non-uniform mesh correction
     if((jx != 0) && (jx != (mesh->ngx-1))) {
       //coef4 += mesh->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
-      coef4 -= 0.25*((mesh->dx[jx+1][jy] - mesh->dx[jx-1][jy])/mesh->dx[jx][jy])*coef1; // BOUT-06 term
+      coef4 -= 0.5*((mesh->dx[jx+1][jy] - mesh->dx[jx-1][jy])/SQ(mesh->dx[jx][jy]))*coef1; // BOUT-06 term
     }
   }
 
@@ -158,7 +159,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     // A first order derivative term
     
     if((jx > 0) && (jx < (mesh->ngx-1)))
-      coef4 += mesh->g11[jx][jy] * 0.25 * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (SQ(mesh->dx[jx][jy])*((*ccoef)[jx][jy]));
+      coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
   }
   
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
@@ -168,16 +169,9 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
     coef3 = 0.0; // This cancels out
   }
   
-  /*
-  if((jy == 4) && (jz == 1)  && (jx > 0) && (jx < (mesh->ngx-1))) {
-    output.write("Lap x=%d : %e, %e, %e, %e\n", jx, 
-                 coef1, coef2, coef4, kwave);
-  }
-  */
-  
   coef1 /= SQ(mesh->dx[jx][jy]);
   coef3 /= 2.*mesh->dx[jx][jy];
-  coef4 /= SQ(mesh->dx[jx][jy]);
+  coef4 /= 2.*mesh->dx[jx][jy];
 
   a = dcomplex(coef1 - coef4,-kwave*coef3);
   b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
