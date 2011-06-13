@@ -101,7 +101,7 @@ bool fix_profiles; // Subtract toroidal averages
 int  jpar_bndry_width; // Set jpar = 0 in a boundary region
 
 // Method to use for brackets: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
-const BRACKET_METHOD bm = BRACKET_SIMPLE; //BRACKET_ARAKAWA;
+const BRACKET_METHOD bm = BRACKET_STD;
 
 int phi_flags, apar_flags; // Inversion flags
 
@@ -353,7 +353,7 @@ int physics_init(bool restarting)
     Grad_par_logB = 0.;
   
   //////////////////////////////////
-  
+
   // Add ion equations
   if(ni_ddt) {
     SOLVE_FOR(Ni);
@@ -512,16 +512,9 @@ const Field3D Div_parP_CtoL(const Field3D &f);
 const Field3D Div_parP_LtoC(const Field3D &f);
 
 ////////////////////////////////////////////////////////////////////////
-// RHS function
+// Calculate auxilliary quantities
 
-int physics_run(BoutReal time)
-{
-  //output << "time = " << time << endl;
-  
-  // Quantities which depend on species
-  //Field3D phi_G, Phi_G; // Gyro-reduced potential
-  Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
-  
+void calc_aux() {
   ////////////////////////////////////////////
   // Adiabatic electrons
   
@@ -581,17 +574,19 @@ int physics_run(BoutReal time)
   }
 
   Jpar = Ui - Ue;
+}
 
+////////////////////////////////////////////////////////////////////////
+// RHS function
+
+int physics_run(BoutReal time)
+{
+  calc_aux();
+  
   ////////////////////////////////////////////
   // Communicate
 
   mesh->communicate(comms);
-
-  ////////////////////////////////////////////
-  // Resistivity
-  
-  Rei = mu_e*nu_e*(eta*Jpar + 
-                   (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
   
   ////////////////////////////////////////////
   // Electron equations
@@ -610,12 +605,6 @@ int physics_run(BoutReal time)
       
       mesh->communicate(phi_G, Phi_G);
     }
-    
-    // Collisional dissipation
-    S_D = (nu_e / (3.*pi_e)) * (Tepar - Teperp);
-    K_par = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar + 0.6*alpha_e*Jpar);
-    K_perp = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qeperp + 0.4*alpha_e*Jpar);
-    K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
     
     if(ne_ddt) {
       ddt(Ne) = -UE_Grad(Ne0, phi_G);
@@ -659,9 +648,6 @@ int physics_run(BoutReal time)
       if(apue_gradB)
         ddt(ApUe) -= tau_e * (Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB;
       
-      if(apue_Rei)
-        ddt(ApUe) -= Rei;
-      
       if(low_pass_z > 0)
         ddt(ApUe) = lowPass(ddt(ApUe), low_pass_z);
       
@@ -674,7 +660,7 @@ int physics_run(BoutReal time)
         - 2.*Div_parP_LtoC(Ue + qepar)
         + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
         - (Ue + qeperp)*Grad_par_logB
-        - 2.*S_D;
+        ;
       
       if(low_pass_z > 0)
         ddt(Tepar) = lowPass(ddt(Tepar), low_pass_z);
@@ -690,7 +676,7 @@ int physics_run(BoutReal time)
         + 0.5*curvature(phi_G + Phi_G + tau_e*(Ne + Teperp) 
                         + 3.*(Phi_G + tau_e*Teperp))
         + (Ue + qeperp)*Grad_par_logB
-        + S_D;
+        ;
       
       if(low_pass_z > 0)
         ddt(Teperp) = lowPass(ddt(Teperp), low_pass_z);
@@ -703,9 +689,7 @@ int physics_run(BoutReal time)
       ddt(qepar) = - UE_Grad(qepar, phi_G)
         - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*(Te0 + Tepar))
         + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
-        - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
-        - (1./mu_e)*K_par
-        - (1./mu_e)*K_D;
+        ;
       
       if(low_pass_z > 0)
         ddt(qepar) = lowPass(ddt(qepar), low_pass_z);
@@ -720,8 +704,7 @@ int physics_run(BoutReal time)
         - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*(Te0 + Teperp))
         + 0.5*tau_e*curvature(Ue + 6.*qeperp)
         - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
-        - (1./mu_e)*K_perp
-        + (1./mu_e)*K_D;
+        ;
       
       if(low_pass_z > 0)
         ddt(qeperp) = lowPass(ddt(qeperp), low_pass_z);
@@ -739,12 +722,6 @@ int physics_run(BoutReal time)
   Phi_G = gyroPade2(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
   
   mesh->communicate(phi_G, Phi_G);
-
-  // Collisional dissipation
-  S_D = (nu_i / (3.*pi_i)) * (Tipar - Tiperp);
-  K_par = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qipar;
-  K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
-  K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
   
   if(ni_ddt) {
     ddt(Ni) = -UE_Grad(Ni0, phi_G);
@@ -788,9 +765,6 @@ int physics_run(BoutReal time)
     if(apui_gradB)
       ddt(ApUi) -= tau_i * (Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
     
-    if(apui_Rei)
-      ddt(ApUi) -= Rei;
-    
     if(low_pass_z > 0)
       ddt(ApUi) = lowPass(ddt(ApUi), low_pass_z);
     
@@ -803,7 +777,7 @@ int physics_run(BoutReal time)
       - 2.*Div_parP_LtoC(Ui + qipar)
       + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
       - (Ui + qiperp)*Grad_par_logB
-      - 2.*S_D;
+      ;
     
     if(low_pass_z > 0)
       ddt(Tipar) = lowPass(ddt(Tipar), low_pass_z);
@@ -819,7 +793,7 @@ int physics_run(BoutReal time)
       + 0.5*curvature(phi_G + Phi_G + tau_i*(Ni + Tiperp) 
                       + 3.*(Phi_G + tau_i*Tiperp))
       + (Ui + qiperp)*Grad_par_logB
-      + S_D;
+      ;
     
     if(low_pass_z > 0)
       ddt(Tiperp) = lowPass(ddt(Tiperp), low_pass_z);
@@ -831,9 +805,7 @@ int physics_run(BoutReal time)
   if(qipar_ddt) {
     ddt(qipar) = - UE_Grad(qipar, phi_G)
       - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*(Ti0 + Tipar))
-      + 0.5*tau_i*curvature(3.*Ui + 8.*qipar)
-      - (1./mu_e)*K_par
-      - (1./mu_e)*K_D;
+      + 0.5*tau_i*curvature(3.*Ui + 8.*qipar);
     
     if(low_pass_z > 0)
       ddt(qipar) = lowPass(ddt(qipar), low_pass_z);
@@ -847,9 +819,7 @@ int physics_run(BoutReal time)
       - WE_Grad(Ui + 2.*qiperp, Phi_G)
       - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*(Ti0 + Tiperp))
       + 0.5*tau_i*curvature(Ui + 6.*qiperp)
-      - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB
-      - (1./mu_e)*K_perp
-      + (1./mu_e)*K_D;
+      - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
     
     if(low_pass_z > 0)
       ddt(qiperp) = lowPass(ddt(qiperp), low_pass_z);
@@ -864,10 +834,20 @@ int physics_run(BoutReal time)
 // Artificial dissipation terms
 int physics_dissipation(BoutReal time)
 {
+  Field3D S_D, K_par, K_perp, K_D; // Collisional dissipation terms
+  
+  calc_aux();
+
   ////////////////////////////////////////////
   // Communicate
 
   mesh->communicate(comms);
+  
+  ////////////////////////////////////////////
+  // Resistivity
+  
+  Rei = mu_e*nu_e*(eta*Jpar + 
+                   (alpha_e/kappa_e)*(qepar + qeperp + alpha_e*Jpar));
 
   ////////////////////////////////////////////
   // Electron equations
@@ -885,6 +865,12 @@ int physics_dissipation(BoutReal time)
       mesh->communicate(phi_G, Phi_G);
     }
     
+    // Collisional dissipation
+    S_D = (nu_e / (3.*pi_e)) * (Tepar - Teperp);
+    K_par = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar + 0.6*alpha_e*Jpar);
+    K_perp = mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qeperp + 0.4*alpha_e*Jpar);
+    K_D = 1.28*mu_e*tau_e*nu_e*((5./2.)/kappa_e)*(qepar - 1.5*qeperp);
+    
     if(ne_ddt) {
       ddt(Ne) = 0.;
       if(ne_ne1)
@@ -894,24 +880,44 @@ int physics_dissipation(BoutReal time)
       ddt(ApUe) = 0.0;
       if(apue_uet)
         ddt(ApUe) -= mu_e*UE_Grad_D(Ue, phi_G);
+      if(apue_Rei)
+        ddt(ApUe) -= Rei;
     }
     if(tepar_ddt) {
-      ddt(Tepar) = -UE_Grad_D(Tepar, phi_G);
+      ddt(Tepar) = -UE_Grad_D(Tepar, phi_G) - 2.*S_D;
+      
     }
     if(teperp_ddt) {
-      ddt(Teperp) = -UE_Grad_D(Teperp, phi_G);
+      ddt(Teperp) = -UE_Grad_D(Teperp, phi_G) + S_D;
     }
     if(qepar_ddt) {
-      ddt(qepar) = -UE_Grad_D(qepar, phi_G);
+      ddt(qepar) = -UE_Grad_D(qepar, phi_G)
+        - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
+        - (1./mu_e)*K_par
+        - (1./mu_e)*K_D;
     }
     if(qeperp_ddt) {
-      ddt(qeperp) = -UE_Grad_D(qeperp, phi_G);
+      ddt(qeperp) = -UE_Grad_D(qeperp, phi_G)
+        - (1./mu_e)*K_perp
+        + (1./mu_e)*K_D;
     }
   }
   
   ////////////////////////////////////////////
   // Ion equations
   
+  // Calculate gyroreduced potentials
+  phi_G = gyroPade1(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
+  Phi_G = gyroPade2(phi, rho_i, INVERT_IN_RHS | INVERT_OUT_RHS);
+  
+  mesh->communicate(phi_G, Phi_G);
+
+  // Collisional dissipation
+  S_D = (nu_i / (3.*pi_i)) * (Tipar - Tiperp);
+  K_par = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qipar;
+  K_perp = mu_i*tau_i*nu_i*((5./2.)/kappa_i)*qiperp;
+  K_D = 1.28*mu_i*tau_i*nu_i*((5./2.)/kappa_i)*(qipar - 1.5*qiperp);
+
   if(ni_ddt) {
     ddt(Ni) = 0.;
     if(ni_ni1)
@@ -921,18 +927,24 @@ int physics_dissipation(BoutReal time)
     ddt(ApUi) = 0.0;
     if(apui_uit)
       ddt(ApUi) = -mu_i*UE_Grad_D(Ui, phi_G);
+    if(apui_Rei)
+      ddt(ApUi) -= Rei;
   }
   if(tipar_ddt) {
-    ddt(Tipar) = - UE_Grad_D(Tipar, phi_G);
+    ddt(Tipar) = - UE_Grad_D(Tipar, phi_G) - 2.*S_D;
   }
   if(tiperp_ddt) {
-    ddt(Tiperp) = - UE_Grad_D(Tiperp, phi_G);
+    ddt(Tiperp) = - UE_Grad_D(Tiperp, phi_G) + S_D;
   }
   if(qipar_ddt) {
-    ddt(qipar) = - UE_Grad_D(qipar, phi_G);
+    ddt(qipar) = - UE_Grad_D(qipar, phi_G)
+      - (1./mu_e)*K_par
+      - (1./mu_e)*K_D;
   }
   if(qiperp_ddt) {
-    ddt(qiperp) = - UE_Grad_D(qiperp, phi_G);
+    ddt(qiperp) = - UE_Grad_D(qiperp, phi_G)
+      - (1./mu_e)*K_perp
+      + (1./mu_e)*K_D;
   }
   
   return 0;
