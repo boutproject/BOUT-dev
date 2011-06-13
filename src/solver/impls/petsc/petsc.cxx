@@ -204,20 +204,14 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = TSSetSolution(ts,u);CHKERRQ(ierr);   
   
   // Create RHSJacobian J
+
   SNES            snes;
   KSP             ksp;
   PC              pc;
-  const PCType    pctype;
   PetscBool       pcnone=PETSC_FALSE;
 
   // set default ksp and pc 
-  if (use_petscts){
-    ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
-    ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
-    ierr = KSPSetType(ksp,KSPGMRES);CHKERRQ(ierr);
-    ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
-    ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr); 
-  } else {
+  if (use_sundials){
     ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr);
     ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr); 
   }
@@ -275,48 +269,42 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     prealloc = cols;
     ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
-
+  
     if (use_petscts){
-      ierr = TSSetIJacobian(ts,J,J,solver_ijacobian,this);CHKERRQ(ierr); //set dummy Jacobian
-   
-      // use -snes_mf_operator for mat*vec in KSP iterations - current using runtime option
+      // use -snes_mf_operator for mat*vec in KSP iterations 
       ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
       ierr = TSSetUp(ts);CHKERRQ(ierr);            // enables queries and MatCreateSNESMF() below
+      ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
       ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
-      ierr = TSSetIJacobian(ts,Jmf,J,solver_ijacobian,this);CHKERRQ(ierr);
     } else {
       ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
+      ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
+      if (pcnone) return(0);
     }
-    ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
-    if (pcnone) return(0);
    
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
     if (J_slowfd){ // create Jacobian matrix by slow fd
-      //ierr = TSSetIJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); //set dummy Jacobian
-      //ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr);
-      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute rhs Jmat by slow fd...\n");CHKERRQ(ierr);}
-      ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr); // this J is correct!
+      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
+      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);}
+      MatStructure flg;
+      ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
+      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J by slow fd is done.\n");CHKERRQ(ierr);}
+      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
 
-      //ierr = TSSetIJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); // needs new TSDefaultComputeJacobian!
-
-      // Create coloring context of J to be used during time stepping - solver_f seems not linked to ts!!!
-      //if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute Jmat by slow fd...\n");CHKERRQ(ierr);}
-      //ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr); // this J is correct!
-#if defined(COLOR)          
+      // Create coloring context of J to be used during time stepping 
       ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
       ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
       ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
       ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
 
-      ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
-      ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);  
-  
-      // Test TSDefaultComputeJacobianColor()
-      ierr = PetscPrintf(comm,"\n[%d] Test TSDefaultComputeJacobianColor() ...\n",rank);
-      ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr); // this J=0 !!!
-      //ierr = TSDefaultComputeJacobianColor(ts,simtime,u,&J,&J,&J_structure, (MatFDColoring)matfdcoloring);CHKERRQ(ierr); // this J=0 !!!
-#endif      
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
+      ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))SNESTSFormFunction,ts);CHKERRQ(ierr);
+      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobianColor,(MatFDColoring)matfdcoloring);CHKERRQ(ierr);
+
+      //Test J with coloring
+      ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
+      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J by coloring is done...\n");CHKERRQ(ierr);}
+      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
+
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
       
@@ -454,22 +442,33 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
       ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
       ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+      //J(2585:n-1,:) has no entry !!!
+      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"Sparse pattern:\n");}
+      ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
       // bout_error("stopping");
       ierr = ISLocalToGlobalMappingDestroy(&ltog);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingDestroy(&ltogb);CHKERRQ(ierr);
-      ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); // remove!!!
+      
+      //ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); // remove!!!
+      // Create coloring context of J to be used during time stepping 
+      ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
+      ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+      ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
+      ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
+
+      ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))SNESTSFormFunction,ts);CHKERRQ(ierr);
+      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+      /*
+        if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by color...\n");CHKERRQ(ierr);}
+        MatStructure flg;
+        ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
+        if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J is done.\n");CHKERRQ(ierr);}
+        ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
+      */
     }
   }
-#if defined(COLOR)    
-  // Create coloring context of J to be used during time stepping 
-  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-  ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-  ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
-#endif //OLD
-
+ 
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
   // Test TSComputeRHSJacobian()
