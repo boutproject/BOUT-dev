@@ -1,7 +1,7 @@
 /**************************************************************
  * Smoothing operators
  *
- **************************************************************************
+ **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -33,6 +33,9 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace = true);
 
 /// Smooth in Y using 1-2-1 filter
 const Field3D smooth_y(const Field3D &f);
+
+/// Smooth using a stencil in X and Y
+const Field3D smoothXY(const Field3D &f);
 
 /// Average over Y
 const Field2D average_y(const Field2D &f);
