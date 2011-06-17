@@ -16,9 +16,9 @@ ZPERIOD = 10 # Fraction of a torus
 MXG = 2
 MYG = 2
 
-#grid="d3d_119919.nc"
-#grid = "cbm18_8_y064_x516_090309.nc"
-grid = "iter_x516_y128_260511.grd.nc"
+grid="d3d_119919.nc"
+# grid = "cbm18_8_y064_x516_090309.nc"
+# grid = "iter_x516_y128_260511.grd.nc"
 
 #twistshift_pf = true # Grid has twist-shift in PF region
 
@@ -64,6 +64,7 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 # Solver settings
 
 [solver]
+type=petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-10 # absolute tolerance

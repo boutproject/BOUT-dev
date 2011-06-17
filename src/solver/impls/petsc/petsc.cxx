@@ -44,6 +44,7 @@ PetscSolver::PetscSolver()
 {
   has_constraints = false; // No constraints
   this->J = 0;
+  this->Jmf = 0;
   this->matfdcoloring = 0;
 }
 
