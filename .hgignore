@@ -7,7 +7,7 @@ syntax:glob
 *.d
 *.dmp.*
 *.log.*
-*.restart.*
+*.restart*
 *.pyc
 .tmtags
 *.swp
@@ -33,3 +33,4 @@ gas_compress
 2fluid
 ue_bmark
 split_operator
+jorek_compare
