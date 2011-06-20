@@ -109,6 +109,7 @@ int RK4Solver::run(MonitorFunc monitor)
         
         // Check accuracy
         BoutReal err = 0.;
+        #pragma omp parallel for reduction(+: err)   
         for(int i=0;i<nlocal;i++)
           err += fabs(f2[i] - f1[i]) / ( fabs(f1[i] + f2[i]) + atol );
         err /= (BoutReal) nlocal;
@@ -188,6 +189,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime);
   save_derivs(k1);
   
+  #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
     tmp[i] = f0[i] + 0.5*dt*k1[i];
   
@@ -195,13 +197,15 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime + 0.5*dt);
   save_derivs(k2);
   
+  #pragma omp parallel for 
   for(int i=0;i<nlocal;i++)
     tmp[i] = f0[i] + 0.5*dt*k2[i];
   
   load_vars(tmp);
   run_rhs(curtime + 0.5*dt);
   save_derivs(k3);
-  
+ 
+  #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
     tmp[i] = f0[i] + dt*k3[i];
   
@@ -209,6 +213,7 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   run_rhs(curtime + dt);
   save_derivs(k4);
   
+  #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
 }

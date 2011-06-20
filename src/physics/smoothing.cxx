@@ -5,7 +5,7 @@
  * 2010-05-17 Ben Dudson <bd512@york.ac.uk>
  *    * Added nonlinear filter
  * 
- **************************************************************************
+ **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
@@ -34,8 +34,7 @@
 #include <bout_types.hxx>
 
 // Smooth using simple 1-2-1 filter
-const Field3D smooth_x(const Field3D &f, bool BoutRealspace)
-{
+const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   Field3D fs, result;
 
   if(BoutRealspace) {
@@ -70,8 +69,7 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace)
 }
 
 
-const Field3D smooth_y(const Field3D &f)
-{
+const Field3D smooth_y(const Field3D &f) {
   Field3D result;
 
   result.allocate();
@@ -97,9 +95,24 @@ const Field3D smooth_y(const Field3D &f)
   return result;
 }
 
-const Field2D averageY(const Field2D &f)
-{
+const Field2D averageY(const Field2D &f) {
   return mesh->averageY(f);
+}
+
+const Field3D smoothXY(const Field3D &f) {
+  Field3D result;
+  result.allocate();
+
+  for(int x=2;x<mesh->ngx-2;x++)
+    for(int y=2;y<mesh->ngy-2;y++)
+      for(int z=0;z<mesh->ngz;z++) {
+        result[x][y][z] = 0.5*f[x][y][z] + 0.125*( 0.5*f[x+1][y][z] + 0.125*(f[x+2][y][z] + f[x][y][z] + f[x+1][y-1][z] + f[x+1][y+1][z]) +
+                                                   0.5*f[x-1][y][z] + 0.125*(f[x][y][z] + f[x-2][y][z] + f[x-1][y-1][z] + f[x-1][y+1][z]) +
+                                                   0.5*f[x][y-1][z] + 0.125*(f[x+1][y-1][z] + f[x-1][y-1][z] + f[x][y-2][z] + f[x][y][z]) +
+                                                   0.5*f[x][y+1][z] + 0.125*(f[x+1][y+1][z] + f[x-1][y+1][z] + f[x][y][z] + f[x][y+2][z]));
+      }
+  
+  return result;
 }
 
 /// Nonlinear filtering to remove grid-scale noise
@@ -111,8 +124,7 @@ const Field2D averageY(const Field2D &f)
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
   
  */
-void nl_filter(rvec &f, BoutReal w)
-{
+void nl_filter(rvec &f, BoutReal w) {
   for(size_t i=1; i<f.size()-1; i++) {
     
     BoutReal dp = f[i+1] - f[i];
@@ -139,8 +151,7 @@ void nl_filter(rvec &f, BoutReal w)
   }
 }
 
-const Field3D nl_filter_x(const Field3D &f, BoutReal w)
-{
+const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
 #endif
@@ -165,8 +176,7 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w)
   return result;
 }
 
-const Field3D nl_filter_y(const Field3D &fs, BoutReal w)
-{
+const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
 #endif
@@ -187,10 +197,9 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w)
   return result;
 }
 
-const Field3D nl_filter_z(const Field3D &fs, BoutReal w)
-{
+const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
 #ifdef CHECK
-  msg_stack.push("nl_filter_x( Field3D )");
+  msg_stack.push("nl_filter_z( Field3D )");
 #endif
   
   Field3D result;

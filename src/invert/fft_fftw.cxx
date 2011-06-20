@@ -350,11 +350,10 @@ void irfft(dcomplex *in, int length, BoutReal *out)
   static int size = 0, nthreads;
   
   int th_id = omp_get_thread_num();
+  int n_th = omp_get_num_threads(); // Number of threads
 #pragma omp critical(irfft)
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
-    int n_th = omp_get_num_threads(); // Number of threads
-    //output << "Num threads = " << n_th << " id = " << th_id << endl;
     
     if((size != length) || (nthreads < n_th)) {
       output << "irfft allocating: " << th_id << " / " << n_th << endl;

@@ -78,6 +78,10 @@ using std::list;
 #include <petsc.h>
 #endif
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #ifdef SIGHANDLE
 #include <signal.h>
 void bout_signal_handler(int sig);  // Handles segmentation faults
@@ -208,6 +212,12 @@ int bout_init(int argc, char **argv)
   output.write("\tnetCDF support enabled\n");
 #else
   output.write("\tnetCDF support disabled\n");
+#endif
+
+#ifdef _OPENMP
+  output.write("\tOpenMP parallelisation enabled\n");
+#else
+  output.write("\tOpenMP parallelisation disabled\n");
 #endif
 
 #ifdef METRIC3D

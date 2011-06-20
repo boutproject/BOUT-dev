@@ -293,10 +293,24 @@ const Field3D Grad2_par2(const Field3D &f)
   int msg_pos = msg_stack.push("Grad2_par2( Field3D )");
 #endif
 
-  Field2D sg = sqrt(mesh->g_22);
-  Field3D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/mesh->g_22;
+  Field2D sg;
+  Field3D result, r2;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    {
+      sg = sqrt(mesh->g_22);
+      sg = DDY(1./sg) / sg;
+    }
+    
+    #pragma omp section
+    result = DDY(f);
+    
+    #pragma omp section
+    r2 = D2DY2(f)/mesh->g_22;
+  }
+  result = sg*result + r2;
   
-  //Field3D result = D2DY2(f)/mesh->g_22;
 #ifdef TRACK
   result.name = "Grad2_par2("+f.name+")";
 #endif
@@ -373,9 +387,6 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   // NEW: SOLVE USING FFT
 
   static dcomplex **ft = (dcomplex**) NULL, **delft;
-  int jx, jy, jz;
-  BoutReal filter;
-  dcomplex a, b, c;
 
   result.allocate();
 
@@ -391,20 +402,24 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   }
   
   // Loop over all y indices
-  for(jy=0;jy<mesh->ngy;jy++) {
+  for(int jy=0;jy<mesh->ngy;jy++) {
 
     // Take forward FFT
     
-    for(jx=0;jx<mesh->ngx;jx++)
+    #pragma omp parallel for
+    for(int jx=0;jx<mesh->ngx;jx++)
       ZFFT(fd[jx][jy], mesh->zShift[jx][jy], ft[jx]);
 
     // Loop over kz
-    for(jz=0;jz<=ncz/2;jz++) {
-
+    #pragma omp parallel for
+    for(int jz=0;jz<=ncz/2;jz++) {
+      BoutReal filter;
+      dcomplex a, b, c;
+      
       if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
-      for(jx=2;jx<(mesh->ngx-2);jx++) {
+      for(int jx=2;jx<(mesh->ngx-2);jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -424,14 +439,15 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
     }
   
     // Reverse FFT
-    for(jx=1;jx<(mesh->ngx-1);jx++) {
+    #pragma omp parallel for
+    for(int jx=1;jx<(mesh->ngx-1);jx++) {
 
       ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
       rd[jx][jy][ncz] = rd[jx][jy][0];
     }
 
     // Boundaries
-    for(jz=0;jz<ncz;jz++) {
+    for(int jz=0;jz<ncz;jz++) {
       rd[0][jy][jz] = 0.0;
       rd[mesh->ngx-1][jy][jz] = 0.0;
     }
@@ -560,8 +576,8 @@ const Field3D Laplacian(const Field3D &f)
 
 const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
 {
-  Field2D dpdx, dpdy, dpdz;
-  Field2D vx, vy, vz;
+  Field2D dpdx, dpdy;
+  Field2D vx, vy;
   Field2D result;
 
 #ifdef CHECK
@@ -569,22 +585,36 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
 #endif
   
   // Calculate phi derivatives
-  dpdx = DDX(phi); dpdy = DDY(phi); dpdz = DDZ(phi);
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    dpdx = DDX(phi);
+    
+    #pragma omp section
+    dpdy = DDY(phi);
+  }
   
   // Calculate advection velocity
-  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
-  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
-  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
-
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    // BOUT-06 style differencing
-    vz += mesh->IntShiftTorsion * vx;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    vx = -mesh->g_23*dpdy;
+    
+    #pragma omp section
+    vy = mesh->g_23*dpdx;
   }
 
   // Upwind A using these velocities
-  
-  result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
-  
+  Field2D r2;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    result = VDDX(vx, A);
+    
+    #pragma omp section
+    r2 = VDDY(vy, A);
+  }
+  result += r2;
   result /= mesh->J*sqrt(mesh->g_22);
 
 #ifdef TRACK
@@ -598,7 +628,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
 
 const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
 {
-  Field2D dpdx, dpdy, dpdz;
+  Field2D dpdx, dpdy;
   Field2D vx, vy, vz;
   Field3D result;
   
@@ -607,12 +637,27 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
 #endif
 
   // Calculate phi derivatives
-  dpdx = DDX(phi); dpdy = DDY(phi); dpdz = DDZ(phi);
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    dpdx = DDX(phi); 
+    
+    #pragma omp section
+    dpdy = DDY(phi);
+  }
   
   // Calculate advection velocity
-  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
-  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
-  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    vx = -mesh->g_23*dpdy;
+    
+    #pragma omp section
+    vy = mesh->g_23*dpdx;
+    
+    #pragma omp section
+    vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
+  }
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
@@ -621,9 +666,20 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
 
   // Upwind A using these velocities
   
-  result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+  Field3D ry,rz;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    result = VDDX(vx, A);
+    
+    #pragma omp section
+    ry = VDDY(vy, A);
 
-  result /= mesh->J*sqrt(mesh->g_22);
+    #pragma omp section
+    rz = VDDZ(vz, A);
+  }
+
+  result = (result + ry + rz) / (mesh->J*sqrt(mesh->g_22));
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";
@@ -637,7 +693,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
 const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outloc)
 {
   Field3D dpdx, dpdy, dpdz;
-  Field3D vx, vy, vz;
+  Field3D vx, vy;
   Field3D result;
 
 #ifdef CHECK
@@ -645,25 +701,41 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
 #endif
 
   // Calculate phi derivatives
-  dpdx = DDX(p, outloc);
-  dpdy = DDY(p, outloc);
-  dpdz = DDZ(p, outloc);
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    dpdx = DDX(p, outloc);
+    
+    #pragma omp section
+    dpdy = DDY(p, outloc);
+    
+    #pragma omp section
+    dpdz = DDZ(p, outloc);
+  }
 
   // Calculate advection velocity
-  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
-  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
-  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
-
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    // BOUT-06 style differencing
-    vz += mesh->IntShiftTorsion * vx;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+    
+    #pragma omp section
+    vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
   }
 
   // Upwind A using these velocities
 
-  result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+  Field3D r2;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    result = VDDX(vx, A);
+    
+    #pragma omp section
+    r2 = VDDY(vy, A);
+  }
 
-  result /= mesh->J*sqrt(mesh->g_22);
+  result = (result + r2) / (mesh->J*sqrt(mesh->g_22));
   
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+p.name+","+A.name+")";
@@ -685,12 +757,30 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 #endif
 
   // Calculate phi derivatives
-  dpdx = DDX(phi, outloc); dpdy = DDY(phi, outloc); dpdz = DDZ(phi, outloc);
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    dpdx = DDX(phi, outloc); 
+    
+    #pragma omp section
+    dpdy = DDY(phi, outloc);
+    
+    #pragma omp section
+    dpdz = DDZ(phi, outloc);
+  }
   
   // Calculate advection velocity
-  vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
-  vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
-  vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+    
+    #pragma omp section
+    vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+    
+    #pragma omp section
+    vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
+  }
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
@@ -699,9 +789,20 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   // Upwind A using these velocities
   
-  result = VDDX(vx, A) + VDDY(vy, A) + VDDZ(vz, A);
+  Field3D ry, rz;
+  #pragma omp parallel sections
+  {
+    #pragma omp section
+    result = VDDX(vx, A);
+    
+    #pragma omp section
+    ry = VDDY(vy, A);
+    
+    #pragma omp section
+    rz = VDDZ(vz, A);
+  }
   
-  result /= mesh->J*sqrt(mesh->g_22);
+  result = (result + ry + rz) / (mesh->J*sqrt(mesh->g_22));
 
 #ifdef TRACK
   result.name = "b0xGrad_dot_Grad("+phi.name+","+A.name+")";

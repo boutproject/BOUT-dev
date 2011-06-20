@@ -735,8 +735,8 @@ void calc_index(bindex *bx)
   
   bx->jzp  = (bx->jz+1)%ncz;
   bx->jzm  = (bx->jz+ncz-1)%ncz;
-  bx->jz2p = (bx->jz+2)%ncz;
-  bx->jz2m = (bx->jz+ncz-2)%ncz;
+  bx->jz2p = (bx->jzp+1)%ncz;
+  bx->jz2m = (bx->jzm+ncz-1)%ncz;
 
   bx->yp_shift = bx->y2p_shift = false;
   bx->ym_shift = bx->y2m_shift = false;
