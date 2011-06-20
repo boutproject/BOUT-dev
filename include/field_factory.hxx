@@ -54,6 +54,7 @@ public:
 };
 
 //////////////////////////////////////////////////////////
+// Basic generators: Numerical value, 'x', 'y' and 'z'
 
 class FieldValue : public FieldGenerator {
 public:
@@ -65,19 +66,26 @@ private:
 
 class FieldX : public FieldGenerator {
 public:
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
   BoutReal generate(int x, int y, int z);
 };
 
 class FieldY : public FieldGenerator {
 public:
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
   BoutReal generate(int x, int y, int z);
 };
 
 class FieldZ : public FieldGenerator {
 public:
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
   BoutReal generate(int x, int y, int z);
 };
 
+//////////////////////////////////////////////////////////
+// Functions
+
+/// Binary operators
 class FieldBinary : public FieldGenerator {
 public:
   FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
@@ -89,6 +97,28 @@ private:
   char op;
 };
 
+class FieldSin : public FieldGenerator {
+public:
+  FieldSin(FieldGenerator* g) : gen(g) {}
+  ~FieldSin() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
+class FieldCos : public FieldGenerator {
+public:
+  FieldCos(FieldGenerator* g) : gen(g) {}
+  ~FieldCos() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
 //////////////////////////////////////////////////////////
 
 class FieldFactory {
@@ -96,7 +126,7 @@ public:
   FieldFactory();
   ~FieldFactory();
   
-  const Field3D create2D(const string &value);
+  const Field2D create2D(const string &value);
   const Field3D create3D(const string &value);
   
   void addGenerator(string name, FieldGenerator* g);

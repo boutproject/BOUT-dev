@@ -1,0 +1,37 @@
+/*
+ * FieldFactory regression test
+ * 
+ * Test the FieldFactory class
+ *
+ */
+
+#include <bout.hxx>
+#include <boutmain.hxx>
+#include <field_factory.hxx>
+
+int physics_init(bool restarting) {
+  FieldFactory f;
+  
+  Field2D a = f.create2D("2.");
+  Field2D b = f.create2D("1 - x");
+  Field3D c = f.create3D("sin(3*z)");
+  
+  SAVE_ONCE3(a, b, c);
+
+  int MYPE;
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  
+  // Write data to file
+  dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
+  
+  // Need to wait for all processes to finish writing
+  MPI_Barrier(BoutComm::get());
+
+  // Send an error code so quits
+  return 1;
+}
+
+int physics_run(BoutReal t) {
+  // Doesn't do anything
+  return 1;
+}

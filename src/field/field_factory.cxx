@@ -39,6 +39,8 @@ BoutReal FieldZ::generate(int x, int y, int z) {
   return TWOPI*((BoutReal) z) / ((BoutReal) (mesh->ngz-1));
 }
 
+//////////////////////////////////////////////////////////
+
 FieldBinary::~FieldBinary() {
   if(lhs)
     delete lhs;
@@ -67,6 +69,32 @@ BoutReal FieldBinary::generate(int x, int y, int z) {
   return 0.;
 }
 
+FieldGenerator* FieldSin::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sin function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSin(args.front());
+}
+
+BoutReal FieldSin::generate(int x, int y, int z) {
+  return sin(gen->generate(x,y,z));
+}
+
+FieldGenerator* FieldCos::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to cos function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldCos(args.front());
+}
+
+BoutReal FieldCos::generate(int x, int y, int z) {
+  return cos(gen->generate(x,y,z));
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
@@ -83,13 +111,18 @@ FieldFactory::FieldFactory() {
   addGenerator("x", new FieldX());
   addGenerator("y", new FieldY());
   addGenerator("z", new FieldZ());
+  
+  // Some standard functions
+  addGenerator("sin", new FieldSin(NULL));
+  addGenerator("cos", new FieldCos(NULL));
+  
 }
 
 FieldFactory::~FieldFactory() {
   
 }
 
-const Field3D FieldFactory::create2D(const string &value) {
+const Field2D FieldFactory::create2D(const string &value) {
   Field2D result = 0.;
 
   FieldGenerator* gen = parse(value);
@@ -169,13 +202,15 @@ char FieldFactory::nextToken() {
     while(true) {
       if(LastChar == '.') {
         if(gotdecimal || gotexponent) {
-          output << "Unexpected '.' in number expression" << endl;
+          output << "FieldFactory error: Unexpected '.' in number expression" << endl;
+	  curtok = 0;
           return 0;
         }
         gotdecimal = true;
       }else if((LastChar == 'E') || (LastChar == 'e')) {
         if(gotexponent) {
-          output << "Unexpected extra 'e' in number expression" << endl;
+          output << "FieldFactory error: Unexpected extra 'e' in number expression" << endl;
+	  curtok = 0;
           return 0;
         }
         gotexponent = true;
@@ -183,7 +218,8 @@ char FieldFactory::nextToken() {
         NumStr += 'e';
         LastChar = ss.get();
         if((LastChar != '+') && (LastChar != '-') && !isdigit(LastChar)) {
-          output << "Expecting '+', '-' or number after 'e'"  << endl;
+          output << "FieldFactory error: Expecting '+', '-' or number after 'e'"  << endl;
+	  curtok = 0;
           return 0;
         }
       }else if(!isdigit(LastChar))
@@ -229,8 +265,11 @@ FieldGenerator* FieldFactory::parseIdentifierExpr() {
     do{
       // Should be an expression
       FieldGenerator *a = parseExpression();
-      if(!a) 
+      if(!a) {
+	output << "FieldFactory error: Couldn't parse argument " << args.size()+1 
+	       << " to " << name << " function" << endl;
         return NULL;
+      }
       args.push_back(a);
       
       // Now either a comma or ')'
@@ -241,16 +280,19 @@ FieldGenerator* FieldFactory::parseIdentifierExpr() {
         return it->second->clone(args);
       }
       if(curtok != ',') {
-        // error
+        output << "FieldFactory error: Expecting ',' or ')' in function argument list (" << name << ")" << endl;
         return NULL;
       }
+      nextToken();
     }while(true);
     
   }else {
     // No arguments. Search in generator list
     map<string, FieldGenerator*>::iterator it = gen.find(name);
-    if(it == gen.end())
+    if(it == gen.end()) {
+      output << "FieldFactory error: Can't find generator '" << name << "'" << endl;
       return NULL;
+    }
     list<FieldGenerator*> args;
     return it->second->clone(args);
   }
@@ -271,8 +313,10 @@ FieldGenerator* FieldFactory::parseParenExpr() {
 
 FieldGenerator* FieldFactory::parsePrimary() {
   switch(curtok) {
-  case -1: // a number
+  case -1: { // a number
+    nextToken(); // Eat number
     return new FieldValue(curval);
+  }
   case -2: {
     return parseIdentifierExpr();
   }
@@ -285,14 +329,16 @@ FieldGenerator* FieldFactory::parsePrimary() {
 
 FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
   // Check for end of input
-  if(curtok == 0)
+  if((curtok == 0) || (curtok == ')') || (curtok == ','))
     return lhs;
 
   // Next token should be a binary operator
   map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(curtok);
   
-  if(it == bin_op.end())
+  if(it == bin_op.end()) {
+    output << "FieldFactory error: Unexpected binary operator '" << curtok << "'" << endl;
     return NULL;
+  }
   
   FieldGenerator* op = it->second.first;
   int TokPrec = it->second.second;
@@ -305,8 +351,8 @@ FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
   FieldGenerator* rhs = parsePrimary();
   if(!rhs)
     return NULL;
-  
-  if(curtok == 0) {
+
+  if((curtok == 0) || (curtok == ')') || (curtok == ',')) {
     // Done
     
     list<FieldGenerator*> args;
@@ -318,8 +364,10 @@ FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
   // Find next binop
   it = bin_op.find(curtok);
   
-  if(it == bin_op.end())
+  if(it == bin_op.end()) {
+    output << "FieldFactory error: Unexpected character '" << curtok << "'" << endl;
     return NULL;
+  }
   
   int NextPrec = it->second.second;
   if (TokPrec < NextPrec) {
@@ -344,7 +392,10 @@ FieldGenerator* FieldFactory::parseExpression() {
 
 FieldGenerator* FieldFactory::parse(const string &input) {
   
+  ss.clear();
   ss.str(input); // Set the input stream
+  ss.seekg(0, ios_base::beg);
+  
   LastChar = ss.get(); // First char from stream
   nextToken(); // Get first token
   
