@@ -658,28 +658,43 @@ PRO event_handler, event
     END
     'restore': BEGIN
       filename = DIALOG_PICKFILE(dialog_parent=event.top, file="hypnotoad.idl", /read)
+      IF STRLEN(filename) EQ 0 THEN BEGIN
+        WIDGET_CONTROL, info.status, set_value="   *** Cancelled restore ***"
+        RETURN
+      ENDIF
       oldinfo = info
-      RESTORE, filename
       
-      ; Copy the widget IDs
-      info.nrad_field = oldinfo.nrad_field
-      info.npol_field = oldinfo.npol_field
-      info.draw = oldinfo.draw
-      info.psi_inner_field = oldinfo.psi_inner_field
-      info.rad_peak_field = oldinfo.rad_peak_field
-      info.status = oldinfo.status
-      info.leftbargeom = oldinfo.leftbargeom
-      
-      IF info.rz_grid_valid THEN BEGIN
-        plot_rz_equil, *info.rz_grid
-      ENDIF
-      
-      IF info.flux_mesh_valid THEN BEGIN
-        oplot_mesh, *info.rz_grid, *info.flux_mesh
-      ENDIF
+      CATCH, err
+      IF err NE 0 THEN BEGIN
+        WIDGET_CONTROL, info.status, set_value=!ERROR_STATE.MSG
+      ENDIF ELSE BEGIN
 
-      widget_control, event.top, set_UVALUE=info
-      WIDGET_CONTROL, info.status, set_value="Restored state from "+filename
+        RESTORE, filename
+        
+        ; Copy the widget IDs
+        info.nrad_field = oldinfo.nrad_field
+        info.npol_field = oldinfo.npol_field
+        info.draw = oldinfo.draw
+        info.psi_inner_field = oldinfo.psi_inner_field
+        info.rad_peak_field = oldinfo.rad_peak_field
+        info.status = oldinfo.status
+        info.leftbargeom = oldinfo.leftbargeom
+        info.strict_bndry = oldinfo.strict_bndry
+        info.simple_bndry = oldinfo.simple_bndry
+        info.smoothP = oldinfo.smoothP
+        info.single_rad_grid = oldinfo.single_rad_grid
+        
+        IF info.rz_grid_valid THEN BEGIN
+          plot_rz_equil, *info.rz_grid
+        ENDIF
+        
+        IF info.flux_mesh_valid THEN BEGIN
+          oplot_mesh, *info.rz_grid, *info.flux_mesh
+        ENDIF
+        
+        widget_control, event.top, set_UVALUE=info
+        WIDGET_CONTROL, info.status, set_value="Restored state from "+filename
+      ENDELSE
     END
     ELSE: PRINT, "Unknown event", uvalue
   ENDCASE
@@ -798,11 +813,13 @@ PRO hypnotoad
   
   radgrid_check = WIDGET_BUTTON(checkboxbase, VALUE="Single radial grid", uvalue='radgrid', $
                              tooltip="Grid radially in one")
-  Widget_Control, radgrid_check, Set_Button=0
+  Widget_Control, radgrid_check, Set_Button=1
 
   smoothP_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth pressure", uvalue='smoothP', $
                                 tooltip="Interpolate P to smooth derivative")
-
+  
+  Widget_Control, smoothP_check, Set_Button=1
+  
   mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
 
@@ -850,12 +867,12 @@ PRO hypnotoad
            detail_set:0, $ ; 1 if using detailed settings
            strict_bndry:1, $ ; 1 if boundaries should be strict
            simple_bndry:0, $ ; Use simplified boundary?
-           smoothP:0, $     ; Interpolate to make P smooth
+           smoothP:1, $     ; Interpolate to make P smooth
+           single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
-           single_rad_grid:0, $
            curv_ind:curv_index $
          } 
 

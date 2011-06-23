@@ -50,7 +50,7 @@ function curlcyl, vecR, vecV, gradVr, gradVphi, gradVz
 ;        vecV - vector V in cylindrical components {r:Vr,phi:Vphi,z:Vz} 
 ;        gradVr - gradient of the r-component,     {dVr/dr,dVr/dz}
 ;        gradVphi - gradient of the phi-component, {dVphi/dr,dVphi/dz}
-;        gradVz - gradient of the z-component,     {dVphi/dr,dVphi/dz}
+;        gradVz - gradient of the z-component,     {dVz/dr,dVz/dz}
 ;
 ; Output: curl in cylindrical coordinates
 ;-------------------------------------------------
@@ -111,6 +111,8 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   nr = mesh.nr
   nz = mesh.nz
   
+  ; NOTE: MINUS SIGN ON mesh.psi BRINGS INTO AGREEMENT WITH OTHER
+  ; METHODS BUT REASON NOT UNDERSTOOD. INVESTIGATE!
   grad_Psi = pdiff_xy(nr, nz, mesh.R, mesh.Z, mesh.psi)
   
   R2D = DBLARR(nr, nz)
@@ -130,7 +132,8 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
       IF psinorm GT 1. THEN BEGIN
         fpol = mesh.fpol[N_ELEMENTS(mesh.fpol)-1]
       ENDIF ELSE BEGIN
-        fpol = INTERPOL(mesh.fpol, mesh.npsigrid, psinorm, /spline)
+        ;fpol = INTERPOL(mesh.fpol, mesh.npsigrid, psinorm, /spline)
+        fpol = SPLINE(mesh.npsigrid, mesh.fpol, psinorm)
       ENDELSE
       Bphi[i,j] = fpol / mesh.R[i]
     ENDFOR
