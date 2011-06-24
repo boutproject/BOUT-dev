@@ -1,5 +1,7 @@
+
+#include <globals.hxx>
 #include <quiltmesh.hxx>
-#include "bout_exception.h"
+#include <boutexception.hxx>
 
 #include <algorithm>
 #include <numeric>
@@ -8,8 +10,9 @@ using std::accumulate;
 
 QuiltMesh::~QuiltMesh()
 {
-
+  
 }
+
 
 int QuiltMesh::load()
 {
@@ -20,7 +23,7 @@ int QuiltMesh::load()
   
   // Get number of regions
   int nregions;
-  if(get(nregions, "nregions"))
+  if(Mesh::get(nregions, "nregions"))
     throw BoutException("Mesh file doesn't have nregions variable. Incorrect format?\n");
   
   if(nregions > NPES)
@@ -30,10 +33,178 @@ int QuiltMesh::load()
   vector<int> nx = readInts("nx", nregions);
   vector<int> ny = readInts("ny", nregions);
   
-  ///////////////////////////////////////////////////////////
-  // Partition this grid between NPES processors.
-  // Try to make the number of points on each processor approximately
-  // equal, and make each domain as square as possible (minimise comms)
+  // Partition the mesh
+  domains = partition(nx, ny, NPES);
+  
+  
+}
+
+/****************************************************************
+ * Getting variables
+ ****************************************************************/
+  
+int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
+
+}
+
+int QuiltMesh::get(Field2D &var, const string &name, BoutReal def) {
+
+}
+
+int QuiltMesh::get(Field3D &var, const char *name) {
+
+}
+
+int QuiltMesh::get(Field3D &var, const string &name) {
+
+}
+
+/****************************************************************
+ * Communications
+ ****************************************************************/
+
+int QuiltMesh::communicate(FieldGroup &g) {
+  comm_handle c = send(g);
+  return wait(c);
+}
+
+comm_handle QuiltMesh::send(FieldGroup &g) {
+  /// Record starting wall-time
+  BoutReal t = MPI_Wtime();
+  
+  /// Get the list of variables to send
+  vector<FieldData*> var_list = g.get();
+  
+  QMCommHandle *ch = getHandle(0);
+
+  //////////////////////////////
+  /// Post recieves
+  
+  if(mydomain->xin != NULL) {
+    // Inner processor
+    
+    /*
+    MPI_Irecv(ch.umsg_recvbuff,
+	      msg_len(var_list, 0, MXG, 0, mydomain->ny),
+              PVEC_REAL_MPI_TYPE,
+              xin->destination->proc; // Destination processor
+	      OUT_SENT_IN,
+	      BoutComm::get(),
+	      &ch.request[0]);
+    */
+  }
+  if(mydomain->xout != NULL) {
+    // Outer processor
+    
+  }
+  
+  vector<GuardRange*>::iterator it;
+  // Iterate over the upper guard cell ranges
+  for(it = mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
+    
+  }
+  
+  // Iterate over lower guard cell ranges
+  for(it = mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
+    
+  }
+
+  //////////////////////////////
+  /// Send data
+  
+  if(mydomain->xin != NULL) {
+    // Inner processor
+    
+  }
+  if(mydomain->xout != NULL) {
+    // Outer processor
+    
+  }
+  
+  // Iterate over the upper guard cell ranges
+  for(it = mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
+    
+  }
+  
+  // Iterate over lower guard cell ranges
+  for(it = mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
+    
+  }
+}
+
+int QuiltMesh::wait(comm_handle handle) {
+  if(handle == NULL)
+    return 1;
+  
+  
+}
+
+
+/****************************************************************
+ * X communications
+ ****************************************************************/
+
+bool QuiltMesh::firstX() {
+  return mydomain->xin == NULL;
+}
+
+bool QuiltMesh::lastX() {
+  return mydomain->xout == NULL;
+}
+
+int QuiltMesh::sendXOut(BoutReal *buffer, int size, int tag) {
+  
+}
+
+int QuiltMesh::sendXIn(BoutReal *buffer, int size, int tag) {
+  
+}
+
+comm_handle QuiltMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
+  
+}
+
+comm_handle QuiltMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
+  
+}
+
+/****************************************************************
+ * Private functions
+ ****************************************************************/
+
+const vector<int> QuiltMesh::readInts(const string &name, int n)
+{
+  vector<int> result;
+  
+  // First get a data source
+  GridDataSource* s = findSource(name);
+  if(s) {
+    s->open(name);
+    s->setOrigin();
+    result.resize(n);
+    if(!s->fetch(&(result.front()), name, n)) {
+      // Error reading
+      s->close();
+      throw BoutException("Could not read integer array '%s'\n", name.c_str());
+    }
+    s->close();
+  }else {
+    // Not found
+    throw BoutException("Missing integer array %s\n", name.c_str());
+  }
+  
+  return result;
+}
+
+
+///////////////////////////////////////////////////////////
+// Partition this grid between NPES processors.
+// Try to make the number of points on each processor approximately
+// equal, and make each domain as square as possible (minimise comms)
+vector<QuiltMesh::MeshDomain*> QuiltMesh::partition(const vector<int> &nx, 
+                                         const vector<int> &ny, 
+                                         int NPES) {
+  int nregions = nx.size();
   
   // Number of points in each region ntot = nx * ny
   vector<int> ntot(nregions);
@@ -83,17 +254,29 @@ int QuiltMesh::load()
   
   ///////////////////////////////////////////////////////////
   // Each region now has ntot points and nproc processors
-  // Divide up each region.
+  // Divide up each region to produce a set of MeshDomains
+  
+  vector<MeshDomain*> result;
+  vector<int> nxproc(nregions); // Number of X processors in each region
+
   int proc = 0; // Processor number
-  for(int r = 0; r < nregion; r++) { // Loop over the regions
-    // Calculate number of processors in X for a square domain (mxsub = mysub)
-    int nxp_sq = (int) ((BoutReal) nx[r])*sqrt(((BoutReal) nproc[r]) / ((BoutReal) ntot[r]));
+  for(int r = 0; r < nregions; r++) { // Loop over the regions
     
-    for(int nxp=nxp_sq; nxp > 0; nxp--) {
+    // Allocate all processors first to make it easier to link together
+    for(int i=0;i<nproc[r];i++)
+      result.push_back(new MeshDomain());
+    
+    // Calculate number of processors in X for a square domain (mxsub = mysub)
+    int nxp_sq = (int) (((BoutReal) nx[r])*sqrt(((BoutReal) nproc[r]) / ((BoutReal) ntot[r])));
+    
+    int nxp;
+    for(nxp=nxp_sq; nxp > 0; nxp--) {
       if(nproc[r] % nxp == 0) {
         break;
       }
     }
+    nxproc[r] = nxp;
+    
     int nyp = nproc[r] / nxp;
 
     // Divide up into nyp strips
@@ -102,59 +285,90 @@ int QuiltMesh::load()
     
     int nxall = (int) nx[r] / nxp;
     int nxextra = nx[r] % nxp;
-
-    int x0 = 0;
-    for(int xp = 0; xp < nxp; xp++) {
-      int nxsub = nxall; // nx on these processors
-      if(xp < nxextra)
-        nxsub++;
-      for(int yp = 0; yp < nyp; yp++) {
-        int y0 = 0;
-        int nysub = nyall; // ny on these processors
-        if(yp < nyextra)
-          nysub++;
-
+    
+    // Loop over X processors fastest so X processors are close
+    // together (for inversions, tightly coupled in X).
+    
+    int y0 = 0;
+    for(int yp = 0; yp < nyp; yp++) {
+      int nysub = nyall; // ny on these processors
+      if(yp < nyextra)
+        nysub++; // Extra y point in this processor
+      
+      int x0 = 0;
+      for(int xp = 0; xp < nxp; xp++) {
+        int nxsub = nxall; // nx on these processors
+        if(xp < nxextra)
+          nxsub++;
+        
         // Create a new domain
-        MeshDomain *d = new MeshDomain;
-        d->region = r;
+        MeshDomain *d = result[proc];
+        d->proc = proc;
         d->nx = nxsub;
         d->ny = nysub;
         d->x0 = x0;
         d->y0 = y0;
-        d->proc = proc;
-        if(proc == MYPE)
-          mydomain = d;
         
+        // Inside a region, fill in the communications.
+        // Communication between regions is more complicated
+        // and needs to be done after all regions have been created
+
+        if(xp == 0) {
+          d->xin = NULL; // No inner X processor
+        }else
+          d->xin = result[proc-1];
+        if(xp == (nxp-1)) {
+          d->xout = NULL;
+        }else
+          d->xout = result[proc+1];
         
-        domain.push_back(d); // Add this domain
+        if(yp > 0) {
+          // Communications going down
+          GuardRange *gd = new GuardRange;
+          gd->xmin = 0;
+          gd->xmax = nxsub-1;
+          gd->destination = result[proc-nxp];
+          gd->xshift = 0;
+          d->ydown.push_back(gd);
+        }
+        if(yp < (nyp-1)) {
+          // Communications going up
+          GuardRange *gu = new GuardRange;
+          gu->xmin = 0;
+          gu->xmax = nxsub-1;
+          gu->destination = result[proc+nxp];
+          gu->xshift = 0;
+          d->yup.push_back(gu);
+        }
         
         proc++;
-        y0 += nysub;
+        x0 += nxsub;
       }
+      y0 += nysub;
     }
-    x0 += nxsub;
   }
+  
+  // Have all regions, connected internally.
+  // Now connect regions together
+
+  return result;
 }
 
-const vector<int> QuiltMesh::readInts(const string &name, int n)
-{
-  vector<int> result;
+void QuiltMesh::freeHandle(QMCommHandle *h) {
+  comm_list.push_back(h);
+}
+
+QuiltMesh::QMCommHandle* QuiltMesh::getHandle(int n) {
+  QMCommHandle* h;
+  if(!comm_list.empty()) {
+    h = comm_list.front();
+    comm_list.pop_front();
+  }else
+    h = new QMCommHandle;
   
-  // First get a data source
-  GridDataSource* s = findSource(name);
-  if(s) {
-    s->open(name);
-    s->setOrigin();
-    if(!s->fetch(result, name, n)) {
-      // Error reading
-      s->close();
-      throw BoutException("Could not read integer array '%s'\n", name.c_str());
-    }
-    s->close();
-  }else {
-    // Not found
-    throw BoutException("Missing integer array %s\n", name.c_str());
-  }
-  
-  return result;
+  h->buffer.resize(n);
+  h->request.resize(n);
+  h->inProgress = false;
+
+  return h;
 }

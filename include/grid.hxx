@@ -61,8 +61,11 @@ class GridDataSource {
 
   /// Called before fetching a variable
   virtual void open(const char *name = NULL) {  }
+  
   /// Called after fetching variables
   virtual void close() { }
+  
+  void open(const string &name) { open(name.c_str()); }
 };
 
 /// Interface to grid data in a file

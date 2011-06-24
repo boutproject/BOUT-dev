@@ -849,8 +849,19 @@ usually used.
 The mesh is used in pretty much all parts of the code, and deals with 
 things like the geometry of the mesh (metric tensors etc.), and how the
 mesh is divided between processors (communications). The Mesh class
-(\file{mesh/mesh.h}) defines an interface, whilst currently BoutMesh
-(\file{mesh/boutmesh.h}) is the only implementation of this interface.
+(\file{include/mesh.h}) defines an interface, and there are currently
+two implementations:
+\begin{itemize}
+\item BoutMesh (\file{src/mesh/boutmesh.cxx}) which is backwards compatible
+  with the BOUT and BOUT-06 codes. This is a logically rectangular mesh so
+  the number of radial points (x) can't change in the poloidal direction (y). 
+  
+\item QuiltMesh (\file{src/mesh/quiltmesh.cxx}) is a more general mesh under development
+  (i.e. {\bf not} recommended except for testing). The primary advantage is that
+  it allows the number of points in x to vary between regions so the number of radial
+  grid points in the core no longer needs to be the same as the number in the private
+  flux regions.
+\end{itemize}
 
 \subsection{Loading a mesh}
 
@@ -897,6 +908,12 @@ int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
 and are equal in the case of single-null configurations. The indexing
 is such that all points \code{0 <= x < ixseps1} are inside the separatrix,
 whilst \code{ixseps1 <= x < ngx} are outside.
+
+\subsubsection{Implementation: QuiltMesh}
+
+
+
+
 
 \subsection{Index ranges}
 

@@ -24,9 +24,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Get data
   
-  int get(int &ival, const char *name);
-  int get(BoutReal &rval, const char *name);
-  
   int get(Field2D &var, const char *name, BoutReal def=0.0);
   int get(Field2D &var, const string &name, BoutReal def=0.0);
   int get(Field3D &var, const char *name);
@@ -181,8 +178,6 @@ class BoutMesh : public Mesh {
   int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
   int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
-  /// Calculates the size of a message for a given x and y range
-  int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
 };
 
 /*

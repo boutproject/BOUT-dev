@@ -68,10 +68,10 @@ int BoutMesh::load() {
   //////////////
   // Grid sizes
   
-  if(get(nx, "nx"))
+  if(Mesh::get(nx, "nx"))
     return 1;
   
-  if(get(ny, "ny"))
+  if(Mesh::get(ny, "ny"))
     return 1;
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
@@ -179,32 +179,32 @@ int BoutMesh::load() {
   ///////////////////// TOPOLOGY //////////////////////////
   
   // separatrix location
-  if(get(ixseps1, "ixseps1")) {
+  if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = ngx;
     output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
   }
-  if(get(ixseps2, "ixseps2")) {
+  if(Mesh::get(ixseps2, "ixseps2")) {
     ixseps2 = ngx;
     output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
   }
-  if(get(jyseps1_1,"jyseps1_1")) {
+  if(Mesh::get(jyseps1_1,"jyseps1_1")) {
     jyseps1_1 = -1;
     output.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n", jyseps1_1);
   }
-  if(get(jyseps1_2,"jyseps1_2")) {
+  if(Mesh::get(jyseps1_2,"jyseps1_2")) {
     jyseps1_2 = ny/2;
     output.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n", jyseps1_2);
   }
-  if(get(jyseps2_1,"jyseps2_1")) {
+  if(Mesh::get(jyseps2_1,"jyseps2_1")) {
     jyseps2_1 = jyseps1_2;
     output.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n", jyseps2_1);
   }
-  if(get(jyseps2_2,"jyseps2_2")) {
+  if(Mesh::get(jyseps2_2,"jyseps2_2")) {
     jyseps2_2 = ny-1;
     output.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
   }
 
-  if(get(ny_inner,"ny_inner")) {
+  if(Mesh::get(ny_inner,"ny_inner")) {
     ny_inner = jyseps2_1;
     output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
   }
@@ -634,49 +634,6 @@ int BoutMesh::load() {
 /*****************************************************************************
  * get routines
  *****************************************************************************/
-
-/// Get an integer
-int BoutMesh::get(int &ival, const char *name) {
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Loading integer: BoutMesh::get(int, %s)", name);
-#endif
-
-  GridDataSource* s = findSource(name);
-  if(s == NULL) {
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 1;
-  }
-  
-  s->open(name);
-  bool success = s->fetch(&ival, name);
-  s->close();
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
-  if(!success) {
-    return 2;
-  }
-  return 0;
-}
-
-/// A BoutReal number
-int BoutMesh::get(BoutReal &rval, const char *name) {
-  GridDataSource* s = findSource(name);
-  if(s == NULL)
-    return 1;
-  
-  s->open(name);
-  bool success = s->fetch(&rval, name);
-  s->close();
-  
-  if(!success)
-    return 2;
-  return 0;
-}
 
 int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   if(name == NULL)
@@ -2033,21 +1990,6 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
   }
   
   return(len);
-}
-
-int BoutMesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt)
-{
-  int len = 0;
-
-  /// Loop over variables
-  for(std::vector<FieldData*>::iterator it = var_list.begin(); it != var_list.end(); it++) {
-    if((*it)->is3D()) {
-      len += (xlt - xge) * (ylt - yge) * (mesh->ngz-1) * (*it)->BoutRealSize();
-    }else
-      len += (xlt - xge) * (ylt - yge) * (*it)->BoutRealSize();
-  }
-  
-  return len;
 }
 
 /****************************************************************

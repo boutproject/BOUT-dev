@@ -116,8 +116,8 @@ class Mesh {
   int load(GridDataSource &source); ///< Load from specified source
   
   // Get routines to request data from mesh file
-  virtual int get(int &ival, const char *name) = 0; ///< Get an integer
-  virtual int get(BoutReal &rval, const char *name) = 0; ///< Get a BoutReal number
+  virtual int get(int &ival, const char *name); ///< Get an integer
+  virtual int get(BoutReal &rval, const char *name); ///< Get a BoutReal number
   
   virtual int get(Field2D &var, const char *name, BoutReal def=0.0) = 0;
   virtual int get(Field2D &var, const string &name, BoutReal def=0.0) = 0;
@@ -241,7 +241,12 @@ class Mesh {
   std::list<GridDataSource*> source_list; ///< List of sources
   
   GridDataSource *findSource(const char *name);
-
+  GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
+  
+  
+  /// Calculates the size of a message for a given x and y range
+  int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
+  
  private:
   int gaussj(BoutReal **a, int n);
 };
