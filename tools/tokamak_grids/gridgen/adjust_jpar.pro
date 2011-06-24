@@ -27,7 +27,7 @@ FUNCTION grad_par, var, mesh
   RETURN, (mesh.Bpxy / (mesh.Bxy * mesh.hthe)) * ddy(var, mesh)*dtheta / mesh.dy
 END
 
-PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar
+PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   
   type = SIZE(grid, /type)
   IF type EQ 7 THEN BEGIN
@@ -107,27 +107,29 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar
     ENDIF
   ENDREP UNTIL last
   
-  WINDOW, xsize=800, ysize=800
-  !P.multi=[0,2,2,0,0]
-  SURFACE, data.jpar0, tit="Input Jpar0", chars=2
-  SURFACE, jpar, tit="New Jpar0", chars=2
-  PLOT, data.jpar0[0,*], tit="jpar at x=0. Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
-                                                             MAX([data.jpar0[0,*],jpar[0,*]])]
-  OPLOT, jpar[0,*], psym=1
+  IF NOT KEYWORD_SET(noplot) THEN BEGIN
+    WINDOW, xsize=800, ysize=800
+    !P.multi=[0,2,2,0,0]
+    SURFACE, data.jpar0, tit="Input Jpar0", chars=2
+    SURFACE, jpar, tit="New Jpar0", chars=2
+    PLOT, data.jpar0[0,*], tit="jpar at x=0. Solid=input", yr=[MIN([data.jpar0[0,*],jpar[0,*]]), $
+                                                               MAX([data.jpar0[0,*],jpar[0,*]])]
+    OPLOT, jpar[0,*], psym=1
   
-  ;x = data.ixseps1-1
-  ;PLOT, data.jpar0[x,*], tit="Jpar at x="+STR(x)+" Solid=input", $
-  ;  yr=[MIN([data.jpar0[x,*],jpar[x,*]]), $
-  ;      MAX([data.jpar0[x,*],jpar[x,*]])]
-  ;OPLOT, jpar[x,*], psym=1
-  
-  y = out_mid
-  PLOT, data.jpar0[*,y], tit="Jpar at y="+STR(y)+" Solid=input", $
-    yr=[MIN([data.jpar0[*,y],jpar[*,y]]), $
-        MAX([data.jpar0[*,y],jpar[*,y]])]
-  OPLOT, jpar[*,y], psym=1
-
-  !P.multi=0
+    ;x = data.ixseps1-1
+    ;PLOT, data.jpar0[x,*], tit="Jpar at x="+STR(x)+" Solid=input", $
+    ;  yr=[MIN([data.jpar0[x,*],jpar[x,*]]), $
+    ;      MAX([data.jpar0[x,*],jpar[x,*]])]
+    ;OPLOT, jpar[x,*], psym=1
+    
+    y = out_mid
+    PLOT, data.jpar0[*,y], tit="Jpar at y="+STR(y)+" Solid=input", $
+      yr=[MIN([data.jpar0[*,y],jpar[*,y]]), $
+          MAX([data.jpar0[*,y],jpar[*,y]])]
+    OPLOT, jpar[*,y], psym=1
+    
+    !P.multi=0
+  ENDIF
   
   IF type EQ 7 THEN BEGIN
     ; Ask if user wants to write this new Jpar to file
