@@ -111,8 +111,6 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   nr = mesh.nr
   nz = mesh.nz
   
-  ; NOTE: MINUS SIGN ON mesh.psi BRINGS INTO AGREEMENT WITH OTHER
-  ; METHODS BUT REASON NOT UNDERSTOOD. INVESTIGATE!
   grad_Psi = pdiff_xy(nr, nz, mesh.R, mesh.Z, mesh.psi)
   
   R2D = DBLARR(nr, nz)
@@ -124,7 +122,7 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
 
   Br = -grad_psi.Z / R2D
   Bz = grad_psi.R / R2D
-  
+
   Bphi = DBLARR(nr, nz)
   FOR i=0,nr-1 DO BEGIN
     FOR j=0,nz-1 DO BEGIN
