@@ -95,6 +95,27 @@ BoutReal FieldCos::generate(int x, int y, int z) {
   return cos(gen->generate(x,y,z));
 }
 
+FieldGenerator* FieldGaussian::clone(const list<FieldGenerator*> args) {
+  if((args.size() < 1) || (args.size() > 2)) {
+    output << "FieldFactory error: Incorrect number of arguments to gaussian function. Expecting 1 or 2, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  FieldGenerator *xin = args.front();
+  FieldGenerator *sin;
+  if(args.size() == 2) {
+    sin = args.back(); // Optional second argument
+  }else
+    sin = new FieldValue(1.0);
+  
+  return new FieldGaussian(xin, sin);
+}
+
+BoutReal FieldGaussian::generate(int x, int y, int z) {
+  BoutReal sigma = s->generate(x,y,z);
+  return exp(-SQ(X->generate(x,y,z)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
@@ -115,7 +136,7 @@ FieldFactory::FieldFactory() {
   // Some standard functions
   addGenerator("sin", new FieldSin(NULL));
   addGenerator("cos", new FieldCos(NULL));
-  
+  addGenerator("gauss", new FieldGaussian(NULL, NULL));
 }
 
 FieldFactory::~FieldFactory() {
@@ -250,6 +271,8 @@ FieldGenerator* FieldFactory::parseIdentifierExpr() {
     
     map<string, FieldGenerator*>::iterator it = gen.find(name);
     if(it == gen.end()) {
+      output << "FieldFactory error: Couldn't find generator '"
+             << name << "'" << endl;
       return NULL;
     }
     

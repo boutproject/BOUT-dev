@@ -39,6 +39,7 @@
 #include <globals.hxx>
 #include <initialprofiles.hxx>
 #include <boutexception.hxx>
+#include <field_factory.hxx>
 
 #include <math.h>
 #include <string.h>
@@ -104,92 +105,90 @@ int initial_profile(const char *name, Field3D &var)
   
   FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
 
-  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
-  
-  FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
-  FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
-  FIND_OPT(varOpts, allOpts, "zs_opt", zs_opt, 2);
-
-  // Mode number (for sinusoidal)
-  
-  FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
-  FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
-  FIND_OPT(varOpts, allOpts, "zs_mode", zs_mode, 4);
-
-  // Phase (for sinusoidal), in units of pi
-
-  FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
-  FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
-  FIND_OPT(varOpts, allOpts, "zs_phase", zs_phase, 0.);
-  
-  // Gaussian peak location
-  
-  FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "zs_s0", zs_s0, 0.5);
-
-  // Gaussian width
-
-  FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "zs_wd", zs_wd, 0.2);
-
-  for (jx=0; jx < mesh->ngx; jx++) {
-    BoutReal xcoord = mesh->GlobalX(jx);
+  if(varOpts->isSet("function")) {
+    // Form of perturbation specified as string. Use FieldFactory to generate values
     
-    for (jz=0; jz < mesh->ngz; jz++) {
-      for (jy=0; jy < mesh->ngy; jy++) {
-	BoutReal ycoord = mesh->GlobalY(jy);
+    FieldFactory f;
+    string s;
+    varOpts->get("function", s, "");
+    var = scale*f.create3D(s);
+  }else {
+    // Backwards-compatible method
+    
+    // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
+    
+    FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
+    FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
+    FIND_OPT(varOpts, allOpts, "zs_opt", zs_opt, 2);
+    
+    // Mode number (for sinusoidal)
+    
+    FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
+    FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
+    FIND_OPT(varOpts, allOpts, "zs_mode", zs_mode, 4);
+    
+    // Phase (for sinusoidal), in units of pi
+    
+    FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
+    FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
+    FIND_OPT(varOpts, allOpts, "zs_phase", zs_phase, 0.);
+    
+    // Gaussian peak location
+    
+    FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
+    FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
+    FIND_OPT(varOpts, allOpts, "zs_s0", zs_s0, 0.5);
+    
+    // Gaussian width
+    
+    FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
+    FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
+    FIND_OPT(varOpts, allOpts, "zs_wd", zs_wd, 0.2);
+
+    for (jx=0; jx < mesh->ngx; jx++) {
+      BoutReal xcoord = mesh->GlobalX(jx);
+    
+      for (jz=0; jz < mesh->ngz; jz++) {
+        for (jy=0; jy < mesh->ngy; jy++) {
+          BoutReal ycoord = mesh->GlobalY(jy);
 	
-	cx=Prof1D(xcoord, xs_s0, 0., 1.0, xs_wd, xs_mode, xs_phase, xs_opt);
-	cy=Prof1D(ycoord, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+          cx=Prof1D(xcoord, xs_s0, 0., 1.0, xs_wd, xs_mode, xs_phase, xs_opt);
+          cy=Prof1D(ycoord, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
+          cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
-	var[jx][jy][jz] = scale*cx*cy*cz;
-        if(!finite(var[jx][jy][jz])) {
-	  output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var[jx][jy][jz]);
-          output.write("%e, %e, %e, %e, %e, %e\n",
-             ycoord, ys_s0, ys_wd, ys_mode, ys_phase, ys_opt);
-          throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
+          var[jx][jy][jz] = scale*cx*cy*cz;
+          if(!finite(var[jx][jy][jz])) {
+            output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var[jx][jy][jz]);
+            output.write("%e, %e, %e, %e, %e, %e\n",
+                         ycoord, ys_s0, ys_wd, ys_mode, ys_phase, ys_opt);
+            throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
+          }
+          BoutReal ts; ///< Twist-shift angle
+          if(mesh->surfaceClosed(jx, ts) && Ballooning) {
+            // Use a truncated Ballooning transform to enforce periodicity
+            
+            int ball_n = 3; // How many times around in each direction
+            
+            for(int i=1; i<= ball_n; i++) {
+              // y - i * nycore
+              cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
+              cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+              var[jx][jy][jz] += scale*cx*cy*cz;
+              
+              // y + i * nycore
+              cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
+              cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+              var[jx][jy][jz] += scale*cx*cy*cz;
+            }
+          }else if(Ballooning) {
+            // Open surfaces. Not sure what to do, so set to zero
+            var[jx][jy][jz] = 0.;
+          }
+          
         }
-	BoutReal ts; ///< Twist-shift angle
-	if(mesh->surfaceClosed(jx, ts) && Ballooning) {
-	  // Use a truncated Ballooning transform to enforce periodicity
-	  
-	  int ball_n = 3; // How many times around in each direction
-	  
-	  for(int i=1; i<= ball_n; i++) {
-	    // y - i * nycore
-	    cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
-	    var[jx][jy][jz] += scale*cx*cy*cz;
-	    
-	    // y + i * nycore
-	    cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
-	    cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
-	    var[jx][jy][jz] += scale*cx*cy*cz;
-	  }
-	}else if(Ballooning) {
-	  // Open surfaces. Not sure what to do, so set to zero
-	  var[jx][jy][jz] = 0.;
-	}
-	
-	/*
-	  //NOTE: This code causes NANs if prof1D goes to zero
-	if(!MYPE_IN_CORE) {
-	  ly = YGLOBAL(jy);
-	  if(ly <= jyseps1_1) {
-	    // Inner lower
-	    var[jx][jy][jz] *= Prof1D((BoutReal) (ly-jyseps1_1-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D(0.0, ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
-	  }else if(ly > jyseps2_2) {
-	    // Outer lower
-	    var[jx][jy][jz] *= Prof1D((BoutReal) (ly-jyseps2_2+nycore-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt) / Prof1D((BoutReal) (nycore-1), ys_s0, 0., (BoutReal) nycore, ys_wd, ys_mode, ys_phase, ys_opt);
-	  }
-	}
-	*/
       }
     }
-  }
+  } // End of backwards-compatible method
 
   if(ShiftInitial)
     var = var.shiftZ(false);
@@ -228,39 +227,48 @@ int initial_profile(const char *name, Field2D &var)
   
   FIND_OPT(varOpts, allOpts, "scale", scale, 1.0e-4);
 
-  // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
+  if(varOpts->isSet("function")) {
+    // Form of perturbation specified as string. Use FieldFactory to generate values
+    
+    FieldFactory f;
+    string s;
+    varOpts->get("function", s, "");
+    var = scale*f.create2D(s);
+  }else {
+    // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
+    
+    FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
+    FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
+    
+    // Mode number (for sinusoidal)
   
-  FIND_OPT(varOpts, allOpts, "xs_opt", xs_opt, 1);
-  FIND_OPT(varOpts, allOpts, "ys_opt", ys_opt, 0);
+    FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
+    FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
+  
+    // Phase (for sinusoidal), in units of pi
 
-  // Mode number (for sinusoidal)
+    FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
+    FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
   
-  FIND_OPT(varOpts, allOpts, "xs_mode", xs_mode, 4);
-  FIND_OPT(varOpts, allOpts, "ys_mode", ys_mode, 4);
-  
-  // Phase (for sinusoidal), in units of pi
+    // Gaussian peak location
 
-  FIND_OPT(varOpts, allOpts, "xs_phase", xs_phase, 0.);
-  FIND_OPT(varOpts, allOpts, "ys_phase", ys_phase, 0.);
-  
-  // Gaussian peak location
+    FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
+    FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
 
-  FIND_OPT(varOpts, allOpts, "xs_s0", xs_s0, 0.5);
-  FIND_OPT(varOpts, allOpts, "ys_s0", ys_s0, 0.5);
-
-  // Gaussian width
+    // Gaussian width
   
-  FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
-  FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
+    FIND_OPT(varOpts, allOpts, "xs_wd", xs_wd, 0.2);
+    FIND_OPT(varOpts, allOpts, "ys_wd", ys_wd, 0.2);
   
-  for (jx=0; jx < mesh->ngx; jx++) {
-    BoutReal xcoord = mesh->GlobalX(jx);
-    for (jy=0; jy < mesh->ngy; jy++) {
-      BoutReal ycoord = mesh->GlobalY(jy);
-      cx=Prof1D(xcoord, xs_s0, 0., 1., xs_wd, xs_mode, xs_phase, xs_opt);
-      cy=Prof1D(ycoord, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
+    for (jx=0; jx < mesh->ngx; jx++) {
+      BoutReal xcoord = mesh->GlobalX(jx);
+      for (jy=0; jy < mesh->ngy; jy++) {
+        BoutReal ycoord = mesh->GlobalY(jy);
+        cx=Prof1D(xcoord, xs_s0, 0., 1., xs_wd, xs_mode, xs_phase, xs_opt);
+        cy=Prof1D(ycoord, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
       
-      var[jx][jy] = scale*cx*cy;
+        var[jx][jy] = scale*cx*cy;
+      }
     }
   }
   
