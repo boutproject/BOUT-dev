@@ -6,6 +6,7 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 
+\usepackage{subfigure}
 \usepackage{listings}
 \usepackage{color}
 \usepackage{textcomp}
@@ -34,6 +35,10 @@
         extendedchars=true,
         morekeywords={Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup},
 }
+
+% Add an index
+\usepackage{makeidx}
+\makeindex
 
 %% Modify margins
 \addtolength{\oddsidemargin}{-.25in}
@@ -168,7 +173,7 @@ when using this code:
 
 BOUT++ is now hosted publicly on github (\url{http://github.com/bendudson/BOUT}), and includes
 instructions on downloading and installing BOUT++ in wiki pages. This website also has current issues
-and history of changes. To obtain a copy of the latest version, run
+and history of changes. To obtain a copy of the latest version, run \index{Github}
 \begin{verbatim}
 git clone git://github.com/bendudson/BOUT.git
 \end{verbatim}
@@ -518,6 +523,7 @@ and (hopefully) find an error as soon as possible after it occurs.
 
 \section{BOUT++ options}
 \label{sec:options}
+\index{options}
 
 The inputs to BOUT++ are a binary grid file in NetCDF or PDB format,
 and a text file with options. Generating input grids for tokamaks is
@@ -636,7 +642,7 @@ grid = "data/cbm18_8_y064_x260.pdb"
 
 \subsection{Time integration solver}
 \label{sec:timeoptions}
-
+\index{time integration}
 BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
 and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
 
@@ -701,7 +707,7 @@ The most commonly changed options are the  absolute and relative solver toleranc
 \code{ATOL} and \code{RTOL} which should be varied to check convergence.
 
 \subsection{Laplacian inversion}
-
+\index{Laplacian inversion}
 A common problem in plasma models is to solve an equation of the form
 \[
 d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
@@ -729,13 +735,13 @@ Option & Description & Default \\
 \end{table}
 
 \subsection{Communications}
-
+\index{communication}
 The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
 determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
 with machine and problem.
 
 \subsection{Differencing methods}
-
+\index{differencing}
 Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
 for each dimension. 
 \begin{itemize}
@@ -762,7 +768,7 @@ out with their default values. This won't provide much explanation of what they 
 See section~\ref{sec:output} for more details.
 
 \subsection{Variable initialisation}
-
+\index{variable initialisation}
 Each variable being evolved has its own section, with the same name as the
 output data. For example, the high-$\beta$ model has variables ``P'',
 ``jpar'', and ``U'', and so has sections \code{[P]}, \code{[jpar]},
@@ -823,7 +829,7 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 
 \subsection{Boundary conditions}
 \label{sec:bndryopts}
-
+\index{boundary conditions}
 Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
 \code{[All]}. Boundary conditions are specified for each variable, being 
@@ -1266,7 +1272,7 @@ This can be added to your IDL startup file (which is specified by the
 \code{IDL\_STARTUP} environment variable).
 
 \subsection{Reading BOUT++ output into IDL}
-
+\index{IDL}
 There are several routines provided for reading data from BOUT++ output into
 IDL. In the directory containing the BOUT++ output files
 (usually \texttt{data/}), you can list the variables available using
@@ -1449,7 +1455,7 @@ There are many other useful routines in the \texttt{idllib} directory. See the \
 for a short description of each one.
 
 \subsection{Python routines}
-
+\index{Python}
 The NumPy module enables Python to efficiently handle large arrays of 
 scientific data. There are several modules available for reading
 NetCDF files, but the one used by the BOUT++ routines is ...
@@ -1457,19 +1463,19 @@ Because this library may change in future, or BOUT++ may use a different
 file format, file access is wrapped into a class DataFile. This
 provides a simple interface for reading and writing files.
 
-
 \section{Generating input grids}
 \label{sec:gridgen}
 
-The grid file is in PDB format, and can contain the following variables.
-Some of these are required for any run, but most are optional.
+The grid file describes the grid points, geometry, and starting profiles.
+Currently BOUT++ supports either NetCDF or PDB format binary files.
+During startup, BOUT++ looks in the grid file for the following variables.
 If any are not found, a warning will be printed and the default values used.
 \begin{itemize}
 \item X and Y grid sizes (integers) \code{nx} and \code{ny} {\bf REQUIRED}
 \item Differencing quantities in 2D arrays \code{dx[nx][ny]} and \code{dy[nx][ny]}.
   If these are not found they will be set to 1.
 \item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]}, \code{g22[nx][ny]},
-  and \code{g33[nx][ny]}. If not found, these will be set to 1.
+  and \code{g33[nx][ny]}. If not found, these will be set to 1. \index{metric tensor}
 \item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]}, \code{g13[nx][ny]},
   and \code{g23[nx][ny]}. If not found, these will be set to 0.
 \item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for dpsi derivatives
@@ -1514,7 +1520,7 @@ output from different codes and converting into input to BOUT++.
 \end{figure}
 
 \subsection{Converting grid files}
-
+\index{ELITE}\index{GATO}
 Currently conversions exist for ELITE \code{.eqin} and GATO \code{dskgato} equilibrium files.
 Conversion of these into BOUT++ input grids is in two stages: In the first, both these
 input files are converted into a common PDB format which describes the Grad-Shafranov equilibrium.
@@ -1724,8 +1730,9 @@ int physics_init(bool restarting)
 }
 \end{lstlisting}
 
-Scalar and vector fields behave much as you would expect: Field3D objects can be added, subtracted,
-multiplied, divided and exponentiated, so the following examples are all valid operations:
+Scalar and vector fields behave much as you would expect: \lstinline!Field3D! objects can be added, subtracted,
+multiplied, divided and exponentiated, so the following examples are all valid operations: 
+\index{Field3D}\index{BoutReal}
 \begin{lstlisting}
 Field3D a, b, c;
 BoutReal r;
@@ -1736,7 +1743,7 @@ a = b / c; a = b / r; a = r / b;
 a = b ^ c; a = b ^ r; a = r ^ b;
 \end{lstlisting}
 Similarly, vector objects can be added/subtracted from each other, multiplied/divided by scalar
-fields and real numbers, for example:
+fields and real numbers, for example:\index{Vector3D}
 \begin{lstlisting}
 Vector3D a, b, c;
 Field3D f;
@@ -1793,7 +1800,7 @@ automatically read and written depending on input options (see section~\ref{subs
 Input options based on these names are also used to initialise the variables.
 
 If the name of the variable in the output file is the same as the variable name, you can use 
-a shorthand macro. In this case, we could use this shorthand for \code{v} and \code{B}:
+a shorthand macro. In this case, we could use this shorthand for \code{v} and \code{B}:\index{SOLVE\_FOR}
 \begin{lstlisting}
 SOLVE_FOR(v);
 SOLVE_FOR(B);
@@ -1833,7 +1840,7 @@ on vector objects (since result is neither scalar nor vector), so the $\mathbf{v
 
 \subsection{Input options}
 \label{sec:inputopts}
-
+\index{Options}
 Note that in the above equations the extra parameter \code{gamma} has been used. To enable this to be set
 in the input options file (see section~\ref{sec:options}), we use the \code{options} object in the
 initialisation function:
@@ -1881,7 +1888,7 @@ options->get("gamma", gamma, 5.0/3.0);
 See section~\ref{sec:options} for more details of how to use the input options.
 
 \subsection{Communication}
-
+\index{communication}
 If you plan to run BOUT++ on more than one processor, any operations involving y derivatives
 will require knowledge of data stored on other processors. To handle the necessary parallel
 communication, there is the \code{mesh->communicate} function. This takes care of where the data
@@ -1900,14 +1907,13 @@ int physics_run(BoutReal t)
 If you need to communicate lots of variables, or want to change at run-time which
 variables are evolved (e.g. depending on input options), then you can create a group
 of variables and communicate them later.
-To do this, first create a \code{FieldGroup} object, in this case called \code{comms},
+To do this, first create a \code{FieldGroup} object\index{FieldGroup}, in this case called \code{comms},
 then use the add method. This method does no communication, but records which variables to transfer
 when the communication is done later.
 \begin{lstlisting}
 FieldGroup comms;
 
-int physics_init()
-{
+int physics_init() {
   .
   .
   .
@@ -1926,8 +1932,7 @@ shortened to
 \begin{lstlisting}
 FieldGroup comms;
 
-int physics_init()
-{
+int physics_init() {
   .
   .
   .
@@ -1956,10 +1961,9 @@ code if parallel communication bandwidth is a problem for your simulation.
 
 In our MHD example, the calculation of \code{ddt(rho)} and \code{ddt(p)} does not require
 \code{B}, so we could first communicate \code{rho}, \code{p}, and \code{v}, send \code{B}
-and do some calculations whilst communications are performed:
+and do some calculations whilst communications are performed: \index{comm\_handle}
 \begin{lstlisting}
-int physics_run(BoutReal t) 
-{
+int physics_run(BoutReal t) {
   mesh->communicate(rho, p, v); // sends and receives rho, p and v
   comm_handle ch = mesh->send(B);// only send B
   
@@ -1988,7 +1992,7 @@ the output of one differential operator and use it as input to another different
 perform communications (and set boundary conditions) first. See section~\ref{sec:diffops}.
 
 \subsection{Boundary conditions}
-
+\index{boundary conditions}
 All evolving variables have boundary conditions applied automatically after
 the \lstinline!physics_run! has finished. Which condition is applied depends on the options file
 settings (see section~\ref{sec:bndryopts}). Quite often however it's necessary to impose
@@ -2034,7 +2038,7 @@ Field3D a, b;
 \end{lstlisting}
 
 \subsection{Initial profiles}
-
+\index{variable initialisation}
 Up to this point the code is evolving total density, pressure etc. This has advantages for clarity,
 but has problems numerically: For small perturbations, rounding error and tolerances in the time-integration
 mean that linear dispersion relations are not calculated correctly. The solution to this
@@ -2059,7 +2063,7 @@ int physics_init(bool restarting)
 
 As with the input options, most of the time the name of the variable in the
 physics code will be the same as the name in the grid file to avoid confusion.
-In this case, you can just use
+In this case, you can just use \index{GRID\_LOAD}
 \begin{lstlisting}
 GRID_LOAD(Ni0);
 \end{lstlisting}
@@ -2069,7 +2073,6 @@ mesh->get(Ni0, "Ni0");
 \end{lstlisting}
 
 \subsection{Output variables}
-
 BOUT++ always writes the evolving variables to file, but often it's useful to add other variables
 to the output. For convenience you might want to write the normalised starting profiles or other
 non-evolving values to file. For example:
@@ -2080,7 +2083,7 @@ non-evolving values to file. For example:
   dump.add(Ni0, "Ni0", 0); 
 \end{lstlisting}
 where the '0' at the end means the variable should only be written to file once at the start of the
-simulation. For convenience there are some macros e.g.
+simulation. For convenience there are some macros e.g. \index{SAVE\_ONCE}
 \begin{lstlisting}
   SAVE_ONCE(Ni0); 
 \end{lstlisting}
@@ -2117,7 +2120,7 @@ and people have different tastes in these matters.
 
 The C-like way (which is the dominant way in BOUT++) is to use the \code{write} function,
 which works just like \code{printf}, and takes all the same codes (it uses \code{sprintf}
-internally). 
+internally). \index{output}
 \begin{lstlisting}
 output.write(const char *format, ...)
 \end{lstlisting}
@@ -2140,7 +2143,7 @@ Unless there is a really good reason not to, please use this \code{output} objec
 when writing text output.
 
 \subsection{Laplacian inversion}
-
+\index{Laplacian inversion}
 Quite a common problem in plasma simulation codes is to invert an equation of the form
 \[
 \nabla_\perp^2 x + a x = b
@@ -2200,7 +2203,7 @@ you run the code, then the easiest way to hunt down the bug is to insert lots of
 statements (see section~\ref{sec:printing}). Things get harder when a bug only occurs after a long time
 of running, and/or only occasionally. For this type of problem, a useful tool
 can be the message stack.
-At the start of a section of code, put a message onto the stack:
+At the start of a section of code, put a message onto the stack: \index{msg\_stack}
 \begin{lstlisting}
    msg_stack.push("Some message here");
 \end{lstlisting}
@@ -2230,7 +2233,7 @@ differencing methods (such as 4th-order central differencing), and differential 
 
 \subsection{Differencing methods}
 \label{sec:diffmethod}
-
+\index{differencing}
 Methods are implemented on 5-point stencils, and are divided into three categories:
 \begin{itemize}
 \item Central-differencing methods, for diffusion operators $\frac{df}{dx}$, $\frac{d^2f}{dx^2}$. Each method has a short code, and currently include
@@ -2260,7 +2263,7 @@ a development of the ENO reconstruction schemes which combine good handling of s
 regions with high accuracy in smooth regions.
 
 \subsection{Non-uniform meshes}
-
+\index{non-uniform mesh}
 Setting \texttt{non\_uniform = true} in the BOUT.inp options file
 enables corrections to second derivatives in $X$ and $Y$. This correction
 is given by writing derivatives as:
@@ -2304,7 +2307,7 @@ f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplacian(Field)}
 \end{eqnarray*}
 
 Another set of operators assume that the equilibrium magnetic field is written
-in Clebsh form as
+in Clebsh form as \index{Clebsh}
 \[
 \mathbf{B}_0 = \nabla z\times\nabla x \qquad \left|B_0\right| = \frac{\sqrt{g_{yy}}}{J}
 \]
@@ -2332,7 +2335,7 @@ In a Clebsch coordinate system $\underline{B} = \nabla z \times \nabla x = \frac
 
 \section{Staggered grids}
 \label{sec:staggergrids}
-
+\index{staggered grids}
 Until now all quantities have been cell-centred i.e. both velocities
 and conserved quantities were defined at the same locations. This
 is because these methods are simple and this was the scheme used in 
@@ -2388,11 +2391,33 @@ parallel current density and vorticity.
 
 Input grid files are the same as the original BOUT code, but the output format is different.
 
+\begin{figure}[htbp!]
+\centering
+\subfigure[Growth rate]{
+  \label{fig:drift_imag}
+  \includegraphics[scale=0.35]{figs/drift_growth.pdf}
+}
+\subfigure[Real Frequency]{
+  \label{fig:drift_real}
+  \includegraphics[scale=0.35]{figs/drift_freq.pdf}
+}
+\caption{Resistive Drift wave instability test. Dashed lines are analytic results, diamonds from BOUT++ simulations}
+\label{fig:drift_test}
+\end{figure}
+
 \subsection{em-drift}
 
 \subsection{gyro-gem}
 
 \subsection{interchange-instability}
+
+\begin{figure}[htb!]
+\centering
+\includegraphics[scale=0.4]{figs/interchange_inst_test.pdf}
+\caption{Interchange instability test. Solid lines are from analytic theory, symbols from BOUT++ simulations, and the RMS
+density is averaged over $z$. Vertical dashed line marks the reference point, where analytic and simulation results are set equal}
+\label{fig:profiles}
+\end{figure}
 
 \subsection{jorek-compare}
 
@@ -2406,6 +2431,11 @@ whilst the file \texttt{mhd\_perturb.cxx} solves for a perturbation about the eq
 \subsection{shear-alfven-wave}
 
 \subsection{sod-shock}
+
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/sod_result.pdf}
+\caption{Sod shock-tube problem for testing shock-handling methods}
+\end{figure}
 
 \subsection{uedge-benchmark}
 
@@ -2485,7 +2515,7 @@ Alternatively, equation~\ref{eq:exb1} can be expanded as
 
 \section{Installing PACT}
 \label{apx:pact}
-
+\index{PACT}
 There are two ways to install PACT, and usually one of them will 
 work on a given system. 
 
@@ -2983,5 +3013,7 @@ Here the format is
 \begin{itemize}
 \item Datafile()  Constructor
 \end{itemize}
+
+\printindex
 
 \end{document}
