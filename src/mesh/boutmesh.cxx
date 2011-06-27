@@ -671,12 +671,18 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     if(size[0] != 1) {
       output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
       s->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
       return 1;
     }
     BoutReal val;
     if(!s->fetch(&val, name)) {
       output.write("Couldn't read 0D variable '%s'\n", name);
       s->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
       return 1;
     }
     
@@ -684,6 +690,9 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     
     // Close source
     s->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
     return 0;
   }
   case 2: {
@@ -691,6 +700,9 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
       output.write("Error: Variable '%s' has dimensions [%d,%d]. Expecting [%d,%d]\n",
                    name, size[0], size[1], nx, ny);
       s->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
       return 1;
     }
     break;
@@ -699,6 +711,9 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
                  name, size.size());
     s->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
     return 1;
   }
   }

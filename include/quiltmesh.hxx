@@ -56,6 +56,8 @@ class QuiltMesh : public Mesh {
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
 
+  int MXG, MYG;
+
   struct MeshDomain;
   
   /// Range of guard cells
@@ -111,6 +113,13 @@ class QuiltMesh : public Mesh {
 
   void packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data);
   void unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars);
+  
+  void read2Dvar(GridDataSource *s, const char *name, 
+                 int xs, int ys,
+                 int xd, int yd,
+                 int nx, int ny,
+                 BoutReal **data);
+                 
 };
 
 #endif // __QUILTMESH_H__

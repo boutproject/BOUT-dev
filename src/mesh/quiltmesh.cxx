@@ -46,19 +46,152 @@ int QuiltMesh::load()
  ****************************************************************/
   
 int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
+  if(name == NULL)
+    return 1;
+  
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
+#endif
+  
+  GridDataSource *s = findSource(name);
+  if(s == NULL) {
+    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+    var = def;
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 2;
+  }
+  
+  var.allocate(); // Make sure data allocated
+  
+  BoutReal **data = var.getData(); // pointer for faster access
+  
+  // Send an open signal to the source
+  s->open(name);
+  
+  // Get the size of the variable
+  vector<int> size = s->getSize(name);
+  switch(size.size()) {
+  case 1: {
+    // 0 or 1 dimension
+    if(size[0] != 1) {
+      output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
+      s->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
+      return 1;
+    }
+    BoutReal val;
+    if(!s->fetch(&val, name)) {
+      output.write("Couldn't read 0D variable '%s'\n", name);
+      s->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
+      return 1;
+    }
+    var = val;
+    // Close source
+    s->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 0;
+  }
+  case 2: {
+    // Check size? More complicated now...
+    break;
+  }
+  default: {
+    output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
+                 name, size.size());
+    s->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 1;
+  }
+  }
+  
+  // Read bulk of points
+  read2Dvar(s, name, 
+            mydomain->x0, mydomain->y0,  // Coordinates in grid file
+            MXG, MYG,                    // Coordinates in this processor
+            mydomain->nx, mydomain->ny,  // Number of points to read
+            data);
+  
+  if(mydomain->xin) {
+    // Inner boundary
+    MeshDomain *d = mydomain->xin;
+    read2Dvar(s, name, 
+              d->x0+d->nx-MXG, d->y0, // Coordinates in grid file
+              0, MYG, // Coordinates in this processor
+              MXG, mydomain->ny, 
+              data);
+  }else {
+    // Read from grid
+    read2Dvar(s, name, 
+              mydomain->x0-MXG, mydomain->y0,  // Coordinates in grid file
+              0, MYG,                    // Coordinates in this processor
+              MXG, mydomain->ny,  // Number of points to read
+              data);
+  }
+  
+  if(mydomain->xout) {
+    // Outer boundary
+    MeshDomain *d = mydomain->xout;
+    read2Dvar(s, name, 
+              d->x0, d->y0, // Coordinates in grid file
+              0, MYG, // Coordinates in this processor
+              MXG, mydomain->ny, 
+              data);
+  }else {
+    // Read from grid
+    read2Dvar(s, name, 
+              mydomain->x0+mydomain->nx, mydomain->y0,  // Coordinates in grid file
+              MXG+mydomain->nx, MYG,                    // Coordinates in this processor
+              MXG, mydomain->ny,  // Number of points to read
+              data);
+  }
+  
+  for(vector<GuardRange*>::iterator it=mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
+    MeshDomain *d = (*it)->destination;
+    read2Dvar(s, name, 
+              (*it)->xmin+(*it)->xshift-MXG+d->x0, d->y0-MYG, 
+              (*it)->xmin, (*it)->ymin, // Coordinates in this processor
+              (*it)->xmax - (*it)->xmin + 1, MYG, 
+              data);
+  }
 
+  for(vector<GuardRange*>::iterator it=mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
+    MeshDomain *d = (*it)->destination;
+    read2Dvar(s, name, 
+              (*it)->xmin+(*it)->xshift-MXG+d->x0, d->y0, 
+              (*it)->xmin, (*it)->ymin, // Coordinates in this processor
+              (*it)->xmax - (*it)->xmin + 1, MYG, 
+              data);
+  }
+  
+  // Close the data source
+  s->close();
+  
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
 }
 
 int QuiltMesh::get(Field2D &var, const string &name, BoutReal def) {
-
+  return get(var, name.c_str());
 }
 
 int QuiltMesh::get(Field3D &var, const char *name) {
-
+  
 }
 
 int QuiltMesh::get(Field3D &var, const string &name) {
-
+  return get(var, name.c_str());
 }
 
 /****************************************************************
@@ -77,23 +210,31 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
   /// Get the list of variables to send
   vector<FieldData*> var_list = g.get();
   
-  QMCommHandle *ch = getHandle(0);
+  // Number of communications
+  int ncomm = mydomain->yup.size() + mydomain->ydown.size();
+  if(mydomain->xin) ncomm++;
+  if(mydomain->xout) ncomm++;
+  
+  QMCommHandle *ch = getHandle(ncomm);
 
   //////////////////////////////
   /// Post recieves
   
+  int cid = 0;
+  
   if(mydomain->xin != NULL) {
     // Inner processor
     
-    /*
-    MPI_Irecv(ch.umsg_recvbuff,
-	      msg_len(var_list, 0, MXG, 0, mydomain->ny),
+    int len = msg_len(var_list, 0, MXG, 0, mydomain->ny);
+    ch->buffer[cid].resize(len);
+    
+    MPI_Irecv(&ch->buffer[cid][0],
+	      len,
               PVEC_REAL_MPI_TYPE,
-              xin->destination->proc; // Destination processor
-	      OUT_SENT_IN,
+              mydomain->xin->proc, // Destination processor
+	      0,
 	      BoutComm::get(),
-	      &ch.request[0]);
-    */
+	      &ch->request[0]);
   }
   if(mydomain->xout != NULL) {
     // Outer processor
@@ -544,4 +685,12 @@ void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<Fie
 	  len += (*it)->setData(x,y,0,&data[len]);
     }
   }
+}
+
+void QuiltMesh::read2Dvar(GridDataSource *s, const char *name, 
+                          int xs, int ys,
+                          int xd, int yd,
+                          int nx, int ny,
+                          BoutReal **data) {
+  
 }
