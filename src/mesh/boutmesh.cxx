@@ -1476,7 +1476,7 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
 
   wtime_comms += MPI_Wtime() - t;
 
-  return (void*) ch;
+  return (comm_handle) ch;
 }
 
 comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
@@ -1501,7 +1501,7 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
 
   wtime_comms += MPI_Wtime() - t;
 
-  return (void*) ch;
+  return (comm_handle) ch;
 }
 
 /****************************************************************
@@ -1947,7 +1947,7 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
 	// 3D variable
 	
 	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < mesh->ngz-1;jz++)
+	  for(jz=0;jz < ngz-1;jz++)
 	    len += (*it)->getData(jx,jy,jz,buffer+len);
 	
       }else {

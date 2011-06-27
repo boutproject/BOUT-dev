@@ -52,15 +52,23 @@ class QuiltMesh : public Mesh {
 
   void outputVars(Datafile &file); ///< Add mesh vars to file
  private:
+  
+  // Settings
+  bool TwistShift;   // Use a twist-shift condition in core?
+
   struct MeshDomain;
   
   /// Range of guard cells
   struct GuardRange { 
     int xmin, xmax;   // Range of X in local indices
+    int ymin, ymax;   // Range of Y in local indices
     MeshDomain *destination; // The domain (NULL if none)
     int xshift; // Add this shift going between processor local indices
                 // so [x] on this processor connects to [x+xshift] on
                 // destination processor
+    
+    bool zshift; // Shift in Z across boundary going in Y?
+    vector<BoutReal> shiftAngle; // Angle to shift by 
   };
   
   /// Domain simulated by a single processor
@@ -90,7 +98,9 @@ class QuiltMesh : public Mesh {
   /// Handle for communications
   struct QMCommHandle {
     vector<MPI_Request> request;
-    vector<vector<BoutReal> > buffer; ///< Buffers for send/receive
+    vector<int> tag;
+    vector<vector<BoutReal> > buffer;
+    vector<GuardRange*> range; ///< Where is the data going?
     bool inProgress;   ///< Denotes if communication is in progress
     vector<FieldData*> var_list; ///< List of fields being communicated
   };
@@ -98,6 +108,9 @@ class QuiltMesh : public Mesh {
   void freeHandle(QMCommHandle *h);
   QMCommHandle* getHandle(int n);
   list<QMCommHandle*> comm_list;
+
+  void packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data);
+  void unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars);
 };
 
 #endif // __QUILTMESH_H__

@@ -245,7 +245,7 @@ class Mesh {
   
   
   /// Calculates the size of a message for a given x and y range
-  int msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
+  int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
   
  private:
   int gaussj(BoutReal **a, int n);

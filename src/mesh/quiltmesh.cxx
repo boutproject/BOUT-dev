@@ -8,6 +8,8 @@
 using std::accumulate;
 #include <cmath>
 
+#define PVEC_REAL_MPI_TYPE MPI_DOUBLE
+
 QuiltMesh::~QuiltMesh()
 {
   
@@ -136,7 +138,64 @@ int QuiltMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
   
+  QMCommHandle *ch = (QMCommHandle*) handle;
   
+  if(!ch->inProgress)
+    return 2;
+  
+  BoutReal t = MPI_Wtime(); // Starting time
+  
+  if(ch->var_list.empty()) {
+    // just waiting for communications, not unpacking into variables
+    
+    MPI_Waitall(ch->request.size(),
+		&ch->request[0],
+		MPI_STATUSES_IGNORE);
+    
+    freeHandle(ch);
+    
+    // Add the time elapsed to the communications wall time
+    wtime_comms += MPI_Wtime() - t;
+    
+    return 0;
+  }
+  
+  // Waiting for data, and unpacking the result into variables
+  
+  do {
+    int ind;
+    MPI_Waitany(ch->request.size(),   // How many requests 
+		&ch->request[0],      // Array of requests
+		&ind,   // Index into the array: which one arrived?
+		MPI_STATUSES_IGNORE); // Don't store statuses for now
+    
+    if(ind == MPI_UNDEFINED)
+      break; // Finished
+    
+    // Unpack data into variables
+    unpackData(ch->buffer[ind], ch->range[ind], ch->var_list);
+    
+    // Twist-shift condition
+    if(TwistShift && (mesh->TwistOrder == 0) && ch->range[ind]->zshift) {
+      GuardRange *r = ch->range[ind];
+      for(vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
+	if((*it)->is3D()) {
+	  // Only need to shift 3D variables
+	  for(int jx=r->xmin;jx<=r->xmax;jx++)
+	    for(int jy=r->ymin;jy <= r->ymax; jy++)
+	      (*it)->shiftZ(jx, jy, r->shiftAngle[jx-r->xmin]);
+	}
+    }
+    
+    // Mark the request as NULL
+    ch->request[ind] = MPI_REQUEST_NULL;
+  }while(1);
+  
+  freeHandle(ch);
+
+  wtime_comms += MPI_Wtime() - t;
+  
+  return 0;
 }
 
 
@@ -153,19 +212,87 @@ bool QuiltMesh::lastX() {
 }
 
 int QuiltMesh::sendXOut(BoutReal *buffer, int size, int tag) {
+  if(lastX())
+    return 1;
   
+  BoutReal t = MPI_Wtime();
+
+  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   mydomain->xout->proc,
+	   tag,
+	   BoutComm::get());
+  
+  wtime_comms += MPI_Wtime() - t;
+
+  return 0;
 }
 
 int QuiltMesh::sendXIn(BoutReal *buffer, int size, int tag) {
+  if(firstX())
+    return 1;
   
+  BoutReal t = MPI_Wtime();
+
+  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   mydomain->xin->proc,
+	   tag,
+	   BoutComm::get());
+  
+  wtime_comms += MPI_Wtime() - t;
+
+  return 0;
 }
 
 comm_handle QuiltMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
+  if(lastX())
+    return NULL; // No processor to receive from
   
+  BoutReal t = MPI_Wtime();
+
+  QMCommHandle *ch = getHandle(1); // Just one request
+  
+  ch->tag[0] = tag;
+  ch->var_list.clear();
+
+  MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    mydomain->xout->proc, // Processor number
+	    tag,
+	    BoutComm::get(),
+	    &ch->request[0]);
+  
+  ch->inProgress = true;
+  
+  wtime_comms += MPI_Wtime() - t;
+  
+  return (comm_handle) ch;
 }
 
 comm_handle QuiltMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
+  if(firstX())
+    return NULL;
   
+  BoutReal t = MPI_Wtime();
+  
+  QMCommHandle *ch = getHandle(1);
+  
+  ch->tag[0] = tag;
+  ch->var_list.clear();
+  
+  MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    mydomain->xin->proc, // Processor number
+	    tag,
+	    BoutComm::get(),
+	    &ch->request[0]);
+  
+  ch->inProgress = true;
+  
+  wtime_comms += MPI_Wtime() - t;
+  
+  return (comm_handle) ch;
 }
 
 /****************************************************************
@@ -355,6 +482,7 @@ vector<QuiltMesh::MeshDomain*> QuiltMesh::partition(const vector<int> &nx,
 }
 
 void QuiltMesh::freeHandle(QMCommHandle *h) {
+  h->inProgress = false;
   comm_list.push_back(h);
 }
 
@@ -368,7 +496,52 @@ QuiltMesh::QMCommHandle* QuiltMesh::getHandle(int n) {
   
   h->buffer.resize(n);
   h->request.resize(n);
+  h->tag.resize(n);
   h->inProgress = false;
 
   return h;
+}
+
+void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data) {
+  
+  /// Get size of buffer needed
+  int len = msg_len(vars, range->xmin, range->xmax+1, range->ymin, range->ymax+1);
+  
+  data.resize(len);
+  
+  len = 0;
+  // Loop over variables
+  for(vector<FieldData*>::const_iterator it = vars.begin(); it != vars.end(); it++) {
+    if((*it)->is3D()) {
+      // 3D variable
+      for(int x=range->xmin; x <= range->xmax; x++)
+	for(int y=range->ymin; y <= range->ymax; y++)
+	  for(int z=0;z<ngz-1;z++)
+	    len += (*it)->getData(x,y,z,&data[len]);
+    }else {
+      // 2D variable
+      for(int x=range->xmin; x <= range->xmax; x++)
+	for(int y=range->ymin; y <= range->ymax; y++)
+	  len += (*it)->getData(x,y,0,&data[len]);
+    }
+  }
+}
+
+void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars) {
+  int len = 0;
+  // Loop over variables
+  for(vector<FieldData*>::iterator it = vars.begin(); it != vars.end(); it++) {
+    if((*it)->is3D()) {
+      // 3D variable
+      for(int x=range->xmin; x <= range->xmax; x++)
+	for(int y=range->ymin; y <= range->ymax; y++)
+	  for(int z=0;z<ngz-1;z++)
+	    len += (*it)->setData(x,y,z,&data[len]);
+    }else {
+      // 2D variable
+      for(int x=range->xmin; x <= range->xmax; x++)
+	for(int y=range->ymin; y <= range->ymax; y++)
+	  len += (*it)->setData(x,y,0,&data[len]);
+    }
+  }
 }

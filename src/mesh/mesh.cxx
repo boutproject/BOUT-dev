@@ -243,11 +243,11 @@ int Mesh::communicate(FieldPerp &f)
   return 0;
 }
 
-int Mesh::msg_len(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
   int len = 0;
 
   /// Loop over variables
-  for(std::vector<FieldData*>::iterator it = var_list.begin(); it != var_list.end(); it++) {
+  for(std::vector<FieldData*>::const_iterator it = var_list.begin(); it != var_list.end(); it++) {
     if((*it)->is3D()) {
       len += (xlt - xge) * (ylt - yge) * (ngz-1) * (*it)->BoutRealSize();
     }else
