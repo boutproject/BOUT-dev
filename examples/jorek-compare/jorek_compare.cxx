@@ -59,6 +59,8 @@ bool vorticity_momentum; // Vorticity is curl of momentum, rather than velocity
 
 bool include_profiles; // Include zero-order equilibrium terms
 
+int low_pass_z; // Toroidal (Z) filtering of all variables
+
 Vector3D vExB, vD; // Velocities
 Field3D divExB;    // Divergence of ExB flow
 
@@ -185,6 +187,10 @@ int physics_init(bool restarting) {
   OPTION(options, electron_density,    false);
   OPTION(options, vorticity_momentum,  false);
   OPTION(options, include_profiles,    false);
+
+  OPTION(options, phi_flags,  0);
+
+  OPTION(options, low_pass_z, -1); // Default is no filtering
 
   OPTION(options, Wei, 1.0);
   
@@ -469,7 +475,10 @@ int physics_run(BoutReal t) {
       // Using electron parallel velocity rather than ion
       ddt(rho) += (Mi/(Charge*sqrt(MU0*rhonorm)))* Div_par_LtoC(Jpar);
     }
-    
+
+    if(low_pass_z > 0)
+      ddt(rho) = lowPass(ddt(rho), low_pass_z);   
+ 
     msg_stack.pop();
     
     msg_stack.push("Te");
@@ -502,6 +511,11 @@ int physics_run(BoutReal t) {
       
       ddt(Ti) += Tei;
       ddt(Te) -= Tei;
+    }
+
+    if(low_pass_z > 0) {
+      ddt(Te) = lowPass(ddt(Te), low_pass_z);
+      ddt(Ti) = lowPass(ddt(Ti), low_pass_z);
     }
   }
   
@@ -585,7 +599,10 @@ int physics_run(BoutReal t) {
     if(viscos_perp > 0.0)
       ddt(U) += viscos_perp * Delp2(U) / rhot;     // Perpendicular viscosity
   }
-    
+  
+  if(low_pass_z > 0)
+    ddt(U) = lowPass(ddt(U), low_pass_z);
+   
   msg_stack.pop();
 
   ////////// Parallel velocity equation ////////////
@@ -598,7 +615,10 @@ int physics_run(BoutReal t) {
     ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
     ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
   }
-    
+  
+  if(low_pass_z > 0)
+    ddt(Vpar) = lowPass(ddt(Vpar), low_pass_z);
+   
   msg_stack.pop();
 
   ////////// Magnetic potential equation ////////////
@@ -610,6 +630,9 @@ int physics_run(BoutReal t) {
              - eta*Jpar;
   if(nonlinear)
     ddt(Apar) += b0xGrad_dot_Grad(Apar, phi) / B0;
+
+  if(low_pass_z > 0)
+    ddt(Apar) = lowPass(ddt(Apar), low_pass_z);
 
   msg_stack.pop(sp);
   return 0;

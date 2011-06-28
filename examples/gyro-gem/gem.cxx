@@ -892,7 +892,7 @@ int physics_dissipation(BoutReal time)
     }
     if(qepar_ddt) {
       ddt(qepar) = -UE_Grad_D(qepar, phi_G)
-        - Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
+        //- Landau*(tau_e/mu_e)*(1. - 0.125*Grad2_par2(qepar))
         - (1./mu_e)*K_par
         - (1./mu_e)*K_D;
     }
