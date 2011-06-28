@@ -1,8 +1,8 @@
 /*******************************************************************************
  * 2-fluid equations
  * Same as Maxim's version of BOUT - simplified 2-fluid for benchmarking
+ * LAPD standard case with simulation results published in PoP in Popovich et. al. 2010
  *******************************************************************************/
-
 #include <bout.hxx>
 #include <boutmain.hxx>
 
@@ -16,11 +16,11 @@
 #include <stdlib.h>
 
 // 2D initial profiles
-Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0;
+Field2D Ni0, Ti0, Te0, Vi0, phi0, Ve0, rho0, Ajpar0, src_ni0;
 Vector2D b0xcv; // for curvature terms
 
 // 3D evolving fields
-Field3D rho, Ni, Ajpar;
+Field3D rho, ni, ajpar, te;
 
 // Derived 3D variables
 Field3D phi, Apar, Ve, jpar;
@@ -29,19 +29,20 @@ Field3D phi, Apar, Ve, jpar;
 Field3D nu, mu_i, kapa_Te, kapa_Ti;
 
 // 3D total values
-Field3D Nit, Tit, Tet, Vit;
+Field3D Nit, Tit, Tet, Vit, phit, VEt, dphi_bc_ydown, dphi_bc_yup;
 
 // pressures
 Field3D pei, pe;
 Field2D pei0, pe0;
 
 // Metric coefficients
-Field2D Rxy, Bpxy, Btxy, hthe;
+Field2D Rxy, Bpxy, Btxy, hthe,Zxy;
 
 // parameters
 BoutReal Te_x, Ti_x, Ni_x, Vi_x, bmag, rho_s, fmei, AA, ZZ;
 BoutReal lambda_ei, lambda_ii;
 BoutReal nu_hat, mui_hat, wci, nueix, nuiix;
+BoutReal ni_perpdiff, rho_perpdiff, te_perpdiff;
 BoutReal beta_p;
 BoutReal nuIonNeutral; // Ion-neutral collision rate (normalised by wci)
 
@@ -52,28 +53,57 @@ bool arakawa;   // Use Arakawa scheme for ExB advection
 bool bout_exb;  // Use BOUT-06 expression for ExB velocity
 
 BoutReal zeff, nu_perp;
-bool evolve_rho,evolve_ni, evolve_ajpar;
+bool evolve_rho, evolve_ni, evolve_ajpar, evolve_te;
 BoutReal ShearFactor;
+BoutReal time_step;
 
-bool nonlinear;    // Include nonlinear terms
+bool nonlinear;
+bool neg_fix;
+
+BoutReal ni_floor, minNit;
+
+bool filter_z;
+int filter_z_mode;
 
 bool log_density;  // Evolve logarithm of the density
-
-bool filter_z;     // Remove all but a single azimuthal mode-number
-int filter_z_mode; // The azimuthal mode-number to keep
 
 int phi_flags, apar_flags; // Inversion flags
 
 bool niprofile;
 
-bool evolve_source; // If true, evolve a source/sink profile
+bool evolve_source_ni, evolve_source_te; // If true, evolve a source/sink profile
 BoutReal source_response;  // Initial source response (inverse timescale) 
 BoutReal source_converge;  // Timescale for convergence
-Field2D Sn; // Density source (inverse timescale)
+Field2D Sn,St; // Density source (inverse timescale)
 bool input_source; // Read Sn from the input file
+bool remove_tor_av_ni, remove_tor_av_te; // Subtract the toroidal averages
+
+// Switches for terms in the ni equation
+bool ni_jpar1, ni_ni0_phi1, ni_ni1_phi0, ni_ni1_phi1, ni_src_ni0, ni_diff;
+
+// Switches for terms in the rho equation
+bool rho_jpar1, rho_nuin_rho1, rho_rho1, rho_rho1_phi1, rho_ve2t, rho_diff;
+bool rho_rho0_phi1, rho_rho1_phi0, rho_ve2lin;
+
+// Switches for terms in the ajpar equation
+bool ajpar_phi1, ajpar_jpar1, ajpar_te_ni, ajpar_te; 
+bool ajpar_ajpar1_phi1, ajpar_ajpar1_phi0, ajpar_ve1_ve1;
+
+// Switches for terms in the te equation
+bool te_te1_phi0, te_te0_phi1, te_te1_phi1, te_ajpar_te;
+bool te_te_ajpar, te_nu_te1, te_nu_tet, te_jpar, te_diff;
+
+// Coefficients for linear sheath problem
+Field2D LAMBDA1, LAMBDA2;
+
+// My ixseps variables
+int my_ixseps;
 
 // Communication object
 FieldGroup comms;
+
+// BOUT-06 L1
+const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f);
 
 int physics_init(bool restarting)
 {
@@ -92,6 +122,7 @@ int physics_init(bool restarting)
   mesh->get(phi0,   "phi0");
   mesh->get(rho0,   "rho0");
   mesh->get(Ajpar0, "Ajpar0");
+  mesh->get(src_ni0, "src_ni0");
 
   // Load magnetic curvature term
   b0xcv.covariant = false; // Read contravariant components
@@ -99,6 +130,7 @@ int physics_init(bool restarting)
 
   // Load metrics
   mesh->get(Rxy,  "Rxy");
+  mesh->get(Zxy,  "Zxy");
   mesh->get(Bpxy, "Bpxy");
   mesh->get(Btxy, "Btxy");
   mesh->get(hthe, "hthe");
@@ -112,15 +144,25 @@ int physics_init(bool restarting)
   mesh->get(Ni_x, "Ni_x");
   mesh->get(bmag, "bmag");
 
+  // Get separatrix location
+  mesh->get(my_ixseps, "ixseps1");
+
+
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
 
-  /*************** READ OPTIONS *************************/
 
+
+
+  /*************** READ OPTIONS *************************/
   // Read some parameters
+
   Options *globalOptions = Options::getRoot();
+
+  globalOptions->get("TIMESTEP", time_step, 1.0);
+
   Options *options = globalOptions->getSection("2fluid");
-  OPTION(options, AA, 2.0); // <=> options.get("AA", AA, 1.0);
+  OPTION(options, AA, 4.0); // <=> options.get("AA", AA, 1.0);
   OPTION(options, ZZ, 1.0);
 
   OPTION(options, estatic,     false);
@@ -133,32 +175,74 @@ int physics_init(bool restarting)
   OPTION(options, bout_exb,    false);
   
   OPTION(options, niprofile, false);
-  OPTION(options, evolve_source, false);
+  OPTION(options, evolve_source_ni, false);
+  OPTION(options, evolve_source_te, false);
   OPTION(options, source_response, 1.0);
-  OPTION(options, source_converge, 100.);
+  OPTION(options, source_converge, -1);
+
+  OPTION(options, ni_perpdiff, 0.0);
+  OPTION(options, rho_perpdiff, 0.0);
+  OPTION(options, te_perpdiff, 0.0);
   
   OPTION(options, input_source, false);
+  OPTION(options, remove_tor_av_ni, false);
+  OPTION(options, remove_tor_av_te, false);
 
   OPTION(options, phi_flags,   0);
   OPTION(options, apar_flags,  0);
 
   OPTION(options, nonlinear, true);
 
-  OPTION(options, log_density, false);
-  if(log_density) {
-    if(!nonlinear)
-      output << "WARNING: logarithmic density => Nonlinear terms enabled\n";
-    nonlinear = true; // Need to include the nonlinear terms
-  }
-
   // Toroidal filtering
   OPTION(options, filter_z,          false);  // Filter a single n
   OPTION(options, filter_z_mode,     1);
 
-  // Check for "evolve" inside variable sections
-  (globalOptions->getSection("rho"))->get("evolve", evolve_rho,   true);
-  (globalOptions->getSection("Ni"))->get("evolve", evolve_ni,    true);
-  (globalOptions->getSection("Ajpar"))->get("evolve", evolve_ajpar, true);
+  // Set default values for terms in each equation
+  // Allows default to be overridden in BOUT.inp file
+  Options *option_rho = globalOptions->getSection("rho");
+  OPTION(option_rho, evolve_rho,    true);
+  OPTION(option_rho, rho_jpar1,     false);
+  OPTION(option_rho, rho_nuin_rho1, false);
+  OPTION(option_rho, rho_rho1,      false);
+  OPTION(option_rho, rho_rho0_phi1, false);
+  OPTION(option_rho, rho_rho1_phi0, false);
+  OPTION(option_rho, rho_ve2lin,    false);
+  OPTION(option_rho, rho_rho1_phi1, false);
+  OPTION(option_rho, rho_ve2t,      false);
+  OPTION(option_rho, rho_diff,      false);
+
+  Options *option_ni = globalOptions->getSection("ni");
+  OPTION(option_ni, evolve_ni,   true);
+  OPTION(option_ni, ni_jpar1,    false);
+  OPTION(option_ni, ni_ni0_phi1, false);
+  OPTION(option_ni, ni_ni1_phi0, false);
+  OPTION(option_ni, ni_ni1_phi1, false);
+  OPTION(option_ni, ni_src_ni0,  false);
+  OPTION(option_ni, ni_diff,      false);
+
+  Options *option_ajpar = globalOptions->getSection("ajpar");
+  OPTION(option_ajpar, evolve_ajpar,     true);
+  OPTION(option_ajpar, ajpar_phi1,       false);
+  OPTION(option_ajpar, ajpar_jpar1,      false);
+  OPTION(option_ajpar, ajpar_te_ni,      false);
+  OPTION(option_ajpar, ajpar_te,         false);
+  OPTION(option_ajpar, ajpar_ajpar1_phi0,false);
+  OPTION(option_ajpar, ajpar_ajpar1_phi1,false);
+  OPTION(option_ajpar, ajpar_ve1_ve1,    false);
+
+  Options *option_te = globalOptions->getSection("te");
+  OPTION(option_te, evolve_te,    true);
+  OPTION(option_te, te_te1_phi0,  false);
+  OPTION(option_te, te_te0_phi1,  false);
+  OPTION(option_te, te_te1_phi1,  false);
+  OPTION(option_te, te_ajpar_te,  false);
+  OPTION(option_te, te_te_ajpar,  false);
+  OPTION(option_te, te_nu_te1,    false);
+  OPTION(option_te, te_nu_tet,    false);
+  OPTION(option_te, te_jpar,      false);
+  OPTION(option_te, te_diff,      false);
+
+
 
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
@@ -181,11 +265,8 @@ int physics_init(bool restarting)
   nueix     = 2.91e-6*Ni_x*lambda_ei/pow(Te_x, 1.5);
   nuiix     = 4.78e-8*pow(ZZ,4.)*Ni_x*lambda_ii/pow(Ti_x, 1.5)/sqrt(AA);
   nu_hat    = zeff*nueix/wci;
+  mui_hat   = 0.96*wci/nuiix*pow(Ti_x/Te_x, -1.5);
 
-  if(nu_perp < 1.e-10) {
-    mui_hat      = (3./10.)*nuiix/wci;
-  } else
-    mui_hat      = nu_perp;
 
   if(estatic) {
     beta_p    = 1.e-29;
@@ -206,7 +287,7 @@ int physics_init(bool restarting)
   /************** SHIFTED GRIDS LOCATION ***************/
 
   // Velocities defined on cell boundaries
-  Ajpar.setLocation(CELL_YLOW);
+  ajpar.setLocation(CELL_YLOW);
 
   // Apar and jpar too
   Apar.setLocation(CELL_YLOW); 
@@ -261,6 +342,10 @@ int physics_init(bool restarting)
   mesh->g_13 = I*Rxy*Rxy;
   mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
 
+  mesh->geometry();
+
+  rho0 = Ni0*Delp2(phi0) + Perp_Grad_dot_Grad(phi0,Ni0);
+
   /**************** SET EVOLVING VARIABLES *************/
 
   // Tell BOUT++ which variables to evolve
@@ -272,57 +357,67 @@ int physics_init(bool restarting)
     initial_profile("rho", rho);
 
   if(evolve_ni) {
-    bout_solve(Ni, "Ni");
-    comms.add(Ni);
+    bout_solve(ni, "ni");
+    comms.add(ni);
   }else
-    initial_profile("Ni", Ni);
+    initial_profile("ni", ni);
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, "Ajpar");
-    comms.add(Ajpar);
+    bout_solve(ajpar, "ajpar");
+    comms.add(ajpar);
   }else {
-    initial_profile("Ajpar", Ajpar);
+    initial_profile("ajpar", ajpar);
     if(ZeroElMass)
-      dump.add(Ajpar, "Ajpar", 1); // output calculated Ajpar
+      dump.add(ajpar, "ajpar", 1); // output calculated Ajpar
   }
 
-  if(log_density) {
-    // Need to evolve the entire Ni, not perturbation
-    Ni += Ni0; // Add background to perturbation
-    Ni = log(Ni); // Take logarithm for starting point
-  }
+  if(evolve_te) {
+    bout_solve(te, "te");
+    comms.add(te);
+  }else
+    initial_profile("te", te);
 
-  // Set boundary conditions on jpar
+  // Set boundary conditions on jpar and VEt
   jpar.setBoundary("jpar");
+  VEt.setBoundary("VEt");
 
-  if(evolve_source) {
+  if(evolve_source_ni) {
     bout_solve(Sn, "Sn");
+    dump.add(Sn, "Sn");
   }
   if(input_source)
     mesh->get(Sn, "Sn");
+
+  if(evolve_source_te) {
+    bout_solve(St, "St");
+    dump.add(St, "St");
+  }
+
   
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
-  comms.add(phi, Apar);
+  comms.add(phi);
 
-  // Add any other variables to be dumped to file
-  dump.add(phi,  "phi",  1);
-  dump.add(Apar, "Apar", 1);
-  dump.add(jpar, "jpar", 1);
+  /*************** DUMP VARIABLES TO OUTPUT**********/
+  dump.add(phi,  "phi",  1);  dump.add(jpar, "jpar", 1);
 
-  SAVE_ONCE(Ni0);
-  SAVE_ONCE(Te0);
-  SAVE_ONCE(Ti0);
+  SAVE_ONCE4(Ni0,Te0,phi0,rho0);
+  SAVE_ONCE5(Rxy,Bpxy,Btxy,Zxy,hthe);
+  dump.add(mesh->Bxy, "Bxy", 0);  dump.add(my_ixseps, "ixseps", 0);
 
-  SAVE_ONCE(Te_x);
-  SAVE_ONCE(Ti_x);
-  SAVE_ONCE(Ni_x);
-  SAVE_ONCE(rho_s);
-  SAVE_ONCE(wci);
-  
+  SAVE_ONCE3(Te_x,Ti_x,Ni_x);
+  SAVE_ONCE6(AA,ZZ,zeff,rho_s,wci,bmag);
+  dump.add(mesh->ngx, "ngx", 0);  dump.add(mesh->ngy,   "ngy", 0);  dump.add(mesh->ngz,   "ngz", 0);
+  SAVE_ONCE6(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
+  SAVE_ONCE3(ni_perpdiff,rho_perpdiff,te_perpdiff);
+
+
+
   return(0);
 }
+// End of physics_init()
+//////////////////////////////////////////////////////////////////
 
 // Routines for ExB terms (end of this file)
 const Field2D vE_Grad(const Field2D &f, const Field2D &p);
@@ -330,13 +425,14 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p);
 const Field3D vE_Grad(const Field3D &f, const Field2D &p);
 const Field3D vE_Grad(const Field3D &f, const Field3D &p);
 
+
+///////////////////////////////////////////////////////////////////
+// Function called at each time step
+// Time derivatives calculated here
 int physics_run(BoutReal t)
 {
-  if(log_density) {
-    // Ni contains the logarithm of total density. 
-    Ni = exp(Ni); // Convert to density
-    Ni -= Ni0; // Turn into perturbation
-  }
+
+
 
   // Invert vorticity to get phi
   
@@ -344,35 +440,26 @@ int physics_run(BoutReal t)
   // Arguments are:   (b,   bit-field, a,    c)
   // Passing NULL -> missing term
   if(nonlinear) {
-    phi = invert_laplace(rho/(Ni0+Ni), phi_flags, NULL, &Ni0);
-  }else
-    phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
-
-  if(estatic || ZeroElMass) {
-    // Electrostatic operation
-    Apar = 0.0;
-  }else {
-    // Invert Ajpar to get Apar
-    static Field2D acoeff;
-    static bool aset = false;
-    
-    if(!aset) // calculate Apar coefficient
-      acoeff = (-0.5*beta_p/fmei)*Ni0;
-    aset = true;
-  
-    Apar = invert_laplace(-acoeff*Ajpar, apar_flags, &acoeff);
+    phi = invert_laplace(rho/(Ni0+ni), phi_flags, NULL, &Ni0);
   }
+  else {
+    phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
+  }
+
+
 
   // Communicate variables
   mesh->communicate(comms);
 
   // Update profiles
   if(nonlinear) {
-    Nit = Ni0 + Ni;
+    Nit = Ni0 + ni;
+    phit = phi0 + phi;
     Tit = Ti0;
-    Tet = Te0;
+    Tet = Te0 + te;
   }else {
     Nit = Ni0;
+    phit = phi0;
     Tit = Ti0;
     Tet = Te0;
   }
@@ -385,20 +472,48 @@ int physics_run(BoutReal t)
   }else
       source_alpha = source_response;
 
+  
+  // Exit if the density goes negative
+  if(nonlinear && min(Nit) < 0.0) {
+    output.enable();  // Use stdout for the next line
+    output.write("Unphysical negative density encountered. Exiting...\n");
+    exit(1);
+  }
+
+
+  // Exit if the temperature goes negative or make negatives zero
+  if(nonlinear && evolve_te && min(Tet) < 0.0) {
+    output.enable();  // Use stdout for the next line
+    output.write("Unphysical negative temperature encountered. Exiting...\n");
+    exit(1);
+  }
+  
+
   // Update non-linear coefficients
   nu      = nu_hat * Nit / (Tet^1.5);
-  mu_i    = mui_hat * Nit / (Tit^0.5);
-  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
-  kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
+  mu_i    = mui_hat * (Tit^2.5)/Nit;
+  //kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
+  //kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
+
   
   // Calculate pressures
-  pei = (Tet+Tit)*Nit;
-  pe  = Tet*Nit;
+  //pei = (Tet+Tit)*Nit;
+  //pe  = Tet*Nit;
   
+  // Calculate E cross B velocity
+  if(nonlinear){
+    VEt = sqrt(mesh->g11*DDX(phit)*DDX(phit) + mesh->g33*DDZ(phit)*DDZ(phit));
+  
+    // Set boundary condition on VEt
+    VEt.applyBoundary();
+
+    // Communicate VEt
+    mesh->communicate(VEt);
+  }
+
   if(ZeroElMass) {
     // Set jpar,Ve,Ajpar neglecting the electron inertia term
-    //jpar = ((Te0*Grad_par(Ni, CELL_YLOW)) - (Ni0*Grad_par(phi, CELL_YLOW)))/(fmei*0.51*nu);
-    jpar = ((Tet*Grad_par_LtoC(Ni)) - (Nit*Grad_par_LtoC(phi)))/(fmei*0.51*nu);
+    jpar = ((Tet*Grad_par_LtoC(ni)) - (Nit*Grad_par_LtoC(phi)))/(fmei*0.51*nu);
     
     // Set boundary condition on jpar
     jpar.applyBoundary();
@@ -407,116 +522,226 @@ int physics_run(BoutReal t)
     mesh->communicate(jpar);
 
     Ve = -jpar/Nit;
-    Ajpar = Ve;
+    ajpar = Ve;
   }else {
     
-    Ve = Ajpar + Apar;
+    Ve = ajpar;
     jpar = -Nit*Ve;
+    //jpar = -Ni0*Ve; //Linearize as in BOUT06
   }
-
+  //////////////////////////////////////////////////////////////////////////////////////////
   // DENSITY EQUATION
 
-  ddt(Ni) = 0.0;
+  ddt(ni) = 0.0;
   if(evolve_ni) {
-    ddt(Ni) -= vE_Grad(Ni0, phi);
     
-    if(nonlinear)
-      ddt(Ni) -= vE_Grad(Ni, phi);
-    
-    ddt(Ni) += Div_par_CtoL(jpar); // Left hand differencing
+    if(ni_ni0_phi1) {
+      ddt(ni) -= DDX(Ni0)*DDZ(phi);
+    }
+  
+    if(ni_ni1_phi0) {
+      ddt(ni) -= vE_Grad(ni, phi0);
+    }
 
-    if(evolve_source || input_source) {
-      // Evolve source
-      if(evolve_source)
-        ddt(Sn) = mesh->averageY(-1. * source_alpha * Ni.DC() / Ni0);
+    if(ni_ni1_phi1) {
+      ddt(ni) -= vE_Grad(ni, phi);
+    }
+    
+    if(ni_jpar1) {
+      ddt(ni) += Grad_par_CtoL(jpar); // Left hand differencing
+    }
+
+    if(ni_src_ni0) {
+      ddt(ni) += src_ni0;
+    }
+
+    if(ni_diff) {
+      ddt(ni) += ni_perpdiff * Delp2(ni,-1.0);
+    }
+
+    if(evolve_source_ni) {
+
+      ddt(Sn) = mesh->averageY(-1. * source_alpha * ni.DC() / Ni0);
 
       // Add density source/sink
-      ddt(Ni) += Sn*where(Sn, Ni0, Nit); // Sn*Ni0 if Sn > 0, Sn*Nit if Sn < 0
+      ddt(ni) += Sn*where(Sn, Ni0, Nit); // Sn*Ni0 if Sn > 0, Sn*Nit if Sn < 0
 
-    }else if(niprofile) {
-      // Allowing Ni profile to change
-      if(mesh->firstX()) {
-	// Inner boundary
-	for(int i=0;i<3;i++) {
-	  // Relax upwards (only add density)
-	  for(int j=0;j<mesh->ngy;j++)
-	    for(int k=0;k<mesh->ngz;k++) {
-	      if(Ni[i][j][k] < 0.0)
-		ddt(Ni)[i][j][k] -= 0.1*Ni[i][j][k];
-	      }
-	    }
-      }
-      if(mesh->lastX()) {
-	// Outer boundary
-	for(int i=0;i<3;i++) {
-	  // Relax downwards (only remove density)
-	  for(int j=0;j<mesh->ngy;j++)
-	    for(int k=0;k<mesh->ngz;k++) {
-	      if(Ni[mesh->ngx-1-i][j][k] > 0.0)
-		ddt(Ni)[mesh->ngx-1-i][j][k] -= 0.1*Ni[mesh->ngx-1-i][j][k];
-	      }
-	}
-      }
-    }else
-      ddt(Ni) -= ddt(Ni).DC(); // REMOVE TOROIDAL AVERAGE DENSITY
-    
-    if(log_density) {
-      // d/dt(ln Ni) = d/dt(Ni) / Ni
-      ddt(Ni) /= Nit;
     }
-  }
 
+    if(remove_tor_av_ni)
+      ddt(ni) -= ddt(ni).DC(); // REMOVE TOROIDAL AVERAGE DENSITY
+  }
+  ///////////////////////////////////////////////////////////////////////////////////////////
   // VORTICITY
 
   ddt(rho) = 0.0;
   if(evolve_rho) {
     
-    if(nonlinear)
-      ddt(rho) -= vE_Grad(rho, phi);
-
-    //ddt(rho) += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
-    ddt(rho) += mesh->Bxy*mesh->Bxy*Div_par_CtoL(jpar); // Left hand differencing
-
-    if(nuIonNeutral > 0.0)
-      ddt(rho) -= nuIonNeutral * rho;
-    
-    if(evolve_source || input_source) {
-      // Sinks also remove vorticity
-      ddt(rho) += Sn*where(Sn, 0., rho);
+    if(rho_jpar1) { 
+      ddt(rho) += Grad_par_CtoL(jpar); // Left hand differencing
     }
+
+    if(rho_nuin_rho1) {
+      ddt(rho) -= nuIonNeutral * rho;
+    }
+
+    if(rho_rho1) {
+      ddt(rho) += mu_i*Delp2(rho,-1.0);  //Check second argument meaning in difops.cpp
+    }
+
+    if(rho_diff) {
+      ddt(rho) += rho_perpdiff * Delp2(rho,-1.0);
+    }
+
+    if(rho_rho1_phi1) {
+      ddt(rho) -= vE_Grad(rho, phi);
+    }
+
+    if(rho_rho0_phi1) {
+      ddt(rho) -= vE_Grad(rho0, phi);
+    }
+
+    if(rho_rho1_phi0) {
+      ddt(rho) -= vE_Grad(rho, phi0);
+    }
+
+    if(rho_ve2lin) {
+      ddt(rho) -= mesh->g11*mesh->g33 * DDX(phi0)*(DDX(Ni0)*D2DXDZ(phi) - D2DX2(phi0)*DDZ(ni));
+    }
+
+    if(rho_ve2t) {
+      ddt(rho) += VEt * vE_Grad(VEt,Nit);
+    }
+    
   }
   
+  /////////////////////////////////////////////////////////////////////////////////////
   // AJPAR
 
-  ddt(Ajpar) = 0.0;
+  ddt(ajpar) = 0.0;
   if(evolve_ajpar) {
 
-    //ddt(Ajpar) += (1./fmei)*Grad_par(phi, CELL_YLOW);
-    ddt(Ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand differencing
+    if(ajpar_phi1) {
+      ddt(ajpar) += (1./fmei)*Grad_par_LtoC(phi); // Right-hand deriv with b.c. Necessary for sheath mode
+    }
 
-    //ddt(Ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par(Ni, CELL_YLOW);
-    ddt(Ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(Ni);
-    
-    ddt(Ajpar) += 0.51*nu*jpar/Ni0;
+    if(ajpar_jpar1) {
+      ddt(ajpar) -= 0.51*nu*ajpar;
+    }
+
+
+    if(ajpar_te_ni) {
+      ddt(ajpar) -= (1./fmei)*(Tet/Nit)*Grad_par_LtoC(ni);
+    }
+
+    if(ajpar_te) {
+      ddt(ajpar) -= (1.71/fmei)*Grad_par_LtoC(te);
+    }
+
+    if(ajpar_ajpar1_phi0) {
+      ddt(ajpar) -= vE_Grad(ajpar,phi0);
+    }
+
+    if(ajpar_ajpar1_phi1) {
+      ddt(ajpar) -= vE_Grad(ajpar,phi);
+    }
+
+    if(ajpar_ve1_ve1) {
+      ddt(ajpar) -= Vpar_Grad_par(ajpar,ajpar);
+    }
+
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////////////////
+  // TEMPERATURE EQUATION
+
+  ddt(te) = 0.0;
+  if(evolve_te) {
+
+    if(te_te0_phi1) {
+      ddt(te) -= vE_Grad(Te0, phi);
+    }
+
+
+    if(te_te1_phi0) {
+      ddt(te) -= vE_Grad(te, phi0);
+    }
+
+    if(te_te1_phi1) {
+      ddt(te) -= vE_Grad(te, phi);
+    }
+
+    if(te_ajpar_te) {
+      ddt(te) -= ajpar * Grad_par_LtoC(te);
+    }
+
+    if(te_te_ajpar) {
+      ddt(te) -= 2./3. * Tet * Grad_par_CtoL(ajpar);
+    }
+
+    if(te_nu_te1) {
+      ddt(te) -= 2.*fmei*nu_hat*(Ni0/(Te0^1.5)*te + ni/sqrt(Te0));  // Explicitly linear
+    }
+
+    if(te_nu_tet) {
+      ddt(te) -= 2.*fmei*(nu*Tet -  nu_hat*Ni0/sqrt(Te0)); // All Nonlinear
+    }
+
+    if(te_jpar) {
+      ddt(te) += 0.71*2./3. * Tet/Nit * Grad_par_CtoL(jpar);
+    }
+
+    if(te_diff) {
+      ddt(te) += te_perpdiff * Delp2(te,-1.0);
+    }
+
+    if(remove_tor_av_te)
+      ddt(te) -= ddt(te).DC(); // REMOVE TOROIDAL AVERAGE TEMPERATURE
+
+    if(evolve_source_te) {
+      // Evolve source
+      ddt(St) = mesh->averageY(-1. * source_alpha * te.DC() / Te0);
+
+      // Add heat source/sink
+      ddt(te) += St*where(St, Te0, Tet);
+
+    }
+    
+
+    // There is an ion collision term that can be added with finite T_i
+
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////////
   // Z filtering
   if(filter_z) {
     // Filter out all except filter_z_mode
     
     ddt(rho) = filter(ddt(rho), filter_z_mode);
-    ddt(Ni) = filter(ddt(Ni), filter_z_mode);
-    ddt(Ajpar) = filter(ddt(Ajpar), filter_z_mode);
+    ddt(ni) = filter(ddt(ni), filter_z_mode);
+    ddt(ajpar) = filter(ddt(ajpar), filter_z_mode);
+    ddt(te) = filter(ddt(te), filter_z_mode);
   }
-  
+
+ 
   return 0;
 }
+//End of physics_run
+/////////////////////////////////////////////////////////////////
+
+
+/****************SPECIAL DIFFERENTIAL OPERATORS******************/
+const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f)
+{
+  return DDX(p)*DDX(f)*mesh->g11;
+}
+
 
 /////////////////////////////////////////////////////////////////
 // ExB terms. These routines allow comparisons with BOUT-06
 // if bout_exb=true is set in BOUT.inp
 /////////////////////////////////////////////////////////////////
-
 const Field2D vE_Grad(const Field2D &f, const Field2D &p)
 {
   Field2D result;
@@ -546,7 +771,9 @@ const Field3D vE_Grad(const Field2D &f, const Field3D &p)
           
           // J++ = DDZ(p)*DDX(f) - DDX(p)*DDZ(f)
           BoutReal Jpp = 0.25*( (p[jx][jy][jzp] - p[jx][jy][jzm])*
-                                (f[jx+1][jy] - f[jx-1][jy]) )
+                                (f[jx+1][jy] - f[jx-1][jy]) -
+                                (p[jx+1][jy][jz] - p[jx-1][jy][jz])*
+                                (f[jx][jy] - f[jx][jy]) )
             / (mesh->dx[jx][jy] * mesh->dz);
 
           // J+x
