@@ -112,7 +112,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   if(info != 0) {
     // Some sort of problem
     output.write("Problem in LAPACK ZGTSV routine\n");
-    return 1;
+     return 1;
   }
 
   // Copy result back

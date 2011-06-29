@@ -56,14 +56,14 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 CvodeSolver::CvodeSolver() : Solver()
 {
   has_constraints = false; ///< This solver doesn't have constraints
-  
+
   prefunc = NULL;
   jacfunc = NULL;
 }
 
 CvodeSolver::~CvodeSolver()
 {
-  
+
 }
 
 /**************************************************************************
@@ -91,26 +91,26 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
 
   // Calculate number of variables (in generic_solver)
   int local_N = getLocalN();
-  
+
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, local_N);
+                n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
-  
+
   if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     bout_error("ERROR: SUNDIALS memory allocation failed\n");
-  
+
   // Put the variables into uvec
   if(save_vars(NV_DATA_P(uvec)))
     bout_error("\tERROR: Initial variable value not set\n");
-  
+
   /// Get options
 
   BoutReal abstol, reltol;
@@ -121,7 +121,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   BoutReal max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
   int MXSUB = mesh->xend - mesh->xstart + 1;
-  
+
   Options *options = Options::getRoot();
   options = options->getSection("solver");
   options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
@@ -134,12 +134,12 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options->get("use_precon", use_precon, false);
   options->get("use_jacobian", use_jacobian, false);
   options->get("max_timestep", max_timestep, -1.);
-  
+
   int mxsteps; // Maximum number of steps to take between outputs
   options->get("mxstep", mxsteps, 500);
-  
+
   options->get("adams_moulton", adams_moulton, false);
-  
+
   int lmm = CV_BDF;
   if(adams_moulton) {
     // By default use functional iteration for Adams-Moulton
@@ -151,7 +151,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
     // Use Newton iteration for BDF
     options->get("func_iter", func_iter, false); 
   }
-  
+
   int iter = CV_NEWTON;
   if(func_iter)
     iter = CV_FUNCTIONAL;
@@ -159,13 +159,13 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   // Call CVodeCreate
   if((cvode_mem = CVodeCreate(lmm, iter)) == NULL)
     bout_error("ERROR: CVodeCreate failed\n");
-  
+
   if( CVodeSetUserData(cvode_mem, this) < 0 ) // For callbacks, need pointer to solver object
     bout_error("ERROR: CVodeSetUserData failed\n");
 
   if( CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0 )
     bout_error("ERROR: CVodeInit failed\n");
-  
+
   if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
     bout_error("ERROR: CVodeSStolerances failed\n");
 
@@ -175,47 +175,47 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
     // Setting a maximum timestep
     CVodeSetMaxStep(cvode_mem, max_timestep);
   }
-  
+
   /// Newton method can include Preconditioners and Jacobian function
   if(!func_iter) {
     output.write("\tUsing Newton iteration\n");
     /// Set Preconditioner
     if(use_precon) {
-      
+
       if( CVSpgmr(cvode_mem, PREC_LEFT, maxl) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpgmr failed\n");
-      
+        bout_error("ERROR: CVSpgmr failed\n");
+
       if(prefunc == NULL) {
-	output.write("\tUsing BBD preconditioner\n");
-	
-	if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
-			  mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
-	  bout_error("ERROR: CVBBDPrecInit failed\n");
-	
-      }else {
-	output.write("\tUsing user-supplied preconditioner\n");
-	
-	if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
-	  bout_error("ERROR: CVSpilsSetPreconditioner failed\n");
+        output.write("\tUsing BBD preconditioner\n");
+
+        if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
+              mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
+          bout_error("ERROR: CVBBDPrecInit failed\n");
+
+      } else {
+        output.write("\tUsing user-supplied preconditioner\n");
+
+        if( CVSpilsSetPreconditioner(cvode_mem, NULL, cvode_pre) )
+          bout_error("ERROR: CVSpilsSetPreconditioner failed\n");
       }
     }else {
       // Not using preconditioning
-      
+
       output.write("\tNo preconditioning\n");
-      
+
       if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpgmr failed\n");
+        bout_error("ERROR: CVSpgmr failed\n");
     }
-    
+
     /// Set Jacobian-vector multiplication function
-    
+
     if((use_jacobian) && (jacfunc != NULL)) {
       output.write("\tUsing user-supplied Jacobian function\n");
-      
+
       if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
-	bout_error("ERROR: CVSpilsSetJacTimesVecFn failed\n");
-    
-    }else 
+        bout_error("ERROR: CVSpilsSetJacTimesVecFn failed\n");
+
+    }else
       output.write("\tUsing difference quotient approximation for Jacobian\n");
   }else {
     output.write("\tUsing Functional iteration\n");
@@ -238,12 +238,12 @@ int CvodeSolver::run(MonitorFunc monitor)
 #ifdef CHECK
   int msg_point = msg_stack.push("CvodeSolver::run()");
 #endif
-  
+
   if(!initialised)
     bout_error("CvodeSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
-    
+
     /// Run the solver for one output timestep
     simtime = run(simtime + TIMESTEP, rhs_ncalls, rhs_wtime);
     iteration++;
@@ -261,19 +261,19 @@ int CvodeSolver::run(MonitorFunc monitor)
 
     /// Write the restart file
     restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
-    
+
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
       restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
     }
-    
+
     /// Call the monitor function
-    
+
     if(monitor(simtime, i, NOUT)) {
       // User signalled to quit
-      
+
       // Write restart to a different file
       restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
-      
+
       output.write("Monitor signalled to quit. Returning\n");
       break;
     }
@@ -301,7 +301,7 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   pre_ncalls = 0.0;
 
   int flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
-  
+
   ncalls = rhs_ncalls;
   rhstime = rhs_wtime;
 
@@ -313,12 +313,12 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   (*func)(simtime);
   rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
-  
+
   if(flag < 0) {
     output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -335,13 +335,13 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
-  
+
   // Load state from udata
   load_vars(udata);
-  
+
   // Call RHS function
   run_rhs(t);
-  
+
   // Save derivatives to dudata
   save_derivs(dudata);
 
