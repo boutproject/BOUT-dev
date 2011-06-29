@@ -436,54 +436,18 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   pressure = FLTARR(nx, ny)
   
-  IF KEYWORD_SET(smoothpressure) THEN BEGIN
-    IF 0 THEN BEGIN ; Disabled for now
-      ; Interpolate to produce a smooth pressure profile
-      ; with continuous derivatives. Interpolation not quite exact
-      
-      w = WHERE(mesh.psixy[*,ymid] LT 1.)
-      p2 = interp_smooth(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[w,ymid])
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        yi = gen_surface(period=period, last=last, xi=xi)
-        IF period THEN BEGIN
-          pressure[xi,yi] = p2[xi]
-        ENDIF ELSE BEGIN
-          pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-        ENDELSE
-      ENDREP UNTIL last
+  ; Use splines to interpolate pressure profile
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    IF period THEN BEGIN
+      ; Pressure only given on core surfaces
+      pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
     ENDIF ELSE BEGIN
-      ; Use splines to interpolate pressure profile
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
-        IF period THEN BEGIN
-          ; Pressure only given on core surfaces
-          pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
-        ENDIF ELSE BEGIN
-          pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-        ENDELSE
-      ENDREP UNTIL last
+      pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
     ENDELSE
-  ENDIF ELSE BEGIN
-    ; Interpolate to match input pressure. Exact interpolation
-    ; at input points, but result may not be so well behaved
-    
-    status = gen_surface(mesh=mesh) ; Start generator
-    REPEAT BEGIN
-      ; Get the next domain
-      yi = gen_surface(period=period, last=last, xi=xi)
-      IF period THEN BEGIN
-        ; Pressure only given on core surfaces
-        pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi[0]], /spline)
-        ; Use monotonic cubic spline
-        ;pressure[xi,yi] = spline_mono(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]])
-      ENDIF ELSE BEGIN
-        pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-      ENDELSE
-    ENDREP UNTIL last
-  ENDELSE
+  ENDREP UNTIL last
   
   ; Add a minimum amount
   IF MIN(pressure) LT 1.0e-2*MAX(pressure) THEN BEGIN
@@ -492,26 +456,38 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     pressure = pressure + 1e-2*MAX(pressure)
   ENDIF
   
-  m = MAX(Rxy[0,*],ind)
-  REPEAT BEGIN
-    !P.multi=[0,0,2,0,0]
-    PLOT, pressure[*,ind], xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ind),2), color=1
-    PLOT, DERIV(pressure[*,ind]), xtitle="X index", ytitle="DERIV(pressure)", color=1
-    sm = get_yesno("Smooth pressure profile?", gui=gui, dialog_parent=parent)
-    IF sm THEN BEGIN
-      ; Smooth the pressure profile
-      FOR i=0, ny-1 DO BEGIN
-        pressure[*,i] = SMOOTH(pressure[*,i],10)
-      ENDFOR
-      ; Make sure it's still constant on flux surfaces
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
-        pressure[xi,yi] = MEAN(pressure[xi,yi])
-      ENDREP UNTIL last
-    ENDIF
-  ENDREP UNTIL sm EQ 0
+  IF KEYWORD_SET(smoothpressure) THEN BEGIN
+    p0 = pressure[*,ymid] ; Keep initial pressure for comparison
+    REPEAT BEGIN
+      !P.multi=[0,0,2,0,0]
+      PLOT, p0, xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ymid),2)+" dashed=original", color=1, lines=1
+      OPLOT, pressure[*,ymid], color=1
+      PLOT, DERIV(p0), xtitle="X index", ytitle="DERIV(pressure)", color=1, lines=1
+      OPLOT, DERIV(pressure[*,ymid]), color=1
+      sm = get_yesno("Smooth pressure profile?", gui=gui, dialog_parent=parent)
+      IF sm THEN BEGIN
+        ; Smooth the pressure profile
+        
+        FOR i=0, 5 DO BEGIN
+          status = gen_surface(mesh=mesh) ; Start generator
+          REPEAT BEGIN
+            ; Get the next domain
+            yi = gen_surface(period=period, last=last, xi=xi)
+            
+            IF (xi GT 0) AND (xi LT (nx-1)) THEN BEGIN
+              FOR j=0,N_ELEMENTS(yi)-1 DO BEGIN
+                pressure[xi,yi[j]] = 0.5*pressure[xi,yi[j]] + $
+                  0.25*(pressure[xi-1,yi[j]] + pressure[xi+1,yi[j]])
+              ENDFOR
+            ENDIF
+            
+            ; Make sure it's still constant on flux surfaces
+            pressure[xi,yi] = MEAN(pressure[xi,yi])
+          ENDREP UNTIL last
+        ENDFOR
+      ENDIF
+    ENDREP UNTIL sm EQ 0
+  ENDIF
 
   IF MIN(pressure) LT 0.0 THEN BEGIN
     PRINT, ""
