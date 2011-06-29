@@ -120,8 +120,8 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
     Z2D[i,*] = mesh.Z
   ENDFOR
 
-  Br = -grad_psi.Z / R2D
-  Bz = grad_psi.R / R2D
+  Br = grad_psi.Z / R2D
+  Bz = -grad_psi.R / R2D
 
   Bphi = DBLARR(nr, nz)
   FOR i=0,nr-1 DO BEGIN

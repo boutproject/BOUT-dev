@@ -518,9 +518,12 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   dy = FLTARR(nx, ny) + dtheta
   
   ; B field components
+  ; Following signs mean that psi increasing outwards from
+  ; core to edge results in Bp clockwise in the poloidal plane
+  ; i.e. in the positive Grad Theta direction.
   
-  Brxy = -mesh.dpsidZ / Rxy
-  Bzxy = mesh.dpsidR / Rxy
+  Brxy = mesh.dpsidZ / Rxy
+  Bzxy = -mesh.dpsidR / Rxy
   Bpxy = SQRT(Brxy^2 + Bzxy^2)
   
   ; Determine direction (dot B with grad y vector)
@@ -760,7 +763,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   PRINT, ""
   PRINT, "==== Calculating curvature ===="
   
-    ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
   ; Calculating b x kappa
   
   IF NOT KEYWORD_SET(curv) THEN BEGIN
@@ -809,13 +812,11 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy)
     bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy) / hthe
     bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy)
-
-    ; IF BPXY < 0 THEN NEED TO REVERSE SIGN. REASON NOT KNOWN
-
-    bxcvx = bpsign*bxcv_psi 
-    bxcvy = bpsign*bxcv_theta
+    
+    ; If Bp is reversed, then Grad x = - Grad psi
+    bxcvx = bpsign*bxcv_psi
+    bxcvy = bxcv_theta
     bxcvz = bpsign*(bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta)
-
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
     
@@ -827,15 +828,13 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       dpb[*,i] = MU*dpdpsi/Bxy[*,i]
     ENDFOR
     dpb = dpb + DDX(psixy, Bxy)
-    
-    ; IF BPXY < 0 THEN NEED TO REVERSE SIGN. REASON NOT KNOWN
 
     bxcvx = bpsign*(Bpxy * DDY(Btxy*Rxy / Bxy, mesh) / hthe)
     bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
-    bxcvz = -bpsign*dpb - sinty*bxcvx
+    bxcvz = -dpb - sinty*bxcvx
   ENDELSE
   
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; CALCULATE PARALLEL CURRENT
   ; 
   ; Three ways to calculate Jpar0:
@@ -845,7 +844,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; 
   ; Provides a way to check if Btor should be reversed
   ;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   PRINT, ""
   PRINT, "==== Calculating parallel current ===="
@@ -862,7 +861,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDREP UNTIL last
   
   ; Curl(B) expression for Jpar0 (very noisy usually)
-  j0 = ((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
+  j0 = bpsign*((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - bpsign*Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
         - Bxy*DDX(psixy, Btxy*Rxy)) / MU
   
   ; Create a temporary mesh structure to send to adjust_jpar
