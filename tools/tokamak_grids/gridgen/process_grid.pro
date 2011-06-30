@@ -846,7 +846,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   PRINT, ""
   PRINT, "==== Calculating parallel current ===="
   
-  jpar0 = Bxy * fprime / MU + Rxy*Btxy * dpdpsi / Bxy
+  jpar0 = - Bxy * fprime / MU - Rxy*Btxy * dpdpsi / Bxy
   
   ; Set to zero in PF and SOL
   status = gen_surface(mesh=mesh) ; Start generator
