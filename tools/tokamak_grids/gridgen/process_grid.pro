@@ -428,7 +428,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       BREAK
     ENDIF
   ENDREP UNTIL last
-      
+  
 
   Rxy = mesh.Rxy
   Zxy = mesh.Zxy
@@ -778,16 +778,13 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
     
-    brxy = -mesh.dpsidZ / Rxy
-    bzxy = mesh.dpsidR / Rxy
-    
     curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
       FLOAT(psixy), FLOAT(thetaxy), hthe, $
       bxcv=bxcv, mesh=mesh
 
-    bxcvx = bxcv.psi 
+    bxcvx = bpsign*bxcv.psi 
     bxcvy = bxcv.theta
-    bxcvz = bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta
+    bxcvz = bpsign*(bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta)
 
     ; x borders
     bxcvx[0,*] = bxcvx[1,*]
