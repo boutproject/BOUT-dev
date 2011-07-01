@@ -61,7 +61,7 @@ laplace_nonuniform = true
 # Solver settings
 
 [solver]
-# type=petsc
+type=petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-12 # absolute tolerance

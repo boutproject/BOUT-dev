@@ -138,9 +138,12 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
   ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
+  Vec rhs_vec;
+  ierr = VecDuplicate(u,&rhs_vec);
   //
   // Set user provided RHSFunction
-  ierr = TSSetRHSFunction(ts,PETSC_NULL, solver_f,this);CHKERRQ(ierr);
+  ierr = TSSetRHSFunction(ts,rhs_vec, solver_f,this);CHKERRQ(ierr);
+  ierr = VecDestroy(&rhs_vec);
 
   //Sets the general-purpose update function called at the beginning of every time step. 
   //This function can change the time step.
@@ -203,32 +206,36 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   const PCType    pctype;
   PetscBool       pcnone=PETSC_TRUE,sundialstype;
 
+  ierr = TSSundialsSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = TSSundialsMonitorInternalSteps(ts,PETSC_TRUE);CHKERRQ(ierr);
 
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
-  ierr = TSSetUp(ts);CHKERRQ(ierr);            // enables queries and MatCreateSNESMF() below
 
   ierr = PetscTypeCompare((PetscObject)ts,TSSUNDIALS,&sundialstype);CHKERRQ(ierr);
   if (sundialstype) {
     ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr);
     ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
   } else {
-    // use -snes_mf_operator for mat*vec in KSP iterations 
+    // This hardcodes matrix-free for now
     ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
     ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
-    // ierr = SNESSetFunction(snes, u, solver_f, this);
     ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
+    ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
     ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
   }
+  // Hardcode no preconditioner
+  ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
+
   ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
   ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
   output.write("\tSundialstype %d, PCNONE %d\n",sundialstype,pcnone);
 
-  if (sundialstype && pcnone) return(0);
+  if (pcnone) return(0);
 
   // Create Jacobian matrix to be used by preconditioner
   output.write("\tGet Jacobian matrix .... tstart %g, J localsize %d\n",simtime,local_N);
   ierr = PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
-  if(J_load){
+  if(J_load) {
     PetscViewer     fd;
     if (!rank){
       ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
@@ -282,7 +289,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
 
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
-    if (J_slowfd){ // create Jacobian matrix by slow fd
+    if (J_slowfd) { // create Jacobian matrix by slow fd
       ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
       if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);}
       MatStructure flg;
@@ -885,7 +892,7 @@ PetscErrorCode PreStep(TS ts)
   // output.write("\nPre-update %e about to take a %e step\n", t, dt);
 
   // if(ts->max_time < s->nout * s->tstep)
-    ts->max_time = ts->ptime + dt;
+    // ts->max_time = ts->ptime + dt;
 
 
 
@@ -927,17 +934,17 @@ PetscErrorCode PostStep(TS ts)
   ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
   ierr = TSGetApplicationContext(ts, (void **)&s);CHKERRQ(ierr);
 
-  if(ts->max_time < s->nout * s->tstep)
-    ts->max_time = ts->ptime + dt;
+  // if(ts->max_time < s->nout * s->tstep)
+    // ts->max_time = ts->ptime + dt;
 
-  ts->time_step = s->tstep;
+  // ts->time_step = s->tstep;
   s->iteration++; // Increment the 'iteration' number. keeps track of outputs
     // Reset iteration and wall-time count
     s->rhs_ncalls = 0;
     s->rhs_wtime = 0.0;
 
     s->outputnext = false;
-    s->next_time = ts->ptime + s->tstep; // Set the next output time
+    // s->next_time = ts->ptime + s->tstep; // Set the next output time
   // output.write("\nPost-update %e took %e timestep\n", t, dt);
 
   // if((t + dt) >= s->next_time) {

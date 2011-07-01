@@ -249,7 +249,7 @@ int bout_init(int argc, char **argv)
   solver_options->get("type", solver_option, "", false);
   if(!solver_option.empty()) type = solver_option.c_str();
   if(!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC)))
-    PetscInitialize(&argc,&argv,"../petscopt",help);
+    PetscInitialize(&argc,&argv,PETSC_NULL,help);
 #endif
   
   try {
