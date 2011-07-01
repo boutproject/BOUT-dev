@@ -418,6 +418,17 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   nx = FIX(TOTAL(mesh.nrad))
   ny = FIX(TOTAL(mesh.npol))
 
+  ; Find the midplane
+  ymid = 0
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(period=period, last=last, xi=xi)
+    IF period THEN BEGIN
+      rm = MAX(mesh.Rxy[xi,yi], ymid)
+      BREAK
+    ENDIF
+  ENDREP UNTIL last
+  
 
   Rxy = mesh.Rxy
   Zxy = mesh.Zxy
@@ -425,64 +436,18 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 
   pressure = FLTARR(nx, ny)
   
-  IF KEYWORD_SET(smoothpressure) THEN BEGIN
-    IF 0 THEN BEGIN ; Disabled for now
-      ; Interpolate to produce a smooth pressure profile
-      ; with continuous derivatives. Interpolation not quite exact
-      
-      ; Find the midplane
-      ymid = 0
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        yi = gen_surface(period=period, last=last, xi=xi)
-        IF period THEN BEGIN
-          rm = MAX(mesh.Rxy[xi,yi], ymid)
-          BREAK
-        ENDIF
-      ENDREP UNTIL last
-      w = WHERE(mesh.psixy[*,ymid] LT 1.)
-      p2 = interp_smooth(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[w,ymid])
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        yi = gen_surface(period=period, last=last, xi=xi)
-        IF period THEN BEGIN
-          pressure[xi,yi] = p2[xi]
-        ENDIF ELSE BEGIN
-          pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-        ENDELSE
-      ENDREP UNTIL last
+  ; Use splines to interpolate pressure profile
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    IF period THEN BEGIN
+      ; Pressure only given on core surfaces
+      pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
     ENDIF ELSE BEGIN
-      ; Use splines to interpolate pressure profile
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
-        IF period THEN BEGIN
-          ; Pressure only given on core surfaces
-          pressure[xi,yi] = SPLINE(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]], /double)
-        ENDIF ELSE BEGIN
-          pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-        ENDELSE
-      ENDREP UNTIL last
+      pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
     ENDELSE
-  ENDIF ELSE BEGIN
-    ; Interpolate to match input pressure. Exact interpolation
-    ; at input points, but result may not be so well behaved
-    
-    status = gen_surface(mesh=mesh) ; Start generator
-    REPEAT BEGIN
-      ; Get the next domain
-      yi = gen_surface(period=period, last=last, xi=xi)
-      IF period THEN BEGIN
-        ; Pressure only given on core surfaces
-        pressure[xi,yi] = INTERPOL(rz_grid.pres, rz_grid.npsigrid, mesh.psixy[xi,yi[0]], /spline)
-        ; Use monotonic cubic spline
-        ;pressure[xi,yi] = spline_mono(rz_grid.npsigrid, rz_grid.pres, mesh.psixy[xi,yi[0]])
-      ENDIF ELSE BEGIN
-        pressure[xi,yi] = rz_grid.pres[N_ELEMENTS(rz_grid.pres)-1]
-      ENDELSE
-    ENDREP UNTIL last
-  ENDELSE
+  ENDREP UNTIL last
   
   ; Add a minimum amount
   IF MIN(pressure) LT 1.0e-2*MAX(pressure) THEN BEGIN
@@ -491,26 +456,38 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     pressure = pressure + 1e-2*MAX(pressure)
   ENDIF
   
-  m = MAX(Rxy[0,*],ind)
-  REPEAT BEGIN
-    !P.multi=[0,0,2,0,0]
-    PLOT, pressure[*,ind], xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ind),2), color=1
-    PLOT, DERIV(pressure[*,ind]), xtitle="X index", ytitle="DERIV(pressure)", color=1
-    sm = get_yesno("Smooth pressure profile?", gui=gui, dialog_parent=parent)
-    IF sm THEN BEGIN
-      ; Smooth the pressure profile
-      FOR i=0, ny-1 DO BEGIN
-        pressure[*,i] = SMOOTH(pressure[*,i],10)
-      ENDFOR
-      ; Make sure it's still constant on flux surfaces
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
-        pressure[xi,yi] = MEAN(pressure[xi,yi])
-      ENDREP UNTIL last
-    ENDIF
-  ENDREP UNTIL sm EQ 0
+  IF KEYWORD_SET(smoothpressure) THEN BEGIN
+    p0 = pressure[*,ymid] ; Keep initial pressure for comparison
+    REPEAT BEGIN
+      !P.multi=[0,0,2,0,0]
+      PLOT, p0, xtitle="X index", ytitle="pressure at y="+STRTRIM(STRING(ymid),2)+" dashed=original", color=1, lines=1
+      OPLOT, pressure[*,ymid], color=1
+      PLOT, DERIV(p0), xtitle="X index", ytitle="DERIV(pressure)", color=1, lines=1
+      OPLOT, DERIV(pressure[*,ymid]), color=1
+      sm = get_yesno("Smooth pressure profile?", gui=gui, dialog_parent=parent)
+      IF sm THEN BEGIN
+        ; Smooth the pressure profile
+        
+        FOR i=0, 5 DO BEGIN
+          status = gen_surface(mesh=mesh) ; Start generator
+          REPEAT BEGIN
+            ; Get the next domain
+            yi = gen_surface(period=period, last=last, xi=xi)
+            
+            IF (xi GT 0) AND (xi LT (nx-1)) THEN BEGIN
+              FOR j=0,N_ELEMENTS(yi)-1 DO BEGIN
+                pressure[xi,yi[j]] = 0.5*pressure[xi,yi[j]] + $
+                  0.25*(pressure[xi-1,yi[j]] + pressure[xi+1,yi[j]])
+              ENDFOR
+            ENDIF
+            
+            ; Make sure it's still constant on flux surfaces
+            pressure[xi,yi] = MEAN(pressure[xi,yi])
+          ENDREP UNTIL last
+        ENDFOR
+      ENDIF
+    ENDREP UNTIL sm EQ 0
+  ENDIF
 
   IF MIN(pressure) LT 0.0 THEN BEGIN
     PRINT, ""
@@ -522,13 +499,13 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   dpdpsi = DDX(psixy, pressure)
 
-  IF MAX(dpdpsi)*mesh.fnorm GT 0.0 THEN BEGIN
-    PRINT, ""
-    PRINT, "============= WARNING =============="
-    PRINT, "Poor quality equilibrium: Pressure is increasing radially"
-    PRINT, ""
-    poorquality = 1
-  ENDIF
+  ;IF MAX(dpdpsi)*mesh.fnorm GT 0.0 THEN BEGIN
+  ;  PRINT, ""
+  ;  PRINT, "============= WARNING =============="
+  ;  PRINT, "Poor quality equilibrium: Pressure is increasing radially"
+  ;  PRINT, ""
+  ;  poorquality = 1
+  ;ENDIF
 
   ; Grid spacing
   dx = FLTARR(nx, ny)
@@ -541,11 +518,26 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   dy = FLTARR(nx, ny) + dtheta
   
   ; B field components
+  ; Following signs mean that psi increasing outwards from
+  ; core to edge results in Bp clockwise in the poloidal plane
+  ; i.e. in the positive Grad Theta direction.
   
-  Bpxy = SQRT(mesh.dpsidR^2 + mesh.dpsidZ^2) / Rxy
+  Brxy = mesh.dpsidZ / Rxy
+  Bzxy = -mesh.dpsidR / Rxy
+  Bpxy = SQRT(Brxy^2 + Bzxy^2)
   
   ; Determine direction (dot B with grad y vector)
   
+  dot = Brxy[0,ymid]*(Rxy[0,ymid+1] - Rxy[0,ymid-1]) + $
+    Bzxy[0,ymid]*(Zxy[0,ymid+1] - Zxy[0,ymid-1])
+  
+  bpsign = 1.0
+  IF dot LT 0. THEN BEGIN
+    PRINT, "**** Poloidal field is in opposite direction to Grad Theta -> Bp negative"
+    Bpxy = -Bpxy
+    bpsign = -1.0
+  ENDIF
+
   ; Get toroidal field from poloidal current function fpol
   Btxy = FLTARR(nx, ny)
   fprime = Btxy
@@ -638,45 +630,52 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   PRINT, "Calculating pressure profile from force balance"
 
-  ; Calculate force balance
-  dpdx = ( -Bpxy*DDX(psixy, Bpxy * hthe) - Btxy*hthe*DDX(psixy, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(psixy, Rxy) ) / (MU*hthe)
-  
-  ; Surface average
-  dpdx2 = surface_average(dpdx, mesh)
-  
-  pres = FLTARR(nx, ny)
-  ; Integrate to get pressure
-  FOR i=0, ny-1 DO BEGIN
-    pres[*,i] = int_func(psixy[*,i], dpdx2[*,i])
-    pres[*,i] = pres[*,i] - pres[nx-1,i]
-  ENDFOR
+  CATCH, err
+  IF err THEN BEGIN
+    CATCH, /cancel
+    PRINT, "WARNING: Pressure profile calculation failed: ", !ERROR_STATE.MSG 
+  ENDIF ELSE BEGIN
 
-  status = gen_surface(mesh=mesh) ; Start generator
-  REPEAT BEGIN
-     ; Get the next domain
-     yi = gen_surface(period=period, last=last, xi=xi)
-     
-     ma = MAX(pres[xi,yi])
-     FOR i=0, N_ELEMENTS(yi)-1 DO BEGIN
+    ; Calculate force balance
+    dpdx = ( -Bpxy*DDX(psixy, Bpxy * hthe) - Btxy*hthe*DDX(psixy, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(psixy, Rxy) ) / (MU*hthe)
+    
+    ; Surface average
+    dpdx2 = surface_average(dpdx, mesh)
+    
+    pres = FLTARR(nx, ny)
+    ; Integrate to get pressure
+    FOR i=0, ny-1 DO BEGIN
+      pres[*,i] = int_func(psixy[*,i], dpdx2[*,i])
+      pres[*,i] = pres[*,i] - pres[nx-1,i]
+    ENDFOR
+    
+    status = gen_surface(mesh=mesh) ; Start generator
+    REPEAT BEGIN
+      ; Get the next domain
+      yi = gen_surface(period=period, last=last, xi=xi)
+      
+      ma = MAX(pres[xi,yi])
+      FOR i=0, N_ELEMENTS(yi)-1 DO BEGIN
         pres[*,yi[i]] = pres[*,yi[i]] - pres[xi,yi[i]] + ma
-     ENDFOR
-  ENDREP UNTIL last
+      ENDFOR
+    ENDREP UNTIL last
+    
+    pres = pres - MIN(pres)
   
-  pres = pres - MIN(pres)
+    ; Some sort of smoothing here?
   
-  ; Some sort of smoothing here?
+    fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, hthe, pres)
+    PRINT, "Force imbalance: ", MEAN(ABS(fb0)), MAX(ABS(fb0))
   
-  fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, hthe, pres)
-  PRINT, "Force imbalance: ", MEAN(ABS(fb0)), MAX(ABS(fb0))
+    !P.MULTI=[0,0,2,0,0]
+    SURFACE, pressure, xtitle="X", ytitle="Y", title="Input pressure", chars=2, color=1
+    SURFACE, pres, xtitle="X", ytitle="Y", title="New pressure", chars=2,color=1
   
-  !P.MULTI=[0,0,2,0,0]
-  SURFACE, pressure, xtitle="X", ytitle="Y", title="Input pressure", chars=2, color=1
-  SURFACE, pres, xtitle="X", ytitle="Y", title="New pressure", chars=2,color=1
-  
-  IF get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent) THEN BEGIN
-    pressure = pres
-    dpdpsi = dpdx2
-  ENDIF
+    IF get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent) THEN BEGIN
+      pressure = pres
+      dpdpsi = dpdx2
+    ENDIF
+  ENDELSE
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Correct f = RBt using force balance
@@ -725,178 +724,167 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDIF
   ENDIF
   
+  ; Calculate field-line pitch
+  pitch = hthe * Btxy / (Bpxy * Rxy)
   
-  REPEAT BEGIN
-    ; Calculate field-line pitch
-    pitch = hthe * Btxy / (Bpxy * Rxy)
+  ; derivative with psi
+  dqdpsi = DDX(psixy, pitch)
   
-    ; derivative with psi
-    dqdpsi = DDX(psixy, pitch)
-    
-    qinty = int_y(pitch, mesh, loop=qloop) * dtheta
-    qloop = qloop * dtheta
-    sinty = int_y(dqdpsi, mesh) * dtheta
-    
-    ; NOTE: This is only valid in the core
-    pol_angle = FLTARR(nx,ny)
-    FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
-    
+  qinty = int_y(pitch, mesh, loop=qloop) * dtheta
+  qloop = qloop * dtheta
+  sinty = int_y(dqdpsi, mesh) * dtheta
+  
+  ; NOTE: This is only valid in the core
+  pol_angle = FLTARR(nx,ny)
+  FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
+  
     ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
-    ; re-set zshift to be zero at the outboard midplane
+  ; re-set zshift to be zero at the outboard midplane
   
-    PRINT, "MIDPLANE INDEX = ", ymidplane
-    
-    status = gen_surface(mesh=mesh) ; Start generator
-    REPEAT BEGIN
-      ; Get the next domain
-      yi = gen_surface(period=period, last=last, xi=xi)
-      
-      w = WHERE(yi EQ ymidplane, count)
-      IF count GT 0 THEN BEGIN
-        ; Crosses the midplane
-        qinty[xi, yi] = qinty[xi, yi] - qinty[xi, ymidplane]
-        sinty[xi, yi] = sinty[xi, yi] - sinty[xi, ymidplane]
-      ENDIF ELSE BEGIN
-        ; Doesn't include a point at the midplane
-        qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
-        sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
-      ENDELSE
-    ENDREP UNTIL last
-    
-    PRINT, ""
-    PRINT, "==== Calculating curvature ===="
-    
-    ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
-    ; Calculating b x kappa
+  PRINT, "MIDPLANE INDEX = ", ymidplane
   
-    IF NOT KEYWORD_SET(curv) THEN BEGIN
-      
-      PRINT, "*** Calculating curvature in toroidal coordinates"
-      
-      thetaxy = FLTARR(nx, ny)
-      status = gen_surface(mesh=mesh) ; Start generator
-      REPEAT BEGIN
-        ; Get the next domain
-        yi = gen_surface(period=period, last=last, xi=xi)
-        thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
-      ENDREP UNTIL last
-      
-      brxy = -mesh.dpsidZ / Rxy
-      bzxy = mesh.dpsidR / Rxy
-      
-      curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
-        FLOAT(psixy), FLOAT(thetaxy), hthe, $
-        bxcv=bxcv, mesh=mesh
-
-      bxcvx = bxcv.psi 
-      bxcvy = bxcv.theta
-      bxcvz = bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta
-
-      ; x borders
-      bxcvx[0,*] = bxcvx[1,*]
-      bxcvx[nx-1,*] = bxcvx[nx-2,*]
-      
-      bxcvy[0,*] = bxcvy[1,*]
-      bxcvy[nx-1,*] = bxcvy[nx-2,*]
-      
-      bxcvz[0,*] = bxcvz[1,*]
-      bxcvz[nx-1,*] = bxcvz[nx-2,*]
-      
-    ENDIF ELSE IF curv EQ 1 THEN BEGIN
-      ; Calculate on R-Z mesh and then interpolate onto grid
-      ; ( cylindrical coordinates)
-
-      PRINT, "*** Calculating curvature in cylindrical coordinates"
-      
-      bxcv = rz_curvature(rz_grid)
-      
-      ; DCT methods cause spurious oscillations
-      ; Linear interpolation seems to be more robust
-      bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy)
-      bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy) / hthe
-      bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy)
-
-      bxcvx = bxcv_psi 
-      bxcvy = bxcv_theta
-      bxcvz = bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta
-
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    
+    w = WHERE(yi EQ ymidplane, count)
+    IF count GT 0 THEN BEGIN
+      ; Crosses the midplane
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi, ymidplane]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi, ymidplane]
     ENDIF ELSE BEGIN
-      ; calculate in flux coordinates.
-      
-      PRINT, "*** Calculating curvature in flux coordinates"
-      
-      dpb = DBLARR(nx, ny)      ; quantity used for y and z components
-      
-      FOR i=0, ny-1 DO BEGIN
-        dpb[*,i] = MU*dpdpsi/Bxy[*,i]
-      ENDFOR
-      dpb = dpb + DDX(psixy, Bxy)
-      
-      bxcvx = Bpxy * DDY(Btxy*Rxy / Bxy, mesh) / hthe
-      bxcvy = Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2)
-      bxcvz = -dpb - sinty*bxcvx 
+      ; Doesn't include a point at the midplane
+      qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
+      sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
     ENDELSE
+  ENDREP UNTIL last
+  
+  PRINT, ""
+  PRINT, "==== Calculating curvature ===="
+  
+  ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
+  ; Calculating b x kappa
+  
+  IF NOT KEYWORD_SET(curv) THEN BEGIN
     
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    ; CALCULATE PARALLEL CURRENT
-    ; 
-    ; Three ways to calculate Jpar0:
-    ; 1. From fprime and pprime
-    ; 2. From Curl(B) in field-aligned coords
-    ; 3. From the curvature
-    ; 
-    ; Provides a way to check if Btor should be reversed
-    ;
-    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    PRINT, "*** Calculating curvature in toroidal coordinates"
     
-    PRINT, ""
-    PRINT, "==== Calculating parallel current ===="
-    
-    jpar0 = Bxy * fprime / MU + Rxy*Btxy * dpdpsi / Bxy
-    
-    ; Set to zero in PF and SOL
+    thetaxy = FLTARR(nx, ny)
     status = gen_surface(mesh=mesh) ; Start generator
     REPEAT BEGIN
       ; Get the next domain
       yi = gen_surface(period=period, last=last, xi=xi)
-      
-      IF NOT period THEN jpar0[xi,yi] = 0.0
+      thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
     ENDREP UNTIL last
     
-    ; Curl(B) expression for Jpar0 (very noisy usually)
-    j0 = ((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
-          - Bxy*DDX(psixy, Btxy*Rxy)) / MU
-    
-    ; Create a temporary mesh structure to send to adjust_jpar
-    tmp_mesh = CREATE_STRUCT(mesh, $
-                             "bxcvx", bxcvx, "bxcvy", bxcvy, "bxcvz", bxcvz, $
-                             "Bpxy", Bpxy, "Btxy", Btxy, "Bxy", Bxy, $
-                             "dx", dx, "dy", dy, $
-                             "hthe", hthe, "jpar0", jpar0, "pressure", pressure)
-    tmp_mesh.psixy = psixy
-    
-    adjust_jpar, tmp_mesh, jpar=jpar, /noplot
-    
-    !P.multi=[0,2,2,0,0]
-    surface, jpar0, xtitle="X", ytitle="Y", title="Jpar from F' and P'", chars=2, color=1
-    surface, jpar, xtitle="X", ytitle="Y", title="Jpar from curvature", chars=2, color=1
-    
-    PLOT, jpar0[0,*], tit="jpar at x=0. Solid from f' and p'", yr=[MIN([jpar0[0,*],jpar[0,*]]), $
-                                                                   MAX([jpar0[0,*],jpar[0,*]])]
-    OPLOT, jpar[0,*], psym=1
-    
-    PLOT, jpar0[*,ymidplane], tit="Jpar at y="+STR(ymidplane)+" Solid from f' and p'", $
-      yr=[MIN([jpar0[*,ymidplane],jpar[*,ymidplane]]), $
-          MAX([jpar0[*,ymidplane],jpar[*,ymidplane]])]
-    OPLOT, jpar[*,ymidplane], psym=1
-    
-    !P.multi=0
+    curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
+      FLOAT(psixy), FLOAT(thetaxy), hthe, $
+      bxcv=bxcv, mesh=mesh
 
-    IF get_yesno("Reverse Bt?", gui=gui, dialog_parent=parent) THEN BEGIN
-      Btxy = -Btxy
-      fprime=-fprime
-    ENDIF ELSE BREAK
-  ENDREP UNTIL 0
+    bxcvx = bpsign*bxcv.psi 
+    bxcvy = bxcv.theta
+    bxcvz = bpsign*(bxcv.phi - sinty*bxcv.psi - pitch*bxcv.theta)
+
+    ; x borders
+    bxcvx[0,*] = bxcvx[1,*]
+    bxcvx[nx-1,*] = bxcvx[nx-2,*]
+    
+    bxcvy[0,*] = bxcvy[1,*]
+    bxcvy[nx-1,*] = bxcvy[nx-2,*]
+    
+    bxcvz[0,*] = bxcvz[1,*]
+    bxcvz[nx-1,*] = bxcvz[nx-2,*]
+
+  ENDIF ELSE IF curv EQ 1 THEN BEGIN
+    ; Calculate on R-Z mesh and then interpolate onto grid
+    ; ( cylindrical coordinates)
+
+    PRINT, "*** Calculating curvature in cylindrical coordinates"
+    
+    bxcv = rz_curvature(rz_grid)
+    
+    ; DCT methods cause spurious oscillations
+    ; Linear interpolation seems to be more robust
+    bxcv_psi = INTERPOLATE(bxcv.psi, mesh.Rixy, mesh.Zixy)
+    bxcv_theta = INTERPOLATE(bxcv.theta, mesh.Rixy, mesh.Zixy) / hthe
+    bxcv_phi = INTERPOLATE(bxcv.phi, mesh.Rixy, mesh.Zixy)
+    
+    ; If Bp is reversed, then Grad x = - Grad psi
+    bxcvx = bpsign*bxcv_psi
+    bxcvy = bxcv_theta
+    bxcvz = bpsign*(bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta)
+  ENDIF ELSE BEGIN
+    ; calculate in flux coordinates.
+    
+    PRINT, "*** Calculating curvature in flux coordinates"
+    
+    dpb = DBLARR(nx, ny)      ; quantity used for y and z components
+    
+    FOR i=0, ny-1 DO BEGIN
+      dpb[*,i] = MU*dpdpsi/Bxy[*,i]
+    ENDFOR
+    dpb = dpb + DDX(psixy, Bxy)
+
+    bxcvx = bpsign*(Bpxy * DDY(Btxy*Rxy / Bxy, mesh) / hthe)
+    bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
+    bxcvz = -dpb - sinty*bxcvx
+  ENDELSE
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; CALCULATE PARALLEL CURRENT
+  ; 
+  ; Three ways to calculate Jpar0:
+  ; 1. From fprime and pprime
+  ; 2. From Curl(B) in field-aligned coords
+  ; 3. From the curvature
+  ; 
+  ; Provides a way to check if Btor should be reversed
+  ;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  
+  PRINT, ""
+  PRINT, "==== Calculating parallel current ===="
+  
+  jpar0 = - Bxy * fprime / MU - Rxy*Btxy * dpdpsi / Bxy
+  
+  ; Set to zero in PF and SOL
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    
+    IF NOT period THEN jpar0[xi,yi] = 0.0
+  ENDREP UNTIL last
+  
+  ; Curl(B) expression for Jpar0 (very noisy usually)
+  j0 = bpsign*((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - bpsign*Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
+        - Bxy*DDX(psixy, Btxy*Rxy)) / MU
+  
+  ; Create a temporary mesh structure to send to adjust_jpar
+  tmp_mesh = CREATE_STRUCT(mesh, $
+                           "bxcvx", bxcvx, "bxcvy", bxcvy, "bxcvz", bxcvz, $
+                           "Bpxy", Bpxy, "Btxy", Btxy, "Bxy", Bxy, $
+                           "dx", dx, "dy", dy, $
+                           "hthe", hthe, "jpar0", jpar0, "pressure", pressure)
+  tmp_mesh.psixy = psixy
+  
+  adjust_jpar, tmp_mesh, jpar=jpar, /noplot
+  
+  !P.multi=[0,2,2,0,0]
+  surface, jpar0, xtitle="X", ytitle="Y", title="Jpar from F' and P'", chars=2, color=1
+  surface, jpar, xtitle="X", ytitle="Y", title="Jpar from curvature", chars=2, color=1
+  
+  PLOT, jpar0[0,*], tit="jpar at x=0. Solid from f' and p'", yr=[MIN([jpar0[0,*],jpar[0,*]]), $
+                                                                 MAX([jpar0[0,*],jpar[0,*]])]
+  OPLOT, jpar[0,*], psym=1
+  
+  PLOT, jpar0[*,ymidplane], tit="Jpar at y="+STR(ymidplane)+" Solid from f' and p'", $
+    yr=[MIN([jpar0[*,ymidplane],jpar[*,ymidplane]]), $
+        MAX([jpar0[*,ymidplane],jpar[*,ymidplane]])]
+  OPLOT, jpar[*,ymidplane], psym=1
+  
+  !P.multi=0
   
   IF get_yesno("Use Jpar from curvature?", gui=gui, dialog_parent=parent) THEN BEGIN
     Jpar0 = Jpar

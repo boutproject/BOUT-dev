@@ -3,13 +3,17 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 10     # number of time-steps
-TIMESTEP = 1e-3   # time between outputs
+NOUT = 100     # number of time-steps
+TIMESTEP = 1e-3  # time between outputs
+
+archive=10
+
+wall_limit = 4
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
 
-MZ = 16     # number of points in z direction (2^n + 1)
+MZ = 1     # number of points in z direction (2^n + 1)
 
 ZPERIOD = 10 # Fraction of a torus
 
@@ -17,8 +21,6 @@ MXG = 2
 MYG = 2
 
 grid="d3d_119919.nc"
-# grid = "cbm18_8_y064_x516_090309.nc"
-# grid = "iter_x516_y128_260511.grd.nc"
 
 #twistshift_pf = true # Grid has twist-shift in PF region
 
@@ -56,7 +58,7 @@ flux = U1
 # Laplacian inversion settings
 
 [laplace]
-all_terms = false
+all_terms = true
 laplace_nonuniform = true
 filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
@@ -64,7 +66,7 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 # Solver settings
 
 [solver]
-# type=petsc
+type=petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-10 # absolute tolerance
@@ -72,7 +74,7 @@ RTOL = 1.0e-5  # relative tolerance
 mxstep = 50000
 
 #type=karniadakis
-#timestep=1e-3
+#timestep=5e-5
 
 ##################################################
 # settings for JOREK comparison model
@@ -89,9 +91,9 @@ chi_ipar = 5   # Ion parallel diffusion
 
 eta = 1.0   # Resistivity relative to Spitzer. 
             # Comment-out to use value from grid file
-Wei = 1.0   # Electron-ion energy exchange relative to collisional
+Wei = 0.0   # Electron-ion energy exchange relative to collisional
 
-ohmic_heating = true # Include Ohmic heating in Te equation
+ohmic_heating = false # Include Ohmic heating in Te equation
 
 viscos_perp = 1e-5  # Perpendicular viscosity
 viscos_par = 1e-5   # Parallel viscosity
@@ -103,7 +105,7 @@ flux_method = false  # Use flux methods for fluid quantities
 
 nonlinear = false
 
-electron_density = false
+electron_density = true
 
 vorticity_momentum = true
 
@@ -144,7 +146,7 @@ ys_opt = 1
 zs_opt = 2
 
 xs_wd = 0.25
-xs_s0 = 0.5
+xs_s0 = 0.4
 ys_mode = 1 
 ys_wd = 0.6 
 zs_mode = 1 # toroidal mode number
@@ -159,32 +161,40 @@ zs_wd = 0.2
 #
 # relax( )   - Make boundary condition relaxing
 
-bndry_all = dirichlet # Default zero value
+bndry_all = neumann # Default zero value
 
 [rho]
 
-bndry_all=relax(neumann)
-#scale=1.e-3
+scale=1.e-3
 
 [Vpar]
 
+bndry_pf = dirichlet
+bndry_sol = dirichlet
+
 [Te]
 
-bndry_all=relax(neumann)
 
 [Ti]
 
-bndry_all=relax(neumann)
 
 [u] # Vorticity
 #scale = 1.0e-3 # Initial perturbation size
 
-bndry_xin = relax(dirichlet)
-bndry_xout = relax(dirichlet)
+bndry_xin = zerolaplace
+bndry_xout = zerolaplace
 
 [Apar]
 bndry_xin = constlaplace
 bndry_xout = zerolaplace
 
 [Jpar]
-bndry_core = neumann
+
+bndry_pf = dirichlet
+bndry_sol = dirichlet
+
+[phi]
+# X boundaries set by flags
+bndry_xin = none
+bndry_xout = none
+

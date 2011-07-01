@@ -818,7 +818,7 @@ PRO hypnotoad
   smoothP_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth pressure", uvalue='smoothP', $
                                 tooltip="Interpolate P to smooth derivative")
   
-  Widget_Control, smoothP_check, Set_Button=1
+  Widget_Control, smoothP_check, Set_Button=0
   
   mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
@@ -867,7 +867,7 @@ PRO hypnotoad
            detail_set:0, $ ; 1 if using detailed settings
            strict_bndry:1, $ ; 1 if boundaries should be strict
            simple_bndry:0, $ ; Use simplified boundary?
-           smoothP:1, $     ; Interpolate to make P smooth
+           smoothP:0, $     ; Interpolate to make P smooth
            single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $

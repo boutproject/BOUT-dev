@@ -18,9 +18,6 @@ class QuiltMesh : public Mesh {
   /////////////////////////////////////////////
   // Get data
   
-  int get(int &ival, const char *name);
-  int get(BoutReal &rval, const char *name);
-  
   int get(Field2D &var, const char *name, BoutReal def=0.0);
   int get(Field2D &var, const string &name, BoutReal def=0.0);
   int get(Field3D &var, const char *name);
@@ -55,27 +52,74 @@ class QuiltMesh : public Mesh {
 
   void outputVars(Datafile &file); ///< Add mesh vars to file
  private:
-  struct MeshRegion {
-    int id;     // Region number
-    int x0, y0; // Lower-left corner in grid data
-    int nx, ny; // Size of the region
+  
+  // Settings
+  bool TwistShift;   // Use a twist-shift condition in core?
+
+  int MXG, MYG;
+
+  struct MeshDomain;
+  
+  /// Range of guard cells
+  struct GuardRange { 
+    int xmin, xmax;   // Range of X in local indices
+    int ymin, ymax;   // Range of Y in local indices
+    MeshDomain *destination; // The domain (NULL if none)
+    int xshift; // Add this shift going between processor local indices
+                // so [x] on this processor connects to [x+xshift] on
+                // destination processor
     
+    bool zshift; // Shift in Z across boundary going in Y?
+    vector<BoutReal> shiftAngle; // Angle to shift by 
   };
+  
+  /// Domain simulated by a single processor
   struct MeshDomain {
-    int region;  // Region number
     int x0, y0;  // Lower left corner in region
-    int nx, ny;  // Number of x and y points
+    int nx, ny;  // Number of x and y points (not including guard cells)
     
     int proc;    // The processor for this domain
     
-    Domain *xin, *xout;
-    int yup_xsplit;
-    
+    vector<GuardRange*> yup;   // Upper guard cells
+    vector<GuardRange*> ydown; // Lower guard cells
+    MeshDomain *xin, *xout;    // Inner and outer destinations (NULL for none)
   };
-  vector<MeshDomain> domain;
-  Domain *mydomain;
   
-  const vector<int> readInts(const string &name);
+  // Every processor knows about all domains
+  vector<MeshDomain*> domains;
+  MeshDomain *mydomain; // The domain for this processor
+  
+  /// Read a 1D array of integers
+  const vector<int> readInts(const string &name, int n);
+  
+  /// Partition mesh into domains
+  vector<MeshDomain*> partition(const vector<int> &nx, 
+                                const vector<int> &ny, 
+                                int NPES);
+  
+  /// Handle for communications
+  struct QMCommHandle {
+    vector<MPI_Request> request;
+    vector<int> tag;
+    vector<vector<BoutReal> > buffer;
+    vector<GuardRange*> range; ///< Where is the data going?
+    bool inProgress;   ///< Denotes if communication is in progress
+    vector<FieldData*> var_list; ///< List of fields being communicated
+  };
+  
+  void freeHandle(QMCommHandle *h);
+  QMCommHandle* getHandle(int n);
+  list<QMCommHandle*> comm_list;
+
+  void packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data);
+  void unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars);
+  
+  void read2Dvar(GridDataSource *s, const char *name, 
+                 int xs, int ys,
+                 int xd, int yd,
+                 int nx, int ny,
+                 BoutReal **data);
+                 
 };
 
 #endif // __QUILTMESH_H__

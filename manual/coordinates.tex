@@ -105,8 +105,11 @@
 \begin{document}
 
 \title{Field-aligned coordinates}
-\author{B.Dudson, Department of Physics, University of York}
-\date{15$^{th}$ April 2011}
+\author{B.Dudson\S, M.V.Umansky\dag, X.Q.Xu\dag, L.L.LoDestro\dag \\
+\\
+  \S Department of Physics, University of York, UK \\
+  \dag Lawrence Livermore National Laboratory, USA}
+\date{29$^{th}$ June 2011}
 \maketitle
 
 \section{Introduction}
@@ -158,21 +161,22 @@ Similarly,
 \section{Field-aligned coordinates}
 
 In order to efficiently simulate (predominantly) field-aligned structures, grid-points
-are placed in a field-aligned coordinate system defined by:
+are placed in a field-aligned coordinate system. We define $\sigma_{B\theta} \equiv B_\theta / \left|B_\theta\right|$
+i.e. the sign of the poloidal field. The new coordinates $\left(x,y,z\right)$ are defined by:
 \begin{equation}
-x = \psi - \psi_0 \qquad y = \theta \qquad z = \zeta - \int_{\theta_0}^{\theta}\nu\left(\psi, \theta\right)d\theta
+x = \sbt\left(\psi - \psi_0\right) \qquad y = \theta \qquad z = \sigma_{B\theta}\left(\zeta - \int_{\theta_0}^{\theta}\nu\left(\psi, \theta\right)d\theta\right)
 \label{eq:coordtransform}
 \end{equation}
 Where $\nu$ is the local field-line pitch given by
 \begin{equation}
-\nu\left(\psi, \theta\right) = \frac{\mathbf{B}\cdot\nabla\zeta}{\mathbf{B}\cdot\nabla\theta} = \frac{\Bt\hthe}{\Bp R}
+\nu\left(\psi, \theta\right) = \frac{\mathbf{B}\cdot\nabla\zeta}{\mathbf{B}\cdot\nabla\theta} = \frac{\Bt\hthe}{\Bp R} = \frac{\left(F/R\right)h_\theta}{B_\theta R} = FJ/R^2
 \end{equation}
-The coordinate system is chosen so that $\psi$ increases radially outwards, and 
-$\Bp$ is positive. The sign of the toroidal field $\Bt$ can then be either +ve or -ve.
+The coordinate system is chosen so that $x$ increases radially outwards, from plasma to the wall.
+The sign of the toroidal field $\Bt$ can then be either +ve or -ve.
 
 The contravariant basis vectors are therefore
 \[
-\nabla x = \nabla \psi \qquad \nabla y = \nabla \theta \qquad \nabla z = \nabla\zeta - \left[\int_{\theta_0}^\theta\deriv{\nu\left(\psi, \theta\right)}{\psi} d\theta\right] \nabla\psi - \nu\left(\psi, \theta\right)\nabla\theta
+\nabla x = \sbt\nabla \psi \qquad \nabla y = \nabla \theta \qquad \nabla z = \sbt\left(\nabla\zeta - \left[\int_{\theta_0}^\theta\deriv{\nu\left(\psi, \theta\right)}{\psi} d\theta\right] \nabla\psi - \nu\left(\psi, \theta\right)\nabla\theta\right)
 \]
 
 The term in square brackets is the integrated local shear:
@@ -213,20 +217,20 @@ The Jacobian of this coordinate system is
 \[
 J^{-1} \equiv \left(\nabla x\times\nabla y\right)\cdot\nabla z = \Bp / \hthe
 \]
-
+which can be either positive or negative, depending on the sign of $\Bp$.
 The contravariant metric tensor is given by:
 \[
 g^{ij} \equiv \Vec{e}^i \cdot\Vec{e}^j \equiv \nabla u^i \cdot \nabla u^j = \left(\begin{array}{ccc}
 \left(R\Bp\right)^2 & 0 & -I\left(R\Bp\right)^2 \\
-0 & 1 / \hthe^2 & -\nu / \hthe^2 \\
--I\left(R\Bp\right)^2 & -\nu / \hthe^2 & I^2\left(R\Bp\right)^2 + B^2 / \left(R\Bp\right)^2 \end{array} \right)
+0 & 1 / \hthe^2 & -\sbt\nu / \hthe^2 \\
+-I\left(R\Bp\right)^2 & -\sbt\nu / \hthe^2 & I^2\left(R\Bp\right)^2 + B^2 / \left(R\Bp\right)^2 \end{array} \right)
 \]
 and the covariant metric tensor:
 \[
 g_{ij} \equiv \Vec{e}_i \cdot\Vec{e}_j = \left(\begin{array}{ccc}
-I^2 R^2 + 1 / \rbpsq & \Bt\hthe I R / \Bp & I R^2 \\
-\Bt\hthe I R / \Bp & B^2\hthe^2 / \Bp^2 & \Bt\hthe R / \Bp \\
-I R^2 & \Bt\hthe R / \Bp & R^2 \end{array} \right)
+I^2 R^2 + 1 / \rbpsq & \sbt\Bt\hthe I R / \Bp & I R^2 \\
+\sbt\Bt\hthe I R / \Bp & B^2\hthe^2 / \Bp^2 & \sbt\Bt\hthe R / \Bp \\
+I R^2 & \sbt\Bt\hthe R / \Bp & R^2 \end{array} \right)
 \]
 
 \subsection{Differential operators}
@@ -285,7 +289,7 @@ B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
 \]
 and
 \[
-B_x = \Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \Bt R
+B_x = \sbt \Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \sbt \Bt R
 \]
 
 Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
@@ -293,10 +297,12 @@ Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
 \[
 \left(\Curl{\Bvec}\right)^x = \frac{1}{J}\left(\deriv{B_z}{y} - \deriv{B_y}{z}\right) = 0
 \]
-since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric.
+since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric. As expected then,
+there are no equilibrium currents across flux surfaces.
+
 \begin{eqnarray*}
-\left(\Curl{\Bvec}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
-\left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \deriv{}{y}\left(\Bt I R\right)\right]
+\left(\Curl{\Bvec}\right)^y &=& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
+\left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\deriv{}{y}\left(\Bt I R\right)\right]
 \end{eqnarray*}
 The second term can be simplified, again using $\Bt R$ constant on flux-surfaces:
 \[
@@ -304,13 +310,13 @@ The second term can be simplified, again using $\Bt R$ constant on flux-surfaces
 \]
 From these, calculate covariant components:
 \begin{eqnarray}
-\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber\\
-\left(\Curl{\Bvec}\right)_y &=& -\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
-\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber
+\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \nonumber\\
+\left(\Curl{\Bvec}\right)_y &=& -\sbt\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \sbt\Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
+\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \nonumber
 \end{eqnarray}
 Calculate $\Jvec\times\Bvec$:
 \begin{eqnarray*}
-\mu_0 \left(\Jvec\times\Bvec\right)^x = -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]
+\mu_0 \left(\Jvec\times\Bvec\right)^x = -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right]
 \end{eqnarray*}
 
 Covariant components of $\nabla P$:
@@ -323,7 +329,7 @@ and contravariant:
 \]
 Hence equating contravariant x components of $\Jvec\times\Bvec = \nabla P$,
 \begin{equation}
-\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
 \label{eq:xbalance}
 \end{equation}
 
@@ -334,11 +340,11 @@ J_{||} = \mathbf{b}\cdot\Jvec \qquad b^y = \frac{\Bp}{B\hthe}
 \]
 and from equation \ref{eq:curlb_y}:
 \[
-J_y = \frac{1}{\mu_0}\left\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]\right\}
+J_y = \frac{\sbt}{\mu_0}\left\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right]\right\}
 \]
 since $J_{||} = b^yJ_y$,
 \[
-\mu_0 J_{||} =\frac{\Bp\Bt R}{B\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] - B\deriv{}{x}\left(\Bt R\right)
+\mu_0 J_{||} =\sbt\frac{\Bp\Bt R}{B\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] - \sbt B\deriv{}{x}\left(\Bt R\right)
 \]
 
 \subsection{Curvature}
@@ -350,28 +356,28 @@ $\mathbf{\kappa} = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arr
 \]
 Components of $\nabla\times\mathbf{b}$ are:
 \begin{eqnarray*}
-\left(\nabla\times\mathbf{b}\right)^x &=& \frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
-\left(\nabla\times\mathbf{b}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{\Bt R}{B}\right) \\
-\left(\nabla\times\mathbf{b}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
+\left(\nabla\times\mathbf{b}\right)^x &=& \sbt\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
+\left(\nabla\times\mathbf{b}\right)^y &=& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{\Bt R}{B}\right) \\
+\left(\nabla\times\mathbf{b}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \sbt\frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - \sbt I\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
 \end{eqnarray*}
 
 \[
-\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right) = -B\deriv{}{x}\left(\frac{\Bt R}{B}\right) + \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
+\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right) = -\sbt B\deriv{}{x}\left(\frac{\Bt R}{B}\right) + \sbt \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
 \]
 
 therefore,
 \begin{eqnarray*}
-\left(\mathbf{b}\times\mathbf{\kappa}\right)^x &=& \frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) = -\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
-\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \frac{\Bp^2\Bt^2 R^2}{B^3\hthe^2}\deriv{\nu}{x} - \frac{\Bp^2\Bt R}{B^2\hthe^2}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) \\
-\left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^x &=& \sbt\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) = -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \frac{\Bp^2\Bt^2 R^2}{B^3\hthe^2}\deriv{\nu}{x} - \sbt\frac{\Bp^2\Bt R}{B^2\hthe^2}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \sbt\frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
 \end{eqnarray*}
 Using equation~\ref{eq:xbalance}:
 \[
-B\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) + \frac{B\hthe}{\Bp}\deriv{B}{x} - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+B\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) + \frac{B\hthe}{\Bp}\deriv{B}{x} - \sbt\Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
 \]
 we can re-write the above components as:
 \begin{eqnarray*}
-\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \frac{\Bp\Bt R}{B^2\hthe}\left[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\right] \\
+\left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \sbt\frac{\Bp\Bt R}{B^2\hthe}\left[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\right] \\
 \left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& -\frac{\mu_0}{B}\deriv{P}{x} - \deriv{B}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
 \end{eqnarray*}
 

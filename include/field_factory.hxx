@@ -119,6 +119,17 @@ private:
   FieldGenerator *gen;
 };
 
+class FieldGaussian : public FieldGenerator {
+public:
+  FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
+  ~FieldGaussian() {if(X) delete X; if(s) delete s;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *X, *s;
+};
+
 //////////////////////////////////////////////////////////
 
 class FieldFactory {

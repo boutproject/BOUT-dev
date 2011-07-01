@@ -111,8 +111,6 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   nr = mesh.nr
   nz = mesh.nz
   
-  ; NOTE: MINUS SIGN ON mesh.psi BRINGS INTO AGREEMENT WITH OTHER
-  ; METHODS BUT REASON NOT UNDERSTOOD. INVESTIGATE!
   grad_Psi = pdiff_xy(nr, nz, mesh.R, mesh.Z, mesh.psi)
   
   R2D = DBLARR(nr, nz)
@@ -122,9 +120,9 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
     Z2D[i,*] = mesh.Z
   ENDFOR
 
-  Br = -grad_psi.Z / R2D
-  Bz = grad_psi.R / R2D
-  
+  Br = grad_psi.Z / R2D
+  Bz = -grad_psi.R / R2D
+
   Bphi = DBLARR(nr, nz)
   FOR i=0,nr-1 DO BEGIN
     FOR j=0,nz-1 DO BEGIN
@@ -161,7 +159,7 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   curlb_unit = CurlCyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)
   
   ; Cross product with b to get curvature vector
-  curvec   = Xprod(vecB_unit,curlb_unit)
+  curvec   = Xprod(vecB_unit,curlb_unit, /MINUS)
   ;-unit b cross curvature vector at cell center
   bxcurvec = Xprod(vecB_unit,curvec)
   
@@ -169,8 +167,7 @@ FUNCTION rz_curvature, mesh, rixy=rixy, zixy=zixy
   grad_Theta = Xprod(grad_Phi, grad_Psi)
   grad_Theta.r   = grad_Theta.r   / Bpxy
   grad_Theta.z   = grad_Theta.z   / Bpxy
-  grad_Theta.phi = grad_Theta.phi / Bpxy
-  
+
   ;-calculate bxcurvec dotted with grad_psi, grad_theta, and grad_phi
   bxcv = {psi:Dotprod(bxcurvec,grad_Psi), $
           theta:Dotprod(bxcurvec,grad_Theta), $

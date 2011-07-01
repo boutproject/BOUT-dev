@@ -3,19 +3,19 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 10       # number of time-steps
-TIMESTEP = 10.	   # time between outputs
+NOUT = 400       # number of time-steps
+TIMESTEP = 2.e1	   # time between outputs
 
-archive = 20
+archive = 500
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 9     # number of points in z direction (2^n + 1)
-#ZPERIOD = 7  # Number of periods
+MZ = 513     # number of points in z direction (2^n + 1)
+ZPERIOD = 1  # Number of periods
 
-ZMIN=0.0
-ZMAX=3.6198e-2  # Non-integer period for comparison with BOUT-06
+#ZMIN=0.0
+#ZMAX=2.e-2  # Non-integer period for comparison with BOUT-06
 
 MXG = 2
 MYG = 2
@@ -26,6 +26,8 @@ dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
 #StaggerGrids = true
 
+non_uniform = true
+
 NXPE = 1 # Decompose in X direction
 
 ##################################################
@@ -35,7 +37,7 @@ NXPE = 1 # Decompose in X direction
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
-upwind = C4   # U1 = 1st order upwind, W3 = 3rd order WENO
+upwind = U1   # U1 = 1st order upwind, W3 = 3rd order WENO
 
 [ddy]
 
@@ -47,7 +49,7 @@ upwind = U1
 
 first = C4
 second = C4
-upwind = C4
+upwind = U1
 
 ##################################################
 # Laplacian inversion settings
@@ -61,10 +63,9 @@ laplace_nonuniform = true
 # Solver settings
 
 [solver]
-type=petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
-ATOL = 1.0e-12 # absolute tolerance
+ATOL = 1.0e-10 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
 mxstep = 50000
 
@@ -78,21 +79,29 @@ ZZ = 1.0
  
 estatic = true    # if true, electrostatic (Apar = 0)
 ZeroElMass = false  # Use Ohms law without electron inertia
-Zeff = 1.0        # Z effective
+zeff = 1.0        # Z effective
 nu_perp = 1.0e-20
 
-nuIonNeutral = -1. # Ion-neutral collision rate, normalised to wci
+nuIonNeutral = 2.e-3 # Ion-neutral collision rate, normalised to wci
+
+ni_perpdiff = 2.e-3
+rho_perpdiff = 2.e-3
+te_perpdiff = 2.e-3
 
 nonlinear = true
 
 ShearFactor = 0.0
 
-arakawa = true     # Use Arakawa scheme for ExB advection   
-bout_exb = false   # Use the BOUT-06 subset of ExB terms
+arakawa = false     # Use Arakawa scheme for ExB advection   
+bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
-log_density = false # Evolve log(density) rather than density
+remove_tor_av_ni = false
+remove_tor_av_te = false
 
-filter_z = true    # Filter in Z
+evolve_source_ni = true
+evolve_source_te = false
+
+filter_z = false    # Filter in Z
 filter_z_mode = 1  # Keep this Z harmonic
 
 # field inversion flags: Add the following
@@ -104,7 +113,7 @@ filter_z_mode = 1  # Keep this Z harmonic
 # 32 - Don't use previous solution to start iterations
 #      (iterative methods only)
 
-phi_flags = 0  # inversion flags for phi
+phi_flags = 9  # inversion flags for phi
 apar_flags = 0 # flags for apar inversion
 
 ##################################################
@@ -122,9 +131,9 @@ scale = 0.0 # default size of initial perturbations
 # 2 - Sinusoidal
 # 3 - Mix of mode numbers (like original BOUT)
 
-xs_opt = 2
-ys_opt = 2
-zs_opt = 2
+xs_opt = 3
+ys_opt = 3
+zs_opt = 3
 
 xs_mode = 1 # Radial mode number
 
@@ -142,10 +151,89 @@ zs_mode = 1 # asimuthal mode number
 #
 # relax( )   - Make boundary condition relaxing
 
+#bndry_core = relax(neumann)
+#bndry_sol = relax(neumann)
+#bndry_target = none
 bndry_all = relax(neumann)
 
-[Ni]
+# Section for only the Ni equation
+# Contains switches for terms
+[ni]
+# Terms always present
+evolve_ni = true
+ni_jpar1 = true
+ni_ni0_phi1 = true
+ni_diff = true
+
+# Linear Terms with phi0
+ni_ni1_phi0 = false
+
+# Nonlinear Terms
+ni_ni1_phi1 = true
+
 scale = 1.0e-8 # only perturbing Ni
 
+#xinner = 1
+#xouter = 1
+
+
+# Section for only the rho equation
+# Contains switches for terms
 [rho]
+# Terms always present
+evolve_rho = true
+rho_jpar1 = true
+rho_nuin_rho1 = true          # Neutral Damping
+rho_rho1 = false               # Viscosity
+rho_diff = true
+
+# Linear Terms with phi0
+rho_rho0_phi1 = false
+rho_rho1_phi0 = false
+rho_ve2lin = false
+
+# Nonlinear Terms
+rho_rho1_phi1 = true
+rho_ve2t = true
+
+
 scale = -1.0e-8
+
+
+# Section for only the Ajpar equation
+# Contains switches for terms
+[ajpar]
+# Terms always present
+evolve_ajpar = true
+ajpar_phi1 = true
+ajpar_jpar1 = true
+ajpar_te_ni = true
+ajpar_te = false
+
+# Linear Terms with phi0
+ajpar_ajpar1_phi0 = false
+
+# Nonlinear terms
+ajpar_ajpar1_phi1 = true
+ajpar_ve1_ve1 = true
+
+
+# Section for only the te equation
+# Contains switches for terms
+[te]
+# Terms always present
+evolve_te = false
+te_te0_phi1 = false
+te_te_ajpar = false
+te_nu_te1 = false
+te_jpar = false
+te_diff = false
+
+# Linear Terms with phi0
+te_te1_phi0 = false
+
+# Nonlinear terms
+te_te1_phi1 = false
+te_ajpar_te = false
+te_nu_tet = false
+

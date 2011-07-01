@@ -9,6 +9,53 @@
 BoutReal Mesh::wtime_comms = 0.0;
 
 /**************************************************************************
+ * Default functions for getting scalars
+ **************************************************************************/
+
+/// Get an integer
+int Mesh::get(int &ival, const char *name) {
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Loading integer: Mesh::get(int, %s)", name);
+#endif
+
+  GridDataSource* s = findSource(name);
+  if(s == NULL) {
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 1;
+  }
+  
+  s->open(name);
+  bool success = s->fetch(&ival, name);
+  s->close();
+  
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  if(!success) {
+    return 2;
+  }
+  return 0;
+}
+
+/// A BoutReal number
+int Mesh::get(BoutReal &rval, const char *name) {
+  GridDataSource* s = findSource(name);
+  if(s == NULL)
+    return 1;
+  
+  s->open(name);
+  bool success = s->fetch(&rval, name);
+  s->close();
+  
+  if(!success)
+    return 2;
+  return 0;
+}
+
+/**************************************************************************
  * Data sources
  **************************************************************************/
 
@@ -194,6 +241,20 @@ int Mesh::communicate(FieldPerp &f)
   sendXOut(fd[xend-nout+1], nout*ngz, 0);
   
   return 0;
+}
+
+int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
+  int len = 0;
+
+  /// Loop over variables
+  for(std::vector<FieldData*>::const_iterator it = var_list.begin(); it != var_list.end(); it++) {
+    if((*it)->is3D()) {
+      len += (xlt - xge) * (ylt - yge) * (ngz-1) * (*it)->BoutRealSize();
+    }else
+      len += (xlt - xge) * (ylt - yge) * (*it)->BoutRealSize();
+  }
+  
+  return len;
 }
 
 /**************************************************************************

@@ -69,6 +69,7 @@ PRO adjust_jpar, grid, smoothp=smoothp, jpar=jpar, noplot=noplot
   gj = data.Bxy^2 * Grad_par(data.Jpar0/data.Bxy, data)
   
   ; Generate Jpar0 by integrating kp (Pfirsch-Schluter current)
+  ; Grad_par = (Bp / (B*hthe))*d/dy
   
   gparj = -kp * data.hthe / (data.Bxy * data.Bpxy)
   ps = data.Bxy * int_y(gparj, data, /nosmooth) * data.dy

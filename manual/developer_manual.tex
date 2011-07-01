@@ -34,6 +34,10 @@
         morekeywords={string,Field2D,Field3D,Vector2D,Vector3D,BoutReal,FieldGroup,dcomplex},
 }
 
+% Add an index
+\usepackage{makeidx}
+\makeindex
+
 %% Modify margins
 \addtolength{\oddsidemargin}{-.25in}
 \addtolength{\evensidemargin}{-.25in}
@@ -106,7 +110,7 @@ on the source should produce a set of HTML documentation. See
 
 \subsection{Using the BOUT++ repository}
 
-As of June 2009, the BOUT++ distribution is hosted on Github:
+As of June 2009, the BOUT++ distribution is hosted on Github: \index{Github}
 
 \file{http://github.com/bendudson/BOUT/}
 
@@ -220,7 +224,7 @@ much greater.
 
 Here are some rules for editing the core BOUT++ code:
 \begin{itemize}
-\item {\bf NO FORTRAN}. EVER. Though it may be tempting for scientific programmers to use
+\item \index{Fortran} {\bf NO FORTRAN}. EVER. Though it may be tempting for scientific programmers to use
 a little FORTRAN now and then, please please don't put any into BOUT++. 
 Use of FORTRAN, particularly when mixed with C/C++, is the cause of many problems in
 porting and modifying codes. 
@@ -290,7 +294,7 @@ files are:
   being removed shortly.
 \item field
   \begin{itemize}
-  \item \file{field2d.cpp} implements the \code{Field2D} class. This is a
+  \item \index{Field3D} \file{field2d.cpp} implements the \code{Field2D} class. This is a
     scalar field which varies only in $x$ and $y$ and is used for things
     like metric tensor components and initial profiles. It supplies lots
     of overloaded operators and functions on these objects.
@@ -457,7 +461,7 @@ The classes outlines in red in figure~\ref{fig:layout2} are data types
 currently implemented in BOUT++. 
 
 \subsection{\code{FieldData}}
-
+\index{FieldData}
 All BOUT++ data types implement a standard interface for accessing their
 data, which is then used in communication and file I/O code. This interface
 is in \file{src/field/field\_data.h}. The mandatory (pure virtual) functions are:
@@ -494,7 +498,7 @@ void shiftZ(int jx, int jy, double zangle);
 \end{lstlisting}
 
 \subsection{\code{Field}}
-
+\index{Field}
 The two main types are \code{Field2D}, and \code{Field3D}. Their main functions
 are to provide an easy way to manipulate data; they take care of all memory management,
 and most looping over grid-points in algebraic expressions. The 2D field implementation
@@ -515,7 +519,7 @@ of this variable. This function ensures that this field is unique
 using a singleton pattern.
 
 \subsection{\code{Vector}}
-
+\index{Vector}
 Vector classes build on the field classes, just using a field to represent
 each component. 
 
@@ -527,7 +531,7 @@ ddt(v.x) = ddt(v).x
 \end{lstlisting}
 
 \subsection{\code{dcomplex}}
-
+\index{dcomplex}
 Several parts of the BOUT++ code involve FFTs and are therefore much easier to
 write using complex numbers. Unfortunately, the C++ complex library also tries
 to define a \code{real} type, which is already defined by PVODE. Several
@@ -635,7 +639,7 @@ at runtime (DIFF\_C2, defined in \texttt{bout\_types.h}), and function pointers
 (\texttt{DDX\_C2}), taking into account whether
 variables are shifted or not, BOUT++ uses a set of lookup tables.
 
-To find function pointers, tables of the following type are used:
+To find function pointers, tables of the following type are used: \index{DiffLookup}
 \begin{lstlisting}
 /// Translate between DIFF_METHOD codes, and functions
 struct DiffLookup {
@@ -671,7 +675,7 @@ to use for specific operators.
 When reading settings from the input file, they are specified as short
 strings like ``C2'', and a longer description
 of the method chosen should be written to the output log. To do this, 
-there is a name lookup table:
+there is a name lookup table: \index{DiffNameLookup}
 \begin{lstlisting}
 /// Translate between short names, long names and DIFF_METHOD codes
 struct DiffNameLookup {
@@ -707,7 +711,7 @@ a \texttt{DIFF\_METHOD} enum code, then this code is turned into a function poin
 \end{figure}
 
 \subsection{Staggered grids}
-
+\index{staggered grids}
 \note{This feature is currently very experimental, and doesn't appear to work as it should}
 
 By default, all quantities in BOUT++ are defined at cell centre, and
@@ -770,7 +774,7 @@ Any & Any & Interpolate to centre, use central stencil, then interpolate \\
 \end{table}
 
 \section{Laplacian inversion}
-
+\index{Laplacian}
 \note{This part of the code needs some algorithm improvement (better parallel tridiagonal solver).}
 
 
@@ -845,12 +849,52 @@ it has been found that these terms are important, so this method is not
 usually used. 
 
 \section{Mesh}
-
+\index{Mesh}
 The mesh is used in pretty much all parts of the code, and deals with 
 things like the geometry of the mesh (metric tensors etc.), and how the
 mesh is divided between processors (communications). The Mesh class
-(\file{mesh/mesh.h}) defines an interface, whilst currently BoutMesh
-(\file{mesh/boutmesh.h}) is the only implementation of this interface.
+(\file{include/mesh.h}) defines an interface, and there are currently
+two implementations:
+\begin{itemize}
+\item \lstinline!BoutMesh! (\file{src/mesh/boutmesh.cxx}) \index{BoutMesh} which is backwards compatible
+  with the BOUT and BOUT-06 codes. This is a logically rectangular mesh so
+  the number of radial points (x) can't change in the poloidal direction (y). 
+  
+\item \lstinline!QuiltMesh! (\file{src/mesh/quiltmesh.cxx}) \index{QuiltMesh} is a more general mesh under development
+  (i.e. {\bf not} recommended except for testing). The primary advantage is that
+  it allows the number of points in x to vary between regions so the number of radial
+  grid points in the core no longer needs to be the same as the number in the private
+  flux regions.
+\end{itemize}
+
+\subsection{Grid data sources}
+\index{GridDataSource}
+
+All data sources inherit from \lstinline!GridDataSource!, defined in \file{grid.hxx} at line
+43. They must supply a method to test if a variable exists:
+\begin{lstlisting}[firstnumber=47]
+bool GridDataSource::hasVar(const char *name);
+\end{lstlisting}
+a method to get the size of the variable
+\begin{lstlisting}[firstnumber=49]
+vector<int> GridDataSource::getSize(const char *name);
+\end{lstlisting}
+To fetch data, first the (x,y,z) origin must be set:
+\begin{lstlisting}[firstnumber=52]
+bool GridDataSource::setOrigin(int x = 0, int y = 0, int z = 0);
+\end{lstlisting}
+and then use methods to fetch integers or reals:
+\begin{lstlisting}[firstnumber=52]
+bool GridDataSource::fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+bool GridDataSource::fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+\end{lstlisting}
+
+In addition, GridDataSource implementations can have methods which should be called
+before and after variables are accessed:
+\begin{lstlisting}[firstnumber=52]
+void GridDataSource::open(const char *name = NULL);
+void GridDataSource::close();
+\end{lstlisting}
 
 \subsection{Loading a mesh}
 
@@ -862,9 +906,9 @@ int load(GridDataSource);        // Load from specified data source
 \end{lstlisting}
 all of which return an error code (0 if successful). 
 \code{addSource} is used to add a set of input data sources which
-inherit from \code{GridDataSource}. \code{load()} loads the mesh
+inherit from \lstinline!GridDataSource!. \lstinline!load()! loads the mesh
 from these sources, querying each data source in turn for the required
-variables (in the order in which they were added). \code{load(GridDataSource)}
+variables (in the order in which they were added). \lstinline!load(GridDataSource)!
 loads the mesh from only the supplied data source.
 
 In \file{bout++.cpp}, this is used to initialise the mesh:
@@ -888,8 +932,7 @@ which is called during BOUT++ initialisation.
 
 \subsubsection{Implementation: BoutMesh}
 
-BoutMesh class uses the BOUT indices (which trace back to UEDGE... there's
-heritage here):
+BoutMesh class uses the BOUT indices (which trace back to UEDGE):
 \begin{lstlisting}
 int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
 \end{lstlisting}
@@ -897,6 +940,12 @@ int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
 and are equal in the case of single-null configurations. The indexing
 is such that all points \code{0 <= x < ixseps1} are inside the separatrix,
 whilst \code{ixseps1 <= x < ngx} are outside.
+
+\subsubsection{Implementation: QuiltMesh}
+
+
+
+
 
 \subsection{Index ranges}
 
@@ -934,6 +983,7 @@ s->close();                             // Close the source
 To read 2D and 3D fields, the branch-cuts need to be taken into account.
 
 \subsection{Communications}
+\index{communication}
 
 The most common type of communication is to just exchange all
 guard cells with neighboring processors. Mesh provides the following
@@ -1078,7 +1128,7 @@ RangeIter* iterateBndryUpperY();
 bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
 \end{lstlisting}
   
-The \code{RangeIter} class is a simple iterator
+The \code{RangeIter} class is a simple iterator \index{RangeIter}
 \begin{lstlisting}
 class RangeIter {
  public:
@@ -1101,7 +1151,7 @@ for(xr->first(); !xr->isDone(); xr->next())
 \end{lstlisting}
 
 \subsection{Initial profiles}
-
+\index{variable initialisation}
 The initial profiles code needs to construct a solution which is smooth
 everywhere, with a form of perturbation specified in the input file
 for each direction. In order to do this, it needs a continuous function
@@ -1124,9 +1174,9 @@ BoutReal zlength, dz;    // Derived from options (in radians)
 \end{lstlisting}
 
 \subsection{Metrics}
-
+\index{metric tensor}
 The contravariant and covariant metric tensor components are
-public members of \code{Mesh}:
+public members of \code{Mesh}: 
 \begin{lstlisting}
 // Contravariant metric tensor (g^{ij})
 Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
@@ -1197,6 +1247,7 @@ bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all
 
 \section{Boundary conditions}
 \label{sec:boundaries}
+\index{boundary conditions}
 
 The boundary condition system needs to be very flexible in order to handle:
 \begin{itemize}
@@ -1237,7 +1288,7 @@ This returns a vector of pointers to \code{BoundaryRegion} objects,
 each of which describes a boundary region with a label, a \code{BndryLoc} 
 location (i.e. inner x, outer x, lower y, upper y or all), and iterator
 functions for looping over the points. This class is
-defined in \file{boundary\_region.h}:
+defined in \file{boundary\_region.h}:\index{BoundaryRegion}
 \begin{lstlisting}[firstnumber=12]
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion {
@@ -1290,7 +1341,7 @@ On each boundary, conditions must be specified for each variable.
 The different conditions are imposed by \code{BoundaryOp} objects.
 These set the values in the boundary region such that they obey e.g.
 Dirichlet or Neumann conditions. The \code{BoundaryOp} class is defined
-in \file{boundary\_op.h}:
+in \file{boundary\_op.h}: \index{BoundaryOp}
 \begin{lstlisting}[firstnumber=21]
 /// An operation on a boundary
 class BoundaryOp {
@@ -1347,7 +1398,7 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 \end{lstlisting}
-and implemented in \file{boundary\_standard.cpp}
+and implemented in \file{boundary\_standard.cpp} \index{BoundaryNeumann}
 \begin{lstlisting}[firstnumber=52]
 void BoundaryNeumann::apply(Field2D &f)
 {
@@ -1385,7 +1436,7 @@ as a vector of strings - see explanation in section~\ref{sec:BoundaryFactory}.
 To create more complicated boundary conditions from simple ones (such as
 Neumann conditions above), boundary operations can be modified by
 wrapping them up in a \code{BoundaryModifier} object, defined
-in \file{boundary\_op.h}:
+in \file{boundary\_op.h}: \index{BoundaryModifier}
 \begin{lstlisting}[firstnumber=63]
 class BoundaryModifier : public BoundaryOp {
  public:
@@ -1403,7 +1454,7 @@ instead of a \code{BoundaryRegion} to operate on, modifiers are passed a
 \code{BoundaryOp} to modify.
 
 Currently the only modifier is \code{BoundaryRelax}, defined in
-\file{boundary\_standard.h}:
+\file{boundary\_standard.h}: \index{BoundaryRelax}
 \begin{lstlisting}[firstnumber=64]
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
@@ -1424,7 +1475,7 @@ class BoundaryRelax : public BoundaryModifier {
 
 \subsection{Boundary factory}
 \label{sec:BoundaryFactory}
-
+\index{BoundaryFactory}
 The boundary factory creates new boundary operations from input strings,
 for example turning "relax(dirichlet)" into a relaxing Dirichlet boundary
 operation on a given region. It is defined in \file{boundary\_factory.h}
@@ -1490,6 +1541,7 @@ arguments are passed, and to parse them into floats or other types.
 
 {\bf Example}: The Dirichlet boundary condition can take an optional
 argument to change the value the boundary's set to. In \file{boundary\_standard.cpp}:
+\index{BoundaryDirichlet}
 \begin{lstlisting}[firstnumber=13]
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
 {
@@ -1513,7 +1565,7 @@ If more arguments are passed then these are just ignored; probably a warning
 should be printed.
 
 To set boundary conditions on a field, \code{FieldData} methods are
-defined in \file{field\_data.h}:
+defined in \file{field\_data.h}: \index{FieldData}
 \begin{lstlisting}
 // Boundary conditions
   void setBoundary(const string &name); ///< Set the boundary conditions
@@ -1529,9 +1581,51 @@ The \code{setBoundary(const string \&name)} method is implemented in
 \code{BoundaryFactory::createFromOptions} for each one and adding the resulting
 boundary operator to the \code{bndry\_op} vector.
 
+\section{Variable initialisation}
+\index{variable initialisation}
+\subsection{\lstinline!FieldFactory! class}
+
+This class provides a way to generate a field with a specified form. It implements
+a recursive descent parser to turn a string containing something like
+\lstinline!"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"! into values in a \lstinline!Field3D!
+or \lstinline!Field2D! object. Examples are given in the \texttt{test-fieldfactory} example:
+\index{FieldFactory}
+\begin{lstlisting}
+FieldFactory f;
+Field2D b = f.create2D("1 - x");
+Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
+\end{lstlisting}
+
+This is done by creating a tree of \lstinline!FieldGenerator! objects
+which then generate the field values: \index{FieldGenerator}
+\begin{lstlisting}[firstnumber=49]
+class FieldGenerator {
+public:
+  virtual ~FieldGenerator() { }
+  virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
+  virtual BoutReal generate(int x, int y, int z) = 0;
+};
+\end{lstlisting}
+All classes inheriting from \lstinline!FieldGenerator! must implement a
+\lstinline!generate! function, which returns the value
+at the given \lstinline!(x,y,z)! position. Classes should also implement a
+\lstinline!clone! function, which takes a list of arguments and creates a new
+instance of its class.
+
+The simplest generator is a fixed numerical value, which is represented
+by a \lstinline!FieldValue! object: \index{FieldValue}
+\begin{lstlisting}[firstnumber=59]
+class FieldValue : public FieldGenerator {
+public:
+  FieldValue(BoutReal val) : value(val) {}
+  BoutReal generate(int x, int y, int z) { return value; }
+private:
+  BoutReal value;
+};
+\end{lstlisting}
 
 \section{Solver}
-
+\index{Solver}
 The solver is the interface between BOUT++ and the time-integration code
 such as SUNDIALS. All solvers implement the \code{Solver} class
 interface (see \file{src/solver/generic\_solver.h}).
@@ -1621,7 +1715,7 @@ relatively straightforward.
 Access to data in files is provided using a Bridge pattern: The
 \code{Datafile} class provides an interface to the rest of the code
 to read and write variables, whilst file formats implement the
-\code{Dataformat} interface.
+\code{Dataformat} interface. \index{Datafile}
 \begin{lstlisting}
 class Datafile {
  public:
@@ -1647,7 +1741,7 @@ class Datafile {
 \end{lstlisting}
 
 
-The important bits of the DataFormat interface are:
+The important bits of the DataFormat interface are: \index{DataFormat}
 \begin{lstlisting}
 class DataFormat {
  public:
@@ -1690,11 +1784,11 @@ class DataFormat {
 \end{lstlisting}
 
 \section{Options}
-
+\index{Options}
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the \lstinline!Options! class defined in
-\file{bout++/include/options.h}
+\file{bout++/include/options.h} 
 \begin{lstlisting}
 class Options {
  public:
@@ -1765,7 +1859,7 @@ To suppress this, set the \lstinline!log! argument to \lstinline!false!:
 To allow different input file formats, each file parser implements
 the \lstinline!OptionParser! interface defined in
 \file{bout++/src/sys/options/optionparser.h}
-
+\index{OptionParser}
 \begin{lstlisting}
 class OptionParser {
  public:
@@ -1779,7 +1873,7 @@ object.
 
 To use these parsers and read in a file, there is the
 \lstinline!OptionsReader! class defined in
-\file{bout++/include/optionsreader.h}
+\file{bout++/include/optionsreader.h} \index{OptionsReader}
 \begin{lstlisting}
 class OptionsReader {
  public:
@@ -1818,6 +1912,8 @@ Other small modules which don't really fit into any system, but are needed.
 
 \bibliography{references}
 \bibliographystyle{unsrt}
+
+\printindex
 
 \end{document}
 

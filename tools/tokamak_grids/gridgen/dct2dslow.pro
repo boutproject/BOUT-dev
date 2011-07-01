@@ -11,7 +11,7 @@
 ;       * Matrix operations for inverse
 ;       * Forward # Inverse = 1 with errors on the order of 1.0d-14 of maximum
 
-pro dct2dslow2, sig, fsig, inverse=inverse
+pro dct2dslow, sig, fsig, inverse=inverse
 ;
 ;-calculate 2D discrete cosine transform
 ;----------------------------------------
