@@ -17,7 +17,7 @@ FUNCTION int_y, var, mesh, loop=loop, nosmooth=nosmooth
     ;ENDIF ELSE BEGIN
       f[xi,yi] = int_func(var[xi,yi])
       IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
-        f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge), 5, /edge)
+        f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
       ENDIF
       loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
     ;ENDELSE
