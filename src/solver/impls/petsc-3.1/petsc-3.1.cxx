@@ -1,5 +1,5 @@
 /**************************************************************************
- * Interface to PVODE solver
+ * Interface to PETSc 3.1 solver
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
