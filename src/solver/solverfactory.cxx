@@ -23,7 +23,7 @@ SolverFactory* SolverFactory::getInstance()
 
 inline SolverType SolverFactory::getDefaultSolverType() {
   SolverType type = NULL;
-  
+
   #if defined BOUT_HAS_CVODE
     type = SOLVERCVODE;
   #elif defined BOUT_HAS_IDA
@@ -33,23 +33,22 @@ inline SolverType SolverFactory::getDefaultSolverType() {
   #else
     type = SOLVERPVODE;
   #endif
-  
+
   return type;
 }
 
 Solver* SolverFactory::createSolver() {
   SolverType type = getDefaultSolverType();
-  
+
   Options *options = Options::getRoot();
   options = options->getSection("solver");
   string solver_option;
 /*  options.get("solver_type", solver_option, type);
   string solver_option;*/
   options->get("type", solver_option, "");
-  
+
   if(!solver_option.empty()) type = solver_option.c_str();
-  
-  
+
   return createSolver(type);
 }
 
@@ -70,7 +69,7 @@ Solver* SolverFactory::createSolver(SolverType &type)
   } else if(!strcasecmp(type, SOLVERRK4)) {
     return new RK4Solver;
   }
-  
+
   // Need to throw an error saying 'Supplied option "type"' was not found
   throw BoutException("No such solver exists in this build, type: %s", type);
 }
