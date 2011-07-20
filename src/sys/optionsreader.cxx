@@ -11,30 +11,26 @@
 OptionsReader* OptionsReader::instance = NULL;
 
 OptionsReader* OptionsReader::getInstance() {
-  if(instance == NULL) {
-    // Create the singleton object
-    instance = new OptionsReader();
-  }
+  if (instance == NULL) instance = new OptionsReader(); // Create the singleton object
+
   return instance;
 }
 
 void OptionsReader::read(Options *options, const char *file, ...) {
-  if(file == (const char*) NULL) {
-    throw new BoutException("OptionsReader::read passed NULL filename\n");
-  }
-  
+  if(file == (const char*) NULL) throw new BoutException("OptionsReader::read passed NULL filename\n");
+
   va_list ap;  // List of arguments
   char filename[512];
+
   va_start(ap, file);
   vsprintf(filename, file, ap);
   va_end(ap);
-  
+
   output.write("Reading options file %s\n", filename);
-  
+
   // Need to decide what file format to use
-  
   OptionParser *parser = new OptionINI();
-  
+
   parser->read(options, filename);
   
   delete parser;
