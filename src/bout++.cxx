@@ -256,8 +256,6 @@ int bout_init(int argc, char **argv)
     OPTION(options, TIMESTEP, 1.0);
 
     options->get("grid", grid_name, DEFAULT_GRID);
-    /*  if ((grid_name = options.getString("grid")) == (char*) NULL)
-        grid_name = DEFAULT_GRID;*/
 
     OPTION(options, dump_float,   true);
     OPTION(options, non_uniform,  false);
@@ -269,10 +267,6 @@ int bout_init(int argc, char **argv)
 
     /// Get file extensions
     options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
-    /*  if ((dump_ext = options.getString("dump_format")) == NULL) {
-    // Set default extension
-    dump_ext = DEFAULT_FILE_EXT;
-    }*/
 
     /// Setup derivative methods
     if (derivs_init()) {
