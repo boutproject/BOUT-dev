@@ -495,10 +495,10 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
   iteration = iter;
 
   /// Write (append) dump file
-  
+
   dump.write(append);
   append = true;
-  
+
   /// Collect timing information
   int ncalls = solver->rhs_ncalls;
   BoutReal wtime_rhs   = solver->rhs_wtime;
@@ -507,15 +507,15 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
   BoutReal wtime_io    = Datafile::wtime;      // Time spend on I/O
 
   output.print("\r"); // Only goes to screen
-  
-  if(first_time) {
+
+  if (first_time) {
     /// First time the monitor has been called
-    
+
     /// Get some options
     Options *options = Options::getRoot();
     OPTION(options, wall_limit, -1.0); // Wall time limit. By default, no limit
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
-    
+
     /// Record the starting time
     mpi_start_time = MPI_Wtime(); // NB: Miss time for first step (can be big!)
 
@@ -523,56 +523,55 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
 
     /// Print the column header for timing info
     output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-    
+
     /// Don't know wall time, so don't print timings
-    output.write("%.3e      %5d        -     -    -    -    -    - \n", 
-	       simtime, ncalls); // Everything else
-  }else {
+    output.write("%.3e      %5d        -     -    -    -    -    - \n", simtime, ncalls); // Everything else
+  } else {
     wtime = MPI_Wtime() - wtime;
-    
+
     output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
-		 simtime, ncalls, wtime,
-		 100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-		 100.*wtime_invert/wtime,  // Inversions
-		 100.0*wtime_comms/wtime,  // Communications
-		 100.*wtime_io/wtime,      // I/O
-		 100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+        simtime, ncalls, wtime,
+        100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+        100.*wtime_invert/wtime,  // Inversions
+        100.0*wtime_comms/wtime,  // Communications
+        100.*wtime_io/wtime,      // I/O
+        100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
-  
+
   // This bit only to screen, not log file
-  
+
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
   output.print("%c  Step %d of %d. Elapsed %s", get_spin(), iteration+1, NOUT, (time_to_hms(t_elapsed)).c_str());
   output.print(" ETA %s", (time_to_hms(wtime * ((BoutReal) (NOUT - iteration - 1)))).c_str());
-  
-  if(wall_limit > 0.0) {
+
+  if (wall_limit > 0.0) {
     // Check if enough time left
-    
+
     BoutReal t_remain = mpi_start_time + wall_limit - MPI_Wtime();
     if(t_remain < wtime) {
       // Less than 1 time-step left
       output.write("Only %e seconds left. Quitting\n", t_remain);
-      
+
 #ifdef CHECK
       msg_stack.pop(msg_point);
 #endif
       return 1; // Return an error code to quit
-    }else {
+    } else {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
-    } 
+    }
   }
 
   /// Reset clocks for next timestep
-  
+
   mesh->wtime_comms = 0.0; // Reset communicator clock
   Datafile::wtime = 0.0;
   wtime_invert = 0.0;
   wtime = MPI_Wtime();
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
-  
+
   return 0;
 }
 
