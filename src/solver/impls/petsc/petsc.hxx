@@ -55,36 +55,34 @@ using std::vector;
 
 typedef int (*rhsfunc)(BoutReal);
 
-extern PetscErrorCode PreStep(TS);
-extern PetscErrorCode PostStep(TS);
+extern BoutReal simtime;
+extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
 class PetscSolver : public Solver {
  public:
   PetscSolver();
   ~PetscSolver();
-  
+
   int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
-  
+
   int run(MonitorFunc f);
 
   // These functions used internally (but need to be public)
   PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
-  friend PetscErrorCode PreStep(TS);
-  friend PetscErrorCode PostStep(TS);
+  friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 
  private:
   Vec           u;
-  TS            ts; 
+  TS            ts;
   Mat           J,Jmf;
   MatFDColoring matfdcoloring;
 
   int nout;   // The number of outputs
   BoutReal tstep; // Time between outputs
   MonitorFunc monitor; // Monitor function to call regularly
-  
-  BoutReal next_time;  // When the monitor should be called next
-  bool outputnext; // true if the monitor should be called next time 
+
+  BoutReal next_output;  // When the monitor should be called next
 
   // Looping over variables. This should be in generic, but better...
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);

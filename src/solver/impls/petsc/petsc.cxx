@@ -142,15 +142,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = VecDuplicate(u,&rhs_vec);
   //
   // Set user provided RHSFunction
-  ierr = TSSetRHSFunction(ts,rhs_vec, solver_f,this);CHKERRQ(ierr);
+  ierr = TSSetRHSFunction(ts,PETSC_NULL, solver_f,this);CHKERRQ(ierr);
   ierr = VecDestroy(&rhs_vec);
-
-  //Sets the general-purpose update function called at the beginning of every time step. 
-  //This function can change the time step.
-  TSSetPreStep(ts, PreStep);
-
-  //Sets the general-purpose update function called after every time step -- Copy variables?
-  TSSetPostStep(ts, PostStep);
 
   ///////////// GET OPTIONS /////////////
   int MXSUB = mesh->xend - mesh->xstart + 1;
@@ -186,6 +179,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   BoutReal initial_tstep;
   OPTION(options, initial_tstep, TIMESTEP);
   ierr = TSSetInitialTimeStep(ts,simtime,initial_tstep);CHKERRQ(ierr);
+  next_output = simtime;
 
   // Maximum number of steps
   int mxstep;
@@ -206,9 +200,9 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   const PCType    pctype;
   PetscBool       pcnone=PETSC_TRUE,sundialstype;
 
-  ierr = TSSundialsSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
-  ierr = TSSundialsMonitorInternalSteps(ts,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = TSSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
 
+  ierr = TSMonitorSet(ts,PetscMonitor,this,PETSC_NULL);CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
   ierr = PetscTypeCompare((PetscObject)ts,TSSUNDIALS,&sundialstype);CHKERRQ(ierr);
@@ -512,12 +506,11 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon)
   BoutReal ftime;
 
   // Set when the next call to monitor is desired
-  next_time = simtime + tstep;
+  // next_output = simtime + tstep;
   monitor = mon; // Store the monitor function pointer
-  outputnext = false;
 
   PetscFunctionBegin;
-  PetscFunctionReturn(TSStep(ts,&steps,&ftime));
+  PetscFunctionReturn(TSSolve(ts,u,&ftime));
 }
 
 /**************************************************************************
@@ -546,33 +539,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
   VecGetArray(dudata, &dudata_array);
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
-
-  simtime = t; // Update the simulation time
-
-  // Decide whether to call the monitor
-  if(t >= next_time) {
-  //if(outputnext) {
-    // NOTE: Not using if(t >= next_time) to avoid floating-point comparisons
-
-
-    // Call the monitor function
-    /*
-    if(monitor(simtime, iteration, nout)) {
-      // User signalled to quit
-
-      // Write restart to a different file
-      char restartname[512];
-      sprintf(restartname, "data/BOUT.final.%d.pdb", MYPE);
-      restart.write(restartname);
-
-      output.write("Monitor signalled to quit. Returning\n");
-
-      PetscFunctionReturn(1);
-    }
-    */
-
-
-  }
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -828,7 +794,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
 
 #undef __FUNCT__  
 #define __FUNCT__ "solver_rhsjacobian"
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)                          
+PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
 {
   PetscErrorCode ierr;
 
@@ -876,102 +842,45 @@ PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,
 }
 //-----------------------------------------
 
-#undef __FUNCT__  
-#define __FUNCT__ "PreStep"
-PetscErrorCode PreStep(TS ts) 
+#undef __FUNCT__
+#define __FUNCT__ "PetscMonitor"
+PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx)
 {
-  PetscSolver *s;
-  PetscReal t, dt;
   PetscErrorCode ierr;
+  PetscSolver *s = (PetscSolver *)ctx;
+  PetscReal tfinal, dt;
+  Vec interpolatedX;
+  const PetscScalar *x;
+  static int i = 0;
 
   PetscFunctionBegin;
-  ierr = TSGetTime(ts, &t);CHKERRQ(ierr);
   ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
-  ierr = TSGetApplicationContext(ts, (void **)&s);CHKERRQ(ierr);
+  ierr = TSGetDuration(ts, PETSC_NULL, &tfinal);CHKERRQ(ierr);
 
-  // output.write("\nPre-update %e about to take a %e step\n", t, dt);
+  /* Duplicate the solution vector X into a work vector */
+  ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
+  while (s->next_output <= t && s->next_output <= tfinal) {
+    ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
 
-  // if(ts->max_time < s->nout * s->tstep)
-    // ts->max_time = ts->ptime + dt;
+    /* Place the interpolated values into the global variables */
+    ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);
+    s->load_vars((BoutReal *)x);
+    ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-
-
-  if((t + dt) >= s->next_time) {
-    // Going past next output time
-
-    dt = s->next_time - t;
-    s->outputnext = true;
-    if(s->monitor(ts->ptime, s->iteration-1, s->nout)) {
-      // User signalled to quit
-
-      // Write restart to a different file
-      char restartname[512];
-      sprintf(restartname, "data/BOUT.final.%d.pdb", s->MYPE);
-      s->restart.write(restartname);
+    if (s->monitor(simtime,i++,s->nout)) {
+      s->restart.write("%s/BOUT.final.%d.%s", s->restartdir.c_str(), s->MYPE, s->restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");
-
-      PetscFunctionReturn(1);
     }
-  }else
-    s->outputnext = false;
 
-  // output.write("\nPre-update %e changing timestep to %e\n", t, dt);
+    s->next_output += s->tstep;
+    simtime = s->next_output;
+  }
 
-  PetscFunctionReturn(0);
-}
-
-#undef __FUNCT__  
-#define __FUNCT__ "PostStep"
-PetscErrorCode PostStep(TS ts) 
-{
-  PetscSolver *s;
-  PetscReal t, dt;
-  PetscErrorCode ierr;
-
-  PetscFunctionBegin;
-  ierr = TSGetTime(ts, &t);CHKERRQ(ierr);
-  ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
-  ierr = TSGetApplicationContext(ts, (void **)&s);CHKERRQ(ierr);
-
-  // if(ts->max_time < s->nout * s->tstep)
-    // ts->max_time = ts->ptime + dt;
-
-  // ts->time_step = s->tstep;
-  s->iteration++; // Increment the 'iteration' number. keeps track of outputs
-    // Reset iteration and wall-time count
-    s->rhs_ncalls = 0;
-    s->rhs_wtime = 0.0;
-
-    s->outputnext = false;
-    // s->next_time = ts->ptime + s->tstep; // Set the next output time
-  // output.write("\nPost-update %e took %e timestep\n", t, dt);
-
-  // if((t + dt) >= s->next_time) {
-    // // Going past next output time
-
-    // dt = s->next_time - t;
-    // s->outputnext = true;
-    // if(s->monitor(s->simtime, s->iteration, s->nout)) {
-      // // User signalled to quit
-
-      // // Write restart to a different file
-      // char restartname[512];
-      // sprintf(restartname, "data/BOUT.final.%d.pdb", s->MYPE);
-      // s->restart.write(restartname);
-
-      // output.write("Monitor signalled to quit. Returning\n");
-
-      // PetscFunctionReturn(1);
-    // }
-  // }else
-    // s->outputnext = false;
-
-
+  /* Done with vector, so destroy it */
+  ierr = VecDestroy(&interpolatedX);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
-
-#undef __FUNCT__  
 
 #endif
