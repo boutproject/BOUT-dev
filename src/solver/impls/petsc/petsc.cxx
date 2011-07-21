@@ -138,11 +138,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
   ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
+  // Set user provided RHSFunction
+  // Need to duplicate the solution vector for the residual
   Vec rhs_vec;
   ierr = VecDuplicate(u,&rhs_vec);
-  //
-  // Set user provided RHSFunction
-  ierr = TSSetRHSFunction(ts,PETSC_NULL, solver_f,this);CHKERRQ(ierr);
+  ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
   ierr = VecDestroy(&rhs_vec);
 
   ///////////// GET OPTIONS /////////////
