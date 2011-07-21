@@ -101,7 +101,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       if (scorepos != string::npos) {
         size_t endscore = key.find_last_of("_");
 
-        if (scorepos != endscore) throw BoutException("\nMultiple '_' in command-line argument '%s'\n", key.c_str());
+        // if (scorepos != endscore) throw BoutException("\nMultiple '_' in command-line argument '%s'\n", key.c_str());
 
         string section = key.substr(0,scorepos);
         key = key.substr(scorepos+1);
