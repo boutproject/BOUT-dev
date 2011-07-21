@@ -198,31 +198,27 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   KSP             ksp;
   PC              pc;
   const PCType    pctype;
-  PetscBool       pcnone=PETSC_TRUE,sundialstype;
+  const TSType    tstype;
+  PetscBool       pcnone=PETSC_TRUE;
 
   ierr = TSSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
 
   ierr = TSMonitorSet(ts,PetscMonitor,this,PETSC_NULL);CHKERRQ(ierr);
-  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
-  ierr = PetscTypeCompare((PetscObject)ts,TSSUNDIALS,&sundialstype);CHKERRQ(ierr);
-  if (sundialstype) {
-    ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr);
-    ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
-  } else {
-    // This hardcodes matrix-free for now
-    ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
-    ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
-    ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
-    ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
-    ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
-  }
+  // This hardcodes matrix-free for now
+  ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
+  ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
+  ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
+  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+
   // Hardcode no preconditioner
   ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
   ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
-  ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
-  output.write("\tSundialstype %d, PCNONE %d\n",sundialstype,pcnone);
+  ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
+  output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
   if (pcnone) return(0);
 
