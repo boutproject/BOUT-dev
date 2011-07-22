@@ -491,6 +491,9 @@ int physics_init(bool restarting)
     }
   }
 
+  phi.setBoundary("phi");
+  Apar.setBoundary("Apar");
+
   return 0;
 }
 
@@ -546,12 +549,16 @@ void calc_aux() {
     phi -= tau_i * dn;
   }
   
+  phi.applyBoundary();
+
   ////////////////////////////////////////////
   // Helmholtz equation for Apar
   
   Field2D a = beta_e * (1./mu_e - 1./mu_i);
   Apar = invert_laplace(ApUe/mu_e - ApUi/mu_i, apar_flags, &a);
-  
+ 
+  Apar.applyBoundary();
+ 
   Ui = (ApUi - beta_e*Apar) / mu_i;
   Ue = (ApUe - beta_e*Apar) / mu_e;
   
