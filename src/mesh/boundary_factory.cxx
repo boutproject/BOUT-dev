@@ -239,24 +239,3 @@ BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s)
     return NULL;
   return it->second;
 }
-
-// Strips leading and trailing spaces from a string
-const string BoundaryFactory::trim(const string &str, const string &c)
-{
-  string s(str);
-  // Find the first character position after excluding leading blank spaces
-  size_t startpos = s.find_first_not_of(c);
-  // Find the first character position from reverse af
-  size_t endpos = s.find_last_not_of(c);
-
-  // if all spaces or empty, then return an empty string
-  if(( startpos == string::npos ) || ( endpos == string::npos ))
-  {
-    s = "";
-  }
-  else
-  {
-    s = s.substr(startpos, endpos-startpos+1);
-  }
-  return s;
-}
