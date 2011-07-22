@@ -1,6 +1,7 @@
 #include <globals.hxx>
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
+#include <utils.hxx>
 
 // Interface for option file parsers
 #include "options/optionparser.hxx"
@@ -68,13 +69,17 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
         buffer.append(buffer_peek);
         i = i+1;
       }
-    } else if (i < argc-1 && dashpos != string::npos) {
+    } else if (i < argc-1) {
       buffer_peek = argv[i+1];
       size_t test_next_for_dash = buffer_peek.find_first_of("-");
+      size_t test_next_for_equal_sign = buffer_peek.find_first_of("=");
 
-      if (test_next_for_dash == string::npos) {
+      if (test_next_for_dash == string::npos && test_next_for_equal_sign == string::npos) {
         buffer.append("=");
         buffer.append(buffer_peek);
+        i = i+1;
+      } else if (test_next_for_equal_sign != string::npos) {
+        buffer.append(buffer_peek.substr(test_next_for_equal_sign));
         i = i+1;
       }
     }
@@ -93,14 +98,14 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 
       if(startpos != endpos) throw BoutException("\tMultiple '=' in command-line argument '%s'\n", buffer.c_str());
 
-      string key = buffer.substr(0, startpos);
-      string value = buffer.substr(startpos+1);
+      string key = trim(buffer.substr(0, startpos));
+      string value = trim(buffer.substr(startpos+1));
 
       size_t scorepos = key.find_first_of("_");
 
       if (scorepos != string::npos) {
         string section = key.substr(0,scorepos);
-        key = key.substr(scorepos+1);
+        key = trim(key.substr(scorepos+1));
 
         options = options->getSection(section);
       }
