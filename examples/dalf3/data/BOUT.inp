@@ -1,0 +1,21 @@
+
+
+[dalf3]
+
+estatic = false
+ZeroElMass = false
+
+[apar]
+bndry_xin = none
+bndry_xout = none
+bndry_target = neumann
+
+[jpar]
+bndry_xin = none
+bndry_xout = none
+bndry_target = neumann
+
+[phi]
+bndry_xin = none
+bndry_xout = none
+bndry_target = neumann
