@@ -40,6 +40,7 @@
 #undef DATAFILE_ORIGIN
 
 #include <globals.hxx>
+#include <boutexception.hxx>
 
 #ifdef PDBF
 #include "pdb_format.hxx"
@@ -170,8 +171,10 @@ void Datafile::setLowPrecision()
   file->setLowPrecision();
 }
 
-void Datafile::add(int &i, const char *name, int grow)
-{
+void Datafile::add(int &i, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+
   VarStr<int> d;
 
   d.ptr = &i;
@@ -181,8 +184,10 @@ void Datafile::add(int &i, const char *name, int grow)
   int_arr.push_back(d);
 }
 
-void Datafile::add(BoutReal &r, const char *name, int grow)
-{
+void Datafile::add(BoutReal &r, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+  
   VarStr<BoutReal> d;
 
   d.ptr = &r;
@@ -192,8 +197,10 @@ void Datafile::add(BoutReal &r, const char *name, int grow)
   BoutReal_arr.push_back(d);
 }
 
-void Datafile::add(Field2D &f, const char *name, int grow)
-{
+void Datafile::add(Field2D &f, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+  
   VarStr<Field2D> d;
 
   d.ptr = &f;
@@ -203,8 +210,10 @@ void Datafile::add(Field2D &f, const char *name, int grow)
   f2d_arr.push_back(d);
 }
 
-void Datafile::add(Field3D &f, const char *name, int grow)
-{
+void Datafile::add(Field3D &f, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+  
   VarStr<Field3D> d;
 
   d.ptr = &f;
@@ -214,8 +223,10 @@ void Datafile::add(Field3D &f, const char *name, int grow)
   f3d_arr.push_back(d);
 }
 
-void Datafile::add(Vector2D &f, const char *name, int grow)
-{
+void Datafile::add(Vector2D &f, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+  
   VarStr<Vector2D> d;
 
   d.ptr = &f;
@@ -226,8 +237,10 @@ void Datafile::add(Vector2D &f, const char *name, int grow)
   v2d_arr.push_back(d);
 }
 
-void Datafile::add(Vector3D &f, const char *name, int grow)
-{
+void Datafile::add(Vector3D &f, const char *name, int grow) {
+  if(varAdded(string(name)))
+    throw BoutException("Variable '%s' already added to Datafile", name);
+  
   VarStr<Vector3D> d;
 
   d.ptr = &f;
@@ -238,8 +251,7 @@ void Datafile::add(Vector3D &f, const char *name, int grow)
   v3d_arr.push_back(d);
 }
 
-int Datafile::read(const char *format, ...)
-{
+int Datafile::read(const char *format, ...) {
   va_list ap;  // List of arguments
   
   if(format == (const char*) NULL)
@@ -392,7 +404,7 @@ bool Datafile::write(const string &filename, bool append)
 {
   if(!enabled)
     return true; // Just pretend it worked
-  
+
   // Record starting time
   BoutReal tstart = MPI_Wtime();
 
@@ -562,7 +574,7 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow)
     //output << "Datafile: unallocated: " << name << endl;
     return false; // No data allocated
   }
-  
+
   if(grow) {
     return file->write_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }else {
@@ -570,3 +582,35 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow)
   }
 }
 
+bool Datafile::varAdded(const string &name) {
+  for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+
+  for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+
+  for(std::vector< VarStr<Field2D> >::iterator it = f2d_arr.begin(); it != f2d_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+  
+  for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+  
+  for(std::vector< VarStr<Vector2D> >::iterator it = v2d_arr.begin(); it != v2d_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+
+  for(std::vector< VarStr<Vector3D> >::iterator it = v3d_arr.begin(); it != v3d_arr.end(); it++) {
+    if(name == it->name)
+      return true;
+  }
+  return false;
+}

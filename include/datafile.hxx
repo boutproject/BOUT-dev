@@ -111,6 +111,8 @@ class Datafile {
 
   bool write_f2d(const string &name, Field2D *f, bool grow);
   bool write_f3d(const string &name, Field3D *f, bool grow);
+
+  bool varAdded(const string &name); // Check if a variable has already been added
 };
 
 #endif // __DATAFILE_H__

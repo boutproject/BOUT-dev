@@ -178,6 +178,8 @@ protected:
   // Loading data from BOUT++ to/from solver
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
+
+  bool varAdded(const string &name); // Check if a variable has already been added
 };
 
 #endif // __SOLVER_H__
