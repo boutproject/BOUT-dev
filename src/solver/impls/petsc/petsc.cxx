@@ -48,6 +48,7 @@ PetscSolver::PetscSolver()
   this->J = 0;
   this->Jmf = 0;
   this->matfdcoloring = 0;
+  this->interpolate = PETSC_TRUE;
 }
 
 PetscSolver::~PetscSolver()
@@ -203,6 +204,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
   ierr = TSSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
 
+  ierr = PetscOptionsGetBool(PETSC_NULL,"-interpolate",&interpolate,PETSC_NULL);CHKERRQ(ierr);
   ierr = TSMonitorSet(ts,PetscMonitor,this,PETSC_NULL);CHKERRQ(ierr);
 
   // This hardcodes matrix-free for now
@@ -856,7 +858,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx)
   /* Duplicate the solution vector X into a work vector */
   ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
   while (s->next_output <= t && s->next_output <= tfinal) {
-    ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
+    if (s->interpolate) ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
 
     /* Place the interpolated values into the global variables */
     ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);

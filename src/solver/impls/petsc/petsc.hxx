@@ -84,6 +84,8 @@ class PetscSolver : public Solver {
 
   BoutReal next_output;  // When the monitor should be called next
 
+  PetscBool interpolate; // Whether to interpolate or not
+
   // Looping over variables. This should be in generic, but better...
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
