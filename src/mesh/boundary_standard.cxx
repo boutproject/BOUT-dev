@@ -63,6 +63,27 @@ void BoundaryNeumann::apply(Field3D &f)
       f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
 }
 
+void BoundaryConstGradient::apply(Field2D &f){
+  // Loop over all elements and set equal to the next point in
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    f[bndry->x][bndry->y] = 2.*f[bndry->x - bndry->bx][bndry->y - bndry->by] - f[bndry->x - 2*bndry->bx][bndry->y - 2*bndry->by];
+}
+
+void BoundaryConstGradient::apply(Field3D &f) {
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      f[bndry->x][bndry->y][z] = 2.*f[bndry->x - bndry->bx][bndry->y - bndry->by][z] - f[bndry->x - 2*bndry->bx][bndry->y - 2*bndry->by][z];
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryConstGradient\n";
+  }
+  return new BoundaryConstGradient(region);
+}
+
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args)

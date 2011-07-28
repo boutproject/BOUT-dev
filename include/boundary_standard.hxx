@@ -11,7 +11,7 @@ class BoundaryDirichlet : public BoundaryOp {
  public:
   BoundaryDirichlet() : val(0.) {}
   BoundaryDirichlet(const BoutReal setval): val(setval) {}
- BoundaryDirichlet(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryDirichlet(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
@@ -23,7 +23,16 @@ class BoundaryDirichlet : public BoundaryOp {
 class BoundaryNeumann : public BoundaryOp {
  public:
   BoundaryNeumann() {}
- BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
+class BoundaryConstGradient : public BoundaryOp {
+ public:
+  BoundaryConstGradient() {}
+  BoundaryConstGradient(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);

@@ -309,6 +309,7 @@ int bout_init(int argc, char **argv)
     BoundaryFactory* bndry = BoundaryFactory::getInstance();
     bndry->add(new BoundaryDirichlet(), "dirichlet");
     bndry->add(new BoundaryNeumann(), "neumann");
+    bndry->add(new BoundaryConstGradient(), "constgradient");
     bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
     bndry->add(new BoundaryConstLaplace(), "constlaplace");
     bndry->addMod(new BoundaryRelax(10.), "relax");
