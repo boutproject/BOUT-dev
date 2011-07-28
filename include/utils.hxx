@@ -75,4 +75,8 @@ const string lowercasequote(const string &str);
 std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems);
 std::list<std::string> strsplit(const std::string &s, char delim);
 
+string trim(const string &, const string &c=" \t\r");
+string trimLeft(const string &, const string &c=" \t");
+string trimRight(const string &, const string &c=" \t\r");
+string trimComments(const string &, const string &c="#;");
 #endif // __UTILS_H__

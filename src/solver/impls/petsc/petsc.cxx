@@ -1,5 +1,5 @@
 /**************************************************************************
- * Interface to PVODE solver
+ * Interface to PETSc solver
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -26,6 +26,8 @@
 #include "petsc.hxx"
 
 #ifdef BOUT_HAS_PETSC_DEV
+
+#include <private/tsimpl.h>
 
 #include <globals.hxx>
 
@@ -78,10 +80,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   BoutReal        precon_tol;
   MPI_Comm        comm = PETSC_COMM_WORLD;
 
-  // Save NOUT and TIMESTEP for use later
-  nout = NOUT;
-  tstep = TIMESTEP;
-
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising PETSc solver");
 #endif
@@ -90,6 +88,13 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
+
+  // Save NOUT and TIMESTEP for use later
+  nout = NOUT;
+  tstep = TIMESTEP;
+
+  // Set the rhs solver function
+  // func = f;
 
   PetscInt n2d = n2Dvars();       // Number of 2D variables
   PetscInt n3d = n3Dvars();       // Number of 3D variables
@@ -120,41 +125,25 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
 
   PetscBool       J_load;
-  MatStructure    J_structure; 
+  MatStructure    J_structure;
   PetscMPIInt     rank;
   char            load_file[PETSC_MAX_PATH_LEN];  /* jacobian input file name */
   PetscBool       J_write=PETSC_FALSE,J_slowfd=PETSC_FALSE;
-  PetscBool       use_petscts=PETSC_TRUE,use_sundials=PETSC_FALSE;
   ISColoring      iscoloring;
 
   // Create timestepper
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-use_PetscSundials",&use_sundials,PETSC_NULL);CHKERRQ(ierr);
-  if (use_sundials){
-    use_petscts=PETSC_FALSE;
-    if (!rank) printf("        use PETSc Sundials ...\n");
-  } else {
-    if (!rank) printf("        use PETSc TS ...\n");
-  }
-
   ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
+  ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
+  ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
   // Set user provided RHSFunction
-  if (use_petscts){
-    ierr = TSSetType(ts,TSGL);CHKERRQ(ierr);
-    ierr = TSSetIFunction(ts,solver_if,this);CHKERRQ(ierr);
-  } else {
-    ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
-    ierr = TSSetRHSFunction(ts,solver_f,this);CHKERRQ(ierr); // needed for ts_type=sundials
-  }
-
-  //Sets the general-purpose update function called at the beginning of every time step. 
-  //This function can change the time step.
-  // TSSetPreStep(ts, PreStep);
-
-  //Sets the general-purpose update function called after every time step -- Copy variables?
-  // TSSetPostStep(ts, PostStep);
+  // Need to duplicate the solution vector for the residual
+  Vec rhs_vec;
+  ierr = VecDuplicate(u,&rhs_vec);
+  ierr = TSSetRHSFunction(ts,rhs_vec,solver_f,this);CHKERRQ(ierr);
+  ierr = VecDestroy(&rhs_vec);
 
   ///////////// GET OPTIONS /////////////
   int MXSUB = mesh->xend - mesh->xstart + 1;
@@ -170,28 +159,27 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   OPTION(options, precon_tol, 1.0e-4);
 
   // Set Sundials tolerances
-  if (use_sundials){
-    BoutReal abstol, reltol;
-    options->get("ATOL", abstol, 1.0e-12);
-    options->get("RTOL", reltol, 1.0e-5);
-    ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
+  BoutReal abstol, reltol;
+  options->get("ATOL", abstol, 1.0e-12);
+  options->get("RTOL", reltol, 1.0e-5);
+  ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
-    // Select Sundials Adams-Moulton or BDF method
-    bool adams_moulton;
-    OPTION(options, adams_moulton, false);
-    if (adams_moulton) {
-      output.write("\tUsing Adams-Moulton implicit multistep method\n");
-      ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
-    } else {
-      output.write("\tUsing BDF method\n");
-      ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
-    }
+  // Select Sundials Adams-Moulton or BDF method
+  bool adams_moulton;
+  OPTION(options, adams_moulton, false);
+  if (adams_moulton) {
+    output.write("\tUsing Adams-Moulton implicit multistep method\n");
+    ierr = TSSundialsSetType(ts, SUNDIALS_ADAMS);CHKERRQ(ierr);
+  } else {
+    output.write("\tUsing BDF method\n");
+    ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
 
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal initial_tstep;
   OPTION(options, initial_tstep, TIMESTEP);
   ierr = TSSetInitialTimeStep(ts,simtime,initial_tstep);CHKERRQ(ierr);
+  next_output = simtime;
 
   // Maximum number of steps
   int mxstep;
@@ -209,18 +197,35 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   SNES            snes;
   KSP             ksp;
   PC              pc;
-  PetscBool       pcnone=PETSC_FALSE;
+  const PCType    pctype;
+  const TSType    tstype;
+  PetscBool       pcnone=PETSC_TRUE;
 
-  // set default ksp and pc
-  if (use_sundials){
-    ierr = TSSundialsGetPC(ts,&pc);CHKERRQ(ierr);
-    ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
-  }
+  ierr = TSSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
+
+  ierr = TSMonitorSet(ts,PetscMonitor,this,PETSC_NULL);CHKERRQ(ierr);
+
+  // This hardcodes matrix-free for now
+  ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
+  ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
+  ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
+  ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
+
+  // Hardcode no preconditioner
+  ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
+  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
+
+  ierr = PCGetType(pc,&pctype);CHKERRQ(ierr);
+  ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
+  output.write("\tTS type %s, PC type %s\n",tstype,pctype);
+
+  if (pcnone) return(0);
 
   // Create Jacobian matrix to be used by preconditioner
   output.write("\tGet Jacobian matrix .... tstart %g, J localsize %d\n",simtime,local_N);
   ierr = PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
-  if(J_load){
+  if(J_load) {
     PetscViewer     fd;
     if (!rank){
       ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
@@ -271,20 +276,10 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
-    if (use_petscts){
-      // use -snes_mf_operator for mat*vec in KSP iterations 
-      ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
-      ierr = TSSetUp(ts);CHKERRQ(ierr);            // enables queries and MatCreateSNESMF() below
-      ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
-      ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
-    } else {
-      ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
-      ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
-      if (pcnone) return(0);
-    }
+
 
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
-    if (J_slowfd){ // create Jacobian matrix by slow fd
+    if (J_slowfd) { // create Jacobian matrix by slow fd
       ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
       if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);}
       MatStructure flg;
@@ -470,8 +465,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     }
   }
 
-  ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
-
   // Test TSComputeRHSJacobian()
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
   ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
@@ -509,12 +502,11 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon)
   BoutReal ftime;
 
   // Set when the next call to monitor is desired
-  next_time = simtime + tstep;
+  // next_output = simtime + tstep;
   monitor = mon; // Store the monitor function pointer
-  outputnext = false;
 
   PetscFunctionBegin;
-  PetscFunctionReturn(TSStep(ts,&steps,&ftime));
+  PetscFunctionReturn(TSSolve(ts,u,&ftime));
 }
 
 /**************************************************************************
@@ -543,39 +535,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
   VecGetArray(dudata, &dudata_array);
   save_derivs(dudata_array);
   VecRestoreArray(dudata, &dudata_array);
-
-  simtime = t; // Update the simulation time
-
-  // Decide whether to call the monitor
-  if(t >= next_time) {
-  //if(outputnext) {
-    // NOTE: Not using if(t >= next_time) to avoid floating-point comparisons
-
-    iteration++; // Increment the 'iteration' number. keeps track of outputs
-
-    // Call the monitor function
-    /*
-    if(monitor(simtime, iteration, nout)) {
-      // User signalled to quit
-
-      // Write restart to a different file
-      char restartname[512];
-      sprintf(restartname, "data/BOUT.final.%d.pdb", MYPE);
-      restart.write(restartname);
-
-      output.write("Monitor signalled to quit. Returning\n");
-
-      PetscFunctionReturn(1);
-    }
-    */
-
-    // Reset iteration and wall-time count
-    rhs_ncalls = 0;
-    rhs_wtime = 0.0;
-
-    outputnext = false;
-    next_time = simtime + tstep; // Set the next output time
-  }
 
 #ifdef CHECK
   msg_stack.pop(msg_point);
@@ -831,7 +790,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
 
 #undef __FUNCT__  
 #define __FUNCT__ "solver_rhsjacobian"
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)                          
+PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
 {
   PetscErrorCode ierr;
 
@@ -879,39 +838,45 @@ PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,
 }
 //-----------------------------------------
 
-#undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::PreUpdate"
-PetscErrorCode PreStep(TS ts) 
+#undef __FUNCT__
+#define __FUNCT__ "PetscMonitor"
+PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx)
 {
-  PetscSolver *s;
-  PetscReal t, dt;
   PetscErrorCode ierr;
+  PetscSolver *s = (PetscSolver *)ctx;
+  PetscReal tfinal, dt;
+  Vec interpolatedX;
+  const PetscScalar *x;
+  static int i = 0;
 
   PetscFunctionBegin;
-  ierr = TSGetTime(ts, &t);CHKERRQ(ierr);
   ierr = TSGetTimeStep(ts, &dt);CHKERRQ(ierr);
-  ierr = TSGetApplicationContext(ts, (void **)&s);CHKERRQ(ierr);
+  ierr = TSGetDuration(ts, PETSC_NULL, &tfinal);CHKERRQ(ierr);
 
-  output.write("Pre-update %e\n", t);
+  /* Duplicate the solution vector X into a work vector */
+  ierr = VecDuplicate(X,&interpolatedX);CHKERRQ(ierr);
+  while (s->next_output <= t && s->next_output <= tfinal) {
+    ierr = TSInterpolate(ts,s->next_output,interpolatedX);CHKERRQ(ierr);
 
-  if((t + dt) >= s->next_time) {
-    // Going past next output time
+    /* Place the interpolated values into the global variables */
+    ierr = VecGetArrayRead(interpolatedX,&x);CHKERRQ(ierr);
+    s->load_vars((BoutReal *)x);
+    ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    dt = s->next_time - t;
-    s->outputnext = true;
-  }else
-    s->outputnext = false;
+    if (s->monitor(simtime,i++,s->nout)) {
+      s->restart.write("%s/BOUT.final.%d.%s", s->restartdir.c_str(), s->MYPE, s->restartext.c_str());
+
+      output.write("Monitor signalled to quit. Returning\n");
+    }
+
+    s->next_output += s->tstep;
+    simtime = s->next_output;
+  }
+
+  /* Done with vector, so destroy it */
+  ierr = VecDestroy(&interpolatedX);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
-
-#undef __FUNCT__  
-#define __FUNCT__ "PetscSolver::PostUpdate"
-PetscErrorCode PostStep(TS ts) 
-{
-  PetscFunctionReturn(0);
-}
-
-#undef __FUNCT__  
 
 #endif

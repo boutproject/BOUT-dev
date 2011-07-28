@@ -28,6 +28,7 @@ autom4te.cache/
 include/pvode
 lib/
 data-*
+data.*
 
 #example runs
 gas_compress
@@ -36,3 +37,4 @@ ue_bmark
 split_operator
 jorek_compare
 lapd_drift
+gem

@@ -44,7 +44,7 @@ using namespace std;
 
 /// Class for reading INI style configuration files
 /*!
- * 
+ *
  */
 class OptionINI : public OptionParser {
 public:
@@ -53,13 +53,9 @@ public:
 
   /// Read options from grid file
   void read(Options *options, const string &filename);
-  
+
 private:
-  
-  void trim(string &, const string &c=" \t\r");
-  void trimLeft(string &, const string &c=" \t");
-  void trimRight(string &, const string &c=" \t\r");
-  void trimComments(string &);
+
   void parse(const string &, string &, string &);
   string getNextLine(ifstream &);
 };

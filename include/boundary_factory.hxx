@@ -18,9 +18,9 @@ class BoundaryFactory {
   ~BoundaryFactory();
   /// Return a pointer to the only instance
   static BoundaryFactory* getInstance();
-  
+
   static void cleanup(); ///< Frees all memory
-  
+
   /// Create a boundary operation object
   BoundaryOp* create(const string &name, BoundaryRegion *region);
   BoundaryOp* create(const char* name, BoundaryRegion *region);
@@ -35,11 +35,11 @@ class BoundaryFactory {
   void add(BoundaryOp* bop, const char *name);
   void addMod(BoundaryModifier* bmod, const string &name);
   void addMod(BoundaryModifier* bmod, const char *name);
-  
+
  private:
   BoundaryFactory() {} // Prevent instantiation of this class
   static BoundaryFactory* instance; ///< The only instance of this class (Singleton)
-  
+
   // Database of available boundary conditions and modifiers
   map<string, BoundaryOp*> opmap;
   map<string, BoundaryModifier*> modmap;
@@ -47,8 +47,6 @@ class BoundaryFactory {
   // Functions to look up operations and modifiers
   BoundaryOp* findBoundaryOp(const string &s);
   BoundaryModifier* findBoundaryMod(const string &s);
-
-  const string trim(const string &s, const string &c = " \t\n\r");
 };
 
 #endif // __BNDRY_FACTORY_H__

@@ -66,6 +66,7 @@ filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 # Solver settings
 
 [solver]
+type=petsc
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-10 # absolute tolerance

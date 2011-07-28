@@ -1,5 +1,5 @@
 /**************************************************************************
- * Interface to PVODE solver
+ * Interface to PETSc 3.1 solver
  * NOTE: This class needs tidying, generalising to use FieldData interface
  *
  **************************************************************************

@@ -57,7 +57,7 @@ BoutReal **rmatrix(int xsize, int ysize)
 {
   long i;
   BoutReal **m;
-  
+
   if((m = (BoutReal**) malloc(xsize*sizeof(BoutReal*))) == (BoutReal**) NULL) {
     printf("Error: could not allocate memory:%d\n", xsize);
     exit(1);
@@ -78,7 +78,7 @@ int **imatrix(int xsize, int ysize)
 {
   long i;
   int **m;
-  
+
   if((m = (int**) malloc(xsize*sizeof(int*))) == (int**) NULL) {
     printf("Error: could not allocate memory:%d\n", xsize);
     exit(1);
@@ -171,7 +171,7 @@ int ROUND(BoutReal x)
 void SWAP(BoutReal &a, BoutReal &b)
 {
   BoutReal tmp;
-  
+
   tmp = a;
   a = b;
   b = tmp;
@@ -180,7 +180,7 @@ void SWAP(BoutReal &a, BoutReal &b)
 void SWAP(BoutReal* &a, BoutReal* &b)
 {
   BoutReal *tmp;
-  
+
   tmp = a;
   a = b;
   b = tmp;
@@ -189,7 +189,7 @@ void SWAP(BoutReal* &a, BoutReal* &b)
 void SWAP(dcomplex &a, dcomplex &b)
 {
   dcomplex tmp;
-  
+
   tmp = a;
   a = b;
   b = tmp;
@@ -279,7 +279,7 @@ char* copy_string(const char* s)
 {
   char *s2;
   int n;
-  
+
   if(s == NULL)
     return NULL;
 
@@ -294,7 +294,7 @@ char* copy_string(const char* s)
 char *strconcat(const char* left, const char *right)
 {
   static char buffer[128];
-  
+
   snprintf(buffer, 128, "%s%s", left, right);
   return buffer;
 }
@@ -303,7 +303,7 @@ char *strconcat(const char* left, const char *right)
 const string lowercase(const string &str)
 {
   string strlow(str);
-  
+
   std::transform(strlow.begin(), strlow.end(), strlow.begin(), ::tolower);
   return strlow;
 }
@@ -312,7 +312,7 @@ const string lowercase(const string &str)
 const string lowercasequote(const string &str)
 {
   string strlow(str);
-  
+
   bool quote = false, dquote = false;
   for(int i=0;i<strlow.length(); i++) {
     if(strlow[i] == '\'') {
@@ -342,3 +342,30 @@ std::list<std::string> strsplit(const std::string &s, char delim)
     std::list<std::string> elems;
     return strsplit(s, delim, elems);
 }
+
+// Strips leading and trailing spaces from a string
+std::string trim(const std::string &s, const std::string &c)
+{
+  return trimLeft(trimRight(s, c), c);
+}
+
+std::string trimRight(const std::string &s, const std::string &c)
+{
+  std::string str(s);
+  return str.erase(s.find_last_not_of(c)+1);
+}
+
+std::string trimLeft(const std::string &s, const std::string &c)
+{
+  std::string str(s);
+  return str.erase(0, s.find_first_not_of(c));
+}
+
+// Strips the comments from a string
+// This is the compliment of trimLeft
+std::string trimComments(const std::string &s, const std::string &c)
+{
+  std::string str(s);
+  return str.substr(0, s.find_first_of(c));
+}
+
