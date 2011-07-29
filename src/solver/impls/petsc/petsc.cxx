@@ -222,6 +222,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
   output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
+  ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
   if (pcnone) return(0);
 
   // Create Jacobian matrix to be used by preconditioner
@@ -309,6 +310,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       // are the size
       PetscInt starts[3], dims[3];
       starts[0] = starts[1] = starts[2] = 0;
+
+      // Only for advect1d, need to figure this out
+      nx = 5;
+      ny = 128;
+
       dims[0] = nx;
       dims[1] = ny;
       dims[2] = nz;
@@ -328,6 +334,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       // Need to figure out how to tell if y is periodic
       bool yperiodic = true;
 
+      printf(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
       for(k=0;k<nz;k++) {
         cout << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
@@ -410,6 +417,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
               stencil[d].c = dof;
             }
             ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
+            printf("stencil: %d, %d, %d; -- %d %d %d %d\n",gi,gj,k,stencil[0].i,stencil[0].j,stencil[0].k,stencil[0].c);
 
           }
           // cout << endl;
