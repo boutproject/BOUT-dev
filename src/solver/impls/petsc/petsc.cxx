@@ -207,14 +207,14 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = PetscOptionsGetBool(PETSC_NULL,"-interpolate",&interpolate,PETSC_NULL);CHKERRQ(ierr);
   ierr = TSMonitorSet(ts,PetscMonitor,this,PETSC_NULL);CHKERRQ(ierr);
 
-  // This hardcodes matrix-free for now
+  // Default to matrix-free
   ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
   ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
   ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  // Hardcode no preconditioner
+  // Default to no preconditioner
   ierr = PCSetType(pc,PCNONE);CHKERRQ(ierr);
   ierr = TSSetFromOptions(ts);CHKERRQ(ierr);   // enable PETSc runtime options
 
@@ -229,13 +229,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = PetscOptionsGetString(PETSC_NULL,"-J_load",load_file,PETSC_MAX_PATH_LEN-1,&J_load);CHKERRQ(ierr);
   if(J_load) {
     PetscViewer     fd;
-    if (!rank){
-      ierr = PetscPrintf(PETSC_COMM_SELF,"load Jmat ...\n");CHKERRQ(ierr);
-    }
+
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"load Jmat ...\n");CHKERRQ(ierr);
     ierr = PetscViewerBinaryOpen(comm,load_file,FILE_MODE_READ,&fd);CHKERRQ(ierr);
     ierr = MatLoad(J, fd);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&fd);CHKERRQ(ierr);
-
   } else { // create Jacobian matrix
 
     PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
@@ -248,9 +246,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     PetscInt nz  = mesh->ngz - 1;
 
     /* number of degrees (variables) at each grid point */
-    if(n2Dvars() != 0) {
-      bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
-    }
+    if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
 
     PetscInt dof = n3Dvars();
 
@@ -265,7 +261,9 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
+
     cout << "n: " << n << "\t\t local_N: " << local_N << endl;
+
     ierr = MatSetSizes(J,local_N, local_N, PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
@@ -278,33 +276,18 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
-
-
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
     if (J_slowfd) { // create Jacobian matrix by slow fd
-      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
-      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);}
       MatStructure flg;
-      ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
-      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J by slow fd is done.\n");CHKERRQ(ierr);}
+
+      ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);
+
+      ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
-
-      // Create coloring context of J to be used during time stepping 
-      ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
-      ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-      ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-      ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
-
-      ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))SNESTSFormFunction,ts);CHKERRQ(ierr);
-      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobianColor,(MatFDColoring)matfdcoloring);CHKERRQ(ierr);
-
-      //Test J with coloring
-      ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
-      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J by coloring is done...\n");CHKERRQ(ierr);}
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
-
     } else { // get sparse pattern of the Jacobian
-      ierr = PetscPrintf(PETSC_COMM_SELF,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
@@ -313,17 +296,13 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       MatStencil stencil[cols];
 
       PetscScalar one[preallocblock];
-      for (i = 0; i < preallocblock; i++) {
-        one[i] = 1.0;
-      }
+      for (i = 0; i < preallocblock; i++) one[i] = 1.0;
 
       // Change this block for parallel. Currently this is just the identity
       // map since advect1d has no branch cuts (and we are only testing
       // single processor now)
       PetscInt ltog_array[n];
-      for (i = 0; i < n; i++) {
-        ltog_array[i] = i;
-      }
+      for (i = 0; i < n; i++) ltog_array[i] = i;
 
       // Also change this for parallel. This defines the 'global stencil'
       // where starts are the starting index in each dimension and dims
@@ -442,8 +421,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
       //J(2585:n-1,:) has no entry !!!
-      if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"Sparse pattern:\n");}
-      ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
+      // ierr = PetscPrintf(PETSC_COMM_WORLD,"Sparse pattern:\n");
+      // ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
       // bout_error("stopping");
       ierr = ISLocalToGlobalMappingDestroy(&ltog);CHKERRQ(ierr);
       ierr = ISLocalToGlobalMappingDestroy(&ltogb);CHKERRQ(ierr);
@@ -451,37 +430,45 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       //ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,this);CHKERRQ(ierr); // remove!!!
       // Create coloring context of J to be used during time stepping 
       ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
-      ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-      ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-      ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
+      // ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+      // ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
+      // ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
 
-      ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))SNESTSFormFunction,ts);CHKERRQ(ierr);
-      ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+      // ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))SNESTSFormFunction,ts);CHKERRQ(ierr);
+      // ierr = SNESSetJacobian(snes,Jmf,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
       /*
-        if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"SNESComputeJacobian J by color...\n");CHKERRQ(ierr);}
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"SNESComputeJacobian J by color...\n");CHKERRQ(ierr);
         MatStructure flg;
         ierr = SNESComputeJacobian(snes,u,&J,&J,&flg);CHKERRQ(ierr);
-        if (!rank){ierr = PetscPrintf(PETSC_COMM_SELF,"compute J is done.\n");CHKERRQ(ierr);}
+        ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J is done.\n");CHKERRQ(ierr);
         ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
       */
     }
   }
+
+  // Create coloring context of J to be used during time stepping 
+  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
+  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
+  ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
+  ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
+  ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
 
   // Test TSComputeRHSJacobian()
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
   ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
   if (J_write){
     PetscViewer    viewer;
-    ierr = PetscPrintf(comm,"\n[%d] Test TSComputeRHSJacobian() ...\n",rank);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"\n[%d] Test TSComputeRHSJacobian() ...\n",rank);
     ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&J_structure);CHKERRQ(ierr);
     ierr = PetscSynchronizedPrintf(comm, "[%d] TSComputeRHSJacobian is done\n",rank);
     ierr = PetscSynchronizedFlush(comm);CHKERRQ(ierr);
-    if (J_slowfd){
-      ierr = PetscPrintf(comm,"[%d] writing J in binary to data_petsc/Jrhs_dense.dat...\n",rank);CHKERRQ(ierr);
-      ierr = PetscViewerBinaryOpen(comm,"data_petsc/Jrhs_dense.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
+    if (J_slowfd) {
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data/Jrhs_dense.dat...\n",rank);CHKERRQ(ierr);
+      ierr = PetscViewerBinaryOpen(comm,"data/Jrhs_dense.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     } else {
-      ierr = PetscPrintf(comm,"[%d] writing J in binary to data_petsc/Jrhs_sparse.dat...\n",rank);CHKERRQ(ierr);
-      ierr = PetscViewerBinaryOpen(comm,"data_petsc/Jrhs_sparse.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"[%d] writing J in binary to data/Jrhs_sparse.dat...\n",rank);CHKERRQ(ierr);
+      ierr = PetscViewerBinaryOpen(comm,"data/Jrhs_sparse.dat",FILE_MODE_WRITE,&viewer);CHKERRQ(ierr);
     }
     ierr = MatView(J,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
