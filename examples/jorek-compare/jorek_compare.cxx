@@ -32,7 +32,7 @@ Field3D tau_e; // electron collision time
 Field2D eta0;  // Resistivity
 Field3D eta;
 
-BoutReal viscos_par, viscos_perp; // Viscosity coefficients
+BoutReal viscos_par, viscos_perp, viscos_coll; // Viscosity coefficients
 
 int phi_flags;
 
@@ -83,7 +83,7 @@ int physics_init(bool restarting) {
   // Load data from the grid
 
   // Load 2D profiles
-  if(mesh->get(J0, "Jpar0"));    // A / m^2
+  mesh->get(J0, "Jpar0");    // A / m^2
   
   if(mesh->get(rho0, "Ni0")) {
     output << "Warning: No density profile available\n";
@@ -156,6 +156,8 @@ int physics_init(bool restarting) {
     options->get("viscos_par", tmp, -1.0);
     viscos_par = tmp;
   }else mesh->get(viscos_par, "viscos_par");
+
+  OPTION(options, viscos_coll, -1.0);
 
   // Load curvature term
   b0xcv.covariant = false; // Read contravariant components
@@ -598,6 +600,10 @@ int physics_run(BoutReal t) {
     
     if(viscos_perp > 0.0)
       ddt(U) += viscos_perp * Delp2(U) / rhot;     // Perpendicular viscosity
+    
+    // Collisional viscosity
+    if(viscos_coll > 0.0)
+      ddt(U) += viscos_coll / MU0 * eta * Delp2(U) / rhot;
   }
   
   if(low_pass_z > 0)
