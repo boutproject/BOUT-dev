@@ -285,6 +285,15 @@ else
   ] )
 fi
 
+# Test if FFTW_ROOT is set
+if test "$FFTPATH" = ""
+then
+  if test "$FFTW_ROOT" != ""
+  then
+    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h $FFTW_ROOT/lib/libfftw3.a , FFTPATH=$FFTW_ROOT, )
+  fi
+fi
+
 # Try some known paths
 if test "$FFTPATH" = ""
 then
