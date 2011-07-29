@@ -32,7 +32,8 @@ Field3D tau_e; // electron collision time
 Field2D eta0;  // Resistivity
 Field3D eta;
 
-BoutReal viscos_par, viscos_perp; // Viscosity coefficients
+BoutReal viscos_par, viscos_perp, viscos_coll; // Viscosity coefficients
+BoutReal hyperresist; // Hyper-resistivity coefficient
 
 int phi_flags;
 
@@ -83,7 +84,7 @@ int physics_init(bool restarting) {
   // Load data from the grid
 
   // Load 2D profiles
-  if(mesh->get(J0, "Jpar0"));    // A / m^2
+  mesh->get(J0, "Jpar0");    // A / m^2
   
   if(mesh->get(rho0, "Ni0")) {
     output << "Warning: No density profile available\n";
@@ -157,6 +158,8 @@ int physics_init(bool restarting) {
     viscos_par = tmp;
   }else mesh->get(viscos_par, "viscos_par");
 
+  OPTION(options, viscos_coll, -1.0);
+
   // Load curvature term
   b0xcv.covariant = false; // Read contravariant components
   mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
@@ -183,6 +186,8 @@ int physics_init(bool restarting) {
   OPTION(options, flux_method,         false);
   
   OPTION(options, jpar_bndry_width,    -1);
+
+  OPTION(options, hyperresist,         -1);
 
   OPTION(options, electron_density,    false);
   OPTION(options, vorticity_momentum,  false);
@@ -598,6 +603,10 @@ int physics_run(BoutReal t) {
     
     if(viscos_perp > 0.0)
       ddt(U) += viscos_perp * Delp2(U) / rhot;     // Perpendicular viscosity
+    
+    // Collisional viscosity
+    if(viscos_coll > 0.0)
+      ddt(U) += viscos_coll / MU0 * eta * Delp2(U) / rhot;
   }
   
   if(low_pass_z > 0)
@@ -613,6 +622,7 @@ int physics_run(BoutReal t) {
   ddt(Vpar) = -Grad_par_CtoL(P) + b0xGrad_dot_Grad(Apar, P0) / B0;
   if(nonlinear) {
     ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
+    ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar); // Parallel advection
     ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
   }
   
@@ -628,6 +638,11 @@ int physics_run(BoutReal t) {
             // -Grad_parP(phi, CELL_CENTRE)
              -Grad_par_CtoL(phi)
              - eta*Jpar;
+  
+  if(hyperresist > 0.0) {
+    ddt(Apar) += eta*hyperresist * Delp2(Jpar);
+  }
+
   if(nonlinear)
     ddt(Apar) += b0xGrad_dot_Grad(Apar, phi) / B0;
 

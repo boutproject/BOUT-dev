@@ -1,7 +1,24 @@
+/****************************************************************
+ * DALF3 model
+ * 
+ * Four-field model for electron pressure, vorticity, A|| and
+ * parallel velocity
+ *
+ * References:
+ *
+ *   B.Scott, Plasma Phys. Contr. Fusion 39 (1997) 1635
+ *
+ *   B.Scott, "Drift Wave versus Interchange Turbulence in
+ *             Tokamak Geometry: Linear versus Nonlinear
+ *             Mode Structure"
+ *             arXiv:physics/0207126  Feb 2001
+ *
+ ****************************************************************/
 
 #include <bout.hxx>
 #include <boutmain.hxx>
 
+#include <utils.hxx>
 #include <invert_laplace.hxx>
 #include <math.h>
 
@@ -31,14 +48,15 @@ FieldGroup comms;
 
 int physics_init(bool restarting) {
   
-  //////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////
   // Load data from the grid
   
   GRID_LOAD(Jpar0);
   
   Field2D Ni0, Te0, Ti0;
   GRID_LOAD3(Ni0, Te0, Ti0);
-  Pe0 = Charge * 1e20*Ni0 * (Te0 + Ti0); // Pressure in Pascals
+  Ni0 *= 1e20; // To m^-3
+  Pe0 = Charge * Ni0 * (Te0 + Ti0); // Pressure in Pascals
   SAVE_ONCE(Pe0);
   
   // Load curvature term
@@ -61,8 +79,7 @@ int physics_init(bool restarting) {
   mesh->get(B0,   "Bxy");  // T
   mesh->get(hthe, "hthe"); // m
   mesh->get(I,    "sinty");// m^-2 T^-1
-
-  //////////////////////////////////////////////////////////////
+  
   // SHIFTED RADIAL COORDINATES
 
   if(mesh->ShiftXderivs) {
@@ -76,7 +93,35 @@ int physics_init(bool restarting) {
       I = 0.0;  // I disappears from metric
     }
   }
+  
+  ///////////////////////////////////////////////////
+  // Normalisation
+  
+  BoutReal Tenorm = max(Te0, true);
+  BoutReal Nenorm = max(Ni0, true);
+  BoutReal Bnorm = max(B0, true);
+  BoutReal qnorm = 5; // Typical q
+  BoutReal Rnorm = max(Rxy, true);
 
+  // Perpendicular and parallel length scales
+  BoutReal Lperp = 1.;
+  BoutReal Lpar = 2.*PI*qnorm*Rnorm;
+
+  // Sound speed in m/s
+  BoutReal Cs = sqrt(Charge*Tenorm / Mi);
+  
+  // drift scale
+  BoutReal rho_s = Cs * Mi / (Charge * Bnorm);
+  
+  eps_hat = SQ(qnorm*Rnorm / Lperp);
+  beta_hat = 4.e-7*PI * Tenorm * Nenorm / (Bnorm*Bnorm) * eps_hat;
+  mu_hat = Me / Mi * eps_hat;
+  
+
+  Jpar0 /= Nenorm*Charge*Cs;
+  
+  
+  ///////////////////////////////////////////////////
   // CALCULATE METRICS
   
   mesh->g11 = (Rxy*Bpxy)^2;
