@@ -1,0 +1,127 @@
+%% Manual / derivations for preconditioning in BOUT++
+
+\documentclass[12pt]{article}
+\usepackage[nofoot]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{amsfonts}
+
+\usepackage{listings}
+\usepackage{color}
+\usepackage{textcomp}
+\definecolor{listinggray}{gray}{0.9}
+\definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
+\lstset{
+	backgroundcolor=\color{lbcolor},
+        language=C++,
+	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+	identifierstyle=\ttfamily,
+	commentstyle=\color[rgb]{0.133,0.545,0.133},
+	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+	showstringspaces=false,
+	basicstyle=\small,
+	numberstyle=\footnotesize,
+	numbers=left,
+	stepnumber=1,
+	numbersep=10pt,
+	tabsize=2,
+	breaklines=true,
+	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+	breakatwhitespace=false,
+	aboveskip={1.5\baselineskip},
+        columns=fixed,
+        upquote=true,
+        extendedchars=true,
+        morekeywords={Field2D,Field3D,Vector2D,Vector3D,real,FieldGroup},
+}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+%% SET HEADERS AND FOOTERS
+
+\pagestyle{fancy}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+  \markright{\thesection.\ #1}}
+\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+                                        % pages and right on odd pages 
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
+
+%% commands for boxes with important notes
+\newlength{\notewidth}
+\addtolength{\notewidth}{\textwidth}
+\addtolength{\notewidth}{-3.\parindent}
+\newcommand{\note}[1]{
+\fbox{
+\begin{minipage}{\notewidth}
+{\bf NOTE}: #1
+\end{minipage}
+}}
+
+\newcommand{\pow}{\ensuremath{\wedge} }
+
+\newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
+\newcommand{\Vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
+\newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
+\newcommand{\Bvec}{\ensuremath{\underline{B}}}
+\newcommand{\bvec}{\ensuremath{\underline{b}}}
+\newcommand{\kvec}{\ensuremath{\underline{\kappa}}}
+\newcommand{\apar}{\ensuremath{A_{||}}}
+
+\begin{document}
+
+\title{DALF3 model}
+
+\maketitle
+
+\section{Overview}
+
+
+\subsection{Normalisation}
+
+Denote normalised quantities with a hat. 
+
+Start with equation for total derivative:
+\[
+\frac{d}{dt} = \deriv{}{t} + \frac{1}{B}\bvec\times\nabla \phi \cdot\nabla
+\]
+
+Time is normalised to
+\[
+\hat{t} = t\frac{C_s}{L} \qquad \deriv{}{t} = \frac{C_s}{L}\deriv{}{\hat{t}}
+\]
+where $C_s$ is a typical sound speed $C_s = \sqrt{e\overline{T}/M_i}$, spatial derivatives to a perpendicular scale length $L$, and magnetic field to a typical magnetic field strength $\overline{B}$.
+
+Therefore,
+\[
+\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{L}{C_s}\frac{1}{\overline{B}L^2\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
+\]
+
+The drift scale $\rho_s$ is given by
+\[
+\rho_s = \frac{C_s M_i}{e\overline{B}} \qquad \rho_sC_s = \overline{T} / \overline{B}
+\]
+and so
+\[
+\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{L}{C_s}\frac{1}{\overline{B}L^2\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
+\]
+Using $C_s = \overline{T} / \left(\overline{B}\rho_s\right)$,
+\[
+\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{\rho_s}{\overline{T}L}\frac{1}{\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
+\]
+Hence $\phi$ is normalised to
+\[
+\hat{\phi} = \frac{\phi}{\overline{T}}\frac{\rho_s}{L}
+\]
+
+
+\end{document}
+
