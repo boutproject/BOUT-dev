@@ -5,7 +5,8 @@
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 \usepackage{amsfonts}
-
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{listings}
 \usepackage{color}
 \usepackage{textcomp}
@@ -68,7 +69,6 @@
 
 \newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
 \newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
-\newcommand{\Vec}[1]{\ensuremath{\mathbf{#1}}}
 \newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
 \newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
 \newcommand{\Bvec}{\ensuremath{\underline{B}}}
@@ -84,44 +84,137 @@
 
 \section{Overview}
 
+In SI units the equations solved are:
+\begin{align}
+\rho\frac{d\omega}{dt} &= B^2\nabla_{||}\frac{J_{||}}{B} - \mathcal{K}\left(p_e\right) \\
+\deriv{\apar}{t} + \frac{m_e}{e^2n}\frac{dJ_{||}}{dt} &= \frac{1}{en}\nabla_{||}P_e - \nabla_{||}\phi - \eta J_{||} \\
+\rho\frac{du_{||}}{dt} &= -\nabla_{||}p_e + \mu_{||}\nabla_{||}^2u_{||}
+\end{align}
+
+where 
+\[
+\frac{d}{dt} = \deriv{}{t} + \frac{1}{B}\bvec\times\nabla\phi\cdot\nabla
+\]
 
 \subsection{Normalisation}
 
-Denote normalised quantities with a hat. 
-
-Start with equation for total derivative:
+Normalised quantities are denoted with a hat, and typical values with a bar.
+Starting with equation for total derivative:
 \[
 \frac{d}{dt} = \deriv{}{t} + \frac{1}{B}\bvec\times\nabla \phi \cdot\nabla
 \]
-
-Time is normalised to
+The electrostatic potential is normalised to:
 \[
-\hat{t} = t\frac{C_s}{L} \qquad \deriv{}{t} = \frac{C_s}{L}\deriv{}{\hat{t}}
+\boxed{\hat{\phi} = \frac{\phi}{\overline{T}}\frac{L}{\rho_s}}
 \]
-where $C_s$ is a typical sound speed $C_s = \sqrt{e\overline{T}/M_i}$, spatial derivatives to a perpendicular scale length $L$, and magnetic field to a typical magnetic field strength $\overline{B}$.
-
-Therefore,
-\[
-\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{L}{C_s}\frac{1}{\overline{B}L^2\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
-\]
-
-The drift scale $\rho_s$ is given by
+where $\overline{T}$ is a typical temperature (in eV), $L$ is a perpendicular scale length, and
+the drift scale $\rho_s$ is given by
 \[
 \rho_s = \frac{C_s M_i}{e\overline{B}} \qquad \rho_sC_s = \overline{T} / \overline{B}
 \]
-and so
+where $C_s$ is a typical sound speed $C_s = \sqrt{e\overline{T}/M_i}$, and $\overline{B}$ is a typical
+magnetic field strength.
+Normalising spatial derivatives to the typical length scale $\boxed{\hat{\nabla} = L\nabla}$ gives
 \[
-\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{L}{C_s}\frac{1}{\overline{B}L^2\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
+\frac{d}{dt} = \deriv{}{t} + \frac{\overline{T}\rho_s}{\overline{B}L^3\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
 \]
-Using $C_s = \overline{T} / \left(\overline{B}\rho_s\right)$,
+Time is therefore normalised as
 \[
-\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{\rho_s}{\overline{T}L}\frac{1}{\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
+\boxed{\hat{t} = t\frac{C_s}{L}\left(\frac{\rho_s}{L}\right)^2} \qquad \deriv{}{t} = \frac{C_s}{L}\left(\frac{\rho_s}{L}\right)^2\deriv{}{\hat{t}}
 \]
-Hence $\phi$ is normalised to
+giving
 \[
-\hat{\phi} = \frac{\phi}{\overline{T}}\frac{\rho_s}{L}
+\frac{d}{d\hat{t}} = \deriv{}{\hat{t}} + \frac{1}{\hat{B}}\bvec\times\hat{\nabla} \phi \cdot\hat{\nabla}
 \]
 
+The vorticity is given by $\omega = \bvec\cdot\nabla\times \mathbf{v}_E \simeq \frac{1}{B}\nabla_\perp^2\phi$ and so
+\[
+\omega = \frac{1}{\overline{B}\hat{B}}\frac{1}{L^2}\frac{\rho_s\overline{T}}{L}\hat{\nabla}_\perp^2\hat{\phi} = \frac{C_s}{L}\left(\frac{\rho_s}{L}\right)^2\frac{1}{\hat{B}}\hat{\nabla}_\perp^2\hat{\phi}
+\]
+Vorticity $\omega$ is therefore normalised as
+\[
+\boxed{\hat{\omega} = \frac{L}{C_s}\left(\frac{L}{\rho_s}\right)^2\omega} \quad \rightarrow \hat{\omega} = \frac{1}{\hat{B}}\hat{\nabla}_\perp^2\hat{\phi}
+\]
 
+The vorticity equation in SI units is
+\[
+\rho\frac{d\omega}{dt} = B^2\nabla_{||}\frac{J_{||}}{B} - \mathcal{K}\left(p_e\right)
+\]
+where $\mathcal{K}$ is the curvature operator which has units of $1/L^2$.
+This is normalised using a typical number density $\overline{n}$, and assuming that the mass density is constant
+$\rho = \overline{n}M_i$.
+\[
+\overline{n}M_i\frac{C_s^2}{L^2}\frac{d\omega}{dt} = \frac{\overline{B}}{L}\hat{B}^2\hat{\nabla}_{||}^2\frac{J_{||}}{\hat{B}} - \frac{1}{L^2}\hat{\mathcal{K}}\left(p_e\right)
+\]
+re-aranging:
+\[
+\frac{d\hat{\omega}}{d\hat{t}} = \frac{\overline{B}L}{M_i\overline{n}C_s^2}\hat{B}^2\hat{\nabla}_{||}^2\frac{J_{||}}{\hat{B}} - \frac{1}{\overline{n}M_iC_s^2}\hat{\mathcal{K}}\left(p_e\right)
+\]
+For the first term on the RHS use $C_sM_i / \overline{B} = e\rho_s$, and for the second $C_s^2 = e\overline{T}/M_i$:
+\[
+\frac{d\hat{\omega}}{d\hat{t}} = \frac{L}{e\overline{n}C_s\rho_s}\hat{B}^2\hat{\nabla}_{||}^2\frac{J_{||}}{\hat{B}} - \frac{1}{e\overline{T}\overline{n}}\hat{\mathcal{K}}\left(p_e\right)
+\]
+
+The parallel current and pressure are therefore normalised as
+\[
+\boxed{\hat{J}_{||} = \frac{J_{||}}{e\overline{n}C_s}\frac{L}{\rho_s}} \qquad \boxed{\hat{p}_e = \frac{p_e}{e\overline{T}\overline{n}}\frac{\rho_s}{L}}
+\]
+whilst the curvature operator is normalised as
+\[
+\boxed{\hat{\mathcal{K}} = \mathcal{K}\frac{L^3}{\rho_s}}
+\]
+to give a normalised equation
+\[
+\frac{d\hat{\omega}}{d\hat{t}} = \hat{B}^2\hat{\nabla}_{||}^2\frac{\hat{J}_{||}}{\hat{B}} - \hat{\mathcal{K}}\left(\hat{p}_e\right)
+\]
+
+The parallel vector potential $A_{||}$ is related to the perturbed current by
+\[
+J_{||} = -\frac{1}{\mu_0}\nabla_\perp^2 A_{||}
+\]
+and so normalising:
+\[
+\frac{e\overline{n}C_s\rho_s}{L}\hat{J}_{||} = -\frac{1}{\mu_0}\frac{1}{L^2}\hat{\nabla}_\perp^2A_{||}
+\]
+Using $C_s\rho_s = \overline{T}/\overline{B}$ and rearranging:
+\[
+\hat{J}_{||} = -\underbrace{\frac{\overline{B}^2}{\mu_0 e\overline{n}\overline{T}}}_{1/\beta}\frac{1}{L\overline{B}}\hat{\nabla}_\perp^2 A_{||}
+\]
+$A_{||}$ is therefore normalised to:
+\[
+\boxed{\hat{A}_{||} = \frac{A_{||}}{L\overline{B}\beta}} \quad \rightarrow \hat{J}_{||} = -\hat{\nabla}_\perp^2 \hat{A}_{||}
+\]
+with $\beta = \mu_0 e\overline{n}\overline{T}/\overline{B}^2$
+
+Ohm's law in SI units can be written:
+\[
+\deriv{\apar}{t} + \frac{m_e}{e^2n}\frac{dJ_{||}}{dt} = \frac{1}{en}\nabla_{||}P_e - \nabla_{||}\phi - \eta J_{||}
+\]
+Normalising, this becomes
+\[
+\frac{C_s}{L}L\overline{B}\beta\deriv{\hat{\apar}}{\hat{t}} + \frac{m_e}{e^2n}\frac{C_s}{L}e\overline{n}C_s\frac{d\hat{J}_{||}}{d\hat{t}} = \frac{1}{en}\frac{1}{L}\frac{e\overline{T}\overline{n}L}{\rho_s}\hat{\nabla}_{||}\hat{p}_e - \frac{1}{L}\frac{\overline{T}L}{\rho_s}\hat{\nabla}_{||}\hat{\phi} - \eta\frac{e\overline{n}C_s\rho_s}{L}\hat{J}_{||}
+\]
+Making the assumption that the density $n$ is constant, and multiplying through by $\rho_s/\overline{T}$, this simplifies
+to
+\[
+\beta\deriv{\hat{\apar}}{\hat{t}} + \mu\frac{d\hat{J}_{||}}{d\hat{t}} = \hat{\nabla}_{||}\left(\hat{p}_e - \hat{\phi}\right) - \hat{\eta}\hat{J}_{||}
+\]
+where the normalised resistivity are parameter $\mu$ are
+\[
+\boxed{\hat{\eta} = \eta\frac{e\overline{n}}{\overline{B}}\frac{\rho_s}{L}} \qquad \mu = \frac{m_e}{m_i}\frac{\rho_s^2}{L^2}
+\]
+
+The parallel momentum equation in SI units is
+\[
+\rho\frac{du_{||}}{dt} = -\nabla_{||}p_e + \mu_{||}\nabla_{||}^2u_{||}
+\]
+the parallel velocity and parallel viscosity are normalised as:
+\[
+\boxed{\hat{u}_{||} = \frac{u_{||}}{C_s}\frac{\rho_s}{L}} \qquad \boxed{\hat{\mu} = \frac{\mu}{e\overline{n}\overline{B}}}
+\]
+to give a normalised equation (again assuming $n$ is constant)
+\[
+\frac{d\hat{u}_{||}}{d\hat{t}} = -\hat{\nabla}_{||}\hat{p}_e + \hat{\mu}_{||}\hat{\nabla}_{||}^2\hat{u}_{||}
+\]
 \end{document}
 
