@@ -208,7 +208,7 @@ int physics_init(bool restarting) {
   apar.setBoundary("apar");
   jpar.setBoundary("jpar");
 
-  SAVE_REPEAT2(jpar, apar);
+  SAVE_REPEAT3(jpar, apar, phi);
 
   return 0;
 }
@@ -267,6 +267,24 @@ int physics_run(BoutReal time) {
     mesh->communicate(jpar);
   }
   
+  
+  // Boundary in jpar
+  if(mesh->firstX()) {
+    for(int i=4;i>=0;i--)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+          jpar[i][j][k] = 0.5*jpar[i+1][j][k];
+	}
+  }
+  if(mesh->lastX()) {
+    for(int i=mesh->ngx-5;i<mesh->ngx;i++)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+          jpar[i][j][k] = 0.5*jpar[i-1][j][k];
+	}
+  }
+  
+  
   // Vorticity equation
   ddt(Vort) = 
     - bracket(phi, Vort, bm)    // ExB advection
@@ -299,6 +317,25 @@ int physics_run(BoutReal time) {
                     + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
                     )
     ;
+  
+  
+  // Boundary in Vpar and vorticity
+  if(mesh->firstX()) {
+    for(int i=3;i>=0;i--)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+          ddt(Vpar)[i][j][k] = ddt(Vpar)[i+1][j][k];
+          ddt(Vort)[i][j][k] = ddt(Vort)[i+1][j][k];
+	}
+  }
+  if(mesh->lastX()) {
+    for(int i=mesh->ngx-3;i<mesh->ngx;i++)
+      for(int j=0;j<mesh->ngy;j++)
+	for(int k=0;k<mesh->ngz-1;k++) {
+          ddt(Vpar)[i][j][k] = ddt(Vpar)[i-1][j][k];
+          ddt(Vort)[i][j][k] = ddt(Vort)[i-1][j][k];
+	}
+  }
   
   return 0;
 }

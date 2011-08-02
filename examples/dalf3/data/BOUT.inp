@@ -3,23 +3,23 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1       # time between outputs
+NOUT = 10          # number of time-steps
+TIMESTEP = 1.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
-wall_limit = 1.55  # wall time limit (in hours)
+wall_limit = 4  # wall time limit (in hours)
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
-MZ = 17             # number of points in z direction (2^n + 1)
-ZPERIOD = 15        # Fraction of a torus to simulate
+MZ = 65             # number of points in z direction (2^n + 1)
+ZPERIOD = 10        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
 
-NXPE = 16            # Number of processor in X
+NXPE = 1            # Number of processor in X
 
 grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
@@ -45,6 +45,9 @@ group_nonblock = false  # Use non-blocking group operations?
 [laplace]
 
 # max_mode = 16  # Maximum N to solve for
+all_terms = false
+laplace_nonuniform = false
+filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
 
 ##################################################
 # FFTs
@@ -116,7 +119,7 @@ mul_resist = 1.0    # Multiply resistivity by this
 # 512 - Laplacian = 0 outer boundary
 
 phi_flags = 769
-apar_flags = 11
+apar_flags = 769
 
 [All]
 scale = 0.0 # default size of initial perturbations
