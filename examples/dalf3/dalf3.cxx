@@ -193,13 +193,24 @@ int physics_init(bool restarting) {
   comms.add(Vort, Pe, Vpar);
   if(!(estatic && ZeroElMass)) {
     SOLVE_FOR(Ajpar);
-    comms.add(Ajpar);
+    // Never differentiate Ajpar -> don't communicate
   }
+  if(estatic) {
+    comms.add(jpar);
+  }else {
+    // Need to communicate apar first then jpar
+    comms.add(apar);
+  }
+  
   comms.add(phi);
 
   phi.setBoundary("phi");
   apar.setBoundary("apar");
   jpar.setBoundary("jpar");
+
+  SAVE_REPEAT2(jpar, apar);
+
+  return 0;
 }
 
 // Curvature operator
@@ -226,9 +237,6 @@ int physics_run(BoutReal time) {
   phi = invert_laplace(Vort*B0, phi_flags);
   phi.applyBoundary();
   
-  // Communicate evolving variables and phi
-  mesh->communicate(comms);
-
   // Calculate apar and jpar
   if(estatic) {
     // Electrostatic
@@ -240,6 +248,7 @@ int physics_run(BoutReal time) {
     }else {
       jpar = Ajpar / mu_hat;
     }
+    mesh->communicate(comms);
   }else {
     // Electromagnetic
     if(ZeroElMass) {
@@ -252,12 +261,12 @@ int physics_run(BoutReal time) {
       apar = invert_laplace(Ajpar, apar_flags, &a, NULL, &d);
       apar.applyBoundary();
     }
+    mesh->communicate(comms);
     jpar = -Delp2(apar);
     jpar.applyBoundary();
+    mesh->communicate(jpar);
   }
   
-  mesh->communicate(apar, jpar);
-
   // Vorticity equation
   ddt(Vort) = 
     - bracket(phi, Vort, bm)    // ExB advection
