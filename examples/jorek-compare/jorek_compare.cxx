@@ -60,6 +60,8 @@ bool vorticity_momentum; // Vorticity is curl of momentum, rather than velocity
 
 bool include_profiles; // Include zero-order equilibrium terms
 
+bool parallel_lc; // Use CtoL and LtoC differencing
+
 int low_pass_z; // Toroidal (Z) filtering of all variables
 
 Vector3D vExB, vD; // Velocities
@@ -192,6 +194,7 @@ int physics_init(bool restarting) {
   OPTION(options, electron_density,    false);
   OPTION(options, vorticity_momentum,  false);
   OPTION(options, include_profiles,    false);
+  OPTION(options, parallel_lc,         true);
 
   OPTION(options, phi_flags,  0);
 
@@ -338,7 +341,15 @@ int physics_init(bool restarting) {
 // Parallel gradient along perturbed field-line
 const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
   // Derivative along equilibrium field-line
-  Field3D result = Grad_par(f, loc);
+  Field3D result;
+  
+  if(parallel_lc) {
+    if(loc == CELL_YLOW) {
+      result = Grad_par_CtoL(f);
+    }else
+      result = Grad_par_LtoC(f);
+  }else
+    result = Grad_par(f, loc);
   
   if(nonlinear) {
     if(full_bfield) {
@@ -351,6 +362,10 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
     }
   }
   return result;
+}
+
+const Field3D Div_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
+  return B0*Grad_parP(f/B0, loc);
 }
 
 int physics_run(BoutReal t) {
@@ -472,13 +487,13 @@ int physics_run(BoutReal t) {
       - b0xGrad_dot_Grad(phi, rhot)/B0 // ExB advection 
       - divExB*rhot                    // Divergence of ExB (compression)
       - Vpar_Grad_par(Vpar, rho)       // Parallel advection
-      - rhot*Div_par_LtoC(Vpar)        // Parallel compression
+      - rhot*Div_parP(Vpar, CELL_CENTRE) // Parallel compression
       + D_perp * Delp2(rho)            // Perpendicular diffusion
       ;
     
     if(electron_density) {
       // Using electron parallel velocity rather than ion
-      ddt(rho) += (Mi/(Charge*sqrt(MU0*rhonorm)))* Div_par_LtoC(Jpar);
+      ddt(rho) += (Mi/(Charge*sqrt(MU0*rhonorm)))* Div_parP(Jpar, CELL_CENTRE);
     }
 
     if(low_pass_z > 0)
@@ -489,7 +504,7 @@ int physics_run(BoutReal t) {
     msg_stack.push("Te");
     ddt(Te) = 
       -b0xGrad_dot_Grad(phi, Tet)/B0 - Vpar_Grad_par(Vpar, Tet) // advection
-      - (2./3.)*Tet*(divExB  + Div_par_LtoC(Vpar)) // Divergence of flow
+      - (2./3.)*Tet*(divExB  + Div_parP(Vpar, CELL_CENTRE)) // Divergence of flow
       + Div_par_K_Grad_par(chi_epar, Te) / rhot    // Parallel diffusion
       + chi_eperp*Delp2(Te) / rhot   // Perpendicular diffusion
       ;
@@ -502,7 +517,7 @@ int physics_run(BoutReal t) {
     msg_stack.push("Ti");
     ddt(Ti) = 
       -b0xGrad_dot_Grad(phi, Tit)/B0 - Vpar_Grad_par(Vpar, Tit)
-      - (2./3.)*Tit*(divExB + Div_par_LtoC(Vpar))
+      - (2./3.)*Tit*(divExB + Div_parP(Vpar, CELL_CENTRE))
       + Div_par_K_Grad_par(chi_ipar, Ti) / rhot
       + chi_iperp*Delp2(Ti) / rhot
       ;
@@ -531,9 +546,9 @@ int physics_run(BoutReal t) {
     // Vorticity is b dot curl(rho * v)
     
     ddt(U) = 
-      (B0^2)*Grad_par_LtoC(Jpar/B0)  // b0 dot J
+      (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE)  // b0 dot J
       + 2.*b0xcv*Grad(P)
-      - rhot*(divExB + Div_par_LtoC(Vpar)) * Delp2(phi)/B0   // drho/dt term
+      - rhot*(divExB + Div_parP(Vpar, CELL_CENTRE)) * Delp2(phi)/B0   // drho/dt term
       ;
 
     // b dot J0
@@ -546,12 +561,12 @@ int physics_run(BoutReal t) {
     
     if(electron_density) {
       // drho/dt jpar term
-      ddt(U) += (Mi/(Charge*sqrt(MU0*rhonorm)))* rhot*Div_par_LtoC(Jpar/rhot) * Delp2(phi)/B0;
+      ddt(U) += (Mi/(Charge*sqrt(MU0*rhonorm)))* rhot*Div_parP(Jpar/rhot, CELL_CENTRE) * Delp2(phi)/B0;
     }
     
     if(include_profiles) {
       ddt(U) +=
-        (B0^2)*Grad_par_LtoC(J0/B0) // b0 dot J0
+        (B0^2)*Grad_par(J0/B0) // b0 dot J0
         + 2.*b0xcv*Grad(P0)
         ;
     }
@@ -559,7 +574,6 @@ int physics_run(BoutReal t) {
     if(nonlinear) {
       ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
       ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
-      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0);  // b dot Grad J
     }
 
     // Viscosity terms
@@ -567,12 +581,12 @@ int physics_run(BoutReal t) {
       ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
     
     if(viscos_perp > 0.0)
-      ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
+      ddt(U) += viscos_perp * rhot*Delp2(U/rhot); // Perpendicular viscosity
     
   }else {
     // Vorticity is b dot curl(v)
     ddt(U) = (
-              (B0^2)*Grad_par_LtoC(Jpar/B0)
+              (B0^2)*Grad_parP(Jpar/B0, CELL_CENTRE)
               + 2.*b0xcv*Grad(P)  // curvature term
               ) / rhot;
   
@@ -586,7 +600,7 @@ int physics_run(BoutReal t) {
   
     if(include_profiles) {
       ddt(U) += (
-                 (B0^2)*Grad_par_LtoC(J0/B0) // b0 dot J0
+                 (B0^2)*Grad_par(J0/B0) // b0 dot J0
                  + 2.*b0xcv*Grad(P0)
                  ) / rhot;
     }
@@ -594,7 +608,6 @@ int physics_run(BoutReal t) {
     if(nonlinear) {
       ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
       ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
-      ddt(U) -= B0*b0xGrad_dot_Grad(Apar, Jpar/B0) / rhot;  // b dot Grad J
     }
   
     // Viscosity terms
@@ -617,13 +630,11 @@ int physics_run(BoutReal t) {
   ////////// Parallel velocity equation ////////////
     
   msg_stack.push("Vpar");
-    
-  //ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
-  ddt(Vpar) = -Grad_par_CtoL(P) + b0xGrad_dot_Grad(Apar, P0) / B0;
+  
+  ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
   if(nonlinear) {
     ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
     ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar); // Parallel advection
-    ddt(Vpar) += b0xGrad_dot_Grad(Apar, P) / B0;
   }
   
   if(low_pass_z > 0)
@@ -635,16 +646,12 @@ int physics_run(BoutReal t) {
   
   msg_stack.push("Apar");
   ddt(Apar) = 
-            // -Grad_parP(phi, CELL_CENTRE)
-             -Grad_par_CtoL(phi)
-             - eta*Jpar;
+    -Grad_parP(phi, CELL_YLOW)
+    - eta*Jpar;
   
   if(hyperresist > 0.0) {
     ddt(Apar) += eta*hyperresist * Delp2(Jpar);
   }
-
-  if(nonlinear)
-    ddt(Apar) += b0xGrad_dot_Grad(Apar, phi) / B0;
 
   if(low_pass_z > 0)
     ddt(Apar) = lowPass(ddt(Apar), low_pass_z);

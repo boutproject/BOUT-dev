@@ -109,11 +109,13 @@ flux_method = false  # Use flux methods for fluid quantities
 
 nonlinear = false
 
-electron_density = true
+electron_density = true # Evolve electron density. Adds a jpar term to density
 
 vorticity_momentum = true
 
 include_profiles = false
+
+parallel_lc = true  # Use LtoC and CtoL differencing
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
