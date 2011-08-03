@@ -71,6 +71,9 @@ char *strconcat(const char* left, const char *right);
 const string lowercase(const string &str);
 const string lowercasequote(const string &str);
 
+// Convert a string to a BoutReal
+BoutReal stringToReal(const std::string &s);
+
 /// Split a string on a given delimiter
 std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems);
 std::list<std::string> strsplit(const std::string &s, char delim);
