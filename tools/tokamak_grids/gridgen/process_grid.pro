@@ -730,9 +730,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; derivative with psi
   dqdpsi = DDX(psixy, pitch)
   
-  qinty = int_y(pitch, mesh, loop=qloop) * dtheta
+  qinty = int_y(pitch, mesh, loop=qloop, /simple, /nosmooth) * dtheta
   qloop = qloop * dtheta
-  sinty = int_y(dqdpsi, mesh) * dtheta
+  sinty = int_y(dqdpsi, mesh, /simple, /nosmooth) * dtheta
   
   ; NOTE: This is only valid in the core
   pol_angle = FLTARR(nx,ny)
