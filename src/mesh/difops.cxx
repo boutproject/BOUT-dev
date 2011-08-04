@@ -24,6 +24,7 @@
  **************************************************************************/
 
 #include <globals.hxx>
+#include <bout.hxx>
 #include <difops.hxx>
 #include <vecops.hxx>
 #include <utils.hxx>
@@ -905,6 +906,89 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
 {
   Field3D result;
   switch(method) {
+  case BRACKET_CTU: {
+    // First order Corner Transport Upwind method
+    // P.Collela JCP 87, 171-200 (1990)
+    
+    // Get current timestep
+    BoutReal dt = solver->getCurrentTimestep();
+
+    result.allocate();
+    
+    FieldPerp vx, vz;
+    vx.allocate();
+    vz.allocate();
+    
+    int ncz = mesh->ngz - 1;
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      for(int x=1;x<=mesh->ngx-2;x++) {
+        for(int z=0;z<ncz;z++) {
+          int zm = (z - 1 + ncz) % ncz;
+          int zp = (z + 1) % ncz;
+          
+          // Vx = DDZ(f)
+          vx[x][z] = -(f[x][y][zp] - f[x][y][zm])/(2.*mesh->dz);
+          // Vz = -DDX(f)
+          vz[x][z] = -(f[x-1][y][z] - f[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+          
+          // Set stability condition
+          solver->setMaxTimestep(mesh->dx[x][y] / (fabs(vx[x][z]) + 1e-16));
+          solver->setMaxTimestep(mesh->dz / (fabs(vz[x][z]) + 1e-16));
+        }
+      }
+      
+      // Simplest form: use cell-centered velocities (no divergence included so not flux conservative)
+      
+      for(int x=mesh->xstart;x<=mesh->xend;x++)
+        for(int z=0;z<ncz;z++) {
+          int zm = (z - 1 + ncz) % ncz;
+          int zp = (z + 1) % ncz;
+          
+          BoutReal gp, gm;
+
+          // X differencing
+          if(vx[x][z] > 0.0) {
+            gp = g[x][y][z]
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x][y][zm] - g[x][y][z]) : vz[x][z]*(g[x][y][z] - g[x][y][zp]) );
+            
+            
+            gm = g[x-1][y][z]
+              //+ (0.5*dt/mesh->dz) * ( (vz[x-1][z] > 0) ? vz[x-1][z]*(g[x-1][y][zm] - g[x-1][y][z]) : vz[x-1][z]*(g[x-1][y][z] - g[x-1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x-1][y][zm] - g[x-1][y][z]) : vz[x][z]*(g[x-1][y][z] - g[x-1][y][zp]) );
+            
+          }else {
+            gp = g[x+1][y][z]
+              //+ (0.5*dt/mesh->dz) * ( (vz[x+1][z] > 0) ? vz[x+1][z]*(g[x+1][y][zm] - g[x+1][y][z]) : vz[x+1][z]*(g[x+1][y][z] - g[x+1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x+1][y][zm] - g[x+1][y][z]) : vz[x][z]*(g[x+1][y][z] - g[x+1][y][zp]) );
+            
+            gm = g[x][y][z] 
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x][y][zm] - g[x][y][z]) : vz[x][z]*(g[x][y][z] - g[x][y][zp]) );
+          }
+          
+          result[x][y][z] = vx[x][z] * (gm - gp) / mesh->dx[x][y];
+          
+          // Z differencing
+          if(vz[x][z] > 0.0) {
+            gp = g[x][y][z]
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][z] - g[x][y][z]) : vx[x][z]*(g[x][y][z] - g[x+1][y][z]) );
+            
+            gm = g[x][y][zm]
+              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zm] > 0) ? vx[x][zm]*(g[x-1][y][zm] - g[x][y][zm]) : vx[x][zm]*(g[x][y][zm] - g[x+1][y][zm]) );
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][zm] - g[x][y][zm]) : vx[x][z]*(g[x][y][zm] - g[x+1][y][zm]) );
+          }else {
+            gp = g[x][y][zp]
+              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zp] > 0) ? vx[x][zp]*(g[x-1][y][zp] - g[x][y][zp]) : vx[x][zp]*(g[x][y][zp] - g[x+1][y][zp]) );
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][zp] - g[x][y][zp]) : vx[x][z]*(g[x][y][zp] - g[x+1][y][zp]) );
+            
+            gm = g[x][y][z]
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][z] - g[x][y][z]) : vx[x][z]*(g[x][y][z] - g[x+1][y][z]) );
+          }
+          
+          result[x][y][z] += vz[x][z] * (gm - gp) / mesh->dz;
+        }
+    }
+    break;
+  }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
     
