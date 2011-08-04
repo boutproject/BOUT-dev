@@ -64,7 +64,7 @@ class RK4Solver : public Solver {
   
   BoutReal timestep; // The internal timestep
   
-  int nlocal; // Number of variables on local processor
+  int nlocal, neq; // Number of variables on local processor and in total
   
   void take_step(BoutReal curtime, BoutReal dt, 
                  BoutReal *start, BoutReal *result); // Take a single step to calculate f1

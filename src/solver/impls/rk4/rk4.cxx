@@ -45,10 +45,8 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   nlocal = getLocalN();
   
   // Get total problem size
-  int neq;
   if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    throw BoutException("MPI_Allreduce failed!");
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
@@ -111,11 +109,18 @@ int RK4Solver::run(MonitorFunc monitor) {
         take_step(simtime, dt, f0, f1);
         
         // Check accuracy
-        BoutReal err = 0.;
-        #pragma omp parallel for reduction(+: err)   
+        BoutReal local_err = 0.;
+        #pragma omp parallel for reduction(+: local_err)   
         for(int i=0;i<nlocal;i++)
-          err += fabs(f2[i] - f1[i]) / ( fabs(f1[i] + f2[i]) + atol );
-        err /= (BoutReal) nlocal;
+          local_err += fabs(f2[i] - f1[i]) / ( fabs(f1[i] + f2[i]) + atol );
+        
+        // Average over all processors
+        BoutReal err;
+        if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+          throw BoutException("MPI_Allreduce failed");
+        }
+
+        err /= (BoutReal) neq;
         
         internal_steps++;
         if(internal_steps > mxstep)

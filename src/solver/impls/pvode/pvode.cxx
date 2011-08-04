@@ -116,7 +116,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
     return(1);
   }
 
-  //.allocate memory, and set problem data, initial values, tolerances
+  // Allocate memory, and set problem data, initial values, tolerances
 
   u = N_VNew(neq, machEnv);
 
@@ -317,7 +317,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 #endif
 
   // Get current timestep
-  hcur = ((CVodeMemRec*) cvode_mem)->cv_h;
+  hcur = 0.0; //((CVodeMemRec*) cvode_mem)->cv_h;
 
   // Load state from CVODE
   load_vars(udata);

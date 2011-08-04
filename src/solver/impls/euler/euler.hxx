@@ -54,7 +54,8 @@ class EulerSolver : public Solver {
  private:
   BoutReal start_timestep; // Starting timestep
   int mxstep; // Maximum number of internal steps between outputs
-  
+  BoutReal cfl_factor; // Factor by which timestep must be smaller than maximum
+
   BoutReal *f0, *f1;
   
   BoutReal out_timestep; // The output timestep

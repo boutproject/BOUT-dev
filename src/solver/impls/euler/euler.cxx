@@ -15,10 +15,10 @@ EulerSolver::~EulerSolver() {
 }
 
 void EulerSolver::setMaxTimestep(BoutReal dt) {
-  if(dt > timestep)
+  if(dt >= cfl_factor*timestep)
     return; // Already less than this
   
-  timestep = dt;
+  timestep = dt*0.99 / cfl_factor; // Slightly below to avoid re-setting to same value over again
   timestep_reduced = true;
 }
 
@@ -41,15 +41,15 @@ int EulerSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   options = options->getSection("solver");
   OPTION(options, start_timestep, tstep);
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  
+  OPTION(options, cfl_factor, 2.);
+
   // Calculate number of variables
   nlocal = getLocalN();
   
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    throw BoutException("MPI_Allreduce failed in EulerSolver::init");
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
@@ -83,18 +83,37 @@ int EulerSolver::run(MonitorFunc monitor) {
     int internal_steps = 0;
     do {
       // Take a step
+      BoutReal dt_limit = timestep; // Store the timestep
+      
       if((simtime + timestep) >= target) {
         // Make sure the last timestep is on the output 
         timestep = target - simtime; 
         running = false;
       }
       
+      BoutReal old_timestep = timestep;
+      
       timestep_reduced = false;
       take_step(simtime, timestep, f0, f1);
       
-      // If timestep_reduced re-run
+      // Check with all processors if timestep was reduced
+      
+      BoutReal newdt_local = 10.*old_timestep; // Signal no change
       if(timestep_reduced)
+        newdt_local = timestep;
+      
+      BoutReal newdt;
+      if(MPI_Allreduce(&newdt_local, &newdt, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get())) {
+        throw BoutException("MPI_Allreduce failed in EulerSolver::run");
+      }
+
+      // If timestep_reduced re-run
+      if(newdt < old_timestep) { // At least one processor reduced the timestep
+        timestep = newdt;
         take_step(simtime, timestep, f0, f1);
+        dt_limit = timestep; // This becomes the new limit
+        running = true; // Need another step
+      }
       
       // Taken a step, swap buffers
       SWAP(f1, f0);
@@ -104,6 +123,7 @@ int EulerSolver::run(MonitorFunc monitor) {
       if(internal_steps > mxstep)
         throw BoutException("ERROR: MXSTEP exceeded. simtime=%e, timestep = %e\n", simtime, timestep);
       
+      timestep = dt_limit; // Change back to limiting timestep
     }while(running);
     
     iteration++; // Advance iteration number
