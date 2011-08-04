@@ -7,6 +7,7 @@
 #include "impls/pvode/pvode.hxx"
 #include "impls/karniadakis/karniadakis.hxx"
 #include "impls/rk4/rk4.hxx"
+#include "impls/euler/euler.hxx"
 
 #include <boutexception.hxx>
 
@@ -68,6 +69,8 @@ Solver* SolverFactory::createSolver(SolverType &type)
     return new KarniadakisSolver;
   } else if(!strcasecmp(type, SOLVERRK4)) {
     return new RK4Solver;
+  } else if(!strcasecmp(type, SOLVEREULER)) {
+    return new EulerSolver;
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found

@@ -6,18 +6,22 @@
 
 #include <cmath>
 
-RK4Solver::RK4Solver() : Solver()
-{
+RK4Solver::RK4Solver() : Solver() {
   
 }
 
-RK4Solver::~RK4Solver()
-{
+RK4Solver::~RK4Solver() {
 
 }
 
-int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
+void RK4Solver::setMaxTimestep(BoutReal dt) {
+  if(dt > timestep)
+    return; // Already less than this
+  
+  timestep = dt; // Won't be used this time, but next
+}
+
+int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising RK4 solver");
 #endif
@@ -30,7 +34,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
 
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
-  
+
   // Choose timestep
   if(max_dt < 0.0) {
     max_dt = tstep;
@@ -74,8 +78,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   return 0;
 }
 
-int RK4Solver::run(MonitorFunc monitor)
-{
+int RK4Solver::run(MonitorFunc monitor) {
 #ifdef CHECK
   int msg_point = msg_stack.push("RK4Solver::run()");
 #endif

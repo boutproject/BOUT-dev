@@ -316,6 +316,9 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
 #endif
 
+  // Get current timestep
+  hcur = ((CVodeMemRec*) cvode_mem)->cv_h;
+
   // Load state from CVODE
   load_vars(udata);
 

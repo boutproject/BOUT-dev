@@ -330,8 +330,7 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
  * RHS function du = F(t, u)
  **************************************************************************/
 
-void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
-{
+void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: CvodeSolver::res(%e)", t);
 #endif
@@ -339,6 +338,10 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata)
   // Load state from udata
   load_vars(udata);
 
+  // Get the current timestep
+  // Note: CVodeGetCurrentStep updated too late in older versions
+  CVodeGetLastStep(cvode_mem, &hcur);
+  
   // Call RHS function
   run_rhs(t);
 
@@ -679,14 +682,14 @@ void CvodeSolver::save_derivs(BoutReal *dudata)
 
 static int cvode_rhs(BoutReal t, 
 		     N_Vector u, N_Vector du, 
-		     void *user_data)
-{
+		     void *user_data) {
+  
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   
   CvodeSolver *s = (CvodeSolver*) user_data;
-
-  // Calculate residuals
+  
+  // Calculate RHS function
   s->rhs(t, udata, dudata);
 
   return 0;

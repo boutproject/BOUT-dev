@@ -1,5 +1,5 @@
 /**************************************************************************
- * 4th-order Runge Kutta explicit method with adaptive timestepping
+ * Euler explicit method
  * 
  * Always available, since doesn't depend on external library
  * 
@@ -25,10 +25,10 @@
  *
  **************************************************************************/
 
-class RK4Solver;
+class EulerSolver;
 
-#ifndef __RK4_SOLVER_H__
-#define __RK4_SOLVER_H__
+#ifndef __EULER_SOLVER_H__
+#define __EULER_SOLVER_H__
 
 #include "mpi.h"
 
@@ -40,10 +40,10 @@ class RK4Solver;
 
 #include "solver.hxx"
 
-class RK4Solver : public Solver {
+class EulerSolver : public Solver {
  public:
-  RK4Solver();
-  ~RK4Solver();
+  EulerSolver();
+  ~EulerSolver();
   
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
@@ -52,17 +52,16 @@ class RK4Solver : public Solver {
   
   int run(MonitorFunc f);
  private:
-  BoutReal atol, rtol; // Tolerances for adaptive timestepping
-  BoutReal max_timestep; // Maximum timestep
   BoutReal start_timestep; // Starting timestep
   int mxstep; // Maximum number of internal steps between outputs
   
-  BoutReal *f0, *f1, *f2;
+  BoutReal *f0, *f1;
   
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
   
   BoutReal timestep; // The internal timestep
+  bool timestep_reduced; // Set true if the timestep is reduced during RHS call
   
   int nlocal; // Number of variables on local processor
   

@@ -66,6 +66,8 @@ class PvodeSolver : public Solver {
 
   void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
+  BoutReal getCurrentTimestep() { return hcur; }
+  
   int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
@@ -78,6 +80,7 @@ class PvodeSolver : public Solver {
  private:
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
+  BoutReal hcur; // Current internal timestep
   
   pvode::N_Vector u;
   pvode::machEnvType machEnv;

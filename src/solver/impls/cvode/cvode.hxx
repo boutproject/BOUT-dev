@@ -62,6 +62,8 @@ class CvodeSolver : public Solver {
     void setPrecon(PhysicsPrecon f) {prefunc = f;}
 
     void setJacobian(Jacobian j) {jacfunc = j; }
+    
+    BoutReal getCurrentTimestep() { return hcur; }
 
     int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 
@@ -75,6 +77,7 @@ class CvodeSolver : public Solver {
   private:
     int NOUT; // Number of outputs. Specified in init, needed in run
     BoutReal TIMESTEP; // Time between outputs
+    BoutReal hcur; // Current internal timestep
 
     rhsfunc func; // RHS function
     PhysicsPrecon prefunc; // Preconditioner
