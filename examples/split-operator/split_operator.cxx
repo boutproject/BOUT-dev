@@ -59,7 +59,7 @@ int physics_run(BoutReal time) {
   mesh->communicate(U);
 
   // Form of advection operator for reduced MHD type models
-  ddt(U) = bracket(phi, U, BRACKET_ARAKAWA);
+  ddt(U) = -bracket(phi, U, BRACKET_SIMPLE);
   
   return 0;
 }
