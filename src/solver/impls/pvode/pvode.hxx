@@ -88,14 +88,6 @@ class PvodeSolver : public Solver {
   
   rhsfunc func; // RHS function
   rhsfunc gfunc; // Preconditioner function
-  
-  // Loading data from BOUT++ to/from CVODE
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-  
-  void load_vars(BoutReal *udata);
-  int save_vars(BoutReal *udata);
-  void save_derivs(BoutReal *dudata);
 };
 
 #endif // __PVODE_SOLVER_H__
