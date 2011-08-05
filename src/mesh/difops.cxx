@@ -927,9 +927,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
           int zp = (z + 1) % ncz;
           
           // Vx = DDZ(f)
-          vx[x][z] = -(f[x][y][zp] - f[x][y][zm])/(2.*mesh->dz);
+          vx[x][z] = (f[x][y][zp] - f[x][y][zm])/(2.*mesh->dz);
           // Vz = -DDX(f)
-          vz[x][z] = -(f[x-1][y][z] - f[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+          vz[x][z] = (f[x-1][y][z] - f[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
           
           // Set stability condition
           solver->setMaxTimestep(mesh->dx[x][y] / (fabs(vx[x][z]) + 1e-16));
@@ -965,7 +965,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
               + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x][y][zm] - g[x][y][z]) : vz[x][z]*(g[x][y][z] - g[x][y][zp]) );
           }
           
-          result[x][y][z] = vx[x][z] * (gm - gp) / mesh->dx[x][y];
+          result[x][y][z] = vx[x][z] * (gp - gm) / mesh->dx[x][y];
           
           // Z differencing
           if(vz[x][z] > 0.0) {
@@ -984,7 +984,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
               + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][z] - g[x][y][z]) : vx[x][z]*(g[x][y][z] - g[x+1][y][z]) );
           }
           
-          result[x][y][z] += vz[x][z] * (gm - gp) / mesh->dz;
+          result[x][y][z] += vz[x][z] * (gp - gm) / mesh->dz;
         }
     }
     break;
