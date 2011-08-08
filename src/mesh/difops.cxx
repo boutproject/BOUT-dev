@@ -99,17 +99,55 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc)
  * Derivative along perturbed field-line
  *
  * b0 dot Grad  -  (1/B)b0 x Grad(apar) dot Grad
+ *
+ * Combines the parallel and perpendicular calculation to include
+ * grid-points at the corners.
  *******************************************************************************/
 
-/*
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   Field3D result;
   result.allocate();
   
-  // Y derivative
+  Field3D as = apar;
+  Field3D fs = f;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    as = apar.shiftZ(true);
+    fs = f.shiftZ(true);
+  }
+  
+  int ncz = mesh->ngz-1;
+  for(int x=1;x<=mesh->ngx-2;x++) {
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      BoutReal by = 1./sqrt(mesh->g_22[x][y]);
+      for(int z=0;z<ncz;z++) {
+        int zm = (z - 1 + ncz) % ncz;
+        int zp = (z + 1) % ncz;
+        
+        // bx = -DDZ(apar)
+        BoutReal bx = (as[x][y][zm] - as[x][y][zp])/(2.*mesh->dz);
+        // bz = DDX(f)
+        BoutReal bz = (as[x+1][y][z] - as[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+        
+        // Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
+
+        // dl + 1/2
+        
+        BoutReal fp = 0.5*(fs[x][y][z] + fs[x][y+1][z]);
+        if(bx > 0.0) {
+          
+        }else {
+          
+        }
+        
+        BoutReal fm = 0.5*(fs[x][y][z] + fs[x][y-1][z]);
+      }
+    }
+  }
+  
+  
+  
   
 }
-*/
 
 /*******************************************************************************
  * Vpar_Grad_par
@@ -897,6 +935,11 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
   }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
+
+    Field3D fs = f;
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+      fs = f.shiftZ(true);
+    }
     
     result.allocate();
     int ncz = mesh->ngz - 1;
@@ -907,27 +950,31 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
           int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (f[jx][jy][jzp] - f[jx][jy][jzm])*
+          BoutReal Jpp = 0.25*( (fs[jx][jy][jzp] - fs[jx][jy][jzm])*
                                 (g[jx+1][jy] - g[jx-1][jy]) -
-                                (f[jx+1][jy][jz] - f[jx-1][jy][jz])*
+                                (fs[jx+1][jy][jz] - fs[jx-1][jy][jz])*
                                 (g[jx][jy] - g[jx][jy]) )
             / (mesh->dx[jx][jy] * mesh->dz);
 
           // J+x
-          BoutReal Jpx = 0.25*( g[jx+1][jy]*(f[jx+1][jy][jzp]-f[jx+1][jy][jzm]) -
-                                g[jx-1][jy]*(f[jx-1][jy][jzp]-f[jx-1][jy][jzm]) -
-                                g[jx][jy]*(f[jx+1][jy][jzp]-f[jx-1][jy][jzp]) +
-                                g[jx][jy]*(f[jx+1][jy][jzm]-f[jx-1][jy][jzm]))
+          BoutReal Jpx = 0.25*( g[jx+1][jy]*(fs[jx+1][jy][jzp]-fs[jx+1][jy][jzm]) -
+                                g[jx-1][jy]*(fs[jx-1][jy][jzp]-fs[jx-1][jy][jzm]) -
+                                g[jx][jy]*(fs[jx+1][jy][jzp]-fs[jx-1][jy][jzp]) +
+                                g[jx][jy]*(fs[jx+1][jy][jzm]-fs[jx-1][jy][jzm]))
             / (mesh->dx[jx][jy] * mesh->dz);
           // Jx+
-          BoutReal Jxp = 0.25*( g[jx+1][jy]*(f[jx][jy][jzp]-f[jx+1][jy][jz]) -
-                                g[jx-1][jy]*(f[jx-1][jy][jz]-f[jx][jy][jzm]) -
-                                g[jx-1][jy]*(f[jx][jy][jzp]-f[jx-1][jy][jz]) +
-                                g[jx+1][jy]*(f[jx+1][jy][jz]-f[jx][jy][jzm]))
+          BoutReal Jxp = 0.25*( g[jx+1][jy]*(fs[jx][jy][jzp]-fs[jx+1][jy][jz]) -
+                                g[jx-1][jy]*(fs[jx-1][jy][jz]-fs[jx][jy][jzm]) -
+                                g[jx-1][jy]*(fs[jx][jy][jzp]-fs[jx-1][jy][jz]) +
+                                g[jx+1][jy]*(fs[jx+1][jy][jz]-fs[jx][jy][jzm]))
             / (mesh->dx[jx][jy] * mesh->dz);
           
           result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
         }
+    
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
+      result = result.shiftZ(false); // Shift back
+    
     break;
   }
   case BRACKET_SIMPLE: {
@@ -947,6 +994,7 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method)
 {
   Field3D result;
   switch(method) {
+  case BRACKET_CTU:
   case BRACKET_ARAKAWA: 
   case BRACKET_SIMPLE: {
     // Use a subset of terms for comparison to BOUT-06
@@ -978,6 +1026,13 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
     vx.allocate();
     vz.allocate();
     
+    Field3D fs = f;
+    Field3D gs = g;
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+      fs = f.shiftZ(true);
+      gs = g.shiftZ(true);
+    }
+    
     int ncz = mesh->ngz - 1;
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       for(int x=1;x<=mesh->ngx-2;x++) {
@@ -986,9 +1041,9 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
           int zp = (z + 1) % ncz;
           
           // Vx = DDZ(f)
-          vx[x][z] = (f[x][y][zp] - f[x][y][zm])/(2.*mesh->dz);
+          vx[x][z] = (fs[x][y][zp] - fs[x][y][zm])/(2.*mesh->dz);
           // Vz = -DDX(f)
-          vz[x][z] = (f[x-1][y][z] - f[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+          vz[x][z] = (fs[x-1][y][z] - fs[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
           
           // Set stability condition
           solver->setMaxTimestep(mesh->dx[x][y] / (fabs(vx[x][z]) + 1e-16));
@@ -1007,51 +1062,60 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
 
           // X differencing
           if(vx[x][z] > 0.0) {
-            gp = g[x][y][z]
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x][y][zm] - g[x][y][z]) : vz[x][z]*(g[x][y][z] - g[x][y][zp]) );
+            gp = gs[x][y][z]
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x][y][zm] - gs[x][y][z]) : vz[x][z]*(gs[x][y][z] - gs[x][y][zp]) );
             
             
-            gm = g[x-1][y][z]
+            gm = gs[x-1][y][z]
               //+ (0.5*dt/mesh->dz) * ( (vz[x-1][z] > 0) ? vz[x-1][z]*(g[x-1][y][zm] - g[x-1][y][z]) : vz[x-1][z]*(g[x-1][y][z] - g[x-1][y][zp]) );
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x-1][y][zm] - g[x-1][y][z]) : vz[x][z]*(g[x-1][y][z] - g[x-1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x-1][y][zm] - gs[x-1][y][z]) : vz[x][z]*(gs[x-1][y][z] - gs[x-1][y][zp]) );
             
           }else {
-            gp = g[x+1][y][z]
-              //+ (0.5*dt/mesh->dz) * ( (vz[x+1][z] > 0) ? vz[x+1][z]*(g[x+1][y][zm] - g[x+1][y][z]) : vz[x+1][z]*(g[x+1][y][z] - g[x+1][y][zp]) );
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x+1][y][zm] - g[x+1][y][z]) : vz[x][z]*(g[x+1][y][z] - g[x+1][y][zp]) );
+            gp = gs[x+1][y][z]
+              //+ (0.5*dt/mesh->dz) * ( (vz[x+1][z] > 0) ? vz[x+1][z]*(gs[x+1][y][zm] - gs[x+1][y][z]) : vz[x+1][z]*(gs[x+1][y][z] - gs[x+1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x+1][y][zm] - gs[x+1][y][z]) : vz[x][z]*(gs[x+1][y][z] - gs[x+1][y][zp]) );
             
-            gm = g[x][y][z] 
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(g[x][y][zm] - g[x][y][z]) : vz[x][z]*(g[x][y][z] - g[x][y][zp]) );
+            gm = gs[x][y][z] 
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x][y][zm] - gs[x][y][z]) : vz[x][z]*(gs[x][y][z] - gs[x][y][zp]) );
           }
           
           result[x][y][z] = vx[x][z] * (gp - gm) / mesh->dx[x][y];
           
           // Z differencing
           if(vz[x][z] > 0.0) {
-            gp = g[x][y][z]
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][z] - g[x][y][z]) : vx[x][z]*(g[x][y][z] - g[x+1][y][z]) );
+            gp = gs[x][y][z]
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][z] - gs[x][y][z]) : vx[x][z]*(gs[x][y][z] - gs[x+1][y][z]) );
             
-            gm = g[x][y][zm]
-              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zm] > 0) ? vx[x][zm]*(g[x-1][y][zm] - g[x][y][zm]) : vx[x][zm]*(g[x][y][zm] - g[x+1][y][zm]) );
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][zm] - g[x][y][zm]) : vx[x][z]*(g[x][y][zm] - g[x+1][y][zm]) );
+            gm = gs[x][y][zm]
+              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zm] > 0) ? vx[x][zm]*(gs[x-1][y][zm] - gs[x][y][zm]) : vx[x][zm]*(gs[x][y][zm] - gs[x+1][y][zm]) );
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zm] - gs[x][y][zm]) : vx[x][z]*(gs[x][y][zm] - gs[x+1][y][zm]) );
           }else {
-            gp = g[x][y][zp]
-              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zp] > 0) ? vx[x][zp]*(g[x-1][y][zp] - g[x][y][zp]) : vx[x][zp]*(g[x][y][zp] - g[x+1][y][zp]) );
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][zp] - g[x][y][zp]) : vx[x][z]*(g[x][y][zp] - g[x+1][y][zp]) );
+            gp = gs[x][y][zp]
+              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zp] > 0) ? vx[x][zp]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][zp]*(gs[x][y][zp] - gs[x+1][y][zp]) );
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][z]*(gs[x][y][zp] - gs[x+1][y][zp]) );
             
-            gm = g[x][y][z]
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(g[x-1][y][z] - g[x][y][z]) : vx[x][z]*(g[x][y][z] - g[x+1][y][z]) );
+            gm = gs[x][y][z]
+              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][z] - gs[x][y][z]) : vx[x][z]*(gs[x][y][z] - gs[x+1][y][z]) );
           }
           
           result[x][y][z] += vz[x][z] * (gp - gm) / mesh->dz;
         }
     }
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
+      result = result.shiftZ(false); // Shift back
     break;
   }
   case BRACKET_ARAKAWA: {
-    // Arakawa scheme for perpendicular flow. Here as a test
+    // Arakawa scheme for perpendicular flow
     
     result.allocate();
+    
+    Field3D fs = f;
+    Field3D gs = g;
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+      fs = f.shiftZ(true);
+      gs = g.shiftZ(true);
+    }
     
     int ncz = mesh->ngz - 1;
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
@@ -1061,27 +1125,29 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
           int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (f[jx][jy][jzp] - f[jx][jy][jzm])*
-                                (g[jx+1][jy][jz] - g[jx-1][jy][jz]) -
-                                (f[jx+1][jy][jz] - f[jx-1][jy][jz])*
-                                (g[jx][jy][jzp] - g[jx][jy][jzm]) )
+          BoutReal Jpp = 0.25*( (fs[jx][jy][jzp] - fs[jx][jy][jzm])*
+                                (gs[jx+1][jy][jz] - gs[jx-1][jy][jz]) -
+                                (fs[jx+1][jy][jz] - fs[jx-1][jy][jz])*
+                                (gs[jx][jy][jzp] - gs[jx][jy][jzm]) )
             / (mesh->dx[jx][jy] * mesh->dz);
 
           // J+x
-          BoutReal Jpx = 0.25*( g[jx+1][jy][jz]*(f[jx+1][jy][jzp]-f[jx+1][jy][jzm]) -
-                                g[jx-1][jy][jz]*(f[jx-1][jy][jzp]-f[jx-1][jy][jzm]) -
-                                g[jx][jy][jzp]*(f[jx+1][jy][jzp]-f[jx-1][jy][jzp]) +
-                                g[jx][jy][jzm]*(f[jx+1][jy][jzm]-f[jx-1][jy][jzm]))
+          BoutReal Jpx = 0.25*( gs[jx+1][jy][jz]*(fs[jx+1][jy][jzp]-fs[jx+1][jy][jzm]) -
+                                gs[jx-1][jy][jz]*(fs[jx-1][jy][jzp]-fs[jx-1][jy][jzm]) -
+                                gs[jx][jy][jzp]*(fs[jx+1][jy][jzp]-fs[jx-1][jy][jzp]) +
+                                gs[jx][jy][jzm]*(fs[jx+1][jy][jzm]-fs[jx-1][jy][jzm]))
             / (mesh->dx[jx][jy] * mesh->dz);
           // Jx+
-          BoutReal Jxp = 0.25*( g[jx+1][jy][jzp]*(f[jx][jy][jzp]-f[jx+1][jy][jz]) -
-                                g[jx-1][jy][jzm]*(f[jx-1][jy][jz]-f[jx][jy][jzm]) -
-                                g[jx-1][jy][jzp]*(f[jx][jy][jzp]-f[jx-1][jy][jz]) +
-                                g[jx+1][jy][jzm]*(f[jx+1][jy][jz]-f[jx][jy][jzm]))
+          BoutReal Jxp = 0.25*( gs[jx+1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx+1][jy][jz]) -
+                                gs[jx-1][jy][jzm]*(fs[jx-1][jy][jz]-fs[jx][jy][jzm]) -
+                                gs[jx-1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx-1][jy][jz]) +
+                                gs[jx+1][jy][jzm]*(fs[jx+1][jy][jz]-fs[jx][jy][jzm]))
             / (mesh->dx[jx][jy] * mesh->dz);
           
           result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
         }
+    if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
+      result = result.shiftZ(false); // Shift back
     break;
   }
   case BRACKET_SIMPLE: {
