@@ -94,6 +94,24 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc)
 }
 
 /*******************************************************************************
+ * Grad_parP
+ *
+ * Derivative along perturbed field-line
+ *
+ * b0 dot Grad  -  (1/B)b0 x Grad(apar) dot Grad
+ *******************************************************************************/
+
+/*
+const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
+  Field3D result;
+  result.allocate();
+  
+  // Y derivative
+  
+}
+*/
+
+/*******************************************************************************
  * Vpar_Grad_par
  * vparallel times the parallel derivative along unperturbed B-field
  *******************************************************************************/
@@ -836,6 +854,47 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
 {
   Field3D result;
   switch(method) {
+  case BRACKET_CTU: {
+    // First order Corner Transport Upwind method
+    // P.Collela JCP 87, 171-200 (1990)
+    
+    // Get current timestep
+    BoutReal dt = solver->getCurrentTimestep();
+
+    result.allocate();
+    
+    int ncz = mesh->ngz - 1;
+    for(int x=mesh->xstart;x<=mesh->xend;x++)
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        for(int z=0;z<ncz;z++) {
+          int zm = (z - 1 + ncz) % ncz;
+          int zp = (z + 1) % ncz;
+          
+          BoutReal gp, gm;
+
+          // Vx = DDZ(f)
+          BoutReal vx = (f[x][y][zp] - f[x][y][zm])/(2.*mesh->dz);
+          
+          // Set stability condition
+          solver->setMaxTimestep(mesh->dx[x][y] / (fabs(vx) + 1e-16));
+          
+          // X differencing
+          if(vx > 0.0) {
+            gp = g[x][y];
+            
+            gm = g[x-1][y];
+            
+          }else {
+            gp = g[x+1][y];
+            
+            gm = g[x][y];
+          }
+          
+          result[x][y][z] = vx * (gp - gm) / mesh->dx[x][y];
+        }
+      }
+    break;
+  }
   case BRACKET_ARAKAWA: {
     // Arakawa scheme for perpendicular flow. Here as a test
     
