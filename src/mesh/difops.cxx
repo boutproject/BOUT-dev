@@ -130,22 +130,22 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
         
         // Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
 
-        // dl + 1/2
+        BoutReal b = sqrt(SQ(bx) + SQ(by) + SQ(bz));
         
-        BoutReal fp = 0.5*(fs[x][y][z] + fs[x][y+1][z]);
+        BoutReal delta_x = mesh->dx[x][y] * (bx/b);
+        BoutReal delta_y = mesh->dy[x][y] * (by/b);
+        BoutReal delta_z = mesh->dz * (bz/b);
+        BoutReal dl = sqrt(SQ(delta_x) + SQ(delta_y) + SQ(delta_z));
+        
         if(bx > 0.0) {
           
         }else {
           
         }
         
-        BoutReal fm = 0.5*(fs[x][y][z] + fs[x][y-1][z]);
       }
     }
   }
-  
-  
-  
   
 }
 
