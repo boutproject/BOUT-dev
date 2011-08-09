@@ -34,7 +34,7 @@ const BoutReal Me_Mi = Me / Mi; // Electron mass / Ion mass
 
 // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
-const BRACKET_METHOD bm = BRACKET_STD;
+BRACKET_METHOD bm; // Bracket method for advection terms
 
 // Evolving quantities
 Field3D Vort, Ajpar, Pe, Vpar;
@@ -46,13 +46,15 @@ Vector2D b0xcv;
 
 Field2D eta; // Collisional damping (resistivity)
 BoutReal beta_hat, mu_hat;
-BoutReal mu_par;
+BoutReal viscosity_par;
 
 int phi_flags, apar_flags;
 bool ZeroElMass, estatic; 
 bool curv_kappa;
 bool flat_resist;
 BoutReal mul_resist;
+
+BoutReal viscosity, hyper_viscosity;
 
 FieldGroup comms;
 
@@ -62,11 +64,12 @@ int physics_init(bool restarting) {
   // Load data from the grid
   
   GRID_LOAD(Jpar0);
-  
+  SAVE_ONCE(Jpar0);
+
   Field2D Ni0, Te0;
   GRID_LOAD2(Ni0, Te0);
   Ni0 *= 1e20; // To m^-3
-  Pe0 = Charge * Ni0 * Te0; // Electron pressure in Pascals
+  Pe0 = 2.*Charge * Ni0 * Te0; // Electron pressure in Pascals
   SAVE_ONCE(Pe0);
   
   // Load curvature term
@@ -103,7 +106,23 @@ int physics_init(bool restarting) {
   OPTION(options, curv_kappa, false);
   OPTION(options, flat_resist, false);
   OPTION(options, mul_resist, 1.0);
-  
+  OPTION(options, viscosity, -1.0);
+  OPTION(options, hyper_viscosity, -1.0);
+  OPTION(options, viscosity_par, -1.0);
+ 
+  int bracket_method;
+  OPTION(options, bracket_method, 0);
+  switch(bracket_method) {
+   case 0:
+    bm = BRACKET_STD; break;
+   case 1:
+    bm = BRACKET_SIMPLE; break;
+   case 2:
+    bm = BRACKET_ARAKAWA;
+   default:
+    bm = BRACKET_CTU;
+  }
+ 
   // SHIFTED RADIAL COORDINATES
 
   if(mesh->ShiftXderivs) {
@@ -130,7 +149,10 @@ int physics_init(bool restarting) {
   
   // drift scale
   BoutReal rho_s = Cs * Mi / (Charge * Bnorm);
-  
+ 
+  // Ion cyclotron frequency
+  BoutReal wci = Charge * Bnorm / Mi;
+ 
   beta_hat = 4.e-7*PI * Charge*Tenorm * Nenorm / (Bnorm*Bnorm);
   
   if(ZeroElMass) {
@@ -152,6 +174,10 @@ int physics_init(bool restarting) {
 
   // Coefficients
   eta *= Charge * Nenorm / Bnorm;
+
+  viscosity /= wci*SQ(rho_s);
+  hyper_viscosity /= wci*SQ(SQ(rho_s));
+  viscosity_par /= wci*SQ(rho_s);
 
   b0xcv.x /= Bnorm;
   b0xcv.y *= rho_s*rho_s;
@@ -220,15 +246,15 @@ const Field3D Kappa(const Field3D &f) {
     return -2.*b0xcv*Grad(f) / B0;
   }
   
-  return -2.*bracket(log(B0), f, bm);
+  return 2.*bracket(log(B0), f, bm);
 }
 
 const Field3D Grad_parP_LtoC(const Field3D &f) {
-  return Grad_par_LtoC(f) - beta_hat * bracket(apar, f);
+  return Grad_par_LtoC(f) - beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
 }
 
 const Field3D Grad_parP_CtoL(const Field3D &f) {
-  return Grad_par_CtoL(f) - beta_hat * bracket(apar, f);
+  return Grad_par_CtoL(f) - beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
 }
 
 int physics_run(BoutReal time) {
@@ -291,7 +317,18 @@ int physics_run(BoutReal time) {
     + B0*B0*Grad_parP_LtoC(jpar/B0)
     - B0*Kappa(Pe)
     ;
-  
+ 
+  if(viscosity > 0.0) {
+    ddt(Vort) +=  viscosity * Delp2(Vort);
+  }
+  if(hyper_viscosity > 0.0) {
+    Field3D delp2_vort = Delp2(Vort);
+    delp2_vort.applyBoundary("neumann");
+    mesh->communicate(delp2_vort);
+    
+    ddt(Vort) += hyper_viscosity*Delp2(delp2_vort);
+  }
+ 
   // Parallel Ohm's law
   if(!(estatic && ZeroElMass)) {
     // beta_hat*apar + mu_hat*jpar
@@ -306,8 +343,11 @@ int physics_run(BoutReal time) {
   ddt(Vpar) = 
     - bracket(phi, Vpar, bm)
     - Grad_parP_CtoL(Pe + Pe0) 
-    + mu_par * Grad2_par2(Vpar)
     ;
+
+  if(viscosity_par > 0.) {
+    ddt(Vpar) += viscosity_par * Grad2_par2(Vpar);
+  }
 
   // Electron pressure
   ddt(Pe) =
@@ -317,7 +357,6 @@ int physics_run(BoutReal time) {
                     + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
                     )
     ;
-  
   
   // Boundary in Vpar and vorticity
   if(mesh->firstX()) {
