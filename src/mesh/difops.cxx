@@ -108,14 +108,32 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   Field3D result;
   result.allocate();
   
+  int ncz = mesh->ngz-1;
+  
+  Field3D gys;
+  gys.allocate();
+
+  // Need Y derivative everywhere
+  for(int x=1;x<=mesh->ngx-2;x++)
+    for(int y=1;y<=mesh->ngy-2;y++)
+      for(int z=0;z<ncz;z++) {
+        gys[x][y][z] = (f[x][y+1][z] - f[x][y-1][z])/(0.5*mesh->dy[x][y+1] + mesh->dy[x][y] + 0.5*mesh->dy[x][y-1]);
+      }
+
+  // Shift into orthogonal XZ local coordinates
   Field3D as = apar;
   Field3D fs = f;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     as = apar.shiftZ(true);
     fs = f.shiftZ(true);
+    gys = gys.shiftZ(true);
   }
   
-  int ncz = mesh->ngz-1;
+  Field3D gx, bx, bz;
+  gx.allocate();
+  bx.allocate();
+  bz.allocate();
+  
   for(int x=1;x<=mesh->ngx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
       BoutReal by = 1./sqrt(mesh->g_22[x][y]);
@@ -124,29 +142,86 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
         int zp = (z + 1) % ncz;
         
         // bx = -DDZ(apar)
-        BoutReal bx = (as[x][y][zm] - as[x][y][zp])/(2.*mesh->dz);
+        bx[x][y][z] = (as[x][y][zm] - as[x][y][zp])/(2.*mesh->dz);
         // bz = DDX(f)
-        BoutReal bz = (as[x+1][y][z] - as[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+        bz[x][y][z] = (as[x+1][y][z] - as[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
         
         // Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
+        
+        // Length dl for predictor
+        BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
+        dl = MIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
+        dl = MIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        
+        BoutReal fp, fm;
+        
+        // X differencing
+        fp = fs[x+1][y][z] 
+          + (0.25*dl/mesh->dz) * bz[x][y][z] * (fs[x+1][y][zm] - fs[x+1][y][zp])
+          - 0.5*dl * by * gys[x+1][y][z];
+        
+        fm = fs[x-1][y][z]
+          + (0.25*dl/mesh->dz) * bz[x][y][z] * (fs[x-1][y][zm] - fs[x-1][y][zp])
+          - 0.5*dl * by * gys[x-1][y][z];
+        
+        result[x][y][z] = bx[x][y][z] * (fp - fm) / (0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
 
-        BoutReal b = sqrt(SQ(bx) + SQ(by) + SQ(bz));
+        // Z differencing
         
-        BoutReal delta_x = mesh->dx[x][y] * (bx/b);
-        BoutReal delta_y = mesh->dy[x][y] * (by/b);
-        BoutReal delta_z = mesh->dz * (bz/b);
-        BoutReal dl = sqrt(SQ(delta_x) + SQ(delta_y) + SQ(delta_z));
+        fp = fs[x][y][zp]
+          + (0.25*dl/mesh->dx[x][y]) * bx[x][y][z] * (fs[x-1][y][zp] - fs[x+1][y][zp])
+          - 0.5*dl * by * gys[x][y][zp];
         
-        if(bx > 0.0) {
-          
-        }else {
-          
-        }
+        fm = fs[x][y][zm]
+          + (0.25*dl/mesh->dx[x][y]) * bx[x][y][z] * (fs[x-1][y][zm] - fs[x+1][y][zm])
+          - 0.5*dl * by * gys[x][y][zm];
+
+        result[x][y][z] += bz[x][y][z] * (fp - fm) / (2.*mesh->dz);
+        
+        // Y differencing. Need X derivative
+        gx[x][y][z] = (fs[x+1][y][z] - fs[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
         
       }
     }
   }
+
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift into field-aligned coordinates
+    gx = gx.shiftZ(false);
+    bx = bx.shiftZ(false);
+    bz = bz.shiftZ(false);
+    result = result.shiftZ(false);
+  }
   
+  // Y differencing
+  for(int x=1;x<=mesh->ngx-2;x++) {
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      BoutReal by = 1./sqrt(mesh->g_22[x][y]);
+      for(int z=0;z<ncz;z++) {
+        int zm = (z - 1 + ncz) % ncz;
+        int zp = (z + 1) % ncz;
+        
+        // Re-calculate dl
+        BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
+        dl = MIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
+        dl = MIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        
+        BoutReal fp, fm;
+
+        fp = f[x][y+1][z]
+          - 0.5*dl * bx[x][y][z] * gx[x][y+1][z]
+          + (0.25*dl/mesh->dz)   * bz[x][y][z] * (fs[x][y+1][zm] - fs[x][y+1][zp]);
+        
+        fm = f[x][y-1][z]
+          - 0.5*dl * bx[x][y][z] * gx[x][y-1][z]
+          + (0.25*dl/mesh->dz)   * bz[x][y][z] * (fs[x][y-1][zm] - fs[x][y-1][zp]);
+
+        result[x][y][z] += by * (fp - fm) / (0.5*mesh->dy[x][y-1] + mesh->dy[x][y] + 0.5*mesh->dy[x][y+1]);
+      }
+    }
+  }
+  
+  return result;
 }
 
 /*******************************************************************************
@@ -1046,7 +1121,7 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
           vz[x][z] = (fs[x-1][y][z] - fs[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
           
           // Set stability condition
-          solver->setMaxTimestep(mesh->dx[x][y] / (fabs(vx[x][z]) + 1e-16));
+          solver->setMaxTimestep(fabs(mesh->dx[x][y]) / (fabs(vx[x][z]) + 1e-16));
           solver->setMaxTimestep(mesh->dz / (fabs(vz[x][z]) + 1e-16));
         }
       }
