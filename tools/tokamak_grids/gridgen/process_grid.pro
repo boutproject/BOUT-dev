@@ -398,7 +398,8 @@ END
 
 PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
                   gui=gui, parent=parent, reverse_bt=reverse_bt, $
-                  curv=curv, smoothpressure=smoothpressure
+                  curv=curv, smoothpressure=smoothpressure, $
+                  smoothhthe=smoothhthe
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -468,6 +469,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       IF sm THEN BEGIN
         ; Smooth the pressure profile
         
+        p2 = pressure
         FOR i=0, 5 DO BEGIN
           status = gen_surface(mesh=mesh) ; Start generator
           REPEAT BEGIN
@@ -476,14 +478,15 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
             
             IF (xi GT 0) AND (xi LT (nx-1)) THEN BEGIN
               FOR j=0,N_ELEMENTS(yi)-1 DO BEGIN
-                pressure[xi,yi[j]] = 0.5*pressure[xi,yi[j]] + $
+                p2[xi,yi[j]] = 0.5*pressure[xi,yi[j]] + $
                   0.25*(pressure[xi-1,yi[j]] + pressure[xi+1,yi[j]])
               ENDFOR
             ENDIF
             
             ; Make sure it's still constant on flux surfaces
-            pressure[xi,yi] = MEAN(pressure[xi,yi])
+            p2[xi,yi] = MEAN(p2[xi,yi])
           ENDREP UNTIL last
+          pressure = p2
         ENDFOR
       ENDIF
     ENDREP UNTIL sm EQ 0
@@ -676,6 +679,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       dpdpsi = dpdx2
     ENDIF
   ENDELSE
+  CATCH, /cancel
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Correct f = RBt using force balance
@@ -724,6 +728,43 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDIF
   ENDIF
   
+  IF KEYWORD_SET(smoothhthe) THEN BEGIN
+    ; Smooth hthe to prevent large jumps in X or Y. This
+    ; should be done by creating a better mesh in the first place
+    
+    ; Need to smooth in Y and X otherwise smoothing in X
+    ; produces discontinuities in Y
+    hold = hthe
+    
+    IF 1 THEN BEGIN
+      ; Nonlinear smoothing. Tries to smooth only regions with large
+      ; changes in gradient
+      
+      hthe = smooth_nl(hthe, mesh);
+      
+    ENDIF ELSE BEGIN
+      ; Just use smooth in both directions
+      
+      FOR i=0, ny-1 DO BEGIN
+        hthe[*,i] = SMOOTH(SMOOTH(hthe[*,i],10),10)
+      ENDFOR
+      
+      status = gen_surface(mesh=mesh) ; Start generator
+      REPEAT BEGIN
+        ; Get the next domain
+        yi = gen_surface(period=period, last=last, xi=xi)
+        
+        n = N_ELEMENTS(yi)
+        
+        IF period THEN BEGIN
+          hthe[xi,yi] = (SMOOTH([reform(hthe[xi,yi[(n-4):(n-1)]]), reform(hthe[xi,yi]), reform(hthe[xi,yi[0:3]])], 4))[4:(n+3)]
+        ENDIF ELSE BEGIN
+          hthe[xi,yi] = SMOOTH(hthe[xi,yi], 4)
+        ENDELSE
+      ENDREP UNTIL last
+    ENDELSE
+  ENDIF
+
   ; Calculate field-line pitch
   pitch = hthe * Btxy / (Bpxy * Rxy)
   
