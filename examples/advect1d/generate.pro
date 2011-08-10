@@ -4,7 +4,7 @@
 PRO generate, ny=ny, mxg=mxg, file=file
   IF NOT KEYWORD_SET(ny) THEN ny = 128
   IF NOT KEYWORD_SET(mxg) THEN mxg = 2
-  IF NOT KEYWORD_SET(file) THEN file="data/advect.grd.pdb"
+  IF NOT KEYWORD_SET(file) THEN file="advect.grd.nc"
 
   nx = 1 + 2*FIX(mxg)
 
@@ -32,17 +32,21 @@ PRO generate, ny=ny, mxg=mxg, file=file
   jyseps1_1 = -1
   jyseps2_2 = ny-1
 
-  PD_write, file, "nx", nx
-  PD_write, file, "ny", ny
-  PD_write, file, "dx", dxarr
-  PD_write, file, "dy", dyarr
+  fp = file_open(file, /create)
 
-  PD_write, file, "ixseps1", ixseps1
-  PD_write, file, "ixseps2", ixseps2
-  PD_write, file, "jyseps1_1", jyseps1_1
-  PD_write, file, "jyseps2_2", jyseps2_2
+  status = file_write(fp, "nx", nx)
+  status = file_write(fp, "ny", ny)
+  status = file_write(fp, "dx", dxarr)
+  status = file_write(fp, "dy", dyarr)
+  
+  status = file_write(fp, "ixseps1", ixseps1)
+  status = file_write(fp, "ixseps2", ixseps2)
+  status = file_write(fp, "jyseps1_1", jyseps1_1)
+  status = file_write(fp, "jyseps2_2", jyseps2_2)
 
-  PD_write, file, "density", density
-  PD_write, file, "pressure", pressure
-  PD_write, file, "vy", vy
+  status = file_write(fp, "density", density)
+  status = file_write(fp, "pressure", pressure)
+  status = file_write(fp, "vy", vy)
+  
+  file_close, fp
 END
