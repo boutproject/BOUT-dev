@@ -32,6 +32,10 @@ const BoutReal Mi = 2.0*1.67262158e-27; // Ion mass
 const BoutReal Me = 9.1093816e-31;  // Electron mass
 const BoutReal Me_Mi = Me / Mi; // Electron mass / Ion mass
 
+// Normalisation factors
+BoutReal Tenorm, Nenorm, Bnorm;
+BoutReal Cs, rho_s, wci;
+
 // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 BRACKET_METHOD bm; // Bracket method for advection terms
@@ -53,6 +57,8 @@ bool ZeroElMass, estatic;
 bool curv_kappa;
 bool flat_resist;
 BoutReal mul_resist;
+bool parallel_lc;
+bool nonlinear;
 
 BoutReal viscosity, hyper_viscosity;
 
@@ -109,18 +115,36 @@ int physics_init(bool restarting) {
   OPTION(options, viscosity, -1.0);
   OPTION(options, hyper_viscosity, -1.0);
   OPTION(options, viscosity_par, -1.0);
- 
+  
+  OPTION(options, parallel_lc, true);
+  OPTION(options, nonlinear, true);
+  
   int bracket_method;
   OPTION(options, bracket_method, 0);
   switch(bracket_method) {
-   case 0:
-    bm = BRACKET_STD; break;
-   case 1:
-    bm = BRACKET_SIMPLE; break;
-   case 2:
-    bm = BRACKET_ARAKAWA;
-   default:
-    bm = BRACKET_CTU;
+  case 0: {
+    bm = BRACKET_STD; 
+    output << "\tBrackets: default differencing\n";
+    break;
+  }
+  case 1: {
+    bm = BRACKET_SIMPLE; 
+    output << "\tBrackets: simplified operator\n";
+    break;
+  }
+  case 2: {
+    bm = BRACKET_ARAKAWA; 
+    output << "\tBrackets: Arakawa scheme\n";
+    break;
+  }
+  case 3: {
+    bm = BRACKET_CTU; 
+    output << "\tBrackets: Corner Transport Upwind method\n";
+    break;
+  }
+  default:
+    output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+    return 1;
   }
  
   // SHIFTED RADIAL COORDINATES
@@ -140,18 +164,18 @@ int physics_init(bool restarting) {
   ///////////////////////////////////////////////////
   // Normalisation
   
-  BoutReal Tenorm = max(Te0, true);
-  BoutReal Nenorm = max(Ni0, true);
-  BoutReal Bnorm = max(B0, true);
+  Tenorm = max(Te0, true);
+  Nenorm = max(Ni0, true);
+  Bnorm  = max(B0, true);
 
   // Sound speed in m/s
-  BoutReal Cs = sqrt(Charge*Tenorm / Mi);
+  Cs = sqrt(Charge*Tenorm / Mi);
   
   // drift scale
-  BoutReal rho_s = Cs * Mi / (Charge * Bnorm);
+  rho_s = Cs * Mi / (Charge * Bnorm);
  
   // Ion cyclotron frequency
-  BoutReal wci = Charge * Bnorm / Mi;
+  wci = Charge * Bnorm / Mi;
  
   beta_hat = 4.e-7*PI * Charge*Tenorm * Nenorm / (Bnorm*Bnorm);
   
@@ -160,6 +184,10 @@ int physics_init(bool restarting) {
   }else
     mu_hat = Me / Mi;
   
+  SAVE_ONCE3(Tenorm, Nenorm, Bnorm);
+  SAVE_ONCE3(Cs, rho_s, wci);
+  SAVE_ONCE2(beta_hat, mu_hat);
+
   // Spitzer resistivity 
   if(flat_resist) {
     // eta in Ohm-m. NOTE: ln(Lambda) = 20
@@ -250,11 +278,35 @@ const Field3D Kappa(const Field3D &f) {
 }
 
 const Field3D Grad_parP_LtoC(const Field3D &f) {
-  return Grad_par_LtoC(f) - beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
+  Field3D result;
+  if(parallel_lc) {
+    result = Grad_par_LtoC(f);
+    if(nonlinear)
+      result -= beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
+  }else {
+    if(nonlinear) {
+      result = Grad_parP(apar*beta_hat, f);
+    }else {
+      result = Grad_par(f);
+    }
+  }
+  return result;
 }
 
 const Field3D Grad_parP_CtoL(const Field3D &f) {
-  return Grad_par_CtoL(f) - beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
+  Field3D result;
+  if(parallel_lc) {
+    result = Grad_par_CtoL(f);
+    if(nonlinear)
+      result -= beta_hat * bracket(apar, f, BRACKET_ARAKAWA);
+  }else {
+    if(nonlinear) {
+      result = Grad_parP(apar*beta_hat, f);
+    }else {
+      result = Grad_par(f);
+    }
+  }
+  return result;
 }
 
 int physics_run(BoutReal time) {
@@ -292,7 +344,11 @@ int physics_run(BoutReal time) {
     jpar.applyBoundary();
     mesh->communicate(jpar);
   }
-  
+
+  Field3D Pet = Pe0;
+  if(nonlinear) {
+    Pet += Pe;
+  }
   
   // Boundary in jpar
   if(mesh->firstX()) {
@@ -313,11 +369,14 @@ int physics_run(BoutReal time) {
   
   // Vorticity equation
   ddt(Vort) = 
-    - bracket(phi, Vort, bm)    // ExB advection
-    + B0*B0*Grad_parP_LtoC(jpar/B0)
+    B0*B0*Grad_parP_LtoC(jpar/B0)
     - B0*Kappa(Pe)
     ;
  
+  if(nonlinear) {
+    ddt(Vort) -= bracket(phi, Vort, bm);    // ExB advection
+  }
+
   if(viscosity > 0.0) {
     ddt(Vort) +=  viscosity * Delp2(Vort);
   }
@@ -333,17 +392,23 @@ int physics_run(BoutReal time) {
   if(!(estatic && ZeroElMass)) {
     // beta_hat*apar + mu_hat*jpar
     ddt(Ajpar) =
-      - mu_hat*bracket(phi, jpar, bm)
-      + Grad_parP_CtoL(Pe0 + Pe - phi)
+      Grad_parP_CtoL(Pe0 + Pe - phi)
       - eta*jpar
       ;
+
+    if(nonlinear) {
+      ddt(Ajpar) -= mu_hat*bracket(phi, jpar, bm);
+    }
   }
   
   // Parallel velocity
   ddt(Vpar) = 
-    - bracket(phi, Vpar, bm)
     - Grad_parP_CtoL(Pe + Pe0) 
     ;
+
+  if(nonlinear) {
+    ddt(Vpar) -= bracket(phi, Vpar, bm);
+  }
 
   if(viscosity_par > 0.) {
     ddt(Vpar) += viscosity_par * Grad2_par2(Vpar);
@@ -351,11 +416,11 @@ int physics_run(BoutReal time) {
 
   // Electron pressure
   ddt(Pe) =
-    - bracket(phi, Pe + Pe0, bm)
-    + (Pe0 + Pe) * (
-                    Kappa(phi - Pe)
-                    + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
-                    )
+    - bracket(phi, Pet, bm)
+    + Pet * (
+             Kappa(phi - Pe)
+             + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
+             )
     ;
   
   // Boundary in Vpar and vorticity

@@ -105,7 +105,18 @@ curv_kappa = false  # Use bxcv vector in grid file, otherwise log(B)
 flat_resist = false # Flat resistivity profile
 mul_resist = 1.0    # Multiply resistivity by this
 
-bracket_method = 2
+viscosity = -1.0       # Perpendicular viscosity
+viscosity_par = -1.0   # Parallel viscosity
+hyper_viscosity = -1.0 # Perpendicular hyper-viscosity
+
+bracket_method = 2 # Method to use for [f,g] terms
+                   # 0 = Use default differencing methods
+                   # 1 = Simplified operator
+                   # 2 = Arakawa scheme
+                   # 3 = Corner Transport Upwind (CTU)
+
+parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
+nonlinear = true   # Include nonlinear terms?
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
