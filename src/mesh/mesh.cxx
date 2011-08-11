@@ -556,14 +556,13 @@ int Mesh::calcContravariant()
   return 0;
 }
 
-int Mesh::jacobian()
-{
+int Mesh::jacobian() {
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  J = sqrt(g11*g22*g33 + 
-	   2.0*g12*g13*g23 - 
-	   g11*g23*g23 - 
-	   g22*g13*g13 - 
-	   g33*g12*g12);
+  J = 1. / sqrt(g11*g22*g33 + 
+                2.0*g12*g13*g23 - 
+                g11*g23*g23 - 
+                g22*g13*g13 - 
+                g33*g12*g12);
   
   // Check jacobian
   if(!finite(mesh->J)) {
