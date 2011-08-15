@@ -41,7 +41,7 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
   // A key/value pair, separated by a '=' or a switch
   // and sections separated with an '_' but don't start with a '-'
 
-  string buffer,buffer_peek,buffer_peek_peek;
+  string buffer;
 
   // Go through command-line arguments
   for (size_t i=1;i<argc;i++) {
@@ -50,42 +50,34 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
     options = options->getRoot();
 
     buffer = argv[i];
-    size_t dashpos = buffer.find_first_of("-");
-
+    // Test if name starts with a '-'
+    bool startdash = buffer[0] == '-';
+    
     // Test to see if the user put spaces around the '=' sign
-    if (i < argc-2) {
-      buffer_peek = argv[i+1];
-      buffer_peek_peek = argv[i+2];
-      size_t test_next_for_equal_sign = buffer_peek.find_first_of("=");
-      size_t test_next_next_for_equal_sign = buffer_peek_peek.find_first_of("=");
-
-      // If the user did, then concatenate all the strings
-      if (test_next_for_equal_sign != string::npos) {
-        buffer.append(buffer_peek);
-        buffer.append(buffer_peek_peek);
-        i = i+2;
-      } else if (dashpos != string::npos && test_next_next_for_equal_sign == string::npos) {
-        buffer.append("=");
-        buffer.append(buffer_peek);
-        i = i+1;
-      }
-    } else if (i < argc-1) {
-      buffer_peek = argv[i+1];
-      size_t test_next_for_dash = buffer_peek.find_first_of("-");
-      size_t test_next_for_equal_sign = buffer_peek.find_first_of("=");
-
-      if (test_next_for_dash == string::npos && test_next_for_equal_sign == string::npos) {
-        buffer.append("=");
-        buffer.append(buffer_peek);
-        i = i+1;
-      } else if (test_next_for_equal_sign != string::npos) {
-        buffer.append(buffer_peek.substr(test_next_for_equal_sign));
-        i = i+1;
+    if (i < argc-1) {
+      if(buffer[buffer.length()-1] == '=') {
+        // Space after '=' sign
+        
+        i++;
+        buffer.append(argv[i]);
+        
+      }else if(argv[i+1][0] == '=') {
+        // Space before '=' sign
+        
+        i++;
+        buffer.append(argv[i]);
+        
+        if((argv[i][1] == 0) && (i < argc-2)) {
+          // End of string, so space after '=' sign too
+          
+          i++;
+          buffer.append(argv[i]);
+        }
       }
     }
-
-    if (dashpos != string::npos) buffer = buffer.substr(dashpos+1);
-
+    
+    if (startdash) buffer = buffer.substr(1);
+    
     size_t startpos = buffer.find_first_of("=");
 
     if (startpos == string::npos) {
@@ -100,16 +92,19 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 
       string key = trim(buffer.substr(0, startpos));
       string value = trim(buffer.substr(startpos+1));
-
-      size_t scorepos = key.find_first_of("_");
-
-      if (scorepos != string::npos) {
-        string section = key.substr(0,scorepos);
-        key = trim(key.substr(scorepos+1));
-
-        options = options->getSection(section);
+      
+      if(!startdash) {
+        // Only split into sections if no dash at start
+        size_t scorepos;
+        while((scorepos = key.find_first_of("_")) != string::npos) {
+          // sub-section
+          string section = key.substr(0,scorepos);
+          key = trim(key.substr(scorepos+1));
+          
+          options = options->getSection(section);
+        }
       }
-
+      
       if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value in command line '%s'\n", buffer.c_str());
 
       options->set(key, value, "Command line");
