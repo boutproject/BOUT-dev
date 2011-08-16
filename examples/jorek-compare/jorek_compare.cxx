@@ -70,6 +70,10 @@ Field3D divExB;    // Divergence of ExB flow
 BoutReal Wei;  // Factor for the electron-ion collision term
 bool ohmic_heating;
 
+// Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
+// Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
+BRACKET_METHOD bm; // Bracket method for advection terms
+
 // Communication objects
 FieldGroup comms;
 
@@ -203,6 +207,34 @@ int physics_init(bool restarting) {
   OPTION(options, Wei, 1.0);
   
   OPTION(options, ohmic_heating, true);
+
+  int bracket_method;
+  OPTION(options, bracket_method, 0);
+  switch(bracket_method) {
+  case 0: {
+    bm = BRACKET_STD; 
+    output << "\tBrackets: default differencing\n";
+    break;
+  }
+  case 1: {
+    bm = BRACKET_SIMPLE; 
+    output << "\tBrackets: simplified operator\n";
+    break;
+  }
+  case 2: {
+    bm = BRACKET_ARAKAWA; 
+    output << "\tBrackets: Arakawa scheme\n";
+    break;
+  }
+  case 3: {
+    bm = BRACKET_CTU; 
+    output << "\tBrackets: Corner Transport Upwind method\n";
+    break;
+  }
+  default:
+    output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+    return 1;
+  }
 
   //////////////////////////////////////////////////////////////
   // SHIFTED RADIAL COORDINATES
@@ -358,7 +390,7 @@ const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT) {
       result += Btilde * Grad(f) / B0;
     }else {
       // Simplified expression
-      result -= b0xGrad_dot_Grad(Apar, f) / B0;
+      result -= bracket(Apar, f, BRACKET_ARAKAWA);
     }
   }
   return result;
@@ -395,17 +427,21 @@ int physics_run(BoutReal t) {
   Jpar.applyBoundary();
 
   if(jpar_bndry_width > 0) {
-    // Zero j in boundary regions. Prevents vorticity drive
-    // at the boundary
-    
-    for(int i=0;i<jpar_bndry_width;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-	  if(mesh->firstX())
-	    Jpar[i][j][k] = 0.0;
-	  if(mesh->lastX())
-	    Jpar[mesh->ngx-1-i][j][k] = 0.0;
-	}
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_bndry_width;i>=0;i--)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jpar[i][j][k] = 0.5*Jpar[i+1][j][k];
+          }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_bndry_width-1;i<mesh->ngx;i++)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jpar[i][j][k] = 0.5*Jpar[i-1][j][k];
+          }
+    }
   }
   
   mesh->communicate(Jpar);
@@ -484,7 +520,7 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("density");
     ddt(rho) = 
-      - b0xGrad_dot_Grad(phi, rhot)/B0 // ExB advection 
+      - bracket(phi, rhot, bm)      // ExB advection 
       - divExB*rhot                    // Divergence of ExB (compression)
       - Vpar_Grad_par(Vpar, rho)       // Parallel advection
       - rhot*Div_parP(Vpar, CELL_CENTRE) // Parallel compression
@@ -503,7 +539,7 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Te");
     ddt(Te) = 
-      -b0xGrad_dot_Grad(phi, Tet)/B0 - Vpar_Grad_par(Vpar, Tet) // advection
+      -bracket(phi, Tet, bm) - Vpar_Grad_par(Vpar, Tet) // advection
       - (2./3.)*Tet*(divExB  + Div_parP(Vpar, CELL_CENTRE)) // Divergence of flow
       + Div_par_K_Grad_par(chi_epar, Te) / rhot    // Parallel diffusion
       + chi_eperp*Delp2(Te) / rhot   // Perpendicular diffusion
@@ -516,7 +552,7 @@ int physics_run(BoutReal t) {
     
     msg_stack.push("Ti");
     ddt(Ti) = 
-      -b0xGrad_dot_Grad(phi, Tit)/B0 - Vpar_Grad_par(Vpar, Tit)
+      - bracket(phi, Tit, bm) - Vpar_Grad_par(Vpar, Tit)
       - (2./3.)*Tit*(divExB + Div_parP(Vpar, CELL_CENTRE))
       + Div_par_K_Grad_par(chi_ipar, Ti) / rhot
       + chi_iperp*Delp2(Ti) / rhot
@@ -556,7 +592,7 @@ int physics_run(BoutReal t) {
       Vector3D Btilde = Curl(B0vec * Apar / B0);
       ddt(U) += B0*Btilde * Grad(J0/B0);
     }else {
-      ddt(U) -= B0 * b0xGrad_dot_Grad(Apar, J0/B0, CELL_CENTRE);
+      ddt(U) -= B0 * B0*bracket(Apar, J0/B0, BRACKET_ARAKAWA);
     }
     
     if(electron_density) {
@@ -572,7 +608,7 @@ int physics_run(BoutReal t) {
     }
     
     if(nonlinear) {
-      ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
+      ddt(U) -= bracket(phi, U, bm);    // Advection
       ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
     }
 
@@ -595,7 +631,7 @@ int physics_run(BoutReal t) {
       Vector3D Btilde = Curl(B0vec * Apar / B0);
       ddt(U) += B0*Btilde * Grad(J0/B0) / rhot;
     }else {
-      ddt(U) -= B0 * b0xGrad_dot_Grad(Apar, J0/B0, CELL_CENTRE) / rhot;
+      ddt(U) -= B0 * B0* bracket(Apar, J0/B0, BRACKET_ARAKAWA) / rhot;
     }
   
     if(include_profiles) {
@@ -606,7 +642,7 @@ int physics_run(BoutReal t) {
     }
 
     if(nonlinear) {
-      ddt(U) -= b0xGrad_dot_Grad(phi, U)/B0;    // Advection
+      ddt(U) -= bracket(phi, U);    // Advection
       ddt(U) -= Vpar_Grad_par(Vpar, U);         // Parallel advection
     }
   
@@ -633,7 +669,7 @@ int physics_run(BoutReal t) {
   
   ddt(Vpar) = -Grad_parP(P + P0, CELL_YLOW);
   if(nonlinear) {
-    ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar)/B0; // Advection
+    ddt(Vpar) -= bracket(phi, Vpar); // Advection
     ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar); // Parallel advection
   }
   

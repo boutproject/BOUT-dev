@@ -99,15 +99,15 @@ Wei = 0.0   # Electron-ion energy exchange relative to collisional
 ohmic_heating = false # Include Ohmic heating in Te equation
 
 viscos_perp = 1e-5  # Perpendicular viscosity
-viscos_coll = 1.0   # Collisional viscosity
+viscos_coll = 0.0   # Collisional viscosity
 viscos_par = 1e-5   # Parallel viscosity
 
-jpar_bndry_width=4  # Set Jpar to zero in boundary regions
+jpar_bndry_width=4  # Decaying jpar in boundary region
 
 full_bfield = false
 flux_method = false  # Use flux methods for fluid quantities
 
-nonlinear = false
+nonlinear = true
 
 electron_density = true # Evolve electron density. Adds a jpar term to density
 
@@ -116,6 +116,8 @@ vorticity_momentum = true
 include_profiles = false
 
 parallel_lc = true  # Use LtoC and CtoL differencing
+
+bracket_method = 3  # 0 = std, 1=simplified, 2 = arakawa, 3 = ctu
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
@@ -195,9 +197,6 @@ bndry_sol = dirichlet
 #bndry_xout = zerolaplace
 
 [Jpar]
-
-bndry_pf = dirichlet
-bndry_sol = dirichlet
 
 [phi]
 # X boundaries set by flags
