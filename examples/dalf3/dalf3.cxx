@@ -332,17 +332,24 @@ int physics_run(BoutReal time) {
     if(ZeroElMass) {
       // Ignore electron inertia term
       apar = Ajpar / beta_hat;
+      
+      mesh->communicate(comms);
+      jpar = -Delp2(apar);
+      jpar.applyBoundary();
+      mesh->communicate(jpar);
     }else {
       // All terms - solve Helmholtz equation
+      // ajpar = beta_hat*apar + mu_hat*jpar
       Field2D a = beta_hat;
       Field2D d = -mu_hat;
       apar = invert_laplace(Ajpar, apar_flags, &a, NULL, &d);
       apar.applyBoundary();
+      
+      mesh->communicate(comms);
+      
+      jpar = (Ajpar - beta_hat*apar) / mu_hat;
+      // Already applied boundaries on Ajpar and apar
     }
-    mesh->communicate(comms);
-    jpar = -Delp2(apar);
-    jpar.applyBoundary();
-    mesh->communicate(jpar);
   }
 
   Field3D Pet = Pe0;
