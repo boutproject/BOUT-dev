@@ -60,8 +60,7 @@ RTOL = 1.0e-5  # relative tolerance
 
 AA = 1.0
 ZZ = 1.0
- 
-estatic = false   # if true, electrostatic (Apar = 0)
+
 ZeroElMass = false # Use Ohms law without electron inertia
 Zeff = 2.0        # Z effective
 nu_perp = 1.0e-20
