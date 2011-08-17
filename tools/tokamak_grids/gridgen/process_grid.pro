@@ -590,11 +590,20 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Get the next domain
     yi = gen_surface(period=period, last=last, xi=xi)
     
+    n = N_ELEMENTS(yi)
+    
     ; Get distance along this line
+    
     IF period THEN BEGIN
       ; Periodic, so can use FFT
-      drdi = REAL_PART(fft_deriv(Rxy[xi, yi]))
-      dzdi = REAL_PART(fft_deriv(Zxy[xi, yi]))
+      ;drdi = REAL_PART(fft_deriv(Rxy[xi, yi]))
+      ;dzdi = REAL_PART(fft_deriv(Zxy[xi, yi]))
+      drdi = (DERIV([REFORM(Rxy[xi,yi[n-2:*]]), $
+                     REFORM(Rxy[xi, yi]), $
+                     REFORM(Rxy[xi,yi[0:1]])]))[2:(n+1)]
+      dzdi = (DERIV([REFORM(Zxy[xi,yi[n-2:*]]), $
+                     REFORM(Zxy[xi, yi]), $
+                     REFORM(Zxy[xi,yi[0:1]])]))[2:(n+1)]
     ENDIF ELSE BEGIN
       ; Non-periodic
       drdi = DERIV(Rxy[xi, yi])
@@ -603,17 +612,20 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     dldi = REFORM(SQRT(drdi^2 + dzdi^2))
     
-    ; Need to smooth to get sensible results
-    IF period THEN BEGIN
-      n = N_ELEMENTS(dldi)
-      dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
-      dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
-      dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
-    ENDIF ELSE BEGIN
-      dldi = SMOOTH(dldi, 5)
-      dldi = SMOOTH(dldi, 5)
-      dldi = SMOOTH(dldi, 5)
-    ENDELSE
+    IF 0 THEN BEGIN
+
+      ; Need to smooth to get sensible results
+      IF period THEN BEGIN
+        n = N_ELEMENTS(dldi)
+        dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
+        dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
+        dldi = (SMOOTH([ dldi[(n-2):*], dldi, dldi[0:1] ], 5))[2:(n+1)]
+      ENDIF ELSE BEGIN
+        dldi = SMOOTH(dldi, 5)
+        dldi = SMOOTH(dldi, 5)
+        dldi = SMOOTH(dldi, 5)
+      ENDELSE
+    ENDIF
     
     hthe[xi, yi] = dldi / dtheta ; First estimate of hthe
     
