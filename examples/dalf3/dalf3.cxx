@@ -63,6 +63,8 @@ bool jpar_noderiv; // Don't take Delp2(apar) to get jpar
 
 BoutReal viscosity, hyper_viscosity;
 
+bool smooth_separatrix;
+
 FieldGroup comms;
 
 int physics_init(bool restarting) {
@@ -99,7 +101,7 @@ int physics_init(bool restarting) {
   mesh->get(B0,   "Bxy");  // T
   mesh->get(hthe, "hthe"); // m
   mesh->get(I,    "sinty");// m^-2 T^-1
-  
+
   //////////////////////////////////////////////////////////////
   // Options
 
@@ -117,7 +119,8 @@ int physics_init(bool restarting) {
   OPTION(options, viscosity, -1.0);
   OPTION(options, hyper_viscosity, -1.0);
   OPTION(options, viscosity_par, -1.0);
-  
+  OPTION(options, smooth_separatrix, false);
+
   OPTION(options, parallel_lc, true);
   OPTION(options, nonlinear, true);
   
@@ -437,6 +440,11 @@ int physics_run(BoutReal time) {
              )
     ;
   
+  if(smooth_separatrix) {
+    // Experimental smoothing across separatrix
+    ddt(Vort) = mesh->smoothSeparatrix(ddt(Vort));
+  }
+
   // Boundary in Vpar and vorticity
   if(mesh->firstX()) {
     for(int i=3;i>=0;i--)

@@ -111,6 +111,8 @@ viscosity = -1.0       # Perpendicular viscosity
 viscosity_par = -1.0   # Parallel viscosity
 hyper_viscosity = -1.0 # Perpendicular hyper-viscosity
 
+smooth_separatrix = false
+
 bracket_method = 2 # Method to use for [f,g] terms
                    # 0 = Use default differencing methods
                    # 1 = Simplified operator

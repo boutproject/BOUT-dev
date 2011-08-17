@@ -63,6 +63,8 @@ class BoutMesh : public Mesh {
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
 
+  const Field3D smoothSeparatrix(const Field3D &f);
+
   BoutReal GlobalX(int jx);
   BoutReal GlobalY(int jy);
 
