@@ -100,6 +100,8 @@ func_iter = false     # Functional iteration (default is Newton)
 estatic = false     # Set Apar = 0
 ZeroElMass = false  # Set electron mass to zero
 
+jpar_noderiv = false  # If true, use jpar = (Ajpar - beta*apar)/mu
+
 curv_kappa = false  # Use bxcv vector in grid file, otherwise log(B)
 
 flat_resist = false # Flat resistivity profile

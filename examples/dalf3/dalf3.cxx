@@ -59,6 +59,7 @@ bool flat_resist;
 BoutReal mul_resist;
 bool parallel_lc;
 bool nonlinear;
+bool jpar_noderiv; // Don't take Delp2(apar) to get jpar
 
 BoutReal viscosity, hyper_viscosity;
 
@@ -109,6 +110,7 @@ int physics_init(bool restarting) {
   OPTION(options, apar_flags, 0);
   OPTION(options, estatic, false);
   OPTION(options, ZeroElMass, false);
+  OPTION(options, jpar_noderiv, true);
   OPTION(options, curv_kappa, false);
   OPTION(options, flat_resist, false);
   OPTION(options, mul_resist, 1.0);
@@ -346,9 +348,14 @@ int physics_run(BoutReal time) {
       apar.applyBoundary();
       
       mesh->communicate(comms);
-      
-      jpar = (Ajpar - beta_hat*apar) / mu_hat;
-      // Already applied boundaries on Ajpar and apar
+      if(jpar_noderiv) {
+        // Already applied boundaries on Ajpar and apar
+        jpar = (Ajpar - beta_hat*apar) / mu_hat;
+      }else {
+        jpar = -Delp2(apar);
+        jpar.applyBoundary();
+        mesh->communicate(jpar);
+      }
     }
   }
 
