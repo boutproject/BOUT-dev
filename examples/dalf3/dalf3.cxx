@@ -442,10 +442,11 @@ int physics_run(BoutReal time) {
   
   if(smooth_separatrix) {
     // Experimental smoothing across separatrix
-    ddt(Vort) = mesh->smoothSeparatrix(ddt(Vort));
+    ddt(Vort) += mesh->smoothSeparatrix(Vort);
   }
 
   // Boundary in Vpar and vorticity
+  
   if(mesh->firstX()) {
     for(int i=3;i>=0;i--)
       for(int j=0;j<mesh->ngy;j++)
@@ -453,6 +454,17 @@ int physics_run(BoutReal time) {
           ddt(Vpar)[i][j][k] = ddt(Vpar)[i+1][j][k];
           ddt(Vort)[i][j][k] = ddt(Vort)[i+1][j][k];
 	}
+    
+    // Subtract DC component
+    for(int i=0;i<10;i++)
+      for(int j=0;j<mesh->ngy;j++) {
+        BoutReal avg = 0.;
+        for(int k=0;k<mesh->ngz-1;k++)
+          avg += ddt(Vort)[i][j][k];
+        avg /= (BoutReal) mesh->ngz-1;
+        for(int k=0;k<mesh->ngz-1;k++)
+          ddt(Vort)[i][j][k] -= avg;
+      }
   }
   if(mesh->lastX()) {
     for(int i=mesh->ngx-3;i<mesh->ngx;i++)
