@@ -1,21 +1,32 @@
 ; Slab geometry grid generator
 ; 
+; Optional keywords:
+; =================
+; 
+; output   =   Set output file name
+; thin     =   Use thin radial box approximation
+;              so Bpxy = constant, but gradient is non-zero
+; 
+; ni  = Ion density in 10^20 m^-3 
+; Ti  = temperature in eV (Te = Ti)
+; 
+; Rmaj    = Major radius [meters]
+; rminor  = Minor radius [m]
+; dr      = Radial width of box [m]
+; r_wid   = Radial extent, normalised to gyro-radius r_wid = dr / rho_i
+; 
+; q       = Safety factor q = r*Bt/(R*Bp) at middle of box
+; dq      = Change in q. Will go from q-dq/2 to q+dq/2
+; 
+; L_T     = Temperature length scale [m]
+; eta_i   = Ratio of density to temp. length scales eta = L_n / L_T
 
-; Integrate 1 / (1 - eps*cos(theta))^2  where eps = r / R
-FUNCTION eps_func, theta, y
-  COMMON eps_com, eps
-  RETURN, 1. / ((1. - eps*COS(theta))^2)
-END
-
-FUNCTION eps_integral, eps, theta=theta
-  COMMON eps_com, ep
-  ep = eps
-  IF NOT KEYWORD_SET(theta) THEN theta = 2.*!PI
-  result = [0.]
-  return, (LSODE(result, 0.0, theta, 'eps_func'))[0]
-END
-
-PRO slab, output=output, varyBp=varyBp
+PRO slab, output=output, thin=thin, $
+          ni=ni, Ti=Ti, $
+          Rmaj=Rmaj, rminor=rminor, dr=dr, $
+          r_wid=r_wid, $
+          q=q, dq=dq, $
+          L_T=L_T, eta_i=eta_i
 
   nx = 68 ; Radial grid points
   ny = 32 ; Poloidal (parallel) grid points
@@ -25,38 +36,39 @@ PRO slab, output=output, varyBp=varyBp
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
   ; Ion density in 10^20 m^-3 
-  ni = 1.
+  IF NOT KEYWORD_SET(ni) THEN ni = 1.
   
   ; Temperature in eV (Te = Ti)
-  Ti = 1000
+  IF NOT KEYWORD_SET(Ti) THEN Ti = 1000
   
   ; Major radius [meters], used for setting box Z size
-  Rmaj = 5
+  IF NOT KEYWORD_SET(Rmaj) THEN Rmaj = 5
 
   ; Minor radius [m], Y size of domain
-  rminor = 1
+  IF NOT KEYWORD_SET(rminor) THEN rminor = 1
   
   ; Radial width of the domain [m]
-  dr = 0.1
+  IF NOT KEYWORD_SET(dr) THEN dr = 0.1
   
   ; Radial extent, normalised to gyro-radius r_wid = dr / rho_i
   ; Determines magnetic field strength
-  r_wid = 100
+  IF NOT KEYWORD_SET(r_wid) THEN r_wid = 100
   
   ; Safety factor q = r*Bt/(R*Bp) at middle of box
-  q = 3
+  IF NOT KEYWORD_SET(q) THEN q = 3
 
-  ; Change in q. Will go from q-dq to q+dq
-  dq = 0.1
+  ; Change in q. Will go from q-dq/2 to q+dq/2
+  IF NOT KEYWORD_SET(dq) THEN dq = 0.1
   
   ; Temperature length scale [m]
-  L_T = 0.1
+  IF NOT KEYWORD_SET(L_T) THEN L_T = 0.1
   
   ; Ratio of density to temp. length scales eta = L_n / L_T
-  eta_i = 1
-  
+  IF NOT KEYWORD_SET(eta_i) THEN eta_i = 1
   
   Mi = 2.*1.67262158e-27   ; Ion mass [kg]. Deuterium
+  
+  MU0 = 4.e-7*!PI
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -78,17 +90,17 @@ PRO slab, output=output, varyBp=varyBp
   ; Minor radius offset
   drprof = dr*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
   ; q profile
-  qprof = q + 2.*dq*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
+  qprof = q + dq*((FINDGEN(nx) / FLOAT(nx-1)) - 0.5)
   ShiftAngle = qprof * 2.*!PI
   
-  IF KEYWORD_SET(varyBp) THEN BEGIN
+  IF KEYWORD_SET(thin) THEN BEGIN
+     ; Constant Bp, but shift angle varies
+     Bpxy = FLTARR(nx, ny) + Bp
+  ENDIF ELSE BEGIN
      ; Vary Bpxy to get shear
      Bpxy = FLTARR(nx, ny)
      FOR i=0, ny-1 DO Bpxy[*,i] = Bp * q / qprof
      PRINT, "Poloidal field varies from "+STR(MIN(Bpxy))+" to "+STR(MAX(Bpxy))
-  ENDIF ELSE BEGIN
-     ; Constant Bp, but shift angle varies
-     Bpxy = FLTARR(nx, ny) + Bp
   ENDELSE
   
   dx = Bp * (dr / FLOAT(nx-1)) * Rxy
@@ -111,6 +123,19 @@ PRO slab, output=output, varyBp=varyBp
   pressure = Ni0 * (Ti0 + Te0) * 1.602e-19*1.0e20 ; In Pascals
 
   Jpar0 = FLTARR(nx, ny)
+  
+  IF KEYWORD_SET(thin) THEN BEGIN
+    ; Bp = const across box, but dBp/dr is non-zero
+    
+    jphi = -(dq/dr)*Bp/q/MU0
+    
+    Jpar0 = (Bt0/Bxy)*jphi
+  ENDIF ELSE BEGIN
+    r = rminor ;+ drprof
+    ;jphi = DERIV(drprof, r*Bpxy[*,0])/(r*MU0)
+    jphi = -(dq/dr)*Bp*q/(qprof^2 * MU0)
+    FOR y=0, ny-1 DO Jpar0[*,y] = (Bt0/Bxy[*,y]) * jphi
+  ENDELSE
 
   ; Shape       : Rxy, Zxy
   ; Differencing: hthe, dx, dy
