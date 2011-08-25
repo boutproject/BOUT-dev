@@ -3,8 +3,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1000.0       # time between outputs
+NOUT = 60          # number of time-steps
+TIMESTEP = 1.e2       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
@@ -112,6 +112,10 @@ bracket_method = 2 # Method to use for [f,g] terms
 parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
 nonlinear = false   # Include nonlinear terms?
 
+include_jpar0 = false
+
+jpar_bndry = 3
+
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
 #  2 - Zero-gradient AC component on inner boundary
@@ -125,28 +129,10 @@ nonlinear = false   # Include nonlinear terms?
 # 256 - Laplacian = 0 inner boundary
 # 512 - Laplacian = 0 outer boundary
 
-phi_flags = 10
+phi_flags = 0 # 11 #769
 
 [All]
 scale = 0.0 # default size of initial perturbations
-
-# form of initial profile:
-# 0 - constant
-# 1 - Gaussian
-# 2 - Sinusoidal
-# 3 - Mix of mode numbers (like original BOUT)
-
-xs_opt = 1
-ys_opt = 1
-zs_opt = 2
-
-xs_s0 = 0.5
-xs_wd = 0.1
-
-ys_s0 = 0.5
-ys_wd = 0.3
-
-zs_mode = 1
 
 # boundary conditions
 # -------------------
@@ -163,12 +149,14 @@ bndry_all = neumann
 
 [U]   # vorticity
 
-bndry_all = dirichlet
 
 [Apar]
 
-bndry_xin = dirichlet
-bndry_xout = dirichlet
+function = gauss(x-0.5, 0.1)*sin(3*y - z)
+scale = -1.0
+
+bndry_xin = constlaplace
+bndry_xout = constlaplace
 
 ########### Auxilliary variables
 
@@ -183,4 +171,4 @@ bndry_xout = none
 [Apar_coil]
 
 function = x*x*sin(3*y - z)
-scale = 1e-3
+scale = 0.

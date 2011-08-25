@@ -49,6 +49,8 @@ int phi_flags; // Inversion flags
 
 bool nonlinear;
 bool parallel_lc;
+bool include_jpar0;
+int jpar_bndry;
 
 int physics_init(bool restarting) {
 
@@ -70,7 +72,9 @@ int physics_init(bool restarting) {
   // normalisation values
   OPTION(options, nonlinear, false);
   OPTION(options, parallel_lc, true);
-  
+  OPTION(options, include_jpar0, true);
+  OPTION(options, jpar_bndry, 0);
+
   OPTION(options, eta, 1e-3); // Normalised resistivity
   OPTION(options, mu, 1.e-3); // Normalised vorticity
   
@@ -191,13 +195,15 @@ const Field3D Grad_parP_LtoC(const Field3D &f) {
   Field3D result;
   if(parallel_lc) {
     result = Grad_par_LtoC(f);
-    if(nonlinear)
+    if(nonlinear) {
       result -= beta_hat * bracket(Apar_coil+Apar, f, BRACKET_ARAKAWA);
+    }else
+      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
   }else {
     if(nonlinear) {
       result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
     }else {
-      result = Grad_par(f);
+      result = Grad_parP(Apar_coil*beta_hat, f);
     }
   }
   return result;
@@ -207,13 +213,16 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
   Field3D result;
   if(parallel_lc) {
     result = Grad_par_CtoL(f);
-    if(nonlinear)
-      result -= beta_hat * bracket(Apar+Apar_coil, f, BRACKET_ARAKAWA);
+    if(nonlinear) {
+      result -= beta_hat * bracket(Apar + Apar_coil, f, BRACKET_ARAKAWA);
+    }else {
+      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
+    }
   }else {
     if(nonlinear) {
       result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
     }else {
-      result = Grad_par(f);
+      result = Grad_parP(Apar_coil*beta_hat, f);
     }
   }
   return result;
@@ -231,29 +240,31 @@ int physics_run(BoutReal t) {
   jpar = -Delp2(Apar);
   jpar.applyBoundary();
   mesh->communicate(jpar);
-
-  /*
-  // Boundary in jpar
-  if(mesh->firstX()) {
-    for(int i=3;i>=0;i--)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i+1][j][k];
-	}
+  
+  if(jpar_bndry > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_bndry;i>=0;i--)
+	for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    jpar[i][j][k] = 0.5*jpar[i+1][j][k];
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
+	for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    jpar[i][j][k] = 0.5*jpar[i-1][j][k];
+	  }
+    }
   }
-  if(mesh->lastX()) {
-    for(int i=mesh->ngx-4;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i-1][j][k];
-	}
-  }
-  */
 
   // VORTICITY
-  ddt(U) = 
-    SQ(mesh->Bxy)*Grad_parP_LtoC(jpar/mesh->Bxy)
-    - SQ(mesh->Bxy)*beta_hat * bracket(Apar+Apar_coil, Jpar0/mesh->Bxy, BRACKET_ARAKAWA);
+  ddt(U) = SQ(mesh->Bxy)*Grad_parP_LtoC(jpar/mesh->Bxy);
+
+  if(include_jpar0) {
+   ddt(U) -= SQ(mesh->Bxy)*beta_hat * bracket(Apar+Apar_coil, Jpar0/mesh->Bxy, BRACKET_ARAKAWA);
+  }
   
   if(nonlinear) {
     ddt(U) -= bracket(phi, U, bm); // ExB advection
@@ -264,10 +275,10 @@ int physics_run(BoutReal t) {
 
   // APAR
   
-  ddt(Apar) = -Grad_parP_CtoL(phi);
+  ddt(Apar) = -Grad_parP_CtoL(phi) / beta_hat;
   
   if(eta > 0.)
-    ddt(Apar) -= eta*jpar;
+    ddt(Apar) -= eta*jpar / beta_hat;
 
   return 0;
 }
