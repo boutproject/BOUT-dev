@@ -1,12 +1,7 @@
 /**************************************************************************
- * Karniadakis split-operator solver
- *   J. Comput. Phys. 97 (1991) p414-443
+ * Euler explicit method
  * 
  * Always available, since doesn't depend on external library
- * 
- * Solves a system df/dt = S(f) + D(f)
- * 
- * where S is the RHS of each equation, and D is the diffusion terms
  * 
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -30,10 +25,10 @@
  *
  **************************************************************************/
 
-class KarniadakisSolver;
+class EulerSolver;
 
-#ifndef __KARNIADAKIS_SOLVER_H__
-#define __KARNIADAKIS_SOLVER_H__
+#ifndef __EULER_SOLVER_H__
+#define __EULER_SOLVER_H__
 
 #include "mpi.h"
 
@@ -45,33 +40,34 @@ class KarniadakisSolver;
 
 #include "solver.hxx"
 
-class KarniadakisSolver : public Solver {
+class EulerSolver : public Solver {
  public:
-  KarniadakisSolver();
-  ~KarniadakisSolver();
-
+  EulerSolver();
+  ~EulerSolver();
+  
+  void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
-
+  
   int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
  private:
-  
-  BoutReal *f1, *f0, *fm1, *fm2; // System state at current, and two previous time points
-  BoutReal *S0, *Sm1, *Sm2; // Convective part of the RHS equations
-  BoutReal *D0;             // Dissipative part of the RHS
-  
-  bool first_time; // Need to initialise values
+  BoutReal start_timestep; // Starting timestep
+  int mxstep; // Maximum number of internal steps between outputs
+  BoutReal cfl_factor; // Factor by which timestep must be smaller than maximum
 
+  BoutReal *f0, *f1;
+  
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
   
   BoutReal timestep; // The internal timestep
-  int nsubsteps; // Number of sub steps
+  bool timestep_reduced; // Set true if the timestep is reduced during RHS call
   
   int nlocal; // Number of variables on local processor
   
-  void take_step(BoutReal dt); // Take a single step to calculate f1
+  void take_step(BoutReal curtime, BoutReal dt, 
+                 BoutReal *start, BoutReal *result); // Take a single step to calculate f1
 };
 
 #endif // __KARNIADAKIS_SOLVER_H__

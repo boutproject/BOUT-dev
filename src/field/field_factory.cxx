@@ -399,11 +399,13 @@ FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
       return 0;
   }
   
-  // Merge lhs and rhs
+  // Merge lhs and rhs into new lhs
   list<FieldGenerator*> args;
   args.push_front(lhs);
   args.push_back(rhs);
-  return op->clone(args);
+  lhs = op->clone(args);
+  
+  return parseBinOpRHS(0, lhs);
 }
 
 FieldGenerator* FieldFactory::parseExpression() {

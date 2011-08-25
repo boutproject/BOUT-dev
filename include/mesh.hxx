@@ -165,7 +165,10 @@ class Mesh {
   
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
-
+  
+  // Branch-cut special handling (experimental)
+  virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
+  
   // Indexing. Iterate over the mesh
   /*  virtual IndexIter *iterateIndexXY() = 0;
   virtual IndexIter *iterateIndexXYZ() = 0;
@@ -235,7 +238,7 @@ class Mesh {
   // Timing
   
   static BoutReal wtime_comms; // Time spent communicating
-
+  
  protected:
   
   std::list<GridDataSource*> source_list; ///< List of sources

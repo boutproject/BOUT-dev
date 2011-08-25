@@ -44,7 +44,10 @@ class RK4Solver : public Solver {
  public:
   RK4Solver();
   ~RK4Solver();
-
+  
+  void setMaxTimestep(BoutReal dt);
+  BoutReal getCurrentTimestep() {return timestep; }
+  
   int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
@@ -61,7 +64,7 @@ class RK4Solver : public Solver {
   
   BoutReal timestep; // The internal timestep
   
-  int nlocal; // Number of variables on local processor
+  int nlocal, neq; // Number of variables on local processor and in total
   
   void take_step(BoutReal curtime, BoutReal dt, 
                  BoutReal *start, BoutReal *result); // Take a single step to calculate f1

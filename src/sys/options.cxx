@@ -192,11 +192,14 @@ void Options::printUnused() {
     output << "Unused options:\n";
     for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
       if(!it->second.used) {
-	output << "\t" << it->first << " = " << it->second.value;
+	output << "\t" << sectionName << "/" << it->first << " = " << it->second.value;
 	if(!it->second.source.empty())
 	  output << " (" << it->second.source << ")";
 	output << endl;
       }
     }
+  }
+  for(map<string,Options*>::iterator it=sections.begin(); it != sections.end(); it++) {
+    it->second->printUnused();
   }
 }

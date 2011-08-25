@@ -326,6 +326,13 @@ const string lowercasequote(const string &str)
   return strlow;
 }
 
+BoutReal stringToReal(const std::string &s) {
+  std::stringstream ss(s);
+  BoutReal val;
+  ss >> val;
+  return val;
+}
+
 std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems)
 {
     std::stringstream ss(s);

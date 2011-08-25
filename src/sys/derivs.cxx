@@ -729,7 +729,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   Field3D vs = var;
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     // Shift in Z using FFT
-    vs = var.shiftZ(true); // Shift into BoutReal space
+    vs = var.shiftZ(true); // Shift into real space
   }
   
   bindex bx;

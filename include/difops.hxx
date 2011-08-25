@@ -47,6 +47,9 @@ const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=C
 const Field3D Grad_par(const Field3D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
 
+// b0 dot Grad  -  (1/B)b0 x Grad(apar) dot Grad
+const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
+
 // vpar times parallel derivative (upwinding)
 const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f);
 const Field3D Vpar_Grad_par(const Field &v, const Field &f, 
@@ -98,7 +101,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A);
 const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc=CELL_DEFAULT);
 
 // Poisson bracket methods
-enum BRACKET_METHOD {BRACKET_STD=0, BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2};
+enum BRACKET_METHOD {BRACKET_STD=0, BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2, BRACKET_CTU=3};
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD);
 const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD);
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD);

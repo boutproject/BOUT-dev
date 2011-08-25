@@ -66,6 +66,8 @@ class PvodeSolver : public Solver {
 
   void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
+  BoutReal getCurrentTimestep() { return hcur; }
+  
   int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
@@ -78,6 +80,7 @@ class PvodeSolver : public Solver {
  private:
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
+  BoutReal hcur; // Current internal timestep
   
   pvode::N_Vector u;
   pvode::machEnvType machEnv;
@@ -85,14 +88,6 @@ class PvodeSolver : public Solver {
   
   rhsfunc func; // RHS function
   rhsfunc gfunc; // Preconditioner function
-  
-  // Loading data from BOUT++ to/from CVODE
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-  
-  void load_vars(BoutReal *udata);
-  int save_vars(BoutReal *udata);
-  void save_derivs(BoutReal *dudata);
 };
 
 #endif // __PVODE_SOLVER_H__

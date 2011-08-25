@@ -2373,6 +2373,43 @@ vector<BoundaryRegion*> BoutMesh::getBoundaries()
   return boundary;
 }
 
+const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
+  Field3D result = 0.;
+  if((ixseps_inner > 0) && (ixseps_inner < nx-1)) {
+    if(XPROC(ixseps_inner) == PE_XIND) {
+      int x = XLOCAL(ixseps_inner);
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+        }
+    }
+    if(XPROC(ixseps_inner-1) == PE_XIND) {
+      int x = XLOCAL(ixseps_inner-1);
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+        }
+    }
+  }
+  if((ixseps_outer > 0) && (ixseps_outer < nx-1)) {
+    if(XPROC(ixseps_outer) == PE_XIND) {
+      int x = XLOCAL(ixseps_outer);
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+        }
+    }
+    if(XPROC(ixseps_outer-1) == PE_XIND) {
+      int x = XLOCAL(ixseps_outer-1);
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+        }
+    }
+  }
+  return result;
+}
+
 BoutRangeIter::BoutRangeIter(int start, int end)
 {
   s = start;

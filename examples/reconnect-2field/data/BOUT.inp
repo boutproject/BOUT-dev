@@ -3,8 +3,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 10          # number of time-steps
-TIMESTEP = 1.0       # time between outputs
+NOUT = 100          # number of time-steps
+TIMESTEP = 1000.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
@@ -13,15 +13,18 @@ TwistShift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
+ShiftInitial = true
+ballooning = false
+
 MZ = 65             # number of points in z direction (2^n + 1)
-ZPERIOD = 10        # Fraction of a torus to simulate
+ZPERIOD = 1        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
 
 NXPE = 1            # Number of processor in X
 
-grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
+grid = "slab_68x32.nc"  # Grid file
 
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format
@@ -95,23 +98,10 @@ func_iter = false     # Functional iteration (default is Newton)
 
 ##################################################
 
-[dalf3]
+[2field]
 
-estatic = false     # Set Apar = 0
-ZeroElMass = false  # Set electron mass to zero
-
-jpar_noderiv = false  # If true, use jpar = (Ajpar - beta*apar)/mu
-
-curv_kappa = false  # Use bxcv vector in grid file, otherwise log(B)
-
-flat_resist = false # Flat resistivity profile
-mul_resist = 1.0    # Multiply resistivity by this
-
-viscosity = -1.0       # Perpendicular viscosity
-viscosity_par = -1.0   # Parallel viscosity
-hyper_viscosity = -1.0 # Perpendicular hyper-viscosity
-
-smooth_separatrix = false
+eta = -1  # Resistivity
+mu = -1  # Viscosity
 
 bracket_method = 2 # Method to use for [f,g] terms
                    # 0 = Use default differencing methods
@@ -120,7 +110,7 @@ bracket_method = 2 # Method to use for [f,g] terms
                    # 3 = Corner Transport Upwind (CTU)
 
 parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
-nonlinear = true   # Include nonlinear terms?
+nonlinear = false   # Include nonlinear terms?
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary
@@ -135,8 +125,7 @@ nonlinear = true   # Include nonlinear terms?
 # 256 - Laplacian = 0 inner boundary
 # 512 - Laplacian = 0 outer boundary
 
-phi_flags = 769
-apar_flags = 769
+phi_flags = 10
 
 [All]
 scale = 0.0 # default size of initial perturbations
@@ -172,24 +161,16 @@ bndry_all = neumann
 
 ########### Evolving variables
 
-[Vort]   # vorticity
+[U]   # vorticity
 
-scale = 1.0e-5
+bndry_all = dirichlet
 
-[Ajpar]  # beta*apar + mu*jpar
+[Apar]
 
-[Vpar]   # Parallel velocity
-
-bndry_pf = dirichlet
-bndry_sol = dirichlet
-
-[Pe]    # Electron pressure
+bndry_xin = dirichlet
+bndry_xout = dirichlet
 
 ########### Auxilliary variables
-
-[apar]
-bndry_xin = none   # Radial boundaries specified in inversion
-bndry_xout = none
 
 [jpar]
 
@@ -197,3 +178,9 @@ bndry_xout = none
 bndry_xin = none   # Radial boundaries specified in inversion
 bndry_xout = none
 
+########## External field
+
+[Apar_coil]
+
+function = x*x*sin(3*y - z)
+scale = 1e-3

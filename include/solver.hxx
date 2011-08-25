@@ -49,6 +49,7 @@ using std::string;
 #define SOLVERPETSC31     "petsc-3.1"
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
+#define SOLVEREULER       "euler"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -95,7 +96,9 @@ class Solver {
   
   /// Set a maximum internal timestep (only for explicit schemes)
   virtual void setMaxTimestep(BoutReal dt) {max_dt = dt;}
-
+  /// Return the current internal timestep 
+  virtual BoutReal getCurrentTimestep() {return 0.0;}
+  
   /// Initialise the solver, passing the RHS function
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works

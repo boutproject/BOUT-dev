@@ -398,7 +398,7 @@ PRO event_handler, event
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
-                      curv=info.curv_ind, smoothpressure=info.smoothP
+                      curv=info.curv_ind, smoothpressure=info.smoothP, smoothhthe=info.smoothH
         
         IF poorquality THEN BEGIN
           r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
@@ -449,6 +449,10 @@ PRO event_handler, event
     END
     'smoothP': BEGIN
       info.smoothP = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'smoothH': BEGIN
+      info.smoothH = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'draw': BEGIN
@@ -682,6 +686,7 @@ PRO event_handler, event
         info.strict_bndry = oldinfo.strict_bndry
         info.simple_bndry = oldinfo.simple_bndry
         info.smoothP = oldinfo.smoothP
+        info.smoothH = oldinfo.smoothH
         info.single_rad_grid = oldinfo.single_rad_grid
         
         IF info.rz_grid_valid THEN BEGIN
@@ -816,9 +821,14 @@ PRO hypnotoad
   Widget_Control, radgrid_check, Set_Button=1
 
   smoothP_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth pressure", uvalue='smoothP', $
-                                tooltip="Interpolate P to smooth derivative")
+                                tooltip="Smooth P profiles")
   
   Widget_Control, smoothP_check, Set_Button=0
+
+  smoothH_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth Hthe", uvalue='smoothH', $
+                                tooltip="Smooth Hthe")
+
+  Widget_Control, smoothH_check, Set_Button=0
   
   mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
@@ -868,6 +878,7 @@ PRO hypnotoad
            strict_bndry:1, $ ; 1 if boundaries should be strict
            simple_bndry:0, $ ; Use simplified boundary?
            smoothP:0, $     ; Interpolate to make P smooth
+           smoothH:0, $ 
            single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $

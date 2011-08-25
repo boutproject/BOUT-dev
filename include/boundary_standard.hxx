@@ -29,6 +29,17 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 
+class BoundaryRobin : public BoundaryOp {
+ public:
+  BoundaryRobin() : aval(0.), bval(0.), gval(0.) {}
+  BoundaryRobin(BoundaryRegion *region, BoutReal a, BoutReal b, BoutReal g):BoundaryOp(region), aval(a), bval(b), gval(g) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+private:
+  BoutReal aval, bval, gval;
+};
+
 class BoundaryConstGradient : public BoundaryOp {
  public:
   BoundaryConstGradient() {}

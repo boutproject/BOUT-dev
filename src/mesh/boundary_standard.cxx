@@ -4,35 +4,26 @@
 #include <invert_laplace.hxx>
 #include <fft.hxx>
 #include <boutexception.hxx>
-
-#include <sstream>
-using std::stringstream;
+#include <utils.hxx>
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     // First argument should be a value
-    stringstream ss;
-    ss << args.front();
-    
-    BoutReal val;
-    ss >> val;
+    val = stringToReal(args.front());
     return new BoundaryDirichlet(region, val);
   }
   return new BoundaryDirichlet(region);
 }
 
-void BoundaryDirichlet::apply(Field2D &f)
-{
+void BoundaryDirichlet::apply(Field2D &f) {
   // Just loop over all elements and set to zero
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f[bndry->x][bndry->y] = val;
 }
 
-void BoundaryDirichlet::apply(Field3D &f)
-{
+void BoundaryDirichlet::apply(Field3D &f) {
   // Just loop over all elements and set to zero
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
@@ -41,27 +32,86 @@ void BoundaryDirichlet::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
   }
   return new BoundaryNeumann(region);
 }
 
-void BoundaryNeumann::apply(Field2D &f)
-{
+void BoundaryNeumann::apply(Field2D &f) {
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by];
 }
 
-void BoundaryNeumann::apply(Field3D &f)
-{
+void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
       f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
 }
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
+  BoutReal a = 0.5, b = 1.0, g = 0.;
+  
+  list<string>::const_iterator it = args.begin();
+  
+  if(it != args.end()) {
+    // First argument is 'a'
+    a = stringToReal(*it);
+    it++;
+    
+    if(it != args.end()) {
+      // Second is 'b'
+      b = stringToReal(*it);
+      it++;
+      
+      if(it != args.end()) {
+	// Third is 'g'
+	g = stringToReal(*it);
+	it++;
+	if(it != args.end()) {
+	  output << "WARNING: BoundaryRobin takes maximum of 3 arguments. Ignoring extras\n";
+	}
+      }
+    }
+  }
+  
+  return new BoundaryRobin(region, a, b, g);
+}
+
+void BoundaryRobin::apply(Field2D &f) {
+  if(fabs(bval) < 1.e-12) {
+    // No derivative term so just constant value
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      f[bndry->x][bndry->y] = gval / aval;
+  }else {
+    BoutReal sign = 1.;
+    if( (bndry->bx < 0) || (bndry->by < 0))
+      sign = -1.;
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by] + sign*(gval - aval*f[bndry->x - bndry->bx][bndry->y - bndry->by] ) / bval;
+  }
+}
+
+void BoundaryRobin::apply(Field3D &f) {
+  if(fabs(bval) < 1.e-12) {
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      for(int z=0;z<mesh->ngz;z++)
+	f[bndry->x][bndry->y][z] = gval / aval;
+  }else {
+    BoutReal sign = 1.;
+    if( (bndry->bx < 0) || (bndry->by < 0))
+      sign = -1.;
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      for(int z=0;z<mesh->ngz;z++)
+	f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z] + sign*(gval - aval*f[bndry->x - bndry->bx][bndry->y - bndry->by][z] ) / bval;
+  }
+}
+
+///////////////////////////////////////////////////////////////
 
 void BoundaryConstGradient::apply(Field2D &f){
   // Loop over all elements and set equal to the next point in
@@ -363,11 +413,7 @@ BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &a
   
   if(!args.empty()) {
     // First argument should be the rate
-    stringstream ss;
-    ss << args.front();
-    
-    BoutReal val;
-    ss >> val;
+    BoutReal val = stringToReal(args.front());
     val = fabs(val); // Should always be positive
     result->r = val;
   }

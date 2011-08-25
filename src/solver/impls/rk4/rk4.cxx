@@ -6,18 +6,22 @@
 
 #include <cmath>
 
-RK4Solver::RK4Solver() : Solver()
-{
+RK4Solver::RK4Solver() : Solver() {
   
 }
 
-RK4Solver::~RK4Solver()
-{
+RK4Solver::~RK4Solver() {
 
 }
 
-int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
+void RK4Solver::setMaxTimestep(BoutReal dt) {
+  if(dt > timestep)
+    return; // Already less than this
+  
+  timestep = dt; // Won't be used this time, but next
+}
+
+int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising RK4 solver");
 #endif
@@ -30,7 +34,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
 
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
-  
+
   // Choose timestep
   if(max_dt < 0.0) {
     max_dt = tstep;
@@ -41,10 +45,8 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   nlocal = getLocalN();
   
   // Get total problem size
-  int neq;
   if(MPI_Allreduce(&nlocal, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    throw BoutException("MPI_Allreduce failed!");
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
@@ -74,8 +76,7 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   return 0;
 }
 
-int RK4Solver::run(MonitorFunc monitor)
-{
+int RK4Solver::run(MonitorFunc monitor) {
 #ifdef CHECK
   int msg_point = msg_stack.push("RK4Solver::run()");
 #endif
@@ -108,11 +109,18 @@ int RK4Solver::run(MonitorFunc monitor)
         take_step(simtime, dt, f0, f1);
         
         // Check accuracy
-        BoutReal err = 0.;
-        #pragma omp parallel for reduction(+: err)   
+        BoutReal local_err = 0.;
+        #pragma omp parallel for reduction(+: local_err)   
         for(int i=0;i<nlocal;i++)
-          err += fabs(f2[i] - f1[i]) / ( fabs(f1[i] + f2[i]) + atol );
-        err /= (BoutReal) nlocal;
+          local_err += fabs(f2[i] - f1[i]) / ( fabs(f1[i] + f2[i]) + atol );
+        
+        // Average over all processors
+        BoutReal err;
+        if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+          throw BoutException("MPI_Allreduce failed");
+        }
+
+        err /= (BoutReal) neq;
         
         internal_steps++;
         if(internal_steps > mxstep)

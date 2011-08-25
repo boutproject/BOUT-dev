@@ -13,7 +13,7 @@ enum BndryLoc {BNDRY_XIN=1, BNDRY_XOUT=2, BNDRY_YDOWN=4, BNDRY_YUP=8, BNDRY_ALL=
 class BoundaryRegion {
  public:
  BoundaryRegion() {}
- BoundaryRegion(const string &name, int xd, int yd) : label(name),bx(xd), by(yd) {}
+  BoundaryRegion(const string &name, int xd, int yd) : label(name),bx(xd), by(yd), width(2) {}
   virtual ~BoundaryRegion() {}
   
   string label; // Label for this boundary region
@@ -22,6 +22,8 @@ class BoundaryRegion {
   
   int x,y; // Indices of the point in the boundary
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
+
+  int width; // Width of the boundary
 
   virtual void first() = 0;
   virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
