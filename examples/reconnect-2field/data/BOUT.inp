@@ -1,0 +1,186 @@
+# DALF3 model settings
+
+##################################################
+# Global settings used by the core code
+
+NOUT = 100          # number of time-steps
+TIMESTEP = 1000.0       # time between outputs
+archive = 20        # Archive restart files after this number of outputs
+wall_limit = 4  # wall time limit (in hours)
+
+ShiftXderivs = true # use shifted radial derivatives?
+TwistShift = true   # use twist-shift condition?
+ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
+TwistOrder = 0      # order of twist-shift interpolation
+
+ShiftInitial = true
+ballooning = false
+
+MZ = 65             # number of points in z direction (2^n + 1)
+ZPERIOD = 1        # Fraction of a torus to simulate
+
+MXG = 2
+MYG = 2
+
+NXPE = 1            # Number of processor in X
+
+grid = "slab_68x32.nc"  # Grid file
+
+dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
+restart_format = "nc"   # Restart file format
+
+StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
+
+##################################################
+# Communications
+# Fastest setting depends on machine and MPI
+# implementation. Do not affect result.
+
+[comms]
+
+async = false           # Use asyncronous sends?
+pre_post = false        # Post receives as early as possible
+group_nonblock = false  # Use non-blocking group operations?
+
+##################################################
+# Laplacian inversion routines
+
+[laplace]
+
+# max_mode = 16  # Maximum N to solve for
+all_terms = false
+laplace_nonuniform = false
+filter = 0.2   # Remove the top 20% of modes (BOUT-06 zwindow=0.4)
+
+##################################################
+# FFTs
+
+[fft]
+
+fft_measure = true  # If using FFTW, perform tests to determine fastest method
+
+##################################################
+# derivative methods
+
+[ddx]
+
+first = C4  # order of first x derivatives (options are 2 or 4)
+second = C4 # order of second x derivatives (2 or 4)
+upwind = W3 # order of upwinding method (1, 4, 0 = TVD (DO NOT USE), 3 = WENO)
+
+[ddy]
+
+first = C4
+second = C4
+upwind = W3
+
+[ddz]
+
+first = C4  # Z derivatives can be done using FFT
+second = C4
+upwind = W3
+
+##################################################
+# Solver settings
+
+[solver]
+
+# mudq, mldq, mukeep, mlkeep preconditioner options
+ATOL = 1.0e-8 # absolute tolerance
+RTOL = 1.0e-5  # relative tolerance
+
+use_precon = false    # Use preconditioner: User-supplied or BBD
+use_jacobian = false  # Use user-supplied Jacobian
+
+mxstep = 5000   # Number of internal steps between outputs
+adams_moulton = false # Use Adams-Moulton method (default is BDF)
+func_iter = false     # Functional iteration (default is Newton)
+
+##################################################
+
+[2field]
+
+eta = -1  # Resistivity
+mu = -1  # Viscosity
+
+bracket_method = 2 # Method to use for [f,g] terms
+                   # 0 = Use default differencing methods
+                   # 1 = Simplified operator
+                   # 2 = Arakawa scheme
+                   # 3 = Corner Transport Upwind (CTU)
+
+parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
+nonlinear = false   # Include nonlinear terms?
+
+# field inversion flags: Add the following
+#  1 - Zero-gradient DC component on inner boundary
+#  2 - Zero-gradient AC component on inner boundary
+#  4 -      "        DC     "      " outer    "
+#  8 -      "        AC     "      " outer    "
+# 16 - Zero all DC components of the result
+# 32 - Don't use previous solution to start iterations
+#      (iterative methods only)
+# 64 - Set the width of the boundary layer to 1
+# 128 - use 4th order differencing
+# 256 - Laplacian = 0 inner boundary
+# 512 - Laplacian = 0 outer boundary
+
+phi_flags = 10
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# form of initial profile:
+# 0 - constant
+# 1 - Gaussian
+# 2 - Sinusoidal
+# 3 - Mix of mode numbers (like original BOUT)
+
+xs_opt = 1
+ys_opt = 1
+zs_opt = 2
+
+xs_s0 = 0.5
+xs_wd = 0.1
+
+ys_s0 = 0.5
+ys_wd = 0.3
+
+zs_mode = 1
+
+# boundary conditions
+# -------------------
+# dirichlet    - Zero value
+# neumann      - Zero gradient
+# zerolaplace  - Laplacian = 0, decaying solution
+# constlaplace - Laplacian = const, decaying solution
+#
+# relax( )   - Make boundary condition relaxing
+
+bndry_all = neumann
+
+########### Evolving variables
+
+[U]   # vorticity
+
+bndry_all = dirichlet
+
+[Apar]
+
+bndry_xin = dirichlet
+bndry_xout = dirichlet
+
+########### Auxilliary variables
+
+[jpar]
+
+[phi]
+bndry_xin = none   # Radial boundaries specified in inversion
+bndry_xout = none
+
+########## External field
+
+[Apar_coil]
+
+function = x*x*sin(3*y - z)
+scale = 1e-3
