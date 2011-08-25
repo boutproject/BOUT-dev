@@ -61,6 +61,8 @@ bool parallel_lc;
 bool nonlinear;
 bool jpar_noderiv; // Don't take Delp2(apar) to get jpar
 
+bool filter_z;
+
 BoutReal viscosity, hyper_viscosity;
 
 bool smooth_separatrix;
@@ -120,6 +122,8 @@ int physics_init(bool restarting) {
   OPTION(options, hyper_viscosity, -1.0);
   OPTION(options, viscosity_par, -1.0);
   OPTION(options, smooth_separatrix, false);
+  
+  OPTION(options, filter_z, false);
 
   OPTION(options, parallel_lc, true);
   OPTION(options, nonlinear, true);
@@ -404,6 +408,9 @@ int physics_run(BoutReal time) {
     
     ddt(Vort) += hyper_viscosity*Delp2(delp2_vort);
   }
+
+  if(filter_z)
+    ddt(Vort) = filter(ddt(Vort), 1);
  
   // Parallel Ohm's law
   if(!(estatic && ZeroElMass)) {
@@ -416,6 +423,9 @@ int physics_run(BoutReal time) {
     if(nonlinear) {
       ddt(Ajpar) -= mu_hat*bracket(phi, jpar, bm);
     }
+
+    if(filter_z)
+      ddt(Ajpar) = filter(ddt(Ajpar), 1);
   }
   
   // Parallel velocity
@@ -431,6 +441,9 @@ int physics_run(BoutReal time) {
     ddt(Vpar) += viscosity_par * Grad2_par2(Vpar);
   }
 
+  if(filter_z)
+    ddt(Vpar) = filter(ddt(Vpar), 1);
+
   // Electron pressure
   ddt(Pe) =
     - bracket(phi, Pet, bm)
@@ -439,11 +452,14 @@ int physics_run(BoutReal time) {
              + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
              )
     ;
-  
+ 
   if(smooth_separatrix) {
     // Experimental smoothing across separatrix
     ddt(Vort) += mesh->smoothSeparatrix(Vort);
   }
+
+  if(filter_z)
+    ddt(Pe) = filter(ddt(Pe), 1);
 
   // Boundary in Vpar and vorticity
   
