@@ -11,10 +11,15 @@ Run SRC/checksum.sh to get the checksum.
 
          --- Hash ---                    --- Version ---
 
+98c532a65f0d499f7606a9ddf53ce1e8        1.0-RELEASE
 13598849ac0565e2c39296a230a3dce3        FACETS-INITIAL
 c14cba9486e36a51a0d246411b5082ec	0.80-RELEASE
 9703e3588ef9e66cc89a893e4706d8ac        0.70-RELEASE
 
+1.0-RELEASE
+-----------
+
+Release of BOUT++ for August 2011 workshop at LLNL
 
 FACETS-INITIAL
 --------------
