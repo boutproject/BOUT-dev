@@ -3,8 +3,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 60          # number of time-steps
-TIMESTEP = 1.e2       # time between outputs
+NOUT = 50          # number of time-steps
+TIMESTEP = 1.e3       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
@@ -149,14 +149,10 @@ bndry_all = neumann
 
 [U]   # vorticity
 
-
 [Apar]
 
-function = gauss(x-0.5, 0.1)*sin(3*y - z)
+function = (1 - 4*(x-0.5)^2 )*sin(3*y - z)
 scale = -1.0
-
-bndry_xin = constlaplace
-bndry_xout = constlaplace
 
 ########### Auxilliary variables
 
@@ -171,4 +167,4 @@ bndry_xout = none
 [Apar_coil]
 
 function = x*x*sin(3*y - z)
-scale = 0.
+scale = 1.e-3

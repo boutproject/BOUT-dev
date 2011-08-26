@@ -247,14 +247,14 @@ int physics_run(BoutReal t) {
       for(int i=jpar_bndry;i>=0;i--)
 	for(int j=0;j<mesh->ngy;j++)
 	  for(int k=0;k<mesh->ngz-1;k++) {
-	    jpar[i][j][k] = 0.5*jpar[i+1][j][k];
+	    jpar[i][j][k] = jpar[i+1][j][k];
 	  }
     }
     if(mesh->lastX()) {
       for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
 	for(int j=0;j<mesh->ngy;j++)
 	  for(int k=0;k<mesh->ngz-1;k++) {
-	    jpar[i][j][k] = 0.5*jpar[i-1][j][k];
+	    jpar[i][j][k] = jpar[i-1][j][k];
 	  }
     }
   }
