@@ -7,8 +7,8 @@ FUNCTION theta_differential, s, pos
 ; Inputs: x->s (distance along theta line)
 ; y[0:1] -> [r,z] (coords)
 ;------------------------------------------------;
-  COMMON td_com, dctf, lastgoodpos
-  a = local_gradient(dctf, pos[0], pos[1], status=status)
+  COMMON td_com, f, dctf, lastgoodpos
+  a = local_gradient(dctf, pos[0], pos[1], status=status, f=f)
   
   IF status EQ 0 THEN BEGIN
     ; No error in localgradient.
