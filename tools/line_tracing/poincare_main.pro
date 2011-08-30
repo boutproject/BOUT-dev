@@ -4,14 +4,7 @@ PRO Poincare_Main, zArr,xArr,cArr,tindex=tindex,time=time,rational=rational,$
 ;
 
 COMMON griddata, g, deltaZtor, Ntor
-
-;None of these should be needed since they are all set in Poincare.pro
-;IF NOT KEYWORD_SET(nstart) THEN nstart=10
-;IF NOT KEYWORD_SET(nmap) THEN nmap=50
-;IF NOT KEYWORD_SET(nsubcycle) THEN nsubcycle=1
-;IF NOT KEYWORD_SET(savefile) THEN savefile='puncture_plot.idl.dat'
-;IF NOT KEYWORD_SET(xmin) THEN xmin=MIN(g.psixy)
-;IF NOT KEYWORD_SET(xmax) THEN xmax=MAX(g.psixy)
+COMMON flags, flag, mc_flag
 
 zmin=0.0
 zmax=deltaZtor ;;2*!PI/period
@@ -21,7 +14,7 @@ zArr=[0.0]
 xArr=[0.0]
 cArr=[0]
 
-for istart=1, nStart-2 do begin
+for istart=0, nStart-1 do begin
     ;;-select flux surface
     if keyword_set(RATIONAL) then begin
         qval=(18+iStart)/15.
@@ -30,15 +23,21 @@ for istart=1, nStart-2 do begin
         xStart = xmin+(xmax-xmin)*DOUBLE(istart)/DOUBLE(nStart-1)
     endelse
 
+;(JPS) changed istart=0,nstart-1 from istart=1,nstart-2
+;but need to make sure that xstart doesn't exit computational domain  
+    IF istart EQ 0 THEN xStart=xmin+(xmax-xmin)/(2*DOUBLE(nstart-1))
+    IF istart EQ nstart-1 THEN xStart=xmax-(xmax-xmin)/(2*DOUBLE(nstart-1))
+
     for isub=1,Nsubcycle do begin
 
         ;;-select random z-coordinate
-        zStart=zMax*RANDOMU(seed)
+;        zStart=zMax*RANDOMU(seed)
+        zStart=0.25*zMax
 
         iColor=iColor+1
         color=(iColor mod 13) + 1
 
-        x=xStart+0.01*(isub-2)
+        x=xStart+0.01*(isub-1)   ; (JPS) Can give x values below xmin for large nstart (CORRECTED)
         z=zStart
 
         for imap=0,Nmap-1 do begin
@@ -59,6 +58,6 @@ endfor ;-istart
 allPts={x:xArr,z:zArr,c:cArr}
 xminplot=xmin
 xmaxplot=xmax
-save, allPts,zmin,zmax,xminplot,xmaxplot,time,tindex, f=savefile
+save, allPts,zmin,zmax,xminplot,xmaxplot,time,tindex,flag,mc_flag, f=savefile
 ;
 END

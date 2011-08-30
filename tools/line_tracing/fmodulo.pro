@@ -1,27 +1,16 @@
-function FMOD, x,y
-;
-; Cast x within the period [0,y]
-;===================================================;
-
- return, (x mod y)
-end
-
-
-function FMODULO, x,y
-;
-; Generalization of FMOD to negative x.
+FUNCTION FMODULO, x,y
+; Generalization of modulo to negative x.
 ;
 ; Example: 
 ;       fmodulo(-2*!PI+0.1, 2*!PI) -> 0.1
 ; while 
-;       fmod(-2*!PI+0.1, 2*!PI) -> -6.18319
+;       mod(-2*!PI+0.1, 2*!PI) -> -6.18319
 ;===================================================;
+  IF (x GE 0.) THEN BEGIN 
+    res=(x MOD y)
+  ENDIF ELSE BEGIN
+    res=( (x+(CEIL(ABS(x/y)))*y) MOD y )
+  ENDELSE
 
-  if (x ge 0.) then begin 
-    res=FMOD(x,y)
-  endif else begin
-    res=FMOD(x+(CEIL(ABS(x/y)))*y,y)
-  endelse
-
- return, res
-end
+ RETURN, res
+END
