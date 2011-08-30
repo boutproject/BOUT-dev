@@ -686,6 +686,7 @@ PRO event_handler, event
         info.npol_field = oldinfo.npol_field
         info.draw = oldinfo.draw
         info.psi_inner_field = oldinfo.psi_inner_field
+        info.psi_outer_field = oldinfo.psi_outer_field
         info.rad_peak_field = oldinfo.rad_peak_field
         info.status = oldinfo.status
         info.leftbargeom = oldinfo.leftbargeom
