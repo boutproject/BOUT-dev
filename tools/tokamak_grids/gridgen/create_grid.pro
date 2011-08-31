@@ -1071,7 +1071,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       ; Get the separatrices
       legsep = leg_separatrix(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
-                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi, psi=psi)
+                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       ; Go a little way along each core separatrix and follow
       follow_gradient, dctF, R, Z, $
@@ -1254,7 +1254,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       ; Get the lines from the x-point to the target plates
       legsep = leg_separatrix(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
-                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi, psi=psi)
+                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
