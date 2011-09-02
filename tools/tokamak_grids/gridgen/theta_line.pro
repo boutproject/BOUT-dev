@@ -1,9 +1,10 @@
-FUNCTION theta_line, dctF, ri0, zi0, di0, nstep, boundary=boundary, dir=dir
-  COMMON td_com, fdata, lastgoodpos
+FUNCTION theta_line, dctF, ri0, zi0, di0, nstep, boundary=boundary, dir=dir, psi=psi
+  COMMON td_com, fvals, fdata, lastgoodpos
   
   ri = [ri0]
   zi = [zi0]
   fdata = dctF
+  IF KEYWORD_SET(psi) THEN fvals = psi ELSE fvals = 0
   
   pos = [ri0,zi0]
   

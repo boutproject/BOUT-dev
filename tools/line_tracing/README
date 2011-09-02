@@ -1,0 +1,36 @@
+The .pro files here constitute the code for the BOUT++ line tracing utility
+written in IDL. This utility must be run from within the IDL environment.
+
+First make sure that you specify the location of these files in your IDL path
+environment variable. This can be done by adding the following line to your
+.IDL_STARTUP file or just executing directly in IDL:
+  !path=!path+":/LOCATION/OF/THIS/DIRECTORY"
+
+A sample IDL_STARTUP file is included in MISC for reference. Paths will need to
+be changed.
+
+Then just execute the code using a command of the form:
+  poincare,tindex=10,nstart=50,nmap=100,method='bicube_fft'
+
+This assumes that IDL is in the root simulation directory and the directory
+structure is of the form:
+  elm_pb/
+        /data/
+             /grid_file.nc
+             /BOUT.dmp.*.nc
+
+This will generate an IDL data file "poincare.10.bicube_fft.idl.dat" in the 
+directory "data". This can be read in again and plotted using the command:
+  poincare,s_file='poincare.10.bicube_fft.idl.dat'
+
+The options that can be specified at run-time are described at the start of the
+poincare.pro file. Hopefully the rest of the code should be commented well-
+enough to give an idea of what is going on.
+
+misc:
+  apar_*.pro - files evaluate derivatives of vector potential at given (x,y,z)
+  mc_*.pro   - evaluates metric coefficients at given (x,y,z)
+  cp_*.pro   - converts the data to a form more amenable to direct indexing
+               (i.e. duplicating data apar[*,*,0] in apar[*,*,NZ])
+
+-JPS (8/24/2011)

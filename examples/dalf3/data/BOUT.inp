@@ -4,7 +4,7 @@
 # Global settings used by the core code
 
 NOUT = 10          # number of time-steps
-TIMESTEP = 1.0       # time between outputs
+TIMESTEP = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
@@ -113,14 +113,18 @@ hyper_viscosity = -1.0 # Perpendicular hyper-viscosity
 
 smooth_separatrix = false
 
-bracket_method = 2 # Method to use for [f,g] terms
+bracket_method = 3 # Method to use for [f,g] terms
                    # 0 = Use default differencing methods
                    # 1 = Simplified operator
                    # 2 = Arakawa scheme
                    # 3 = Corner Transport Upwind (CTU)
 
 parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
-nonlinear = true   # Include nonlinear terms?
+nonlinear = false   # Include nonlinear terms?
+
+vpar_advect = false # Include vpar dot grad advection terms
+
+warm_ion = false   # Include ion diamagnetic drift
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary

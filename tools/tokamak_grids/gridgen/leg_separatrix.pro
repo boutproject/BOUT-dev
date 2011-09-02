@@ -10,11 +10,14 @@
 FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
                          opt_ri, opt_zi, $  ; Location of primary O-point
                          status=status, $
-                         boundary=boundary
-  COMMON td_com, fdata, lastgoodpos
+                         boundary=boundary, $
+                         psi=psi
+  COMMON td_com, fvals, fdata, lastgoodpos
   s = SIZE(dctF, /DIMENSION)
   nr = s[0]
   nz = s[1]
+
+  IF KEYWORD_SET(psi) THEN fvals = psi ELSE fvals = 0
 
   fdata = dctF
 
@@ -112,11 +115,11 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
   
   line1 = theta_line( dctF, $
                       xpt_ri + di*v1[0], xpt_zi + di*v1[1], $
-                      sign*di, 1000, boundary=boundary)
+                      sign*di, 1000, boundary=boundary, psi=psi)
   
   core1 = theta_line( dctF, $
                       xpt_ri - di*v1[0], xpt_zi - di*v1[1], $
-                      sign*di, 100)
+                      sign*di, 100, psi=psi)
 
   dt = theta_differential(0., [xpt_ri + di*v2[0], xpt_zi + di*v2[1]])
   sign = 1.
@@ -124,11 +127,11 @@ FUNCTION leg_separatrix, dctF, R, Z, xpt_ri, xpt_zi, $
 
   line2 = theta_line( dctF, $
                       xpt_ri + di*v2[0], xpt_zi + di*v2[1], $
-                      sign*di, 1000, boundary=boundary)
+                      sign*di, 1000, boundary=boundary, psi=psi)
 
   core2 = theta_line( dctF, $
                       xpt_ri - di*v2[0], xpt_zi - di*v2[1], $
-                      sign*di, 100)
+                      sign*di, 100, psi=psi)
 
   OPLOT, INTERPOLATE(R, line1[*,0]), INTERPOLATE(Z, line1[*,1]), color=3, thick=2
   OPLOT, INTERPOLATE(R, line2[*,0]), INTERPOLATE(Z, line2[*,1]), color=4, thick=2

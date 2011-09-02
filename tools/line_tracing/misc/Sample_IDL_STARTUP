@@ -1,0 +1,5 @@
+!path=!path+":/global/homes/j/jpsauppe/local/idl"
+!path=!path+":/global/homes/j/jpsauppe/hopper/BOUT/BOUT_08/tools/idllib"
+!path=!path+":/global/homes/j/jpsauppe/hopper/BOUT/BOUT_08/tools/Line_Tracing"
+
+.run pdb2idl

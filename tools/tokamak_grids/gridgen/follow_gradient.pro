@@ -6,8 +6,8 @@
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 FUNCTION radial_differential, fcur, pos
-  COMMON rd_com, dctf, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol
-  a = local_gradient(dctf, pos[0], pos[1], status=status)
+  COMMON rd_com, f, dctf, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol
+  a = local_gradient(dctf, pos[0], pos[1], status=status, f=f)
   
   ood = 0
 
@@ -59,8 +59,8 @@ END
 ; ibndry    (out)   If hits boundary, index where hit
 ;
 PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
-                     boundary=boundary, fbndry=fbndry, ibndry=ibndry
-  COMMON rd_com, df, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
+                     boundary=boundary, fbndry=fbndry, ibndry=ibndry, psi=psi
+  COMMON rd_com, f, df, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
   
   tol = 0.1
 
@@ -68,6 +68,8 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
   Zpos = Z
   
   ibndry = -1
+
+  IF KEYWORD_SET(psi) THEN f = psi ELSE f = 0
 
   IF KEYWORD_SET(boundary) THEN BEGIN
     bndry = boundary
@@ -81,7 +83,7 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
   IF SIZE(ftarget, /TYPE) EQ 0 THEN PRINT, ftarget
 
   ; Get starting f
-  g = local_gradient(dctF, ri0, zi0, status=status)
+  g = local_gradient(dctF, ri0, zi0, status=status, f=psi)
   IF status EQ 1 THEN BEGIN
     ri = ri0
     zi = zi0
@@ -100,7 +102,7 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
     REPEAT BEGIN
       rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
       IF lstat EQ -1 THEN BEGIN
-        PRINT, "  -> Excessive work "+STR(f)+" to "+STR(ftarget)+" Trying to continue..."
+        PRINT, "  -> Excessive work "+STR(f0)+" to "+STR(ftarget)+" Trying to continue..."
         lstat = 2 ; continue
         rcount = rcount + 1
         IF rcount GT 10 THEN BEGIN
@@ -108,7 +110,7 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
           STOP
         ENDIF
         ; Get f at this new location
-        g = local_gradient(dctF, rznew[0], rznew[1], status=status)
+        g = local_gradient(dctF, rznew[0], rznew[1], status=status, f=psi)
         IF status EQ 1 THEN BEGIN
           ri = ri0
           zi = zi0
@@ -132,7 +134,7 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
     ri = rznew[0]
     zi = rznew[1]
     
-    g = local_gradient(dctF, ri, zi, status=status)
+    g = local_gradient(dctF, ri, zi, status=status, f=psi)
     
   ENDIF ELSE BEGIN
     ; An error occurred in LSODE.
