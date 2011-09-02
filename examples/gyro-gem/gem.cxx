@@ -67,6 +67,7 @@ BoutReal mu_e, mu_i;   // M_z / (M_i * Z)
 BoutReal beta_e; // Electron dynamical beta
 
 BoutReal rho_e, rho_i; // Electron, ion gyroradius
+BoutReal rho_s, delta;
 
 // Collisional transport coefficients
 const BoutReal eta     = 0.51;
@@ -100,6 +101,11 @@ bool fix_profiles; // Subtract toroidal averages
 
 int  jpar_bndry_width; // Set jpar = 0 in a boundary region
 
+bool nonlinear; // Include nonlinear terms
+
+BoutReal flat_temp; // Flat temperature profile
+BoutReal flat_dens; // Flat density profile
+
 // Method to use for brackets: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 const BRACKET_METHOD bm = BRACKET_STD;
 
@@ -111,14 +117,16 @@ int low_pass_z; // Toroidal (Z) filtering of all variables
 // Terms in the equations
 
 bool ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv;
-bool apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, apue_gradB, apue_Rei;
+bool apue_ddt, apue_phi1, apue_pet, apue_curv, apue_gradB, apue_Rei; // Linear terms
+bool apue_ue1_phi1, apue_qe1_phi1, apue_apar1_phi1, apue_apar1_pe1;  // Nonlinear terms
 bool tepar_ddt;
 bool teperp_ddt;
 bool qepar_ddt;
 bool qeperp_ddt;
 
-bool ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui,   ni_curv;
-bool apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, apui_gradB, apui_Rei;
+bool ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui, ni_curv;
+bool apui_ddt, apui_phi1, apui_pit, apui_curv, apui_gradB, apui_Rei; // Linear terms
+bool apui_ui1_phi1, apui_qi1_phi1, apui_apar1_phi1, apui_apar1_pi1;  // Nonlinear terms
 bool tipar_ddt;
 bool tiperp_ddt;
 bool qipar_ddt;
@@ -171,6 +179,10 @@ int physics_init(bool restarting)
   
   OPTION(options, fix_profiles, false); // Subtract DC components
 
+  OPTION(options, nonlinear, true);
+  OPTION(options, flat_temp, -1.0);
+  OPTION(options, flat_dens, -1.0);
+
   //////////////////////////////////
   // Read profiles
 
@@ -191,7 +203,19 @@ int physics_init(bool restarting)
   Ne0 = Ni0;
 
   Field2D p_e = qe * Te0 * Ne0; // Electron pressure in Pascals
- 
+  
+  if(flat_temp > 0.) {
+    Te0 = flat_temp;
+    Ti0 = flat_temp;
+    
+    Ne0 = Ni0 = p_e / (qe*Te0);
+  }else if(flat_dens > 0.) {
+    Ne0 = flat_dens;
+    Ni0 = flat_dens;
+    
+    Te0 = Ti0 = p_e / (qe*Ne0);
+  }
+  
   if(curv_logB) {
     GRID_LOAD(logB);
   }
@@ -226,9 +250,7 @@ int physics_init(bool restarting)
   SAVE_ONCE(Bbar);
 
   beta_e =  4.e-7*PI * max(p_e,true) / (Bbar*Bbar); SAVE_ONCE(beta_e); 
-
   
-
   // Mass to charge ratios
   mu_i = 1. / ZZ;
   mu_e = -1. / (AA * 1860.);
@@ -237,28 +259,32 @@ int physics_init(bool restarting)
   tau_i = 1. /ZZ;
 
   // Gyro-radii (SI units)
-  BoutReal rho_s = Cs * AA * Mp / (qe * Bbar);
+  rho_s = Cs * AA * Mp / (qe * Bbar); 
   rho_e = rho_s * sqrt(fabs(mu_e * tau_e));
   rho_i = rho_s * sqrt(fabs(mu_i * tau_i));
-
-  BoutReal delta = rho_s / Lbar; SAVE_ONCE(delta); // This should be small
+  SAVE_ONCE3(rho_s, rho_e, rho_i);
+  
+  delta = rho_s / Lbar; SAVE_ONCE(delta); // This should be small
   
   ////////////////////////////////////////////////////
   // Terms in equations
   
   OPTION(options, jpar_bndry_width,    -1);
 
-  OPTION6(options, ne_ddt, ne_ne1, ne_te0, ne_te1, ne_ue, ne_curv, true);
-  OPTION6(options, apue_ddt, apue_uet, apue_qe,  apue_phi, apue_parP, apue_curv, true);
-  OPTION2(options, apue_gradB, apue_Rei, true);
+  OPTION4(options, ne_ddt, ne_te0, ne_ue, ne_curv, true); // Linear
+  OPTION2(options, ne_ne1, ne_te1, nonlinear); // Nonlinear
+  OPTION6(options, apue_ddt, apue_phi1, apue_pet, apue_curv, apue_gradB, apue_Rei, true);
+  OPTION4(options, apue_ue1_phi1, apue_qe1_phi1, apue_apar1_phi1, apue_apar1_pe1, nonlinear);
+  
   OPTION(options, tepar_ddt, true);
   OPTION(options, teperp_ddt, true);
   OPTION(options, qepar_ddt, true);
   OPTION(options, qeperp_ddt, true);
   
-  OPTION6(options, ni_ddt, ni_ni1, ni_ti0, ni_ti1, ni_ui, ni_curv, true);
-  OPTION6(options, apui_ddt, apui_uit, apui_qi,  apui_phi, apui_parP, apui_curv, true);
-  OPTION2(options, apui_gradB, apui_Rei, true);
+  OPTION4(options, ni_ddt, ni_ti0, ni_ui, ni_curv, true); // Linear
+  OPTION2(options, ni_ni1, ni_ti1, nonlinear); // Nonlinear
+  OPTION6(options, apui_ddt, apui_phi1, apui_pit, apui_curv, apui_gradB, apui_Rei, true);
+  OPTION4(options, apui_ui1_phi1, apui_qi1_phi1, apui_apar1_phi1, apui_apar1_pi1, nonlinear);
   OPTION(options, tipar_ddt, true);
   OPTION(options, tiperp_ddt, true);
   OPTION(options, qipar_ddt, true);
@@ -390,7 +416,8 @@ int physics_init(bool restarting)
 
   if(adiabatic_electrons) {
     // Solving with adiabatic electrons
-    
+    output << "Error: no adiabatic electrons yet\n";
+    return 1;
   }else {
     // Add electron equations
     
@@ -636,18 +663,23 @@ int physics_run(BoutReal time)
     }
     
     if(apue_ddt) {
-      if(apue_uet) {
+      if(apue_ue1_phi1) {
         ddt(ApUe) = -mu_e*UE_Grad(Ue, phi_G);
       }else
         ddt(ApUe) = 0.0;
       
-      if(apue_qe) 
+      if(apue_qe1_phi1) 
         ddt(ApUe) -= mu_e*WE_Grad(qeperp, Phi_G);
       
-      if(apue_phi)
-        ddt(ApUe) -= Grad_parP_CtoL(phi_G);
-      if(apue_parP)
-        ddt(ApUe) -= tau_e*Grad_parP_CtoL(Ne0 + Te0 + Ne + Tepar);
+      if(apue_phi1) // Linear term
+        ddt(ApUe) -= Grad_par_CtoL(phi_G);
+      if(apue_apar1_phi1) // Nonlinear term
+	ddt(ApUe) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
+
+      if(apue_pet) // Linear terms
+	ddt(ApUe) -= tau_i*Grad_parP_CtoL(Ne0 + Te0) + tau_i*Grad_par_CtoL(Ne+Tepar);
+      if(apue_apar1_pe1) // Nonlinear terms
+	ddt(ApUe) +=  tau_i*beta_e*bracket(Apar, Ne+Tepar, BRACKET_ARAKAWA);
       
       if(apue_curv)
         ddt(ApUe) += mu_e * tau_e * curvature(2.*Ue + qepar + 0.5*qeperp);
@@ -663,11 +695,17 @@ int physics_run(BoutReal time)
     }
     
     if(tepar_ddt) {
-      ddt(Tepar) = - UE_Grad(Te0 + Tepar, phi_G)
-        - 2.*Div_parP_LtoC(Ue + qepar)
-        + curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
+      ddt(Tepar) = curvature(phi_G + tau_e*(Ne+Tepar) + 2.*tau_e*Tepar)
         - (Ue + qeperp)*Grad_par_logB
         ;
+      
+      if(nonlinear) {
+	ddt(Tepar) += -UE_Grad(Te0 + Tepar, phi_G) 
+	  - 2.*Div_parP_LtoC(Ue + qepar);
+      }else {
+	ddt(Tepar) += -UE_Grad(Te0, phi_G)
+	  - 2.*Div_par_LtoC(Ue + qepar);
+      }
       
       if(low_pass_z > 0)
         ddt(Tepar) = lowPass(ddt(Tepar), low_pass_z);
@@ -677,14 +715,24 @@ int physics_run(BoutReal time)
     }
     
     if(teperp_ddt) {
-      ddt(Teperp) = - UE_Grad(Te0 + Teperp, phi_G)
-        - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
-        - Div_parP_LtoC(qeperp)
+      ddt(Teperp) = 
         + 0.5*curvature(phi_G + Phi_G + tau_e*(Ne + Teperp) 
                         + 3.*(Phi_G + tau_e*Teperp))
         + (Ue + qeperp)*Grad_par_logB
         ;
       
+      if(nonlinear) {
+	ddt(Teperp) +=
+	  - UE_Grad(Te0 + Teperp, phi_G)
+	  - WE_Grad(Ne0 + Ne + 2.*(Te0 + Teperp), Phi_G)
+	  - Div_parP_LtoC(qeperp);
+      }else {
+	ddt(Teperp) +=
+	  - UE_Grad(Te0, phi_G)
+	  - WE_Grad(Ne0 + 2.*Te0, Phi_G)
+	  - Div_par_LtoC(qeperp);
+      }
+
       if(low_pass_z > 0)
         ddt(Teperp) = lowPass(ddt(Teperp), low_pass_z);
 
@@ -693,11 +741,20 @@ int physics_run(BoutReal time)
     }
     
     if(qepar_ddt) {
-      ddt(qepar) = - UE_Grad(qepar, phi_G)
-        - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*(Te0 + Tepar))
+      ddt(qepar) = 
+        - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*Te0)
         + 0.5*mu_e*tau_e*curvature(3.*Ue + 8.*qepar)
         ;
       
+      if(nonlinear) {
+	ddt(qepar) += 
+	  - UE_Grad(qepar, phi_G)
+	  - 1.5*(1./mu_e)*Grad_parP_CtoL(tau_e*Tepar);
+      }else {
+	ddt(qepar) += 
+	  - 1.5*(1./mu_e)*Grad_par_CtoL(tau_e*Tepar);
+      }
+
       if(low_pass_z > 0)
         ddt(qepar) = lowPass(ddt(qepar), low_pass_z);
       
@@ -706,12 +763,21 @@ int physics_run(BoutReal time)
     }
     
     if(qeperp_ddt) {
-      ddt(qeperp) = - UE_Grad(qeperp, phi_G)
-        - WE_Grad(Ue + 2.*qeperp, Phi_G)
-        - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*(Te0 + Teperp))
+      ddt(qeperp) = 
+        + (1./mu_e)*beta_e*bracket(Apar, tau_e*Te0, BRACKET_ARAKAWA)
         + 0.5*tau_e*curvature(Ue + 6.*qeperp)
         - (tau_e/mu_e)*(Phi_G + tau_e*Teperp - tau_e*Tepar)*Grad_par_logB
         ;
+      
+      if(nonlinear) {
+	ddt(qeperp) +=
+	  - UE_Grad(qeperp, phi_G)
+	  - WE_Grad(Ue + 2.*qeperp, Phi_G)
+	  - (1./mu_e)*Grad_parP_CtoL(Phi_G + tau_e*Teperp);
+      }else {
+	ddt(qeperp) +=
+	  -(1./mu_e)*Grad_par_CtoL(Phi_G + tau_e*Teperp);
+      }
       
       if(low_pass_z > 0)
         ddt(qeperp) = lowPass(ddt(qeperp), low_pass_z);
@@ -753,18 +819,23 @@ int physics_run(BoutReal time)
   }
   
   if(apui_ddt) {
-    if(apui_uit) {
+    if(apui_ui1_phi1) {
       ddt(ApUi) = -mu_i*UE_Grad(Ui, phi_G);
     }else
       ddt(ApUi) = 0.0;
     
-    if(apui_qi) 
+    if(apui_qi1_phi1) 
       ddt(ApUi) -= mu_i*WE_Grad(qiperp, Phi_G);
     
-    if(apui_phi)
-      ddt(ApUi) -= Grad_parP_CtoL(phi_G);
-    if(apue_parP)
-      ddt(ApUi) -= tau_i*Grad_parP_CtoL(Ni0 + Ti0 + Ni + Tipar);
+    if(apui_phi1)
+      ddt(ApUi) -= Grad_par_CtoL(phi_G);
+    if(apui_apar1_phi1) // Nonlinear term
+      ddt(ApUi) += beta_e*bracket(Apar, phi_G, BRACKET_ARAKAWA);
+
+    if(apui_pit) // Linear terms
+      ddt(ApUi) -= tau_i*Grad_parP_CtoL(Ni0 + Ti0) + tau_i*Grad_par_CtoL(Ni+Tipar);
+    if(apui_apar1_pi1) // Nonlinear terms
+      ddt(ApUi) +=  tau_i*beta_e*bracket(Apar, Ni+Tipar, BRACKET_ARAKAWA);
     
     if(apui_curv)
       ddt(ApUi) += mu_i * tau_i * curvature(2.*Ui + qipar + 0.5*qiperp);
@@ -780,11 +851,20 @@ int physics_run(BoutReal time)
   }
   
   if(tipar_ddt) {
-    ddt(Tipar) = - UE_Grad(Ti0 + Tipar, phi_G)
-      - 2.*Div_parP_LtoC(Ui + qipar)
+    ddt(Tipar) = 
       + curvature(phi_G + tau_i*(Ni+Tipar) + 2.*tau_i*Tipar)
       - (Ui + qiperp)*Grad_par_logB
       ;
+    
+    if(nonlinear) {
+      ddt(Tipar) += 
+	-UE_Grad(Ti0 + Tipar, phi_G)
+	- 2.*Div_parP_LtoC(Ui + qipar);
+    }else {
+      ddt(Tipar) += 
+	-UE_Grad(Ti0, phi_G)
+	- 2.*Div_par_LtoC(Ui + qipar);
+    }
     
     if(low_pass_z > 0)
       ddt(Tipar) = lowPass(ddt(Tipar), low_pass_z);
@@ -794,14 +874,24 @@ int physics_run(BoutReal time)
   }
   
   if(tiperp_ddt) {
-    ddt(Tiperp) = - UE_Grad(Ti0 + Tiperp, phi_G)
-      - WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
-      - Div_parP_LtoC(qiperp)
+    ddt(Tiperp) = 
       + 0.5*curvature(phi_G + Phi_G + tau_i*(Ni + Tiperp) 
                       + 3.*(Phi_G + tau_i*Tiperp))
       + (Ui + qiperp)*Grad_par_logB
       ;
     
+    if(nonlinear) {
+      ddt(Tiperp) +=
+	- UE_Grad(Ti0 + Tiperp, phi_G)
+	- WE_Grad(Ni0 + Ni + 2.*(Ti0 + Tiperp), Phi_G)
+	- Div_parP_LtoC(qiperp);
+    }else {
+      ddt(Tiperp) +=
+	- UE_Grad(Ti0, phi_G)
+	- WE_Grad(Ni0 + 2.*Ti0, Phi_G)
+	- Div_par_LtoC(qiperp);
+    }
+
     if(low_pass_z > 0)
       ddt(Tiperp) = lowPass(ddt(Tiperp), low_pass_z);
     
@@ -810,9 +900,18 @@ int physics_run(BoutReal time)
   }
   
   if(qipar_ddt) {
-    ddt(qipar) = - UE_Grad(qipar, phi_G)
-      - 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*(Ti0 + Tipar))
+    ddt(qipar) = 
+      + 1.5*(1./mu_i)*beta_e*bracket(Apar, tau_i*Ti0, BRACKET_ARAKAWA)
       + 0.5*tau_i*curvature(3.*Ui + 8.*qipar);
+    
+    if(nonlinear) {
+      ddt(qipar) +=
+	- UE_Grad(qipar, phi_G)
+	- 1.5*(1./mu_i)*Grad_parP_CtoL(tau_i*Tipar);
+    }else {
+      ddt(qipar) +=
+	- 1.5*(1./mu_i)*Grad_par_CtoL(tau_i*Tipar);
+    }
     
     if(low_pass_z > 0)
       ddt(qipar) = lowPass(ddt(qipar), low_pass_z);
@@ -822,12 +921,21 @@ int physics_run(BoutReal time)
   }
   
   if(qiperp_ddt) {
-    ddt(qiperp) = - UE_Grad(qiperp, phi_G)
-      - WE_Grad(Ui + 2.*qiperp, Phi_G)
-      - (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*(Ti0 + Tiperp))
+    ddt(qiperp) = 
+      + (1./mu_i)*beta_e*bracket(Apar, tau_i*Ti0, BRACKET_ARAKAWA)
       + 0.5*tau_i*curvature(Ui + 6.*qiperp)
       - (tau_i/mu_i)*(Phi_G + tau_i*Tiperp - tau_i*Tipar)*Grad_par_logB;
     
+    if(nonlinear) {
+      ddt(qiperp) +=
+	- UE_Grad(qiperp, phi_G)
+	- WE_Grad(Ui + 2.*qiperp, Phi_G)
+	- (1./mu_i)*Grad_parP_CtoL(Phi_G + tau_i*Tiperp);
+    }else {
+      ddt(qiperp) +=
+	- (1./mu_i)*Grad_par_CtoL(Phi_G + tau_i*Tiperp);
+    }
+
     if(low_pass_z > 0)
       ddt(qiperp) = lowPass(ddt(qiperp), low_pass_z);
     
@@ -885,7 +993,7 @@ int physics_dissipation(BoutReal time)
     }
     if(apue_ddt) {
       ddt(ApUe) = 0.0;
-      if(apue_uet)
+      if(apue_ue1_phi1)
         ddt(ApUe) -= mu_e*UE_Grad_D(Ue, phi_G);
       if(apue_Rei)
         ddt(ApUe) -= Rei;
@@ -932,7 +1040,7 @@ int physics_dissipation(BoutReal time)
   }
   if(apui_ddt) {
     ddt(ApUi) = 0.0;
-    if(apui_uit)
+    if(apui_ui1_phi1)
       ddt(ApUi) = -mu_i*UE_Grad_D(Ui, phi_G);
     if(apui_Rei)
       ddt(ApUi) -= Rei;
@@ -976,9 +1084,9 @@ const Field3D curvature(const Field3D &f)
   return Div(B0vec ^ gradf / (mesh->Bxy*mesh->Bxy));
   */
   if(curv_logB) {
-    return -bracket(2.*logB, f, bm);
+    return -bracket(2.*logB, f, BRACKET_ARAKAWA);
   }else
-    return -bracket(log(mesh->Bxy^2), f, bm);
+    return -bracket(2.*log(mesh->Bxy), f, BRACKET_ARAKAWA);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1013,17 +1121,17 @@ const Field3D WE_Grad(const Field3D &f, const Field3D &p)
 
 const Field3D Grad_parP(const Field3D &f)
 {
-  return Grad_par(f) - beta_e*bracket(Apar, f, bm);
+  return Grad_par(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
 }
 
 const Field3D Grad_parP_CtoL(const Field3D &f)
 {
-  return Grad_par_CtoL(f) - beta_e*bracket(Apar, f, bm);
+  return Grad_par_CtoL(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
 }
 
 const Field3D Grad_parP_LtoC(const Field3D &f)
 {
-  return Grad_par_LtoC(f) - beta_e*bracket(Apar, f, bm);
+  return Grad_par_LtoC(f) - beta_e*bracket(Apar, f, BRACKET_ARAKAWA);
 }
 
 const Field3D Div_parP(const Field3D &f)
