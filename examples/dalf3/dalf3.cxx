@@ -68,6 +68,7 @@ bool filter_z;
 BoutReal viscosity, hyper_viscosity;
 
 bool smooth_separatrix;
+int jpar_boundary;
 
 FieldGroup comms;
 
@@ -129,7 +130,7 @@ int physics_init(bool restarting) {
   OPTION(options, smooth_separatrix, false);
   OPTION(options, warm_ion, false);
   OPTION(options, vpar_advect, false);
-
+  OPTION(options, jpar_boundary, 5); 
   OPTION(options, filter_z, false);
 
   OPTION(options, parallel_lc, true);
@@ -393,20 +394,22 @@ int physics_run(BoutReal time) {
   if(nonlinear)
     Ptot += P;
   
-  // Boundary in jpar
-  if(mesh->firstX()) {
-    for(int i=4;i>=0;i--)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i+1][j][k];
-	}
-  }
-  if(mesh->lastX()) {
-    for(int i=mesh->ngx-5;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i-1][j][k];
-	}
+  if(jpar_boundary > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_boundary-1;i>=0;i--)
+        for(int j=0;j<mesh->ngy;j++)
+  	  for(int k=0;k<mesh->ngz-1;k++) {
+            jpar[i][j][k] = 0.0; //0.5*jpar[i+1][j][k];
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_boundary;i<mesh->ngx;i++)
+        for(int j=0;j<mesh->ngy;j++)
+  	for(int k=0;k<mesh->ngz-1;k++) {
+            jpar[i][j][k] = 0.0; //0.5*jpar[i-1][j][k];
+  	}
+    }
   }
   
   // Vorticity equation
