@@ -617,7 +617,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=boundary, debug=debug, strictbndry=strictbndry, iter=iter, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
-                      single_rad_grid=single_rad_grid, fast=fast
+                      single_rad_grid=single_rad_grid, fast=fast, $
+                      xpt_mindist=xpt_mindist
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
   IF NOT KEYWORD_SET(rad_peaking) THEN rad_peaking = 2.0
@@ -685,20 +686,18 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     RETURN, {error:1}
   ENDIF
 
-  IF KEYWORD_SET(fast) THEN BEGIN
-    ; Get an even number of points for efficient FFTs
-    IF nx MOD 2 EQ 1 THEN BEGIN
-      ; odd number of points in R. Cut out last point
-      R = R[0:(nx-2)]
-      F = F[0:(nx-2), *]
-      nx = nx - 1
-    ENDIF
-    IF ny MOD 2 EQ 1 THEN BEGIN
-      ; Same for Z
-      Z = Z[0:(ny-2)]
-      F = F[*,0:(ny-2)]
-      ny = ny - 1
-    ENDIF
+  ; Get an even number of points for efficient FFTs
+  IF nx MOD 2 EQ 1 THEN BEGIN
+    ; odd number of points in R. Cut out last point
+    R = R[0:(nx-2)]
+    F = F[0:(nx-2), *]
+    nx = nx - 1
+  ENDIF
+  IF ny MOD 2 EQ 1 THEN BEGIN
+    ; Same for Z
+    Z = Z[0:(ny-2)]
+    F = F[*,0:(ny-2)]
+    ny = ny - 1
   ENDIF
 
   IF KEYWORD_SET(boundary) THEN BEGIN
@@ -717,16 +716,16 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
   
   ;;;;;;;;;;;;;;; Calculate DCT ;;;;;;;;;;;;;;
   
+  dctF = DCT2D(F)
   IF KEYWORD_SET(fast) THEN BEGIN
     PRINT, "Using Fast settings"
-    
-    dctF = DCT2D(F)
     psi = F  ; Passed through to local_gradient, so doesn't use DCT
-  ENDIF ELSE BEGIN
-    PRINT, "Calculating DCT..."
-    DCT2Dslow, F, dctF
-    PRINT, "Finished DCT"
-  ENDELSE
+  ENDIF
+
+  ; Create a structure containing interpolation settings and data
+  interp_data = {f:f, $
+                 dct: dctF, $
+                 method:0}
 
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
@@ -1450,10 +1449,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       ; xpt_dist[i,*] = solve_xpt_hthe(dctF, R, Z, (*sep_info[i]), xpt_dist[i,*], pf_f, core_f, sol_in_f, sol_out_f, $
       ;                               boundary=gridbndry)
-      xpt_dist[i,*] = increase_xpt_hthe(dctF, R, Z, $
-                                        (*sep_info[i]), xpt_dist[i,*], $
-                                        pf_f, core_f, sol_in_f, sol_out_f,$
-                                        boundary=gridbndry, psi=psi)
+      ;xpt_dist[i,*] = increase_xpt_hthe(dctF, R, Z, $
+      ;                                  (*sep_info[i]), xpt_dist[i,*], $
+      ;                                  pf_f, core_f, sol_in_f, sol_out_f,$
+      ;                                  boundary=gridbndry, psi=psi)
+      
+      IF KEYWORD_SET(xpt_mindist) THEN xpt_dist[i,*] = xpt_dist[i,*] > xpt_mindist
     ENDFOR
 
     ; Each x-point now has a distance. Could multiply by a scaling
