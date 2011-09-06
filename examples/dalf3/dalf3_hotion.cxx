@@ -45,7 +45,7 @@ Field3D Vort, Ajpar, Pe, Vpar;
 
 Field3D phi, apar, jpar;
 
-Field2D B0, Pe0, Jpar0;
+Field2D B0, Pe0, Jpar0, P0;
 Vector2D b0xcv;
 
 Field2D eta; // Collisional damping (resistivity)
@@ -60,12 +60,15 @@ BoutReal mul_resist;
 bool parallel_lc;
 bool nonlinear;
 bool jpar_noderiv; // Don't take Delp2(apar) to get jpar
+bool warm_ion;
+bool vpar_advect;  // Include Vpar advection terms
 
 bool filter_z;
 
 BoutReal viscosity, hyper_viscosity;
 
 bool smooth_separatrix;
+int jpar_boundary;
 
 FieldGroup comms;
 
@@ -80,8 +83,11 @@ int physics_init(bool restarting) {
   Field2D Ni0, Te0;
   GRID_LOAD2(Ni0, Te0);
   Ni0 *= 1e20; // To m^-3
-  Pe0 = 2.*Charge * Ni0 * Te0; // Electron pressure in Pascals
-  SAVE_ONCE(Pe0);
+  Pe0 = Charge * Ni0 * Te0; // Electron pressure in Pascals
+  P0 = 2.*Pe0;
+  if(!warm_ion)
+    Pe0 = P0; // No ion pressure
+  SAVE_ONCE2(Pe0, P0);
   
   // Load curvature term
   b0xcv.covariant = false; // Read contravariant components
@@ -122,7 +128,9 @@ int physics_init(bool restarting) {
   OPTION(options, hyper_viscosity, -1.0);
   OPTION(options, viscosity_par, -1.0);
   OPTION(options, smooth_separatrix, false);
-  
+  OPTION(options, warm_ion, false);
+  OPTION(options, vpar_advect, false);
+  OPTION(options, jpar_boundary, 5); 
   OPTION(options, filter_z, false);
 
   OPTION(options, parallel_lc, true);
@@ -207,7 +215,7 @@ int physics_init(bool restarting) {
   if(mul_resist < 0.0)
     mul_resist = 0.0;
   eta *= mul_resist;
-  
+
   // Plasma quantities
   Jpar0 /= Nenorm*Charge*Cs;
   Pe0 /= Nenorm*Charge*Tenorm;
@@ -276,11 +284,6 @@ int physics_init(bool restarting) {
 
   SAVE_REPEAT3(jpar, apar, phi);
 
-  if(nonlinear) {
-    SAVE_REPEAT(eta);
-  }else
-    SAVE_ONCE(eta);
-  
   return 0;
 }
 
@@ -330,8 +333,12 @@ int physics_run(BoutReal time) {
 
   // Invert vorticity to get electrostatic potential
   phi = invert_laplace(Vort*B0, phi_flags);
-  phi.applyBoundary();
+  if(warm_ion) {
+    phi -= 0.5*Pe / mesh->Bxy; // Pi = Pe
+  }
   
+  phi.applyBoundary();
+
   // Calculate apar and jpar
   if(estatic) {
     // Electrostatic
@@ -379,31 +386,43 @@ int physics_run(BoutReal time) {
     Pet += Pe;
   }
   
-  // Boundary in jpar
-  if(mesh->firstX()) {
-    for(int i=4;i>=0;i--)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i+1][j][k];
-	}
-  }
-  if(mesh->lastX()) {
-    for(int i=mesh->ngx-5;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++)
-	for(int k=0;k<mesh->ngz-1;k++) {
-          jpar[i][j][k] = 0.5*jpar[i-1][j][k];
-	}
-  }
+  Field3D P = Pe;
+  if(warm_ion)
+    P *= 2.; // Ti = Te
   
+  Field3D Ptot = P0;
+  if(nonlinear)
+    Ptot += P;
+  
+  if(jpar_boundary > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_boundary-1;i>=0;i--)
+        for(int j=0;j<mesh->ngy;j++)
+  	  for(int k=0;k<mesh->ngz-1;k++) {
+            jpar[i][j][k] = 0.0; //0.5*jpar[i+1][j][k];
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_boundary;i<mesh->ngx;i++)
+        for(int j=0;j<mesh->ngy;j++)
+  	for(int k=0;k<mesh->ngz-1;k++) {
+            jpar[i][j][k] = 0.0; //0.5*jpar[i-1][j][k];
+  	}
+    }
+  }
   
   // Vorticity equation
   ddt(Vort) = 
     B0*B0*Grad_parP_LtoC(jpar/B0)
-    - B0*Kappa(Pe)
+    - B0*Kappa(P) // Total perturbed pressure
     ;
  
   if(nonlinear) {
     ddt(Vort) -= bracket(phi, Vort, bm);    // ExB advection
+    
+    if(vpar_advect)
+      ddt(Vort) -= Vpar_Grad_par(Vpar, Vort);
   }
 
   if(viscosity > 0.0) {
@@ -424,7 +443,7 @@ int physics_run(BoutReal time) {
   if(!(estatic && ZeroElMass)) {
     // beta_hat*apar + mu_hat*jpar
     ddt(Ajpar) =
-      Grad_parP_CtoL(Pe - phi)
+      Grad_parP_CtoL(Pe - phi) // Electron pressure only
       - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
       - eta*jpar
       ;
@@ -439,12 +458,15 @@ int physics_run(BoutReal time) {
   
   // Parallel velocity
   ddt(Vpar) = 
-    - Grad_parP_CtoL(Pe) 
-    + beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
+    - Grad_parP_CtoL(P) // Total pressure
+    + beta_hat * bracket(apar, P0, BRACKET_ARAKAWA)
     ;
-
+  
   if(nonlinear) {
     ddt(Vpar) -= bracket(phi, Vpar, bm);
+    
+    if(vpar_advect)
+      ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar);
   }
 
   if(viscosity_par > 0.) {
@@ -462,7 +484,12 @@ int physics_run(BoutReal time) {
              + B0*Grad_parP_LtoC( (jpar - Vpar)/B0 )
              )
     ;
- 
+  
+  if(nonlinear) {
+    if(vpar_advect)
+      ddt(Vort) -= Vpar_Grad_par(Vpar, Pe);
+  }
+
   if(smooth_separatrix) {
     // Experimental smoothing across separatrix
     ddt(Vort) += mesh->smoothSeparatrix(Vort);
