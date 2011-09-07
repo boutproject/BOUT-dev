@@ -14,27 +14,19 @@
 ; OUTPUTS
 ; 
 
-FUNCTION leg_separatrix2, dctpsi, R, Z, xpt_ri, xpt_zi, $
+FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
                           opt_ri, opt_zi, $ ; Location of primary O-point
                           status=status, $
                           boundary=boundary, $
-                          f=f, $
                           debug=debug
   
-  IF NOT KEYWORD_SET(f) THEN BEGIN
-    ; Need psi
-    
-    psi = DCT2D(dctpsi, /inverse)
-  ENDIF ELSE psi = f
-
-  s = SIZE(psi, /DIMENSION)
-  nr = s[0]
-  nz = s[1]
+  psi = interp_data.f
+  nr = interp_data.nx
+  nz = interp_data.ny
   
   ; Get value of psi at the X-point
   
-  g = local_gradient(dctpsi, xpt_ri, xpt_zi, f=psi)
-  f0 = g.f 
+  local_gradient, interp_data, xpt_ri, xpt_zi, f=f0
   
   ; Get contour lines at this level, i.e. the separatrix
 
