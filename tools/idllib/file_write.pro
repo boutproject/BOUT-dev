@@ -95,6 +95,10 @@ FUNCTION file_write, handle, varname, data
         4: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /FLOAT)
         5: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /DOUBLE)
         7: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /CHAR)
+        12: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        13: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        14: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        15: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         ELSE: BEGIN
           PRINT, "Sorry, file_write doesn't support this type: ", vartype
           PRINT, "=> Couldn't write variable '"+varname+"'"
@@ -149,6 +153,10 @@ FUNCTION file_write, handle, varname, data
         4: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /FLOAT)
         5: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /DOUBLE)
         7: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /CHAR)
+        12: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        13: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        14: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
+        15: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         ELSE: BEGIN
           PRINT, "Sorry, file_write doesn't support this type: ", vartype
           PRINT, "=> Couldn't write variable '"+varname+"'"
@@ -164,7 +172,14 @@ FUNCTION file_write, handle, varname, data
   
   ; Reverse indices of data and write to the file
 
-  CALL_PROCEDURE, 'NCDF_VARPUT', handle.id, vid, REVERSE_INDS(data)
+  vartype = SIZE(data, /TYPE)
+  IF (vartype GE 12) AND (vartype LE 15) THEN BEGIN
+    ; unsigned long and 64 integer types
+    data2 = LONG(data)
+    CALL_PROCEDURE, 'NCDF_VARPUT', handle.id, vid, REVERSE_INDS(data2)
+  ENDIF ELSE BEGIN
+    CALL_PROCEDURE, 'NCDF_VARPUT', handle.id, vid, REVERSE_INDS(data)
+  ENDELSE
   
   CATCH, /CANCEL
   
