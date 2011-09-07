@@ -312,6 +312,9 @@ FUNCTION grid_region, dctF, R, Z, $
         BREAK
       ENDIF
     ENDFOR
+    IF KEYWORD_SET(oplot) THEN BEGIN
+      OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
+    ENDIF
   ENDFOR
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
@@ -824,7 +827,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                     start_ri, start_zi, $
                     fvals, $
                     sind, $
-                    npol, fpsi=fpsi, psi=psi)
+                    npol, fpsi=fpsi, psi=psi, /oplot)
     
     OPLOT, [REFORM(a.rxy[0,*]), a.rxy[0,0]], [REFORM(a.zxy[0,*]), a.zxy[0,0]], color=4
       
@@ -1069,28 +1072,62 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       PRINT, "Finding theta location of x-point "+STR(i)
       
       ; Get the separatrices
-      legsep = leg_separatrix(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
-                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
+      legsep = leg_separatrix2(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
+                               opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       ; Go a little way along each core separatrix and follow
       follow_gradient, dctF, R, Z, $
-                       legsep.core1[10,0], legsep.core1[10,1], $
+                       legsep.core1[2,0], legsep.core1[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
                        boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind1, psi=psi
       follow_gradient, dctF, R, Z, $
-                       legsep.core2[10,0], legsep.core2[10,1], $
+                       legsep.core2[2,0], legsep.core2[2,1], $
                        0.95 * f_cont + 0.05*opt_f[primary_opt], $
                        rhit, zhit, $
                        boundary=TRANSPOSE([[start_ri], [start_zi]]), ibndry=hit_ind2, psi=psi
       
       ni = N_ELEMENTS(start_ri)
-      IF ABS(hit_ind2 - hit_ind1 - ni) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
+      
+      ; Refine the theta index of the X-point using divide and conquer
+      REPEAT BEGIN
+        IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
+          ; One at the beginning and one at the end (across the join)
+          mini = (hit_ind2 + hit_ind1 - ni) / 2.
+          IF mini LT 0. THEN mini = mini + ni
+        ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
+        
+        ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind1)], [INTERPOLATE(Z[start_zi], hit_ind1)], psym=2, color=2
+        ;OPLOT, [INTERPOLATE(R[start_ri], hit_ind2)], [INTERPOLATE(Z[start_zi], hit_ind2)], psym=2, color=2
+        ;OPLOT, [INTERPOLATE(R[start_ri], mini)], [INTERPOLATE(Z[start_zi], mini)], psym=2, color=4
+        
+        PRINT, "Theta location: " + STR(hit_ind1) + "," + STR(hit_ind2) + " -> " + STR(mini)
+
+        ;  Get line a little bit beyond the X-point
+        pos = get_line(dctF, R, Z, $
+                       INTERPOLATE(start_ri, mini), INTERPOLATE(start_zi, mini), $
+                       critical.xpt_f[i] + (critical.xpt_f[i] - opt_f[primary_opt]) * 0.05, psi=psi)
+        
+        ;OPLOT, INTERPOLATE(R, pos[*,0]), INTERPOLATE(Z, pos[*,1]), color=4, thick=2
+        
+        ; Find which separatrix line this intersected with
+        cpos = line_crossings([xpt_ri[i], legsep.core1[*,0]], $
+                              [xpt_zi[i], legsep.core1[*,1]], 0, $
+                              pos[*,0], pos[*,1], 0, $
+                              ncross=ncross, inds1=inds)
+        IF ncross GT 0 THEN BEGIN
+          hit_ind1 = mini
+        ENDIF ELSE BEGIN
+          hit_ind2 = mini
+        ENDELSE
+        dist = MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2, ABS([hit_ind2 - hit_ind1])])
+      ENDREP UNTIL dist LT 0.1
+      IF MIN([ni - hit_ind2 + hit_ind1, ni - hit_ind1 + hit_ind2]) LT ABS(hit_ind2 - hit_ind1) THEN BEGIN
         ; One at the beginning and one at the end (across the join)
         mini = (hit_ind2 + hit_ind1 - ni) / 2.
         IF mini LT 0. THEN mini = mini + ni
       ENDIF ELSE mini = (hit_ind1 + hit_ind2) / 2.
-
+        
       xpt_ind[i] = mini  ; Record the index
         
       ; Plot the line to the x-point
@@ -1252,8 +1289,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       
       ; Get the lines from the x-point to the target plates
-      legsep = leg_separatrix(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
-                              opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
+      legsep = leg_separatrix2(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
+                               opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
       
       pf_ri = [REVERSE(legsep.leg1[*,0]), xpt_ri[i], legsep.leg2[*,0]]
       pf_zi = [REVERSE(legsep.leg1[*,1]), xpt_zi[i], legsep.leg2[*,1]]
@@ -1573,7 +1610,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       sfirst=sfirst1, $
                       slast=slast1, $
                       boundary=gridbndry, $
-                      ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], psi=psi)
+                      ffirst=ffirst, flast=flast1, fpsi=fpsi, yup_dist=xpt_dist[xpt, 0], psi=psi, /oplot)
       Rxy[*, ypos:(ypos+npol[3*i]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i]-1)] = a.Rixy
@@ -1645,7 +1682,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=gridbndry, $
                       ffirst=ffirst, flast=flast2, fpsi=fpsi, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
-                      ydown_space=ydown_space, yup_space=yup_space, psi=psi)
+                      ydown_space=ydown_space, yup_space=yup_space, psi=psi, /oplot)
       
       Rxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+1]-1)] = a.Zxy
@@ -1690,7 +1727,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       slast=slast3, $
                       boundary=gridbndry, $
                       ffirst=ffirst, flast=flast3, fpsi=fpsi, $
-                      ydown_dist=xpt_dist[xpt, 3], psi=psi)
+                      ydown_dist=xpt_dist[xpt, 3], psi=psi, /oplot)
       Rxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rxy
       Zxy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Zxy
       Rixy[*, ypos:(ypos+npol[3*i+2]-1)] = a.Rixy
