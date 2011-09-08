@@ -24,6 +24,7 @@
 #include "nc_format.hxx"
 
 #include <utils.hxx>
+#include <cmath>
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
