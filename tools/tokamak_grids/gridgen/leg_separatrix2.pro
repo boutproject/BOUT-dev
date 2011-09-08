@@ -24,6 +24,9 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   nr = interp_data.nx
   nz = interp_data.ny
   
+  drpdi = R[1] - R[0]
+  dzpdi = Z[1] - Z[0]
+
   ; Get value of psi at the X-point
   
   local_gradient, interp_data, xpt_ri, xpt_zi, f=f0
@@ -91,7 +94,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
       
       ; Then check if this is towards the O-point (core) or away (PF)
       
-      d = drdi*dir * (opt_ri - xpt_ri) + dzdi*dir * (opt_zi - xpt_zi)
+      d = drdi*dir * (opt_ri - xpt_ri)*drpdi^2 + dzdi*dir * (opt_zi - xpt_zi) * dzpdi^2
+      ;OPLOT, INTERPOLATE(R, xpt_ri) + [0., drdi*dir*drpdi * 100], INTERPOLATE(Z, xpt_zi) + [0., dzdi*dir*dzpdi * 100], color=2
       
       IF d GT 0 THEN BEGIN
         ; Core
