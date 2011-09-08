@@ -624,6 +624,11 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
 	data[i] = -1e20;
     }
   }
+  
+  for(int i=0;i<lx*ly*lz;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
+  }
 
   if(!(var->put(data, counts)))
     return false;
@@ -766,7 +771,7 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
       rec_nr[name] = default_rec;
     }
   }
-
+  
   if(!var->put_rec(data, rec_nr[name]))
     return false;
 
@@ -854,6 +859,11 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
       if(data[i] < -1e20)
 	data[i] = -1e20;
     }
+  }
+  
+  for(int i=0;i<lx*ly*lz;i++) {
+    if(!finite(data[i]))
+      data[i] = 0.0;
   }
 
   // Add the record
