@@ -114,6 +114,10 @@ As of June 2009, the BOUT++ distribution is hosted on Github: \index{Github}
 
 \file{http://github.com/bendudson/BOUT/}
 
+For a full guide to using Git, see the git website\footnote{\texttt{http://git-scm.com/}} or
+online tutorials. This manual just explains some basic ways to use Git, and the recommended work flow
+when working with BOUT++.
+
 If you're just starting with BOUT++, current developers will want to check
 your changes before submitting them to the repository. In this case
 you should clone (checkout) the git repository, make any changes and
@@ -190,6 +194,8 @@ $ git format-patch origin/master --stdout > your-patch-file.diff
 Now you can email this patch to someone who can commit to the Git archive
 (e.g. Ben Dudson, bd512@york.ac.uk).
 
+\subsubsection{Developing BOUT++}
+
 If you are doing a lot of development of BOUT++, it will probably make sense
 for you to push changes directly to the online repository. 
 In this case you'll need to sign up for an account on \file{github.com},
@@ -222,6 +228,83 @@ get a copy of BOUT++ by running
 \begin{verbatim}
 $ git clone gh:bendudson/BOUT
 \end{verbatim}
+
+\subsubsection{Creating a private repository}
+
+Whilst we would prefer it if improvements to BOUT++ were shared, 
+sometimes you might want to keep changes private for a while before
+publishing them. Creating a private repository with Git is very simple,
+because every clone of a repository is itself a repository.
+Git doesn't have the concept of a
+central repository, which can seem strange coming from the world of SVN and
+CVS. What it means is that you can create your own private repository
+anywhere you have access to. Sharing it with only some people means
+as giving them read or write access to the repository directory.
+
+The following assumes you have a NERSC account and want to create a private
+repository on Franklin. To apply this to a different machine just replace
+\texttt{franklin.nersc.gov} with the machine you want to put the repository on.
+
+\begin{enumerate}
+\item SSH to \texttt{franklin.nersc.gov}, or wherever you want your
+  repository
+  \begin{verbatim}
+    $ ssh username@franklin.nersc.gov
+  \end{verbatim}
+\item Create a ``bare'' Git repository by cloning a repository with the \texttt{--bare} option:
+  \begin{verbatim}
+    $ cd ~
+    $ git clone --bare git@github.com:bendudson/BOUT.git  bout_private
+  \end{verbatim}
+  where you can replace \texttt{git@github.com:bendudson/BOUT.git} with any other repository you can access.
+  \texttt{bout\_private} will be the name of the directory which will be created.
+  This will make a repository without a working version. This means you can't modify the
+  code in it directly, but can pull and push changes to it. If you want to work on the code on Franklin,
+  make a clone of your private repository:
+  \begin{verbatim}
+    $ git clone bout_private bout
+  \end{verbatim}
+  which creates a repository \texttt{bout} from your private repository. Running \texttt{git pull} and
+  \texttt{git push} from within this new repository will exchange patches with your \texttt{bout\_private}
+  repository.
+\item You can now clone, pull and push changes to your private repository over SSH e.g.
+  \begin{verbatim}
+    $ git clone username@franklin.nersc.gov:bout_private
+  \end{verbatim}
+\item To keep your private repository up to date you may want to pull changes from
+  github into your private repository. To do this, you need to use a third repository. Log into
+  Franklin again:
+  \begin{verbatim}
+    $ cd ~
+    $ git clone bout_private bout_tmp
+  \end{verbatim}
+  This creates a repository \texttt{bout\_tmp} from your private repository. Now cd to the new directory
+  and pull the latest changes from github:
+  \begin{verbatim}
+    $ cd bout_tmp
+    $ git pull git://github.com/bendudson/BOUT.git
+  \end{verbatim}
+  Note: You should be able to access this repository from Franklin, but if not then see the previous subsection
+  for how to access github from behind a firewall.
+\item
+  This pull might result in some conflicts which need to be resolved. If so, git will
+  tell you, and running
+  \begin{verbatim}
+    $ git status
+  \end{verbatim}
+  will give a list of files which need to be resolved. Edit each of the files listed, and when you're happy 
+  commit the changes
+  \begin{verbatim}
+    $ git commit -a
+  \end{verbatim}
+\item Your \texttt{bout\_tmp} directory now contains a merge of your private repository and the repository
+  on github. To update your private repository, just push the changes back:
+  \begin{verbatim}
+    $ git push
+  \end{verbatim}
+  You can now delete the \texttt{bout\_tmp} repository if you want.
+\end{enumerate}
+
 
 \subsection{House rules}
 
@@ -309,166 +392,166 @@ include files (which can be used in physics models) in
 in \file{bout++/src}. Inside \file{bout++/src}, the current source code
 files are:
 \begin{itemize}
-\item \file{bout++.cpp} : Main file which initialises, runs and finalises
+\item \file{bout++.cxx} : Main file which initialises, runs and finalises
   BOUT++. Currently contains a \code{main()} function, though this is
   being removed shortly.
 \item field
   \begin{itemize}
-  \item \index{Field3D} \file{field2d.cpp} implements the \code{Field2D} class. This is a
+  \item \index{Field3D} \file{field2d.cxx} implements the \code{Field2D} class. This is a
     scalar field which varies only in $x$ and $y$ and is used for things
     like metric tensor components and initial profiles. It supplies lots
     of overloaded operators and functions on these objects.
-  \item \file{field3d.cpp} implements the \code{Field3D} class, which varies 
+  \item \file{field3d.cxx} implements the \code{Field3D} class, which varies 
     in $x$, $y$ and $z$. Since these handle a lot more memory than Field2D
     objects, the memory management is more complicated and includes reference
     counting. See section~\ref{sec:memorymanage} for more details.
-  \item \file{field\_data.cpp} Implements some functions in the \code{FieldData} class. This is a mainly pure virtual interface class which is inherited by \code{Field2D} and \code{Field3D}.
-  \item \file{fieldperp.cpp} implements a \code{FieldPerp} class to store
+  \item \file{field\_data.cxx} Implements some functions in the \code{FieldData} class. This is a mainly pure virtual interface class which is inherited by \code{Field2D} and \code{Field3D}.
+  \item \file{fieldperp.cxx} implements a \code{FieldPerp} class to store
     slices perpendicular to the magnetic field i.e. they are a function of
     $x$ and $z$ only. This is mainly used for Laplacian inversion routines,
     and needs to be integrated with the other fields better.
-  \item \file{initialprofiles.cpp} routines to set the initial values of
+  \item \file{initialprofiles.cxx} routines to set the initial values of
     fields when a simulation first starts. Reads settings from the option
     file based on the name of the variable.
-  \item \file{vecops.cpp} a collection of function to operate on vectors. 
+  \item \file{vecops.cxx} a collection of function to operate on vectors. 
     Contains things like \code{Grad}, \code{Div} and \code{Curl}, and uses
-    a combination of field differential operators (in \file{difops.cpp}) and
+    a combination of field differential operators (in \file{difops.cxx}) and
     metric tensor components (in \code{Mesh}).
-  \item \file{vector2d.cpp} implements the \code{Vector2D} class, which uses
+  \item \file{vector2d.cxx} implements the \code{Vector2D} class, which uses
     a \code{Field2D} object for each of its 3 components. Overloads operators 
     to supply things like dot and cross products.
-  \item \file{vector3d.cpp} implements \code{Vector3D} by using a
+  \item \file{vector3d.cxx} implements \code{Vector3D} by using a
     \code{Field3D} object for each component.
-  \item \file{where.cpp} supplies functions for choosing between values
+  \item \file{where.cxx} supplies functions for choosing between values
     based on selection criteria.
   \end{itemize}
 \item fileio
   \begin{itemize}
-  \item \file{datafile.cpp} supplies an abstract \code{DataFile} interface
+  \item \file{datafile.cxx} supplies an abstract \code{DataFile} interface
     for data input and output. Handles the conversion of data in fields
     and vectors into blocks of data which are then sent to a specific file
     format.
-  \item \file{nc\_format.cpp} implements an interface to the NetCDF-4 library
-  \item \file{nc\_format.h} is the header file. This is not in the
+  \item \file{nc\_format.cxx} implements an interface to the NetCDF-4 library
+  \item \file{nc\_format.hxx} is the header file. This is not in the
     \file{include/} directory because it should only be used by \code{DataFile}.
-  \item \file{pdb\_format.cpp} implements an interace to Portable Data
+  \item \file{pdb\_format.cxx} implements an interace to Portable Data
     Binary (PDB) formatted files.
-  \item \file{pdb\_format.h}
+  \item \file{pdb\_format.hxx}
   \end{itemize}
 \item invert
   \begin{itemize}
-  \item \file{fft\_fftw.cpp} implements the \code{fft.h} interface by calling
+  \item \file{fft\_fftw.cxx} implements the \code{fft.hxx} interface by calling
     the Fastest Fourier Transform in the West (FFTW) library.
-  \item \file{full\_gmres.cpp}
-  \item \file{inverter.cpp} is a \code{FieldPerp} inversion class currently
+  \item \file{full\_gmres.cxx}
+  \item \file{inverter.cxx} is a \code{FieldPerp} inversion class currently
     under development. It is intended to provide a way to solve nonlinear
     problems using a GMRES iterative method.
-  \item \file{invert\_gmres.cpp}
-  \item \file{invert\_laplace.cpp} uses Fourier decomposition in $z$ combined
+  \item \file{invert\_gmres.cxx}
+  \item \file{invert\_laplace.cxx} uses Fourier decomposition in $z$ combined
     with tri- and band-diagonal solvers in $x$ to solve Laplacian problems.
-  \item \file{invert\_laplace\_gmres.cpp} inherits the \code{Inverter} class
+  \item \file{invert\_laplace\_gmres.cxx} inherits the \code{Inverter} class
     and will solve more general Laplacian problems, using the
     \code{invert\_laplace} routines as preconditioners.
-  \item \file{invert\_parderiv.cpp} inverts a problem involving only parallel
+  \item \file{invert\_parderiv.cxx} inverts a problem involving only parallel
     $y$ derivatives. Intended for use in some preconditioners.
-  \item \file{lapack\_routines.cpp} supplies an interface to the LAPACK linear
+  \item \file{lapack\_routines.cxx} supplies an interface to the LAPACK linear
     solvers, which are used by the \code{invert\_laplace} routines.
   \end{itemize}
 \item mesh
   \begin{itemize}
-  \item \file{boundary\_factory.cpp} creates boundary condition operators
+  \item \file{boundary\_factory.cxx} creates boundary condition operators
     which can then be applied to fields. Described in
     section~\ref{sec:BoundaryFactory}.
-  \item \file{boundary\_region.cpp} implements a way to describe and iterate
+  \item \file{boundary\_region.cxx} implements a way to describe and iterate
     over boundary regions. Created by the mesh, and then used by boundary
     conditions. See section~\ref{sec:BoundaryRegion} for more details.
-  \item \file{boundary\_standard.cpp} implements some standard boundary
+  \item \file{boundary\_standard.cxx} implements some standard boundary
     operations and modifiers such as \code{Neumann} and \code{Dirichlet}.
-  \item \file{boutmesh.cpp} implements a mesh interface which is compatible
+  \item \file{boutmesh.cxx} implements a mesh interface which is compatible
     with BOUT grid files.
-  \item \file{difops.cpp} is a collection of differential operators on scalar
-    fields. It uses the differential methods in \file{derivs.cpp} and the
+  \item \file{difops.cxx} is a collection of differential operators on scalar
+    fields. It uses the differential methods in \file{derivs.cxx} and the
     metric tensor components in \code{Mesh} to compute operators.
-  \item \file{grid.cpp} contains some routines which are used by the \code{Mesh}
+  \item \file{grid.cxx} contains some routines which are used by the \code{Mesh}
     to read data. 
-  \item \file{interpolation.cpp} contains functions for interpolating fields
-  \item \file{mesh.cpp} is the base class for the \code{Mesh} object. Contains
+  \item \file{interpolation.cxx} contains functions for interpolating fields
+  \item \file{mesh.cxx} is the base class for the \code{Mesh} object. Contains
     routines useful for all \code{Mesh} implementations.
-  \item \file{quiltmesh.cpp} is an implementation of \code{Mesh} which is
+  \item \file{quiltmesh.cxx} is an implementation of \code{Mesh} which is
     currently under development. It is intended to handle more general mesh
     shapes and topology than the currently used \code{BoutMesh} can handle.
   \end{itemize}
 \item physics
   \begin{itemize}
-  \item \file{smoothing.cpp} provides smoothing routines on scalar fields
-  \item \file{sourcex.cpp} contains some useful routines for creating
+  \item \file{smoothing.cxx} provides smoothing routines on scalar fields
+  \item \file{sourcex.cxx} contains some useful routines for creating
     sources and sinks in physics equations.
   \end{itemize}
 \item precon
   \begin{itemize}
-  \item \file{jstruc.cpp} is an experimental code for preconditioning using
+  \item \file{jstruc.cxx} is an experimental code for preconditioning using
     PETSc
   \end{itemize}
 \item solver
   \begin{itemize}
-  \item \file{solver.cpp} is the interface for all solvers 
-  \item \file{solverfactory.cpp} creates solver objects
-  \item \file{solverfactory.h}
+  \item \file{solver.cxx} is the interface for all solvers 
+  \item \file{solverfactory.cxx} creates solver objects
+  \item \file{solverfactory.hxx}
   \item impls
     \begin{itemize}
     \item cvode
       \begin{itemize}
-      \item \file{cvode.cpp} is the implementation of \code{Solver} which
+      \item \file{cvode.cxx} is the implementation of \code{Solver} which
         interfaces with the SUNDIALS CVODE library.
-      \item \file{cvode.h}
+      \item \file{cvode.hxx}
       \end{itemize}
     \item ida
       \begin{itemize}
-      \item \file{ida.cpp} is the implementation which interfaces with the
+      \item \file{ida.cxx} is the implementation which interfaces with the
         SUNDIALS IDA library
-      \item \file{ida.h}
+      \item \file{ida.hxx}
       \end{itemize}
     \item petsc
       \begin{itemize}
-      \item \file{petsc.cpp} is the interface to the PETSc time integration
+      \item \file{petsc.cxx} is the interface to the PETSc time integration
         routines
-      \item \file{petsc.h}
+      \item \file{petsc.hxx}
       \end{itemize}
     \item pvode
       \begin{itemize}
-      \item \file{pvode.cpp} interfaces with the 1998 (pre-SUNDIALS) version
+      \item \file{pvode.cxx} interfaces with the 1998 (pre-SUNDIALS) version
         of PVODE (which became CVODE).
-      \item \file{pvode.h}
+      \item \file{pvode.hxx}
       \end{itemize}
     \end{itemize}
   \end{itemize}
 \item sys
   \begin{itemize}
-  \item \file{boutexception.cpp} is an exception class which are used
+  \item \file{boutexception.cxx} is an exception class which are used
     for error handling
-  \item \file{comm\_group.cpp} provides routines for non-blocking collective 
+  \item \file{comm\_group.cxx} provides routines for non-blocking collective 
     MPI operations. These are not available in MPI-2, though are planned for
     MPI-3.
-  \item \file{dcomplex.cpp} provides a \code{dcomplex} complex type. It is here
+  \item \file{dcomplex.cxx} provides a \code{dcomplex} complex type. It is here
     because the original type \code{real} conflicted with the STL definition.
     This could probably be replaced with the STL implementation now.
-  \item \file{derivs.cpp} contains basic derivative methods such as
+  \item \file{derivs.cxx} contains basic derivative methods such as
     upwinding, central difference and WENO methods. These are then
-    used by \file{difops.cpp}. Details are given in
+    used by \file{difops.cxx}. Details are given in
     section~\ref{sec:derivatives}.
-  \item \file{diagnos.cpp} is the start of a diagnostics code which will extract
+  \item \file{diagnos.cxx} is the start of a diagnostics code which will extract
     values from fields each timestep and print to the output log file. Not
     yet finished.
-  \item \file{msg\_stack.cpp} is part of the error handling system. It maintains
+  \item \file{msg\_stack.cxx} is part of the error handling system. It maintains
     a stack of messages which can be pushed onto the stack at the start of 
     a function, then removed (popped) at the end. If an error occurs or 
     a segmentation fault is caught then this stack is printed out and can
     help to find errors.
-  \item \file{options.cpp} provides an interface to the BOUT.inp option file
+  \item \file{options.cxx} provides an interface to the BOUT.inp option file
     and the command-line options. 
-  \item \file{stencils.cpp} contains methods to operate on stencils which are
+  \item \file{stencils.cxx} contains methods to operate on stencils which are
     used by differential methods. 
-  \item \file{utils.cpp} contains miscellaneous small useful routines
+  \item \file{utils.cxx} contains miscellaneous small useful routines
     such as allocating and freeing arrays.
   \end{itemize}
 \end{itemize}
@@ -484,7 +567,7 @@ currently implemented in BOUT++.
 \index{FieldData}
 All BOUT++ data types implement a standard interface for accessing their
 data, which is then used in communication and file I/O code. This interface
-is in \file{src/field/field\_data.h}. The mandatory (pure virtual) functions are:
+is in \file{src/field/field\_data.hxx}. The mandatory (pure virtual) functions are:
 \begin{lstlisting}
 bool isReal(); // Returns true if field consists of real values
 bool is3D() const;   // True if variable is 3D
@@ -604,7 +687,7 @@ compile flags}
 \label{sec:derivatives}
 
 This is probably the part of the code most people will want to alter, and is
-in \texttt{bout++/src/sys/derivs.cpp}. The main
+in \texttt{bout++/src/sys/derivs.cxx}. The main
 task of this module is to map functions on fields like \code{DDX}
 to direction-independent differential methods on stencils such as
 $4^{th}$-order central differencing. This mapping depends on global
@@ -629,12 +712,12 @@ Four kinds of differencing methods are supported
 \end{enumerate}
 
 The differencing methods themselves are independent on direction, and have
-types defined in \texttt{derivs.cpp}
+types defined in \texttt{derivs.cxx}
 \begin{lstlisting}
 typedef BoutReal (*deriv_func)(stencil &); // f
 typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 \end{lstlisting}
-These operate on \code{stencil} objects. This class is in \file{stencils.h}
+These operate on \code{stencil} objects. This class is in \file{stencils.hxx}
 \begin{lstlisting}
 class stencil {
   public:
@@ -655,7 +738,7 @@ values.
 
 To convert between short variable names (``C2''), long descriptions 
 (``2nd order Central Differencing''), \texttt{DIFF\_METHOD} enums used to specify methods
-at runtime (DIFF\_C2, defined in \texttt{bout\_types.h}), and function pointers
+at runtime (DIFF\_C2, defined in \texttt{bout\_types.hxx}), and function pointers
 (\texttt{DDX\_C2}), taking into account whether
 variables are shifted or not, BOUT++ uses a set of lookup tables.
 
@@ -876,7 +959,7 @@ usually used.
 The mesh is used in pretty much all parts of the code, and deals with 
 things like the geometry of the mesh (metric tensors etc.), and how the
 mesh is divided between processors (communications). The Mesh class
-(\file{include/mesh.h}) defines an interface, and there are currently
+(\file{include/mesh.hxx}) defines an interface, and there are currently
 two implementations:
 \begin{itemize}
 \item \lstinline!BoutMesh! (\file{src/mesh/boutmesh.cxx}) \index{BoutMesh} which is backwards compatible
@@ -934,7 +1017,7 @@ from these sources, querying each data source in turn for the required
 variables (in the order in which they were added). \lstinline!load(GridDataSource)!
 loads the mesh from only the supplied data source.
 
-In \file{bout++.cpp}, this is used to initialise the mesh:
+In \file{bout++.cxx}, this is used to initialise the mesh:
 \begin{lstlisting}
 mesh->addSource(new GridFile(data_format(grid_name), grid_name));
 if(mesh->load()) {
@@ -1020,7 +1103,7 @@ int wait(comm_handle);           // Receive data
 \end{lstlisting}
 \code{communicate(FieldData)} can (currently) be used to communicate
 up to 4 variables together, and makes the code quite clear. For example in
-\file{examples/DriftInstability/2fluid.cpp} around line 360:
+\file{examples/DriftInstability/2fluid.cxx} around line 360:
 \begin{lstlisting}
 // Need to communicate jpar
 mesh->communicate(jpar);
@@ -1082,14 +1165,14 @@ comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
 \end{lstlisting}
 
 The variables \code{NXPE} and \code{PE\_XIND} shouldn't really be there,
-but are currently needed because the SPT algorithm in \file{invert\_laplace.cpp}
+but are currently needed because the SPT algorithm in \file{invert\_laplace.cxx}
 needs to know when it's going to be next and so keep track of which processor
 number is currently working. This logic to pass a problem along a chain in
 X should really be moved into Mesh.
 
 \subsection{Y-Z surface communications}
 
-Some operations (like parallel inversions in \texttt{bout++/src/invert/invert\_parderiv.cpp}) need to be performed on
+Some operations (like parallel inversions in \texttt{bout++/src/invert/invert\_parderiv.cxx}) need to be performed on
 Y-Z surfaces, i.e. slices at constant X. This needs to be able to
 handle open and closed surfaces, and that closed surfaces may need a 
 shift in the Z direction to match one end onto the other (a twist-shift
@@ -1163,7 +1246,7 @@ class RangeIter {
 };
 \end{lstlisting}
 which allows looping over the X indices in the boundary. For example, in
-\code{boundary.cpp} to loop over the upper Y boundary of a 2D variable
+\code{boundary.cxx} to loop over the upper Y boundary of a 2D variable
 \code{var}:
 \begin{lstlisting}
 RangeIter* xr = mesh->iterateBndryUpperY(); // Upper boundary
@@ -1202,7 +1285,7 @@ The contravariant and covariant metric tensor components are
 public members of \code{Mesh}: 
 \begin{lstlisting}
 // Contravariant metric tensor (g^{ij})
-Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
+Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cxx
 
 // Covariant metric tensor
 Field2D g_11, g_22, g_33, g_12, g_13, g_23;
@@ -1302,7 +1385,7 @@ The boundary condition system needs to be very flexible in order to handle:
 
 Different regions of the boundary such as ``core'', ``sol'' etc. are
 labelled by the \code{Mesh} class (i.e. \code{BoutMesh}), which
-implements a member function defined in \file{mesh.h}:
+implements a member function defined in \file{mesh.hxx}:
 \begin{lstlisting}[firstnumber=150]
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
@@ -1311,7 +1394,7 @@ This returns a vector of pointers to \code{BoundaryRegion} objects,
 each of which describes a boundary region with a label, a \code{BndryLoc} 
 location (i.e. inner x, outer x, lower y, upper y or all), and iterator
 functions for looping over the points. This class is
-defined in \file{boundary\_region.h}:\index{BoundaryRegion}
+defined in \file{boundary\_region.hxx}:\index{BoundaryRegion}
 \begin{lstlisting}[firstnumber=12]
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion {
@@ -1364,7 +1447,7 @@ On each boundary, conditions must be specified for each variable.
 The different conditions are imposed by \code{BoundaryOp} objects.
 These set the values in the boundary region such that they obey e.g.
 Dirichlet or Neumann conditions. The \code{BoundaryOp} class is defined
-in \file{boundary\_op.h}: \index{BoundaryOp}
+in \file{boundary\_op.hxx}: \index{BoundaryOp}
 \begin{lstlisting}[firstnumber=21]
 /// An operation on a boundary
 class BoundaryOp {
@@ -1409,7 +1492,7 @@ component individually, and the \code{apply\_ddt()} functions just call
 the \code{apply()} functions.
 
 {\bf Example}: Neumann boundary conditions are defined in
-\file{boundary\_standard.h}:
+\file{boundary\_standard.hxx}:
 \begin{lstlisting}[firstnumber=22]
 /// Neumann (zero-gradient) boundary condition
 class BoundaryNeumann : public BoundaryOp {
@@ -1421,7 +1504,7 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 \end{lstlisting}
-and implemented in \file{boundary\_standard.cpp} \index{BoundaryNeumann}
+and implemented in \file{boundary\_standard.cxx} \index{BoundaryNeumann}
 \begin{lstlisting}[firstnumber=52]
 void BoundaryNeumann::apply(Field2D &f)
 {
@@ -1459,7 +1542,7 @@ as a vector of strings - see explanation in section~\ref{sec:BoundaryFactory}.
 To create more complicated boundary conditions from simple ones (such as
 Neumann conditions above), boundary operations can be modified by
 wrapping them up in a \code{BoundaryModifier} object, defined
-in \file{boundary\_op.h}: \index{BoundaryModifier}
+in \file{boundary\_op.hxx}: \index{BoundaryModifier}
 \begin{lstlisting}[firstnumber=63]
 class BoundaryModifier : public BoundaryOp {
  public:
@@ -1477,7 +1560,7 @@ instead of a \code{BoundaryRegion} to operate on, modifiers are passed a
 \code{BoundaryOp} to modify.
 
 Currently the only modifier is \code{BoundaryRelax}, defined in
-\file{boundary\_standard.h}: \index{BoundaryRelax}
+\file{boundary\_standard.hxx}: \index{BoundaryRelax}
 \begin{lstlisting}[firstnumber=64]
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
@@ -1501,7 +1584,7 @@ class BoundaryRelax : public BoundaryModifier {
 \index{BoundaryFactory}
 The boundary factory creates new boundary operations from input strings,
 for example turning "relax(dirichlet)" into a relaxing Dirichlet boundary
-operation on a given region. It is defined in \file{boundary\_factory.h}
+operation on a given region. It is defined in \file{boundary\_factory.hxx}
 as a Singleton, so to get a pointer to the boundary factory use
 \begin{lstlisting}[numbers=none]
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
@@ -1515,7 +1598,7 @@ Because users should be able to add new boundary conditions during
 \code{physics\_init()}, boundary conditions are not hard-wired into
 \code{BoundaryFactory}. Instead, boundary conditions must be registered
 with the factory, passing an instance which can later be cloned. This
-is done in \file{bout++.cpp} for the standard boundary conditions:
+is done in \file{bout++.cxx} for the standard boundary conditions:
 \begin{lstlisting}[firstnumber=258]
   BoundaryFactory* bndry = BoundaryFactory::getInstance();
   bndry->add(new BoundaryDirichlet(), "dirichlet");
@@ -1530,7 +1613,7 @@ is called.
 When a boundary operation is added, it is given a name
 such as ``dirichlet'', and similarly for the modifiers (``relax'' above).
 These labels and object pointers are stored internally in \code{BoundaryFactory}
-in maps defined in \file{boundary\_factory.h}:
+in maps defined in \file{boundary\_factory.hxx}:
 \begin{lstlisting}[firstnumber=43]
   // Database of available boundary conditions and modifiers
   map<string, BoundaryOp*> opmap;
@@ -1544,7 +1627,7 @@ These are then used by \code{BoundaryFactory::create()}:
 \end{lstlisting}
 to turn a string such as ``relax(dirichlet)'' and a \code{BoundaryRegion}
 pointer into a \code{BoundaryOp} object. These functions are implemented
-in \file{boundary\_factory.cpp}, starting around line 42. The parsing is
+in \file{boundary\_factory.cxx}, starting around line 42. The parsing is
 done recursively by matching the input string to one of:
 \begin{itemize}
 \item \code{modifier(<expression>, arg1, ...)}
@@ -1563,7 +1646,7 @@ to the operation implementation to ensure that the correct number of
 arguments are passed, and to parse them into floats or other types.
 
 {\bf Example}: The Dirichlet boundary condition can take an optional
-argument to change the value the boundary's set to. In \file{boundary\_standard.cpp}:
+argument to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
 \index{BoundaryDirichlet}
 \begin{lstlisting}[firstnumber=13]
 BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
@@ -1588,7 +1671,7 @@ If more arguments are passed then these are just ignored; probably a warning
 should be printed.
 
 To set boundary conditions on a field, \code{FieldData} methods are
-defined in \file{field\_data.h}: \index{FieldData}
+defined in \file{field\_data.hxx}: \index{FieldData}
 \begin{lstlisting}
 // Boundary conditions
   void setBoundary(const string &name); ///< Set the boundary conditions
@@ -1599,7 +1682,7 @@ defined in \file{field\_data.h}: \index{FieldData}
   vector<BoundaryOp*> bndry_op; // Boundary conditions
 \end{lstlisting}
 The \code{setBoundary(const string \&name)} method is implemented in
-\file{field\_data.cpp}. It first gets a vector of pointers to
+\file{field\_data.cxx}. It first gets a vector of pointers to
 \code{BoundaryRegion}s from the mesh, then loops over these calling
 \code{BoundaryFactory::createFromOptions} for each one and adding the resulting
 boundary operator to the \code{bndry\_op} vector.
@@ -1651,7 +1734,7 @@ private:
 \index{Solver}
 The solver is the interface between BOUT++ and the time-integration code
 such as SUNDIALS. All solvers implement the \code{Solver} class
-interface (see \file{src/solver/generic\_solver.h}).
+interface (see \file{src/solver/generic\_solver.hxx}).
 
 First all the fields which are to be evolved need to be added
 to the solver. These are always done in pairs, the first
@@ -1690,7 +1773,7 @@ initialised using:
 int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
 \end{lstlisting}
 which returns an error code (0 on success). This is currently
-called in \file{bout++.cpp}:
+called in \file{bout++.cxx}:
 \begin{lstlisting}
 if(solver.init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
   output.write("Failed to initialise solver. Aborting\n");
@@ -1719,8 +1802,8 @@ int run(MonitorFunc f);
 BOUT++ needs to deal with binary format files to read the grid;
 read and write restart restart files; and write dump files. 
 The two parts of the code which need to read and write data are therefore
-the grid routines (\code{grid.h} and \code{grid.cpp}), and the
-\code{Datafile} class (\code{datafile.h} and \code{datafile.cpp}).
+the grid routines (\code{grid.hxx} and \code{grid.cxx}), and the
+\code{Datafile} class (\code{datafile.hxx} and \code{datafile.cxx}).
 All other parts which need to read or write data go through these
 methods.
 
@@ -1729,7 +1812,7 @@ For historical reasons (inherited from BOUT), BOUT++ originally used the
 Portable Data Binary (PDB) format developed at LLNL. 
 To separate the basic file format functions from the higher level grid and 
 Datafile classes, these use an abstract class \code{DataFormat}. Any
-class which implements the functions listed in \code{dataformat.h}
+class which implements the functions listed in \code{dataformat.hxx}
 can therefore be passed to grid or datafile. This makes implementing
 a new file format, and switching between formats at run-time, 
 relatively straightforward.
@@ -1811,7 +1894,7 @@ class DataFormat {
 To control the behaviour of BOUT++ a set of options is used, with
 options organised into sections which can be nested. To represent this
 tree structure there is the \lstinline!Options! class defined in
-\file{bout++/include/options.h} 
+\file{bout++/include/options.hxx} 
 \begin{lstlisting}
 class Options {
  public:
@@ -1881,7 +1964,7 @@ To suppress this, set the \lstinline!log! argument to \lstinline!false!:
 
 To allow different input file formats, each file parser implements
 the \lstinline!OptionParser! interface defined in
-\file{bout++/src/sys/options/optionparser.h}
+\file{bout++/src/sys/options/optionparser.hxx}
 \index{OptionParser}
 \begin{lstlisting}
 class OptionParser {
@@ -1896,7 +1979,7 @@ object.
 
 To use these parsers and read in a file, there is the
 \lstinline!OptionsReader! class defined in
-\file{bout++/include/optionsreader.h} \index{OptionsReader}
+\file{bout++/include/optionsreader.hxx} \index{OptionsReader}
 \begin{lstlisting}
 class OptionsReader {
  public:
@@ -1909,7 +1992,7 @@ This is a singleton object which is accessed using
   OptionsReader *reader = OptionsReader::getInstance();
 \end{lstlisting}
 so to read a file \file{BOUT.inp} in a directory given in a variable
-\lstinline!data_dir! the following code is used in \file{bout++.cpp}:
+\lstinline!data_dir! the following code is used in \file{bout++.cxx}:
 \begin{lstlisting}
   Options *options = Options::getRoot();
   OptionsReader *reader = OptionsReader::getInstance();
