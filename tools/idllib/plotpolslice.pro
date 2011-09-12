@@ -210,9 +210,13 @@ PRO plotpolslice, var3d_in, uedge, period=period, zangle=zangle, $
   d = [[reform(var2d[*,y])], [reform(var2d[*,yp])]]
   r = [[reform(rxy[*,y])], [reform(rxy[*,yp])]]
   z = [[reform(zxy[*,y])], [reform(zxy[*,yp])]]
-  CONTOUR, d, r, z, /over, /fil, lev=lev, c_col=col
-
-  oplot, [reform(rxy[0,*]), rxy[0,0]], [reform(zxy[0,*]),zxy[0,0]], color=1
+; create a solid/"filled" plot of the simulation domain
+  ;CONTOUR, d, r, z, /over, /fil, lev=lev, c_col=col
+  
+  ; draw the inner boundary of the simulation domain
+  ;oplot, [reform(rxy[0,*]), rxy[0,0]], [reform(zxy[0,*]),zxy[0,0]], color=1
+  
+  ; draw the outer boundary of the simulation domain
   oplot, [reform(rxy[nx-1,*]),rxy[nx-1,0]],[reform(zxy[nx-1,*]),zxy[nx-1,0]], color=1
 
   ;FOR y=0, ny2-1 DO BEGIN
