@@ -168,6 +168,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   BoutReal abstol, reltol;
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
+  //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
+  
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
@@ -213,6 +215,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
   // Default to matrix-free
   ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
+  ierr = SNESSetTolerances(snes,abstol,reltol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);CHKERRQ(ierr);
+
   ierr = MatCreateSNESMF(snes,&Jmf);CHKERRQ(ierr);
   ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);CHKERRQ(ierr);
