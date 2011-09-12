@@ -1,0 +1,3 @@
+module swap PrgEnv-pgi PrgEnv-gnu
+module load netcdf
+./configure MPICC=cc MPICXX=CC --with-netcdf=/opt/cray/netcdf/4.1.1.0/netcdf-gnu --with-fftw=/opt/fftw/3.2.2.1 --with-pdb=/global/homes/u/umansky/PUBLIC/PACT_HOPP2/pact
