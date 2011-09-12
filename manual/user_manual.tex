@@ -774,6 +774,13 @@ output data. For example, the high-$\beta$ model has variables ``P'',
 ``jpar'', and ``U'', and so has sections \code{[P]}, \code{[jpar]},
 \code{[U]} (not case sensitive). 
 
+There are two ways to specify the initial conditions for a variable:
+the original method (similar to that used by BOUT-06) which covers
+the most commonly needed functions. If more flexibility is needed then
+a more general analytical expression can be given.
+
+\subsubsection{Original method}
+
 The shape of the initial value is specified for each dimension separately
 using the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These
 are set to an integer: 
@@ -826,6 +833,25 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 \end{figure}
 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
+
+\subsubsection{Expressions}
+
+If a more general function is needed, a variable can be initialised using the \code{function} option
+for each variable. This overrides the original method for that variable. e.g.
+\begin{lstlisting}[language=bash,numbers=none]
+[all]
+
+xs_opt = 1  # Gaussian in X
+ys_opt = 1  # Gaussian in Y
+zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
+
+[U]
+scale = 1.0e-5
+
+[p]
+function = 1 + gaussian(x-0.5)*gauss(y)*sin(z)
+\end{lstlisting}
+will use the original method to set $U$, but use the given expression to set $p$.
 
 \subsection{Boundary conditions}
 \label{sec:bndryopts}
@@ -1867,8 +1893,7 @@ section, for example here the ``mhd'' section has been specified. To save having
 BoutReal gamma;
 int someint;
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   Options *globalOptions = Options::getRoot();
   Options *options = globalOptions->getSection("mhd");
 
@@ -1899,8 +1924,7 @@ call the \code{mesh->communicate} function directly. For the MHD code, we need t
 the variables \code{rho,p,v,B} at the beginning of the \code{physics\_run} function
 before any derivatives are calculated:
 \begin{lstlisting}
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   mesh->communicate(rho, p, v, B);
 \end{lstlisting}
 
@@ -1995,11 +2019,15 @@ perform communications (and set boundary conditions) first. See section~\ref{sec
 \index{boundary conditions}
 All evolving variables have boundary conditions applied automatically after
 the \lstinline!physics_run! has finished. Which condition is applied depends on the options file
-settings (see section~\ref{sec:bndryopts}). Quite often however it's necessary to impose
-boundary conditions on other quantities.
+settings (see section~\ref{sec:bndryopts}). If you want to disable this and apply your own
+boundary conditions then set boundary condition to \code{none} in the \code{BOUT.inp} options file.
 
-The simplest way to do this is to specify a boundary condition as text, so to apply a Dirichlet boundary
-condition:
+In addition to evolving variables, it's sometimes necessary
+to impose boundary conditions on other quantities which are not explicitly
+evolved. 
+
+The simplest way to set a boundary condition is to specify it as text,
+so to apply a Dirichlet boundary condition:
 \begin{lstlisting}
   Field3D var;
   ...
@@ -2028,13 +2056,60 @@ This will look in the options file for a section called \code{"[myvar]"}  (upper
 doesn't matter) in the same way that evolving variables are handled. In fact this is precisely what
 is done: inside \code{bout\_solve} (or \code{SOLVE\_FOR}) the \code{setBoundary} method is called,
 and then after \code{physics\_run} the applyBoundary() method is called on each evolving variable.
+This method also gives you the flexibility to apply different boundary conditions on different
+boundary regions (e.g. radial boundaries and target plates); the first method just applies the same
+boundary condition to all boundaries.
 
-Finally, another way to set the boundaries is to copy them from another variable:
+Another way to set the boundaries is to copy them from another variable:
 \begin{lstlisting}
 Field3D a, b;
   ...
   a.setBoundaryTo(b); // Copy b's boundaries into a
   ...
+\end{lstlisting}
+
+\subsubsection{Custom boundary conditions}
+
+The boundary conditions supplied with the BOUT++ library cover the most common situations,
+but cannot cover all of them. If the boundary condition you need isn't
+available, then it's quite straightforward
+to write your own. To set an X boundary condition, it's necessary to test if the processor
+is at the left boundary (first in X), or right boundary (last in X). Note that it might be
+both if \code{NXPE = 1}, or neither if \code{NXPE > 2}. 
+\begin{lstlisting}
+  Field3D f;
+  ...
+  if(mesh->firstX()) {
+    // At the left of the X domain
+    // set f[0:1][*][*] i.e. first two points in X, all Y and all Z
+    for(int x=0; x < 2; x++)
+      for(int y=0; y < mesh->ngy; y++)
+        for(int z=0; z < mesh->ngz; z++) {
+          f[x][y][z] = ...
+        }
+  }
+  if(mesh->lastX()) {
+    // At the right of the X domain
+    // Set last two points in X
+    for(int x=mesh->ngx-2; x < mesh->ngx; x++)
+      for(int y=0; y < mesh->ngy; y++)
+        for(int z=0; z < mesh->ngz; z++) {
+          f[x][y][z] = ...
+        }
+  }
+\end{lstlisting}
+note the size of the local mesh including guard cells is given by \code{mesh->ngx}, \code{mesh->ngy},
+and \code{mesh->ngz}. The functions \code{mesh->firstX()} and \code{mesh->lastX()} return true only
+if the current processor is on the left or right of the X domain respectively.
+
+Setting custom Y boundaries is slightly more complicated than X boundaries, because target or limiter
+plates could cover only part of the domain. Rather than use a \code{for} loop to iterate over the points
+in the boundary, we need to use a more general iterator:
+
+\begin{lstlisting}
+  Field3D f;
+  ...
+  
 \end{lstlisting}
 
 \subsection{Initial profiles}
