@@ -3,8 +3,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 10          # number of time-steps
-TIMESTEP = 1.0       # time between outputs
+NOUT = 100          # number of time-steps
+TIMESTEP = 100.0       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 4  # wall time limit (in hours)
 
@@ -13,13 +13,13 @@ TwistShift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
-MZ = 65             # number of points in z direction (2^n + 1)
+MZ = 64             # number of points in z direction (2^n + 1)
 ZPERIOD = 10        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
 
-NXPE = 1            # Number of processor in X
+NXPE = 32           # Number of processor in X
 
 grid = "cbm18_8_y064_x516_090309.nc"  # Grid file
 
@@ -93,6 +93,9 @@ mxstep = 5000   # Number of internal steps between outputs
 adams_moulton = false # Use Adams-Moulton method (default is BDF)
 func_iter = false     # Functional iteration (default is Newton)
 
+#type = euler
+#start_timestep = 1.0
+
 ##################################################
 
 [dalf3]
@@ -100,27 +103,21 @@ func_iter = false     # Functional iteration (default is Newton)
 estatic = false     # Set Apar = 0
 ZeroElMass = false  # Set electron mass to zero
 
-jpar_noderiv = false  # If true, use jpar = (Ajpar - beta*apar)/mu
+jpar_noderiv = false
 
-curv_kappa = false  # Use bxcv vector in grid file, otherwise log(B)
+curv_kappa = true  # Use bxcv vector in grid file, otherwise log(B)
 
 flat_resist = false # Flat resistivity profile
 mul_resist = 1.0    # Multiply resistivity by this
 
-viscosity = -1.0       # Perpendicular viscosity
-viscosity_par = -1.0   # Parallel viscosity
-hyper_viscosity = -1.0 # Perpendicular hyper-viscosity
+nonlinear = true
 
-smooth_separatrix = false
+filter_z = false # Keep only lowest harmonic
 
-bracket_method = 2 # Method to use for [f,g] terms
-                   # 0 = Use default differencing methods
-                   # 1 = Simplified operator
-                   # 2 = Arakawa scheme
-                   # 3 = Corner Transport Upwind (CTU)
+bracket_method = 3  # 0 = std, 2 = arakawa, 3 = ctu
 
-parallel_lc = true # Use quasi-staggered LtoC and CtoL in Y
-nonlinear = true   # Include nonlinear terms?
+viscosity = 0.01
+viscosity_par = 1.0
 
 # field inversion flags: Add the following
 #  1 - Zero-gradient DC component on inner boundary

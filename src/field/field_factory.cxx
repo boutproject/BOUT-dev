@@ -116,6 +116,32 @@ BoutReal FieldGaussian::generate(int x, int y, int z) {
   return exp(-SQ(X->generate(x,y,z)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
+FieldGenerator* FieldAbs::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to abs function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldAbs(args.front());
+}
+
+BoutReal FieldAbs::generate(int x, int y, int z) {
+  return fabs(gen->generate(x,y,z));
+}
+
+FieldGenerator* FieldSqrt::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sqrt function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSqrt(args.front());
+}
+
+BoutReal FieldSqrt::generate(int x, int y, int z) {
+  return sqrt(gen->generate(x,y,z));
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
@@ -133,10 +159,15 @@ FieldFactory::FieldFactory() {
   addGenerator("y", new FieldY());
   addGenerator("z", new FieldZ());
   
+  // Useful values
+  addGenerator("pi", new FieldPI());
+
   // Some standard functions
   addGenerator("sin", new FieldSin(NULL));
   addGenerator("cos", new FieldCos(NULL));
   addGenerator("gauss", new FieldGaussian(NULL, NULL));
+  addGenerator("abs", new FieldAbs(NULL));
+  addGenerator("sqrt", new FieldSqrt(NULL));
 }
 
 FieldFactory::~FieldFactory() {

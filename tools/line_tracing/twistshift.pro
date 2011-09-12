@@ -1,5 +1,4 @@
-pro TwistShift, x1,z1, x2,z2, zShift=zShift, debug=debug
-;
+PRO TwistShift, x1,z1, x2,z2, zShift=zShift, debug=debug
 ; Inputs:  coordinates of entry location 
 ;  x1 [weber]
 ;  z1 [rad]
@@ -22,4 +21,4 @@ pro TwistShift, x1,z1, x2,z2, zShift=zShift, debug=debug
   ;;-no change in the radial coordinate
   x2=x1
 ;
-end
+END

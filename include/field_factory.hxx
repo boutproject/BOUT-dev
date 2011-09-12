@@ -25,7 +25,6 @@
  **************************************************************************/
 
 class FieldGenerator;
-class FieldModifier;
 class FieldFactory;
 
 #ifndef __FIELD_FACTORY_H__
@@ -45,6 +44,8 @@ using std::map;
 using std::stringstream;
 
 //////////////////////////////////////////////////////////
+// Generates a value at a given (x,y,z) location,
+// perhaps using other generators passed to clone()
 
 class FieldGenerator {
 public:
@@ -80,6 +81,15 @@ class FieldZ : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
   BoutReal generate(int x, int y, int z);
+};
+
+//////////////////////////////////////////////////////////
+// Values
+
+class FieldPI : public FieldGenerator {
+public:
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldPI(); }
+  BoutReal generate(int x, int y, int z) { return PI;}
 };
 
 //////////////////////////////////////////////////////////
@@ -130,7 +140,30 @@ private:
   FieldGenerator *X, *s;
 };
 
+class FieldAbs : public FieldGenerator {
+public:
+  FieldAbs(FieldGenerator* g) : gen(g) {}
+  ~FieldAbs() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
+class FieldSqrt : public FieldGenerator {
+public:
+  FieldSqrt(FieldGenerator* g) : gen(g) {}
+  ~FieldSqrt() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
 //////////////////////////////////////////////////////////
+// Create a tree of generators from an input string
 
 class FieldFactory {
 public:

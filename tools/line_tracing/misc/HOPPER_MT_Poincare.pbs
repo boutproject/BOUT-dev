@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -N IDL_Poincare
+#PBS -l mppwidth=24
+#PBS -q regular
+#PBS -l walltime=04:00:00
+#PBS -e Poincare.err
+#PBS -o Poincare.out
+BINARY="idl mt_poincare"
+cd ${PBS_O_WORKDIR}
+${BINARY}

@@ -143,7 +143,8 @@ PRO popup_event, event
                          settings, $
                          boundary=boundary, strict=base_info.strict_bndry, rad_peaking=rad_peak, $
                          single_rad_grid=base_info.single_rad_grid, $
-                         critical=(*(base_info.rz_grid)).critical)
+                         critical=(*(base_info.rz_grid)).critical, $
+                         fast=base_info.fast)
       
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
@@ -166,7 +167,7 @@ PRO event_handler, event
   ; Get the UVALUE
   widget_control, event.id, get_uvalue=uvalue
   
-  ; Retrieve a copy of information stored in tlb
+  ; Get info stored in base
   widget_control, event.top, get_uvalue=info
   
   IF N_ELEMENTS(uvalue) EQ 0 THEN RETURN ; Undefined
@@ -314,7 +315,8 @@ PRO event_handler, event
                          boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
-                         critical=(*(info.rz_grid)).critical)
+                         critical=(*(info.rz_grid)).critical, $
+                         fast=info.fast)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -453,6 +455,10 @@ PRO event_handler, event
     END
     'smoothH': BEGIN
       info.smoothH = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'fast': BEGIN
+      info.fast = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'draw': BEGIN
@@ -680,6 +686,7 @@ PRO event_handler, event
         info.npol_field = oldinfo.npol_field
         info.draw = oldinfo.draw
         info.psi_inner_field = oldinfo.psi_inner_field
+        info.psi_outer_field = oldinfo.psi_outer_field
         info.rad_peak_field = oldinfo.rad_peak_field
         info.status = oldinfo.status
         info.leftbargeom = oldinfo.leftbargeom
@@ -706,15 +713,17 @@ PRO event_handler, event
 END
 
 PRO handle_resize, event
+  
+  IF WHERE(TAG_NAMES(event) EQ "X") EQ -1 THEN RETURN
+  
   WIDGET_CONTROL, event.top, get_uvalue=info, /No_Copy
   
   statusgeom = WIDGET_INFO(info.status, /geom) 
-
+  
   WIDGET_CONTROL, info.draw, $
                   Draw_XSize=(event.x - info.leftbargeom.xsize) > statusgeom.xsize, $
                   Draw_YSize=(event.y - statusgeom.ysize) > info.leftbargeom.ysize
   
-
   IF info.rz_grid_valid THEN BEGIN
     ; Plot the equilibrium
     plot_rz_equil, *info.rz_grid
@@ -753,20 +762,25 @@ PRO hypnotoad
   ; Create a bar down left side for buttons and settings
   bar = WIDGET_BASE(base, /COLUMN, EVENT_PRO = 'event_handler')
   
-  read_button = WIDGET_BUTTON(bar, VALUE='Read G-EQDSK', $
+  ; Create a tabbed interface in the bar
+  tab_base = WIDGET_TAB(base)
+  
+  tab1 = WIDGET_BASE(tab_base, title="Actions", /Column, EVENT_PRO = 'event_handler')
+  
+  read_button = WIDGET_BUTTON(tab1, VALUE='Read G-EQDSK', $
                               uvalue='aandg', tooltip="Read RZ equilibrium from EFIT")
 
-  bndry_button = WIDGET_BUTTON(bar, VALUE='Read boundary', $
+  bndry_button = WIDGET_BUTTON(tab1, VALUE='Read boundary', $
                                uvalue='bndry', tooltip="Read boundary from g-eqdsk file")
   
-  nrad_field = CW_FIELD( bar,                            $
+  nrad_field = CW_FIELD( tab1,                            $
                          title  = 'Radial points:',      $ 
                          uvalue = 'nrad',                $ 
                          /long,                          $ 
                          value = 36,                     $
                          xsize=8                         $
                        )
-  npol_field = CW_FIELD( bar,                            $
+  npol_field = CW_FIELD( tab1,                            $
                          title  = 'Poloidal points:',    $ 
                          uvalue = 'npol',                $ 
                          /long,                          $ 
@@ -774,14 +788,14 @@ PRO hypnotoad
                          xsize=8                         $
                        )
   
-  psi_inner_field = CW_FIELD( bar,                            $
+  psi_inner_field = CW_FIELD( tab1,                            $
                               title  = 'Inner psi:',          $ 
                               uvalue = 'inner_psi',           $ 
                               /floating,                      $ 
                               value = 0.9,                    $
                               xsize=8                         $
                             )
-  psi_outer_field = CW_FIELD( bar,                            $
+  psi_outer_field = CW_FIELD( tab1,                            $
                               title  = 'Outer psi:',          $ 
                               uvalue = 'outer_psi',           $ 
                               /floating,                      $ 
@@ -790,7 +804,7 @@ PRO hypnotoad
                             )
   
   
-  rad_peak_field = CW_FIELD( bar,                            $
+  rad_peak_field = CW_FIELD( tab1,                            $
                              title  = 'Sep. packing:',          $ 
                              uvalue = 'rad_peak',           $ 
                              /floating,                      $ 
@@ -798,8 +812,11 @@ PRO hypnotoad
                              xsize=8                         $
                            )
   
-  w = WIDGET_LABEL(bar, value="Curvature method")
-  curv_select = WIDGET_COMBOBOX(bar, VALUE=["Toroidal, SVD method", $
+  ; Options tab
+  tab2 = WIDGET_BASE(tab_base, title="Options", /COLUMN, EVENT_PRO = 'event_handler')
+
+  w = WIDGET_LABEL(tab2, value="Curvature method")
+  curv_select = WIDGET_COMBOBOX(tab2, VALUE=["Toroidal, SVD method", $
                                             "Cylindrical+interpol", $
                                             "Field-aligned coords"], $
                                 EVENT_PRO = 'event_handler', $
@@ -807,7 +824,7 @@ PRO hypnotoad
   curv_index = 1 ; Default index
   WIDGET_CONTROL, curv_select, set_combobox_select=curv_index
 
-  checkboxbase = WIDGET_BASE(bar, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
+  checkboxbase = WIDGET_BASE(tab2, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
                                tooltip="Enforce boundaries strictly")
   Widget_Control, strict_check, Set_Button=1
@@ -829,26 +846,29 @@ PRO hypnotoad
                                 tooltip="Smooth Hthe")
 
   Widget_Control, smoothH_check, Set_Button=0
+
+  fast_check = WIDGET_BUTTON(checkboxbase, VALUE="Fast", uvalue='fast', tooltip="Uses faster but less acurate methods")
+  Widget_Control, fast_check, set_button=0
   
-  mesh_button = WIDGET_BUTTON(bar, VALUE='Generate mesh', $
+  mesh_button = WIDGET_BUTTON(tab1, VALUE='Generate mesh', $
                               uvalue='mesh', tooltip="Generate a new mesh")
 
-  mesh2_button = WIDGET_BUTTON(bar, VALUE='Nonorthogonal mesh', $
+  mesh2_button = WIDGET_BUTTON(tab1, VALUE='Nonorthogonal mesh', $
                               uvalue='mesh2', tooltip="Generate a new nonorthogonal mesh")
   
-  detail_button = WIDGET_BUTTON(bar, VALUE='Detailed settings', $
+  detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
                                 uvalue='detail', $
                                 tooltip="Set quantities in each region")
 
-  process_button = WIDGET_BUTTON(bar, VALUE='Output mesh', $
+  process_button = WIDGET_BUTTON(tab1, VALUE='Output mesh', $
                                  uvalue='process', tooltip="Process mesh and output to file")
 
-  print_button = WIDGET_BUTTON(bar, VALUE='Plot to file', $
+  print_button = WIDGET_BUTTON(tab1, VALUE='Plot to file', $
                                uvalue='print', tooltip="Produce a Postscript plot of the mesh")
 
-  save_button = WIDGET_BUTTON(bar, VALUE='Save state', $
+  save_button = WIDGET_BUTTON(tab1, VALUE='Save state', $
                                uvalue='save', tooltip="Save current Hypnotoad state")
-  restore_button = WIDGET_BUTTON(bar, VALUE='Restore state', $
+  restore_button = WIDGET_BUTTON(tab1, VALUE='Restore state', $
                                uvalue='restore', tooltip="Restore Hypnotoad state")
 
   leftbargeom = WIDGET_INFO(bar, /Geometry)
@@ -879,6 +899,7 @@ PRO hypnotoad
            simple_bndry:0, $ ; Use simplified boundary?
            smoothP:0, $     ; Interpolate to make P smooth
            smoothH:0, $ 
+           fast:0, $
            single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $

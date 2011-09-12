@@ -203,6 +203,26 @@ and rather than creating a patch, you push changes to the repository:
 $ git push
 \end{verbatim}
 
+\subsubsection{Accessing github from behind a firewall}
+
+If you're working on a machine which can't access github directly
+(such as grendel, smaug etc. at LLNL), you can still seamlessly access
+github by using another machine as a proxy over SSH. To do this,
+edit your SSH config file \texttt{~/.ssh/config} and add the following lines:
+\begin{verbatim}
+Host        gh
+HostName    github.com
+User        git
+ProxyCommand    ssh -q -x user@euclid.nersc.gov nc %h %p
+\end{verbatim}
+where \texttt{euclid.nersc.gov} can be replaced by any machine you can access
+which has netcat (\texttt{nc}) installed, and which can access github.com. 
+If you have set up a github account with SSH keys, you should now be able to
+get a copy of BOUT++ by running
+\begin{verbatim}
+$ git clone gh:bendudson/BOUT
+\end{verbatim}
+
 \subsection{House rules}
 
 BOUT++ consists of about 32,400 lines of C/C++\footnote{generated using
@@ -800,6 +820,9 @@ $c$ and $d$ are optional. Note: this is also used by \texttt{Delp2}.
 
 \subsubsection{Tridiagonal solver}
 
+A common problem is to invert a differential equation involving the perpendicular
+Laplacian operator $\nabla_\perp^2$. Routines to do this are implemented in
+\file{src/invert/invert\_laplace.cxx}, header file \file{invert\_laplace.hxx}.
 
 \subsubsection{Band solver}
 

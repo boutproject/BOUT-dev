@@ -2138,13 +2138,10 @@ void Field3D::applyTDerivBoundary()
 #endif
 }
 
-void Field3D::setBoundaryTo(const Field3D &f3d)
-{
+void Field3D::setBoundaryTo(const Field3D &f3d) {
+  allocate(); // Make sure data allocated
 #ifdef CHECK
   msg_stack.push("Field3D::setBoundary(const Field3D&)");
-
-  if(block == NULL)
-    throw BoutException("Setting boundary condition on empty data\n");
   
   if(f3d.block == NULL)
     throw BoutException("Setting boundary condition to empty data\n");

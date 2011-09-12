@@ -43,7 +43,7 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
               az=az, delay=delay, _extra=_extra, $
               noscale=noscale, uedge=uedge, period=period, $
               addsym=addsym, bw=bw, bmp=bmp, output=output, $
-              numoff=numoff
+              numoff=numoff, nobuffer=nobuffer
 
   on_error,2  ; If an error occurs, return to caller
 
@@ -54,6 +54,8 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
   IF NOT KEYWORD_SET(numoff) THEN numoff = 0 ELSE PRINT, "Offsetting numbers by "+STRTRIM(STRING(FIX(numoff)),2)
   numoff = FIX(numoff) ; make sure it's an integer
 
+  IF KEYWORD_SET(bmp) THEN nobuffer = 1 ; No buffering
+
   s = SIZE(data, /dimensions)
 
   ndims = N_ELEMENTS(s)
@@ -62,10 +64,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
   xsize = !D.X_size ; Size of the current window
   ysize = !D.Y_size 
 
-  ; Create a pixmap window for double-buffering
-  WINDOW, xsize=xsize, ysize=ysize, /PIXMAP, /FREE
-  pixid = !D.WINDOW  ; Get window ID
-  WSET, pixid
+  IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+    ; Create a pixmap window for double-buffering
+    WINDOW, xsize=xsize, ysize=ysize, /PIXMAP, /FREE
+    pixid = !D.WINDOW  ; Get window ID
+    WSET, pixid
+  ENDIF
 
   IF ndims EQ 2 THEN BEGIN
     IF NOT KEYWORD_SET(yr) THEN yr = [MIN(data),MAX(data)]
@@ -81,10 +85,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
         IF KEYWORD_SET(addsym) THEN oplot, data[*,t], psym=addsym
       ENDELSE
       
-      ; Copy buffer
-      WSET, wcur
-      DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
-      WSET, pixid
+      IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+        ; Copy buffer
+        WSET, wcur
+        DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
+        WSET, pixid
+      ENDIF
       
       IF delay LT 0.0 THEN BEGIN
         cursor, x, y, /down
@@ -124,10 +130,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
                 /fill, nlev=50, color=color, $
                 title="time = "+strtrim(string(i),2), _extra=_extra
               
-              ; Copy buffer
-              WSET, wcur
-              DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
-              WSET, pixid
+              IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+                ; Copy buffer
+                WSET, wcur
+                DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
+                WSET, pixid
+              ENDIF
               
               IF delay LT 0.0 THEN BEGIN
                   cursor, x, y, /down
@@ -149,11 +157,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
           FOR i=0, nt-1 DO BEGIN
               surface, reform(val[*,*,i]), chars=chars, zr=yr, zstyle=1, $
                 color=color, az=az, title="time = "+strtrim(string(i),2), _extra=_extra
-              
-              ; Copy buffer
-              WSET, wcur
-              DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
-              WSET, pixid
+              IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+                ; Copy buffer
+                WSET, wcur
+                DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
+                WSET, pixid
+              ENDIF
               
               IF delay LT 0.0 THEN BEGIN
                   cursor, x, y, /down
@@ -199,10 +208,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
           plotpolslice, REFORM(data[*,*,*,i]), uedge, $
             period=period, profile=profile, output=psfile, _extra=_extra
           
-          ; Copy buffer
-          WSET, wcur
-          DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
-          WSET, pixid
+          IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+            ; Copy buffer
+            WSET, wcur
+            DEVICE, copy=[0,0,xsize,ysize,0,0,pixid]
+            WSET, pixid
+          ENDIF
           
           IF delay LT 0.0 THEN BEGIN
               cursor, x, y, /down
@@ -223,10 +234,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
       PRINT, "Data must be either 2, 3 or 4 dimensional"
   ENDELSE
 
-  ; Switch back to original window
-  WSET, wcur
-  
-  ; Delete the pixmap window
-  WDELETE, pixid
+  IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
+    ; Switch back to original window
+    WSET, wcur
+    
+    ; Delete the pixmap window
+    WDELETE, pixid
+  ENDIF
 
 END

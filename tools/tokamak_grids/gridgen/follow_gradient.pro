@@ -6,8 +6,9 @@
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 FUNCTION radial_differential, fcur, pos
-  COMMON rd_com, dctf, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol
-  a = local_gradient(dctf, pos[0], pos[1], status=status)
+  COMMON rd_com, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol
+  
+  local_gradient, idata, pos[0], pos[1], status=status, dfdr=dfdr, dfdz=dfdz
   
   ood = 0
 
@@ -17,7 +18,7 @@ FUNCTION radial_differential, fcur, pos
     lastgoodpos = pos
 
     ; If status NE 0 then an error occurred.
-    ; Allow a.dfdz to cause an error so escape LSODE
+    ; Allow dfdz to cause an error so escape LSODE
   ENDIF ELSE ood = 1 ; Out Of Domain
 
   IF N_ELEMENTS(boundary) GT 1 THEN BEGIN
@@ -38,16 +39,16 @@ FUNCTION radial_differential, fcur, pos
   dRdi = INTERPOLATE(DERIV(R), pos[0])
   dZdi = INTERPOLATE(DERIV(Z), pos[1])
   
-  ; Check mismatch between fcur and a.f ? 
-  Br = a.dfdz/dZdi
-  Bz = -a.dfdr/dRdi
+  ; Check mismatch between fcur and f ? 
+  Br = dfdz/dZdi
+  Bz = -dfdr/dRdi
   B2 = Br^2 + Bz^2
 
   RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
 END
 
 ;
-; F         (in)    2D psi data
+; interp_data (in)  Data for interpolation of 2D Psi
 ; R, Z      (in)    1D arrays of position vs. index
 ; ri0,zi0   (in)    Starting indices
 ; ftarget   (in)    The f to aim for
@@ -58,9 +59,9 @@ END
 ; fbndry    (out)   If hits boundary, gives final f value
 ; ibndry    (out)   If hits boundary, index where hit
 ;
-PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
+PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
                      boundary=boundary, fbndry=fbndry, ibndry=ibndry
-  COMMON rd_com, df, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
+  COMMON rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
   
   tol = 0.1
 
@@ -68,6 +69,8 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
   Zpos = Z
   
   ibndry = -1
+  
+  idata = interp_data
 
   IF KEYWORD_SET(boundary) THEN BEGIN
     bndry = boundary
@@ -76,19 +79,16 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
   ENDIF ELSE bndry = 0
   ood = 0
 
-  df = dctF
-  
   IF SIZE(ftarget, /TYPE) EQ 0 THEN PRINT, ftarget
 
   ; Get starting f
-  g = local_gradient(dctF, ri0, zi0, status=status)
+  local_gradient, interp_data, ri0, zi0, status=status, f=f0
   IF status EQ 1 THEN BEGIN
     ri = ri0
     zi = zi0
     status = 1
     RETURN
   ENDIF
-  f0 = g.f
 
   fmax = ftarget ; Target (with maybe boundary in the way)
 
@@ -100,15 +100,20 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
     REPEAT BEGIN
       rznew = LSODE(rzold,f0,ftarget - f0,'radial_differential', lstat)
       IF lstat EQ -1 THEN BEGIN
-        PRINT, "  -> Excessive work "+STR(f)+" to "+STR(ftarget)+" Trying to continue..."
+        PRINT, "  -> Excessive work "+STR(f0)+" to "+STR(ftarget)+" Trying to continue..."
         lstat = 2 ; continue
         rcount = rcount + 1
         IF rcount GT 10 THEN BEGIN
           PRINT, "   -> Too many repeats. Giving Up."
-          STOP
+          
+          ri = lastgoodpos[0]
+          zi = lastgoodpos[1]
+          fmax = lastgoodf
+          
+          RETURN
         ENDIF
         ; Get f at this new location
-        g = local_gradient(dctF, rznew[0], rznew[1], status=status)
+        local_gradient, interp_data, rznew[0], rznew[1], status=status, f=f0
         IF status EQ 1 THEN BEGIN
           ri = ri0
           zi = zi0
@@ -116,7 +121,6 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
           RETURN
         ENDIF
         rzold = rznew
-        f0 = g.f
   
         CONTINUE
       ENDIF ELSE BREAK
@@ -131,8 +135,6 @@ PRO follow_gradient, dctF, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
     
     ri = rznew[0]
     zi = rznew[1]
-    
-    g = local_gradient(dctF, ri, zi, status=status)
     
   ENDIF ELSE BEGIN
     ; An error occurred in LSODE.

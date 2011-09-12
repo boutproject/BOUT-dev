@@ -204,7 +204,10 @@ int physics_init(bool restarting) {
   }else {
     eta = 0.51*1.03e-4*20.*(Te0^(-1.5)); 
   }
-
+  if(mul_resist < 0.0)
+    mul_resist = 0.0;
+  eta *= mul_resist;
+  
   // Plasma quantities
   Jpar0 /= Nenorm*Charge*Cs;
   Pe0 /= Nenorm*Charge*Tenorm;
@@ -273,6 +276,11 @@ int physics_init(bool restarting) {
 
   SAVE_REPEAT3(jpar, apar, phi);
 
+  if(nonlinear) {
+    SAVE_REPEAT(eta);
+  }else
+    SAVE_ONCE(eta);
+  
   return 0;
 }
 
@@ -416,7 +424,8 @@ int physics_run(BoutReal time) {
   if(!(estatic && ZeroElMass)) {
     // beta_hat*apar + mu_hat*jpar
     ddt(Ajpar) =
-      Grad_parP_CtoL(Pe0 + Pe - phi)
+      Grad_parP_CtoL(Pe - phi)
+      - beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
       - eta*jpar
       ;
 
@@ -430,7 +439,8 @@ int physics_run(BoutReal time) {
   
   // Parallel velocity
   ddt(Vpar) = 
-    - Grad_parP_CtoL(Pe + Pe0) 
+    - Grad_parP_CtoL(Pe) 
+    + beta_hat * bracket(apar, Pe0, BRACKET_ARAKAWA)
     ;
 
   if(nonlinear) {
