@@ -204,7 +204,11 @@ MFILE
   then
     CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
     echo "Using PETSc 3.1 interface"
-  elif test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "0"
+  elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
+    echo "Using PETSc 3.2 interface"
+  elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
