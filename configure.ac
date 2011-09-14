@@ -42,7 +42,7 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
-AC_ARG_ENABLE(download_pvode,  [  --download-pvode		Download and build PVODE 98])
+AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98])
 
 EXTRA_INCS="" # Extra includes
 EXTRA_LIBS="" # Extra library flags
@@ -686,15 +686,10 @@ CREATE_DIR(externalpackages)
 CREATE_DIR(lib)
 CREATE_DIR(include)
 
-if ( test "$enable_download_pvode" != "no" )
+if ( test "$with_pvode" != "no" )
 then
-  if ( test "$enable_download_pvode" == "")
-  then
-    enable_download_pvode=yes
-  fi
 
-  if ! ( [[ -f externalpackages/PVODE/lib/libpvode.a ]] && [[ -f externalpackages/PVODE/lib/libpvpre.a ]] )
-  then
+
 
 #    # Get a decent file transfer
 #    prog=$(basename "$(which curl)")
@@ -741,10 +736,13 @@ then
 #  fi
 #  cd -
 
+   # Clean PVODE
+   make -C externalpackages/PVODE/ clean
+
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source >> config-build.log 2>&1
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon >> config-build.log 2>&1
+    
+    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -757,7 +755,6 @@ then
     else
       AC_MSG_ERROR(Could not build PVODE. See config-build.log for errors)
     fi
-  fi
 
   # Set the correct libraries and copy them to bout
   CREATE_DIR(include/pvode)

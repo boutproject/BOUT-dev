@@ -1,0 +1,538 @@
+\documentclass{beamer}
+%\usetheme{Boadilla}
+%\usetheme[height=7mm]{Rochester}
+\usetheme{Warsaw} 
+\setbeamertemplate{items}[ball]
+%\setbeamertemplate{blocks}[rounded][shadow=true] 
+\setbeamertemplate{navigation symbols}{} 
+
+\usepackage{tikz}
+%\usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,placments,fit}
+\usetikzlibrary{%
+  arrows,%
+  shapes,%
+  chains,%
+  matrix,%
+  positioning,% wg. " of "
+  scopes,%
+  decorations.pathmorphing,% /pgf/decoration/random steps | erste Graphik
+  shadows%
+}
+
+\tikzstyle{every picture}+=[remember picture]
+% By default all math in TikZ nodes are set in inline mode. Change this to
+% displaystyle so that we don't get small fractions.
+\everymath{\displaystyle}
+
+\usepackage{pgfplots}
+
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Useful macros for equations
+
+\newcommand{\pow}{\ensuremath{\wedge} }
+\newcommand{\poweq}{\ensuremath{\wedge =} }
+
+\newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
+\newcommand{\Vpar}{\ensuremath{V_{||}}}
+\newcommand{\Gradpar}{\ensuremath{\partial_{||}}}
+\newcommand{\Divpar}{\ensuremath{\nabla_{||}}}
+\newcommand{\DivXgradX}[2]{\ensuremath{\nabla_\psi\left(#1\partial_\psi #2\right)}}
+\newcommand{\DivParGradPar}[2]{\ensuremath{\nabla_{||}\left(#1\partial_{||} #2\right)}}
+
+\newcommand{\apar}{\ensuremath{A_{||}}}
+\newcommand{\hthe}{\ensuremath{h_\theta}}
+\newcommand{\Bp}{\ensuremath{B_\theta}}
+\newcommand{\Bt}{\ensuremath{B_\zeta}}
+
+\newcommand{\bvec}{\mathbf{b}}
+\newcommand{\kvec}{\mathbf{\kappa}}
+\newcommand{\bxk}{\bvec_0\times\kvec_0\cdot\nabla}
+\newcommand{\Bvec}{\mathbf{B}}
+\newcommand{\Bbar}{\overline{B}}
+\newcommand{\Lbar}{\overline{L}}
+\newcommand{\Tbar}{\overline{T}}
+\newcommand{\Jvec}{\mathbf{J}}
+\newcommand{\Jpar}{J_{||}}
+\newcommand{\Apar}{A_{||}}
+\newcommand{\delp}{\nabla_\perp^2}
+\newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
+\newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
+\newcommand{\rbp}{\ensuremath{R\Bp}}
+\newcommand{\rbpsq}{\ensuremath{\left(\rbp\right)^2}}
+\newcommand{\noun}[1]{\textsc{#1}}
+\newcommand{\vE}{\ensuremath{\mathbf{v}_E}}
+\newcommand{\vort}{\ensuremath{\overline{\omega}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\title[BOUT++ code structure (\insertframenumber\ of \inserttotalframenumber)]{BOUT++ code structure}
+\author[B. D. Dudson, University of York]{Ben Dudson\\
+\texttt{benjamin.dudson@york.ac.uk}}
+
+\pgfdeclareimage[width=0.5\textwidth]{yorklogo}{york_logo.png} 
+\pgfdeclareimage[width=0.4\textwidth]{llnllogo}{llnl_logo.png}
+\institute[Uni. York]{Department of Physics, University of York, Heslington, York YO10 5DD, UK\\
+Lawrence Livermore National Laboratory}
+\date{14$^{th}$ September 2011\\
+\pgfuseimage{yorklogo}\\
+\pgfuseimage{llnllogo}}
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{BOUT++ conventions}
+  
+  Before getting into the code, there are some conventions used throughout:
+  \begin{itemize}
+  \item The X direction is usually $\psi$, and has boundaries called \texttt{core}, \texttt{pf} and \texttt{sol} (also \texttt{xinner} and \texttt{xouter})
+  \item The Y direction is along the field-line (for Clebsch coordinate
+    operators). Boundaries called \texttt{target}, or \texttt{yupper} and \texttt{ylower}
+  \item The Z direction is axisymmetric, so all metric tensors are constant in Z and FFTs can be used easily
+  \end{itemize}
+  
+  \pause
+  
+  The BOUT++ code is divided into two parts:
+  \begin{itemize}
+  \item The BOUT++ library, which provides generic routines for manipulating
+    data, calculating differential operators, integrating ODEs etc. 
+  \item The physics module which describes a particular set of equations,
+    coordinate system, and normalisation.
+  \end{itemize}
+  
+  Aim is to separate out all the generic code, so this can be
+  tested and not re-written every time. Physics code becomes
+  smaller and more understandable.
+\end{frame}
+
+\begin{frame}
+  \frametitle{BOUT++ repository layout}
+  
+  The repository contains the following main directories:
+  \begin{itemize}
+  \item \texttt{manual/}   contains documentation
+    \only<1> {
+      \begin{itemize}
+      \item {\bf User manual}, introduction to BOUT++, installing and running
+      \item {\bf Developer manual}, describes the internals of BOUT++
+      \item {\bf Coordinates manual}, a collection of useful derivations in
+	the field-aligned coordinate system used for tokamak simulations
+      \end{itemize}
+    }
+  \item<2-> \texttt{src/}  contains BOUT++ library code
+    \only<2> {
+      \begin{itemize}
+      \item \texttt{field/}  memory handling and arithmetic  used throughout the codeoperations
+      \item \texttt{fileio/}  Binary file input and output
+      \item \texttt{invert/}  Inversion routines, particularly Laplacian inversion
+      \item \texttt{mesh/}   Handling of mesh topology, metric tensor and MPI communication
+      \item \texttt{physics/}  Miscellaneous routines useful for writing physics modules, such as gyro-averaging operators
+      \item \texttt{solver/}   Time-integration solvers
+      \item \texttt{sys/}    Miscellaneous low-level routines
+      \end{itemize}
+    }
+  \item<3-> \texttt{examples/}  contains several physics modules, including
+    \only<3> {
+      \begin{itemize}
+      \item \texttt{drift-instability/}, resistive drift wave instability
+      \item \texttt{interchange-instability/}, resistive interchange mode
+      \item \texttt{shear-alfven-wave/}, Shear Alfv\'en wave
+      \item \texttt{sod-shock/}, standard 1D fluid shock problem
+      \item \texttt{orszag-tang/}, 2D MHD problem
+      \item \texttt{uedge-benchmark/}, 2D benchmark against UEDGE code
+      \item \texttt{elm-pb/}, ELM simulation code
+      \end{itemize}
+    }
+  \item<4-> \texttt{tools/}  contains pre- and post-processing codes
+    \only<4> {
+      \begin{itemize}
+      \item \texttt{idllib/}  lots of useful routines for reading and writing data, collecting and plotting the output from BOUT++
+      \item \texttt{pylib/}  Beginnings of a library of Python routines
+      \item \texttt{slab/}  Sheared slab grid generator
+      \item \texttt{tokamak\_grids/}  codes for generating and converting
+	tokamak equilibria and grid files
+      \end{itemize}
+    }
+  \item<5-> \texttt{include/} and \texttt{lib/} contain header files and BOUT++ library
+  \end{itemize}
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{BOUT++ components}
+  BOUT++ consists of some low-level data handling classes, and 
+  a collection of independent routines for manipulating them built on top
+  
+  \begin{itemize}
+  \item Base classes and interfaces: \texttt{Field}, \texttt{FieldData}
+  \item Classes representing scalar fields: 
+    \begin{itemize}
+    \item \texttt{Field2D}, representing quantities varying in X and Y. This includes metric tensor components, and usually equilibrium plasma quantities
+    \item \texttt{Field3D} represents a 3D array in X, Y and Z.
+    \item \texttt{FieldPerp}
+    \end{itemize}
+  \item Classes representing vector fields: \texttt{Vector2D}, \texttt{Vector3D}
+  \item Log file output: \texttt{Output} class
+  \item Debugging message stack: \texttt{MsgStack} class
+  \item Binary data input and output 
+  \end{itemize}
+  
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Field classes}
+  \begin{itemize}
+  \item The main function of the field classes is to provide
+    automatic memory management, and looping over array indices.
+  \item Before being used, must first be allocated, or assigned a value.
+    Catches use of uninitialised data.
+  \item When fields are destroyed, memory will automatically be free'd or
+    re-used. Field3D's internally use pointers to avoid data copying,
+    allocation and freeing
+    \pause
+  \item Fields have lots of overloaded operators, to allow expressions like
+    \begin{verbatim}
+ Field3D a, b, c;
+ ...
+ a = b + (c^2) / b
+    \end{verbatim}
+    \vspace{-0.5cm}
+    Each operation is calculated separately, looping over the mesh
+  \item Isolates loops, making the rest of the code clearer
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Log file output}
+  
+  To write messages to a log file, there is the \texttt{Output} class
+  and global instance \texttt{output}. This can be used either like
+  C's \texttt{printf}:
+  \begin{verbatim}
+    output.write("Message text", ...);
+  \end{verbatim}
+  \vspace{-0.5cm}
+  or using C++ streams:
+  \begin{verbatim}
+    output << "Message text" << ...;
+  \end{verbatim}
+  \vspace{-0.5cm}
+  
+  Whatever is sent to output is sent to a file \texttt{BOUT.log.\#} where '\#' is the processor number. The output from processor 0 is also sent to \texttt{stdout}.
+  
+  \begin{block}
+    
+    \begin{center}
+      Source code in: \texttt{src/sys/output.cxx} \\
+      Global object in \texttt{include/globals.hxx}, line 124
+    \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Debugging messages}
+  
+  To help find bugs, BOUT++ uses a class called \texttt{MsgStack}
+  with a single global instance \texttt{msg\_stack}. 
+  
+  \begin{itemize}
+  \item At the beginning of a function or section of code, a message
+    can be put onto the stack:
+    \begin{verbatim}
+      msg_stack.push("Message text", ...);
+    \end{verbatim}
+    \vspace{-0.5cm}
+    which has the same syntax as C's \texttt{printf} function.
+  \item To remove the last message from the stack
+    \begin{verbatim}
+      msg_stack.pop();
+    \end{verbatim}
+    \vspace{-0.5cm}
+  \item In the event of a segmentation fault, this is caught by
+    \texttt{bout\_signal\_handler} (\texttt{src/bout++.cxx}, line 632)
+    and the message stack is printed to the log file by calling
+    \begin{verbatim}
+      msg_stack.dump();
+    \end{verbatim}
+    \vspace{-0.5cm}
+  \end{itemize}
+
+  \begin{block}
+    
+    \begin{center}
+      Source code in: \texttt{src/sys/msg\_stack.cxx} \\
+      Global object in \texttt{include/globals.hxx}, line 186
+    \end{center}
+  \end{block}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Binary data input and output}
+  
+  To read and write binary data, BOUT++ has the \texttt{Datafile} class
+  in \texttt{include/datafile.hxx} and \texttt{src/fileio/datafile.cxx}.
+
+  \begin{itemize}
+  \item Variables are first added. The Datafile object stores a pointer
+    to the variable, so it must not be destroyed before the datafile is used
+    \begin{verbatim}
+      Datafile file;
+      Field3D var;
+      file.add(var, "name");
+    \end{verbatim}
+    \vspace{-0.5cm}
+  \item The variable can then be read or written to file
+    \begin{verbatim}
+      file.read("input_data.nc");
+      
+      file.write("file_%d.nc", 10); 
+    \end{verbatim}
+    \vspace{-0.5cm}
+  \end{itemize}
+  
+  Datafile also handles time-dependent data, allowing files to be appended.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Binary data input and output}
+  
+  {\bf Reading}: The Mesh class handles splitting the mesh between
+  processors, reading data from the input file, and communications.
+  To read a variable from the mesh file:
+  \begin{verbatim}
+    Field2D Ni0;
+    mesh->get(Ni0, "Ni0");
+  \end{verbatim}
+  \vspace{-0.5cm}
+  A shorthand if the name of the variable and the name in the input
+  file are the same is
+  \begin{verbatim}
+    GRID_LOAD(Ni0);
+  \end{verbatim}
+  \vspace{-0.5cm}
+  
+  {\bf Writing}: There is a global Datafile object \texttt{dump} defined in
+  \texttt{include/globals.hxx}, line 127. The macros
+  \begin{verbatim}
+    SAVE_ONCE(var);    // Output once
+    SAVE_REPEAT(var2); // Every time-step
+  \end{verbatim}
+  \vspace{-0.5cm}
+  save variables into the output file. Also \texttt{SAVE\_ONCE2}...\texttt{SAVE\_ONCE6} and \texttt{SAVE\_REPEAT2}...\texttt{SAVE\_REPEAT6}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Binary data input and output}
+  
+  Currently BOUT++ supports PDB and NetCDF file formats. This
+  is done by having a common interface to file formats: 
+  \begin{itemize} 
+  \item \texttt{include/dataformat.hxx} defines which members must be defined
+  \item The PDB file format is implemented in \texttt{src/fileio/pdb\_format.hxx} and \texttt{src/fileio/pdb\_format.cxx}
+  \item The NetCDF format is implemented in \texttt{src/fileio/nc\_format.hxx} and \texttt{src/fileio/nc\_format.cxx}
+  \item To add a new file format, create a new class which implements all the interface functions in \texttt{include/dataformat.hxx}. Add some code to
+    the \texttt{data\_format} function in \texttt{src/fileio/datafile.cxx}
+    to detect the new format from the file name.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Input options}
+  
+  \begin{itemize}
+  \item Options are handled using a tree structure of \texttt{Options}
+    objects, defined in \texttt{include/options.hxx} and \texttt{src/sys/options.cxx}
+    
+  \item There is a root object defined as a singleton in \texttt{include/options.hxx}, line 88. Obtain using
+    \begin{semiverbatim}
+      Options *options = Options->getRoot()
+    \end{semiverbatim}
+  \item The \texttt{getSection()} and \texttt{get()} methods extract values:
+    \begin{semiverbatim}
+      int setting;
+
+      options->getSection("mysection")->get("mysetting", setting, 1);
+    \end{semiverbatim}
+    This will fetch a value called ``mysetting'' in a section ``mysection'',
+    and attempt to convert it to an integer. 
+    If the setting isn't found, then the default value (1 here) will be used.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Input options shorthand}
+  
+  Usually the name of the variable, and the name of the setting are the same,
+  so to save typing there are some shortcut macros defined in \texttt{globals.hxx}, line 62
+  
+  First get the section you want
+  \begin{semiverbatim}
+    Options *options = Options->getRoot(); // Get root
+    
+    options = options->getSection("mysection");
+  \end{semiverbatim}
+  then use macros to get the options:
+  \begin{semiverbatim}
+    int a;
+
+    OPTION(options, a, 4);
+
+    BoutReal b;
+
+    OPTION(options, b, 3.14);
+  \end{semiverbatim}
+  
+  To read several options, there are additional macros
+  \begin{semiverbatim}
+    int a, b;
+
+    OPTION2(options, a, b, 4);
+  \end{semiverbatim}
+  for up to 6 variables: \texttt{OPTION2} ... \texttt{OPTION6}.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Solving physics problems}
+  The \texttt{Field} classes, text and binary data input and output, and
+  error handling provide the basic functionality on which the
+  rest of the BOUT++ code is built
+  \begin{itemize}
+  \item Time-integration solvers, such as RK4 and interfaces to external timestepping routines in SUNDIALS and PVODE
+  \item Mesh handling, communications
+  \item Boundary conditions
+  \item Differential operators, combining differencing methods with
+    metric tensor components
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Time-integration}
+  
+  To advance the time, the time-derivative of all quantities needs to be
+  calculated. To store this data, every field variable contains a pointer to
+  another field which contains it's time-derivative. This can be accessed using the \texttt{timeDeriv()} method:
+  
+  \begin{semiverbatim}
+    Field3D var;
+    Field3D *deriv = var.timeDeriv();
+  \end{semiverbatim}
+  \vspace{-0.5cm}
+  
+  The time integration solvers supply the system state in \texttt{var},
+  and expect the time-derivative values to be in \texttt{deriv}. As a shorthand,, a macro is defined in \texttt{include/globals.hxx}, line 231:
+
+  \begin{verbatim}
+  #define ddt(f) (*((f).timeDeriv()))
+  \end{verbatim}
+  \vspace{-0.5cm}
+  which allows us to use \texttt{ddt(var)} as a variable, e.g:
+  \begin{verbatim}
+  ddt(var) = ...
+  \end{verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Time-integration}
+  
+  To tell BOUT++ that a variable should be evolved,
+  there are the functions:
+  \begin{verbatim}
+    bout_solve(Ni, "density");
+  \end{verbatim}
+  \vspace{-0.5cm}
+  defined in \texttt{src/bout++.cxx} at line 567. This just calls
+  \texttt{solver->add}, associating the variable with its time-derivative.
+
+  As with the file input/output and options, there is a shorthand macro if
+  the name of the variable and the name of the output are the same:
+  \begin{verbatim}
+    SOLVE_FOR(Ni);
+  \end{verbatim}
+  \vspace{-0.5cm}
+  and also \texttt{SOLVE\_FOR2} ... \texttt{SOLVE\_FOR6}
+
+  There is no limit on the number of variables which can be evolved,
+  apart from memory and run-time.
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Time-integration}
+  
+  Like the binary data files, BOUT++ defines an interface which solvers
+  must implement. Multiple solvers are compiled into the library, and can
+  be switched at run-time.
+  
+  \begin{itemize}
+  \item \texttt{Solver} base class provides generic routines for solvers, 
+    such as loading data to and from variables and time-derivatives.
+    Defined in \texttt{include/solver.hxx} and \texttt{src/solver/solver.cxx}
+  \item Time-integration solvers implemented in \texttt{src/solver/impls/}
+  \item See Euler and RK4 solvers to see how they work. More tomorrow on solvers
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Differential operators}
+  
+  Differential operators such as $\nabla_{||}$ or $\mathbf{b}\times\nabla f \cdot \nabla g$ are handled in two levels:
+  \begin{itemize}
+  \item Low-level differentials, which just calculate $\partial / \partial x$  \\
+    These are in \texttt{src/sys/derivs.cxx}
+  \item High-level operations, which combine differentials and metric tensor
+    components into physical operators like $\nabla_{||}$ and 
+    $\mathbf{b}\times\nabla f \cdot \nabla g$ \\
+    These are in \texttt{src/mesh/difops.cxx} and \texttt{src/field/vecops.cxx}
+  \end{itemize}
+  
+\end{frame}
+
+\begin{frame}
+  \frametitle{Adding a new differencing scheme}
+  
+  If the differencing operator can be implemented as a 1D operator
+    (MOL), then it is in \texttt{src/sys/derivs.cxx}
+  \begin{itemize}
+  \item The function needs to be defined on a stencil, see existing
+    implementations at top of \texttt{src/sys/derivs.cxx}
+  \item Define a new DIFF\_METHOD code for your method. \texttt{bout\_types.hxx} line 39
+  \item To translate between input strings and DIFF\_METHOD codes, put
+    your method into \texttt{DiffNameTable} in \texttt{src/sys/derivs.cxx}, line
+    374
+  \item Add your function to a lookup table
+    corresponding to the type of derivative, starting in
+    \texttt{src/sys/derivs.cxx} at line 386
+  \end{itemize}
+  If your method needs more information than a single stencil, 
+  define it in \texttt{src/mesh/difops.cxx}. See the \texttt{bracket} function
+  there for some examples e.g. Arakawa scheme.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Summary}
+  
+  BOUT++ is a collection of classes and routines which
+  allow plasma fluid simulations to be quickly developed
+  and different numerical methods tried
+  
+  \begin{itemize}
+  \item Generic data handling, and input/output facilities
+  \item On top of these are built differential operators and interfaces to
+    time-integration solvers
+  \item Separation into interfaces and implementations, allowing
+    methods to be chosen at run-time using options
+  \item Allows a lot of common code to be written and debugged once then
+    re-used many times
+  \item Improvements to the core BOUT++ library can be used by all physics
+    codes without any changes (if backwards-compatible)
+  \end{itemize}
+\end{frame}
+
+\end{document}

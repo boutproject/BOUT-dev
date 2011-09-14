@@ -81,13 +81,13 @@ int Petsc32Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
   MPI_Comm        comm = PETSC_COMM_WORLD;
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc solver");
+  int msg_point = msg_stack.push("Initialising PETSc 3.2 solver");
 #endif
 
   /// Call the generic initialisation first
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
-  output.write("Initialising PETSc solver\n");
+  output.write("Initialising PETSc 3.2 solver\n");
 
   // Save NOUT and TIMESTEP for use later
   nout = NOUT;
