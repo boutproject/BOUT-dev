@@ -38,3 +38,5 @@ split_operator
 jorek_compare
 lapd_drift
 gem
+*.dat
+*.dat.*
