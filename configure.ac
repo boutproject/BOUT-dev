@@ -44,8 +44,8 @@ AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98])
 
-EXTRA_INCS="" # Extra includes
-EXTRA_LIBS="" # Extra library flags
+AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
+AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 
 file_formats=""  # Record which file formats are being supported
 
