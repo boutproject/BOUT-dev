@@ -1,3 +1,1 @@
-./configure --with-netcdf=/usr/local/tools/netcdf-gnu-4.1 --with-fftw=/usr/local --with-pdb=/home/xu/PACT/pact/dev/lnx-2.5-ib
-
-;./configure --with-netcdf=/usr/local/tools/netcdf-intel-4.1 --with-fftw=/usr/local --with-pdb=/home/xu/PACT/pact/dev/lnx-2.5-ib
+./configure --with-netcdf=/usr/local/tools/netcdf-gnu --with-fftw=/usr/local
