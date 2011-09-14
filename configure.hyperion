@@ -1,1 +1,1 @@
-./configure --with-netcdf=/usr/local/tools/netcdf-gnu --with-fftw=/usr/local
+./configure --with-netcdf=/usr/local/tools/netcdf-gnu --with-fftw=/usr/local MPICXX=mpiCC
