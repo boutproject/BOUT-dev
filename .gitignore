@@ -12,3 +12,4 @@ include/pvode
 lib/
 externalpackages/
 data_*
+test*.py
