@@ -11,3 +11,4 @@ autom4te.cache/
 include/pvode
 lib/
 externalpackages/
+data_*
