@@ -9,7 +9,7 @@ output files will be produced.
 To convert these files into a BOUT++ input grid, go to the "all" directory,
 and run
 
-IDL> uedge2bout, path="/path/to/files/", output="output_grid.pdb"
+IDL> uedge2bout, path="/path/to/files/", output="output_grid.nc"
 
 This will then ask some more questions and output a BOUT++ grid file.
 
