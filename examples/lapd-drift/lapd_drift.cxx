@@ -383,7 +383,6 @@ int physics_init(bool restarting)
 
   if(evolve_source_ni) {
     bout_solve(Sn, "Sn");
-    dump.add(Sn, "Sn");
   }
   if(input_source)
     mesh->get(Sn, "Sn");
