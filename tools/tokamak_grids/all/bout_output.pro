@@ -961,8 +961,8 @@ PRO bout_output, data, output=output, $
       ENDIF
   ENDIF ELSE BEGIN
       PRINT, "Using this new Jpar"
-      PRINT, "CLICK TO CONTINUE"
-      cursor, x, y, /down
+      ;PRINT, "CLICK TO CONTINUE"
+      ;cursor, x, y, /down
       jpar = j0
   ENDELSE
 

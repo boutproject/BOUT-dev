@@ -33,22 +33,22 @@ END
 
 PRO uedge2bout, path=path, output=output, reform=reform, _extra=_extra
   IF NOT KEYWORD_SET(path) THEN path="."
-  IF NOT KEYWORD_SET(output) THEN output="uedge.grd.pdb"
+  IF NOT KEYWORD_SET(output) THEN output="uedge.grd.nc"
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Read input files
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  file1=EXPAND_PATH(path+'/gridue.pdb')
-  file2=EXPAND_PATH(path+'/uedgegrd.pdb')
-  file3=EXPAND_PATH(path+'/uedgeout.pdb')
+  file1=EXPAND_PATH(path+'/gridue.nc')
+  file2=EXPAND_PATH(path+'/uedgegrd.nc')
+  file3=EXPAND_PATH(path+'/uedgeout.nc')
 
   PRINT, "READING "+file1
-  d1 = pd_import(file1)
+  d1 = file_import(file1)
   PRINT, "READING "+file2
-  d2 = pd_import(file2)
+  d2 = file_import(file2)
   PRINT, "READING "+file3
-  d3 = pd_import(file3)
+  d3 = file_import(file3)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Reformat input from BASIS

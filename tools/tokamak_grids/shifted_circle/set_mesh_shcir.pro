@@ -237,19 +237,20 @@ pro set_mesh_shcir, d1, d2, d3, plotmesh=plotmesh, export=export, noreset=norese
 
    IF keyword_set(EXPORT) then begin
     if not keyword_set(PATH) then PATH='.' 
-      file1=PATH + '/gridue.pdb' 
-      file2=PATH + '/uedgegrd.pdb'
-      file3=PATH + '/uedgeout.pdb'
+    
+      file1=PATH + '/gridue.nc' 
+      file2=PATH + '/uedgegrd.nc'
+      file3=PATH + '/uedgeout.nc'
 
-        print, 'Writing files...'
-        print, file1  
-        print, file2  
-        print, file3  
-
-     pd_export, file1, d1
-     pd_export, file2, d2
-     pd_export, file3, d3
+      print, 'Writing files...'
+      print, file1  
+      print, file2  
+      print, file3  
+      
+      status = file_export( file1, d1 )
+      status = file_export(file2, d2)
+      status = file_export(file3, d3)
    ENDIF
 
-if keyword_set(DEBUG) then STOP
+   if keyword_set(DEBUG) then STOP
 end
