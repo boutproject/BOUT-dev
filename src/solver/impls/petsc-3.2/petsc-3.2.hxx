@@ -1,5 +1,5 @@
 /**************************************************************************
- * Interface to PETSc 3.2 solver
+ * Interface to PETSc solver
  * NOTE: This class needs tidying, generalising to use FieldData interface
  *
  **************************************************************************
@@ -59,7 +59,7 @@ extern BoutReal simtime;
 extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class Petsc32Solver : public Solver {
+class Petsc32Solver: public Solver {
  public:
   Petsc32Solver();
   ~Petsc32Solver();
@@ -84,6 +84,8 @@ class Petsc32Solver : public Solver {
 
   BoutReal next_output;  // When the monitor should be called next
 
+  PetscBool interpolate; // Whether to interpolate or not
+
   // Looping over variables. This should be in generic, but better...
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
@@ -95,6 +97,6 @@ class Petsc32Solver : public Solver {
 };
 
 
-#endif // __PETSC32_SOLVER_H__
+#endif // __PETSC_SOLVER_H__
 
 #endif

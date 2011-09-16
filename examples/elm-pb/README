@@ -10,3 +10,11 @@ IDL> moment_xyzt, p, rms=rms
 IDL> plot, deriv(alog(rms[317,32,*]))
 IDL> 
 
+For low resolution mesh nx=68, data/cbm18_dens8.grid_nx68ny64.nc, 
+the growth rate is 0.275002 *Alfven time.
+
+
+For high resolution mesh nx=516, data/cbm18_8_y064_x516_090309.nc
+the growth rate is 0.186655 *Alfven time.
+
+The diference is 47%.
