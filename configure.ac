@@ -42,7 +42,8 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
-AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98])
+AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
+AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -585,6 +586,56 @@ then
   exit
 else
   echo "Supported file formats:$file_formats"
+fi
+
+#############################################################
+# Hypre
+#############################################################
+
+if test "$with_hypre" != "no"
+then
+  # Try to find a valid Hypre installation
+
+  HYPREPATH=""
+  if test "$with_hypre" != "yes"
+  then
+    # Path specified. Check that needed files exist
+    HYPREPATH=$with_hypre
+    echo "Looking for HYPRE in $HYPREPATH"
+    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h $HYPREPATH/lib/libHYPRE.a ,, [
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+    ] )
+  fi
+
+  if test "$HYPREPATH" = ""
+  then
+    # try some known paths
+    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
+    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
+    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
+    )))
+    
+    if test "$HYPREPATH" = ""
+    then
+      # Check for the other files
+      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,, [
+        HYPREPATH=""
+        ] )
+    fi
+  fi
+  
+  if test "$HYPREPATH" != ""
+  then
+    echo "Support for Hypre enabled"
+    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+    
+    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
+  else
+    echo "Support for Hypre disabled"
+  fi
+  echo ""
 fi
 
 #############################################################
