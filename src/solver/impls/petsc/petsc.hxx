@@ -72,6 +72,7 @@ class PetscSolver : public Solver {
   PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 
+  PetscLogEvent solver_event, loop_event;
  private:
   Vec           u;
   TS            ts;

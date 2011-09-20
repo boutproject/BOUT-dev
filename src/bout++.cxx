@@ -87,6 +87,10 @@ using std::list;
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
 
+#ifdef BOUT_HAS_PETSC
+PetscLogEvent USER_EVENT;
+#endif
+
 bool append = false;
 
 BoutReal simtime;
@@ -245,6 +249,8 @@ int bout_init(int argc, char **argv)
   solver_options->get("type", solver_option, "", false);
   if (!solver_option.empty()) type = solver_option.c_str();
   if (!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC) && strcasecmp(type, SOLVERPETSC32))) PetscInitialize(&argc,&argv,PETSC_NULL,help);
+  PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
+  PetscLogEventBegin(USER_EVENT,0,0,0,0);
 #endif
 
   try {
@@ -441,8 +447,8 @@ int bout_finish()
   options = options->getSection("solver");
   options->get("type", solver_option, "", false);
   if (!solver_option.empty()) type = solver_option.c_str();
-
-  if (!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC))) PetscFinalize();
+  PetscLogEventEnd(USER_EVENT,0,0,0,0);
+  if (!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC32) && strcasecmp(type, SOLVERPETSC))) PetscFinalize();
   else if (!BoutComm::getInstance()->isSet()) MPI_Finalize();
 
   options = Options::getRoot();

@@ -49,6 +49,8 @@ PetscSolver::PetscSolver()
   this->Jmf = 0;
   this->matfdcoloring = 0;
   this->interpolate = PETSC_TRUE;
+  PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
+  PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 }
 
 PetscSolver::~PetscSolver()
@@ -618,6 +620,7 @@ void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   int jx, jy;
   int p = 0; // Counter for location in udata array
 
+  PetscLogEventBegin(loop_event,0,0,0,0);
   int MYSUB = mesh->yend - mesh->ystart + 1;
 
   // Inner X boundary
@@ -654,6 +657,7 @@ void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
         loop_vars_op(jx, jy, udata, p, op);
   }
+  PetscLogEventEnd(loop_event,0,0,0,0);
 }
 
 void PetscSolver::load_vars(BoutReal *udata)
@@ -749,9 +753,11 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
   PetscSolver *s;
 
   PetscFunctionBegin;
-  //printf("solver_f(), t %g\n",t);
   s = (PetscSolver*) f_data;
-  PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
+  PetscLogEventBegin(s->solver_event,0,0,0,0);
+  s->rhs(ts, t, globalin, globalout);
+  PetscLogEventEnd(s->solver_event,0,0,0,0);
+  PetscFunctionReturn(0);
 }
 
 /*
