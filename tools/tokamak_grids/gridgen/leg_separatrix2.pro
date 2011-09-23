@@ -23,6 +23,12 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
   psi = interp_data.f
   nr = interp_data.nx
   nz = interp_data.ny
+
+  IF NOT KEYWORD_SET(boundary) THEN BEGIN
+    bndry = FLTARR(2,4)
+    bndry[0,*] = [1, nr-2, nr-2, 1]
+    bndry[1,*] = [1, 1, nz-2, nz-2]
+  ENDIF ELSE bndry = boundary
   
   drpdi = R[1] - R[0]
   dzpdi = Z[1] - Z[0]
@@ -54,9 +60,8 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
     IF KEYWORD_SET(debug) THEN BEGIN
       plot, sep_ri, sep_zi
       oplot, ri, zi, color=2
-      IF KEYWORD_SET(boundary) THEN BEGIN
-        oplot, boundary[0,*], boundary[1,*], color=2, thick=2
-      ENDIF
+      
+      oplot, bndry[0,*], bndry[1,*], color=2, thick=2
     ENDIF
 
     cpos = line_crossings(sep_ri, sep_zi, 0, $
@@ -127,7 +132,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
         ; Find where it crosses a boundary
         
         cpos = line_crossings(sepri, sepzi, 0, $
-                              boundary[0,*], boundary[1,*], 1, $
+                              bndry[0,*], bndry[1,*], 1, $
                               ncross=ncross, inds1=in)
         
         IF ncross GT 0 THEN BEGIN

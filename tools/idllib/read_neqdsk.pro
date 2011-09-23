@@ -81,20 +81,30 @@ FUNCTION read_neqdsk, file
   nlim   = LONG(next_double())
   
   PRINT, nbdry, nlim
-
-  rbdry = DBLARR(nbdry)
-  zbdry = DBLARR(nbdry)
-  FOR i=0, nbdry-1 DO BEGIN
-    rbdry[i] = next_double()
-    zbdry[i] = next_double()
-  ENDFOR
   
-  xlim = DBLARR(nlim)
-  ylim = DBLARR(nlim)
-  FOR i=0, nlim-1 DO BEGIN
-    xlim[i] = next_double()
-    ylim[i] = next_double()
-  ENDFOR
+  IF nbdry GT 0 THEN BEGIN
+    rbdry = DBLARR(nbdry)
+    zbdry = DBLARR(nbdry)
+    FOR i=0, nbdry-1 DO BEGIN
+      rbdry[i] = next_double()
+      zbdry[i] = next_double()
+    ENDFOR
+  ENDIF ELSE BEGIN
+    rbdry = [0]
+    zbdry = [0]
+  ENDELSE
+  
+  IF nlim GT 0 THEN BEGIN
+    xlim = DBLARR(nlim)
+    ylim = DBLARR(nlim)
+    FOR i=0, nlim-1 DO BEGIN
+      xlim[i] = next_double()
+      ylim[i] = next_double()
+    ENDFOR
+  ENDIF ELSE BEGIN
+    xlim = [0]
+    ylim = [0]
+  ENDELSE
   
   FREE_LUN, fid
 
