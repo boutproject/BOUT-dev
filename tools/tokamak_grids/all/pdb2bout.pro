@@ -439,7 +439,7 @@ END
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
+PRO pdb2bout, file, uedge=uedge, output=output, input=input, _extra=_extra
 
   IF NOT KEYWORD_SET(output) THEN output="bout.grd.pdb"
 
@@ -711,7 +711,11 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
    
   IF MAX(a.mu0p) GT 1.0 THEN BEGIN
       PRINT, "***Maximum mu0p is ", MAX(a.mu0p)
-      IF get_yesno("Is this pressure (not mu0*pressure)?") EQ 0 THEN BEGIN
+
+      if keyword_set(INPUT) then ispressure=input.ispressure else $
+        ispressure=get_yesno("Is this pressure (not mu0*pressure)?")
+
+      IF ispressure EQ 0 THEN BEGIN
           a.mu0p = a.mu0p / MU
           a.mu0pprime = a.mu0pprime / MU
       ENDIF
@@ -798,8 +802,14 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
   done = 0
   REPEAT BEGIN
       
-      min_psin = get_float("Inner Psi boundary:")
-      max_psin = get_float("Outer Psi boundary:")
+      if keyword_set(INPUT) then begin
+          min_psin = input.min_psin
+          max_psin = input.max_psin
+      endif else begin
+          min_psin = get_float("Inner Psi boundary:")
+          max_psin = get_float("Outer Psi boundary:")
+      endelse
+
 
       PRINT, "Psi range ", min_psin, max_psin
 
@@ -836,7 +846,10 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
           IF count2 LT 2 THEN BEGIN
               PRINT, "Insufficient points inside plasma"
           ENDIF ELSE BEGIN
-              done = get_yesno("Is this range ok?")
+
+              IF keyword_set(INPUT) then done=input.range_ok else $
+                done = get_yesno("Is this range ok?")
+
           ENDELSE
       ENDELSE
   ENDREP UNTIL done EQ 1
@@ -855,7 +868,11 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
       ; got some plasma parameters
       
       PRINT, "Some plasma parameters given in input file"
-      IF get_yesno("Use given parameters?") EQ 1 THEN BEGIN
+
+      IF keyword_set(INPUT) then use_given=input.use_given else $
+        use_given=get_yesno("Use given parameters?")
+
+      IF use_given EQ 1 THEN BEGIN
       
           IF (var_present(a, "Te") NE -1) OR (var_present(a, "Ti") NE -1) THEN BEGIN
               ; got one or both of Te or Ti
@@ -897,8 +914,8 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
               a = CREATE_STRUCT(a, "Ti", a.Te)
               
               PRINT, "Maximum temperature (eV):", max(a.Te)
-         ENDELSE
-         gotprof = 1   
+          ENDELSE
+          gotprof = 1
       ENDIF
   ENDIF
   
@@ -911,7 +928,10 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
       PRINT, "  2. Flat density profile"
       PRINT, "  3. Te proportional to density"
       REPEAT BEGIN
-          opt = get_integer("Profile option:")
+
+          if keyword_set(INPUT) then opt=input.profile_option else $
+            opt = get_integer("Profile option:")
+
       ENDREP UNTIL (opt GE 1) AND (opt LE 3)
       
       IF opt EQ 1 THEN BEGIN
@@ -919,15 +939,18 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
           
           PRINT, "Setting flat temperature profile"
           REPEAT BEGIN
-              Te_x = get_float("Temperature (eV):")
-              
-              
+
+              if keyword_set(INPUT) then Te_x=input.te_x else $
+                Te_x = get_float("Temperature (eV):")
+                            
                                 ; get density
               Ni = a.mu0p / (2.*Te_x* 1.602e-19*1.0e20)
               
               PRINT, "Maximum density (10^20 m^-3):", MAX(Ni)
-              
-              done = get_yesno("Is this ok?")
+
+              if keyword_set(INPUT) then done=input.max_dens_ok else $
+                done = get_yesno("Is this ok?")
+
           ENDREP UNTIL done EQ 1
           
           Te = FLTARR(a.nx)+Te_x
@@ -1012,8 +1035,13 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
   ; Increase radial resolution (optional)
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  IF get_yesno("Increase radial resolution?") THEN BEGIN
-      nx2 = get_integer("Number of radial points:")
+  if keyword_set(INPUT) then increase_radial=input.increase_radial else $
+    increase_radial=get_yesno("Increase radial resolution?")
+
+  IF increase_radial THEN BEGIN
+
+      if keyword_set(INPUT) then nx2=input.nx2 else $
+        nx2 = get_integer("Number of radial points:")
 
       IF KEYWORD_SET(smooth) THEN BEGIN
         PRINT, "Adding "+STRTRIM(STRING(2*width),2)+" X points for smoothing"
@@ -1052,11 +1080,15 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
 
   REPEAT BEGIN
 
-     ny = get_integer("Number of poloidal grid points:")
+      if keyword_set(INPUT) then ny=input.ny else $
+        ny = get_integer("Number of poloidal grid points:")
       
       REPEAT BEGIN
-          index = get_integer("Enter x index of equal hthe [0, "+$
-                              STRTRIM(STRING(nx-1),2)+"] :")
+
+          if keyword_set(INPUT) then index=input.index else $
+            index = get_integer("Enter x index of equal hthe [0, "+$
+                                STRTRIM(STRING(nx-1),2)+"] :")
+
       ENDREP UNTIL (index GE 0) AND (index LT nx)
       
       ; create orthogonal coordinate system
@@ -1081,7 +1113,8 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
       plot, Rxy2, Zxy2, psym=3, /iso, title="Poloidal grid", color=1
       oplot, a.rxy[edge, *], a.zxy[edge, *], color=2, thick=1.5
      
-      done = get_yesno("Is this ok?")
+      if keyword_set(INPUT) then done=input.grid_ok else $
+        done = get_yesno("Is this ok?")
   ENDREP UNTIL done EQ 1
 
   Rxy = Rxy2
@@ -1137,6 +1170,6 @@ PRO pdb2bout, file, uedge=uedge, output=output, _extra=_extra
           dpdpsi:dpdpsi, qsafe:qsafe, $
           rmag:rmag, bmag:bmag}
   
-  bout_output, data, output=output, fix=index, _extra=_extra
+  bout_output, data, output=output, fix=index, input=input,_extra=_extra
   
 END

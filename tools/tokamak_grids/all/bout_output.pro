@@ -619,7 +619,7 @@ END
 ; specifying /default asks no questions (non-interactive)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-PRO bout_output, data, output=output, $
+PRO bout_output, data, output=output, input=input,$
                  smooth=smooth, width=width, degree=degree, $
                  vacsmooth=vacsmooth, oldcurv=oldcurv, $
                  default=default, reverse=reverse, fixvals=fixvals
@@ -715,7 +715,11 @@ PRO bout_output, data, output=output, $
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   IF NOT KEYWORD_SET(default) THEN BEGIN  ;; by default skip this
-      IF get_yesno("Add vacuum region?") THEN BEGIN
+
+      if keyword_set(INPUT) then add_vac=input.add_vac else $
+        add_vac=get_yesno("Add vacuum region?")
+
+      IF add_vac THEN BEGIN
           done = 0
           REPEAT BEGIN
              ; get dpsi at the edge
@@ -827,7 +831,8 @@ PRO bout_output, data, output=output, $
   PRINT, "  2  hthe and RBt using force balance and q (FAILS)"
   PRINT, "  3  hthe and RBt using force balance and jpar"
 
-  copt = get_integer("Enter option:")
+  if keyword_set(INPUT) then copt=input.correct_opt else $
+    copt = get_integer("Enter option:")
 
   hthe = calc_hthe(Rxy, Zxy)
 
@@ -929,7 +934,11 @@ PRO bout_output, data, output=output, $
   ;cursor, x, y, /down
 
   old_hthe = hthe
-  IF get_yesno("Use new hthe?") THEN hthe = nh
+
+  if keyword_set(INPUT) then use_new_hthe=input.use_new_hthe else $
+    use_new_hthe=get_yesno("Use new hthe?")
+
+  IF use_new_hthe THEN hthe = nh
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; CALCULATE PARALLEL CURRENT
@@ -957,7 +966,12 @@ PRO bout_output, data, output=output, $
   
   IF got_jpar THEN BEGIN
       IF NOT KEYWORD_SET(default) THEN BEGIN ;; by default keep existing jpar
-          IF get_yesno("Use new Jpar?") THEN jpar = j0
+
+          if keyword_set(INPUT) then use_new_jpar=input.use_new_jpar else $
+            use_new_jpar=get_yesno("Use new Jpar?")
+
+          IF use_new_jpar THEN jpar = j0
+
       ENDIF
   ENDIF ELSE BEGIN
       PRINT, "Using this new Jpar"
@@ -1014,19 +1028,33 @@ PRO bout_output, data, output=output, $
       plot, ShiftAngle/(2.0*!PI), title="Safety factor. Solid is from input q", color=1
       oplot, qloop/(2.0*!PI), psym=1, color=2
       
-      ;PRINT, "CLICK TO CONTINUE"
-      ;cursor, x, y, /down
+;       if keyword_set(INPUT) then begin
+;           wait, 3
+;       endif else begin
+;           PRINT, "CLICK TO CONTINUE"
+;           cursor, x, y, /down
+;       endelse
 
       IF NOT KEYWORD_SET(default) THEN BEGIN ;; by default keep existing qsafe
-          IF get_yesno("Use new qsafe?") THEN ShiftAngle = qloop
+
+          if keyword_set(INPUT) then use_new_qsafe=input.use_new_qsafe else $
+            use_new_qsafe=get_yesno("Use new qsafe?")
+          
+            IF use_new_qsafe THEN ShiftAngle = qloop
+
       ENDIF
   ENDIF ELSE BEGIN
       qsafe = qloop
       PRINT, "Using loop integral for qsafe"
       
       plot, qsafe / (2.0*!PI), title="Safety factor", color=2
-      ;PRINT, "CLICK TO CONTINUE"
-      ;cursor, x, y, /down
+
+;       if keyword_set(INPUT) then begin
+;           wait, 3
+;       endif else begin
+;           PRINT, "CLICK TO CONTINUE"
+;           cursor, x, y, /down
+;       endelse
 
       ShiftAngle = qsafe
 
