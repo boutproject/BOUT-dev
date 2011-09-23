@@ -238,6 +238,10 @@ FUNCTION grid_region, interp_data, R, Z, $
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
 
+  ;rii = int_func(SMOOTH(deriv(rii), 3)) + rii[0]
+  ;zii = int_func(SMOOTH(deriv(zii), 3)) + zii[0]
+  ;STOP
+  
   ; Refine the location of the starting point
   FOR i=0, npar-1 DO BEGIN
     follow_gradient, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1
@@ -686,6 +690,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       bndryi[0,*] = INTERPOL(FINDGEN(nx), R, REFORM(boundary[0,*]))
       bndryi[1,*] = INTERPOL(FINDGEN(ny), Z, REFORM(boundary[1,*]))
     ENDELSE
+  ENDIF
+  
+  IF NOT KEYWORD_SET(bndryi) THEN BEGIN
+    bndryi = FLTARR(2,4)
+    bndryi[0,*] = [1, nx-2, nx-2, 1]
+    bndryi[1,*] = [1, 1, ny-2, ny-2]
   ENDIF
   
   ;;;;;;;;;;;;;;; Calculate DCT ;;;;;;;;;;;;;;
