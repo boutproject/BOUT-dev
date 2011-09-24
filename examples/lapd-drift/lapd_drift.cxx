@@ -680,7 +680,7 @@ int physics_run(BoutReal t)
     }
 
     if(te_nu_te1) {
-      ddt(te) -= 2.*fmei*nu_hat*(Ni0/(Te0^1.5)*te + ni/sqrt(Te0));  // Explicitly linear
+      ddt(te) -= 2.*fmei*nu_hat*(ni - 1./2.*Ni0/Te0*te);  // Explicitly linear
     }
 
     if(te_nu_tet) {
