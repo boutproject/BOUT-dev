@@ -73,5 +73,34 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 const Field3D invert_laplace(const Field3D &b, int flags, 
                              const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
 
+/// Base class for Laplacian inversion
+class Laplacian {
+public:
+  virtual int init();
+  
+  /// Set coefficients for inversion. Re-builds matrices if necessary
+  virtual void setCoeffs(); 
+  virtual void setFlags();
+  
+  virtual const FieldPerp invert(const FieldPerp &b) = 0;
+  virtual const Field3D invert(const Field3D &b);
+  virtual const Field2D invert(const Field2D &b);
+  
+  /// Coefficients in tridiagonal inversion
+  static void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+
+protected:
+  int maxmode; ///< The maximum Z mode to solve for
+  bool async_send; ///< If true, use asyncronous send in parallel algorithms
+  bool use_pdd; ///< If true, use PDD algorithm
+  bool low_mem;    ///< If true, reduce the amount of memory used
+  bool all_terms; // applies to Delp2 operator and laplacian inversion
+  bool nonuniform; // Non-uniform mesh correction
+  
+private:
+  
+  
+};
+
 #endif // __LAPLACE_H__
 

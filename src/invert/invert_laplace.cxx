@@ -60,16 +60,8 @@
  *                                 INITIALISATION
  **********************************************************************************/
 
-int laplace_maxmode; ///< The maximum Z mode to solve for
-bool invert_async_send; ///< If true, use asyncronous send in parallel algorithms
-bool invert_use_pdd; ///< If true, use PDD algorithm
-bool invert_low_mem;    ///< If true, reduce the amount of memory used
-bool laplace_all_terms; // applies to Delp2 operator and laplacian inversion
-bool laplace_nonuniform; // Non-uniform mesh correction
-
 /// Laplacian inversion initialisation. Called once at the start to get settings
-int invert_init()
-{
+int Laplacian::init() {
   BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
 
   output.write("Initialising Laplacian inversion routines\n");
@@ -78,15 +70,13 @@ int invert_init()
   
   // Communication options
   Options *commOpts = options->getSection("comms");
-  commOpts->get("async", invert_async_send, true);
+  commOpts->get("async", async_send, true);
   
   // Inversion options
   Options *lapOpts = options->getSection("laplace");
   OPTION(lapOpts, filter, 0.2);
-  lapOpts->get("low_mem", invert_low_mem, false);
-  lapOpts->get("use_pdd", invert_use_pdd, false);
-  lapOpts->get("all_terms", laplace_all_terms, false);
-  OPTION(lapOpts, laplace_nonuniform, false);
+  OPTION4(lapOpts, low_mem, use_pdd, all_terms, nonuniform, false);
+
 
   if(mesh->firstX() && mesh->lastX()) {
     // This processor is both the first and the last in X
@@ -104,13 +94,13 @@ int invert_init()
   int ncz = mesh->ngz-1;
 
   // convert filtering into an integer number of modes
-  laplace_maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
+  maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
 
   // Can be overriden by max_mode option
-  lapOpts->get("max_mode", laplace_maxmode, laplace_maxmode);
+  OPTION(lapOpts, maxmode, maxmode);
   
-  if(laplace_maxmode < 0) laplace_maxmode = 0;
-  if(laplace_maxmode > ncz/2) laplace_maxmode = ncz/2;
+  if(maxmode < 0) maxmode = 0;
+  if(maxmode > ncz/2) maxmode = ncz/2;
   
   // Broadcast this since rounding errors could cause mismatch across processors
   // THIS LINE CAUSES SEGFAULT ON LLNL GRENDEL
@@ -123,59 +113,7 @@ int invert_init()
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, 
                           const Field2D *ccoef, const Field2D *d)
 {
-  BoutReal coef1, coef2, coef3, coef4, coef5, kwave;
-  
-  kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-  
-  coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
-  coef2=mesh->g33[jx][jy];     ///< Z 2nd derivative coefficient
-  coef3=2.*mesh->g13[jx][jy];  ///< X-Z mixed derivative coefficient
-
-  coef4 = 0.0;
-  coef5 = 0.0;
-  if(laplace_all_terms) {
-    coef4 = mesh->G1[jx][jy]; // X 1st derivative
-    coef5 = mesh->G3[jx][jy]; // Z 1st derivative
-  }
-
-  if(d != (Field2D*) NULL) {
-    // Multiply Delp2 component by a factor
-    coef1 *= (*d)[jx][jy];
-    coef2 *= (*d)[jx][jy];
-    coef3 *= (*d)[jx][jy];
-    coef4 *= (*d)[jx][jy];
-    coef5 *= (*d)[jx][jy];
-  }
-
-  if(laplace_nonuniform) {
-    // non-uniform mesh correction
-    if((jx != 0) && (jx != (mesh->ngx-1))) {
-      //coef4 += mesh->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
-      coef4 -= 0.5*((mesh->dx[jx+1][jy] - mesh->dx[jx-1][jy])/SQ(mesh->dx[jx][jy]))*coef1; // BOUT-06 term
-    }
-  }
-
-  if(ccoef != NULL) {
-    // A first order derivative term
-    
-    if((jx > 0) && (jx < (mesh->ngx-1)))
-      coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
-  }
-  
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
-    // d2dz2 term
-    coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
-    // Mixed derivative
-    coef3 = 0.0; // This cancels out
-  }
-  
-  coef1 /= SQ(mesh->dx[jx][jy]);
-  coef3 /= 2.*mesh->dx[jx][jy];
-  coef4 /= 2.*mesh->dx[jx][jy];
-
-  a = dcomplex(coef1 - coef4,-kwave*coef3);
-  b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
-  c = dcomplex(coef1 + coef4,kwave*coef3);
+  Laplacian::tridagCoefs(jx, jy, jz, a, b, c, ccoef, d);
 }
 
 /**********************************************************************************
@@ -1862,3 +1800,63 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
   return x;
 }
 
+
+/**********************************************************************************
+ *                                 Laplace class
+ **********************************************************************************/
+
+static void Laplacian::tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL) {
+  BoutReal coef1, coef2, coef3, coef4, coef5, kwave;
+  
+  kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+  
+  coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
+  coef2=mesh->g33[jx][jy];     ///< Z 2nd derivative coefficient
+  coef3=2.*mesh->g13[jx][jy];  ///< X-Z mixed derivative coefficient
+
+  coef4 = 0.0;
+  coef5 = 0.0;
+  if(laplace_all_terms) {
+    coef4 = mesh->G1[jx][jy]; // X 1st derivative
+    coef5 = mesh->G3[jx][jy]; // Z 1st derivative
+  }
+
+  if(d != (Field2D*) NULL) {
+    // Multiply Delp2 component by a factor
+    coef1 *= (*d)[jx][jy];
+    coef2 *= (*d)[jx][jy];
+    coef3 *= (*d)[jx][jy];
+    coef4 *= (*d)[jx][jy];
+    coef5 *= (*d)[jx][jy];
+  }
+
+  if(laplace_nonuniform) {
+    // non-uniform mesh correction
+    if((jx != 0) && (jx != (mesh->ngx-1))) {
+      //coef4 += mesh->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
+      coef4 -= 0.5*((mesh->dx[jx+1][jy] - mesh->dx[jx-1][jy])/SQ(mesh->dx[jx][jy]))*coef1; // BOUT-06 term
+    }
+  }
+
+  if(ccoef != NULL) {
+    // A first order derivative term
+    
+    if((jx > 0) && (jx < (mesh->ngx-1)))
+      coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
+  }
+  
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+    // d2dz2 term
+    coef2 += mesh->g11[jx][jy] * mesh->IntShiftTorsion[jx][jy] * mesh->IntShiftTorsion[jx][jy];
+    // Mixed derivative
+    coef3 = 0.0; // This cancels out
+  }
+  
+  coef1 /= SQ(mesh->dx[jx][jy]);
+  coef3 /= 2.*mesh->dx[jx][jy];
+  coef4 /= 2.*mesh->dx[jx][jy];
+
+  a = dcomplex(coef1 - coef4,-kwave*coef3);
+  b = dcomplex(-2.0*coef1 - SQ(kwave)*coef2,kwave*coef5);
+  c = dcomplex(coef1 + coef4,kwave*coef3);
+}
