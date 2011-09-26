@@ -1134,12 +1134,12 @@ int physics_run(BoutReal t)
   }
 
   // left edge sink terms 
-  if(sink_Ul > 1.0){
+  if(sink_Ul > 0.0){
     ddt(U) -=  sink_Ul*sink_tanhxl(P0,U,su_widthl,su_lengthl); // core sink
   }
 
   // right edge sink terms 
-  if(sink_Ur > 1.0){
+  if(sink_Ur > 0.0){
     ddt(U) -=  sink_Ur*sink_tanhxr(P0,U,su_widthr,su_lengthr); //  sol sink
   }
 
@@ -1169,14 +1169,14 @@ int physics_run(BoutReal t)
     ddt(P) -= diffusion_p4 * Grad2_par2new(Grad2_par2new(P));
 
   // heating source terms 
-  if(heating_P > 1.0){
+  if(heating_P > 0.0){
     BoutReal pnorm = P0[0][0];
     ddt(P) += heating_P*source_expx2(P0,2.*hp_width,0.5*hp_length)*(Tbar/pnorm); // heat source
     ddt(P) += (100.*source_tanhx(P0,hp_width,hp_length)+0.01) * mesh->g11 * D2DX2(P) * (Tbar/Lbar/Lbar) ;     // radial diffusion
   }
 
   // sink terms 
-  if(sink_P > 1.0){
+  if(sink_P > 0.0){
     ddt(P) -= sink_P*sink_tanhxr(P0,P,sp_width,sp_length)*Tbar; // sink
   }
 
@@ -1189,7 +1189,7 @@ int physics_run(BoutReal t)
     ddt(P) -= beta*Div_par_CtoL(Vpar);
     
     if(phi_curv) {
-      ddt(P) += beta*b0xcv*Grad(phi);
+      ddt(P) -= 2.*beta*b0xcv*Grad(phi);
     }
 
     // Vpar equation
