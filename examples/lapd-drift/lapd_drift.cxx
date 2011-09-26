@@ -384,12 +384,13 @@ int physics_init(bool restarting)
   if(evolve_source_ni) {
     bout_solve(Sn, "Sn");
   }
-  if(input_source)
+  if(input_source) {
     mesh->get(Sn, "Sn");
+    dump.add(Sn, "Sn");
+  }
 
   if(evolve_source_te) {
     bout_solve(St, "St");
-    dump.add(St, "St");
   }
 
   
@@ -680,7 +681,7 @@ int physics_run(BoutReal t)
     }
 
     if(te_nu_te1) {
-      ddt(te) -= 2.*fmei*nu_hat*(ni - 1./2.*Ni0/Te0*te);  // Explicitly linear
+      ddt(te) -= 2.*fmei*nu_hat/sqrt(Te0)*(ni - 1./2.*Ni0/Te0*te);  // Explicitly linear
     }
 
     if(te_nu_tet) {
