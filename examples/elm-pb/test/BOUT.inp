@@ -4,8 +4,8 @@
 ##################################################
 # Global settings used by the core code
 
-NOUT = 100          # number of time-steps
-TIMESTEP = 1       # time between outputs
+NOUT = 5          # number of time-steps
+TIMESTEP = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
 wall_limit = 1.55  # wall time limit (in hours)
 
@@ -14,15 +14,14 @@ TwistShift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
 
-MZ = 17             # number of points in z direction (2^n + 1)
+MZ = 9             # number of points in z direction (2^n + 1)
 ZPERIOD = 15        # Fraction of a torus to simulate
 
 MXG = 2
 MYG = 2
 
-NXPE = 16            # Number of processor in X
+NXPE = 1            # Number of processor in X
 
-#grid = "data/cbm18_8_y064_x516_090309.nc"  # Grid file
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
@@ -112,8 +111,8 @@ phi_constraint = false # Solve phi as a constraint (DAE system, needs IDA)
 include_jpar0 = true     # determines whether to include jpar0 terms
 include_curvature = true # include curvature drive term?
 
-compress = false       # set compressible (evolve Vpar)
-nonlinear  = false     # include non-linear terms?
+compress = true       # set compressible (evolve Vpar)
+nonlinear  = true     # include non-linear terms?
 
 diamag = true         # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
@@ -131,7 +130,7 @@ relax_j_vac = false    # Relax to zero-current in the vacuum
 relax_j_tconst = 1e-2  # Time constant for vacuum relaxation
 
 ## Toroidal filtering
-filter_z = true   # remove all except one mode
+filter_z = false   # remove all except one mode
 filter_z_mode = 1  # Specify which harmonic to keep (1 = fundamental)
 low_pass_z = 16    # Keep up to and including this harmonic (-1 = keep all)
 zonal_flow = 0    # remove this zonal harmonic  (-1 = keep zonal harmonic)
@@ -164,8 +163,8 @@ vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+vac_lund = 1.0e7    # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.0e7  # Lundquist number in core (negative -> infinity)
 hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
@@ -270,10 +269,10 @@ bndry_all = dirichlet # Default to zero-value
 
 [U]   # vorticity
 
-scale = 1.0e-5
+scale = -1.0e-3
 
 [P]  # pressure
-#scale = 1.0e-5
+scale = 1.0e-2
 
 [Psi]  # Vector potential
 
@@ -287,7 +286,7 @@ bndry_xout = zerolaplace
 bndry_core = neumann
 
 [Vpar]
-
+scale = -1.e-3
 bndry_core = neumann
 
 [phi]
