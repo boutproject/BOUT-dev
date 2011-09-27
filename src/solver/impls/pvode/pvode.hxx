@@ -71,7 +71,7 @@ class PvodeSolver : public Solver {
   int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
-  BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime);
+  BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)
   void rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata);

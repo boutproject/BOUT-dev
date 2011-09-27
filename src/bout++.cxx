@@ -520,7 +520,7 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
     output.write("%.3e      %5d        -     -    -    -    -    - \n", simtime, ncalls); // Everything else
   } else {
     wtime = MPI_Wtime() - wtime;
-
+    
     output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
         simtime, ncalls, wtime,
         100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -529,6 +529,7 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
         100.*wtime_io/wtime,      // I/O
         100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
+  
 
   // This bit only to screen, not log file
 
@@ -558,8 +559,10 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
   mesh->wtime_comms = 0.0; // Reset communicator clock
   Datafile::wtime = 0.0;
   wtime_invert = 0.0;
-  wtime = MPI_Wtime();
+  solver->rhs_wtime = 0.0;
 
+  wtime = MPI_Wtime();
+  
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
