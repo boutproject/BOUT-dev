@@ -100,8 +100,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    bout_error("\tERROR: MPI_Allreduce failed!\n");
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
@@ -111,9 +110,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, &argc, &argv);
 
   if (machEnv == NULL) {
-    if(MYPE == 0)
-      output.write("\tError: PVecInitMPI failed\n");
-    return(1);
+    bout_error("\tError: PVecInitMPI failed\n");
   }
 
   // Allocate memory, and set problem data, initial values, tolerances
@@ -142,8 +139,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
                      solver_gloc, solver_cfn, (void*) this);
   
   if (pdata == NULL) {
-    output.write("\tError: PVBBDAlloc failed.\n");
-    return(1);
+    bout_error("\tError: PVBBDAlloc failed.\n");
   }
 
   ////////// SAVE DATA TO CVODE ///////////
@@ -152,7 +148,6 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   BoutReal *udata = N_VDATA(u);
   if(save_vars(udata)) {
     bout_error("\tError: Initial variable value not set\n");
-    return(1);
   }
   
   /* Call CVodeMalloc to initialize CVODE: 
@@ -180,8 +175,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
                           &abstol, this, NULL, optIn, iopt, ropt, machEnv);
 
   if(cvode_mem == NULL) {
-    output.write("\tError: CVodeMalloc failed.\n");
-    return(1);
+    bout_error("\tError: CVodeMalloc failed.\n");
   }
   
   /* Call CVSpgmr to specify the CVODE linear solver CVSPGMR with
@@ -210,8 +204,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
  * Run - Advance time
  **************************************************************************/
 
-int PvodeSolver::run(MonitorFunc monitor)
-{
+int PvodeSolver::run(MonitorFunc monitor) {
 #ifdef CHECK
   int msg_point = msg_stack.push("PvodeSolver::run()");
 #endif
@@ -222,7 +215,7 @@ int PvodeSolver::run(MonitorFunc monitor)
   for(int i=0;i<NOUT;i++) {
     
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP, rhs_ncalls, rhs_wtime);
+    simtime = run(simtime + TIMESTEP);
     iteration++;
 
     /// Check if the run succeeded
@@ -263,8 +256,7 @@ int PvodeSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
-{
+BoutReal PvodeSolver::run(BoutReal tout) {
   BoutReal *udata;
   int flag;
 
@@ -281,17 +273,11 @@ BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
   // Run CVODE
   flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
 
-  ncalls = rhs_ncalls;
-  rhstime = rhs_wtime;
-
   // Copy variables
   load_vars(udata);
   
   // Call rhs function to get extra variables at this time
-  BoutReal tstart = MPI_Wtime();
   run_rhs(simtime);
-  rhstime += MPI_Wtime() - tstart;
-  ncalls++;
 
   // Check return flag
   if(flag != SUCCESS) {
@@ -310,8 +296,7 @@ BoutReal PvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
  * RHS function
  **************************************************************************/
 
-void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
-{
+void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::rhs(%e)", t);
 #endif
