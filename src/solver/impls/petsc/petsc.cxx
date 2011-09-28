@@ -51,6 +51,7 @@ PetscSolver::PetscSolver()
   this->interpolate = PETSC_TRUE;
   PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
+  PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
 }
 
 PetscSolver::~PetscSolver()
@@ -88,6 +89,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   int msg_point = msg_stack.push("Initialising PETSc solver");
 #endif
 
+  PetscLogEventBegin(init_event,0,0,0,0);
   /// Call the generic initialisation first
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
@@ -475,6 +477,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
+  PetscLogEventEnd(init_event,0,0,0,0);
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
