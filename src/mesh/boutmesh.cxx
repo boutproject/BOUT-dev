@@ -59,6 +59,10 @@ int BoutMesh::load() {
   
   output << "Loading mesh" << endl;
 
+#ifdef BOUT_HAS_PETSC
+  PetscLogEventRegister("LoadMesh",PETSC_VIEWER_CLASSID,&load_event);
+  PetscLogEventBegin(load_event,0,0,0,0);
+#endif
   //////////////
   // Number of processors
   
@@ -623,6 +627,10 @@ int BoutMesh::load() {
   }
   
   output.write("\tdone\n");
+
+#ifdef BOUT_HAS_PETSC
+  PetscLogEventEnd(load_event,0,0,0,0);
+#endif
   
 #ifdef CHECK
   msg_stack.pop(msg);

@@ -11,6 +11,10 @@
 #include <vector>
 #include <cmath>
 
+#ifdef BOUT_HAS_PETSC 
+  #include <petsc.h>
+#endif
+
 using std::list;
 using std::vector;
 
@@ -180,6 +184,10 @@ class BoutMesh : public Mesh {
   int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
   int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+
+#ifdef BOUT_HAS_PETSC
+  PetscLogEvent load_event;
+#endif
 };
 
 /*
