@@ -133,7 +133,7 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
   static dcomplex **cdata = NULL;
   static BoutReal *h;
   if(cdata == NULL) {
-    int size = MAX(nin, nout)+2;
+    int size = BOUTMAX(nin, nout)+2;
     cdata = cmatrix(size, ncz/2 + 1);
     h = new BoutReal[size];
   }
