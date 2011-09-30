@@ -31,6 +31,7 @@ MKDIR			= @MKDIR@
 ####################################################################
 
 LD			= $(CXX)
+LDFLAGS = @LDFLAGS@
 
 ####################################################################
 # Extra (optional) source files, includes and libs
@@ -162,7 +163,7 @@ $(TARGET).cxx: checklib
 $(TARGET).o: $(LIB)
 $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
 	@echo "  Linking" $(TARGET)
-	@$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")

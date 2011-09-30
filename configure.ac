@@ -51,6 +51,7 @@ AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 file_formats=""  # Record which file formats are being supported
 
 AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
+AC_ARG_VAR(LDFLAGS,[Extra linking flags])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
