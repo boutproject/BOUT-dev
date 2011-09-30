@@ -402,7 +402,8 @@ then
     NCINC=`nc-config --cflags`
     EXTRA_INCS="$EXTRA_INCS $NCINC"
     NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-    EXTRA_LIBS="$EXTRA_LIBS $NCLIB" 
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
     file_formats="$file_formats netCDF"
 
@@ -411,13 +412,13 @@ then
   else
   # No nc-config. Check the NetCDF path manually
 
-  if test "$NCPATH" != ""
-  then
-    # Path set, so check if libraries present
-    AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
-    ] )
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+      ] )
     else
       echo " -> Path not given. Searching for library..."
     fi
@@ -438,7 +439,7 @@ then
     fi
 
     # Try to find using locate
-    if test	"$NCPATH" = ""
+    if test "$NCPATH" = ""
     then
       NCFILE=`locate netcdfcpp.h | head -n 1`
       if test "$NCFILE" != ""
@@ -466,6 +467,7 @@ then
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
         EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"

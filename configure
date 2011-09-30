@@ -2908,6 +2908,7 @@ then
     EXTRA_INCS="$EXTRA_INCS $NCINC"
     NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
     EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
     file_formats="$file_formats netCDF"
 
@@ -2916,10 +2917,10 @@ then
   else
   # No nc-config. Check the NetCDF path manually
 
-  if test "$NCPATH" != ""
-  then
-    # Path set, so check if libraries present
-    as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/include/netcdfcpp.h" >&5
 $as_echo_n "checking for $NCPATH/include/netcdfcpp.h... " >&6; }
 if eval \${$as_ac_File+:} false; then :
@@ -2944,8 +2945,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
@@ -2973,8 +2974,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
@@ -3002,8 +3003,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 
@@ -3136,7 +3137,7 @@ fi
     fi
 
     # Try to find using locate
-    if test	"$NCPATH" = ""
+    if test "$NCPATH" = ""
     then
       NCFILE=`locate netcdfcpp.h | head -n 1`
       if test "$NCFILE" != ""
@@ -3242,6 +3243,7 @@ fi
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
         EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
