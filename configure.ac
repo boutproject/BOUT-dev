@@ -50,7 +50,7 @@ AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 
 file_formats=""  # Record which file formats are being supported
 
-AC_ARG_VAR(CFLAGS,[Extra compile flags])
+AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
@@ -77,9 +77,9 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CFLAGS="$CFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g"
 else
-  CFLAGS="$CFLAGS -O"
+  CXXFLAGS="$CXXFLAGS -O"
 fi
 
 if test "$with_checks" != "no"
@@ -88,14 +88,14 @@ then
   if test "$with_checks" = "1"
   then
     echo " -> Level 1 (Basic checking)"
-    CFLAGS="$CFLAGS -DCHECK=1"
+    CXXFLAGS="$CXXFLAGS -DCHECK=1"
   elif test "$with_checks" = "3"
   then
-    CFLAGS="$CFLAGS -DCHECK=3"
+    CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
   else
     echo " -> Level 2 (Basic checking + stack tracing)"
-    CFLAGS="$CFLAGS -DCHECK=2"
+    CXXFLAGS="$CXXFLAGS -DCHECK=2"
   fi
 else
   echo "Run-time checking disabled"
@@ -104,14 +104,14 @@ fi
 if test "$with_signal" != "no"
 then
   echo "Segmentation fault handling enabled"
-  CFLAGS="$CFLAGS -DSIGHANDLE"
+  CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
 fi
 
 if test "$with_track" != ""
 then
-       CFLAGS="$CFLAGS -DTRACK"
+       CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
 #############################################################
@@ -203,15 +203,15 @@ MFILE
 
   if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
     echo "Using PETSc 3.1 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
     echo "Using PETSc 3.2 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "0"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
   fi
 
@@ -248,7 +248,7 @@ then
   # Compile in the IDA solver
   EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
 
-  CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
 fi
 
 if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
@@ -266,7 +266,7 @@ then
   # Compile in the CVODE solver
   EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
 
-  CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
 fi
 
 
@@ -336,7 +336,7 @@ if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CFLAGS="$CFLAGS -DLAPACK"	
+  CXXFLAGS="$CXXFLAGS -DLAPACK"	
 fi
 
 #############################################################
@@ -393,7 +393,7 @@ then
     echo " -> Using $NCP for configuration settings"
     # Can use nc-config to get configuration options
     # Set a compile-time flag
-    CFLAGS="$CFLAGS -DNCDF"
+    CXXFLAGS="$CXXFLAGS -DNCDF"
 
     # Add extra sources
     FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -456,7 +456,7 @@ then
     if test "$with_netcdf" != "no"
     then
       # Set a compile-time flag
-      CFLAGS="$CFLAGS -DNCDF"
+      CXXFLAGS="$CXXFLAGS -DNCDF"
 
       # Add extra sources
       FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -566,7 +566,7 @@ else
     EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
     # Set a compile-time flag. PDBF because PDB already used in score.h
-    CFLAGS="$CFLAGS -DPDBF"
+    CXXFLAGS="$CXXFLAGS -DPDBF"
 
     file_formats="$file_formats PDB"
   else
@@ -631,7 +631,7 @@ then
     EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
     EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
     
-    CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
@@ -726,7 +726,7 @@ AC_FUNC_VPRINTF
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
 # Add the flag to both compile and link stages
-CFLAGS="$CFLAGS $OPENMP_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
@@ -788,16 +788,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
     
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
     
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -816,7 +816,7 @@ then
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
-  CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
 fi
 
 #############################################################
