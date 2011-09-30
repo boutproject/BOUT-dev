@@ -49,9 +49,6 @@ PetscSolver::PetscSolver()
   this->Jmf = 0;
   this->matfdcoloring = 0;
   this->interpolate = PETSC_TRUE;
-  PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
-  PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
-  PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
 }
 
 PetscSolver::~PetscSolver()
@@ -89,10 +86,15 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   int msg_point = msg_stack.push("Initialising PETSc solver");
 #endif
 
-  PetscLogEventBegin(init_event,0,0,0,0);
+  PetscFunctionBegin;
+  PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
+  PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
+  PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
+
   /// Call the generic initialisation first
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
+  ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
 
@@ -110,7 +112,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(1);
   }
 
   ierr = PetscPrintf(comm,"\t3d fields = %d, 2d fields = %d neq=%d\n",n3d, n2d, neq);CHKERRQ(ierr);
@@ -128,7 +131,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = VecGetArray(u,&udata);CHKERRQ(ierr);
   if(save_vars(udata)) {
     bout_error("\tError: Initial variable value not set\n");
-    return(1);
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(1);
   }
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
   PetscReal norm;
@@ -235,7 +239,10 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
   ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
-  if (pcnone) return(0);
+  if (pcnone) {
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   // Create Jacobian matrix to be used by preconditioner
   ierr = PetscPrintf(PETSC_COMM_WORLD," Get Jacobian matrix at simtime %g\n",simtime);CHKERRQ(ierr);
@@ -477,12 +484,12 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
-  PetscLogEventEnd(init_event,0,0,0,0);
+  ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
 
-  return(0);
+  PetscFunctionReturn(0);
 }
 
 /**************************************************************************
