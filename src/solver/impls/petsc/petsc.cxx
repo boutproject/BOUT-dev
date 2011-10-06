@@ -269,8 +269,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     PetscInt nz  = mesh->ngz - 1;
 
     /* number of degrees (variables) at each grid point */
-    if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
-
     PetscInt dof = n3Dvars();
 
     /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
@@ -308,6 +306,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
       //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+
+      if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
 
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
