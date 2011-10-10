@@ -241,8 +241,7 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
  * Run - Advance time
  **************************************************************************/
 
-int CvodeSolver::run(MonitorFunc monitor)
-{
+int CvodeSolver::run(MonitorFunc monitor) {
 #ifdef CHECK
   int msg_point = msg_stack.push("CvodeSolver::run()");
 #endif
@@ -253,7 +252,7 @@ int CvodeSolver::run(MonitorFunc monitor)
   for(int i=0;i<NOUT;i++) {
 
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP, rhs_ncalls, rhs_wtime);
+    simtime = run(simtime + TIMESTEP);
     iteration++;
 
     /// Check if the run succeeded
@@ -294,8 +293,7 @@ int CvodeSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
-{
+BoutReal CvodeSolver::run(BoutReal tout) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
@@ -310,17 +308,11 @@ BoutReal CvodeSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
 
   int flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
 
-  ncalls = rhs_ncalls;
-  rhstime = rhs_wtime;
-
   // Copy variables
   load_vars(NV_DATA_P(uvec));
 
   // Call rhs function to get extra variables at this time
-  BoutReal tstart = MPI_Wtime();
-  (*func)(simtime);
-  rhs_wtime += MPI_Wtime() - tstart;
-  rhs_ncalls++;
+  run_rhs(simtime);
 
   if(flag < 0) {
     output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", simtime, flag);
