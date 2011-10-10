@@ -138,6 +138,9 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   int mxsteps; // Maximum number of steps to take between outputs
   options->get("mxstep", mxsteps, 500);
 
+  int mxorder; // Maximum lmm order to be used by the solver
+  options->get("mxorder", mxorder, -1);
+
   options->get("adams_moulton", adams_moulton, false);
 
   int lmm = CV_BDF;
@@ -174,6 +177,11 @@ int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   if(max_timestep > 0.0) {
     // Setting a maximum timestep
     CVodeSetMaxStep(cvode_mem, max_timestep);
+  }
+
+  if(mxorder > 0) {
+    // Setting the maximum solver order
+    CVodeSetMaxOrd(cvode_mem, mxorder);
   }
 
   /// Newton method can include Preconditioners and Jacobian function
