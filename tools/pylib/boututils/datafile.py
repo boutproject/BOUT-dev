@@ -26,8 +26,9 @@ except ImportError:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
         from Scientific.N import Int, Float
         library = "Scientific"
+        print "  => Using Scientific.IO.NetCDF instead"
     except ImportError:
-        print "ERROR: Scientific.IO.NetCDF module not found"
+        print "ERROR: Scientific.IO.NetCDF module not found either"
         raise
 
 import time
@@ -72,7 +73,7 @@ class DataFile:
     def __del__(self):
         self.close()
 
-    def read(self, name):
+    def read(self, name, ranges=None):
         """Read a variable from the file."""
         if self.handle == None: return None
         
@@ -90,15 +91,64 @@ class DataFile:
         ndims = len(var.dimensions)
         if ndims == 0:
             data = var.getValue()
-            return data[0]
+            return data #[0]
         else:
-            return var[:]
+            if ranges != None:
+                if len(ranges) != 2*ndims:
+                    print "Incorrect number of elements in ranges argument"
+                    return None
+                
+                if library == "Scientific":
+                    # Passing ranges to var[] doesn't seem to work
+                    data = var[:]
+                    if ndims == 1:
+                        data = data[ranges[0]:ranges[1]]
+                    elif ndims == 2:
+                        data = data[ranges[0]:ranges[1], 
+                                    ranges[2]:ranges[3]]
+                    elif ndims == 3:
+                        data = data[ranges[0]:ranges[1], 
+                                    ranges[2]:ranges[3],
+                                    ranges[4]:ranges[5]]
+                    elif ndims == 4:
+                        data = data[(ranges[0]):(ranges[1]),
+                                    (ranges[2]):(ranges[3]),
+                                    (ranges[4]):(ranges[5]),
+                                    (ranges[6]):(ranges[7])]
+                else:
+                    if ndims == 1:
+                        data = var[ranges[0]:ranges[1]]
+                    elif ndims == 2:
+                        data = var[ranges[0]:ranges[1], 
+                                   ranges[2]:ranges[3]]
+                    elif ndims == 3:
+                        data = var[ranges[0]:ranges[1], 
+                                   ranges[2]:ranges[3],
+                                   ranges[4]:ranges[5]]
+                    elif ndims == 4:
+                        print "Ranges = ", ranges
+                        data = var[(ranges[0]):(ranges[1]),
+                                   (ranges[2]):(ranges[3]),
+                                   (ranges[4]):(ranges[5]),
+                                   (ranges[6]):(ranges[7])]
+                return data
+            else:
+                return var[:]
 
     def list(self):
         """List all variables in the file."""
         if self.handle == None: return []
         return self.handle.variables.keys()
 
+    def dimensions(self, varname):
+        """Array of dimension names"""
+        if self.handle == None: return None
+        try:
+            var = self.handle.variables[varname]
+        except KeyError:
+            return None
+        return var.dimensions
+        
     def ndims(self, varname):
         """Number of dimensions for a variable."""
         if self.handle == None: return None
@@ -115,7 +165,13 @@ class DataFile:
             var = self.handle.variables[varname]
         except KeyError:
             return []
-        return map(lambda d: len(self.handle.dimensions[d]), var.dimensions)
+        
+        def dimlen(d):
+            dim = self.handle.dimensions[d]
+            if dim != None:
+                return len(dim)
+            return 0
+        return map(lambda d: dimlen(d), var.dimensions)
 
     def write(self, name, data):
         """Writes a variable to file, making guesses for the dimensions"""
