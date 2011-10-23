@@ -35,6 +35,7 @@
 
 #include <interpolation.hxx> // Cell interpolation
 
+static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
 extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 extern PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data);
@@ -42,8 +43,7 @@ extern PetscErrorCode solver_if(TS,BoutReal,Vec,Vec,Vec,void*);
 extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 extern PetscErrorCode solver_ijacobianfd(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 
-PetscSolver::PetscSolver()
-{
+PetscSolver::PetscSolver() {
   has_constraints = false; // No constraints
   this->J = 0;
   this->Jmf = 0;
@@ -51,8 +51,7 @@ PetscSolver::PetscSolver()
   this->interpolate = PETSC_TRUE;
 }
 
-PetscSolver::~PetscSolver()
-{
+PetscSolver::~PetscSolver() {
 
   if(initialised) {
     // Free CVODE memory
@@ -65,14 +64,27 @@ PetscSolver::~PetscSolver()
 
     initialised = false;
   }
+  
+  PetscLogEventEnd(USER_EVENT,0,0,0,0);
+  PetscFinalize();
+}
+
+/**************************************************************************
+ * Setup
+ **************************************************************************/
+
+int PetscSolver::setup(int argc, char **argv) {
+  output << "Initialising PETc\n";
+  PetscInitialize(&argc,&argv,PETSC_NULL,help);
+  PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
+  PetscLogEventBegin(USER_EVENT,0,0,0,0);
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
-{
+int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -546,212 +558,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 /**************************************************************************
  * PRIVATE FUNCTIONS
  **************************************************************************/
-
-/// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void PetscSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
-{
-  BoutReal **d2d, ***d3d;
-  unsigned int i;
-  int jz;
-
-  unsigned int n2d = f2d.size();
-  unsigned int n3d = f3d.size();
-
-  switch(op) {
-  case LOAD_VARS: {
-    /// Load variables from PETSc into BOUT++
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].var->getData(); // Get pointer to data
-        d3d[jx][jy][jz] = udata[p];
-        p++;
-      }
-    }
-    break;
-  }
-  case SAVE_VARS: {
-    /// Save variables from BOUT++ into CVODE (only used at start of simulation)
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].var->getData(); // Get pointer to data
-        udata[p] = d3d[jx][jy][jz];
-        p++;
-      }
-    }
-    break;
-  }
-    /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SAVE_DERIVS: {
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].F_var->getData(); // Get pointer to data
-        udata[p] = d3d[jx][jy][jz];
-        p++;
-      }
-    }
-    break;
-  }
-  }
-}
-
-/// Loop over variables and domain. Used for all data operations for consistency
-void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
-{
-  int jx, jy;
-  int p = 0; // Counter for location in udata array
-
-  PetscLogEventBegin(loop_event,0,0,0,0);
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX()) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-        loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
-  }
-
-  // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
-
-  // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Outer X boundary
-  if(mesh->lastX()) {
-    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-        loop_vars_op(jx, jy, udata, p, op);
-  }
-  PetscLogEventEnd(loop_event,0,0,0,0);
-}
-
-void PetscSolver::load_vars(BoutReal *udata)
-{
-  unsigned int i;
-
-  // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].var->allocate();
-    f3d[i].var->setLocation(f3d[i].location);
-  }
-
-  loop_vars(udata, LOAD_VARS);
-
-  // Mark each vector as either co- or contra-variant
-
-  for(i=0;i<v2d.size();i++)
-    v2d[i].var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].var->covariant = v3d[i].covariant;
-}
-
-// This function only called during initialisation
-int PetscSolver::save_vars(BoutReal *udata)
-{
-  unsigned int i;
-
-  for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
-
-  for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
-
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].var->toCovariant();
-    }else
-      v2d[i].var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].var->toCovariant();
-    }else
-      v3d[i].var->toContravariant();
-  }
-
-  loop_vars(udata, SAVE_VARS);
-
-  return(0);
-}
-
-void PetscSolver::save_derivs(BoutReal *dudata)
-{
-  unsigned int i;
-
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].F_var->toCovariant();
-    }else
-      v2d[i].F_var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].F_var->toCovariant();
-    }else
-      v3d[i].F_var->toContravariant();
-  }
-
-  // Make sure 3D fields are at the correct cell location
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if((*it).location != ((*it).F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
-    }
-  }
-
-  loop_vars(dudata, SAVE_DERIVS);
-}
 
 /**************************************************************************
  * Static functions which can be used for PETSc callbacks

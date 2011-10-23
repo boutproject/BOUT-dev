@@ -63,7 +63,9 @@ class Petsc32Solver: public Solver {
  public:
   Petsc32Solver();
   ~Petsc32Solver();
-
+  
+  int setup(int argc, char **argv);
+  
   int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run(MonitorFunc f);
@@ -85,15 +87,8 @@ class Petsc32Solver: public Solver {
   BoutReal next_output;  // When the monitor should be called next
 
   PetscBool interpolate; // Whether to interpolate or not
-
-  // Looping over variables. This should be in generic, but better...
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-
-  // Move data between 
-  void load_vars(BoutReal *udata);
-  int save_vars(BoutReal *udata);
-  void save_derivs(BoutReal *dudata);
+  
+  PetscLogEvent USER_EVENT;
 };
 
 
