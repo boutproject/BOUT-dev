@@ -669,6 +669,7 @@ with_netcdf
 with_debug
 with_ida
 with_cvode
+with_sundials
 with_facets
 with_fftw
 with_lapack
@@ -1316,6 +1317,7 @@ Optional Packages:
   --with-debug            	   Enable all debugging flags
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
   --with-cvode            	   Use the SUNDIALS CVODE solver
+  --with-sundals              Use CVODE and IDA
   --with-facets           	   Build the interface to FACETS
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library
@@ -2171,6 +2173,12 @@ if test "${with_cvode+set}" = set; then :
 fi
 
 
+# Check whether --with-sundials was given.
+if test "${with_sundials+set}" = set; then :
+  withval=$with_sundials;
+fi
+
+
 # Check whether --with-facets was given.
 if test "${with_facets+set}" = set; then :
   withval=$with_facets;
@@ -2211,6 +2219,9 @@ fi
 
 
 file_formats=""  # Record which file formats are being supported
+
+# Delete the build log from last time
+rm config-build.log
 
 
 
@@ -2269,6 +2280,8 @@ if test "$with_track" != ""
 then
        CFLAGS="$CFLAGS -DTRACK"
 fi
+
+echo
 
 #############################################################
 # FACETS
@@ -2529,43 +2542,1049 @@ fi
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
+if ( ( test "$with_sundials" != "" ) && ( test "$with_sundials" != "no" ) )
+then
+  # Set both IDA and CVODE if not set already
+
+  if test "$with_ida" = ""
+  then
+    with_ida=$with_sundials
+  fi
+
+  if test "$with_cvode" = ""
+  then
+    with_cvode=$with_sundials
+  fi
+fi
+
 if ( ( test "$with_ida" != "" ) && ( test "$with_ida" != "no" ) )
 then
+  echo "Searching for SUNDIALS IDA library"
   if test "$with_ida" = "yes"
   then
-    # No path specified
-    echo "SUNDIALS IDA solver enabled"
+    # No path specified. Try using sundials-config
+    if type sundials-config > /dev/null 2>&1; then
+       IDAINCS=`sundials-config -m ida -t p -l c -s cppflags`
+       IDALIBS=`sundials-config -m ida -t p -l c -s libs`
+       scr=`which sundials-config`
+       echo "=> Using SUNDIALS IDA solver, configured with $scr"
+    else
+       IDAINCS=""
+       IDALIBS=""
+    fi
   else
     # Specified with path
-    echo "SUNDIALS IDA solver enabled, path $with_ida"
-    EXTRA_INCS="$EXTRA_INCS -I$with_ida/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$with_ida/lib"
-  fi
-  # Compile in the IDA solver
-  EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
+    echo "Checking given path to SUNDIALS' IDA solver"
+    IDALIBS=$with_ida
+    as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida.h" >&5
+$as_echo_n "checking for $with_ida/include/ida/ida.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/include/ida/ida.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-  CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/include/ida/ida.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida_spgmr.h" >&5
+$as_echo_n "checking for $with_ida/include/ida/ida_spgmr.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/include/ida/ida_spgmr.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/include/ida/ida_spgmr.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/ida/ida_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/ida/ida_bbdpre.h" >&5
+$as_echo_n "checking for $with_ida/include/ida/ida_bbdpre.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/include/ida/ida_bbdpre.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_ida/include/nvector/nvector_parallel.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/include/nvector/nvector_parallel.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $with_ida/include/sundials/sundials_types.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/include/sundials/sundials_types.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/include/sundials/sundials_types.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_ida.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_ida.a" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_ida.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_ida/lib/libsundials_nvecparallel.a" >&5
+$as_echo_n "checking for $with_ida/lib/libsundials_nvecparallel.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_ida/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      IDALIBS=""
+
+fi
+
+    if test "$IDALIBS" != ""
+    then
+	IDAINCS="-I$IDALIBS/include"
+	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	echo "=> Using SUNDIALS IDA solver, path $with_ida"
+    else
+      echo " -> Given path not correct. Finding..."
+    fi
+  fi
+
+  if test "$IDALIBS" = ""
+  then
+    # Try some known paths
+    as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/ida/ida.h" >&5
+$as_echo_n "checking for $HOME/local/include/ida/ida.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/local/include/ida/ida.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  IDALIBS=$HOME/local
+else
+  as_ac_File=`$as_echo "ac_cv_file_$HOME/include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/include/ida/ida.h" >&5
+$as_echo_n "checking for $HOME/include/ida/ida.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/include/ida/ida.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  IDALIBS=$HOME
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/ida/ida.h" >&5
+$as_echo_n "checking for /usr/include/ida/ida.h... " >&6; }
+if test "${ac_cv_file__usr_include_ida_ida_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/include/ida/ida.h"; then
+  ac_cv_file__usr_include_ida_ida_h=yes
+else
+  ac_cv_file__usr_include_ida_ida_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_ida_ida_h" >&5
+$as_echo "$ac_cv_file__usr_include_ida_ida_h" >&6; }
+if test "x$ac_cv_file__usr_include_ida_ida_h" = x""yes; then :
+  IDALIBS=/usr
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/ida/ida.h" >&5
+$as_echo_n "checking for /usr/local/include/ida/ida.h... " >&6; }
+if test "${ac_cv_file__usr_local_include_ida_ida_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/local/include/ida/ida.h"; then
+  ac_cv_file__usr_local_include_ida_ida_h=yes
+else
+  ac_cv_file__usr_local_include_ida_ida_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_ida_ida_h" >&5
+$as_echo "$ac_cv_file__usr_local_include_ida_ida_h" >&6; }
+if test "x$ac_cv_file__usr_local_include_ida_ida_h" = x""yes; then :
+  IDALIBS=/usr/local
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/ida/ida.h" >&5
+$as_echo_n "checking for /opt/local/include/ida/ida.h... " >&6; }
+if test "${ac_cv_file__opt_local_include_ida_ida_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/opt/local/include/ida/ida.h"; then
+  ac_cv_file__opt_local_include_ida_ida_h=yes
+else
+  ac_cv_file__opt_local_include_ida_ida_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_ida_ida_h" >&5
+$as_echo "$ac_cv_file__opt_local_include_ida_ida_h" >&6; }
+if test "x$ac_cv_file__opt_local_include_ida_ida_h" = x""yes; then :
+  IDALIBS=/opt/local
+fi
+
+fi
+
+fi
+
+fi
+
+fi
+
+
+    if test "$IDALIBS" != ""
+    then
+	# Check the rest of the files
+	as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/ida/ida.h" >&5
+$as_echo_n "checking for $IDALIBS/include/ida/ida.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/include/ida/ida.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/include/ida/ida.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/ida/ida_spgmr.h" >&5
+$as_echo_n "checking for $IDALIBS/include/ida/ida_spgmr.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/include/ida/ida_spgmr.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/include/ida/ida_spgmr.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/ida/ida_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/ida/ida_bbdpre.h" >&5
+$as_echo_n "checking for $IDALIBS/include/ida/ida_bbdpre.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/include/ida/ida_bbdpre.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/include/ida/ida_bbdpre.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $IDALIBS/include/nvector/nvector_parallel.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/include/nvector/nvector_parallel.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/include/sundials/sundials_types.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/include/sundials/sundials_types.h" >&5
+$as_echo_n "checking for $IDALIBS/include/sundials/sundials_types.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/include/sundials/sundials_types.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/include/sundials/sundials_types.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_ida.a" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_ida.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $IDALIBS/lib/libsundials_nvecparallel.a" >&5
+$as_echo_n "checking for $IDALIBS/lib/libsundials_nvecparallel.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      	  IDALIBS=""
+
+fi
+
+    fi
+
+    if test "$IDALIBS" != ""
+    then
+	IDAINCS="-I$IDALIBS/include"
+	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+    fi
+  fi
+
+  if test "$IDALIBS" = ""
+  then
+    echo "=> IDA solver not available"
+    echo
+  else
+    # Compile in the IDA solver
+    echo "=> IDA solver enabled"
+    echo
+    EXTRA_LIBS="$EXTRA_LIBS $IDALIBS"
+    EXTRA_INCS="$EXTRA_INCS $IDAINCS"
+    CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
+  fi
 fi
 
 if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
 then
+  echo "Searching for SUNDIALS' CVODE library"
   if test "$with_cvode" = "yes"
   then
-    # No path specified
-    echo "Using SUNDIALS' CVODE solver"
+    # No path specified. Try using sundials-config
+    if type sundials-config > /dev/null 2>&1; then
+       CVODEINCS=`sundials-config -m cvode -t p -l c -s cppflags`
+       CVODELIBS=`sundials-config -m cvode -t p -l c -s libs`
+       scr=`which sundials-config`
+       echo "=> Using SUNDIALS CVODE solver, configured with $scr"
+    else
+       CVODEINCS=""
+       CVODELIBS=""
+    fi
   else
     # Specified with path
-    echo "Using SUNDIALS' CVODE solver, path $with_cvode"
-    EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
-  fi
-  # Compile in the CVODE solver
-  EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
+    echo "Checking given path to SUNDIALS' CVODE solver"
+    CVODELIBS=$with_cvode
+    as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode.h" >&5
+$as_echo_n "checking for $with_cvode/include/cvode/cvode.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/include/cvode/cvode.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 
-  CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for $with_cvode/include/cvode/cvode_spgmr.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/include/cvode/cvode_spgmr.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode_spgmr.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/cvode/cvode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/cvode/cvode_bbdpre.h" >&5
+$as_echo_n "checking for $with_cvode/include/cvode/cvode_bbdpre.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/include/cvode/cvode_bbdpre.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_cvode/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $with_cvode/include/nvector/nvector_parallel.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/include/nvector/nvector_parallel.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_cvode/lib/libsundials_cvode.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/lib/libsundials_cvode.a" >&5
+$as_echo_n "checking for $with_cvode/lib/libsundials_cvode.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/lib/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/lib/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_cvode/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_cvode/lib/libsundials_nvecparallel.a" >&5
+$as_echo_n "checking for $with_cvode/lib/libsundials_nvecparallel.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_cvode/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_cvode/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      CVODELIBS=""
+
 fi
 
 
+    if test "$CVODELIBS" != ""
+    then
+      CVODEINCS="-I$with_cvode/include"
+      CVODELIBS="-L$with_cvode/lib -lsundials_cvode -lsundials_nvecparallel"
+      echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
+    else
+      echo " -> Given path not correct. Finding..."
+    fi
+  fi
+
+  if test "$CVODELIBS" = ""
+  then
+    # Try some known paths
+    as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/cvode/cvode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for $HOME/local/include/cvode/cvode_spgmr.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/local/include/cvode/cvode_spgmr.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  CVODELIBS=$HOME/local
+else
+  as_ac_File=`$as_echo "ac_cv_file_$HOME/include/cvode/cvode_spgmr.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for $HOME/include/cvode/cvode_spgmr.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/include/cvode/cvode_spgmr.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  CVODELIBS=$HOME
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for /usr/include/cvode/cvode_spgmr.h... " >&6; }
+if test "${ac_cv_file__usr_include_cvode_cvode_spgmr_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/include/cvode/cvode_spgmr.h"; then
+  ac_cv_file__usr_include_cvode_cvode_spgmr_h=yes
+else
+  ac_cv_file__usr_include_cvode_cvode_spgmr_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_cvode_cvode_spgmr_h" >&5
+$as_echo "$ac_cv_file__usr_include_cvode_cvode_spgmr_h" >&6; }
+if test "x$ac_cv_file__usr_include_cvode_cvode_spgmr_h" = x""yes; then :
+  CVODELIBS=/usr
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for /usr/local/include/cvode/cvode_spgmr.h... " >&6; }
+if test "${ac_cv_file__usr_local_include_cvode_cvode_spgmr_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/local/include/cvode/cvode_spgmr.h"; then
+  ac_cv_file__usr_local_include_cvode_cvode_spgmr_h=yes
+else
+  ac_cv_file__usr_local_include_cvode_cvode_spgmr_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_cvode_cvode_spgmr_h" >&5
+$as_echo "$ac_cv_file__usr_local_include_cvode_cvode_spgmr_h" >&6; }
+if test "x$ac_cv_file__usr_local_include_cvode_cvode_spgmr_h" = x""yes; then :
+  CVODELIBS=/usr/local
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /opt/local/include/cvode/cvode_spgmr.h" >&5
+$as_echo_n "checking for /opt/local/include/cvode/cvode_spgmr.h... " >&6; }
+if test "${ac_cv_file__opt_local_include_cvode_cvode_spgmr_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/opt/local/include/cvode/cvode_spgmr.h"; then
+  ac_cv_file__opt_local_include_cvode_cvode_spgmr_h=yes
+else
+  ac_cv_file__opt_local_include_cvode_cvode_spgmr_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__opt_local_include_cvode_cvode_spgmr_h" >&5
+$as_echo "$ac_cv_file__opt_local_include_cvode_cvode_spgmr_h" >&6; }
+if test "x$ac_cv_file__opt_local_include_cvode_cvode_spgmr_h" = x""yes; then :
+  CVODELIBS=/opt/local
+fi
+
+fi
+
+fi
+
+fi
+
+fi
+
+
+    if test "$CVODELIBS" != ""
+    then
+	# Check the rest of the files
+	as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/cvode/cvode.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/include/cvode/cvode.h" >&5
+$as_echo_n "checking for $CVODELIBS/include/cvode/cvode.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$CVODELIBS/include/cvode/cvode.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$CVODELIBS/include/cvode/cvode.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+	  CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/cvode/cvode_bbdpre.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/include/cvode/cvode_bbdpre.h" >&5
+$as_echo_n "checking for $CVODELIBS/include/cvode/cvode_bbdpre.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$CVODELIBS/include/cvode/cvode_bbdpre.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$CVODELIBS/include/cvode/cvode_bbdpre.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+	  CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/include/nvector/nvector_parallel.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/include/nvector/nvector_parallel.h" >&5
+$as_echo_n "checking for $CVODELIBS/include/nvector/nvector_parallel.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$CVODELIBS/include/nvector/nvector_parallel.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$CVODELIBS/include/nvector/nvector_parallel.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+	  CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/lib/libsundials_cvode.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/lib/libsundials_cvode.a" >&5
+$as_echo_n "checking for $CVODELIBS/lib/libsundials_cvode.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$CVODELIBS/lib/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$CVODELIBS/lib/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+	  CVODELIBS=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$CVODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $CVODELIBS/lib/libsundials_nvecparallel.a" >&5
+$as_echo_n "checking for $CVODELIBS/lib/libsundials_nvecparallel.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$CVODELIBS/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$CVODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+	  CVODELIBS=""
+
+fi
+
+    fi
+
+    if test "$CVODELIBS" != ""
+    then
+      CVODEINCS="-I$CVODELIBS/include"
+      CVODELIBS="-L$CVODELIBS/lib -lsundials_cvode -lsundials_nvecparallel"
+    fi
+  fi
+
+  if test "$CVODELIBS" = ""
+  then
+    echo "=> CVODE solver not available"
+    echo
+  else
+    # Compile in the CVODE solver
+    echo "=> CVODE solver enabled"
+    echo
+    EXTRA_LIBS="$EXTRA_LIBS $CVODELIBS"
+    EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
+    CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+  fi
+fi
 
 #############################################################
 # FFT routines
@@ -3262,7 +4281,7 @@ fi
 
 if test "$with_pdb" = "no"
 then
-  echo "PDB support disabled"
+  echo "=> PDB support disabled"
 else
   echo "Searching for PDB library"
 
@@ -3825,12 +4844,13 @@ fi
     CFLAGS="$CFLAGS -DPDBF"
 
     file_formats="$file_formats PDB"
+    echo "=> PDB support enabled"
   else
-    echo "PDB support not available"
+    echo "=> PDB support not available"
   fi
 fi
 
-
+echo
 
 #############################################################
 # Check file formats
@@ -3843,6 +4863,8 @@ then
 else
   echo "Supported file formats:$file_formats"
 fi
+
+echo
 
 #############################################################
 # Hypre
@@ -4029,6 +5051,7 @@ fi
   else
     echo "Support for Hypre disabled"
   fi
+  echo ""
 fi
 
 #############################################################
@@ -5694,6 +6717,87 @@ then
   echo " before making BOUT++"
   echo "================================================"
 fi
+
+#############################################################
+# Print configuration info
+#############################################################
+
+echo
+echo "Configuration summary"  | tee -a config-build.log
+echo
+
+if test "$FACETS_SOURCE" = ""
+then
+  echo "  FACETS support: no"   | tee -a config-build.log
+else
+  echo "  FACETS support: yes"  | tee -a config-build.log
+fi
+
+if test "$PETSC" = ""
+then
+  echo "  PETSc support: no" | tee -a config-build.log
+else
+  echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
+fi
+
+if test "$IDALIBS" = ""
+then
+  echo "  IDA support: no" | tee -a config-build.log
+else
+  echo "  IDA support: yes" | tee -a config-build.log
+fi
+
+if test "$CVODELIBS" = ""
+then
+  echo "  CVODE support: no" | tee -a config-build.log
+else
+  echo "  CVODE support: yes" | tee -a config-build.log
+fi
+
+if test "$NCPATH" = ""
+then
+  echo "  NetCDF support: no" | tee -a config-build.log
+else
+  echo "  NetCDF support: yes" | tee -a config-build.log
+fi
+
+if test "$PACT" = ""
+then
+  echo "  PDB support: no" | tee -a config-build.log
+else
+  echo "  PDB support: yes" | tee -a config-build.log
+fi
+
+if test "$HYPREPATH" = ""
+then
+  echo "  Hypre support: no" | tee -a config-build.log
+else
+  echo "  Hypre support: yes" | tee -a config-build.log
+fi
+
+echo ""
+echo
+echo "Data analysis configuration"
+echo
+echo "=== IDL ==="
+echo
+echo "Make sure that the tools/idllib directory is in your IDL_PATH"
+echo "e.g. by adding to your ~/.bashrc file"
+echo
+echo "    export IDL_PATH=$PWD/tools/idllib:\$IDL_PATH"
+echo
+echo "=== Python ==="
+echo
+echo "Make sure that the tools/pylib directory is in your PYTHONPATH"
+echo "e.g. by adding to your ~/.bashrc file"
+echo
+echo "   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH"
+echo
+echo "=== Octave ==="
+echo
+echo "Add the following to ~/.octaverc"
+echo "   addpath('$PWD/tools/octave')"
+echo
 
 # Only make.config is altered by configure
 ac_config_files="$ac_config_files make.config"
