@@ -54,7 +54,8 @@ file_formats=""  # Record which file formats are being supported
 # Delete the build log from last time
 rm config-build.log
 
-AC_ARG_VAR(CFLAGS,[Extra compile flags])
+AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
+AC_ARG_VAR(LDFLAGS,[Extra linking flags])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
@@ -81,9 +82,9 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CFLAGS="$CFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g"
 else
-  CFLAGS="$CFLAGS -O"
+  CXXFLAGS="$CXXFLAGS -O"
 fi
 
 if test "$with_checks" != "no"
@@ -92,14 +93,14 @@ then
   if test "$with_checks" = "1"
   then
     echo " -> Level 1 (Basic checking)"
-    CFLAGS="$CFLAGS -DCHECK=1"
+    CXXFLAGS="$CXXFLAGS -DCHECK=1"
   elif test "$with_checks" = "3"
   then
-    CFLAGS="$CFLAGS -DCHECK=3"
+    CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
   else
     echo " -> Level 2 (Basic checking + stack tracing)"
-    CFLAGS="$CFLAGS -DCHECK=2"
+    CXXFLAGS="$CXXFLAGS -DCHECK=2"
   fi
 else
   echo "Run-time checking disabled"
@@ -108,14 +109,14 @@ fi
 if test "$with_signal" != "no"
 then
   echo "Segmentation fault handling enabled"
-  CFLAGS="$CFLAGS -DSIGHANDLE"
+  CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
 fi
 
 if test "$with_track" != ""
 then
-       CFLAGS="$CFLAGS -DTRACK"
+       CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
 echo
@@ -209,15 +210,15 @@ MFILE
 
   if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
     echo "Using PETSc 3.1 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
     echo "Using PETSc 3.2 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "0"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
   fi
 
@@ -377,7 +378,6 @@ then
 	  CVODELIBS=""
 	])
     fi
-
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$CVODELIBS/include"
@@ -464,7 +464,7 @@ if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CFLAGS="$CFLAGS -DLAPACK"	
+  CXXFLAGS="$CXXFLAGS -DLAPACK"	
 fi
 
 #############################################################
@@ -521,7 +521,7 @@ then
     echo " -> Using $NCP for configuration settings"
     # Can use nc-config to get configuration options
     # Set a compile-time flag
-    CFLAGS="$CFLAGS -DNCDF"
+    CXXFLAGS="$CXXFLAGS -DNCDF"
 
     # Add extra sources
     FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -529,7 +529,8 @@ then
     NCINC=`nc-config --cflags`
     EXTRA_INCS="$EXTRA_INCS $NCINC"
     NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-    EXTRA_LIBS="$EXTRA_LIBS $NCLIB" 
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
     file_formats="$file_formats netCDF"
 
@@ -538,13 +539,13 @@ then
   else
   # No nc-config. Check the NetCDF path manually
 
-  if test "$NCPATH" != ""
-  then
-    # Path set, so check if libraries present
-    AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
-    ] )
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+      ] )
     else
       echo " -> Path not given. Searching for library..."
     fi
@@ -565,7 +566,7 @@ then
     fi
 
     # Try to find using locate
-    if test	"$NCPATH" = ""
+    if test "$NCPATH" = ""
     then
       NCFILE=`locate netcdfcpp.h | head -n 1`
       if test "$NCFILE" != ""
@@ -584,7 +585,7 @@ then
     if test "$with_netcdf" != "no"
     then
       # Set a compile-time flag
-      CFLAGS="$CFLAGS -DNCDF"
+      CXXFLAGS="$CXXFLAGS -DNCDF"
 
       # Add extra sources
       FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -593,6 +594,7 @@ then
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
         EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
@@ -694,7 +696,7 @@ else
     EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
     # Set a compile-time flag. PDBF because PDB already used in score.h
-    CFLAGS="$CFLAGS -DPDBF"
+    CXXFLAGS="$CXXFLAGS -DPDBF"
 
     file_formats="$file_formats PDB"
     echo "=> PDB support enabled"
@@ -763,6 +765,56 @@ then
     EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
     
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
+  else
+    echo "Support for Hypre disabled"
+  fi
+  echo ""
+fi
+
+#############################################################
+# Hypre
+#############################################################
+
+if test "$with_hypre" != "no"
+then
+  # Try to find a valid Hypre installation
+
+  HYPREPATH=""
+  if test "$with_hypre" != "yes"
+  then
+    # Path specified. Check that needed files exist
+    HYPREPATH=$with_hypre
+    echo "Looking for HYPRE in $HYPREPATH"
+    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h $HYPREPATH/lib/libHYPRE.a ,, [
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+    ] )
+  fi
+
+  if test "$HYPREPATH" = ""
+  then
+    # try some known paths
+    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
+    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
+    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
+    )))
+    
+    if test "$HYPREPATH" = ""
+    then
+      # Check for the other files
+      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,, [
+        HYPREPATH=""
+        ] )
+    fi
+  fi
+  
+  if test "$HYPREPATH" != ""
+  then
+    echo "Support for Hypre enabled"
+    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+    
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
@@ -857,7 +909,7 @@ AC_FUNC_VPRINTF
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
 # Add the flag to both compile and link stages
-CFLAGS="$CFLAGS $OPENMP_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
@@ -919,16 +971,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
     
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
     
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -947,7 +999,7 @@ then
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
-  CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
 fi
 
 #############################################################

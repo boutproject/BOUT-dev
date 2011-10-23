@@ -13,9 +13,9 @@
 # -DPDBF  PDB format (need to include pdb_format.cxx)
 # -DNCDF  NetCDF format (nc_format.cxx)
 
-# Created this variable so that a user won't overwrite the CFLAGS variable
+# Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS		= $(CFLAGS) @CFLAGS@
+BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@
 
 # Specify the MPI C++ compiler in CXX
 
@@ -31,6 +31,7 @@ MKDIR			= @MKDIR@
 ####################################################################
 
 LD			= $(CXX)
+LDFLAGS = @LDFLAGS@
 
 ####################################################################
 # Extra (optional) source files, includes and libs
@@ -162,7 +163,7 @@ $(TARGET).cxx: checklib
 $(TARGET).o: $(LIB)
 $(TARGET): makefile $(BOUT_TOP)/make.config $(OBJ)
 	@echo "  Linking" $(TARGET)
-	@$(LD) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
+	@$(LD) $(LDFLAGS) -o $(TARGET) $(OBJ) $(BOUT_LIBS)
 
 checklib:
 ifneq ("$(CHANGED)foo", "foo")

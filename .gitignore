@@ -11,3 +11,5 @@ autom4te.cache/
 include/pvode
 lib/
 externalpackages/
+data_*
+test*.py

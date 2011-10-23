@@ -605,8 +605,6 @@ OBJEXT
 EXEEXT
 ac_ct_CXX
 CPPFLAGS
-LDFLAGS
-CXXFLAGS
 CXX
 RANLIB
 SET_MAKE
@@ -617,7 +615,8 @@ FACETS_SOURCE
 FILEIO_SOURCE
 PRECON_SOURCE
 MKDIR
-CFLAGS
+LDFLAGS
+CXXFLAGS
 EXTRA_LIBS
 EXTRA_INCS
 target_alias
@@ -683,11 +682,10 @@ host_alias
 target_alias
 EXTRA_INCS
 EXTRA_LIBS
-CFLAGS
-PACT
-CXX
 CXXFLAGS
 LDFLAGS
+PACT
+CXX
 LIBS
 CPPFLAGS
 CCC
@@ -1328,12 +1326,10 @@ Optional Packages:
 Some influential environment variables:
   EXTRA_INCS  Extra compile flags
   EXTRA_LIBS  Extra linking flags
-  CFLAGS      Extra compile flags
+  CXXFLAGS    Extra compile flags
+  LDFLAGS     Extra linking flags
   PACT        Path to the Portable Application Toolkit library
   CXX         C++ compiler command
-  CXXFLAGS    C++ compiler flags
-  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
-              nonstandard directory <lib dir>
   LIBS        libraries to pass to the linker, e.g. -l<library>
   CPPFLAGS    (Objective) C/C++ preprocessor flags, e.g. -I<include dir> if
               you have headers in a nonstandard directory <include dir>
@@ -2229,6 +2225,7 @@ rm config-build.log
 
 
 
+
 # Adding variables for additional sources
 
 
@@ -2244,9 +2241,9 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CFLAGS="$CFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g"
 else
-  CFLAGS="$CFLAGS -O"
+  CXXFLAGS="$CXXFLAGS -O"
 fi
 
 if test "$with_checks" != "no"
@@ -2255,14 +2252,14 @@ then
   if test "$with_checks" = "1"
   then
     echo " -> Level 1 (Basic checking)"
-    CFLAGS="$CFLAGS -DCHECK=1"
+    CXXFLAGS="$CXXFLAGS -DCHECK=1"
   elif test "$with_checks" = "3"
   then
-    CFLAGS="$CFLAGS -DCHECK=3"
+    CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
   else
     echo " -> Level 2 (Basic checking + stack tracing)"
-    CFLAGS="$CFLAGS -DCHECK=2"
+    CXXFLAGS="$CXXFLAGS -DCHECK=2"
   fi
 else
   echo "Run-time checking disabled"
@@ -2271,14 +2268,14 @@ fi
 if test "$with_signal" != "no"
 then
   echo "Segmentation fault handling enabled"
-  CFLAGS="$CFLAGS -DSIGHANDLE"
+  CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
 fi
 
 if test "$with_track" != ""
 then
-       CFLAGS="$CFLAGS -DTRACK"
+       CXXFLAGS="$CXXFLAGS -DTRACK"
 fi
 
 echo
@@ -2511,15 +2508,15 @@ MFILE
 
   if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
     echo "Using PETSc 3.1 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
     echo "Using PETSc 3.2 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "0"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
   fi
 
@@ -2537,6 +2534,8 @@ then
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 fi
+
+echo
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
@@ -3564,7 +3563,6 @@ else
 fi
 
     fi
-
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$CVODELIBS/include"
@@ -3856,7 +3854,7 @@ if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CFLAGS="$CFLAGS -DLAPACK"
+  CXXFLAGS="$CXXFLAGS -DLAPACK"
 fi
 
 #############################################################
@@ -3913,7 +3911,7 @@ then
     echo " -> Using $NCP for configuration settings"
     # Can use nc-config to get configuration options
     # Set a compile-time flag
-    CFLAGS="$CFLAGS -DNCDF"
+    CXXFLAGS="$CXXFLAGS -DNCDF"
 
     # Add extra sources
     FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -3922,6 +3920,7 @@ then
     EXTRA_INCS="$EXTRA_INCS $NCINC"
     NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
     EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
     file_formats="$file_formats netCDF"
 
@@ -3930,10 +3929,10 @@ then
   else
   # No nc-config. Check the NetCDF path manually
 
-  if test "$NCPATH" != ""
-  then
-    # Path set, so check if libraries present
-    as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdfcpp.h" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/include/netcdfcpp.h" >&5
 $as_echo_n "checking for $NCPATH/include/netcdfcpp.h... " >&6; }
 if eval "test \"\${$as_ac_File+set}\"" = set; then :
@@ -3958,8 +3957,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_sh`
@@ -3987,8 +3986,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
@@ -4016,8 +4015,8 @@ _ACEOF
 
 else
 
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
 
 fi
 
@@ -4150,7 +4149,7 @@ fi
     fi
 
     # Try to find using locate
-    if test	"$NCPATH" = ""
+    if test "$NCPATH" = ""
     then
       NCFILE=`locate netcdfcpp.h | head -n 1`
       if test "$NCFILE" != ""
@@ -4247,7 +4246,7 @@ fi
     if test "$with_netcdf" != "no"
     then
       # Set a compile-time flag
-      CFLAGS="$CFLAGS -DNCDF"
+      CXXFLAGS="$CXXFLAGS -DNCDF"
 
       # Add extra sources
       FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -4256,6 +4255,7 @@ fi
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
         EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
@@ -4841,7 +4841,7 @@ fi
     EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
     # Set a compile-time flag. PDBF because PDB already used in score.h
-    CFLAGS="$CFLAGS -DPDBF"
+    CXXFLAGS="$CXXFLAGS -DPDBF"
 
     file_formats="$file_formats PDB"
     echo "=> PDB support enabled"
@@ -5048,6 +5048,194 @@ fi
     EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
 
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
+  else
+    echo "Support for Hypre disabled"
+  fi
+  echo ""
+fi
+
+#############################################################
+# Hypre
+#############################################################
+
+if test "$with_hypre" != "no"
+then
+  # Try to find a valid Hypre installation
+
+  HYPREPATH=""
+  if test "$with_hypre" != "yes"
+  then
+    # Path specified. Check that needed files exist
+    HYPREPATH=$with_hypre
+    echo "Looking for HYPRE in $HYPREPATH"
+    as_ac_File=`$as_echo "ac_cv_file_$HYPREPATH/include/HYPRE.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HYPREPATH/include/HYPRE.h" >&5
+$as_echo_n "checking for $HYPREPATH/include/HYPRE.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HYPREPATH/include/HYPRE.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$HYPREPATH/include/HYPRE.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HYPREPATH/lib/libHYPRE.a" >&5
+$as_echo_n "checking for $HYPREPATH/lib/libHYPRE.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HYPREPATH/lib/libHYPRE.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+
+fi
+
+  fi
+
+  if test "$HYPREPATH" = ""
+  then
+    # try some known paths
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/HYPRE.h" >&5
+$as_echo_n "checking for /usr/include/HYPRE.h... " >&6; }
+if test "${ac_cv_file__usr_include_HYPRE_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/include/HYPRE.h"; then
+  ac_cv_file__usr_include_HYPRE_h=yes
+else
+  ac_cv_file__usr_include_HYPRE_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_HYPRE_h" >&5
+$as_echo "$ac_cv_file__usr_include_HYPRE_h" >&6; }
+if test "x$ac_cv_file__usr_include_HYPRE_h" = x""yes; then :
+  HYPREPATH=/usr/
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/HYPRE.h" >&5
+$as_echo_n "checking for /usr/local/include/HYPRE.h... " >&6; }
+if test "${ac_cv_file__usr_local_include_HYPRE_h+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/local/include/HYPRE.h"; then
+  ac_cv_file__usr_local_include_HYPRE_h=yes
+else
+  ac_cv_file__usr_local_include_HYPRE_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_HYPRE_h" >&5
+$as_echo "$ac_cv_file__usr_local_include_HYPRE_h" >&6; }
+if test "x$ac_cv_file__usr_local_include_HYPRE_h" = x""yes; then :
+  HYPREPATH=/usr/local/
+else
+  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/HYPRE.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/HYPRE.h" >&5
+$as_echo_n "checking for $HOME/local/include/HYPRE.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/local/include/HYPRE.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  HYPREPATH=$HOME/local
+fi
+
+fi
+
+fi
+
+
+    if test "$HYPREPATH" = ""
+    then
+      # Check for the other files
+      as_ac_File=`$as_echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HYPREPATH/lib/libHYPRE.a" >&5
+$as_echo_n "checking for $HYPREPATH/lib/libHYPRE.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HYPREPATH/lib/libHYPRE.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+        HYPREPATH=""
+
+fi
+
+    fi
+  fi
+
+  if test "$HYPREPATH" != ""
+  then
+    echo "Support for Hypre enabled"
+    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
@@ -6589,7 +6777,7 @@ $as_echo "$ac_cv_prog_cxx_openmp" >&6; }
 
 
 # Add the flag to both compile and link stages
-CFLAGS="$CFLAGS $OPENMP_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
@@ -6666,16 +6854,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
 
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [ -f externalpackages/PVODE/lib/libpvode.a ]
     then
@@ -6699,7 +6887,7 @@ then
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
-  CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
 fi
 
 #############################################################

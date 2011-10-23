@@ -35,6 +35,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     
     # Read data from the first file
     f = DataFile(file_list[0])
+    
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
@@ -168,7 +169,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             else:
                 if ymin >= (mysub + myg): inrange = False
                 if ymax >= (mysub + myg): ymax = (mysub+myg-1)
-                
+            
         else:
             if (ymin >= (mysub + myg)) or (ymax < myg):
                 inrange = False # Y out of range
@@ -238,12 +239,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 d = f.read(varname, ranges=[xmin, xmax+1, 
                                             ymin, ymax+1, 
                                             zind[0],zind[1]+1])
-                var[xmin:(xmax+1), ymin:(ymax+1), zind[0]:(zind[1]+1)]
                 data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
             else: # txy
                 d = f.read(varname, ranges=[tind[0],tind[1]+1,
-                                        xmin, xmax+1, 
-                                        ymin, ymax+1])
+                                            xmin, xmax+1, 
+                                            ymin, ymax+1])
                 data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
         elif ndims == 2:
             # xy
