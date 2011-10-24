@@ -122,6 +122,18 @@ fi
 echo
 
 #############################################################
+# Git revision number
+#############################################################
+
+rev=`git rev-parse HEAD`
+if test "$?" = "0"
+then
+  # Attach revision info to flags
+  CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
+  echo "Revision ID: $rev"
+fi
+
+#############################################################
 # FACETS
 #############################################################
 
@@ -522,7 +534,8 @@ then
     # Can use nc-config to get configuration options
     # Set a compile-time flag
     CXXFLAGS="$CXXFLAGS -DNCDF"
-
+    NCPATH=`nc-config --prefix`
+    
     # Add extra sources
     FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
