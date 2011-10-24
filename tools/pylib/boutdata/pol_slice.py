@@ -17,9 +17,8 @@ except ImportError:
     print "=> Set $PYTHONPATH variable to include BOUT++ pylib"
     raise SystemExit
 
-print "    data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0)"
-
 def pol_slice(var3d, gridfile, n=1, zangle=0.0):
+    """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0) """
     n = int(n)
     zangle = float(zangle)
 

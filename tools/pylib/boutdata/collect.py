@@ -22,11 +22,28 @@ except ImportError:
     print "ERROR: NumPy module not available"
     raise
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False):
-    """Collect a variable from a set of BOUT++ outputs."""
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, info=True,prefix="BOUT.dmp"):
+    """Collect a variable from a set of BOUT++ outputs.
+    
+    data = collect(name)
+    
+    name   Name of the variable (string)
+    
+    Optional arguments:
+
+    xind = [min,max]   Range of X indices to collect
+    yind = [min,max]   Range of Y indices to collect
+    zind = [min,max]   Range of Z indices to collect
+    tind = [min,max]   Range of T indices to collect
+    
+    path    = "."          Path to data files
+    prefix  = "BOUT.dmp"   File prefix
+    yguards = False        Collect Y boundary guard cells?
+    info    = True         Print information about collect?
+    """
     
     # Search for BOUT++ dump files in NetCDF format
-    file_list = glob.glob(os.path.join(path, "BOUT.dmp.*.nc"))
+    file_list = glob.glob(os.path.join(path, prefix+".*.nc"))
     if file_list == []:
         print "ERROR: No data files found"
         return None
@@ -44,6 +61,12 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         print "ERROR: Variable '"+varname+"' not found"
         return None
 
+    if ndims < 2:
+        # Just read from file
+        data = f.read(varname)
+        f.close()
+        return data
+
     if ndims > 4:
         print "ERROR: Too many dimensions"
         raise CollectError
@@ -55,6 +78,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     t_array = f.read("t_array")
     nt = len(t_array)
     
+    if info:
+        print "mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz)
+
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
         v = f.read("BOUT_VERSION")
@@ -65,11 +91,13 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         nype = f.read("NYPE")
         npe = nxpe * nype
         
-        if npe < nfiles:
-            print "WARNING: More files than expected (" + str(npe) + ")"
-        elif npe > nfiles:
-            print "WARNING: Some files missing. Expected " + str(npe)
-
+        if info:
+            print "nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe)
+            if npe < nfiles:
+                print "WARNING: More files than expected (" + str(npe) + ")"
+            elif npe > nfiles:
+                print "WARNING: Some files missing. Expected " + str(npe)
+        
         nx = nxpe * mxsub + 2*mxg
     except KeyError:
         print "BOUT++ version : Pre-0.2"
@@ -92,12 +120,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     def check_range(r, low, up, name="range"):
         r2 = r
         if r != None:
-            if (len(r) < 1) or (len(r) > 2):
+            try:
+                n = len(r2)
+            except:
+                # No len attribute, so probably a single number
+                r2 = [r2,r2]
+            if (len(r2) < 1) or (len(r2) > 2):
                 print "WARNING: "+name+" must be [min, max]"
                 r2 = None
             else:
-                if len(r) == 1:
-                    r = [r,r]
+                if len(r2) == 1:
+                    r2 = [r2,r2]
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
@@ -217,12 +250,13 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         if not inrange:
             continue # Don't need this file
         
-        filename = os.path.join(path, "BOUT.dmp." + str(i) + ".nc")
-        sys.stdout.write("\rReading from " + filename + ": [" + \
-                         str(xmin) + "-" + str(xmax) + "][" + \
-                         str(ymin) + "-" + str(ymax) + "] -> [" + \
-                         str(xgmin) + "-" + str(xgmax) + "][" + \
-                         str(ygmin) + "-" + str(ygmax) + "]")
+        filename = os.path.join(path, prefix+"." + str(i) + ".nc")
+        if info:
+            sys.stdout.write("\rReading from " + filename + ": [" + \
+                                 str(xmin) + "-" + str(xmax) + "][" + \
+                                 str(ymin) + "-" + str(ymax) + "] -> [" + \
+                                 str(xgmin) + "-" + str(xgmax) + "][" + \
+                                 str(ygmin) + "-" + str(ygmax) + "]")
 
         f = DataFile(filename)
 
@@ -254,5 +288,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         f.close()
     
     # Finished looping over all files
-    sys.stdout.write("\n")
+    if info:
+        sys.stdout.write("\n")
     return data

@@ -26,3 +26,21 @@ try:
     from calculus import deriv, integrate
 except:
     print "No calculus"
+
+try:
+    from shell import shell
+except:
+    print "No shell commands"
+
+try:
+    from ncpus import determineNumberOfCPUs
+except:
+    print "No determineNumberOfCPUs"
+
+try:
+    from launch import launch
+except:
+    print "No launch command"
+    raise
+
+
