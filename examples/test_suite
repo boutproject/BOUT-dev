@@ -5,7 +5,7 @@
 #
 
 # List of directories containing test cases
-tests = ['test-io', 'test-fieldfactory', 'interchange-instability']
+tests = ['test-io', 'test-fieldfactory', 'test-laplace', 'interchange-instability']
 
 ##################################################################
 
