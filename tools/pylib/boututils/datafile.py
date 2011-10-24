@@ -20,15 +20,15 @@ try:
     from netCDF4 import Dataset
     library = "netCDF4"
 except ImportError:
-    print "netcdf4-python module not found"
+    #print "netcdf4-python module not found"
     
     try:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
         from Scientific.N import Int, Float
         library = "Scientific"
-        print "  => Using Scientific.IO.NetCDF instead"
+        #print "  => Using Scientific.IO.NetCDF instead"
     except ImportError:
-        print "ERROR: Scientific.IO.NetCDF module not found either"
+        print "DataFile: Neither netCDF4 nor Scientific.IO.NetCDF modules available"
         raise
 
 import time

@@ -4,43 +4,39 @@
 # Run the test, compare results against the benchmark
 #
 
+
+vars = ['a', 'b', 'c', 'd']  # Variables to compare
+tol = 1e-10                  # Absolute tolerance
+
 from boututils import shell,launch
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit
 
-print "Making I/O test"
+print "Making FieldFactory test"
 shell("make > make.log")
 
 # Read benchmark values
-
-vars = ['ivar', 'rvar', 'f2d', 'f3d', 'ivar_evol', 'rvar_evol', 'v2d_evol_x', 'v2d_evol_y', 'v2d_evol_z']
-
-tol = 1e-10
-
 print "Reading benchmark data"
 bmk = {}
 for v in vars:
-  bmk[v] = collect(v, path="data", prefix="benchmark.out", info=False)
+  bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
 
-print "Running I/O test"
+print "Running FieldFactory test"
 success = True
-for nproc in [1,2,4]:
-  cmd = "./test_io"
 
-  # On some machines need to delete dmp files first
-  # or data isn't written correctly
-  shell("rm data/BOUT.dmp.*.nc") 
+for nproc in [1,2,4]:
+  cmd = "./test_fieldfactory"
   
-  # Run test case
-  
+  shell("rm data/BOUT.dmp.*.nc")
+
   print "   %d processor...." % (nproc)
   s, out = launch(cmd, nproc=nproc, pipe=True)
   f = open("run.log."+str(nproc), "w")
   f.write(out)
   f.close()
-
-  # Collect output data
+  
+   # Collect output data
   for v in vars:
     stdout.write("      Checking variable "+v+" ... ")
     result = collect(v, path="data", info=False)
@@ -54,9 +50,9 @@ for nproc in [1,2,4]:
       success = False
     else:
       print "Pass"
-  
+
 if success:
-  print " => All I/O tests passed"
+  print " => All FieldFactory tests passed"
   exit(0)
 else:
   print " => Some failed tests"
