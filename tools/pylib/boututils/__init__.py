@@ -23,9 +23,19 @@ except:
     print "No datafile"
 
 try:
+    from file_import import file_import
+except:
+    print "No file_import"
+
+try:
     from calculus import deriv, integrate
 except:
     print "No calculus"
+
+try:
+    from linear_regression import linear_regression
+except:
+    print "No linear regression"
 
 try:
     from shell import shell
