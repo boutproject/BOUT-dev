@@ -374,6 +374,11 @@ FieldGenerator* FieldFactory::parsePrimary() {
   case -2: {
     return parseIdentifierExpr();
   }
+  case '-': {
+    // Unary minus
+    nextToken(); // Eat '-'
+    return new FieldUnary(parsePrimary());
+  }
   case '(':
   case '[':
     return parseParenExpr();
