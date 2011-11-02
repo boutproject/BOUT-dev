@@ -38,6 +38,7 @@ AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF fil
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
+AC_ARG_WITH(sundials, [  --with-sundals              Use CVODE and IDA])
 AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
@@ -50,7 +51,11 @@ AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
 
 file_formats=""  # Record which file formats are being supported
 
-AC_ARG_VAR(CFLAGS,[Extra compile flags])
+# Delete the build log from last time
+rm config-build.log
+
+AC_ARG_VAR(CXXFLAGS,[Extra compile flags])
+AC_ARG_VAR(LDFLAGS,[Extra linking flags])
 
 AC_SUBST(MKDIR)
 AC_SUBST(EXTRA_INCS)
@@ -77,9 +82,9 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CFLAGS="$CFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g"
 else
-  CFLAGS="$CFLAGS -O"
+  CXXFLAGS="$CXXFLAGS -O"
 fi
 
 if test "$with_checks" != "no"
@@ -88,14 +93,14 @@ then
   if test "$with_checks" = "1"
   then
     echo " -> Level 1 (Basic checking)"
-    CFLAGS="$CFLAGS -DCHECK=1"
+    CXXFLAGS="$CXXFLAGS -DCHECK=1"
   elif test "$with_checks" = "3"
   then
-    CFLAGS="$CFLAGS -DCHECK=3"
+    CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
   else
     echo " -> Level 2 (Basic checking + stack tracing)"
-    CFLAGS="$CFLAGS -DCHECK=2"
+    CXXFLAGS="$CXXFLAGS -DCHECK=2"
   fi
 else
   echo "Run-time checking disabled"
@@ -104,14 +109,28 @@ fi
 if test "$with_signal" != "no"
 then
   echo "Segmentation fault handling enabled"
-  CFLAGS="$CFLAGS -DSIGHANDLE"
+  CXXFLAGS="$CXXFLAGS -DSIGHANDLE"
 else
   echo "Segmentation fault handling disabled"
 fi
 
 if test "$with_track" != ""
 then
-       CFLAGS="$CFLAGS -DTRACK"
+       CXXFLAGS="$CXXFLAGS -DTRACK"
+fi
+
+echo
+
+#############################################################
+# Git revision number
+#############################################################
+
+rev=`git rev-parse HEAD`
+if test "$?" = "0"
+then
+  # Attach revision info to flags
+  CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
+  echo "Revision ID: $rev"
 fi
 
 #############################################################
@@ -203,15 +222,15 @@ MFILE
 
   if test "$PETSC_VERSION_MINOR" = "1" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_1"
     echo "Using PETSc 3.1 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "1"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
     echo "Using PETSc 3.2 interface"
   elif test "$PETSC_VERSION_MINOR" = "2" && test "$PETSC_VERSION_RELEASE" = "0"
   then
-    CFLAGS="$CFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
   fi
 
@@ -229,47 +248,168 @@ then
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
 fi
 
+echo
+
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
 #############################################################
 
+if ( ( test "$with_sundials" != "" ) && ( test "$with_sundials" != "no" ) )
+then
+  # Set both IDA and CVODE if not set already
+  
+  if test "$with_ida" = ""
+  then
+    with_ida=$with_sundials
+  fi
+
+  if test "$with_cvode" = ""
+  then
+    with_cvode=$with_sundials
+  fi
+fi
+
 if ( ( test "$with_ida" != "" ) && ( test "$with_ida" != "no" ) )
 then
+  echo "Searching for SUNDIALS IDA library"
   if test "$with_ida" = "yes"
   then
-    # No path specified
-    echo "SUNDIALS IDA solver enabled"
+    # No path specified. Try using sundials-config
+    if type sundials-config > /dev/null 2>&1; then
+       IDAINCS=`sundials-config -m ida -t p -l c -s cppflags`
+       IDALIBS=`sundials-config -m ida -t p -l c -s libs`
+       scr=`which sundials-config`
+       echo "=> Using SUNDIALS IDA solver, configured with $scr"
+    else
+       IDAINCS=""
+       IDALIBS=""
+    fi
   else
     # Specified with path
-    echo "SUNDIALS IDA solver enabled, path $with_ida"
-    EXTRA_INCS="$EXTRA_INCS -I$with_ida/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$with_ida/lib"
+    echo "Checking given path to SUNDIALS' IDA solver"
+    IDALIBS=$with_ida
+    AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h $with_ida/lib/libsundials_ida.a $with_ida/lib/libsundials_nvecparallel.a, , [
+      IDALIBS=""
+    ] )
+    if test "$IDALIBS" != ""
+    then
+	IDAINCS="-I$IDALIBS/include"
+	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	echo "=> Using SUNDIALS IDA solver, path $with_ida"
+    else
+      echo " -> Given path not correct. Finding..."
+    fi
   fi
-  # Compile in the IDA solver
-  EXTRA_LIBS="$EXTRA_LIBS -lsundials_ida -lsundials_nvecparallel"
-
-  CFLAGS="$CFLAGS -DBOUT_HAS_IDA"
+  
+  if test "$IDALIBS" = ""
+  then
+    # Try some known paths
+    AC_CHECK_FILE($HOME/local/include/ida/ida.h, IDALIBS=$HOME/local,
+    AC_CHECK_FILE($HOME/include/ida/ida.h, IDALIBS=$HOME,
+    AC_CHECK_FILE(/usr/include/ida/ida.h, IDALIBS=/usr,
+    AC_CHECK_FILE(/usr/local/include/ida/ida.h, IDALIBS=/usr/local,
+    AC_CHECK_FILE(/opt/local/include/ida/ida.h, IDALIBS=/opt/local,
+    )))))
+    
+    if test "$IDALIBS" != ""
+    then
+	# Check the rest of the files
+	AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h $IDALIBS/lib/libsundials_ida.a $IDALIBS/lib/libsundials_nvecparallel.a, , [
+      	  IDALIBS=""
+      	] )
+    fi
+    
+    if test "$IDALIBS" != ""
+    then
+	IDAINCS="-I$IDALIBS/include"
+	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+    fi
+  fi
+  
+  if test "$IDALIBS" = ""
+  then
+    echo "=> IDA solver not available"
+    echo
+  else
+    # Compile in the IDA solver
+    echo "=> IDA solver enabled"
+    echo
+    EXTRA_LIBS="$EXTRA_LIBS $IDALIBS"
+    EXTRA_INCS="$EXTRA_INCS $IDAINCS"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_IDA"
+  fi
 fi
 
 if ( ( test "$with_cvode" != "" ) && ( test "$with_cvode" != "no" ) )
 then
+  echo "Searching for SUNDIALS' CVODE library"
   if test "$with_cvode" = "yes"
   then
-    # No path specified
-    echo "Using SUNDIALS' CVODE solver"
+    # No path specified. Try using sundials-config
+    if type sundials-config > /dev/null 2>&1; then
+       CVODEINCS=`sundials-config -m cvode -t p -l c -s cppflags`
+       CVODELIBS=`sundials-config -m cvode -t p -l c -s libs`
+       scr=`which sundials-config`
+       echo "=> Using SUNDIALS CVODE solver, configured with $scr"
+    else
+       CVODEINCS=""
+       CVODELIBS=""
+    fi
   else
     # Specified with path
-    echo "Using SUNDIALS' CVODE solver, path $with_cvode"
-    EXTRA_INCS="$EXTRA_INCS -I$with_cvode/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$with_cvode/lib"
+    echo "Checking given path to SUNDIALS' CVODE solver"
+    CVODELIBS=$with_cvode
+    AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, , [
+      CVODELIBS=""
+    ] )
+    
+    if test "$CVODELIBS" != ""
+    then
+      CVODEINCS="-I$with_cvode/include"
+      CVODELIBS="-L$with_cvode/lib -lsundials_cvode -lsundials_nvecparallel"
+      echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
+    else
+      echo " -> Given path not correct. Finding..."
+    fi
   fi
-  # Compile in the CVODE solver
-  EXTRA_LIBS="$EXTRA_LIBS -lsundials_cvode -lsundials_nvecparallel"
-
-  CFLAGS="$CFLAGS -DBOUT_HAS_CVODE"
+  
+  if test "$CVODELIBS" = ""
+  then
+    # Try some known paths
+    AC_CHECK_FILE($HOME/local/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME/local,
+    AC_CHECK_FILE($HOME/include/cvode/cvode_spgmr.h, CVODELIBS=$HOME,
+    AC_CHECK_FILE(/usr/include/cvode/cvode_spgmr.h, CVODELIBS=/usr,
+    AC_CHECK_FILE(/usr/local/include/cvode/cvode_spgmr.h, CVODELIBS=/usr/local,
+    AC_CHECK_FILE(/opt/local/include/cvode/cvode_spgmr.h, CVODELIBS=/opt/local,
+    )))))
+    
+    if test "$CVODELIBS" != ""
+    then
+	# Check the rest of the files
+	AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, , [
+	  CVODELIBS=""
+	])
+    fi
+    if test "$CVODELIBS" != ""
+    then
+      CVODEINCS="-I$CVODELIBS/include"
+      CVODELIBS="-L$CVODELIBS/lib -lsundials_cvode -lsundials_nvecparallel"
+    fi
+  fi
+	
+  if test "$CVODELIBS" = ""
+  then
+    echo "=> CVODE solver not available"
+    echo
+  else
+    # Compile in the CVODE solver
+    echo "=> CVODE solver enabled"
+    echo
+    EXTRA_LIBS="$EXTRA_LIBS $CVODELIBS"
+    EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
+  fi
 fi
-
-
 
 #############################################################
 # FFT routines
@@ -336,7 +476,7 @@ if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CFLAGS="$CFLAGS -DLAPACK"	
+  CXXFLAGS="$CXXFLAGS -DLAPACK"	
 fi
 
 #############################################################
@@ -393,15 +533,17 @@ then
     echo " -> Using $NCP for configuration settings"
     # Can use nc-config to get configuration options
     # Set a compile-time flag
-    CFLAGS="$CFLAGS -DNCDF"
-
+    CXXFLAGS="$CXXFLAGS -DNCDF"
+    NCPATH=`nc-config --prefix`
+    
     # Add extra sources
     FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
     NCINC=`nc-config --cflags`
     EXTRA_INCS="$EXTRA_INCS $NCINC"
     NCLIB=`nc-config --libs | sed s/-lnetcdf/-lnetcdf_c++\ -lnetcdf/` # Note netcdf_c++ needed
-    EXTRA_LIBS="$EXTRA_LIBS $NCLIB" 
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
 
     file_formats="$file_formats netCDF"
 
@@ -410,13 +552,13 @@ then
   else
   # No nc-config. Check the NetCDF path manually
 
-  if test "$NCPATH" != ""
-  then
-    # Path set, so check if libraries present
-    AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
-      echo " -> Given path not correct. Finding..."
-      NCPATH=""
-    ] )
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      AC_CHECK_FILES( $NCPATH/include/netcdfcpp.h $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a ,, [
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+      ] )
     else
       echo " -> Path not given. Searching for library..."
     fi
@@ -437,7 +579,7 @@ then
     fi
 
     # Try to find using locate
-    if test	"$NCPATH" = ""
+    if test "$NCPATH" = ""
     then
       NCFILE=`locate netcdfcpp.h | head -n 1`
       if test "$NCFILE" != ""
@@ -456,7 +598,7 @@ then
     if test "$with_netcdf" != "no"
     then
       # Set a compile-time flag
-      CFLAGS="$CFLAGS -DNCDF"
+      CXXFLAGS="$CXXFLAGS -DNCDF"
 
       # Add extra sources
       FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
@@ -465,6 +607,7 @@ then
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
         EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
@@ -490,7 +633,7 @@ AC_ARG_VAR(PACT,[Path to the Portable Application Toolkit library])
 
 if test "$with_pdb" = "no"
 then
-  echo "PDB support disabled"
+  echo "=> PDB support disabled"
 else
   echo "Searching for PDB library"
 
@@ -566,15 +709,16 @@ else
     EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
     # Set a compile-time flag. PDBF because PDB already used in score.h
-    CFLAGS="$CFLAGS -DPDBF"
+    CXXFLAGS="$CXXFLAGS -DPDBF"
 
     file_formats="$file_formats PDB"
+    echo "=> PDB support enabled"
   else
-    echo "PDB support not available"
+    echo "=> PDB support not available"
   fi
 fi
 
-
+echo
 
 #############################################################
 # Check file formats
@@ -587,6 +731,8 @@ then
 else
   echo "Supported file formats:$file_formats"
 fi
+
+echo
 
 #############################################################
 # Hypre
@@ -632,6 +778,56 @@ then
     EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
     
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
+  else
+    echo "Support for Hypre disabled"
+  fi
+  echo ""
+fi
+
+#############################################################
+# Hypre
+#############################################################
+
+if test "$with_hypre" != "no"
+then
+  # Try to find a valid Hypre installation
+
+  HYPREPATH=""
+  if test "$with_hypre" != "yes"
+  then
+    # Path specified. Check that needed files exist
+    HYPREPATH=$with_hypre
+    echo "Looking for HYPRE in $HYPREPATH"
+    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h $HYPREPATH/lib/libHYPRE.a ,, [
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+    ] )
+  fi
+
+  if test "$HYPREPATH" = ""
+  then
+    # try some known paths
+    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
+    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
+    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
+    )))
+    
+    if test "$HYPREPATH" = ""
+    then
+      # Check for the other files
+      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,, [
+        HYPREPATH=""
+        ] )
+    fi
+  fi
+  
+  if test "$HYPREPATH" != ""
+  then
+    echo "Support for Hypre enabled"
+    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+    
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
@@ -726,7 +922,7 @@ AC_FUNC_VPRINTF
 : ${enable_openmp=no}  # Disable by default
 AC_OPENMP
 # Add the flag to both compile and link stages
-CFLAGS="$CFLAGS $OPENMP_CXXFLAGS"
+CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
 EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
@@ -788,16 +984,16 @@ then
 #  cd -
 
    # Clean PVODE
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-   CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+   CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
     
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
     
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
-    CXX="$MPICXX" CFLAGS="$CFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
+    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
     if [[ -f externalpackages/PVODE/lib/libpvode.a ]]
     then
@@ -816,7 +1012,7 @@ then
   cp externalpackages/PVODE/precon/pvbbdpre.h externalpackages/PVODE/include/*.h include/pvode
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
-  CFLAGS="$CFLAGS -DBOUT_HAS_PVODE"
+  CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
 fi
 
 #############################################################
@@ -834,6 +1030,87 @@ then
   echo " before making BOUT++"
   echo "================================================"
 fi
+
+#############################################################
+# Print configuration info
+#############################################################
+
+echo 
+echo "Configuration summary"  | tee -a config-build.log
+echo
+
+if test "$FACETS_SOURCE" = ""
+then
+  echo "  FACETS support: no"   | tee -a config-build.log
+else
+  echo "  FACETS support: yes"  | tee -a config-build.log
+fi
+
+if test "$PETSC" = ""
+then
+  echo "  PETSc support: no" | tee -a config-build.log
+else
+  echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
+fi
+
+if test "$IDALIBS" = ""
+then
+  echo "  IDA support: no" | tee -a config-build.log
+else
+  echo "  IDA support: yes" | tee -a config-build.log
+fi
+
+if test "$CVODELIBS" = ""
+then
+  echo "  CVODE support: no" | tee -a config-build.log
+else
+  echo "  CVODE support: yes" | tee -a config-build.log
+fi
+
+if test "$NCPATH" = ""
+then
+  echo "  NetCDF support: no" | tee -a config-build.log
+else
+  echo "  NetCDF support: yes" | tee -a config-build.log
+fi
+
+if test "$PACT" = ""
+then
+  echo "  PDB support: no" | tee -a config-build.log
+else
+  echo "  PDB support: yes" | tee -a config-build.log
+fi
+
+if test "$HYPREPATH" = ""
+then
+  echo "  Hypre support: no" | tee -a config-build.log
+else
+  echo "  Hypre support: yes" | tee -a config-build.log
+fi
+
+echo ""
+echo
+echo "Data analysis configuration"
+echo
+echo "=== IDL ==="
+echo
+echo "Make sure that the tools/idllib directory is in your IDL_PATH"
+echo "e.g. by adding to your ~/.bashrc file"
+echo
+echo "    export IDL_PATH=$PWD/tools/idllib:\$IDL_PATH"
+echo
+echo "=== Python ==="
+echo
+echo "Make sure that the tools/pylib directory is in your PYTHONPATH"
+echo "e.g. by adding to your ~/.bashrc file"
+echo
+echo "   export PYTHONPATH=$PWD/tools/pylib/:\$PYTHONPATH"
+echo
+echo "=== Octave ==="
+echo
+echo "Add the following to ~/.octaverc"
+echo "   addpath('$PWD/tools/octave')"
+echo
 
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)

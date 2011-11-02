@@ -12,8 +12,33 @@ except ImportError:
     print "ERROR: NumPy module not available"
     raise
 
-def deriv(var, periodic=False):
-    """Take derivative of 1D array"""
+
+def deriv(*args, **kwargs):
+    """Take derivative of 1D array
+    
+    result = deriv(y)
+    result = deriv(x, y)
+     
+    keywords
+    
+    periodic = False    Domain is periodic
+    """
+     
+    nargs = len(args)
+    if nargs == 1:
+        var = args[0]
+        x = arange(var.size)
+    elif nargs == 2:
+        x = args[0]
+        var = args[1]
+    else:
+        raise RuntimeError("deriv must be given 1 or 2 arguments")
+   
+    try:
+        periodic = kwargs['periodic']
+    except:
+        periodic = False
+
     n = var.size
     if periodic:
         # Use FFTs to take derivatives
@@ -35,16 +60,17 @@ def deriv(var, periodic=False):
         if n > 2:
             for i in arange(1, n-1):
                 # 2nd-order central difference in the middle of the domain
-                result[i] = 0.5*(var[i+1] - var[i-1])
+                result[i] = (var[i+1] - var[i-1]) / (x[i+1] - x[i-1])
             # Use left,right-biased stencils on edges (2nd order)
-            result[0]   = -1.5*var[0]   + 2.*var[1]   - 0.5*var[2]
-            result[n-1] =  1.5*var[n-1] - 2.*var[n-2] + 0.5*var[n-3]
+            result[0]   = (-1.5*var[0]   + 2.*var[1]   - 0.5*var[2]) / (x[1] - x[0])
+            result[n-1] =  (1.5*var[n-1] - 2.*var[n-2] + 0.5*var[n-3]) / (x[n-1] - x[n-2])
         elif n == 2:
             # Just 1st-order difference for both points
-            result[0] = result[1] = var[1] - var[0]
+            result[0] = result[1] = (var[1] - var[0])/(x[1] - x[0])
         elif n == 1:
             result[0] = 0.0
         return result
+
 
 def integrate(var, periodic=False):
     """Integrate a 1D array

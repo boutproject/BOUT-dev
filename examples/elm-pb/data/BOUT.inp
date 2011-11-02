@@ -23,7 +23,7 @@ MYG = 2
 NXPE = 16            # Number of processor in X
 
 #grid = "data/cbm18_8_y064_x516_090309.nc"  # Grid file
-grid = "data/cbm18_dens8.grid_nx68ny64.nc"  # Grid file
+grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
 restart_format = "nc"   # Restart file format

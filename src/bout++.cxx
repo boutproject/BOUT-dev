@@ -28,8 +28,6 @@
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
 static char DEFAULT_GRID[] = "data/bout.grd.pdb";
-static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -74,10 +72,6 @@ static char help[] = "BOUT++: Uses finite difference methods to solve plasma flu
 using std::string;
 using std::list;
 
-#ifdef BOUT_HAS_PETSC
-#include <petsc.h>
-#endif
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -98,8 +92,7 @@ char get_spin();                    // Produces a spinning bar
 int bout_monitor(BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
 
 
-int bout_init(int argc, char **argv)
-{
+int bout_init(int argc, char **argv) {
   int i, NOUT;
   BoutReal TIMESTEP;
   string grid_name;
@@ -235,20 +228,14 @@ int bout_init(int argc, char **argv)
     output << e->what() << endl;
     return 1;
   }
-
-  /// Start MPI
-  //Dirty, dirty hack
-#ifdef BOUT_HAS_PETSC
-  SolverType type("");
-  string solver_option;
-  Options *solver_options = options->getSection("solver");
-  solver_options->get("type", solver_option, "", false);
-  if (!solver_option.empty()) type = solver_option.c_str();
-  if (!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC) && strcasecmp(type, SOLVERPETSC32))) PetscInitialize(&argc,&argv,PETSC_NULL,help);
-#endif
+  
+  /// Create the solver
+  solver = Solver::Create();
+  
+  /// Solver setup, check for command-line arguments
+  solver->setup(argc, argv);
 
   try {
-
     /////////////////////////////////////////////
     /// Get some settings
 
@@ -329,10 +316,6 @@ int bout_init(int argc, char **argv)
     msg_point = msg_stack.push("Initialising physics module");
 #endif
 
-
-    /// Create the solver
-    solver = Solver::Create();
-
     if (physics_init(restart)) {
       output.write("Failed to initialise physics. Aborting\n");
       return 1;
@@ -378,8 +361,7 @@ int bout_init(int argc, char **argv)
   return 0;
 }
 
-int bout_run()
-{
+int bout_run() {
   /// Run the solver
   output.write("Running simulation\n\n");
   int status;
@@ -413,8 +395,7 @@ int bout_run()
   return status;
 }
 
-int bout_finish()
-{
+int bout_finish() {
   // Delete the solver
   delete solver;
 
@@ -431,27 +412,11 @@ int bout_finish()
 
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
-
-  // close MPI
-  //Dirty, dirty hack
-#ifdef BOUT_HAS_PETSC
-  SolverType type("");
-  string solver_option;
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
-  options->get("type", solver_option, "", false);
-  if (!solver_option.empty()) type = solver_option.c_str();
-
-  if (!(strcasecmp(type, SOLVERPETSC31) && strcasecmp(type, SOLVERPETSC))) PetscFinalize();
-  else if (!BoutComm::getInstance()->isSet()) MPI_Finalize();
-
-  options = Options::getRoot();
-#else
+  
   // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
   // but might need to revisit if that isn't the case
   if (!BoutComm::getInstance()->isSet()) MPI_Finalize();
-#endif
-
+  
   return 0;
 }
 
@@ -461,8 +426,7 @@ int bout_finish()
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(BoutReal t, int iter, int NOUT)
-{
+int bout_monitor(BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
   static BoutReal wtime = 0.0;       ///< Wall-time since last output
@@ -511,7 +475,7 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
     output.write("%.3e      %5d        -     -    -    -    -    - \n", simtime, ncalls); // Everything else
   } else {
     wtime = MPI_Wtime() - wtime;
-
+    
     output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
         simtime, ncalls, wtime,
         100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
@@ -520,6 +484,7 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
         100.*wtime_io/wtime,      // I/O
         100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
+  
 
   // This bit only to screen, not log file
 
@@ -549,8 +514,10 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
   mesh->wtime_comms = 0.0; // Reset communicator clock
   Datafile::wtime = 0.0;
   wtime_invert = 0.0;
-  wtime = MPI_Wtime();
+  solver->rhs_wtime = 0.0;
 
+  wtime = MPI_Wtime();
+  
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -564,25 +531,21 @@ int bout_monitor(BoutReal t, int iter, int NOUT)
 
 // NOTE: Here bout_solve is for backwards-compatibility. Eventually will be removed
 
-void bout_solve(Field2D &var, const char *name)
-{
+void bout_solve(Field2D &var, const char *name) {
   // Add to solver
   solver->add(var, ddt(var), name);
 }
 
-void bout_solve(Field3D &var, const char *name)
-{
+void bout_solve(Field3D &var, const char *name) {
   solver->add(var, ddt(var), name);
 }
 
-void bout_solve(Vector2D &var, const char *name)
-{
+void bout_solve(Vector2D &var, const char *name) {
   solver->add(var, ddt(var), name);
   var.setBoundary(name);
 }
 
-void bout_solve(Vector3D &var, const char *name)
-{
+void bout_solve(Vector3D &var, const char *name) {
   solver->add(var, ddt(var), name);
 }
 
@@ -590,8 +553,7 @@ void bout_solve(Vector3D &var, const char *name)
  * Add constraints
  **************************************************************************/
 
-bool bout_constrain(Field3D &var, Field3D &F_var, const char *name)
-{
+bool bout_constrain(Field3D &var, Field3D &F_var, const char *name) {
   if (!solver->constraints()) return false; // Doesn't support constraints
 
   // Add to solver
@@ -605,13 +567,11 @@ bool bout_constrain(Field3D &var, Field3D &F_var, const char *name)
  **************************************************************************/
 
 /// Print an error message and exit
-void bout_error()
-{
+void bout_error() {
   bout_error(NULL);
 }
 
-void bout_error(const char *str)
-{
+void bout_error(const char *str) {
   output.write("****** ERROR CAUGHT ******\n");
 
   if (str != NULL) output.write(str);
@@ -629,8 +589,7 @@ void bout_error(const char *str)
 
 #ifdef SIGHANDLE
 /// Signal handler - catch segfaults
-void bout_signal_handler(int sig)
-{
+void bout_signal_handler(int sig) {
   /// Set signal handler back to default to prevent possible infinite loop
   signal(SIGSEGV, SIG_DFL);
 
@@ -651,8 +610,7 @@ void bout_signal_handler(int sig)
  **************************************************************************/
 
 /// Write a time in h:mm:ss.s format
-const string time_to_hms(BoutReal t)
-{
+const string time_to_hms(BoutReal t) {
   int h, m;
 
   h = (int) (t / 3600); t -= 3600.*((BoutReal) h);
@@ -665,8 +623,7 @@ const string time_to_hms(BoutReal t)
 }
 
 /// Produce a spinning bar character
-char get_spin()
-{
+char get_spin() {
   static int i = 0;
   char c = '|'; // Doesn't need to be assigned; squash warning
 

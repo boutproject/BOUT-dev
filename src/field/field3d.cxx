@@ -2199,6 +2199,29 @@ memblock3d *Field3D::newBlock() const
     
       nblocks++;
     }
+
+#if CHECK > 1
+    // Set the boundary regions to non-finite numbers
+    // Catches unset boundaries, skipped communications
+    
+    BoutReal val = 1./0.; // Deliberately non-finite number
+    
+    // X boundaries
+    for(int i=0;i<2;i++)
+      for(int j=0;j<mesh->ngy;j++)
+        for(int k=0;k<mesh->ngz;k++) {
+          nb->data[i][j][k] = val;
+          nb->data[mesh->ngx-i-1][j][k] = val;
+        }
+    // Y boundaries
+    for(int i=0;i<mesh->ngx;i++)
+      for(int j=0;j<2;j++)
+        for(int k=0;k<mesh->ngz;k++) {
+          nb->data[i][j][k] = val;
+          nb->data[i][mesh->ngy-j-1][k] = val;
+        }
+#endif
+
   } // End of critical section
   return nb;
 }

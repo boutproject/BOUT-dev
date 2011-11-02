@@ -35,6 +35,7 @@
 
 #include <interpolation.hxx> // Cell interpolation
 
+static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
 extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 extern PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data);
@@ -42,8 +43,7 @@ extern PetscErrorCode solver_if(TS,BoutReal,Vec,Vec,Vec,void*);
 extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 extern PetscErrorCode solver_ijacobianfd(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 
-PetscSolver::PetscSolver()
-{
+PetscSolver::PetscSolver() {
   has_constraints = false; // No constraints
   this->J = 0;
   this->Jmf = 0;
@@ -51,8 +51,7 @@ PetscSolver::PetscSolver()
   this->interpolate = PETSC_TRUE;
 }
 
-PetscSolver::~PetscSolver()
-{
+PetscSolver::~PetscSolver() {
 
   if(initialised) {
     // Free CVODE memory
@@ -65,14 +64,27 @@ PetscSolver::~PetscSolver()
 
     initialised = false;
   }
+  
+  PetscLogEventEnd(USER_EVENT,0,0,0,0);
+  PetscFinalize();
+}
+
+/**************************************************************************
+ * Setup
+ **************************************************************************/
+
+int PetscSolver::setup(int argc, char **argv) {
+  output << "Initialising PETc\n";
+  PetscInitialize(&argc,&argv,PETSC_NULL,help);
+  PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
+  PetscLogEventBegin(USER_EVENT,0,0,0,0);
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
-{
+int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -85,10 +97,16 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 #ifdef CHECK
   int msg_point = msg_stack.push("Initialising PETSc solver");
 #endif
-  
+
+  PetscFunctionBegin;
+  PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
+  PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
+  PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
+
   /// Call the generic initialisation first
   Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
 
+  ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
 
@@ -106,7 +124,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   /********** Get total problem size **********/
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
-    return 1;
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(1);
   }
 
   ierr = PetscPrintf(comm,"\t3d fields = %d, 2d fields = %d neq=%d\n",n3d, n2d, neq);CHKERRQ(ierr);
@@ -124,7 +143,8 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = VecGetArray(u,&udata);CHKERRQ(ierr);
   if(save_vars(udata)) {
     bout_error("\tError: Initial variable value not set\n");
-    return(1);
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(1);
   }
   ierr = VecRestoreArray(u,&udata);CHKERRQ(ierr);
   PetscReal norm;
@@ -169,7 +189,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
   //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
-  
+
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
@@ -231,7 +251,10 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
   ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
-  if (pcnone) return(0);
+  if (pcnone) {
+    ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   // Create Jacobian matrix to be used by preconditioner
   ierr = PetscPrintf(PETSC_COMM_WORLD," Get Jacobian matrix at simtime %g\n",simtime);CHKERRQ(ierr);
@@ -258,8 +281,6 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     PetscInt nz  = mesh->ngz - 1;
 
     /* number of degrees (variables) at each grid point */
-    if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
-
     PetscInt dof = n3Dvars();
 
     /* Stencil width. Hardcoded to 2 until there is a public method to get mesh->MXG */
@@ -273,7 +294,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
-    ierr = MatSetSizes(J,local_N, local_N, neq,neq);CHKERRQ(ierr); 
+    ierr = MatSetSizes(J,local_N, local_N, neq,neq);CHKERRQ(ierr);
     ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
     // Get nonzero pattern of J - color_none !!!
@@ -282,7 +303,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = MatMPIAIJSetPreallocation(J,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
     prealloc = cols; // why nonzeros=295900, allocated nonzeros=2816000/12800000 (*dof*dof), number of mallocs used during MatSetValues calls =256?
-    ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
+    ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
@@ -294,9 +315,11 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
 
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
+      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
+
+      if(n2Dvars() != 0) bout_error("PETSc solver can't handle 2D variables yet. Sorry\n");
 
       ISLocalToGlobalMapping ltog, ltogb;
       PetscInt i, j, k, d, s;
@@ -445,9 +468,9 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     }
   }
 
-  // Create coloring context of J to be used during time stepping 
+  // Create coloring context of J to be used during time stepping
   ierr = PetscPrintf(PETSC_COMM_WORLD," Create coloring ...\n");
-  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
+  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr);
   ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
@@ -473,11 +496,12 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     ierr = PetscViewerDestroy(&viewer);CHKERRQ(ierr);
   }
 
+  ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
 
-  return(0);
+  PetscFunctionReturn(0);
 }
 
 /**************************************************************************
@@ -535,229 +559,27 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
  * PRIVATE FUNCTIONS
  **************************************************************************/
 
-/// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void PetscSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
-{
-  BoutReal **d2d, ***d3d;
-  unsigned int i;
-  int jz;
- 
-  unsigned int n2d = f2d.size();
-  unsigned int n3d = f3d.size();
-
-  switch(op) {
-  case LOAD_VARS: {
-    /// Load variables from PETSc into BOUT++
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].var->getData(); // Get pointer to data
-        d3d[jx][jy][jz] = udata[p];
-        p++;
-      }
-    }
-    break;
-  }
-  case SAVE_VARS: {
-    /// Save variables from BOUT++ into CVODE (only used at start of simulation)
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].var->getData(); // Get pointer to data
-        udata[p] = d3d[jx][jy][jz];
-        p++;
-      }
-    }
-    break;
-  }
-    /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SAVE_DERIVS: {
-
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-        d3d = f3d[i].F_var->getData(); // Get pointer to data
-        udata[p] = d3d[jx][jy][jz];
-        p++;
-      }
-    }
-    break;
-  }
-  }
-}
-
-/// Loop over variables and domain. Used for all data operations for consistency
-void PetscSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
-{
-  int jx, jy;
-  int p = 0; // Counter for location in udata array
-
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX()) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-        loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
-  }
-
-  // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
-
-  // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Outer X boundary
-  if(mesh->lastX()) {
-    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-        loop_vars_op(jx, jy, udata, p, op);
-  }
-}
-
-void PetscSolver::load_vars(BoutReal *udata)
-{
-  unsigned int i;
-
-  // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].var->allocate();
-    f3d[i].var->setLocation(f3d[i].location);
-  }
-
-  loop_vars(udata, LOAD_VARS);
-
-  // Mark each vector as either co- or contra-variant
-
-  for(i=0;i<v2d.size();i++)
-    v2d[i].var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].var->covariant = v3d[i].covariant;
-}
-
-// This function only called during initialisation
-int PetscSolver::save_vars(BoutReal *udata)
-{
-  unsigned int i;
-
-  for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
-
-  for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
-
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].var->toCovariant();
-    }else
-      v2d[i].var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].var->toCovariant();
-    }else
-      v3d[i].var->toContravariant();
-  }
-
-  loop_vars(udata, SAVE_VARS);
-
-  return(0);
-}
-
-void PetscSolver::save_derivs(BoutReal *dudata)
-{
-  unsigned int i;
-
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].F_var->toCovariant();
-    }else
-      v2d[i].F_var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].F_var->toCovariant();
-    }else
-      v3d[i].F_var->toContravariant();
-  }
-
-  // Make sure 3D fields are at the correct cell location
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if((*it).location != ((*it).F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
-    }
-  }
-
-  loop_vars(dudata, SAVE_DERIVS);
-}
-
 /**************************************************************************
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
   PetscSolver *s;
 
   PetscFunctionBegin;
-  //printf("solver_f(), t %g\n",t);
   s = (PetscSolver*) f_data;
-  PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
+  PetscLogEventBegin(s->solver_event,0,0,0,0);
+  s->rhs(ts, t, globalin, globalout);
+  PetscLogEventEnd(s->solver_event,0,0,0,0);
+  PetscFunctionReturn(0);
 }
 
 /*
   FormIFunction = Udot - RHSFunction
 */
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data)
 {
@@ -776,7 +598,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_rhsjacobian"
 PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
 {

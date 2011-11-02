@@ -1,11 +1,11 @@
 # Requires:
-#  - netcdf4-python (HDF5, NetCDF-4)
+#  - boututils
 #  - NumPy
 
 try:
-    from netCDF4 import Dataset
+    from boututils import DataFile
 except ImportError:
-    print "ERROR: netcdf4-python module not found"
+    print "ERROR: boututils.DataFile couldn't be loaded"
     raise
 
 try:
@@ -22,73 +22,82 @@ except ImportError:
     print "ERROR: NumPy module not available"
     raise
 
-print "    data = collect('variable', path='.')"
-
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path="."):
-    """Collect a variable from a set of BOUT++ outputs."""
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, info=True,prefix="BOUT.dmp"):
+    """Collect a variable from a set of BOUT++ outputs.
     
-    # Little helper function to read a variable
-    def read_var(file, name):
-        var = file.variables[name]
-        return var[:]
+    data = collect(name)
+    
+    name   Name of the variable (string)
+    
+    Optional arguments:
+
+    xind = [min,max]   Range of X indices to collect
+    yind = [min,max]   Range of Y indices to collect
+    zind = [min,max]   Range of Z indices to collect
+    tind = [min,max]   Range of T indices to collect
+    
+    path    = "."          Path to data files
+    prefix  = "BOUT.dmp"   File prefix
+    yguards = False        Collect Y boundary guard cells?
+    info    = True         Print information about collect?
+    """
     
     # Search for BOUT++ dump files in NetCDF format
-    file_list = glob.glob(os.path.join(path, "BOUT.dmp.*.nc"))
+    file_list = glob.glob(os.path.join(path, prefix+".*.nc"))
     if file_list == []:
         print "ERROR: No data files found"
         return None
     nfiles = len(file_list)
-    print "Number of files: " + str(nfiles)
+    #print "Number of files: " + str(nfiles)
     
     # Read data from the first file
-    f = Dataset(file_list[0], "r")
-    print "File format    : " + f.file_format
+    f = DataFile(file_list[0])
+    
+    #print "File format    : " + f.file_format
     try:
-        v = f.variables[varname]
+        dimens = f.dimensions(varname)
+        ndims = len(dimens)
     except KeyError:
         print "ERROR: Variable '"+varname+"' not found"
         return None
-    dims = v.dimensions
-    ndims = len(dims)
 
-    if ndims == 0:
-        # Just read from this file and return
-        data = v.getValue()
-        f.close()
-        return data[0]
-    elif ndims == 1:
-        data = v[:]
+    if ndims < 2:
+        # Just read from file
+        data = f.read(varname)
         f.close()
         return data
-    elif ndims > 4:
+
+    if ndims > 4:
         print "ERROR: Too many dimensions"
-        f.close()
         raise CollectError
 
-    mxsub = read_var(f, "MXSUB")[0]
-    mysub = read_var(f, "MYSUB")[0]
-    mz    = read_var(f, "MZ")[0]
-    myg   = read_var(f, "MYG")[0]
-    t_array = read_var(f, "t_array")
+    mxsub = f.read("MXSUB")
+    mysub = f.read("MYSUB")
+    mz    = f.read("MZ")
+    myg   = f.read("MYG")
+    t_array = f.read("t_array")
     nt = len(t_array)
-    print "Time-points    : " + str(nt)
     
+    if info:
+        print "mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz)
+
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
-        v = f.variables["BOUT_VERSION"]
-        print "BOUT++ version : " + str(v.getValue()[0])
+        v = f.read("BOUT_VERSION")
 
         # 2D decomposition
-        nxpe = read_var(f, "NXPE")[0]
-        mxg  = read_var(f, "MXG")[0]
-        nype = read_var(f, "NYPE")[0]
+        nxpe = f.read("NXPE")
+        mxg  = f.read("MXG")
+        nype = f.read("NYPE")
         npe = nxpe * nype
-
-        if npe < nfiles:
-            print "WARNING: More files than expected (" + str(npe) + ")"
-        elif npe > nfiles:
-            print "WARNING: Some files missing. Expected " + str(npe)
-
+        
+        if info:
+            print "nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe)
+            if npe < nfiles:
+                print "WARNING: More files than expected (" + str(npe) + ")"
+            elif npe > nfiles:
+                print "WARNING: Some files missing. Expected " + str(npe)
+        
         nx = nxpe * mxsub + 2*mxg
     except KeyError:
         print "BOUT++ version : Pre-0.2"
@@ -98,22 +107,30 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path="."):
         mxg = 0
         nxpe = 1
         nype = nfiles
+
+    if yguards:
+        ny = mysub * nype + 2*myg
+    else:
+        ny = mysub * nype
     
-    ny = mysub * nype
-    
-    f.close()
-    
+    f.close();
+
     # Check ranges
     
     def check_range(r, low, up, name="range"):
         r2 = r
         if r != None:
-            if (len(r) < 1) or (len(r) > 2):
+            try:
+                n = len(r2)
+            except:
+                # No len attribute, so probably a single number
+                r2 = [r2,r2]
+            if (len(r2) < 1) or (len(r2) > 2):
                 print "WARNING: "+name+" must be [min, max]"
                 r2 = None
             else:
-                if len(r) == 1:
-                    r = [r,r]
+                if len(r2) == 1:
+                    r2 = [r2,r2]
                 if r2[0] < low:
                     r2[0] = low
                 if r2[0] > up:
@@ -135,7 +152,6 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path="."):
     zind = check_range(zind, 0, mz-2, "zind")
     tind = check_range(tind, 0, nt-1, "tind")
     
-    
     xsize = xind[1] - xind[0] + 1
     ysize = yind[1] - yind[0] + 1
     zsize = zind[1] - zind[0] + 1
@@ -145,32 +161,56 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path="."):
     sizes = {'x':xsize, 'y':ysize, 'z':zsize, 't':tsize}
 
     # Create a list with size of each dimension
-    ddims = map(lambda d: sizes[d], dims)
+    ddims = map(lambda d: sizes[d], dimens)
     
     # Create the data array
     data = np.zeros(ddims)
     
-    for i in range(nfiles):
+    for i in range(npe):
         # Get X and Y processor indices
         pe_yind = int(i / nxpe)
         pe_xind = i % nxpe
 
         # Get local ranges
-        ymin = yind[0] - pe_yind*mysub + myg
-        ymax = yind[1] - pe_yind*mysub + myg
-
+        if yguards:
+            ymin = yind[0] - pe_yind*mysub
+            ymax = yind[1] - pe_yind*mysub
+        else:
+            ymin = yind[0] - pe_yind*mysub + myg
+            ymax = yind[1] - pe_yind*mysub + myg
+        
         xmin = xind[0] - pe_xind*mxsub
         xmax = xind[1] - pe_xind*mxsub
         
         inrange = True
 
-        if (ymin >= (mysub + myg)) or (ymax < myg):
-            inrange = False # Y out of range
+        if yguards:
+            # Check lower y boundary
+            if pe_yind == 0:
+                # Keeping inner boundary
+                if ymax < 0: inrange = False
+                if ymin < 0: ymin = 0
+            else:
+                if ymax < myg: inrange = False
+                if ymin < myg: ymin = myg
 
-        if ymin < myg:
-            ymin = myg
-        if ymax >= mysub+myg:
-            ymax = myg + mysub - 1
+            # Upper y boundary
+            if pe_yind == (nype - 1):
+                # Keeping outer boundary
+                if ymin >= (mysub + 2*myg): inrange = False
+                if ymax > (mysub + 2*myg - 1): ymax = (mysub + 2*myg - 1)
+            else:
+                if ymin >= (mysub + myg): inrange = False
+                if ymax >= (mysub + myg): ymax = (mysub+myg-1)
+            
+        else:
+            if (ymin >= (mysub + myg)) or (ymax < myg):
+                inrange = False # Y out of range
+
+            if ymin < myg:
+                ymin = myg
+            if ymax >= mysub+myg:
+                ymax = myg + mysub - 1
 
         # Check lower x boundary
         if pe_xind == 0:
@@ -198,39 +238,56 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path="."):
         xgmin = xmin + pe_xind * mxsub
         xgmax = xmax + pe_xind * mxsub
 
-        ygmin = ymin + pe_yind * mysub - myg
-        ygmax = ymax + pe_yind * mysub - myg
+        if yguards:
+            ygmin = ymin + pe_yind * mysub
+            ygmax = ymax + pe_yind * mysub
+
+        else:
+            ygmin = ymin + pe_yind * mysub - myg
+            ygmax = ymax + pe_yind * mysub - myg
+
 
         if not inrange:
             continue # Don't need this file
         
-        filename = os.path.join(path, "BOUT.dmp." + str(i) + ".nc")
-        sys.stdout.write("\rReading from " + filename + ": [" + \
-                         str(xmin) + "-" + str(xmax) + "][" + \
-                         str(ymin) + "-" + str(ymax) + "] -> [" + \
-                         str(xgmin) + "-" + str(xgmax) + "][" + \
-                         str(ygmin) + "-" + str(ygmax) + "]")
+        filename = os.path.join(path, prefix+"." + str(i) + ".nc")
+        if info:
+            sys.stdout.write("\rReading from " + filename + ": [" + \
+                                 str(xmin) + "-" + str(xmax) + "][" + \
+                                 str(ymin) + "-" + str(ymax) + "] -> [" + \
+                                 str(xgmin) + "-" + str(xgmax) + "][" + \
+                                 str(ygmin) + "-" + str(ygmax) + "]")
 
-        f = Dataset(filename, "r")
-        var = f.variables[varname]
+        f = DataFile(filename)
 
         if ndims == 4:
-            d = var[tind[0]:(tind[1]+1), xmin:(xmax+1), ymin:(ymax+1), zind[0]:(zind[1]+1)]
+            d = f.read(varname, ranges=[tind[0],tind[1]+1,
+                                        xmin, xmax+1, 
+                                        ymin, ymax+1, 
+                                        zind[0],zind[1]+1])
             data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
         elif ndims == 3:
             # Could be xyz or txy
             
-            if dims[3] == 'z': # xyz
-                d = var[xmin:(xmax+1), ymin:(ymax+1), zind[0]:(zind[1]+1)]
+            if dimens[2] == 'z': # xyz
+                d = f.read(varname, ranges=[xmin, xmax+1, 
+                                            ymin, ymax+1, 
+                                            zind[0],zind[1]+1])
                 data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
             else: # txy
-                d = var[tind[0]:(tind[1]+1), xmin:(xmax+1), ymin:(ymax+1)]
+                d = f.read(varname, ranges=[tind[0],tind[1]+1,
+                                            xmin, xmax+1, 
+                                            ymin, ymax+1])
                 data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
         elif ndims == 2:
             # xy
-            d = var[xmin:(xmax+1), ymin:(ymax+1)]
+            d = f.read(varname, ranges=[xmin, xmax+1, 
+                                        ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+
+        f.close()
     
     # Finished looping over all files
-    sys.stdout.write("\n")
+    if info:
+        sys.stdout.write("\n")
     return data

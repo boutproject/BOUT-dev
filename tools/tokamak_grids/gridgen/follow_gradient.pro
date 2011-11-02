@@ -103,7 +103,7 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
         PRINT, "  -> Excessive work "+STR(f0)+" to "+STR(ftarget)+" Trying to continue..."
         lstat = 2 ; continue
         rcount = rcount + 1
-        IF rcount GT 10 THEN BEGIN
+        IF rcount GT 3 THEN BEGIN
           PRINT, "   -> Too many repeats. Giving Up."
           
           ri = lastgoodpos[0]

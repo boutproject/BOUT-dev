@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 
 #include "emptysolver.hxx"
 typedef EmptySolver PetscSolver;
- 
+
 #else
 class PetscSolver;
 
@@ -64,14 +64,17 @@ class PetscSolver : public Solver {
   PetscSolver();
   ~PetscSolver();
 
+  int setup(int argc, char **argv);
+
   int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run(MonitorFunc f);
 
   // These functions used internally (but need to be public)
-  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
+  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 
+  PetscLogEvent solver_event, loop_event, init_event;
  private:
   Vec           u;
   TS            ts;
@@ -85,15 +88,8 @@ class PetscSolver : public Solver {
   BoutReal next_output;  // When the monitor should be called next
 
   PetscBool interpolate; // Whether to interpolate or not
-
-  // Looping over variables. This should be in generic, but better...
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
-  void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-
-  // Move data between 
-  void load_vars(BoutReal *udata);
-  int save_vars(BoutReal *udata);
-  void save_derivs(BoutReal *dudata);
+  
+  PetscLogEvent USER_EVENT;
 };
 
 

@@ -150,8 +150,8 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
         
         // Length dl for predictor
         BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
-        dl = MIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
-        dl = MIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        dl = BOUTMIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
+        dl = BOUTMIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
         
         BoutReal fp, fm;
         
@@ -203,8 +203,8 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
         
         // Re-calculate dl
         BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
-        dl = MIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
-        dl = MIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        dl = BOUTMIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
+        dl = BOUTMIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
         
         BoutReal fp, fm;
 

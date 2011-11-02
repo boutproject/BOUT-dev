@@ -156,11 +156,11 @@ which since $j_{||}$ is normalised to $\mu_0$, and $\apar$ is not normalised giv
 \]
 The $E\times B$ velocity is given by:
 \[
-\Vec{v}_{ExB} = \frac{1}{B^2}\Bvec\times\nabla\phi
+\Vec{v}_{E\times B} = \frac{1}{B^2}\Bvec\times\nabla\phi
 \]
 Vorticity $U$ is defined as 
 \begin{eqnarray*}
-U \equiv \Curl{\Vec{v}_{ExB}} &=& \frac{\bvec}{B}\Div{\nabla\phi} - \nabla\phi\left(\Div{\frac{\bvec}{B}}\right) + \left(\nabla\phi\cdot\nabla\right)\frac{\bvec}{B} - \left(\frac{\bvec}{B}\cdot\nabla\right)\nabla\phi \\
+U \equiv \Curl{\Vec{v}_{E\times B}} &=& \frac{\bvec}{B}\Div{\nabla\phi} - \nabla\phi\left(\Div{\frac{\bvec}{B}}\right) + \left(\nabla\phi\cdot\nabla\right)\frac{\bvec}{B} - \left(\frac{\bvec}{B}\cdot\nabla\right)\nabla\phi \\
 &\simeq& \frac{\bvec}{B}\nabla_\perp^2\phi
 \end{eqnarray*}
 where only the first term has been kept, and parallel derivatives neglected (flute assumption). Electrostatic potential can therefore be related to 
@@ -172,11 +172,11 @@ U \simeq \frac{1}{B_0}\nabla_\perp^2\phi
 The normalised evolution equations solved are:
 
 \begin{eqnarray*}
-  \deriv{\rho}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(\rho + \rho_0\right) + \left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(\rho + \rho_0\right) + D_\perp\nabla_\perp^2\rho \\
-  \deriv{T_s}{t} &=& -\Vec{v}_{ExB}\cdot\nabla\left(T_s + T_{s0}\right) - \frac{2}{3}\left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(T_s + T_{s0}\right) \\
+  \deriv{\rho}{t} &=& -\Vec{v}_{E\times B}\cdot\nabla\left(\rho + \rho_0\right) + \left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(\rho + \rho_0\right) + D_\perp\nabla_\perp^2\rho \\
+  \deriv{T_s}{t} &=& -\Vec{v}_{E\times B}\cdot\nabla\left(T_s + T_{s0}\right) - \frac{2}{3}\left(\nabla\cdot\Vec{v}_{E\times B}\right)\left(T_s + T_{s0}\right) \\
   &&+ \frac{1}{\rho + \rho_0}\left[ \nabla_{||}\cdot\left(\chi_{s||}\partial_{||}T_s\right) + \chi_\perp\nabla_\perp^2T_s\right] + \frac{2}{3\left(\rho+\rho_0\right)}W_s \\
-  \deriv{U}{t} &=& -\Vec{v}_{ExB}\cdot\nabla U + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u\right] \\
-\deriv{v_{||}}{t} &=& -\Vec{v}_{ExB}\cdot\nabla v_{||} - \nabla_{||} P \\
+  \deriv{U}{t} &=& -\Vec{v}_{E\times B}\cdot\nabla U + \frac{1}{\rho+\rho_0}\left[ B_0^2\nabla_{||}\left(\frac{J_{||}+J_{||0}}{B_0}\right) + 2\bvec_0\times\kvec_0\cdot\nabla P + \nu_{||}\partial_{||}^2u + \nu_\perp\nabla_\perp^2u\right] \\
+\deriv{v_{||}}{t} &=& -\Vec{v}_{E\times B}\cdot\nabla v_{||} - \nabla_{||} P \\
 \deriv{\apar}{t} &=& -\nabla_{||}\phi - \eta J_{||} \\
 P &=& \rho\left(T_e + T_i\right)
 \end{eqnarray*}

@@ -95,18 +95,6 @@ public:
 //////////////////////////////////////////////////////////
 // Functions
 
-/// Binary operators
-class FieldBinary : public FieldGenerator {
-public:
-  FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
-  ~FieldBinary();
-  FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
-private:
-  FieldGenerator *lhs, *rhs;
-  char op;
-};
-
 class FieldSin : public FieldGenerator {
 public:
   FieldSin(FieldGenerator* g) : gen(g) {}
@@ -160,6 +148,38 @@ public:
   BoutReal generate(int x, int y, int z);
 private:
   FieldGenerator *gen;
+};
+
+/// Unary minus
+class FieldUnary : public FieldGenerator {
+public:
+  FieldUnary(FieldGenerator* g) : gen(g) {}
+  ~FieldUnary() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() != 1) {
+      output << "FieldFactory error: Incorrect number of arguments to unary minus. Expecting 1, got " << args.size() << endl;
+      return NULL;
+    }
+    return new FieldUnary(args.front());
+  }
+  BoutReal generate(int x, int y, int z) {
+    return -gen->generate(x,y,z);
+  }
+private:
+  FieldGenerator *gen;
+};
+
+/// Binary operators
+class FieldBinary : public FieldGenerator {
+public:
+  FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
+  ~FieldBinary();
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *lhs, *rhs;
+  char op;
 };
 
 //////////////////////////////////////////////////////////

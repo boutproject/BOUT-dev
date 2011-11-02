@@ -71,6 +71,9 @@ class Solver {
   Solver();
   virtual ~Solver() { }
   
+  /// Some solvers (PETSc) need the command-line
+  virtual int setup(int argc, char **argv) {return 0;}
+  
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
   virtual void add(Field2D &v, Field2D &F_v, const char* name);

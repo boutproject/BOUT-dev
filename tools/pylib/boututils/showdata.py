@@ -6,18 +6,16 @@
 #
 
 try:
-    print "Trying to import GTK..."
     import gobject
     widget = "gtk"
 except:
-    print "failed\nTrying to import WX..."
     try:
         from wx import *
         widget = "wx"
     except:
-	    print "failed."
-	    raise
-
+        print "showdata: Couldn't import gobject or wx"
+        raise
+    
 
 try:
     import matplotlib

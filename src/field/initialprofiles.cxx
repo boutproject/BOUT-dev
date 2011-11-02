@@ -410,7 +410,41 @@ BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal 
         + sin(3.*nMode*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 2.*nMode)*TWOPI)
         + sin(4.*nMode*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 3.*nMode)*TWOPI);
       break;
-
+    case 5:
+      res=cos(1.*sNorm*TWOPI  + hash_BoutReals(sNorm, phase, 1.)*PI)
+	+cos(2*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 2.)*PI)
+	+cos(3*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 3.)*PI)
+	+cos(4*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 4.)*PI)
+	+cos(5*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 5.)*PI)
+	+cos(6*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 6.)*PI)
+	+cos(7*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 7.)*PI)
+	+cos(8*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 8.)*PI)
+	+cos(9*sNorm*TWOPI    + hash_BoutReals(sNorm, phase, 9.)*PI)
+	+cos(10*sNorm*TWOPI   + hash_BoutReals(sNorm, phase, 10.)*PI)
+	+cos(11*sNorm*TWOPI   + hash_BoutReals(sNorm, phase, 11.)*PI)
+	+cos(12*sNorm*TWOPI   + hash_BoutReals(sNorm, phase, 12.)*PI)
+	+cos(13*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 13.)*PI)
+	+cos(14*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 14.)*PI)
+	+cos(15*sNorm*TWOPI + hash_BoutReals(sNorm, phase, 14.)*PI);
+      break;
+      //random start, note that using rand() to randomize phase will cause problems, its possible that different 
+      // cpus will produce a different random value resulting in a sharp phase discontinuity leading to mode blowup 
+      // above roughly k> N/3
+    case 6:
+      res=cos(1.*sNorm*TWOPI +  0*(rand()/(100.0 * RAND_MAX + 1.0) * 1.0 )*PI)
+	+cos(2*sNorm*TWOPI)
+	+cos(3*sNorm*TWOPI)
+	+cos(4*sNorm*TWOPI)
+	+cos(5*sNorm*TWOPI)
+	+cos(6*sNorm*TWOPI +  0*(rand()/(100.0 * RAND_MAX + 1.0) * 1.0 )*PI)
+	+cos(7*sNorm*TWOPI)
+	+cos(8*sNorm*TWOPI)
+	+cos(9*sNorm*TWOPI)
+	+cos(10*sNorm*TWOPI)
+	+cos(11*sNorm*TWOPI)
+	+cos(12*sNorm*TWOPI)
+	+cos(13*sNorm*TWOPI)
+	+cos(14*sNorm*TWOPI);
     default: res=1.0;
     }
 

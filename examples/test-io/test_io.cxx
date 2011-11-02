@@ -10,8 +10,7 @@
 #include <bout.hxx>
 #include <boutmain.hxx>
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   // Variables to be read and written
   int ivar, ivar_evol;
   BoutReal rvar, rvar_evol; 
@@ -51,9 +50,9 @@ int physics_init(bool restarting)
     v3d.x = v3d.y = v3d.z = f3d;
     
     if(i == 0) {
-      dump.write("%s/test_io.out.%d.nc", "data", MYPE);
+      dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
     }else
-      dump.append("%s/test_io.out.%d.nc", "data", MYPE);
+      dump.append("%s/BOUT.dmp.%d.nc", "data", MYPE);
   }
   
   // Need to wait for all processes to finish writing
@@ -63,8 +62,7 @@ int physics_init(bool restarting)
   return 1;
 }
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   // Doesn't do anything
   return 1;
 }
