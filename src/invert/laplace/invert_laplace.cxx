@@ -106,7 +106,6 @@ const Field3D Laplacian::solve(const Field3D &b) {
   x.allocate();
 
   for(int jy=ys; jy <= ye; jy++) {
-    // HANDLE INVERT_IN_SET and INVERT_OUT_SET
     x = solve(b.slice(jy));
   }
   
@@ -121,6 +120,38 @@ const Field3D Laplacian::solve(const Field3D &b) {
 const Field2D Laplacian::solve(const Field2D &b) {
   Field3D f = b;
   f = solve(f);
+  return f.DC();
+}
+
+const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
+  #ifdef CHECK
+  msg_stack.push("Laplacian::solve(Field3D, Field3D)");
+#endif
+
+  int ys = mesh->ystart, ye = mesh->yend;
+  
+  if(MYPE_IN_CORE == 0) {
+    ys = 0;
+    ye = mesh->ngy-1;
+  }
+  
+  Field3D x;
+  x.allocate();
+
+  for(int jy=ys; jy <= ye; jy++) {
+    x = solve(b.slice(jy), x0.slice(jy));
+  }
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+
+  return x;
+}
+
+const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
+  Field3D f = b, g = x0;
+  f = solve(f, g);
   return f.DC();
 }
 

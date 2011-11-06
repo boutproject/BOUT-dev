@@ -87,6 +87,10 @@ public:
   virtual const Field3D solve(const Field3D &b);
   virtual const Field2D solve(const Field2D &b);
   
+  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) { return solve(b); }
+  virtual const Field3D solve(const Field3D &b, const Field3D &x0);
+  virtual const Field2D solve(const Field2D &b, const Field2D &x0);
+
   /// Coefficients in tridiagonal inversion
   void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
   

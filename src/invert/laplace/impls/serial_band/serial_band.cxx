@@ -60,6 +60,10 @@ LaplaceSerialBand::~LaplaceSerialBand() {
 }
 
 const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
+  return solve(b,b);
+}
+
+const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
 
@@ -76,7 +80,13 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
-    ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
+    
+    if(((ix < xbndry) && (flags & INVERT_IN_SET)) ||
+       ((ncx-ix < xbndry) && (flags & INVERT_OUT_SET))) {
+      // Use the values in x0 in the boundary
+      ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
+    }else
+      ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
   }
   
   int xstart, xend;
@@ -202,18 +212,6 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b) {
 
       A[ncx-ix][0] = A[ncx-ix][1] = A[ncx-ix][3] = A[ncx-ix][4] = 0.0;
       A[ncx-ix][2] = 1.0;
-    }
-
-    if(flags & INVERT_IN_SET) {
-      // Set values of inner boundary from X
-      for(int ix=0;ix<xbndry;ix++)
-        bk1d[ix] = xk[ix][iz];
-    }
-      
-    if(flags & INVERT_OUT_SET) {
-      // Set values of outer boundary from X
-      for(int ix=0;ix<xbndry;ix++)
-        bk1d[ncx-ix] = xk[ncx-ix][iz];
     }
 
     if(iz == 0) {

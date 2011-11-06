@@ -43,6 +43,7 @@ public:
   void setCoefD(const Field2D &val) { D = val; }
   
   const FieldPerp solve(const FieldPerp &b);
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
 private:
   Field2D A, C, D;
   

@@ -66,6 +66,10 @@ LaplaceSerialTri::~LaplaceSerialTri() {
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
+  return solve(b,b);
+}
+
+const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
 
@@ -83,7 +87,12 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
-    ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
+    if(((ix < xbndry) && (flags & INVERT_IN_SET)) ||
+       ((ncx-ix < xbndry) && (flags & INVERT_OUT_SET))) {
+      // Use the values in x0 in the boundary
+      ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
+    }else
+      ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
   }
   
   for(int iz=0;iz<=ncz/2;iz++) {
@@ -145,7 +154,6 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
             cvec[ix] = 0.0;
-            bk1d[ix] = xk[ix][iz];
           }
         }else {
           // Zero value at inner boundary
@@ -201,7 +209,6 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
             avec[ncx-ix] = 0.0;
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
-            bk1d[ncx-ix] = xk[ncx-ix][iz];
           }
         }else {
           // Zero value at outer boundary
@@ -256,7 +263,6 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
             cvec[ix] = 0.0;
-            bk1d[ix] = xk[ix][iz];
           }
         }else if(flags & INVERT_AC_IN_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
@@ -329,7 +335,6 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
             avec[ncx-ix] = 0.0;
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
-            bk1d[ncx-ix] = xk[ncx-ix][iz];
           }
         }else {
           // Zero value at outer boundary

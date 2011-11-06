@@ -1,3 +1,30 @@
+/*!
+ * \file spt.cxx
+ *
+ * \brief Simple Parallel Tridiagonal solver
+ *
+ *
+ **************************************************************************
+ * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
+ *
+ * Contact: Ben Dudson, bd512@york.ac.uk
+ * 
+ * This file is part of BOUT++.
+ *
+ * BOUT++ is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BOUT++ is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
 
 #include <globals.hxx>
 #include <boutexception.hxx>
@@ -7,6 +34,10 @@
 #include "spt.hxx"
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
+  return solve(b,b);
+}
+
+const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
   
@@ -41,6 +72,9 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     ys = 0;
     ye = mesh->ngy-1;
   }
+
+  if(flags & (INVERT_IN_SET | INVERT_OUT_SET))
+    throw BoutException("SPT doesn't support IN_SET or OUT_SET flags");
 
   static SPT_data *data = NULL;
   if(data == NULL) {
