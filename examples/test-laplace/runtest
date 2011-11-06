@@ -15,7 +15,7 @@ from boutdata import collect
 import numpy as np
 from sys import stdout, exit
 
-print "Making FieldFactory test"
+print "Making Laplacian inversion test"
 shell("make > make.log")
 
 # Read benchmark values
