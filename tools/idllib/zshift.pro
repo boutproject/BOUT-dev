@@ -53,7 +53,7 @@ FUNCTION zshift, var, zangle, period=period
     result = var
     
     ; Shift each y slice separately
-    FOR t=0, nt-1 DO BEGIN
+    FOR y=0, ny-1 DO BEGIN
       result[*,y,*] = zshift(REFORM(var[*,y,*]), $
                              REFORM(zangle[*,y]), $
                              period=period)
