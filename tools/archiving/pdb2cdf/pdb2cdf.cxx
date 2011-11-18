@@ -21,14 +21,21 @@ struct TDim {
   NcDim* nDim; // netCDF dimension
 };
 
-// List of dimensions. Handles up to 4
-static TDim dimlist[] = {{"x", 0},
-			 {"y", 0},
-			 {"z", 0},
-			 {"t", 0}};
+// List of dimensions. Handles up to 3
+static TDim dimlist3d[] = {{"x", 0},
+			   {"y", 0},
+			   {"z", 0}};
+
+// Special case for 4D
+static TDim dimlist4d[] = {{"t", 0},
+			   {"x", 0},
+			   {"y", 0},
+			   {"z", 0}};
 
 int main(int argc, char** argv)
 {
+  TDim *dimlist;
+  
   if(argc < 2) {
     fprintf(stderr, "Useage: %s file1 file2 ...\n", argv[0]);
     return 1;
@@ -108,6 +115,11 @@ int main(int argc, char** argv)
     }
 
     printf("%d dimensions\n", maxdims);
+    
+    if(maxdims < 4) {
+      dimlist = dimlist3d;
+    }else
+      dimlist = dimlist4d;
     
     if(maxdims > 4) {
       fprintf(stderr, "ERROR: Can only handle up to 4D variables\n");
