@@ -1,6 +1,7 @@
 
 #include <globals.hxx>
 #include <boutexception.hxx>
+#include <strings.h>
 
 #include "laplacefactory.hxx"
 

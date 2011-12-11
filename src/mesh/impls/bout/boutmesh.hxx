@@ -4,8 +4,7 @@
 
 #include "mpi.h"
 
-#include "mesh.hxx"
-#include "field3d.hxx"
+#include <mesh.hxx>
 
 #include <list>
 #include <vector>
@@ -45,6 +44,8 @@ class BoutMesh : public Mesh {
   int sendXIn(BoutReal *buffer, int size, int tag);
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
+  
+  MPI_Comm getXcomm() const {return comm_x; }
   
   /////////////////////////////////////////////
   // Y-Z communications
@@ -150,6 +151,11 @@ class BoutMesh : public Mesh {
   void clear_handles();
   list<CommHandle*> comm_list; // List of allocated communication handles
 
+  //////////////////////////////////////////////////
+  // X communicator
+  
+  MPI_Comm comm_x;
+  
   //////////////////////////////////////////////////
   // Surface communications
   

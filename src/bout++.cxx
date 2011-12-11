@@ -54,7 +54,6 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 #include <utils.hxx>
 #include <invert_laplace.hxx>
 #include <interpolation.hxx>
-#include <boutmesh.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 
@@ -258,13 +257,13 @@ int bout_init(int argc, char **argv) {
     /// Setup derivative methods
     if (derivs_init()) {
       output.write("Failed to initialise derivative methods. Aborting\n");
-      return(1);
+      return 1;
     }
 
     ////////////////////////////////////////////
 
     /// Create the mesh
-    mesh = new BoutMesh();
+    mesh = Mesh::create();
 
     output.write("Setting grid format\n");
 

@@ -30,7 +30,7 @@
  *
  **************************************************************************/
 
-#include <boutmesh.hxx>
+#include "boutmesh.hxx"
 
 #include <globals.hxx>
 #include <utils.hxx>
@@ -368,22 +368,48 @@ int BoutMesh::load() {
     if(!finite(Bxy))
       throw new BoutException("\tERROR: Bxy not finite everywhere!\n");
   }
-  
+
   //////////////////////////////////////////////////////
-  /// Communicators for Y gather/scatter
-  
-  //MPI_Comm comm_inner, comm_middle, comm_outer;
+  /// Communicator
   
   MPI_Group group_world;
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
   
+  //////////////////////////////////////////////////////
+  /// Communicator in X
+  
   MPI_Group group;
-  MPI_Group group_tmp1, group_tmp2;
+  MPI_Comm comm_tmp;
   
   int proc[3]; // Processor range
-  proc[2] = NXPE; // Stride in processor rank
   
-  MPI_Comm comm_tmp;
+  for(int yp = 0; yp < NYPE; yp++) {
+    proc[0] = PROC_NUM(0, yp);      // First 
+    proc[1] = PROC_NUM(NXPE-1, yp); // Last
+    proc[2] = 1;                         // stride
+    
+    MPI_Group_range_incl(group_world, 1, &proc, &group);
+    MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+    MPI_Group_free(&group);
+    
+    if(yp == PE_YIND) {
+      // Should be in this group
+      if(comm_tmp == MPI_COMM_NULL)
+        throw BoutException("X communicator null");
+      
+      comm_x = comm_tmp;
+    }else {
+      if(comm_tmp != MPI_COMM_NULL)
+        throw BoutException("X communicator should be null");
+    }
+  }
+  
+  //////////////////////////////////////////////////////
+  /// Communicators for Y gather/scatter
+  
+  MPI_Group group_tmp1, group_tmp2;
+  
+  proc[2] = NXPE; // Stride in processor rank
 
   // Outer SOL regions
   if(jyseps1_2 == jyseps2_1) {

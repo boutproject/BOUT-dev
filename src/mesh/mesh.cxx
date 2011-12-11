@@ -6,7 +6,13 @@
 
 #include <cmath>
 
+#include "meshfactory.hxx"
+
 BoutReal Mesh::wtime_comms = 0.0;
+
+Mesh* Mesh::create(Options *opt) {
+  return MeshFactory::getInstance()->createMesh(opt);
+}
 
 /**************************************************************************
  * Default functions for getting scalars

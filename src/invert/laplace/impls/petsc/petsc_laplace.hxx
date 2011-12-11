@@ -4,8 +4,21 @@ class LaplacePetsc;
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
+#ifndef BOUT_HAS_PETSC_DEV
+
+#include <boutexception.hxx>
+
+class LaplacePetsc : public Laplacian {
+public:
+  LaplacePetsc(Options *opt = NULL) { throw BoutException("No PETSc solver available"); }
+};
+
+#else
+
 #include <invert_laplace.hxx>
 #include <options.hxx>
+
+#include <petscvec.h>
 
 class LaplacePetsc : public Laplacian {
 public:
@@ -26,7 +39,9 @@ public:
 private:
   Field3D A, C, D;
   
+  Vec x, b;
 };
 
-#endif __PETSC_LAPLACE_H__
+#endif //BOUT_HAS_PETSC_DEV
 
+#endif //__PETSC_LAPLACE_H__

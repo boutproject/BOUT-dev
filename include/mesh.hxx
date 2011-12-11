@@ -38,11 +38,14 @@ class SurfaceIter;
 #ifndef __MESH_H__
 #define __MESH_H__
 
+#include "mpi.h"
+
 #include "field_data.hxx"
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "datafile.hxx"
+#include "options.hxx"
 
 #include "grid.hxx"  // For griddatasource 
 
@@ -107,6 +110,9 @@ class RangeIter {
 class Mesh {
  public:
   virtual ~Mesh() { };
+
+  static Mesh* create(Options *opt = NULL); ///< Create a Mesh object
+
   /// Add a data source
   int addSource(GridDataSource &source);
   int addSource(GridDataSource *source);
@@ -150,6 +156,8 @@ class Mesh {
   virtual int sendXIn(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
+
+  virtual MPI_Comm getXcomm() const = 0; // Return X communicator
 
   int communicate(FieldPerp &f); // Communicate an X-Z field
 
