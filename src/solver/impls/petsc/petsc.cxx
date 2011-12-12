@@ -310,7 +310,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
     if (J_slowfd) { // create Jacobian matrix by slow fd
       MatStructure flg;
 
-      ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr); //cannot set TSSetRHSJacobian(ts,Jmf,J,...)?
+      ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);
 
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
@@ -475,7 +475,7 @@ int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOU
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
   ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
-  ierr = TSSetRHSJacobian(ts,J,J,TSDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
   ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
