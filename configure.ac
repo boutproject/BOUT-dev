@@ -759,8 +759,9 @@ then
     # try some known paths
     AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
     AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
+    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
     AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    )))
+    ))))
     
     if test "$HYPREPATH" = ""
     then
@@ -809,8 +810,9 @@ then
     # try some known paths
     AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
     AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
+    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
     AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    )))
+    ))))
     
     if test "$HYPREPATH" = ""
     then
