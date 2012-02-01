@@ -91,10 +91,11 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
        ((ncx-ix < xbndry) && (flags & INVERT_OUT_SET))) {
       // Use the values in x0 in the boundary
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
+      
     }else
       ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
   }
-  
+
   for(int iz=0;iz<=ncz/2;iz++) {
     // solve differential equation in x
 
@@ -104,7 +105,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       
     for(int ix=0;ix<=ncx;ix++)
       bk1d[ix] = bk[ix][iz] * flt;
-
+    
     ///////// PERFORM INVERSION /////////
       
     for(int ix=xbndry;ix<=ncx-xbndry;ix++) {
@@ -116,11 +117,11 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(!mesh->periodicX) {
       // Need boundary conditions
       /// By default, set RHS to zero, unless INVERT_*_RHS set
-      if(!(flags & INVERT_IN_RHS)) {
+      if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
         for(int ix=0;ix<xbndry;ix++)
           bk1d[ix] = 0.;
       }
-      if(!(flags & INVERT_OUT_RHS)) {
+      if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
         for(int ix=mesh->ngx-xbndry;ix<mesh->ngx;ix++)
           bk1d[ix] = 0.;
       }
@@ -363,10 +364,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
           }
         }
       }
-        
+      
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
-
+      
       if((flags & INVERT_IN_SYM) && (xbndry > 1)) {
         // (Anti-)symmetry on inner boundary. Nothing to do if only one boundary cell
         int xloc = 2*xbndry;
@@ -426,7 +427,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       xk[ix][iz]=xk1d[ix];
     }
   }
-  
+
   // Done inversion, transform back
   
   for(int ix=0; ix<=ncx; ix++){

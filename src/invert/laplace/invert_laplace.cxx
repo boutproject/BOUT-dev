@@ -422,12 +422,35 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   
   lap->setFlags(flags);
   
-  x = lap->solve(b);
+  x = lap->solve(b, x);
   
   wtime_invert += MPI_Wtime() - t;
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
-  Field3D x;
-  invert_laplace(b, x, flags, a, c, d);
+  BoutReal t = MPI_Wtime();
+  
+  Laplacian *lap = Laplacian::defaultInstance();
+  
+  if(a != NULL) {
+    lap->setCoefA(*a);
+  }else
+    lap->setCoefA(0.0);
+  
+  if(c != NULL) {
+    lap->setCoefC(*c);
+  }else
+    lap->setCoefC(1.0);
+  
+  if(d != NULL) {
+    lap->setCoefD(*a);
+  }else
+    lap->setCoefD(1.0);
+  
+  lap->setFlags(flags);
+  
+  Field3D x = lap->solve(b);
+  
+  wtime_invert += MPI_Wtime() - t;
+  
   return x;
 }
