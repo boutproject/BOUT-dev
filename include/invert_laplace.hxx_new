@@ -27,6 +27,8 @@
  *
  **************************************************************************/
 
+class Laplacian;
+
 #ifndef __LAPLACE_H__
 #define __LAPLACE_H__
 
@@ -39,6 +41,7 @@
 #include "field2d.hxx"
 
 #include "dcomplex.hxx"
+#include "options.hxx"
 
 // Inversion flags
 
@@ -62,7 +65,63 @@ const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
 const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
 const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
 
-int invert_init();
+/// Base class for Laplacian inversion
+class Laplacian {
+public:
+  Laplacian(Options *options = NULL);
+  
+  /// Set coefficients for inversion. Re-builds matrices if necessary
+  virtual void setCoefA(const Field2D &val) = 0;
+  virtual void setCoefA(const Field3D &val) { setCoefA(val.DC()); }
+  virtual void setCoefA(const BoutReal &r) { Field2D f(r); setCoefA(f); }
+  
+  virtual void setCoefC(const Field2D &val) = 0;
+  virtual void setCoefC(const Field3D &val) { setCoefC(val.DC()); }
+  virtual void setCoefC(const BoutReal &r) { Field2D f(r); setCoefC(f); }
+  
+  virtual void setCoefD(const Field2D &val) = 0;
+  virtual void setCoefD(const Field3D &val) { setCoefD(val.DC()); }
+  virtual void setCoefD(const BoutReal &r) { Field2D f(r); setCoefD(f); }
+  
+  virtual void setFlags(int f) {flags = f;}
+  
+  virtual const FieldPerp solve(const FieldPerp &b) = 0;
+  virtual const Field3D solve(const Field3D &b);
+  virtual const Field2D solve(const Field2D &b);
+  
+  virtual const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) { return solve(b); }
+  virtual const Field3D solve(const Field3D &b, const Field3D &x0);
+  virtual const Field2D solve(const Field2D &b, const Field2D &x0);
+
+  /// Coefficients in tridiagonal inversion
+  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+  
+  static Laplacian* create(Options *opt = NULL);  ///< Create a new Laplacian solver
+  static Laplacian* defaultInstance(); ///< Return pointer to global singleton
+  
+protected:
+  bool async_send; ///< If true, use asyncronous send in parallel algorithms
+  
+  int maxmode;     ///< The maximum Z mode to solve for
+  
+  bool low_mem;    ///< If true, reduce the amount of memory used
+  bool all_terms;  // applies to Delp2 operator and laplacian inversion
+  bool nonuniform; // Non-uniform mesh correction
+  
+  int flags;       ///< Default flags
+
+  void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
+                    dcomplex **bk, int jy, int flags, 
+                    const Field2D *a = NULL, const Field2D *ccoef=NULL, 
+                    const Field2D *d = NULL);
+private:
+  /// Singleton instance
+  static Laplacian *instance;
+};
+
+////////////////////////////////////////////
+// Legacy interface
+// These will be removed at some point
 
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
 
@@ -72,6 +131,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 /// More readable API for calling Laplacian inversion. Returns x
 const Field3D invert_laplace(const Field3D &b, int flags, 
                              const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
+
 
 #endif // __LAPLACE_H__
 

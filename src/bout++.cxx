@@ -306,6 +306,9 @@ int bout_init(int argc, char **argv) {
 
     mesh->outputVars(dump);
 
+    // Initialise Laplacian inversion
+    invert_init();
+
     output.write("Initialising physics module\n");
     /// Initialise physics module
 #ifdef CHECK
