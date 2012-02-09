@@ -35,6 +35,8 @@ int physics_init(bool restarting) {
   
   output << "\nFinished running test. Triggering error to quit\n\n";
   
+  MPI_Barrier(BoutComm::get()); // Wait for all processors to write data
+  
   return 1;
 }
 
