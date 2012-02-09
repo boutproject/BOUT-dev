@@ -1,12 +1,24 @@
 # File I/O class
-# A wrapper around the NetCDF4 library, used by
-# BOUT++ routines. This allows easily changing
-# methods later.
+# A wrapper around various NetCDF libraries, used by
+# BOUT++ routines. Creates a consistent interface
+# across machines
 #
 # NOTE: NetCDF includes unlimited dimensions,
 # but this library is just for very simple
 # I/O operations. Educated guesses are made
 # for the dimensions.
+#
+# Supported libraries:
+# -------------------
+#
+# netCDF4
+#
+# Scientific.IO.NetCDF
+#
+# scipy.io.netcdf
+#   old version (create_dimension, create_variable)
+#   new version (createDimension, createVariable)
+#
 
 try:
     import numpy as np
@@ -28,9 +40,13 @@ except ImportError:
         library = "Scientific"
         #print "  => Using Scientific.IO.NetCDF instead"
     except ImportError:
-        print "DataFile: Neither netCDF4 nor Scientific.IO.NetCDF modules available"
-        raise
-
+        try:
+            from scipy.io.netcdf import netcdf_file as Dataset
+            library = "scipy"
+            # print "Using scipy.io.netcdf library"
+        except:
+            print "DataFile: No supported NetCDF modules available"
+            raise
 import time
 
 def getUserName():
@@ -56,6 +72,8 @@ class DataFile:
                 self.handle = Dataset(filename, "w", 
                                       'Created ' + time.ctime(time.time())
                                       + ' by ' + getUserName())
+            elif library == "scipy":
+                self.handle = Dataset(filename, "w")
             else:
                 self.handle = Dataset(filename, "w", format=format)
         else:
@@ -196,7 +214,7 @@ class DataFile:
             if var.shape != s:
                 print "Datafile: Variable already exists with different size: "+ name
                 raise
-        except KeyError:
+        except:
             # Not found, so add.
 
             # Get dimensions
@@ -233,14 +251,22 @@ class DataFile:
                         except KeyError:
                             # Not found. Create
                             print "Defining dimension "+ dn + " of size %d" % size
-                            self.handle.createDimension(dn, size)
+                            try:
+                                self.handle.createDimension(dn, size)
+                            except AttributeError:
+                                # Try the old-style function
+                                self.handle.create_dimension(dn, size)
                             return dn
                         i = i + 1
                     
                 except KeyError:
                     # Doesn't exist, so add
                     print "Defining dimension "+ name + " of size %d" % size
-                    self.handle.createDimension(name, size)
+                    try:
+                        self.handle.createDimension(name, size)
+                    except AttributeError:
+                        self.handle.create_dimension(name, size)
+                    
                 return name
                 
             # List of (size, 'name') tuples
@@ -255,9 +281,20 @@ class DataFile:
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)
+                    
+            elif library == "scipy":
+                try:
+                    # New style functions
+                    var = self.handle.createVariable(name, t, dims)
+                except AttributeError:
+                    # Old style functions
+                    var = self.handle.create_variable(name, t, dims)
             else:
                 var = self.handle.createVariable(name, t, dims)
 
+            if var == None:
+                raise Exception("Couldn't create variable")
+            
         # Write the data
         var.assignValue(data)
         
