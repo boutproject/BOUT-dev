@@ -77,6 +77,8 @@ const Field3D Div_par_CtoL(const Field2D &var);
 const Field3D Div_par_CtoL(const Field3D &var);
 
 // Parallel divergence of diffusive flux, K*Grad_par
+const Field2D Div_par_K_Grad_par(BoutReal kY, Field2D &f);
+const Field3D Div_par_K_Grad_par(BoutReal kY, Field3D &f);
 const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f);
 const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f);
 const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f);

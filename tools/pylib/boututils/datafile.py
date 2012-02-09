@@ -251,7 +251,6 @@ class DataFile:
             # Create the variable
             if library == "Scientific":
                 if t == 'int':
-                    print "Integer"
                     tc = Int
                 else:
                     tc = Float
@@ -260,7 +259,6 @@ class DataFile:
                 var = self.handle.createVariable(name, t, dims)
 
         # Write the data
-        var[:] = data
-        #var = data
+        var.assignValue(data)
         
             

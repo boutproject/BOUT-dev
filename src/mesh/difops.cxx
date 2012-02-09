@@ -457,6 +457,14 @@ const Field3D Grad2_par2(const Field3D &f)
  * Parallel divergence of diffusive flux, K*Grad_par
  *******************************************************************************/
 
+const Field2D Div_par_K_Grad_par(BoutReal kY, Field2D &f) {
+  return kY*Grad2_par2(f);
+}
+
+const Field3D Div_par_K_Grad_par(BoutReal kY, Field3D &f) {
+  return kY*Grad2_par2(f);
+}
+
 const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f)
 {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
