@@ -78,24 +78,43 @@ class FieldGroup {
 
 typedef void* comm_handle;
 
-/// Iterates over Y-Z surfaces, distributing work between processors
+/// Iterates over Y-Z surfaces, optionally distributing work between processors
 class SurfaceIter {
  public:
   int xpos; // X position
-  virtual int ysize() = 0; // Return the size of the current surface
-                           // NB: Could be zero if this PE has nothing to do
+  virtual int ySize() = 0; // Return the size of the current surface
+  
+  virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
+  virtual bool closed() { BoutReal tmp; return closed(tmp); }
+  
+  virtual MPI_Comm communicator() = 0; // Communicator for this surface
+  
+  virtual int yGlobal(int yloc) = 0; // Return global y index of given local index
+
+  virtual void first() = 0;
+  virtual void next() = 0;
+  virtual bool isDone() = 0;
+};
+
+/// Iterates over Y-Z surfaces, distributing work between processors
+class DistribSurfaceIter {
+public:
+  int xpos; // X position
+  virtual int ySize() = 0; // Return the size of the current surface
   virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
   
   virtual void first() = 0;
   virtual void next() = 0;
   virtual bool isDone() = 0;
   
-  virtual int gather(const Field2D &f, BoutReal *data) = 0;
+  virtual int gather(const Field2D &f, BoutReal *data) = 0; // Return zero if no work to do
   virtual int gather(const Field3D &f, BoutReal *data) = 0;
   virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
   
   virtual int scatter(BoutReal *data, Field2D &f) = 0;
   virtual int scatter(BoutReal *data, Field3D &f) = 0;
+  virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
+private:
 };
 
 class RangeIter {
@@ -161,8 +180,9 @@ class Mesh {
 
   int communicate(FieldPerp &f); // Communicate an X-Z field
 
-  // Y-Z surface gather/scatter operations
+  // Y-Z surface iteration and gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
+  virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle

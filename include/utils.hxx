@@ -28,9 +28,13 @@
 
 #include "bout_types.hxx"
 #include "dcomplex.hxx"
+#include "boutexception.hxx"
 
 #include <string>
 #include <list>
+#include <cmath>
+
+using std::abs;
 
 BoutReal *rvector(int size);
 BoutReal *rvresize(BoutReal *v, int newsize);
@@ -38,13 +42,23 @@ int *ivector(int size);
 int *ivresize(int *v, int newsize);
 BoutReal **rmatrix(int xsize, int ysize);
 int **imatrix(int xsize, int ysize);
+
+template <class T>
+T **matrix(int xsize, int ysize);
+
 void free_rmatrix(BoutReal **m);
 void free_imatrix(int **m);
+
+template <class T>
+void free_matrix(T **m);
+
 BoutReal ***r3tensor(int nrow, int ncol, int ndep);
 void free_r3tensor(BoutReal ***m);
 
 dcomplex **cmatrix(int nrow, int ncol);
 void free_cmatrix(dcomplex** cm);
+
+BoutReal randomu(); // Get Random number between 0 and 1
 
 BoutReal SQ(BoutReal x);
 int ROUND(BoutReal x);

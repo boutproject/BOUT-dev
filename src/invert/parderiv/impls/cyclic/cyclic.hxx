@@ -1,11 +1,19 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * Intended for use in preconditioner for reduced MHD
  * 
  * Inverts a matrix of the form 
  *
  * A + B * Grad2_par2
  * 
+ * Parallel algorithm, using Cyclic Reduction
+ *
+ * Author: Ben Dudson, University of York, Oct 2011
+ * 
+ * Known issues:
+ * ------------
+ *
+ * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -28,41 +36,30 @@
  *
  ************************************************************************/
 
-#ifndef __INV_PAR_H__
-#define __INV_PAR_H__
+#ifndef __INV_PAR_CR_H__
+#define __INV_PAR_CR_H__
 
-#include "field3d.hxx"
-#include "field2d.hxx"
+#include "invert_parderiv.hxx"
+#include "dcomplex.hxx"
 
-// Parderiv implementations
-#define PARDERIVSERIAL "serial"
-#define PARDERIVCYCLIC "cyclic"
-
-/// Base class for parallel inversion solvers
-class InvertPar {
+class InvertParCR : public InvertPar {
 public:
-  InvertPar() {}
-  virtual ~InvertPar() {}
+  InvertParCR();
+  ~InvertParCR();
+  const Field3D solve(const Field3D &f);
   
-  static InvertPar* Create();
-  
-  virtual const Field2D solve(const Field2D &f); ///< Warning: Default implementation very inefficient
-  virtual const Field3D solve(const Field3D &f) = 0;  ///< This method must be implemented
-  
-  virtual const Field3D solve(const Field2D &f, const Field2D &start) {return solve(f);}
-  virtual const Field3D solve(const Field3D &f, const Field3D &start) {return solve(f);}
-  
-  virtual void setCoefA(const Field2D &f) = 0;
-  virtual void setCoefA(const Field3D &f) {setCoefA(f.DC());}
-  virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
-  
-  virtual void setCoefB(const Field2D &f) = 0;
-  virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
-  virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
-  
+  void setCoefA(const Field2D &f) {A = f;}
+  void setCoefB(const Field2D &f) {B = f;}
 private:
+  Field2D A, B;
+  
+  int nsys;
+  
+  dcomplex **rhs;
+  dcomplex **rhsk;
+  dcomplex **xk;
+  dcomplex **a, **b, **c; // Matrix coefficients
 };
 
 
-#endif // __INV_PAR_H__
-
+#endif // __INV_PAR_CR_H__
