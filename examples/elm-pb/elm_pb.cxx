@@ -5,17 +5,28 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include <bout.hxx>
-#include <boutmain.hxx>
-#include <initialprofiles.hxx>
-#include <invert_laplace.hxx>
-#include <invert_parderiv.hxx>
-#include <interpolation.hxx>
-#include <derivs.hxx>
+#include "bout.hxx"
+#include "initialprofiles.hxx"
+#include "invert_laplace.hxx"
+#include "interpolation.hxx"
+#include "derivs.hxx"
 #include <math.h>
+#include "sourcex.hxx"
+#include <boutmain.hxx>
+
+
+
+
+//xia:       rf waves
+BoutReal Prf; // power of rf waves 
+Field2D Frf, Prf_h; // force of rf waves and the normalized power
+BoutReal n_par; // parallel refractive index of rf
+BoutReal rf_width_x,rf_width_y,rf_x,rf_y; // the width and the center coordinate of Gaussian rf waves 
+
+
 
 // 2D inital profiles
-Field2D J0, P0; // Current and pressure
+Field2D  J0, P0; // Current and pressure
 Vector2D b0xcv; // Curvature term
 Field2D beta, gradparB;   // Used for Vpar terms
 Field2D phi0;   // When diamagnetic terms used
@@ -45,9 +56,13 @@ BoutReal dnorm; // For diamagnetic terms: 1 / (2. * wci * Tbar)
 BoutReal dia_fact; // Multiply diamagnetic term by this
 BoutReal delta_i; // Normalized ion skin depth
 
-BoutReal diffusion_p4;   //M: 4th Parallel pressure diffusion
-
 BoutReal diffusion_par;  // Parallel pressure diffusion
+BoutReal diffusion_Vpar;  //xia: Parallel velocitye diffusion
+BoutReal diffusion_psiP;  //xia: Parallel magnetic flux diffusion
+BoutReal diffusion_p4;   //M: 4th Parallel pressure diffusion
+BoutReal diffusion_v4;   //M: 4th Parallel velocitye diffusion
+BoutReal diffusion_U4;  //xia: 4th order Parall vorticity diffusion
+
 BoutReal heating_P;  // heating power in pressure
 BoutReal hp_width;  // heating profile radial width in pressure
 BoutReal hp_length;  // heating radial domain in pressure
@@ -112,6 +127,11 @@ bool parallel_lr_diff; // Use left and right shifted stencils for parallel diffe
 bool parallel_lagrange; // Use (semi-) Lagrangian method for parallel derivatives
 bool parallel_project;  // Use Apar to project field-lines
 
+
+
+//********************
+
+
 Field3D Xip_x, Xip_z;     // Displacement of y+1 (in cell index space)
 
 Field3D Xim_x, Xim_z;     // Displacement of y-1 (in cell index space)
@@ -155,7 +175,6 @@ const BoutReal Mi = 2.0*1.6726e-27; // Ion mass
 // Communication objects
 FieldGroup comms;
 
-int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
 int jacobian(BoutReal t); // Jacobian-vector multiply
 
 int precon_phi(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner with phi constraint
@@ -163,6 +182,9 @@ int precon_phi(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner with 
 void advect_tracer(const Field3D &p,  // phi (input)
 		   const Field3D &delta_x, const Field3D &delta_z, // Current location (input) 
 		   Field3D &F_dx, Field3D &F_dz); // Time-derivative of location
+
+const Field2D rfpower_exp(BoutReal rf_width_x, BoutReal rf_width_y, BoutReal rf_x,  BoutReal rf_y);
+//xia: inital normalized profile of rf power with Gaussian form
 
 const Field3D Grad2_par2new(const Field3D &f); //for 4th order diffusion
 
@@ -191,6 +213,44 @@ const Field3D Grad2_par2new(const Field3D &f)
 #endif
   return result;
 }
+
+const Field2D rfpower_exp(BoutReal rf_width_x, BoutReal rf_width_y, BoutReal rf_x,  BoutReal rf_y)
+{
+  Field2D result;
+  result.allocate();
+
+  if(rf_y < 0.0 ){
+    for(int jx=0;jx<mesh->ngx;++jx)
+      for(int jy=0;jy<mesh->ngy;++jy)
+	//      for(int jz=0;jz<mesh->ngz;jz++)
+	{
+	  BoutReal lx = mesh->GlobalX(jx) - rf_x;
+	  //BoutReal ly = mesh->GlobalX(jy) - rf_y;
+	  //	BoutReal lz = mesh->GlobalX(jz) - rf_z;
+	  //	BoutReal dampl = exp(-(lx*lx+ly*ly)/(rf_width*rf_width));
+	  BoutReal dampl = exp(-(lx*lx)/(rf_width_x*rf_width_x));
+	  result[jx][jy] = dampl/(sqrt(PI)*rf_width_x*rf_x+rf_width_x*rf_width_x*(1.0-1.0/2.71828)/2.0);
+	}
+  }
+  else {
+    for(int jx=0;jx<mesh->ngx;++jx)
+      for(int jy=0;jy<mesh->ngy;++jy)
+	//      for(int jz=0;jz<mesh->ngz;jz++)
+	{
+	  BoutReal lx = mesh->GlobalX(jx) - rf_x;
+	  BoutReal ly = mesh->GlobalY(jy) - rf_y;
+	  //	BoutReal lz = mesh->GlobalX(jz) - rf_z;
+	  BoutReal dampl = exp(-(lx*lx)/(rf_width_x*rf_width_x)-(ly*ly)/(rf_width_y*rf_width_y));
+	  //BoutReal dampl = exp(-(lx*lx)/(rf_width*rf_width));
+	  result[jx][jy] = dampl/(PI*rf_width_x*rf_width_x*rf_x+sqrt(PI)*rf_width_x*rf_width_x*rf_width_y*(1.0-1.0/2.71828)/2.0);
+	}
+  }
+
+  mesh->communicate(result);
+
+  return result;
+}
+
 
 int physics_init(bool restarting)
 {
@@ -237,8 +297,19 @@ int physics_init(bool restarting)
   // Prints out what values are assigned
   /////////////////////////////////////////////////////////////
 
+  //  options.setSection("highbeta");    // The section header for all these settings
+
   Options *globalOptions = Options::getRoot();
   Options *options = globalOptions->getSection("highbeta");
+
+  // xia: rf waves input
+  OPTION(options, Prf,               0);      // Input rf power
+  OPTION(options, n_par,             0);      // the parallel refractive index
+  OPTION(options, rf_width_x,           0.1);    // the width of rf waves of x
+  OPTION(options, rf_width_y,           0.1);    // the width of rf waves of y
+  OPTION(options, rf_x,              0.8);   // The center of rf injection
+  OPTION(options, rf_y,              -1.);
+
 
   OPTION(options, density,           1.0e19); // Number density [m^-3]
 
@@ -320,7 +391,12 @@ int physics_init(bool restarting)
   
   // parallel pressure diffusion
   OPTION(options, diffusion_par,        -1.0);  // Parallel pressure diffusion
+  OPTION(options, diffusion_Vpar,        -1.0);  //xia: Parallel velocity diffusion
+  OPTION(options, diffusion_psiP,        -1.0);  //xia: Parallel magnetic flux diffusion
   OPTION(options, diffusion_p4,        -1.0);  // M: 4th Parallel pressure diffusion
+  OPTION(options, diffusion_v4,        -1.0);  //M: 4th Parallel velocity diffusion
+  OPTION(options, diffusion_U4,        -1.0);  //M: 4th Parallel vorticity diffusion
+
 
   // heating factor in pressure
   OPTION(options, heating_P,        -1.0);  //  heating power in pressure
@@ -370,7 +446,8 @@ int physics_init(bool restarting)
 	OPTION(options, rmp_polpeak, 0.5);
 	// Divide n by the size of the domain
         int zperiod;
-        globalOptions->get("zperiod", zperiod, 1);
+	//     options->get(NULL, "zperiod", zperiod, 1);
+	options->get("zperiod", zperiod, 1);
 	if((rmp_n % zperiod) != 0)
 	  output.write("     ***WARNING: rmp_n (%d) not a multiple of zperiod (%d)\n", rmp_n, zperiod);
 
@@ -507,6 +584,31 @@ int physics_init(bool restarting)
     dump.add(diffusion_p4, "diffusion_p4", 1);
   }
 
+  // xia: add the parallel velocity
+  if(diffusion_Vpar > 0.0) {
+    output.write("    diffusion_Vpar: %e\n", diffusion_Vpar);
+    dump.add(diffusion_Vpar, "diffusion_Vpar", 1);
+  }
+
+  // M: 4th order parallel velocity diffusion
+  if(diffusion_v4 > 0.0) {
+    output.write("    diffusion_v4: %e\n", diffusion_v4);
+    dump.add(diffusion_v4, "diffusion_v4", 1);
+  }
+
+  // xia: 4th order vorticity diffusion
+  if(diffusion_U4 > 0.0) {
+    output.write("    diffusion_U4: %e\n", diffusion_U4);
+    dump.add(diffusion_v4, "diffusion_U4", 1);
+  }
+
+
+  // xia: add the magnetic flux diffusion
+  if(diffusion_psiP > 0.0) {
+    output.write("    diffusion_psiP: %e\n", diffusion_psiP);
+    dump.add(diffusion_psiP, "diffusion_psiP", 1);
+  }
+
   if(heating_P > 0.0) {
     output.write("    heating_P(watts): %e\n", heating_P);
     dump.add(heating_P, "heating_P", 1);
@@ -528,6 +630,35 @@ int physics_init(bool restarting)
     output.write("    sp_length(%): %e\n",sp_length);
     dump.add(sp_length, "sp_length", 1);
   }
+
+  //xia:  rf initial
+  if(Prf>0.0)
+    {
+      output.write("    rf_power(Watts): %e\n ", Prf);
+      dump.add(Prf, "Pinput", 1);
+
+      output.write("    n_parallel: %e\n ", n_par);
+      dump.add(n_par, "n_par", 1);
+
+      output.write("    rf_width_x(%): %e\n ", rf_width_x);
+      dump.add(rf_width_x, "rf_width_x", 1);
+
+      output.write("    rf_width_y(%): %e\n ", rf_width_y);
+      dump.add(rf_width_y, "rf_width_y", 1);
+
+      output.write("    rf_x(%): %e\n ", rf_x);
+      dump.add(rf_x, "rf_x", 1);
+
+      output.write("    rf_y(%): %e\n ", rf_y);
+      dump.add(rf_y, "rf_y", 1);
+
+      Prf_h = Prf*rfpower_exp(rf_width_x, rf_width_y, rf_x, rf_y)* 2.*MU0*Tbar/(Bbar*Bbar);
+      dump.add(Prf_h, "Prf", 1);
+      Frf = Lbar/Tbar *2.*Prf_h *n_par/Va;
+      dump.add(Frf, "Frf", 1);
+
+    }
+
 
   Field2D Te;
   Te = P0 / (2.0*density * 1.602e-19); // Temperature in eV
@@ -719,9 +850,6 @@ int physics_init(bool restarting)
     // Phi solved in RHS (explicitly)
     dump.add(phi, "phi", 1);
 
-    // Set preconditioner
-    solver->setPrecon(precon);
-
     // Set Jacobian
     solver->setJacobian(jacobian);
   }
@@ -775,6 +903,12 @@ int physics_init(bool restarting)
 
   return 0;
 }
+
+
+/*const Field3D Div_par_CtoL(const Field3D &var)
+{
+  return mesh->Bxy * Grad_par_CtoL(var / mesh->Bxy);
+  }*/
 
 // Parallel gradient along perturbed field-line
 const Field3D Grad_parP(const Field3D &f, CELL_LOC loc = CELL_DEFAULT)
@@ -1028,7 +1162,7 @@ int physics_run(BoutReal t)
                                  +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
     }
     if(diamag && diamag_phi0)
-      ddt(Psi) -= b0xGrad_dot_Grad(phi0, Psi);   // Equilibrium flow
+      ddt(Psi) -= b0xGrad_dot_Grad(B0*phi0, Psi)/B0;   // Equilibrium flow
 
     if(Vt0!=0 || Vp0!=0)
       ddt(Psi) += 1.0*V_dot_Grad(V0eff, Psi);
@@ -1051,6 +1185,13 @@ int physics_run(BoutReal t)
       ddt(Psi) -= eta*ehyperviscos * Delp2(Jpar2);
     }
 
+    //xia: adding hyper diffusion of psi
+    if(diffusion_psiP > 0.0) {
+      ddt(Psi) -= diffusion_psiP * Grad2_par2new(Grad2_par2new(Psi));
+    }
+
+
+
     // Vacuum solution
     if(relax_j_vac) {
       // Calculate the J and Psi profile we're aiming for
@@ -1062,6 +1203,12 @@ int physics_run(BoutReal t)
       // Add a relaxation term in the vacuum
       ddt(Psi) = ddt(Psi)*(1. - vac_mask) - (Psi - Psitarget)*vac_mask / relax_j_tconst;
     }
+
+    //xia: rf-force
+    if(Prf>0.0)
+      {
+	ddt(Psi) -= Bbar*Tbar/(2.*1836*MU0*B0*Lbar*Lbar)*Frf;
+      }
   }
 
   if(parallel_lagrange) {
@@ -1115,6 +1262,10 @@ int physics_run(BoutReal t)
   if(viscos_par > 0.0)
     ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
   
+    //xia: 4th order diffusion of velocity
+  if(diffusion_U4 > 0.0)
+    ddt(U) -= diffusion_U4 * Grad2_par2new(Grad2_par2new(U));
+
   if(viscos_perp > 0.0)
     ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
 
@@ -1164,15 +1315,24 @@ int physics_run(BoutReal t)
   if(diffusion_par > 0.0)
     ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
 
+  //another choice
+  //  if(diffusion_par > 0.0)
+  //  ddt(P) += diffusion_par * Grad2_par2new(P)
+
   //M: 4th order Parallel diffusion terms 
   if(diffusion_p4 > 0.0)
     ddt(P) -= diffusion_p4 * Grad2_par2new(Grad2_par2new(P));
 
+  // xia: rf power
+  if(Prf>0.0)
+    ddt(P) += 2./3.*Prf_h; 
+
   // heating source terms 
-  if(heating_P > 0.0){
+  if(heating_P > 1.0){
     BoutReal pnorm = P0[0][0];
+    //    ddt(P) += 2./3.*Prf_h;  // xia:  rf waves 
     ddt(P) += heating_P*source_expx2(P0,2.*hp_width,0.5*hp_length)*(Tbar/pnorm); // heat source
-    ddt(P) += (100.*source_tanhx(P0,hp_width,hp_length)+0.01) * mesh->g11 * D2DX2(P) * (Tbar/Lbar/Lbar) ;     // radial diffusion
+    //ddt(P) += (100.*source_tanhx(P0,hp_width,hp_length)+0.01) * mesh->g11 * D2DX2(P) * (Tbar/Lbar/Lbar) ;     // radial diffusion
   }
 
   // sink terms 
@@ -1185,8 +1345,8 @@ int physics_run(BoutReal t)
   
   if(compress0) {
     
-    //ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
-    ddt(P) -= beta*Div_par_CtoL(Vpar);
+    ddt(P) += beta*( - Grad_parP(Vpar, CELL_CENTRE) + Vpar*gradparB );
+    //    ddt(P) -= beta*Div_par_CtoL(Vpar);
     
     if(phi_curv) {
       ddt(P) -= 2.*beta*b0xcv*Grad(phi);
@@ -1194,11 +1354,42 @@ int physics_run(BoutReal t)
 
     // Vpar equation
 
-    //ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
-    ddt(Vpar) = -0.5*Grad_par_LtoC(P + P0);
+    ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_CENTRE);
+    //    ddt(Vpar) = -0.5*Grad_parP(P + P0, CELL_YLOW);
+    //    ddt(Vpar) = -0.5*Grad_par_LtoC(P + P0);
 
     if(nonlinear)
       ddt(Vpar) -= b0xGrad_dot_Grad(phi, Vpar); // Advection
+
+    //xia: diffusion of velocity
+    if(diffusion_Vpar > 0.0)
+      ddt(Vpar) += diffusion_Vpar * Grad2_par2(Vpar); // Parallel diffusion
+
+    //another choice
+    //    if(diffusion_Vpar > 0.0)
+    //  ddt(Vpar) += diffusion_Vpar * Grad2_par2new(Vpar);
+
+    //M: 4th order diffusion of velocity
+    if(diffusion_v4 > 0.0)
+      ddt(Vpar) -= diffusion_v4 * Grad2_par2new(Grad2_par2new(Vpar));
+
+    //xqx include vpar convection
+    //#if 0
+    if(nonlinear) {
+      if(evolve_jpar) {
+	ddt(Jpar) -= Vpar_Grad_par(Vpar, Jpar);
+      }//else
+	//	ddt(Psi) -= Vpar_Grad_par(Vpar, Psi);
+
+      ddt(U) -= Vpar_Grad_par(Vpar, U);
+      ddt(P) -= Vpar_Grad_par(Vpar, P+P0);
+      ddt(Vpar) -= Vpar_Grad_par(Vpar, Vpar);
+    }
+    //#endif
+
+    //xia: rf force
+    if(Prf>0.0)
+      ddt(Vpar) += Frf;
   }
   
   if(filter_z) {
@@ -1211,6 +1402,10 @@ int physics_run(BoutReal t)
 
     ddt(U) = filter(ddt(U), filter_z_mode);
     ddt(P) = filter(ddt(P), filter_z_mode);
+
+    if(compress0) {
+      ddt(Vpar) = filter(ddt(Vpar), filter_z_mode);
+    }
   }
 
   if(low_pass_z > 0) {
@@ -1222,6 +1417,10 @@ int physics_run(BoutReal t)
 
     ddt(U) = lowPass(ddt(U), low_pass_z, zonal_flow);
     ddt(P) = lowPass(ddt(P), low_pass_z, zonal_bkgd);
+
+    if(compress0) {
+      ddt(Vpar) = lowPass(ddt(Vpar), low_pass_z, zonal_bkgd);
+    }
   }
 
   if(damp_width > 0) {
@@ -1292,53 +1491,6 @@ const Field3D Pschur(const Field3D &f)
   result.setBoundary("U"); result.applyBoundary();
   
   return result;
-}
-
-int precon(BoutReal t, BoutReal gamma, BoutReal delta)
-{
-  Field3D U1;
-  Field3D P2, Psi2, U2;
-  Field3D P3, Psi3, U3;
-
-  //output.write("precon t = %e, gamma = %e\n", t, gamma);
-
-  mesh->communicate(ddt(P), ddt(Psi), ddt(U));
-
-  // First matrix. Only modifies vorticity
-  
-  U1 = ddt(U) + gamma*(Lp(ddt(P)) + Lpsi(ddt(Psi)));
-  U1.setBoundary("U"); U1.applyBoundary();
-  
-  // Second matrix. If linear, only modify vorticity
-  // NB: This is the key step, inverting Pschur
-  
-  P2 = ddt(P);
-  Psi2 = ddt(Psi);
-
-  U2=U1;
-  U2 = invert_parderiv(1.0, -gamma*gamma*B0*B0, U1);
-  //U2 = U1 + gamma*gamma*Pschur(U1); // Binomial expansion of P^-1
-  
-  // Third matrix
-  
-  Field3D phitmp = invert_laplace(U2, phi_flags, NULL);
-  mesh->communicate(phitmp);
-  
-  P3 = P2 + gamma*b0xGrad_dot_Grad(phitmp, P0);
-  Psi3 = Psi2 + gamma*Grad_par(B0*phitmp) / B0;
-  U3 = U2;
-  
-  // Put result into system state
-  
-  P = P3;
-  Psi = Psi3;
-  U = U3;
-  
-  P.applyBoundary();
-  Psi.applyBoundary();
-  U.applyBoundary();
-  
-  return 0;
 }
 
 /*******************************************************************************
