@@ -53,6 +53,7 @@ class BoutMesh : public Mesh {
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
   const Field2D averageY(const Field2D&);
+  const Field3D averageY(const Field3D &f);
   bool surfaceClosed(int jx);
   bool surfaceClosed(int jx, BoutReal &ts);
 

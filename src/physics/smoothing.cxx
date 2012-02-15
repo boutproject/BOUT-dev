@@ -99,6 +99,10 @@ const Field2D averageY(const Field2D &f) {
   return mesh->averageY(f);
 }
 
+const Field3D averageY(const Field3D &f) {
+  return mesh->averageY(f);
+}
+
 const Field3D smoothXY(const Field3D &f) {
   Field3D result;
   result.allocate();

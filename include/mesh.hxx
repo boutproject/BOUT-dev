@@ -184,6 +184,7 @@ class Mesh {
   virtual SurfaceIter* iterateSurfaces() = 0;
   virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
   virtual const Field2D averageY(const Field2D &f) = 0;
+  virtual const Field3D averageY(const Field3D &f);
   virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   

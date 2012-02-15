@@ -2205,7 +2205,7 @@ bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
 
 // Define MPI operation to sum 2D fields over y.
 // NB: Don't sum in y boundary regions
-void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
+void ysum2d_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
 {
     BoutReal *rin = (BoutReal*) invec;
     BoutReal *rinout = (BoutReal*) inoutvec;
@@ -2231,7 +2231,7 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
 #endif
 
   if(!opdefined) {
-    MPI_Op_create(ysum_op, 1, &op);
+    MPI_Op_create(ysum2d_op, 1, &op);
     opdefined = true;
   }
 
@@ -2242,7 +2242,96 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
   fd = f.getData();
   rd = result.getData();
   
-  MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_inner);
+  int np;
+  MPI_Comm_size(comm_inner, &np);
+  if(np == 1) {
+    // Just one processor
+    for(int x=0;x<mesh->ngx;x++) {
+      BoutReal val = 0.;
+      // Sum values, not including boundaries
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        val += fd[x][y];
+      }
+      val /= mesh->yend - mesh->ystart + 1;
+      for(int y=0;y<mesh->ngy;y++) {
+        rd[x][y] = val;
+      }
+    }
+  }else {
+    MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_inner);
+  }
+  
+  result /= (BoutReal) NYPE;
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return result;
+}
+
+// Define MPI operation to sum 3D fields over y.
+// NB: Don't sum in y boundary regions
+void ysum3d_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype) {
+  BoutReal *rin = (BoutReal*) invec;
+  BoutReal *rinout = (BoutReal*) inoutvec;
+  for(int x=0;x<mesh->ngx;x++) {
+    for(int z=0;z<mesh->ngz;z++) {
+      BoutReal val = 0.;
+      // Sum values
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        int ind = x*(mesh->ngy*mesh->ngz) + y*mesh->ngz + z;
+        val += rin[ind] + rinout[ind];
+      }
+      // Put into output (spread over y)
+      val /= mesh->yend - mesh->ystart + 1;
+      for(int y=0;y<mesh->ngy;y++) {
+        int ind = x*(mesh->ngy*mesh->ngz) + y*mesh->ngz + z;
+        rinout[ind] = val;
+      }
+    }
+  }
+}
+
+const Field3D BoutMesh::averageY(const Field3D &f) {
+  static MPI_Op op;
+  static bool opdefined = false;
+
+#ifdef CHECK
+  msg_stack.push("averageY(Field2D)");
+#endif
+  
+  if(!opdefined) {
+    MPI_Op_create(ysum3d_op, 1, &op);
+    opdefined = true;
+  }
+
+  Field3D result;
+  result.allocate();
+  
+  BoutReal ***fd, ***rd;
+  fd = f.getData();
+  rd = result.getData();
+  
+  int np;
+  MPI_Comm_size(comm_inner, &np);
+  if(np == 1) {
+    // Just one processor
+    for(int x=0;x<mesh->ngx;x++)
+      for(int z=0;z<mesh->ngz;z++) {
+        BoutReal val = 0.;
+        // Sum values, not including boundaries
+        for(int y=mesh->ystart;y<=mesh->yend;y++) {
+          val += fd[x][y][z];
+        }
+        val /= mesh->yend - mesh->ystart + 1;
+        for(int y=0;y<mesh->ngy;y++) {
+          rd[x][y][z] = val;
+        }
+      }
+  }else {
+    MPI_Allreduce(**fd, **rd, mesh->ngx*mesh->ngy*mesh->ngz, MPI_DOUBLE, op, comm_inner);
+  }
   
   result /= (BoutReal) NYPE;
 
