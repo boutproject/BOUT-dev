@@ -2,11 +2,14 @@
 ; Generate a flux tube input file in the SOL of a tokamak equilibrium
 ;
 
-PRO sol_flux_tube, gfile, psinorm, output=output, ny=ny
+PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidth
   
   IF NOT KEYWORD_SET(output) THEN output="fluxtube"+STR(psinorm)+".grd.nc"
   
+  IF NOT KEYWORD_SET(nx) THEN nx = 132
   IF NOT KEYWORD_SET(ny) THEN ny = 128
+
+  IF NOT KEYWORD_SET(psiwidth) THEN psiwidth = 0.05
 
   IF psinorm LE 1.0 THEN BEGIN
     PRINT, "Error: Normalised psi must be greater than 1"
@@ -112,7 +115,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, ny=ny
   
   IF g.nlim GT 2 THEN BEGIN
     ; Find intersections with boundary
-    oplot, g.xlim, g.ylim, thick=2
+    oplot, g.xlim, g.ylim, thick=2, color=3
     
     
     cpos = line_crossings(rpos, zpos, 0, $
@@ -147,6 +150,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, ny=ny
   L = int_func(dldi, /simple) ; Integrate function
   
   lpos = max(L) * FINDGEN(ny)/FLOAT(ny-1)
+  dldi = max(L) / FLOAT(ny-1)
   
   ; Find index
   inds = INTERPOL(findgen(N_ELEMENTS(L)), L, lpos)
@@ -154,5 +158,190 @@ PRO sol_flux_tube, gfile, psinorm, output=output, ny=ny
   rpos = INTERPOLATE(rpos, inds)
   zpos = INTERPOLATE(zpos, inds)
   
-  STOP
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Now got regularly spaced grid points along flux surface
+  ; (rpos, zpos)   =   ( Major radius, Height )
+
+  ;;;;;;;;;;; Toroidal field
+  ; f = RBt
+  
+  f = g.fpol[n_elements(g.fpol)-1]
+  
+  Btor = f / rpos
+  
+  ;;;;;;;;;;; Poloidal field
+  
+  Bpol = FLTARR(ny)
+  
+  FOR i=0, ny-1 DO BEGIN
+     ; Get local gradient of psi
+     local_gradient, interp_data, ri[i], zi[i], status=status, dfdr=dpsidr, dfdz=dpsidz
+     
+     ; Convert to correct units
+     dpsidr = dpsidr / (rzgrid.r[1] - rzgrid.r[0])
+     dpsidz = dpsidz / (rzgrid.z[1] - rzgrid.z[0])
+     
+     Bpol[i] = SQRT(dpsidr^2 + dpsidz^2) / rpos[i]
+     
+  ENDFOR
+  
+  ; Total field
+  B = SQRT(Btor^2 + Bpol^2)
+
+  ; Change in toroidal angle, following a field-line
+  dtdi = dldi * Btor / (Bpol * rpos)
+  
+  qinty = int_func(dtdi, /simple)
+  
+  ; Get parallel distance
+  dsdi = dldi * B / Bpol
+  
+  ; Parallel distance
+  s = int_func(dsdi, /simple)
+  
+  hthe = dldi / (2.*!PI / FLOAT(ny))
+
+  ;;;;;;;;;;;;;;;;; Magnetic shear
+  
+  ; Tricky... zero for now
+  
+  pitch = hthe * Btor / (Bpol * Rpos)
+
+  sinty = FLTARR(ny)
+  
+  ;;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
+  ; Calculate b x kappa using coordinates of a single field-line
+  
+  ; First derivatives along the line to get tangent vector
+  dr = DERIV(s, rpos)  ; R position
+  dz = DERIV(s, zpos)  ; Z position 
+  dp = DERIV(s, qinty) ; Toroidal angle
+  
+  ; Second derivatives
+  d2r = DERIV(s, dr)
+  d2z = DERIV(s, dz)
+  d2p = DERIV(s, dp)
+  
+  ; Components of b (tangent vector)
+  br = dr
+  bz = dz
+  bp = Rpos*dp
+
+  ; Components of curvature (unit vectors)
+  kr = d2r - rpos*dp^2
+  kz = d2z
+  kp = 2.*dr*dp + rpos*d2p
+
+  ; Calculate bxk in cylindrical coordinates
+
+  bxkr = bp*kz - bz*kp
+  bxkz = br*kp - bp*kr
+  bxkp = bz*kr - br*kz
+  
+  ; Calculate components in (psi, theta, phi) toroidal coordinates
+  ; (bxk) dot grad psi
+  bxkpsi   = bxkr * dpsidR + bxkz * dpsidZ
+  ; (bxk) dot grad theta
+  bxktheta = ( bxkr * dpsidZ - bxkz * dpsidR ) / (rpos*Bpol*hthe)
+
+  ;Finally into field-aligned coordinates
+  bxcvx1d = bxkpsi
+  bxcvy1d = bxktheta
+  bxcvz1d = bxkpsi - sinty*bxkpsi - pitch*bxktheta
+
+  ;;;;;;;;;;;;;;;; RADIAL MESH ;;;;;;;;;;;;;;;;;;
+  
+  ; Convert normalised psi to psi
+  dpsi = (psiwidth * (psi_sep - psi_axis)) / FLOAT(nx-1)
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Put everything into 2D arrays
+  
+  ; B field components
+  Bpxy = FLTARR(nx, ny)
+  Btxy = FLTARR(nx, ny)
+  Bxy  = FLTARR(nx, ny)
+  FOR i=0, nx-1 DO BEGIN
+     Bpxy[i,*] = Bpol
+     Btxy[i,*] = Btor
+     Bxy[i,*] = B
+  ENDFOR
+  
+  ; Grid spacing
+  dx = FLTARR(nx, ny) + dpsi
+  dy = FLTARR(nx, ny) + 2.*!PI/FLOAT(ny)
+  
+  ; Geometrical quantities
+  hxy = FLTARR(nx, ny)
+  Rxy = FLTARR(nx, ny)
+  Zxy = FLTARR(nx, ny)
+  FOR i=0, nx-1 DO BEGIN
+    hxy[i,*] = hthe
+    Rxy[i,*] = rpos
+    Zxy[i,*] = zpos
+  ENDFOR
+  
+  ; Curvature
+  bxcvx = FLTARR(nx, ny)
+  bxcvy = bxcvx
+  bxcvz = bxcvx
+  FOR i=0, nx-1 DO BEGIN
+     bxcvx[i,*] = bxcvx1d
+     bxcvy[i,*] = bxcvy1d
+     bxcvz[i,*] = bxcvz1d
+  ENDFOR
+  
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Save to file
+  ; NOTE: This needs the physics initialisation code
+  ;       to calculate the metric tensor components
+
+  handle = file_open(output, /CREATE)
+  
+  ; Size of the grid
+  s = file_write(handle, "nx", nx)
+  s = file_write(handle, "ny", ny)
+  
+  ; Grid spacing
+  s = file_write(handle, "dx", dx)
+  s = file_write(handle, "dy", dy)
+
+  ; topology
+  ixseps = -1 ; Separatrix inside domain -> not periodic
+  s = file_write(handle, "ixseps1", ixseps)
+  s = file_write(handle, "ixseps2", ixseps)
+  
+  ; Shift angles
+  ;s = file_write(handle, "ShiftAngle", ShiftAngle) ; For twist-shift location
+  ;s = file_write(handle, "zShift", zShift) ; for shifted radial derivatives
+  ;s = file_write(handle, "sinty", sinty2)
+
+  ; Geometric quantities
+  s = file_write(handle, "Rxy",  Rxy)
+  s = file_write(handle, "Zxy",  Zxy) ; Not needed for simulation, useful for plotting
+  s = file_write(handle, "hthe", hxy)
+  
+  ; Field components
+  s = file_write(handle, "Bpxy", Bpxy)
+  s = file_write(handle, "Btxy", Btxy)
+  s = file_write(handle, "Bxy",  Bxy)
+  
+  ; Typical quantities
+  rmag = max(abs(rpos))   ; maximum major radius
+  bmag = max(abs(B)) ; B field at the same location
+  s = file_write(handle, "bmag", bmag)
+  s = file_write(handle, "rmag", rmag)
+  
+  ; Curvature
+  s = file_write(handle, "bxcvx", bxcvx)
+  s = file_write(handle, "bxcvy", bxcvy)
+  s = file_write(handle, "bxcvz", bxcvz)
+  
+  ; Psi normalisation (only for post-processing)
+  s = file_write(handle, "psi_axis", psi_axis)
+  s = file_write(handle, "psi_bndry", psi_sep)
+  
+  file_close, handle
+  
 END
