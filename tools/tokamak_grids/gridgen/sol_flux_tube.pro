@@ -3,7 +3,14 @@
 ;
 
 PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidth
-  
+  IF N_PARAMS() EQ 0 THEN BEGIN
+    PRINT, "Arguments are: gfile [, psinorm]"
+    RETURN
+  ENDIF ELSE IF N_PARAMS() EQ 1 THEN BEGIN
+    ; No psinorm
+    psinorm = 1.05
+  ENDIF
+
   IF NOT KEYWORD_SET(output) THEN output="fluxtube"+STR(psinorm)+".grd.nc"
   
   IF NOT KEYWORD_SET(nx) THEN nx = 132
@@ -214,14 +221,14 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ; Calculate b x kappa using coordinates of a single field-line
   
   ; First derivatives along the line to get tangent vector
-  dr = DERIV(s, rpos)  ; R position
-  dz = DERIV(s, zpos)  ; Z position 
-  dp = DERIV(s, qinty) ; Toroidal angle
+  dr = SMOOTH(DERIV(s, rpos),3)  ; R position
+  dz = SMOOTH(DERIV(s, zpos),3)  ; Z position 
+  dp = SMOOTH(DERIV(s, qinty),3) ; Toroidal angle
   
   ; Second derivatives
-  d2r = DERIV(s, dr)
-  d2z = DERIV(s, dz)
-  d2p = DERIV(s, dp)
+  d2r = SMOOTH(DERIV(s, dr),3)
+  d2z = SMOOTH(DERIV(s, dz),3)
+  d2p = SMOOTH(DERIV(s, dp),3)
   
   ; Components of b (tangent vector)
   br = dr
@@ -246,9 +253,9 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   bxktheta = ( bxkr * dpsidZ - bxkz * dpsidR ) / (rpos*Bpol*hthe)
 
   ;Finally into field-aligned coordinates
-  bxcvx1d = bxkpsi
-  bxcvy1d = bxktheta
-  bxcvz1d = bxkpsi - sinty*bxkpsi - pitch*bxktheta
+  bxcvx1d = SMOOTH(bxkpsi,3)
+  bxcvy1d = SMOOTH(bxktheta,3)
+  bxcvz1d = SMOOTH(bxkpsi - sinty*bxkpsi - pitch*bxktheta,3)
 
   ;;;;;;;;;;;;;;;; RADIAL MESH ;;;;;;;;;;;;;;;;;;
   
@@ -291,12 +298,14 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
      bxcvy[i,*] = bxcvy1d
      bxcvz[i,*] = bxcvz1d
   ENDFOR
-  
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Save to file
   ; NOTE: This needs the physics initialisation code
   ;       to calculate the metric tensor components
-
+  
+  PRINT, "Writing grid file to: "+output
+  
   handle = file_open(output, /CREATE)
   
   ; Size of the grid
