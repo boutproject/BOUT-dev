@@ -233,8 +233,12 @@ class DataFile:
                     d = self.handle.dimensions[name]
 
                     # Check if it's the correct size
-                    if len(d) == size:
-                        return name
+                    if type(d).__name__ == 'int':
+                        if d == size:
+                            return name;
+                    else:
+                        if len(d) == size:
+                            return name
 
                     # Find another with the correct size
                     for dn, d in self.handle.dimensions.iteritems():
