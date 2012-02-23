@@ -1,8 +1,7 @@
 
-#include <options.hxx>
-
 #include "meshfactory.hxx"
 
+#include <options.hxx>
 #include "impls/bout/boutmesh.hxx"
 
 MeshFactory *MeshFactory::instance = NULL;
