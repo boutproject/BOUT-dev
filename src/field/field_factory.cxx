@@ -95,6 +95,32 @@ BoutReal FieldCos::generate(int x, int y, int z) {
   return cos(gen->generate(x,y,z));
 }
 
+FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sinh function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSinh(args.front());
+}
+
+BoutReal FieldSinh::generate(int x, int y, int z) {
+  return sinh(gen->generate(x,y,z));
+}
+
+FieldGenerator* FieldCosh::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to cosh function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldCosh(args.front());
+}
+
+BoutReal FieldCosh::generate(int x, int y, int z) {
+  return cosh(gen->generate(x,y,z));
+}
+
 FieldGenerator* FieldGaussian::clone(const list<FieldGenerator*> args) {
   if((args.size() < 1) || (args.size() > 2)) {
     output << "FieldFactory error: Incorrect number of arguments to gaussian function. Expecting 1 or 2, got " << args.size() << endl;
@@ -165,6 +191,8 @@ FieldFactory::FieldFactory() {
   // Some standard functions
   addGenerator("sin", new FieldSin(NULL));
   addGenerator("cos", new FieldCos(NULL));
+  addGenerator("sinh", new FieldSinh(NULL));
+  addGenerator("cosh", new FieldCosh(NULL));
   addGenerator("gauss", new FieldGaussian(NULL, NULL));
   addGenerator("abs", new FieldAbs(NULL));
   addGenerator("sqrt", new FieldSqrt(NULL));

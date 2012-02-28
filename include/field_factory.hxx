@@ -117,6 +117,28 @@ private:
   FieldGenerator *gen;
 };
 
+class FieldSinh : public FieldGenerator {
+public:
+  FieldSinh(FieldGenerator* g) : gen(g) {}
+  ~FieldSinh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
+class FieldCosh : public FieldGenerator {
+public:
+  FieldCosh(FieldGenerator* g) : gen(g) {}
+  ~FieldCosh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
 class FieldGaussian : public FieldGenerator {
 public:
   FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
