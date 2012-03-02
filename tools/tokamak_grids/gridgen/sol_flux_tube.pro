@@ -1,8 +1,21 @@
 ;
 ; Generate a flux tube input file in the SOL of a tokamak equilibrium
 ;
+; Inputs
+;
+;   gfile   [string]             Name of the file to read
+;   psinorm [float, optional]    Normalised psi of the flux surface
+;
+; Keywords
+;   output [string]       Name of the output file
+;   nx [int]              Number of radial grid points
+;   ny [int]              Number of points along field-line
+;   psiwidth [float]      Radial width of the box in normalised psi
+;   /equ  [true/false]    Force input file to be a .equ file. Normally
+;                            goes on file ending.
+; 
 
-PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidth
+PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidth, equ=equ
   IF N_PARAMS() EQ 0 THEN BEGIN
     PRINT, "Arguments are: gfile [, psinorm]"
     RETURN
@@ -23,22 +36,45 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
     RETURN
   ENDIF
   
-  ; Read the EFIT G-EQDSK file
-  g = read_neqdsk(gfile)
-  
-  ; Check the return
-  IF SIZE(g, /TYPE) NE 8 THEN BEGIN
-     PRINT, "ERROR: Couldn't read G-EQDSK file '"+gfile+"'"
-     RETURN
-  ENDIF
-  rzgrid = {nr:g.nx, nz:g.ny, $ ; Number of grid points
-            r:REFORM(g.r[*,0]), z:REFORM(g.z[0,*]), $ ; R and Z as 1D arrays
-            simagx:g.simagx, sibdry:g.sibdry, $       ; Range of psi
-            psi:g.psi, $       ; Poloidal flux in Weber/rad on grid points
-            pres:g.pres, $     ; Plasma pressure in nt/m^2 on uniform flux grid
-            qpsi:g.qpsi, $     ; q values on uniform flux grid
-            nlim:g.nlim, rlim:g.xlim, zlim:g.ylim} ; Wall boundary
-  
+  ; Get the file extension
+  s = STRSPLIT(gfile, '.', /extract)
+  IF (STRLOWCASE(s[N_ELEMENTS(s)-1]) EQ 'equ') OR KEYWORD_SET(equ) THEN BEGIN
+    ; Either file ends in '.equ' or the keyword was set
+    
+    g = read_equ(gfile)
+    
+    ; Check the return
+    IF SIZE(g, /TYPE) NE 8 THEN BEGIN
+      PRINT, "ERROR: Couldn't read EQU file '"+gfile+"'"
+      RETURN
+    ENDIF
+    
+    rzgrid = {nr:g.nx, nz:g.ny, $ ; Number of grid points
+              r:g.r, z:g.z, $ ; R and Z as 1D arrays
+              psi:g.psi, $ ; Poloidal flux in Weber/rad on grid points
+              fpol:[g.fpol], $
+              nlim:0} ; Wall boundary
+  ENDIF ELSE BEGIN
+    ; Assume it's an EFIT G-EQDSK file
+    PRINT, "Reading a G-EQDSK file"
+    g = read_neqdsk(gfile)
+
+    ; Check the return
+    IF SIZE(g, /TYPE) NE 8 THEN BEGIN
+      PRINT, "ERROR: Couldn't read G-EQDSK file '"+gfile+"'"
+      RETURN
+    ENDIF
+    
+    rzgrid = {nr:g.nx, nz:g.ny, $ ; Number of grid points
+              r:REFORM(g.r[*,0]), z:REFORM(g.z[0,*]), $ ; R and Z as 1D arrays
+              simagx:g.simagx, sibdry:g.sibdry, $       ; Range of psi
+              psi:g.psi, $ ; Poloidal flux in Weber/rad on grid points
+              pres:g.pres, $ ; Plasma pressure in nt/m^2 on uniform flux grid
+              fpol:g.fpol, $
+              qpsi:g.qpsi, $     ; q values on uniform flux grid
+              nlim:g.nlim, rlim:g.xlim, zlim:g.ylim} ; Wall boundary
+  ENDELSE
+
   ; Plot psi
   nlev = 100
   minf = MIN(rzgrid.psi)
@@ -61,12 +97,16 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   psi_axis = critical.opt_f[critical.primary_opt]
   psi_sep = critical.xpt_f[critical.inner_sep]
   
-  ; See how this compares to grid values
-  PRINT, "Psi Axis : ", psi_axis, g.simagx
-  PRINT, "Psi Bndry: ", psi_sep, g.sibdry
+  ; Add these if they're not already in the structure
+  str_check_present, rzgrid, "simagx", psi_axis
+  str_check_present, rzgrid, "sibdry", psi_sep
   
-  psi_axis = g.simagx
-  psi_sep = g.sibdry
+  ; See how this compares to grid values
+  PRINT, "Psi Axis : ", psi_axis, rzgrid.simagx
+  PRINT, "Psi Bndry: ", psi_sep, rzgrid.sibdry
+  
+  psi_axis = rzgrid.simagx
+  psi_sep = rzgrid.sibdry
 
   psi = psi_axis + psinorm*(psi_sep - psi_axis)
   
@@ -77,7 +117,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   PRINT, "Finished DCT"
   
   ; Create a structure containing interpolation settings and data
-  interp_data = {nx:g.nx, ny:g.ny, $
+  interp_data = {nx:rzgrid.nr, ny:rzgrid.nz, $
                  method:0, $
                  f: rzgrid.psi, $       ; Always include function
                  dct: dctpsi} ; Pass the DCT coefficients
@@ -120,13 +160,13 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   rpos = SMOOTH(rpos, 4)
   zpos = SMOOTH(zpos, 4)
   
-  IF g.nlim GT 2 THEN BEGIN
+  IF rzgrid.nlim GT 2 THEN BEGIN
     ; Find intersections with boundary
-    oplot, g.xlim, g.ylim, thick=2, color=3
+    oplot, rzgrid.xlim, rzgrid.ylim, thick=2, color=3
     
     
     cpos = line_crossings(rpos, zpos, 0, $
-                          g.xlim, g.ylim, 1, $
+                          rzgrid.xlim, rzgrid.ylim, 1, $
                           ncross=ncross, inds1=inds)
     
     print, "Number of crossings: ", ncross
@@ -173,7 +213,7 @@ PRO sol_flux_tube, gfile, psinorm, output=output, nx=nx, ny=ny, psiwidth=psiwidt
   ;;;;;;;;;;; Toroidal field
   ; f = RBt
   
-  f = g.fpol[n_elements(g.fpol)-1]
+  f = rzgrid.fpol[n_elements(rzgrid.fpol)-1]
   
   Btor = f / rpos
   

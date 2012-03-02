@@ -18,6 +18,9 @@ FUNCTION read_equ, file
     RETURN, 0
   ENDIF
 
+  btf = 0.0
+  rf = 0.0
+  
   REPEAT BEGIN
      ; read the next line
      line=' '
@@ -72,7 +75,8 @@ FUNCTION read_equ, file
   
   result = {nx:jm, ny:km, $
             r:r, z:z, $
-            psi:psi}
+            psi:psi, $
+            fpol:(btf * rf)}
   
   RETURN, result
 END
