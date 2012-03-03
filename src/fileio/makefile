@@ -1,7 +1,8 @@
 
 BOUT_TOP = ../..
 
-SOURCEC		= datafile.cxx $(FILEIO_SOURCE)
+DIRS            = impls
+SOURCEC		= datafile.cxx formatfactory.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx) dataformat.hxx
 TARGET		= lib
 

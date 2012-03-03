@@ -23,6 +23,8 @@
 #include <globals.hxx>
 #include "nc_format.hxx"
 
+#ifdef NCDF
+
 #include <utils.hxx>
 #include <cmath>
 
@@ -892,4 +894,5 @@ bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int 
  * Private functions
  ***************************************************************************/
 
+#endif // NCDF
 

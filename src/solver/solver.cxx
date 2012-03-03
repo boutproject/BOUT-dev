@@ -419,12 +419,12 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   /// Get restart file extension
   string dump_ext, restart_ext;
 
-  options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+  options->get("dump_format", dump_ext, "default");
   
   options->get("restart_format", restart_ext, dump_ext);
 
   /// Set the restart file format
-  restart.setFormat(data_format(restart_ext.c_str()));
+  restart.setFormat(restart_ext);
   restartext = string(restart_ext);
 
   /// Add basic variables to the restart file

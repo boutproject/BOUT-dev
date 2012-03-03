@@ -28,14 +28,6 @@ class Datafile;
 #include <vector>
 #include <string>
 
-#ifndef DATAFILE_ORIGIN
-extern char DEFAULT_FILE_EXT[]; ///< Default file extension
-#endif
-
-/// Work out which data format to use for given filename
-/// Omit argument (or pass NULL) for default format
-DataFormat *data_format(const char *filename = NULL);
-
 /*!
   Uses a generic interface to file formats (DataFormat)
   and provides an interface for reading/writing simulation data.
@@ -44,12 +36,13 @@ DataFormat *data_format(const char *filename = NULL);
 */
 class Datafile {
  public:
-  Datafile();
+  Datafile() : low_prec(false), file(NULL) {}
   Datafile(DataFormat *format);
   ~Datafile();
   
   /// Set the file format by passing an interface class
   void setFormat(DataFormat *format);
+  void setFormat(const string &format);
 
   void setLowPrecision(); ///< Only output floats
 

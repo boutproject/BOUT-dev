@@ -35,127 +35,29 @@
  *********************************************************/
 #include "mpi.h" // For MPI_Wtime()
 
-#define DATAFILE_ORIGIN
 #include <datafile.hxx>
-#undef DATAFILE_ORIGIN
+#include "formatfactory.hxx"
 
 #include <globals.hxx>
 #include <boutexception.hxx>
 
-#ifdef PDBF
-#include "pdb_format.hxx"
-#endif
 
-#ifdef NCDF
-#include "nc_format.hxx"
-#endif
-
-#include <string.h>
-
-// Define a default file extension
-#ifdef PDBF
-char DEFAULT_FILE_EXT[] = "pdb";
-#else
-#ifdef NCDF
-char DEFAULT_FILE_EXT[] = "nc";
-#else
-
-#error No file format available; aborting.
-
-#endif // NCDF
-#endif // PDBF
-
-int match_string(const char *str, int n, const char **match)
-{
-  for(int i=0;i<n;i++)
-    if(strcasecmp(str, match[i]) == 0)
-      return i;
-  return -1;
-}
-
-// Work out which data format to use for given filename
-DataFormat *data_format(const char *filename)
-{
-  if(filename == NULL) {
-    // Return default file format
-
-#ifdef PDBF
-    //output.write("\tUsing default format (PDB)\n");
-    return new PdbFormat;
-#else
-
-#ifdef NCDF
-    //output.write("\tUsing default format (NetCDF)\n");
-    return new NcFormat;
-#else
-
-#error No file format available; aborting.
-
-#endif // NCDF
-#endif // PDBF
-  }
-
-  // Extract the file extension
-
-  int len = strlen(filename);
-
-  int ind = len-1;  
-  while((ind != -1) && (filename[ind] != '.')) {
-    ind--;
-  }
-  
-  const char *s = filename + ind+1;
-
-  // Match strings
-  
-#ifdef PDBF
-  const char *pdb_match[] = {"pdb"};
-  if(match_string(s, 1, pdb_match) != -1) {
-    output.write("\tUsing PDB format for file '%s'\n", filename);
-    return new PdbFormat;
-  }
-#endif
-
-#ifdef NCDF
-  const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
-  if(match_string(s, 3, ncdf_match) != -1) {
-    output.write("\tUsing NetCDF format for file '%s'\n", filename);
-    return new NcFormat;
-  }
-#endif
-
-  output.write("\tFile extension not recognised for '%s'\n", filename);
-  // Set to the default
-  return data_format(NULL);
-}
 
 ///////////////////////////////////////
 // Global variables, shared between Datafile objects
 bool Datafile::enabled = true;
 BoutReal Datafile::wtime = 0.0;
 
-Datafile::Datafile()
-{
-  low_prec = false;
-  file = NULL;
-  setFormat(data_format()); // Set default format
-}
-
-Datafile::Datafile(DataFormat *format)
-{
-  low_prec = false;
-  file = NULL;
+Datafile::Datafile(DataFormat *format) : low_prec(false), file(NULL) {
   setFormat(format);
 }
 
-Datafile::~Datafile()
-{
+Datafile::~Datafile() {
   if(file != NULL)
     delete file;
 }
 
-void Datafile::setFormat(DataFormat *format)
-{
+void Datafile::setFormat(DataFormat *format) {
   if(file != NULL)
     delete file;
   
@@ -165,8 +67,11 @@ void Datafile::setFormat(DataFormat *format)
     file->setLowPrecision();
 }
 
-void Datafile::setLowPrecision()
-{
+void Datafile::setFormat(const string &format) {
+  setFormat(FormatFactory::getInstance()->createDataFormat(format.c_str()));
+}
+
+void Datafile::setLowPrecision() {
   low_prec = true;
   file->setLowPrecision();
 }

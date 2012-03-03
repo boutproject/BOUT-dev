@@ -57,6 +57,8 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 
+#include "fileio/formatfactory.hxx"
+
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
 
@@ -252,7 +254,7 @@ int bout_init(int argc, char **argv) {
     OPTION(options, append, false);
 
     /// Get file extensions
-    options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+    options->get("dump_format", dump_ext, "default");
 
     /// Setup derivative methods
     if (derivs_init()) {
@@ -292,7 +294,7 @@ int bout_init(int argc, char **argv) {
 
     // Set file formats
     output.write("Setting file formats\n");
-    dump.setFormat(data_format(dumpname));
+    dump.setFormat(dumpname);
 
     if (dump_float) dump.setLowPrecision(); // Down-convert to floats
 
