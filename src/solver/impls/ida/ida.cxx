@@ -207,8 +207,7 @@ IdaSolver::~IdaSolver()
  * Run - Advance time
  **************************************************************************/
 
-int IdaSolver::run(MonitorFunc monitor)
-{
+int IdaSolver::run(MonitorFunc monitor) {
 #ifdef CHECK
   int msg_point = msg_stack.push("IDA IdaSolver::run()");
 #endif
@@ -219,7 +218,7 @@ int IdaSolver::run(MonitorFunc monitor)
   for(int i=0;i<NOUT;i++) {
     
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP, rhs_ncalls, rhs_wtime);
+    simtime = run(simtime + TIMESTEP, rhs_ncalls);
     iteration++;
 
     /// Check if the run succeeded
@@ -260,34 +259,26 @@ int IdaSolver::run(MonitorFunc monitor)
   return 0;
 }
 
-BoutReal IdaSolver::run(BoutReal tout, int &ncalls, BoutReal &rhstime)
-{
+BoutReal IdaSolver::run(BoutReal tout) {
   if(!initialised)
     bout_error("ERROR: Running IDA solver without initialisation\n");
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
-
-  rhs_wtime = 0.0;
+  
   rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
 
   int flag = IDASolve(idamem, tout, &simtime, uvec, duvec, IDA_NORMAL);
-  
-  ncalls = rhs_ncalls;
-  rhstime = rhs_wtime;
 
   // Copy variables
   load_vars(NV_DATA_P(uvec));
 
   // Call rhs function to get extra variables at this time
-  BoutReal tstart = MPI_Wtime();
   run_rhs(simtime);
-  rhstime += MPI_Wtime() - tstart;
-  ncalls++;
   
   if(flag < 0) {
     output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);

@@ -28,6 +28,7 @@
 #ifdef BOUT_HAS_PVODE
 
 #include <output.hxx>
+#include <bout/sys/timer.hxx>
 
 using namespace pvode;
 
@@ -265,8 +266,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
-
-  rhs_wtime = 0.0;
+  
   rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
@@ -320,8 +320,7 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
 #endif
 }
 
-void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
-{
+void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   int flag;
   BoutReal tstart;
 
@@ -329,7 +328,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
 #endif
 
-  tstart = MPI_Wtime();
+  Timer timer("rhs");
 
   // Load state from CVODE
   load_vars(udata);
@@ -339,8 +338,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata)
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-
-  rhs_wtime += MPI_Wtime() - tstart;
+  
   rhs_ncalls++;
 
 #ifdef CHECK

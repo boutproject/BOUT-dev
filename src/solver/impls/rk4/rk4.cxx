@@ -171,7 +171,6 @@ int RK4Solver::run(MonitorFunc monitor) {
     
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
-    rhs_wtime = 0.0;
   }
   
 #ifdef CHECK
@@ -181,8 +180,7 @@ int RK4Solver::run(MonitorFunc monitor) {
   return 0;
 }
 
-void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result)
-{ 
+void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) { 
   static int n = 0;
   static BoutReal *k1, *k2, *k3, *k4, *tmp;
   

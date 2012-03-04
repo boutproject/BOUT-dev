@@ -301,8 +301,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 #endif
 
   MPI_Barrier(BoutComm::get());
-
-  rhs_wtime = 0.0;
+  
   rhs_ncalls = 0;
 
   pre_Wtime = 0.0;

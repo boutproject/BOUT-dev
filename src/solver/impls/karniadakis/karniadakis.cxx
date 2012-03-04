@@ -169,7 +169,6 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     }
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
-    rhs_wtime = 0.0;
   }
   
 #ifdef CHECK

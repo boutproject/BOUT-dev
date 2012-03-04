@@ -121,9 +121,6 @@ GLOBAL MsgStack msg_stack;
 
 // Settings
 
-// Timing information
-GLOBAL BoutReal wtime_invert; //< Time spent performing inversions
-
 GLOBAL bool non_uniform; // Use corrections for non-uniform meshes
 
 // Error handling (bout++.cpp)

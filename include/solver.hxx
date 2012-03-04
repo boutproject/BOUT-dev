@@ -117,8 +117,7 @@ class Solver {
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
-
-  BoutReal rhs_wtime; ///< Wall time used in RHS
+  
   int rhs_ncalls; ///< Number of calls to the RHS function
 
   void setRestartDir(const string &dir);

@@ -73,8 +73,6 @@ class Datafile {
 
   /// Set this to false to switch off all data writing
   static bool enabled;
-  
-  static BoutReal wtime; ///< Keep track of wall-time used
  private:
   string def_filename; ///< Default filename
   

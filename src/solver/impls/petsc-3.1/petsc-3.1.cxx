@@ -526,7 +526,6 @@ PetscErrorCode Petsc31Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
    
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
-    rhs_wtime = 0.0;
 
     outputnext = false;
     next_time = simtime + tstep; // Set the next output time

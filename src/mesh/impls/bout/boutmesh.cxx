@@ -41,6 +41,7 @@
 #include <options.hxx>
 #include <boutexception.hxx>
 #include <output.hxx>
+#include <bout/sys/timer.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -1062,14 +1063,12 @@ const int OUT_SENT_DOWN = 3;
 const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
 
-int BoutMesh::communicate(FieldGroup &g)
-{
+int BoutMesh::communicate(FieldGroup &g) {
   comm_handle c = send(g);
   return wait(c);
 }
 
-void BoutMesh::post_receive(CommHandle &ch)
-{
+void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
   int len;
   
@@ -1147,10 +1146,9 @@ void BoutMesh::post_receive(CommHandle &ch)
   }
 }
 
-comm_handle BoutMesh::send(FieldGroup &g)
-{ 
-  /// Record starting wall-time
-  BoutReal t = MPI_Wtime();
+comm_handle BoutMesh::send(FieldGroup &g) { 
+  /// Start timer
+  Timer timer("comms");
   
   /// Get the list of variables to send
   vector<FieldData*> var_list = g.get();
@@ -1304,14 +1302,11 @@ comm_handle BoutMesh::send(FieldGroup &g)
   
   /// Mark communication handle as in progress
   ch->in_progress = true;
-
-  /// Add the elapsed wall-time to wtime
-  wtime_comms += MPI_Wtime() - t;
+  
   return (void*) ch;
 }
 
-int BoutMesh::wait(comm_handle handle)
-{
+int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
   
@@ -1320,8 +1315,8 @@ int BoutMesh::wait(comm_handle handle)
   if(!ch->in_progress)
     return 2;
 
-  /// Record starting time
-  BoutReal t = MPI_Wtime();
+  /// Start timer
+  Timer timer("comms");
   
   ///////////// WAIT FOR DATA //////////////
   
@@ -1333,9 +1328,6 @@ int BoutMesh::wait(comm_handle handle)
     // Just waiting for a single MPI request
     MPI_Wait(ch->request, &status);
     free_handle(ch);
-
-    /// Add the time elapsed to the communications wall time
-    wtime_comms += MPI_Wtime() - t;
     
     return 0;
   }
@@ -1439,9 +1431,6 @@ int BoutMesh::wait(comm_handle handle)
 #endif
 
   free_handle(ch);
-
-  /// Add the time elapsed to the communications wall time
-  wtime_comms += MPI_Wtime() - t;
   
   return 0;
 }
@@ -1452,56 +1441,47 @@ int BoutMesh::wait(comm_handle handle)
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::firstX()
-{
+bool BoutMesh::firstX() {
   return PE_XIND == 0;
 }
 
-bool BoutMesh::lastX()
-{
+bool BoutMesh::lastX() {
   return PE_XIND == NXPE-1;
 }
 
-int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag)
-{
+int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == NXPE-1)
     return 1;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND+1, PE_YIND),
 	   tag,
 	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
 
   return 0;
 }
 
-int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag)
-{
+int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == 0)
     return 1;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND-1, PE_YIND),
 	   tag,
 	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
 
   return 0;
 }
 
-comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
-{
+comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == NXPE-1)
     return NULL;
 
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
   
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1516,17 +1496,14 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
   
   ch->in_progress = true;
 
-  wtime_comms += MPI_Wtime() - t;
-
   return (comm_handle) ch;
 }
 
-comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
-{
+comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == 0)
     return NULL;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1540,8 +1517,6 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
 	    ch->request);
   
   ch->in_progress = true;
-
-  wtime_comms += MPI_Wtime() - t;
 
   return (comm_handle) ch;
 }

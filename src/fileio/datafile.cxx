@@ -33,20 +33,19 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  * 
  *********************************************************/
-#include "mpi.h" // For MPI_Wtime()
-
-#include <datafile.hxx>
-#include "formatfactory.hxx"
+//#include "mpi.h" // For MPI_Wtime()
 
 #include <globals.hxx>
+#include <bout/sys/timer.hxx>
+#include <datafile.hxx>
 #include <boutexception.hxx>
 #include <output.hxx>
 
+#include "formatfactory.hxx"
 
 ///////////////////////////////////////
 // Global variables, shared between Datafile objects
 bool Datafile::enabled = true;
-BoutReal Datafile::wtime = 0.0;
 
 Datafile::Datafile(DataFormat *format) : low_prec(false), file(NULL) {
   setFormat(format);
@@ -167,9 +166,8 @@ int Datafile::read(const char *format, ...) {
     vsprintf(filename, format, ap);
   va_end(ap);
 
-  // Record starting time
-  BoutReal tstart = MPI_Wtime();
-  
+  Timer timer("io");  ///< Start timer. Stops when goes out of scope
+
   // Open the file
   
   if(!file->openr(filename))
@@ -264,13 +262,10 @@ int Datafile::read(const char *format, ...) {
   
   file->close();
 
-  wtime += MPI_Wtime() - tstart;
-
   return 0;
 }
 
-int Datafile::write(const char *format, ...)
-{
+int Datafile::write(const char *format, ...) {
   va_list ap;  // List of arguments
   
   if(format == (const char*) NULL)
@@ -287,8 +282,7 @@ int Datafile::write(const char *format, ...)
   return 1;
 }
 
-int Datafile::append(const char *format, ...)
-{
+int Datafile::append(const char *format, ...) {
   va_list ap;  // List of arguments
   
   if(format == (const char*) NULL)
@@ -305,13 +299,11 @@ int Datafile::append(const char *format, ...)
   return 1;
 }
 
-bool Datafile::write(const string &filename, bool append)
-{
+bool Datafile::write(const string &filename, bool append) {
   if(!enabled)
     return true; // Just pretend it worked
-
-  // Record starting time
-  BoutReal tstart = MPI_Wtime();
+  
+  Timer timer("io");
 
   if(!file->openw(filename, append))
     return false;
@@ -396,14 +388,11 @@ bool Datafile::write(const string &filename, bool append)
   }
 
   file->close();
-
-  wtime += MPI_Wtime() - tstart;
-
+  
   return true;
 }
 
-void Datafile::setFilename(const char *format, ...)
-{
+void Datafile::setFilename(const char *format, ...) {
   va_list ap;  // List of arguments
   
   if(format == (const char*) NULL) {
@@ -421,8 +410,7 @@ void Datafile::setFilename(const char *format, ...)
 
 /////////////////////////////////////////////////////////////
 
-bool Datafile::read_f2d(const string &name, Field2D *f, bool grow)
-{
+bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   f->allocate();
   
   if(grow) {
@@ -441,8 +429,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow)
   return true;
 }
 
-bool Datafile::read_f3d(const string &name, Field3D *f, bool grow)
-{
+bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   f->allocate();
   
   if(grow) {
@@ -461,8 +448,7 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow)
   return true;
 }
 
-bool Datafile::write_f2d(const string &name, Field2D *f, bool grow)
-{
+bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
   if(!f->isAllocated())
     return false; // No data allocated
   
@@ -473,8 +459,7 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool grow)
   }
 }
 
-bool Datafile::write_f3d(const string &name, Field3D *f, bool grow)
-{
+bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   if(!f->isAllocated()) {
     //output << "Datafile: unallocated: " << name << endl;
     return false; // No data allocated

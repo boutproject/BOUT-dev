@@ -30,6 +30,7 @@
 
 #include "solverfactory.hxx"
 
+#include <bout/sys/timer.hxx>
 #include <output.hxx>
 
 /**************************************************************************
@@ -42,7 +43,6 @@ Solver::Solver() {
   initialised = false;
 
   // Zero timing
-  rhs_wtime = 0.0;
   rhs_ncalls = 0;
 
   // Restart directory
@@ -843,11 +843,10 @@ void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD)
   phys_diff = fD;
 }
 
-int Solver::run_rhs(BoutReal t)
-{
+int Solver::run_rhs(BoutReal t) {
   int status;
   
-  BoutReal tstart = MPI_Wtime();
+  Timer timer("rhs");
   
   if(split_operator) {
     // Run both parts
@@ -871,17 +870,15 @@ int Solver::run_rhs(BoutReal t)
   }else
     status = run_func(t, phys_run);
   
-  rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
 
   return status;
 }
 
-int Solver::run_convective(BoutReal t)
-{
+int Solver::run_convective(BoutReal t) {
   int status;
   
-  BoutReal tstart = MPI_Wtime();
+  Timer timer("rhs");
   
   if(split_operator) {
     status =  run_func(t, phys_conv);
@@ -890,17 +887,15 @@ int Solver::run_convective(BoutReal t)
     status = run_func(t, phys_run);
   }
   
-  rhs_wtime += MPI_Wtime() - tstart;
   rhs_ncalls++;
   
   return status;
 }
 
-int Solver::run_diffusive(BoutReal t)
-{
+int Solver::run_diffusive(BoutReal t) {
   int status = 0;
   
-  BoutReal tstart = MPI_Wtime();
+  Timer timer("rhs");
 
   if(split_operator) {
     status = run_func(t, phys_diff);
@@ -912,14 +907,10 @@ int Solver::run_diffusive(BoutReal t)
       *((*it).F_var) = 0.0;
   }
   
-  rhs_wtime += MPI_Wtime() - tstart;
-  //rhs_ncalls++;
-  
   return status;
 }
 
-int Solver::run_func(BoutReal t, rhsfunc f)
-{
+int Solver::run_func(BoutReal t, rhsfunc f) {
   int status = (*f)(t);
 
   // Make sure vectors in correct basis
