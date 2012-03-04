@@ -32,7 +32,6 @@
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "options.hxx"
-#include "output.hxx"
 #include "msg_stack.hxx" 
 
 #include "datafile.hxx"

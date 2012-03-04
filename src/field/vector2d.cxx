@@ -32,6 +32,7 @@
 
 #include <vector2d.hxx>
 #include <boundary_op.hxx>
+#include <output.hxx>
 
 Vector2D::Vector2D()
 {

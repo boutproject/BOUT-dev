@@ -9,7 +9,7 @@
 #include "impls/netcdf/nc_format.hxx"
 
 #include <boutexception.hxx>
-
+#include <output.hxx>
 #include <string.h>
 
 FormatFactory* FormatFactory::instance = NULL;

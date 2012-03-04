@@ -40,7 +40,7 @@
 
 #include <globals.hxx>
 #include <boutexception.hxx>
-
+#include <output.hxx>
 
 
 ///////////////////////////////////////

@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include <output.hxx>
+
 EulerSolver::EulerSolver() : Solver() {
   
 }

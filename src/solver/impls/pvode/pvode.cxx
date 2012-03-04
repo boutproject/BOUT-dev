@@ -27,6 +27,8 @@
 
 #ifdef BOUT_HAS_PVODE
 
+#include <output.hxx>
+
 using namespace pvode;
 
 void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data);

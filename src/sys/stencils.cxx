@@ -24,12 +24,13 @@
  *
  **************************************************************************/
 
-#include <math.h>
+#include <cmath>
 
 typedef double BoutReal;
 
 #include <globals.hxx>
 #include <stencils.hxx>
+#include <output.hxx>
 
 /**************************************************************************
  * bvalue class

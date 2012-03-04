@@ -28,6 +28,7 @@
 #include <diagnos.hxx>
 #include <utils.hxx>
 #include <globals.hxx>
+#include <output.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 

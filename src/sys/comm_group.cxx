@@ -29,6 +29,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <output.hxx>
+#include <options.hxx>
+
 namespace comm_group {
 
   const int COMM_GROUP_TAG = 31415;

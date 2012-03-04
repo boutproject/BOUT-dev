@@ -26,6 +26,7 @@
 #include <globals.hxx>
 #include <interpolation.hxx>
 #include <stencils.hxx>
+#include <output.hxx>
 
 /// Perform interpolation between centre -> shifted or vice-versa
 /*!

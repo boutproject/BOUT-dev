@@ -24,9 +24,7 @@
 
 #include "mpi.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+#include <cmath>
 
 #include <field3d.hxx>
 #include <utils.hxx>
@@ -36,6 +34,7 @@
 #include <boundary_op.hxx>
 #include <boundary_factory.hxx>
 #include <boutexception.hxx>
+#include <output.hxx>
 
 /// Constructor
 Field3D::Field3D() : background(NULL)

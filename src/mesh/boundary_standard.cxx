@@ -5,6 +5,7 @@
 #include <fft.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
+#include <output.hxx>
 
 ///////////////////////////////////////////////////////////////
 

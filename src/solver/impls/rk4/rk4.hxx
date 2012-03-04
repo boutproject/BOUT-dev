@@ -33,11 +33,6 @@ class RK4Solver;
 #include "mpi.h"
 
 #include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
-
 #include "solver.hxx"
 
 class RK4Solver : public Solver {

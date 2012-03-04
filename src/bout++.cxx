@@ -41,19 +41,14 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 
 #define GLOBALORIGIN
 
+#include "mpi.h"
+
 #include <bout.hxx>
 #include <datafile.hxx>
 #include <grid.hxx>
 #include <solver.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
-#include <initialprofiles.hxx>
 #include <derivs.hxx>
-#include <utils.hxx>
 #include <invert_laplace.hxx>
-#include <interpolation.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 
@@ -62,10 +57,6 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
 
-#include "mpi.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
 #include <string>
@@ -81,6 +72,8 @@ using std::list;
 #include <signal.h>
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
+
+#include <output.hxx>
 
 bool append = false;
 

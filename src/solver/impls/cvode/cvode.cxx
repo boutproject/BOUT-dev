@@ -37,6 +37,8 @@
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 
+#include <output.hxx>
+
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 

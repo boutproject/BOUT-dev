@@ -32,6 +32,7 @@
 
 #include <vector3d.hxx>
 #include <boundary_op.hxx>
+#include <output.hxx>
 
 Vector3D::Vector3D()
 {

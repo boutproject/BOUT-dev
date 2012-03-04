@@ -38,6 +38,8 @@
 
 #include "karniadakis.hxx"
 
+#include <output.hxx>
+
 KarniadakisSolver::KarniadakisSolver() : Solver()
 {
   

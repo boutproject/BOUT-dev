@@ -40,6 +40,7 @@
 #include <dcomplex.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
+#include <output.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 

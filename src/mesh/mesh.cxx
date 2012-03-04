@@ -8,6 +8,8 @@
 
 #include "meshfactory.hxx"
 
+#include <output.hxx>
+
 BoutReal Mesh::wtime_comms = 0.0;
 
 Mesh* Mesh::create(Options *opt) {

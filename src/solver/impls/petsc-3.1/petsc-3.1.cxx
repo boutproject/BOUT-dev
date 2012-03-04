@@ -35,6 +35,8 @@
 
 #include <petsc.h>
 
+#include <output.hxx>
+
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);

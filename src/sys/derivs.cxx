@@ -45,9 +45,11 @@
 #include <fft.hxx>
 #include <interpolation.hxx>
 
-#include <math.h>
+#include <cmath>
 #include <string.h>
 #include <stdlib.h>
+
+#include <output.hxx>
 
 //#undef _OPENMP
 

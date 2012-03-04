@@ -53,6 +53,8 @@
 
 #include "where.hxx"
 
+#include "output.hxx"
+
 const BoutReal BOUT_VERSION = 1.0;  ///< Version number
 
 // BOUT++ functions (bout++.cpp). Call to add a variable to evolve

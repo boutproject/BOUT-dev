@@ -6,6 +6,8 @@
 
 #include <cmath>
 
+#include <output.hxx>
+
 RK4Solver::RK4Solver() : Solver() {
   
 }

@@ -38,6 +38,8 @@ class FieldFactory;
 #include <vector>
 #include <sstream>
 
+#include "output.hxx"
+
 using std::vector;
 using std::string;
 using std::map;

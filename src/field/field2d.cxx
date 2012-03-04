@@ -37,8 +37,7 @@
 #include <boutexception.hxx>
 
 #include <cmath>
-#include <stdlib.h>
-#include <stdio.h>
+#include <output.hxx>
 
 Field2D::Field2D()
 {

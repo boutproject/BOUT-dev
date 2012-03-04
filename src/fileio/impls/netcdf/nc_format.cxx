@@ -28,6 +28,8 @@
 #include <utils.hxx>
 #include <cmath>
 
+#include <output.hxx>
+
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 

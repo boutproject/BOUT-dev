@@ -46,9 +46,8 @@
 #include <fft.hxx>
 #include <utils.hxx>
 #include <dcomplex.hxx>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <output.hxx>
 
 #include <lapack_routines.hxx> // Tridiagonal & band inversion routines
 #include <boutexception.hxx>

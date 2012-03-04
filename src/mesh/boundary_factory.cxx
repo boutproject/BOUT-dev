@@ -8,6 +8,8 @@
 using std::list;
 using std::string;
 
+#include <output.hxx>
+
 BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::~BoundaryFactory()
