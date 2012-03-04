@@ -59,6 +59,7 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 
 #include <time.h>
 
+#include <strings.h>
 #include <string>
 #include <list>
 using std::string;
