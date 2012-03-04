@@ -28,20 +28,17 @@
 #include <string.h>
 #include <output.hxx>
 
-void Output::enable()
-{ 
+void Output::enable() {
   add(std::cout);
   enabled = true;
 }
 
-void Output::disable()
-{
+void Output::disable() {
   remove(std::cout);
   enabled = false;
 }
 
-int Output::open(const char* fname, ...)
-{
+int Output::open(const char* fname, ...) {
   va_list ap;  // List of arguments
   
   if(fname == (const char*) NULL)
@@ -65,8 +62,7 @@ int Output::open(const char* fname, ...)
   return 0;
 }
 
-void Output::close()
-{
+void Output::close() {
   if(!file.is_open())
     return;
   
@@ -74,8 +70,7 @@ void Output::close()
   file.close();
 }
 
-void Output::write(const char* string, ...)
-{
+void Output::write(const char* string, ...) {
   va_list ap;  // List of arguments
 
   if(string == (const char*) NULL)
@@ -88,8 +83,7 @@ void Output::write(const char* string, ...)
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
 }
 
-void Output::print(const char* string, ...)
-{
+void Output::print(const char* string, ...) {
   va_list ap;  // List of arguments
 
   if(!enabled)
@@ -103,4 +97,15 @@ void Output::print(const char* string, ...)
   va_end(ap);
   
   fflush(stdout);
+}
+
+
+Output* Output::instance = NULL;
+
+Output* Output::getInstance() {
+  if(instance == NULL) {
+    // Create the instance
+    instance = new Output();
+  }
+  return instance;
 }

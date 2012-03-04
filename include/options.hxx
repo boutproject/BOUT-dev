@@ -94,4 +94,38 @@ public:
   map<string, Options*> sections;
 };
 
+/// Define for reading options which passes the variable name
+#define OPTION(options, var, def)  \
+  options->get(#var, var, def)
+
+#define OPTION2(options, var1, var2, def){ \
+    options->get(#var1, var1, def);  \
+    options->get(#var2, var2, def);}
+
+#define OPTION3(options, var1, var2, var3, def){  \
+    options->get(#var1, var1, def);               \
+    options->get(#var2, var2, def);               \
+    options->get(#var3, var3, def);}
+
+#define OPTION4(options, var1, var2, var3, var4, def){ \
+    options->get(#var1, var1, def);               \
+    options->get(#var2, var2, def);               \
+    options->get(#var3, var3, def);               \
+    options->get(#var4, var4, def);}
+
+#define OPTION5(options, var1, var2, var3, var4, var5, def){ \
+    options->get(#var1, var1, def);                      \
+    options->get(#var2, var2, def);                      \
+    options->get(#var3, var3, def);                      \
+    options->get(#var4, var4, def);                      \
+    options->get(#var5, var5, def);}
+
+#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
+    options->get(#var1, var1, def);                               \
+    options->get(#var2, var2, def);                               \
+    options->get(#var3, var3, def);                               \
+    options->get(#var4, var4, def);                               \
+    options->get(#var5, var5, def);                               \
+    options->get(#var6, var6, def);}
+
 #endif // __OPTIONS_H__

@@ -2204,7 +2204,7 @@ bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
 }
 
 const Field2D BoutMesh::averageY(const Field2D &f) {
-  static BoutReal *input = NULL, *output;
+  static BoutReal *input = NULL, *result;
  
 #ifdef CHECK
   msg_stack.push("averageY(Field2D)");
@@ -2212,7 +2212,7 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
  
   if(input == NULL) {
     input = new BoutReal[mesh->ngx];
-    output = new BoutReal[mesh->ngx];
+    result = new BoutReal[mesh->ngx];
   }
  
   BoutReal **fd = f.getData();
@@ -2227,9 +2227,9 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
     input[x] /= mesh->yend - mesh->ystart + 1;
   }
 
-  Field2D result;
-  result.allocate();
-  BoutReal **rd = result.getData();
+  Field2D r;
+  r.allocate();
+  BoutReal **rd = r.getData();
 
   int np;
   MPI_Comm_size(comm_inner, &np);
@@ -2239,21 +2239,21 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
       for(int y=0;y<mesh->ngy;y++)
         rd[x][y] = input[x];
   }else {
-    MPI_Allreduce(input, output, mesh->ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
+    MPI_Allreduce(input, result, mesh->ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
     for(int x=0;x<mesh->ngx;x++)
       for(int y=0;y<mesh->ngy;y++)
-        rd[x][y] = output[x] / (BoutReal) np;
+        rd[x][y] = result[x] / (BoutReal) np;
   }
 
 #ifdef CHECK
   msg_stack.pop();
 #endif
   
-  return result;
+  return r;
 }
 
 const Field3D BoutMesh::averageY(const Field3D &f) {
-  static BoutReal **input = NULL, **output;
+  static BoutReal **input = NULL, **result;
 
 #ifdef CHECK
   msg_stack.push("averageY(Field3D)");
@@ -2261,7 +2261,7 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
 
   if(input == NULL) {
     input = rmatrix(mesh->ngx, mesh->ngz);
-    output = rmatrix(mesh->ngx, mesh->ngz);
+    result = rmatrix(mesh->ngx, mesh->ngz);
   }
   
   BoutReal ***fd = f.getData();
@@ -2277,19 +2277,19 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
       input[x][z] /= mesh->yend - mesh->ystart + 1;
     }
   
-  Field3D result;
-  result.allocate();
-  BoutReal ***rd = result.getData();
+  Field3D r;
+  r.allocate();
+  BoutReal ***rd = r.getData();
 
   int np;
   MPI_Comm_size(comm_inner, &np);
   if(np > 1) {
-    MPI_Allreduce(*input, *output, mesh->ngx*mesh->ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
+    MPI_Allreduce(*input, *result, mesh->ngx*mesh->ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
     
     for(int x=0;x<mesh->ngx;x++)
       for(int y=0;y<mesh->ngy;y++)
         for(int z=0;z<mesh->ngz;z++) {
-          rd[x][y][z] = output[x][z] / (BoutReal) np;
+          rd[x][y][z] = result[x][z] / (BoutReal) np;
         }
   }else {
     for(int x=0;x<mesh->ngx;x++)
@@ -2303,7 +2303,7 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
   msg_stack.pop();
 #endif
   
-  return result;
+  return r;
 }
 
 BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi) {

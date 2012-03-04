@@ -58,40 +58,6 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core
 
 ///////////////////////////////////////////////////////////////
 
-/// Define for reading options which passes the variable name
-#define OPTION(options, var, def)  \
-  options->get(#var, var, def)
-
-#define OPTION2(options, var1, var2, def){ \
-    options->get(#var1, var1, def);  \
-    options->get(#var2, var2, def);}
-
-#define OPTION3(options, var1, var2, var3, def){  \
-    options->get(#var1, var1, def);               \
-    options->get(#var2, var2, def);               \
-    options->get(#var3, var3, def);}
-
-#define OPTION4(options, var1, var2, var3, var4, def){ \
-    options->get(#var1, var1, def);               \
-    options->get(#var2, var2, def);               \
-    options->get(#var3, var3, def);               \
-    options->get(#var4, var4, def);}
-
-#define OPTION5(options, var1, var2, var3, var4, var5, def){ \
-    options->get(#var1, var1, def);                      \
-    options->get(#var2, var2, def);                      \
-    options->get(#var3, var3, def);                      \
-    options->get(#var4, var4, def);                      \
-    options->get(#var5, var5, def);}
-
-#define OPTION6(options, var1, var2, var3, var4, var5, var6, def){ \
-    options->get(#var1, var1, def);                               \
-    options->get(#var2, var2, def);                               \
-    options->get(#var3, var3, def);                               \
-    options->get(#var4, var4, def);                               \
-    options->get(#var5, var5, def);                               \
-    options->get(#var6, var6, def);}
-
 /// Macro to replace bout_solve, passing variable name
 #define SOLVE_FOR(var) bout_solve(var, #var)
 #define SOLVE_FOR2(var1, var2) { \
@@ -120,67 +86,8 @@ GLOBAL int MYPE_IN_CORE; // 1 if processor in core
   bout_solve(var5, #var5);             \
   bout_solve(var6, #var6);}
 
-/// Output object
-GLOBAL Output output;
-
 /// Dump file object
 GLOBAL Datafile dump;
-
-/// Write this variable once to the grid file
-#define SAVE_ONCE(var) dump.add(var, #var, 0)
-#define SAVE_ONCE2(var1, var2) { \
-    dump.add(var1, #var1, 0); \
-    dump.add(var2, #var2, 0);}
-#define SAVE_ONCE3(var1, var2, var3) {\
-    dump.add(var1, #var1, 0); \
-    dump.add(var2, #var2, 0); \
-    dump.add(var3, #var3, 0);}
-#define SAVE_ONCE4(var1, var2, var3, var4) { \
-    dump.add(var1, #var1, 0); \
-    dump.add(var2, #var2, 0); \
-    dump.add(var3, #var3, 0); \
-    dump.add(var4, #var4, 0);}
-#define SAVE_ONCE5(var1, var2, var3, var4, var5) {\
-    dump.add(var1, #var1, 0); \
-    dump.add(var2, #var2, 0); \
-    dump.add(var3, #var3, 0); \
-    dump.add(var4, #var4, 0); \
-    dump.add(var5, #var5, 0);}
-#define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) {\
-    dump.add(var1, #var1, 0); \
-    dump.add(var2, #var2, 0); \
-    dump.add(var3, #var3, 0); \
-    dump.add(var4, #var4, 0); \
-    dump.add(var5, #var5, 0); \
-    dump.add(var6, #var6, 0);}
-
-/// Write this variable every timestep
-#define SAVE_REPEAT(var) dump.add(var, #var, 1)
-#define SAVE_REPEAT2(var1, var2) { \
-    dump.add(var1, #var1, 1); \
-    dump.add(var2, #var2, 1);}
-#define SAVE_REPEAT3(var1, var2, var3) {\
-    dump.add(var1, #var1, 1); \
-    dump.add(var2, #var2, 1); \
-    dump.add(var3, #var3, 1);}
-#define SAVE_REPEAT4(var1, var2, var3, var4) { \
-    dump.add(var1, #var1, 1); \
-    dump.add(var2, #var2, 1); \
-    dump.add(var3, #var3, 1); \
-    dump.add(var4, #var4, 1);}
-#define SAVE_REPEAT5(var1, var2, var3, var4, var5) {\
-    dump.add(var1, #var1, 1); \
-    dump.add(var2, #var2, 1); \
-    dump.add(var3, #var3, 1); \
-    dump.add(var4, #var4, 1); \
-    dump.add(var5, #var5, 1);}
-#define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) {\
-    dump.add(var1, #var1, 1); \
-    dump.add(var2, #var2, 1); \
-    dump.add(var3, #var3, 1); \
-    dump.add(var4, #var4, 1); \
-    dump.add(var5, #var5, 1); \
-    dump.add(var6, #var6, 1);}
 
 /// Status message stack. Used for debugging messages
 GLOBAL MsgStack msg_stack;
