@@ -48,7 +48,6 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 #include <grid.hxx>
 #include <solver.hxx>
 #include <derivs.hxx>
-#include <invert_laplace.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
 
@@ -303,9 +302,6 @@ int bout_init(int argc, char **argv) {
     dump.add(iteration, "iteration", 0);
 
     mesh->outputVars(dump);
-
-    // Initialise Laplacian inversion
-    invert_init();
 
     output.write("Initialising physics module\n");
     /// Initialise physics module
