@@ -33,6 +33,8 @@ class FieldFactory;
 #include "field2d.hxx"
 #include "field3d.hxx"
 
+#include "bout/constants.hxx"
+
 #include <string>
 #include <map>
 #include <vector>

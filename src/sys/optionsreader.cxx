@@ -1,4 +1,3 @@
-#include <globals.hxx>
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>

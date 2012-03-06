@@ -31,6 +31,7 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <lapack_routines.hxx>
+#include <bout/constants.hxx>
 
 LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   if(!mesh->firstX() || !mesh->lastX())

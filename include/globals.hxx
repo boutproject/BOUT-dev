@@ -32,11 +32,10 @@
 #include "bout_types.hxx"
 #include "field2d.hxx"
 #include "options.hxx"
-#include "msg_stack.hxx" 
 
 #include "datafile.hxx"
 #include "grid.hxx"
-#include "mesh.hxx"
+#include "bout/mesh.hxx"
 
 #include "boutcomm.hxx"
 
@@ -50,78 +49,10 @@
 
 GLOBAL Mesh *mesh; ///< The mesh object
 
-const BoutReal PI = 3.141592653589793;
-const BoutReal TWOPI = 6.2831853071795;
-
-GLOBAL int MYPE_IN_CORE; // 1 if processor in core
-
 ///////////////////////////////////////////////////////////////
-
-/// Macro to replace bout_solve, passing variable name
-#define SOLVE_FOR(var) bout_solve(var, #var)
-#define SOLVE_FOR2(var1, var2) { \
-  bout_solve(var1, #var1);       \
-  bout_solve(var2, #var2);}
-#define SOLVE_FOR3(var1, var2, var3) { \
-  bout_solve(var1, #var1);             \
-  bout_solve(var2, #var2);             \
-  bout_solve(var3, #var3);}
-#define SOLVE_FOR4(var1, var2, var3, var4) { \
-  bout_solve(var1, #var1);             \
-  bout_solve(var2, #var2);             \
-  bout_solve(var3, #var3);             \
-  bout_solve(var4, #var4);}
-#define SOLVE_FOR5(var1, var2, var3, var4, var5) { \
-  bout_solve(var1, #var1);             \
-  bout_solve(var2, #var2);             \
-  bout_solve(var3, #var3);             \
-  bout_solve(var4, #var4);             \
-  bout_solve(var5, #var5);}
-#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) { \
-  bout_solve(var1, #var1);             \
-  bout_solve(var2, #var2);             \
-  bout_solve(var3, #var3);             \
-  bout_solve(var4, #var4);             \
-  bout_solve(var5, #var5);             \
-  bout_solve(var6, #var6);}
 
 /// Dump file object
 GLOBAL Datafile dump;
-
-/// Status message stack. Used for debugging messages
-GLOBAL MsgStack msg_stack;
-
-/// Define for reading a variable from the grid
-#define GRID_LOAD(var) mesh->get(var, #var)
-#define GRID_LOAD2(var1, var2) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2);}
-#define GRID_LOAD3(var1, var2, var3) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3);}
-#define GRID_LOAD4(var1, var2, var3, var4) { \
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); }
-#define GRID_LOAD5(var1, var2, var3, var4, var5) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); \
-    mesh->get(var5, #var5);}
-#define GRID_LOAD6(var1, var2, var3, var4, var5, var6) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); \
-    mesh->get(var5, #var5); \
-    mesh->get(var6, #var6);}
-
-// Settings
-
-GLOBAL bool non_uniform; // Use corrections for non-uniform meshes
 
 // Error handling (bout++.cpp)
 void bout_error();
@@ -129,8 +60,5 @@ void bout_error(const char *str);
 
 #undef GLOBAL
 #undef SETTING
-
-/// Concise way to write time-derivatives
-#define ddt(f) (*((f).timeDeriv()))
 
 #endif // __GLOBALS_H__

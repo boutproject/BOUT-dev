@@ -4,7 +4,7 @@
 
 #include "mpi.h"
 
-#include <mesh.hxx>
+#include <bout/mesh.hxx>
 
 #include <list>
 #include <vector>

@@ -28,6 +28,7 @@
 #include <globals.hxx>
 #include <options.hxx>
 #include <fft.hxx>
+#include <bout/constants.hxx>
 
 #include <fftw3.h>
 #include <math.h>

@@ -35,6 +35,7 @@
 #include <boundary_factory.hxx>
 
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
 
 #include <cmath>
 #include <output.hxx>

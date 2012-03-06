@@ -1,6 +1,7 @@
-#include <globals.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
 #include <iostream>
+#include <stdarg.h>
 
 BoutException::~BoutException() throw()
 {

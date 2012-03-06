@@ -26,7 +26,7 @@
 
 #ifndef BOUT_HAS_PETSC_3_1
 
-#include "emptysolver.hxx"
+#include "../emptysolver.hxx"
 typedef EmptySolver Petsc31Solver;
 
 #else
@@ -37,12 +37,12 @@ class Petsc31Solver;
 
 #include <petscts.h>
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include <field2d.hxx>
+#include <field3d.hxx>
+#include <vector2d.hxx>
+#include <vector3d.hxx>
 
-#include "solver.hxx"
+#include <bout/solver.hxx>
 
 #include <vector>
 

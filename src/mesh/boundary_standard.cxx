@@ -6,6 +6,8 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <output.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 ///////////////////////////////////////////////////////////////
 

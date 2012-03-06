@@ -35,6 +35,8 @@
 #include <boundary_factory.hxx>
 #include <boutexception.hxx>
 #include <output.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 /// Constructor
 Field3D::Field3D() : background(NULL)

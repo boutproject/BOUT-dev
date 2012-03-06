@@ -40,6 +40,8 @@
 #include <cmath>
 #include <bout/sys/timer.hxx>
 #include <output.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #include "laplacefactory.hxx"
 
@@ -98,7 +100,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(MYPE_IN_CORE == 0) {
+  if(mesh->MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
     ys = 0;
     ye = mesh->ngy-1;
@@ -132,7 +134,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(MYPE_IN_CORE == 0) {
+  if(mesh->MYPE_IN_CORE == 0) {
     ys = 0;
     ye = mesh->ngy-1;
   }

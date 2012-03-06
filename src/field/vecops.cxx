@@ -27,6 +27,7 @@
 #include <globals.hxx>
 #include <vecops.hxx>
 #include <derivs.hxx>
+#include <msg_stack.hxx>
 
 /**************************************************************************
  * Gradient operators

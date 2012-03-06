@@ -32,6 +32,7 @@
 #include <globals.hxx>
 #include <smoothing.hxx>
 #include <bout_types.hxx>
+#include <msg_stack.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {

@@ -28,6 +28,7 @@
 #ifdef BOUT_HAS_PVODE
 
 #include <output.hxx>
+#include <msg_stack.hxx>
 #include <bout/sys/timer.hxx>
 
 using namespace pvode;

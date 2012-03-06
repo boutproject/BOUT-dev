@@ -41,6 +41,8 @@
 #include <fft.hxx>
 #include <boutexception.hxx>
 #include <cyclic_reduction.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #include <cmath>
 

@@ -44,6 +44,8 @@
 #include <fft.hxx>
 #include <lapack_routines.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #include <cmath>
 

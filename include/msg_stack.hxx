@@ -59,6 +59,16 @@ class MsgStack {
   int size;    ///< Size of the stack
 };
 
+#ifndef GLOBALORIGIN
+#define GLOBAL extern
+#else
+#define GLOBAL
+#endif
+
+/// Global object. Will eventually replace with better system
+GLOBAL MsgStack msg_stack;
+
+#undef GLOBAL
 
 #endif // __MSG_STACK_H__
 

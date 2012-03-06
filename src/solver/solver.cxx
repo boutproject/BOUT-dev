@@ -21,7 +21,7 @@
  **************************************************************************/
 
 #include <globals.hxx>
-#include <solver.hxx>
+#include <bout/solver.hxx>
 #include <string.h>
 
 #include <initialprofiles.hxx>
@@ -31,6 +31,7 @@
 #include "solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
+#include <msg_stack.hxx>
 #include <output.hxx>
 
 /**************************************************************************

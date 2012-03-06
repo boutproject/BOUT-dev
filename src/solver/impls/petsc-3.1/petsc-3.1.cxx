@@ -32,6 +32,7 @@
 #include <stdlib.h>
 
 #include <interpolation.hxx> // Cell interpolation
+#include <msg_stack.hxx>
 
 #include <petsc.h>
 

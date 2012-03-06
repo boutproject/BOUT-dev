@@ -31,6 +31,7 @@
 
 #include <globals.hxx>
 #include <interpolation.hxx> // Cell interpolation
+#include <msg_stack.hxx>
 
 #include <cvode/cvode.h>
 #include <nvector/nvector_parallel.h>

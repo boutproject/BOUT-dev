@@ -29,6 +29,7 @@
 #include <utils.hxx>
 #include <globals.hxx>
 #include <output.hxx>
+#include <msg_stack.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 

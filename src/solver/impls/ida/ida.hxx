@@ -29,7 +29,7 @@
 
 #ifndef BOUT_HAS_IDA
 
-#include "emptysolver.hxx"
+#include "../emptysolver.hxx"
 typedef EmptySolver IdaSolver;
  
 #else
@@ -38,13 +38,13 @@ class IdaSolver;
 #ifndef __IDA_SOLVER_H__
 #define __IDA_SOLVER_H__
 
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include <bout_types.hxx>
+#include <field2d.hxx>
+#include <field3d.hxx>
+#include <vector2d.hxx>
+#include <vector3d.hxx>
 
-#include "solver.hxx"
+#include <bout/solver.hxx>
 
 // NOTE: MPI must be included before SUNDIALS, otherwise complains
 #include "mpi.h"

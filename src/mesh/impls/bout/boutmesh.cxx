@@ -32,16 +32,17 @@
 
 #include "boutmesh.hxx"
 
-#include <globals.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
 #include <derivs.hxx>
-
+#include <boutcomm.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
 #include <output.hxx>
 #include <bout/sys/timer.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -127,6 +128,7 @@ int BoutMesh::load() {
       return 1;
     }
   }
+  OPTION(options, non_uniform,  false);
   OPTION(options, TwistShift,   false);
   OPTION(options, TwistOrder,   0);
   OPTION(options, ShiftOrder,   0);
@@ -140,10 +142,10 @@ int BoutMesh::load() {
 
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
-    if(mesh->ShiftOrder == 0) {
+    if(ShiftOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", mesh->ShiftOrder);
+      output.write("%d-point\n", ShiftOrder);
   }
   
   if(options->isSet("zperiod")) {
@@ -159,10 +161,10 @@ int BoutMesh::load() {
 
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(mesh->TwistOrder == 0) {
+    if(TwistOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", mesh->TwistOrder);
+      output.write("%d-point\n", TwistOrder);
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
@@ -260,7 +262,7 @@ int BoutMesh::load() {
     ShiftTorsion = 0.0;
   }
   
-  if(mesh->IncIntShear) {
+  if(IncIntShear) {
     if(get(IntShiftTorsion, "IntShiftTorsion")) {
       output.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
@@ -290,8 +292,8 @@ int BoutMesh::load() {
 	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
    
     }else if(YPROC(jyseps1_1+1) == PE_YIND) {
-      for(int i=0;i<mesh->ngx;i++)
-	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
+      for(int i=0;i<ngx;i++)
+	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
     }
     
     // In the core, need to set ShiftAngle everywhere for ballooning initial condition
@@ -331,8 +333,8 @@ int BoutMesh::load() {
       TS_up_in = true; // Switch on twist-shift
       
     }else if(YPROC(jyseps2_2+1) == PE_YIND) {
-      for(int i=0;i<mesh->ngx;i++) {
-	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
+      for(int i=0;i<ngx;i++) {
+	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
       }
       TS_down_in = true;
     }
@@ -347,21 +349,21 @@ int BoutMesh::load() {
     return 1;
   
   // Attempt to read J from the grid file
-  Field2D Jcalc = mesh->J;
-  if(mesh->get(mesh->J, "J")) {
+  Field2D Jcalc = J;
+  if(get(J, "J")) {
     output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    mesh->J = Jcalc;
+    J = Jcalc;
   }else {
     // Compare calculated and loaded values  
-    output.write("\tMaximum difference in J is %e\n", max(abs(mesh->J - Jcalc)));
+    output.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
     
     // Re-evaluate Bxy using new J
-    Bxy = sqrt(mesh->g_22)/mesh->J;
+    Bxy = sqrt(g_22)/J;
   }
 
   // Attempt to read Bxy from the grid file
   Field2D Bcalc = Bxy;
-  if(mesh->get(Bxy, "Bxy")) {
+  if(get(Bxy, "Bxy")) {
     output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
     Bxy = Bcalc;
   }else {
@@ -426,12 +428,12 @@ int BoutMesh::load() {
 	// Should be part of this communicator
 	if(comm_tmp == MPI_COMM_NULL) {
 	  // error
-	  bout_error("Single null outer SOL not correct\n");
+	  throw BoutException("Single null outer SOL not correct\n");
 	}
 	comm_outer = comm_tmp;
       }else if(comm_tmp != MPI_COMM_NULL) {
 	// Not part of this communicator so should be NULL
-	bout_error("Single null outer SOL not correct\n");
+	throw BoutException("Single null outer SOL not correct\n");
       }
       MPI_Group_free(&group);
     }
@@ -1385,7 +1387,7 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if(TwistShift && (mesh->TwistOrder == 0)) {
+  if(TwistShift && (TwistOrder == 0)) {
     int jx, jy;
     
     // Perform Twist-shift using shifting method (rather than in setStencil)
@@ -1993,7 +1995,7 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
 	// 3D variable
    
 	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < mesh->ngz-1;jz++) {
+	  for(jz=0;jz < ngz-1;jz++) {
 	    len += (*it)->setData(jx,jy,jz,buffer+len);
 	  }
 	
@@ -2042,7 +2044,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 
   int maxmode = (size[2] - 1)/2; ///< Maximum mode-number n
 
-  int ncz = mesh->ngz-1;
+  int ncz = ngz-1;
 
   // Print out which modes are going to be read in
   if(zperiod > maxmode) {
@@ -2187,20 +2189,20 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
 #endif
  
   if(input == NULL) {
-    input = new BoutReal[mesh->ngx];
-    result = new BoutReal[mesh->ngx];
+    input = new BoutReal[ngx];
+    result = new BoutReal[ngx];
   }
  
   BoutReal **fd = f.getData();
   
   // Average on this processor
-  for(int x=0;x<mesh->ngx;x++) {
+  for(int x=0;x<ngx;x++) {
     input[x] = 0.;
     // Sum values, not including boundaries
-    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+    for(int y=ystart;y<=yend;y++) {
       input[x] += fd[x][y];
     }
-    input[x] /= mesh->yend - mesh->ystart + 1;
+    input[x] /= yend - ystart + 1;
   }
 
   Field2D r;
@@ -2211,13 +2213,13 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
   MPI_Comm_size(comm_inner, &np);
   
   if(np == 1) {
-    for(int x=0;x<mesh->ngx;x++)
-      for(int y=0;y<mesh->ngy;y++)
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
         rd[x][y] = input[x];
   }else {
-    MPI_Allreduce(input, result, mesh->ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
-    for(int x=0;x<mesh->ngx;x++)
-      for(int y=0;y<mesh->ngy;y++)
+    MPI_Allreduce(input, result, ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
         rd[x][y] = result[x] / (BoutReal) np;
   }
 
@@ -2236,21 +2238,21 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
 #endif
 
   if(input == NULL) {
-    input = rmatrix(mesh->ngx, mesh->ngz);
-    result = rmatrix(mesh->ngx, mesh->ngz);
+    input = rmatrix(ngx, ngz);
+    result = rmatrix(ngx, ngz);
   }
   
   BoutReal ***fd = f.getData();
   
   // Average on this processor
-  for(int x=0;x<mesh->ngx;x++)
-    for(int z=0;z<mesh->ngz;z++) {
+  for(int x=0;x<ngx;x++)
+    for(int z=0;z<ngz;z++) {
       input[x][z] = 0.;
       // Sum values, not including boundaries
-      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      for(int y=ystart;y<=yend;y++) {
         input[x][z] += fd[x][y][z];
       }
-      input[x][z] /= mesh->yend - mesh->ystart + 1;
+      input[x][z] /= yend - ystart + 1;
     }
   
   Field3D r;
@@ -2260,17 +2262,17 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
   int np;
   MPI_Comm_size(comm_inner, &np);
   if(np > 1) {
-    MPI_Allreduce(*input, *result, mesh->ngx*mesh->ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
+    MPI_Allreduce(*input, *result, ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
     
-    for(int x=0;x<mesh->ngx;x++)
-      for(int y=0;y<mesh->ngy;y++)
-        for(int z=0;z<mesh->ngz;z++) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
           rd[x][y][z] = result[x][z] / (BoutReal) np;
         }
   }else {
-    for(int x=0;x<mesh->ngx;x++)
-      for(int y=0;y<mesh->ngy;y++)
-        for(int z=0;z<mesh->ngz;z++) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
           rd[x][y][z] = input[x][z];
         }
   }
@@ -2331,7 +2333,7 @@ bool BoutSurfaceIter::closed(BoutReal &ts) {
   if(m->TwistShift) {
     ts = m->ShiftAngle[xpos];
   }
-  return (xglobal < m->ixseps_inner) && MYPE_IN_CORE;
+  return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
 }
 
 MPI_Comm BoutSurfaceIter::communicator() {

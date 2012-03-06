@@ -28,6 +28,7 @@
 #include <cmath>
 
 #include <output.hxx>
+#include <bout/constants.hxx>
 
 BoutReal FieldX::generate(int x, int y, int z) {
   return mesh->GlobalX(x);

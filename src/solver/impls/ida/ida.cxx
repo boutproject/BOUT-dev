@@ -33,6 +33,7 @@
 
 #include <globals.hxx>
 #include <interpolation.hxx> // Cell interpolation
+#include <msg_stack.hxx>
 
 #include <ida/ida.h>
 #include <ida/ida_spgmr.h>

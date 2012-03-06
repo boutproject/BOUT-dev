@@ -38,6 +38,7 @@
 
 #include "karniadakis.hxx"
 
+#include <msg_stack.hxx>
 #include <output.hxx>
 
 KarniadakisSolver::KarniadakisSolver() : Solver()

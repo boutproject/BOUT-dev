@@ -10,7 +10,6 @@ class BoundaryModifier;
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
-#include "bout.hxx"
 
 #include <cmath>
 #include <string>

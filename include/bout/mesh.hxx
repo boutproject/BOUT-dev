@@ -262,6 +262,10 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
+
+  int MYPE_IN_CORE;  // 1 if processor in core
+  
+  bool non_uniform; // Use corrections for non-uniform meshes
   
  protected:
   
@@ -278,4 +282,33 @@ class Mesh {
   int gaussj(BoutReal **a, int n);
 };
 
+/// Define for reading a variable from the grid
+#define GRID_LOAD(var) mesh->get(var, #var)
+#define GRID_LOAD2(var1, var2) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2);}
+#define GRID_LOAD3(var1, var2, var3) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3);}
+#define GRID_LOAD4(var1, var2, var3, var4) { \
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); }
+#define GRID_LOAD5(var1, var2, var3, var4, var5) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); \
+    mesh->get(var5, #var5);}
+#define GRID_LOAD6(var1, var2, var3, var4, var5, var6) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); \
+    mesh->get(var5, #var5); \
+    mesh->get(var6, #var6);}
+
 #endif // __MESH_H__
+

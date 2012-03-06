@@ -1,8 +1,9 @@
 
 #include <globals.hxx>
-#include <mesh.hxx>
+#include <bout/mesh.hxx>
 #include <utils.hxx>
 #include <derivs.hxx>
+#include <msg_stack.hxx>
 
 #include <cmath>
 

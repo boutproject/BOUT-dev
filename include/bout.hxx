@@ -47,7 +47,7 @@
 
 #include "sourcex.hxx"     // source and mask functions
 
-#include "solver.hxx"
+#include "bout/solver.hxx"
 
 #include "datafile.hxx"
 
@@ -65,6 +65,34 @@ void bout_solve(Vector2D &var, const char *name);
 void bout_solve(Vector3D &var, const char *name);
 
 bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
+
+/// Macro to replace bout_solve, passing variable name
+#define SOLVE_FOR(var) bout_solve(var, #var)
+#define SOLVE_FOR2(var1, var2) { \
+  bout_solve(var1, #var1);       \
+  bout_solve(var2, #var2);}
+#define SOLVE_FOR3(var1, var2, var3) { \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);}
+#define SOLVE_FOR4(var1, var2, var3, var4) { \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);}
+#define SOLVE_FOR5(var1, var2, var3, var4, var5) { \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);             \
+  bout_solve(var5, #var5);}
+#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) { \
+  bout_solve(var1, #var1);             \
+  bout_solve(var2, #var2);             \
+  bout_solve(var3, #var3);             \
+  bout_solve(var4, #var4);             \
+  bout_solve(var5, #var5);             \
+  bout_solve(var6, #var6);}
 
 // Physics functions
 

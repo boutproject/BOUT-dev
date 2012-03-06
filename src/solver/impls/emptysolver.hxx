@@ -30,8 +30,8 @@ class EmptySolver;
 #ifndef __EMPTY_SOLVER_H__
 #define __EMPTY_SOLVER_H__
 
-#include "solver.hxx"
-#include "boutexception.hxx"
+#include <bout/solver.hxx>
+#include <boutexception.hxx>
 
 class EmptySolver : public Solver {
 public:

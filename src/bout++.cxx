@@ -46,10 +46,11 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 #include <bout.hxx>
 #include <datafile.hxx>
 #include <grid.hxx>
-#include <solver.hxx>
+#include <bout/solver.hxx>
 #include <derivs.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
+#include <msg_stack.hxx>
 
 #include "fileio/formatfactory.hxx"
 
@@ -241,7 +242,6 @@ int bout_init(int argc, char **argv) {
     options->get("grid", grid_name, DEFAULT_GRID);
 
     OPTION(options, dump_float,   true);
-    OPTION(options, non_uniform,  false);
 
     // Check if restarting
     bool restart;
