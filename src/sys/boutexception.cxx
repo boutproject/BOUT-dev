@@ -1,6 +1,7 @@
 #include <globals.hxx>
 #include <boutexception.hxx>
 #include <iostream>
+#include <output.hxx>
 
 BoutException::~BoutException() throw()
 {
