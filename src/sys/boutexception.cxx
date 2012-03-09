@@ -2,6 +2,7 @@
 #include <msg_stack.hxx>
 #include <iostream>
 #include <stdarg.h>
+#include <output.hxx>
 
 BoutException::~BoutException() throw()
 {

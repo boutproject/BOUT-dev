@@ -332,6 +332,35 @@ use
 $ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
 \end{verbatim}
 
+\subsubsection{PETSc-dev}
+
+The development version of PETSc has the latest and greatest, and is needed for some 
+shiny features like timestepping. To install it, follow the instructions here:
+\url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
+writing, this consisted of fetching the latest version ({\bf NB} needs Mercurial 
+'hg' to be installed):
+\begin{verbatim}
+hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
+cd petsc-dev
+hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
+\end{verbatim}
+
+then configure PETSc, making sure to enable C++ and SUNDIALS support
+\begin{verbatim}
+./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
+            --with-sundials=1 --with-sundials-dir=$HOME/local/
+\end{verbatim}
+replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation. Finally
+compile PETSc:
+\begin{verbatim}
+make
+\end{verbatim}
+To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to the petsc-dev directory so add something
+like this to your startup file \texttt{\$HOME/.bashrc}
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-dev
+\end{verbatim}
+
 \subsection{Installing BOUT++}
 \label{sec:installbout}
 

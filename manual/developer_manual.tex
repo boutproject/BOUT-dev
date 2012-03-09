@@ -1716,7 +1716,8 @@ All classes inheriting from \lstinline!FieldGenerator! must implement a
 \lstinline!generate! function, which returns the value
 at the given \lstinline!(x,y,z)! position. Classes should also implement a
 \lstinline!clone! function, which takes a list of arguments and creates a new
-instance of its class.
+instance of its class. This takes as input a list of other \lstinline!FieldGenerator! objects,
+allowing a variable number of arguments. 
 
 The simplest generator is a fixed numerical value, which is represented
 by a \lstinline!FieldValue! object: \index{FieldValue}
@@ -1729,6 +1730,141 @@ private:
   BoutReal value;
 };
 \end{lstlisting}
+
+\subsection{Adding a new function}
+
+To add a new function to the FieldFactory, a new \lstinline!FieldGenerator! class
+must be defined. Here we will use the example of the \lstinline!sinh! function, implemented
+using a class \lstinline!FieldSinh!. This takes a single argument as input, but
+\lstinline!FieldPI! takes no arguments, and \lstinline!FieldGaussian! takes either one or two.
+Study these after reading this to see how these are handled.
+
+First, edit \file{include/field\_factory.hxx} and add a class definition:
+\begin{lstlisting}[firstnumber=122]
+  class FieldSinh : public FieldGenerator {
+public:
+  FieldSinh(FieldGenerator* g) : gen(g) {}
+  ~FieldSinh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+\end{lstlisting}
+
+The \lstinline!gen! member is used to store the input argument, and to make sure it's deleted
+properly we add some code to the destructor. The constructor takes a single input, the \lstinline!FieldGenerator! argument to the \lstinline!sinh! function, which is stored in the member \lstinline!gen!.
+
+Next edit \file{src/field/field\_factory.cxx} and add the implementation of the \lstinline!clone! and
+\lstinline!generate! functions:
+\begin{lstlisting}[firstnumber=100]
+FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sinh function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSinh(args.front());
+}
+
+BoutReal FieldSinh::generate(int x, int y, int z) {
+  return sinh(gen->generate(x,y,z));
+}
+\end{lstlisting}
+
+The \lstinline!clone! function first checks the number of arguments using \lstinline!args.size()!. This
+is used in \lstinline!FieldGaussian! to handle different numbers of input, but in this case we 
+print an error message and return \lstinline!NULL! if the number of inputs isn't one. \lstinline!clone! then creates
+a new \lstinline!FieldSinh! object, passing the first argument (\lstinline!args.front()!) to the constructor (which
+then gets stored in the \lstinline!gen! member variable). 
+
+The \lstinline!generate! function for \lstinline!sinh! just gets the value of the input by calling
+\lstinline!gen->generate(x,y,z)!, calculates \lstinline!sinh! of it and returns the result.
+
+The \lstinline!clone! function means that the parsing code can make copies of any \lstinline!FieldGenerator! class
+if it's given a single instance to start with. The final step is therefore to give the \lstinline!FieldFactory! 
+class an instance of this new generator. Edit the \lstinline!FieldFactory! constructor \lstinline!FieldFactory::FieldFactory()! in \file{src/field/field\_factory.cxx} and add the line:
+\begin{lstlisting}[firstnumber=196]
+addGenerator("sinh", new FieldSinh(NULL));
+\end{lstlisting}
+
+That's it! This line associates the string \lstinline!"sinh"! with a \lstinline!FieldGenerator!. Even
+though \lstinline!FieldFactory! doesn't know what type of \lstinline!FieldGenerator! it is, it can make more copies
+by calling the \lstinline!clone! member function. This is a useful technique for polymorphic objects in C++ called the
+``Virtual Constructor'' idiom.
+
+\subsection{Parser internals}
+
+When a \lstinline!FieldGenerator! is added using the \lstinline!addGenerator! function,
+it is entered into a \lstinline!std::map! which maps strings to \lstinline!FieldGenerator!
+objects (\file{include/field\_factory.hxx}):
+
+\begin{lstlisting}[firstnumber=223]
+map<string, FieldGenerator*> gen;
+\end{lstlisting}
+
+Parsing a string into a tree of \lstinline!FieldGenerator! objects is done by first splitting the string up
+into separate tokens like operators like '*', brackets '(', names like 'sinh' and so on, then 
+recognising patterns in the stream of tokens. Recognising tokens is done in \file{src/field/field\_factory.cxx}:
+\begin{lstlisting}[firstnumber=259]
+char FieldFactory::nextToken() {
+ ...
+\end{lstlisting}
+
+This returns the next token, and setting the variable \lstinline!char curtok! to the same value. 
+This can be one of:
+\begin{itemize}
+\item -1 if the next token is a number. The variable \lstinline!BoutReal curval! is set to
+  the value of the token
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything which starts with a letter, and
+  contains only letters, numbers, and underscores. The string is stored in the variable \lstinline!string curident!. 
+\item 0 to mean end of input
+\item The character if none of the above. Since letters and numbers are taken care of (see above), this includes
+  brackets and operators like '+' and '-'.
+\end{itemize}
+
+The parsing stage turns these tokens into a tree of \lstinline!FieldGenerator! objects, starting
+with the \lstinline!parse()! function
+\begin{lstlisting}[firstnumber=484]
+FieldGenerator* FieldFactory::parse(const string &input) {
+   ...
+\end{lstlisting}
+which puts the input string into a stream so that \lstinline!nextToken()! can use it, then
+calls the \lstinline!parseExpression()! function to do the actual parsing:
+\begin{lstlisting}[firstnumber=477]
+FieldGenerator* FieldFactory::parseExpression() {
+   ...
+\end{lstlisting}
+
+This breaks down expressions in stages, starting with writing every expression as
+\begin{verbatim}
+expression := primary [ op primary ]
+\end{verbatim}
+i.e. a primary expression, and optionally an operator and another primary expression. Primary
+expressions are handled by the \lstinline!parsePrimary()! function, so first \lstinline!parsePrimary()! is called, 
+and then \lstinline!parseBinOpRHS! which checks if there is an operator, and if so calls \lstinline!parsePrimary()! to
+parse it. This code also takes care of operator precedence by keeping track of the precedence
+of the current operator. Primary expressions are then further broken down and can consist of either
+a number, a name (identifier), a minus sign and a primary expression, or brackets around an  expression:
+\begin{verbatim}
+primary := number
+        := identifier
+        := '-' primary
+        := '(' expression ')'
+        := '[' expression ']'
+\end{verbatim}
+The minus sign case is needed to handle the unary minus e.g. \lstinline!"-x"!. Identifiers are handled
+in \lstinline!parseIdentifierExpr()! which handles either variable names, or functions
+\begin{verbatim}
+identifier := name
+           := name '(' expression [ ',' expression [ ',' ... ] ] ')'
+\end{verbatim}
+i.e. a name, optionally followed by brackets containing one or more expressions separated by commas.
+names without brackets are treated the same as those with empty brackets, so \lstinline!"x"! is the same
+as \lstinline!"x()"!. A list of inputs (\lstinline!list<FieldGenerator*> args;!) is created, 
+the \lstinline!gen! map is searched to find the \lstinline!FieldGenerator! object corresponding to the name,
+and the list of inputs is passed to the object's \lstinline!clone! function.
 
 \section{Solver}
 \index{Solver}
