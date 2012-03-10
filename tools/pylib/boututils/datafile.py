@@ -187,6 +187,9 @@ class DataFile:
         def dimlen(d):
             dim = self.handle.dimensions[d]
             if dim != None:
+                t = type(dim).__name__
+                if t == 'int':
+                    return dim
                 return len(dim)
             return 0
         return map(lambda d: dimlen(d), var.dimensions)
