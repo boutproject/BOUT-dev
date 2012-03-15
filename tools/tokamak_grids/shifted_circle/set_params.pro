@@ -9,7 +9,7 @@ names=tag_names(s)
   read, ans, prompt=prompt
 
   if (STRLOWCASE(ans) ne 'y') then begin
-   val=0.0
+   val=s.(i)
    read, val, prompt='Setting '+names[i]+ '='
    s.(i)=val
   endif
