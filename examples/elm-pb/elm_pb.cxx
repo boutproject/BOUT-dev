@@ -13,8 +13,8 @@
 #include <math.h>
 #include "sourcex.hxx"
 #include <boutmain.hxx>
-
-
+#include <bout/constants.hxx>
+#include <msg_stack.hxx>
 
 
 //xia:       rf waves
@@ -266,7 +266,7 @@ int physics_init(bool restarting)
   // Load 2D profiles
   mesh->get(J0, "Jpar0");    // A / m^2
   mesh->get(P0, "pressure"); // Pascals
-
+  
   // Load curvature term
   b0xcv.covariant = false; // Read contravariant components
   mesh->get(b0xcv, "bxcv"); // mixed units x: T y: m^-2 z: m^-2
@@ -310,7 +310,10 @@ int physics_init(bool restarting)
   OPTION(options, rf_x,              0.8);   // The center of rf injection
   OPTION(options, rf_y,              -1.);
 
-
+  BoutReal scaleP;
+  OPTION(options, scaleP,            1.0);  // Multiply P0 by a number
+  P0 *= scaleP;              // NOTE: Not self consistent with B field
+  
   OPTION(options, density,           1.0e19); // Number density [m^-3]
 
   OPTION(options, evolve_jpar,       false);  // If true, evolve J raher than Psi
