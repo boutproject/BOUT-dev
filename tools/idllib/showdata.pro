@@ -32,18 +32,26 @@
 ;  /bw            Make contour plots greyscale
 ;  
 ;  bmp="string"    Output each plot to a numbered BMP file
-;  output="string" 
+;
+;  output="string" Output each plot to a numbered PS file
+;
 ;  numoff=integer  Add this to the numbering of output files
 ;
+;  mpeg = "string"  Generate a truecolor MPEG movie with each plot as a separate frame
 ;
 ; B.Dudson, University of York
+;
+; Modified:
+;
+;   2012/03/12  I. Joseph: add mpeg write capability
+;
 
 PRO showdata, data, contour=contour, yr=yr, color=color, $
               profile=profile, chars=chars, $
               az=az, delay=delay, _extra=_extra, $
               noscale=noscale, uedge=uedge, period=period, $
               addsym=addsym, bw=bw, bmp=bmp, output=output, $
-              numoff=numoff, nobuffer=nobuffer
+              numoff=numoff, nobuffer=nobuffer, mpeg=mpeg
 
   on_error,2  ; If an error occurs, return to caller
 
@@ -54,7 +62,7 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
   IF NOT KEYWORD_SET(numoff) THEN numoff = 0 ELSE PRINT, "Offsetting numbers by "+STRTRIM(STRING(FIX(numoff)),2)
   numoff = FIX(numoff) ; make sure it's an integer
 
-  IF KEYWORD_SET(bmp) THEN nobuffer = 1 ; No buffering
+  IF KEYWORD_SET(bmp) OR KEYWORD_SET(mpeg) THEN nobuffer = 1 ; No buffering
 
   s = SIZE(data, /dimensions)
 
@@ -69,6 +77,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
     WINDOW, xsize=xsize, ysize=ysize, /PIXMAP, /FREE
     pixid = !D.WINDOW  ; Get window ID
     WSET, pixid
+  ENDIF
+
+  IF KEYWORD_SET(mpeg) THEN BEGIN
+	 mpegfile = mpeg+".mpeg"
+	 mpegid = MPEG_OPEN([xsize,ysize],file=mpegfile)
+         PRINT, "Writing to: " +mpegfile
   ENDIF
 
   IF ndims EQ 2 THEN BEGIN
@@ -121,10 +135,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
              LOADCT, 0
           ENDIF ELSE BEGIN
              loadct, 39
+
           ENDELSE
           device, decomposed=0
-                                ;safe_colors, /first
-          
+                                ;safe_colors, /first      
+
+
           FOR i=0, nt-1 DO BEGIN
               contour, reform(val[*,*,i]), chars=chars, zr=yr, zstyle=1, $
                 /fill, nlev=50, color=color, $
@@ -151,6 +167,12 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
                   
                   WRITE_BMP, file, TVRD(TRUE=1)
               ENDIF
+              IF KEYWORD_SET(mpeg) THEN BEGIN
+                  PRINT, "  frame "+strtrim(string(i+1),1)+"/"+strtrim(string(nt),1)
+	          frame = tvrd(true=1,/order)
+                  MPEG_PUT, mpegid, image=frame, frame=i
+              ENDIF
+
           ENDFOR
       ENDIF ELSE BEGIN
           PRINT, "chars=", chars
@@ -183,7 +205,7 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
 
       loadct, 39
       device, decomposed=0
-          
+       
       IF NOT KEYWORD_SET(noscale) THEN yr=[MIN(data), MAX(data)]
           
       FOR i=0, nt-1 DO BEGIN
@@ -229,10 +251,27 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
               
               WRITE_BMP, file, TVRD(TRUE=1)
           ENDIF
+
+          IF KEYWORD_SET(mpeg) THEN BEGIN
+;              IF i EQ 0 THEN BEGIN
+;                  PRINT, "Click window to begin"
+;                  cursor, x, y, /down
+;              ENDIF		
+              PRINT, "  frame "+strtrim(string(i+1),1)+"/"+strtrim(string(nt),1)
+              frame = tvrd(true=1,/order)
+              MPEG_PUT, mpegid, image=frame, frame=i
+          ENDIF
+
       ENDFOR
   ENDIF ELSE BEGIN
       PRINT, "Data must be either 2, 3 or 4 dimensional"
   ENDELSE
+
+  IF KEYWORD_SET(mpeg) THEN BEGIN
+	PRINT, "Saving MPEG file: "+mpegfile
+	MPEG_SAVE,mpegid
+	MPEG_CLOSE,mpegid
+  ENDIF
 
   IF NOT KEYWORD_SET(nobuffer) THEN BEGIN
     ; Switch back to original window
