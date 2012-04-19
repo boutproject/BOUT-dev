@@ -204,11 +204,21 @@ class DataFile:
         if t == 'NoneType':
             print "DataFile: None passed as data to write. Ignoring"
             return
-        
+            
         if t == 'ndarray':
-            # Numpy type
+            # Numpy type. Get the data type
             t = data.dtype.str
-        
+
+        if t == 'list':
+            # List -> convert to numpy array
+            data = np.array(data)
+            t = data.dtype.str
+
+        if (t == 'int') or (t == '<i8'):
+            # NetCDF 3 does not support type int64
+            data = np.int32(data)
+            t = data.dtype.str
+            
         try:
             # See if the variable already exists
             var = self.handle.variables[name]
