@@ -303,6 +303,13 @@ class DataFile:
                 raise Exception("Couldn't create variable")
             
         # Write the data
-        var.assignValue(data)
+
+        try:
+            # Some libraries allow this for arrays
+            var.assignValue(data)
+        except:
+            # And some others only this
+            var[:] = data
+            
         
             
