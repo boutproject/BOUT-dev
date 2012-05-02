@@ -285,7 +285,7 @@ class Field3D : public Field, public FieldData {
   
   CELL_LOC location; // Location of the variable in the cell
   
-  Field3D *ddt; ///< Time derivative (may be NULL)
+  Field3D *deriv; ///< Time derivative (may be NULL)
 };
 
 // Non-member overloaded operators

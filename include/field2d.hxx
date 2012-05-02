@@ -184,7 +184,7 @@ class Field2D : public Field, public FieldData {
   void allocData();
   void freeData();
   
-  Field2D *ddt; ///< Time-derivative, can be NULL
+  Field2D *deriv; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators

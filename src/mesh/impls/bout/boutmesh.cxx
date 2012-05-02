@@ -2532,6 +2532,7 @@ bool BoutRangeIter::isDone()
 BoutReal BoutMesh::GlobalX(int jx)
 {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy)

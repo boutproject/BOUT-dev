@@ -32,36 +32,30 @@
 
 #include <vector3d.hxx>
 #include <boundary_op.hxx>
-#include <output.hxx>
+#include <boutexception.hxx>
 
-Vector3D::Vector3D()
-{
-  covariant = true;
-  ddt = NULL;
+Vector3D::Vector3D() : covariant(true), deriv(NULL) { }
+
+Vector3D::Vector3D(const Vector3D &f) : covariant(f.covariant), deriv(NULL) {
+  x = f.x;
+  y = f.y;
+  z = f.z;
 }
 
-Vector3D::Vector3D(const Vector3D &f)
-{
-  *this = f;
-  ddt = NULL;
-}
-
-Vector3D::~Vector3D()
-{
-  if(ddt != NULL) {
+Vector3D::~Vector3D() {
+  if(deriv != NULL) {
     // The ddt of the components (x.ddt) point to the same place as ddt.x
     // only delete once
-    x.ddt = NULL;
-    y.ddt = NULL;
-    z.ddt = NULL;
+    x.deriv = NULL;
+    y.deriv = NULL;
+    z.deriv = NULL;
     
-    // Now delete them as part of the ddt vector
-    delete ddt;
+    // Now delete them as part of the deriv vector
+    delete deriv;
   }
 }
 
-void Vector3D::toCovariant()
-{  
+void Vector3D::toCovariant() {  
   if(!covariant) {
     Field3D gx, gy, gz;
 
@@ -98,31 +92,31 @@ void Vector3D::toContravariant()
 
 Vector3D* Vector3D::timeDeriv()
 {
-  if(ddt == NULL) {
-    ddt = new Vector3D();
+  if(deriv == NULL) {
+    deriv = new Vector3D();
     
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
     
-    if(x.ddt != NULL) {
+    if(x.deriv != NULL) {
       // already set. Copy across then delete
-      ddt->x = *(x.ddt);
-      delete x.ddt;
+      deriv->x = *(x.deriv);
+      delete x.deriv;
     }
-    if(y.ddt != NULL) {
-      ddt->y = *(y.ddt);
-      delete y.ddt;
+    if(y.deriv != NULL) {
+      deriv->y = *(y.deriv);
+      delete y.deriv;
     }
-    if(z.ddt != NULL) {
-      ddt->z = *(z.ddt);
-      delete z.ddt;
+    if(z.deriv != NULL) {
+      deriv->z = *(z.deriv);
+      delete z.deriv;
     }
     // Set the component time-derivatives
-    x.ddt = &(ddt->x);
-    y.ddt = &(ddt->y);
-    z.ddt = &(ddt->z);
+    x.deriv = &(deriv->x);
+    y.deriv = &(deriv->y);
+    z.deriv = &(deriv->z);
   }
-  return ddt;
+  return deriv;
 }
 
 /***************************************************************
@@ -567,8 +561,7 @@ int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
-    output.write("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
+    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
@@ -584,8 +577,7 @@ int Vector3D::getData(int jx, int jy, int jz, BoutReal *rptr) const
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy > mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
-    output.write("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
+    throw BoutException("Vector3D: getData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
 
@@ -601,8 +593,7 @@ int Vector3D::setData(int jx, int jy, int jz, void *vptr)
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
-    output.write("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
+    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
   BoutReal *rptr = (BoutReal*) vptr;
@@ -618,8 +609,7 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
-    output.write("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
-    exit(1);
+    throw BoutException("Vector3D: setData (%d,%d,%d) out of bounds\n", jx, jy, jz);
   }
 #endif
 

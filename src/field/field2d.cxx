@@ -40,12 +40,8 @@
 #include <cmath>
 #include <output.hxx>
 
-Field2D::Field2D()
-{
-  data = (BoutReal**) NULL;
+Field2D::Field2D() : data(NULL), deriv(NULL) { 
   is_const = false;
-
-  ddt = NULL;
 
   boundaryIsSet = false;
 
@@ -54,34 +50,25 @@ Field2D::Field2D()
 #endif
 }
 
-Field2D::Field2D(const Field2D& f)
-{
-  data = (BoutReal**) NULL;
+Field2D::Field2D(const Field2D& f) : data(NULL), deriv(NULL) {
   is_const = false;
   boundaryIsSet = false;
   *this = f;
-
-  ddt = NULL;
 }
 
-Field2D::Field2D(BoutReal val)
-{
-  data = (BoutReal**) NULL;
+Field2D::Field2D(BoutReal val) : data(NULL), deriv(NULL) {
   boundaryIsSet = false;
   *this = val;
-  ddt = NULL;
 }
 
-Field2D::~Field2D()
-{
+Field2D::~Field2D() {
   freeData();
   
-  if(ddt != NULL)
-    delete ddt;
+  if(deriv != NULL)
+    delete deriv;
 }
 
-Field2D* Field2D::clone() const
-{
+Field2D* Field2D::clone() const {
   return new Field2D(*this);
 }
 
@@ -92,9 +79,9 @@ void Field2D::allocate()
 
 Field2D* Field2D::timeDeriv()
 {
-  if(ddt == NULL)
-    ddt = new Field2D();
-  return ddt;
+  if(deriv == NULL)
+    deriv = new Field2D();
+  return deriv;
 }
 
 BoutReal **Field2D::getData() const

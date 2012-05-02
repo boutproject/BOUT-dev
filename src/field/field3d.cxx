@@ -39,8 +39,7 @@
 #include <bout/constants.hxx>
 
 /// Constructor
-Field3D::Field3D() : background(NULL)
-{
+Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: constructor\n", (unsigned int) this);
 #endif
@@ -48,19 +47,13 @@ Field3D::Field3D() : background(NULL)
   name = "<F3D>";
 #endif
 
-  /// Mark data as unallocated
-  block = NULL;
-
   location = CELL_CENTRE; // Cell centred variable by default
-  
-  ddt = NULL;
 
   boundaryIsSet = false;
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL)
-{
+Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
@@ -76,8 +69,6 @@ Field3D::Field3D(const Field3D& f) : background(NULL)
   block->refs++;
 
   location = f.location;
-
-  ddt = NULL;
  
   boundaryIsSet = false;
  
@@ -86,18 +77,12 @@ Field3D::Field3D(const Field3D& f) : background(NULL)
 #endif
 }
 
-Field3D::Field3D(const Field2D& f) : background(NULL)
-{
+Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from Field2D");
 #endif
-  
-  /// Mark data as unallocated
-  block = NULL;
 
   location = CELL_CENTRE; // Cell centred variable by default
-  
-  ddt = NULL;
   
   boundaryIsSet = false;
 
@@ -108,19 +93,13 @@ Field3D::Field3D(const Field2D& f) : background(NULL)
 #endif
 }
 
-Field3D::Field3D(const BoutReal val) : background(NULL)
-{
+Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from value");
 #endif
-  
-  /// Mark data as unallocated
-  block = NULL;
 
   location = CELL_CENTRE; // Cell centred variable by default
   
-  ddt = NULL;
-
   boundaryIsSet = false;
   
   *this = val;
@@ -130,14 +109,13 @@ Field3D::Field3D(const BoutReal val) : background(NULL)
 #endif
 }
 
-Field3D::~Field3D()
-{
+Field3D::~Field3D() {
   /// free the block of data if allocated
   freeData();
   
   /// Delete the time derivative variable if allocated
-  if(ddt != NULL)
-    delete ddt;
+  if(deriv != NULL)
+    delete deriv;
 }
 
 Field3D* Field3D::clone() const
@@ -170,10 +148,10 @@ BoutReal*** Field3D::getData() const
 
 Field3D* Field3D::timeDeriv()
 {
-  if(ddt == NULL)
-    ddt = new Field3D();
+  if(deriv == NULL)
+    deriv = new Field3D();
   
-  return ddt;
+  return deriv;
 }
 
 const Field2D Field3D::DC() const
@@ -2091,16 +2069,16 @@ void Field3D::applyTDerivBoundary()
 #ifdef CHECK
   msg_stack.push("Field3D::applyTDerivBoundary()");
 
-  if(ddt == NULL)
+  if(deriv == NULL)
     output << "WARNING: Empty ddt in Field3D::applyTDerivBoundary()" << endl;
-  if((block == NULL) || (ddt->block == NULL))
+  if((block == NULL) || (deriv->block == NULL))
     output << "WARNING: Empty data in Field3D::applyTDerivBoundary()" << endl;
 #endif
   
-  if(ddt == NULL)
+  if(deriv == NULL)
     return;
   
-  if((block == NULL) || (ddt->block == NULL))
+  if((block == NULL) || (deriv->block == NULL))
     return;
   
   if(background != NULL)
@@ -2116,21 +2094,21 @@ void Field3D::applyTDerivBoundary()
   for(int jx=0;jx<mesh->xstart;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++)
-        ddt->block->data[jx][jy][jz] = 0.;
+        deriv->block->data[jx][jy][jz] = 0.;
     }
     for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++)
-        ddt->block->data[jx][jy][jz] = 0.;
+        deriv->block->data[jx][jy][jz] = 0.;
     }
   }
   for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
     for(int jy=0;jy<mesh->ystart;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++)
-        ddt->block->data[jx][jy][jz] = 0.;
+        deriv->block->data[jx][jy][jz] = 0.;
     }
     for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++)
-        ddt->block->data[jx][jy][jz] = 0.;
+        deriv->block->data[jx][jy][jz] = 0.;
     }
   }
 
