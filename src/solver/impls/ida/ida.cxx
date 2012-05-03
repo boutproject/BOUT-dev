@@ -219,7 +219,7 @@ int IdaSolver::run(MonitorFunc monitor) {
   for(int i=0;i<NOUT;i++) {
     
     /// Run the solver for one output timestep
-    simtime = run(simtime + TIMESTEP, rhs_ncalls);
+    simtime = run(simtime + TIMESTEP);
     iteration++;
 
     /// Check if the run succeeded
