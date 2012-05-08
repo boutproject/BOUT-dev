@@ -41,6 +41,7 @@ class Options;
 #include "bout_types.hxx"
 
 #include <map>
+#include <strings.h>
 
 using namespace std;
 

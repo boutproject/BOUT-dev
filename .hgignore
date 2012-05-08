@@ -40,3 +40,4 @@ lapd_drift
 gem
 *.dat
 *.dat.*
+test_precon
