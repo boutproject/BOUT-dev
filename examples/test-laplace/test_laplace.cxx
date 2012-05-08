@@ -11,10 +11,10 @@
 int physics_init(bool restarting) {
   FieldFactory f;
   
-  Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y)*gauss(z)");
+  Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
   Field2D a = f.create2D("gauss(x) * sin(y)");
-  Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y)");
-  Field2D d = f.create2D("y - pi");
+  Field2D c = f.create2D("sin(x) * gauss(x-0.5) * gauss(y-pi)");
+  Field2D d = f.create2D("y - pi/2");
   SAVE_ONCE3(input, a, c);
 
   Field3D flag0 = invert_laplace(input, 0);
