@@ -78,24 +78,43 @@ class FieldGroup {
 
 typedef void* comm_handle;
 
-/// Iterates over Y-Z surfaces, distributing work between processors
+/// Iterates over Y-Z surfaces, optionally distributing work between processors
 class SurfaceIter {
  public:
   int xpos; // X position
-  virtual int ysize() = 0; // Return the size of the current surface
-                           // NB: Could be zero if this PE has nothing to do
+  virtual int ySize() = 0; // Return the size of the current surface
+  
+  virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
+  virtual bool closed() { BoutReal tmp; return closed(tmp); }
+  
+  virtual MPI_Comm communicator() = 0; // Communicator for this surface
+  
+  virtual int yGlobal(int yloc) = 0; // Return global y index of given local index
+
+  virtual void first() = 0;
+  virtual void next() = 0;
+  virtual bool isDone() = 0;
+};
+
+/// Iterates over Y-Z surfaces, distributing work between processors
+class DistribSurfaceIter {
+public:
+  int xpos; // X position
+  virtual int ySize() = 0; // Return the size of the current surface
   virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
   
   virtual void first() = 0;
   virtual void next() = 0;
   virtual bool isDone() = 0;
   
-  virtual int gather(const Field2D &f, BoutReal *data) = 0;
+  virtual int gather(const Field2D &f, BoutReal *data) = 0; // Return zero if no work to do
   virtual int gather(const Field3D &f, BoutReal *data) = 0;
   virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
   
   virtual int scatter(BoutReal *data, Field2D &f) = 0;
   virtual int scatter(BoutReal *data, Field3D &f) = 0;
+  virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
+private:
 };
 
 class RangeIter {
@@ -161,9 +180,11 @@ class Mesh {
 
   int communicate(FieldPerp &f); // Communicate an X-Z field
 
-  // Y-Z surface gather/scatter operations
+  // Y-Z surface iteration and gather/scatter operations
   virtual SurfaceIter* iterateSurfaces() = 0;
+  virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
   virtual const Field2D averageY(const Field2D &f) = 0;
+  virtual const Field3D averageY(const Field3D &f);
   virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
@@ -242,10 +263,9 @@ class Mesh {
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
 
-  //////////////////////////////////////////////////////////
-  // Timing
+  int MYPE_IN_CORE;  // 1 if processor in core
   
-  static BoutReal wtime_comms; // Time spent communicating
+  bool non_uniform; // Use corrections for non-uniform meshes
   
  protected:
   
@@ -262,4 +282,33 @@ class Mesh {
   int gaussj(BoutReal **a, int n);
 };
 
+/// Define for reading a variable from the grid
+#define GRID_LOAD(var) mesh->get(var, #var)
+#define GRID_LOAD2(var1, var2) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2);}
+#define GRID_LOAD3(var1, var2, var3) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3);}
+#define GRID_LOAD4(var1, var2, var3, var4) { \
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); }
+#define GRID_LOAD5(var1, var2, var3, var4, var5) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); \
+    mesh->get(var5, #var5);}
+#define GRID_LOAD6(var1, var2, var3, var4, var5, var6) {\
+    mesh->get(var1, #var1); \
+    mesh->get(var2, #var2); \
+    mesh->get(var3, #var3); \
+    mesh->get(var4, #var4); \
+    mesh->get(var5, #var5); \
+    mesh->get(var6, #var6);}
+
 #endif // __MESH_H__
+

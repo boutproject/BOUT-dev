@@ -6,6 +6,7 @@
 
 # List of directories containing test cases
 tests = ['test-io', 'test-fieldfactory', 'test-laplace', 
+         "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
          "drift-instability", 'interchange-instability']
 
 ##################################################################

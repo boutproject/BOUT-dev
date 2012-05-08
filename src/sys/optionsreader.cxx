@@ -1,4 +1,3 @@
-#include <globals.hxx>
 #include <optionsreader.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
@@ -8,6 +7,8 @@
 
 // Individual parsers
 #include "options/options_ini.hxx"
+
+#include <output.hxx>
 
 OptionsReader* OptionsReader::instance = NULL;
 

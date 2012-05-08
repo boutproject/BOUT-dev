@@ -1,15 +1,7 @@
 /*!************************************************************************
 * MPI Communicator for BOUT++ representation
 *
-* The Options class represents a tree structure of key-value settings.
-* Provides get and set methods on these options.
-*
-* Internally, all quantities are stored as strings for simplicity
-* and so that option file parsers don't have to do type conversion
-* without knowing the type a priori.
-*
-* There is a singleton object "root" which contains the top-level
-* options and allows access to all sub-sections
+* 
 *
 **************************************************************************
 * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu

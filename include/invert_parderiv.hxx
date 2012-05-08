@@ -6,15 +6,6 @@
  *
  * A + B * Grad2_par2
  * 
- * Stages:
- * - Problem trivially parallel in X, so gather all data for fixed X onto
- *   a single processor. Split MXSUB locations between NYPE processors
- * - Use nearest neighbour for twist-shift location.
- *   This splits the problem into one or more (cyclic) tridiagonal problems
- *   (number depends on the q value)
- * - Solve each of these tridiagonal systems O(Nz*Ny)
- * - Scatter data back 
- *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -43,14 +34,34 @@
 #include "field3d.hxx"
 #include "field2d.hxx"
 
-namespace invpar {
-  const Field3D invert_parderiv(const Field2D &A, const Field2D &B, const Field3D &r);
-  const Field3D invert_parderiv(BoutReal val, const Field2D &B, const Field3D &r);
-  const Field3D invert_parderiv(const Field2D &A, BoutReal val, const Field3D &r);
-  const Field3D invert_parderiv(BoutReal val, BoutReal val2, const Field3D &r);
-}
+// Parderiv implementations
+#define PARDERIVSERIAL "serial"
+#define PARDERIVCYCLIC "cyclic"
 
-using invpar::invert_parderiv;
+/// Base class for parallel inversion solvers
+class InvertPar {
+public:
+  InvertPar() {}
+  virtual ~InvertPar() {}
+  
+  static InvertPar* Create();
+  
+  virtual const Field2D solve(const Field2D &f); ///< Warning: Default implementation very inefficient
+  virtual const Field3D solve(const Field3D &f) = 0;  ///< This method must be implemented
+  
+  virtual const Field3D solve(const Field2D &f, const Field2D &start) {return solve(f);}
+  virtual const Field3D solve(const Field3D &f, const Field3D &start) {return solve(f);}
+  
+  virtual void setCoefA(const Field2D &f) = 0;
+  virtual void setCoefA(const Field3D &f) {setCoefA(f.DC());}
+  virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
+  
+  virtual void setCoefB(const Field2D &f) = 0;
+  virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
+  
+private:
+};
 
 
 #endif // __INV_PAR_H__

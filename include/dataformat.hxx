@@ -40,15 +40,11 @@ class DataFormat {
   virtual ~DataFormat() { }
   // File opening routines
   virtual bool openr(const string &name) = 0;
-  virtual bool openr(const char *name) = 0;
   virtual bool openw(const string &name, bool append=false) = 0;
-  virtual bool openw(const char *name, bool append=false) = 0;
   
   virtual bool is_valid() = 0;
   
   virtual void close() = 0;
-  
-  virtual const char* filename() = 0;
 
   virtual const vector<int> getSize(const char *var) = 0;
   virtual const vector<int> getSize(const string &var) = 0;

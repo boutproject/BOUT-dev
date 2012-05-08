@@ -1,8 +1,8 @@
 
 BOUT_TOP = ../..
 
-DIRS            = 
-SOURCEC		= fft_fftw.cxx invert_laplace_gmres.cxx invert_parderiv.cxx inverter.cxx lapack_routines.cxx invert_laplace.cxx
+DIRS            = parderiv laplace
+SOURCEC		= fft_fftw.cxx invert_laplace_gmres.cxx inverter.cxx lapack_routines.cxx
 SOURCEH		= fft.hxx invert_laplace_gmres.hxx invert_parderiv.hxx inverter.hxx lapack_routines.hxx
 TARGET		= lib
 

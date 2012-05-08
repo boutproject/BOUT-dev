@@ -27,6 +27,13 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef PDBF
+
+#include "../emptyformat.hxx"
+typedef EmptyFormat PdbFormat;
+
+#else
+
 class PdbFormat;
 
 #ifndef __PDBFORMAT_H__
@@ -99,3 +106,6 @@ class PdbFormat : public DataFormat {
 };
 
 #endif // __PDBFORMAT_H__
+
+#endif // PDBF
+

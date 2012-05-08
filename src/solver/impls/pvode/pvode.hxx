@@ -26,7 +26,7 @@
 
 #ifndef BOUT_HAS_PVODE
 
-#include "emptysolver.hxx"
+#include "../emptysolver.hxx"
 typedef EmptySolver PvodeSolver;
  
 #else
@@ -35,16 +35,16 @@ class PvodeSolver;
 #ifndef __PVODE_SOLVER_H__
 #define __PVODE_SOLVER_H__
 
-#include "globals.hxx"
+#include <globals.hxx>
 
-#include "field2d.hxx"
-#include "field3d.hxx"
-#include "vector2d.hxx"
-#include "vector3d.hxx"
+#include <field2d.hxx>
+#include <field3d.hxx>
+#include <vector2d.hxx>
+#include <vector3d.hxx>
 
-#include "solver.hxx"
-#include "bout_types.hxx"
-#include "interpolation.hxx"   // Cell interpolation
+#include <bout/solver.hxx>
+#include <bout_types.hxx>
+#include <interpolation.hxx>   // Cell interpolation
 
 #include <mpi.h>             // MPI data types and prototypes
 #include <pvode/nvector.h>

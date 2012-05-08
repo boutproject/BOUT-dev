@@ -187,6 +187,9 @@ class DataFile:
         def dimlen(d):
             dim = self.handle.dimensions[d]
             if dim != None:
+                t = type(dim).__name__
+                if t == 'int':
+                    return dim
                 return len(dim)
             return 0
         return map(lambda d: dimlen(d), var.dimensions)
@@ -201,11 +204,21 @@ class DataFile:
         if t == 'NoneType':
             print "DataFile: None passed as data to write. Ignoring"
             return
-        
+            
         if t == 'ndarray':
-            # Numpy type
+            # Numpy type. Get the data type
             t = data.dtype.str
-        
+
+        if t == 'list':
+            # List -> convert to numpy array
+            data = np.array(data)
+            t = data.dtype.str
+
+        if (t == 'int') or (t == '<i8'):
+            # NetCDF 3 does not support type int64
+            data = np.int32(data)
+            t = data.dtype.str
+            
         try:
             # See if the variable already exists
             var = self.handle.variables[name]
@@ -233,8 +246,12 @@ class DataFile:
                     d = self.handle.dimensions[name]
 
                     # Check if it's the correct size
-                    if len(d) == size:
-                        return name
+                    if type(d).__name__ == 'int':
+                        if d == size:
+                            return name;
+                    else:
+                        if len(d) == size:
+                            return name
 
                     # Find another with the correct size
                     for dn, d in self.handle.dimensions.iteritems():
@@ -296,6 +313,13 @@ class DataFile:
                 raise Exception("Couldn't create variable")
             
         # Write the data
-        var.assignValue(data)
+
+        try:
+            # Some libraries allow this for arrays
+            var.assignValue(data)
+        except:
+            # And some others only this
+            var[:] = data
+            
         
             

@@ -27,7 +27,7 @@
 
 #ifndef BOUT_HAS_CVODE
 
-#include "emptysolver.hxx"
+#include "../emptysolver.hxx"
 typedef EmptySolver CvodeSolver;
  
 #else
@@ -45,7 +45,7 @@ class CvodeSolver;
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-#include "solver.hxx"
+#include "bout/solver.hxx"
 
 #include <cvode/cvode_spgmr.h>
 #include <cvode/cvode_bbdpre.h>

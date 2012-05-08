@@ -30,6 +30,7 @@
 #include <utils.hxx>
 #include <derivs.hxx>
 #include <fft.hxx>
+#include <msg_stack.hxx>
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 

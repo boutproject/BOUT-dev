@@ -31,6 +31,7 @@
 #include <utils.hxx>
 #include <fft.hxx>
 #include <lapack_routines.hxx>
+#include <bout/constants.hxx>
 #include <cmath>
 
 LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {

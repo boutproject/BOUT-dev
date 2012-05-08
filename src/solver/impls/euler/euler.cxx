@@ -3,8 +3,11 @@
 
 #include <utils.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
 
 #include <cmath>
+
+#include <output.hxx>
 
 EulerSolver::EulerSolver() : Solver() {
   
@@ -149,7 +152,6 @@ int EulerSolver::run(MonitorFunc monitor) {
     
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
-    rhs_wtime = 0.0;
   }
   
 #ifdef CHECK

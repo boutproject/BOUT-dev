@@ -7,7 +7,8 @@
 # Variables to compare
 vars = ['flag0', 'flag3', 
         'flag0a', 'flag3a', 
-        'flag0ac', 'flag3ac']  
+        'flag0ac', 'flag3ac',
+        'flag0ad', 'flag3ad']  
 tol = 1e-5                  # Absolute tolerance
 
 from boututils import shell,launch

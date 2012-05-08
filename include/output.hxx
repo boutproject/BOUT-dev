@@ -50,7 +50,7 @@ using std::endl;
   and disabled.
 */
 class Output : private multioutbuf_init<char, std::char_traits<char> >, 
-  public std::basic_ostream<char, std::char_traits<char> > {
+               public std::basic_ostream<char, std::char_traits<char> > {
 
   typedef std::char_traits<char> _Tr;
   typedef ::multioutbuf_init<char, _Tr> multioutbuf_init;
@@ -69,7 +69,7 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
     enable();
     open(fname);
   } 
-  ~Output() {}
+  ~Output() {close();}
   
   void enable();  ///< Enables writing to stdout (default)
   void disable(); ///< Disables stdout
@@ -88,11 +88,17 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   void remove(std::basic_ostream<char, _Tr>& str) {
     multioutbuf_init::buf()->remove(str);
   }
+
+  static Output *getInstance(); ///< Return pointer to instance
  private:
+  static Output *instance; ///< Default instance of this class
+  
   std::ofstream file; ///< Log file stream
   char buffer[1024]; ///< Buffer used for C style output
   bool enabled;      ///< Whether output to stdout is enabled
 };
 
+/// To allow statements like "output.write(...)" or "output << ..."
+#define output (*Output::getInstance())
 
 #endif // __OUTPUT_H__

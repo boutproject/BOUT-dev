@@ -23,8 +23,13 @@
 #include <globals.hxx>
 #include "nc_format.hxx"
 
+#ifdef NCDF
+
 #include <utils.hxx>
 #include <cmath>
+
+#include <output.hxx>
+#include <msg_stack.hxx>
 
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
@@ -892,4 +897,5 @@ bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int 
  * Private functions
  ***************************************************************************/
 
+#endif // NCDF
 

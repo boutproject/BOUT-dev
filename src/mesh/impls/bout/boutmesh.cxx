@@ -32,14 +32,17 @@
 
 #include "boutmesh.hxx"
 
-#include <globals.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
 #include <derivs.hxx>
-
+#include <boutcomm.hxx>
 #include <dcomplex.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
+#include <output.hxx>
+#include <bout/sys/timer.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
@@ -125,6 +128,7 @@ int BoutMesh::load() {
       return 1;
     }
   }
+  OPTION(options, non_uniform,  false);
   OPTION(options, TwistShift,   false);
   OPTION(options, TwistOrder,   0);
   OPTION(options, ShiftOrder,   0);
@@ -138,10 +142,10 @@ int BoutMesh::load() {
 
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
-    if(mesh->ShiftOrder == 0) {
+    if(ShiftOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", mesh->ShiftOrder);
+      output.write("%d-point\n", ShiftOrder);
   }
   
   if(options->isSet("zperiod")) {
@@ -157,10 +161,10 @@ int BoutMesh::load() {
 
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(mesh->TwistOrder == 0) {
+    if(TwistOrder == 0) {
       output.write("FFT\n");
     }else
-      output.write("%d-point\n", mesh->TwistOrder);
+      output.write("%d-point\n", TwistOrder);
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
@@ -258,7 +262,7 @@ int BoutMesh::load() {
     ShiftTorsion = 0.0;
   }
   
-  if(mesh->IncIntShear) {
+  if(IncIntShear) {
     if(get(IntShiftTorsion, "IntShiftTorsion")) {
       output.write("\tWARNING: No Integrated torsion specified\n");
       IntShiftTorsion = 0.0;
@@ -288,8 +292,8 @@ int BoutMesh::load() {
 	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
    
     }else if(YPROC(jyseps1_1+1) == PE_YIND) {
-      for(int i=0;i<mesh->ngx;i++)
-	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
+      for(int i=0;i<ngx;i++)
+	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
     }
     
     // In the core, need to set ShiftAngle everywhere for ballooning initial condition
@@ -329,8 +333,8 @@ int BoutMesh::load() {
       TS_up_in = true; // Switch on twist-shift
       
     }else if(YPROC(jyseps2_2+1) == PE_YIND) {
-      for(int i=0;i<mesh->ngx;i++) {
-	ShiftAngle[i] = mesh->zShift[i][MYG-1] - mesh->zShift[i][MYG]; // Jump across boundary
+      for(int i=0;i<ngx;i++) {
+	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
       }
       TS_down_in = true;
     }
@@ -345,21 +349,21 @@ int BoutMesh::load() {
     return 1;
   
   // Attempt to read J from the grid file
-  Field2D Jcalc = mesh->J;
-  if(mesh->get(mesh->J, "J")) {
+  Field2D Jcalc = J;
+  if(get(J, "J")) {
     output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    mesh->J = Jcalc;
+    J = Jcalc;
   }else {
     // Compare calculated and loaded values  
-    output.write("\tMaximum difference in J is %e\n", max(abs(mesh->J - Jcalc)));
+    output.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
     
     // Re-evaluate Bxy using new J
-    Bxy = sqrt(mesh->g_22)/mesh->J;
+    Bxy = sqrt(g_22)/J;
   }
 
   // Attempt to read Bxy from the grid file
   Field2D Bcalc = Bxy;
-  if(mesh->get(Bxy, "Bxy")) {
+  if(get(Bxy, "Bxy")) {
     output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
     Bxy = Bcalc;
   }else {
@@ -424,12 +428,12 @@ int BoutMesh::load() {
 	// Should be part of this communicator
 	if(comm_tmp == MPI_COMM_NULL) {
 	  // error
-	  bout_error("Single null outer SOL not correct\n");
+	  throw BoutException("Single null outer SOL not correct\n");
 	}
 	comm_outer = comm_tmp;
       }else if(comm_tmp != MPI_COMM_NULL) {
 	// Not part of this communicator so should be NULL
-	bout_error("Single null outer SOL not correct\n");
+	throw BoutException("Single null outer SOL not correct\n");
       }
       MPI_Group_free(&group);
     }
@@ -1061,14 +1065,12 @@ const int OUT_SENT_DOWN = 3;
 const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
 
-int BoutMesh::communicate(FieldGroup &g)
-{
+int BoutMesh::communicate(FieldGroup &g) {
   comm_handle c = send(g);
   return wait(c);
 }
 
-void BoutMesh::post_receive(CommHandle &ch)
-{
+void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
   int len;
   
@@ -1146,10 +1148,9 @@ void BoutMesh::post_receive(CommHandle &ch)
   }
 }
 
-comm_handle BoutMesh::send(FieldGroup &g)
-{ 
-  /// Record starting wall-time
-  BoutReal t = MPI_Wtime();
+comm_handle BoutMesh::send(FieldGroup &g) { 
+  /// Start timer
+  Timer timer("comms");
   
   /// Get the list of variables to send
   vector<FieldData*> var_list = g.get();
@@ -1303,14 +1304,11 @@ comm_handle BoutMesh::send(FieldGroup &g)
   
   /// Mark communication handle as in progress
   ch->in_progress = true;
-
-  /// Add the elapsed wall-time to wtime
-  wtime_comms += MPI_Wtime() - t;
+  
   return (void*) ch;
 }
 
-int BoutMesh::wait(comm_handle handle)
-{
+int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
   
@@ -1319,8 +1317,8 @@ int BoutMesh::wait(comm_handle handle)
   if(!ch->in_progress)
     return 2;
 
-  /// Record starting time
-  BoutReal t = MPI_Wtime();
+  /// Start timer
+  Timer timer("comms");
   
   ///////////// WAIT FOR DATA //////////////
   
@@ -1332,9 +1330,6 @@ int BoutMesh::wait(comm_handle handle)
     // Just waiting for a single MPI request
     MPI_Wait(ch->request, &status);
     free_handle(ch);
-
-    /// Add the time elapsed to the communications wall time
-    wtime_comms += MPI_Wtime() - t;
     
     return 0;
   }
@@ -1392,7 +1387,7 @@ int BoutMesh::wait(comm_handle handle)
   }
 
   // TWIST-SHIFT CONDITION
-  if(TwistShift && (mesh->TwistOrder == 0)) {
+  if(TwistShift && (TwistOrder == 0)) {
     int jx, jy;
     
     // Perform Twist-shift using shifting method (rather than in setStencil)
@@ -1438,9 +1433,6 @@ int BoutMesh::wait(comm_handle handle)
 #endif
 
   free_handle(ch);
-
-  /// Add the time elapsed to the communications wall time
-  wtime_comms += MPI_Wtime() - t;
   
   return 0;
 }
@@ -1451,56 +1443,47 @@ int BoutMesh::wait(comm_handle handle)
  * Intended mainly to handle the perpendicular inversion operators
  ****************************************************************/
 
-bool BoutMesh::firstX()
-{
+bool BoutMesh::firstX() {
   return PE_XIND == 0;
 }
 
-bool BoutMesh::lastX()
-{
+bool BoutMesh::lastX() {
   return PE_XIND == NXPE-1;
 }
 
-int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag)
-{
+int BoutMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == NXPE-1)
     return 1;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND+1, PE_YIND),
 	   tag,
 	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
 
   return 0;
 }
 
-int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag)
-{
+int BoutMesh::sendXIn(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == 0)
     return 1;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
 	   PROC_NUM(PE_XIND-1, PE_YIND),
 	   tag,
 	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
 
   return 0;
 }
 
-comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
-{
+comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == NXPE-1)
     return NULL;
 
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
   
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1515,17 +1498,14 @@ comm_handle BoutMesh::irecvXOut(BoutReal *buffer, int size, int tag)
   
   ch->in_progress = true;
 
-  wtime_comms += MPI_Wtime() - t;
-
   return (comm_handle) ch;
 }
 
-comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
-{
+comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if(PE_XIND == 0)
     return NULL;
   
-  BoutReal t = MPI_Wtime();
+  Timer timer("comms");
 
   // Get a communications handle. Not fussy about size of arrays
   CommHandle *ch = get_handle(0,0);
@@ -1539,8 +1519,6 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag)
 	    ch->request);
   
   ch->in_progress = true;
-
-  wtime_comms += MPI_Wtime() - t;
 
   return (comm_handle) ch;
 }
@@ -2017,7 +1995,7 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
 	// 3D variable
    
 	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < mesh->ngz-1;jz++) {
+	  for(jz=0;jz < ngz-1;jz++) {
 	    len += (*it)->setData(jx,jy,jz,buffer+len);
 	  }
 	
@@ -2066,7 +2044,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 
   int maxmode = (size[2] - 1)/2; ///< Maximum mode-number n
 
-  int ncz = mesh->ngz-1;
+  int ncz = ngz-1;
 
   // Print out which modes are going to be read in
   if(zperiod > maxmode) {
@@ -2183,10 +2161,8 @@ void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var)
  *                 SURFACE ITERATION
  ****************************************************************/
 
-SurfaceIter* BoutMesh::iterateSurfaces()
-{
-  //return new BoutSurfaceIter(this);
-  return (SurfaceIter*) NULL;
+SurfaceIter* BoutMesh::iterateSurfaces() {
+  return new BoutSurfaceIter(this);
 }
 
 bool BoutMesh::surfaceClosed(int jx)
@@ -2205,71 +2181,120 @@ bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
   return false;
 }
 
-// Define MPI operation to sum 2D fields over y.
-// NB: Don't sum in y boundary regions
-void ysum_op(void *invec, void *inoutvec, int *len, MPI_Datatype *datatype)
-{
-    BoutReal *rin = (BoutReal*) invec;
-    BoutReal *rinout = (BoutReal*) inoutvec;
-    for(int x=0;x<mesh->ngx;x++) {
-	BoutReal val = 0.;
-	// Sum values
-	for(int y=mesh->ystart;y<=mesh->yend;y++) {
-	    val += rin[x*mesh->ngy + y] + rinout[x*mesh->ngy + y];
-	}
-	// Put into output (spread over y)
-	val /= mesh->yend - mesh->ystart + 1;
-	for(int y=0;y<mesh->ngy;y++)
-	    rinout[x*mesh->ngy + y] = val;
-    }
-}
-
-const Field2D BoutMesh::averageY(const Field2D &f)
-{
-  static MPI_Op op;
-  static bool opdefined = false;
-
+const Field2D BoutMesh::averageY(const Field2D &f) {
+  static BoutReal *input = NULL, *result;
+ 
 #ifdef CHECK
   msg_stack.push("averageY(Field2D)");
 #endif
-
-  if(!opdefined) {
-    MPI_Op_create(ysum_op, 1, &op);
-    opdefined = true;
+ 
+  if(input == NULL) {
+    input = new BoutReal[ngx];
+    result = new BoutReal[ngx];
+  }
+ 
+  BoutReal **fd = f.getData();
+  
+  // Average on this processor
+  for(int x=0;x<ngx;x++) {
+    input[x] = 0.;
+    // Sum values, not including boundaries
+    for(int y=ystart;y<=yend;y++) {
+      input[x] += fd[x][y];
+    }
+    input[x] /= yend - ystart + 1;
   }
 
-  Field2D result;
-  result.allocate();
+  Field2D r;
+  r.allocate();
+  BoutReal **rd = r.getData();
+
+  int np;
+  MPI_Comm_size(comm_inner, &np);
   
-  BoutReal **fd, **rd;
-  fd = f.getData();
-  rd = result.getData();
-  
-  MPI_Allreduce(*fd, *rd, mesh->ngx*mesh->ngy, MPI_DOUBLE, op, comm_inner);
-  
-  result /= (BoutReal) NYPE;
+  if(np == 1) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = input[x];
+  }else {
+    MPI_Allreduce(input, result, ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = result[x] / (BoutReal) np;
+  }
 
 #ifdef CHECK
   msg_stack.pop();
 #endif
   
-  return result;
+  return r;
 }
 
-/*
-BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi)
-{
+const Field3D BoutMesh::averageY(const Field3D &f) {
+  static BoutReal **input = NULL, **result;
+
+#ifdef CHECK
+  msg_stack.push("averageY(Field3D)");
+#endif
+
+  if(input == NULL) {
+    input = rmatrix(ngx, ngz);
+    result = rmatrix(ngx, ngz);
+  }
+  
+  BoutReal ***fd = f.getData();
+  
+  // Average on this processor
+  for(int x=0;x<ngx;x++)
+    for(int z=0;z<ngz;z++) {
+      input[x][z] = 0.;
+      // Sum values, not including boundaries
+      for(int y=ystart;y<=yend;y++) {
+        input[x][z] += fd[x][y][z];
+      }
+      input[x][z] /= yend - ystart + 1;
+    }
+  
+  Field3D r;
+  r.allocate();
+  BoutReal ***rd = r.getData();
+
+  int np;
+  MPI_Comm_size(comm_inner, &np);
+  if(np > 1) {
+    MPI_Allreduce(*input, *result, ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
+    
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = result[x][z] / (BoutReal) np;
+        }
+  }else {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = input[x][z];
+        }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return r;
+}
+
+BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi) {
   m = mi;
 }
 
-int BoutSurfaceIter::ysize()
-{
+int BoutSurfaceIter::ySize() {
   int xglobal = m->XGLOBAL(xpos);
-  int yglobal = m->YGLOBAL(MYG);
+  int yglobal = m->YGLOBAL(m->MYG);
   
   if((xglobal < m->ixseps_lower) && ((yglobal <= m->jyseps1_1) || (yglobal > m->jyseps2_2))) {
     // Lower PF region
-    return (m->jyseps1_1 + 1) + (ny - m->jyseps2_2);
+    return (m->jyseps1_1 + 1) + (m->ny - m->jyseps2_2);
     
   }else if((xglobal < m->ixseps_upper) && (yglobal > m->jyseps2_1) && (yglobal >= m->jyseps1_2)) {
     // Upper PF region
@@ -2288,7 +2313,7 @@ int BoutSurfaceIter::ysize()
     
     if(m->ixseps_lower < m->ixseps_upper) {
       // Connects to lower divertor
-      return (m->jyseps2_1 + 1) + (ny - m->jyseps1_2);
+      return (m->jyseps2_1 + 1) + (m->ny - m->jyseps1_2);
     }else {
       // Connects to upper divertor
       return m->jyseps2_2 - m->jyseps1_1;
@@ -2301,18 +2326,65 @@ int BoutSurfaceIter::ysize()
   return m->ny - m->ny_inner;
 }
 
-bool BoutSurfaceIter::closed(BoutReal &ts)
-{
+bool BoutSurfaceIter::closed(BoutReal &ts) {
   int xglobal = m->XGLOBAL(xpos);
+  int yglobal = m->YGLOBAL(m->MYG);
   ts = 0.;
-  if(TwistShift) {
-    ts = ShiftAngle[xpos];
+  if(m->TwistShift) {
+    ts = m->ShiftAngle[xpos];
   }
-  return m->MYPE_IN_CORE && (xglobal < m->ixseps_inner);
+  return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
 }
 
-void BoutSurfaceIter::first()
-{
+MPI_Comm BoutSurfaceIter::communicator() {
+  int xglobal = m->XGLOBAL(xpos);
+  
+  if(xglobal < m->ixseps_inner) {
+    return m->comm_inner;
+  }else if(xglobal < m->ixseps_outer) {
+    return m->comm_middle;
+  }
+  return m->comm_outer;
+}
+
+int BoutSurfaceIter::yGlobal(int yloc) {
+  // Communicator for this surface
+  MPI_Comm comm = communicator();
+  
+  // Get number of processors and processor rank
+  int np;
+  MPI_Comm_size(comm, &np);
+  int myp;
+  MPI_Comm_rank(comm, &myp);
+  
+  int yg = myp * m->MYSUB + yloc - m->MYG;
+  if(!SurfaceIter::closed()) {
+    // Need to include boundary points
+    yg += m->MYG;
+  }
+  
+  return yg;
+}
+
+void BoutSurfaceIter::first() {
+  xpos = 0;
+}
+
+void BoutSurfaceIter::next() {
+  if(xpos < 0)
+    return;
+  
+  xpos++;
+  if(xpos >= m->ngx)
+    xpos = -1;
+}
+
+bool BoutSurfaceIter::isDone() {
+  return xpos < 0;
+}
+
+/*
+void BoutSurfaceIter::first() {
   xpos = m->PE_XIND;
   if(xpos > m->ngx-1)
     xpos = -1; // Nothing to do
@@ -2460,6 +2532,7 @@ bool BoutRangeIter::isDone()
 BoutReal BoutMesh::GlobalX(int jx)
 {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy)

@@ -46,12 +46,12 @@
 #include <fft.hxx>
 #include <utils.hxx>
 #include <dcomplex.hxx>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cmath>
+#include <output.hxx>
 
 #include <lapack_routines.hxx> // Tridiagonal & band inversion routines
 #include <boutexception.hxx>
+#include <bout/sys/timer.hxx>
 
 // This was defined in nvector.h
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
@@ -1656,8 +1656,7 @@ int invert_pdd_continue(PDD_data &data)
 }
 
 /// Last part of the PDD algorithm
-int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x)
-{
+int invert_pdd_finish(PDD_data &data, int flags, FieldPerp &x) {
   int ix, kz;
 
   x.allocate();
@@ -1757,14 +1756,12 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
  * This is done at the expense of more memory useage. Setting low_mem
  * in the config file uses less memory, and less communication overlap
  */
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d)
-{
+int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   int jy, jy2;
   FieldPerp xperp;
   int ret;
-  BoutReal t;
   
-  t = MPI_Wtime();
+  Timer timer("invert");
   
   x.allocate();
 
@@ -1848,14 +1845,12 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
     }
   }
 
-  wtime_invert += MPI_Wtime() - t;
-
   x.setLocation(b.getLocation());
 
   return 0;
 }
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d)
-{
+
+const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   Field3D x;
   
   invert_laplace(b, x, flags, a, c, d);

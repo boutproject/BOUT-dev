@@ -1,8 +1,8 @@
-#include <globals.hxx>
 #include <options.hxx>
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <sstream>
+#include <output.hxx>
 
 Options::~Options() {
   // Delete sub-sections

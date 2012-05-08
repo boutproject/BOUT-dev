@@ -44,10 +44,14 @@
 #include <utils.hxx>
 #include <fft.hxx>
 #include <interpolation.hxx>
+#include <bout/constants.hxx>
+#include <msg_stack.hxx>
 
-#include <math.h>
+#include <cmath>
 #include <string.h>
 #include <stdlib.h>
+
+#include <output.hxx>
 
 //#undef _OPENMP
 
@@ -1367,7 +1371,7 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   result = applyXdiff(f, func, (mesh->dx*mesh->dx));
   result.setLocation(diffloc);
 
-  if(non_uniform) {
+  if(mesh->non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dx*applyXdiff(f, fDDX, mesh->dx);
   }
@@ -1399,7 +1403,7 @@ const Field2D D2DX2(const Field2D &f)
 
   result = applyXdiff(f, fD2DX2, (mesh->dx*mesh->dx));
 
-  if(non_uniform) {
+  if(mesh->non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dx * applyXdiff(f, fDDX, mesh->dx);
   }
@@ -1461,7 +1465,7 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   result = applyYdiff(f, func, (mesh->dy*mesh->dy));
   result.setLocation(diffloc);
 
-  if(non_uniform) {
+  if(mesh->non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
   }
@@ -1480,7 +1484,7 @@ const Field2D D2DY2(const Field2D &f)
 
   result = applyYdiff(f, fD2DY2, (mesh->dy*mesh->dy));
 
-  if(non_uniform) {
+  if(mesh->non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
   }

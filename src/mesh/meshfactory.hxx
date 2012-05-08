@@ -4,7 +4,7 @@ class MeshFactory;
 #ifndef __MESH_FACTORY_H__
 #define __MESH_FACTORY_H__
 
-#include <mesh.hxx>
+#include <bout/mesh.hxx>
 #include <uncopyable.hxx>
 
 class MeshFactory : private Uncopyable {

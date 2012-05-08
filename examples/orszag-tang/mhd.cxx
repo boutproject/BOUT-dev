@@ -5,6 +5,7 @@
 
 #include <bout.hxx>
 #include <boutmain.hxx>
+#include <msg_stack.hxx>
 
 // 3D evolving variables
 Field3D rho, p; // density, pressure
@@ -17,8 +18,7 @@ BoutReal gamma;
 bool include_viscos;
 BoutReal viscos;
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   // 2D initial profiles
   Field2D rho0, p0;
   Vector2D v0, B0;
@@ -71,8 +71,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   // Communicate variables
   mesh->communicate(v, B, p, rho);
 

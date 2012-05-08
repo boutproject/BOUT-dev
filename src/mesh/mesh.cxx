@@ -1,14 +1,15 @@
 
 #include <globals.hxx>
-#include <mesh.hxx>
+#include <bout/mesh.hxx>
 #include <utils.hxx>
 #include <derivs.hxx>
+#include <msg_stack.hxx>
 
 #include <cmath>
 
 #include "meshfactory.hxx"
 
-BoutReal Mesh::wtime_comms = 0.0;
+#include <output.hxx>
 
 Mesh* Mesh::create(Options *opt) {
   return MeshFactory::getInstance()->createMesh(opt);
@@ -678,4 +679,40 @@ int Mesh::gaussj(BoutReal **a, int n)
   // done.
 
   return 0;
+}
+
+/*******************************************************************************
+ * AverageY 
+ *******************************************************************************/
+
+/// Not very efficient version, as a fallback
+const Field3D Mesh::averageY(const Field3D &f) {
+  Field3D result;
+  result.allocate();
+  BoutReal ***d = result.getData();
+
+  Field2D xy;
+  xy.allocate();
+
+  for(int jz=0; jz<ngz;jz++) {
+
+    for(int jx=0; jx<ngx;jx++) {
+      for(int jy=0; jy<ngy;jy++) {
+
+	xy[jx][jy] = f[jx][jy][jz];
+      }
+    }
+
+    xy = averageY(xy);
+
+    for(int jx=0; jx<ngx;jx++) {
+      for(int jy=0; jy<ngy;jy++) {
+
+	d[jx][jy][jz] = xy[jx][jy];
+      }
+    }
+  }
+      
+  return result;
+
 }

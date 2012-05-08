@@ -41,31 +41,27 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 
 #define GLOBALORIGIN
 
+#include "mpi.h"
+
 #include <bout.hxx>
 #include <datafile.hxx>
 #include <grid.hxx>
-#include <solver.hxx>
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
-#include <initialprofiles.hxx>
+#include <bout/solver.hxx>
 #include <derivs.hxx>
-#include <utils.hxx>
-#include <invert_laplace.hxx>
-#include <interpolation.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
+#include <msg_stack.hxx>
+
+#include "fileio/formatfactory.hxx"
 
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
 
-#include "mpi.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <bout/sys/timer.hxx>
+
 #include <time.h>
 
+#include <strings.h>
 #include <string>
 #include <list>
 using std::string;
@@ -79,6 +75,8 @@ using std::list;
 #include <signal.h>
 void bout_signal_handler(int sig);  // Handles segmentation faults
 #endif
+
+#include <output.hxx>
 
 bool append = false;
 
@@ -244,7 +242,6 @@ int bout_init(int argc, char **argv) {
     options->get("grid", grid_name, DEFAULT_GRID);
 
     OPTION(options, dump_float,   true);
-    OPTION(options, non_uniform,  false);
 
     // Check if restarting
     bool restart;
@@ -252,7 +249,7 @@ int bout_init(int argc, char **argv) {
     OPTION(options, append, false);
 
     /// Get file extensions
-    options->get("dump_format", dump_ext, DEFAULT_FILE_EXT);
+    options->get("dump_format", dump_ext, "default");
 
     /// Setup derivative methods
     if (derivs_init()) {
@@ -292,7 +289,7 @@ int bout_init(int argc, char **argv) {
 
     // Set file formats
     output.write("Setting file formats\n");
-    dump.setFormat(data_format(dumpname));
+    dump.setFormat(dumpname);
 
     if (dump_float) dump.setLowPrecision(); // Down-convert to floats
 
@@ -305,9 +302,6 @@ int bout_init(int argc, char **argv) {
     dump.add(iteration, "iteration", 0);
 
     mesh->outputVars(dump);
-
-    // Initialise Laplacian inversion
-    invert_init();
 
     output.write("Initialising physics module\n");
     /// Initialise physics module
@@ -367,7 +361,8 @@ int bout_run() {
   try {
     time_t start_time = time((time_t*) NULL);
     output.write("\nRun started at  : %s\n", ctime(&start_time));
-
+    
+    Timer timer("run"); // Start timer
     status = solver->run(bout_monitor);
 
     time_t end_time = time((time_t*) NULL);
@@ -428,7 +423,6 @@ int bout_finish() {
 int bout_monitor(BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
-  static BoutReal wtime = 0.0;       ///< Wall-time since last output
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
 
 #ifdef CHECK
@@ -446,11 +440,12 @@ int bout_monitor(BoutReal t, int iter, int NOUT) {
   append = true;
 
   /// Collect timing information
-  int ncalls = solver->rhs_ncalls;
-  BoutReal wtime_rhs   = solver->rhs_wtime;
-  //BoutReal wtime_invert = 0.0; // wtime_invert is a global
-  BoutReal wtime_comms = mesh->wtime_comms;  // Time spent communicating (part of RHS)
-  BoutReal wtime_io    = Datafile::wtime;      // Time spend on I/O
+  BoutReal wtime        = Timer::resetTime("run");
+  int ncalls            = solver->rhs_ncalls;
+  BoutReal wtime_rhs    = Timer::resetTime("rhs");
+  BoutReal wtime_invert = Timer::resetTime("invert");
+  BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
+  BoutReal wtime_io     = Timer::resetTime("io");      // Time spend on I/O
 
   output.print("\r"); // Only goes to screen
 
@@ -470,21 +465,17 @@ int bout_monitor(BoutReal t, int iter, int NOUT) {
     /// Print the column header for timing info
     output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
 
-    /// Don't know wall time, so don't print timings
-    output.write("%.3e      %5d        -     -    -    -    -    - \n", simtime, ncalls); // Everything else
-  } else {
-    wtime = MPI_Wtime() - wtime;
-    
-    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
-        simtime, ncalls, wtime,
-        100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-        100.*wtime_invert/wtime,  // Inversions
-        100.0*wtime_comms/wtime,  // Communications
-        100.*wtime_io/wtime,      // I/O
-        100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
   
-
+  output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+               simtime, ncalls, wtime,
+               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+               100.*wtime_invert/wtime,  // Inversions
+               100.0*wtime_comms/wtime,  // Communications
+               100.* wtime_io / wtime,      // I/O
+               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+  
+  
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
@@ -507,15 +498,6 @@ int bout_monitor(BoutReal t, int iter, int NOUT) {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
-
-  /// Reset clocks for next timestep
-
-  mesh->wtime_comms = 0.0; // Reset communicator clock
-  Datafile::wtime = 0.0;
-  wtime_invert = 0.0;
-  solver->rhs_wtime = 0.0;
-
-  wtime = MPI_Wtime();
   
 #ifdef CHECK
   msg_stack.pop(msg_point);

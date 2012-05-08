@@ -25,9 +25,12 @@
  ***********************************************************************/
 
 #include <comm_group.hxx>
-#include <globals.hxx>
 #include <string.h>
 #include <stdlib.h>
+
+#include <output.hxx>
+#include <options.hxx>
+#include <msg_stack.hxx>
 
 namespace comm_group {
 

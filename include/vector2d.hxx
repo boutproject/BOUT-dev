@@ -173,7 +173,7 @@ class Vector2D : public FieldData {
   void applyTDerivBoundary();
  private:
   
-  Vector2D *ddt; ///< Time-derivative, can be NULL
+  Vector2D *deriv; ///< Time-derivative, can be NULL
 };
 
 // Non-member overloaded operators

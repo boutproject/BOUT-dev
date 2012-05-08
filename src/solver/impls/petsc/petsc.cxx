@@ -34,6 +34,8 @@
 #include <stdlib.h>
 
 #include <interpolation.hxx> // Cell interpolation
+#include <msg_stack.hxx>
+#include <output.hxx>
 
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 

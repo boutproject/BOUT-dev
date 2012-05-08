@@ -4,6 +4,7 @@
 \usepackage[nofoot]{geometry}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
+\usepackage{hyperref}
 
 \usepackage{listings}
 \usepackage{color}
@@ -308,9 +309,9 @@ repository on Franklin. To apply this to a different machine just replace
 
 \subsection{House rules}
 
-BOUT++ consists of about 32,400 lines of C/C++\footnote{generated using
+BOUT++ consists of about 38,900 lines of C/C++\footnote{generated using
 David A. Wheeler's 'SLOCCount'},
-along with 11,600 lines of IDL. Of this, about 21,100 lines is the core
+along with 11,600 lines of IDL. Of this, about 23,700 lines is the core
 BOUT++ code, and the remainder
 a mix of pre- and post-processors, and physics modules. As production codes
 go, this is not particularly huge, but it is definitely large enough that
@@ -335,7 +336,7 @@ porting and modifying codes.
 core code if it is more generally applicable, or cannot be put into the physics module.
 \end{itemize}
 
-\subsection{Naming conventions}
+\subsection{Coding conventions}
 
 The naming of BOUT++ classes, functions etc. has not been very consistent
 historically, but please try to follow the following rules:
@@ -345,6 +346,19 @@ historically, but please try to follow the following rules:
 \item Class member functions start with a lower case letter with each subsequent word capitalised (e.g. \code{write()}, \code{setSection()}), also without underscores.
 \item Variable names are all lower case, with underscores if you want.
 \end{itemize}
+
+Curly braces should {\bf not} start on a new line: please use
+\begin{lstlisting}
+if( ... ) {
+  ...
+}
+\end{lstlisting}
+and
+\begin{lstlisting}
+type function( ... ) {
+  ...
+}
+\end{lstlisting}
 
 \section{Code layout}
 
@@ -389,8 +403,30 @@ it has also changed over time, so some parts could be cleaner.
 The source code for the core of BOUT++ is divided into
 include files (which can be used in physics models) in 
 \file{bout++/include}, and source code and low-level includes
-in \file{bout++/src}. Inside \file{bout++/src}, the current source code
-files are:
+in \file{bout++/src}. Many parts of the code are defined by their
+interface, and can have multiple different implementations. An example
+is the time-integration solvers: many different implementations are available,
+some of which use external libraries, but all have the same interface and can
+be used interchangeably. This is reflected in the directory structure
+inside \file{bout++/src}. A common pattern is
+to store individual implementations of an interface
+in a subdirectory called \texttt{impls}. 
+\begin{verbatim}
+include/foo.hxx
+src/.../foo.cxx
+src/.../foo_factory.hxx
+src/.../foo_factory.cxx
+src/.../impls/one/one.hxx
+src/.../impls/one/one.cxx
+\end{verbatim}
+where \texttt{foo.hxx} defines the interface, \texttt{foo.cxx} implements common functions
+used in several implementations. \texttt{foo\_factory} creates new implementations, and is
+the only file which includes all the implementations. Individual implementations
+are stored in their own subdirectories of \texttt{impls}. Components which follow this pattern
+include \texttt{fileio} formats, \texttt{invert/laplace} and \texttt{invert/parderiv} 
+inversion codes, \texttt{mesh}, and \texttt{solver}.
+
+The current source code files are:
 \begin{itemize}
 \item \file{bout++.cxx} : Main file which initialises, runs and finalises
   BOUT++. Currently contains a \code{main()} function, though this is
@@ -447,16 +483,63 @@ files are:
     under development. It is intended to provide a way to solve nonlinear
     problems using a GMRES iterative method.
   \item \file{invert\_gmres.cxx}
-  \item \file{invert\_laplace.cxx} uses Fourier decomposition in $z$ combined
-    with tri- and band-diagonal solvers in $x$ to solve Laplacian problems.
+  
   \item \file{invert\_laplace\_gmres.cxx} inherits the \code{Inverter} class
     and will solve more general Laplacian problems, using the
     \code{invert\_laplace} routines as preconditioners.
+  \end{itemize}
+\item invert / laplace
+  \begin{itemize}
+  \item \file{invert\_laplace.cxx} uses Fourier decomposition in $z$ combined
+    with tri- and band-diagonal solvers in $x$ to solve Laplacian problems.
+  \item \file{laplacefactory.hxx}
+  \item \file{laplacefactory.cxx}
+  \item impls
+    \begin{itemize}
+    \item serial\_tri
+      \begin{itemize}
+      \item \file{serial\_tri.hxx}
+      \item \file{serial\_tri.cxx}
+      \end{itemize}
+    \item serial\_band
+      \begin{itemize}
+      \item \file{serial\_band.hxx}
+      \item \file{serial\_band.cxx}
+      \end{itemize}
+    \item spt
+      \begin{itemize}
+      \item \file{spt.hxx}
+      \item \file{spt.cxx}
+      \end{itemize}
+    \item pdd
+      \begin{itemize}
+      \item \file{pdd.hxx}
+      \item \file{pdd.cxx}
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\item invert / parderiv
+  \begin{itemize}
   \item \file{invert\_parderiv.cxx} inverts a problem involving only parallel
     $y$ derivatives. Intended for use in some preconditioners.
-  \item \file{lapack\_routines.cxx} supplies an interface to the LAPACK linear
-    solvers, which are used by the \code{invert\_laplace} routines.
+  \item \file{parderiv\_factory.hxx}
+  \item \file{parderiv\_factory.cxx}
+  \item impls
+    \begin{itemize}
+    \item serial
+      \begin{itemize}
+      \item \file{serial.cxx}
+      \item \file{serial.hxx}
+      \end{itemize}
+    \item cyclic
+      \begin{itemize}
+      \item \file{cyclic.cxx}
+      \item \file{cyclic.hxx}
+      \end{itemize}
+    \end{itemize}
   \end{itemize}
+\item \file{lapack\_routines.cxx} supplies an interface to the LAPACK linear
+  solvers, which are used by the \code{invert\_laplace} routines.
 \item mesh
   \begin{itemize}
   \item \file{boundary\_factory.cxx} creates boundary condition operators
@@ -483,6 +566,7 @@ files are:
   \end{itemize}
 \item physics
   \begin{itemize}
+  \item \file{gyro\_average.cxx} gyro-averaging operators
   \item \file{smoothing.cxx} provides smoothing routines on scalar fields
   \item \file{sourcex.cxx} contains some useful routines for creating
     sources and sinks in physics equations.
@@ -551,12 +635,12 @@ files are:
     and the command-line options. 
   \item \file{stencils.cxx} contains methods to operate on stencils which are
     used by differential methods. 
+  \item \file{timer.cxx} a class for timing parts of the code like communications
+    and file I/O. Described in section~\ref{sec:timerclass}
   \item \file{utils.cxx} contains miscellaneous small useful routines
     such as allocating and freeing arrays.
   \end{itemize}
 \end{itemize}
-
-
 
 \section{Data types}
 
@@ -1506,15 +1590,13 @@ class BoundaryNeumann : public BoundaryOp {
 \end{lstlisting}
 and implemented in \file{boundary\_standard.cxx} \index{BoundaryNeumann}
 \begin{lstlisting}[firstnumber=52]
-void BoundaryNeumann::apply(Field2D &f)
-{
+void BoundaryNeumann::apply(Field2D &f) {
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by];
 }
 
-void BoundaryNeumann::apply(Field3D &f)
-{
+void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
       f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
@@ -1649,8 +1731,7 @@ arguments are passed, and to parse them into floats or other types.
 argument to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
 \index{BoundaryDirichlet}
 \begin{lstlisting}[firstnumber=13]
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     // First argument should be a value
     stringstream ss;
@@ -1716,7 +1797,8 @@ All classes inheriting from \lstinline!FieldGenerator! must implement a
 \lstinline!generate! function, which returns the value
 at the given \lstinline!(x,y,z)! position. Classes should also implement a
 \lstinline!clone! function, which takes a list of arguments and creates a new
-instance of its class.
+instance of its class. This takes as input a list of other \lstinline!FieldGenerator! objects,
+allowing a variable number of arguments. 
 
 The simplest generator is a fixed numerical value, which is represented
 by a \lstinline!FieldValue! object: \index{FieldValue}
@@ -1729,6 +1811,141 @@ private:
   BoutReal value;
 };
 \end{lstlisting}
+
+\subsection{Adding a new function}
+
+To add a new function to the FieldFactory, a new \lstinline!FieldGenerator! class
+must be defined. Here we will use the example of the \lstinline!sinh! function, implemented
+using a class \lstinline!FieldSinh!. This takes a single argument as input, but
+\lstinline!FieldPI! takes no arguments, and \lstinline!FieldGaussian! takes either one or two.
+Study these after reading this to see how these are handled.
+
+First, edit \file{include/field\_factory.hxx} and add a class definition:
+\begin{lstlisting}[firstnumber=122]
+  class FieldSinh : public FieldGenerator {
+public:
+  FieldSinh(FieldGenerator* g) : gen(g) {}
+  ~FieldSinh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+\end{lstlisting}
+
+The \lstinline!gen! member is used to store the input argument, and to make sure it's deleted
+properly we add some code to the destructor. The constructor takes a single input, the \lstinline!FieldGenerator! argument to the \lstinline!sinh! function, which is stored in the member \lstinline!gen!.
+
+Next edit \file{src/field/field\_factory.cxx} and add the implementation of the \lstinline!clone! and
+\lstinline!generate! functions:
+\begin{lstlisting}[firstnumber=100]
+FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sinh function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSinh(args.front());
+}
+
+BoutReal FieldSinh::generate(int x, int y, int z) {
+  return sinh(gen->generate(x,y,z));
+}
+\end{lstlisting}
+
+The \lstinline!clone! function first checks the number of arguments using \lstinline!args.size()!. This
+is used in \lstinline!FieldGaussian! to handle different numbers of input, but in this case we 
+print an error message and return \lstinline!NULL! if the number of inputs isn't one. \lstinline!clone! then creates
+a new \lstinline!FieldSinh! object, passing the first argument (\lstinline!args.front()!) to the constructor (which
+then gets stored in the \lstinline!gen! member variable). 
+
+The \lstinline!generate! function for \lstinline!sinh! just gets the value of the input by calling
+\lstinline!gen->generate(x,y,z)!, calculates \lstinline!sinh! of it and returns the result.
+
+The \lstinline!clone! function means that the parsing code can make copies of any \lstinline!FieldGenerator! class
+if it's given a single instance to start with. The final step is therefore to give the \lstinline!FieldFactory! 
+class an instance of this new generator. Edit the \lstinline!FieldFactory! constructor \lstinline!FieldFactory::FieldFactory()! in \file{src/field/field\_factory.cxx} and add the line:
+\begin{lstlisting}[firstnumber=196]
+addGenerator("sinh", new FieldSinh(NULL));
+\end{lstlisting}
+
+That's it! This line associates the string \lstinline!"sinh"! with a \lstinline!FieldGenerator!. Even
+though \lstinline!FieldFactory! doesn't know what type of \lstinline!FieldGenerator! it is, it can make more copies
+by calling the \lstinline!clone! member function. This is a useful technique for polymorphic objects in C++ called the
+``Virtual Constructor'' idiom.
+
+\subsection{Parser internals}
+
+When a \lstinline!FieldGenerator! is added using the \lstinline!addGenerator! function,
+it is entered into a \lstinline!std::map! which maps strings to \lstinline!FieldGenerator!
+objects (\file{include/field\_factory.hxx}):
+
+\begin{lstlisting}[firstnumber=223]
+map<string, FieldGenerator*> gen;
+\end{lstlisting}
+
+Parsing a string into a tree of \lstinline!FieldGenerator! objects is done by first splitting the string up
+into separate tokens like operators like '*', brackets '(', names like 'sinh' and so on, then 
+recognising patterns in the stream of tokens. Recognising tokens is done in \file{src/field/field\_factory.cxx}:
+\begin{lstlisting}[firstnumber=259]
+char FieldFactory::nextToken() {
+ ...
+\end{lstlisting}
+
+This returns the next token, and setting the variable \lstinline!char curtok! to the same value. 
+This can be one of:
+\begin{itemize}
+\item -1 if the next token is a number. The variable \lstinline!BoutReal curval! is set to
+  the value of the token
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything which starts with a letter, and
+  contains only letters, numbers, and underscores. The string is stored in the variable \lstinline!string curident!. 
+\item 0 to mean end of input
+\item The character if none of the above. Since letters and numbers are taken care of (see above), this includes
+  brackets and operators like '+' and '-'.
+\end{itemize}
+
+The parsing stage turns these tokens into a tree of \lstinline!FieldGenerator! objects, starting
+with the \lstinline!parse()! function
+\begin{lstlisting}[firstnumber=484]
+FieldGenerator* FieldFactory::parse(const string &input) {
+   ...
+\end{lstlisting}
+which puts the input string into a stream so that \lstinline!nextToken()! can use it, then
+calls the \lstinline!parseExpression()! function to do the actual parsing:
+\begin{lstlisting}[firstnumber=477]
+FieldGenerator* FieldFactory::parseExpression() {
+   ...
+\end{lstlisting}
+
+This breaks down expressions in stages, starting with writing every expression as
+\begin{verbatim}
+expression := primary [ op primary ]
+\end{verbatim}
+i.e. a primary expression, and optionally an operator and another primary expression. Primary
+expressions are handled by the \lstinline!parsePrimary()! function, so first \lstinline!parsePrimary()! is called, 
+and then \lstinline!parseBinOpRHS! which checks if there is an operator, and if so calls \lstinline!parsePrimary()! to
+parse it. This code also takes care of operator precedence by keeping track of the precedence
+of the current operator. Primary expressions are then further broken down and can consist of either
+a number, a name (identifier), a minus sign and a primary expression, or brackets around an  expression:
+\begin{verbatim}
+primary := number
+        := identifier
+        := '-' primary
+        := '(' expression ')'
+        := '[' expression ']'
+\end{verbatim}
+The minus sign case is needed to handle the unary minus e.g. \lstinline!"-x"!. Identifiers are handled
+in \lstinline!parseIdentifierExpr()! which handles either variable names, or functions
+\begin{verbatim}
+identifier := name
+           := name '(' expression [ ',' expression [ ',' ... ] ] ')'
+\end{verbatim}
+i.e. a name, optionally followed by brackets containing one or more expressions separated by commas.
+names without brackets are treated the same as those with empty brackets, so \lstinline!"x"! is the same
+as \lstinline!"x()"!. A list of inputs (\lstinline!list<FieldGenerator*> args;!) is created, 
+the \lstinline!gen! map is searched to find the \lstinline!FieldGenerator! object corresponding to the name,
+and the list of inputs is passed to the object's \lstinline!clone! function.
 
 \section{Solver}
 \index{Solver}
@@ -2012,6 +2229,23 @@ Other small modules which don't really fit into any system, but are needed.
 
 
 \subsection{Printing messages}
+
+
+\subsection{Timing}
+\label{sec:timerclass}
+
+To time parts of the code, there is the \lstinline!Timer! class defined
+in \file{include/bout/sys/timer.hxx}. To use it, just create a \lstinline!Timer!
+object at the beginning of the function you want to time:
+\begin{lstlisting}
+#include <bout/sys/timer.hxx>
+
+void someFunction() {
+  Timer timer("test")
+  ...
+}
+\end{lstlisting}
+
 
 
 \subsection{Error handling}

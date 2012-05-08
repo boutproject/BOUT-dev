@@ -229,7 +229,7 @@ format, but writing output data in NetCDF format.
 It should be possible to install and try out BOUT++ with a minimal number of
 libraries, but BOUT++ can use the following libraries:
 \begin{itemize}
-  \item MPI (Message Passing Interface) and C++ compiler (e.g. \code{mpiCC} or \code{mpicxx}) {\bf [Required]}. Should work with most implementations, though mostly tested with MPICH and LAM.
+  \item MPI (Message Passing Interface) and C++ compiler (e.g. \code{mpiCC} or \code{mpicxx}) {\bf [Required]}. Should work with most implementations, though mostly tested with MPICH, LAM, and OpenMPI.
   \item FFTW-3 (Fastest Fourier Transform  in the West) {\bf [Required]} \url{http://www.fftw.org/} 
   \item NetCDF-4 \url{http://www.unidata.ucar.edu/software/netcdf/} {\bf [Recommended]}. Does not need the HDF5 extensions.
   \item SUNDIALS \url{https://computation.llnl.gov/casc/sundials/main.html}. An old version (c.1998) of the SUNDIALS CVODE solver (then called PVODE) is included with BOUT++, but the latest CVODE solver is recommended.
@@ -330,6 +330,35 @@ on machines where the MPI compilers are given non-standard names. For IBM AIX ma
 use
 \begin{verbatim}
 $ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
+\end{verbatim}
+
+\subsubsection{PETSc-dev}
+
+The development version of PETSc has the latest and greatest, and is needed for some 
+shiny features like timestepping. To install it, follow the instructions here:
+\url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
+writing, this consisted of fetching the latest version ({\bf NB} needs Mercurial 
+'hg' to be installed):
+\begin{verbatim}
+hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
+cd petsc-dev
+hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
+\end{verbatim}
+
+then configure PETSc, making sure to enable C++ and SUNDIALS support
+\begin{verbatim}
+./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
+            --with-sundials=1 --with-sundials-dir=$HOME/local/
+\end{verbatim}
+replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation. Finally
+compile PETSc:
+\begin{verbatim}
+make
+\end{verbatim}
+To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to the petsc-dev directory so add something
+like this to your startup file \texttt{\$HOME/.bashrc}
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-dev
 \end{verbatim}
 
 \subsection{Installing BOUT++}
@@ -476,6 +505,26 @@ and to specify a non-standard path
 \begin{verbatim}
 ./configure --with-lapack=/path/to/lapack
 \end{verbatim}
+
+\subsection{Running the test suite}
+
+To run the test cases, the Python libraries must first be set up. To do this, the path to
+\texttt{tools/pylib} should be added to the \texttt{PYTHONPATH} environment variable.
+Instructions for doing this are printed at the end of the configure script, for example:
+
+\begin{verbatim}
+Make sure that the tools/pylib directory is in your PYTHONPATH
+e.g. by adding to your ~/.bashrc file
+
+   export PYTHONPATH=/home/ben/BOUT/tools/pylib/:$PYTHONPATH
+
+\end{verbatim}
+
+Running the script \texttt{test\_suite} in the \texttt{examples} subdirectory
+will run through a set of tests,
+each on a variety of different processors. {\bf Note:} currently this uses
+the \texttt{mpirun} command to launch the runs, so won't work on machines which
+use a job submission system like PBS or SGE.
 
 \subsection{Running the examples}
 \label{sec:runexamples}
@@ -666,6 +715,7 @@ options needed to make the solver available.
 \hline
 Name & Description & Compile options \\
 \hline
+euler & Euler explicit method & Always available \\
 rk4 & Runge-Kutta 4th-order explicit method & Always available \\
 karniadakis & Karniadakis explicit method & Always available \\
 pvode & 1998 PVODE with BDF method & Always available \\
@@ -849,7 +899,7 @@ zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
 scale = 1.0e-5
 
 [p]
-function = 1 + gaussian(x-0.5)*gauss(y)*sin(z)
+function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
 \end{lstlisting}
 will use the original method to set $U$, but use the given expression to set $p$.
 
@@ -1273,8 +1323,9 @@ reading PDB files and analysing data. A summary of available IDL routines
 is given in Appendix~\ref{apx:idl_routines}.
 
 Post-processing using Python is also possible, and there are some modules
-in the \texttt{pylib} directory, and a list of routines in Appendix~\ref{apx:py_routines}. This is a more recent addition, and so is
-not yet as developed as the IDL support. 
+in the \texttt{pylib} directory, and a list of routines in Appendix~\ref{apx:py_routines}. 
+This is a more recent addition, and so is not yet as developed as the IDL support. 
+
 
 
 \subsection{Note on reading PDB files}
@@ -1482,12 +1533,64 @@ for a short description of each one.
 
 \subsection{Python routines}
 \index{Python}
-The NumPy module enables Python to efficiently handle large arrays of 
-scientific data. There are several modules available for reading
-NetCDF files, but the one used by the BOUT++ routines is ...
-Because this library may change in future, or BOUT++ may use a different
-file format, file access is wrapped into a class DataFile. This
-provides a simple interface for reading and writing files.
+There are several modules available for reading
+NetCDF files, so to provide a consistent interface, file access is wrapped into a class DataFile. This
+provides a simple interface for reading and writing files from any of the following modules:
+\texttt{netCDF4}; \texttt{Scientific.IO.NetCDF}; and \texttt{scipy.io.netcdf}. 
+To open a file using DataFile:
+\begin{lstlisting}[language=python,numbers=none]
+from boututils import DataFile
+
+f = DataFile("file.nc")  # Open the file
+var = f.read("variable") # Read a variable from the file
+f.close()                # Close the file
+\end{lstlisting}
+
+To list the variables in a file e.g.
+\begin{lstlisting}[language=python,numbers=none]
+>>> f = DataFile("test_io.grd.nc")
+>>> print f.list()
+['f3d', 'f2d', 'nx', 'ny', 'rvar', 'ivar']
+\end{lstlisting}
+and to list the names of the dimensions
+\begin{lstlisting}[language=python,numbers=none]
+>>> print d.dimensions("f3d")
+('x', 'y', 'z')
+\end{lstlisting}
+or to get the sizes of the dimensions
+\begin{lstlisting}[language=python,numbers=none]
+>>> print d.size("f3d")
+[12, 12, 5]
+\end{lstlisting}
+
+To read in all variables in a file into a dictionary there is
+the \texttt{file\_import} function
+\begin{lstlisting}
+from boututils import file_import
+
+grid = file_import("grid.nc")
+\end{lstlisting}
+
+As for IDL, there is a \texttt{collect} routine which reads gathers together the data from multiple processors
+\begin{lstlisting}
+from boutdata import collect
+
+Ni = collect("Ni")  # Collect the variable "Ni"
+\end{lstlisting}
+
+\subsection{Octave routines}
+
+There is minimal support for reading data into Octave, which has been tested on
+Octave 3.2. It requires the \texttt{octcdf} library to access NetCDF files.
+
+\begin{lstlisting}[language=octave,numbers=none]
+f = bcollect()  # optional path argument is "." by default
+
+f = bsetxrange(f, 1, 10) # Set ranges
+# Same for y, z, and t (NOTE: indexing from 1!)
+
+u = bread(f, "U")  # Finally read the variable
+\end{lstlisting}
 
 \section{Generating input grids}
 \label{sec:gridgen}
@@ -1719,13 +1822,11 @@ is given in the file \texttt{mhd.cxx} in the BOUT++ examples directory. The equa
 
 To specify a set of equations to solve in BOUT++, two functions need to be written:
 \begin{lstlisting}
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   return 0;
 }
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   return 0;
 }
 \end{lstlisting}
@@ -1751,8 +1852,7 @@ For ideal MHD, we need two 3D scalar fields density $\rho$ and pressure $p$, and
 Field3D rho, p; // 3D scalar fields
 Vector3D v, B;  // 3D vector fields
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
 }
 \end{lstlisting}
 
@@ -1811,8 +1911,7 @@ At this point we can tell BOUT++ which variables to evolve, and where the state 
 will be stored. This is done using the \code{bout\_solve(variable, name)} function
 in \code{physics\_init}:
 \begin{lstlisting}
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   bout_solve(rho, "density");
   bout_solve(p,   "pressure");
   bout_solve(v,   "v");
@@ -1834,8 +1933,7 @@ SOLVE_FOR(B);
 To make this even shorter, we can use macros \code{SOLVE\_FOR2}, \code{SOLVE\_FOR3}, ..., \code{SOLVE\_FOR6}
 to shorten our initialisation code to
 \begin{lstlisting}
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   bout_solve(rho, "density");
   bout_solve(p,   "pressure");
   SOLVE_FOR2(v, B);
@@ -1849,8 +1947,7 @@ passed to the function (\code{BoutReal t}) is the simulation time - only needed 
 equations contain time-dependent sources or similar terms. To refer to the time-derivative
 of a variable \code{var}, use \code{ddt(var)}. The ideal MHD equations can be written as:
 \begin{lstlisting}
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   ddt(rho) = -V_dot_Grad(v, rho) - rho*Div(v);
   ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
   ddt(v) = -V_dot_Grad(v, v) + ( (Curl(B)^B) - Grad(p) ) / rho;
@@ -1873,8 +1970,7 @@ initialisation function:
 \begin{lstlisting}
 BoutReal gamma;
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   Options *globalOptions = Options::getRoot();
   Options *options = globalOptions->getSection("mhd");
 
@@ -1971,8 +2067,7 @@ with the group. In this case
 we need to communicate all these variables before performing any calculations, so call
 this function at the start of the \code{physics\_run} routine:
 \begin{lstlisting}
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   mesh->communicate(comms);
   .
   .
@@ -2128,8 +2223,7 @@ To read in a quantity from a grid file, there is the \code{grid.get} function:
 \begin{lstlisting}
 Field2D Ni0; // Background density
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   ...
   mesh->get(Ni0, "Ni0");
   ...
@@ -2172,16 +2266,71 @@ is equivalent to
 
 The MHD example presented previously covered some of the functions available in BOUT++,
 which can be used for a wide variety of models. There are however several other significant
-functions and classes which are commonly used, which will be illustrated using another example
+functions and classes which are commonly used, which will be illustrated using the
+\texttt{reconnect-2field} example. This is solving equations for $A_{||}$ and
+vorticity $U$
+
+\begin{eqnarray*}
+\deriv{U}{t} &=& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2 \nabla_{||}\left(j_{||} / B\right) \\
+\deriv{A_{||}}{t} &=& -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}
+\end{eqnarray*}
+with $\phi$ and $j_{||}$ given by
+\begin{eqnarray*}
+U &=& \frac{1}{B}\nabla_\perp^2\phi \\
+j_{||} &=& -\nabla_\perp^2 A_{||}
+\end{eqnarray*}
+
+First create the variables which are going to be evolved, ensure they're
+communicated 
 
 \begin{lstlisting}
-Field3D 
+Field3D U, Apar; // Evolving variables
+
 int physics_init(bool restarting) {
   
+  SOLVE_FOR2(U, Apar);
 }
 
 int physics_run(BoutReal t) {
+  mesh->communicate(U, Apar);
   
+}
+\end{lstlisting}
+
+In order to calculate the time derivatives, we need the auxilliary variables
+$\phi$ and $j_{||}$. Calculating $j_{||}$ from $A_{||}$ is a straightforward
+differential operation, but getting $\phi$ from $U$ means inverting a Laplacian.
+\begin{lstlisting}
+Field3D U, Apar;
+Field3D phi, jpar; // Auxilliary variables
+
+int physics_init(bool restarting) {
+  SOLVE_FOR2(U, Apar);
+  SAVE_REPEAT2(phi, jpar); // Save variables in output file
+  return 0;
+}
+
+int physics_run(BoutReal t) {
+  phi = invert_laplace(mesh->Bxy*U, phi_flags); // Solve for phi
+  mesh->communicate(U, Apar, phi);  // Communicate phi
+  jpar = -Delp2(Apar);     // Calculate jpar
+  mesh->communicate(jpar); // Communicate jpar
+  return 0;
+}
+\end{lstlisting}
+Note that the Laplacian inversion code takes care of boundary regions,
+so \lstinline!U! doesn't need to be communicated first. The differential operator
+\lstinline!Delp2!, like all differential operators, needs the values
+in the guard cells and so \lstinline!Apar! needs to be communicated
+before calculating \lstinline!jpar!. Since we will need to take derivatives
+of \lstinline!jpar! later, this needs to be communicated as well.
+\begin{lstlisting}
+int physics_run(BoutReal t) {
+  ...
+  mesh->communicate(jpar);
+  
+  ddt(U) = -b0xGrad_dot_Grad(phi, U) + SQ(mesh->Bxy)*Grad_par(Jpar / mesh->Bxy)
+  ddt(Apar) = -Grad_par(phi) / beta_hat - eta*jpar / beta_hat;
 }
 \end{lstlisting}
 
@@ -2225,20 +2374,41 @@ Quite a common problem in plasma simulation codes is to invert an equation of th
 \]
 where $a$ is symmetric in z, and the operator $\nabla_\perp = \nabla - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right) = -\mathbf{b\times} \left(\mathbf{b\times}\nabla\right)$. For example, this operator
 appears in reduced MHD for the vorticity inversion and $j_||$.
-Efficiently inverting this operator is done in the same way as in the BOUT code:
-FFTs are used in the $z$ direction to transform this problem into a set of 1D 
-inversion problems (in $x$) for each Fourier mode.
+
+Efficiently inverting this operator is done by taking FFTs in the $z$ direction
+to transform this problem into a set of 1D inversion problems (in $x$) for each Fourier mode.
 These inversion problems are band-diagonal (tri-diagonal in the case of 2nd-order differencing) and so
-inversions are very efficient: $O\left(n_z \log n_z\right)$ for the FFTs, $O\left(n_x\right)$ for tridiagonal inversion
+inversions can be very efficient: $O\left(n_z \log n_z\right)$ for the FFTs, $O\left(n_x\right)$ for tridiagonal inversion
 using the Thomas algorithm \cite{press-1999}, where $n_x$ and $n_z$ are the number of grid-points
 in the $x$ and $z$ directions respectively.
-This routine is:
+
+The \lstinline!Laplacian! class is defined in \texttt{invert\_laplace.hxx} and solves
+problems of the form
+\[
+d\nabla_\perp^2 x + \frac{1}{c}\nabla_\perp c \cdot\nabla_\perp x + a x = b
+\]
+To use this class, first create an instance of it:
 \begin{lstlisting}
-invert_laplace(b, x, flags, &a);
+Laplacian *lap = Laplacian::create();
 \end{lstlisting}
-where \code{b} and \code{x} are 3D fields, and \code{a} is a pointer to a 2D field (which may be
-NULL). \code{flags} is an \code{int} which determines boundary conditions and other options.
-Its value is calculated by adding the settings given in \code{invert\_laplace.hxx}, and reproduced in
+By default, this will use the options in a section called ``laplace'', but can be given
+a different section as an argument.
+By default $d = a = 1$ and the $c$ term is switched off. To set the values of these
+coefficients, there are the \lstinline!setCoefA()!, \lstinline!setCoefC()!, and \lstinline!setCoefD()!
+methods:
+\begin{lstlisting}
+Field2D a = ...;
+lap->setCoefA(a);
+lap->setCoefC(0.5);
+\end{lstlisting}
+arguments can be \lstinline!Field2D!, \lstinline!Field3D!, or real values. 
+Settings are controlled using \lstinline!setFlags! 
+\begin{lstlisting}
+lap->setFlags(flags);
+\end{lstlisting}
+\code{flags} is an \code{int} which determines boundary conditions
+and other options. Its value is calculated by adding the settings given
+in \code{invert\_laplace.hxx}, and reproduced in
 table~\ref{tab:laplaceflags}.
 \begin{table}[htbp!]
 \caption{Laplacian inversion flags: add the required quantities together.}
@@ -2265,6 +2435,25 @@ Flag & Meaning \\
 \hline
 \end{tabular}
 \end{table}
+
+To perform the inversion, there's the \lstinline!solve! method
+\begin{lstlisting}
+x = lap->solve(b);
+\end{lstlisting}
+
+If you prefer, there are functions compatible with older versions
+of the BOUT++ code:
+\begin{lstlisting}
+Field2D a, c, d;
+invert_laplace(b, x, flags, &a, &c, &d);
+\end{lstlisting}
+and
+\begin{lstlisting}
+x = invert_laplace(b, flags, &a, &c, &d);
+\end{lstlisting}
+The input \code{b} and output \code{x} are 3D fields, and the coefficients
+\code{a}, \code{c}, and \code{d} are pointers to 2D fields. To omit
+any of the three coefficients, set them to NULL.
 
 \subsection{Error handling}
 
@@ -3085,8 +3274,24 @@ Here the format is
 \section{Python routines (alphabetical)}
 \label{apx:py_routines}
 
+\subsection{boututils}
+
 \begin{itemize}
-\item Datafile()  Constructor
+\item \lstinline!class Datafile!
+\item \lstinline!deriv()!
+\item \lstinline!determineNumberOfCPUs()!
+\item \lstinline!file_import()!
+\item \lstinline!integrate()!
+\item \lstinline!launch()!
+\item \lstinline!linear_regression()!
+\end{itemize}
+
+\subsection{boutdata}
+
+\begin{itemize}
+\item \lstinline!collect()!
+\item \lstinline!pol_slice()!
+\item \lstinline!gen_surface()!
 \end{itemize}
 
 \printindex

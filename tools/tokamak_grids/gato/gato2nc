@@ -184,10 +184,12 @@ except:
     print "=> File does not contain Br and Bz"
     Br = Bz = None
 
+ny = ntheta
+
 if isym == 1:
     # Fill in values for up-down symmetric case
     print "Grid is up-down symmetric. Reflecting grid about midplane"
-    tsize = 2*(ntheta - 1) + 1
+    ny = tsize = 2*(ntheta - 1) + 1
     
     def reflect(data, mapfunc = lambda x:x):
         """ Reflect a variable about midplane
@@ -226,6 +228,9 @@ Btor = fnorm / xnorm
 print "Writing data to '"+outfile+"'"
 of = DataFile()
 of.open(outfile, create=True)
+
+of.write("nx", npsi)
+of.write("ny", ny)
 
 # Write 1D flux functions
 mu0 = 4.e-7*np.pi

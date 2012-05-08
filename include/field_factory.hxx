@@ -33,10 +33,14 @@ class FieldFactory;
 #include "field2d.hxx"
 #include "field3d.hxx"
 
+#include "bout/constants.hxx"
+
 #include <string>
 #include <map>
 #include <vector>
 #include <sstream>
+
+#include "output.hxx"
 
 using std::vector;
 using std::string;
@@ -110,6 +114,28 @@ class FieldCos : public FieldGenerator {
 public:
   FieldCos(FieldGenerator* g) : gen(g) {}
   ~FieldCos() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
+class FieldSinh : public FieldGenerator {
+public:
+  FieldSinh(FieldGenerator* g) : gen(g) {}
+  ~FieldSinh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
+class FieldCosh : public FieldGenerator {
+public:
+  FieldCosh(FieldGenerator* g) : gen(g) {}
+  ~FieldCosh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(int x, int y, int z);

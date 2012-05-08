@@ -10,7 +10,7 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-3
 
-from boututils import shell, launch, file_import, deriv, linear_regression, plotdata
+from boututils import shell, launch, file_import, deriv, linear_regression
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit

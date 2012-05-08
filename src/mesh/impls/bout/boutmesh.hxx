@@ -4,7 +4,7 @@
 
 #include "mpi.h"
 
-#include <mesh.hxx>
+#include <bout/mesh.hxx>
 
 #include <list>
 #include <vector>
@@ -53,6 +53,7 @@ class BoutMesh : public Mesh {
   SurfaceIter* iterateSurfaces();
   friend class BoutSurfaceIter;
   const Field2D averageY(const Field2D&);
+  const Field3D averageY(const Field3D &f);
   bool surfaceClosed(int jx);
   bool surfaceClosed(int jx, BoutReal &ts);
 
@@ -188,10 +189,25 @@ class BoutMesh : public Mesh {
   int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
 };
 
-/*
 class BoutSurfaceIter : public SurfaceIter {
  public:
   BoutSurfaceIter(BoutMesh* mi);
+  int ySize(); // Return the size of the current surface
+  bool closed(BoutReal &ts);
+  MPI_Comm communicator();
+  
+  int yGlobal(int yloc);
+
+  void first();
+  void next();
+  bool isDone();
+ private:
+  BoutMesh* m;
+};
+/*
+class BoutDistribSurfaceIter : public DistribSurfaceIter {
+ public:
+  BoutDistribSurfaceIter(BoutMesh* mi);
   int ysize(); // Return the size of the current surface
   bool closed(BoutReal &ts);
 
@@ -201,9 +217,11 @@ class BoutSurfaceIter : public SurfaceIter {
   
   int gather(const Field2D &f, BoutReal *data);
   int gather(const Field3D &f, BoutReal **data);
-  
+  int gather(const FieldGroup &f, BoutReal *data);
+
   int scatter(BoutReal *data, Field2D &f);
   int scatter(BoutReal **data, Field3D &f);
+  int scatter(BoutReal *data, FieldGroup &f);
  private:
   BoutMesh* m;
 };

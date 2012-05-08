@@ -28,14 +28,6 @@ class Datafile;
 #include <vector>
 #include <string>
 
-#ifndef DATAFILE_ORIGIN
-extern char DEFAULT_FILE_EXT[]; ///< Default file extension
-#endif
-
-/// Work out which data format to use for given filename
-/// Omit argument (or pass NULL) for default format
-DataFormat *data_format(const char *filename = NULL);
-
 /*!
   Uses a generic interface to file formats (DataFormat)
   and provides an interface for reading/writing simulation data.
@@ -44,12 +36,13 @@ DataFormat *data_format(const char *filename = NULL);
 */
 class Datafile {
  public:
-  Datafile();
+  Datafile() : low_prec(false), file(NULL) {}
   Datafile(DataFormat *format);
   ~Datafile();
   
   /// Set the file format by passing an interface class
   void setFormat(DataFormat *format);
+  void setFormat(const string &format);
 
   void setLowPrecision(); ///< Only output floats
 
@@ -80,8 +73,6 @@ class Datafile {
 
   /// Set this to false to switch off all data writing
   static bool enabled;
-  
-  static BoutReal wtime; ///< Keep track of wall-time used
  private:
   string def_filename; ///< Default filename
   
@@ -114,5 +105,61 @@ class Datafile {
 
   bool varAdded(const string &name); // Check if a variable has already been added
 };
+
+/// Write this variable once to the grid file
+#define SAVE_ONCE(var) dump.add(var, #var, 0)
+#define SAVE_ONCE2(var1, var2) { \
+    dump.add(var1, #var1, 0); \
+    dump.add(var2, #var2, 0);}
+#define SAVE_ONCE3(var1, var2, var3) {\
+    dump.add(var1, #var1, 0); \
+    dump.add(var2, #var2, 0); \
+    dump.add(var3, #var3, 0);}
+#define SAVE_ONCE4(var1, var2, var3, var4) { \
+    dump.add(var1, #var1, 0); \
+    dump.add(var2, #var2, 0); \
+    dump.add(var3, #var3, 0); \
+    dump.add(var4, #var4, 0);}
+#define SAVE_ONCE5(var1, var2, var3, var4, var5) {\
+    dump.add(var1, #var1, 0); \
+    dump.add(var2, #var2, 0); \
+    dump.add(var3, #var3, 0); \
+    dump.add(var4, #var4, 0); \
+    dump.add(var5, #var5, 0);}
+#define SAVE_ONCE6(var1, var2, var3, var4, var5, var6) {\
+    dump.add(var1, #var1, 0); \
+    dump.add(var2, #var2, 0); \
+    dump.add(var3, #var3, 0); \
+    dump.add(var4, #var4, 0); \
+    dump.add(var5, #var5, 0); \
+    dump.add(var6, #var6, 0);}
+
+/// Write this variable every timestep
+#define SAVE_REPEAT(var) dump.add(var, #var, 1)
+#define SAVE_REPEAT2(var1, var2) { \
+    dump.add(var1, #var1, 1); \
+    dump.add(var2, #var2, 1);}
+#define SAVE_REPEAT3(var1, var2, var3) {\
+    dump.add(var1, #var1, 1); \
+    dump.add(var2, #var2, 1); \
+    dump.add(var3, #var3, 1);}
+#define SAVE_REPEAT4(var1, var2, var3, var4) { \
+    dump.add(var1, #var1, 1); \
+    dump.add(var2, #var2, 1); \
+    dump.add(var3, #var3, 1); \
+    dump.add(var4, #var4, 1);}
+#define SAVE_REPEAT5(var1, var2, var3, var4, var5) {\
+    dump.add(var1, #var1, 1); \
+    dump.add(var2, #var2, 1); \
+    dump.add(var3, #var3, 1); \
+    dump.add(var4, #var4, 1); \
+    dump.add(var5, #var5, 1);}
+#define SAVE_REPEAT6(var1, var2, var3, var4, var5, var6) {\
+    dump.add(var1, #var1, 1); \
+    dump.add(var2, #var2, 1); \
+    dump.add(var3, #var3, 1); \
+    dump.add(var4, #var4, 1); \
+    dump.add(var5, #var5, 1); \
+    dump.add(var6, #var6, 1);}
 
 #endif // __DATAFILE_H__

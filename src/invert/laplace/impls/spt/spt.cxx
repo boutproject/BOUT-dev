@@ -67,7 +67,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   x.allocate();
   
   int ys = mesh->ystart, ye = mesh->yend;
-  if(MYPE_IN_CORE == 0) {
+  if(mesh->MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
     ys = 0;
     ye = mesh->ngy-1;

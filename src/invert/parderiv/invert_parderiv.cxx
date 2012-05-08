@@ -1,8 +1,10 @@
-/**************************************************************************
- * Empty solver class for throwing errors
+/************************************************************************
+ * Inversion of parallel derivatives
  * 
- * NOTE: Only one solver can currently be compiled in
+ * Inverts a matrix of the form 
  *
+ * (A + B * Grad2_par2) x = r
+ * 
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -23,24 +25,20 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
- **************************************************************************/
+ ************************************************************************/
 
-class EmptySolver;
+#include <invert_parderiv.hxx>
+#include "parderiv_factory.hxx"
 
-#ifndef __EMPTY_SOLVER_H__
-#define __EMPTY_SOLVER_H__
+InvertPar* InvertPar::Create() {
+  return ParDerivFactory::getInstance()->createInvertPar();
+}
 
-#include "solver.hxx"
-#include "boutexception.hxx"
-
-class EmptySolver : public Solver {
-public:
-  EmptySolver() {throw BoutException("Solver not enabled!");}
+const Field2D InvertPar::solve(const Field2D &f) {
+  Field3D var(f);
   
-  int run(MonitorFunc f) {return 0;}
-  BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime) {return 0;}
+  var = solve(var);
+  return var.DC();
+}
 
-};
-
-#endif // __EMPTY_SOLVER_H__
-
+  

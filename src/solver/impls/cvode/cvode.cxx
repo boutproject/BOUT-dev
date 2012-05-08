@@ -31,11 +31,14 @@
 
 #include <globals.hxx>
 #include <interpolation.hxx> // Cell interpolation
+#include <msg_stack.hxx>
 
 #include <cvode/cvode.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
+
+#include <output.hxx>
 
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
@@ -299,8 +302,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 #endif
 
   MPI_Barrier(BoutComm::get());
-
-  rhs_wtime = 0.0;
+  
   rhs_ncalls = 0;
 
   pre_Wtime = 0.0;

@@ -22,6 +22,8 @@
 
 #include "pdb_format.hxx"
 
+#ifdef PDBF
+
 #include <utils.hxx>
 
 static char* REALSTR = (char*)"double";
@@ -466,3 +468,6 @@ int PdbFormat::nrecs(const char *name)
   
   return nt;
 }
+
+#endif // PDBF
+

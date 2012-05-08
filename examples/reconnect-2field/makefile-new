@@ -1,0 +1,6 @@
+
+BOUT_TOP	= ../..
+
+SOURCEC		= 2field-orig.cxx
+
+include $(BOUT_TOP)/make.config

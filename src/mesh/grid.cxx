@@ -33,12 +33,14 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 
 #include <fft.hxx> // For reading 3D variables
 #include <dcomplex.hxx>
 
 #include <bout_types.hxx>
+
+#include <output.hxx>
 
 /*******************************************************************************
  * GridFile class

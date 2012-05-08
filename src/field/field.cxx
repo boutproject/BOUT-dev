@@ -23,16 +23,16 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+//#include <globals.hxx>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdarg.h>
 
 #include <field.hxx>
+#include <output.hxx>
+#include <msg_stack.hxx>
+#include <boutexception.hxx>
 
-Field::Field()
-{
+Field::Field() {
 #ifdef CHECK
   bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true;
 #endif
@@ -43,8 +43,7 @@ Field::Field()
 char err_buffer[512];
 
 // Report an error occurring
-void Field::error(const char *s, ...) const
-{
+void Field::error(const char *s, ...) const {
   va_list ap;  // List of arguments
 
   if(s == (const char*) NULL) {
@@ -62,6 +61,6 @@ void Field::error(const char *s, ...) const
 #endif
   }
   
-  bout_error();
+  throw BoutException("Error in field: %s", err_buffer);
 }
 

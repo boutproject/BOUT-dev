@@ -33,6 +33,13 @@
  *
  */
 
+#ifndef NCDF
+
+#include "../emptyformat.hxx"
+typedef EmptyFormat NcFormat;
+
+#else
+
 class NcFormat;
 
 #ifndef __NCFORMAT_H__
@@ -121,3 +128,5 @@ class NcFormat : public DataFormat {
 };
 
 #endif // __NCFORMAT_H__
+
+#endif // NCDF

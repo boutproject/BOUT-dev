@@ -38,6 +38,10 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <cmath>
+#include <bout/sys/timer.hxx>
+#include <output.hxx>
+#include <msg_stack.hxx>
+#include <bout/constants.hxx>
 
 #include "laplacefactory.hxx"
 
@@ -96,7 +100,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(MYPE_IN_CORE == 0) {
+  if(mesh->MYPE_IN_CORE == 0) {
     // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
     ys = 0;
     ye = mesh->ngy-1;
@@ -130,7 +134,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(MYPE_IN_CORE == 0) {
+  if(mesh->MYPE_IN_CORE == 0) {
     ys = 0;
     ye = mesh->ngy-1;
   }
@@ -389,7 +393,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
     lap->setCoefC(1.0);
   
   if(d != NULL) {
-    lap->setCoefD(*a);
+    lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);
   
@@ -401,7 +405,8 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 }
 
 int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
-  BoutReal t = MPI_Wtime();
+  
+  Timer timer("invert"); ///< Start timer
   
   Laplacian *lap = Laplacian::defaultInstance();
   
@@ -416,18 +421,20 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
     lap->setCoefC(1.0);
   
   if(d != NULL) {
-    lap->setCoefD(*a);
+    lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
   
+  x.allocate(); // Make sure x is allocated
+
   x = lap->solve(b, x);
   
-  wtime_invert += MPI_Wtime() - t;
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
-  BoutReal t = MPI_Wtime();
+  
+  Timer timer("invert"); ///< Start timer 
   
   Laplacian *lap = Laplacian::defaultInstance();
   
@@ -442,7 +449,7 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
     lap->setCoefC(1.0);
   
   if(d != NULL) {
-    lap->setCoefD(*a);
+    lap->setCoefD(*d);
   }else
     lap->setCoefD(1.0);
   
@@ -450,7 +457,6 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
   
   Field3D x = lap->solve(b);
   
-  wtime_invert += MPI_Wtime() - t;
-  
   return x;
 }
+
