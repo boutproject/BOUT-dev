@@ -9,29 +9,41 @@ class ConstDomainIterator;
 #include <list>
 #include <ostream>
 #include <map>
+#include <string>
+#include <algorithm>
+#include <iterator>
+
+using std::string;
+using std::list;
+using std::find;
 
 #include <uncopyable.hxx>
 
-class DomainIterator {
+class DomainIterator : public std::iterator<std::forward_iterator_tag, Domain> {
 public:
-  DomainIterator() : dom(0) {}
-  DomainIterator(Domain &d) : dom(&d) {}
+  DomainIterator();
+  DomainIterator(Domain &d);
   
   Domain& operator*() {return *dom;}
   Domain* operator->() {return dom;}
-  
+
   bool operator==(const DomainIterator &x) const {
     return dom == x.dom;
   }
   bool operator!=(const DomainIterator &x) const {
     return dom != x.dom;
   }
-  
   DomainIterator& operator++();
+  DomainIterator operator++(int) {DomainIterator tmp(*this); operator++(); return tmp;}
 private:
   Domain* dom; // Current domain
+  list<Domain*> visited_list; // Previously visited (includes dom)
+  list<Domain*> stack; // Stack of visited domains (includes dom)
   
-  //std::map<Domain*, > iter;
+  bool visited(Domain *d) {
+    list<Domain*>::iterator it = find(visited_list.begin(), visited_list.end(), d);
+    return it != visited_list.end();
+  }
 };
 
 class ConstDomainIterator {
@@ -40,7 +52,7 @@ public:
   ConstDomainIterator(const Domain &d) : dom(&d) {}
   
   const Domain& operator*() const {return *dom;}
-  //const Domain* restrict operator->() const {return dom;}
+  Domain const* operator->() const {return dom;}
   
   bool operator==(const ConstDomainIterator &x) const {
     return dom == x.dom;
@@ -58,6 +70,7 @@ private:
 class Domain : private Uncopyable {
 public:
   Domain(int NX, int NY);
+  Domain(int NX, int NY, const string &Name);
   ~Domain();
   
   // Iterators over domains
@@ -88,6 +101,7 @@ private:
   Domain(); ///< declared, not defined
   
   int nx, ny; ///< Size of the domain
+  string name; ///< Name or label for this domain
   
   /// Boundary structure, shared between domains
   struct Bndry {
@@ -145,9 +159,11 @@ private:
   void removeBoundary(Bndry *b);
   void removeBoundary(std::list<Bndry*>::iterator &it);
   
-  std::list<Bndry*> boundary;
+  list<Bndry*> boundary;
 
   static BndrySide reverse(const BndrySide &side);
+  
+  
 };
 
 #endif // __DOMAIN_H__

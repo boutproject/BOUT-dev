@@ -3,9 +3,46 @@
 
 #include <boutexception.hxx>
 
-using std::list;
+DomainIterator::DomainIterator() : dom(0) {}
+
+DomainIterator::DomainIterator(Domain &d) : dom(&d) {
+  stack.push_front(dom);
+  visited_list.push_front(dom);
+}
+
+DomainIterator& DomainIterator::operator++() {
+  // Depth-first search of domains, using a list of visited 
+  // This algorithm is pretty slow, but should only be run during setup
+
+  if(dom == NULL) // Already at the end
+    return *this;
+
+  while(!stack.empty()) {
+    // Most recently visited first
+    Domain* d = stack.front();
+    
+    // Go through all boundaries of this domain
+    for(list<Domain::Bndry*>::iterator bit = d->boundary.begin(); bit != d->boundary.end(); bit++) {
+      Domain::Bndry* b = *bit;
+      Domain *neighbour = b->getNeighbour(d);
+      if((neighbour != NULL) && !visited(neighbour)) {
+        // If neighbour exists, and hasn't been visited
+        stack.push_front(neighbour);
+        visited_list.push_front(neighbour);
+        dom = neighbour;
+        return *this;
+      }
+    }
+    // All boundaries visited
+    stack.pop_front(); // Remove from stack, but not from visited_list
+  }
+  // No more domains
+  dom = NULL;
+  return *this;
+}
 
 Domain::Domain(int NX, int NY) : nx(NX), ny(NY) {}
+Domain::Domain(int NX, int NY, const string &Name) : nx(NX), ny(NY), name(Name) {}
 
 Domain::~Domain() {
   for(list<Bndry*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
