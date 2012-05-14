@@ -68,6 +68,8 @@ void Domain::addNeighbour(Domain *d,
   // Create a new boundary
   Bndry *b = new Bndry(side, this, d, first, last, shift, zshift);
   
+  std::cout << "Adding boundary: " << b << endl;
+  
   // Add to both domains
   addBoundary(b);
   if((d != NULL) && (d != this))
@@ -101,7 +103,7 @@ Domain* Domain::splitX(int xind) {
     if(b->onSide(this, xlow)) {
       // Move to new domain
       b->setNeighbour(xhigh, d);
-      break;
+      it = boundary.begin(); // Start at the beginning again
     }else if(b->onSide(this, ylow)) {
       int start = b->getMin(ylow);
       int end   = b->getMax(ylow);
@@ -109,18 +111,20 @@ Domain* Domain::splitX(int xind) {
       if(end < xind) {
         // Move to new domain
         b->setNeighbour(yhigh, d);
+        it = boundary.begin();
       }else if((start <= xind) &&
                (end >= xind)) {
         // Crosses cut, so need to split into two
         
         b->setNeighbour(yhigh, d); // Move to new domain
-        b->end -= end - xind;      // Make boundary smaller
+        b->end -= end - xind + 1;      // Make boundary smaller
         
         // Create a new boundary
         addNeighbour(b->getNeighbour(this), 
                      ylow,
                      0, end - xind,
-                     b->shift, b->zshift);
+                     b->shift+xind, b->zshift);
+        it = boundary.begin();
       }
     }else if(b->onSide(this, yhigh)) {
       int start = b->getMin(yhigh);
@@ -129,18 +133,20 @@ Domain* Domain::splitX(int xind) {
       if(end < xind) {
         // Move to new domain
         b->setNeighbour(ylow, d);
+        it = boundary.begin();
       }else if((start <= xind) &&
                (end >= xind)) {
         // Crosses cut, so need to split into two
         
         b->setNeighbour(ylow, d); // Move to new domain
-        b->end -= end - xind;      // Make boundary smaller
+        b->end -= end - xind + 1;      // Make boundary smaller
         
         // Create a new boundary
         addNeighbour(b->getNeighbour(this), 
                      yhigh,
                      0, end - xind,
-                     b->shift, b->zshift);
+                     b->shift+xind, b->zshift);
+        it = boundary.begin();
       }
     }
   }
@@ -156,10 +162,69 @@ Domain* Domain::splitY(int yind) {
   
   ny -= yind;
 
+  for(list<Bndry*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
+    Bndry *b = *it;
+    cout << b << endl;
+    if(b->onSide(this, ylow)) {
+      // Move to new domain
+      b->setNeighbour(yhigh, d);
+      it = boundary.begin();
+    }else if(b->onSide(this, xlow)) {
+      int start = b->getMin(xlow);
+      int end   = b->getMax(xlow);
+      
+      if(end < yind) {
+        // Move to new domain
+        b->setNeighbour(xhigh, d);
+        it = boundary.begin();
+      }else if((start <= yind) &&
+               (end >= yind)) {
+        // Crosses cut, so need to split into two
+        
+        b->setNeighbour(xhigh, d); // Move to new domain
+        b->end -= end - yind + 1;      // Make boundary smaller
+        
+        // Create a new boundary
+        addNeighbour(b->getNeighbour(this), 
+                     xlow,
+                     0, end-yind,
+                     b->shift+yind, b->zshift);
+        it = boundary.begin();
+      }
+    }else if(b->onSide(this, xhigh)) {
+      int start = b->getMin(xhigh);
+      int end   = b->getMax(xhigh);
+      
+      if(end < yind) {
+        // Move to new domain
+        b->setNeighbour(xlow, d);
+        it = boundary.begin();
+      }else if((start <= yind) &&
+               (end >= yind)) {
+        // Crosses cut, so need to split into two
+        
+        b->setNeighbour(xlow, d); // Move to new domain
+        b->end -= end - yind + 1;      // Make boundary smaller
+        
+        // Create a new boundary
+        addNeighbour(b->getNeighbour(this), 
+                     xhigh,
+                     0, end - yind,
+                     b->shift+yind, b->zshift);
+        it = boundary.begin();
+      }
+    }
+  }
+  
+  // Add boundary between domains
+  addNeighbour(d, ylow, 0, ny-1);
+  
+
   return d;
 }
 
 std::ostream& operator<<(std::ostream &os, const Domain &d) {
+  os << "Domain " << &d << endl;
   os << "Size: " << d.nx << " x " << d.ny << std::endl;
   os << "Connections: ";
   if(d.boundary.empty()) {
@@ -171,7 +236,7 @@ std::ostream& operator<<(std::ostream &os, const Domain &d) {
       for(list<Domain::Bndry*>::const_iterator it=d.boundary.begin(); it != d.boundary.end(); it++) {
         Domain::Bndry *b = *it;
         if(b->onSide(&d, (Domain::BndrySide) i)) {
-          os << "\t\tRange: " << b->start << " -> " << b->end
+          os << "\t\tRange: " << b->getMin((Domain::BndrySide)i) << " -> " << b->getMax((Domain::BndrySide)i)
              << " to domain " << b->getNeighbour(&d) << std::endl;
         }
       }
