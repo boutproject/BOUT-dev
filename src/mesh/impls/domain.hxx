@@ -95,6 +95,10 @@ public:
   Domain* splitX(int xind);
   Domain* splitY(int yind);
   
+  int xSize() const {return nx;}
+  int ySize() const {return ny;}
+  int area() const {return nx*ny;}
+
   /// Output info to streams. Mainly useful for debugging
   friend std::ostream& operator<<(std::ostream &os, const Domain &d);
   friend class DomainIterator;
