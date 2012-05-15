@@ -1,6 +1,6 @@
 
 BOUT_TOP=../../../
 
-unit_test: unit_tests.cxx domain.cxx
-	g++ unit_tests.cxx domain.cxx -o $@ -I$(BOUT_TOP)/include
+test: unit_tests.cxx domain.cxx
+	g++ -g unit_tests.cxx domain.cxx -o $@ -I$(BOUT_TOP)/include
 

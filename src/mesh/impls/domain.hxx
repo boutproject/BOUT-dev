@@ -13,6 +13,8 @@ class ConstDomainIterator;
 #include <algorithm>
 #include <iterator>
 
+#include <iostream>
+
 using std::string;
 using std::list;
 using std::find;
@@ -115,7 +117,7 @@ private:
     int shift;       ///< Shift going from this domain to neighbour
     int zshift;      ///< Shift in Z across boundary
 
-    bool onSide(const Domain *me, const BndrySide &s) const {
+    bool onSide(const Domain *me, BndrySide s) const {
       if( (me == from) && (s == side) )
         return true;
       if( (me == to) && (s == reverse(side)) )

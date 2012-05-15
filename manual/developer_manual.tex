@@ -983,21 +983,6 @@ void laplace_tridag_coefs(int jx, int jy, int jz,
 \end{lstlisting}
 $c$ and $d$ are optional. Note: this is also used by \texttt{Delp2}. 
 
-\subsection{Serial algorithms}
-
-\subsubsection{Tridiagonal solver}
-
-A common problem is to invert a differential equation involving the perpendicular
-Laplacian operator $\nabla_\perp^2$. Routines to do this are implemented in
-\file{src/invert/invert\_laplace.cxx}, header file \file{invert\_laplace.hxx}.
-
-\subsubsection{Band solver}
-
-This is band-solver which performs a $4^{th}$-order inversion. Currently this
-is only available when \code{NXPE=1}; when more than one processor is used in $x$,
-the Laplacian algorithm currently reverts to $3^{rd}$-order.
-
-\subsection{Parallel algorithms}
 
 \begin{lstlisting}
 void par_tridag_matrix(dcomplex **avec,dcomplex **bvec,
@@ -1008,7 +993,19 @@ void par_tridag_matrix(dcomplex **avec,dcomplex **bvec,
                        const Field2D *d=NULL)
 \end{lstlisting}
 
-\subsubsection{Simple Parallelisation}
+\subsection{Serial tridiagonal solver}
+
+A common problem is to invert a differential equation involving the perpendicular
+Laplacian operator $\nabla_\perp^2$. Routines to do this are implemented in
+\file{src/invert/invert\_laplace.cxx}, header file \file{invert\_laplace.hxx}.
+
+\subsection{Serial band solver}
+
+This is band-solver which performs a $4^{th}$-order inversion. Currently this
+is only available when \code{NXPE=1}; when more than one processor is used in $x$,
+the Laplacian algorithm currently reverts to $3^{rd}$-order.
+
+\subsection{SPT parallel tridiagonal}
 
 This is a reference code which performs the same operations as the serial code.
 To invert a single XZ slice (\lstinline!FieldPerp! object), data must pass
@@ -1031,7 +1028,7 @@ of 3 poloidal slices
 \label{fig:par_laplace}
 \end{figure}
 
-\subsubsection{PDD algorithm}
+\subsection{PDD algorithm}
 
 This is the Parallel Diagonally Dominant (PDD) algorithm. It's very fast, but
 achieves this by neglecting some cross-processor terms. For ELM simulations, 
@@ -1787,7 +1784,7 @@ This is done by creating a tree of \lstinline!FieldGenerator! objects
 which then generate the field values: \index{FieldGenerator}
 \begin{lstlisting}[firstnumber=49]
 class FieldGenerator {
-public:
+ public:
   virtual ~FieldGenerator() { }
   virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
   virtual BoutReal generate(int x, int y, int z) = 0;
@@ -1804,10 +1801,10 @@ The simplest generator is a fixed numerical value, which is represented
 by a \lstinline!FieldValue! object: \index{FieldValue}
 \begin{lstlisting}[firstnumber=59]
 class FieldValue : public FieldGenerator {
-public:
+ public:
   FieldValue(BoutReal val) : value(val) {}
   BoutReal generate(int x, int y, int z) { return value; }
-private:
+ private:
   BoutReal value;
 };
 \end{lstlisting}
@@ -1822,14 +1819,14 @@ Study these after reading this to see how these are handled.
 
 First, edit \file{include/field\_factory.hxx} and add a class definition:
 \begin{lstlisting}[firstnumber=122]
-  class FieldSinh : public FieldGenerator {
-public:
+class FieldSinh : public FieldGenerator {
+ public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
   ~FieldSinh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(int x, int y, int z);
-private:
+ private:
   FieldGenerator *gen;
 };
 \end{lstlisting}
@@ -2233,8 +2230,9 @@ Other small modules which don't really fit into any system, but are needed.
 
 \subsection{Timing}
 \label{sec:timerclass}
+\index{Timer}
 
-To time parts of the code, there is the \lstinline!Timer! class defined
+To time parts of the code, and calculate the percentage of time spent in communications, file I/O, etc. there is the \lstinline!Timer! class defined
 in \file{include/bout/sys/timer.hxx}. To use it, just create a \lstinline!Timer!
 object at the beginning of the function you want to time:
 \begin{lstlisting}
@@ -2245,8 +2243,50 @@ void someFunction() {
   ...
 }
 \end{lstlisting}
+Creating the object starts the timer, and since the object is destroyed when
+the function returns (since it goes out of scope) the destructor stops
+the timer.
+\begin{lstlisting}
+class Timer {
+public:
+  Timer();
+  Timer(const std::string &label);
+  ~Timer();
 
+  double getTime();
+  double resetTime();
+};
+\end{lstlisting}
+The empty constructor is equivalent to setting \lstinline!label = ""!. 
+Constructors call a private function \lstinline!getInfo()!, which looks
+up the \lstinline!timer_info! structure corresponding to the label in 
+a \lstinline!map<string, timer_info*>!. If no such structure exists, then one
+is created. This structure is defined as:
+\begin{lstlisting}
+struct timer_info {
+  double time;    ///< Total time
+  bool running;   ///< Is the timer currently running?
+  double started; ///< Start time
+};
+\end{lstlisting}
+Since each timer can only have one entry in the map, creating two
+timers with the same label at the same time will lead to trouble. 
+Hence this code is {\bf not} thread-safe.
 
+The member functions \lstinline!getTime()! and \lstinline!resetTime()!
+both return the current time. Whereas \lstinline!getTime()! only returns
+the time without modifying the timer, \lstinline!resetTime()! also resets
+the timer to zero. 
+
+If you don't have the object, you can still get and reset the time using
+static methods:
+\begin{lstlisting}
+double Timer::getTime(const std::string &label);
+double Timer::resetTime(const std::string &label);
+\end{lstlisting}
+These look up the \lstinline!timer_info! structure, and perform
+the same task as their non-static namesakes. These functions are used by the
+monitor function in \file{bout++.cxx} to print the percentage timing information.
 
 \subsection{Error handling}
 
