@@ -74,6 +74,7 @@
 \newcommand{\Zvec}{\ensuremath{\hat{\Vec{Z}}}}
 \newcommand{\phivec}{\ensuremath{\hat{\Vec{\phi}}}}
 \newcommand{\ehat}{\ensuremath{\hat{\Vec{e}}}}
+\newcommand{\sbp}{\ensuremath{\sigma_{B\theta}}}
 
 \begin{document}
 \title{Tokamak grid generator in IDL}
@@ -422,6 +423,98 @@ Similarly,
 \nabla\theta\times\nabla\zeta = \frac{R}{h_\theta}\mathbf{\hat{e}}_\psi
 \]
 
+Field-aligned coordinates $(x,y,z)$ are defined by:
+
+\begin{eqnarray}
+x &=& \sbp\left(\psi - \psi_0\right) \\ 
+y &=& \theta \\
+z &=& \sbp\left[\zeta - \int_{\theta_0}^{\theta}\nu\left(\psi, \theta\right)d\theta\right]
+\label{eq:coordtransform}
+\end{eqnarray}
+Where $\nu$ is the local field-line pitch given by
+\begin{equation}
+\nu\left(\psi, \theta\right) = \frac{\mathbf{B}\cdot\nabla\zeta}{\mathbf{B}\cdot\nabla\theta} = \frac{\Bt\hthe}{\Bp R}
+\end{equation}
+
+and the \sbp is the sign of the poloidal field $\Bp / \left|\Bp\right|$. This means $x$ always increases from core to edge
+
+The contravariant basis vectors are therefore
+\begin{eqnarray*}
+\nabla x &=& \sbp \nabla \psi \\
+\nabla y &=& \nabla \theta \\
+\nabla z &=& \sbp \left( \nabla\zeta - \left[\int_{\theta_0}^\theta\deriv{\nu\left(\psi, \theta\right)}{\psi} d\theta\right] \nabla\psi - \nu\left(\psi, \theta\right)\nabla\theta \right)
+\end{eqnarray*}
+
+The term in square brackets is the integrated local shear:
+\[
+I = \int_{y_0}^y\frac{\partial\nu\left(x, y\right)}{\partial\psi}dy
+\]
+
+\subsection{Metrics}
+
+Magnetic field is defined as:
+\[
+\mathbf{B} = \nabla z\times \nabla x
+\]
+The contravariant components of this are then
+\begin{equation}
+B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
+\label{eq:B_contravariant}
+\end{equation}
+i.e. $\Bvec$ can be written as
+\begin{equation}
+\Bvec = \frac{\Bp}{\hthe}\mathbf{e}_y
+\label{eq:Bvec_cont}
+\end{equation}
+and the covariant components calculated using $g_{ij}$ as
+\begin{equation}
+B_x = \Bt I R \qquad B_y = \frac{B^2 \hthe}{\Bp} \qquad B_z = \Bt R
+\label{eq:B_covariant}
+\end{equation}
+
+The Jacobian of this coordinate system is
+\[
+J^{-1} \equiv \left(\nabla x\times\nabla y\right)\cdot\nabla z = \Bp / \hthe
+\]
+
+The contravariant metric tensor is given by:
+\[
+g^{ij} \equiv \Vec{e}^i \cdot\Vec{e}^j \equiv \nabla u^i \cdot \nabla u^j = \left(\begin{array}{ccc}
+\left(R\Bp\right)^2 & 0 & -I\left(R\Bp\right)^2 \\
+0 & 1 / \hthe^2 & -\sbp\nu / \hthe^2 \\
+-I\left(R\Bp\right)^2 & -\sbp\nu / \hthe^2 & I^2\left(R\Bp\right)^2 + B^2 / \left(R\Bp\right)^2 \end{array} \right)
+\]
+and the covariant metric tensor:
+\[
+g_{ij} \equiv \Vec{e}_i \cdot\Vec{e}_j = \left(\begin{array}{ccc}
+I^2 R^2 + 1 / \rbpsq & \sbp\Bt\hthe I R / \Bp & I R^2 \\
+\sbp\Bt\hthe I R / \Bp & B^2\hthe^2 / \Bp^2 & \sbp\Bt\hthe R / \Bp \\
+I R^2 & \sbp\Bt\hthe R / \Bp & R^2 \end{array} \right)
+\]
+
+\subsection{Differential operators}
+
+The derivative along the unperturbed magnetic field is given by
+\[
+\nabla_{||0}A \equiv \Vec{b}_0 \cdot\nabla A = \frac{\Bp}{B\hthe}\deriv{A}{y}
+\]
+Using equation (\ref{eq:general_laplacian}), the laplacian operator is given by
+\begin{eqnarray}
+\nabla^2 = &\frac{\partial^2}{\partial x^2}\left|\nabla x\right|^2 + 
+\frac{\partial^2}{\partial y^2}\left|\nabla y\right|^2 + 
+\frac{\partial^2}{\partial z^2}\left|\nabla z\right|^2 \nonumber \\
+&-2\frac{\partial^2}{\partial x\partial z}I\left(RB_p\right)^2 - 2\frac{\partial^2}{\partial y\partial z}\frac{\nu}{h_\theta^2}\\
+&+\frac{\partial}{\partial x}\nabla^2x + \frac{\partial}{\partial y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber
+\end{eqnarray}
+Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = -\Gamma^x$ etc, the values are
+\begin{equation}
+\nabla^2x = \frac{B_p}{h_\theta}\frac{\partial}{\partial x}\left(h_\theta R^2B_p\right) \qquad
+\nabla^2y = \frac{B_p}{h_\theta}\frac{\partial}{\partial y}\left(\frac{1}{B_ph_\theta}\right)
+\end{equation}
+\[
+\nabla^2z = -\frac{B_p}{h_\theta}\left[\frac{\partial}{\partial x}\left(IR^2B_ph_\theta\right) + \frac{\partial}{\partial y}\left(\frac{\nu}{B_ph_\theta}\right)\right]
+\]
+
 \subsection{$J\times B$ in field-aligned coordinates}
 \label{sec:jxb_fac}
 
@@ -431,7 +524,7 @@ B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
 \]
 and
 \[
-B_x = \Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \Bt R
+B_x = \sbp\Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \sbp\Bt R
 \]
 
 Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
@@ -441,8 +534,8 @@ Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
 \]
 since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric.
 \begin{eqnarray*}
-\left(\Curl{\Bvec}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
-\left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \deriv{}{y}\left(\Bt I R\right)\right]
+\left(\Curl{\Bvec}\right)^y &=& -\sbp\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
+\left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\deriv{}{y}\left(\Bt I R\right)\right]
 \end{eqnarray*}
 The second term can be simplified, again using $\Bt R$ constant on flux-surfaces:
 \[
@@ -450,13 +543,19 @@ The second term can be simplified, again using $\Bt R$ constant on flux-surfaces
 \]
 From these, calculate covariant components:
 \begin{eqnarray}
-\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber\\
-\left(\Curl{\Bvec}\right)_y &=& -\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
-\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber
+\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\Bt R\deriv{\nu}{x}\right] \nonumber\\
+\left(\Curl{\Bvec}\right)_y &=& -\sbp\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \sbp\Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
+\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\Bt R\deriv{\nu}{x}\right] \nonumber
 \end{eqnarray}
-Calculate $\Jvec\times\Bvec$:
+Calculate $\Jvec\times\Bvec$ using
+\begin{equation}
+\mathbf{e}^i = \frac{1}{J}\left(\mathbf{e}_j \times \mathbf{e}_k\right) \qquad \mathbf{e}_i = J\left(\mathbf{e}^j \times \mathbf{e}^k\right) \qquad i,j,k \texttt{ cyc } 1,2,3
+\label{eq:cross_relation}
+\end{equation}
+gives 
 \begin{eqnarray*}
-\mu_0 \left(\Jvec\times\Bvec\right)^x = -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]
+\mu_0 \left(\Jvec\times\Bvec\right)^x &=& \frac{1}{J}\left[\left(\Curl{\Bvec}\right)_y B_z - \left(\Curl{\Bvec}\right)_z B_y \right]\\
+&=& -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\Bt R\deriv{\nu}{x}\right]
 \end{eqnarray*}
 
 Covariant components of $\nabla P$:
@@ -469,14 +568,14 @@ and contravariant:
 \]
 Hence equating contravariant x components of $\Jvec\times\Bvec = \nabla P$,
 \begin{equation}
-\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbp\Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
 \label{eq:xbalance}
 \end{equation}
 Use this to calculate $\hthe$ profiles (need to fix $\hthe$ at one radial location).
 
 Close to x-points, the above expression becomes singular, so a better way to write it is:
 \[
-\deriv{}{x}\left(B^2\hthe\right) - \hthe\Bp\deriv{\Bp}{x} - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R}\right) + \mu_0\hthe\deriv{P}{x} = 0
+\deriv{}{x}\left(B^2\hthe\right) - \hthe\Bp\deriv{\Bp}{x} - \sbp \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R}\right) + \mu_0\hthe\deriv{P}{x} = 0
 \]
 
 For solving force-balance by adjusting $P$ and $f$ profiles, the form used is
