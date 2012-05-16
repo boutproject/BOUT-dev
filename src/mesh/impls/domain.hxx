@@ -13,8 +13,6 @@ class ConstDomainIterator;
 #include <algorithm>
 #include <iterator>
 
-#include <iostream>
-
 using std::string;
 using std::list;
 using std::find;
@@ -121,6 +119,8 @@ private:
     int shift;       ///< Shift going from this domain to neighbour
     int zshift;      ///< Shift in Z across boundary
 
+    // Check if boundary is on a given side
+    // Done this way as boundary could be on two sides if periodic
     bool onSide(const Domain *me, BndrySide s) const {
       if( (me == from) && (s == side) )
         return true;
@@ -134,6 +134,7 @@ private:
     int getMax(BndrySide s) {
       return (s == side) ? end : end + shift;
     }
+
     const Domain* getNeighbour(const Domain* me) const {
       return (me == from) ? to : from;
     }
@@ -155,6 +156,22 @@ private:
           from->addBoundary(this);
       }
     }
+
+    // Shift the indices in only one of the domains
+    void shiftInds(BndrySide s, int x) {
+      if(s == side) {
+        start += x;
+        end += x;
+        shift -= x;
+      }else {
+        shift += x;
+      }
+    }
+    
+    int getShift(BndrySide s) {
+      return (s == side) ? shift : -shift;
+    }
+    
     int getZshift(const BndrySide &s) const {
       return (s == side) ? zshift : -zshift;
     }

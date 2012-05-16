@@ -1,5 +1,7 @@
 
 #include "domain.hxx"
+#include "partition.hxx"
+
 #include <boutexception.hxx>
 #include <iostream>
 #include <assert.h>
@@ -13,16 +15,29 @@ const char* BoutException::what() const throw() {std::cout << "ERROR\n";}
 
 int main() {
   
-  Domain d(10,20);
-  Domain *d2 = d.splitX(3);
-  Domain *d3 = d2->splitY(5);
+  Domain d(20,10);
+  d.splitX(5);
   
-  int n = 0;
-  for(Domain::iterator it = d.begin(); it != d.end(); it++) {
+  cout << "Split X\n";
+  
+  for(Domain::iterator it = d.begin(); it != d.end(); it++)
     cout << *it;
-    n++;
-  }
-  assert(n == 3);
+  
+  d.splitY(5);
+  
+  cout << "Split Y\n";
+  for(Domain::iterator it = d.begin(); it != d.end(); it++)
+    cout << *it;
+  
+  cout << "\n\n";
+  Domain t(8,5);
+  cout << t;
+  
+  partition(&t, 5);
+  
+  cout << "\nPartitioned\n";
+  for(Domain::iterator it = t.begin(); it != t.end(); it++)
+    cout << *it;
   
   return 0;
 }
