@@ -12,6 +12,22 @@
 ; Changelog
 ; 16 Oct 2008: First version, B.Dudson
 
+; Take derivative in y, taking into account branch-cuts
+FUNCTION ddy, var, mesh, dy=dy
+  f = var
+
+  IF NOT KEYWORD_SET(dy) THEN dy = 2.*!PI / FLOAT(TOTAL(mesh.npol))
+
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=period)
+    IF period THEN BEGIN
+       f[xi,yi] = fft_deriv(var[xi,yi])
+    ENDIF ELSE f[xi,yi] = DERIV(var[xi,yi])
+  ENDREP UNTIL last
+  RETURN, f / dy
+END
+
 FUNCTION phi2xi_3d, phi, u, period=period
   ; this is the main function. Takes 3D (x,y,z) variable
   ON_ERROR, 2
@@ -45,10 +61,8 @@ FUNCTION phi2xi_3d, phi, u, period=period
 
   ; d/dy
 
-  FOR x=0, nx-1 DO BEGIN
-    FOR z=0, nz-1 DO BEGIN
-      dphidy[x,*,z] = DERIV(phi[x,*,z]) / u.dy[x,*]
-    ENDFOR
+  FOR z=0, nz-1 DO BEGIN
+    dphidy[*,*,z] = DDY( REFORM(phi[*,*,z]), u, dy=u.dy )
   ENDFOR
 
   ; d/dz

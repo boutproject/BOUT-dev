@@ -11,14 +11,6 @@
 ; xi     - The X index of this surface
 ;
 
-FUNCTION range, first, last
-  IF first LT last THEN BEGIN
-    RETURN, first + INDGEN(last - first + 1)
-  ENDIF ELSE BEGIN
-    RETURN, last + REVERSE(INDGEN(first - last + 1))
-  ENDELSE
-END
-
 FUNCTION gen_surface, mesh=mesh, period=period, last=last, xi=xi
   COMMON gen_surf_com, m, ys, xind, nd, domain, visited
   IF KEYWORD_SET(mesh) THEN BEGIN
