@@ -211,6 +211,10 @@ class Mesh {
   
   //////////////////////////////////////////////////////////
   
+  int GlobalNx, GlobalNy, GlobalNz; // Size of the global arrays. Note: can have holes
+  int OffsetX, OffsetY, OffsetZ;    // Offset of this mesh within the global array
+                                    // so startx on this processor is OffsetX in global
+  
   /// Global locator functions
   virtual int XGLOBAL(int xloc) = 0;
   virtual int YGLOBAL(int yloc) = 0;
