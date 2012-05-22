@@ -513,20 +513,16 @@ void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 
   // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
   
   // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
