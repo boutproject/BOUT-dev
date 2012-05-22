@@ -67,11 +67,10 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   x.allocate();
   
   int ys = mesh->ystart, ye = mesh->yend;
-  if(mesh->MYPE_IN_CORE == 0) {
-    // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
-    ys = 0;
-    ye = mesh->ngy-1;
-  }
+  if( !(mesh->iterateBndryLowerY())->isDone() )
+    ys = 0; // Mesh contains a lower boundary
+  if( !(mesh->iterateBndryUpperY())->isDone() )
+    ye = mesh->ngy-1; // Contains upper boundary
 
   if(flags & (INVERT_IN_SET | INVERT_OUT_SET))
     throw BoutException("SPT doesn't support IN_SET or OUT_SET flags");

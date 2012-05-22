@@ -100,12 +100,14 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(mesh->MYPE_IN_CORE == 0) {
-    // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
-    ys = 0;
-    ye = mesh->ngy-1;
-  }
+  if( !(mesh->iterateBndryLowerY())->isDone() )
+    ys = 0; // Mesh contains a lower boundary
+  if( !(mesh->iterateBndryUpperY())->isDone() )
+    ye = mesh->ngy-1; // Contains upper boundary
   
+  
+  output << "Solve(3D) " << ys << " -> " << ye << endl; 
+
   Field3D x;
   x.allocate();
 
@@ -133,11 +135,12 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 #endif
 
   int ys = mesh->ystart, ye = mesh->yend;
-  
-  if(mesh->MYPE_IN_CORE == 0) {
-    ys = 0;
-    ye = mesh->ngy-1;
-  }
+  if( !(mesh->iterateBndryLowerY())->isDone() )
+    ys = 0; // Mesh contains a lower boundary
+  if( !(mesh->iterateBndryUpperY())->isDone() )
+    ye = mesh->ngy-1; // Contains upper boundary
+
+  output << "Solve(3D,3D) " << ys << " -> " << ye << endl; 
   
   Field3D x;
   x.allocate();

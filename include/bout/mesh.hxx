@@ -266,8 +266,6 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
-
-  int MYPE_IN_CORE;  // 1 if processor in core
   
   bool non_uniform; // Use corrections for non-uniform meshes
   

@@ -2508,24 +2508,20 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   return result;
 }
 
-BoutRangeIter::BoutRangeIter(int start, int end)
-{
-  s = start;
-  e = end;
+BoutRangeIter::BoutRangeIter(int start, int end) : s(start), e(end) {
+  ind = s;
+  output << "Range: " << s << " -> " << e << " : " << ind << endl;
 }
 
-void BoutRangeIter::first()
-{
+void BoutRangeIter::first() {
   ind = s;
 }
 
-void BoutRangeIter::next()
-{
+void BoutRangeIter::next() {
   ind++;
 }
 
-bool BoutRangeIter::isDone()
-{
+bool BoutRangeIter::isDone() {
   return ind > e;
 }
 

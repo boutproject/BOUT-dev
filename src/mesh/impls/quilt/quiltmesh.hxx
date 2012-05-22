@@ -4,6 +4,8 @@
 
 #include "mesh.hxx"
 
+#include "../domain.hxx"
+
 /*!
  * Mesh composed of a patchwork of regions. Generalised
  * code which extends the topology of BoutMesh
@@ -58,44 +60,12 @@ class QuiltMesh : public Mesh {
 
   int MXG, MYG;
 
-  struct MeshDomain;
-  
-  /// Range of guard cells
-  struct GuardRange { 
-    int xmin, xmax;   // Range of X in local indices
-    int ymin, ymax;   // Range of Y in local indices
-    MeshDomain *destination; // The domain (NULL if none)
-    int xshift; // Add this shift going between processor local indices
-                // so [x] on this processor connects to [x+xshift] on
-                // destination processor
-    
-    bool zshift; // Shift in Z across boundary going in Y?
-    vector<BoutReal> shiftAngle; // Angle to shift by 
-  };
-  
-  /// Domain simulated by a single processor
-  struct MeshDomain {
-    int x0, y0;  // Lower left corner in region
-    int nx, ny;  // Number of x and y points (not including guard cells)
-    
-    int proc;    // The processor for this domain
-    
-    vector<GuardRange*> yup;   // Upper guard cells
-    vector<GuardRange*> ydown; // Lower guard cells
-    MeshDomain *xin, *xout;    // Inner and outer destinations (NULL for none)
-  };
-  
-  // Every processor knows about all domains
-  vector<MeshDomain*> domains;
-  MeshDomain *mydomain; // The domain for this processor
+  // Describes regions of the mesh and connections between them
+  Domain *mydomain;
   
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
   
-  /// Partition mesh into domains
-  vector<MeshDomain*> partition(const vector<int> &nx, 
-                                const vector<int> &ny, 
-                                int NPES);
   
   /// Handle for communications
   struct QMCommHandle {

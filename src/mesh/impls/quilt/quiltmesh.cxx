@@ -8,20 +8,19 @@
 using std::accumulate;
 #include <cmath>
 
+#include "../partition.hxx"
+
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-QuiltMesh::~QuiltMesh()
-{
+QuiltMesh::~QuiltMesh() {
   
 }
 
-
-int QuiltMesh::load()
-{
+int QuiltMesh::load(MPI_Comm comm) {
   // Get number of processors
   int NPES, MYPE;
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  MPI_Comm_size(comm, &NPES);
+  MPI_Comm_rank(comm, &MYPE);
   
   // Get number of regions
   int nregions;
@@ -35,10 +34,22 @@ int QuiltMesh::load()
   vector<int> nx = readInts("nx", nregions);
   vector<int> ny = readInts("ny", nregions);
   
-  // Partition the mesh
-  domains = partition(nx, ny, NPES);
+  // Create domains
+  vector<Domain*> domains;
   
+  for(int i=0;i<nregions;i++)
+    domains.push_back(new Domain(nx[i], ny[i]));
   
+  // Join domains together
+  
+  // Partition the mesh (all domains connected together)
+  partitionAll(domains[0], NPES);
+  
+  // Assign domains to processors
+  for(Domain::iterator it=domains[0]->begin(); it != domains[0]->end(); it++) {
+    // For now very simple numbering. Should cluster nearby domains
+    
+  }
 }
 
 /****************************************************************

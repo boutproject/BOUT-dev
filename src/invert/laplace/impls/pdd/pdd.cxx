@@ -62,11 +62,10 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
   xperp.allocate();
   
   int ys = mesh->ystart, ye = mesh->yend;
-  if(mesh->MYPE_IN_CORE == 0) {
-    // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
-    ys = 0;
-    ye = mesh->ngy-1;
-  }
+  if( !(mesh->iterateBndryLowerY())->isDone() )
+    ys = 0; // Mesh contains a lower boundary
+  if( !(mesh->iterateBndryUpperY())->isDone() )
+    ye = mesh->ngy-1; // Contains upper boundary
   
   if(low_mem) {
     // Solve one slice at a time

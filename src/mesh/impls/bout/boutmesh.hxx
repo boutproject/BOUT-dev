@@ -86,6 +86,8 @@ class BoutMesh : public Mesh {
   int PE_YIND; ///< Y index of this processor
   int NYPE; // Number of processors in the Y direction
   
+  int MYPE_IN_CORE;  // 1 if processor in core
+  
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
