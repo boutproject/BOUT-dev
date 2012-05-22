@@ -2431,8 +2431,8 @@ int BoutSurfaceIter::scatter(BoutReal **data, Field3D &f)
  *                 Range iteration
  ****************************************************************/
 
-RangeIter* BoutMesh::iterateBndryLowerY()
-{
+const RangeIterator BoutMesh::iterateBndryLowerY() const {
+  
   int xs = 0;
   int xe = ngx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
@@ -2445,11 +2445,10 @@ RangeIter* BoutMesh::iterateBndryLowerY()
   if(xe > xend)
     xe = xend;
 
-  return new BoutRangeIter(xs, xe);
+  return RangeIterator(xs, xe);
 }
 
-RangeIter* BoutMesh::iterateBndryUpperY()
-{
+const RangeIterator BoutMesh::iterateBndryUpperY() const {
   int xs = 0;
   int xe = ngx-1;
   if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
@@ -2462,12 +2461,11 @@ RangeIter* BoutMesh::iterateBndryUpperY()
   if(xe > xend)
     xe = xend;
 
-  return new BoutRangeIter(xs, xe);
+  return RangeIterator(xs, xe);
 }
 
 
-vector<BoundaryRegion*> BoutMesh::getBoundaries()
-{
+vector<BoundaryRegion*> BoutMesh::getBoundaries() {
   return boundary;
 }
 
@@ -2506,23 +2504,6 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
     }
   }
   return result;
-}
-
-BoutRangeIter::BoutRangeIter(int start, int end) : s(start), e(end) {
-  ind = s;
-  output << "Range: " << s << " -> " << e << " : " << ind << endl;
-}
-
-void BoutRangeIter::first() {
-  ind = s;
-}
-
-void BoutRangeIter::next() {
-  ind++;
-}
-
-bool BoutRangeIter::isDone() {
-  return ind > e;
 }
 
 BoutReal BoutMesh::GlobalX(int jx)

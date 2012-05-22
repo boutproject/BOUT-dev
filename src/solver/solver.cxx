@@ -533,8 +533,7 @@ void Solver::setRestartDir(const string &dir)
  * Useful routines (protected)
  **************************************************************************/
 
-int Solver::getLocalN()
-{
+int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
@@ -547,18 +546,14 @@ int Solver::getLocalN()
   //////////// Find boundary regions ////////////
   
   // Y up
-  RangeIter *xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
   }
-  delete xi;
   
   // Y down
-  xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     local_N +=  mesh->ystart * (n2d + ncz * n3d);
   }
-  delete xi;
   
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
@@ -575,8 +570,7 @@ int Solver::getLocalN()
   return local_N;
 }
 
-Solver* Solver::Create()
-{  
+Solver* Solver::Create() {  
   return SolverFactory::getInstance()->createSolver();
 }
 
@@ -685,8 +679,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
-{
+void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   int jx, jy;
   int p = 0; // Counter for location in udata array
 
@@ -700,12 +693,10 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 
   // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
@@ -713,12 +704,10 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
       loop_vars_op(jx, jy, udata, p, op);
   
   // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {

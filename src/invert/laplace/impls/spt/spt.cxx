@@ -65,11 +65,12 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
 const Field3D LaplaceSPT::solve(const Field3D &b) {
   Field3D x;
   x.allocate();
-  
+
   int ys = mesh->ystart, ye = mesh->yend;
-  if( !(mesh->iterateBndryLowerY())->isDone() )
+  
+  if(mesh->hasBndryLowerY())
     ys = 0; // Mesh contains a lower boundary
-  if( !(mesh->iterateBndryUpperY())->isDone() )
+  if(mesh->hasBndryUpperY())
     ye = mesh->ngy-1; // Contains upper boundary
 
   if(flags & (INVERT_IN_SET | INVERT_OUT_SET))

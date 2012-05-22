@@ -50,6 +50,7 @@ class SurfaceIter;
 #include "grid.hxx"  // For griddatasource 
 
 #include "boundary_region.hxx"
+#include "sys/range.hxx" // RangeIterator
 
 #include <list>
 
@@ -117,15 +118,6 @@ public:
 private:
 };
 
-class RangeIter {
- public:
-  virtual void first() = 0;
-  virtual void next() = 0;
-  virtual bool isDone() = 0;
-  
-  int ind; // The index
-};
-
 class Mesh {
  public:
   virtual ~Mesh() { };
@@ -189,21 +181,39 @@ class Mesh {
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
-  virtual RangeIter* iterateBndryLowerY() = 0;
-  virtual RangeIter* iterateBndryUpperY() = 0;
+  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual const RangeIterator iterateBndryUpperY() const = 0;
   
+  bool hasBndryLowerY() {
+    static bool calc = false, answer;
+    if(calc) return answer; // Already calculated
+    
+    int mybndry = (int) !(iterateBndryLowerY().isDone());
+    int allbndry;
+    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+    answer = (bool) allbndry;
+    calc = true;
+    return answer;
+  }
+  
+  bool hasBndryUpperY() {
+    static bool calc = false, answer;
+    if(calc) return answer; // Already calculated
+    
+    int mybndry = (int) !(iterateBndryUpperY().isDone());
+    int allbndry;
+    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+    answer = (bool) allbndry;
+    calc = true;
+    return answer;
+  }
+
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
-  // Indexing. Iterate over the mesh
-  /*  virtual IndexIter *iterateIndexXY() = 0;
-  virtual IndexIter *iterateIndexXYZ() = 0;
-  virtual IndexIter *iterateIndexXZ() = 0;
-  */
-
   virtual BoutReal GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
 
