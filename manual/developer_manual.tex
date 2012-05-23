@@ -309,9 +309,9 @@ repository on Franklin. To apply this to a different machine just replace
 
 \subsection{House rules}
 
-BOUT++ consists of about 38,900 lines of C/C++\footnote{generated using
+BOUT++ consists of about 39,400 lines of C/C++\footnote{generated using
 David A. Wheeler's 'SLOCCount'},
-along with 11,600 lines of IDL. Of this, about 23,700 lines is the core
+along with 18,500 lines of IDL and 2,900 of Python. Of this, about 24,700 lines is the core
 BOUT++ code, and the remainder
 a mix of pre- and post-processors, and physics modules. As production codes
 go, this is not particularly huge, but it is definitely large enough that
@@ -359,6 +359,26 @@ type function( ... ) {
   ...
 }
 \end{lstlisting}
+
+\subsection{Testing}
+
+Two types of tests are currently used in BOUT++ to catch bugs as early as possible: Unit tests, which 
+check a small piece of the code separately, and a test suite which runs the entire code on a short problem.
+
+\index{Unit tests}
+Unit tests can be run using the \file{src/unit\_tests} Python script. This searches through the directories
+looking for an executable script called \file{unit\_test}, runs them, and collates the results. Not many
+tests are currently available as much of the code is too tightly coupled. If done correctly, the unit tests
+should describe and check the behavior of each part of the code, and hopefully the number of these will increase
+over time.
+
+\index{Test suite}
+The test suite is in the \file{examples} directory, and is run using the \file{test\_suite} python script. At the top
+of this file is a list of the subdirectories to run (e.g. \file{test-io}, \file{test-laplace}, and \file{interchange-instability}). In each of those subdirectories the script \file{runtest} is executed, and the return value used to determine if the test passed or failed.
+
+All tests should be short, otherwise it discourages people from running the tests before committing changes. A few minutes or less on a typical desktop, and ideally only a few seconds. If you have a large simulation which you want
+to stop anyone breaking, find starting parameters which are as sensitive as possible so that the simulation
+can be run quickly. 
 
 \section{Code layout}
 
@@ -467,12 +487,28 @@ The current source code files are:
     for data input and output. Handles the conversion of data in fields
     and vectors into blocks of data which are then sent to a specific file
     format.
-  \item \file{nc\_format.cxx} implements an interface to the NetCDF-4 library
-  \item \file{nc\_format.hxx} is the header file. This is not in the
-    \file{include/} directory because it should only be used by \code{DataFile}.
-  \item \file{pdb\_format.cxx} implements an interace to Portable Data
-    Binary (PDB) formatted files.
-  \item \file{pdb\_format.hxx}
+  \item \file{formatfactory.cxx}
+  \item \file{formatfactory.hxx}
+  \item impls
+    \begin{itemize}
+    \item \file{emptyformat.hxx}
+    \item netcdf
+      \begin{itemize}
+      \item \file{nc\_format.cxx} implements an interface to the NetCDF-4 library
+      \item \file{nc\_format.hxx} 
+      \end{itemize}
+    \item pdb
+      \begin{itemize}
+      \item \file{pdb\_format.cxx} implements an interace to Portable Data
+        Binary (PDB) formatted files.
+      \item \file{pdb\_format.hxx}
+      \end{itemize}
+    \item pnetcdf
+      \begin{itemize}
+        \item \file{pnetcdf.cxx} Parallel NetCDF interface
+        \item \file{pnetcdf.hxx}
+      \end{itemize}
+    \end{itemize}
   \end{itemize}
 \item invert
   \begin{itemize}
@@ -632,7 +668,9 @@ The current source code files are:
     a segmentation fault is caught then this stack is printed out and can
     help to find errors.
   \item \file{options.cxx} provides an interface to the BOUT.inp option file
-    and the command-line options. 
+    and the command-line options.
+  \item \file{range.cxx} Provides the RangeIterator class, used to iterate over a set
+    of ranges. Described in section~\ref{sec:rangeiterator}
   \item \file{stencils.cxx} contains methods to operate on stencils which are
     used by differential methods. 
   \item \file{timer.cxx} a class for timing parts of the code like communications
@@ -802,6 +840,7 @@ typedef BoutReal (*deriv_func)(stencil &); // f
 typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 \end{lstlisting}
 These operate on \code{stencil} objects. This class is in \file{stencils.hxx}
+\index{stencil}
 \begin{lstlisting}
 class stencil {
   public:
@@ -2288,7 +2327,51 @@ These look up the \lstinline!timer_info! structure, and perform
 the same task as their non-static namesakes. These functions are used by the
 monitor function in \file{bout++.cxx} to print the percentage timing information.
 
+\subsection{Iterating over ranges}
+\label{sec:rangeiterator}
+\index{RangeIterator}
+
+The boundary of a processor's domain may consist of a set of disjoint ranges, so 
+the mesh needs a clean way to tell any code which depends on the boundary how to iterate over it.
+The \lstinline!RangeIterator! class in \file{include/bout/sys/range.hxx} and \file{src/sys/range.cxx}
+provides this.
+
+RangeIterator can represent a single continuous range, constructed by passing
+the minimum and maximum values. 
+\begin{lstlisting}
+RangeIterator it(1,4);  // Range includes both end points
+for(it.first(); !it.isDone(); it.next())
+  cout << it.ind; // Prints 1234
+\end{lstlisting}
+
+A more canonical C++ style is also supported, using overloaded \lstinline!++!, \lstinline!*!, and \lstinline!!=!
+operators:
+\begin{lstlisting}
+for(it.first(); it != RangeIterator::end(); it++)
+  cout << *it; // Prints 1234
+\end{lstlisting}
+where \lstinline!it++! is the same as \lstinline!it.next()!, and \lstinline!*it! the same as \lstinline!it.ind!.
+
+To iterate over several ranges, \lstinline!RangeIterator! can be constructed with the next range as an
+argument:
+\begin{lstlisting}
+RangeIterator it(1,4, RangeIterator(6,9));
+for(it.first(); it != RangeIterator::end(); it++)
+  cout << *it; // Prints 12346789
+\end{lstlisting}
+and these can be chained together to an arbitrary depth.
+
+To support statements like
+\begin{lstlisting}
+for(RangeIterator it = mesh->iterateBndryLowerY(); !it.isDone(); it++)
+  ...
+\end{lstlisting}
+the initial call to \lstinline!first()! is optional, and everything is initialised in the constructor.
+
+
 \subsection{Error handling}
+
+
 
 \bibliography{references}
 \bibliographystyle{unsrt}
