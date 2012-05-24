@@ -47,8 +47,6 @@ class PncFormat;
 
 #include "dataformat.hxx"
 
-#include <pnetcdf.h> // Parallel NetCDF library
-
 #include <map>
 #include <string>
 
@@ -67,17 +65,17 @@ class PncFormat : public DataFormat {
   bool openw(const string &name, bool append=false) { return openw(name.c_str(), append); }
   bool openw(const char *name, bool append=false);
   
-  bool is_valid();
+  bool is_valid() { return fname != NULL;}
   
   void close();
   
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);
-  const vector<int> getSize(const string &var);
+  const vector<int> getSize(const string &var) { return getSize(var.c_str()); }
   
   // Set the origin for all subsequent calls
-  bool setOrigin(int x = 0, int y = 0, int z = 0); 
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setRecord(int t); // negative -> latest
   
   // Read / Write simple variables up to 3D
@@ -112,6 +110,7 @@ class PncFormat : public DataFormat {
 
   /// ID of netCDF file
   int ncfile;
+  bool valid; // True if the file is valid
   
   /// Dimensions
   int xDim, yDim, zDim, tDim;
@@ -122,7 +121,7 @@ class PncFormat : public DataFormat {
   bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
 
-  int x0, y0, z0, t0; ///< Data origins
+  int x0, y0, z0, t0; ///< Data origins (global offsets)
 
   map<string, int> rec_nr; // Record number for each variable (bit nasty)
   int default_rec;  // Starting record. Useful when appending to existing file

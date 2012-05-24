@@ -277,7 +277,7 @@ int BoutMesh::load() {
   GridDataSource* s = findSource("ShiftAngle");
   if(s) {
     s->open("ShiftAngle");
-    s->setOrigin(XGLOBAL(0));
+    s->setGlobalOrigin(XGLOBAL(0));
     if(!s->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
       for(int i=0;i<ngx;i++)
@@ -859,20 +859,20 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     int yfrom = (IDATA_DEST/NXPE)*MYSUB;
     for(int i=0;i<MXG;i++) {
       output.write("in: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, i, MYG);
-      s->setOrigin(xfrom+i, yfrom);
+      s->setGlobalOrigin(xfrom+i, yfrom);
       s->fetch(&(data[i][MYG]), name, 1, MYSUB);
     }
-    s->setOrigin();
+    s->setGlobalOrigin();
   }
   if(ODATA_DEST >= 0) {
     int xfrom = (ODATA_DEST % NXPE)*MXSUB + MXG;
     int yfrom = (ODATA_DEST/NXPE)*MYSUB;
     for(int i=0;i<MXG;i++) {
       output.write("out: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, MXG+MXSUB+i, MYG);
-      s->setOrigin(xfrom+i, yfrom);
+      s->setGlobalOrigin(xfrom+i, yfrom);
       s->fetch(&(data[MXG+MXSUB+i][MYG]), name, 1, MYSUB);
     }
-    s->setOrigin();
+    s->setGlobalOrigin();
   }
   */
 #ifdef TRACK
@@ -2074,7 +2074,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
       
       int yind = yread + jy; // Global location to read from
       
-      s->setOrigin(XGLOBAL(jx), yind);
+      s->setGlobalOrigin(XGLOBAL(jx), yind);
       if(!s->fetch(zdata, name, 1, 1, size[2]))
 	return 1;
       
@@ -2107,7 +2107,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
     }
   }
 
-  s->setOrigin();
+  s->setGlobalOrigin();
 
   // free data
   delete[] zdata;
@@ -2138,13 +2138,13 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
 {
   for(int i=xge;i!=xlt;i++) { // go through all the x indices 
     // Set the indices to read in this x position 
-    s->setOrigin(XGLOBAL(i), yread);
+    s->setGlobalOrigin(XGLOBAL(i), yread);
     // Read in the block of data for this x value (C ordering)
     if(!s->fetch(&(var[i][ydest]), varname, 1, ysize))
       return 1;
   }
   
-  s->setOrigin();
+  s->setGlobalOrigin();
   
   return 0;
 }

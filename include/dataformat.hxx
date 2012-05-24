@@ -50,7 +50,8 @@ class DataFormat {
   virtual const vector<int> getSize(const string &var) = 0;
 
   // Set the origin for all subsequent calls
-  virtual bool setOrigin(int x = 0, int y = 0, int z = 0) = 0; 
+  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0; 
+  virtual bool setLocalOrigin(int x = 0, int y = 0, int z = 0);
   virtual bool setRecord(int t) = 0; // negative -> latest
   
   // Read / Write simple variables up to 3D

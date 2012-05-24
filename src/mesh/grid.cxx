@@ -114,12 +114,11 @@ vector<int> GridFile::getSize(const char *name)
   return s;
 }
 
-bool GridFile::setOrigin(int x, int y, int z)
-{
+bool GridFile::setGlobalOrigin(int x, int y, int z) {
   if(file == NULL)
     return false;
   
-  return file->setOrigin(x,y,z);
+  return file->setGlobalOrigin(x,y,z);
 }
 
 bool GridFile::fetch(int *var, const char *name, int lx, int ly, int lz)

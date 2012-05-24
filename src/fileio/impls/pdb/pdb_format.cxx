@@ -150,7 +150,7 @@ const vector<int> PdbFormat::getSize(const string &var)
   return getSize(var.c_str());
 }
 
-bool PdbFormat::setOrigin(int x, int y, int z)
+bool PdbFormat::setGlobalOrigin(int x, int y, int z)
 {
   x0 = x;
   y0 = y;

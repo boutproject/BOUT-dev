@@ -665,6 +665,7 @@ with_signal
 with_track
 with_pdb
 with_netcdf
+with_pnetcdf
 with_debug
 with_ida
 with_cvode
@@ -1312,6 +1313,7 @@ Optional Packages:
   --with-track            	   Enable variable tracking
   --with-pdb              	   Enable support for PDB files
   --with-netcdf           	   Enable support for netCDF files
+  --with-pnetcdf              Set path to Parallel NetCDF library
   --with-debug            	   Enable all debugging flags
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
   --with-cvode            	   Use the SUNDIALS CVODE solver
@@ -2148,6 +2150,12 @@ fi
 # Check whether --with-netcdf was given.
 if test "${with_netcdf+set}" = set; then :
   withval=$with_netcdf;
+fi
+
+
+# Check whether --with-pnetcdf was given.
+if test "${with_pnetcdf+set}" = set; then :
+  withval=$with_pnetcdf;
 fi
 
 
@@ -4276,7 +4284,6 @@ fi
       file_formats="$file_formats netCDF"
 
       echo " -> NetCDF support enabled"
-      echo ""
     fi
   fi
 fi
@@ -4285,6 +4292,210 @@ if test "$with_netcdf" = "no"
 then
   echo "NetCDF support disabled"
 fi
+
+echo ""
+
+#############################################################
+# Parallel NetCDF support
+#############################################################
+
+PNCPATH=""
+if test "$with_pnetcdf" != "no"
+then
+  echo "Searching for Parallel-NetCDF library"
+
+  if test "$with_pnetcdf" != ""
+  then
+    # Given a path to the library
+    as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/include/pnetcdf.h" >&5
+$as_echo_n "checking for $with_pnetcdf/include/pnetcdf.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_pnetcdf/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_pnetcdf/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$with_pnetcdf
+fi
+as_ac_File=`$as_echo "ac_cv_file_$with_pnetcdf/lib/libpnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $with_pnetcdf/lib/libpnetcdf.a" >&5
+$as_echo_n "checking for $with_pnetcdf/lib/libpnetcdf.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$with_pnetcdf/lib/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$with_pnetcdf/lib/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$with_pnetcdf
+fi
+
+    if test "$PNCPATH" == ""
+    then
+      echo "parallel-netcdf not found in given directory"
+    fi
+  fi
+
+  # Find the utilities included with pnetcdf
+  if test "$PNCPATH" == ""
+  then
+    path=`which ncmpidump`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
+$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
+$as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/lib/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+
+    fi
+  fi
+
+  # Try locate
+  if test "$PNCPATH" == ""
+  then
+    path=`locate pnetcdf.h | head -n 1`
+    if test "$path" != ""
+    then
+      path=$path/..
+      as_ac_File=`$as_echo "ac_cv_file_$path/include/pnetcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/include/pnetcdf.h" >&5
+$as_echo_n "checking for $path/include/pnetcdf.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/include/pnetcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/include/pnetcdf.h" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+as_ac_File=`$as_echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $path/lib/libpnetcdf.a" >&5
+$as_echo_n "checking for $path/lib/libpnetcdf.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$path/lib/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+PNCPATH=$path
+fi
+
+    fi
+  fi
+fi
+
+if test "$PNCPATH" == ""
+then
+  echo "Parallel-NetCDF support disabled"
+else
+  # Set a compile-time flag
+  CXXFLAGS="$CXXFLAGS -DPNCDF"
+  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/lib -lpnetcdf"
+
+  file_formats="$file_formats Parallel-NetCDF"
+  echo "Parallel-NetCDF support enabled"
+fi
+
+echo ""
 
 #############################################################
 # PACT library
@@ -6960,6 +7171,13 @@ then
   echo "  NetCDF support: no" | tee -a config-build.log
 else
   echo "  NetCDF support: yes" | tee -a config-build.log
+fi
+
+if test "$PNCPATH" = ""
+then
+  echo "  Parallel-NetCDF support: no" | tee -a config-build.log
+else
+  echo "  Parallel-NetCDF support: yes" | tee -a config-build.log
 fi
 
 if test "$PACT" = ""

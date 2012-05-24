@@ -77,7 +77,8 @@ class NcFormat : public DataFormat {
   const vector<int> getSize(const string &var);
   
   // Set the origin for all subsequent calls
-  bool setOrigin(int x = 0, int y = 0, int z = 0); 
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
   bool setRecord(int t); // negative -> latest
   
   // Read / Write simple variables up to 3D

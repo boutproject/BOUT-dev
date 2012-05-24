@@ -25,7 +25,10 @@
 
 #include "pnetcdf.hxx"
 
+
 #ifdef PNCDF
+
+#include <pnetcdf.h> // Parallel NetCDF library
 
 #include <utils.hxx>
 #include <cmath>
@@ -59,9 +62,7 @@ PncFormat::PncFormat(const char *name) {
 }
 
 PncFormat::PncFormat(const string &name) {
-  dataFile = NULL;
   x0 = y0 = z0 = t0 = 0;
-  recDimList = new const NcDim*[4];
   dimList = recDimList+1;
   lowPrecision = false;
 
@@ -81,35 +82,35 @@ bool PncFormat::openr(const char *name) {
   msg_stack.push("PncFormat::openr");
 #endif
 
+  if(is_valid()) // Already open. Close then re-open
+    close(); 
+
   int ret;
   MPI_Comm comm = BoutComm::get();
   
   /// Open file for reading
+  
   ret = ncmpi_open(comm, name, NC_NOWRITE, MPI_INFO_NULL, &ncfile); CHKERR(ret);
-
-  if(dataFile != NULL) // Already open. Close then re-open
-    close(); 
-
-
+  
   /// Get the dimensions from the file
-  ret = ncmpi_inq_dimid(ncid, "x", &xDim);
+  ret = ncmpi_inq_dimid(ncfile, "x", &xDim);
   if(ret != NC_NOERR) {
     output.write("WARNING: NetCDF file should have an 'x' dimension\n");
   }
   
-  ret = ncmpi_inq_dimid(ncid, "y", &yDim);
+  ret = ncmpi_inq_dimid(ncfile, "y", &yDim);
   if(ret != NC_NOERR) {
     output.write("WARNING: NetCDF file should have an 'y' dimension\n");
   }
   
   // z and t dimensions less crucial
-  ret = ncmpi_inq_dimid(ncid, "z", &zDim);
+  ret = ncmpi_inq_dimid(ncfile, "z", &zDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
-  ret = ncmpi_inq_dimid(ncid, "t", &tDim);
+  ret = ncmpi_inq_dimid(ncfile, "t", &tDim);
   if(ret != NC_NOERR) {
 #ifdef NCDF_VERBOSE
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
@@ -135,21 +136,21 @@ bool PncFormat::openw(const char *name, bool append) {
   msg_stack.push("PncFormat::openw");
 #endif
   
-  if(dataFile != NULL) // Already open. Close then re-open
+  if(is_valid()) // Already open. Close then re-open
     close(); 
 
   int ret; // Return status
   MPI_Comm comm = BoutComm::get();
 
   if(append) {
-    ret = ncmpi_open(MPI_COMM_WORLD, "foo.nc", NC_WRITE, MPI_INFO_NULL, &ncid); CHKERR(ret);
+    ret = ncmpi_open(comm, name, NC_WRITE, MPI_INFO_NULL, &ncfile); CHKERR(ret);
     
     /// Get the dimensions from the file
     
-    ret = ncmpi_inq_dimid(ncid, "x", &xDim); CHKERR(ret);
-    ret = ncmpi_inq_dimid(ncid, "y", &yDim); CHKERR(ret);
-    ret = ncmpi_inq_dimid(ncid, "z", &zDim); CHKERR(ret);
-    ret = ncmpi_inq_dimid(ncid, "t", &tDim); CHKERR(ret);
+    ret = ncmpi_inq_dimid(ncfile, "x", &xDim); CHKERR(ret);
+    ret = ncmpi_inq_dimid(ncfile, "y", &yDim); CHKERR(ret);
+    ret = ncmpi_inq_dimid(ncfile, "z", &zDim); CHKERR(ret);
+    ret = ncmpi_inq_dimid(ncfile, "t", &tDim); CHKERR(ret);
     
     /// Test they're the right size (and t is unlimited)
     
@@ -176,8 +177,7 @@ bool PncFormat::openw(const char *name, bool append) {
                        name,
                        NC_WRITE|NC_64BIT_OFFSET,
                        MPI_INFO_NULL,
-                       &ncfile);
-    if( ret != NC_NOERR ) throw new BoutException(ncmpi_strerror(err));
+                       &ncfile); CHKERR(ret);
     
     /// Add the dimensions
     
@@ -209,18 +209,14 @@ bool PncFormat::openw(const char *name, bool append) {
   return true;
 }
 
-bool PncFormat::is_valid()
-{
-  if(dataFile == NULL)
-    return false;
-  return dataFile->is_valid();
-}
-
 void PncFormat::close() {
 #ifdef CHECK
   msg_stack.push("PncFormat::close");
 #endif
   
+  if(!is_valid())
+    return; // Already closed
+
   int ret = ncmpi_close(ncfile);
   free(fname);
   fname = NULL;
@@ -230,15 +226,8 @@ void PncFormat::close() {
 #endif
 }
 
-const vector<int> PncFormat::getSize(const char *name)
-{
+const vector<int> PncFormat::getSize(const char *name) {
   vector<int> size;
-
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
 
   if(!is_valid())
     return size;
@@ -247,26 +236,33 @@ const vector<int> PncFormat::getSize(const char *name)
   msg_stack.push("PncFormat::getSize");
 #endif
 
-  NcVar *var;
-  
-  if(!(var = dataFile->get_var(name)))
+  int ret, var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
     return size;
+  }
   
-  if(!var->is_valid())
-    return size;
-
-  int nd = var->num_dims(); // Number of dimensions
+  // Number of dimensions
+  int nd;
+  if(ret = ncmpi_inq_varndims (ncfile, var, &nd)) 
+    return size; // Not valid
 
   if(nd == 0) {
     size.push_back(1);
     return size;
   }
   
-  long *ls = var->edges();
-  for(int i=0;i<nd;i++)
-    size.push_back((int) ls[i]);
-
-  delete[] ls;
+  // Get the dimension IDs
+  int dimid[nd];
+  
+  ret = ncmpi_inq_vardimid(ncfile, var, dimid); CHKERR(ret);
+  
+  for(int i=0;i<nd;i++) {
+    // Get length of each dimension
+    MPI_Offset len;
+    ret = ncmpi_inq_dimlen(ncfile, dimid[i], &len); CHKERR(ret);
+    size.push_back((int) len);
+  }
   
 #ifdef CHECK
   msg_stack.pop();
@@ -275,29 +271,20 @@ const vector<int> PncFormat::getSize(const char *name)
   return size;
 }
 
-const vector<int> PncFormat::getSize(const string &var)
-{
-  return getSize(var.c_str());
-}
-
-bool PncFormat::setOrigin(int x, int y, int z)
-{
+bool PncFormat::setGlobalOrigin(int x, int y, int z) {
   x0 = x;
   y0 = y;
   z0 = z;
-  
   return true;
 }
 
-bool PncFormat::setRecord(int t)
-{
+bool PncFormat::setRecord(int t) {
   t0 = t;
 
   return true;
 }
 
-bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz)
-{
+bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -308,11 +295,12 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz)
   msg_stack.push("PncFormat::read(int)");
 #endif
 
-  NcVar *var;
-  
-  if(!(var = dataFile->get_var(name))) {
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
 #ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF variable '%s' not found\n", name);
+    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
 #ifdef CHECK
     msg_stack.pop();
@@ -320,30 +308,20 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz)
     return false;
   }
   
-  long cur[3], counts[3];
-  cur[0] = x0;    cur[1] = y0;    cur[2] = z0;
-  counts[0] = lx; counts[1] = ly; counts[2] = lz;
-
-  if(!(var->set_cur(cur))) {
-#ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF Could not set cur(%d,%d,%d) for variable '%s'\n", 
-		 x0,y0,z0, name);
-#endif
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return false;
+  // Number of dimensions
+  int nd;
+  ret = ncmpi_inq_varndims(ncfile, var, &nd); CHKERR(ret);
+  
+  if(nd == 0) {
+    ret = ncmpi_get_var_int_all(ncfile, var, data); CHKERR(ret);
+    return true;
   }
-
-  if(!(var->get(data, counts))) {
-#ifdef NCDF_VERBOSE
-    output.write("INFO: NetCDF could not read data for '%s'\n", name);
-#endif
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return false;
-  }
+  
+  MPI_Offset start[3], count[3];
+  start[0] = x0; start[1] = y0; start[2] = z0;
+  count[0] = lx; count[1] = ly; count[2] = lz;
+  
+  ret = ncmpi_get_vara_int_all(ncfile, var, start, count, data);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -352,13 +330,28 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool PncFormat::read(int *var, const string &name, int lx, int ly, int lz)
-{
+bool PncFormat::read(int *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+// Helper functions to select the correct ncmpi function
+int pnc_get_var_all(int ncfile, int var, double* data) {
+  return ncmpi_get_var_double_all(ncfile, var, data);
+}
+
+int pnc_get_var_all(int ncfile, int var, float* data) {
+  return ncmpi_get_var_float_all(ncfile, var, data);
+}
+
+int pnc_get_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, double* data) {
+  return ncmpi_get_vara_double_all(ncfile, var, start, count, data);
+}
+
+int pnc_get_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, float* data) {
+  return ncmpi_get_vara_float_all(ncfile, var, start, count, data);
+}
+
+bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -368,40 +361,35 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz)
 #ifdef CHECK
   msg_stack.push("PncFormat::read(BoutReal)");
 #endif
-
-  // Create an error object so netCDF doesn't exit
+  
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
 #ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
+    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
-
-  NcVar *var;
-  
-  if(!(var = dataFile->get_var(name))) {
 #ifdef CHECK
     msg_stack.pop();
 #endif
     return false;
   }
   
-  long cur[3], counts[3];
-  cur[0] = x0;    cur[1] = y0;    cur[2] = z0;
-  counts[0] = lx; counts[1] = ly; counts[2] = lz;
-
-  if(!(var->set_cur(cur))) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return false;
+  // Number of dimensions
+  int nd;
+  ret = ncmpi_inq_varndims(ncfile, var, &nd); CHKERR(ret);
+  
+  if(nd == 0) {
+    ret = pnc_get_var_all(ncfile, var, data); CHKERR(ret);
+    return true;
   }
+  
+  
+  MPI_Offset start[3], count[3];
+  start[0] = x0; start[1] = y0; start[2] = z0;
+  count[0] = lx; count[1] = ly; count[2] = lz;
 
-  if(!(var->get(data, counts))) {
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return false;
-  }
+  ret = pnc_get_vara_all(ncfile, var, start, count, data); CHKERR(ret);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -432,25 +420,31 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
 
   int ret;
   int var;
-  if(!(var = dataFile->get_var(name))) {
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
     
     // Put into define mode
     ret = ncmpi_redef(ncfile); CHKERR(ret); 
     // Define variable
     ret = ncmpi_def_var(ncfile, name, NC_INT, nd, dimList, &var); CHKERR(ret);
+    // Back out of define mode
+    ret = ncmpi_enddef(ncfile); CHKERR(ret);
   }
   
-  long cur[3], counts[3];
-  cur[0] = x0;    cur[1] = y0;    cur[2] = z0;
-  counts[0] = lx; counts[1] = ly; counts[2] = lz;
-
-  if(!(var->set_cur(cur)))
-    return false;
+  if(nd == 0) {
+    // Writing a scalar
+    ret = ncmpi_put_var_int_all(ncfile, var, data); CHKERR(ret);
+    return true;
+  }
   
-  if(!(var->put(data, counts)))
-    return false;
-
+  // An array of values
+  
+  MPI_Offset start[3], count[3];
+  start[0] = x0; start[1] = y0; start[2] = z0;
+  count[0] = lx; count[1] = ly; count[2] = lz;
+  
+  ret = ncmpi_put_vara_int_all(ncfile, var, start, count, data); CHKERR(ret);
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -462,8 +456,25 @@ bool PncFormat::write(int *var, const string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
-bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+// Helper functions to select the correct ncmpi function
+int pnc_put_var_all(int ncfile, int var, double* data) {
+  return ncmpi_put_var_double_all(ncfile, var, data);
+}
+
+int pnc_put_var_all(int ncfile, int var, float* data) {
+  return ncmpi_put_var_float_all(ncfile, var, data);
+}
+
+// Helper functions to select the correct ncmpi function
+int pnc_put_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, double* data) {
+  return ncmpi_put_vara_double_all(ncfile, var, start, count, data);
+}
+
+int pnc_put_vara_all(int ncfile, int var, MPI_Offset* start, MPI_Offset* count, float* data) {
+  return ncmpi_put_vara_float_all(ncfile, var, start, count, data);
+}
+
+bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -479,33 +490,28 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
   
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
+    
+    // Put into define mode
+    ret = ncmpi_redef(ncfile); CHKERR(ret); 
 
-  NcVar *var;
-  if(!(var = dataFile->get_var(name))) {
-    // Variable not in file, so add it.
-    if(lowPrecision) {
-      var = dataFile->add_var(name, ncFloat, nd, dimList);
-    }else
-      var = dataFile->add_var(name, ncDouble, nd, dimList);
+    nc_type type = (lowPrecision) ? NC_FLOAT : NC_DOUBLE;
 
-    if(!var->is_valid()) {
-      output.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
-      return false;
-    }
-  }  
-
-  long cur[3], counts[3];
-  cur[0] = x0;    cur[1] = y0;    cur[2] = z0;
-  counts[0] = lx; counts[1] = ly; counts[2] = lz;
-
-  if(!(var->set_cur(cur)))
-    return false;
-
+    // Define variable
+    ret = ncmpi_def_var(ncfile, name, type, nd, dimList, &var); CHKERR(ret);
+    // Back out of define mode
+    ret = ncmpi_enddef(ncfile); CHKERR(ret);
+  }
+  
+  if(nd == 0) {
+    // Writing a scalar
+    ret = pnc_put_var_all(ncfile, var, data); CHKERR(ret);
+    return true;
+  }
+  
   if(lowPrecision) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
@@ -519,14 +525,18 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
     }
   }
   
+  // Similarly, non-finite numbers can have nasty effects
   for(int i=0;i<lx*ly*lz;i++) {
     if(!finite(data[i]))
       data[i] = 0.0;
   }
 
-  if(!(var->put(data, counts)))
-    return false;
-
+  MPI_Offset start[3], count[3];
+  start[0] = x0; start[1] = y0; start[2] = z0;
+  count[0] = lx; count[1] = ly; count[2] = lz;
+  
+  ret = pnc_put_vara_all(ncfile, var, start, count, data); CHKERR(ret);
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -534,8 +544,7 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool PncFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool PncFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -543,88 +552,71 @@ bool PncFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
  * Record-based (time-dependent) data
  ***************************************************************************/
 
-bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz)
-{
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
-
-  // Create an error object so netCDF doesn't exit
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
-
-  NcVar *var;
-  
-  if(!(var = dataFile->get_var(name)))
-    return false;
-  
-  // NOTE: Probably should do something here to check t0
-
-  long cur[4], counts[4];
-  cur[0] = t0; cur[1] = x0;    cur[2] = y0;    cur[3] = z0;
-  counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
-  
-  if(!(var->set_cur(cur)))
-    return false;
-  
-  if(!(var->get(data, counts)))
-    return false;
-  
-  return true;
-}
-
-bool PncFormat::read_rec(int *var, const string &name, int lx, int ly, int lz)
-{
-  return read_rec(var, name.c_str(), lx, ly, lz);
-}
-
-bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
-  // Create an error object so netCDF doesn't exit
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
 #ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
+    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
 #endif
-
-  NcVar *var;
-  
-  if(!(var = dataFile->get_var(name)))
     return false;
+  }
   
   // NOTE: Probably should do something here to check t0
 
-  long cur[4], counts[4];
-  cur[0] = t0; cur[1] = x0;    cur[2] = y0;    cur[3] = z0;
-  counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
+  MPI_Offset start[4], count[4];
+  start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
+  count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
   
-  if(!(var->set_cur(cur)))
-    return false;
-  
-  if(!(var->get(data, counts)))
-    return false;
+  ret = ncmpi_get_vara_int_all(ncfile, var, start, count, data);
   
   return true;
 }
 
-bool PncFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool PncFormat::read_rec(int *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
-{
+bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (ly < 0) || (lz < 0))
+    return false;
+  
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
+#ifdef NCDF_VERBOSE
+    output.write("INFO: Parallel NetCDF variable '%s' not found\n", name);
+#endif
+    return false;
+  }
+  
+  // NOTE: Probably should do something here to check t0
+
+  MPI_Offset start[4], count[4];
+  start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
+  count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
+
+  ret = pnc_get_vara_all(ncfile, var, start, count, data); CHKERR(ret);
+  
+  return true;
+}
+
+bool PncFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
+  return read_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -635,29 +627,20 @@ bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
-
-  NcVar *var;
   
-  // Try to find variable
-  if(!(var = dataFile->get_var(name))) {
-    // Need to add to file
-
-    var = dataFile->add_var(name, ncInt, nd, recDimList);
-
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
+    
+    // Put into define mode
+    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    // Define variable
+    ret = ncmpi_def_var(ncfile, name, NC_INT, nd, recDimList, &var); CHKERR(ret);
+    // Back out of define mode
+    ret = ncmpi_enddef(ncfile); CHKERR(ret);
+    
     rec_nr[name] = default_rec; // Starting record
-
-    if(!var->is_valid()) {
-#ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-      return false;
-    }
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -666,24 +649,23 @@ bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
     }
   }
   
-  if(!var->put_rec(data, rec_nr[name]))
-    return false;
-
-  var->sync();
+  MPI_Offset start[4], count[4];
+  start[0] = rec_nr[name]; start[1] = x0; start[2] = y0; start[3] = z0;
+  count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
+  
+  ret = ncmpi_put_vara_int_all(ncfile, var, start, count, data); CHKERR(ret);
   
   // Increment record number
-  rec_nr[name] = rec_nr[name] + 1;
+  rec_nr[name] += 1;
 
   return true;
 }
 
-bool PncFormat::write_rec(int *var, const string &name, int lx, int ly, int lz)
-{
+bool PncFormat::write_rec(int *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -699,35 +681,20 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
 
-#ifdef NCDF_VERBOSE
-  NcError err(NcError::verbose_nonfatal);
-#else
-  NcError err(NcError::silent_nonfatal);
-#endif
-
-  NcVar *var;
-
-  // Try to find variable
-  if(!(var = dataFile->get_var(name))) {
-    // Need to add to file
+  int ret;
+  int var;
+  if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
+    // Variable not in file
     
-    NcType vartype = ncDouble;
-    if(lowPrecision)
-      vartype = ncFloat;
-  
-    var = dataFile->add_var(name, vartype, nd, recDimList);
+    // Put into define mode
+    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    // Define variable
+    nc_type type = (lowPrecision) ? NC_FLOAT : NC_DOUBLE;
+    ret = ncmpi_def_var(ncfile, name, type, nd, recDimList, &var); CHKERR(ret);
+    // Back out of define mode
+    ret = ncmpi_enddef(ncfile); CHKERR(ret);
     
     rec_nr[name] = default_rec; // Starting record
-
-    if(!var->is_valid()) {
-#ifdef NCDF_VERBOSE
-      output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-      return false;
-    }
   }else {
     // Get record number
     if(rec_nr.find(name) == rec_nr.end()) {
@@ -735,8 +702,6 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
       rec_nr[name] = default_rec;
     }
   }
-  
-  int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
   output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
@@ -760,14 +725,16 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
       data[i] = 0.0;
   }
 
-  // Add the record
-  if(!var->put_rec(data, t))
-    return false;
+  MPI_Offset start[4], count[4];
+  start[0] = rec_nr[name]; start[1] = x0; start[2] = y0; start[3] = z0;
+  count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
 
-  var->sync();
+  // Add the record
+
+  ret = pnc_put_vara_all(ncfile, var, start, count, data); CHKERR(ret);
   
   // Increment record number
-  rec_nr[name] = rec_nr[name] + 1;
+  rec_nr[name] += 1;
 
 #ifdef CHECK
   msg_stack.pop();
