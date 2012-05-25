@@ -420,7 +420,7 @@ g^{\psi\psi}\mathbf{e}_\psi\times g^{\theta\theta}\mathbf{e}_\theta \nonumber \\
 Similarly, 
 \[
 \nabla\psi\times\nabla\zeta = -\left|B_p\right|\mathbf{\hat{e}}_\theta \qquad
-\nabla\theta\times\nabla\zeta = \frac{R}{h_\theta}\mathbf{\hat{e}}_\psi
+\nabla\theta\times\nabla\zeta = \frac{1}{Rh_\theta}\mathbf{\hat{e}}_\psi = \frac{1}{h_\theta R^2\left|\Bp\right|}\nabla \psi
 \]
 
 Field-aligned coordinates $(x,y,z)$ are defined by:
@@ -679,6 +679,34 @@ This vector must then be dotted with $\nabla\psi$, $\nabla\theta$, and $\nabla\p
 \nabla\theta &=& \frac{1}{\Bp\hthe}\nabla\phi\times\nabla\psi = \frac{1}{R\Bp\hthe}\left(\deriv{\psi}{Z}\hat{\Vec{R}} - \deriv{\psi}{R}\hat{\Vec{Z}}\right) \\
 \end{eqnarray*}
 
+An alternative is to use
+\[
+\bvec \times \nabla\phi = \frac{\sbp}{BR^2}\nabla\psi
+\]
+and that the tangent vector $\Vec{T} = \bvec$. This gives
+\begin{equation}
+\nabla\psi = \sbp BR\left[\frac{dR}{ds}\Vec{Z} - \frac{dZ}{ds}\Vec{R}\right] 
+\label{eq:flinegradpsi}
+\end{equation}
+and so because $d\phi / ds = \Bt / \left(RB\right)$
+\begin{equation}
+\kvec\cdot\nabla\psi = \sbp BR\left[ \left( \frac{\Bt^2}{RB^2} - \ddd{R}{s}\right)\dd{Z}{s} + \ddd{Z}{s}\frac{dR}{ds} \right]
+\label{eq:flinekappsi}
+\end{equation}
+
+Taking the cross-product of the tangent vector with the curvature in equation~\ref{eq:kappaline} above gives
+\begin{eqnarray*}
+  \bvec \times\kvec &=& \left[\frac{\Bt}{B}\ddd{Z}{s} - \dd{Z}{s}\left(2\dd{R}{s} + R\ddd{\phi}{s}\right)\right]\Vec{R} \\
+  &+& \left[\dd{R}{s}\left(2\dd{R}{s} + R\ddd{\phi}{s}\right) - \frac{\Bt}{B}\left(\ddd{R}{s} - R\left(\dd{\phi}{s}\right)^2\right)\right]\Vec{Z} \\
+  &+& \left[\dd{Z}{s}\left(\ddd{R}{s} - R\left(\dd{\phi}{s}\right)^2\right) - \dd{R}{s}\ddd{Z}{s}\right]\phivec
+\end{eqnarray*}
+
+The components in field-aligned coordinates can then be calculated:
+\begin{eqnarray*}
+\left(\bvec\times\kvec\right)^x &=& \sbp\left(\bvec\times\kvec\right)\cdot\nabla\psi \\
+&=& \frac{R\Bp^2}{B}\left(2\dd{R}{s} + R\ddd{\phi}{s}\right) - R\Bt\left(\dd{R}{s}\ddd{R}{s} + \dd{Z}{s}\ddd{Z}{s}\right) + \frac{\Bt^3}{B^2}\dd{R}{s}
+\end{eqnarray*}
+
 \subsection{Curvature in toroidal coordinates}
 
 In toroidal coordinates $\left(\psi,\theta,\phi\right)$, the $\bvec$ vector
@@ -791,6 +819,26 @@ and using $B\deriv{B}{x} = \Bt\deriv{\Bt}{x} + \Bp\deriv{\Bp}{x}$, this simplifi
 \begin{equation}
 \frac{\kvec\cdot\nabla\psi}{\rbpsq} = -\sbp\frac{\Bp^2}{B^2\hthe}\deriv{\hthe}{x} - \sbp\frac{\Bt^2}{B^2 R}\deriv{R}{x}
 \label{eq:dhdpsi}
+\end{equation}
+
+This can be transformed into an expression for $\deriv{\hthe}{x}$ involving only derivatives along
+field-lines. 
+Writing $\nabla R = \deriv{R}{\psi}\nabla\psi + \deriv{R}{\theta}\nabla\theta$, 
+\[
+\nabla R \cdot \nabla\psi = \deriv{R}{\psi}\rbpsq
+\]
+Using \ref{eq:flinegradpsi}, 
+\[
+\nabla\psi \cdot \nabla R = -\sbp B R\frac{dZ}{ds}
+\]
+and so
+\[
+\deriv{R}{x} = -\frac{BR}{\rbpsq}\frac{dZ}{ds}
+\]
+Substituting this and equation \ref{eq:flinekappsi} for $\kvec\cdot\nabla\psi$ into equation~\ref{eq:dhdpsi}
+the $\deriv{R}{x}$ term cancels with part of the $\kvec\cdot\nabla\psi$ term, simplifying to
+\begin{equation}
+\deriv{\hthe}{x} = -\hthe\frac{B^3R}{\Bp^2\rbpsq}\left[\frac{d^2Z}{ds^2}\frac{dR}{ds} - \frac{d^2R}{ds^2}\frac{dZ}{ds}\right]
 \end{equation}
 
 \end{document}
