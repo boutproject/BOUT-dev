@@ -100,19 +100,24 @@ bool PdbFormat::openw(const char *name, bool append)
   return true;
 }
 
-bool PdbFormat::is_valid()
-{
+bool PdbFormat::is_valid() {
   return (fp != NULL);
 }
 
-void PdbFormat::close()
-{
+void PdbFormat::close() {
   if(fp == NULL)
     return;
 
   PD_close(fp);
 
   fp = NULL;
+}
+
+void PdbFormat::flush() {
+  if(!is_valid())
+    return;
+  
+  PD_flush(fp);
 }
 
 const char* PdbFormat::filename()

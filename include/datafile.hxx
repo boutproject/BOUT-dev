@@ -19,6 +19,7 @@ class Datafile;
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+#include "options.hxx"
 
 #include "dataformat.hxx"
 
@@ -31,18 +32,20 @@ class Datafile;
 /*!
   Uses a generic interface to file formats (DataFormat)
   and provides an interface for reading/writing simulation data.
-  
-  Data formats are currently implemented for PDB and netCDF.
 */
 class Datafile {
  public:
-  Datafile() : low_prec(false), file(NULL) {}
-  Datafile(DataFormat *format);
+  Datafile(Options *opt = NULL);
+  Datafile(const Datafile &other);
   ~Datafile();
   
-  /// Set the file format by passing an interface class
-  void setFormat(DataFormat *format);
-  void setFormat(const string &format);
+  Datafile& operator=(const Datafile &rhs);
+
+  bool openr(const char *filename, ...);
+  bool openw(const char *filename, ...); // Overwrites existing file
+  bool opena(const char *filename, ...); // Appends if exists
+  
+  void close();
 
   void setLowPrecision(); ///< Only output floats
 
@@ -52,31 +55,19 @@ class Datafile {
   void add(Field3D &f, const char *name, int grow = 0);
   void add(Vector2D &f, const char *name, int grow = 0);
   void add(Vector3D &f, const char *name, int grow = 0);
+  
+  bool read();  ///< Read data into added variables 
+  bool write(); ///< Write added variables
 
-  /// Read a given file into the added variables
-  int read(const char *filename, ...);
-  int read(const string &filename) {return read(filename.c_str());}
-  int read() {return read(def_filename); }
-  /// Write the variables to the given file (over-writes existing file)
-  int write(const char *filename, ...);
-  int write() {return write(def_filename.c_str()); }
-  /// Append data to an existing file (error if doesn't exist)
-  int append(const char *filename, ...);
-  int append() {return append(def_filename.c_str()); }
-  
-  bool write(const string &filename, bool append=false);
-  bool write(bool append) {return write(def_filename, append); }
-  
-  /// Set a default filename 
-  void setFilename(const char *format, ...);
-  void setFilename(const string &filename) { def_filename = filename; }
+  bool write(const char *filename, ...) const; ///< Opens, writes, closes file
 
   /// Set this to false to switch off all data writing
   static bool enabled;
  private:
-  string def_filename; ///< Default filename
-  
-  bool low_prec;
+  bool parallel; // Use parallel formats?
+  bool flush;    // Flush after every write?
+  bool guards;   // Write guard cells?
+  bool low_prec; // Low precision?
 
   DataFormat *file;
 
@@ -91,7 +82,7 @@ class Datafile {
 
   // one set per variable type
   vector< VarStr<int> >      int_arr;
-  vector< VarStr<BoutReal> >     BoutReal_arr;
+  vector< VarStr<BoutReal> > BoutReal_arr;
   vector< VarStr<Field2D> >  f2d_arr;
   vector< VarStr<Field3D> >  f3d_arr;
   vector< VarStr<Vector2D> > v2d_arr;

@@ -43,6 +43,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     """
     
     # Search for BOUT++ dump files in NetCDF format
+    file_list = glob.glob(os.path.join(path, prefix+".nc"))
+    if file_list != []:
+        print "Single (parallel) data file"
+        f = DataFile(file_list[0]) # Open the file
+        
+        data = f.read(varname)
+        return data
+        
     file_list = glob.glob(os.path.join(path, prefix+".*.nc"))
     if file_list == []:
         print "ERROR: No data files found"

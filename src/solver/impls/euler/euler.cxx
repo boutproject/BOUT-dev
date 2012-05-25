@@ -119,7 +119,7 @@ int EulerSolver::run(MonitorFunc monitor) {
       }
       
       // Taken a step, swap buffers
-      SWAP(f1, f0);
+      swap(f1, f0);
       simtime += timestep;
 
       internal_steps++;

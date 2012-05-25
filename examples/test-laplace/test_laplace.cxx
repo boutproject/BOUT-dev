@@ -34,9 +34,9 @@ int physics_init(bool restarting) {
   SAVE_ONCE2(flag0ad, flag3ad);
  
   // Get the processor number for the output file name
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
+  
+  dump.write();
+  dump.close();
   
   output << "\nFinished running test. Triggering error to quit\n\n";
   

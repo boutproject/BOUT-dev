@@ -646,7 +646,7 @@ int Mesh::gaussj(BoutReal **a, int n)
     // on the diagonal
     if(irow != icol) {
       for(l=0;l<n;l++)
-	SWAP(a[irow][l],a[icol][l]);
+	swap(a[irow][l],a[icol][l]);
     }
     indxr[i] = irow;
     indxc[i] = icol;
@@ -674,7 +674,7 @@ int Mesh::gaussj(BoutReal **a, int n)
   for(l=n-1;l>=0;l--) {
     if(indxr[l] != indxc[l])
       for(k=0;k<n;k++)
-	SWAP(a[k][indxr[l]], a[k][indxc[l]]);
+	swap(a[k][indxr[l]], a[k][indxc[l]]);
   }
   // done.
 

@@ -59,6 +59,8 @@ class PdbFormat : public DataFormat {
   
   void close();
   
+  void flush();
+  
   const char* filename();
 
   const vector<int> getSize(const char *var);

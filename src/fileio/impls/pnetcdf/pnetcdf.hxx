@@ -62,13 +62,18 @@ class PncFormat : public DataFormat {
   
   bool openr(const string &name) { return openr(name.c_str()); }
   bool openr(const char *name);
+  bool openr(const string &name, int mype) {return openr(name);}
+
   bool openw(const string &name, bool append=false) { return openw(name.c_str(), append); }
   bool openw(const char *name, bool append=false);
-  
+  bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
+
   bool is_valid() { return fname != NULL;}
   
   void close();
   
+  void flush();
+
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);

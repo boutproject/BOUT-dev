@@ -502,7 +502,7 @@ void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
     if (dum == 0.0) a[k-1][0]=TINY;
     if (i != k) {
       *d = -(*d);
-      for (j=0;j<mm;j++) SWAP(a[k-1][j],a[i-1][j]);
+      for (j=0;j<mm;j++) swap(a[k-1][j],a[i-1][j]);
     }
     for (i=k;i<l;i++) {
       dum=a[i][0]/a[k-1][0];
@@ -524,7 +524,7 @@ void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
   l=m1;
   for (k=1;k<=n;k++) {
     i=indx[k-1];
-    if (i != k) SWAP(b[k-1],b[i-1]);
+    if (i != k) swap(b[k-1],b[i-1]);
     if (l < n) l++;
     for (i=k+1;i<=l;i++) b[i-1] -= al[k-1][i-k-1]*b[k-1];
   }

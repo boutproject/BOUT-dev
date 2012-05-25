@@ -58,10 +58,9 @@ int physics_init(bool restarting) {
   SAVE_ONCE(allpassed);
   
   // Write data to file
-  int mype;
-  MPI_Comm_rank(BoutComm::get(), &mype);
-  dump.write("%s/BOUT.dmp.%d.nc", "data", mype);
-
+  dump.write();
+  dump.close();
+  
   MPI_Barrier(BoutComm::get());
   
   // Send an error code so quits

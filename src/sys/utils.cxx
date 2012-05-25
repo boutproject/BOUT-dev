@@ -193,37 +193,6 @@ int ROUND(BoutReal x) {
   return (x > 0.0) ? (int) (x + 0.5) : (int) (x - 0.5);
 }
 
-void SWAP(BoutReal &a, BoutReal &b) {
-  BoutReal tmp;
-
-  tmp = a;
-  a = b;
-  b = tmp;
-}
-
-void SWAP(BoutReal* &a, BoutReal* &b) {
-  BoutReal *tmp;
-
-  tmp = a;
-  a = b;
-  b = tmp;
-}
-
-void SWAP(dcomplex &a, dcomplex &b) {
-  dcomplex tmp;
-
-  tmp = a;
-  a = b;
-  b = tmp;
-}
-
-void SWAP(int &a, int &b) {
-  int tmp;
-  tmp = a;
-  a = b;
-  b = tmp;
-}
-
 int BOUTMAX(int a, int b) {
   return (a > b) ? a : b;
 }
@@ -288,7 +257,7 @@ BoutReal operator^(BoutReal lhs, const BoutReal &rhs)
  * String routines
  **************************************************************************/
 
-///.allocate memory for a copy of given string
+/// Allocate memory for a copy of given string
 char* copy_string(const char* s) {
   char *s2;
   int n;
@@ -310,6 +279,17 @@ char *strconcat(const char* left, const char *right) {
   snprintf(buffer, 128, "%s%s", left, right);
   return buffer;
 }
+
+// Convert a value to a string
+template <class T>
+const string toString(const T& val) {
+  std::stringstream ss;
+  ss << val;
+  return ss.str();
+}
+
+template const string toString(const int& val);
+template const string toString(const BoutReal& val);
 
 /// Convert a string to lower case
 const string lowercase(const string &str) {

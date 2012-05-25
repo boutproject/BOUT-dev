@@ -226,6 +226,12 @@ void PncFormat::close() {
 #endif
 }
 
+void PncFormat::flush() {
+  if(!is_valid())
+    return;
+  int ret = ncmpi_sync(ncfile);
+}
+
 const vector<int> PncFormat::getSize(const char *name) {
   vector<int> size;
 
@@ -314,6 +320,9 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   
   if(nd == 0) {
     ret = ncmpi_get_var_int_all(ncfile, var, data); CHKERR(ret);
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return true;
   }
   
@@ -381,6 +390,9 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   
   if(nd == 0) {
     ret = pnc_get_var_all(ncfile, var, data); CHKERR(ret);
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return true;
   }
   
@@ -434,6 +446,9 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(nd == 0) {
     // Writing a scalar
     ret = ncmpi_put_var_int_all(ncfile, var, data); CHKERR(ret);
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return true;
   }
   
@@ -509,6 +524,9 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
   if(nd == 0) {
     // Writing a scalar
     ret = pnc_put_var_all(ncfile, var, data); CHKERR(ret);
+#ifdef CHECK
+    msg_stack.pop();
+#endif
     return true;
   }
   

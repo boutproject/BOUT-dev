@@ -115,7 +115,8 @@ int BoutMesh::load() {
 		 MY, NYPE);
     return 1;
   }
-  
+
+
   /// Get mesh options
   int MZ;
   OPTION(options, MZ,           65);
@@ -139,6 +140,18 @@ int BoutMesh::load() {
   OPTION(options, periodicX, false); // Periodic in X
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
+
+
+  
+  // Set global sizes and offsets
+  GlobalNx = nx;
+  GlobalNy = ny + 4; //
+  GlobalNz = MZ;
+  
+  OffsetX = PE_XIND*MXSUB;
+  OffsetY = PE_YIND*MYSUB;
+  OffsetZ = 0;
+
 
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");

@@ -71,6 +71,8 @@ class NcFormat : public DataFormat {
   
   void close();
   
+  void flush();
+
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);

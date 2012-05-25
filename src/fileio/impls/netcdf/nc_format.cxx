@@ -322,6 +322,13 @@ void NcFormat::close()
 #endif
 }
 
+void NcFormat::flush() {
+  if(!is_valid())
+    return;
+  
+  dataFile->sync();
+}
+
 const vector<int> NcFormat::getSize(const char *name)
 {
   vector<int> size;

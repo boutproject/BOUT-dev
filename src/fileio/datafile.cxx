@@ -40,6 +40,7 @@
 #include <datafile.hxx>
 #include <boutexception.hxx>
 #include <output.hxx>
+#include <boutcomm.hxx>
 
 #include "formatfactory.hxx"
 
@@ -47,8 +48,36 @@
 // Global variables, shared between Datafile objects
 bool Datafile::enabled = true;
 
-Datafile::Datafile(DataFormat *format) : low_prec(false), file(NULL) {
-  setFormat(format);
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), file(NULL) {
+  if(opt == NULL)
+    return; // To allow static initialisation
+  
+  // Read options
+  
+  OPTION(opt, parallel, false); // By default no parallel formats for now
+  OPTION(opt, flush, true);     // Safer. Disable explicitly if required
+  OPTION(opt, guards, true);    // Compatible with old behavior
+  OPTION(opt, low_prec, false); // High precision by default
+}
+
+Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), low_prec(other.low_prec), file(NULL), int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+  
+  // Same added variables, but the file not the same 
+}
+
+Datafile& Datafile::operator=(const Datafile &rhs) {
+  parallel     = rhs.parallel;
+  flush        = rhs.flush;
+  guards       = rhs.guards;
+  low_prec     = rhs.low_prec;
+  file         = NULL; // All values copied except this
+  int_arr      = rhs.int_arr;
+  BoutReal_arr = rhs.BoutReal_arr;
+  f2d_arr      = rhs.f2d_arr;
+  f3d_arr      = rhs.f3d_arr;
+  v2d_arr      = rhs.v2d_arr;
+  v3d_arr      = rhs.v3d_arr;
+  return *this;
 }
 
 Datafile::~Datafile() {
@@ -56,18 +85,88 @@ Datafile::~Datafile() {
     delete file;
 }
 
-void Datafile::setFormat(DataFormat *format) {
-  if(file != NULL)
-    delete file;
+bool Datafile::openr(const char *format, ...) {
+  va_list ap;  // List of arguments
+  if(format == (const char*) NULL)
+    return 1;
+  char filename[512];
+  va_start(ap, format);
+    vsprintf(filename, format, ap);
+  va_end(ap);
   
-  file = format;
+  // Get the data format
+  file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
   
-  if(low_prec)
-    file->setLowPrecision();
+  if(!file)
+    return false;
+  
+  // Open the file
+  int MYPE;
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  if(!file->openr(filename, MYPE))
+    return false;
+  
+  return true;
 }
 
-void Datafile::setFormat(const string &format) {
-  setFormat(FormatFactory::getInstance()->createDataFormat(format.c_str()));
+bool Datafile::openw(const char *format, ...) {
+  if(!enabled)
+    return true;
+  
+  va_list ap;  // List of arguments
+  if(format == (const char*) NULL)
+    return 1;
+  char filename[512];
+  va_start(ap, format);
+  vsprintf(filename, format, ap);
+  va_end(ap);
+  
+  // Get the data format
+  file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
+  
+  if(!file)
+    return false;
+  
+  // Open the file
+  int MYPE;
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  if(!file->openw(filename, MYPE))
+    return false;
+
+  return true;
+}
+
+bool Datafile::opena(const char *format, ...) {
+  if(!enabled)
+    return true;
+  
+  va_list ap;  // List of arguments
+  if(format == (const char*) NULL)
+    return 1;
+  char filename[512];
+  va_start(ap, format);
+  vsprintf(filename, format, ap);
+  va_end(ap);
+  
+  // Get the data format
+  file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
+  
+  if(!file)
+    return false;
+  
+  // Open the file
+  int MYPE;
+  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  if(!file->openw(filename, MYPE, true))
+    return false;
+
+  return true;
+}
+
+void Datafile::close() {
+  if(!file)
+    return;
+  file->close();
 }
 
 void Datafile::setLowPrecision() {
@@ -155,26 +254,11 @@ void Datafile::add(Vector3D &f, const char *name, int grow) {
   v3d_arr.push_back(d);
 }
 
-int Datafile::read(const char *format, ...) {
-  va_list ap;  // List of arguments
-  
-  if(format == (const char*) NULL)
-    return 1;
-
-  char filename[512];
-  va_start(ap, format);
-    vsprintf(filename, format, ap);
-  va_end(ap);
-
+bool Datafile::read() {
   Timer timer("io");  ///< Start timer. Stops when goes out of scope
-
-  // Open the file
   
-  if(!file->openr(filename))
-    return 1;
-
   if(!file->is_valid())
-    return 1;  
+    return false;  
 
   file->setRecord(-1); // Read the latest record
 
@@ -259,57 +343,21 @@ int Datafile::read(const char *format, ...) {
 
     it->ptr->covariant = it->covar;
   }
-  
-  file->close();
 
-  return 0;
+  return true;
 }
 
-int Datafile::write(const char *format, ...) {
-  va_list ap;  // List of arguments
-  
-  if(format == (const char*) NULL)
-    return 1;
-
-  char filename[512];
-  va_start(ap, format);
-    vsprintf(filename, format, ap);
-  va_end(ap);
-  
-  if(write(string(filename), false))
-    return 0;
-  
-  return 1;
-}
-
-int Datafile::append(const char *format, ...) {
-  va_list ap;  // List of arguments
-  
-  if(format == (const char*) NULL)
-    return 1;
-  
-  char filename[512];
-  va_start(ap, format);
-    vsprintf(filename, format, ap);
-  va_end(ap);
-  
-  if(write(string(filename), true))
-    return 0;
-  
-  return 1;
-}
-
-bool Datafile::write(const string &filename, bool append) {
+bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
   
-  Timer timer("io");
-
-  if(!file->openw(filename, append))
+  if(!file)
     return false;
-
+  
   if(!file->is_valid())
     return false;
+  
+  Timer timer("io");
   
   file->setRecord(-1); // Latest record
 
@@ -386,26 +434,30 @@ bool Datafile::write(const string &filename, bool append) {
       write_f3d(it->name+string("z"), &(v.z), it->grow);
     }
   }
-
-  file->close();
   
   return true;
 }
 
-void Datafile::setFilename(const char *format, ...) {
+bool Datafile::write(const char *format, ...) const {
+  if(!enabled)
+    return true;
+  
   va_list ap;  // List of arguments
-  
-  if(format == (const char*) NULL) {
-    def_filename.clear();
-    return;
-  }
-  
+  if(format == (const char*) NULL)
+    return false;
   char filename[512];
   va_start(ap, format);
-    vsprintf(filename, format, ap);
+  vsprintf(filename, format, ap);
   va_end(ap);
+
+  // Create a new datafile
+  Datafile tmp(*this);
   
-  setFilename(string(filename));
+  tmp.openw(filename);
+  bool ret = tmp.write();
+  tmp.close();
+  
+  return ret;
 }
 
 /////////////////////////////////////////////////////////////

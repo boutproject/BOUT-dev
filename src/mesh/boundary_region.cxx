@@ -10,7 +10,7 @@ BoundaryRegionXIn::BoundaryRegionXIn(const string &name, int ymin, int ymax)
   width = mesh->xstart;
   x = width-1; // First point inside the boundary
   if(ye < ys)
-    SWAP(ys, ye);
+    swap(ys, ye);
 }
 
 void BoundaryRegionXIn::first()
@@ -58,7 +58,7 @@ BoundaryRegionXOut::BoundaryRegionXOut(const string &name, int ymin, int ymax)
   width = mesh->ngx - mesh->xend - 1;
   x = mesh->ngx - width; // First point inside the boundary
   if(ye < ys)
-    SWAP(ys, ye);
+    swap(ys, ye);
 }
 
 void BoundaryRegionXOut::first()
@@ -106,7 +106,7 @@ BoundaryRegionYDown::BoundaryRegionYDown(const string &name, int xmin, int xmax)
   width = mesh->ystart;
   y = width-1; // First point inside the boundary
   if(xe < xs)
-    SWAP(xs, xe);
+    swap(xs, xe);
 }
 
 void BoundaryRegionYDown::first()
@@ -155,7 +155,7 @@ BoundaryRegionYUp::BoundaryRegionYUp(const string &name, int xmin, int xmax)
   width = mesh->ngy - mesh->yend - 1;
   y = mesh->ngy - width; // First point inside the boundary
   if(xe < xs)
-    SWAP(xs, xe);
+    swap(xs, xe);
 }
 
 void BoundaryRegionYUp::first()

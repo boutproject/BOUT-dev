@@ -425,11 +425,11 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   options->get("dump_format", dump_ext, "default");
   
   options->get("restart_format", restart_ext, dump_ext);
-
-  /// Set the restart file format
-  restart.setFormat(restart_ext);
   restartext = string(restart_ext);
-
+  
+  // Set up restart options
+  restart = Datafile(options->getSection("restart"));
+  
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);
   restart.add(iteration, "hist_hi", 0);
@@ -479,10 +479,11 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
 #endif
     
     /// Load restart file
-    if(restart.read("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str()) != 0) {
-      output.write("Error: Could not read restart file\n");
-      return(2);
-    }
+    if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+      throw new BoutException("Error: Could not open restart file\n");
+    if(!restart.read())
+      throw new BoutException("Error: Could not read restart file\n");
+    restart.close();
 
     if(NPES == 0) {
       // Old restart file
