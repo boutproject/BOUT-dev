@@ -605,7 +605,7 @@ since $J_{||} = b^yJ_y$,
 \subsection{Curvature}
 
 For reduced MHD, need to calculate curvature term $\mathbf{b}\times\mathbf{\kappa}$, where
-$\mathbf{\kappa} = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arranging, this becomes:
+$\mathbf{\kappa} = \left(\bvec\cdot\nabla\right)\bvec = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arranging, this becomes:
 \[
 \mathbf{b}\times\mathbf{\kappa} = \nabla\times\mathbf{b} - \mathbf{b}\left(\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right)\right)
 \]
@@ -615,6 +615,13 @@ Components of $\nabla\times\mathbf{b}$ are:
 \left(\nabla\times\mathbf{b}\right)^y &=& -\frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{\Bt R}{B}\right) \\
 \left(\nabla\times\mathbf{b}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - I\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
 \end{eqnarray*}
+
+giving:
+\begin{eqnarray}
+\mathbf{\kappa} &=& -\frac{B_\theta}{B h_\theta}\left[\deriv{}{x}\left(\frac{B h_\theta}{B_\theta}\right) - \sbp\deriv{}{y}\left(\frac{B_\zeta I R}{B}\right)\right]\nabla x \nonumber \\
+&+& \sbp\frac{B_\theta}{B h_\theta}\deriv{}{y}\left(\frac{B_\zeta R}{B}\right)\nabla z
+\label{eq:curvature}
+\end{eqnarray}
 
 \[
 \mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right) = -B\deriv{}{x}\left(\frac{\Bt R}{B}\right) + \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
@@ -758,5 +765,32 @@ and so
 \deriv{\nu}{\psi} = \frac{\nu}{\hthe}\deriv{\hthe}{\psi} + \frac{\nu}{\Bt}\deriv{\Bt}{\psi} - \frac{\nu}{\Bp}\deriv{\Bp}{\psi} - \frac{\nu}{R}\deriv{R}{\psi}
 \]
 The last three terms are given in the previous section, but $\partial\hthe/\partial\psi$ needs to be evaluated
+
+\subsection{$\psi$ derivative of $\hthe$}
+
+From the expression for curvature \ref{eq:curvature}, and using $\nabla x \cdot \nabla \psi = \sbp \left(R\Bp\right)^2$ and $\nabla z\cdot\nabla \psi = -\sbp I \left(R\Bp\right)^2$
+
+\begin{eqnarray*}
+\kvec\cdot\nabla\psi &=& -\sbp \frac{\Bp}{B\hthe}\rbpsq\left[\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \sbp\deriv{}{y}\left(\frac{\Bt IR}{B}\right)\right] \\
+&&- I\rbpsq \frac{\Bp}{B\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right)
+\end{eqnarray*}
+
+The second and third terms partly cancel, and using $\deriv{I}{y} = \sbp \deriv{\nu}{x}$
+\begin{eqnarray*}
+  \frac{\kvec\cdot\nabla\psi}{\rbpsq} &=& -\sbp\frac{\Bp}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) + \sbp\frac{\Bp}{B\hthe}\frac{\Bt R}{B}\deriv{\nu}{x} \\
+  &=& -\sbp\frac{\Bp}{B\hthe}\left[\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bt R}{B}\deriv{}{x}\left(\frac{\Bt\hthe}{\Bp R}\right)\right] \\
+  &=& -\sbp\frac{\Bp}{B\hthe}\left[\hthe\deriv{}{x}\left(\frac{B}{\Bp}\right) - \hthe\frac{\Bt R}{B}\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right) + \frac{B^2}{B\Bp}\deriv{\hthe}{x} - \frac{\Bt^2}{B\Bp}\deriv{\hthe}{x}\right] \\
+  &=& -\sbp \frac{\Bp}{B^2\hthe}\deriv{\hthe}{x} - \sbp\frac{\Bp}{B^2}\left[B\deriv{}{x}\left(\frac{B}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right)\right]
+\end{eqnarray*}
+Writing
+\begin{eqnarray*}
+B\deriv{}{x}\left(\frac{B}{\Bp}\right) &=& \deriv{}{x}\left(\frac{B^2}{\Bp}\right) - \frac{B}{\Bp}\deriv{B}{x} \\
+\Bt R\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right) &=& \deriv{}{x}\left(\frac{\Bt^2}{\Bp}\right) - \frac{\Bt}{\Bp R}\deriv{}{x}\left(\Bt R\right)
+\end{eqnarray*}
+and using $B\deriv{B}{x} = \Bt\deriv{\Bt}{x} + \Bp\deriv{\Bp}{x}$, this simplifies to give
+\begin{equation}
+\frac{\kvec\cdot\nabla\psi}{\rbpsq} = -\sbp\frac{\Bp^2}{B^2\hthe}\deriv{\hthe}{x} - \sbp\frac{\Bt^2}{B^2 R}\deriv{R}{x}
+\label{eq:dhdpsi}
+\end{equation}
 
 \end{document}
