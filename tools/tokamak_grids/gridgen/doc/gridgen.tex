@@ -775,6 +775,47 @@ From the definition $B=\sqrt{\Bt^2 + \Bp^2}$,
 \deriv{B}{\psi} = \frac{1}{B}\left(\Bt\deriv{\Bt}{\psi} + \Bp\deriv{\Bp}{\psi}\right)
 \]
 
+\subsection{Parallel derivative of $B$ field}
+
+To get the parallel gradients of the $B$ field components, start with
+\[
+\deriv{}{s}\left(B^2\right) = \deriv{}{s}\left(\Bt^2\right) + \deriv{}{s}\left(\Bp^2\right)
+\]
+Using the fact that $R\Bt$ is constant along $s$,
+\[
+\deriv{}{s}\left(R^2\Bt^2\right) = R^2\deriv{}{s}\left(\Bt^2\right) + \Bt^2\deriv{}{s}\left(R^2\right) = 0
+\]
+which gives
+\begin{equation}
+  \deriv{}{s}\left(\Bt^2\right) = -\frac{\Bt^2}{R^2}\deriv{}{s}\left(R^2\right)
+  \label{eq:dbtds}
+\end{equation}
+The poloidal field can be calculated from
+\[
+\deriv{}{s}\left(\nabla\psi \cdot \nabla\psi\right) = \deriv{}{s}\left(R^2\Bp^2\right) = R^2\deriv{}{s}\left(\Bp^2\right) + \Bp^2\deriv{}{s}\left(R^2\right)
+\]
+Using equation~\ref{eq:flinegradpsi}, $\nabla\psi \cdot \nabla\psi$ can also be written as
+\[
+\nabla\psi \cdot \nabla\psi = B^2R^2\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\]
+and so (unsurprisingly)
+\[
+\frac{\Bp^2}{B^2} = \left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\]
+Hence
+\[
+\deriv{}{s}\left(\Bp^2\right) = B^2\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right] + \frac{\Bp^2}{B^2}\deriv{}{s}\left(B^2\right)
+\]
+
+Which gives
+\begin{equation}
+\deriv{}{s}\left(B^2\right) = -\frac{B^2}{R^2}\deriv{}{s}\left(R^2\right) + \frac{B^4}{\Bt^2}\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\end{equation}
+
+\begin{equation}
+\deriv{}{s}\left(\Bp^2\right) = \left(1 + \frac{\Bp^2}{\Bt^2}\right)B^2\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right] - \frac{\Bp^2}{R^2}\deriv{}{s}\left(R^2\right)
+\end{equation}
+
 \subsection{Magnetic shear from $J\times B$}
 
 Re-arranging the radial force balance equation~\ref{eq:xbalance} gives
