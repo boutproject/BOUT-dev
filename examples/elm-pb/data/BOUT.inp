@@ -174,7 +174,9 @@ damp_t_const = 1e-2  # Damping time constant
 ## Parallel pressure diffusion
 
 diffusion_par = -1.0e-0   # Parallel pressure diffusion (< 0 = none)
-diffusion_p4 = -1.0e-5     # 4th order Parallel pressure diffusion (< 0 = none)
+diffusion_p4  = -1.0e-5   # parallel hyper-viscous diffusion for pressure (< 0 = none)
+diffusion_u4  = 1.0e-5    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_a4  = -1.0e-5   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
  

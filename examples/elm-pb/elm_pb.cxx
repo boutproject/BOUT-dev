@@ -48,6 +48,10 @@ Field3D Jpar, phi; // Parallel current, electric potential
 
 Field3D Jpar2; //  Delp2 of Parallel current
 
+Field3D tmpP2; // Grad2_par2new of pressure
+Field3D tmpU2; // Grad2_par2new of Parallel vorticity
+Field3D tmpA2; // Grad2_par2new of Parallel vector potential
+
 // Constraint
 Field3D C_phi;
 
@@ -63,7 +67,8 @@ BoutReal diffusion_Vpar;  //xia: Parallel velocitye diffusion
 BoutReal diffusion_psiP;  //xia: Parallel magnetic flux diffusion
 BoutReal diffusion_p4;   //M: 4th Parallel pressure diffusion
 BoutReal diffusion_v4;   //M: 4th Parallel velocitye diffusion
-BoutReal diffusion_U4;  //xia: 4th order Parall vorticity diffusion
+BoutReal diffusion_u4;   //xqx: parallel hyper-viscous diffusion for vorticity
+BoutReal diffusion_a4;   //xqx: parallel hyper-viscous diffusion for vector potential
 
 BoutReal heating_P;  // heating power in pressure
 BoutReal hp_width;  // heating profile radial width in pressure
@@ -403,8 +408,8 @@ int physics_init(bool restarting)
   OPTION(options, diffusion_psiP,        -1.0);  //xia: Parallel magnetic flux diffusion
   OPTION(options, diffusion_p4,        -1.0);  // M: 4th Parallel pressure diffusion
   OPTION(options, diffusion_v4,        -1.0);  //M: 4th Parallel velocity diffusion
-  OPTION(options, diffusion_U4,        -1.0);  //M: 4th Parallel vorticity diffusion
-
+  OPTION(options, diffusion_u4,        -1.0);   //xqx: parallel hyper-viscous diffusion for vorticity
+  OPTION(options, diffusion_a4,        -1.0);   //xqx: parallel hyper-viscous diffusion for vector potential
 
   // heating factor in pressure
   OPTION(options, heating_P,        -1.0);  //  heating power in pressure
@@ -589,7 +594,7 @@ int physics_init(bool restarting)
     dump.add(diffusion_par, "diffusion_par", 1);
   }
 
-  //M: 4th order diffusion of p
+  //xqx: parallel hyper-viscous diffusion for pressure
   if(diffusion_p4 > 0.0) {
     output.write("    diffusion_p4: %e\n", diffusion_p4);
     dump.add(diffusion_p4, "diffusion_p4", 1);
@@ -607,17 +612,21 @@ int physics_init(bool restarting)
     dump.add(diffusion_v4, "diffusion_v4", 1);
   }
 
-  // xia: 4th order vorticity diffusion
-  if(diffusion_U4 > 0.0) {
-    output.write("    diffusion_U4: %e\n", diffusion_U4);
-    dump.add(diffusion_v4, "diffusion_U4", 1);
-  }
-
-
   // xia: add the magnetic flux diffusion
   if(diffusion_psiP > 0.0) {
     output.write("    diffusion_psiP: %e\n", diffusion_psiP);
     dump.add(diffusion_psiP, "diffusion_psiP", 1);
+  
+  //xqx: parallel hyper-viscous diffusion for vorticity
+  if(diffusion_u4 > 0.0) {
+    output.write("    diffusion_u4: %e\n", diffusion_u4);
+    dump.add(diffusion_u4, "diffusion_u4", 1);
+  }
+
+  //xqx: parallel hyper-viscous diffusion for vector potential
+  if(diffusion_a4 > 0.0) {
+    output.write("    diffusion_a4: %e\n", diffusion_a4);
+    dump.add(diffusion_a4, "diffusion_a4", 1);
   }
 
   if(heating_P > 0.0) {
@@ -906,6 +915,9 @@ int physics_init(bool restarting)
   comms.add(phi);
 
   phi.setBoundary("phi"); // Set boundary conditions
+  tmpU2.setBoundary("U");
+  tmpP2.setBoundary("P");
+  tmpA2.setBoundary("J");
   
   if(evolve_jpar) {
     comms.add(Jpar);
@@ -1203,6 +1215,14 @@ int physics_run(BoutReal t)
     if(diffusion_psiP > 0.0) {
       ddt(Psi) -= diffusion_psiP * Grad2_par2new(Grad2_par2new(Psi));
     }
+    
+    //xqx: parallel hyper-viscous diffusion for vector potential
+    if(diffusion_a4 > 0.0){
+      tmpA2 = Grad2_par2new(Psi);
+      mesh->communicate(tmpA2);
+      tmpA2.applyBoundary();
+      ddt(Psi) -= diffusion_a4 * Grad2_par2new(tmpA2);
+    }
 
     // Vacuum solution
     if(relax_j_vac) {
@@ -1300,9 +1320,14 @@ int physics_run(BoutReal t)
   if(viscos_par > 0.0)
     ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
   
-    //xia: 4th order diffusion of velocity
-  if(diffusion_U4 > 0.0)
-    ddt(U) -= diffusion_U4 * Grad2_par2new(Grad2_par2new(U));
+  //xqx: parallel hyper-viscous diffusion for vorticity
+  if(diffusion_u4 > 0.0){
+    tmpU2 = Grad2_par2new(U);
+    mesh->communicate(tmpU2);
+    tmpU2.applyBoundary();
+    //    tmpU2.applyBoundary("neumann");
+    ddt(U) -= diffusion_u4 * Grad2_par2new(tmpU2);
+  }
 
   if(viscos_perp > 0.0)
     ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
@@ -1353,13 +1378,13 @@ int physics_run(BoutReal t)
   if(diffusion_par > 0.0)
     ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
 
-  //another choice
-  //  if(diffusion_par > 0.0)
-  //  ddt(P) += diffusion_par * Grad2_par2new(P)
-
-  //M: 4th order Parallel diffusion terms 
-  if(diffusion_p4 > 0.0)
-    ddt(P) -= diffusion_p4 * Grad2_par2new(Grad2_par2new(P));
+  //xqx: parallel hyper-viscous diffusion for pressure
+  if(diffusion_p4 > 0.0){
+    tmpP2 = Grad2_par2new(P);
+    mesh->communicate(tmpP2);
+    tmpP2.applyBoundary();
+    ddt(P) = diffusion_p4 * Grad2_par2new(tmpP2);
+  }
 
   // xia: rf power
   if(Prf>0.0)
