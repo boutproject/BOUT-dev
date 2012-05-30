@@ -82,7 +82,7 @@ pro set_mesh_shcir, d1, d2, d3, plotmesh=plotmesh, export=export, noreset=norese
 
 
 ;-Calculate the Shafranov shift for centers
-  Get_delta, deltarr=deltarrc, psiarr=psiarrc, rhoarr=rhoarrc, noreset=noreset 
+  Get_delta, deltarr=deltarrc, psiarr=psiarrc, rhoarr=rhoarrc, noreset=noreset, qarr=qarr
 
 ;-Calculate the Shafranov shift for corners up in rho
   Get_delta, deltarr=deltarrp, psiarr=psiarrp, rhoarr=rhoarrp, noreset=noreset 
@@ -176,6 +176,7 @@ pro set_mesh_shcir, d1, d2, d3, plotmesh=plotmesh, export=export, noreset=norese
       bpol_com:bpol*1e-4,$
       bphi_com:bphi*1e-4,$
       b_com:b*1e-4,$
+      qarr:qarr, $
       nx_com:Ntheta,$
       ny_com:Nrho,$
       ixpt1_com:0,$

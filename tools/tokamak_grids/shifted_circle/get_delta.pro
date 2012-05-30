@@ -248,7 +248,7 @@ end
 
 
 pro get_delta, rarr=rarr, deltaparr=deltaparr, deltarr=deltarr, psiarr=psiarr, rhoarr=rhoarr, $
-set=set, show=show, noreset=noreset
+set=set, show=show, noreset=noreset, qarr=qarr
 ;
 ;-calculate shafranov shift Delta(rho)
 ;-------------------------------------------;
@@ -268,103 +268,105 @@ set=set, show=show, noreset=noreset
   deltaparr=fltarr(nn)
   psiarr=fltarr(nn)
 
-    for i=0,nn-1 do begin
-     ;
-     deltaparr[i]=integrand2(rarr[i]/p.amin) 
-     ;
-     deltarr[i]=p.Delta0 + p.amin*QROMB( 'integrand2', 0, rarr[i]/p.amin) 
-     ;
-     psiarr[i]=p.B0*QROMB('integrand3',0,rarr[i])
-     ;
-    endfor
+  for i=0,nn-1 do begin
+    ;
+    deltaparr[i]=integrand2(rarr[i]/p.amin) 
+    ;
+    deltarr[i]=p.Delta0 + p.amin*QROMB( 'integrand2', 0, rarr[i]/p.amin) 
+    ;
+    psiarr[i]=p.B0*QROMB('integrand3',0,rarr[i])
+    ;
+  endfor
+  
+  qarr = qprof(rarr/p.amin)
+  
 
- if keyword_set(SHOW) then begin
+  if keyword_set(SHOW) then begin
 
-   print,'Showing contours'
-   !p.multi=[0,2,2,0,0]
+    print,'Showing contours'
+    !p.multi=[0,2,2,0,0]
 
 
-     ;-plot a few r=const lines
-     IF (1) then begin
-     plot,/nod, [p.R0-p.Delta0-p.amin,p.R0+p.Delta0+p.amin],[-1,1]*p.amin,/iso,$
-       tit='With theta=const lines', xtit='R [cm]', ytit='Z [cm]'
-     for i=0,nn-1,10 do begin
-       ntheta=101
-       theta=2*!PI*findgen(ntheta)/(ntheta-1)
+    ;-plot a few r=const lines
+    IF (1) then begin
+      plot,/nod, [p.R0-p.Delta0-p.amin,p.R0+p.Delta0+p.amin],[-1,1]*p.amin,/iso,$
+        tit='With theta=const lines', xtit='R [cm]', ytit='Z [cm]'
+      for i=0,nn-1,10 do begin
+        ntheta=101
+        theta=2*!PI*findgen(ntheta)/(ntheta-1)
         ;rnow=p.amin*i/(nn-1)
         rnow=rarr[i]
         rline_r=p.R0+deltarr[i]+rnow*cos(theta)
         rline_z=rnow*sin(theta)
-       oplot, rline_r,rline_z
-     endfor
-     ENDIF
+        oplot, rline_r,rline_z
+      endfor
+    ENDIF
 
     ;-overplot a few theta=const lines
     IF (1) then begin
-    ntheta=21
-    for i=0,ntheta-1 do begin
-     ;nr=101
-     ;rr=p.amin*findgen(nr)/(nr-1)
-     ;rr=rarr
-      theta_now=2*!pi*i/(ntheta-1)
-      ;tline_r=p.R0+delta[FIX((nn-1)*rarr/p.amin)]+rarr*cos(theta_now)
-      tline_r=p.R0 + deltarr + rarr*cos(theta_now)
-      tline_z=rarr*sin(theta_now)
-     oplot, tline_r, tline_z
-    endfor
+      ntheta=21
+      for i=0,ntheta-1 do begin
+        ;nr=101
+        ;rr=p.amin*findgen(nr)/(nr-1)
+        ;rr=rarr
+        theta_now=2*!pi*i/(ntheta-1)
+        ;tline_r=p.R0+delta[FIX((nn-1)*rarr/p.amin)]+rarr*cos(theta_now)
+        tline_r=p.R0 + deltarr + rarr*cos(theta_now)
+        tline_z=rarr*sin(theta_now)
+        oplot, tline_r, tline_z
+      endfor
     ENDIF
 
-   oplot, p.R0*[1,1],P.amin*[-2,2], lin=2, thick=2
-   oplot, (p.R0+p.Delta0)*[1,1],P.amin*[-2,2], lin=2, thick=2
-   oplot, [0,(p.R0+2*p.amin)], [0,0], lin=2, thick=2
+    oplot, p.R0*[1,1],P.amin*[-2,2], lin=2, thick=2
+    oplot, (p.R0+p.Delta0)*[1,1],P.amin*[-2,2], lin=2, thick=2
+    oplot, [0,(p.R0+2*p.amin)], [0,0], lin=2, thick=2
 
 
-     IF (1) then begin
-     ;-plot a few r=const lines
+    IF (1) then begin
+      ;-plot a few r=const lines
       plot,/nod, [p.R0-p.Delta0-p.amin,p.R0+p.Delta0+p.amin],[-1,1]*p.amin,/iso,$
-       tit='With theta_new=const lines', xtit='R [cm]', ytit='Z [cm]'
+        tit='With theta_new=const lines', xtit='R [cm]', ytit='Z [cm]'
       for i=0,nn-1,10 do begin
-       ntheta=101
-       theta=2*!PI*findgen(ntheta)/(ntheta-1)
-        rnow=rarr[i] ;;p.amin*i/(nn-1)
+        ntheta=101
+        theta=2*!PI*findgen(ntheta)/(ntheta-1)
+        rnow=rarr[i]            ;;p.amin*i/(nn-1)
         rline_r=p.R0+deltarr[i]+rnow*cos(theta)
         rline_z=rnow*sin(theta)
         oplot, rline_r,rline_z
       endfor
-     ENDIF
+    ENDIF
 
 
 
-     IF (1) then begin 
-     ;-overplot a few theta_new=const lines
+    IF (1) then begin 
+      ;-overplot a few theta_new=const lines
       ntheta=21
       for i=0,ntheta-1 do begin 
-       theta_now=2*!pi*i/(ntheta-1)
-       th=get_theta(rarr,theta_now,/ord)
-       oplot, p.r0+deltarr+rarr*cos(th), rarr*sin(th)
+        theta_now=2*!pi*i/(ntheta-1)
+        th=get_theta(rarr,theta_now,/ord)
+        oplot, p.r0+deltarr+rarr*cos(th), rarr*sin(th)
       endfor
-     ENDIF
+    ENDIF
 
 
-   oplot, p.R0*[1,1],P.amin*[-2,2], lin=2, thick=2
-   oplot, (p.R0+p.Delta0)*[1,1],P.amin*[-2,2], lin=2, thick=2
-   oplot, [0,(p.R0+2*p.amin)], [0,0], lin=2, thick=2
+    oplot, p.R0*[1,1],P.amin*[-2,2], lin=2, thick=2
+    oplot, (p.R0+p.Delta0)*[1,1],P.amin*[-2,2], lin=2, thick=2
+    oplot, [0,(p.R0+2*p.amin)], [0,0], lin=2, thick=2
+
+    plot, rarr,  qarr, thick=2, tit='q(r) and p1(r)', yr=[0,3], xtit='r [cm]'
+    oplot, rarr, npres(rarr/p.amin), thick=2
 
 
-   plot, rarr,  qprof(rarr/p.amin), thick=2, tit='q(r) and p1(r)', yr=[0,3], xtit='r [cm]'
-   oplot, rarr, npres(rarr/p.amin), thick=2
+    plot, rarr, deltarr, tit="Delta(r) and Delta'(r)", thick=2, yr=[-1.,10.], xtit='r [cm]'
+    oplot, rarr, deltaparr, thick=2
 
+    PRINT, "Shift of outer surface: ", deltarr[N_ELEMENTS(deltarr)-1]
 
-   plot, rarr, deltarr, tit="Delta(r) and Delta'(r)", thick=2, yr=[-1.,10.], xtit='r [cm]'
-   oplot, rarr, deltaparr, thick=2
+    ;-show all parameters
+    str=str2str(p)
+    xyouts,10,8,str, col=2
 
-   PRINT, "Shift of outer surface: ", deltarr[N_ELEMENTS(deltarr)-1]
-
-   ;-show all parameters
-   str=str2str(p)
-   xyouts,10,8,str, col=2
-
-  !p.multi=0
- endif
+    !p.multi=0
+  endif
 
 end
