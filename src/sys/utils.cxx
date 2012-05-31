@@ -201,8 +201,15 @@ BoutReal BOUTMAX(BoutReal a, BoutReal b) {
   return (a > b) ? a : b;
 }
 
+BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c) {
+  return BOUTMAX(BOUTMAX(a,b), c);
+}
+
 BoutReal BOUTMIN(BoutReal a, BoutReal b) {
   return (a < b) ? a : b;
+}
+BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c) {
+  return BOUTMIN(BOUTMIN(a,b),c);
 }
 
 bool is_pow2(int x) {

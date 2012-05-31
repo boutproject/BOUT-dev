@@ -63,6 +63,20 @@ typedef BoutReal (*deriv_func)(stencil &); // f
 typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 
 /*******************************************************************************
+ * Limiters
+ *******************************************************************************/
+
+/// Van Leer limiter. Used in TVD code
+BoutReal VANLEER(BoutReal r) {
+  return r + fabs(r)/(1.0 + fabs(r));
+}
+
+// Superbee limiter
+BoutReal SUPERBEE(BoutReal r) {
+  return BOUTMAX(0.0, BOUTMIN(2.*r, 1.0), BOUTMIN(r, 2.));
+}
+
+/*******************************************************************************
  * Basic derivative methods.
  * All expect to have an input grid cell at the same location as the output
  * Hence convert cell centred values -> centred values, or left -> left
@@ -137,11 +151,6 @@ BoutReal VDDX_U1(stencil &v, stencil &f) {
 BoutReal VDDX_U4(stencil &v, stencil &f) {
   return v.c >= 0.0 ? v.c*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
     : v.c*(-4.*f.m + 12.*f.p - 2.*f.pp - 6.*f.c)/12.;
-}
-
-/// Van Leer limiter. Used in TVD code
-BoutReal VANLEER(BoutReal r) {
-  return r + fabs(r)/(1.0 + fabs(r));
 }
 
 /// TVD upwinding (2nd order)
@@ -283,6 +292,35 @@ BoutReal FDDX_NND(stencil &v, stencil &f) {
   BoutReal hm = flm + frm; 
   
   return hp - hm;
+}
+
+//////////////////////// MUSCL scheme ///////////////////////
+
+void DDX_KT_LR(const stencil &f, BoutReal &fLp, BoutReal &fRp, BoutReal &fLm, BoutReal &fRm) {
+  // Limiter functions
+  BoutReal phi   = SUPERBEE( (f.c - f.m) / (f.p - f.c) );
+  BoutReal phi_m = SUPERBEE( (f.m - f.mm) / (f.c - f.m) );
+  BoutReal phi_p = SUPERBEE( (f.p - f.c) / (f.pp - f.p) );
+
+  fLp = f.c + 0.5*phi*(f.p - f.c);
+  fRp = f.p - 0.5*phi_p*(f.pp - f.p);
+
+  fLm = f.m + 0.5*phi_m*(f.c - f.m);
+  fRm = f.c - 0.5*phi*(f.p - f.c);
+}
+
+// du/dt = d/dx(f)  with maximum local velocity Vmax
+BoutReal DDX_KT(const stencil &f, const stencil &u, const BoutReal Vmax) {
+  BoutReal uLp, uRp, uLm, uRm;
+  BoutReal fLp, fRp, fLm, fRm;
+  
+  DDX_KT_LR(u, uLp, uRp, uLm, uRm);
+  DDX_KT_LR(f, fLp, fRp, fLm, fRm);
+  
+  BoutReal Fm = 0.5*( fRm + fLm - Vmax*(uRm - uLm));
+  BoutReal Fp = 0.5*( fRp + fLp - Vmax*(uRp - uLp));
+  
+  return Fm - Fp;
 }
 
 /*******************************************************************************
@@ -1117,6 +1155,27 @@ const Field3D DDY(const Field3D &f, DIFF_METHOD method)
 const Field2D DDY(const Field2D &f)
 {
   return applyYdiff(f, fDDY, mesh->dy);
+}
+
+const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax) {
+  Field3D result;
+  result.allocate(); // Make sure data allocated
+  BoutReal ***r = result.getData();
+  
+  bindex bx;
+  start_index(&bx, RGN_NOBNDRY);
+
+  stencil fs, us;
+  do {
+    for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
+      F.setYStencil(fs, bx);
+      u.setYStencil(us, bx);
+      
+      r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy[bx.jx][bx.jy];
+    }
+  }while(next_index2(&bx));
+  
+  return result;
 }
 
 ////////////// Z DERIVATIVE /////////////////

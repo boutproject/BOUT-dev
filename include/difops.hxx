@@ -47,6 +47,9 @@ const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=C
 const Field3D Grad_par(const Field3D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
 
+const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
+const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
+
 // b0 dot Grad  -  (1/B)b0 x Grad(apar) dot Grad
 const Field3D Grad_parP(const Field3D &apar, const Field3D &f);
 
@@ -62,6 +65,10 @@ const Field2D Div_par(const Field2D &f);
 const Field3D Div_par(const Field3D &f, 
 		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
+const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
+
 
 // second parallel derivative
 const Field2D Grad2_par2(const Field2D &f);

@@ -89,9 +89,26 @@ const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) {
   return Grad_par(var, outloc, method);
+}
+
+// Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
+const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Grad_par( Field3D, Field3D, Field2D )");
+#endif
+  Field2D sg = sqrt(mesh->g_22);
+  Field3D result = DDY_MUSCL(f, var, sg*Vmax)/sg;
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+  return result;
+}
+
+const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
+  Field2D V = Vmax;
+  return Grad_par(f, var, V);
 }
 
 /*******************************************************************************
@@ -269,8 +286,7 @@ const Field2D Div_par(const Field2D &f)
   return result;
 }
 
-const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Div_par( Field3D )");
 #endif
@@ -288,9 +304,28 @@ const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return Div_par(f, outloc, method);
+}
+
+
+const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
+#ifdef CHECK
+  int msg_pos = msg_stack.push("Div_par( Field3D, Field3D, Field2D )");
+#endif
+
+  Field3D result = mesh->Bxy*Grad_par(f/mesh->Bxy, var, Vmax/mesh->Bxy);
+  
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
+const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
+  Field2D V = Vmax;
+  return Div_par(f, var, V);
 }
 
 /*******************************************************************************

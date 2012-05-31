@@ -66,7 +66,9 @@ BoutReal SQ(BoutReal x);
 int ROUND(BoutReal x);
 int BOUTMAX(int a, int b);
 BoutReal BOUTMAX(BoutReal a, BoutReal b);
+BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c);
 BoutReal BOUTMIN(BoutReal a, BoutReal b);
+BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c);
 bool is_pow2(int x); // Check if a number is a power of 2
 BoutReal SIGN(BoutReal a); // Return +1 or -1 (0 -> +1)
 BoutReal MINMOD(BoutReal a, BoutReal b);

@@ -46,6 +46,7 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD 
 const Field3D DDY(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc);
 const Field3D DDY(const Field3D &f, DIFF_METHOD method);
 const Field2D DDY(const Field2D &f);
+const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax);
 
 const Field3D DDZ(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT, bool inc_xbndry = false);
 const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry=false);
