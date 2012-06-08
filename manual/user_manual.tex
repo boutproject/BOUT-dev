@@ -1617,6 +1617,8 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
 
 \subsubsection{Expressions}
+\index{FieldFactory}
+\index{function}
 
 If a more general function is needed, a variable can be initialised using the \code{function} option
 for each variable. This overrides the original method for that variable. e.g.
@@ -1634,6 +1636,46 @@ scale = 1.0e-5
 function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
 \end{lstlisting}
 will use the original method to set $U$, but use the given expression to set $p$.
+
+The expression used can include the following values
+\begin{table}[htb!]
+\centering
+\caption{Initialisation expression values}
+\label{tab:initexprvals}
+\begin{tabular}{c | c }
+\hline
+Name & Description \\
+\hline
+x & $x$ position between $0$ and $1$ \\
+y & $y$ position between $0$ and $2\pi$\\
+z & $z$ position between $0$ and $2\pi$\\
+pi & $3.1415\ldots$\\
+\hline
+\end{tabular}
+\end{table}
+
+and the following functions
+\begin{table}[htb!]
+\centering
+\caption{Initialisation expression functions}
+\label{tab:initexprfunc}
+\begin{tabular}{l | c }
+\hline
+Name & Description \\
+\hline
+abs(x) & Absolute value $\left|x\right|$\\
+cos(x) & Cosine\\
+cosh(x) & Hyperbolic cosine\\
+gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
+gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
+sin(x) & Sine\\
+sinh(x) & Hyperbolic sine\\
+sqrt(x) & $\sqrt{x}$\\
+H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
+\hline
+\end{tabular}
+\end{table}
+
 
 \subsection{Boundary conditions}
 \label{sec:bndryopts}
