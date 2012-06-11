@@ -68,8 +68,11 @@ class Datafile {
   bool flush;    // Flush after every write?
   bool guards;   // Write guard cells?
   bool low_prec; // Low precision?
+  bool openclose;
 
   DataFormat *file;
+  char filename[512];
+  bool appending;
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>

@@ -48,7 +48,7 @@
 // Global variables, shared between Datafile objects
 bool Datafile::enabled = true;
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), openclose(true), file(NULL) {
   if(opt == NULL)
     return; // To allow static initialisation
   
@@ -58,9 +58,10 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), l
   OPTION(opt, flush, true);     // Safer. Disable explicitly if required
   OPTION(opt, guards, true);    // Compatible with old behavior
   OPTION(opt, low_prec, false); // High precision by default
+  OPTION(opt, openclose, true); // Open and close every write or read
 }
 
-Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), low_prec(other.low_prec), file(NULL), int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), low_prec(other.low_prec), openclose(other.openclose), file(NULL), int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   
   // Same added variables, but the file not the same 
 }
@@ -70,6 +71,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   flush        = rhs.flush;
   guards       = rhs.guards;
   low_prec     = rhs.low_prec;
+  openclose    = rhs.openclose;
   file         = NULL; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
@@ -89,7 +91,6 @@ bool Datafile::openr(const char *format, ...) {
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  char filename[512];
   va_start(ap, format);
     vsprintf(filename, format, ap);
   va_end(ap);
@@ -100,11 +101,13 @@ bool Datafile::openr(const char *format, ...) {
   if(!file)
     return false;
   
-  // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openr(filename, MYPE))
-    return false;
+  if(!openclose) {
+    // Open the file now. Otherwise defer until later
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openr(filename, MYPE))
+      return false;
+  }
   
   return true;
 }
@@ -116,7 +119,6 @@ bool Datafile::openw(const char *format, ...) {
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  char filename[512];
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
@@ -127,12 +129,15 @@ bool Datafile::openw(const char *format, ...) {
   if(!file)
     return false;
   
-  // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE))
-    return false;
-
+  appending = false;
+  if(!openclose) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openw(filename, MYPE))
+      return false;
+  }
+  
   return true;
 }
 
@@ -143,7 +148,6 @@ bool Datafile::opena(const char *format, ...) {
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
-  char filename[512];
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
@@ -153,20 +157,23 @@ bool Datafile::opena(const char *format, ...) {
   
   if(!file)
     return false;
-  
-  // Open the file
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  if(!file->openw(filename, MYPE, true))
-    return false;
 
+  appending = true;
+  if(!openclose) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openw(filename, MYPE, true))
+      return false;
+  }
   return true;
 }
 
 void Datafile::close() {
   if(!file)
     return;
-  file->close();
+  if(!openclose)
+    file->close();
 }
 
 void Datafile::setLowPrecision() {
@@ -256,6 +263,14 @@ void Datafile::add(Vector3D &f, const char *name, int grow) {
 
 bool Datafile::read() {
   Timer timer("io");  ///< Start timer. Stops when goes out of scope
+
+  if(openclose) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openr(filename, MYPE))
+      return false;
+  }
   
   if(!file->is_valid())
     return false;  
@@ -344,6 +359,11 @@ bool Datafile::read() {
     it->ptr->covariant = it->covar;
   }
 
+  if(openclose) {
+    // Close the file
+    file->close();
+  }
+
   return true;
 }
 
@@ -351,6 +371,15 @@ bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
   
+  if(openclose) {
+    // Open the file
+    int MYPE;
+    MPI_Comm_rank(BoutComm::get(), &MYPE);
+    if(!file->openw(filename, MYPE, appending))
+      return false;
+    appending = true;
+  }
+
   if(!file)
     return false;
   
@@ -435,6 +464,9 @@ bool Datafile::write() {
     }
   }
   
+  if(openclose)
+    file->close();
+
   return true;
 }
 
