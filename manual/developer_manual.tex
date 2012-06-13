@@ -586,8 +586,6 @@ The current source code files are:
     conditions. See section~\ref{sec:BoundaryRegion} for more details.
   \item \file{boundary\_standard.cxx} implements some standard boundary
     operations and modifiers such as \code{Neumann} and \code{Dirichlet}.
-  \item \file{boutmesh.cxx} implements a mesh interface which is compatible
-    with BOUT grid files.
   \item \file{difops.cxx} is a collection of differential operators on scalar
     fields. It uses the differential methods in \file{derivs.cxx} and the
     metric tensor components in \code{Mesh} to compute operators.
@@ -596,9 +594,26 @@ The current source code files are:
   \item \file{interpolation.cxx} contains functions for interpolating fields
   \item \file{mesh.cxx} is the base class for the \code{Mesh} object. Contains
     routines useful for all \code{Mesh} implementations.
-  \item \file{quiltmesh.cxx} is an implementation of \code{Mesh} which is
-    currently under development. It is intended to handle more general mesh
-    shapes and topology than the currently used \code{BoutMesh} can handle.
+  \item impls
+    \begin{itemize}
+    \item \file{domain.cxx}
+    \item \file{domain.hxx}
+    \item \file{partition.cxx}
+    \item \file{partition.hxx}
+    \item bout
+      \begin{itemize}
+      \item \file{boutmesh.cxx} implements a mesh interface which is compatible
+	with BOUT grid files.
+      \item \file{boutmesh.hxx}
+      \end{itemize}
+    \item quilt
+      \begin{itemize}
+      \item \file{quiltmesh.cxx} is an implementation of \code{Mesh} which is
+	currently under development. It is intended to handle more general mesh
+	shapes and topology than the currently used \code{BoutMesh} can handle.
+      \item \file{quiltmesh.hxx}
+      \end{itemize}
+    \end{itemize}
   \end{itemize}
 \item physics
   \begin{itemize}
@@ -647,6 +662,7 @@ The current source code files are:
   \end{itemize}
 \item sys
   \begin{itemize}
+  \item \file{boutcomm.cxx}
   \item \file{boutexception.cxx} is an exception class which are used
     for error handling
   \item \file{comm\_group.cxx} provides routines for non-blocking collective 
@@ -669,6 +685,8 @@ The current source code files are:
     help to find errors.
   \item \file{options.cxx} provides an interface to the BOUT.inp option file
     and the command-line options.
+  \item \file{optionsreader.cxx}
+  \item \file{output.cxx}
   \item \file{range.cxx} Provides the RangeIterator class, used to iterate over a set
     of ranges. Described in section~\ref{sec:rangeiterator}
   \item \file{stencils.cxx} contains methods to operate on stencils which are
@@ -677,6 +695,12 @@ The current source code files are:
     and file I/O. Described in section~\ref{sec:timerclass}
   \item \file{utils.cxx} contains miscellaneous small useful routines
     such as allocating and freeing arrays.
+  \item options
+    \begin{itemize}
+    \item \file{optionparser.hxx}
+    \item \file{options\_ini.cxx}
+    \item \file{options\_ini.hxx}
+    \end{itemize}
   \end{itemize}
 \end{itemize}
 
@@ -1004,7 +1028,7 @@ Any & Any & Interpolate to centre, use central stencil, then interpolate \\
 \note{This part of the code needs some algorithm improvement (better parallel tridiagonal solver).}
 
 
-The code in \file{invert\_laplace.cxx} solves the equation:
+The Laplacian inversion code solves the equation:
 \[
 d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
 \]
@@ -1014,29 +1038,53 @@ they differ between serial and parallel versions.
 Serial inversion can currently either be done using a tridiagonal solver
 (Thomas algorithm), or a band-solver (allowing $4^{th}$-order differencing).
 
-The coefficients of the tridiagonal matrix are calculated in a subroutine:
+
+To support multiple implementations, a base class \lstinline!Laplacian! is defined
+in \file{include/invert\_laplace.hxx}. This defines a set of functions which all
+implementations must provide:
 \begin{lstlisting}
-void laplace_tridag_coefs(int jx, int jy, int jz, 
-                          dcomplex &a, dcomplex &b, dcomplex &c, 
-                          const Field2D *ccoef, const Field2D *d);
+class Laplacian {
+ public:
+  virtual void setCoefA(const Field2D &val) = 0;
+  virtual void setCoefC(const Field2D &val) = 0;
+  virtual void setCoefD(const Field2D &val) = 0;
+ 
+  virtual const FieldPerp solve(const FieldPerp &b) = 0;
+}
 \end{lstlisting}
-$c$ and $d$ are optional. Note: this is also used by \texttt{Delp2}. 
+At minimum, all implementations must provide a way to set coefficients, and
+a solve function which operates on a single FieldPerp (X-Y) object at once.
+Several other functions are also virtual, so default code exists but
+can be overridden by an implementation.
 
 
+For convenience, the \lstinline!Laplacian! base class also defines a function to
+calculate coefficients in a Tridiagonal matrix
 \begin{lstlisting}
-void par_tridag_matrix(dcomplex **avec,dcomplex **bvec,
-                       dcomplex **cvec,
-                       dcomplex **bk, int jy, int flags, 
-                       const Field2D *a = NULL, 
-                       const Field2D *ccoef=NULL,
-                       const Field2D *d=NULL)
+  void tridagCoefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
 \end{lstlisting}
+
+For the user of the class, some static functions are defined:
+\begin{lstlisting}
+  static Laplacian* create(Options *opt = NULL);
+  static Laplacian* defaultInstance();
+\end{lstlisting}
+
+The create function allows new Laplacian implementations to be created, based
+on options. To use the options in the \texttt{[laplace]} section, just use the default:
+\begin{lstlisting}
+  Laplacian* lap = Laplacian::create();
+\end{lstlisting}
+
+The code for the \lstinline!Laplacian! base class is in \file{src/invert/laplace/invert\_laplace.cxx}. The actual creation of new Laplacian implementations is done in the \lstinline!LaplaceFactory! class, defined in \file{src/invert/laplace/laplacefactory.cxx}. This file includes all the headers for the implementations, and chooses which one to create based on the ``type'' setting in the input options. This factory therefore provides a single point of access to the underlying Laplacian inversion implementations.
+
+Each of the implementations is in a subdirectory of \file{src/invert/laplace/impls} and is
+discussed below.
+
 
 \subsection{Serial tridiagonal solver}
 
-A common problem is to invert a differential equation involving the perpendicular
-Laplacian operator $\nabla_\perp^2$. Routines to do this are implemented in
-\file{src/invert/invert\_laplace.cxx}, header file \file{invert\_laplace.hxx}.
+This is the simplest implementation, and is in \file{src/invert/laplace/impls/serial\_tri/}
 
 \subsection{Serial band solver}
 
@@ -1346,35 +1394,32 @@ The boundary condition code (see section~\ref{sec:boundaries}) needs
 ways to loop over the boundary regions, without needing to know
 the details of the mesh.
 
+At the moment two mechanisms are provided: A RangeIterator over upper and lower Y boundaries,
+and a vector of BoundaryRegion \index{BoundaryRegion} objects.
+
 \begin{lstlisting}
 // Boundary region iteration
-RangeIter* iterateBndryLowerY();
-RangeIter* iterateBndryUpperY();
+virtual const RangeIterator iterateBndryLowerY() const = 0;
+virtual const RangeIterator iterateBndryUpperY() const = 0;
+
+bool hasBndryLowerY();
+bool hasBndryUpperY();
 
 bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
 \end{lstlisting}
   
-The \code{RangeIter} class is a simple iterator \index{RangeIter}
-\begin{lstlisting}
-class RangeIter {
- public:
-  virtual void first() = 0;
-  virtual void next() = 0;
-  virtual bool isDone() = 0;
-  
-  int ind; // The index
-};
-\end{lstlisting}
-which allows looping over the X indices in the boundary. For example, in
-\code{boundary.cxx} to loop over the upper Y boundary of a 2D variable
+The \code{RangeIterator} class is an iterator \index{RangeIterator}
+which allows looping over a set of indices. Details are given in
+section~\ref{sec:rangeiterator}. For example, in
+\file{src/solver/solver.cxx} to loop over the upper Y boundary of a 2D variable
 \code{var}:
 \begin{lstlisting}
-RangeIter* xr = mesh->iterateBndryUpperY(); // Upper boundary
-for(xr->first(); !xr->isDone(); xr->next())
-  for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
-    var[xr->ind][jy] = ...
-  }
+for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
+  ...
+}
 \end{lstlisting}
+
+The \lstinline!BoundaryRegion! class is defined in \file{include/boundary\_region.hxx}
 
 \subsection{Initial profiles}
 \index{variable initialisation}
