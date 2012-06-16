@@ -56,6 +56,7 @@
 \renewcommand{\headrulewidth}{0.3pt}
 
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
 
 %% commands for boxes with important notes
@@ -505,10 +506,14 @@ These tests should all pass, but if not please send an error report to
 \item The run.log.* files in the directory of the test which failed
 \end{itemize}
 
+If the tests pass, congratulations! You have now got a working installation of BOUT++. 
+Unless you want to use some experimental features of BOUT++, skip to section~\ref{sec:running}
+to start running the code.
+
 \section{Advanced installation options}
 \label{sec:advancedinstall}
 
-This section describes some common isses encountered when configuring
+This section describes some common issues encountered when configuring
 and compiling BOUT++, and how to configure optional libraries like
 SUNDIALS and PETSc.
 
@@ -683,17 +688,117 @@ installed, this points to the IDL install (e.g. something like \texttt{/usr/comm
 \section{Running BOUT++}
 \label{sec:running}
 
-To use the BOUT++ library, set an environment variable {\bf BOUT\_TOP} to point to the BOUT++ root
-directory (the directory containing make.config and configure). Actually this is not strictly true since
-you can compile the examples by just running
-\begin{verbatim}
-gmake examples
-\end{verbatim}
-in the BOUT++ root directory, but setting {\bf BOUT\_TOP} lets you compile examples in different
-directories, and makes it easier to develop cases.
+The \texttt{examples/} directory contains some test cases for a variety of fluid models. The ones starting
+\file{test-} are short tests, which often just run a part of the code rather than a complete simulation. 
+The simplest example to start with is \file{examples/conduction/}. This solves a single equation for
+a 3D scalar field $T$:
+\[
+\deriv{T}{t} = \nabla_{||}\left(\chi\partial_{||}\right)
+\]
+There are several files involved:
+\begin{itemize}
+\item \file{conduction.cxx} contains the source code which specifies the equation to solve
+\item \file{conduct\_grid.nc} is the grid file, which in this case just specifies the number
+  of grid points in $X$ and $Y$ (\code{nx} \& \code{ny}) with everything else being left as the default (e.g. grid
+  spacings dx and dy are $1$, the metric tensor is the identity matrix). For details of the
+  grid file format, see section~\ref{sec:gridgen}.
+\item \file{generate.py} is a Python script to create the grid file. In this case it just
+  writes nx and ny 
+\item \file{data/BOUT.inp} is the settings file, specifying how many output timesteps to take, 
+  differencing schemes to use, and many other things. In this case it's mostly empty so the defaults
+  are used.
+\end{itemize}
 
-The \texttt{examples/} directory contains some test cases for a variety of fluid models. In many cases
-there are two scripts for running and then an IDL script to plot the results:
+First you need to compile the example:
+\begin{verbatim}
+$ gmake
+\end{verbatim}
+which should print out something along the lines of
+\begin{verbatim}
+  Compiling  conduction.cxx
+  Linking conduction
+\end{verbatim}
+If you get an error, most likely during the linking stage, you may need to go back and make sure the
+libraries are all set up correctly. A common problem is mixing MPI implementations, for example compiling NetCDF using Open MPI and then BOUT++ with MPICH2. Unfortunately the solution is to recompile everything with the same compiler.
+
+Then try running the example. If you're running on a standalone server, desktop or laptop then try:
+\begin{verbatim}
+$ mpirun -np 2 ./conduction
+\end{verbatim}
+If you're running on a cluster or supercomputer, you should find out how to submit jobs. This varies, but
+usually on these bigger machines there will be a queueing system and you'll need to use \code{qsub},
+\code{msub}, \code{llsubmit} or similar to submit jobs. 
+
+When the example runs, it should print a lot of output. This is recording all the settings being used by the
+code, and is also written to log files for future reference. The test should take a few seconds to run, and
+produce a bunch of files in the \file{data/} subdirectory.
+\begin{itemize}
+\item \file{BOUT.log.*} contains a log from each process, so because we ran with ``-np 2'' there should be 2 logs. 
+  The one from processor $0$ will be the same as what was printed to the screen. This is mainly useful because
+  if one process crashes it may only put an error message into its own log.
+\item \file{BOUT.restart.*.nc} are the restart files for the last time point. 
+  As of June 2012 each processor saves its own state in a separate file, but this is being worked on.
+\item \file{BOUT.dmp.*.nc} contain the output data, including time history. As with the restart
+  files, each processor currently outputs a separate file.
+\end{itemize}
+
+Restart files allow the run to be restarted from where they left off:
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart
+\end{verbatim}
+This will delete the output data \file{BOUT.dmp.*.nc} files, and start again. If you want to keep the output
+from the first run, add ``append'' 
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart append
+\end{verbatim}
+which will then append any new outputs to the end of the old data files.
+
+To analyse the output of the simulation, cd into the \file{data} subdirectory and start IDL.
+If you don't have IDL, don't panic as all this is also possible in Python and discussed
+in section~\ref{sec:pythonroutines}. First, list the variables in one of the data files:
+\begin{verbatim}
+IDL> print, file_list("BOUT.dmp.0.nc")
+iteration MXSUB MYSUB MXG MYG MZ NXPE NYPE BOUT_VERSION t_array ZMAX ZMIN T
+\end{verbatim}
+All of these except '\code{T}' are in all output files, and they contain information about
+the layout of the mesh so that the data can be put in the correct place. The most useful variable
+is '\code{t\_array}' which is a 1D array of simulation output times. To read this, we can
+use the \code{collect} function:
+\begin{verbatim}
+IDL> time = collect(var="t_array")
+IDL> print, time
+      1.10000      1.20000      1.30000      1.40000      1.50000 ...
+\end{verbatim}
+The number of variables in an output file depends on the model being solved, which in this
+case consists of a single scalar field '\code{T}'. To read this into IDL, again use \code{collect}:
+\begin{verbatim}
+IDL> T = collect(var="T")
+IDL> help, T
+T               FLOAT     = Array[5, 64, 1, 20]
+\end{verbatim}
+This is a 4D variable, arranged as \code{[x, y, z, t]}. The $x$ direction has 5 points, consisting
+of 2 points either side for the boundaries and one point in the middle which is evolving. This case
+is only solving a 1D problem in $y$ with 64 points so to display an animation of this
+\begin{verbatim}
+IDL> showdata, T[2,*,0,*]
+\end{verbatim}
+which selects the only evolving $x$ point, all $y$, the only $z$ point, and all time points.
+If given 3D variables, showdata will display an animated surface 
+\begin{verbatim}
+IDL> showdata, T[*,*,0,*]
+\end{verbatim}
+and to make this a coloured contour plot 
+\begin{verbatim}
+IDL> showdata, T[*,*,0,*], /cont
+\end{verbatim}
+
+
+The next example to look at is \file{test-wave}, which is solving a wave equation using
+\[
+\deriv{f}{t} = \partial_{||} g \qquad \deriv{g}{t} = \partial_{||} f 
+\]
+using two different methods. Other examples contain two scripts: One for running the example and then an IDL script
+to plot the results:
 \begin{verbatim}
 ./runcase.sh
 idl runidl.pro
@@ -703,17 +808,6 @@ Assuming these examples work (which they should), looking through the scripts an
 may give you an idea of how BOUT++ works. More information on setting up and running BOUT++ is given
 in section~\ref{sec:running}, and details of analysing the results using IDL are given in
 section~\ref{sec:output}.
-
-The command to run a parallel code varies between machines, but on most small clusters
-the following command should work:
-\begin{verbatim}
-mpirun -np <num. proc> <command>
-\end{verbatim}
-so to run the \code{highbeta\_reduced} case on 4 processors:
-\begin{verbatim}
-cd <path>/BOUT++/examples/highbeta_elm/
-mpirun -np 4 ./highbeta_reduced
-\end{verbatim}
 
 \subsection{When things go wrong}
 
@@ -782,7 +876,7 @@ The processor number comes next:
 Processor number: 0 of 1
 \end{verbatim}
 This will always be processor number '0' on screen as only the output
-from processor '0' is sent to the terminal. After this comes some
+from processor '0' is sent to the terminal. After this
 the core BOUT++ code reads some options:
 \begin{verbatim}
 	Option /nout = 50 (data/BOUT.inp)
@@ -1242,6 +1336,7 @@ There are many other useful routines in the \texttt{idllib} directory. See the \
 for a short description of each one.
 
 \subsection{Python routines}
+\label{sec:pythonroutines}
 \index{Python}
 There are several modules available for reading
 NetCDF files, so to provide a consistent interface, file access is wrapped into a class DataFile. This
