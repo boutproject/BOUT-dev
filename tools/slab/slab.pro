@@ -205,10 +205,12 @@ PRO slab, output=output, thin=thin, $
   ; Grid spacing
   
   s = file_write(handle, "dx", dx)
+  s = file_write(handle, "dpsi", dx)
   s = file_write(handle, "dy", dy)
   
   s = file_write(handle, "ShiftAngle", ShiftAngle)
   s = file_write(handle, "zShift", zShift)
+  s = file_write(handle, "qinty", zShift)
 ;  s = file_write(handle, "pol_angle", pol_angle)
 ;  s = file_write(handle, "ShiftTorsion", dqdpsi)
 

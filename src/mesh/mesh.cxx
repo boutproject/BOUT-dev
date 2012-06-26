@@ -278,30 +278,34 @@ int Mesh::geometry()
   
   output.write("Calculating differential geometry terms\n");
 
+  if(min(abs(dx)) < 1e-8)
+    throw BoutException("dx magnitude less than 1e-8");
+
+  if(min(abs(dy)) < 1e-8)
+    throw BoutException("dy magnitude less than 1e-8");
+
+  if(fabs(dz) < 1e-8)
+    throw BoutException("dz magnitude less than 1e-8");
+
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    output.write("\tERROR: Diagonal metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    output.write("\tERROR: Diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
   if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    output.write("\tERROR: Off-diagonal metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
   
   if((!finite(g_11)) || (!finite(g_22)) || (!finite(g_33))) {
-    output.write("\tERROR: Diagonal g_ij metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal g_ij metrics are not finite!\n");
   }
   if((min(g_11) <= 0.0) || (min(g_22) <= 0.0) || (min(g_33) <= 0.0)) {
-    output.write("\tERROR: Diagonal g_ij metrics are negative!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal g_ij metrics are negative!\n");
   }
   if((!finite(g_12)) || (!finite(g_13)) || (!finite(g_23))) {
-    output.write("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
   
   // Calculate Christoffel symbol terms (15 independent values)
