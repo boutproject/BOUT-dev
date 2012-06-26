@@ -26,10 +26,11 @@ PRO slab, output=output, thin=thin, $
           Rmaj=Rmaj, rminor=rminor, dr=dr, $
           r_wid=r_wid, $
           q=q, dq=dq, $
-          L_T=L_T, eta_i=eta_i
+          L_T=L_T, eta_i=eta_i, $
+          nx=nx, ny=ny
 
-  nx = 68 ; Radial grid points
-  ny = 32 ; Poloidal (parallel) grid points
+  IF NOT KEYWORD_SET(nx) THEN nx = 68 ; Radial grid points
+  IF NOT KEYWORD_SET(ny) THEN ny = 32 ; Poloidal (parallel) grid points
   
   IF NOT KEYWORD_SET(output) THEN output = "slab_"+STR(nx)+"x"+STR(ny)+".nc"
 
@@ -58,7 +59,7 @@ PRO slab, output=output, thin=thin, $
   IF NOT KEYWORD_SET(q) THEN q = 3
 
   ; Change in q. Will go from q-dq/2 to q+dq/2
-  IF NOT KEYWORD_SET(dq) THEN dq = 0.1
+  IF NOT KEYWORD_SET(dq) THEN dq = 1.
   
   ; Temperature length scale [m]
   IF NOT KEYWORD_SET(L_T) THEN L_T = 0.1
