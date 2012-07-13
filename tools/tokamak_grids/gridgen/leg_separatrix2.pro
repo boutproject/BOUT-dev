@@ -18,7 +18,7 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
                           opt_ri, opt_zi, $ ; Location of primary O-point
                           status=status, $
                           boundary=boundary, $
-                          debug=debug
+                          debug=debug, xpt_psi=xpt_psi
   
   psi = interp_data.f
   nr = interp_data.nx
@@ -35,20 +35,15 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
 
   ; Get value of psi at the X-point
   
-  local_gradient, interp_data, xpt_ri, xpt_zi, f=f0
+  IF KEYWORD_SET(xpt_psi) THEN f0 = xpt_psi ELSE BEGIN
+    local_gradient, interp_data, xpt_ri, xpt_zi, f=f0
+  ENDELSE
   
   ; Get contour lines at this level, i.e. the separatrix
 
   contour_lines, psi, levels=[f0], path_info=info, path_xy=xy
   nsep = N_ELEMENTS(info) ; Will be split into two or more lines
   
-  ; Create a circle around the x-point
-  
-  di = 2 ; Radius of 2 grid points
-  dthe = 2.*!PI*FINDGEN(6)/6.
-  ri = xpt_ri + di*COS(dthe)
-  zi = xpt_zi + di*SIN(dthe)
-
   ncore = 0
   npf = 0
 
@@ -57,9 +52,21 @@ FUNCTION leg_separatrix2, interp_data, R, Z, xpt_ri, xpt_zi, $
     sep_ri = REFORM(xy[0,info[i].offset:(info[i].offset+info[i].n-1)])
     sep_zi = REFORM(xy[1,info[i].offset:(info[i].offset+info[i].n-1)])
     
+    ; Find smallest distance to x-point
+    md = SQRT( MIN((sep_ri - xpt_ri)^2 + (sep_zi - xpt_zi)^2) )
+    
+    ; Create a circle around the x-point
+    di = 2 ; Radius of 2 grid points
+    IF (md GT di) AND (md LT 6) THEN di = md * 1.25
+    dthe = 2.*!PI*FINDGEN(6)/6.
+    ri = xpt_ri + di*COS(dthe)
+    zi = xpt_zi + di*SIN(dthe)
+    
     IF KEYWORD_SET(debug) THEN BEGIN
       plot, sep_ri, sep_zi
       oplot, ri, zi, color=2
+      
+      oplot, [xpt_ri], [xpt_zi], psym=1, color=4
       
       oplot, bndry[0,*], bndry[1,*], color=2, thick=2
     ENDIF
