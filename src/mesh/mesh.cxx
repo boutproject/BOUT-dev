@@ -187,23 +187,20 @@ int Mesh::get(Vector3D &var, const string &name)
  * Communications
  **************************************************************************/
 
-int Mesh::communicate(FieldData &f)
-{
+int Mesh::communicate(FieldData &f) {
   FieldGroup group;
   group.add(f);
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
@@ -211,8 +208,7 @@ int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3)
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
@@ -221,8 +217,7 @@ int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4
   return communicate(group);
 }
 
-comm_handle Mesh::send(FieldData &f)
-{
+comm_handle Mesh::send(FieldData &f) {
   FieldGroup group;
   group.add(f);
   return send(group);
@@ -230,8 +225,7 @@ comm_handle Mesh::send(FieldData &f)
 
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
-int Mesh::communicate(FieldPerp &f)
-{
+int Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
   BoutReal **fd = f.getData();
@@ -270,8 +264,7 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
  * given the contravariant metric tensor terms
  **************************************************************************/
 
-int Mesh::geometry()
-{
+int Mesh::geometry() {
 #ifdef CHECK
   msg_stack.push("Mesh::geometry");
 #endif
@@ -400,8 +393,7 @@ int Mesh::geometry()
   return 0;
 }
 
-int Mesh::calcCovariant()
-{
+int Mesh::calcCovariant() {
 #ifdef CHECK
   msg_stack.push("Mesh::calcCovariant");
 #endif
@@ -488,8 +480,7 @@ int Mesh::calcCovariant()
   return 0;
 }
 
-int Mesh::calcContravariant()
-{
+int Mesh::calcContravariant() {
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -590,14 +581,36 @@ int Mesh::jacobian() {
   return 0;
 }
 
+const vector<int> Mesh::readInts(const string &name, int n) {
+  vector<int> result;
+  
+  // First get a data source
+  GridDataSource* s = findSource(name);
+  if(s) {
+    s->open(name);
+    s->setGlobalOrigin();
+    result.resize(n);
+    if(!s->fetch(&(result.front()), name, n)) {
+      // Error reading
+      s->close();
+      throw BoutException("Could not read integer array '%s'\n", name.c_str());
+    }
+    s->close();
+  }else {
+    // Not found
+    throw BoutException("Missing integer array %s\n", name.c_str());
+  }
+  
+  return result;
+}
+
 /*******************************************************************************
  * Gauss-Jordan matrix inversion
  * used to invert metric tensor
  *******************************************************************************/
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
-int Mesh::gaussj(BoutReal **a, int n)
-{
+int Mesh::gaussj(BoutReal **a, int n) {
   static int *indxc, *indxr, *ipiv, len = 0;
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;
@@ -718,5 +731,4 @@ const Field3D Mesh::averageY(const Field3D &f) {
   }
       
   return result;
-
 }

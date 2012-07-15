@@ -2,9 +2,9 @@
 #ifndef __QUILTMESH_H__
 #define __QUILTMESH_H__
 
-#include "mesh.hxx"
+#include <bout/mesh.hxx>
 
-#include "../domain.hxx"
+#include "quiltdomain.hxx"
 
 /*!
  * Mesh composed of a patchwork of regions. Generalised
@@ -14,8 +14,10 @@ class QuiltMesh : public Mesh {
  public:
   ~QuiltMesh();
   
-  /// Read in the mesh from data sources
   int load();
+
+  /// Read in the mesh from data sources
+  int load(MPI_Comm comm);
 
   /////////////////////////////////////////////
   // Get data
@@ -25,26 +27,36 @@ class QuiltMesh : public Mesh {
   int get(Field3D &var, const char *name);
   int get(Field3D &var, const string &name);
   
+  /////////////////////////////////////////////
+  // Communicate variables
+  
   int communicate(FieldGroup &g); // Returns error code
   comm_handle send(FieldGroup &g);  // Return handle
   int wait(comm_handle handle); // Wait for the handle, return error code
   
+  /////////////////////////////////////////////
   // X communications
+  
   bool firstX();
   bool lastX();
   int sendXOut(BoutReal *buffer, int size, int tag);
   int sendXIn(BoutReal *buffer, int size, int tag);
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
-
+  
+  MPI_Comm getXcomm() const;
+  
+  /////////////////////////////////////////////
   // Y-Z surface gather/scatter operations
   SurfaceIter* iterateSurfaces();
   const Field2D averageY(const Field2D &f);
+  const Field3D averageY(const Field3D &f);
+  
   bool surfaceClosed(int jx, BoutReal &ts); ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
-  RangeIter* iterateBndryLowerY();
-  RangeIter* iterateBndryUpperY();
+  const RangeIterator iterateBndryLowerY() const;
+  const RangeIterator iterateBndryUpperY() const;
   
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
@@ -53,6 +65,11 @@ class QuiltMesh : public Mesh {
   BoutReal GlobalY(int jy); ///< Continuous Y index (0 -> 1)
 
   void outputVars(Datafile &file); ///< Add mesh vars to file
+  
+  /// Global locator functions
+  int XGLOBAL(int xloc);
+  int YGLOBAL(int yloc);
+  
  private:
   
   // Settings
@@ -61,25 +78,38 @@ class QuiltMesh : public Mesh {
   int MXG, MYG;
 
   // Describes regions of the mesh and connections between them
-  Domain *mydomain;
+  QuiltDomain *mydomain;
   
-  /// Read a 1D array of integers
-  const vector<int> readInts(const string &name, int n);
+  /// Describes guard cell regions
+  struct GuardRange {
+    int xmin, xmax;
+    int ymin, ymax;
+    
+    int proc; // Neighbour
+  };
+  vector<GuardRange*> guards;
   
-  
+
   /// Handle for communications
   struct QMCommHandle {
-    vector<MPI_Request> request;
-    vector<int> tag;
-    vector<vector<BoutReal> > buffer;
-    vector<GuardRange*> range; ///< Where is the data going?
     bool inProgress;   ///< Denotes if communication is in progress
     vector<FieldData*> var_list; ///< List of fields being communicated
+    
+    // May have several different requests
+    struct QMRequest {
+      MPI_Request request;
+      int tag;
+      vector<BoutReal> buffer;
+      QuiltDomain* dest; ///< Where is the data going?
+    };
+    vector<QMRequest*> request;
   };
   
   void freeHandle(QMCommHandle *h);
   QMCommHandle* getHandle(int n);
   list<QMCommHandle*> comm_list;
+
+  
 
   void packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data);
   void unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars);

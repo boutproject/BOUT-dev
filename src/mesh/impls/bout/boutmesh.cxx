@@ -46,6 +46,11 @@
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+BoutMesh::BoutMesh(Options *options) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("mesh");
+}
+
 BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();

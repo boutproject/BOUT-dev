@@ -177,7 +177,7 @@ class Mesh {
   virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
-  virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
+  virtual bool surfaceClosed(int jx) { BoutReal ts; return surfaceClosed(jx, ts); } ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
@@ -285,7 +285,9 @@ class Mesh {
   
   GridDataSource *findSource(const char *name);
   GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
-  
+
+  /// Read a 1D array of integers
+  const vector<int> readInts(const string &name, int n);
   
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);

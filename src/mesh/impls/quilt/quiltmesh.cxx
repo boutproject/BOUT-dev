@@ -1,19 +1,28 @@
 
 #include <globals.hxx>
-#include <quiltmesh.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
+#include <output.hxx>
+#include <boutcomm.hxx>
+
+#include <bout/sys/timer.hxx>
 
 #include <algorithm>
 #include <numeric>
 using std::accumulate;
 #include <cmath>
 
+#include "quiltmesh.hxx"
 #include "../partition.hxx"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
 QuiltMesh::~QuiltMesh() {
   
+}
+
+int QuiltMesh::load() {
+  return load(BoutComm::get());
 }
 
 int QuiltMesh::load(MPI_Comm comm) {
@@ -35,10 +44,10 @@ int QuiltMesh::load(MPI_Comm comm) {
   vector<int> ny = readInts("ny", nregions);
   
   // Create domains
-  vector<Domain*> domains;
+  vector<QuiltDomain*> domains;
   
   for(int i=0;i<nregions;i++)
-    domains.push_back(new Domain(nx[i], ny[i]));
+    domains.push_back(new QuiltDomain(nx[i], ny[i]));
   
   // Join domains together
   
@@ -46,9 +55,35 @@ int QuiltMesh::load(MPI_Comm comm) {
   partitionAll(domains[0], NPES);
   
   // Assign domains to processors
+  int p = 0;
   for(Domain::iterator it=domains[0]->begin(); it != domains[0]->end(); it++) {
     // For now very simple numbering. Should cluster nearby domains
+    QuiltDomain *qd = static_cast<QuiltDomain*>( &(*it) );
+    qd->proc = p; p++;
+    if(p == MYPE)
+      mydomain = qd; // Domain for this processor
+  }
+  
+  // Iterate through boundaries to get guard cell regions
+  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
+    Domain::Bndry* b = *it;
+     
+    QuiltDomain* to = (QuiltDomain*) b->getNeighbour(mydomain);
     
+    // Check which boundary(s) this is on
+    if(b->onSide(mydomain, Domain::xlow)) {
+      // get range of indices
+      int min = b->getMin(Domain::xlow);
+      int max = b->getMax(Domain::xlow);
+      
+      // Create new GuardRange 
+      GuardRange *g = new GuardRange();
+      g->xmin = 0;
+      g->xmax = MXG;
+      g->ymin = min;
+      g->ymax = max;
+      g->proc = to->proc;
+    }
   }
 }
 
@@ -128,69 +163,21 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   
   // Read bulk of points
   read2Dvar(s, name, 
-            mydomain->x0, mydomain->y0,  // Coordinates in grid file
+            mydomain->xOrigin(), mydomain->yOrigin(),  // Coordinates in grid file
             MXG, MYG,                    // Coordinates in this processor
-            mydomain->nx, mydomain->ny,  // Number of points to read
+            mydomain->xSize(), mydomain->ySize(),  // Number of points to read
             data);
-  
-  if(mydomain->xin) {
-    // Inner boundary
-    MeshDomain *d = mydomain->xin;
-    read2Dvar(s, name, 
-              d->x0+d->nx-MXG, d->y0, // Coordinates in grid file
-              0, MYG, // Coordinates in this processor
-              MXG, mydomain->ny, 
-              data);
-  }else {
-    // Read from grid
-    read2Dvar(s, name, 
-              mydomain->x0-MXG, mydomain->y0,  // Coordinates in grid file
-              0, MYG,                    // Coordinates in this processor
-              MXG, mydomain->ny,  // Number of points to read
-              data);
-  }
-  
-  if(mydomain->xout) {
-    // Outer boundary
-    MeshDomain *d = mydomain->xout;
-    read2Dvar(s, name, 
-              d->x0, d->y0, // Coordinates in grid file
-              0, MYG, // Coordinates in this processor
-              MXG, mydomain->ny, 
-              data);
-  }else {
-    // Read from grid
-    read2Dvar(s, name, 
-              mydomain->x0+mydomain->nx, mydomain->y0,  // Coordinates in grid file
-              MXG+mydomain->nx, MYG,                    // Coordinates in this processor
-              MXG, mydomain->ny,  // Number of points to read
-              data);
-  }
-  
-  for(vector<GuardRange*>::iterator it=mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
-    MeshDomain *d = (*it)->destination;
-    read2Dvar(s, name, 
-              (*it)->xmin+(*it)->xshift-MXG+d->x0, d->y0-MYG, 
-              (*it)->xmin, (*it)->ymin, // Coordinates in this processor
-              (*it)->xmax - (*it)->xmin + 1, MYG, 
-              data);
-  }
-
-  for(vector<GuardRange*>::iterator it=mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
-    MeshDomain *d = (*it)->destination;
-    read2Dvar(s, name, 
-              (*it)->xmin+(*it)->xshift-MXG+d->x0, d->y0, 
-              (*it)->xmin, (*it)->ymin, // Coordinates in this processor
-              (*it)->xmax - (*it)->xmin + 1, MYG, 
-              data);
-  }
   
   // Close the data source
   s->close();
   
+  // Communicate to get guard cell data
+  Mesh::communicate(var);
+  
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
+  return 0;
 }
 
 int QuiltMesh::get(Field2D &var, const string &name, BoutReal def) {
@@ -215,75 +202,36 @@ int QuiltMesh::communicate(FieldGroup &g) {
 }
 
 comm_handle QuiltMesh::send(FieldGroup &g) {
-  /// Record starting wall-time
-  BoutReal t = MPI_Wtime();
+  /// Start timer
+  Timer timer("comms");
   
   /// Get the list of variables to send
   vector<FieldData*> var_list = g.get();
   
-  // Number of communications
-  int ncomm = mydomain->yup.size() + mydomain->ydown.size();
-  if(mydomain->xin) ncomm++;
-  if(mydomain->xout) ncomm++;
-  
-  QMCommHandle *ch = getHandle(ncomm);
-
-  //////////////////////////////
-  /// Post recieves
-  
-  int cid = 0;
-  
-  if(mydomain->xin != NULL) {
-    // Inner processor
+  // Iterate over boundaries
+  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
+    // Post recieves
+    Domain::Bndry* b = *it;
+     
+    QuiltDomain* to = (QuiltDomain*) b->getNeighbour(mydomain);
     
-    int len = msg_len(var_list, 0, MXG, 0, mydomain->ny);
-    ch->buffer[cid].resize(len);
-    
-    MPI_Irecv(&ch->buffer[cid][0],
-	      len,
-              PVEC_REAL_MPI_TYPE,
-              mydomain->xin->proc, // Destination processor
-	      0,
-	      BoutComm::get(),
-	      &ch->request[0]);
-  }
-  if(mydomain->xout != NULL) {
-    // Outer processor
-    
+    // Check which boundary(s) this is on
+    for(int i = 0; i < 4; i++) {
+      Domain::BndrySide s = static_cast<Domain::BndrySide>(i);
+      if(b->onSide(mydomain, s)) {
+        // get range of indices
+        int min = b->getMin(s);
+        int max = b->getMax(s);
+      }
+    }
   }
   
-  vector<GuardRange*>::iterator it;
-  // Iterate over the upper guard cell ranges
-  for(it = mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
+  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
+    // Send data
     
   }
+ 
   
-  // Iterate over lower guard cell ranges
-  for(it = mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
-    
-  }
-
-  //////////////////////////////
-  /// Send data
-  
-  if(mydomain->xin != NULL) {
-    // Inner processor
-    
-  }
-  if(mydomain->xout != NULL) {
-    // Outer processor
-    
-  }
-  
-  // Iterate over the upper guard cell ranges
-  for(it = mydomain->yup.begin(); it != mydomain->yup.end(); it++) {
-    
-  }
-  
-  // Iterate over lower guard cell ranges
-  for(it = mydomain->ydown.begin(); it != mydomain->ydown.end(); it++) {
-    
-  }
 }
 
 int QuiltMesh::wait(comm_handle handle) {
@@ -295,6 +243,7 @@ int QuiltMesh::wait(comm_handle handle) {
   if(!ch->inProgress)
     return 2;
   
+  /*
   BoutReal t = MPI_Wtime(); // Starting time
   
   if(ch->var_list.empty()) {
@@ -346,7 +295,7 @@ int QuiltMesh::wait(comm_handle handle) {
   freeHandle(ch);
 
   wtime_comms += MPI_Wtime() - t;
-  
+  */
   return 0;
 }
 
@@ -356,25 +305,16 @@ int QuiltMesh::wait(comm_handle handle) {
  ****************************************************************/
 
 bool QuiltMesh::firstX() {
-  return mydomain->xin == NULL;
+  
 }
 
 bool QuiltMesh::lastX() {
-  return mydomain->xout == NULL;
+  
 }
 
 int QuiltMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if(lastX())
     return 1;
-  
-  BoutReal t = MPI_Wtime();
-
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
-	   mydomain->xout->proc,
-	   tag,
-	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
 
   return 0;
 }
@@ -383,15 +323,6 @@ int QuiltMesh::sendXIn(BoutReal *buffer, int size, int tag) {
   if(firstX())
     return 1;
   
-  BoutReal t = MPI_Wtime();
-
-  MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
-	   mydomain->xin->proc,
-	   tag,
-	   BoutComm::get());
-  
-  wtime_comms += MPI_Wtime() - t;
-
   return 0;
 }
 
@@ -403,21 +334,6 @@ comm_handle QuiltMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
 
   QMCommHandle *ch = getHandle(1); // Just one request
   
-  ch->tag[0] = tag;
-  ch->var_list.clear();
-
-  MPI_Irecv(buffer,
-	    size,
-	    PVEC_REAL_MPI_TYPE,
-	    mydomain->xout->proc, // Processor number
-	    tag,
-	    BoutComm::get(),
-	    &ch->request[0]);
-  
-  ch->inProgress = true;
-  
-  wtime_comms += MPI_Wtime() - t;
-  
   return (comm_handle) ch;
 }
 
@@ -428,210 +344,65 @@ comm_handle QuiltMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   BoutReal t = MPI_Wtime();
   
   QMCommHandle *ch = getHandle(1);
-  
-  ch->tag[0] = tag;
-  ch->var_list.clear();
-  
-  MPI_Irecv(buffer,
-	    size,
-	    PVEC_REAL_MPI_TYPE,
-	    mydomain->xin->proc, // Processor number
-	    tag,
-	    BoutComm::get(),
-	    &ch->request[0]);
-  
-  ch->inProgress = true;
-  
-  wtime_comms += MPI_Wtime() - t;
-  
+ 
   return (comm_handle) ch;
+}
+
+MPI_Comm QuiltMesh::getXcomm() const {
+  
+}
+
+SurfaceIter* QuiltMesh::iterateSurfaces() {
+
+}
+
+const Field2D QuiltMesh::averageY(const Field2D &f) {
+
+}
+
+const Field3D QuiltMesh::averageY(const Field3D &f) {
+
+}
+
+bool QuiltMesh::surfaceClosed(int jx, BoutReal &ts) {
+  
+}
+
+const RangeIterator QuiltMesh::iterateBndryLowerY() const {
+
+}
+
+const RangeIterator QuiltMesh::iterateBndryUpperY() const {
+  
+}
+
+vector<BoundaryRegion*> QuiltMesh::getBoundaries() {
+  
+}
+
+BoutReal QuiltMesh::GlobalX(int jx) {
+
+}
+
+BoutReal QuiltMesh::GlobalY(int jy) {
+  
+}
+
+void QuiltMesh::outputVars(Datafile &file) {
+  
+}
+
+int QuiltMesh::XGLOBAL(int xloc) {
+  
+}
+
+int QuiltMesh::YGLOBAL(int yloc) {
+  
 }
 
 /****************************************************************
  * Private functions
  ****************************************************************/
-
-const vector<int> QuiltMesh::readInts(const string &name, int n)
-{
-  vector<int> result;
-  
-  // First get a data source
-  GridDataSource* s = findSource(name);
-  if(s) {
-    s->open(name);
-    s->setOrigin();
-    result.resize(n);
-    if(!s->fetch(&(result.front()), name, n)) {
-      // Error reading
-      s->close();
-      throw BoutException("Could not read integer array '%s'\n", name.c_str());
-    }
-    s->close();
-  }else {
-    // Not found
-    throw BoutException("Missing integer array %s\n", name.c_str());
-  }
-  
-  return result;
-}
-
-
-///////////////////////////////////////////////////////////
-// Partition this grid between NPES processors.
-// Try to make the number of points on each processor approximately
-// equal, and make each domain as square as possible (minimise comms)
-vector<QuiltMesh::MeshDomain*> QuiltMesh::partition(const vector<int> &nx, 
-                                         const vector<int> &ny, 
-                                         int NPES) {
-  int nregions = nx.size();
-  
-  // Number of points in each region ntot = nx * ny
-  vector<int> ntot(nregions);
-  transform(nx.begin(), nx.end(), 
-            ny.begin(),
-            ntot.begin(),
-            std::multiplies<int>());
-  
-  // Sum ntot to get total number of points in the grid
-  int alln =  accumulate( ntot.begin(), ntot.end(), 0 );
-  
-  // Allocate processors to regions
-  vector<int> nproc(nregions);
-  for(int i=0;i<nregions;i++) {
-    nproc[i] = 1; // Need at least one per region
-    // Share the others out
-    nproc[i] += (int) ((NPES-nregions) * ntot[i]) / alln;
-  }
-  // Find number of processors remaining
-  int npremain = NPES - accumulate( nproc.begin(), nproc.end(), 0 );
-  
-  if(npremain != 0) {
-    // Assign extra points to the regions with highest load
-    vector<BoutReal> load(nregions);
-    for(int i=0;i<nregions;i++)
-      load[i] = ((BoutReal) ntot[i]) / ((BoutReal) nproc[i]);
-    
-    for(int p=0;p<npremain;p++) {
-      // Get maximum load index
-      int ind = 0;
-      BoutReal maxload = load[0];
-      for(int i=1;i<nregions;i++)
-        if(load[i] > maxload) {
-          ind = i;
-          maxload = load[i];
-        }else if(fabs(load[i] - maxload) < 1.e-5) {
-          // Equal loads, so add to the one with the largest number of points
-          // (minimise difference in loads after)
-          if(ntot[i] > ntot[ind])
-            ind = i;
-        }
-      // Add a processor to this region
-      nproc[ind]++;
-      load[ind] = ((BoutReal) ntot[ind]) / ((BoutReal) nproc[ind]);
-    }
-  }
-  
-  ///////////////////////////////////////////////////////////
-  // Each region now has ntot points and nproc processors
-  // Divide up each region to produce a set of MeshDomains
-  
-  vector<MeshDomain*> result;
-  vector<int> nxproc(nregions); // Number of X processors in each region
-
-  int proc = 0; // Processor number
-  for(int r = 0; r < nregions; r++) { // Loop over the regions
-    
-    // Allocate all processors first to make it easier to link together
-    for(int i=0;i<nproc[r];i++)
-      result.push_back(new MeshDomain());
-    
-    // Calculate number of processors in X for a square domain (mxsub = mysub)
-    int nxp_sq = (int) (((BoutReal) nx[r])*sqrt(((BoutReal) nproc[r]) / ((BoutReal) ntot[r])));
-    
-    int nxp;
-    for(nxp=nxp_sq; nxp > 0; nxp--) {
-      if(nproc[r] % nxp == 0) {
-        break;
-      }
-    }
-    nxproc[r] = nxp;
-    
-    int nyp = nproc[r] / nxp;
-
-    // Divide up into nyp strips
-    int nyall = (int) ny[r] / nyp;
-    int nyextra = ny[r] % nyp;
-    
-    int nxall = (int) nx[r] / nxp;
-    int nxextra = nx[r] % nxp;
-    
-    // Loop over X processors fastest so X processors are close
-    // together (for inversions, tightly coupled in X).
-    
-    int y0 = 0;
-    for(int yp = 0; yp < nyp; yp++) {
-      int nysub = nyall; // ny on these processors
-      if(yp < nyextra)
-        nysub++; // Extra y point in this processor
-      
-      int x0 = 0;
-      for(int xp = 0; xp < nxp; xp++) {
-        int nxsub = nxall; // nx on these processors
-        if(xp < nxextra)
-          nxsub++;
-        
-        // Create a new domain
-        MeshDomain *d = result[proc];
-        d->proc = proc;
-        d->nx = nxsub;
-        d->ny = nysub;
-        d->x0 = x0;
-        d->y0 = y0;
-        
-        // Inside a region, fill in the communications.
-        // Communication between regions is more complicated
-        // and needs to be done after all regions have been created
-
-        if(xp == 0) {
-          d->xin = NULL; // No inner X processor
-        }else
-          d->xin = result[proc-1];
-        if(xp == (nxp-1)) {
-          d->xout = NULL;
-        }else
-          d->xout = result[proc+1];
-        
-        if(yp > 0) {
-          // Communications going down
-          GuardRange *gd = new GuardRange;
-          gd->xmin = 0;
-          gd->xmax = nxsub-1;
-          gd->destination = result[proc-nxp];
-          gd->xshift = 0;
-          d->ydown.push_back(gd);
-        }
-        if(yp < (nyp-1)) {
-          // Communications going up
-          GuardRange *gu = new GuardRange;
-          gu->xmin = 0;
-          gu->xmax = nxsub-1;
-          gu->destination = result[proc+nxp];
-          gu->xshift = 0;
-          d->yup.push_back(gu);
-        }
-        
-        proc++;
-        x0 += nxsub;
-      }
-      y0 += nysub;
-    }
-  }
-  
-  // Have all regions, connected internally.
-  // Now connect regions together
-
-  return result;
-}
 
 void QuiltMesh::freeHandle(QMCommHandle *h) {
   h->inProgress = false;
@@ -640,15 +411,6 @@ void QuiltMesh::freeHandle(QMCommHandle *h) {
 
 QuiltMesh::QMCommHandle* QuiltMesh::getHandle(int n) {
   QMCommHandle* h;
-  if(!comm_list.empty()) {
-    h = comm_list.front();
-    comm_list.pop_front();
-  }else
-    h = new QMCommHandle;
-  
-  h->buffer.resize(n);
-  h->request.resize(n);
-  h->tag.resize(n);
   h->inProgress = false;
 
   return h;

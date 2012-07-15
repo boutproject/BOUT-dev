@@ -72,6 +72,9 @@ public:
   Domain(int NX, int NY);
   Domain(int NX, int NY, const string &Name);
   ~Domain();
+
+  // Polymorphic constructors
+  virtual Domain* create(int NX, int NY) { return new Domain(NX, NY); }
   
   // Iterators over domains
   typedef DomainIterator iterator;
@@ -97,15 +100,19 @@ public:
   int ySize() const {return ny;}
   int area() const {return nx*ny;}
 
+  // Allow user to attach extra 
+  void setUserData(void* data) {user_data = data;}
+  void* getUserData() const {return user_data;}
+
+  // Keep track of a global origin
+  void setOrigin(int x, int y) {x0 = x; y0 = y;}
+  int xOrigin() const {return x0;}
+  int yOrigin() const {return y0;}
+  
   /// Output info to streams. Mainly useful for debugging
   friend std::ostream& operator<<(std::ostream &os, const Domain &d);
   friend class DomainIterator;
   friend class ConstDomainIterator;
-private:
-  Domain(); ///< declared, not defined
-  
-  int nx, ny; ///< Size of the domain
-  string name; ///< Name or label for this domain
   
   /// Boundary structure, shared between domains
   struct Bndry {
@@ -177,8 +184,18 @@ private:
     }
   };
   
-  void addBoundary(Bndry *b);
+  /// Iterator over boundaries
+  typedef list<Bndry*>::const_iterator bndry_iterator;
+  bndry_iterator bndry_begin() const { return boundary.begin(); }
+  bndry_iterator bndry_end() const { return boundary.end(); }
+private:
+  Domain(); ///< declared, not defined
   
+  int x0, y0; ///< Origin (for user)
+  int nx, ny; ///< Size of the domain
+  string name; ///< Name or label for this domain
+  
+  void addBoundary(Bndry *b);
   void removeBoundary(Bndry *b);
   void removeBoundary(std::list<Bndry*>::iterator &it);
   
@@ -186,7 +203,7 @@ private:
 
   static BndrySide reverse(const BndrySide &side);
   
-  
+  void* user_data;
 };
 
 #endif // __DOMAIN_H__

@@ -143,7 +143,7 @@ Domain* Domain::splitX(int xind) {
 
   cout << "SplitX " << this << " (" << nx << "," << ny << ") " << xind << "\n" ;
   
-  Domain *d = new Domain(xind, ny); // New domain on the right
+  Domain *d = create(xind, ny); // New domain on the right
   nx -= xind;
   
   cout << "   " << this << " (" << nx << "," << ny << ")\n";
@@ -210,7 +210,7 @@ Domain* Domain::splitY(int yind) {
 
   cout << "SplitY " << this << " (" << nx << "," << ny << ") " << yind << "\n";
 
-  Domain *d = new Domain(nx, yind);
+  Domain *d = create(nx, yind);
   ny -= yind;
   
   cout << "   " << this << " (" << nx << "," << ny << ")\n";
