@@ -295,11 +295,13 @@ PRO event_handler, event
         widget_control, info.psi_outer_field, get_value=psi_outer
 
         widget_control, info.rad_peak_field, get_value=rad_peak
+        
 
         settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
       ENDELSE
       
-
+      widget_control, info.xpt_dist_field, get_value=xpt_mul
+      
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -316,7 +318,7 @@ PRO event_handler, event
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
-                         fast=info.fast)
+                         fast=info.fast, xpt_mul=xpt_mul)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -681,20 +683,22 @@ PRO event_handler, event
 
         RESTORE, filename
         
-        ; Copy the widget IDs
-        info.nrad_field = oldinfo.nrad_field
-        info.npol_field = oldinfo.npol_field
-        info.draw = oldinfo.draw
-        info.psi_inner_field = oldinfo.psi_inner_field
-        info.psi_outer_field = oldinfo.psi_outer_field
-        info.rad_peak_field = oldinfo.rad_peak_field
-        info.status = oldinfo.status
-        info.leftbargeom = oldinfo.leftbargeom
-        info.strict_bndry = oldinfo.strict_bndry
-        info.simple_bndry = oldinfo.simple_bndry
-        info.smoothP = oldinfo.smoothP
-        info.smoothH = oldinfo.smoothH
-        info.single_rad_grid = oldinfo.single_rad_grid
+        ; Copy the widget IDs, adding fields if needed for backwards compatability
+        str_set, info, "nrad_field", oldinfo.nrad_field
+        str_set, info, "npol_field", oldinfo.npol_field
+        str_set, info, "draw", oldinfo.draw
+        str_set, info, "psi_inner_field", oldinfo.psi_inner_field
+        str_set, info, "psi_outer_field", oldinfo.psi_outer_field
+        str_set, info, "rad_peak_field", oldinfo.rad_peak_field
+        str_set, info, "xpt_dist_field", oldinfo.xpt_dist_field
+        
+        str_set, info, "status", oldinfo.status
+        str_set, info, "leftbargeom", oldinfo.leftbargeom
+        str_set, info, "strict_bndry", oldinfo.strict_bndry
+        str_set, info, "simple_bndry", oldinfo.simple_bndry
+        str_set, info, "smoothP", oldinfo.smoothP
+        str_set, info, "smoothH", oldinfo.smoothH
+        str_set, info, "single_rad_grid", oldinfo.single_rad_grid
         
         IF info.rz_grid_valid THEN BEGIN
           plot_rz_equil, *info.rz_grid
@@ -812,6 +816,14 @@ PRO hypnotoad
                              xsize=8                         $
                            )
   
+  xpt_dist_field = CW_FIELD( tab1,                            $
+                             title  = 'Xpt dist x:',          $ 
+                             uvalue = 'xpt_mul',           $ 
+                             /floating,                      $ 
+                             value = 1,                    $
+                             xsize=8                         $
+                           )
+
   ; Options tab
   tab2 = WIDGET_BASE(tab_base, title="Options", /COLUMN, EVENT_PRO = 'event_handler')
 
@@ -903,6 +915,7 @@ PRO hypnotoad
            single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
+           xpt_dist_field:xpt_dist_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
            curv_ind:curv_index $

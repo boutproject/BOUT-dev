@@ -596,7 +596,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
                       nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
                       single_rad_grid=single_rad_grid, fast=fast, $
-                      xpt_mindist=xpt_mindist
+                      xpt_mindist=xpt_mindist, xpt_mul=xpt_mul
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
   IF NOT KEYWORD_SET(rad_peaking) THEN rad_peaking = 2.0
@@ -1474,7 +1474,10 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
 
     ; Each x-point now has a distance. Could multiply by a scaling
     ; factor to adjust x-point resolution
-    ;xpt_dist = xpt_dist * 1.5
+    IF KEYWORD_SET(xpt_mul) THEN BEGIN
+      PRINT, "Multiplying x-point distance by ", xpt_mul
+      xpt_dist = xpt_dist * xpt_mul
+    ENDIF
 
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Calculate distances along starting line
