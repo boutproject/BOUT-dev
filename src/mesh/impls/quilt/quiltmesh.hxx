@@ -3,6 +3,7 @@
 #define __QUILTMESH_H__
 
 #include <bout/mesh.hxx>
+#include <options.hxx>
 
 #include "quiltdomain.hxx"
 
@@ -12,6 +13,7 @@
  */
 class QuiltMesh : public Mesh {
  public:
+  QuiltMesh(Options *opt);
   ~QuiltMesh();
   
   int load();
@@ -71,12 +73,12 @@ class QuiltMesh : public Mesh {
   int YGLOBAL(int yloc);
   
  private:
+  Options *options;  // Configuration options to use
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
-
-  int MXG, MYG;
-
+  bool async_send;
+  
   // Describes regions of the mesh and connections between them
   QuiltDomain *mydomain;
   
@@ -87,8 +89,16 @@ class QuiltMesh : public Mesh {
     
     int proc; // Neighbour
   };
-  vector<GuardRange*> guards;
+  vector<GuardRange*> all_guards;
+  vector<GuardRange*> xlow_guards;
+  vector<GuardRange*> xhigh_guards;
   
+  /// A single MPI request with metadata
+  struct QMRequest {
+    MPI_Request request;
+    vector<BoutReal> buffer; // Buffer to store the incoming data
+    GuardRange* guard; ///< Where is the data going?
+  };
 
   /// Handle for communications
   struct QMCommHandle {
@@ -96,17 +106,15 @@ class QuiltMesh : public Mesh {
     vector<FieldData*> var_list; ///< List of fields being communicated
     
     // May have several different requests
-    struct QMRequest {
-      MPI_Request request;
-      int tag;
-      vector<BoutReal> buffer;
-      QuiltDomain* dest; ///< Where is the data going?
-    };
     vector<QMRequest*> request;
+    vector<MPI_Request> mpi_rq;  ///< All requests, so can use MPI_Waitall
   };
   
-  void freeHandle(QMCommHandle *h);
-  QMCommHandle* getHandle(int n);
+  QMCommHandle *getCommHandle();
+  void freeCommHandle(QMCommHandle *h);
+  QMRequest* getRequestHandle(int n);
+  void freeRequestHandle(QMRequest* r);
+  
   list<QMCommHandle*> comm_list;
 
   

@@ -28,7 +28,7 @@ Mesh* MeshFactory::createMesh(Options *options) {
   options->get("type", type, MESH_BOUT);
   
   if(!strcasecmp(type.c_str(), MESH_QUILT)) {
-    return new QuiltMesh();
+    return new QuiltMesh(options);
   }
   
   return new BoutMesh();

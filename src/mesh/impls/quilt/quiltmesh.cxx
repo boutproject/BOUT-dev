@@ -11,14 +11,19 @@
 #include <numeric>
 using std::accumulate;
 #include <cmath>
+#include <utils.hxx>
 
 #include "quiltmesh.hxx"
 #include "../partition.hxx"
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+QuiltMesh::QuiltMesh(Options *opt) : options(opt) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("mesh");
+}
+
 QuiltMesh::~QuiltMesh() {
-  
 }
 
 int QuiltMesh::load() {
@@ -64,6 +69,34 @@ int QuiltMesh::load(MPI_Comm comm) {
       mydomain = qd; // Domain for this processor
   }
   
+  // Read some options
+  int MXG, MYG;
+  options->get("MXG", MXG, 2);
+  options->get("MYG", MYG, 2);
+  if(options->isSet("MZ")) {
+    options->get("MZ", ngz, 65);
+  }else
+    Options::getRoot()->get("MZ", ngz, 65);
+  if(!is_pow2(ngz-1)) {
+    if(is_pow2(ngz)) {
+      ngz++;
+      output.write("WARNING: Number of toroidal points increased to %d\n", ngz);
+    }else {
+      output.write("ERROR: Number of toroidal points must be 2^n + 1");
+      return 1;
+    }
+  }
+  
+  // Get size of the mesh
+  ngx = mydomain->xSize() + 2*MXG;
+  ngy = mydomain->ySize() + 2*MYG;
+  
+  // Local ranges
+  xstart = MXG;
+  xend   = ngx-1-MXG;
+  ystart = MYG;
+  yend   = ngy-1-MYG;
+  
   // Iterate through boundaries to get guard cell regions
   for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
     Domain::Bndry* b = *it;
@@ -71,6 +104,7 @@ int QuiltMesh::load(MPI_Comm comm) {
     QuiltDomain* to = (QuiltDomain*) b->getNeighbour(mydomain);
     
     // Check which boundary(s) this is on
+    // (multiple boundaries in case of periodic domain)
     if(b->onSide(mydomain, Domain::xlow)) {
       // get range of indices
       int min = b->getMin(Domain::xlow);
@@ -83,6 +117,55 @@ int QuiltMesh::load(MPI_Comm comm) {
       g->ymin = min;
       g->ymax = max;
       g->proc = to->proc;
+      
+      all_guards.push_back(g);
+      xlow_guards.push_back(g);
+    }
+    if(b->onSide(mydomain, Domain::xhigh)) {
+      // get range of indices
+      int min = b->getMin(Domain::xhigh);
+      int max = b->getMax(Domain::xhigh);
+      
+      // Create new GuardRange 
+      GuardRange *g = new GuardRange();
+      g->xmin = ngx-1-MXG;
+      g->xmax = ngx-1;
+      g->ymin = min;
+      g->ymax = max;
+      g->proc = to->proc;
+      
+      all_guards.push_back(g);
+      xhigh_guards.push_back(g);
+    }
+    if(b->onSide(mydomain, Domain::ylow)) {
+      // get range of indices
+      int min = b->getMin(Domain::ylow);
+      int max = b->getMax(Domain::ylow);
+      
+      // Create new GuardRange 
+      GuardRange *g = new GuardRange();
+      g->ymin = 0;
+      g->ymax = MYG;
+      g->xmin = min;
+      g->xmax = max;
+      g->proc = to->proc;
+      
+      all_guards.push_back(g);
+    }
+    if(b->onSide(mydomain, Domain::yhigh)) {
+      // get range of indices
+      int min = b->getMin(Domain::yhigh);
+      int max = b->getMax(Domain::yhigh);
+      
+      // Create new GuardRange 
+      GuardRange *g = new GuardRange();
+      g->ymin = ngy-1-MYG;
+      g->ymax = ngy-1;
+      g->xmin = min;
+      g->xmax = max;
+      g->proc = to->proc;
+      
+      all_guards.push_back(g);
     }
   }
 }
@@ -164,8 +247,8 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   // Read bulk of points
   read2Dvar(s, name, 
             mydomain->xOrigin(), mydomain->yOrigin(),  // Coordinates in grid file
-            MXG, MYG,                    // Coordinates in this processor
-            mydomain->xSize(), mydomain->ySize(),  // Number of points to read
+            xstart, ystart,                            // Coordinates in this processor
+            mydomain->xSize(), mydomain->ySize(),      // Number of points to read
             data);
   
   // Close the data source
@@ -205,97 +288,127 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
   /// Start timer
   Timer timer("comms");
   
-  /// Get the list of variables to send
-  vector<FieldData*> var_list = g.get();
+  // Get an empty communication handle to return
+  QMCommHandle *handle = getCommHandle();
   
-  // Iterate over boundaries
-  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
+  /// Get the list of variables to send
+  handle->var_list = g.get();
+  
+  // Iterate over guard cells
+  for(vector<GuardRange*>::const_iterator it=all_guards.begin(); it != all_guards.end(); it++) {
     // Post recieves
-    Domain::Bndry* b = *it;
-     
-    QuiltDomain* to = (QuiltDomain*) b->getNeighbour(mydomain);
+    GuardRange* g = *it;
     
-    // Check which boundary(s) this is on
-    for(int i = 0; i < 4; i++) {
-      Domain::BndrySide s = static_cast<Domain::BndrySide>(i);
-      if(b->onSide(mydomain, s)) {
-        // get range of indices
-        int min = b->getMin(s);
-        int max = b->getMax(s);
-      }
+    // Calculate length of the message
+    int len = msg_len(handle->var_list, g->xmin, g->xmax+1, g->ymin, g->ymax+1);
+    
+    // Get a request handle of this size
+    QMRequest* rq = getRequestHandle(len);
+    rq->guard = g;
+    
+    MPI_Irecv(&(rq->buffer[0]),
+	      len,
+	      PVEC_REAL_MPI_TYPE,
+	      g->proc,
+	      1234,
+	      BoutComm::get(),
+	      &(rq->request));
+    
+    // Add request to the CommHandle
+    handle->request.push_back(rq);
+    handle->mpi_rq.push_back(rq->request);
+  }
+  
+  for(vector<GuardRange*>::const_iterator it=all_guards.begin(); it != all_guards.end(); it++) {
+    // Send data
+    GuardRange* g = *it;
+    
+    // Calculate length of the message
+    int len = msg_len(handle->var_list, g->xmin, g->xmax+1, g->ymin, g->ymax+1);
+    
+    // Get a request handle of this size
+    QMRequest* rq = getRequestHandle(len);
+    rq->guard = NULL; // Signals that no data is to be copied on success
+    
+    // Copy data into the buffer
+    packData(handle->var_list, g, rq->buffer);
+    
+    if(async_send) {
+      // Asyncronous sending
+      MPI_Isend(&(rq->buffer[0]), // Buffer to send
+                len,              // Length of buffer in BoutReals
+                PVEC_REAL_MPI_TYPE,  // Real variable type
+                g->proc,          // Destination processor
+                1234,             // Label (tag) for the message
+                BoutComm::get(),  // Communicator
+                &(rq->request));  // MPI Request handle
+      
+      // Add request to Comm Handle
+      handle->request.push_back(rq);
+      handle->mpi_rq.push_back(rq->request);
+    }else {
+      MPI_Send(&(rq->buffer[0]),
+               len,
+               PVEC_REAL_MPI_TYPE, 
+               g->proc,
+               1234,
+               BoutComm::get());
+      
+      // Free request handle
+      freeRequestHandle(rq);
     }
   }
   
-  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
-    // Send data
-    
-  }
- 
+  handle->inProgress = true;
   
+  return static_cast<comm_handle>(handle);
 }
 
 int QuiltMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
-  
+
   QMCommHandle *ch = (QMCommHandle*) handle;
-  
   if(!ch->inProgress)
     return 2;
   
-  /*
-  BoutReal t = MPI_Wtime(); // Starting time
-  
-  if(ch->var_list.empty()) {
-    // just waiting for communications, not unpacking into variables
-    
-    MPI_Waitall(ch->request.size(),
-		&ch->request[0],
-		MPI_STATUSES_IGNORE);
-    
-    freeHandle(ch);
-    
-    // Add the time elapsed to the communications wall time
-    wtime_comms += MPI_Wtime() - t;
-    
-    return 0;
-  }
-  
-  // Waiting for data, and unpacking the result into variables
-  
+  /// Start timer
+  Timer timer("comms");
+
   do {
     int ind;
-    MPI_Waitany(ch->request.size(),   // How many requests 
-		&ch->request[0],      // Array of requests
+    MPI_Waitany(ch->mpi_rq.size(),   // How many requests 
+		&ch->mpi_rq[0],      // Array of requests
 		&ind,   // Index into the array: which one arrived?
 		MPI_STATUSES_IGNORE); // Don't store statuses for now
-    
     if(ind == MPI_UNDEFINED)
       break; // Finished
     
-    // Unpack data into variables
-    unpackData(ch->buffer[ind], ch->range[ind], ch->var_list);
-    
-    // Twist-shift condition
-    if(TwistShift && (mesh->TwistOrder == 0) && ch->range[ind]->zshift) {
-      GuardRange *r = ch->range[ind];
-      for(vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-	if((*it)->is3D()) {
-	  // Only need to shift 3D variables
-	  for(int jx=r->xmin;jx<=r->xmax;jx++)
-	    for(int jy=r->ymin;jy <= r->ymax; jy++)
-	      (*it)->shiftZ(jx, jy, r->shiftAngle[jx-r->xmin]);
-	}
+    // Check if we need to unpack data
+    if(ch->request[ind]->guard != NULL) {
+      unpackData(ch->request[ind]->buffer, ch->request[ind]->guard, ch->var_list);
+      
+      /*
+      // Twist-shift condition
+      if(TwistShift && (mesh->TwistOrder == 0) && ch->range[ind]->zshift) {
+        GuardRange *r = ch->range[ind];
+        for(vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
+          if((*it)->is3D()) {
+            // Only need to shift 3D variables
+            for(int jx=r->xmin;jx<=r->xmax;jx++)
+              for(int jy=r->ymin;jy <= r->ymax; jy++)
+                (*it)->shiftZ(jx, jy, r->shiftAngle[jx-r->xmin]);
+          }
+          }
+      */
     }
-    
     // Mark the request as NULL
-    ch->request[ind] = MPI_REQUEST_NULL;
+    ch->mpi_rq[ind] = MPI_REQUEST_NULL;
   }while(1);
   
-  freeHandle(ch);
-
-  wtime_comms += MPI_Wtime() - t;
-  */
+  // Free handle
+  freeCommHandle(ch);
+  
   return 0;
 }
 
@@ -305,16 +418,21 @@ int QuiltMesh::wait(comm_handle handle) {
  ****************************************************************/
 
 bool QuiltMesh::firstX() {
-  
+  return xlow_guards.size() == 0;
 }
 
 bool QuiltMesh::lastX() {
-  
+  return xhigh_guards.size() == 0;
 }
 
 int QuiltMesh::sendXOut(BoutReal *buffer, int size, int tag) {
   if(lastX())
     return 1;
+
+  // Get an empty communication handle to return
+  QMCommHandle *handle = getCommHandle();
+  
+  
 
   return 0;
 }
@@ -330,9 +448,9 @@ comm_handle QuiltMesh::irecvXOut(BoutReal *buffer, int size, int tag) {
   if(lastX())
     return NULL; // No processor to receive from
   
-  BoutReal t = MPI_Wtime();
+  
 
-  QMCommHandle *ch = getHandle(1); // Just one request
+  QMCommHandle *ch = getCommHandle(); // Just one request
   
   return (comm_handle) ch;
 }
@@ -341,9 +459,9 @@ comm_handle QuiltMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
   if(firstX())
     return NULL;
   
-  BoutReal t = MPI_Wtime();
   
-  QMCommHandle *ch = getHandle(1);
+  
+  QMCommHandle *ch = getCommHandle();
  
   return (comm_handle) ch;
 }
@@ -404,16 +522,21 @@ int QuiltMesh::YGLOBAL(int yloc) {
  * Private functions
  ****************************************************************/
 
-void QuiltMesh::freeHandle(QMCommHandle *h) {
+QuiltMesh::QMCommHandle* QuiltMesh::getCommHandle() {
+  return NULL;
+}
+
+void QuiltMesh::freeCommHandle(QMCommHandle *h) {
   h->inProgress = false;
   comm_list.push_back(h);
 }
 
-QuiltMesh::QMCommHandle* QuiltMesh::getHandle(int n) {
-  QMCommHandle* h;
-  h->inProgress = false;
+QuiltMesh::QMRequest* QuiltMesh::getRequestHandle(int n) {
+  return NULL;
+}
 
-  return h;
+void QuiltMesh::freeRequestHandle(QMRequest* r) {
+  
 }
 
 void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vector<BoutReal> &data) {
