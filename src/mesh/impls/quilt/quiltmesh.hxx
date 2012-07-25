@@ -4,6 +4,7 @@
 
 #include <bout/mesh.hxx>
 #include <options.hxx>
+#include <bout/sys/range.hxx>
 
 #include "quiltdomain.hxx"
 
@@ -76,8 +77,8 @@ class QuiltMesh : public Mesh {
   Options *options;  // Configuration options to use
   
   // Settings
-  bool TwistShift;   // Use a twist-shift condition in core?
   bool async_send;
+  int MXG, MYG;
   
   // Describes regions of the mesh and connections between them
   QuiltDomain *mydomain;
@@ -92,6 +93,16 @@ class QuiltMesh : public Mesh {
   vector<GuardRange*> all_guards;
   vector<GuardRange*> xlow_guards;
   vector<GuardRange*> xhigh_guards;
+  
+  RangeIterator xlow_range;  // X lower boundary 
+  RangeIterator xhigh_range; // X upper boundary
+  RangeIterator ylow_range;  // Lower Y boundary
+  RangeIterator yhigh_range; // Upper Y boundary
+  
+  vector<BoundaryRegion*> boundaries; // All boundaries
+
+  RangeIterator yperiodic;  // Range of X for which Y is periodic
+  vector<BoutReal> twistshift; // Value of twist-shift for each X location
   
   /// A single MPI request with metadata
   struct QMRequest {

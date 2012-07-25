@@ -25,7 +25,7 @@ int roundi(double x) {
 void V(Domain* d, int m, int k, int j) {
   // Check inputs
   if( (d == NULL) || (m < 1) || (k < 0) || (j < 0) || ((k+j) < 1) )
-    throw new BoutException("Invalid inputs to partition V: %u, %d, %d, %d\n", d, m, k, j);
+    throw BoutException("Invalid inputs to partition V: %u, %d, %d, %d\n", d, m, k, j);
   
   int nx = d->xSize();
   int ny = d->ySize();
@@ -88,7 +88,7 @@ void V(Domain* d, int m, int k, int j) {
 void H(Domain* d, int m, int k, int j) {
   // Check inputs
   if( (d == NULL) || (m < 1) || (k < 0) || (j < 0) || ((k+j) < 1) )
-    throw new BoutException("Invalid inputs to partition H: %u, %d, %d, %d\n", d, m, k, j);
+    throw BoutException("Invalid inputs to partition H: %u, %d, %d, %d\n", d, m, k, j);
   
   int nx = d->xSize();
   int ny = d->ySize();
@@ -138,7 +138,7 @@ void H(Domain* d, int m, int k, int j) {
 void partition(Domain* d, int n) {
   // Check inputs
   if( (d == NULL) || (n < 1) )
-    throw new BoutException("Invalid inputs to partition: %u, %d\n", d, n);
+    throw BoutException("Invalid inputs to partition: %u, %d\n", d, n);
   if(n == 1)
     return; // Nothing to do
 
@@ -163,7 +163,7 @@ void partition(Domain* d, int n) {
     s++;
   // Final check
   if( (s*(s-1) > val) || (s*(s+1) < val) )
-    throw new BoutException("Partition couldn't find s(s-1) < %e < s(s+1)", val);
+    throw BoutException("Partition couldn't find s(s-1) < %e < s(s+1)", val);
 
   int r = n - floor( D(n) / D(s) ) * s;
   int t = floor( D(n) / D(s) ) - r;
@@ -191,7 +191,7 @@ void partition(Domain* d, int n) {
 
 void partitionAll(Domain* d, int n) {
   if( (d == NULL) || (n < 1) )
-    throw new BoutException("Invalid inputs to partitionAll: %u, %d\n", d, n);
+    throw BoutException("Invalid inputs to partitionAll: %u, %d\n", d, n);
   
   // Get a list of domains to partition
   list<Domain*> domains;
@@ -209,7 +209,7 @@ void partitionAll(Domain* d, int n) {
   }
 
   if(n < ndomains)
-    throw new BoutException("Cannot partition %d domains into %d pieces", ndomains, n);
+    throw BoutException("Cannot partition %d domains into %d pieces", ndomains, n);
 
   // Now partition each one
   for(list<Domain*>::iterator it = domains.begin(); it != domains.end(); it++) {

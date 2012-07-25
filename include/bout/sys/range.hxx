@@ -27,6 +27,7 @@
 class RangeIterator {
  public:
   /// Can be given a single range
+  RangeIterator() : is(1), ie(0), n(0), cur(0) {}
   RangeIterator(int start, int end, RangeIterator* join=0);
   RangeIterator(int start, int end, const RangeIterator& join);
   
@@ -45,9 +46,20 @@ class RangeIterator {
     return cur != x.cur;
   }
 
+  bool intersects(const RangeIterator &other, bool all=true) const;
+  bool intersects(int ind, bool all=true) const;
+  
+  RangeIterator& operator=(const RangeIterator &r);
+  RangeIterator& operator+=(const RangeIterator &r); // Add ranges
+  RangeIterator& operator-=(const RangeIterator &r); // Remove ranges
+
   static RangeIterator end() { return RangeIterator(1,0);}
 
   int ind; // The index
+
+  int min() const {return is;}
+  int max() const {return ie;}
+  RangeIterator* nextRange() const {return n;};
  private:
   int is, ie;
   RangeIterator *n; // Next range. Doesn't change after creation

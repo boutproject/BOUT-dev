@@ -90,7 +90,7 @@ int BoutMesh::load() {
   
   options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
   if((NPES % NXPE) != 0) {
-    throw new BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
+    throw BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
                             NPES, NXPE);
   }
 
@@ -108,7 +108,7 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if((MX % NXPE) != 0) {
-    throw new BoutException("Cannot split %d X points equally between %d processors\n",
+    throw BoutException("Cannot split %d X points equally between %d processors\n",
                             MX, NXPE);
   }
 
@@ -262,13 +262,13 @@ int BoutMesh::load() {
   
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    throw new BoutException("\tERROR: Diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw new BoutException("\tERROR: Diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
   if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    throw new BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
   /// Set shift for radial derivatives
@@ -388,7 +388,7 @@ int BoutMesh::load() {
     output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     if(!finite(Bxy))
-      throw new BoutException("\tERROR: Bxy not finite everywhere!\n");
+      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
   }
 
   //////////////////////////////////////////////////////
@@ -1683,12 +1683,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
     ypeup = ype1;
     ypedown = ype2;
   }else {
-    throw new BoutException("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
+    throw BoutException("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
   }
 
   /* check the x ranges are possible */
   if((xge != 0) && (xlt != MX)) {
-    throw new BoutException("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
+    throw BoutException("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
                             ypos1, ypos2, xge, xlt);
   }
 
@@ -1766,21 +1766,21 @@ void BoutMesh::topology()
   // Perform checks common to all topologies
 
   if (NPES != NXPE*NYPE) {
-    throw new BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
+    throw BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
                             NPES,NXPE*NYPE);
   }
   if(MYSUB * NYPE != MY) {
-    throw new BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
+    throw BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
   }
   if(MXSUB * NXPE != MX) {
-    throw new BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
+    throw BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
   }
 
   if((NXPE > 1) && (MXSUB < MXG)) {
-    throw new BoutException("\tERROR: Grid X size must be >= guard cell size\n");
+    throw BoutException("\tERROR: Grid X size must be >= guard cell size\n");
   }
   if(MYSUB < MYG) {
-    throw new BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
+    throw BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
   
   if(jyseps2_1 == jyseps1_2) {
@@ -1800,7 +1800,7 @@ void BoutMesh::topology()
        other or lower legs, but do have to have an integer number
        of processors */
     if((ny_inner-jyseps2_1-1) % MYSUB != 0) {
-      throw new BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
+      throw BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
     }
     if((jyseps1_2-ny_inner+1) % MYSUB != 0) {
       output.write("\tTopology error: Upper outer leg does not have integer number of processors\n");
@@ -2524,14 +2524,12 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   return result;
 }
 
-BoutReal BoutMesh::GlobalX(int jx)
-{
+BoutReal BoutMesh::GlobalX(int jx) {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
   //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
-BoutReal BoutMesh::GlobalY(int jy)
-{
+BoutReal BoutMesh::GlobalY(int jy) {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
 
@@ -2554,8 +2552,7 @@ BoutReal BoutMesh::GlobalY(int jy)
   return ((BoutReal) ly) / ((BoutReal) nycore);
 }
 
-void BoutMesh::outputVars(Datafile &file)
-{
+void BoutMesh::outputVars(Datafile &file) {
   file.add(MXSUB, "MXSUB", 0);
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);

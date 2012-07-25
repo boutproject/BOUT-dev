@@ -43,5 +43,17 @@ int main() {
   }
   assert(sum == 14);
 
+  // Range subtraction
+  RangeIterator set(2, 10, RangeIterator(14,17));
+  set -= RangeIterator(4,6);
+  set -= RangeIterator(9,15);
+  sum = 0;
+  for(set.first(); set != RangeIterator::end(); set++) {
+    cout << *set;
+    sum += *set;
+  }
+  assert(sum == 53);
+  
+  cout << "\n";
   return 0;
 }

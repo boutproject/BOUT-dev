@@ -48,29 +48,7 @@ int QuiltMesh::load(MPI_Comm comm) {
   vector<int> nx = readInts("nx", nregions);
   vector<int> ny = readInts("ny", nregions);
   
-  // Create domains
-  vector<QuiltDomain*> domains;
-  
-  for(int i=0;i<nregions;i++)
-    domains.push_back(new QuiltDomain(nx[i], ny[i]));
-  
-  // Join domains together
-  
-  // Partition the mesh (all domains connected together)
-  partitionAll(domains[0], NPES);
-  
-  // Assign domains to processors
-  int p = 0;
-  for(Domain::iterator it=domains[0]->begin(); it != domains[0]->end(); it++) {
-    // For now very simple numbering. Should cluster nearby domains
-    QuiltDomain *qd = static_cast<QuiltDomain*>( &(*it) );
-    qd->proc = p; p++;
-    if(p == MYPE)
-      mydomain = qd; // Domain for this processor
-  }
-  
   // Read some options
-  int MXG, MYG;
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   if(options->isSet("MZ")) {
@@ -86,6 +64,38 @@ int QuiltMesh::load(MPI_Comm comm) {
       return 1;
     }
   }
+
+  // Create domains
+  output << "\tCreating domains...";
+  vector<QuiltDomain*> domains;
+  
+  for(int i=0;i<nregions;i++)
+    domains.push_back(new QuiltDomain(nx[i], ny[i]));
+  
+
+  // Join domains together
+  
+  
+  // Partition the mesh (all domains connected together)
+  output << "done\n\tPartitioning...";
+  partitionAll(domains[0], NPES);
+  
+
+  // Assign domains to processors
+  output << "done\n\tAssigning...";
+  int p = 0;
+  for(Domain::iterator it=domains[0]->begin(); it != domains[0]->end(); it++) {
+    // For now very simple numbering. Should cluster nearby domains
+    QuiltDomain *qd = static_cast<QuiltDomain*>( &(*it) );
+    
+    // Check that domain is large enough
+    if( (qd->xSize() < MXG) || (qd->ySize() < MYG) )
+      throw BoutException("Domain size too small (< %dx%d). Try fewer processors", MXG, MYG);
+    
+    qd->proc = p; p++;
+    if(p == MYPE)
+      mydomain = qd; // Domain for this processor
+  }
   
   // Get size of the mesh
   ngx = mydomain->xSize() + 2*MXG;
@@ -96,6 +106,10 @@ int QuiltMesh::load(MPI_Comm comm) {
   xend   = ngx-1-MXG;
   ystart = MYG;
   yend   = ngy-1-MYG;
+  
+  // Create ranges for boundary iteration
+  ylow_range = yhigh_range = RangeIterator(0, ngx-1);
+  xlow_range = xhigh_range = RangeIterator(0, ngy-1);
   
   // Iterate through boundaries to get guard cell regions
   for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
@@ -120,6 +134,7 @@ int QuiltMesh::load(MPI_Comm comm) {
       
       all_guards.push_back(g);
       xlow_guards.push_back(g);
+      xlow_range -= RangeIterator(min, max);
     }
     if(b->onSide(mydomain, Domain::xhigh)) {
       // get range of indices
@@ -136,6 +151,7 @@ int QuiltMesh::load(MPI_Comm comm) {
       
       all_guards.push_back(g);
       xhigh_guards.push_back(g);
+      xhigh_range -= RangeIterator(min, max);
     }
     if(b->onSide(mydomain, Domain::ylow)) {
       // get range of indices
@@ -151,6 +167,9 @@ int QuiltMesh::load(MPI_Comm comm) {
       g->proc = to->proc;
       
       all_guards.push_back(g);
+      
+      // Remove range from boundary
+      ylow_range -= RangeIterator(min, max);
     }
     if(b->onSide(mydomain, Domain::yhigh)) {
       // get range of indices
@@ -166,8 +185,28 @@ int QuiltMesh::load(MPI_Comm comm) {
       g->proc = to->proc;
       
       all_guards.push_back(g);
+      
+      // Remove range from boundary
+      yhigh_range -= RangeIterator(min, max);
     }
   }
+  
+  // Turn boundary ranges into BoundaryRegion objects
+  for(RangeIterator *r = &xlow_range; r != 0; r=r->nextRange())
+    boundaries.push_back(new BoundaryRegionXIn("xin", r->min(), r->max()));
+  
+  for(RangeIterator *r = &xhigh_range; r != 0; r=r->nextRange())
+    boundaries.push_back(new BoundaryRegionXOut("xout", r->min(), r->max()));
+  
+  for(RangeIterator *r = &ylow_range; r != 0; r=r->nextRange())
+    boundaries.push_back(new BoundaryRegionYDown("ydown", r->min(), r->max()));
+  
+  for(RangeIterator *r = &yhigh_range; r != 0; r=r->nextRange())
+    boundaries.push_back(new BoundaryRegionYUp("yup", r->min(), r->max()));
+  
+  output << "done\n";
+  
+  return 0;
 }
 
 /****************************************************************
@@ -471,7 +510,7 @@ MPI_Comm QuiltMesh::getXcomm() const {
 }
 
 SurfaceIter* QuiltMesh::iterateSurfaces() {
-
+  
 }
 
 const Field2D QuiltMesh::averageY(const Field2D &f) {
@@ -483,27 +522,27 @@ const Field3D QuiltMesh::averageY(const Field3D &f) {
 }
 
 bool QuiltMesh::surfaceClosed(int jx, BoutReal &ts) {
-  
+  return yperiodic.intersects(jx);
 }
 
 const RangeIterator QuiltMesh::iterateBndryLowerY() const {
-
+  return ylow_range;
 }
 
 const RangeIterator QuiltMesh::iterateBndryUpperY() const {
-  
+  return yhigh_range;
 }
 
 vector<BoundaryRegion*> QuiltMesh::getBoundaries() {
-  
+  return boundaries;
 }
 
 BoutReal QuiltMesh::GlobalX(int jx) {
-
+  return ((BoutReal) XGLOBAL(jx));
 }
 
 BoutReal QuiltMesh::GlobalY(int jy) {
-  
+  return ((BoutReal) YGLOBAL(jy));
 }
 
 void QuiltMesh::outputVars(Datafile &file) {
@@ -511,11 +550,11 @@ void QuiltMesh::outputVars(Datafile &file) {
 }
 
 int QuiltMesh::XGLOBAL(int xloc) {
-  
+  return mydomain->xOrigin() + xloc - MXG;
 }
 
 int QuiltMesh::YGLOBAL(int yloc) {
-  
+  return mydomain->yOrigin() + yloc - MYG;
 }
 
 /****************************************************************
