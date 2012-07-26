@@ -418,6 +418,36 @@ we can re-write the above components as:
 \left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& -\frac{\mu_0}{B}\deriv{P}{x} - \deriv{B}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
 \end{eqnarray*}
 
+\subsection{Curvature from $\nabla\times\left(\bvec / B\right)$}
+
+The vector $\bvec\times\kvec$ is an approximation of
+\[
+\frac{B}{2}\nabla\times\left(\frac{\bvec}{B}\right) \simeq \bvec\times\kvec
+\]
+so can just derive from the original expression. Using the contravariant components of
+$\bvec$, and the curl operator in curvilinear coordinates (see appendix):
+
+\begin{eqnarray*}
+\nabla\times\left(\frac{\bvec}{B}\right) &=& \frac{\Bp}{\hthe}\left[\left(\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \deriv{}{y}\left(\frac{\sbt\Bt IR}{B^2}\right)\right)\Vec{e}_z \right. \\
+&& + \deriv{}{y}\left(\frac{\sbt\Bt R}{B^2}\right)\Vec{e}_x \\
+&& + \left.\deriv{}{x}\left(\frac{\sbt\Bt R}{B^2}\right)\Vec{e}_y\right]
+\end{eqnarray*}
+This can be simplified using
+\[
+\deriv{}{y}\left(\frac{\sbt\Bt IR}{B^2}\right) = I\sbt\Bt R\deriv{}{y}\left(\frac{1}{B^2}\right) + \frac{\Bt R}{B^2}\deriv{\nu}{x}
+\]
+to give
+\begin{eqnarray*}
+  \left(\bvec\times\kvec\right)^x &=& -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+  \left(\bvec\times\kvec\right)^y &=& -\sbt\frac{B\Bp}{2\hthe}\deriv{}{x}\left(\frac{\Bt R}{B^2}\right) \\
+  \left(\bvec\times\kvec\right)^z &=& \frac{B\Bp}{2\hthe}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{2\hthe B}\deriv{\nu}{x} - I\left(\bxk\right)^x
+\end{eqnarray*}
+
+The first and second terms in $\left(\bxk\right)^z$ almost cancel, so by expanding out $\nu$ a better expression is
+\[
+\left(\bvec\times\kvec\right)^z = \frac{\Bp^3}{2\hthe B}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \frac{\Bt R}{2B}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right)
+\]
+
 \subsection{Curvature of a single line}
 
 The curvature vector can be calculated from the field-line toroidal

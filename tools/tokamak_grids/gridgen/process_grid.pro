@@ -517,6 +517,15 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     dx[nx-1,y] = dx[nx-2,y]
   ENDFOR
   
+  ; Sign
+  bpsign = 1.
+  xcoord = psixy
+  IF MIN(dx) LT 0. THEN BEGIN
+    bpsign = -1.
+    dx = -dx ; dx always positive
+    xcoord = -xcoord
+  ENDIF
+
   dtheta = 2.*!PI / FLOAT(ny)
   dy = FLTARR(nx, ny) + dtheta
   
@@ -538,6 +547,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   IF dot LT 0. THEN BEGIN
     PRINT, "**** Poloidal field is in opposite direction to Grad Theta -> Bp negative"
     Bpxy = -Bpxy
+    IF bpsign GT 0 THEN STOP
     bpsign = -1.0
   ENDIF
 
@@ -652,7 +662,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDIF ELSE BEGIN
 
     ; Calculate force balance
-    dpdx = ( -Bpxy*DDX(psixy, Bpxy * hthe) - Btxy*hthe*DDX(psixy, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(psixy, Rxy) ) / (MU*hthe)
+    dpdx = ( -Bpxy*DDX(xcoord, Bpxy * hthe) - Btxy*hthe*DDX(xcoord, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(xcoord, Rxy) ) / (MU*hthe)
     
     ; Surface average
     dpdx2 = surface_average(dpdx, mesh)
@@ -791,7 +801,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   pol_angle = FLTARR(nx,ny)
   FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
   
-    ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
   ; re-set zshift to be zero at the outboard midplane
   
   PRINT, "MIDPLANE INDEX = ", ymidplane
@@ -867,6 +877,13 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     bxcvx = bpsign*bxcv_psi
     bxcvy = bxcv_theta
     bxcvz = bpsign*(bxcv_phi - sinty*bxcv_psi - pitch*bxcv_theta)
+  ENDIF ELSE IF curv EQ 2 THEN BEGIN
+    ; Curvature from Curl(b/B)
+    
+    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
+    bxcvy = -bpsign*Bxy*Bpxy * DDX(xcoord, Btxy*Rxy/Bxy^2) / (2.*hthe)
+    bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.*Bxy) - sinty*bxcvx
+    
   ENDIF ELSE BEGIN
     ; calculate in flux coordinates.
     
@@ -877,9 +894,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     FOR i=0, ny-1 DO BEGIN
       dpb[*,i] = MU*dpdpsi/Bxy[*,i]
     ENDFOR
-    dpb = dpb + DDX(psixy, Bxy)
+    dpb = dpb + DDX(xcoord, Bxy)
 
-    bxcvx = bpsign*(Bpxy * DDY(Btxy*Rxy / Bxy, mesh) / hthe)
+    bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
     bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
     bxcvz = -dpb - sinty*bxcvx
   ENDELSE
@@ -911,8 +928,8 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ENDREP UNTIL last
   
   ; Curl(B) expression for Jpar0 (very noisy usually)
-  j0 = bpsign*((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(psixy, Bxy^2*hthe/Bpxy) - bpsign*Btxy*Rxy*DDX(psixy,Btxy*hthe/(Rxy*Bpxy)) ) $
-        - Bxy*DDX(psixy, Btxy*Rxy)) / MU
+  j0 = bpsign*((Bpxy*Btxy*Rxy/(Bxy*hthe))*( DDX(xcoord, Bxy^2*hthe/Bpxy) - bpsign*Btxy*Rxy*DDX(xcoord,Btxy*hthe/(Rxy*Bpxy)) ) $
+        - Bxy*DDX(xcoord, Btxy*Rxy)) / MU
   
   ; Create a temporary mesh structure to send to adjust_jpar
   tmp_mesh = CREATE_STRUCT(mesh, $
