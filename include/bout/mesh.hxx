@@ -89,11 +89,11 @@ public:
   
   virtual int gather(const Field2D &f, BoutReal *data) = 0; // Return zero if no work to do
   virtual int gather(const Field3D &f, BoutReal *data) = 0;
-  virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
+  //virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
   
   virtual int scatter(BoutReal *data, Field2D &f) = 0;
   virtual int scatter(BoutReal *data, Field3D &f) = 0;
-  virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
+  //virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
 private:
 };
 

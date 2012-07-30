@@ -2474,15 +2474,24 @@ bool BoutSurfaceIter::isDone() {
   return xpos < 0;
 }
 
-/*
-void BoutSurfaceIter::first() {
-  xpos = m->PE_XIND;
+
+/****************************************************************
+ *                 Distributed surface iteration
+ ****************************************************************/
+
+BoutDistribSurfaceIter::BoutDistribSurfaceIter(BoutMesh* mi) : m(mi) {
+  first();
+}
+
+void BoutDistribSurfaceIter::first() {
+  alldone = 0;
+  xpos = m->PE_XIND; // Assign different surface to each processor
   if(xpos > m->ngx-1)
     xpos = -1; // Nothing to do
 }
 
-void BoutSurfaceIter::next()
-{
+void BoutDistribSurfaceIter::next() {
+  alldone += m->PE_XIND;
   if(xpos < 0)
     return;
   
@@ -2491,32 +2500,90 @@ void BoutSurfaceIter::next()
     xpos = -1; // Nothing to do 
 }
 
-bool BoutSurfaceIter::isDone()
-{
-  return xpos < 0;
+bool BoutDistribSurfaceIter::isDone() {
+  return alldone >= m->ngx;
 }
 
-int BoutSurfaceIter::gather(const Field2D &f, BoutReal *data)
-{
+int BoutDistribSurfaceIter::ysize() {
+  return ysize(xpos);
+}
+
+int BoutDistribSurfaceIter::ysize(int x) {
+  if(x < 0)
+    return 0;
+  
+  // Communicator for this surface
+  MPI_Comm comm = communicator(x);
+  
+  // Get number of processors
+  int np;
+  MPI_Comm_size(comm, &np);
+
+  int n = np * m->MYSUB;
+  if(!closed(x))
+    n += 2*m->MYG; // Add boundary points
+
+  return n;
+}
+
+bool BoutDistribSurfaceIter::closed(int x, BoutReal &ts) {
+
+}
+
+bool BoutDistribSurfaceIter::closed(BoutReal &ts) {
+  if(xpos < 0)
+    return false;
+  
+  int xglobal = m->XGLOBAL(xpos);
+  int yglobal = m->YGLOBAL(m->MYG);
+  ts = 0.;
+  if(m->TwistShift) {
+    ts = m->ShiftAngle[xpos];
+  }
+  return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
+}
+
+int BoutDistribSurfaceIter::gather(const Field2D &f, BoutReal *data) {
+  int nsurf = m->ngx - alldone; // Number remaining
+  if(nsurf > m->NXPE) nsurf = m->NXPE;
+  
+  // Loop over processors
+  for(int p = 0; p < nsurf; p++) {
+    int x = alldone + p; // Which X surface?
+    MPI_Comm comm = communicator(x);
+    int MPI_Gather(void *sendbuf, int sendcnt, 
+                   PVEC_REAL_MPI_TYPE,  // Data type sent
+                   data, int recvcnt, 
+                   PVEC_REAL_MPI_TYPE, // Data type received
+                   m->PROC_NUM(p, m->PE_YIND),  // Root processor
+                   comm);
+  }
+}
+
+int BoutDistribSurfaceIter::gather(const Field3D &f, BoutReal **data) {
   
 }
 
-int BoutSurfaceIter::gather(const Field3D &f, BoutReal **data)
-{
+int BoutDistribSurfaceIter::scatter(BoutReal *data, Field2D &f) {
   
 }
 
-int BoutSurfaceIter::scatter(BoutReal *data, Field2D &f)
-{
+int BoutDistribSurfaceIter::scatter(BoutReal **data, Field3D &f) {
   
 }
 
-int BoutSurfaceIter::scatter(BoutReal **data, Field3D &f)
-{
+MPI_Comm BoutDistribSurfaceIter::communicator(int xp) {
+  if(xp < 0)
+    xp = xpos;
+  int xglobal = m->XGLOBAL(xp);
   
+  if(xglobal < m->ixseps_inner) {
+    return m->comm_inner;
+  }else if(xglobal < m->ixseps_outer) {
+    return m->comm_middle;
+  }
+  return m->comm_outer;
 }
-
-*/
 
 /****************************************************************
  *                 Range iteration

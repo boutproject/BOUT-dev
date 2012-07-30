@@ -204,7 +204,7 @@ class BoutSurfaceIter : public SurfaceIter {
  private:
   BoutMesh* m;
 };
-/*
+
 class BoutDistribSurfaceIter : public DistribSurfaceIter {
  public:
   BoutDistribSurfaceIter(BoutMesh* mi);
@@ -217,14 +217,17 @@ class BoutDistribSurfaceIter : public DistribSurfaceIter {
   
   int gather(const Field2D &f, BoutReal *data);
   int gather(const Field3D &f, BoutReal **data);
-  int gather(const FieldGroup &f, BoutReal *data);
+  //int gather(const FieldGroup &f, BoutReal *data);
 
   int scatter(BoutReal *data, Field2D &f);
   int scatter(BoutReal **data, Field3D &f);
-  int scatter(BoutReal *data, FieldGroup &f);
+  //int scatter(BoutReal *data, FieldGroup &f);
  private:
   BoutMesh* m;
+  int alldone; ///< How many surfaces have been done already
+  
+  MPI_Comm communicator(int xp=-1);
+  int ysize(int x);
 };
-*/
 
 #endif // __BOUTMESH_H__
