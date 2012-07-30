@@ -314,6 +314,8 @@ int BoutMesh::load() {
 	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
     }
     
+    msg_stack.push("Creating core_comm for ShiftAngle");
+    
     // In the core, need to set ShiftAngle everywhere for ballooning initial condition
     MPI_Group groupw;
     MPI_Comm_group(BoutComm::get(), &groupw); // Group of all processors
@@ -336,6 +338,7 @@ int BoutMesh::load() {
     if(MYPE_IN_CORE)
       MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
     
+    msg_stack.pop();
   }
 
   /// Can have twist-shift in the private flux regions too
@@ -408,10 +411,14 @@ int BoutMesh::load() {
   for(int yp = 0; yp < NYPE; yp++) {
     proc[0] = PROC_NUM(0, yp);      // First 
     proc[1] = PROC_NUM(NXPE-1, yp); // Last
-    proc[2] = 1;                         // stride
+    proc[2] = 1;                    // stride
     
-    MPI_Group_range_incl(group_world, 1, &proc, &group);
-    MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
+    if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
+      throw BoutException("Could not create X communication group for yp=%d (xind=%d,yind=%d)\n",
+			  yp, PE_XIND, PE_YIND);
+    if(MPI_Comm_create(BoutComm::get(), group, &comm_tmp) != MPI_SUCCESS)
+      throw BoutException("Could not create X communicator for yp=%d (xind=%d,yind=%d)\n", 
+			  yp, PE_XIND, PE_YIND);
     MPI_Group_free(&group);
     
     if(yp == PE_YIND) {
@@ -437,6 +444,8 @@ int BoutMesh::load() {
   if(jyseps1_2 == jyseps2_1) {
     // Single-null. All processors with same PE_XIND
 
+    msg_stack.push("Creating Outer SOL communicators for Single Null operation");
+    
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, NYPE-1);
@@ -455,13 +464,18 @@ int BoutMesh::load() {
       }
       MPI_Group_free(&group);
     }
+    msg_stack.pop();
   }else {
     // Double null
+    
+    msg_stack.push("Creating Outer SOL communicators for Double Null operation");
     
     for(int i=0;i<NXPE;i++) {
       // Inner SOL
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
+      if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
+	throw BoutException("MPI_Group_range_incl failed for xp = %d", NXPE);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
 	comm_outer = comm_tmp;
@@ -476,6 +490,8 @@ int BoutMesh::load() {
 	comm_outer = comm_tmp;
       MPI_Group_free(&group);
     }
+    
+    msg_stack.pop();
   }
 
   for(int i=0;i<NXPE;i++) {
@@ -483,6 +499,8 @@ int BoutMesh::load() {
 
     if((jyseps1_1 >= 0) || (jyseps2_2 < ny)) {
       // A lower PF region exists
+
+      msg_stack.push("Creating lower PF communicators for xp=%d", i);
 
       if(jyseps1_1 >= 0) {
 	proc[0] = PROC_NUM(i, 0);
@@ -511,12 +529,16 @@ int BoutMesh::load() {
 	  comm_middle = comm_outer;
       }
       MPI_Group_free(&group);
+      
+      msg_stack.pop();
     }
 
     if(jyseps2_1 != jyseps1_2) {
       // Upper PF region
       // Note need to order processors so that a continuous surface is formed
       
+      msg_stack.push("Creating upper PF communicators for xp=%d", i);
+
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
       //output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
@@ -535,10 +557,12 @@ int BoutMesh::load() {
 	  comm_middle = comm_outer;
       }
       MPI_Group_free(&group);
+      
+      msg_stack.pop();
     }
     
     // Core region
-    
+    msg_stack.push("Creating core communicators");
     proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
     //output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
@@ -555,6 +579,7 @@ int BoutMesh::load() {
       if(ixseps_inner == ixseps_outer)
 	comm_middle = comm_inner;
     }
+    msg_stack.pop();
   }
   
   if(ixseps_inner != ixseps_outer) {
@@ -562,7 +587,9 @@ int BoutMesh::load() {
     
     if(ixseps_upper > ixseps_lower) {
       // middle is connected to the bottom
-	
+      
+      msg_stack.push("Creating unbalanced lower communicators");
+      
       for(int i=0;i<NXPE;i++) {
 	proc[0] = PROC_NUM(i, 0);
 	proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
@@ -575,9 +602,11 @@ int BoutMesh::load() {
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
       }
+      msg_stack.pop();
     }else {
       // middle is connected to the top
-	
+      
+      msg_stack.push("Creating unbalanced upper communicators");
       for(int i=0;i<NXPE;i++) {
 	proc[0] = PROC_NUM(i, YPROC(ny_inner));
 	proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
@@ -590,6 +619,7 @@ int BoutMesh::load() {
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
       }
+      msg_stack.pop();
     }
   }
   // Now have communicators for all regions.
@@ -2488,36 +2518,40 @@ vector<BoundaryRegion*> BoutMesh::getBoundaries() {
 }
 
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
-  Field3D result = 0.;
+  Field3D result(f);
   if((ixseps_inner > 0) && (ixseps_inner < nx-1)) {
+    result.allocate();
     if(XPROC(ixseps_inner) == PE_XIND) {
       int x = XLOCAL(ixseps_inner);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+	  result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]);
+          //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
     if(XPROC(ixseps_inner-1) == PE_XIND) {
       int x = XLOCAL(ixseps_inner-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+	  result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]);
+          //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
   }
-  if((ixseps_outer > 0) && (ixseps_outer < nx-1)) {
+  if((ixseps_outer > 0) && (ixseps_outer < nx-1) && (ixseps_outer != ixseps_inner)) {
+    result.allocate();
     if(XPROC(ixseps_outer) == PE_XIND) {
       int x = XLOCAL(ixseps_outer);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
     if(XPROC(ixseps_outer-1) == PE_XIND) {
       int x = XLOCAL(ixseps_outer-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
   }
