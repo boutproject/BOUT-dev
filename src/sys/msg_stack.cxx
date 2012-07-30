@@ -40,9 +40,9 @@ MsgStack::~MsgStack()
   clear();
 }
 
+#if CHECK > 1
 int MsgStack::push(const char *s, ...)
 {
-#if CHECK > 1
   va_list ap;  // List of arguments
   msg_item_t *m;
 
@@ -76,38 +76,21 @@ int MsgStack::push(const char *s, ...)
 
   nmsg++;
   return nmsg-1;
-#else
-  return 0;
-#endif
 }
 
-int MsgStack::setPoint()
-{
-#if CHECK > 1
+int MsgStack::setPoint() {
   // Create an empty message
-
   return push(NULL);
-#else
-  return 0;
-#endif
 }
 
-void MsgStack::pop()
-{
-#if CHECK > 1
-  
+void MsgStack::pop() {
   if(nmsg <= 0)
     return;
-  
-  //output.write("Popping %d\n", nmsg);
 
   nmsg--;
-#endif
 }
 
-void MsgStack::pop(int id)
-{
-#if CHECK > 1
+void MsgStack::pop(int id) {
   if(id < 0)
     id = 0;
 
@@ -115,20 +98,13 @@ void MsgStack::pop(int id)
     return;
 
   nmsg = id;
-
-#endif
 }
 
-void MsgStack::clear()
-{
-#if CHECK > 1
+void MsgStack::clear() {
   nmsg = 0;
-#endif
 }
 
-void MsgStack::dump()
-{
-#if CHECK > 1
+void MsgStack::dump() {
   output.write("====== Back trace ======\n");
 
   for(int i=nmsg-1;i>=0;i--) {
@@ -138,5 +114,6 @@ void MsgStack::dump()
       output.write("\n");
     }
   }
-#endif
 }
+
+#endif

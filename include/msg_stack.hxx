@@ -42,15 +42,29 @@ class MsgStack {
   MsgStack();
   ~MsgStack();
   
+#if CHECK > 1
   int push(const char *s, ...); ///< Add a message to the stack. Returns a message id
+  
   int setPoint();     ///< get a message point
-
+  
   void pop();          ///< Remove the last message
   void pop(int id);    ///< Remove all messages back to msg <id>
   void clear();        ///< Clear all message
-
+  
   void dump();         ///< Write out all messages (using output)
- 
+#else
+  /// Dummy functions which should be optimised out
+  int push(const char *s, ...) {return 0;}
+  
+  int setPoint() {return 0;}
+  
+  void pop() {}
+  void pop(int id) {}
+  void clear() {}
+  
+  void dump() {}
+#endif
+  
  private:
   char buffer[256];
   
