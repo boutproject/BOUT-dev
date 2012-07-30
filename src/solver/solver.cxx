@@ -425,11 +425,11 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   options->get("dump_format", dump_ext, "default");
   
   options->get("restart_format", restart_ext, dump_ext);
-
-  /// Set the restart file format
-  restart.setFormat(restart_ext);
   restartext = string(restart_ext);
-
+  
+  // Set up restart options
+  restart = Datafile(options->getSection("restart"));
+  
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);
   restart.add(iteration, "hist_hi", 0);
@@ -479,10 +479,11 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
 #endif
     
     /// Load restart file
-    if(restart.read("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str()) != 0) {
-      output.write("Error: Could not read restart file\n");
-      return(2);
-    }
+    if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+      throw new BoutException("Error: Could not open restart file\n");
+    if(!restart.read())
+      throw new BoutException("Error: Could not read restart file\n");
+    restart.close();
 
     if(NPES == 0) {
       // Old restart file
@@ -533,8 +534,7 @@ void Solver::setRestartDir(const string &dir)
  * Useful routines (protected)
  **************************************************************************/
 
-int Solver::getLocalN()
-{
+int Solver::getLocalN() {
   int n2d = n2Dvars();
   int n3d = n3Dvars();
   
@@ -547,18 +547,14 @@ int Solver::getLocalN()
   //////////// Find boundary regions ////////////
   
   // Y up
-  RangeIter *xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
   }
-  delete xi;
   
   // Y down
-  xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     local_N +=  mesh->ystart * (n2d + ncz * n3d);
   }
-  delete xi;
   
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
@@ -575,8 +571,7 @@ int Solver::getLocalN()
   return local_N;
 }
 
-Solver* Solver::Create()
-{  
+Solver* Solver::Create() {  
   return SolverFactory::getInstance()->createSolver();
 }
 
@@ -685,8 +680,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
 }
 
 /// Loop over variables and domain. Used for all data operations for consistency
-void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
-{
+void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   int jx, jy;
   int p = 0; // Counter for location in udata array
 
@@ -700,12 +694,10 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   }
 
   // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
@@ -713,12 +705,10 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
       loop_vars_op(jx, jy, udata, p, op);
   
   // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op);
   }
-  delete xi;
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {

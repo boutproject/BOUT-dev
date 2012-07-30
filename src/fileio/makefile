@@ -2,7 +2,7 @@
 BOUT_TOP = ../..
 
 DIRS            = impls
-SOURCEC		= datafile.cxx formatfactory.cxx
+SOURCEC		= datafile.cxx dataformat.cxx formatfactory.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx) dataformat.hxx
 TARGET		= lib
 

@@ -49,7 +49,7 @@ class GridDataSource {
   virtual vector<int> getSize(const char *name) = 0; ///< Get size of the variable
 
   /// Set the (x,y,z) origin for all subsequent calls
-  virtual bool setOrigin(int x = 0, int y = 0, int z = 0) = 0;
+  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
   
   /// Get data from the source
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
@@ -85,7 +85,7 @@ class GridFile : public GridDataSource {
   
   virtual vector<int> getSize(const char *name);
 
-  virtual bool setOrigin(int x = 0, int y = 0, int z = 0);
+  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
 
   // Fetch the data. Returns true on success
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);

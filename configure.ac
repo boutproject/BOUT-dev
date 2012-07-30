@@ -35,6 +35,7 @@ AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
 AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
 AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
+AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
@@ -615,7 +616,6 @@ then
       file_formats="$file_formats netCDF"
 
       echo " -> NetCDF support enabled"
-      echo ""
     fi
   fi
 fi
@@ -624,6 +624,66 @@ if test "$with_netcdf" = "no"
 then
   echo "NetCDF support disabled"
 fi
+
+echo ""
+
+#############################################################
+# Parallel NetCDF support
+#############################################################
+
+PNCPATH=""
+if test "$with_pnetcdf" != "no"
+then
+  echo "Searching for Parallel-NetCDF library"
+
+  if test "$with_pnetcdf" != ""
+  then
+    # Given a path to the library
+    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h $with_pnetcdf/lib/libpnetcdf.a, PNCPATH=$with_pnetcdf,)
+    if test "$PNCPATH" == ""
+    then
+      echo "parallel-netcdf not found in given directory"
+    fi
+  fi
+  
+  # Find the utilities included with pnetcdf
+  if test "$PNCPATH" == ""
+  then
+    path=`which ncmpidump`
+    if test "$path" != ""
+    then
+      path=`dirname $path`
+      path=$path/..
+      AC_CHECK_FILES($path/include/pnetcdf.h $path/lib/libpnetcdf.a, PNCPATH=$path,)
+    fi
+  fi
+
+  # Try locate
+  if test "$PNCPATH" == ""
+  then
+    path=`locate pnetcdf.h | head -n 1`
+    if test "$path" != ""
+    then
+      path=$path/..
+      AC_CHECK_FILES($path/include/pnetcdf.h $path/lib/libpnetcdf.a, PNCPATH=$path,)
+    fi
+  fi
+fi
+
+if test "$PNCPATH" == ""
+then
+  echo "Parallel-NetCDF support disabled"
+else
+  # Set a compile-time flag
+  CXXFLAGS="$CXXFLAGS -DPNCDF"
+  EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/lib -lpnetcdf"
+  
+  file_formats="$file_formats Parallel-NetCDF"
+  echo "Parallel-NetCDF support enabled"
+fi
+
+echo ""
 
 #############################################################
 # PACT library
@@ -1074,6 +1134,13 @@ then
   echo "  NetCDF support: no" | tee -a config-build.log
 else
   echo "  NetCDF support: yes" | tee -a config-build.log
+fi
+
+if test "$PNCPATH" = ""
+then
+  echo "  Parallel-NetCDF support: no" | tee -a config-build.log
+else
+  echo "  Parallel-NetCDF support: yes" | tee -a config-build.log
 fi
 
 if test "$PACT" = ""

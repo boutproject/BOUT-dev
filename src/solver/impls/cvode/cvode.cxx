@@ -264,16 +264,16 @@ int CvodeSolver::run(MonitorFunc monitor) {
       output.write("Timestep failed. Aborting\n");
 
       // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
 
       bout_error("SUNDIALS timestep failed\n");
     }
 
     /// Write the restart file
-    restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+    restart.write("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str());
 
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
+      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
     }
 
     /// Call the monitor function
@@ -282,7 +282,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
       // User signalled to quit
 
       // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");
       break;
@@ -423,259 +423,6 @@ void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jv
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
-}
-
-/**************************************************************************
- * PRIVATE FUNCTIONS
- **************************************************************************/
-
-/// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void CvodeSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
-{
-  BoutReal **d2d, ***d3d;
-  int i;
-  int jz;
- 
-  int n2d = f2d.size();
-  int n3d = f3d.size();
-
-  switch(op) {
-  case LOAD_VARS: {
-    /// Load variables from IDA into BOUT++
-    
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
-      p++;
-    }
-    
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-      
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
-      }  
-    }
-    break;
-  }
-  case LOAD_DERIVS: {
-    /// Load derivatives from IDA into BOUT++
-    /// Used for preconditioner
-    
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
-      p++;
-    }
-    
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-      
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
-      }  
-    }
-    
-    break;
-  }
-  case SAVE_VARS: {
-    /// Save variables from BOUT++ into IDA (only used at start of simulation)
-    
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-    
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-      
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
-      }  
-    }
-    break;
-  }
-    /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
-  case SAVE_DERIVS: {
-    
-    // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
-      p++;
-    }
-    
-    for (jz=0; jz < mesh->ngz-1; jz++) {
-      
-      // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
-      }  
-    }
-    break;
-  }
-  }
-}
-
-/// Loop over variables and domain. Used for all data operations for consistency
-void CvodeSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
-{
-  int jx, jy;
-  int p = 0; // Counter for location in udata array
-
-  int MYSUB = mesh->yend - mesh->ystart + 1;
-
-  // Inner X boundary
-  if(mesh->firstX()) {
-    for(jx=0;jx<mesh->xstart;jx++)
-      for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
-  }
-
-  // Lower Y boundary region
-  RangeIter *xi = mesh->iterateBndryLowerY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Bulk of points
-  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
-    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
-  
-  // Upper Y boundary condition
-  xi = mesh->iterateBndryUpperY();
-  for(xi->first(); !xi->isDone(); xi->next()) {
-    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(xi->ind, jy, udata, p, op);
-  }
-  delete xi;
-
-  // Outer X boundary
-  if(mesh->lastX()) {
-    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
-      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_vars_op(jx, jy, udata, p, op);
-  }
-}
-
-void CvodeSolver::load_vars(BoutReal *udata)
-{
-  unsigned int i;
-  
-  // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].var->allocate();
-    f3d[i].var->setLocation(f3d[i].location);
-  }
-
-  loop_vars(udata, LOAD_VARS);
-
-  // Mark each vector as either co- or contra-variant
-
-  for(i=0;i<v2d.size();i++)
-    v2d[i].var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].var->covariant = v3d[i].covariant;
-}
-
-void CvodeSolver::load_derivs(BoutReal *udata)
-{
-  unsigned int i;
-  
-  // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].F_var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].F_var->allocate();
-    f3d[i].F_var->setLocation(f3d[i].location);
-  }
-
-  loop_vars(udata, LOAD_DERIVS);
-
-  // Mark each vector as either co- or contra-variant
-
-  for(i=0;i<v2d.size();i++)
-    v2d[i].F_var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].F_var->covariant = v3d[i].covariant;
-}
-
-// This function only called during initialisation
-int CvodeSolver::save_vars(BoutReal *udata)
-{
-  unsigned int i;
-
-  for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
-
-  for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
-  
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].var->toCovariant();
-    }else
-      v2d[i].var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].var->toCovariant();
-    }else
-      v3d[i].var->toContravariant();
-  }
-
-  loop_vars(udata, SAVE_VARS);
-
-  return(0);
-}
-
-void CvodeSolver::save_derivs(BoutReal *dudata)
-{
-  unsigned int i;
-
-  // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].F_var->toCovariant();
-    }else
-      v2d[i].F_var->toContravariant();
-  }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].F_var->toCovariant();
-    }else
-      v3d[i].F_var->toContravariant();
-  }
-
-  // Make sure 3D fields are at the correct cell location
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if((*it).location != ((*it).F_var)->getLocation()) {
-      //output.write("SOLVER: Interpolating\n");
-      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
-    }
-  }
-
-  loop_vars(dudata, SAVE_DERIVS);
 }
 
 /**************************************************************************

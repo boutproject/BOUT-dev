@@ -56,6 +56,7 @@
 \renewcommand{\headrulewidth}{0.3pt}
 
 \newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
 
 %% commands for boxes with important notes
@@ -129,6 +130,19 @@ using ideal MHD as an example. The remaining sections describe in more detail as
 section~\ref{sec:diffops} describes the differential operators and methods available; section~\ref{sec:staggergrids}
 covers the experimental staggered grid system.
 
+Various sources of documentation are:
+\begin{itemize}
+\item Most directories in the BOUT++ distribution contain a README file. This should
+describe briefly what the contents of the directory are and how to use them.
+\item This user's manual, which goes through BOUT++ from a user's point of view
+\item The developer's manual, which gives details of the internal working of the code.
+\item The reference guide, which summarises functions, settings etc. Intended more for
+quick reference rather than a guide.
+\item Most of the code contains Doxygen comment tags (which are slowly getting better). 
+Running doxygen (\url{www.doxygen.org}) on these files should therefore generate an HTML
+reference. This is probably going to be the most up-to-date documentation.
+\end{itemize}
+
 \subsection{License and terms of use}
 
 \begin{verbatim}
@@ -169,49 +183,341 @@ when using this code:
   and/or other BOUT++ papers. See the file CITATION for details.
 \end{enumerate}
 
-\section{Starting}
+\section{Getting started}
+
+This section goes through the process of getting, installing, and
+starting to run BOUT++. Only the basic functionality needed to use BOUT++
+is described here; the next section (\ref{sec:advancedinstall}) goes through
+more advanced options, and how to fix some common problems. 
+This section will go through the following steps:
+\begin{enumerate}
+\item Obtaining a copy of BOUT++
+\item Installing an MPI compiler (\ref{sec:installmpi})
+\item Installing libraries (\ref{sec:libraries})
+\item Configuring BOUT++ analysis codes (\ref{sec:configanalysis})
+\item Compiling BOUT++ (\ref{sec:installbout})
+\item Running the test suite (\ref{sec:runtestsuite})
+\end{enumerate}
+
+{\bf Note}: In this manual commands to run in a BASH shell will begin with '\$', and commands specific to CSH with a '\%'.
+
+\subsection{Obtaining BOUT++}
 
 BOUT++ is now hosted publicly on github (\url{http://github.com/bendudson/BOUT}), and includes
-instructions on downloading and installing BOUT++ in wiki pages. This website also has current issues
+instructions on downloading and installing BOUT++ in wiki pages. This website also has a list of current  issues
 and history of changes. To obtain a copy of the latest version, run \index{Github}
 \begin{verbatim}
-git clone git://github.com/bendudson/BOUT.git
+$ git clone git://github.com/bendudson/BOUT.git
 \end{verbatim}
 which will create a directory \texttt{BOUT} containing the code. To get the latest changes later,
 go into the  \texttt{BOUT} directory and run
 \begin{verbatim}
-git pull
+$ git pull
 \end{verbatim}
 For more details on using git to work with BOUT++, see the developer's manual.
 
-Once you have got a copy of BOUT++, see the README files for brief descriptions of 
-each file and directory. The core BOUT++ code is in the
-\texttt{bout++} directory (with source in \texttt{bout++/src}), and
-section~\ref{sec:install} describes how to compile this as a library which
-can then be used by many different fluid models. Some example models and test
-problems are in the \texttt{bout++/examples} directory and are described in
-section~\ref{sec:examples}.
+\subsection{Installing an MPI compiler}
+\label{sec:installmpi}
 
-\subsection{Documentation}
+To compile and run the examples BOUT++ needs an MPI compiler. 
+If you are installing on a cluster or supercomputer then the MPI
+C++ compilers will already be installed, and on Cray or IBM
+machines will probably be called 'CC' and 'xlC' respectively. 
+If you're installing on a smaller server or your own machine then you need
+to check that you have an MPI compiler by running 
+\begin{verbatim}
+$ mpicc
+\end{verbatim}
 
-Various sources of documentation are:
-\begin{itemize}
-\item Most directories in the BOUT++ distribution contain a README file. This should
-describe briefly what the contents of the directory are and how to use them.
-\item This user's manual, which goes through BOUT++ from a user's point of view
-\item The developer's manual, which gives details of the internal working of the code.
-\item The reference guide, which summarises functions, settings etc. Intended more for
-quick reference rather than a guide.
-\item Most of the code contains Doxygen comment tags (which are slowly getting better). 
-Running doxygen (\url{www.doxygen.org}) on these files should therefore generate an HTML
-reference. This is probably going to be the most up-to-date documentation.
-\end{itemize}
+This should produce an error message along the lines of ``no input files'', but
+if you see something like ``command not found'' then you need to install MPI first. 
+There are several free MPI distributions available, the main ones currently being
+MPICH2 (\url{www.mcs.anl.gov/mpi/mpich2}), OpenMPI (\url{www.open-mpi.org/}),
+and LAM (\url{www.lam-mpi.org/}).
+On Ubuntu or Debian distributions if you have administrator rights then 
+you can install MPICH2 by running
+\begin{verbatim}
+$ sudo apt-get install mpich2 libmpich2-dev
+\end{verbatim}
+
+If this works, and you now have a working \texttt{mpicc} command, 
+skip to the next section on installing libraries. If not, and 
+particularly if you don't have administrator rights, you should
+install MPI in your home directory by compiling it from source. 
+In your home directory,
+create two subdirectories: One called ``install'' where we'll put the source code, and one called ``local'' where we'll install the MPI compiler:
+\begin{verbatim}
+$ cd
+$ mkdir install
+$ mkdir local
+\end{verbatim}
+
+Download the latest stable version of MPICH2 from \url{http://www.mcs.anl.gov/research/projects/mpich2/downloads/} and put the file in the ``install'' subdirectory created above. At the time of writing (June 2012), the file was 
+called \texttt{mpich2-1.4.1p1.tar.gz}. Untar the file:
+\begin{verbatim}
+$ tar -xzvf mpich2-1.4.1p1.tar.gz
+\end{verbatim}
+which will create a directory containing the source code. 'cd' into this directory and run
+\begin{verbatim}
+$ ./configure --prefix=$HOME/local
+$ make
+$ make install
+\end{verbatim}
+Each of which might take a while. This is the standard way of installing software from source, and will also be used for installing libraries later. The \texttt{--prefix=} option specifies
+where the software should be installed. Since we don't have permission
+to write in the system directories (e.g. \texttt{/usr/bin}), we just use a subdirectory of our home directory. The \texttt{configure} command configures the
+install, finding the libraries and commands it needs. \texttt{make} compiles everything using the options found by \texttt{configure}. The final \texttt{make install} step copies the compiled code into the correct places under \texttt{\$HOME/local}. 
+
+To be able to use the MPI compiler, you need to modify the \texttt{PATH}
+environment variable. To do this, run
+\begin{verbatim}
+$ export PATH=$PATH:$HOME/local/bin
+\end{verbatim}
+and add this to the end of your startup file \texttt{\$HOME/.bashrc}. If you're using CSH rather than BASH, the command is
+\begin{verbatim}
+% setenv PATH ${PATH}:${HOME}/local/bin
+\end{verbatim}
+and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
+\texttt{mpicc} and so have a working MPI compiler.
 
 \subsection{Installing libraries}
-\label{sec:install}
+\label{sec:libraries}
 
-BOUT++ uses several external libraries, and unless these are already installed,
-you will need to install them yourself. 
+After getting an MPI compiler, the next step is to make sure the
+libraries BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3
+library, and to run any of the examples you'll also need NetCDF-4 installed. 
+
+Most large machines (e.g. NERSC Hopper, HECToR, HPC-FF etc.)
+will have these libraries and many more already installed, but you may 
+need to load a module to use them. To see a list of the available modules, 
+try running
+\begin{verbatim}
+modules avail
+\end{verbatim}
+which works on many systems, but not all. See your system's documentation on
+modules and which ones to load. If you don't know, or modules don't work, you can still install libraries in your home directory by following the instructions below.
+
+If you're installing on your own machine, then install the packages for your
+distribution. On Ubuntu or Debian, the necessary packages can be installed
+by running 
+\begin{verbatim}
+$ sudo apt-get install libfftw3-dev libnetcdf-dev
+\end{verbatim}
+
+The easiest way to test if the libraries are installed correctly is 
+try configuring BOUT++. In the \texttt{BOUT} directory obtained previously, run
+\begin{verbatim}
+$ ./configure
+\end{verbatim}
+If this finishes by printing a summary, and paths for IDL, Python, and Octave,
+then the libraries are set up and you can skip to the next section.
+If you see a message ``\texttt{ERROR: FFTW not found. Required by BOUT++}''
+then you need to install FFTW-3. If you haven't already, create
+directories ``install'' and ``local'' in your home directory:
+\begin{verbatim}
+$ cd
+$ mkdir install
+$ mkdir local
+\end{verbatim}
+
+Download the latest stable version from \url{http://www.fftw.org/download.html} into the ``install'' directory. At the time of writing, this was called
+\texttt{fftw-3.3.2.tar.gz}. Untar this file, and 'cd' into the resulting directory. As with the MPI compiler, configure and install the FFTW library into
+\texttt{\$HOME/local} by running:
+\begin{verbatim}
+$ ./configure --prefix=$HOME/local
+$ make
+$ make install
+\end{verbatim}
+
+Go back to the \texttt{BOUT} directory and re-run the configure script.
+If you used \texttt{\$HOME/local} as the prefix, BOUT++ configure should
+find the FFTW library now. If you installed somewhere else, you can
+specify the directory with the \texttt{--with-fftw=} option:
+\begin{verbatim}
+$ ./configure --with-fftw=$HOME/local
+\end{verbatim}
+
+Configure should now find FFTW, and search for the NetCDF library. If
+configure finishes successfully, then skip to the next section, but if you
+see a message \texttt{NetCDF support disabled} then configure couldn't find
+the NetCDF library. Unless you have PACT or pnetcdf installed, this will be
+followed by a message \texttt{ERROR: At least one file format must be supported}. 
+
+Download the 4.1.3 {\bf bundled}\footnote{Support for the more recent unbundled versions is coming soon} release of NetCDF from \url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the \texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. Untar the file and 'cd' into the resulting directory:
+\begin{verbatim}
+$ tar -xzvf netcdf-4.1.3.tar.gz
+$ cd netcdf-4.1.3
+\end{verbatim}
+As with MPI compilers and FFTW, configure, then make and make install:
+\begin{verbatim}
+$ ./configure --prefix=$HOME/local
+$ make
+$ make install
+\end{verbatim}
+Sometimes configure can fail, in which case try disabling fortran and the
+HDF5 interface:
+\begin{verbatim}
+$ ./configure --prefix=$HOME/local --disable-fortran --disable-netcdf-4
+$ make
+$ make install
+\end{verbatim}
+
+%Download the latest stable release of NetCDF-4 C++ from
+%\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/}.
+%At the time of writing, this was called \texttt{netcdf-cxx4-4.2.tar.gz}.
+%Put this file into your ``install'' directory, untar it, and 'cd' into 
+%the resulting directory.
+
+Go back to the BOUT directory and run the configure script again, 
+this time specifying both the location of FFTW (if you installed it 
+from source above), and the NetCDF library:
+\begin{verbatim}
+$ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
+\end{verbatim}
+
+which should now finish successfully, printing a summary of the configuration:
+\begin{verbatim}
+Configuration summary
+  FACETS support: no
+  PETSc support: no
+  IDA support: no
+  CVODE support: no
+  NetCDF support: yes
+  Parallel-NetCDF support: no
+  PDB support: no
+  Hypre support: no
+\end{verbatim}
+
+If not, see section~\ref{sec:advancedinstall} for some things you can
+try to resolve common problems.
+
+\subsection{Configuring analysis routines}
+\label{sec:configanalysis}
+
+The BOUT++ installation comes with a set of useful routines which can
+be used to prepare inputs and analyse outputs. Most of this code
+is in IDL, but an increasing amount is in Python. In particular all the
+test suite scripts use Python, so to run these you'll need this configured.
+If you just want to compile BOUT++ then you can skip to the next section, but make a note of what configure printed out. 
+
+When the configure script finishes, it prints out the paths you need
+to get IDL, Python, and Octave analysis routines working. After running
+the  command which looks like
+\begin{verbatim}
+$ export IDL_PATH=...
+\end{verbatim}
+check that \texttt{idl} can find the analysis routines by running:
+\begin{verbatim}
+$ idl
+IDL> .r collect
+IDL> help, /source
+\end{verbatim}
+You should see the function \texttt{COLLECT} in the \texttt{BOUT/tools/idllib} directory. If not, something is wrong with your \texttt{IDL\_PATH} variable. On some machines, modifying \texttt{IDL\_PATH} causes problems, in which case you can try modifying the path inside IDL by running
+\begin{verbatim}
+IDL> !path = !path + ":/path/to/BOUT/tools/idllib"
+\end{verbatim}
+where you should use the full path. You can get this by going to the \texttt{tools/idllib} directory and typing '\texttt{pwd}'. Once this is done you should be able to use \texttt{collect} and other routines.
+
+
+To use Python, you will need the NumPy and SciPy libraries. On Debian or Ubuntu
+these can be installed with
+\begin{verbatim}
+$ sudo apt-get install python-scipy  
+\end{verbatim}
+which should then add all the other dependencies like NumPy. To test if everything is installed, run
+\begin{verbatim}
+$ python
+>>> import scipy 
+\end{verbatim}
+If not, see the SciPy website \url{http://www.scipy.org} for instructions
+on installing. 
+
+To do this, the path to
+\texttt{tools/pylib} should be added to the \texttt{PYTHONPATH} environment variable.
+Instructions for doing this are printed at the end of the configure script, for example:
+
+\begin{verbatim}
+Make sure that the tools/pylib directory is in your PYTHONPATH
+e.g. by adding to your ~/.bashrc file
+
+   export PYTHONPATH=/home/ben/BOUT/tools/pylib/:$PYTHONPATH
+
+\end{verbatim}
+To test if this command has worked, try running
+\begin{verbatim}
+$ python
+>>> import boutdata
+\end{verbatim}
+If this doesn't produce any error messages then Python is configured correctly.
+
+\subsection{Compiling BOUT++}
+\label{sec:installbout}
+
+Once BOUT++ has been configured, you can compile the bulk of the code
+by going to the \texttt{BOUT} directory (same as \texttt{configure}) and running
+\begin{verbatim}
+$ make
+\end{verbatim}
+(on OS-X, FreeBSD, and AIX this should be \texttt{gmake}). This should print something like:
+\begin{verbatim}
+----- Compiling BOUT++ -----
+CXX      =  mpicxx
+CFLAGS   =  -O -DCHECK=2 -DSIGHANDLE \
+ -DREVISION=13571f760cec446d907e1bbeb1d7a3b1c6e0212a \
+ -DNCDF -DBOUT_HAS_PVODE
+CHECKSUM =  ff3fb702b13acc092613cfce3869b875
+INCLUDE  =  -I../include
+  Compiling  field.cxx
+  Compiling  field2d.cxx
+\end{verbatim}
+
+At the end of this, you should see a file \texttt{libbout++.a} in
+the \texttt{lib/} subdirectory of the BOUT++ distribution. If you
+get an error, please send an error report to a BOUT++ developer
+such as \url{mailto:benjamin.dudson@york.ac.uk} containing
+\begin{itemize}
+\item Which machine you're compiling on
+\item The output from make, including full error message
+\item The \texttt{make.config} file in the BOUT++ root directory
+\end{itemize}
+
+\subsection{Running the test suite}
+\label{sec:runtestsuite}
+
+In the \texttt{examples/} subdirectory there are a set of short test cases 
+which are intended to test portions of the BOUT++ code and catch any bugs
+which could be introduced. To run the test cases, the Python libraries
+must first be set up by following the instructions in section~\ref{sec:configanalysis}. 
+Go into the \texttt{examples} subdirectory and run
+\begin{verbatim}
+$ ./test_suite
+\end{verbatim}
+
+This will go through a set of tests,
+each on a variety of different processors. {\bf Note:} currently this uses
+the \texttt{mpirun} command to launch the runs, so won't work on machines which
+use a job submission system like PBS or SGE.
+
+These tests should all pass, but if not please send an error report to
+\url{mailto:benjamin.dudson@york.ac.uk} containing
+\begin{itemize}
+\item Which machine you're running on
+\item The \texttt{make.config} file in the BOUT++ root directory
+\item The run.log.* files in the directory of the test which failed
+\end{itemize}
+
+If the tests pass, congratulations! You have now got a working installation of BOUT++. 
+Unless you want to use some experimental features of BOUT++, skip to section~\ref{sec:running}
+to start running the code.
+
+\section{Advanced installation options}
+\label{sec:advancedinstall}
+
+This section describes some common issues encountered when configuring
+and compiling BOUT++, and how to configure optional libraries like
+SUNDIALS and PETSc.
+
+\subsection{File formats}
 
 BOUT++ can currently use two different file formats: Portable Data Binary
 (PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}}, and
@@ -221,98 +527,32 @@ was the original format used by BOUT++. NetCDF is a more widely used
 format and so has many more tools for viewing and manipulating files.
 In particular, the NetCDF-4 library can produce files in either
 NetCDF3 ``classic'' format, which is backwards-compatible with NetCDF
-libraries since 1992, or in the newer NetCDF4 format, which is based
-on (and compatible with) HDF5. If you have both libraries installed then
-BOUT++ can use both simultaneously, for example reading in grid files in PDB
-format, but writing output data in NetCDF format. 
+libraries since 1994 (version 2.3), or in the newer NetCDF4 format, 
+which is based on (and compatible with) HDF5. If you have both libraries
+installed then BOUT++ can use both simultaneously, for example reading in
+grid files in PDB format, but writing output data in NetCDF format. 
 
-It should be possible to install and try out BOUT++ with a minimal number of
-libraries, but BOUT++ can use the following libraries:
-\begin{itemize}
-  \item MPI (Message Passing Interface) and C++ compiler (e.g. \code{mpiCC} or \code{mpicxx}) {\bf [Required]}. Should work with most implementations, though mostly tested with MPICH, LAM, and OpenMPI.
-  \item FFTW-3 (Fastest Fourier Transform  in the West) {\bf [Required]} \url{http://www.fftw.org/} 
-  \item NetCDF-4 \url{http://www.unidata.ucar.edu/software/netcdf/} {\bf [Recommended]}. Does not need the HDF5 extensions.
-  \item SUNDIALS \url{https://computation.llnl.gov/casc/sundials/main.html}. An old version (c.1998) of the SUNDIALS CVODE solver (then called PVODE) is included with BOUT++, but the latest CVODE solver is recommended.
-  \item PACT \url{http://pact.llnl.gov/} for reading and writing Portable Data Binary (PDB) format files. This is mainly for backwards compatibility with BOUT and UEDGE, and NetCDF-4 is recommended.
-  \item LAPACK for linear solvers
-\end{itemize}
+To enable NetCDF support, you will need to install NetCDF version 4.0.1 or later. 
+Note that although the NetCDF-4 library is used for the C++ interface, by default
+BOUT++ writes the ``classic'' format. Because of this, you don't need to install zlib or HDF5
+for BOUT++ NetCDF support to work.  If you want to output to HDF5 then you need to first install
+  the zlib and HDF5 libraries, and then compile NetCDF with HDF5 support. 
+When NetCDF is installed, a script \texttt{nc-config}
+should be put into somewhere on the path. If this is found then configure
+should have all the settings it needs. If this isn't found then configure
+will search for the NetCDF include and library files. 
 
-A bare minimum to get BOUT++ running is an MPI implementation (e.g. MPICH, OpenMPI, LAM), FFTW-3, and one (or both) of NetCDF or PACT. 
+PACT \url{http://pact.llnl.gov/} is needed for reading and writing Portable Data Binary (PDB) format files. This is mainly for backwards compatibility with BOUT and UEDGE, and NetCDF-4 is recommended.
+If you need to be able to read or write PDB files, details on installing PACT are given in Appendix~\ref{apx:pact}. 
 
-If you have adminstrator rights (root access) to your computer, then you could use a package manager
-to install these libraries. Alternatively you could ask someone to install these for you. The Debian / Ubuntu
-packages can be installed by running
-\begin{verbatim}
-$ sudo apt-get install mpich-bin libfftw3-dev libnetcdf-dev
-\end{verbatim}
+\subsection{SUNDIALS}
 
-Most large machines / clusters (e.g. NERSC Franklin, HECToR etc) will usually have all these libraries
-already installed (check the available modules, usually by running \texttt{modules avail}). If the 
-libraries are not installed, then you will have to install them in your home directory.
-First go to your home directory, and create a directory ``install'' which is going to be used for temporary
-installation files, and a directory ``local'' where the libraries are going to be installed:
-\begin{verbatim}
- ~/ $ mkdir install
- ~/ $ mkdir local
- ~/ $ mkdir local/bin
- ~/ $ mkdir local/lib
-\end{verbatim}
-
-Then add your local directories to environment variables. For BASH shells:
-\begin{verbatim}
- ~/ $ export PATH=$HOME/local/bin:$PATH
- ~/ $ export LD_LIBRARY_PATH=$HOME/local/lib:$LD_LIBRARY_PATH
-\end{verbatim}
-or for csh type shells:
-\begin{verbatim}
- ~/ $ setenv PATH $HOME/local/bin:$PATH
- ~/ $ setenv LD_LIBRARY_PATH $HOME/local/lib:$LD_LIBRARY_PATH
-\end{verbatim}
-These two lines should be added to the end of your login scripts (e.g. \texttt{~/.profile})
-
-Then download the NetCDF, FFTW, SUNDIALS and (optionally) PACT libraries, and put them into ``install''. This
-tutorial is with the following versions:
-\begin{verbatim}
- ~/ $ ls install
-fftw-3.2.1.tar.gz    pact-2.1.0.tar.gz
-netcdf-4.0.1.tar.gz  sundials-2.4.0.tar.gz
-\end{verbatim}
-
-Before installing, make sure the correct version of \texttt{install} is being used by running
-\begin{verbatim}
- ~/ $ which install
-\end{verbatim}
-This should point to a system directory like \texttt{/usr/bin/install}. Sometimes when IDL has been
-installed, this points to the IDL install (e.g. something like \texttt{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:
-\begin{verbatim}
- ~/ $ ln -s /usr/bin/install $HOME/local/bin/
-\end{verbatim}
-``which install'' should now print the install in your local bin directory.
-
-Most of these libraries can be installed by unzipping the archive, configuring and making. For example, the NetCDF library can be built using:
-\begin{verbatim}
-~/install/ $ tar -xzvf netcdf-4.0.1.tar.gz
-~/install/ $ cd netcdf-4.0.1
-~/install/netcdf-4.0.1/ $ ./configure --prefix=$HOME/local
-~/install/netcdf-4.0.1/ $ gmake
-~/install/netcdf-4.0.1/ $ gmake install
-\end{verbatim}
-
-NOTES: 
-\begin{itemize}
-\item If you want to output to HDF5 then you need to first install
-  the zlib and HDF5 libraries, and then compile NetCDF with HDF5 support.
-\begin{verbatim}
-~/install/netcdf-4.0.1/ $ ./configure --prefix=$HOME/local
-\end{verbatim}
-\item On Franklin, SUNDIALS needs to be compiled with ``--with-mpicc=cc'' to
-  force it to build the parallel libraries
-\end{itemize}
-
-Details on installing PACT are given in Appendix~\ref{apx:pact}. NOTE: This
-can be a giant hassle, and is only really needed
-for backwards compatibility with BOUT. If you're not interested in using PDB files
-you can skip this.
+The BOUT++ distribution includes a 1998 version of CVODE (then called PVODE) by Scott D. Cohen and Alan C.
+Hindmarsh, which is the default time integration solver. 
+Whilst no serious bugs have been found in this code
+(as far as I am aware), several features such as user-supplied preconditioners and constraints cannot
+be used with this solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE and
+IDA, which are available from \code{https://computation.llnl.gov/casc/sundials/main.html}.
 
 The SUNDIALS library needs to have MPI enabled, so after configuring, check the output and look for something like this:
 \begin{verbatim}
@@ -325,120 +565,14 @@ checking for mpicc... none
 configure: WARNING: cannot find MPI-C compiler
 \end{verbatim}
 
-If you see this warning, you need to tell CVODE which MPI compiler to use. This happens
-on machines where the MPI compilers are given non-standard names. For IBM AIX machines,
-use
+If you see this warning, you need to tell CVODE which MPI compiler to use.
+This happens on machines where the MPI compilers are given non-standard
+names. For IBM AIX machines, use
 \begin{verbatim}
 $ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
 \end{verbatim}
-
-\subsubsection{PETSc-dev}
-
-The development version of PETSc has the latest and greatest, and is needed for some 
-shiny features like timestepping. To install it, follow the instructions here:
-\url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
-writing, this consisted of fetching the latest version ({\bf NB} needs Mercurial 
-'hg' to be installed):
-\begin{verbatim}
-hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
-cd petsc-dev
-hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
-\end{verbatim}
-
-then configure PETSc, making sure to enable C++ and SUNDIALS support
-\begin{verbatim}
-./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
-            --with-sundials=1 --with-sundials-dir=$HOME/local/
-\end{verbatim}
-replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation. Finally
-compile PETSc:
-\begin{verbatim}
-make
-\end{verbatim}
-To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to the petsc-dev directory so add something
-like this to your startup file \texttt{\$HOME/.bashrc}
-\begin{verbatim}
-export PETSC_DIR=$HOME/petsc-dev
-\end{verbatim}
-
-\subsection{Installing BOUT++}
-\label{sec:installbout}
-
-Once you have the libraries installed, you can install BOUT++.
-In the root directory of the BOUT++ distribution is a file \texttt{INSTALL} 
-which will contain more details on installation, including troubleshooting.
-For most systems however the installation should consist of running the
-following commands in the BOUT++ root directory:
-\begin{verbatim}
-./configure
-gmake
-\end{verbatim}
-This should detect the setting needed automatically. The main things it's
-looking for are
-\begin{itemize}
-\item NetCDF installation. When NetCDF is installed, a script \texttt{nc-config}
-should be put into somewhere on the path. If this is found then configure
-should have all the settings it needs. If this isn't found then configure
-will search for the NetCDF include and library files. To specify the location
-of these files, use
-\begin{verbatim}
-    ./configure --with-netcdf=/path/to/netcdf/
-\end{verbatim}
-\item A PACT installation (\texttt{http://pact.llnl.gov}) for PDB file I/O. One of the places configure
-  will look is in your home/local directory. If you do not want PDB support, configure with
-\begin{verbatim}
-    ./configure --with-pdb=no
-\end{verbatim}
-If you do this, you will need to enable NetCDF support (see below).
-If you installed PACT into a non-standard location, you can specify this using
-\begin{verbatim}
-    ./configure PACT=/path/to/pact/
-\end{verbatim}
-\item MPI C and C++ compilers. These are usually called something like mpicc and mpiCC (or mpicxx), but if your compilers aren't recognised then set them using
-\begin{verbatim}
-     ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
-\end{verbatim}
-\end{itemize}
-
-When the compilation finishes the BOUT++ library should be in \texttt{lib/libbout++.a}.
-If you have trouble compiling see the \texttt{INSTALL} file for more details.
-
-To enable NetCDF support, you will need to install NetCDF version 4.0.1 or later. 
-Note that although the NetCDF-4 library is used for the C++ interface, by default
-BOUT++ writes the ``classic'' format, which can be read by any NetCDF installation
-since 1994 (version 2.3). Because of this, you don't need to install zlib or HDF5
-for BOUT++ NetCDF support to work.
-
-To enable NetCDF support,
-\begin{verbatim}
-./configure --with-netcdf
-\end{verbatim}
-or
-\begin{verbatim}
-./configure --with-netcdf=/path/to/netcdf/
-\end{verbatim}
-
-NOTES:
-\begin{itemize}
-\item On LLNL's Grendel, mpicxx is broken. Use mpiCC instead by passing ``MPICXX=mpiCC'' to configure. Also need to specify this to NetCDF library by passing ``CXX=mpiCC'' to NetCDF configure.
-\end{itemize}
-
-\subsubsection{Solver library}
-\label{sec:solverlibrary}
-
-As of July 2010, BOUT++ can be compiled with several solver libraries, and the desired one
-selected at runtime (thanks to factory magic by S.Farley).
-
-The BOUT++ distribution used to include a 1998 version of CVODE by Scott D. Cohen and Alan C.
-Hindmarsh, which was the default time integration solver. This is the easiest to install, and
-can be downloaded and compiled automatically by using the option
-\begin{verbatim}
-   ./configure --download-pvode
-\end{verbatim}
-Whilst no serious bugs have been found in this code
-(as far as I am aware), several features such as user-supplied preconditioners and constraints cannot
-be used with this solver. Currently, BOUT++ also supports the SUNDIALS solvers CVODE and
-IDA\footnote{available from \code{https://computation.llnl.gov/casc/sundials/main.html}}.
+On NERSC's Franklin, SUNDIALS needs to be compiled with ``--with-mpicc=cc'' to
+force it to build the parallel libraries
 
 The modern SUNDIALS CVODE solver is essentially the same as the 1998 CVODE (with some tweaking,
 re-arranging etc.), but this solver allows users to supply their own preconditioner 
@@ -470,7 +604,7 @@ You can compile in several of these libraries, for example
 is valid. This will allow you to select at run-time which solver to use. See section~\ref{sec:timeoptions}
 for more details on how to do this.
 
-\subsubsection{PETSc}
+\subsection{PETSc}
 
 BOUT++ can use PETSc for time-integration:
 \begin{verbatim}
@@ -480,17 +614,34 @@ BOUT++ can use PETSc for time-integration:
 This will allow use of a greater number of sophisticated time-integration
 packages and preconditioning methods, and is under development.
 
-\subsubsection{FFT library}
-
-BOUT++ needs the the FFTW-3 (Fastest Fourier Transform in the West)
-library\footnote{\code{http://www.fftw.org/}}. The configure script will
-search for an installation, but if you've installed it in a strange place then
-specify the path to the installation:
+The development version of PETSc has the latest and greatest, and is needed for some 
+shiny features like timestepping. To install it, follow the instructions here:
+\url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
+writing, this consisted of fetching the latest version ({\bf NB} needs Mercurial 
+'hg' to be installed):
 \begin{verbatim}
-./configure --with-fftw=/path/to/fftw/
+hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
+cd petsc-dev
+hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
 \end{verbatim}
 
-\subsubsection{LAPACK}
+then configure PETSc, making sure to enable C++ and SUNDIALS support
+\begin{verbatim}
+./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
+            --with-sundials=1 --with-sundials-dir=$HOME/local/
+\end{verbatim}
+replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation. Finally
+compile PETSc:
+\begin{verbatim}
+make
+\end{verbatim}
+To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to the petsc-dev directory so add something
+like this to your startup file \texttt{\$HOME/.bashrc}
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-dev
+\end{verbatim}
+
+\subsection{LAPACK}
 
 BOUT++ comes with linear solvers for tridiagonal and band-diagonal systems,
 but these are not particularly optimised and are in any case descended from Numerical Recipes code (hence NOT covered by LGPL license).
@@ -506,40 +657,148 @@ and to specify a non-standard path
 ./configure --with-lapack=/path/to/lapack
 \end{verbatim}
 
-\subsection{Running the test suite}
+\subsection{MPI compilers}
 
-To run the test cases, the Python libraries must first be set up. To do this, the path to
-\texttt{tools/pylib} should be added to the \texttt{PYTHONPATH} environment variable.
-Instructions for doing this are printed at the end of the configure script, for example:
-
+These are usually called something like mpicc and mpiCC (or mpicxx), 
+and the configure script will look for several common names. 
+If your compilers aren't recognised then set them using
 \begin{verbatim}
-Make sure that the tools/pylib directory is in your PYTHONPATH
-e.g. by adding to your ~/.bashrc file
-
-   export PYTHONPATH=/home/ben/BOUT/tools/pylib/:$PYTHONPATH
-
+$ ./configure MPICC=<your C compiler> MPICXX=<your C++ compiler>
 \end{verbatim}
 
-Running the script \texttt{test\_suite} in the \texttt{examples} subdirectory
-will run through a set of tests,
-each on a variety of different processors. {\bf Note:} currently this uses
-the \texttt{mpirun} command to launch the runs, so won't work on machines which
-use a job submission system like PBS or SGE.
+NOTES:
+\begin{itemize}
+\item On LLNL's Grendel, mpicxx is broken. Use mpiCC instead by passing ``MPICXX=mpiCC'' to configure. Also need to specify this to NetCDF library by passing ``CXX=mpiCC'' to NetCDF configure.
+\end{itemize}
 
-\subsection{Running the examples}
-\label{sec:runexamples}
+\subsection{Issues}
 
-To use the BOUT++ library, set an environment variable {\bf BOUT\_TOP} to point to the BOUT++ root
-directory (the directory containing make.config and configure). Actually this is not strictly true since
-you can compile the examples by just running
+\subsubsection{Wrong install script}
+Before installing, make sure the correct version of \texttt{install} is being used by running
 \begin{verbatim}
-gmake examples
+ ~/ $ which install
 \end{verbatim}
-in the BOUT++ root directory, but setting {\bf BOUT\_TOP} lets you compile examples in different
-directories, and makes it easier to develop cases.
+This should point to a system directory like \texttt{/usr/bin/install}. Sometimes when IDL has been
+installed, this points to the IDL install (e.g. something like \texttt{/usr/common/usg/idl/idl70/bin/install} on Franklin). A quick way to fix this is to create a link from your local bin to the system install:
+\begin{verbatim}
+ ~/ $ ln -s /usr/bin/install $HOME/local/bin/
+\end{verbatim}
+``which install'' should now print the install in your local bin directory.
 
-The \texttt{examples/} directory contains some test cases for a variety of fluid models. In many cases
-there are two scripts for running and then an IDL script to plot the results:
+\section{Running BOUT++}
+\label{sec:running}
+
+The \texttt{examples/} directory contains some test cases for a variety of fluid models. The ones starting
+\file{test-} are short tests, which often just run a part of the code rather than a complete simulation. 
+The simplest example to start with is \file{examples/conduction/}. This solves a single equation for
+a 3D scalar field $T$:
+\[
+\deriv{T}{t} = \nabla_{||}\left(\chi\partial_{||}\right)
+\]
+There are several files involved:
+\begin{itemize}
+\item \file{conduction.cxx} contains the source code which specifies the equation to solve
+\item \file{conduct\_grid.nc} is the grid file, which in this case just specifies the number
+  of grid points in $X$ and $Y$ (\code{nx} \& \code{ny}) with everything else being left as the default (e.g. grid
+  spacings dx and dy are $1$, the metric tensor is the identity matrix). For details of the
+  grid file format, see section~\ref{sec:gridgen}.
+\item \file{generate.py} is a Python script to create the grid file. In this case it just
+  writes nx and ny 
+\item \file{data/BOUT.inp} is the settings file, specifying how many output timesteps to take, 
+  differencing schemes to use, and many other things. In this case it's mostly empty so the defaults
+  are used.
+\end{itemize}
+
+First you need to compile the example:
+\begin{verbatim}
+$ gmake
+\end{verbatim}
+which should print out something along the lines of
+\begin{verbatim}
+  Compiling  conduction.cxx
+  Linking conduction
+\end{verbatim}
+If you get an error, most likely during the linking stage, you may need to go back and make sure the
+libraries are all set up correctly. A common problem is mixing MPI implementations, for example compiling NetCDF using Open MPI and then BOUT++ with MPICH2. Unfortunately the solution is to recompile everything with the same compiler.
+
+Then try running the example. If you're running on a standalone server, desktop or laptop then try:
+\begin{verbatim}
+$ mpirun -np 2 ./conduction
+\end{verbatim}
+If you're running on a cluster or supercomputer, you should find out how to submit jobs. This varies, but
+usually on these bigger machines there will be a queueing system and you'll need to use \code{qsub},
+\code{msub}, \code{llsubmit} or similar to submit jobs. 
+
+When the example runs, it should print a lot of output. This is recording all the settings being used by the
+code, and is also written to log files for future reference. The test should take a few seconds to run, and
+produce a bunch of files in the \file{data/} subdirectory.
+\begin{itemize}
+\item \file{BOUT.log.*} contains a log from each process, so because we ran with ``-np 2'' there should be 2 logs. 
+  The one from processor $0$ will be the same as what was printed to the screen. This is mainly useful because
+  if one process crashes it may only put an error message into its own log.
+\item \file{BOUT.restart.*.nc} are the restart files for the last time point. 
+  As of June 2012 each processor saves its own state in a separate file, but this is being worked on.
+\item \file{BOUT.dmp.*.nc} contain the output data, including time history. As with the restart
+  files, each processor currently outputs a separate file.
+\end{itemize}
+
+Restart files allow the run to be restarted from where they left off:
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart
+\end{verbatim}
+This will delete the output data \file{BOUT.dmp.*.nc} files, and start again. If you want to keep the output
+from the first run, add ``append'' 
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart append
+\end{verbatim}
+which will then append any new outputs to the end of the old data files.
+
+To analyse the output of the simulation, cd into the \file{data} subdirectory and start IDL.
+If you don't have IDL, don't panic as all this is also possible in Python and discussed
+in section~\ref{sec:pythonroutines}. First, list the variables in one of the data files:
+\begin{verbatim}
+IDL> print, file_list("BOUT.dmp.0.nc")
+iteration MXSUB MYSUB MXG MYG MZ NXPE NYPE BOUT_VERSION t_array ZMAX ZMIN T
+\end{verbatim}
+All of these except '\code{T}' are in all output files, and they contain information about
+the layout of the mesh so that the data can be put in the correct place. The most useful variable
+is '\code{t\_array}' which is a 1D array of simulation output times. To read this, we can
+use the \code{collect} function:
+\begin{verbatim}
+IDL> time = collect(var="t_array")
+IDL> print, time
+      1.10000      1.20000      1.30000      1.40000      1.50000 ...
+\end{verbatim}
+The number of variables in an output file depends on the model being solved, which in this
+case consists of a single scalar field '\code{T}'. To read this into IDL, again use \code{collect}:
+\begin{verbatim}
+IDL> T = collect(var="T")
+IDL> help, T
+T               FLOAT     = Array[5, 64, 1, 20]
+\end{verbatim}
+This is a 4D variable, arranged as \code{[x, y, z, t]}. The $x$ direction has 5 points, consisting
+of 2 points either side for the boundaries and one point in the middle which is evolving. This case
+is only solving a 1D problem in $y$ with 64 points so to display an animation of this
+\begin{verbatim}
+IDL> showdata, T[2,*,0,*]
+\end{verbatim}
+which selects the only evolving $x$ point, all $y$, the only $z$ point, and all time points.
+If given 3D variables, showdata will display an animated surface 
+\begin{verbatim}
+IDL> showdata, T[*,*,0,*]
+\end{verbatim}
+and to make this a coloured contour plot 
+\begin{verbatim}
+IDL> showdata, T[*,*,0,*], /cont
+\end{verbatim}
+
+
+The next example to look at is \file{test-wave}, which is solving a wave equation using
+\[
+\deriv{f}{t} = \partial_{||} g \qquad \deriv{g}{t} = \partial_{||} f 
+\]
+using two different methods. Other examples contain two scripts: One for running the example and then an IDL script
+to plot the results:
 \begin{verbatim}
 ./runcase.sh
 idl runidl.pro
@@ -569,461 +828,6 @@ If this stack isn't printed, make sure checking is set to level 2 or higher (./c
 (./configure --with-checks=3) to perform more checking of values
 and (hopefully) find an error as soon as possible after it occurs.
 \end{itemize}
-
-\section{BOUT++ options}
-\label{sec:options}
-\index{options}
-
-The inputs to BOUT++ are a binary grid file in NetCDF or PDB format,
-and a text file with options. Generating input grids for tokamaks is
-described in section~\ref{sec:gridgen}. The grid file describes the size
-and topology of the X-Y domain, metric tensor components and usually
-some initial profiles. The option file specifies the size of the domain
-in the symmetric direction (Z), and controls how the equations are evolved
-e.g. differencing schemes to use, and boundary conditions.
-In most situations, the grid file will be used in many different simulations,
-but the options may be changed frequently. 
-
-The text input file \texttt{BOUT.inp} is always in a subdirectory called \texttt{data}
-for all examples. The files include comments (starting with either ';' or '\#') and should be fairly
-self-explanatory. The format is the same as a windows INI file, consisting
-of \code{name = value} pairs. Comments are started
-with a hash (\#) or semi-colon, which comments out the rest of the line. 
-values can be:
-\begin{itemize}
-\item Integers
-\item Real values
-\item Booleans
-\item Strings
-\end{itemize}
-Options are also divided into sections, which start with the section name in square brackets.
-\begin{lstlisting}[language=bash,numbers=none]
-[section1]
-
-something = 132         # an integer
-another = 5.131         # a real value
-yetanother = true       # a boolean
-finally = "some text"   # a string
-\end{lstlisting}
-\note{Options are NOT case-sensitive: \code{TwistShift} and \code{twistshift} are the same variable}
-
-Have a look through the examples to see how the options are used.
-
-\subsection{General options}
-
-At the top of the BOUT.inp file (before any section headers), 
-options which affect the core code are listed. 
-These are common to all physics models, and the most useful of them are:
-\begin{lstlisting}[language=bash,numbers=none]
-NOUT = 100       # number of time-points output
-TIMESTEP = 1.0   # time between outputs
-\end{lstlisting}
-which set the number of outputs, and the time step between them. Note that
-this has nothing to do with the internal timestep used to advance the
-equations, which is adjusted automatically. What time-step to use depends
-on many factors, but for high-$\beta$ reduced MHD
-ELM simulations reasonable choices are \code{1.0}
-for the first part of a run (to handle initial transients), then around \code{10.0} for the
-linear phase. Once non-linear effects become important, you will have to reduce the timestep to
-around \code{0.1}.
-
-Most large clusters or supercomputers have a limit on how long a job can
-run for called ``wall time'', because it's the time taken according to a
-clock on the wall, as opposed to the CPU time actually used.
-If this is the case, you can use the option
-\begin{lstlisting}[language=bash,numbers=none]
-wall_limit = 10 # wall clock limit (in hours)
-\end{lstlisting}
-BOUT++ will then try to quit cleanly before this time runs out. Setting a
-negative value (default is -1) means no limit.
-
-Often it's useful to be able to restart a simulation from a chosen point,
-either to reproduce a previous run, or to modify the settings and re-run.
-A restart file is output every timestep, but this is overwritten each time,
-and so the simulation can only be continued from the end of the last
-simulation. Whilst it is possible to create a restart file from the output
-data afterwards, it's much easier if you have the restart files. Using the
-option
-\begin{lstlisting}[language=bash,numbers=none]
-archive = 20
-\end{lstlisting}
-saves a copy of the restart files every 20 timesteps, which can then be used as a starting point.
-
-The X and Y size of the computational grid is set by the grid file, but the
-number of points in the Z (axisymmetric) direction is specified in the options
-file:
-\begin{lstlisting}[language=bash,numbers=none]
-MZ = 33
-\end{lstlisting}
-This must be $\texttt{MZ} = 2^n + 1$, and can be $2,3,5,9,\ldots$. The power of 2 is so
-that FFTs can be used in this direction; the $+1$ is for historical reasons (inherited from BOUT)
-and is going to be removed at some point.
-
-Since the Z dimension is periodic, the domain size is specified as multiples or fractions of $2\pi$.
-To specify a fraction of $2\pi$, use
-\begin{lstlisting}[language=bash,numbers=none]
-ZPERIOD = 10
-\end{lstlisting}
-This specifies a Z range from $0$ to $2\pi / \code{ZPERIOD}$, and is useful for simulation
-of tokamaks to make sure that the domain is an integer fraction of a torus. If instead you want
-to specify the Z range directly (for example if Z is not an angle), there are the options
-\begin{lstlisting}[language=bash,numbers=none]
-ZMIN = 0.0
-ZMAX = 0.1
-\end{lstlisting}
-which specify the range in multiples of $2\pi$.
-
-\note{For users of BOUT, the definition of \code{ZMIN} and \code{ZMAX} has been changed.
-These are now fractions of $2\pi$ radians i.e. $\code{dz} = 2\pi(\code{ZMAX - ZMIN})/\code{(MZ-1)}$}
-
-In BOUT++, grids can be split between processors in both X and Y directions. By
-default only Y decomposition is used, and to use X decomposition you must specify
-the number of processors in the X direction:
-\begin{lstlisting}[language=bash,numbers=none]
-NXPE = 1  # Set number of X processors
-\end{lstlisting}
-
-The grid file to use is specified relative to the root directory where the simulation
-is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options file)
-\begin{lstlisting}[language=bash,numbers=none]
-grid = "data/cbm18_8_y064_x260.pdb"
-\end{lstlisting}
-
-\subsection{Time integration solver}
-\label{sec:timeoptions}
-\index{time integration}
-BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
-and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
-
-The solver library used is set using the \code{solver\_type} option, so either in BOUT.inp:
-\begin{lstlisting}[language=bash,numbers=none]
-[solver]
-type = rk4  # Set the solver to use
-\end{lstlisting}
-or on the command line by adding \code{solver\_type=pvode} for example:
-\begin{lstlisting}[language=bash,numbers=none]
-mpirun -np 4 ./2fluid solver_type=rk4
-\end{lstlisting}
-{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver\_type =pvode} won't work.
-Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
-options needed to make the solver available.
-\begin{table}[htb!]
-\centering
-\caption{Available time integration solvers}
-\label{tab:solvers}
-\begin{tabular}{c | c | c}
-\hline
-Name & Description & Compile options \\
-\hline
-euler & Euler explicit method & Always available \\
-rk4 & Runge-Kutta 4th-order explicit method & Always available \\
-karniadakis & Karniadakis explicit method & Always available \\
-pvode & 1998 PVODE with BDF method & Always available \\
-cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
-ida & SUNDIALS IDA. DAE solver & --with-ida \\
-petsc & PETSc TS methods & --with-petsc \\
-\hline
-\end{tabular}
-\end{table}
-
-Each solver can have its own settings which work in slightly different ways, but some common
-settings and which solvers they are used in are given in table~\ref{tab:solveropts}.
-\begin{table}[htb!]
-\centering
-\caption{Time integration solver options}
-\label{tab:solveropts}
-\begin{tabular}{c | c | c}
-\hline
-Option & Description & Solvers used \\
-\hline
-atol & Absolute tolerance & rk4, pvode, cvode, ida \\
-rtol & Relative tolerance & rk4, pvode, cvode, ida \\
-mxstep & Maximum internal steps  & rk4 \\
-       & per output step & \\
-max\_timestep & Maxmimum timestep & rk4, cvode \\
-start\_timestep & Starting guess for timestep & rk4 \\
-timestep & Fixed timestep & karniadakis \\
-use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
-mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
-mukeep, mlkeep & & \\
-maxl & & \\
-use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
-adams\_moulton & Use Adams-Moulton method & cvode \\
- & rather than BDF & \\
-\hline
-\end{tabular}
-\end{table}
-The most commonly changed options are the  absolute and relative solver tolerances,
-\code{ATOL} and \code{RTOL} which should be varied to check convergence.
-
-\subsection{Laplacian inversion}
-\index{Laplacian inversion}
-A common problem in plasma models is to solve an equation of the form
-\[
-d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
-\]
-where $x$ and $b$ are 3D variables, whilst $a$, $c$ and $d$ are 2D variables.
-BOUT++ includes several routines for solving this equation; see the
-developer's manual for details.
-
-\begin{table}[htbp!]
-\caption{Global Laplacian options}
-\label{tab:lapopts}
-\centering
-\begin{tabular}[c]{c c c}
-\hline
-Option & Description & Default \\
-\hline
-\texttt{low\_mem} & Reduces memory usage & \texttt{false} \\
-\texttt{use\_pdd} & Use the PDD algorithm & \texttt{false} \\
-\texttt{all\_terms} & Include all terms & \texttt{false} \\
-\texttt{laplace\_nonuniform} & Non-uniform mesh corrections & \texttt{false} \\
-\texttt{filter} & Fraction of modes to filter & 0.2 \\
-\texttt{max\_mode} & Maximum Z mode & filter \\ 
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Communications}
-\index{communication}
-The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
-determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
-with machine and problem.
-
-\subsection{Differencing methods}
-\index{differencing}
-Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
-for each dimension. 
-\begin{itemize}
-\item \code{first}, the method used for first derivatives
-\item \code{second}, method for second derivatives
-\item \code{upwind}, method for upwinding terms
-\item \code{flux}, for conservation law terms
-\end{itemize}
-The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT
-Apart from FFT, the first letter gives the type of method (U = upwind, C = central, W = WENO), and
-the number gives the order.
-
-\subsection{Model-specific options}
-
-The options which affect a specific physics model vary, since they are defined in the physics module itself
-(see section~\ref{sec:inputopts}). They should have a separate section, for example the high-$\beta$
-reduced MHD code uses options in a section called \code{[highbeta]}.
-
-There are three places to look for these options: the BOUT.inp file; the physics model C++ code, and 
-the output logs. The physics module author should ideally have an example input file, with commented options
-explaining what they do; alternately they may have put comments in the C++ code for the module. 
-Another way is to look at the output logs: when BOUT++ is run, (nearly) all options used are printed 
-out with their default values. This won't provide much explanation of what they do, but may be useful anyway.
-See section~\ref{sec:output} for more details.
-
-\subsection{Variable initialisation}
-\index{variable initialisation}
-Each variable being evolved has its own section, with the same name as the
-output data. For example, the high-$\beta$ model has variables ``P'',
-``jpar'', and ``U'', and so has sections \code{[P]}, \code{[jpar]},
-\code{[U]} (not case sensitive). 
-
-There are two ways to specify the initial conditions for a variable:
-the original method (similar to that used by BOUT-06) which covers
-the most commonly needed functions. If more flexibility is needed then
-a more general analytical expression can be given.
-
-\subsubsection{Original method}
-
-The shape of the initial value is specified for each dimension separately
-using the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These
-are set to an integer: 
-\begin{enumerate}
-\setcounter{enumi}{-1}
-\item Constant (this is the default)
-\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
-  \code{zs\_s0} as a fraction of the domain (i.e. $0 \rightarrow 1$.
-  The width is given by \code{*s\_wd}, also as a fraction of the domain size.
-\item Sinusoidal, with the number of periods given by \code{*s\_mode}. 
-\item Mix of mode numbers, with psuedo-random phases.
-\end{enumerate}
-The magnitude of the initial value is given by the variable \code{scale}.
-
-Defaults for all variables can be set in a section called \code{[All]},
-so for example the options below:
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-scale = 0.0 # By default set variables to zero
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-xs_s0 = 0.5 # Peak in the middle of the X direction 
-xs_wd = 0.1 # Width is 10% of the domain 
-
-ys_s0 = 0.5 # Peak in the middle of the Y direction
-ys_wd = 0.3 # Width is 30% of the Y domain
-
-zs_mode = 3 # 3 periods in the Z direction
-
-[U]
-scale = 1.0e-5  # Amplitude for the U variable, overrides default
-\end{lstlisting}
-
-For field-aligned tokamak simulations, the Y direction is along the
-field and in the core this will have a discontinuity at the twist-shift
-location where field-lines are matched onto each other. To handle this,
-a truncated Ballooning transformation can be used to construct a smooth
-initial perturbation:
-\[
-U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + q2\pi i\right)
-\]
-
-\begin{figure}[h]
-\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_noballoon.png}
-\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
-\end{figure}
-
-\note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
-
-\subsubsection{Expressions}
-
-If a more general function is needed, a variable can be initialised using the \code{function} option
-for each variable. This overrides the original method for that variable. e.g.
-\begin{lstlisting}[language=bash,numbers=none]
-[all]
-
-xs_opt = 1  # Gaussian in X
-ys_opt = 1  # Gaussian in Y
-zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
-
-[U]
-scale = 1.0e-5
-
-[p]
-function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
-\end{lstlisting}
-will use the original method to set $U$, but use the given expression to set $p$.
-
-\subsection{Boundary conditions}
-\label{sec:bndryopts}
-\index{boundary conditions}
-Like the variable initialisation, boundary conditions can be set for
-each variable in individual sections, with default values in a section
-\code{[All]}. Boundary conditions are specified for each variable, being 
-applied to variable itself during initialisation, and the time-derivatives
-at each timestep.
-
-When finding the boundary condition for a variable \code{var} on a boundary region, 
-the options are checked in order from most to least specific:
-\begin{itemize}
-\item Section \code{var}, \code{bndry\_} + region name. Depending on the mesh file, regions
-  of the grid are given labels. Currently
-  these are \code{core}, \code{sol}, \code{pf} and \code{target} which
-  are intended for tokamak edge simulations. Hence the variables checked
-  are \code{bndry\_core}, \code{bndry\_pf} etc.
-\item Section \code{var}, \code{bndry\_} + boundary side. These names are
-  \code{xin}, \code{xout}, \code{yup} and \code{ydown}. 
-\item Section \code{var}, variable \code{bndry\_all}
-\item The same settings again except in section \code{All}.
-\end{itemize}
-The default setting for everything is therefore \code{bndry\_all}
-in the \code{All} section.
-
-Boundary conditions are given names, with optional arguments in brackets. 
-Currently implemented boundary conditions are:
-\begin{itemize}
-\item \code{dirichlet} - Set to zero
-\item \code{dirichlet(<number>)} - Set to some number e.g. \code{dirichlet(1)}
-sets the boundary to $1.0$
-\item \code{neumann} - Zero gradient
-\item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
-\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
-\end{itemize}
-The zero- or constant-Laplacian boundary conditions works as follows:
-\begin{eqnarray*}
-\nabla_\perp^2 f &=& 0 \\
-&\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} + g^{zz}\frac{\partial^2 f}{\partial z^2}
-\end{eqnarray*}
-which when Fourier transformed in $z$ becomes: 
-\[
-g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0
-\]
-which has the solution
-\[
-\hat{f} = Ae^{xk_z\sqrt{g^{zz}/g^{xx}}} + Be^{-xk_z\sqrt{g^{zz}/g^{xx}}}
-\]
-Assuming that the solution should decay away from the domain, on the inner
-$x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
-
-\subsubsection{Relaxing boundaries}
-
-All boundaries can be modified to be ``relaxing'' which are a combination
-of zero-gradient time-derivative, and whatever boundary condition they are
-applied to. The idea is that this prevents sharp discontinuities at boundaries
-during transients, whilst maintaining the desired boundary condition on
-longer timescales. In some cases this can improve the numerical stability
-and timestep.
-
-For example, \code{relax(dirichlet)} will make a field $f$ at point $i$ in the
-boundary follow a point $i-1$ in the domain:
-\[
-\left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
-\]
-where $\tau$ is a timescale for the boundary (currently set to 0.1, but will
-be a global option).
-When the time-derivatives are slow close to the boundary, the boundary
-relaxes to the desired condition (Dirichlet in this case), but when the
-time-derivatives are large then the boundary approaches Neumann to reduce
-discontinuities.
-
-By default, the relaxation rate is set to $10$ (i.e. a timescale of $\tau=0.1$).
-To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
-
-\subsubsection{Examples}
-
-This example is taken from the UEDGE benchmark test (in \texttt{examples/uedge-benchmark}):
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-bndry_all = neumann # Default for all variables, boundaries
-  
-[Ni]
-bndry_target = neumann
-bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
-bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
-
-[Vi]
-bndry_ydown = relax(dirichlet(-1.41648))   # -3.095e4/Vi_x
-bndry_yup   = relax(dirichlet( 1.41648))
-\end{lstlisting}
-
-The variable \code{Ni} (density) is set to a Neumann boundary condition
-on the targets (yup and ydown), relaxes towards $1$ on the core boundary,
-and relaxes to $0.1$ on all other boundaries. Note that the \code{bndry\_target = neumann} needs to be in the \code{Ni} section: If we just had
-\begin{lstlisting}[language=bash,numbers=none]
-[All]
-bndry_all = neumann # Default for all variables, boundaries
-
-[Ni]
-bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
-bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
-\end{lstlisting}
-then the ``target'' boundary condition for \code{Ni} would first search
-in the \code{[Ni]} section for \code{bndry\_target}, then for \code{bndry\_all}
-in the \code{[Ni]} section. This is set to \code{relax(dirichlet(0.1))}, not
-the Neumann condition desired.
-
-\section{Running BOUT++}
-\label{sec:running}
-
-The command to run a parallel code varies between machines, but on most small clusters
-the following command should work:
-\begin{verbatim}
-mpirun -np <num. proc> <command>
-\end{verbatim}
-so to run the \code{highbeta\_reduced} case on 4 processors:
-\begin{verbatim}
-cd <path>/BOUT++/examples/highbeta_elm/
-mpirun -np 4 ./highbeta_reduced
-\end{verbatim}
 
 \subsection{Startup output}
 
@@ -1072,7 +876,7 @@ The processor number comes next:
 Processor number: 0 of 1
 \end{verbatim}
 This will always be processor number '0' on screen as only the output
-from processor '0' is sent to the terminal. After this comes some
+from processor '0' is sent to the terminal. After this
 the core BOUT++ code reads some options:
 \begin{verbatim}
 	Option /nout = 50 (data/BOUT.inp)
@@ -1532,6 +1336,7 @@ There are many other useful routines in the \texttt{idllib} directory. See the \
 for a short description of each one.
 
 \subsection{Python routines}
+\label{sec:pythonroutines}
 \index{Python}
 There are several modules available for reading
 NetCDF files, so to provide a consistent interface, file access is wrapped into a class DataFile. This
@@ -1591,6 +1396,489 @@ f = bsetxrange(f, 1, 10) # Set ranges
 
 u = bread(f, "U")  # Finally read the variable
 \end{lstlisting}
+
+\section{BOUT++ options}
+\label{sec:options}
+\index{options}
+
+The inputs to BOUT++ are a binary grid file in NetCDF or PDB format,
+and a text file with options. Generating input grids for tokamaks is
+described in section~\ref{sec:gridgen}. The grid file describes the size
+and topology of the X-Y domain, metric tensor components and usually
+some initial profiles. The option file specifies the size of the domain
+in the symmetric direction (Z), and controls how the equations are evolved
+e.g. differencing schemes to use, and boundary conditions.
+In most situations, the grid file will be used in many different simulations,
+but the options may be changed frequently. 
+
+The text input file \texttt{BOUT.inp} is always in a subdirectory called \texttt{data}
+for all examples. The files include comments (starting with either ';' or '\#') and should be fairly
+self-explanatory. The format is the same as a windows INI file, consisting
+of \code{name = value} pairs. Comments are started
+with a hash (\#) or semi-colon, which comments out the rest of the line. 
+values can be:
+\begin{itemize}
+\item Integers
+\item Real values
+\item Booleans
+\item Strings
+\end{itemize}
+Options are also divided into sections, which start with the section name in square brackets.
+\begin{lstlisting}[language=bash,numbers=none]
+[section1]
+
+something = 132         # an integer
+another = 5.131         # a real value
+yetanother = true       # a boolean
+finally = "some text"   # a string
+\end{lstlisting}
+\note{Options are NOT case-sensitive: \code{TwistShift} and \code{twistshift} are the same variable}
+
+Have a look through the examples to see how the options are used.
+
+\subsection{General options}
+
+At the top of the BOUT.inp file (before any section headers), 
+options which affect the core code are listed. 
+These are common to all physics models, and the most useful of them are:
+\begin{lstlisting}[language=bash,numbers=none]
+NOUT = 100       # number of time-points output
+TIMESTEP = 1.0   # time between outputs
+\end{lstlisting}
+which set the number of outputs, and the time step between them. Note that
+this has nothing to do with the internal timestep used to advance the
+equations, which is adjusted automatically. What time-step to use depends
+on many factors, but for high-$\beta$ reduced MHD
+ELM simulations reasonable choices are \code{1.0}
+for the first part of a run (to handle initial transients), then around \code{10.0} for the
+linear phase. Once non-linear effects become important, you will have to reduce the timestep to
+around \code{0.1}.
+
+Most large clusters or supercomputers have a limit on how long a job can
+run for called ``wall time'', because it's the time taken according to a
+clock on the wall, as opposed to the CPU time actually used.
+If this is the case, you can use the option
+\begin{lstlisting}[language=bash,numbers=none]
+wall_limit = 10 # wall clock limit (in hours)
+\end{lstlisting}
+BOUT++ will then try to quit cleanly before this time runs out. Setting a
+negative value (default is -1) means no limit.
+
+Often it's useful to be able to restart a simulation from a chosen point,
+either to reproduce a previous run, or to modify the settings and re-run.
+A restart file is output every timestep, but this is overwritten each time,
+and so the simulation can only be continued from the end of the last
+simulation. Whilst it is possible to create a restart file from the output
+data afterwards, it's much easier if you have the restart files. Using the
+option
+\begin{lstlisting}[language=bash,numbers=none]
+archive = 20
+\end{lstlisting}
+saves a copy of the restart files every 20 timesteps, which can then be used as a starting point.
+
+The X and Y size of the computational grid is set by the grid file, but the
+number of points in the Z (axisymmetric) direction is specified in the options
+file:
+\begin{lstlisting}[language=bash,numbers=none]
+MZ = 33
+\end{lstlisting}
+This must be $\texttt{MZ} = 2^n + 1$, and can be $2,3,5,9,\ldots$. The power of 2 is so
+that FFTs can be used in this direction; the $+1$ is for historical reasons (inherited from BOUT)
+and is going to be removed at some point.
+
+Since the Z dimension is periodic, the domain size is specified as multiples or fractions of $2\pi$.
+To specify a fraction of $2\pi$, use
+\begin{lstlisting}[language=bash,numbers=none]
+ZPERIOD = 10
+\end{lstlisting}
+This specifies a Z range from $0$ to $2\pi / \code{ZPERIOD}$, and is useful for simulation
+of tokamaks to make sure that the domain is an integer fraction of a torus. If instead you want
+to specify the Z range directly (for example if Z is not an angle), there are the options
+\begin{lstlisting}[language=bash,numbers=none]
+ZMIN = 0.0
+ZMAX = 0.1
+\end{lstlisting}
+which specify the range in multiples of $2\pi$.
+
+\note{For users of BOUT, the definition of \code{ZMIN} and \code{ZMAX} has been changed.
+These are now fractions of $2\pi$ radians i.e. $\code{dz} = 2\pi(\code{ZMAX - ZMIN})/\code{(MZ-1)}$}
+
+In BOUT++, grids can be split between processors in both X and Y directions. By
+default only Y decomposition is used, and to use X decomposition you must specify
+the number of processors in the X direction:
+\begin{lstlisting}[language=bash,numbers=none]
+NXPE = 1  # Set number of X processors
+\end{lstlisting}
+
+The grid file to use is specified relative to the root directory where the simulation
+is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options file)
+\begin{lstlisting}[language=bash,numbers=none]
+grid = "data/cbm18_8_y064_x260.pdb"
+\end{lstlisting}
+
+\subsection{Time integration solver}
+\label{sec:timeoptions}
+\index{time integration}
+BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
+and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
+
+The solver library used is set using the \code{solver\_type} option, so either in BOUT.inp:
+\begin{lstlisting}[language=bash,numbers=none]
+[solver]
+type = rk4  # Set the solver to use
+\end{lstlisting}
+or on the command line by adding \code{solver\_type=pvode} for example:
+\begin{lstlisting}[language=bash,numbers=none]
+mpirun -np 4 ./2fluid solver_type=rk4
+\end{lstlisting}
+{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver\_type =pvode} won't work.
+Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
+options needed to make the solver available.
+\begin{table}[htb!]
+\centering
+\caption{Available time integration solvers}
+\label{tab:solvers}
+\begin{tabular}{c | c | c}
+\hline
+Name & Description & Compile options \\
+\hline
+euler & Euler explicit method & Always available \\
+rk4 & Runge-Kutta 4th-order explicit method & Always available \\
+karniadakis & Karniadakis explicit method & Always available \\
+pvode & 1998 PVODE with BDF method & Always available \\
+cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
+ida & SUNDIALS IDA. DAE solver & --with-ida \\
+petsc & PETSc TS methods & --with-petsc \\
+\hline
+\end{tabular}
+\end{table}
+
+Each solver can have its own settings which work in slightly different ways, but some common
+settings and which solvers they are used in are given in table~\ref{tab:solveropts}.
+\begin{table}[htb!]
+\centering
+\caption{Time integration solver options}
+\label{tab:solveropts}
+\begin{tabular}{c | c | c}
+\hline
+Option & Description & Solvers used \\
+\hline
+atol & Absolute tolerance & rk4, pvode, cvode, ida \\
+rtol & Relative tolerance & rk4, pvode, cvode, ida \\
+mxstep & Maximum internal steps  & rk4 \\
+       & per output step & \\
+max\_timestep & Maxmimum timestep & rk4, cvode \\
+start\_timestep & Starting guess for timestep & rk4 \\
+timestep & Fixed timestep & karniadakis \\
+use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
+mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
+mukeep, mlkeep & & \\
+maxl & & \\
+use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
+adams\_moulton & Use Adams-Moulton method & cvode \\
+ & rather than BDF & \\
+\hline
+\end{tabular}
+\end{table}
+The most commonly changed options are the  absolute and relative solver tolerances,
+\code{ATOL} and \code{RTOL} which should be varied to check convergence.
+
+\subsection{Laplacian inversion}
+\index{Laplacian inversion}
+A common problem in plasma models is to solve an equation of the form
+\[
+d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
+\]
+where $x$ and $b$ are 3D variables, whilst $a$, $c$ and $d$ are 2D variables.
+BOUT++ includes several routines for solving this equation; see the
+developer's manual for details.
+
+\begin{table}[htbp!]
+\caption{Global Laplacian options}
+\label{tab:lapopts}
+\centering
+\begin{tabular}[c]{c c c}
+\hline
+Option & Description & Default \\
+\hline
+\texttt{low\_mem} & Reduces memory usage & \texttt{false} \\
+\texttt{use\_pdd} & Use the PDD algorithm & \texttt{false} \\
+\texttt{all\_terms} & Include all terms & \texttt{false} \\
+\texttt{laplace\_nonuniform} & Non-uniform mesh corrections & \texttt{false} \\
+\texttt{filter} & Fraction of modes to filter & 0.2 \\
+\texttt{max\_mode} & Maximum Z mode & filter \\ 
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Communications}
+\index{communication}
+The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
+determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
+with machine and problem.
+
+\subsection{Differencing methods}
+\index{differencing}
+Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
+for each dimension. 
+\begin{itemize}
+\item \code{first}, the method used for first derivatives
+\item \code{second}, method for second derivatives
+\item \code{upwind}, method for upwinding terms
+\item \code{flux}, for conservation law terms
+\end{itemize}
+The methods which can be specified are U1, U4, C2, C4, W2, W3, FFT
+Apart from FFT, the first letter gives the type of method (U = upwind, C = central, W = WENO), and
+the number gives the order.
+
+\subsection{Model-specific options}
+
+The options which affect a specific physics model vary, since they are defined in the physics module itself
+(see section~\ref{sec:inputopts}). They should have a separate section, for example the high-$\beta$
+reduced MHD code uses options in a section called \code{[highbeta]}.
+
+There are three places to look for these options: the BOUT.inp file; the physics model C++ code, and 
+the output logs. The physics module author should ideally have an example input file, with commented options
+explaining what they do; alternately they may have put comments in the C++ code for the module. 
+Another way is to look at the output logs: when BOUT++ is run, (nearly) all options used are printed 
+out with their default values. This won't provide much explanation of what they do, but may be useful anyway.
+See section~\ref{sec:output} for more details.
+
+\subsection{Variable initialisation}
+\index{variable initialisation}
+Each variable being evolved has its own section, with the same name as the
+output data. For example, the high-$\beta$ model has variables ``P'',
+``jpar'', and ``U'', and so has sections \code{[P]}, \code{[jpar]},
+\code{[U]} (not case sensitive). 
+
+There are two ways to specify the initial conditions for a variable:
+the original method (similar to that used by BOUT-06) which covers
+the most commonly needed functions. If more flexibility is needed then
+a more general analytical expression can be given.
+
+\subsubsection{Original method}
+
+The shape of the initial value is specified for each dimension separately
+using the options \code{xs\_opt}, \code{ys\_opt}, and \code{zs\_opt}. These
+are set to an integer: 
+\begin{enumerate}
+\setcounter{enumi}{-1}
+\item Constant (this is the default)
+\item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
+  \code{zs\_s0} as a fraction of the domain (i.e. $0 \rightarrow 1$.
+  The width is given by \code{*s\_wd}, also as a fraction of the domain size.
+\item Sinusoidal, with the number of periods given by \code{*s\_mode}. 
+\item Mix of mode numbers, with psuedo-random phases.
+\end{enumerate}
+The magnitude of the initial value is given by the variable \code{scale}.
+
+Defaults for all variables can be set in a section called \code{[All]},
+so for example the options below:
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+scale = 0.0 # By default set variables to zero
+
+xs_opt = 1  # Gaussian in X
+ys_opt = 1  # Gaussian in Y
+zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
+
+xs_s0 = 0.5 # Peak in the middle of the X direction 
+xs_wd = 0.1 # Width is 10% of the domain 
+
+ys_s0 = 0.5 # Peak in the middle of the Y direction
+ys_wd = 0.3 # Width is 30% of the Y domain
+
+zs_mode = 3 # 3 periods in the Z direction
+
+[U]
+scale = 1.0e-5  # Amplitude for the U variable, overrides default
+\end{lstlisting}
+
+For field-aligned tokamak simulations, the Y direction is along the
+field and in the core this will have a discontinuity at the twist-shift
+location where field-lines are matched onto each other. To handle this,
+a truncated Ballooning transformation can be used to construct a smooth
+initial perturbation:
+\[
+U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + q2\pi i\right)
+\]
+
+\begin{figure}[h]
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_noballoon.png}
+\includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
+\end{figure}
+
+\note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
+
+\subsubsection{Expressions}
+\index{FieldFactory}
+\index{function}
+
+If a more general function is needed, a variable can be initialised using the \code{function} option
+for each variable. This overrides the original method for that variable. e.g.
+\begin{lstlisting}[language=bash,numbers=none]
+[all]
+
+xs_opt = 1  # Gaussian in X
+ys_opt = 1  # Gaussian in Y
+zs_opt = 2  # Sinusoidal in Z (axisymmetric direction)
+
+[U]
+scale = 1.0e-5
+
+[p]
+function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
+\end{lstlisting}
+will use the original method to set $U$, but use the given expression to set $p$.
+
+The expression used can include the following values
+\begin{table}[htb!]
+\centering
+\caption{Initialisation expression values}
+\label{tab:initexprvals}
+\begin{tabular}{c | c }
+\hline
+Name & Description \\
+\hline
+x & $x$ position between $0$ and $1$ \\
+y & $y$ position between $0$ and $2\pi$\\
+z & $z$ position between $0$ and $2\pi$\\
+pi & $3.1415\ldots$\\
+\hline
+\end{tabular}
+\end{table}
+
+and the following functions
+\begin{table}[htb!]
+\centering
+\caption{Initialisation expression functions}
+\label{tab:initexprfunc}
+\begin{tabular}{l | c }
+\hline
+Name & Description \\
+\hline
+abs(x) & Absolute value $\left|x\right|$\\
+cos(x) & Cosine\\
+cosh(x) & Hyperbolic cosine\\
+gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
+gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
+sin(x) & Sine\\
+sinh(x) & Hyperbolic sine\\
+sqrt(x) & $\sqrt{x}$\\
+H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Boundary conditions}
+\label{sec:bndryopts}
+\index{boundary conditions}
+Like the variable initialisation, boundary conditions can be set for
+each variable in individual sections, with default values in a section
+\code{[All]}. Boundary conditions are specified for each variable, being 
+applied to variable itself during initialisation, and the time-derivatives
+at each timestep.
+
+When finding the boundary condition for a variable \code{var} on a boundary region, 
+the options are checked in order from most to least specific:
+\begin{itemize}
+\item Section \code{var}, \code{bndry\_} + region name. Depending on the mesh file, regions
+  of the grid are given labels. Currently
+  these are \code{core}, \code{sol}, \code{pf} and \code{target} which
+  are intended for tokamak edge simulations. Hence the variables checked
+  are \code{bndry\_core}, \code{bndry\_pf} etc.
+\item Section \code{var}, \code{bndry\_} + boundary side. These names are
+  \code{xin}, \code{xout}, \code{yup} and \code{ydown}. 
+\item Section \code{var}, variable \code{bndry\_all}
+\item The same settings again except in section \code{All}.
+\end{itemize}
+The default setting for everything is therefore \code{bndry\_all}
+in the \code{All} section.
+
+Boundary conditions are given names, with optional arguments in brackets. 
+Currently implemented boundary conditions are:
+\begin{itemize}
+\item \code{dirichlet} - Set to zero
+\item \code{dirichlet(<number>)} - Set to some number e.g. \code{dirichlet(1)}
+sets the boundary to $1.0$
+\item \code{neumann} - Zero gradient
+\item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
+\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
+\end{itemize}
+The zero- or constant-Laplacian boundary conditions works as follows:
+\begin{eqnarray*}
+\nabla_\perp^2 f &=& 0 \\
+&\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} + g^{zz}\frac{\partial^2 f}{\partial z^2}
+\end{eqnarray*}
+which when Fourier transformed in $z$ becomes: 
+\[
+g^{xx}\frac{\partial^2 \hat{f}}{\partial x^2} - g^{zz}k_z^2 \hat{f} = 0
+\]
+which has the solution
+\[
+\hat{f} = Ae^{xk_z\sqrt{g^{zz}/g^{xx}}} + Be^{-xk_z\sqrt{g^{zz}/g^{xx}}}
+\]
+Assuming that the solution should decay away from the domain, on the inner
+$x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
+
+\subsubsection{Relaxing boundaries}
+
+All boundaries can be modified to be ``relaxing'' which are a combination
+of zero-gradient time-derivative, and whatever boundary condition they are
+applied to. The idea is that this prevents sharp discontinuities at boundaries
+during transients, whilst maintaining the desired boundary condition on
+longer timescales. In some cases this can improve the numerical stability
+and timestep.
+
+For example, \code{relax(dirichlet)} will make a field $f$ at point $i$ in the
+boundary follow a point $i-1$ in the domain:
+\[
+\left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
+\]
+where $\tau$ is a timescale for the boundary (currently set to 0.1, but will
+be a global option).
+When the time-derivatives are slow close to the boundary, the boundary
+relaxes to the desired condition (Dirichlet in this case), but when the
+time-derivatives are large then the boundary approaches Neumann to reduce
+discontinuities.
+
+By default, the relaxation rate is set to $10$ (i.e. a timescale of $\tau=0.1$).
+To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
+
+\subsubsection{Examples}
+
+This example is taken from the UEDGE benchmark test (in \texttt{examples/uedge-benchmark}):
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+bndry_all = neumann # Default for all variables, boundaries
+  
+[Ni]
+bndry_target = neumann
+bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
+bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
+
+[Vi]
+bndry_ydown = relax(dirichlet(-1.41648))   # -3.095e4/Vi_x
+bndry_yup   = relax(dirichlet( 1.41648))
+\end{lstlisting}
+
+The variable \code{Ni} (density) is set to a Neumann boundary condition
+on the targets (yup and ydown), relaxes towards $1$ on the core boundary,
+and relaxes to $0.1$ on all other boundaries. Note that the \code{bndry\_target = neumann} needs to be in the \code{Ni} section: If we just had
+\begin{lstlisting}[language=bash,numbers=none]
+[All]
+bndry_all = neumann # Default for all variables, boundaries
+
+[Ni]
+bndry_core = relax(dirichlet(1.))   # 1e13 cm^-3 on core boundary
+bndry_all  = relax(dirichlet(0.1))  # 1e12 cm^-3 on other boundaries
+\end{lstlisting}
+then the ``target'' boundary condition for \code{Ni} would first search
+in the \code{[Ni]} section for \code{bndry\_target}, then for \code{bndry\_all}
+in the \code{[Ni]} section. This is set to \code{relax(dirichlet(0.1))}, not
+the Neumann condition desired.
 
 \section{Generating input grids}
 \label{sec:gridgen}

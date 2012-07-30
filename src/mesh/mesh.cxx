@@ -187,23 +187,20 @@ int Mesh::get(Vector3D &var, const string &name)
  * Communications
  **************************************************************************/
 
-int Mesh::communicate(FieldData &f)
-{
+int Mesh::communicate(FieldData &f) {
   FieldGroup group;
   group.add(f);
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
@@ -211,8 +208,7 @@ int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3)
   return communicate(group);
 }
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4)
-{
+int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4) {
   FieldGroup group;
   group.add(f1);
   group.add(f2);
@@ -221,8 +217,7 @@ int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4
   return communicate(group);
 }
 
-comm_handle Mesh::send(FieldData &f)
-{
+comm_handle Mesh::send(FieldData &f) {
   FieldGroup group;
   group.add(f);
   return send(group);
@@ -230,8 +225,7 @@ comm_handle Mesh::send(FieldData &f)
 
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
-int Mesh::communicate(FieldPerp &f)
-{
+int Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
   BoutReal **fd = f.getData();
@@ -270,38 +264,41 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
  * given the contravariant metric tensor terms
  **************************************************************************/
 
-int Mesh::geometry()
-{
+int Mesh::geometry() {
 #ifdef CHECK
   msg_stack.push("Mesh::geometry");
 #endif
   
   output.write("Calculating differential geometry terms\n");
 
+  if(min(abs(dx)) < 1e-8)
+    throw BoutException("dx magnitude less than 1e-8");
+
+  if(min(abs(dy)) < 1e-8)
+    throw BoutException("dy magnitude less than 1e-8");
+
+  if(fabs(dz) < 1e-8)
+    throw BoutException("dz magnitude less than 1e-8");
+
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    output.write("\tERROR: Diagonal metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    output.write("\tERROR: Diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
   if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    output.write("\tERROR: Off-diagonal metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
   
   if((!finite(g_11)) || (!finite(g_22)) || (!finite(g_33))) {
-    output.write("\tERROR: Diagonal g_ij metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal g_ij metrics are not finite!\n");
   }
   if((min(g_11) <= 0.0) || (min(g_22) <= 0.0) || (min(g_33) <= 0.0)) {
-    output.write("\tERROR: Diagonal g_ij metrics are negative!\n");
-    exit(1);
+    throw BoutException("\tERROR: Diagonal g_ij metrics are negative!\n");
   }
   if((!finite(g_12)) || (!finite(g_13)) || (!finite(g_23))) {
-    output.write("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
-    exit(1);
+    throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
   
   // Calculate Christoffel symbol terms (15 independent values)
@@ -396,8 +393,7 @@ int Mesh::geometry()
   return 0;
 }
 
-int Mesh::calcCovariant()
-{
+int Mesh::calcCovariant() {
 #ifdef CHECK
   msg_stack.push("Mesh::calcCovariant");
 #endif
@@ -484,8 +480,7 @@ int Mesh::calcCovariant()
   return 0;
 }
 
-int Mesh::calcContravariant()
-{
+int Mesh::calcContravariant() {
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -586,14 +581,36 @@ int Mesh::jacobian() {
   return 0;
 }
 
+const vector<int> Mesh::readInts(const string &name, int n) {
+  vector<int> result;
+  
+  // First get a data source
+  GridDataSource* s = findSource(name);
+  if(s) {
+    s->open(name);
+    s->setGlobalOrigin();
+    result.resize(n);
+    if(!s->fetch(&(result.front()), name, n)) {
+      // Error reading
+      s->close();
+      throw BoutException("Could not read integer array '%s'\n", name.c_str());
+    }
+    s->close();
+  }else {
+    // Not found
+    throw BoutException("Missing integer array %s\n", name.c_str());
+  }
+  
+  return result;
+}
+
 /*******************************************************************************
  * Gauss-Jordan matrix inversion
  * used to invert metric tensor
  *******************************************************************************/
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
-int Mesh::gaussj(BoutReal **a, int n)
-{
+int Mesh::gaussj(BoutReal **a, int n) {
   static int *indxc, *indxr, *ipiv, len = 0;
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;
@@ -646,7 +663,7 @@ int Mesh::gaussj(BoutReal **a, int n)
     // on the diagonal
     if(irow != icol) {
       for(l=0;l<n;l++)
-	SWAP(a[irow][l],a[icol][l]);
+	swap(a[irow][l],a[icol][l]);
     }
     indxr[i] = irow;
     indxc[i] = icol;
@@ -674,7 +691,7 @@ int Mesh::gaussj(BoutReal **a, int n)
   for(l=n-1;l>=0;l--) {
     if(indxr[l] != indxc[l])
       for(k=0;k<n;k++)
-	SWAP(a[k][indxr[l]], a[k][indxc[l]]);
+	swap(a[k][indxr[l]], a[k][indxc[l]]);
   }
   // done.
 
@@ -714,5 +731,4 @@ const Field3D Mesh::averageY(const Field3D &f) {
   }
       
   return result;
-
 }

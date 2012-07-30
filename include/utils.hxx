@@ -33,8 +33,10 @@
 #include <string>
 #include <list>
 #include <cmath>
+#include <algorithm>
 
 using std::abs;
+using std::swap;
 
 BoutReal *rvector(int size);
 BoutReal *rvresize(BoutReal *v, int newsize);
@@ -62,24 +64,21 @@ BoutReal randomu(); // Get Random number between 0 and 1
 
 BoutReal SQ(BoutReal x);
 int ROUND(BoutReal x);
-void SWAP(BoutReal &a, BoutReal &b);
-void SWAP(BoutReal* &a, BoutReal* &b);
-void SWAP(dcomplex &a, dcomplex &b);
-void SWAP(int &a, int &b);
 int BOUTMAX(int a, int b);
 BoutReal BOUTMAX(BoutReal a, BoutReal b);
+BoutReal BOUTMAX(BoutReal a, BoutReal b, BoutReal c);
 BoutReal BOUTMIN(BoutReal a, BoutReal b);
+BoutReal BOUTMIN(BoutReal a, BoutReal b, BoutReal c);
 bool is_pow2(int x); // Check if a number is a power of 2
 BoutReal SIGN(BoutReal a); // Return +1 or -1 (0 -> +1)
 BoutReal MINMOD(BoutReal a, BoutReal b);
 
-/*
-BoutReal operator^(BoutReal lhs, int rhs);
-BoutReal operator^(BoutReal lhs, const BoutReal &rhs);
-*/
-
 char* copy_string(const char* s);
 char *strconcat(const char* left, const char *right);
+
+// Convert a value to a string
+template <class T>
+const string toString(const T& val);
 
 /// Convert a string to lower case
 const string lowercase(const string &str);

@@ -86,15 +86,6 @@ class CvodeSolver : public Solver {
     N_Vector uvec; // Values
     void *cvode_mem;
 
-    // Loading data from BOUT++ to/from CVODE
-    void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
-    void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
-
-    void load_vars(BoutReal *udata);
-    void load_derivs(BoutReal *udata);
-    int save_vars(BoutReal *udata);
-    void save_derivs(BoutReal *dudata);
-
     BoutReal pre_Wtime; // Time in preconditioner
     BoutReal pre_ncalls; // Number of calls to preconditioner
 };

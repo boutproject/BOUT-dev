@@ -199,7 +199,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
 {
   if(n <= 2)
-    throw new BoutException("n too small in cyclic_tridag");
+    throw BoutException("n too small in cyclic_tridag");
   
   static int len = 0;
   static BoutReal *u, *z;
@@ -419,7 +419,7 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
 {
   if(n <= 2)
-    throw new BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
+    throw BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
   
   static int len = 0;
   static BoutReal *u, *z;
@@ -446,7 +446,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve tridiagonal system Ax=r
   if(!tridag(a, b, c, r, x, n))
-    throw new BoutException("First tridag call failed in cyclic_tridag(BoutReal)");
+    throw BoutException("First tridag call failed in cyclic_tridag(BoutReal)");
   
   u[0] = gamma;
   u[n-1] = c[n-1];
@@ -455,7 +455,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
   
   // Solve Az = u
   if(!tridag(a, b, c, u, z, n))
-    throw new BoutException("ERROR: second tridag call failed in cyclic_tridag(BoutReal)\n");
+    throw BoutException("ERROR: second tridag call failed in cyclic_tridag(BoutReal)\n");
   
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 
@@ -502,7 +502,7 @@ void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
     if (dum == 0.0) a[k-1][0]=TINY;
     if (i != k) {
       *d = -(*d);
-      for (j=0;j<mm;j++) SWAP(a[k-1][j],a[i-1][j]);
+      for (j=0;j<mm;j++) swap(a[k-1][j],a[i-1][j]);
     }
     for (i=k;i<l;i++) {
       dum=a[i][0]/a[k-1][0];
@@ -524,7 +524,7 @@ void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
   l=m1;
   for (k=1;k<=n;k++) {
     i=indx[k-1];
-    if (i != k) SWAP(b[k-1],b[i-1]);
+    if (i != k) swap(b[k-1],b[i-1]);
     if (l < n) l++;
     for (i=k+1;i<=l;i++) b[i-1] -= al[k-1][i-k-1]*b[k-1];
   }
@@ -577,7 +577,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex *x, int n)
 {
   if(n <= 2)
-    throw new BoutException("n too small in cyclic_tridag(dcomplex)");
+    throw BoutException("n too small in cyclic_tridag(dcomplex)");
   
   static int len = 0;
   static dcomplex *u, *z;
@@ -604,7 +604,7 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
   
   // Solve tridiagonal system Ax=r
   if(tridag(a, b, c, r, x, n))
-    throw new BoutException("First tridag call failed in cyclic_tridag(dcomplex)");
+    throw BoutException("First tridag call failed in cyclic_tridag(dcomplex)");
   
   u[0] = gamma;
   u[n-1] = c[n-1];
@@ -613,7 +613,7 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
   
   // Solve Az = u
   if(tridag(a, b, c, u, z, n))
-    throw new BoutException("Second tridag call failed in cyclic_tridag(dcomplex)\n");
+    throw BoutException("Second tridag call failed in cyclic_tridag(dcomplex)\n");
   
   dcomplex fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
     (1.0 + z[0] + a[0]*z[n-1]/gamma); 

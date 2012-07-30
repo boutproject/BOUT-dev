@@ -49,12 +49,11 @@ int physics_init(bool restarting) {
     v2d.x = v2d.y = v2d.z = f2d;
     v3d.x = v3d.y = v3d.z = f3d;
     
-    if(i == 0) {
-      dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
-    }else
-      dump.append("%s/BOUT.dmp.%d.nc", "data", MYPE);
+    dump.write();
   }
   
+  dump.close(); // Ensure data is written
+
   // Need to wait for all processes to finish writing
   MPI_Barrier(BoutComm::get());
 

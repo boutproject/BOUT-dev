@@ -111,17 +111,24 @@ PRO popup_event, event
         psi_inner[i] = inp
       ENDFOR
 
+      noutpsi = N_ELEMENTS(info.out_psi_field)
+      psi_outer = FLTARR(noutpsi)
+      FOR i=0, noutpsi-1 DO BEGIN
+        widget_control, info.out_psi_field[i], get_value=inp
+        psi_outer[i] = inp
+      ENDFOR
+
       nnpol = N_ELEMENTS(info.npol_field)
       npol = LONARR(nnpol)
       FOR i=0, nnpol-1 DO BEGIN
         widget_control, info.npol_field[i], get_value=np
         npol[i] = np
       ENDFOR
-      
-      widget_control, base_info.psi_outer_field, get_value=psi_outer
 
       widget_control, base_info.rad_peak_field, get_value=rad_peak
       
+      widget_control, base_info.xpt_dist_field, get_value=xpt_mul
+
       settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
       
       WIDGET_CONTROL, base_info.status, set_value="Generating mesh ..."
@@ -144,7 +151,7 @@ PRO popup_event, event
                          boundary=boundary, strict=base_info.strict_bndry, rad_peaking=rad_peak, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
-                         fast=base_info.fast)
+                         fast=base_info.fast, xpt_mul=xpt_mul)
       
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
@@ -295,11 +302,13 @@ PRO event_handler, event
         widget_control, info.psi_outer_field, get_value=psi_outer
 
         widget_control, info.rad_peak_field, get_value=rad_peak
+        
 
         settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
       ENDELSE
       
-
+      widget_control, info.xpt_dist_field, get_value=xpt_mul
+      PRINT, "xpt_mul = ", xpt_mul
       ; Check if a simplified boundary should be used
       IF info.simple_bndry THEN BEGIN
         ; Simplify the boundary to a square box
@@ -316,7 +325,7 @@ PRO event_handler, event
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
-                         fast=info.fast)
+                         fast=info.fast, xpt_mul=xpt_mul)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -599,7 +608,32 @@ PRO event_handler, event
                                     xsize=8                         $
                                   )
       ENDFOR
-
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ; Outer psi
+      
+      l = WIDGET_LABEL(popup, value="Outer psi")
+      out_psi_base = WIDGET_BASE(popup, /ROW, EVENT_PRO='popup_event')
+      
+      IF info.flux_mesh_valid THEN BEGIN
+        psi_outer = (*info.flux_mesh).psi_outer
+      ENDIF ELSE BEGIN
+        widget_control, info.psi_outer_field, get_value=psi_out
+        psi_outer = FLTARR(n_xpoint) + psi_out
+      ENDELSE
+      
+      out_psi_field = LONARR(N_ELEMENTS(psi_outer))
+      
+      FOR i=0, N_ELEMENTS(psi_outer)-1 DO BEGIN
+        out_psi_field[i] = CW_FIELD( out_psi_base,                    $
+                                     title  = 'SOL '+STRTRIM(STRING(i),2)+': ', $ 
+                                     uvalue = 'out_psi',              $ 
+                                     /float,                          $ 
+                                     value = psi_outer[i],            $
+                                     xsize=8                          $
+                                  )
+      ENDFOR
+      
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ; Poloidal points
 
@@ -652,6 +686,7 @@ PRO event_handler, event
       popup_info = {info:info, $ ; Store the main info too
                     nrad_field:nrad_field, $
                     in_psi_field:in_psi_field, $
+                    out_psi_field:out_psi_field, $
                     npol_field:npol_field, $
                     top:event.top}
 
@@ -681,20 +716,46 @@ PRO event_handler, event
 
         RESTORE, filename
         
-        ; Copy the widget IDs
-        info.nrad_field = oldinfo.nrad_field
-        info.npol_field = oldinfo.npol_field
-        info.draw = oldinfo.draw
-        info.psi_inner_field = oldinfo.psi_inner_field
-        info.psi_outer_field = oldinfo.psi_outer_field
-        info.rad_peak_field = oldinfo.rad_peak_field
-        info.status = oldinfo.status
-        info.leftbargeom = oldinfo.leftbargeom
-        info.strict_bndry = oldinfo.strict_bndry
-        info.simple_bndry = oldinfo.simple_bndry
-        info.smoothP = oldinfo.smoothP
-        info.smoothH = oldinfo.smoothH
-        info.single_rad_grid = oldinfo.single_rad_grid
+        ; Copy the widget IDs, adding fields if needed for backwards compatability
+        str_set, info, "nrad_field", oldinfo.nrad_field, /over
+        str_set, info, "npol_field", oldinfo.npol_field, /over
+        str_set, info, "draw", oldinfo.draw, /over
+        str_set, info, "psi_inner_field", oldinfo.psi_inner_field, /over
+        str_set, info, "psi_outer_field", oldinfo.psi_outer_field, /over
+        str_set, info, "rad_peak_field", oldinfo.rad_peak_field, /over
+        str_set, info, "xpt_dist_field", oldinfo.xpt_dist_field, /over
+        
+        str_set, info, "status", oldinfo.status, /over
+        str_set, info, "leftbargeom", oldinfo.leftbargeom, /over
+
+        ; Restore options bar settings
+        str_set, info, "curv_select", oldinfo.curv_select, /over
+        str_set, info, "curv_ind", oldinfo.curv_ind
+        WIDGET_CONTROL, info.curv_select, set_combobox_select=info.curv_ind
+        
+        str_set, info, "strict_check", oldinfo.strict_check, /over
+        str_set, info, "strict_bndry", oldinfo.strict_bndry
+        Widget_Control, info.strict_check, Set_Button=info.strict_bndry
+        
+        str_set, info, "simple_check", oldinfo.simple_check, /over
+        str_set, info, "simple_bndry", oldinfo.simple_bndry
+        Widget_Control, info.simple_check, Set_Button=info.simple_bndry
+        
+        str_set, info, "smoothP_check", oldinfo.smoothP_check, /over
+        str_set, info, "smoothP", oldinfo.smoothP
+        Widget_Control, info.smoothP_check, Set_Button=info.smoothP
+        
+        str_set, info, "smoothH_check", oldinfo.smoothH_check, /over
+        str_set, info, "smoothH", oldinfo.smoothH
+        Widget_Control, info.smoothH_check, Set_Button=info.smoothH
+        
+        str_set, info, "radgrid_check", oldinfo.radgrid_check, /over
+        str_set, info, "single_rad_grid", oldinfo.single_rad_grid
+        Widget_Control, info.radgrid_check, Set_Button=info.single_rad_grid
+        
+        str_set, info, "fast_check", oldinfo.fast_check, /over
+        str_set, info, "fast", oldinfo.fast
+        Widget_Control, info.fast_check, Set_Button=info.fast
         
         IF info.rz_grid_valid THEN BEGIN
           plot_rz_equil, *info.rz_grid
@@ -812,22 +873,31 @@ PRO hypnotoad
                              xsize=8                         $
                            )
   
+  xpt_dist_field = CW_FIELD( tab1,                            $
+                             title  = 'Xpt dist x:',          $ 
+                             uvalue = 'xpt_mul',           $ 
+                             /floating,                      $ 
+                             value = 1,                    $
+                             xsize=8                         $
+                           )
+
   ; Options tab
   tab2 = WIDGET_BASE(tab_base, title="Options", /COLUMN, EVENT_PRO = 'event_handler')
 
   w = WIDGET_LABEL(tab2, value="Curvature method")
   curv_select = WIDGET_COMBOBOX(tab2, VALUE=["Toroidal, SVD method", $
                                             "Cylindrical+interpol", $
+                                             "Curl(b/B)", $
                                             "Field-aligned coords"], $
                                 EVENT_PRO = 'event_handler', $
                                 UVALUE="curv")
-  curv_index = 1 ; Default index
+  curv_index = 2 ; Default index
   WIDGET_CONTROL, curv_select, set_combobox_select=curv_index
 
   checkboxbase = WIDGET_BASE(tab2, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
                                tooltip="Enforce boundaries strictly")
-  Widget_Control, strict_check, Set_Button=1
+  Widget_Control, strict_check, Set_Button=0
 
   simple_check = WIDGET_BUTTON(checkboxbase, VALUE="Simplify boundary", uvalue='simplebndry', $
                                tooltip="Simplify the boundary to a square")
@@ -895,17 +965,26 @@ PRO hypnotoad
            settings:(PTRARR(1))[0], $ ; Settings structure
            draw:draw, $ ; Drawing widget
            detail_set:0, $ ; 1 if using detailed settings
-           strict_bndry:1, $ ; 1 if boundaries should be strict
-           simple_bndry:0, $ ; Use simplified boundary?
-           smoothP:0, $     ; Interpolate to make P smooth
-           smoothH:0, $ 
-           fast:0, $
-           single_rad_grid:1, $
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
+           xpt_dist_field:xpt_dist_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $
-           curv_ind:curv_index $
+           $;;; Options tab 
+           curv_select:curv_select, $
+           curv_ind:curv_index, $ 
+           strict_check:strict_check, $
+           strict_bndry:0, $ ; 1 if boundaries should be strict
+           simple_check:simple_check, $
+           simple_bndry:0, $ ; Use simplified boundary?
+           radgrid_check:radgrid_check, $
+           single_rad_grid:1, $
+           smoothP_check:smoothP_check, $
+           smoothP:0, $     ; Interpolate to make P smooth
+           smoothH_check:smoothH_check, $
+           smoothH:0, $ 
+           fast_check:fast_check, $
+           fast:0 $
          } 
 
   ; Store this in the base UVALUE

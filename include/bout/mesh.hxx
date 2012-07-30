@@ -49,32 +49,12 @@ class SurfaceIter;
 
 #include "grid.hxx"  // For griddatasource 
 
+#include "fieldgroup.hxx"
+
 #include "boundary_region.hxx"
+#include "sys/range.hxx" // RangeIterator
 
 #include <list>
-
-/// Group together fields
-class FieldGroup {
- public:
-  void add(FieldData &f) {fvec.push_back(&f);}
-  void add(FieldData &f1, FieldData &f2) {
-    fvec.push_back(&f1); fvec.push_back(&f2);}
-  void add(FieldData &f1, FieldData &f2, FieldData &f3) {
-    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3);}
-  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4) {
-    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); fvec.push_back(&f4);}
-  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4, FieldData &f5) {
-    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); 
-    fvec.push_back(&f4); fvec.push_back(&f5);}
-  void add(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4, FieldData &f5, FieldData &f6) {
-    fvec.push_back(&f1); fvec.push_back(&f2); fvec.push_back(&f3); 
-    fvec.push_back(&f4); fvec.push_back(&f5); fvec.push_back(&f6);}
-  
-  const vector<FieldData*> get() const {return fvec;} 
-  void clear() {fvec.clear();}
- private:
-  vector<FieldData*> fvec; // Vector of fields
-};
 
 typedef void* comm_handle;
 
@@ -115,15 +95,6 @@ public:
   virtual int scatter(BoutReal *data, Field3D &f) = 0;
   virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
 private:
-};
-
-class RangeIter {
- public:
-  virtual void first() = 0;
-  virtual void next() = 0;
-  virtual bool isDone() = 0;
-  
-  int ind; // The index
 };
 
 class Mesh {
@@ -185,31 +156,53 @@ class Mesh {
   virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
-  virtual bool surfaceClosed(int jx) = 0; ///< Test if a surface is closed (periodic in Y)
+  virtual bool surfaceClosed(int jx) { BoutReal ts; return surfaceClosed(jx, ts); } ///< Test if a surface is closed (periodic in Y)
   virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
-  virtual RangeIter* iterateBndryLowerY() = 0;
-  virtual RangeIter* iterateBndryUpperY() = 0;
+  virtual const RangeIterator iterateBndryLowerY() const = 0;
+  virtual const RangeIterator iterateBndryUpperY() const = 0;
   
+  bool hasBndryLowerY() {
+    static bool calc = false, answer;
+    if(calc) return answer; // Already calculated
+    
+    int mybndry = (int) !(iterateBndryLowerY().isDone());
+    int allbndry;
+    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+    answer = (bool) allbndry;
+    calc = true;
+    return answer;
+  }
+  
+  bool hasBndryUpperY() {
+    static bool calc = false, answer;
+    if(calc) return answer; // Already calculated
+    
+    int mybndry = (int) !(iterateBndryUpperY().isDone());
+    int allbndry;
+    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+    answer = (bool) allbndry;
+    calc = true;
+    return answer;
+  }
+
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
-  // Indexing. Iterate over the mesh
-  /*  virtual IndexIter *iterateIndexXY() = 0;
-  virtual IndexIter *iterateIndexXYZ() = 0;
-  virtual IndexIter *iterateIndexXZ() = 0;
-  */
-
   virtual BoutReal GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
 
   virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
   
   //////////////////////////////////////////////////////////
+  
+  int GlobalNx, GlobalNy, GlobalNz; // Size of the global arrays. Note: can have holes
+  int OffsetX, OffsetY, OffsetZ;    // Offset of this mesh within the global array
+                                    // so startx on this processor is OffsetX in global
   
   /// Global locator functions
   virtual int XGLOBAL(int xloc) = 0;
@@ -262,8 +255,6 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
-
-  int MYPE_IN_CORE;  // 1 if processor in core
   
   bool non_uniform; // Use corrections for non-uniform meshes
   
@@ -273,7 +264,9 @@ class Mesh {
   
   GridDataSource *findSource(const char *name);
   GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
-  
+
+  /// Read a 1D array of integers
+  const vector<int> readInts(const string &name, int n);
   
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);

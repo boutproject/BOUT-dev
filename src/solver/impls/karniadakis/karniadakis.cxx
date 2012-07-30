@@ -151,10 +151,10 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     run_rhs(simtime);
 
     /// Write the restart file
-    restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+    restart.write("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str());
     
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
+      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
     }
     
     /// Call the monitor function
@@ -163,7 +163,7 @@ int KarniadakisSolver::run(MonitorFunc monitor)
       // User signalled to quit
       
       // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
       
       output.write("Monitor signalled to quit. Returning\n");
       break;

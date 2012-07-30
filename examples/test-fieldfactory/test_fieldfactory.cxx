@@ -18,11 +18,10 @@ int physics_init(bool restarting) {
   Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
   SAVE_ONCE4(a, b, c, d);
 
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
   
   // Write data to file
-  dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
+  dump.write();
+  dump.close();
   
   // Need to wait for all processes to finish writing
   MPI_Barrier(BoutComm::get());

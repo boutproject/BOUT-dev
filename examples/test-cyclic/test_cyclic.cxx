@@ -104,7 +104,8 @@ int physics_init(bool restarting) {
     output << "FAILED" << endl;
   
   // Write data to file
-  dump.write("%s/BOUT.dmp.%d.nc", "data", mype);
+  dump.write();
+  dump.close();
 
   MPI_Barrier(BoutComm::get());
   

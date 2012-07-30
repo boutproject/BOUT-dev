@@ -35,22 +35,28 @@ class DataFormat;
 
 #include "bout_types.hxx"
 
+// Can't copy, to control access to file
 class DataFormat {
  public:
   virtual ~DataFormat() { }
   // File opening routines
   virtual bool openr(const string &name) = 0;
+  virtual bool openr(const string &base, int mype);
   virtual bool openw(const string &name, bool append=false) = 0;
+  virtual bool openw(const string &base, int mype, bool append=false);
   
   virtual bool is_valid() = 0;
   
   virtual void close() = 0;
 
+  virtual void flush() = 0;
+
   virtual const vector<int> getSize(const char *var) = 0;
   virtual const vector<int> getSize(const string &var) = 0;
 
   // Set the origin for all subsequent calls
-  virtual bool setOrigin(int x = 0, int y = 0, int z = 0) = 0; 
+  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0; 
+  virtual bool setLocalOrigin(int x = 0, int y = 0, int z = 0);
   virtual bool setRecord(int t) = 0; // negative -> latest
   
   // Read / Write simple variables up to 3D

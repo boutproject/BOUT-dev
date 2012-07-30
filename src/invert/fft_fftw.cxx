@@ -114,7 +114,6 @@ void cfft(dcomplex *cv, int length, int isign)
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
     int n_th = omp_get_num_threads(); // Number of threads
-    output << "Num threads = " << n_th << "id = " << th_id << endl;
     if((size != length) || (nthreads < n_th)) {
       if(size > 0) {
         // Free all memory
@@ -301,7 +300,6 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
     //output << "Num threads = " << n_th << " id = " << th_id << endl;
     
     if((size != length) || (nthreads < n_th)) {
-      output << "rfft allocating: " << th_id << " / " << n_th << endl;
       if(size > 0) {
         // Free all memory
         for(int i=0;i<nthreads;i++)
@@ -326,7 +324,6 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
                                     foutall+i*(length/2 + 1), flags);
       size = length;
       nthreads = n_th;
-      output << "rfft alloc done\n";
     }
   }
   
@@ -357,7 +354,6 @@ void irfft(dcomplex *in, int length, BoutReal *out)
     // Sort out memory. Also, FFTW planning routines not thread safe
     
     if((size != length) || (nthreads < n_th)) {
-      output << "irfft allocating: " << th_id << " / " << n_th << endl;
       if(size > 0) {
         // Free all memory
         for(int i=0;i<nthreads;i++)
@@ -383,7 +379,6 @@ void irfft(dcomplex *in, int length, BoutReal *out)
                                     foutall+i*length, flags);
       size = length;
       nthreads = n_th;
-      output << "irfft alloc done\n";
     }
   }
   

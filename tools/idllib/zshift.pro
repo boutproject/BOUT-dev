@@ -31,11 +31,11 @@
 ;
 
 FUNCTION zshift, var, zangle, period=period
-
   IF NOT KEYWORD_SET(period) THEN period = 1.0
   
   s = SIZE(var)
   s2 = SIZE(zangle)
+
 
   IF (s[0] EQ 4) AND (s2[0] EQ 2) THEN BEGIN
     ; XYZT var, XY angle
@@ -74,6 +74,8 @@ FUNCTION zshift, var, zangle, period=period
     nx = s[1]
     nz = s[2]
     dz = 2.0*!PI / (period * FLOAT(nz-1))
+
+    cent = FLOOR(FLOAT(nz-2)/2.0)
     
     result = FLTARR(nx, nz)
     
@@ -81,9 +83,27 @@ FUNCTION zshift, var, zangle, period=period
       offset = zangle[x] / dz
       
       FOR z=0, nz-1 DO BEGIN
-        zpos = (((z + offset) MOD (nz-2)) + (nz-2)) MOD (nz-2)
-        
-        result[x,z] = INTERPOL(REFORM(var[x,*]), FINDGEN(nz), zpos, /SPLINE)
+
+        zpos = (((z + offset) MOD (nz-1)) + (nz-1)) MOD (nz-1)
+        zpos_f = FLOOR(zpos)
+
+        temp_arr  = REFORM(var[x,0:nz-2])
+        temp_arr1 = REFORM(var[x,0:nz-2])
+
+	IF (cent-zpos_f LT 0) THEN BEGIN
+          shift_l = zpos_f - cent
+          temp_arr = [temp_arr1[shift_l:nz-2],temp_arr1[0:shift_l-1]]
+        ENDIF
+
+        IF (cent-zpos_f GT 0) THEN BEGIN
+          shift_r = cent - zpos_f
+          temp_arr = [temp_arr1[nz-1-shift_r:nz-2],temp_arr1[0:nz-2-shift_r]]
+        ENDIF
+
+	znew = zpos - zpos_f + cent
+
+        result[x,z] = INTERPOL(temp_arr,FINDGEN(nz-1),znew,/SPLINE)
+
       ENDFOR
     ENDFOR
   ENDIF ELSE BEGIN

@@ -19,10 +19,9 @@ int physics_init(bool restarting) {
   Field3D pade2 = gyroPade2(input3d, 0.5);
   SAVE_ONCE2(pade1, pade2);
   
-  // Get the processor number for the output file name
-  int MYPE;
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
-  dump.write("%s/BOUT.dmp.%d.nc", "data", MYPE);
+  // Write data
+  dump.write();
+  dump.close();
   
   output << "\nFinished running test. Triggering error to quit\n\n";
   

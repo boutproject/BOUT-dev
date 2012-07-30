@@ -78,8 +78,6 @@ void bout_signal_handler(int sig);  // Handles segmentation faults
 
 #include <output.hxx>
 
-bool append = false;
-
 BoutReal simtime;
 int iteration;
 
@@ -94,8 +92,6 @@ int bout_init(int argc, char **argv) {
   BoutReal TIMESTEP;
   string grid_name;
   bool dump_float; // Output dump files as floats
-
-  char dumpname[512];
 
   string grid_ext, dump_ext; ///< Extensions for restart and dump files
 
@@ -200,6 +196,12 @@ int bout_init(int argc, char **argv) {
   output.write("\tnetCDF support disabled\n");
 #endif
 
+#ifdef PNCDF
+  output.write("\tParallel NetCDF support enabled\n");
+#else
+  output.write("\tParallel NetCDF support disabled\n");
+#endif
+
 #ifdef _OPENMP
   output.write("\tOpenMP parallelisation enabled\n");
 #else
@@ -244,7 +246,7 @@ int bout_init(int argc, char **argv) {
     OPTION(options, dump_float,   true);
 
     // Check if restarting
-    bool restart;
+    bool restart, append;
     OPTION(options, restart, false);
     OPTION(options, append, false);
 
@@ -283,14 +285,18 @@ int bout_init(int argc, char **argv) {
     bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
     bndry->add(new BoundaryConstLaplace(), "constlaplace");
     bndry->addMod(new BoundaryRelax(10.), "relax");
-
-    /// Set the file names
-    sprintf(dumpname, "%s/BOUT.dmp.%d.%s", data_dir, MYPE, dump_ext.c_str());
-
-    // Set file formats
-    output.write("Setting file formats\n");
-    dump.setFormat(dumpname);
-
+    
+    // Set up the "dump" data output file
+    output << "Setting up output (dump) file\n";
+    dump = Datafile(options->getSection("output"));
+    
+    /// Open a file for the output
+    if(append) {
+      dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+    }else {
+      dump.openw("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+    }
+    
     if (dump_float) dump.setLowPrecision(); // Down-convert to floats
 
     /// Add book-keeping variables to the output files
@@ -326,9 +332,6 @@ int bout_init(int argc, char **argv) {
       return 1;
     }
 
-    /// Set the filename for the dump files
-    dump.setFilename(dumpname);
-
     if (!restart) {
       /// Write initial state as time-point 0
 
@@ -338,11 +341,7 @@ int bout_init(int argc, char **argv) {
         return 1;
       }
 
-      if (append) dump.append();
-      else {
-        dump.write();
-        append = true;
-      }
+      dump.write();
     }
 
   }catch(BoutException *e) {
@@ -401,6 +400,9 @@ int bout_finish() {
   // Delete the mesh
   delete mesh;
 
+  // Close the output file
+  dump.close();
+
   // Delete 3D field memory
   Field3D::cleanup();
 
@@ -434,10 +436,8 @@ int bout_monitor(BoutReal t, int iter, int NOUT) {
   simtime = t;
   iteration = iter;
 
-  /// Write (append) dump file
-
-  dump.write(append);
-  append = true;
+  /// Write dump file
+  dump.write();
 
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");

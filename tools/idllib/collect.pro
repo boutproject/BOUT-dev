@@ -13,7 +13,9 @@ END
 
 FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
              path=path, var=var, t_array=t_array, use=use, old=old,  $
-                  quiet=quiet, debug=debug
+                  quiet=quiet, debug=debug, prefix=prefix
+
+  IF NOT KEYWORD_SET(prefix) THEN prefix="BOUT.dmp"
 
   IF NOT KEYWORD_SET(debug) THEN BEGIN
     on_error,2  ; If an error occurs, return to caller
@@ -58,7 +60,7 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
       IF N_ELEMENTS(tind) EQ 1 THEN tind = [tind, tind]
   ENDIF
 
-  SPAWN, "\ls "+path+"/BOUT.dmp.*", result, exit_status=status
+  SPAWN, "\ls "+path+"/"+prefix+".*", result, exit_status=status
 
   IF status NE 0 THEN BEGIN
       PRINT, "ERROR: No data found"
@@ -76,7 +78,7 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
   fext = STRMID(mainfile, i+1, STRLEN(mainfile)-(i+1))
 
   ; Select again only the ones with this extension
-  SPAWN, "\ls "+path+"/BOUT.dmp.*."+fext, result, exit_status=status
+  SPAWN, "\ls "+path+"/"+prefix+".*."+fext, result, exit_status=status
 
   nfo = nfiles
   nfiles = N_ELEMENTS(result)
@@ -270,7 +272,7 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
       ygmax = ymax + PE_YIND*MYSUB - MYG
       
       IF inrange THEN BEGIN
-        filename = path+"/BOUT.dmp."+STRTRIM(STRING(i),2)+"."+fext
+        filename = path+"/"+prefix+"."+STRTRIM(STRING(i),2)+"."+fext
         IF quiet EQ 0 THEN BEGIN
             PRINT, ""
             PRINT, "Reading from "+filename
@@ -389,7 +391,7 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
       
       IF inrange THEN BEGIN
         
-        filename = path+"/BOUT.dmp."+STRTRIM(STRING(i),2)+"."+fext
+        filename = path+"/"+prefix+"."+STRTRIM(STRING(i),2)+"."+fext
         IF quiet EQ 0 THEN BEGIN
             PRINT, ""
             PRINT, "Reading from "+filename
@@ -537,7 +539,7 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
       
       IF inrange THEN BEGIN
         
-        filename = path+"/BOUT.dmp."+STRTRIM(STRING(i),2)+"."+fext
+        filename = path+"/"+prefix+"."+STRTRIM(STRING(i),2)+"."+fext
         IF quiet EQ 0 THEN BEGIN
             PRINT, ""
             PRINT, "Reading from "+filename

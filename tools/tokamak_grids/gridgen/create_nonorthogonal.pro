@@ -18,7 +18,7 @@
 FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                                boundary=boundary, fpsi=fpsi, strict=strict, $
                                nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
-                               single_rad_grid=single_rad_grid
+                               single_rad_grid=single_rad_grid, fast=fast
   
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
   IF NOT KEYWORD_SET(rad_peaking) THEN rad_peaking = 2.0
@@ -82,9 +82,20 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   
   ;;;;;;;;;;;;;;; Calculate DCT ;;;;;;;;;;;;;;
   
-  PRINT, "Calculating DCT..."
-  DCT2Dslow, F, dctF
-  PRINT, "Finished DCT"
+  IF KEYWORD_SET(fast) THEN BEGIN
+    PRINT, "Using Fast settings"
+    interp_data = {nx:nx, ny:ny, $
+                   method:1, $
+                   f: f}  ; Just need the function itself
+  ENDIF ELSE BEGIN
+    dct = DCT2D(F)
+
+    ; Create a structure containing interpolation settings and data
+    interp_data = {nx:nx, ny:ny, $
+                   method:0, $
+                   f: F, $       ; Always include function
+                   dct: dct} ; Pass the DCT coefficients
+  ENDELSE
 
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
@@ -126,12 +137,49 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   PRINT, "Refining x-point locations..."
   FOR i=0, n_xpoint-1 DO BEGIN
     PRINT, "  "+STR(i)+": "+STR([xpt_ri[i], xpt_zi[i]])+" "+STR(xpt_f[i])
-    refine_xpoint, dctF, xpt_ri[i], xpt_zi[i], ri, zi
-    a = local_gradient(dctF, ri, zi)
-    PRINT, "   -> "+STR([ri, zi])+" "+STR(a.f)
+    refine_xpoint, interp_data, xpt_ri[i], xpt_zi[i], ri, zi
+    ;local_gradient, interp_data, ri, zi, f=val
+    val = xpt_f[i]
+    PRINT, "   -> "+STR([ri, zi])+" "+STR(val)
     xpt_ri[i] = ri
     xpt_zi[i] = zi
-    xpt_f[i] = a.f
+    ;xpt_f[i] = val  ; Don't change this
+
+    ; Location can be correct, but not agree with contour
+    
+    mindist = 0.
+    mindist2 = 1.
+    d = 1e-4
+    REPEAT BEGIN
+      val = val - 0.5*mindist / ((mindist2 - mindist) / d)
+      contour_lines, f, levels=[val], path_info=info, path_xy=xy
+      nsep = N_ELEMENTS(info) ; Will be split into two or more lines
+      mindist = 1000
+      FOR j=0, nsep-1 DO BEGIN
+        sep_ri = REFORM(xy[0,info[j].offset:(info[j].offset+info[j].n-1)])
+        sep_zi = REFORM(xy[1,info[j].offset:(info[j].offset+info[j].n-1)])
+        ; Find smallest distance to x-point
+        md = SQRT( MIN((sep_ri - ri)^2 + (sep_zi - zi)^2) )
+        IF md LT mindist THEN mindist = md
+        
+      ENDFOR
+      
+      ; Change level slightly
+      contour_lines, f, levels=[val+d], path_info=info, path_xy=xy
+      nsep = N_ELEMENTS(info) ; Will be split into two or more lines
+      mindist2 = 1000
+      FOR j=0, nsep-1 DO BEGIN
+        sep_ri = REFORM(xy[0,info[j].offset:(info[j].offset+info[j].n-1)])
+        sep_zi = REFORM(xy[1,info[j].offset:(info[j].offset+info[j].n-1)])
+        ; Find smallest distance to x-point
+        md = SQRT( MIN((sep_ri - ri)^2 + (sep_zi - zi)^2) )
+        IF md LT mindist2 THEN mindist2 = md
+      ENDFOR
+      
+    ENDREP UNTIL mindist LT 1.
+    
+    PRINT, "   -> "+STR(val) + " (" + STR(mindist) + ")"
+    xpt_f[i] = val
   ENDFOR
 
   ; Overplot the separatrices, O-points
@@ -243,6 +291,9 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   
   psi_vals = (fvals - faxis) / fnorm ; Normalised psi
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Array of pointers to all flux surfaces
+  ; 
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Get the contours
@@ -285,19 +336,29 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
                             bndryi[0,*], bndryi[1,*], 1, ncross=ncross, inds1=b_ind)
       
       IF ncross GT 0 THEN BEGIN
-        OPLOT, interpolate(R, bpos[0,*]), interpolate(z, bpos[1,*]), psym=1
+        
         
         si = 0 ; Start index of the line
         w = WHERE(b_ind LT start_ind, count)
-        IF count GT 0 THEN si = MAX(b_ind[w]) ; last boundary crossing before the midplane
+        li = 0
+        IF count GT 0 THEN BEGIN
+          si = MAX(b_ind[w], li) ; last boundary crossing before the midplane
+          li = w[li]
+        ENDIF
         
         ei = N_ELEMENTS(line_ri)-1 ; end index
         w = WHERE(b_ind GT start_ind, count)
-        IF count GT 0 THEN ei = MIN(b_ind[w]) ; First boundary crossing after midplane
+        fi = ncross-1
+        IF count GT 0 THEN BEGIN
+          ei = MIN(b_ind[w], fi) ; First boundary crossing after midplane
+          fi = w[fi]
+        ENDIF
         
+        OPLOT, interpolate(R, bpos[0,li:fi]), interpolate(z, bpos[1,li:fi]), psym=1
+
         sii = CEIL(si)
         eii = FLOOR(ei)
-
+        
         line_ri = [INTERPOLATE(line_ri, si), line_ri[sii:eii], INTERPOLATE(line_ri, ei)]
         line_zi = [INTERPOLATE(line_zi, si), line_zi[sii:eii], INTERPOLATE(line_zi, ei)]
         
@@ -306,7 +367,6 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
         oplot, INTERPOLATE(R, line_ri), INTERPOLATE(Z, line_zi), color=2
       ENDELSE
       
-      
     ENDIF
   ENDFOR
   
@@ -314,8 +374,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
     PRINT, "Finding theta location of x-point "+STR(i)
     
     ; Get the separatrices
-    legsep = leg_separatrix(dctF, R, Z, xpt_ri[i], xpt_zi[i], $
-                            opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi)
+    legsep = leg_separatrix2(interp_data, R, Z, xpt_ri[i], xpt_zi[i], $
+                             opt_ri[primary_opt], opt_zi[primary_opt], boundary=bndryi, xpt_psi=xpt_f[i])
   ENDFOR
 
   STOP

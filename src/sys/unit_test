@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+# 
+# Run the test, return status
+#
+
+from boututils import shell,launch
+from sys import exit
+
+print "Making test"
+status, out = shell("make -f unit_makefile")
+
+if status != 0:
+  print "FAILED: Could not make!"
+  exit(status)
+
+print "Running test"
+
+status, out = shell("./test")
+
+shell("rm test")
+
+if status == 0:
+  print "PASSED"
+else:
+  print "FAILED"
+
+exit(status)
+

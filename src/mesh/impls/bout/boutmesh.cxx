@@ -46,6 +46,11 @@
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+BoutMesh::BoutMesh(Options *options) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("mesh");
+}
+
 BoutMesh::~BoutMesh() {
   // Delete the communication handles
   clear_handles();
@@ -85,7 +90,7 @@ int BoutMesh::load() {
   
   options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
   if((NPES % NXPE) != 0) {
-    throw new BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
+    throw BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
                             NPES, NXPE);
   }
 
@@ -103,7 +108,7 @@ int BoutMesh::load() {
   /// Split MX points between NXPE processors
   MXSUB = MX / NXPE;
   if((MX % NXPE) != 0) {
-    throw new BoutException("Cannot split %d X points equally between %d processors\n",
+    throw BoutException("Cannot split %d X points equally between %d processors\n",
                             MX, NXPE);
   }
 
@@ -115,7 +120,8 @@ int BoutMesh::load() {
 		 MY, NYPE);
     return 1;
   }
-  
+
+
   /// Get mesh options
   int MZ;
   OPTION(options, MZ,           65);
@@ -139,6 +145,18 @@ int BoutMesh::load() {
   OPTION(options, periodicX, false); // Periodic in X
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
+
+
+  
+  // Set global sizes and offsets
+  GlobalNx = nx;
+  GlobalNy = ny + 4; //
+  GlobalNz = MZ;
+  
+  OffsetX = PE_XIND*MXSUB;
+  OffsetY = PE_YIND*MYSUB;
+  OffsetZ = 0;
+
 
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
@@ -244,13 +262,13 @@ int BoutMesh::load() {
   
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    throw new BoutException("\tERROR: Diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
   }
   if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw new BoutException("\tERROR: Diagonal metrics are negative!\n");
+    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
   }
   if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    throw new BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
+    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
   }
 
   /// Set shift for radial derivatives
@@ -277,7 +295,7 @@ int BoutMesh::load() {
   GridDataSource* s = findSource("ShiftAngle");
   if(s) {
     s->open("ShiftAngle");
-    s->setOrigin(XGLOBAL(0));
+    s->setGlobalOrigin(XGLOBAL(0));
     if(!s->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
       for(int i=0;i<ngx;i++)
@@ -370,7 +388,7 @@ int BoutMesh::load() {
     output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
     // Check Bxy
     if(!finite(Bxy))
-      throw new BoutException("\tERROR: Bxy not finite everywhere!\n");
+      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
   }
 
   //////////////////////////////////////////////////////
@@ -859,20 +877,20 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     int yfrom = (IDATA_DEST/NXPE)*MYSUB;
     for(int i=0;i<MXG;i++) {
       output.write("in: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, i, MYG);
-      s->setOrigin(xfrom+i, yfrom);
+      s->setGlobalOrigin(xfrom+i, yfrom);
       s->fetch(&(data[i][MYG]), name, 1, MYSUB);
     }
-    s->setOrigin();
+    s->setGlobalOrigin();
   }
   if(ODATA_DEST >= 0) {
     int xfrom = (ODATA_DEST % NXPE)*MXSUB + MXG;
     int yfrom = (ODATA_DEST/NXPE)*MYSUB;
     for(int i=0;i<MXG;i++) {
       output.write("out: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, MXG+MXSUB+i, MYG);
-      s->setOrigin(xfrom+i, yfrom);
+      s->setGlobalOrigin(xfrom+i, yfrom);
       s->fetch(&(data[MXG+MXSUB+i][MYG]), name, 1, MYSUB);
     }
-    s->setOrigin();
+    s->setGlobalOrigin();
   }
   */
 #ifdef TRACK
@@ -1665,12 +1683,12 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
     ypeup = ype1;
     ypedown = ype2;
   }else {
-    throw new BoutException("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
+    throw BoutException("ERROR adding connection: y index %d or %d not on processor boundary\n", ypos1, ypos2);
   }
 
   /* check the x ranges are possible */
   if((xge != 0) && (xlt != MX)) {
-    throw new BoutException("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
+    throw BoutException("ERROR adding connection(%d,%d,%d,%d): can only divide X domain in 2\n",
                             ypos1, ypos2, xge, xlt);
   }
 
@@ -1748,21 +1766,21 @@ void BoutMesh::topology()
   // Perform checks common to all topologies
 
   if (NPES != NXPE*NYPE) {
-    throw new BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
+    throw BoutException("\tTopology error: npes=%d is not equal to NXPE*NYPE=%d\n",
                             NPES,NXPE*NYPE);
   }
   if(MYSUB * NYPE != MY) {
-    throw new BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
+    throw BoutException("\tTopology error: MYSUB[%d] * NYPE[%d] != MY[%d]\n",MYSUB,NYPE,MY);
   }
   if(MXSUB * NXPE != MX) {
-    throw new BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
+    throw BoutException("\tTopology error: MXSUB[%d] * NXPE[%d] != MX[%d]\n",MXSUB,NXPE,MX);
   }
 
   if((NXPE > 1) && (MXSUB < MXG)) {
-    throw new BoutException("\tERROR: Grid X size must be >= guard cell size\n");
+    throw BoutException("\tERROR: Grid X size must be >= guard cell size\n");
   }
   if(MYSUB < MYG) {
-    throw new BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
+    throw BoutException("\tERROR: Grid Y size must be >= guard cell size\n");
   }
   
   if(jyseps2_1 == jyseps1_2) {
@@ -1782,7 +1800,7 @@ void BoutMesh::topology()
        other or lower legs, but do have to have an integer number
        of processors */
     if((ny_inner-jyseps2_1-1) % MYSUB != 0) {
-      throw new BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
+      throw BoutException("\tTopology error: Upper inner leg does not have integer number of processors\n");
     }
     if((jyseps1_2-ny_inner+1) % MYSUB != 0) {
       output.write("\tTopology error: Upper outer leg does not have integer number of processors\n");
@@ -2074,7 +2092,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
       
       int yind = yread + jy; // Global location to read from
       
-      s->setOrigin(XGLOBAL(jx), yind);
+      s->setGlobalOrigin(XGLOBAL(jx), yind);
       if(!s->fetch(zdata, name, 1, 1, size[2]))
 	return 1;
       
@@ -2107,7 +2125,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
     }
   }
 
-  s->setOrigin();
+  s->setGlobalOrigin();
 
   // free data
   delete[] zdata;
@@ -2138,13 +2156,13 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
 {
   for(int i=xge;i!=xlt;i++) { // go through all the x indices 
     // Set the indices to read in this x position 
-    s->setOrigin(XGLOBAL(i), yread);
+    s->setGlobalOrigin(XGLOBAL(i), yread);
     // Read in the block of data for this x value (C ordering)
     if(!s->fetch(&(var[i][ydest]), varname, 1, ysize))
       return 1;
   }
   
-  s->setOrigin();
+  s->setGlobalOrigin();
   
   return 0;
 }
@@ -2431,8 +2449,8 @@ int BoutSurfaceIter::scatter(BoutReal **data, Field3D &f)
  *                 Range iteration
  ****************************************************************/
 
-RangeIter* BoutMesh::iterateBndryLowerY()
-{
+const RangeIterator BoutMesh::iterateBndryLowerY() const {
+  
   int xs = 0;
   int xe = ngx-1;
   if((DDATA_INDEST >= 0) && (DDATA_XSPLIT > xstart))
@@ -2445,11 +2463,10 @@ RangeIter* BoutMesh::iterateBndryLowerY()
   if(xe > xend)
     xe = xend;
 
-  return new BoutRangeIter(xs, xe);
+  return RangeIterator(xs, xe);
 }
 
-RangeIter* BoutMesh::iterateBndryUpperY()
-{
+const RangeIterator BoutMesh::iterateBndryUpperY() const {
   int xs = 0;
   int xe = ngx-1;
   if((UDATA_INDEST >= 0) && (UDATA_XSPLIT > xstart))
@@ -2462,12 +2479,11 @@ RangeIter* BoutMesh::iterateBndryUpperY()
   if(xe > xend)
     xe = xend;
 
-  return new BoutRangeIter(xs, xe);
+  return RangeIterator(xs, xe);
 }
 
 
-vector<BoundaryRegion*> BoutMesh::getBoundaries()
-{
+vector<BoundaryRegion*> BoutMesh::getBoundaries() {
   return boundary;
 }
 
@@ -2508,35 +2524,12 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   return result;
 }
 
-BoutRangeIter::BoutRangeIter(int start, int end)
-{
-  s = start;
-  e = end;
-}
-
-void BoutRangeIter::first()
-{
-  ind = s;
-}
-
-void BoutRangeIter::next()
-{
-  ind++;
-}
-
-bool BoutRangeIter::isDone()
-{
-  return ind > e;
-}
-
-BoutReal BoutMesh::GlobalX(int jx)
-{
+BoutReal BoutMesh::GlobalX(int jx) {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
   //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
-BoutReal BoutMesh::GlobalY(int jy)
-{
+BoutReal BoutMesh::GlobalY(int jy) {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
 
@@ -2559,8 +2552,7 @@ BoutReal BoutMesh::GlobalY(int jy)
   return ((BoutReal) ly) / ((BoutReal) nycore);
 }
 
-void BoutMesh::outputVars(Datafile &file)
-{
+void BoutMesh::outputVars(Datafile &file) {
   file.add(MXSUB, "MXSUB", 0);
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);

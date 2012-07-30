@@ -74,6 +74,8 @@
 \newcommand{\pow}{\ensuremath{\wedge} }
 \newcommand{\poweq}{\ensuremath{\wedge =} }
 
+\newcommand{\dd}[2]{\ensuremath{\frac{d #1}{d #2}}}
+\newcommand{\ddd}[2]{\ensuremath{\frac{d^2 #1}{d #2^2}}}
 \newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
 \newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
 \newcommand{\Vpar}{\ensuremath{V_{||}}}
@@ -101,16 +103,23 @@
 \newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
 \newcommand{\rbp}{\ensuremath{R\Bp}}
 \newcommand{\rbpsq}{\ensuremath{\left(\rbp\right)^2}}
+\newcommand{\Rvec}{\ensuremath{\hat{\Vec{R}}}}
+\newcommand{\Zvec}{\ensuremath{\hat{\Vec{Z}}}}
+\newcommand{\phivec}{\ensuremath{\hat{\Vec{\phi}}}}
+\newcommand{\ehat}{\ensuremath{\hat{\Vec{e}}}}
 
 \begin{document}
 
 \title{Field-aligned coordinates}
-\author{B.Dudson\S, M.V.Umansky\dag, X.Q.Xu\dag, L.L.LoDestro\dag \\
+\author{B.Dudson\S, M.V.Umansky\dag, L.C.Wang\ddag, X.Q.Xu\dag, L.L.LoDestro\dag \\
 \\
   \S Department of Physics, University of York, UK \\
-  \dag Lawrence Livermore National Laboratory, USA}
+  \dag Lawrence Livermore National Laboratory, USA \\
+  \ddag IFTS, China}
 \date{29$^{th}$ June 2011}
 \maketitle
+
+\tableofcontents
 
 \section{Introduction}
 
@@ -155,7 +164,7 @@ g^{\psi\psi}\mathbf{e}_\psi\times g^{\theta\theta}\mathbf{e}_\theta \nonumber \\
 Similarly, 
 \[
 \nabla\psi\times\nabla\zeta = -\left|B_p\right|\mathbf{\hat{e}}_\theta \qquad
-\nabla\theta\times\nabla\zeta = \frac{R}{h_\theta}\mathbf{\hat{e}}_\psi
+\nabla\theta\times\nabla\zeta = \frac{1}{Rh_\theta}\mathbf{\hat{e}}_\psi = \frac{1}{h_\theta R^2\left|\Bp\right|}\nabla \psi
 \]
 
 \section{Field-aligned coordinates}
@@ -202,7 +211,7 @@ i.e. $\Bvec$ can be written as
 \end{equation}
 and the covariant components calculated using $g_{ij}$ as
 \begin{equation}
-B_x = \Bt I R \qquad B_y = \frac{B^2 \hthe}{\Bp} \qquad B_z = \Bt R
+B_x = \sbt\Bt I R \qquad B_y = \frac{B^2 \hthe}{\Bp} \qquad B_z = \sbt\Bt R
 \label{eq:B_covariant}
 \end{equation}
 
@@ -280,8 +289,8 @@ The perpendicular gradient operator:
  &=& \nabla x\left(\deriv{}{x} - \frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) + \nabla z\left(\deriv{}{z} - \frac{g_{yz}}{\left(JB\right)^2}\deriv{}{y}\right)
 \end{eqnarray*}
 
-\section{Useful quantities in field-aligned coordinates}
-\subsection{$J\times B$}
+\subsection{$J\times B$ in field-aligned coordinates}
+\label{sec:jxb_fac}
 
 Components of the magnetic field in field-aligned coordinates:
 \[
@@ -289,7 +298,7 @@ B^y = \frac{\Bp}{\hthe} \qquad B^x = B^z = 0
 \]
 and
 \[
-B_x = \sbt \Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \sbt \Bt R
+B_x = \sbt\Bt I R \qquad B_y = \frac{B^2\hthe}{\Bp} \qquad B_z = \sbt\Bt R
 \]
 
 Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
@@ -297,26 +306,30 @@ Calculate current $\Jvec = \frac{1}{\mu}\Curl{\Bvec}$
 \[
 \left(\Curl{\Bvec}\right)^x = \frac{1}{J}\left(\deriv{B_z}{y} - \deriv{B_y}{z}\right) = 0
 \]
-since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric. As expected then,
-there are no equilibrium currents across flux surfaces.
-
+since $\Bt R$ is a flux-surface quantity, and $\Bvec$ is axisymmetric.
 \begin{eqnarray*}
 \left(\Curl{\Bvec}\right)^y &=& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\left(\Bt R\right) \\
 \left(\Curl{\Bvec}\right)^z &=& \frac{\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\deriv{}{y}\left(\Bt I R\right)\right]
 \end{eqnarray*}
 The second term can be simplified, again using $\Bt R$ constant on flux-surfaces:
 \[
-\deriv{}{y}\left(\Bt I R\right) = \Bt R\deriv{\nu}{x} \qquad \nu = \frac{\hthe\Bt}{R\Bp}
+\deriv{}{y}\left(\Bt I R\right) = \sbt\Bt R\deriv{\nu}{x} \qquad \nu = \frac{\hthe\Bt}{R\Bp}
 \]
 From these, calculate covariant components:
 \begin{eqnarray}
-\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \nonumber\\
-\left(\Curl{\Bvec}\right)_y &=& -\sbt\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \sbt\Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
-\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] \nonumber
+\left(\Curl{\Bvec}\right)_x &=& -\Bt I R \deriv{}{x}\left(\Bt R\right) + \frac{IR^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber\\
+\left(\Curl{\Bvec}\right)_y &=& -\sbt\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right) + \sbt\Bt R\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \label{eq:curlb_y}\\
+\left(\Curl{\Bvec}\right)_z &=& -\Bt R\deriv{}{x}\left(\Bt R\right) + \frac{R^2\Bp}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] \nonumber
 \end{eqnarray}
-Calculate $\Jvec\times\Bvec$:
+Calculate $\Jvec\times\Bvec$ using
+\begin{equation}
+\mathbf{e}^i = \frac{1}{J}\left(\mathbf{e}_j \times \mathbf{e}_k\right) \qquad \mathbf{e}_i = J\left(\mathbf{e}^j \times \mathbf{e}^k\right) \qquad i,j,k \texttt{ cyc } 1,2,3
+\label{eq:cross_relation}
+\end{equation}
+gives 
 \begin{eqnarray*}
-\mu_0 \left(\Jvec\times\Bvec\right)^x = -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right]
+\mu_0 \left(\Jvec\times\Bvec\right)^x &=& \frac{1}{J}\left[\left(\Curl{\Bvec}\right)_y B_z - \left(\Curl{\Bvec}\right)_z B_y \right]\\
+&=& -\frac{\Bp^3 R^2}{\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right]
 \end{eqnarray*}
 
 Covariant components of $\nabla P$:
@@ -329,9 +342,26 @@ and contravariant:
 \]
 Hence equating contravariant x components of $\Jvec\times\Bvec = \nabla P$,
 \begin{equation}
-\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
+\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R\Bp}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{x} = 0
 \label{eq:xbalance}
 \end{equation}
+Use this to calculate $\hthe$ profiles (need to fix $\hthe$ at one radial location).
+
+Close to x-points, the above expression becomes singular, so a better way to write it is:
+\[
+\deriv{}{x}\left(B^2\hthe\right) - \hthe\Bp\deriv{\Bp}{x} - \Bt R\deriv{}{x}\left(\frac{\Bt\hthe}{R}\right) + \mu_0\hthe\deriv{P}{x} = 0
+\]
+
+For solving force-balance by adjusting $P$ and $f$ profiles, the form used is
+\[
+\Bt\hthe\deriv{\Bt}{x} + \frac{\Bt^2\hthe}{R}\deriv{R}{x} + \mu_0\hthe\deriv{P}{x} = -\Bp\deriv{}{x}\left(\Bp\hthe\right)
+\]
+A quick way to calculate f is to rearrange this to:
+\[
+\deriv{\Bt}{x} = \Bt\left[-\frac{1}{R}\deriv{R}{x}\right] + \frac{1}{\Bt}\left[-\mu_0\deriv{P}{x} - \deriv{\Bp}{\hthe}\deriv{}{x}\left(\Bp\hthe\right)\right]
+\]
+and then integrate this using LSODE.
+
 
 \subsection{Parallel current}
 
@@ -344,13 +374,13 @@ J_y = \frac{\sbt}{\mu_0}\left\{-\frac{B^2\hthe}{\Bp}\deriv{}{x}\left(\Bt R\right
 \]
 since $J_{||} = b^yJ_y$,
 \[
-\mu_0 J_{||} =\sbt\frac{\Bp\Bt R}{B\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \sbt\Bt R\deriv{\nu}{x}\right] - \sbt B\deriv{}{x}\left(\Bt R\right)
+\mu_0 J_{||} =\sbt\frac{\Bp\Bt R}{B\hthe}\left[\deriv{}{x}\left(\frac{B^2\hthe}{\Bp}\right) - \Bt R\deriv{\nu}{x}\right] - \sbt B\deriv{}{x}\left(\Bt R\right)
 \]
 
 \subsection{Curvature}
 
 For reduced MHD, need to calculate curvature term $\mathbf{b}\times\mathbf{\kappa}$, where
-$\mathbf{\kappa} = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arranging, this becomes:
+$\mathbf{\kappa} = \left(\bvec\cdot\nabla\right)\bvec = -\mathbf{b}\times\left(\nabla\times\mathbf{b}\right)$. Re-arranging, this becomes:
 \[
 \mathbf{b}\times\mathbf{\kappa} = \nabla\times\mathbf{b} - \mathbf{b}\left(\mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right)\right)
 \]
@@ -360,6 +390,13 @@ Components of $\nabla\times\mathbf{b}$ are:
 \left(\nabla\times\mathbf{b}\right)^y &=& -\sbt\frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{\Bt R}{B}\right) \\
 \left(\nabla\times\mathbf{b}\right)^z &=& \frac{\Bp}{\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \sbt\frac{\Bp\Bt R}{\hthe B}\deriv{\nu}{x} - \sbt I\frac{\Bp}{\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right) \\
 \end{eqnarray*}
+
+giving:
+\begin{eqnarray}
+\mathbf{\kappa} &=& -\frac{B_\theta}{B h_\theta}\left[\deriv{}{x}\left(\frac{B h_\theta}{B_\theta}\right) - \sbt\deriv{}{y}\left(\frac{B_\zeta I R}{B}\right)\right]\nabla x \nonumber \\
+&+& \sbt\frac{B_\theta}{B h_\theta}\deriv{}{y}\left(\frac{B_\zeta R}{B}\right)\nabla z
+\label{eq:curvature}
+\end{eqnarray}
 
 \[
 \mathbf{b}\cdot\left(\nabla\times\mathbf{b}\right) = -\sbt B\deriv{}{x}\left(\frac{\Bt R}{B}\right) + \sbt \frac{\Bt\Bp R}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bp\Bt^2R^2}{\hthe B^2}\deriv{\nu}{x}
@@ -380,6 +417,275 @@ we can re-write the above components as:
 \left(\mathbf{b}\times\mathbf{\kappa}\right)^y &=& \sbt\frac{\Bp\Bt R}{B^2\hthe}\left[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\right] \\
 \left(\mathbf{b}\times\mathbf{\kappa}\right)^z &=& -\frac{\mu_0}{B}\deriv{P}{x} - \deriv{B}{x} - I\left(\mathbf{b}\times\mathbf{\kappa}\right)^x
 \end{eqnarray*}
+
+\subsection{Curvature from $\nabla\times\left(\bvec / B\right)$}
+
+The vector $\bvec\times\kvec$ is an approximation of
+\[
+\frac{B}{2}\nabla\times\left(\frac{\bvec}{B}\right) \simeq \bvec\times\kvec
+\]
+so can just derive from the original expression. Using the contravariant components of
+$\bvec$, and the curl operator in curvilinear coordinates (see appendix):
+
+\begin{eqnarray*}
+\nabla\times\left(\frac{\bvec}{B}\right) &=& \frac{\Bp}{\hthe}\left[\left(\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \deriv{}{y}\left(\frac{\sbt\Bt IR}{B^2}\right)\right)\Vec{e}_z \right. \\
+&& + \deriv{}{y}\left(\frac{\sbt\Bt R}{B^2}\right)\Vec{e}_x \\
+&& + \left.\deriv{}{x}\left(\frac{\sbt\Bt R}{B^2}\right)\Vec{e}_y\right]
+\end{eqnarray*}
+This can be simplified using
+\[
+\deriv{}{y}\left(\frac{\sbt\Bt IR}{B^2}\right) = I\sbt\Bt R\deriv{}{y}\left(\frac{1}{B^2}\right) + \frac{\Bt R}{B^2}\deriv{\nu}{x}
+\]
+to give
+\begin{eqnarray*}
+  \left(\bvec\times\kvec\right)^x &=& -\sbt\frac{\Bp\Bt R}{\hthe B^2}\deriv{B}{y} \\
+  \left(\bvec\times\kvec\right)^y &=& -\sbt\frac{B\Bp}{2\hthe}\deriv{}{x}\left(\frac{\Bt R}{B^2}\right) \\
+  \left(\bvec\times\kvec\right)^z &=& \frac{B\Bp}{2\hthe}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \frac{\Bp\Bt R}{2\hthe B}\deriv{\nu}{x} - I\left(\bxk\right)^x
+\end{eqnarray*}
+
+The first and second terms in $\left(\bxk\right)^z$ almost cancel, so by expanding out $\nu$ a better expression is
+\[
+\left(\bvec\times\kvec\right)^z = \frac{\Bp^3}{2\hthe B}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right) - \frac{\Bt R}{2B}\deriv{}{x}\left(\frac{\hthe}{\Bp}\right)
+\]
+
+\subsection{Curvature of a single line}
+
+The curvature vector can be calculated from the field-line toroidal
+coordinates $\left(R,Z,\phi\right)$ as follows. The line element
+is given by
+\[
+d\Vec{r} = dR\Rvec + dZ\Zvec + Rd\phi\phivec
+\]
+Hence the tangent vector is
+\[
+\hat{\Vec{T}} \equiv \dd{\Vec{r}}{s} = \dd{R}{s}\Rvec + \dd{Z}{s}\Zvec + R\dd{\phi}{s}\phivec
+\]
+where $s$ is the distance along the field-line. From this, the curvature vector
+is given by
+\begin{eqnarray*}
+\kvec \equiv \dd{\Vec{T}}{s} &=& \ddd{R}{s}\Rvec + \dd{R}{s}\dd{\phi}{s}\phivec \\
+&+& \ddd{Z}{s}\Zvec \\
+&+& \dd{R}{s}\dd{\phi}{s}\phivec + R\ddd{\phi}{s}\phivec - R\left(\dd{\phi}{s}\right)^2 \Rvec
+\end{eqnarray*}
+i.e.
+\begin{equation}
+\kvec = \left[\ddd{R}{s} - R\left(\dd{\phi}{s}\right)^2\right]\Rvec + \ddd{Z}{s}\Zvec + \left[2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\right]\phivec
+\label{eq:kappaline}
+\end{equation}
+Want the components of $\Vec{b}\times\kvec$, and since the vector $\Vec{b}$
+is just the tangent vector $\Vec{T}$ above, this can be written using the
+cross-products
+\[
+\Rvec\times\Zvec = -\phivec \qquad \phivec\times\Zvec = \Rvec \qquad \Rvec\times\phivec = \Zvec
+\]
+This vector must then be dotted with $\nabla\psi$, $\nabla\theta$, and $\nabla\phi$. This is done by writing these vectors in cylindrical coordinates:
+\begin{eqnarray*}
+\nabla\psi &=& \deriv{\psi}{R}\hat{\Vec{R}} + \deriv{\psi}{Z}\hat{\Vec{Z}} \\
+\nabla\theta &=& \frac{1}{\Bp\hthe}\nabla\phi\times\nabla\psi = \frac{1}{R\Bp\hthe}\left(\deriv{\psi}{Z}\hat{\Vec{R}} - \deriv{\psi}{R}\hat{\Vec{Z}}\right) \\
+\end{eqnarray*}
+
+An alternative is to use
+\[
+\bvec \times \nabla\phi = \frac{\sbt}{BR^2}\nabla\psi
+\]
+and that the tangent vector $\Vec{T} = \bvec$. This gives
+\begin{equation}
+\nabla\psi = \sbt BR\left[\frac{dR}{ds}\Vec{Z} - \frac{dZ}{ds}\Vec{R}\right] 
+\label{eq:flinegradpsi}
+\end{equation}
+and so because $d\phi / ds = \Bt / \left(RB\right)$
+\begin{equation}
+\kvec\cdot\nabla\psi = \sbt BR\left[ \left( \frac{\Bt^2}{RB^2} - \ddd{R}{s}\right)\dd{Z}{s} + \ddd{Z}{s}\frac{dR}{ds} \right]
+\label{eq:flinekappsi}
+\end{equation}
+
+Taking the cross-product of the tangent vector with the curvature in equation~\ref{eq:kappaline} above gives
+\begin{eqnarray*}
+  \bvec \times\kvec &=& \left[\frac{\Bt}{B}\ddd{Z}{s} - \dd{Z}{s}\left(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\right)\right]\Vec{R} \\
+  &+& \left[\dd{R}{s}\left(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\right) - \frac{\Bt}{B}\left(\ddd{R}{s} - R\left(\dd{\phi}{s}\right)^2\right)\right]\Vec{Z} \\
+  &+& \left[\dd{Z}{s}\left(\ddd{R}{s} - R\left(\dd{\phi}{s}\right)^2\right) - \dd{R}{s}\ddd{Z}{s}\right]\phivec
+\end{eqnarray*}
+
+The components in field-aligned coordinates can then be calculated:
+\begin{eqnarray*}
+\left(\bvec\times\kvec\right)^x &=& \sbt\left(\bvec\times\kvec\right)\cdot\nabla\psi \\
+&=& \frac{R\Bp^2}{B}\left(2\dd{R}{s}\dd{\phi}{s} + R\ddd{\phi}{s}\right) - R\Bt\left(\dd{R}{s}\ddd{R}{s} + \dd{Z}{s}\ddd{Z}{s}\right) + \frac{\Bt^3}{B^2}\dd{R}{s}
+\end{eqnarray*}
+
+\subsection{Curvature in toroidal coordinates}
+
+In toroidal coordinates $\left(\psi,\theta,\phi\right)$, the $\bvec$ vector
+is
+\begin{eqnarray*}
+\bvec &=& \frac{\Bp}{B}\ehat_\theta + \frac{\Bt}{B}\ehat_\phi \\
+&=& \frac{\Bp\hthe}{B}\nabla\theta + \frac{R\Bt}{B}\nabla\phi
+\end{eqnarray*}
+The curl of this vector is
+\begin{eqnarray*}
+\left(\nabla\times\bvec\right)^\psi &=& \frac{1}{\sqrt{g}}\left(\deriv{b_\phi}{\theta} - \deriv{b_\theta}{\phi}\right) \\
+\left(\nabla\times\bvec\right)^\theta &=& \frac{1}{\sqrt{g}}\left(\deriv{b_\psi}{\phi} - \deriv{b_\phi}{\psi}\right) \\
+\left(\nabla\times\bvec\right)^\phi &=& \frac{1}{\sqrt{g}}\left(\deriv{b_\theta}{\psi} - \deriv{b_\psi}{\theta}\right)
+\end{eqnarray*}
+where $1/\sqrt{g} = \Bp/\hthe$. Therefore, in terms of unit vectors:
+\[
+\nabla\times\bvec = \frac{1}{R\hthe}\deriv{}{\theta}\left(\frac{R\Bt}{B}\right)\ehat_\psi - \Bp\deriv{}{\psi}\left(\frac{R\Bt}{B}\right)\ehat_\theta + \frac{\Bp R}{\hthe}\deriv{}{\psi}\left(\frac{\hthe\Bp}{B}\right)\ehat_\phi
+\]
+
+\subsection{$\psi$ derivative of $B$ field}
+
+Needed to calculate magnetic shear, and one way to get the curvature.
+The simplest way is to use finite differencing, but there is another way
+using local derivatives (implemented using DCT).
+\[
+\Bp = \frac{\left|\nabla\psi\right|}{R} = \frac{1}{R}\sqrt{\left(\deriv{\psi}{R}\right)^2 + \left(\deriv{\psi}{R}\right)^2}
+\]
+Using
+\[
+\nabla\Bp = \deriv{\Bp}{\psi}\nabla\psi + \deriv{\Bp}{\theta}\nabla\theta + \deriv{\Bp}{\phi}\nabla\phi
+\]
+we get
+\[
+\nabla\Bp \cdot\nabla\psi = \deriv{\Bp}{\psi}\left|\nabla\psi\right|^2
+\]
+and so
+\[
+\deriv{\Bp}{\psi} = \nabla\Bp \cdot\nabla\psi / \left(R\Bp\right)^2
+\]
+The derivatives of $\Bp$ in $R$ and $Z$ are:
+\begin{eqnarray*}
+\deriv{\Bp}{R} &=& -\frac{\Bp}{R} + \frac{1}{\Bp R^2}\left[\deriv{\psi}{R}\dderiv{\psi}{R} + \deriv{\psi}{Z}\frac{\partial^2\psi}{\partial R\partial Z}\right] \\
+\deriv{\Bp}{Z} &=& \frac{1}{\Bp R^2}\left[\deriv{\psi}{Z}\dderiv{\psi}{Z} + \deriv{\psi}{R}\frac{\partial^2\psi}{\partial R\partial Z}\right]
+\end{eqnarray*}
+
+For the toroidal field, $\Bt = f/R$
+\[
+\deriv{\Bt}{\psi} = \frac{1}{R}\deriv{f}{\psi} - \frac{f}{R^2}\deriv{R}{\psi}
+\]
+As above, $\deriv{R}{\psi} = \nabla R \cdot\nabla\psi / \left(R\Bp\right)^2$,
+and since $\nabla R\cdot\nabla R = 1$,
+\[
+\deriv{R}{\psi} = \deriv{\psi}{R} / \left(R\Bp\right)^2
+\]
+similarly,
+\[
+\deriv{Z}{\psi} = \deriv{\psi}{Z} / \left(R\Bp\right)^2
+\]
+and so the variation of toroidal field with $\psi$ is
+\[
+\deriv{\Bt}{\psi} = \frac{1}{R}\deriv{f}{\psi} - \frac{\Bt}{R^3\Bp^2}\deriv{\psi}{R}
+\]
+
+From the definition $B=\sqrt{\Bt^2 + \Bp^2}$, 
+\[
+\deriv{B}{\psi} = \frac{1}{B}\left(\Bt\deriv{\Bt}{\psi} + \Bp\deriv{\Bp}{\psi}\right)
+\]
+
+\subsection{Parallel derivative of $B$ field}
+
+To get the parallel gradients of the $B$ field components, start with
+\[
+\deriv{}{s}\left(B^2\right) = \deriv{}{s}\left(\Bt^2\right) + \deriv{}{s}\left(\Bp^2\right)
+\]
+Using the fact that $R\Bt$ is constant along $s$,
+\[
+\deriv{}{s}\left(R^2\Bt^2\right) = R^2\deriv{}{s}\left(\Bt^2\right) + \Bt^2\deriv{}{s}\left(R^2\right) = 0
+\]
+which gives
+\begin{equation}
+  \deriv{}{s}\left(\Bt^2\right) = -\frac{\Bt^2}{R^2}\deriv{}{s}\left(R^2\right)
+  \label{eq:dbtds}
+\end{equation}
+The poloidal field can be calculated from
+\[
+\deriv{}{s}\left(\nabla\psi \cdot \nabla\psi\right) = \deriv{}{s}\left(R^2\Bp^2\right) = R^2\deriv{}{s}\left(\Bp^2\right) + \Bp^2\deriv{}{s}\left(R^2\right)
+\]
+Using equation~\ref{eq:flinegradpsi}, $\nabla\psi \cdot \nabla\psi$ can also be written as
+\[
+\nabla\psi \cdot \nabla\psi = B^2R^2\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\]
+and so (unsurprisingly)
+\[
+\frac{\Bp^2}{B^2} = \left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\]
+Hence
+\[
+\deriv{}{s}\left(\Bp^2\right) = B^2\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right] + \frac{\Bp^2}{B^2}\deriv{}{s}\left(B^2\right)
+\]
+
+Which gives
+\begin{equation}
+\deriv{}{s}\left(B^2\right) = -\frac{B^2}{R^2}\deriv{}{s}\left(R^2\right) + \frac{B^4}{\Bt^2}\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right]
+\end{equation}
+
+\begin{equation}
+\deriv{}{s}\left(\Bp^2\right) = \left(1 + \frac{\Bp^2}{\Bt^2}\right)B^2\deriv{}{s}\left[\left(\deriv{R}{s}\right)^2 + \left(\deriv{Z}{s}\right)^2\right] - \frac{\Bp^2}{R^2}\deriv{}{s}\left(R^2\right)
+\end{equation}
+
+\subsection{Magnetic shear from $J\times B$}
+
+Re-arranging the radial force balance equation~\ref{eq:xbalance} gives
+\[
+\frac{\Bp^2R}{\Bt}\deriv{\nu}{\psi} + \nu\left(\frac{2RB}{\Bt}\deriv{B}{\psi} + \frac{B^2}{\Bt}\deriv{R}{\psi} - \frac{B^2R}{\Bt^2}\deriv{\Bt}{\psi}\right) + \frac{\mu_0\hthe}{\Bp}\deriv{P}{\psi} = 0
+\]
+
+\subsection{Magnetic shear}
+
+The field-line pitch is given by
+\[
+\nu = \frac{\hthe\Bt}{\Bp R}
+\]
+and so
+\[
+\deriv{\nu}{\psi} = \frac{\nu}{\hthe}\deriv{\hthe}{\psi} + \frac{\nu}{\Bt}\deriv{\Bt}{\psi} - \frac{\nu}{\Bp}\deriv{\Bp}{\psi} - \frac{\nu}{R}\deriv{R}{\psi}
+\]
+The last three terms are given in the previous section, but $\partial\hthe/\partial\psi$ needs to be evaluated
+
+\subsection{$\psi$ derivative of $\hthe$}
+
+From the expression for curvature \ref{eq:curvature}, and using $\nabla x \cdot \nabla \psi = \sbt \left(R\Bp\right)^2$ and $\nabla z\cdot\nabla \psi = -\sbt I \left(R\Bp\right)^2$
+
+\begin{eqnarray*}
+\kvec\cdot\nabla\psi &=& -\sbt \frac{\Bp}{B\hthe}\rbpsq\left[\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \sbt\deriv{}{y}\left(\frac{\Bt IR}{B}\right)\right] \\
+&&- I\rbpsq \frac{\Bp}{B\hthe}\deriv{}{y}\left(\frac{\Bt R}{B}\right)
+\end{eqnarray*}
+
+The second and third terms partly cancel, and using $\deriv{I}{y} = \sbt \deriv{\nu}{x}$
+\begin{eqnarray*}
+  \frac{\kvec\cdot\nabla\psi}{\rbpsq} &=& -\sbt\frac{\Bp}{B\hthe}\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) + \sbt\frac{\Bp}{B\hthe}\frac{\Bt R}{B}\deriv{\nu}{x} \\
+  &=& -\sbt\frac{\Bp}{B\hthe}\left[\deriv{}{x}\left(\frac{B\hthe}{\Bp}\right) - \frac{\Bt R}{B}\deriv{}{x}\left(\frac{\Bt\hthe}{\Bp R}\right)\right] \\
+  &=& -\sbt\frac{\Bp}{B\hthe}\left[\hthe\deriv{}{x}\left(\frac{B}{\Bp}\right) - \hthe\frac{\Bt R}{B}\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right) + \frac{B^2}{B\Bp}\deriv{\hthe}{x} - \frac{\Bt^2}{B\Bp}\deriv{\hthe}{x}\right] \\
+  &=& -\sbt \frac{\Bp}{B^2\hthe}\deriv{\hthe}{x} - \sbt\frac{\Bp}{B^2}\left[B\deriv{}{x}\left(\frac{B}{\Bp}\right) - \Bt R\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right)\right]
+\end{eqnarray*}
+Writing
+\begin{eqnarray*}
+B\deriv{}{x}\left(\frac{B}{\Bp}\right) &=& \deriv{}{x}\left(\frac{B^2}{\Bp}\right) - \frac{B}{\Bp}\deriv{B}{x} \\
+\Bt R\deriv{}{x}\left(\frac{\Bt}{\Bp R}\right) &=& \deriv{}{x}\left(\frac{\Bt^2}{\Bp}\right) - \frac{\Bt}{\Bp R}\deriv{}{x}\left(\Bt R\right)
+\end{eqnarray*}
+and using $B\deriv{B}{x} = \Bt\deriv{\Bt}{x} + \Bp\deriv{\Bp}{x}$, this simplifies to give
+\begin{equation}
+\frac{\kvec\cdot\nabla\psi}{\rbpsq} = -\sbt\frac{\Bp^2}{B^2\hthe}\deriv{\hthe}{x} - \sbt\frac{\Bt^2}{B^2 R}\deriv{R}{x}
+\label{eq:dhdpsi}
+\end{equation}
+
+This can be transformed into an expression for $\deriv{\hthe}{x}$ involving only derivatives along
+field-lines. 
+Writing $\nabla R = \deriv{R}{\psi}\nabla\psi + \deriv{R}{\theta}\nabla\theta$, 
+\[
+\nabla R \cdot \nabla\psi = \deriv{R}{\psi}\rbpsq
+\]
+Using \ref{eq:flinegradpsi}, 
+\[
+\nabla\psi \cdot \nabla R = -\sbt B R\frac{dZ}{ds}
+\]
+and so
+\[
+\deriv{R}{x} = -\frac{BR}{\rbpsq}\frac{dZ}{ds}
+\]
+Substituting this and equation \ref{eq:flinekappsi} for $\kvec\cdot\nabla\psi$ into equation~\ref{eq:dhdpsi}
+the $\deriv{R}{x}$ term cancels with part of the $\kvec\cdot\nabla\psi$ term, simplifying to
+\begin{equation}
+\deriv{\hthe}{x} = -\hthe\frac{B^3R}{\Bp^2\rbpsq}\left[\frac{d^2Z}{ds^2}\frac{dR}{ds} - \frac{d^2R}{ds^2}\frac{dZ}{ds}\right]
+\end{equation}
 
 \section{Shifted radial derivatives}
 \label{sec:shiftcoords}

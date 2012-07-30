@@ -176,6 +176,17 @@ private:
   FieldGenerator *gen;
 };
 
+class FieldHeaviside : public FieldGenerator {
+public:
+  FieldHeaviside(FieldGenerator* g) : gen(g) {}
+  ~FieldHeaviside() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+private:
+  FieldGenerator *gen;
+};
+
 /// Unary minus
 class FieldUnary : public FieldGenerator {
 public:

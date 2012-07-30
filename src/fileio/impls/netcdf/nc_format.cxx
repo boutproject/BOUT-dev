@@ -322,6 +322,13 @@ void NcFormat::close()
 #endif
 }
 
+void NcFormat::flush() {
+  if(!is_valid())
+    return;
+  
+  dataFile->sync();
+}
+
 const vector<int> NcFormat::getSize(const char *name)
 {
   vector<int> size;
@@ -372,7 +379,7 @@ const vector<int> NcFormat::getSize(const string &var)
   return getSize(var.c_str());
 }
 
-bool NcFormat::setOrigin(int x, int y, int z)
+bool NcFormat::setGlobalOrigin(int x, int y, int z)
 {
   x0 = x;
   y0 = y;

@@ -171,6 +171,19 @@ BoutReal FieldSqrt::generate(int x, int y, int z) {
   return sqrt(gen->generate(x,y,z));
 }
 
+FieldGenerator* FieldHeaviside::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to heaviside function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldHeaviside(args.front());
+}
+
+BoutReal FieldHeaviside::generate(int x, int y, int z) {
+  return (gen->generate(x,y,z) > 0.0) ? 1.0 : 0.0;
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
@@ -199,6 +212,7 @@ FieldFactory::FieldFactory() {
   addGenerator("gauss", new FieldGaussian(NULL, NULL));
   addGenerator("abs", new FieldAbs(NULL));
   addGenerator("sqrt", new FieldSqrt(NULL));
+  addGenerator("h", new FieldHeaviside(NULL));
 }
 
 FieldFactory::~FieldFactory() {

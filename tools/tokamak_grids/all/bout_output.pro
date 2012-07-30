@@ -414,7 +414,19 @@ FUNCTION correct_hthe, Rxy, psixy, Btxy, Bpxy, Bxy, hthe, dpdpsi, fixhthe=fixhth
         IF KEYWORD_SET(robust) THEN BEGIN
           htmp = NEWTON(htmp, "robust_hfunc")
         ENDIF ELSE BEGIN
-          htmp = NEWTON(htmp, "new_hfunc")
+          CATCH, err
+          IF err EQ 0 THEN BEGIN
+            htmp = NEWTON(htmp, "new_hfunc")
+          ENDIF
+          CATCH, /CANCEL
+            
+          IF err GT 0 THEN BEGIN
+            robust = 1   ; Next time 
+            CATCH, err2
+            IF err2 EQ 0 THEN htmp = NEWTON(htmp, "robust_hfunc")
+            CATCH, /cancel
+          ENDIF
+          
         ENDELSE
 
         IF fixhthe GE nx-1 THEN BEGIN
@@ -435,7 +447,7 @@ FUNCTION correct_hthe, Rxy, psixy, Btxy, Bpxy, Bxy, hthe, dpdpsi, fixhthe=fixhth
       w = WHERE(nh[*,i] LT 0.0, count)
       IF count GT 0 THEN BEGIN
           PRINT, "Error in hthe solver: Negative solution at y = ", i
-          STOP
+          RETURN, hthe
       ENDIF
   ENDFOR
 

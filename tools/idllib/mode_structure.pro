@@ -32,12 +32,13 @@ FUNCTION zinterp, v, zind
   RETURN, result
 END
 
-PRO mode_structure, var_in, grid, period=period, $
+PRO mode_structure, var_in, grid_in, period=period, $
                     zangle=zangle, n=n, addq=addq, output=output, $
                     xq=xq, xpsi=xpsi, slow=slow, subset=subset, $
                     filter=filter, famp=famp, quiet=quiet, $
                     ergos=ergos, title=title, $
-                    xrange=xrange, yrange=yrange, rational=rational
+                    xrange=xrange, yrange=yrange, rational=rational, pmodes=pmodes, $
+                    _extra=_extra
 
 
   ON_ERROR, 2
@@ -48,9 +49,19 @@ PRO mode_structure, var_in, grid, period=period, $
     IF KEYWORD_SET(filter) THEN n = filter*period ELSE n = period
   ENDIF
 
+  IF (grid_in.JYSEPS1_1 GE 0) OR (grid_in.JYSEPS1_2 NE grid_in.JYSEPS2_1) OR (grid_in.JYSEPS2_2 NE grid_in.ny-1) THEN BEGIN
+    PRINT, "Mesh contains branch-cuts. Keeping only core"
+    
+    grid = core_mesh(grid_in)
+    var = core_mesh(var_in, grid_in)
+  ENDIF ELSE BEGIN
+    grid = grid_in
+    var = var_in
+  ENDELSE
+
   IF KEYWORD_SET(filter) THEN BEGIN
-    var = zfilter(var_in, filter)
-  ENDIF ELSE var = var_in
+    var = zfilter(var, filter)
+  ENDIF
 
   nx = grid.nx
   ny = grid.ny
@@ -62,6 +73,7 @@ PRO mode_structure, var_in, grid, period=period, $
   ENDIF
   IF (s[0] NE nx) OR (s[1] NE ny) THEN BEGIN
       PRINT, "Error: Size of variable doesn't match grid"
+      
       RETURN
   ENDIF
   nz = s[2]
@@ -200,7 +212,7 @@ PRO mode_structure, var_in, grid, period=period, $
 
   inds = REVERSE(SORT(fmax))
 
-  pmodes = 10
+  IF NOT KEYWORD_SET(pmodes) THEN pmodes = 10
 
   qprof = ABS(grid.shiftangle) / (2.0*!PI)
 
@@ -245,7 +257,7 @@ PRO mode_structure, var_in, grid, period=period, $
     FOR i=0, nf-1 DO BEGIN
       IF max(famp[*,i]) GT 0.05*max(famp) THEN BEGIN
         PRINT, "Mode m = ", i+1, " of ", nf
-        plot, xarr, famp[*,i], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange
+        plot, xarr, famp[*,i], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange, _extra=_extra
         q = FLOAT(i+1) / FLOAT(n)
         
         pos = INTERPOL(xarr, qprof, q)
@@ -264,7 +276,7 @@ PRO mode_structure, var_in, grid, period=period, $
     ENDIF
 
     contour2, famp, xarr, indgen(nf)+1, $
-              xtitle=xtitle, xrange=xrange, yrange=yrange
+              xtitle=xtitle, xrange=xrange, yrange=yrange, _extra=_extra
 
     ; overplot the q profile
 
@@ -307,7 +319,7 @@ PRO mode_structure, var_in, grid, period=period, $
       
       PRINT, "Mode number range: ", minind, maxind
       
-      plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange, /nodata,title=title
+      plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange, /nodata,title=title, _extra=_extra
       color = 2
       FOR i=minind, maxind, subset DO BEGIN
         oplot, xarr, famp[*,i], color=color
@@ -322,7 +334,7 @@ PRO mode_structure, var_in, grid, period=period, $
       
     ENDIF ELSE BEGIN
       ; default - just plot everything
-      plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange,title=title
+      plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xtitle=xtitle, chars=1.5, xrange=xrange,title=title, _extra=_extra
       
       color = 2
       FOR i=0, nf-1 DO BEGIN

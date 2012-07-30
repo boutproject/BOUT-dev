@@ -7,6 +7,10 @@
 *.config
 *.d
 *.dSYM/
+*.ext
+*.bbl
+*.blg
+*.toc
 autom4te.cache/
 include/pvode
 lib/

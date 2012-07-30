@@ -15,6 +15,7 @@ using std::vector;
 
 class BoutMesh : public Mesh {
  public:
+  BoutMesh(Options *options = NULL);
   ~BoutMesh();
   
   /// Read in the mesh from data sources
@@ -58,9 +59,8 @@ class BoutMesh : public Mesh {
   bool surfaceClosed(int jx, BoutReal &ts);
 
   // Boundary iteration
-  RangeIter* iterateBndryLowerY();
-  RangeIter* iterateBndryUpperY();
-  friend class BoutRangeIter;
+  const RangeIterator iterateBndryLowerY() const;
+  const RangeIterator iterateBndryUpperY() const;
 
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
@@ -85,6 +85,8 @@ class BoutMesh : public Mesh {
 
   int PE_YIND; ///< Y index of this processor
   int NYPE; // Number of processors in the Y direction
+  
+  int MYPE_IN_CORE;  // 1 if processor in core
   
   // Topology
   int ixseps1, ixseps2, jyseps1_1, jyseps2_1, jyseps1_2, jyseps2_2;
@@ -112,8 +114,6 @@ class BoutMesh : public Mesh {
   int UDATA_INDEST, UDATA_OUTDEST, UDATA_XSPLIT;
   int DDATA_INDEST, DDATA_OUTDEST, DDATA_XSPLIT;
   int IDATA_DEST, ODATA_DEST; // X inner and outer destinations
-  
-  //int MYPE_IN_CORE; // 1 if processor in core (topology.cpp)
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
@@ -226,16 +226,5 @@ class BoutDistribSurfaceIter : public DistribSurfaceIter {
   BoutMesh* m;
 };
 */
-
-class BoutRangeIter : public RangeIter {
- public:
-  BoutRangeIter(int start, int end);
-  void first();
-  void next();
-  bool isDone();
-  
- private:
-  int s,e;
-};
 
 #endif // __BOUTMESH_H__
