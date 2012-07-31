@@ -39,6 +39,7 @@ public:
 private:
   Field3D A, C, D;
   
+  MPI_Comm comm;
   Vec x, b;
 };
 
