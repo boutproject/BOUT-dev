@@ -1,0 +1,15 @@
+The field-line tracing utility for BOUT++ is written in IDL, which makes taking
+advantage of a multi-core machine problematic, but not impossible.
+
+IDL can use it's own built-in Widget objects to execute commands in parallel
+on different processors. To do this however, an active X-window connection must
+be maintained (i.e. leave your terminal open).
+
+The Hopper batch script just launches one version of IDL on a compute node.
+This then runs the mt_poincare.pro IDL script. Currently, this only allows one
+to produce Poincare plots at different time indices simultaneously. The multi-
+threading has not been included to speed up processing an individual time index.
+
+Field-line tracing options are changed in the IDL script.
+
+-JPS
