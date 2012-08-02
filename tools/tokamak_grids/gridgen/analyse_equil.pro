@@ -157,6 +157,7 @@ FUNCTION analyse_equil, F, R, Z
       PRINT, "   Fitted location deviates too much"
       IF det LT 0.0 THEN BEGIN
         PRINT, "   => X-point probably not valid"
+        PRINT, "      deviation = "+STR(rinew)+","+STR(zinew)
         ;valid = 0
       ENDIF ELSE BEGIN
         
@@ -294,7 +295,8 @@ FUNCTION analyse_equil, F, R, Z
       IF (maxind LT minind) THEN SWAP, maxind, minind
       
       ; Allow a little leeway to account for errors
-      IF (maxind GT (n-3)) AND (minind LT 2) THEN BEGIN
+      ; NOTE: This needs a bit of refining
+      IF (maxind GT (n-3)) AND (minind LT 3) THEN BEGIN
         ; Monotonic, so add this to a list of x-points to keep
         IF nkeep EQ 0 THEN keep = [i] ELSE keep = [keep, i]
         nkeep = nkeep + 1
