@@ -11,6 +11,7 @@
 #include <derivs.hxx>
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
+#include <msg_stack.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -123,9 +124,24 @@ int physics_init(bool restarting)
   mesh->get(Bpxy, "Bpxy");
   mesh->get(Btxy, "Btxy");
   mesh->get(hthe, "hthe");
-  mesh->get(mesh->dx,   "dpsi");
+  
+  Field2D dx;
+  if(!mesh->get(dx,   "dpsi")) {
+    output << "\tUsing dpsi as the x grid spacing\n";
+    mesh->dx = dx; // Only use dpsi if found
+  }else {
+    // dx will have been read already from the grid
+    output << "\tUsing dx as the x grid spacing\n";
+  }
   mesh->get(I,    "sinty");
-  mesh->get(mesh->zShift, "qinty");
+  Field2D qinty;
+  if(!mesh->get(qinty, "qinty")) {
+    output << "\tUsing qinty as the Z shift\n";
+    mesh->zShift = qinty;
+  }else {
+    // Keep zShift
+    output << "\tUsing zShift as the Z shift\n";
+  }
 
   // Load normalisation values
   mesh->get(Te_x, "Te_x");
@@ -491,20 +507,25 @@ int physics_run(BoutReal t)
   // Arguments are:   (b,   bit-field, a,    c)
   // Passing NULL -> missing term
   
+  rho = 0.0;
+  msg_stack.push("Solving for phi");
   if(laplace_extra_rho_term) {
     // Include the first order term Grad_perp Ni dot Grad_perp phi
     phi = invert_laplace(rho/Ni0, phi_flags, NULL, &Ni0);
   }else
     phi = invert_laplace(rho/Ni0, phi_flags);
-
+  
   if(vort_include_pi) {
     // Include Pi term in vorticity
     phi -= (Ti*Ni0 + Ni*Te0) / Ni0;
   }
+  msg_stack.pop();
+  
 
   ////////////////////////////////////////////////////////
   // Invert Ajpar to get Apar
   
+  msg_stack.push("Solving for Apar");
   if(estatic || ZeroElMass) {
     // Electrostatic operation
     Apar = 0.0;
@@ -518,6 +539,7 @@ int physics_run(BoutReal t)
   
     Apar = invert_laplace(acoeff*(Vi - Ajpar), apar_flags, &acoeff);
   }
+  msg_stack.pop();
   
   ////////////////////////////////////////////////////////
   // Communicate variables
@@ -630,6 +652,7 @@ int physics_run(BoutReal t)
   ////////////////////////////////////////////////////////
   // DENSITY EQUATION
 
+  msg_stack.push("Density equation");
   ddt(Ni) = 0.0;
   if(evolve_ni) {
     
@@ -687,10 +710,12 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(Ni) = lowPass(ddt(Ni), lowPass_z);
   }
+  msg_stack.pop();
 
   ////////////////////////////////////////////////////////
   // ION VELOCITY
-
+  
+  msg_stack.push("Ion velocity equation");
   ddt(Vi) = 0.0;
   if(evolve_vi) {
     if(vi_vi0_phi1)
@@ -729,10 +754,12 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(Vi) = lowPass(ddt(Vi), lowPass_z);
   }
-
+  msg_stack.pop();
+  
   ////////////////////////////////////////////////////////
   // ELECTRON TEMPERATURE
 
+  msg_stack.push("Electron temperature equation");
   ddt(Te) = 0.0;
   if(evolve_te) {
     if(te_te1_phi0)
@@ -753,10 +780,12 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(Te) = lowPass(ddt(Te), lowPass_z);
   }
-
+  msg_stack.pop();
+  
   ////////////////////////////////////////////////////////
   // ION TEMPERATURE
 
+  msg_stack.push("Ion temperature equation");
   ddt(Ti) = 0.0;
   if(evolve_ti) {
     if(ti_ti1_phi0)
@@ -777,10 +806,12 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(Ti) = lowPass(ddt(Ti), lowPass_z);
   }
-
+  msg_stack.pop();
+  
   ////////////////////////////////////////////////////////
   // VORTICITY
 
+  msg_stack.push("Vorticity equation");
   ddt(rho) = 0.0;
   if(evolve_rho) {
     
@@ -822,10 +853,12 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(rho) = lowPass(ddt(rho), lowPass_z);
   }
+  msg_stack.pop();
   
   ////////////////////////////////////////////////////////
   // AJPAR
   
+  msg_stack.push("Ajpar equation");
   ddt(Ajpar) = 0.0;
   if(evolve_ajpar) {
     //ddt(Ajpar) -= vE_Grad(Ajpar0, phi) + vE_Grad(Ajpar, phi0) + vE_Grad(Ajpar, phi);
@@ -848,7 +881,8 @@ int physics_run(BoutReal t)
     if(lowPass_z > 0)
       ddt(Ajpar) = lowPass(ddt(Ajpar), lowPass_z);
   }
-
+  msg_stack.pop();
+  
   ////////////////////////////////////////////////////////
   // Profile evolution options
 

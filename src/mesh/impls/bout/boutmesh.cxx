@@ -46,6 +46,8 @@
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
+//#define COMMDEBUG 1
+
 BoutMesh::BoutMesh(Options *options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
@@ -231,6 +233,25 @@ int BoutMesh::load() {
     output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
   }
   
+
+  /// Check inputs
+  if(jyseps2_1 <= jyseps1_1) {
+    output.write("\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n",
+                 jyseps2_1, jyseps1_1, jyseps1_1+1);
+    jyseps2_1 = jyseps1_1 + 1;
+  }
+  if(jyseps1_2 < jyseps2_1) {
+    output.write("\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
+                 jyseps1_2, jyseps2_1, jyseps2_1);
+    jyseps1_2 = jyseps2_1;
+  }
+  if(jyseps2_2 >= ny) {
+    output.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
+                 jyseps2_2, ny, ny-1);
+    jyseps2_2 = ny - 1;
+  }
+
+
   /// Call topology to set layout of grid
   topology();
   
@@ -413,6 +434,9 @@ int BoutMesh::load() {
     proc[1] = PROC_NUM(NXPE-1, yp); // Last
     proc[2] = 1;                    // stride
     
+#ifdef COMMDEBUG
+    output << "XCOMM " << proc[0] << ", " << proc[1] << endl;
+#endif
     if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
       throw BoutException("Could not create X communication group for yp=%d (xind=%d,yind=%d)\n",
 			  yp, PE_XIND, PE_YIND);
@@ -449,6 +473,9 @@ int BoutMesh::load() {
     for(int i=0;i<NXPE;i++) {
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, NYPE-1);
+#ifdef COMMDEBUG
+    output << "Outer SOL " << proc[0] << ", " << proc[1] << endl;
+#endif
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(i == PE_XIND) {
@@ -474,6 +501,9 @@ int BoutMesh::load() {
       // Inner SOL
       proc[0] = PROC_NUM(i, 0);
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
+#ifdef COMMDEBUG
+    output << "Double Null inner SOL " << proc[0] << ", " << proc[1] << endl;
+#endif
       if(MPI_Group_range_incl(group_world, 1, &proc, &group) != MPI_SUCCESS)
 	throw BoutException("MPI_Group_range_incl failed for xp = %d", NXPE);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
@@ -484,6 +514,9 @@ int BoutMesh::load() {
       // Outer SOL
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, NYPE-1);
+#ifdef COMMDEBUG
+    output << "Double Null outer SOL " << proc[0] << ", " << proc[1] << endl;
+#endif
       MPI_Group_range_incl(group_world, 1, &proc, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL)
@@ -565,12 +598,22 @@ int BoutMesh::load() {
     msg_stack.push("Creating core communicators");
     proc[0] = PROC_NUM(i, YPROC(jyseps1_1+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_1));
-    //output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+    output << "CORE1 "<< proc[0] << ", " << proc[1] << endl;
+#endif 
+    if( (proc[0] < 0) || (proc[1] < 0) )
+      throw BoutException("Invalid processor range for core processors");
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
+    
     proc[0] = PROC_NUM(i, YPROC(jyseps1_2+1));
     proc[1] = PROC_NUM(i, YPROC(jyseps2_2));
-    //output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+    output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
+#endif
+    if( (proc[0] < 0) || (proc[1] < 0) )
+      throw BoutException("Invalid processor range for core processors");
     MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    
     MPI_Group_union(group_tmp1, group_tmp2, &group);
     MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
     if(comm_tmp != MPI_COMM_NULL) {
