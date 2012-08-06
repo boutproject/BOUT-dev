@@ -2495,7 +2495,7 @@ void BoutDistribSurfaceIter::next() {
   if(xpos < 0)
     return;
   
-  xpos += NXPE;
+  xpos += m->NXPE;
   if(xpos > m->ngx-1)
     xpos = -1; // Nothing to do 
 }
@@ -2520,27 +2520,28 @@ int BoutDistribSurfaceIter::ysize(int x) {
   MPI_Comm_size(comm, &np);
 
   int n = np * m->MYSUB;
-  if(!closed(x))
+  BoutReal ts;
+  if(!closed(x, ts))
     n += 2*m->MYG; // Add boundary points
 
   return n;
 }
 
 bool BoutDistribSurfaceIter::closed(int x, BoutReal &ts) {
-
-}
-
-bool BoutDistribSurfaceIter::closed(BoutReal &ts) {
-  if(xpos < 0)
+  if(x < 0)
     return false;
   
-  int xglobal = m->XGLOBAL(xpos);
+  int xglobal = m->XGLOBAL(x);
   int yglobal = m->YGLOBAL(m->MYG);
   ts = 0.;
   if(m->TwistShift) {
-    ts = m->ShiftAngle[xpos];
+    ts = m->ShiftAngle[x];
   }
   return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
+}
+
+bool BoutDistribSurfaceIter::closed(BoutReal &ts) {
+  return closed(xpos, ts);
 }
 
 int BoutDistribSurfaceIter::gather(const Field2D &f, BoutReal *data) {
@@ -2550,13 +2551,27 @@ int BoutDistribSurfaceIter::gather(const Field2D &f, BoutReal *data) {
   // Loop over processors
   for(int p = 0; p < nsurf; p++) {
     int x = alldone + p; // Which X surface?
+    
     MPI_Comm comm = communicator(x);
-    int MPI_Gather(void *sendbuf, int sendcnt, 
-                   PVEC_REAL_MPI_TYPE,  // Data type sent
-                   data, int recvcnt, 
-                   PVEC_REAL_MPI_TYPE, // Data type received
-                   m->PROC_NUM(p, m->PE_YIND),  // Root processor
-                   comm);
+    int np;  MPI_Comm_size(comm, &np);  // Number of processors
+    int myp; MPI_Comm_rank(comm, &myp); // The rank of this one
+    
+    int ystart = m->ystart;
+    int nylocal = m->yend - m->ystart + 1;
+    int nyglobal = ysize(x);
+    
+    BoutReal ts;
+    if(!closed(x, ts)) {
+      
+    }
+    /*
+    MPI_Gather(void *sendbuf, nylocal, 
+               PVEC_REAL_MPI_TYPE,  // Data type sent
+               data, nyglobal, 
+               PVEC_REAL_MPI_TYPE, // Data type received
+               root
+               comm);
+    */
   }
 }
 
