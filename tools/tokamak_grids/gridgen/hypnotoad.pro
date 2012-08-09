@@ -409,7 +409,7 @@ PRO event_handler, event
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
-                      curv=info.curv_ind, smoothpressure=info.smoothP, smoothhthe=info.smoothH
+                      curv=info.curv_ind, smoothpressure=info.smoothP, smoothhthe=info.smoothH, smoothCurv=info.smoothCurv
         
         IF poorquality THEN BEGIN
           r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
@@ -464,6 +464,10 @@ PRO event_handler, event
     END
     'smoothH': BEGIN
       info.smoothH = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'smoothCurv' : BEGIN
+      info.smoothCurv = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'fast': BEGIN
@@ -749,6 +753,10 @@ PRO event_handler, event
         str_set, info, "smoothH", oldinfo.smoothH
         Widget_Control, info.smoothH_check, Set_Button=info.smoothH
         
+        str_set, info, "smoothCurv_check", oldinfo.smoothCurv_check, /over
+        str_set, info, "smoothCurv", oldinfo.smoothCurv
+        Widget_Control, info.smoothCurv_check, Set_Button=info.smoothCurv
+
         str_set, info, "radgrid_check", oldinfo.radgrid_check, /over
         str_set, info, "single_rad_grid", oldinfo.single_rad_grid
         Widget_Control, info.radgrid_check, Set_Button=info.single_rad_grid
@@ -826,7 +834,10 @@ PRO hypnotoad
   ; Create a tabbed interface in the bar
   tab_base = WIDGET_TAB(base)
   
-  tab1 = WIDGET_BASE(tab_base, title="Actions", /Column, EVENT_PRO = 'event_handler')
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Mesh tab, for generating new meshes
+
+  tab1 = WIDGET_BASE(tab_base, title="Mesh", /Column, EVENT_PRO = 'event_handler')
   
   read_button = WIDGET_BUTTON(tab1, VALUE='Read G-EQDSK', $
                               uvalue='aandg', tooltip="Read RZ equilibrium from EFIT")
@@ -881,20 +892,20 @@ PRO hypnotoad
                              xsize=8                         $
                            )
 
-  ; Options tab
-  tab2 = WIDGET_BASE(tab_base, title="Options", /COLUMN, EVENT_PRO = 'event_handler')
+  mesh_button = WIDGET_BUTTON(tab1, VALUE='Generate mesh', $
+                              uvalue='mesh', tooltip="Generate a new mesh")
+  
+  detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
+                                uvalue='detail', $
+                                tooltip="Set quantities in each region")
 
-  w = WIDGET_LABEL(tab2, value="Curvature method")
-  curv_select = WIDGET_COMBOBOX(tab2, VALUE=["Toroidal, SVD method", $
-                                            "Cylindrical+interpol", $
-                                             "Curl(b/B)", $
-                                            "Field-aligned coords"], $
-                                EVENT_PRO = 'event_handler', $
-                                UVALUE="curv")
-  curv_index = 2 ; Default index
-  WIDGET_CONTROL, curv_select, set_combobox_select=curv_index
-
-  checkboxbase = WIDGET_BASE(tab2, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
+  save_button = WIDGET_BUTTON(tab1, VALUE='Save state', $
+                               uvalue='save', tooltip="Save current Hypnotoad state")
+  restore_button = WIDGET_BUTTON(tab1, VALUE='Restore state', $
+                               uvalue='restore', tooltip="Restore Hypnotoad state")
+  
+  ; Options
+  checkboxbase = WIDGET_BASE(tab1, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
   strict_check = WIDGET_BUTTON(checkboxbase, VALUE="Strict boundaries", uvalue='strict', $
                                tooltip="Enforce boundaries strictly")
   Widget_Control, strict_check, Set_Button=0
@@ -906,40 +917,55 @@ PRO hypnotoad
   radgrid_check = WIDGET_BUTTON(checkboxbase, VALUE="Single radial grid", uvalue='radgrid', $
                              tooltip="Grid radially in one")
   Widget_Control, radgrid_check, Set_Button=1
+  
+  fast_check = WIDGET_BUTTON(checkboxbase, VALUE="Fast", uvalue='fast', tooltip="Uses faster but less acurate methods")
+  Widget_Control, fast_check, set_button=0
+  
+    
+  ; Experimental
+  mesh2_button = WIDGET_BUTTON(tab1, VALUE='Nonorthogonal mesh', $
+                              uvalue='mesh2', tooltip="Under development")
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Output tab
+  
+  tab2 = WIDGET_BASE(tab_base, title="Output", /COLUMN, EVENT_PRO = 'event_handler')
+
+  w = WIDGET_LABEL(tab2, value="Curvature method")
+  curv_select = WIDGET_COMBOBOX(tab2, VALUE=["Toroidal, SVD method", $
+                                            "Cylindrical+interpol", $
+                                             "Curl(b/B)", $
+                                            "Field-aligned coords"], $
+                                EVENT_PRO = 'event_handler', $
+                                UVALUE="curv")
+  curv_index = 1 ; Default index
+  WIDGET_CONTROL, curv_select, set_combobox_select=curv_index
+
+  checkboxbase = WIDGET_BASE(tab2, /COLUMN, EVENT_PRO = 'event_handler', /NonExclusive)
+  
 
   smoothP_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth pressure", uvalue='smoothP', $
                                 tooltip="Smooth P profiles")
   
   Widget_Control, smoothP_check, Set_Button=0
-
+  
+  smoothH_default = 1
   smoothH_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth Hthe", uvalue='smoothH', $
                                 tooltip="Smooth Hthe")
 
-  Widget_Control, smoothH_check, Set_Button=0
+  Widget_Control, smoothH_check, Set_Button=smoothH_default
 
-  fast_check = WIDGET_BUTTON(checkboxbase, VALUE="Fast", uvalue='fast', tooltip="Uses faster but less acurate methods")
-  Widget_Control, fast_check, set_button=0
+  smoothCurv_default = 1
+  smoothCurv_check = WIDGET_BUTTON(checkboxbase, VALUE="Smooth Curvature", uvalue='smoothCurv', $
+                                tooltip="Smooth Curvature")
+  Widget_Control, smoothCurv_check, Set_Button=smoothCurv_default
   
-  mesh_button = WIDGET_BUTTON(tab1, VALUE='Generate mesh', $
-                              uvalue='mesh', tooltip="Generate a new mesh")
-
-  mesh2_button = WIDGET_BUTTON(tab1, VALUE='Nonorthogonal mesh', $
-                              uvalue='mesh2', tooltip="Generate a new nonorthogonal mesh")
   
-  detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
-                                uvalue='detail', $
-                                tooltip="Set quantities in each region")
-
-  process_button = WIDGET_BUTTON(tab1, VALUE='Output mesh', $
+  process_button = WIDGET_BUTTON(tab2, VALUE='Output mesh', $
                                  uvalue='process', tooltip="Process mesh and output to file")
 
-  print_button = WIDGET_BUTTON(tab1, VALUE='Plot to file', $
+  print_button = WIDGET_BUTTON(tab2, VALUE='Plot to file', $
                                uvalue='print', tooltip="Produce a Postscript plot of the mesh")
-
-  save_button = WIDGET_BUTTON(tab1, VALUE='Save state', $
-                               uvalue='save', tooltip="Save current Hypnotoad state")
-  restore_button = WIDGET_BUTTON(tab1, VALUE='Restore state', $
-                               uvalue='restore', tooltip="Restore Hypnotoad state")
 
   leftbargeom = WIDGET_INFO(bar, /Geometry)
 
@@ -982,7 +1008,9 @@ PRO hypnotoad
            smoothP_check:smoothP_check, $
            smoothP:0, $     ; Interpolate to make P smooth
            smoothH_check:smoothH_check, $
-           smoothH:0, $ 
+           smoothH:smoothH_default, $ 
+           smoothCurv_check:smoothCurv_check, $
+           smoothCurv:smoothCurv_default, $
            fast_check:fast_check, $
            fast:0 $
          } 

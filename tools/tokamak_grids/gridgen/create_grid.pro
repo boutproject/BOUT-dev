@@ -119,7 +119,9 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
 
   dldi = SQRT(drdi^2 + dzdi^2)
   poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
-
+  ;poldist = FLTARR(np)
+  ;FOR i=1, np-1 DO poldist[i] = poldist[i-1] + 0.5*(dldi[i-1] + dldi[i])
+  
   IF SIZE(fpsi, /dim) EQ 2 THEN BEGIN
     ; Parallel distance along line
     ; Need poloidal and toroidal field
@@ -171,7 +173,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
   ENDELSE
 
   ; Get indices in ri, zi
-  ind = INTERPOL(FINDGEN(np), dist, dloc)
+  ind = INTERPOL(FINDGEN(np), dist, dloc, /spline)
   
   RETURN, ind
 END
@@ -806,6 +808,33 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     start_ri = REFORM(xy[0,info.offset:(info.offset+info.n-1)])
     start_zi = REFORM(xy[1,info.offset:(info.offset+info.n-1)])
 
+    ; Make sure that the line goes clockwise
+    
+    m = MAX(INTERPOLATE(Z, start_zi), ind)
+    IF (DERIV(INTERPOLATE(R, start_ri)))[ind] LT 0.0 THEN BEGIN
+      ; R should be increasing at the top. Need to reverse
+      start_ri = REVERSE(start_ri)
+      start_zi = REVERSE(start_zi)
+    ENDIF
+    
+    ; Last point should be the same as the first
+    start_ri = [start_ri, start_ri[0]]
+    start_zi = [start_zi, start_zi[0]]
+    
+    sr = start_ri
+    sz = start_zi
+    ; Smooth and refine the starting location
+    np = N_ELEMENTS(start_ri)
+    s = 3
+    start_ri = (SMOOTH([start_ri[(np-s):(np-1)], start_ri, start_ri[0:(s-1)]], s))[s:(np-1+s)]
+    start_zi = (SMOOTH([start_zi[(np-s):(np-1)], start_zi, start_zi[0:(s-1)]], s))[s:(np-1+s)]
+    
+    FOR i=0, np-1 DO BEGIN
+      follow_gradient, interp_data, R, Z, start_ri[i], start_zi[i], start_f, ri1, zi1
+      start_ri[i] = ri1
+      start_zi[i] = zi1
+    ENDFOR
+    
     oplot_contour, info, xy, R, Z, /periodic, color=2, thick=1.5
     
     a = grid_region(interp_data, R, Z, $
@@ -823,7 +852,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     FOR i=0, npol-1 DO BEGIN
       OPLOT, a.rxy[*,i], a.zxy[*,i], color=4
     ENDFOR
-
+    
     ; Get other useful variables
     Psixy = FLTARR(nrad, npol)
     FOR i=0, npol-1 DO psixy[*,i] = (fvals - faxis)/fnorm ; to get normalised psi

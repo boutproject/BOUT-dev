@@ -399,7 +399,7 @@ END
 PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
                   gui=gui, parent=parent, reverse_bt=reverse_bt, $
                   curv=curv, smoothpressure=smoothpressure, $
-                  smoothhthe=smoothhthe
+                  smoothhthe=smoothhthe, smoothcurv=smoothcurv
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -901,6 +901,25 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     bxcvz = -dpb - sinty*bxcvx
   ENDELSE
   
+
+  IF KEYWORD_SET(smoothcurv) THEN BEGIN
+    ; Smooth curvature to prevent large jumps
+    
+    ; Nonlinear smoothing. Tries to smooth only regions with large
+    ; changes in gradient
+    
+    bz = bxcvz + sinty * bxcvx
+    
+    PRINT, "Smoothing bxcvx..."
+    bxcvx = smooth_nl(bxcvx, mesh)
+    PRINT, "Smoothing bxcvy..."
+    bxcvy = smooth_nl(bxcvy, mesh)
+    PRINT, "Smoothing bxcvz..."
+    bz = smooth_nl(bz, mesh)
+    
+    bxcvz = bz - sinty * bxcvx
+  ENDIF
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; CALCULATE PARALLEL CURRENT
   ; 
@@ -1011,7 +1030,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;;;;;;;;;;;;;;;;;;;; TOPOLOGY ;;;;;;;;;;;;;;;;;;;;;;;
   ; Calculate indices for backwards-compatibility
   
-  IF (N_ELEMENTS(mesh.nrad) EQ 2) AND (N_ELEMENTS(mesh.npol) EQ 3) THEN BEGIN
+  nr = N_ELEMENTS(mesh.nrad)
+  np = N_ELEMENTS(mesh.npol)
+  IF (nr EQ 2) AND (np EQ 3) THEN BEGIN
     PRINT, "Single null equilibrium"
     
     ixseps1 = mesh.nrad[0]
@@ -1023,7 +1044,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     jyseps2_1 = jyseps1_2
     jyseps2_2 = ny - mesh.npol[2]-1
 
-  ENDIF ELSE IF (N_ELEMENTS(mesh.nrad) EQ 3) AND (N_ELEMENTS(mesh.npol) EQ 6) THEN BEGIN
+  ENDIF ELSE IF (nr EQ 3) AND (np EQ 6) THEN BEGIN
     PRINT, "Double null equilibrium"
     
     ixseps1 = mesh.nrad[0]
@@ -1037,8 +1058,28 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     jyseps1_2 = ny_inner + mesh.npol[3] - 1
     jyseps2_2 = jyseps1_2 + mesh.npol[4]
     
+  ENDIF ELSE IF (nr EQ 1) AND (np EQ 1) THEN BEGIN
+    
+    PRINT, "Single domain"
+    
+    ixseps1 = nx
+    ixseps2 = nx
+    
+    jyseps1_1 = -1
+    jyseps1_2 = FIX(ny/2)
+    jyseps2_1 = FIX(ny/2)
+    ny_inner = FIX(ny/2)
+    jyseps2_2 = ny - 1
+    
   ENDIF ELSE BEGIN
-    PRINT, "WARNING: Equilibrium not recognised."
+    PRINT, "***************************************" 
+    PRINT, "* WARNING: Equilibrium not recognised *"
+    PRINT, "*                                     *"
+    PRINT, "*  Check mesh carefully!              *"
+    PRINT, "*                                     *"
+    PRINT, "*  Contact Ben Dudson                 *"
+    PRINT, "*      benjamin.dudson@york.ac.uk     *"
+    PRINT, "***************************************" 
     ixseps1 = -1
     ixseps2 = -1
     
@@ -1046,7 +1087,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     jyseps1_2 = FIX(ny/2)
     jyseps2_1 = FIX(ny/2)
     ny_inner = FIX(ny/2)
-    jyseps2_2 = ny
+    jyseps2_2 = ny - 1
   ENDELSE
 
   PRINT, "Generating plasma profiles:"
