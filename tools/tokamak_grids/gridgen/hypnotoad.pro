@@ -414,6 +414,9 @@ PRO event_handler, event
         IF poorquality THEN BEGIN
           r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
         ENDIF
+        
+        plot_rz_equil, *(info.rz_grid)
+        oplot_mesh, *(info.rz_grid), *(info.flux_mesh)
       ENDIF ELSE BEGIN
         PRINT, "ERROR: Need to generate a mesh first"
         WIDGET_CONTROL, info.status, set_value="  *** Need to generate mesh first ***"

@@ -173,7 +173,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
   ENDELSE
 
   ; Get indices in ri, zi
-  ind = INTERPOL(FINDGEN(np), dist, dloc, /spline)
+  ind = INTERPOL(FINDGEN(np), dist, dloc)
   
   RETURN, ind
 END
@@ -821,8 +821,6 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     start_ri = [start_ri, start_ri[0]]
     start_zi = [start_zi, start_zi[0]]
     
-    sr = start_ri
-    sz = start_zi
     ; Smooth and refine the starting location
     np = N_ELEMENTS(start_ri)
     s = 3

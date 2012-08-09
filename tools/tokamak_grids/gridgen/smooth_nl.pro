@@ -110,5 +110,7 @@ FUNCTION smooth_nl, input, mesh, iter=iter
     it = it + 1
   ENDREP UNTIL (change LT 1e-3) OR (it GE iter)
   
+  PRINT, ""
+
   RETURN, output
 END
