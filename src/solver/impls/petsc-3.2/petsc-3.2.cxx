@@ -37,8 +37,6 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
-
 extern PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 extern PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data);
 extern PetscErrorCode solver_if(TS,BoutReal,Vec,Vec,Vec,void*);
@@ -65,9 +63,6 @@ Petsc32Solver::~Petsc32Solver() {
 
     initialised = false;
   }
-  
-  PetscLogEventEnd(USER_EVENT,0,0,0,0);
-  PetscFinalize();
 }
 
 /**************************************************************************
@@ -75,10 +70,6 @@ Petsc32Solver::~Petsc32Solver() {
  **************************************************************************/
 
 int Petsc32Solver::setup(int argc, char **argv) {
-  output << "Initialising PETc-3.2\n";
-  PetscInitialize(&argc,&argv,PETSC_NULL,help);
-  PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
-  PetscLogEventBegin(USER_EVENT,0,0,0,0);
 }
 
 /**************************************************************************

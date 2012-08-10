@@ -44,6 +44,8 @@ class Petsc31Solver;
 
 #include <bout/solver.hxx>
 
+#include <bout/petsclib.hxx>
+
 #include <vector>
 
 typedef PetscScalar BoutReal;
@@ -76,6 +78,8 @@ class Petsc31Solver : public Solver {
   friend PetscErrorCode PostStep(TS);
 
  private:
+  PetscLib lib; // Handles initialisation and finalisation
+  
   Vec           u;
   TS            ts;
   Mat           J;
@@ -87,8 +91,6 @@ class Petsc31Solver : public Solver {
 
   BoutReal next_time;  // When the monitor should be called next
   bool outputnext; // true if the monitor should be called next time
-  
-  PetscLogEvent USER_EVENT;
 };
 
 

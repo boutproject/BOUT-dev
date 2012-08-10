@@ -44,6 +44,8 @@ class Petsc32Solver;
 
 #include <bout/solver.hxx>
 
+#include <bout/petsclib.hxx>
+
 #include <vector>
 
 typedef PetscScalar BoutReal;
@@ -75,6 +77,8 @@ class Petsc32Solver: public Solver {
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 
  private:
+  PetscLib lib; 
+  
   Vec           u;
   TS            ts;
   Mat           J,Jmf;
@@ -87,8 +91,6 @@ class Petsc32Solver: public Solver {
   BoutReal next_output;  // When the monitor should be called next
 
   PetscBool interpolate; // Whether to interpolate or not
-  
-  PetscLogEvent USER_EVENT;
 };
 
 

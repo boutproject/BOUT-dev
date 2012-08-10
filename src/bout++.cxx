@@ -59,6 +59,8 @@ static char DEFAULT_GRID[] = "data/bout.grd.pdb";
 
 #include <bout/sys/timer.hxx>
 
+#include <bout/petsclib.hxx>
+
 #include <time.h>
 
 #include <strings.h>
@@ -126,7 +128,7 @@ int bout_init(int argc, char **argv) {
       data_dir = argv[i];
     }
     if (strncasecmp(argv[i], "-f", 2) == 0) {
-      // Set data directory
+      // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Useage is %s -f <options filename>\n", argv[0]);
         return 1;
@@ -135,7 +137,10 @@ int bout_init(int argc, char **argv) {
       opt_file = argv[i];
     }
   }
-
+  
+  // Set the command-line arguments for PETSc (if needed)
+  PetscLib::setArgs(argc, argv);
+  
   // If no communicator is supplied, initialise MPI
   if (!BoutComm::getInstance()->isSet()) MPI_Init(&argc,&argv);
 
@@ -317,6 +322,8 @@ int bout_init(int argc, char **argv) {
 
     if (physics_init(restart)) {
       output.write("Failed to initialise physics. Aborting\n");
+      delete mesh;
+      delete solver;
       return 1;
     }
 
