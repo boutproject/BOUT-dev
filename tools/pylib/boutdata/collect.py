@@ -50,8 +50,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         
         data = f.read(varname)
         return data
-        
-    file_list = glob.glob(os.path.join(path, prefix+".*.nc"))
+    
+    file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
+    file_list.sort()
     if file_list == []:
         print "ERROR: No data files found"
         return None
