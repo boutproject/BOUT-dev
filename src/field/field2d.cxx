@@ -1006,7 +1006,8 @@ void Field2D::allocData() {
 
   }else {
     // Need to create another block
-
+    if(mesh == NULL)
+      throw BoutException("Assignment to Field2D before mesh is created");
     data = rmatrix(mesh->ngx, mesh->ngy);
 
   }

@@ -47,7 +47,7 @@
 #define SETTING(name, val) name = val;
 #endif
 
-GLOBAL Mesh *mesh; ///< The mesh object
+SETTING(Mesh *mesh, NULL); ///< The mesh object
 
 ///////////////////////////////////////////////////////////////
 

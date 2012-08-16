@@ -2167,7 +2167,10 @@ memblock3d *Field3D::newBlock() const
     }else {
       // No more blocks left - allocate a new block
       nb = new memblock3d;
-
+      
+      if(mesh == NULL) // Mesh not created yet
+        throw BoutException("Assignment to Field3D before mesh is created");
+      
       nb->data = r3tensor(mesh->ngx, mesh->ngy, mesh->ngz);
       nb->refs = 1;
       nb->next = NULL;
