@@ -2456,7 +2456,19 @@ Field3D a, b;
 The boundary conditions supplied with the BOUT++ library cover the most common situations,
 but cannot cover all of them. If the boundary condition you need isn't
 available, then it's quite straightforward
-to write your own. To set an X boundary condition, it's necessary to test if the processor
+to write your own. First you need to make sure that your boundary condition isn't going to 
+be overwritten. To do this, set the boundary condition to ``none'' in the BOUT.inp options file,
+and BOUT++ will leave that boundary alone. For example:
+\begin{lstlisting}
+[P]
+bndry_all = dirichlet
+bndry_xin = none
+bndry_xout = none
+\end{lstlisting}
+would set all boundaries for the variable ``P'' to zero value, except for the X inner and outer boundaries which will
+be left alone for you to modify.
+
+To set an X boundary condition, it's necessary to test if the processor
 is at the left boundary (first in X), or right boundary (last in X). Note that it might be
 both if \code{NXPE = 1}, or neither if \code{NXPE > 2}. 
 \begin{lstlisting}
@@ -2492,8 +2504,28 @@ in the boundary, we need to use a more general iterator:
 \begin{lstlisting}
   Field3D f;
   ...
-  
+  RangeIterator it = mesh->iterateBndryLowerY();
+  for(it.first(); !it.isDone(); it++) {
+    // it.ind contains the x index
+    for(int y=2;y>=0;y--)  // Boundary width 3 points
+      for(int z=0;z<mesh->ngz;z++) {
+        ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
+      }
+  }
 \end{lstlisting}
+This would set the time-derivative of f to zero in a boundary of width 3 in Y (from 0 to 2 inclusive). In the
+same way \lstinline!mesh->iterateBndryUpperY()! can be used to iterate over the upper boundary:
+\begin{lstlisting}
+  RangeIterator it = mesh->iterateBndryUpperY();
+  for(it.first(); !it.isDone(); it++) {
+    // it.ind contains the x index
+    for(int y=mesh->ngy-3;y<mesh->ngy;y--)  // Boundary width 3 points
+      for(int z=0;z<mesh->ngz;z++) {
+        ddt(f)[it.ind][y][z] = 0.;  // Set time-derivative to zero in boundary
+      }
+  }
+\end{lstlisting}
+
 
 \subsection{Initial profiles}
 \index{variable initialisation}
