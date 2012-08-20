@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+const BoutReal PI = 3.14159265;
+
 //2D initial profiles
 
 Field2D rho0, p0;
@@ -237,10 +239,6 @@ int physics_run(BoutReal t)
   Jpar.applyBoundary();
   
   mesh->communicate(Jpar);
-
-  // Iterate over the lower Y boundary
-  RangeIter *rlow = mesh->iterateBndryLowerY();
-  RangeIter *rhigh = mesh->iterateBndryLowerY();
   
   //Parallel electric field
   ddt(Psi) = -(1/B0)*Grad_par_CtoL(B0*phi);// + 1e-2*Jpar; 
@@ -323,8 +321,9 @@ int physics_run(BoutReal t)
   }
   
   // Iterate over the lower Y boundary
-  for(rlow->first(); !rlow->isDone(); rlow->next()) {
-    int x = rlow->ind;
+  RangeIterator rlow = mesh->iterateBndryLowerY();
+  for(rlow.first(); !rlow.isDone(); rlow.next()) {
+    int x = rlow.ind;
     for(int y=2;y>=0;y--) 
       for(int z=0;z<mesh->ngz;z++) {
         ddt(rho)[x][y][z] = ddt(rho)[x][y+1][z];
@@ -340,8 +339,5 @@ int physics_run(BoutReal t)
 //   gam_rho = 1/rho1; //ddt(rho)/rho1;
 //   gam_Psi = 1/psi1; //ddt(Psi)/psi1;
   
-
-  delete rlow;
-  delete rhigh;
   return 0;
 }
