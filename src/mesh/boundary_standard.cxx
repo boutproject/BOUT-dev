@@ -21,17 +21,31 @@ BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> 
 }
 
 void BoundaryDirichlet::apply(Field2D &f) {
-  // Just loop over all elements and set to zero
+  // Just loop over all elements and set to the value
   for(bndry->first(); !bndry->isDone(); bndry->next())
     f[bndry->x][bndry->y] = val;
 }
 
 void BoundaryDirichlet::apply(Field3D &f) {
-  // Just loop over all elements and set to zero
+  // Just loop over all elements and set to the value
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
       f[bndry->x][bndry->y][z] = val;
 }
+
+void BoundaryDirichlet::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)[bndry->x][bndry->y] = 0.; // Set time derivative to zero
+}
+
+void BoundaryDirichlet::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)[bndry->x][bndry->y][z] = 0.; // Set time derivative to zero
+}
+
 
 ///////////////////////////////////////////////////////////////
 

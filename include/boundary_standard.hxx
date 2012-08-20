@@ -15,6 +15,9 @@ class BoundaryDirichlet : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
  private:
   BoutReal val;
 };
