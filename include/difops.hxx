@@ -47,6 +47,7 @@ const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=C
 const Field3D Grad_par(const Field3D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
 
+// MUSCL schemes. Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
 const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
 const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
 
@@ -66,6 +67,12 @@ const Field3D Div_par(const Field3D &f,
 		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
+// Flux methods. Model divergence of flux: df/dt =  Div(v * f)
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, 
+		      CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+
+// MUSCL scheme. Model dvar/dt = Div_par(f) with a maximum velocity of Vmax
 const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax);
 const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
 
@@ -75,6 +82,7 @@ const Field2D Grad2_par2(const Field2D &f);
 const Field3D Grad2_par2(const Field3D &f);
 
 // Parallel derivatives, converting between cell-centred and lower cell boundary
+// These are a simple way to do staggered differencing
 const Field3D Grad_par_CtoL(const Field3D &var);
 const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f);
 const Field3D Grad_par_LtoC(const Field &var);

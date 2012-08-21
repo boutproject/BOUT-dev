@@ -372,6 +372,8 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
   // Upper cell boundary
   result -= (v.p >= 0) ? v.p * f.c : v.p * f.p;
   
+  result *= -1;
+  
   // result is now d/dx(v*f), but want v*d/dx(f) so subtract f*d/dx(v)
   result -= f.c*(v.p - v.m);
   
@@ -844,6 +846,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   bindex bx;
   
   start_index(&bx, RGN_NOBNDRY);
+  /*
 #ifdef _OPENMP
   bindex bxstart = bx; // Copy to avoid race condition on first index
   bool workToDoGlobal; // Shared loop control
@@ -874,13 +877,13 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
       }
     }while(workToDoGlobal);
   }
-#else
+  #else */
   stencil s;
   do{
     var.setYStencil(s, bx, loc);
     r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
   }while(next_index2(&bx));
-#endif  
+  //#endif  
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -900,6 +903,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   
   start_index(&bx, RGN_NOBNDRY);
   
+  /*
 #ifdef _OPENMP
   // Parallel version
   bindex bxstart = bx; // Copy to avoid race condition on first index
@@ -936,14 +940,16 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
     }while(workToDoGlobal);
   }
 #else 
+  */
   stencil s;
   do {
+    //output.write("apply %d %d\n", bx.jx, bx.jy);
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       var.setYStencil(s, bx, loc);
       r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
     }
   }while(next_index2(&bx));
-#endif
+  //#endif
 
 #ifdef CHECK
   // Mark boundaries as invalid
@@ -1082,8 +1088,7 @@ const Field2D DDX(const Field2D &f)
 
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fDDY; // Set to default function
   DiffLookup *table = FirstDerivTable;
   
@@ -1136,9 +1141,9 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   }
   
   result = applyYdiff(f, func, mesh->dy, diffloc);
-  //output.write("SETTING LOC %s\n", strLocation(diffloc));
+  //output.write("SETTING LOC %s -> %s\n", strLocation(diffloc), strLocation(outloc));
   result.setLocation(diffloc); // Set the result location
-
+  
   return interp_to(result, outloc); // Interpolate if necessary
 }
 
@@ -2433,6 +2438,8 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_MET
 
 const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
 {
+  //output.write("fddy: %d %d %d : %u %u \n", v.getLocation(), f.getLocation(), method, fFDDY, sfFDDY);
+  
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2451,7 +2458,7 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
   }
   
   if(mesh->StaggerGrids && (vloc != inloc)) {
-    // Staggered grids enabled, and velocity at different location to value
+    // Staggered grids enabled, and velocity at different location to value    
     if(vloc == CELL_YLOW) {
       // V staggered w.r.t. variable
       func = sfFDDY;
@@ -2465,7 +2472,7 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
     }else {
       // More complicated. Deciding what to do here isn't straightforward
       // For now, interpolate velocity to the same location as f.
-
+      
       // Should be able to do something like:
       //return VDDX(interp_to(v, inloc), f, outloc, method);
       
@@ -2479,6 +2486,11 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
     func = lookupUpwindFunc(table, method);
   }
   
+  if(func == NULL) {
+    // To catch when no function
+    return VDDY(v, f, outloc) + DDY(v, outloc) * f;
+  }
+
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***d = result.getData();
@@ -2492,15 +2504,16 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
     f.setYStencil(fval, bx); // Location is always the same as input
     
     d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dy[bx.jx][bx.jy];
+
   }while(next_index3(&bx));
-  
+
   result.setLocation(inloc);
 
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
-  
+
   return interp_to(result, outloc);
 }
 

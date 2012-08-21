@@ -64,17 +64,15 @@ const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc) {
   return Grad_par(var, outloc, method);
 }
 
-const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Grad_par( Field3D )");
 #endif
-
+  
   Field3D result;
 
   result = DDY(var, outloc, method)/sqrt(mesh->g_22);
@@ -85,7 +83,6 @@ const Field3D Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method)
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
-
   return result;
 }
 
@@ -267,8 +264,7 @@ const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, 
  * parallel divergence operator B \partial_{||} (F/B)
  *******************************************************************************/
 
-const Field2D Div_par(const Field2D &f)
-{
+const Field2D Div_par(const Field2D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Div_par( Field2D )");
 #endif
@@ -308,6 +304,17 @@ const Field3D Div_par(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return Div_par(f, outloc, method);
 }
 
+//////// Flux methods
+
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return -mesh->Bxy*FDDY(v, f/mesh->Bxy, outloc, method)/sqrt(mesh->g_22);
+}
+
+const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+  return Div_par_flux(v,f, outloc, method);
+}
+
+//////// MUSCL schemes
 
 const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
 #ifdef CHECK

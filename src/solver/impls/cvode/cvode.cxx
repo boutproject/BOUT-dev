@@ -270,7 +270,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
     }
 
     /// Write the restart file
-    restart.write("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str());
+    restart.write();
 
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
       restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());

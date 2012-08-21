@@ -136,7 +136,8 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name) {
 
   initial_profile(name, v);
   v.applyBoundary(); // Make sure initial profile obeys boundary conditions
-
+  v.setLocation(d.location); // Restore location if changed
+                
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -422,7 +423,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   /// Get restart file extension
   string dump_ext, restart_ext;
 
-  options->get("dump_format", dump_ext, "default");
+  options->get("dump_format", dump_ext, "nc");
   
   options->get("restart_format", restart_ext, dump_ext);
   restartext = string(restart_ext);
@@ -514,6 +515,10 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
     // Not restarting
     simtime = 0.0; iteration = 0;
   }
+  
+  /// Open the restart file for writing
+  if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+    throw new BoutException("Error: Could not open restart file for writing\n");
   
   /// Mark as initialised. No more variables can be added
   initialised = true;

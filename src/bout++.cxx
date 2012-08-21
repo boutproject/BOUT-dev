@@ -27,7 +27,7 @@
 
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
-static char DEFAULT_GRID[] = "data/bout.grd.pdb";
+static char DEFAULT_GRID[] = "data/bout.grd.nc";
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -116,8 +116,6 @@ int bout_init(int argc, char **argv) {
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
   for (i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "no", 2) == 0) Datafile::enabled = false; // No output. Used for scaling studies
-
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
@@ -256,7 +254,7 @@ int bout_init(int argc, char **argv) {
     OPTION(options, append, false);
 
     /// Get file extensions
-    options->get("dump_format", dump_ext, "default");
+    options->get("dump_format", dump_ext, "nc");
 
     /// Setup derivative methods
     if (derivs_init()) {

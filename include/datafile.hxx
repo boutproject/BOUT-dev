@@ -61,14 +61,15 @@ class Datafile {
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
 
-  /// Set this to false to switch off all data writing
-  static bool enabled;
+  
+  
  private:
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
   bool guards;   // Write guard cells?
   bool low_prec; // Low precision?
-  bool openclose;
+  bool openclose; // Open and close file for each write
+  bool enabled;  // Enable / Disable writing
 
   DataFormat *file;
   char filename[512];

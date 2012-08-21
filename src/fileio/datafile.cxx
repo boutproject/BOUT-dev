@@ -44,11 +44,7 @@
 
 #include "formatfactory.hxx"
 
-///////////////////////////////////////
-// Global variables, shared between Datafile objects
-bool Datafile::enabled = true;
-
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), openclose(true), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), openclose(true), enabled(true), file(NULL) {
   if(opt == NULL)
     return; // To allow static initialisation
   
@@ -59,9 +55,14 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), l
   OPTION(opt, guards, true);    // Compatible with old behavior
   OPTION(opt, low_prec, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
+  OPTION(opt, enabled, true);
 }
 
-Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), low_prec(other.low_prec), openclose(other.openclose), file(NULL), int_arr(other.int_arr), BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
+Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
+                                            low_prec(other.low_prec), openclose(other.openclose), 
+                                            enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
+                                            BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
+                                            f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
   
   // Same added variables, but the file not the same 
 }
@@ -72,6 +73,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   guards       = rhs.guards;
   low_prec     = rhs.low_prec;
   openclose    = rhs.openclose;
+  enabled      = rhs.enabled;
   file         = NULL; // All values copied except this
   int_arr      = rhs.int_arr;
   BoutReal_arr = rhs.BoutReal_arr;
@@ -177,6 +179,8 @@ void Datafile::close() {
 }
 
 void Datafile::setLowPrecision() {
+  if(!enabled)
+    return;
   low_prec = true;
   file->setLowPrecision();
 }
@@ -371,6 +375,9 @@ bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
   
+  if(!file)
+    return false;
+  
   if(openclose) {
     // Open the file
     int MYPE;
@@ -380,8 +387,6 @@ bool Datafile::write() {
     appending = true;
   }
 
-  if(!file)
-    return false;
   
   if(!file->is_valid())
     return false;

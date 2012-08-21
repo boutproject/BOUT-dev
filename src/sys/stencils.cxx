@@ -864,7 +864,7 @@ int next_index2(bindex *bx)
 int next_indexperp(bindex *bx)
 {
   bx->jz++;
-  if(bx->jz >= mesh->ngz) {
+  if(bx->jz >= mesh->ngz-1) {
     
     bx->jz = 0;
     bx->jx++;
