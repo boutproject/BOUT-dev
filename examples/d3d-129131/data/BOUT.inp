@@ -10,6 +10,8 @@ TIMESTEP = 1.e0   # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
+ballooning = true
+shiftinitial = false
 
 MZ = 65     # number of points in z direction (2^n + 1)
 
@@ -71,8 +73,6 @@ mxstep = 50000
 
 nu_perp = 1.0e-20
 
-relax_flat_bndry = true # If true, use BOUT-06 relaxating boundaries
-lambda = -20.            # Boundary relaxation rate
 bkgd = 2    # Profile option for coefficients (ni, mu_i etc.)
 iTe_dc = 1  # Profile evolution option
 
@@ -86,7 +86,8 @@ bout_jpar = false   # Use BOUT-06 method to calculate ZeroElMass jpar
 
 stagger = true     # Use CtoL and LtoC parallel differencing
 
-bout_exb = true    # Use the BOUT-06 subset of ExB terms
+# Form to use for the ExB advection (Poisson bracket) terms
+bracket_method = 1 # 0 = full terms, 1 = simplified (BOUT-06), 2 = Arakawa, 3 = CTU
 
 curv_upwind = false # Use upwinding for b0xkappa_dot_Grad terms
 
@@ -136,18 +137,16 @@ ys_wd = 0.6
 zs_mode = 2 # toroidal mode number
 zs_wd = 0.2
 
-# boundary conditions (see boundary.h for values)
-# 0 = none applied
-# 1 = zero value
-# 2 = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# boundary conditions
+# -------------------
+# dirichlet    - Zero value
+# neumann      - Zero gradient
+# zerolaplace  - Laplacian = 0, decaying solution
+# constlaplace - Laplacian = const, decaying solution
+#
+# relax( )   - Make boundary condition relaxing
 
-xinner = 2  ## Zero-gradient inner boundary
-xouter = 2  ## Zero-gradient outer boundary
-
-yupper = 2
-ylower = 2
+bndry_all = relax(neumann)  # Relax to zero-gradient inner boundary
 
 ##################################################
 # DENSITY
@@ -194,8 +193,8 @@ evolve = false
 [rho]
 #scale = 1.0e-3
 
-xinner = 1
-xouter = 1
+bndry_xin = relax(dirichlet)
+bndry_xout = relax(dirichlet)
 
 # ExB advection terms
 rho0_phi1 = false
@@ -213,5 +212,5 @@ rho1 = false    # Perpendicular ion viscosity
 
 [jpar]
 
-#yupper = 1
-#ylower = 1
+#bndry_yup = relax(dirichlet)
+#bndry_ydown = relax(dirichlet)

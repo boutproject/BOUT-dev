@@ -1679,14 +1679,14 @@ int BoutMesh::YLOCAL(int yglo, int yproc)
 }
 
 /// Return the Y processor number given a global Y index
-int BoutMesh::YPROC(int yind)
-{
+int BoutMesh::YPROC(int yind) {
+  if((yind < 0) || (yind > ny))
+    return -1;
   return yind / MYSUB;
 }
 
 /// Return the X processor number given a global X index
-int BoutMesh::XPROC(int xind)
-{
+int BoutMesh::XPROC(int xind) {
   return (xind >= MXG) ? (xind - MXG) / MXSUB : 0;
 }
 
@@ -2708,6 +2708,9 @@ BoutReal BoutMesh::GlobalY(int jy) {
       ly = nycore-1;
     }
   }
+  
+  //output.write("GlobalY: %d, %d, %d, %d -> %e\n", jy, YGLOBAL(jy), ly, nycore, ((BoutReal) ly) / ((BoutReal) nycore));
+
   return ((BoutReal) ly) / ((BoutReal) nycore);
 }
 

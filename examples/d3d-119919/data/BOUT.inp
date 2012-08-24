@@ -10,6 +10,8 @@ TIMESTEP = 1.e0   # time between outputs
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true  # use twist-shift condition?
+ballooning = true
+shiftinitial = false
 
 MZ = 65     # number of points in z direction (2^n + 1)
 
@@ -71,7 +73,6 @@ mxstep = 50000
 
 nu_perp = 1.0e-20
 
-lambda = -20.            # Boundary relaxation rate
 bkgd = 2    # Profile option for coefficients (ni, mu_i etc.)
 iTe_dc = 1  # Profile evolution option
 
@@ -85,7 +86,8 @@ bout_jpar = false   # Use BOUT-06 method to calculate ZeroElMass jpar
 
 stagger = true     # Use CtoL and LtoC parallel differencing
 
-bout_exb = true    # Use the BOUT-06 subset of ExB terms
+# Form to use for the ExB advection (Poisson bracket) terms
+bracket_method = 1 # 0 = full terms, 1 = simplified (BOUT-06), 2 = Arakawa, 3 = CTU
 
 curv_upwind = false # Use upwinding for b0xkappa_dot_Grad terms
 
@@ -136,10 +138,13 @@ zs_mode = 2 # toroidal mode number
 zs_wd = 0.2
 
 # boundary conditions
-# dirichlet = zero value
-# neumann = zero gradient
-# 3 = laplacian
-# 4 = laplacian with zero-gradient
+# -------------------
+# dirichlet    - Zero value
+# neumann      - Zero gradient
+# zerolaplace  - Laplacian = 0, decaying solution
+# constlaplace - Laplacian = const, decaying solution
+#
+# relax( )   - Make boundary condition relaxing
 
 # All variables and all regions to zero-gradient
 bndry_all = relax(neumann)

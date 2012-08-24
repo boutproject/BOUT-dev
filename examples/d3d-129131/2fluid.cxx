@@ -58,16 +58,17 @@ bool curv_upwind; // Use upwinding methods for curvature terms
 bool laplace_extra_rho_term; // An extra first-order term in the vorticity inversion
 bool vort_include_pi;    // Include Pi in vorticity
 
-bool bout_exb;  // Use BOUT-06 expression for ExB velocity
 bool bout_jpar; // Use BOUT-06 method for Jpar
 bool OhmPe;     // Include the Pe term in Ohm's law
 
 int bkgd;   // Profile options for coefficients (same options as BOUT-06)
 int iTe_dc; // Profile evolution options
 
-BoutReal lambda; // Boundary condition relaxation rate (negative)
-
 bool stagger; // Use CtoL and LtoC for parallel derivs
+
+// Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
+// Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
+BRACKET_METHOD bm; // Bracket method for advection terms
 
 // Switches for the equation terms
 bool ni_ni1_phi0, ni_ni0_phi1, ni_ni1_phi1, ni_nit_phit;
@@ -87,8 +88,6 @@ bool te_te1_phi0, te_te0_phi1, te_te1_phi1;
 
 bool ti_ti1_phi0, ti_ti0_phi1, ti_ti1_phi1;
 
-bool relax_flat_bndry; // Use relaxing boundary conditions
-
 int lowPass_z; // Low-pass filter result
 
 int phi_flags, apar_flags; // Inversion flags
@@ -96,8 +95,7 @@ int phi_flags, apar_flags; // Inversion flags
 // Group of objects for communications
 FieldGroup comms;
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
   output.write("Solving 6-variable 2-fluid equations\n");
@@ -169,8 +167,36 @@ int physics_init(bool restarting)
   OPTION(options, ShearFactor, 1.0);
   OPTION(options, OhmPe,       true);
   OPTION(options, bout_jpar,   false);
-  OPTION(options, bout_exb,    false);
   OPTION(options, curv_upwind, false);
+
+  // Choose method to use for Poisson bracket advection terms
+  int bracket_method;
+  OPTION(options, bracket_method, 0);
+  switch(bracket_method) {
+  case 0: {
+    bm = BRACKET_STD; 
+    output << "\tBrackets: default differencing\n";
+    break;
+  }
+  case 1: {
+    bm = BRACKET_SIMPLE; 
+    output << "\tBrackets: simplified operator\n";
+    break;
+  }
+  case 2: {
+    bm = BRACKET_ARAKAWA; 
+    output << "\tBrackets: Arakawa scheme\n";
+    break;
+  }
+  case 3: {
+    bm = BRACKET_CTU; 
+    output << "\tBrackets: Corner Transport Upwind method\n";
+    break;
+  }
+  default:
+    output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+    return 1;
+  }
 
   OPTION(options, nuIonNeutral, -1.); 
 
@@ -178,14 +204,6 @@ int physics_init(bool restarting)
   OPTION(options, iTe_dc,    2);
 
   OPTION(options, stagger, false);
-
-  OPTION(options, lambda,   -10.);
-  if(lambda > 0.) {
-    output.write("WARNING: lambda should be < 0. Reversing sign\n");
-    lambda *= -1.0;
-  }
-
-  OPTION(options, relax_flat_bndry, true);
 
   OPTION(options, laplace_extra_rho_term, false);
   OPTION(options, vort_include_pi, false);
@@ -379,7 +397,7 @@ int physics_init(bool restarting)
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho,   "rho");
+    SOLVE_FOR(rho);
     comms.add(rho);
     output.write("rho\n");
   }else {
@@ -389,7 +407,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_ni) {
-    bout_solve(Ni,    "Ni");
+    SOLVE_FOR(Ni);
     comms.add(Ni);
     output.write("ni\n");
   }else {
@@ -399,7 +417,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_te) {
-    bout_solve(Te,    "Te");
+    SOLVE_FOR(Te);
     comms.add(Te);
     
     output.write("te\n");
@@ -410,7 +428,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_ajpar) {
-    bout_solve(Ajpar, "Ajpar");
+    SOLVE_FOR(Ajpar);
     comms.add(Ajpar);
     output.write("ajpar\n");
   }else {
@@ -423,7 +441,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_vi) {
-    bout_solve(Vi, "Vi");
+    SOLVE_FOR(Vi);
     comms.add(Vi);
     output.write("vi\n");
   }else {
@@ -433,7 +451,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_ti) {
-    bout_solve(Ti, "Ti");
+    SOLVE_FOR(Ti);
     comms.add(Ti);
     output.write("ti\n");
   }else {
@@ -443,27 +461,6 @@ int physics_init(bool restarting)
   }
 
   jpar.setBoundary("jpar");
-
-  if(!restarting) {
-    // Smooth the initial perturbation a few times (includes comms)
-    
-    Ni = smooth_y(Ni);
-    Ni = smooth_x(Ni);
-    Ni = smooth_y(Ni);
-    Ni = smooth_x(Ni);
-    Ni = smooth_y(Ni);
-    
-    rho = smooth_y(rho);
-    rho = smooth_x(rho);
-    rho = smooth_y(rho);
-    rho = smooth_x(rho);
-    rho = smooth_y(rho);
-    
-    // Make sure initial perturbation obeys boundary condition
-    // Normally this is taken care of, but have modified initial
-    rho.applyBoundary();
-    Ni.applyBoundary();
-  }
   
   ////////////////////////////////////////////////////////
   // SETUP COMMUNICATIONS
@@ -490,15 +487,10 @@ int physics_init(bool restarting)
   return(0);
 }
 
-// Routines for ExB terms (end of this file)
-const Field2D vE_Grad(const Field2D &f, const Field2D &p);
-const Field3D vE_Grad(const Field2D &f, const Field3D &p);
-const Field3D vE_Grad(const Field3D &f, const Field2D &p);
-const Field3D vE_Grad(const Field3D &f, const Field3D &p);
+// ExB terms using Poisson bracket
+#define vE_Grad(f, p) ( bracket(p, f, bm) )
 
-int physics_run(BoutReal t)
-{
-  //output.write("t = %e\n", t);
+int physics_run(BoutReal t) {
   
   ////////////////////////////////////////////////////////
   // Invert vorticity to get phi
@@ -507,7 +499,6 @@ int physics_run(BoutReal t)
   // Arguments are:   (b,   bit-field, a,    c)
   // Passing NULL -> missing term
   
-  rho = 0.0;
   msg_stack.push("Solving for phi");
   if(laplace_extra_rho_term) {
     // Include the first order term Grad_perp Ni dot Grad_perp phi
@@ -924,62 +915,3 @@ int physics_run(BoutReal t)
   return(0);
 }
 
-/////////////////////////////////////////////////////////////////
-// ExB terms. These routines allow comparisons with BOUT-06
-// if bout_exb=true is set in BOUT.inp
-/////////////////////////////////////////////////////////////////
-
-const Field2D vE_Grad(const Field2D &f, const Field2D &p)
-{
-  Field2D result;
-  if(bout_exb) {
-    // Use a subset of terms for comparison to BOUT-06
-    result = 0.0;
-  }else {
-    // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
-  }
-  return result;
-}
-
-const Field3D vE_Grad(const Field2D &f, const Field3D &p)
-{
-  Field3D result;
-  if(bout_exb) {
-    // Use a subset of terms for comparison to BOUT-06
-    result = VDDX(DDZ(p), f);
-    //result = DDX(DDZ(p)*f);
-  }else {
-    // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
-  }
-  return result;
-}
-
-const Field3D vE_Grad(const Field3D &f, const Field2D &p)
-{
-  Field3D result;
-  if(bout_exb) {
-    // Use a subset of terms for comparison to BOUT-06
-    result = VDDZ(-DDX(p), f);
-    //result = DDZ(-DDX(p) * f);
-  }else {
-    // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
-  }
-  return result;
-}
-
-const Field3D vE_Grad(const Field3D &f, const Field3D &p)
-{
-  Field3D result;
-  if(bout_exb) {
-    // Use a subset of terms for comparison to BOUT-06
-    result = VDDX(DDZ(p), f) + VDDZ(-DDX(p), f);
-    //result = DDX(DDZ(p) * f) + DDZ(-DDX(p) * f);
-  }else {
-    // Use full expression with all terms
-    result = b0xGrad_dot_Grad(p, f) / mesh->Bxy;
-  }
-  return result;
-}
