@@ -26,8 +26,7 @@
 #include <globals.hxx>
 #include <where.hxx>
 
-const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
-{
+const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0) {
   Field3D result;
   
   result.allocate();
@@ -46,8 +45,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field3D &le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0)
-{
+const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0) {
   Field3D result;
 
   result.allocate();
@@ -66,8 +64,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, BoutReal le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0)
-{
+const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0) {
   Field3D result;
 
   result.allocate();
@@ -86,8 +83,7 @@ const Field3D where(const Field2D &test, BoutReal gt0, const Field3D &le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
-{
+const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0) {
   Field3D result;
 
   result.allocate();
@@ -106,8 +102,7 @@ const Field3D where(const Field2D &test, const Field3D &gt0, const Field2D &le0)
   return result;
 }
 
-const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
-{
+const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0) {
   Field3D result;
 
   result.allocate();
@@ -126,3 +121,69 @@ const Field3D where(const Field2D &test, const Field2D &gt0, const Field3D &le0)
   return result;
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// Versions returning Field2D
+
+const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0) {
+  Field2D result;
+  
+  result.allocate();
+  BoutReal **d = result.getData();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      if(test[jx][jy] > 0.0) {
+        d[jx][jy] = gt0[jx][jy];
+      }else {
+        d[jx][jy] = le0[jx][jy];
+      }
+  return result;
+}
+
+const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal &le0) {
+  Field2D result;
+  
+  result.allocate();
+  BoutReal **d = result.getData();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      if(test[jx][jy] > 0.0) {
+        d[jx][jy] = gt0[jx][jy];
+      }else {
+        d[jx][jy] = le0;
+      }
+  return result;
+}
+
+const Field2D where(const Field2D &test, BoutReal gt0, const Field2D &le0) {
+  Field2D result;
+  
+  result.allocate();
+  BoutReal **d = result.getData();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      if(test[jx][jy] > 0.0) {
+        d[jx][jy] = gt0;
+      }else {
+        d[jx][jy] = le0[jx][jy];
+      }
+  return result;
+}
+
+const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
+  Field2D result;
+  
+  result.allocate();
+  BoutReal **d = result.getData();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      if(test[jx][jy] > 0.0) {
+        d[jx][jy] = gt0;
+      }else {
+        d[jx][jy] = le0;
+      }
+  return result;
+}
