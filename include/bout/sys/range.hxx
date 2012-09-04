@@ -30,6 +30,7 @@ class RangeIterator {
   RangeIterator() : is(1), ie(0), n(0), cur(0) {}
   RangeIterator(int start, int end, RangeIterator* join=0);
   RangeIterator(int start, int end, const RangeIterator& join);
+  RangeIterator(const RangeIterator& r);
   
   void first();
   void next();
@@ -45,7 +46,7 @@ class RangeIterator {
   bool operator!=(const RangeIterator &x) const {
     return cur != x.cur;
   }
-
+  
   bool intersects(const RangeIterator &other, bool all=true) const;
   bool intersects(int ind, bool all=true) const;
   

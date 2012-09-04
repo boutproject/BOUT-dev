@@ -36,6 +36,17 @@ RangeIterator::RangeIterator(int start, int end, const RangeIterator& join)
   }
 }
 
+RangeIterator::RangeIterator(const RangeIterator& r) {
+  ind    = r.ind;
+  is     = r.is;
+  ie     = r.ie;
+  n      = r.n;
+  cur    = r.cur;
+  if(cur == &r)
+    cur = this;
+  curend = r.curend;
+}
+
 void RangeIterator::first() {
   cur = this;
   ind = is;
@@ -52,10 +63,11 @@ void RangeIterator::first() {
 }
 
 void RangeIterator::next() {
+  if(isDone())
+    return;
   ind++;
   if(ind > curend) {
     // End of this range
-    
     cur = cur->n;
     if(cur != 0) {
       // Another range
@@ -91,6 +103,8 @@ RangeIterator& RangeIterator::operator=(const RangeIterator &r) {
   ie     = r.ie;
   n      = r.n;
   cur    = r.cur;
+  if(cur == &r)
+    cur = this;
   curend = r.curend;
   
   return *this;
@@ -148,4 +162,5 @@ RangeIterator& RangeIterator::operator-=(const RangeIterator &r) {
     }
     it = it->n;
   }while(it != 0);
+  return *this;
 }
