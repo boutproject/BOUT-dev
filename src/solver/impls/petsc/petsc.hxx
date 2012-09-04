@@ -59,12 +59,26 @@ typedef int (*rhsfunc)(BoutReal);
 
 extern BoutReal simtime;
 extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
+extern PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
+
+extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
+
+typedef struct snes_info {
+  PetscInt it;
+  PetscInt linear_its;
+  PetscReal time;
+  PetscReal norm;
+} snes_info;
 
 class PetscSolver : public Solver {
  public:
   PetscSolver();
   ~PetscSolver();
+
+  // Can be called from physics initialisation to supply callbacks
+  void setPrecon(PhysicsPrecon f) {prefunc = f;}
+  void setJacobian(Jacobian j) {jacfunc = j; }
 
   int setup(int argc, char **argv);
 
@@ -73,11 +87,23 @@ class PetscSolver : public Solver {
   int run(MonitorFunc f);
 
   // These functions used internally (but need to be public)
+
   PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);
+  PetscErrorCode pre(PC pc, Vec x, Vec y);
+  PetscErrorCode jac(Vec x, Vec y);
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
+  friend PetscErrorCode PetscSNESMonitor(SNES,PetscInt,PetscReal,void *ctx);
+  friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 
   PetscLogEvent solver_event, loop_event, init_event;
  private:
+  PhysicsPrecon prefunc; // Preconditioner
+  Jacobian jacfunc; // Jacobian - vector function
+
+  BoutReal shift;   // Shift (alpha) parameter from TS
+  Vec state;
+  BoutReal ts_time;
+
   PetscLib lib; // Handles initialising, finalising PETSc
   
   Vec           u;
@@ -89,9 +115,17 @@ class PetscSolver : public Solver {
   BoutReal tstep; // Time between outputs
   MonitorFunc monitor; // Monitor function to call regularly
 
+  bool diagnose;
+
   BoutReal next_output;  // When the monitor should be called next
 
   PetscBool interpolate; // Whether to interpolate or not
+
+  char output_name[PETSC_MAX_PATH_LEN];
+  PetscBool output_flag;
+  PetscInt prev_linear_its;
+  BoutReal bout_snes_time;
+  vector<snes_info> snes_list;
 };
 
 
