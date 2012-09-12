@@ -24,13 +24,12 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
   timestep = dt; // Won't be used this time, but next
 }
 
-int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep) {
-#ifdef CHECK
+int RK4Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
+
   int msg_point = msg_stack.push("Initialising RK4 solver");
-#endif
   
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
   
   output << "\n\tRunge-Kutta 4th-order solver\n";
@@ -72,17 +71,13 @@ int RK4Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout,
   OPTION(options, start_timestep, -1.); // Starting timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }
 
 int RK4Solver::run(MonitorFunc monitor) {
-#ifdef CHECK
   int msg_point = msg_stack.push("RK4Solver::run()");
-#endif
   
   timestep = out_timestep;
   if((max_timestep > 0.) && (timestep > max_timestep))
@@ -160,7 +155,7 @@ int RK4Solver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(simtime, s, nsteps)) {
+    if(monitor(this, simtime, s, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file
@@ -174,9 +169,7 @@ int RK4Solver::run(MonitorFunc monitor) {
     rhs_ncalls = 0;
   }
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
   
   return 0;
 }

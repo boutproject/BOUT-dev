@@ -40,6 +40,8 @@
 
 #include "bout_types.hxx"
 
+#include "bout/solver.hxx"
+
 // Parallel derivative (central differencing)
 const Field2D Grad_par(const Field2D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);
 const Field2D Grad_par(const Field2D &var, DIFF_METHOD method, CELL_LOC outloc=CELL_DEFAULT);
@@ -119,9 +121,9 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
 // Poisson bracket methods
 enum BRACKET_METHOD {BRACKET_STD=0, BRACKET_SIMPLE=1, BRACKET_ARAKAWA=2, BRACKET_CTU=3};
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD);
-const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD);
-const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD);
-const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD);
+const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, Solver *solver = NULL);
+const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, Solver *solver = NULL);
+const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, Solver *solver = NULL);
+const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, Solver *solver = NULL);
 
 #endif /* __DIFOPS_H__ */

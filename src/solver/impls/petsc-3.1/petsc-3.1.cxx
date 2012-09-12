@@ -70,7 +70,7 @@ int Petsc31Solver::setup(int argc, char **argv) {
  * Initialise
  **************************************************************************/
 
-int Petsc31Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
+int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
 {
   PetscErrorCode  ierr;
   int             neq;
@@ -89,7 +89,7 @@ int Petsc31Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
 #endif
 
   /// Call the generic initialisation first
-  Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
+  Solver::init(f, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc solver\n");
 

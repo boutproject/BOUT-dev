@@ -23,8 +23,8 @@
  *
  *******************************************************************************/
 
-#ifndef __GRID_H__
-#define __GRID_H__
+#ifndef __GRIDDATA_H__
+#define __GRIDDATA_H__
 
 #include "field2d.hxx"
 #include "vector2d.hxx"
@@ -44,7 +44,7 @@ class GridDataSource {
  public:
   virtual ~GridDataSource() { }
   
-  virtual bool hasVar(const char *name) = 0; ///< Test if source can supply a variable
+  virtual bool hasVar(const string &name) = 0; ///< Test if source can supply a variable
   
   virtual vector<int> getSize(const char *name) = 0; ///< Get size of the variable
 
@@ -81,7 +81,7 @@ class GridFile : public GridDataSource {
   
   void setFile(DataFormat *format, const char *gridfilename);
   
-  virtual bool hasVar(const char *name);
+  virtual bool hasVar(const string &name);
   
   virtual vector<int> getSize(const char *name);
 
@@ -102,4 +102,22 @@ class GridFile : public GridDataSource {
   bool isOpen;
 };
 
-#endif // __GRID_H__
+class GridDataGroup : GridDataSource {
+public:
+  GridDataGroup() {}
+  GridDataGroup(GridDataSource *a, GridDataSource *b = NULL, GridDataSource *c = NULL, GridDataSource *d = NULL) {
+    add(a); add(b); add(c); add(d);
+  }
+  
+  /// Add a data source
+  void add(GridDataSource &source) {add(&source);}
+  void add(GridDataSource *source);
+  
+private:
+  std::list<GridDataSource*> source_list; ///< List of sources
+  
+  GridDataSource *findSource(const char *name);
+  GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
+};
+
+#endif // __GRIDDATA_H__

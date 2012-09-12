@@ -47,12 +47,12 @@ class SurfaceIter;
 #include "datafile.hxx"
 #include "options.hxx"
 
-#include "grid.hxx"  // For griddatasource 
-
 #include "fieldgroup.hxx"
 
 #include "boundary_region.hxx"
 #include "sys/range.hxx" // RangeIterator
+
+#include <bout/griddata.hxx>
 
 #include <list>
 
@@ -99,18 +99,17 @@ private:
 
 class Mesh {
  public:
-  virtual ~Mesh() { };
-
-  static Mesh* create(Options *opt = NULL); ///< Create a Mesh object
-
-  /// Add a data source
-  int addSource(GridDataSource &source);
-  int addSource(GridDataSource *source);
-  const std::list<GridDataSource*> getSources() const {return source_list;}
-
-  virtual int load() = 0; ///< Load from sources
-  int load(GridDataSource &source); ///< Load from specified source
   
+  Mesh(GridDataSource *s);
+  virtual ~Mesh() { };
+  
+  static Mesh* create(GridDataSource *source, Options *opt = NULL); ///< Create a Mesh object
+  static Mesh* create(Options *opt = NULL);
+  
+  // Currently need to create and load mesh in separate calls. Will be removed
+  virtual int load() {}
+  virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
+
   // Get routines to request data from mesh file
   virtual int get(int &ival, const char *name); ///< Get an integer
   virtual int get(BoutReal &rval, const char *name); ///< Get a BoutReal number
@@ -195,8 +194,6 @@ class Mesh {
   
   virtual BoutReal GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
-
-  virtual void outputVars(Datafile &file) = 0; ///< Add mesh vars to file
   
   //////////////////////////////////////////////////////////
   
@@ -260,10 +257,7 @@ class Mesh {
   
  protected:
   
-  std::list<GridDataSource*> source_list; ///< List of sources
-  
-  GridDataSource *findSource(const char *name);
-  GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
+  GridDataSource *source; ///< Source for grid data
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);

@@ -14,8 +14,7 @@
 
 SolverFactory* SolverFactory::instance = NULL;
 
-SolverFactory* SolverFactory::getInstance()
-{
+SolverFactory* SolverFactory::getInstance() {
   if(instance == NULL) {
     // Create the singleton object
     instance = new SolverFactory();
@@ -39,25 +38,26 @@ inline SolverType SolverFactory::getDefaultSolverType() {
   return type;
 }
 
-Solver* SolverFactory::createSolver() {
+Solver* SolverFactory::createSolver(Options *options) {
   SolverType type = getDefaultSolverType();
 
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
+  if(options == NULL) 
+    options = Options::getRoot()->getSection("solver");
+  
   string solver_option;
-/*  options.get("solver_type", solver_option, type);
-  string solver_option;*/
   options->get("type", solver_option, "");
 
   if(!solver_option.empty()) type = solver_option.c_str();
 
-  return createSolver(type);
+  return createSolver(type, options);
 }
 
-Solver* SolverFactory::createSolver(SolverType &type)
-{
+Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("solver");
+  
   if(!strcasecmp(type, SOLVERPVODE)) {
-    return new PvodeSolver;
+    return new PvodeSolver(options);
   } else if(!strcasecmp(type, SOLVERCVODE)) {
     return new CvodeSolver;
   } else if(!strcasecmp(type, SOLVERIDA)) {

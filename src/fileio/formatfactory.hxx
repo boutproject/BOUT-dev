@@ -20,8 +20,5 @@ private:
   int matchString(const char *str, int n, const char **match);
 };
 
-// For backwards compatability
-DataFormat* data_format(const char *filename = NULL);
-
 #endif // __FORMATFACTORY_H__
 

@@ -76,8 +76,7 @@ int Petsc32Solver::setup(int argc, char **argv) {
  * Initialise
  **************************************************************************/
 
-int Petsc32Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP)
-{
+int Petsc32Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -87,12 +86,10 @@ int Petsc32Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-#ifdef CHECK
   int msg_point = msg_stack.push("Initialising PETSc 3.2 solver");
-#endif
   
   /// Call the generic initialisation first
-  Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
+  Solver::init(f, restarting, NOUT, TIMESTEP);
 
   output.write("Initialising PETSc 3.2 solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
@@ -653,7 +650,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx)
     s->load_vars((BoutReal *)x);
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    if (s->monitor(simtime,i++,s->nout)) {
+    if (s->monitor(s, simtime,i++,s->nout)) {
       s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");

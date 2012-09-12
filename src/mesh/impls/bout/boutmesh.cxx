@@ -48,7 +48,7 @@
 
 //#define COMMDEBUG 1
 
-BoutMesh::BoutMesh(Options *options) {
+BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
 }
@@ -122,8 +122,7 @@ int BoutMesh::load() {
 		 MY, NYPE);
     return 1;
   }
-
-
+  
   /// Get mesh options
   int MZ;
   OPTION(options, MZ,           65);
@@ -313,16 +312,15 @@ int BoutMesh::load() {
 
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-  GridDataSource* s = findSource("ShiftAngle");
-  if(s) {
-    s->open("ShiftAngle");
-    s->setGlobalOrigin(XGLOBAL(0));
-    if(!s->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
+  if(source->hasVar("ShiftAngle")) {
+    source->open("ShiftAngle");
+    source->setGlobalOrigin(XGLOBAL(0));
+    if(!source->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
       for(int i=0;i<ngx;i++)
         ShiftAngle[i] = 0.0;
     }
-    s->close();
+    source->close();
   }else {
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
 
@@ -760,17 +758,12 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   if(name == NULL)
     return 1;
   
-#ifdef CHECK
   int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
-#endif
   
-  GridDataSource *s = findSource(name);
-  if(s == NULL) {
+  if(!source->hasVar(name)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
-#ifdef CHECK
     msg_stack.pop(msg_pos);
-#endif
     return 2;
   }
   
@@ -782,25 +775,25 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   data = var.getData(); // Get a pointer to the data
   
   // Send an open signal to the source
-  s->open(name);
+  source->open(name);
   
   // Get the size of the variable
-  vector<int> size = s->getSize(name);
+  vector<int> size = source->getSize(name);
   switch(size.size()) {
   case 1: {
     // 0 or 1 dimension
     if(size[0] != 1) {
       output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
-      s->close();
+      source->close();
 #ifdef CHECK
       msg_stack.pop(msg_pos);
 #endif
       return 1;
     }
     BoutReal val;
-    if(!s->fetch(&val, name)) {
+    if(!source->fetch(&val, name)) {
       output.write("Couldn't read 0D variable '%s'\n", name);
-      s->close();
+      source->close();
 #ifdef CHECK
       msg_stack.pop(msg_pos);
 #endif
@@ -810,7 +803,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     var = val;
     
     // Close source
-    s->close();
+    source->close();
 #ifdef CHECK
     msg_stack.pop(msg_pos);
 #endif
@@ -820,7 +813,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     if((size[0] != nx) || (size[1] != ny)) {
       output.write("Error: Variable '%s' has dimensions [%d,%d]. Expecting [%d,%d]\n",
                    name, size[0], size[1], nx, ny);
-      s->close();
+      source->close();
 #ifdef CHECK
       msg_stack.pop(msg_pos);
 #endif
@@ -831,7 +824,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   default: {
     output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
                  name, size.size());
-    s->close();
+    source->close();
 #ifdef CHECK
     msg_stack.pop(msg_pos);
 #endif
@@ -841,7 +834,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   
   // Read in data for bulk of points
   
-  if(readgrid_2dvar(s, name,
+  if(readgrid_2dvar(source, name,
 		    YGLOBAL(MYG), // Start reading at global index for y=MYG
 		    MYG,          // Insert data starting from y=MYG
 		    MYSUB,        // Length of data is MYSUB
@@ -861,7 +854,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
     // Inner data exists and has a destination 
     
-    if(readgrid_2dvar(s, name,
+    if(readgrid_2dvar(source, name,
 		      (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
 		      MYSUB+MYG,            // the same as the upper guard cell
 		      MYG,                  // Only one y point
@@ -883,7 +876,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   
   if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
     
-    if(readgrid_2dvar(s, name,
+    if(readgrid_2dvar(source, name,
 		      (UDATA_OUTDEST / NXPE)*MYSUB,
 		      MYSUB+MYG,
 		      MYG,
@@ -906,7 +899,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
     //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
 
-    if(readgrid_2dvar(s, name,
+    if(readgrid_2dvar(source, name,
 		      ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
 		      0,  // belongs in the lower guard cell
 		      MYG,  // just one y point
@@ -926,7 +919,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
   }
   if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
 
-    if(readgrid_2dvar(s, name,
+    if(readgrid_2dvar(source, name,
 		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
 		      0,
 		      MYG,
@@ -971,7 +964,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
 #endif
    
   // Close source
-  s->close();
+  source->close();
   
 #ifdef CHECK
   // Check that the data is ok
@@ -1006,8 +999,7 @@ int BoutMesh::get(Field3D &var, const char *name) {
   msg_stack.push("Loading 3D field: BoutMesh::get(Field3D, %s)", name);
 #endif
   
-  GridDataSource *s = findSource(name);
-  if(s == NULL) {
+  if(!source->hasVar(name)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
     var = 0.0;
 #ifdef CHECK
@@ -1024,10 +1016,10 @@ int BoutMesh::get(Field3D &var, const char *name) {
   data = var.getData(); // Get a pointer to the data
 
   // Send open signal to data source
-  s->open(name);
+  source->open(name);
 
   // Read in data for bulk of points
-  if(readgrid_3dvar(s, name,
+  if(readgrid_3dvar(source, name,
 		    YGLOBAL(MYG), // Start reading at global index for y=MYG
 		    MYG,          // Insert data starting from y=MYG
 		    MYSUB,        // Length of data is MYSUB
@@ -1047,7 +1039,7 @@ int BoutMesh::get(Field3D &var, const char *name) {
   if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
     // Inner data exists and has a destination 
     
-    if(readgrid_3dvar(s, name,
+    if(readgrid_3dvar(source, name,
 		      (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
 		      MYSUB+MYG,            // the same as the upper guard cell
 		      MYG,                  // Only one y point
@@ -1069,7 +1061,7 @@ int BoutMesh::get(Field3D &var, const char *name) {
   
   if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
     
-    if(readgrid_3dvar(s, name,
+    if(readgrid_3dvar(source, name,
 		      (UDATA_OUTDEST / NXPE)*MYSUB,
 		      MYSUB+MYG,
 		      MYG,
@@ -1092,7 +1084,7 @@ int BoutMesh::get(Field3D &var, const char *name) {
   if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
     //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
 
-    if(readgrid_3dvar(s, name,
+    if(readgrid_3dvar(source, name,
 		      ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
 		      0,  // belongs in the lower guard cell
 		      MYG,  // just one y point
@@ -1112,7 +1104,7 @@ int BoutMesh::get(Field3D &var, const char *name) {
    }
   if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
 
-    if(readgrid_3dvar(s, name,
+    if(readgrid_3dvar(source, name,
 		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
 		      0,
 		      MYG,
@@ -2109,8 +2101,7 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
 /// Reads in a portion of the X-Y domain
 int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name, 
 	                     int yread, int ydest, int ysize, 
-                             int xge, int xlt, BoutReal ***var)
-{
+                             int xge, int xlt, BoutReal ***var) {
   /// Check the arguments make sense
   if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
     return 1;
@@ -2208,8 +2199,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 }
 
 /// Copies a section of a 3D variable
-void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var)
-{
+void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var) {
   int i, k;
   for(i=xge;i!=xlt;i++)
     for(k=0;k<ngz;k++)
@@ -2225,8 +2215,7 @@ void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var
 */
 int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname, 
                              int yread, int ydest, int ysize, 
-                             int xge, int xlt, BoutReal **var)
-{
+                             int xge, int xlt, BoutReal **var) {
   for(int i=xge;i!=xlt;i++) { // go through all the x indices 
     // Set the indices to read in this x position 
     s->setGlobalOrigin(XGLOBAL(i), yread);
@@ -2240,8 +2229,7 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
   return 0;
 }
 
-void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var)
-{
+void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var) {
   int i;
   for(i=xge;i!=xlt;i++)
     var[i][yto] = var[i][yfrom];
@@ -2724,4 +2712,24 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(NYPE,  "NYPE",  0);
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
+  
+  file.add(dx,    "dx",    0);
+  file.add(dy,    "dy",    0);
+  file.add(dz,    "dz",    0);
+  
+  file.add(g11,   "g11",   0);
+  file.add(g22,   "g22",   0);
+  file.add(g33,   "g33",   0);
+  file.add(g12,   "g12",   0);
+  file.add(g13,   "g13",   0);
+  file.add(g23,   "g23",   0);
+  
+  file.add(g_11,  "g_11",  0);
+  file.add(g_22,  "g_22",  0);
+  file.add(g_33,  "g_33",  0);
+  file.add(g_12,  "g_12",  0);
+  file.add(g_13,  "g_13",  0);
+  file.add(g_23,  "g_23",  0);
+  
+  file.add(J,     "J",     0);
 }

@@ -19,6 +19,8 @@ public:
   static double getTime(const std::string &label);
   static double resetTime(const std::string &label);
   
+  static void cleanup(); ///< Frees memory
+  
 private:
   /// Structure to contain timing information
   struct timer_info {

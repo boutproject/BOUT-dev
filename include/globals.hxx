@@ -34,7 +34,6 @@
 #include "options.hxx"
 
 #include "datafile.hxx"
-#include "grid.hxx"
 #include "bout/mesh.hxx"
 
 #include "boutcomm.hxx"

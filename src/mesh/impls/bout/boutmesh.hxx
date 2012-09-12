@@ -15,7 +15,7 @@ using std::vector;
 
 class BoutMesh : public Mesh {
  public:
-  BoutMesh(Options *options = NULL);
+  BoutMesh(GridDataSource *s, Options *options = NULL);
   ~BoutMesh();
   
   /// Read in the mesh from data sources

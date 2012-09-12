@@ -29,6 +29,8 @@
  *
  **************************************************************************/
 
+class Solver;
+
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
@@ -64,22 +66,19 @@ typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
 typedef int (*Jacobian)(BoutReal t);
 
 /// Solution monitor, called each timestep
-typedef int (*MonitorFunc)(BoutReal simtime, int iter, int NOUT);
+typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
 
 class Solver {
  public:
-  Solver();
+  Solver(Options *opts = NULL);
   virtual ~Solver() { }
-  
-  /// Some solvers (PETSc) need the command-line
-  virtual int setup(int argc, char **argv) {return 0;}
   
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
-  virtual void add(Field2D &v, Field2D &F_v, const char* name);
-  virtual void add(Field3D &v, Field3D &F_v, const char* name);
-  virtual void add(Vector2D &v, Vector2D &F_v, const char* name);
-  virtual void add(Vector3D &v, Vector3D &F_v, const char* name);
+  virtual void add(Field2D &v, const char* name);
+  virtual void add(Field3D &v, const char* name);
+  virtual void add(Vector2D &v, const char* name);
+  virtual void add(Vector3D &v, const char* name);
   
   virtual bool constraints() {return has_constraints; } ///< Returns true if constraints available
 
@@ -106,13 +105,10 @@ class Solver {
   /// Initialise the solver, passing the RHS function
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
-  virtual int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+  virtual int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
   /// Run the solver, calling MonitorFunc nout times, at intervals of tstep
   virtual int run(MonitorFunc f) = 0;
-  
-  /// Clean-up code. Some solvers (PETSc) need things to be cleaned up early
-  //virtual int free() {}; 
   
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
@@ -123,9 +119,18 @@ class Solver {
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
-  static Solver* Create();
-  static Solver* Create(SolverType &type);
+  static Solver* create(Options *opts = NULL);
+  static Solver* create(SolverType &type, Options *opts = NULL);
+  
+  static void setArgs(int c, char **v) { argc = c; argv = v;}
 protected:
+
+  // Command-line arguments
+  static int argc;
+  static char** argv;
+
+  // Settings to use during initialisation (set by constructor)
+  Options *options;
 
   int NPES, MYPE; ///< Number of processors and this processor's index
   

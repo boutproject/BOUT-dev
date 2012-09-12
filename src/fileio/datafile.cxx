@@ -44,7 +44,7 @@
 
 #include "formatfactory.hxx"
 
-Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), low_prec(false), openclose(true), enabled(true), file(NULL) {
+Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), file(NULL) {
   if(opt == NULL)
     return; // To allow static initialisation
   
@@ -53,13 +53,13 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), l
   OPTION(opt, parallel, false); // By default no parallel formats for now
   OPTION(opt, flush, true);     // Safer. Disable explicitly if required
   OPTION(opt, guards, true);    // Compatible with old behavior
-  OPTION(opt, low_prec, false); // High precision by default
+  OPTION(opt, floats, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
-                                            low_prec(other.low_prec), openclose(other.openclose), 
+                                            floats(other.floats), openclose(other.openclose), 
                                             enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -71,7 +71,7 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   parallel     = rhs.parallel;
   flush        = rhs.flush;
   guards       = rhs.guards;
-  low_prec     = rhs.low_prec;
+  floats     = rhs.floats;
   openclose    = rhs.openclose;
   enabled      = rhs.enabled;
   file         = NULL; // All values copied except this
@@ -181,7 +181,7 @@ void Datafile::close() {
 void Datafile::setLowPrecision() {
   if(!enabled)
     return;
-  low_prec = true;
+  floats = true;
   file->setLowPrecision();
 }
 
@@ -390,6 +390,9 @@ bool Datafile::write() {
   
   if(!file->is_valid())
     return false;
+
+  if(floats)
+    file->setLowPrecision();
   
   Timer timer("io");
   
@@ -495,6 +498,21 @@ bool Datafile::write(const char *format, ...) const {
   tmp.close();
   
   return ret;
+}
+
+bool Datafile::writeVar(const int &i, const char *name) {
+  // Should do this a better way...
+  int *i2 = new int;
+  *i2 = i;
+  add(*i2, name);
+  return true;
+}
+
+bool Datafile::writeVar(const BoutReal &r, const char *name) {
+  BoutReal *r2 = new BoutReal;
+  *r2 = r;
+  add(*r2, name);
+  return true;
 }
 
 /////////////////////////////////////////////////////////////

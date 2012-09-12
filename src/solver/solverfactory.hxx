@@ -15,8 +15,8 @@ class SolverFactory {
   
   SolverType getDefaultSolverType();
   
-  Solver* createSolver();
-  Solver* createSolver(SolverType &);
+  Solver* createSolver(Options *opts = NULL);
+  Solver* createSolver(SolverType &, Options *opts = NULL);
   
  private:
   SolverFactory() {} // Prevent instantiation of this class

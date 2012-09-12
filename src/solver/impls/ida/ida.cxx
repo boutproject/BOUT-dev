@@ -78,15 +78,12 @@ IdaSolver::~IdaSolver()
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
+ int IdaSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
 
-#ifdef CHECK
   int msg_point = msg_stack.push("Initialising IDA solver");
-#endif
 
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -242,7 +239,7 @@ int IdaSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(simtime, i, NOUT)) {
+    if(monitor(this, simtime, i, NOUT)) {
       // User signalled to quit
       
       // Write restart to a different file

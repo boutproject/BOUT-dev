@@ -61,7 +61,7 @@ class IdaSolver : public Solver {
 
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep);
+  int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
   int run(MonitorFunc f);
   BoutReal run(BoutReal tout);

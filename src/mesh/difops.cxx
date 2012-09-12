@@ -1001,8 +1001,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
  * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
  *******************************************************************************/
 
-const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method)
-{
+const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, Solver *solver) {
   Field2D result;
   if( (method == BRACKET_SIMPLE) || (method == BRACKET_ARAKAWA)) {
     // Use a subset of terms for comparison to BOUT-06
@@ -1014,13 +1013,15 @@ const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method)
   return result;
 }
 
-const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
-{
+const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, Solver *solver) {
   Field3D result;
   switch(method) {
   case BRACKET_CTU: {
     // First order Corner Transport Upwind method
     // P.Collela JCP 87, 171-200 (1990)
+    
+    if(!solver)
+      throw BoutException("CTU method requires access to the solver");
     
     // Get current timestep
     BoutReal dt = solver->getCurrentTimestep();
@@ -1116,8 +1117,7 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method)
   return result;
 }
 
-const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method)
-{
+const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, Solver *solver) {
   Field3D result;
   switch(method) {
   case BRACKET_CTU:
@@ -1135,14 +1135,16 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method)
   return result;
 }
 
-const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method)
-{
+const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, Solver *solver) {
   Field3D result;
   switch(method) {
   case BRACKET_CTU: {
     // First order Corner Transport Upwind method
     // P.Collela JCP 87, 171-200 (1990)
     
+    if(!solver)
+      throw BoutException("CTU method requires access to the solver");
+
     // Get current timestep
     BoutReal dt = solver->getCurrentTimestep();
 

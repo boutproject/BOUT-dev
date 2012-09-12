@@ -27,7 +27,6 @@
 
 const char DEFAULT_DIR[] = "data";
 const char DEFAULT_OPT[] = "BOUT.inp";
-static char DEFAULT_GRID[] = "data/bout.grd.nc";
 
 // MD5 Checksum passed at compile-time
 #define CHECKSUM1_(x) #x
@@ -45,14 +44,11 @@ static char DEFAULT_GRID[] = "data/bout.grd.nc";
 
 #include <bout.hxx>
 #include <datafile.hxx>
-#include <grid.hxx>
 #include <bout/solver.hxx>
-#include <derivs.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
+#include <derivs.hxx>
 #include <msg_stack.hxx>
-
-#include "fileio/formatfactory.hxx"
 
 #include <boundary_factory.hxx>
 #include <boundary_standard.hxx>
@@ -86,24 +82,15 @@ int iteration;
 const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
 
-int bout_monitor(BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
+int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
 
+void BoutInitialise(int argc, char **argv) {
 
-int bout_init(int argc, char **argv) {
-  int i, NOUT;
-  BoutReal TIMESTEP;
-  string grid_name;
-  bool dump_float; // Output dump files as floats
-
-  string grid_ext, dump_ext; ///< Extensions for restart and dump files
+  string dump_ext; ///< Extensions for restart and dump files
 
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
-
-#ifdef CHECK
-  int msg_point; ///< Used to return the message stack to a fixed point
-#endif
-
+  
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
@@ -115,12 +102,12 @@ int bout_init(int argc, char **argv) {
 
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
-  for (i=1;i<argc;i++) {
+  for (int i=1;i<argc;i++) {
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
         fprintf(stderr, "Useage is %s -d <data directory>\n", argv[0]);
-        return 1;
+        return;
       }
       i++;
       data_dir = argv[i];
@@ -129,15 +116,20 @@ int bout_init(int argc, char **argv) {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Useage is %s -f <options filename>\n", argv[0]);
-        return 1;
+        return;
       }
       i++;
       opt_file = argv[i];
     }
   }
   
-  // Set the command-line arguments for PETSc (if needed)
-  PetscLib::setArgs(argc, argv);
+  // Set options
+  Options::getRoot()->set("datadir", string(data_dir));
+  Options::getRoot()->set("optionfile", string(opt_file));
+
+  // Set the command-line arguments
+  PetscLib::setArgs(argc, argv); // PETSc initialisation
+  Solver::setArgs(argc, argv);   // Solver initialisation
   
   // If no communicator is supplied, initialise MPI
   if (!BoutComm::getInstance()->isSet()) MPI_Init(&argc,&argv);
@@ -219,7 +211,7 @@ int bout_init(int argc, char **argv) {
   Options *options = Options::getRoot();
 
   try {
-      /// Load settings file
+    /// Load settings file
     OptionsReader *reader = OptionsReader::getInstance();
     reader->read(options, "%s/%s", data_dir, opt_file);
 
@@ -228,29 +220,15 @@ int bout_init(int argc, char **argv) {
   }catch(BoutException *e) {
     output << "Error encountered during initialisation\n";
     output << e->what() << endl;
-    return 1;
+    return;
   }
-  
-  /// Create the solver
-  solver = Solver::Create();
-  
-  /// Solver setup, check for command-line arguments
-  solver->setup(argc, argv);
 
   try {
     /////////////////////////////////////////////
     /// Get some settings
 
-    OPTION(options, NOUT, 1);
-    OPTION(options, TIMESTEP, 1.0);
-
-    options->get("grid", grid_name, DEFAULT_GRID);
-
-    OPTION(options, dump_float,   true);
-
     // Check if restarting
-    bool restart, append;
-    OPTION(options, restart, false);
+    bool append;
     OPTION(options, append, false);
 
     /// Get file extensions
@@ -259,25 +237,36 @@ int bout_init(int argc, char **argv) {
     /// Setup derivative methods
     if (derivs_init()) {
       output.write("Failed to initialise derivative methods. Aborting\n");
-      return 1;
+      return;
     }
 
     ////////////////////////////////////////////
 
-    /// Create the mesh
-    mesh = Mesh::create();
+    // Set up the "dump" data output file
+    output << "Setting up output (dump) file\n";
 
-    output.write("Setting grid format\n");
+    if(!options->getSection("output")->isSet("floats"))
+      options->getSection("output")->set("floats", true, "default"); // by default output floats
 
-    /// Load the grid
-    options->get("grid_format", grid_ext, "");
-    if (grid_ext.empty()) mesh->addSource(new GridFile(data_format(grid_name.c_str()), grid_name.c_str())); // Guess format based on grid filename
-    else mesh->addSource(new GridFile(data_format(grid_ext.c_str()), grid_name.c_str())); // User-specified format
-
-    if (mesh->load()) {
-      output << "Failed to read grid. Aborting\n";
-      return 1;
+    dump = Datafile(options->getSection("output"));
+    
+    /// Open a file for the output
+    if(append) {
+      dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
+    }else {
+      dump.openw("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
     }
+
+    /// Add book-keeping variables to the output files
+    dump.writeVar(BOUT_VERSION, "BOUT_VERSION");
+    dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
+    dump.add(iteration, "iteration", 0);
+
+    ///////////////////////////////////////////////
+    
+    mesh = Mesh::create();  ///< Create the mesh
+    mesh->load();           ///< Load from sources. Required for Field initialisation
+    mesh->outputVars(dump); ///< Save mesh configuration into output file
 
     /// Setup the boundaries
     BoundaryFactory* bndry = BoundaryFactory::getInstance();
@@ -289,76 +278,29 @@ int bout_init(int argc, char **argv) {
     bndry->add(new BoundaryConstLaplace(), "constlaplace");
     bndry->addMod(new BoundaryRelax(10.), "relax");
     
-    // Set up the "dump" data output file
-    output << "Setting up output (dump) file\n";
-    dump = Datafile(options->getSection("output"));
-    
-    /// Open a file for the output
-    if(append) {
-      dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
-    }else {
-      dump.openw("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
-    }
-    
-    if (dump_float) dump.setLowPrecision(); // Down-convert to floats
-
-    /// Add book-keeping variables to the output files
-
-    // This is a temporary hack to get around datafile's limitations (fix soon)
-    static BoutReal version = BOUT_VERSION;
-    dump.add(version, "BOUT_VERSION", 0);
-    dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
-    dump.add(iteration, "iteration", 0);
-
-    mesh->outputVars(dump);
-
-    output.write("Initialising physics module\n");
-    /// Initialise physics module
-#ifdef CHECK
-    msg_point = msg_stack.push("Initialising physics module");
-#endif
-
-    if (physics_init(restart)) {
-      output.write("Failed to initialise physics. Aborting\n");
-      delete mesh;
-      delete solver;
-      return 1;
-    }
-
-#ifdef CHECK
-    // Can't trust that the user won't leave messages on the stack
-    msg_stack.pop(msg_point);
-#endif
-
-    /// Initialise the solver
-    solver->setRestartDir(data_dir);
-    if (solver->init(physics_run, argc, argv, restart, NOUT, TIMESTEP)) {
-      output.write("Failed to initialise solver-> Aborting\n");
-      return 1;
-    }
-
-    if (!restart) {
-      /// Write initial state as time-point 0
-
-      // Run RHS once to ensure all variables set
-      if (physics_run(0.0)) {
-        output.write("Physics RHS call failed\n");
-        return 1;
-      }
-
-      dump.write();
-    }
-
-  }catch(BoutException *e) {
+  }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
-    return 1;
+    output << e.what() << endl;
   }
-
-  return 0;
 }
 
-int bout_run() {
+int bout_run(Solver *solver, rhsfunc physics_run) {
+  // Get options
+  Options *options = Options::getRoot();
+  
+  bool restart;
+  OPTION(options, restart, false);
+  int NOUT;
+  OPTION(options, NOUT, 1);
+  BoutReal TIMESTEP;
+  OPTION(options, TIMESTEP, 1.0);
+  
+  /// Initialise the solver
+  if (solver->init(physics_run, restart, NOUT, TIMESTEP)) {
+    output.write("Failed to initialise solver-> Aborting\n");
+    return 1;
+  }
+  
   /// Run the solver
   output.write("Running simulation\n\n");
   int status;
@@ -393,15 +335,7 @@ int bout_run() {
   return status;
 }
 
-int bout_finish() {
-  // Delete the solver
-  delete solver;
-
-  // Get and delete the mesh data sources
-  list<GridDataSource*> source = mesh->getSources();
-  for (list<GridDataSource*>::iterator it = source.begin(); it != source.end(); it++)
-    delete *it;
-
+int BoutFinalise() {
   // Delete the mesh
   delete mesh;
 
@@ -414,6 +348,9 @@ int bout_finish() {
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
   
+  // Cleanup timer
+  Timer::cleanup();
+
   // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
   // but might need to revisit if that isn't the case
   if (!BoutComm::getInstance()->isSet()) MPI_Finalize();
@@ -427,7 +364,7 @@ int bout_finish() {
  * Called each timestep by the solver
  **************************************************************************/
 
-int bout_monitor(BoutReal t, int iter, int NOUT) {
+int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   // Data used for timing
   static bool first_time = true;
   static BoutReal wall_limit, mpi_start_time; // Keep track of remaining wall time
@@ -509,43 +446,6 @@ int bout_monitor(BoutReal t, int iter, int NOUT) {
 #endif
 
   return 0;
-}
-
-/*!************************************************************************
- * Add variables to be solved
- **************************************************************************/
-
-// NOTE: Here bout_solve is for backwards-compatibility. Eventually will be removed
-
-void bout_solve(Field2D &var, const char *name) {
-  // Add to solver
-  solver->add(var, ddt(var), name);
-}
-
-void bout_solve(Field3D &var, const char *name) {
-  solver->add(var, ddt(var), name);
-}
-
-void bout_solve(Vector2D &var, const char *name) {
-  solver->add(var, ddt(var), name);
-  var.setBoundary(name);
-}
-
-void bout_solve(Vector3D &var, const char *name) {
-  solver->add(var, ddt(var), name);
-}
-
-/*!************************************************************************
- * Add constraints
- **************************************************************************/
-
-bool bout_constrain(Field3D &var, Field3D &F_var, const char *name) {
-  if (!solver->constraints()) return false; // Doesn't support constraints
-
-  // Add to solver
-  solver->constraint(var, F_var, name);
-
-  return true;
 }
 
 /**************************************************************************

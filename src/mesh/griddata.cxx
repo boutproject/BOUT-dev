@@ -1,5 +1,5 @@
 /*!
- * \file grid.cpp
+ * \file griddata.cxx
  * \brief Functions to read variables from a grid file
  *
  **************************************************************************
@@ -26,7 +26,6 @@
 
 #include "mpi.h"
 
-#include <globals.hxx>
 #include <utils.hxx>
 
 #include <dataformat.hxx> // Abstract data class
@@ -42,6 +41,10 @@
 
 #include <output.hxx>
 
+#include <bout/griddata.hxx>
+
+#include <msg_stack.hxx>
+
 /*******************************************************************************
  * GridFile class
  * 
@@ -51,28 +54,24 @@
  *******************************************************************************/
 
 /// Default constructor
-GridFile::GridFile()
-{
+GridFile::GridFile() {
   file = NULL; ///< Signal that the file is invalid
   isOpen = false;
 }
 
-GridFile::~GridFile()
-{
+GridFile::~GridFile() {
   if(file != NULL)
     delete file;
 }
 
 /// Constructor passing a file format and name
-GridFile::GridFile(DataFormat *format, const char *gridfilename)
-{
+GridFile::GridFile(DataFormat *format, const char *gridfilename) {
   file = NULL; ///< Signal that the file is invalid
   isOpen = false;
   setFile(format, gridfilename);
 }
 
-void GridFile::setFile(DataFormat *format, const char *gridfilename)
-{
+void GridFile::setFile(DataFormat *format, const char *gridfilename) {
   if(file != NULL)
     delete file;
   file = format;
@@ -80,21 +79,19 @@ void GridFile::setFile(DataFormat *format, const char *gridfilename)
   isOpen = false;
 }
 
-bool GridFile::hasVar(const char *name)
-{
+bool GridFile::hasVar(const string &name) {
   if(file == NULL)
     return false;
 
   /// Try to get the size of the variable
-  vector<int> s = getSize(name);
+  vector<int> s = getSize(name.c_str());
   
   /// Test if the variable has zero size
   return s.size() != 0;
 }
 
 /// Return the size of variable
-vector<int> GridFile::getSize(const char *name)
-{
+vector<int> GridFile::getSize(const char *name) {
   vector<int> s;
   
   if(file == NULL)
@@ -121,8 +118,7 @@ bool GridFile::setGlobalOrigin(int x, int y, int z) {
   return file->setGlobalOrigin(x,y,z);
 }
 
-bool GridFile::fetch(int *var, const char *name, int lx, int ly, int lz)
-{
+bool GridFile::fetch(int *var, const char *name, int lx, int ly, int lz) {
   if(file == NULL)
     return false;
   if(!file->is_valid())
@@ -131,8 +127,7 @@ bool GridFile::fetch(int *var, const char *name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-bool GridFile::fetch(int *var, const string &name, int lx, int ly, int lz)
-{
+bool GridFile::fetch(int *var, const string &name, int lx, int ly, int lz) {
   if(file == NULL)
     return false;
   if(!file->is_valid())
@@ -141,8 +136,7 @@ bool GridFile::fetch(int *var, const string &name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-bool GridFile::fetch(BoutReal *var, const char *name, int lx, int ly, int lz)
-{
+bool GridFile::fetch(BoutReal *var, const char *name, int lx, int ly, int lz) {
   if(file == NULL)
     return false;
   if(!file->is_valid())
@@ -151,8 +145,7 @@ bool GridFile::fetch(BoutReal *var, const char *name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-bool GridFile::fetch(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool GridFile::fetch(BoutReal *var, const string &name, int lx, int ly, int lz) {
   if(file == NULL)
     return false;
   if(!file->is_valid())
@@ -161,8 +154,7 @@ bool GridFile::fetch(BoutReal *var, const string &name, int lx, int ly, int lz)
   return file->read(var, name, lx, ly, lz);
 }
 
-void GridFile::open(const char *name)
-{
+void GridFile::open(const char *name) {
   file->openr(filename);
   if(!file->is_valid()) {
     output << "\tERROR: Could not open file " << filename << endl;
@@ -170,8 +162,38 @@ void GridFile::open(const char *name)
   isOpen = true;
 }
 
-void GridFile::close()
-{
+void GridFile::close() {
   file->close();
   isOpen = false;
+}
+
+
+/*******************************************************************************
+ * GridDataGroup class
+ * 
+ * 
+ *******************************************************************************/
+
+void GridDataGroup::add(GridDataSource *source) {
+  if(source == NULL)
+    return;
+  
+  source_list.push_front(source);
+}
+
+GridDataSource* GridDataGroup::findSource(const char *name) {
+
+  int msg_point = msg_stack.push("Finding source");
+  for(std::list<GridDataSource*>::iterator it = source_list.begin(); 
+      it != source_list.end(); it++) {
+    
+    // Query this source
+    if((*it) != NULL)
+      if((*it)->hasVar(name)) {
+	msg_stack.pop(msg_point);
+	return *it;
+      }
+  }
+  msg_stack.pop(msg_point);
+  return NULL;
 }

@@ -14,7 +14,7 @@
  */
 class QuiltMesh : public Mesh {
  public:
-  QuiltMesh(Options *opt);
+  QuiltMesh(GridDataSource *s, Options *opt);
   ~QuiltMesh();
   
   int load();

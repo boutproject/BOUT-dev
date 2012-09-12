@@ -11,8 +11,17 @@
 
 #include <output.hxx>
 
+Mesh* Mesh::create(GridDataSource *s, Options *opt) {
+  return MeshFactory::getInstance()->createMesh(s, opt);
+}
+
 Mesh* Mesh::create(Options *opt) {
-  return MeshFactory::getInstance()->createMesh(opt);
+  return create(NULL, opt);
+}
+
+Mesh::Mesh(GridDataSource *s) : source(s) {
+  if(s == NULL)
+    throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
 }
 
 /**************************************************************************
@@ -21,25 +30,18 @@ Mesh* Mesh::create(Options *opt) {
 
 /// Get an integer
 int Mesh::get(int &ival, const char *name) {
-#ifdef CHECK
   int msg_pos = msg_stack.push("Loading integer: Mesh::get(int, %s)", name);
-#endif
 
-  GridDataSource* s = findSource(name);
-  if(s == NULL) {
-#ifdef CHECK
+  if(!source->hasVar(name)) {
     msg_stack.pop(msg_pos);
-#endif
     return 1;
   }
   
-  s->open(name);
-  bool success = s->fetch(&ival, name);
-  s->close();
+  source->open(name);
+  bool success = source->fetch(&ival, name);
+  source->close();
   
-#ifdef CHECK
   msg_stack.pop(msg_pos);
-#endif
 
   if(!success) {
     return 2;
@@ -49,13 +51,12 @@ int Mesh::get(int &ival, const char *name) {
 
 /// A BoutReal number
 int Mesh::get(BoutReal &rval, const char *name) {
-  GridDataSource* s = findSource(name);
-  if(s == NULL)
+  if(!source->hasVar(name))
     return 1;
   
-  s->open(name);
-  bool success = s->fetch(&rval, name);
-  s->close();
+  source->open(name);
+  bool success = source->fetch(&rval, name);
+  source->close();
   
   if(!success)
     return 2;
@@ -63,75 +64,19 @@ int Mesh::get(BoutReal &rval, const char *name) {
 }
 
 /**************************************************************************
- * Data sources
- **************************************************************************/
-
-int Mesh::addSource(GridDataSource &source)
-{
-  return addSource(&source);
-}
-
-int Mesh::addSource(GridDataSource *source)
-{
-  source_list.push_front(source);
-  return 0;
-}
-
-int Mesh::load(GridDataSource &source)
-{
-  std::list<GridDataSource*> old_list;
-  
-  old_list = source_list;
-  source_list.clear();
-  
-  if(addSource(source))
-    return 1;
-  
-  return load();
-}
-
-GridDataSource* Mesh::findSource(const char *name)
-{
-#ifdef CHECK
-  int msg_point = msg_stack.push("Finding source");
-#endif
-  for(std::list<GridDataSource*>::iterator it = source_list.begin(); 
-      it != source_list.end(); it++) {
-    
-    // Query this source
-    if((*it) != NULL)
-      if((*it)->hasVar(name)) {
-#ifdef CHECK
-	msg_stack.pop(msg_point);
-#endif
-	return *it;
-      }
-  }
-#ifdef CHECK
-  msg_stack.pop(msg_point);
-#endif
-  return NULL;
-}
-
-/**************************************************************************
  * Data get routines
  **************************************************************************/
 
-int Mesh::get(Vector2D &var, const char *name)
-{
+int Mesh::get(Vector2D &var, const char *name) {
   return get(var, string(name));
 }
 
-int Mesh::get(Vector3D &var, const char *name)
-{
+int Mesh::get(Vector3D &var, const char *name) {
   return get(var, string(name));
 }
 
-int Mesh::get(Vector2D &var, const string &name)
-{
-#ifdef CHECK
+int Mesh::get(Vector2D &var, const string &name) {
   msg_stack.push("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
-#endif
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -148,18 +93,13 @@ int Mesh::get(Vector2D &var, const string &name)
     get(var.z, name+"z");
   }
   
-#ifdef CHECK
   msg_stack.pop();
-#endif  
 
   return 0;
 }
 
-int Mesh::get(Vector3D &var, const string &name)
-{
-#ifdef CHECK
+int Mesh::get(Vector3D &var, const string &name) {
   msg_stack.push("Loading 3D vector: Mesh::get(Vector3D, %s)", name.c_str());
-#endif
 
   if(var.covariant) {
     output << "\tReading covariant vector " << name << endl;
@@ -176,9 +116,7 @@ int Mesh::get(Vector3D &var, const string &name)
     get(var.z, name+"z");
   }
   
-#ifdef CHECK
   msg_stack.pop();
-#endif  
 
   return 0;
 }
@@ -584,18 +522,16 @@ int Mesh::jacobian() {
 const vector<int> Mesh::readInts(const string &name, int n) {
   vector<int> result;
   
-  // First get a data source
-  GridDataSource* s = findSource(name);
-  if(s) {
-    s->open(name);
-    s->setGlobalOrigin();
+  if(source->hasVar(name)) {
+    source->open(name);
+    source->setGlobalOrigin();
     result.resize(n);
-    if(!s->fetch(&(result.front()), name, n)) {
+    if(!source->fetch(&(result.front()), name, n)) {
       // Error reading
-      s->close();
+      source->close();
       throw BoutException("Could not read integer array '%s'\n", name.c_str());
     }
-    s->close();
+    source->close();
   }else {
     // Not found
     throw BoutException("Missing integer array %s\n", name.c_str());

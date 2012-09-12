@@ -34,11 +34,19 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
+// Static member variables
+
+int Solver::argc = 0;
+char** Solver::argv = 0;
+
 /**************************************************************************
  * Constructor
  **************************************************************************/
 
-Solver::Solver() {
+Solver::Solver(Options *opts) : options(opts) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("solver");
+
   // Set flags to defaults
   has_constraints = false;
   initialised = false;
@@ -47,7 +55,13 @@ Solver::Solver() {
   rhs_ncalls = 0;
 
   // Restart directory
-  restartdir = string("data");
+  if(options->isSet("restartdir")) {
+    // Solver-specific restart directory
+    options->get("restartdir", restartdir, "data");
+  }else {
+    // Use the root data directory
+    Options::getRoot()->get("datadir", restartdir, "data");
+  }
   
   // Split operator
   split_operator = false;
@@ -58,17 +72,14 @@ Solver::Solver() {
  * Add fields
  **************************************************************************/
 
-void Solver::add(Field2D &v, Field2D &F_v, const char* name) {
-#ifdef CHECK
+void Solver::add(Field2D &v, const char* name) {
   int msg_point = msg_stack.push("Adding 2D field: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
-#endif
 
-  if(initialised) {
-    bout_error("Error: Cannot add to solver after initialisation\n");
-  }
+  if(initialised)
+    throw BoutException("Error: Cannot add to solver after initialisation\n");
   
   // Set boundary conditions
   v.setBoundary(name);
@@ -77,7 +88,7 @@ void Solver::add(Field2D &v, Field2D &F_v, const char* name) {
   
   d.constraint = false;
   d.var = &v;
-  d.F_var = &F_v;
+  d.F_var = &ddt(v);
   d.name = string(name);
 
   f2d.push_back(d);
@@ -94,12 +105,10 @@ void Solver::add(Field2D &v, Field2D &F_v, const char* name) {
   initial_profile(name, v);
   v.applyBoundary();
 
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 }
 
-void Solver::add(Field3D &v, Field3D &F_v, const char* name) {
+void Solver::add(Field3D &v, const char* name) {
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Adding 3D field: Solver::add(%s)", name);
@@ -108,23 +117,22 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name) {
     throw BoutException("Variable '%s' already added to Solver", name);
 #endif
 
-  if(initialised) {
-    bout_error("Error: Cannot add to solver after initialisation\n");
-  }
+  if(initialised)
+    throw BoutException("Error: Cannot add to solver after initialisation\n");
 
   // Set boundary conditions
   v.setBoundary(name);
 
   if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
-    F_v.setLocation(v.getLocation()); // Make sure both at the same location
+    ddt(v).setLocation(v.getLocation()); // Make sure both at the same location
   }
 
   VarStr<Field3D> d;
   
   d.constraint = false;
   d.var = &v;
-  d.F_var = &F_v;
+  d.F_var = &ddt(v);
   d.location = v.getLocation();
   d.name = string(name);
   
@@ -143,18 +151,15 @@ void Solver::add(Field3D &v, Field3D &F_v, const char* name) {
 #endif
 }
 
-void Solver::add(Vector2D &v, Vector2D &F_v, const char* name) {
+void Solver::add(Vector2D &v, const char* name) {
 
-#ifdef CHECK
   int msg_point = msg_stack.push("Adding 2D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
-#endif
 
-  if(initialised) {
-    bout_error("Error: Cannot add to solver after initialisation\n");
-  }
+  if(initialised)
+    throw BoutException("Error: Cannot add to solver after initialisation\n");
 
   // Set boundary conditions
   v.setBoundary(name);
@@ -163,7 +168,7 @@ void Solver::add(Vector2D &v, Vector2D &F_v, const char* name) {
   
   d.constraint = false;
   d.var = &v;
-  d.F_var = &F_v;
+  d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = string(name);
 
@@ -174,35 +179,30 @@ void Solver::add(Vector2D &v, Vector2D &F_v, const char* name) {
   
   /// Add suffix, depending on co- /contravariance
   if(v.covariant) {
-    add(v.x, F_v.x, (d.name+"_x").c_str());
-    add(v.y, F_v.y, (d.name+"_y").c_str());
-    add(v.z, F_v.z, (d.name+"_z").c_str());
+    add(v.x, (d.name+"_x").c_str());
+    add(v.y, (d.name+"_y").c_str());
+    add(v.z, (d.name+"_z").c_str());
   }else {
-    add(v.x, F_v.x, (d.name+"x").c_str());
-    add(v.y, F_v.y, (d.name+"y").c_str());
-    add(v.z, F_v.z, (d.name+"z").c_str());
+    add(v.x, (d.name+"x").c_str());
+    add(v.y, (d.name+"y").c_str());
+    add(v.z, (d.name+"z").c_str());
   }
   
   /// Make sure initial profile obeys boundary conditions
   v.applyBoundary();
 
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 }
 
-void Solver::add(Vector3D &v, Vector3D &F_v, const char* name) {
+void Solver::add(Vector3D &v, const char* name) {
 
-#ifdef CHECK
   int msg_point = msg_stack.push("Adding 3D vector: Solver::add(%s)", name);
   
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Solver", name);
-#endif
 
-  if(initialised) {
-    bout_error("Error: Cannot add to solver after initialisation\n");
-  }
+  if(initialised)
+    throw BoutException("Error: Cannot add to solver after initialisation\n");
   
   // Set boundary conditions
   v.setBoundary(name);
@@ -211,7 +211,7 @@ void Solver::add(Vector3D &v, Vector3D &F_v, const char* name) {
   
   d.constraint = false;
   d.var = &v;
-  d.F_var = &F_v;
+  d.F_var = &ddt(v);
   d.covariant = v.covariant;
   d.name = string(name);
   
@@ -219,20 +219,18 @@ void Solver::add(Vector3D &v, Vector3D &F_v, const char* name) {
 
   // Add suffix, depending on co- /contravariance
   if(v.covariant) {
-    add(v.x, F_v.x, (d.name+"_x").c_str());
-    add(v.y, F_v.y, (d.name+"_y").c_str());
-    add(v.z, F_v.z, (d.name+"_z").c_str());
+    add(v.x, (d.name+"_x").c_str());
+    add(v.y, (d.name+"_y").c_str());
+    add(v.z, (d.name+"_z").c_str());
   }else {
-    add(v.x, F_v.x, (d.name+"x").c_str());
-    add(v.y, F_v.y, (d.name+"y").c_str());
-    add(v.z, F_v.z, (d.name+"z").c_str());
+    add(v.x, (d.name+"x").c_str());
+    add(v.y, (d.name+"y").c_str());
+    add(v.z, (d.name+"z").c_str());
   }
 
   v.applyBoundary();
 
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 }
 
 /**************************************************************************
@@ -396,24 +394,20 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep) {
+int Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   
 #ifdef CHECK
   int msg_point = msg_stack.push("Solver::init()");
 #endif
 
   if(initialised)
-    bout_error("ERROR: Solver is already initialised\n");
+    throw BoutException("ERROR: Solver is already initialised\n");
 
   phys_run = f;
 
   output.write("Initialising solver\n");
-  
-  /// GET GLOBAL OPTIONS
-  Options *options = Options::getRoot();
 
   options->get("archive", archive_restart, -1);
-/*    archive_restart = -1; // Not archiving restart files*/
 
   if(archive_restart > 0) {
     output.write("Archiving restart files every %d iterations\n",
@@ -530,8 +524,7 @@ int Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, Bo
   return 0;
 }
 
-void Solver::setRestartDir(const string &dir)
-{
+void Solver::setRestartDir(const string &dir) {
   restartdir = dir;
 }
 
@@ -576,8 +569,12 @@ int Solver::getLocalN() {
   return local_N;
 }
 
-Solver* Solver::Create() {  
-  return SolverFactory::getInstance()->createSolver();
+Solver* Solver::create(Options *opts) {  
+  return SolverFactory::getInstance()->createSolver(opts);
+}
+
+Solver* Solver::create(SolverType &type, Options *opts) {  
+  return SolverFactory::getInstance()->createSolver(type, opts);
 }
 
 /**************************************************************************
@@ -585,8 +582,7 @@ Solver* Solver::Create() {
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op)
-{
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op) {
   BoutReal **d2d, ***d3d;
   int i;
   int jz;

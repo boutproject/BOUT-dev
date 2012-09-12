@@ -18,7 +18,7 @@ using std::accumulate;
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-QuiltMesh::QuiltMesh(Options *opt) : options(opt) {
+QuiltMesh::QuiltMesh(GridDataSource *s, Options *opt) : Mesh(s), options(opt) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
 }
@@ -221,8 +221,7 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
 #endif
   
-  GridDataSource *s = findSource(name);
-  if(s == NULL) {
+  if(!source->hasVar(name)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
     var = def;
 #ifdef CHECK
@@ -236,25 +235,25 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   BoutReal **data = var.getData(); // pointer for faster access
   
   // Send an open signal to the source
-  s->open(name);
+  source->open(name);
   
   // Get the size of the variable
-  vector<int> size = s->getSize(name);
+  vector<int> size = source->getSize(name);
   switch(size.size()) {
   case 1: {
     // 0 or 1 dimension
     if(size[0] != 1) {
       output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
-      s->close();
+      source->close();
 #ifdef CHECK
       msg_stack.pop(msg_pos);
 #endif
       return 1;
     }
     BoutReal val;
-    if(!s->fetch(&val, name)) {
+    if(!source->fetch(&val, name)) {
       output.write("Couldn't read 0D variable '%s'\n", name);
-      s->close();
+      source->close();
 #ifdef CHECK
       msg_stack.pop(msg_pos);
 #endif
@@ -262,7 +261,7 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
     }
     var = val;
     // Close source
-    s->close();
+    source->close();
 #ifdef CHECK
     msg_stack.pop(msg_pos);
 #endif
@@ -275,7 +274,7 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   default: {
     output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
                  name, size.size());
-    s->close();
+    source->close();
 #ifdef CHECK
     msg_stack.pop(msg_pos);
 #endif
@@ -284,14 +283,14 @@ int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
   }
   
   // Read bulk of points
-  read2Dvar(s, name, 
+  read2Dvar(source, name, 
             mydomain->xOrigin(), mydomain->yOrigin(),  // Coordinates in grid file
             xstart, ystart,                            // Coordinates in this processor
             mydomain->xSize(), mydomain->ySize(),      // Number of points to read
             data);
   
   // Close the data source
-  s->close();
+  source->close();
   
   // Communicate to get guard cell data
   Mesh::communicate(var);

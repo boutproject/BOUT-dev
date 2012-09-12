@@ -60,14 +60,16 @@ class Datafile {
   bool write(); ///< Write added variables
 
   bool write(const char *filename, ...) const; ///< Opens, writes, closes file
-
   
+  // Write a variable to the file now
+  bool writeVar(const int &i, const char *name);
+  bool writeVar(const BoutReal &r, const char *name);
   
  private:
   bool parallel; // Use parallel formats?
   bool flush;    // Flush after every write?
   bool guards;   // Write guard cells?
-  bool low_prec; // Low precision?
+  bool floats;   // Low precision?
   bool openclose; // Open and close file for each write
   bool enabled;  // Enable / Disable writing
 

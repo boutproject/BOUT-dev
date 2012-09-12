@@ -56,16 +56,14 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp);
 
-CvodeSolver::CvodeSolver() : Solver()
-{
+CvodeSolver::CvodeSolver() : Solver() {
   has_constraints = false; ///< This solver doesn't have constraints
 
   prefunc = NULL;
   jacfunc = NULL;
 }
 
-CvodeSolver::~CvodeSolver()
-{
+CvodeSolver::~CvodeSolver() {
 
 }
 
@@ -73,14 +71,11 @@ CvodeSolver::~CvodeSolver()
  * Initialise
  **************************************************************************/
 
-int CvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
-#ifdef CHECK
+int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising CVODE solver");
-#endif
 
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
 
   // Save nout and tstep for use in run
@@ -278,7 +273,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
 
     /// Call the monitor function
 
-    if(monitor(simtime, i, NOUT)) {
+    if(monitor(this, simtime, i, NOUT)) {
       // User signalled to quit
 
       // Write restart to a different file

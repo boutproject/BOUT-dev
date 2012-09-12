@@ -6,13 +6,14 @@ class MeshFactory;
 
 #include <bout/mesh.hxx>
 #include <uncopyable.hxx>
+#include <bout/griddata.hxx>
 
 class MeshFactory : private Uncopyable {
  public:
   /// Return a pointer to the only instance
   static MeshFactory* getInstance();
   
-  Mesh* createMesh(Options *options = NULL);
+  Mesh* createMesh(GridDataSource *source, Options *options = NULL);
   
 private:
   MeshFactory() {} // Prevent instantiation of this class

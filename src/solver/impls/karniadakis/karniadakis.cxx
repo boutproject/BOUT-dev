@@ -41,24 +41,19 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-KarniadakisSolver::KarniadakisSolver() : Solver()
-{
+KarniadakisSolver::KarniadakisSolver() : Solver() {
   
 }
 
-KarniadakisSolver::~KarniadakisSolver()
-{
+KarniadakisSolver::~KarniadakisSolver() {
   
 }
 
-int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
-#ifdef CHECK
+int KarniadakisSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising Karniadakis solver");
-#endif
   
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
   
   output << "\n\tKarniadakis solver\n";
@@ -111,18 +106,13 @@ int KarniadakisSolver::init(rhsfunc f, int argc, char **argv, bool restarting, i
 
   timestep = tstep / ((float) nsubsteps);
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }
 
-int KarniadakisSolver::run(MonitorFunc monitor)
-{
-#ifdef CHECK
+int KarniadakisSolver::run(MonitorFunc monitor) {
   int msg_point = msg_stack.push("KarniadakisSolver::run()");
-#endif
   
   for(int i=0;i<nsteps;i++) {
     // Run through a fixed number of steps
@@ -159,7 +149,7 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     
     /// Call the monitor function
     
-    if(monitor(simtime, i, nsteps)) {
+    if(monitor(this, simtime, i, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file
@@ -172,15 +162,12 @@ int KarniadakisSolver::run(MonitorFunc monitor)
     rhs_ncalls = 0;
   }
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
   
   return 0;
 }
 
-void KarniadakisSolver::take_step(BoutReal dt)
-{
+void KarniadakisSolver::take_step(BoutReal dt) {
   // S0 = S(f0)
   
   load_vars(f0);

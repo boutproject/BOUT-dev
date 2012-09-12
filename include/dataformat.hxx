@@ -88,4 +88,7 @@ class DataFormat {
   virtual void setLowPrecision() { }  // By default doesn't do anything
 };
 
+// For backwards compatability. In formatfactory.cxx
+DataFormat* data_format(const char *filename = NULL);
+
 #endif // __DATAFORMAT_H__

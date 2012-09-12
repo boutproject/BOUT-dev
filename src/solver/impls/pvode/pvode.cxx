@@ -30,6 +30,7 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 #include <bout/sys/timer.hxx>
+#include <boutexception.hxx>
 
 using namespace pvode;
 
@@ -45,8 +46,7 @@ static PVBBDData pdata;
 long int iopt[OPT_SIZE];
 BoutReal ropt[OPT_SIZE];
 
-PvodeSolver::PvodeSolver() : Solver()
-{
+PvodeSolver::PvodeSolver(Options *options) : Solver() {
   gfunc = (rhsfunc) NULL;
 
   has_constraints = false; ///< This solver doesn't have constraints
@@ -68,8 +68,7 @@ PvodeSolver::~PvodeSolver()
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep)
-{
+int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
@@ -80,12 +79,10 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   int n2d = n2Dvars(); // Number of 2D variables
   int n3d = n3Dvars(); // Number of 3D variables
 
-#ifdef CHECK
   int msg_point = msg_stack.push("Initialising PVODE solver");
-#endif
 
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -104,7 +101,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
-    bout_error("\tERROR: MPI_Allreduce failed!\n");
+    throw BoutException("\tERROR: MPI_Allreduce failed!\n");
   }
   
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
@@ -114,7 +111,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, &argc, &argv);
 
   if (machEnv == NULL) {
-    bout_error("\tError: PVecInitMPI failed\n");
+    throw BoutException("\tError: PVecInitMPI failed\n");
   }
 
   // Allocate memory, and set problem data, initial values, tolerances
@@ -143,7 +140,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
                      solver_gloc, solver_cfn, (void*) this);
   
   if (pdata == NULL) {
-    bout_error("\tError: PVBBDAlloc failed.\n");
+    throw BoutException("\tError: PVBBDAlloc failed.\n");
   }
 
   ////////// SAVE DATA TO CVODE ///////////
@@ -151,7 +148,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   // Set pointer to data array in vector u.
   BoutReal *udata = N_VDATA(u);
   if(save_vars(udata)) {
-    bout_error("\tError: Initial variable value not set\n");
+    throw BoutException("\tError: Initial variable value not set\n");
   }
   
   /* Call CVodeMalloc to initialize CVODE: 
@@ -179,7 +176,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
                           &abstol, this, NULL, optIn, iopt, ropt, machEnv);
 
   if(cvode_mem == NULL) {
-    bout_error("\tError: CVodeMalloc failed.\n");
+    throw BoutException("\tError: CVodeMalloc failed.\n");
   }
   
   /* Call CVSpgmr to specify the CVODE linear solver CVSPGMR with
@@ -196,10 +193,7 @@ int PvodeSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
 
   /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
   
-  
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
   
   return(0);
 }
@@ -242,7 +236,7 @@ int PvodeSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(simtime, i, NOUT)) {
+    if(monitor(this, simtime, i, NOUT)) {
       // User signalled to quit
       
       // Write restart to a different file

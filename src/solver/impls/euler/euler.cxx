@@ -25,13 +25,11 @@ void EulerSolver::setMaxTimestep(BoutReal dt) {
   timestep_reduced = true;
 }
 
-int EulerSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nout, BoutReal tstep) {
-#ifdef CHECK
+int EulerSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising Euler solver");
-#endif
   
   /// Call the generic initialisation first
-  if(Solver::init(f, argc, argv, restarting, nout, tstep))
+  if(Solver::init(f, restarting, nout, tstep))
     return 1;
   
   output << "\n\tEuler solver\n";
@@ -65,17 +63,13 @@ int EulerSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int nou
   // Put starting values into f0
   save_vars(f0);
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
 
   return 0;
 }
 
 int EulerSolver::run(MonitorFunc monitor) {
-#ifdef CHECK
   int msg_point = msg_stack.push("EulerSolver::run()");
-#endif
   
   timestep = start_timestep;
   
@@ -140,7 +134,7 @@ int EulerSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(simtime, s, nsteps)) {
+    if(monitor(this, simtime, s, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file
@@ -154,9 +148,7 @@ int EulerSolver::run(MonitorFunc monitor) {
     rhs_ncalls = 0;
   }
   
-#ifdef CHECK
   msg_stack.pop(msg_point);
-#endif
   
   return 0;
 }
