@@ -64,6 +64,8 @@ public:
   /// Get a pointer to the only root instance
   static Options* getRoot();
 
+  static void cleanup();
+
   // Setting options
   void set(const string &key, const int &val, const string &source="");
   void set(const string &key, const BoutReal &val, const string &source="");

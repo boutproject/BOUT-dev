@@ -41,12 +41,20 @@ BoutReal *rvresize(BoutReal *v, int newsize) {
   return (BoutReal*) realloc(v, sizeof(BoutReal)*newsize);
 }
 
+void rvfree(BoutReal *r) {
+  free(r);
+}
+
 int *ivector(int size) {
   return (int*) malloc(sizeof(int)*size);
 }
 
 int *ivresize(int *v, int newsize) {
   return (int*) realloc(v, sizeof(int)*newsize);
+}
+
+void ivfree(int *v) {
+  free(v);
 }
 
 BoutReal **rmatrix(int xsize, int ysize) {

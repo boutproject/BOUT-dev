@@ -42,6 +42,7 @@ class OptionsReader;
 class OptionsReader {
  public:
   static OptionsReader *getInstance();
+  static void cleanup() {delete instance; instance = NULL;}
   
   void read(Options *options, const char *file, ...);
   

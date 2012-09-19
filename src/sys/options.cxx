@@ -21,6 +21,13 @@ Options* Options::getRoot() {
   return root;
 }
 
+void Options::cleanup() {
+  if(root == NULL)
+    return;
+  delete root;
+  root = NULL;
+}
+
 void Options::set(const string &key, const int &val, const string &source) {
   stringstream ss;
   ss << val;

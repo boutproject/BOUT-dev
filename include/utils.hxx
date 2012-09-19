@@ -40,8 +40,12 @@ using std::swap;
 
 BoutReal *rvector(int size);
 BoutReal *rvresize(BoutReal *v, int newsize);
+void rvfree(BoutReal *r);
+
 int *ivector(int size);
 int *ivresize(int *v, int newsize);
+void ivfree(int *v);
+
 BoutReal **rmatrix(int xsize, int ysize);
 int **imatrix(int xsize, int ysize);
 

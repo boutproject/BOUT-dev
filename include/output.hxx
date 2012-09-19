@@ -90,6 +90,7 @@ class Output : private multioutbuf_init<char, std::char_traits<char> >,
   }
 
   static Output *getInstance(); ///< Return pointer to instance
+  static void cleanup();
  private:
   static Output *instance; ///< Default instance of this class
   

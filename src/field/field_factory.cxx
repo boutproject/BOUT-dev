@@ -216,7 +216,12 @@ FieldFactory::FieldFactory() {
 }
 
 FieldFactory::~FieldFactory() {
+  // Free memory
+  for(map<string, FieldGenerator*>::iterator it = gen.begin(); it != gen.end(); it++)
+    delete it->second;
   
+  for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
+    delete it->second.first;
 }
 
 const Field2D FieldFactory::create2D(const string &value) {

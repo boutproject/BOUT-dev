@@ -22,6 +22,19 @@ Mesh* Mesh::create(Options *opt) {
 Mesh::Mesh(GridDataSource *s) : source(s) {
   if(s == NULL)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
+  
+  ilen = 0; // For gaussj routine
+}
+
+Mesh::~Mesh() {
+  delete source;
+  
+  // Gaussj working arrays
+  if(ilen > 0) {
+    ivfree(indxc);
+    ivfree(indxr);
+    ivfree(ipiv);
+  }
 }
 
 /**************************************************************************
@@ -547,13 +560,12 @@ const vector<int> Mesh::readInts(const string &name, int n) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Mesh::gaussj(BoutReal **a, int n) {
-  static int *indxc, *indxr, *ipiv, len = 0;
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;
 
   // Make sure enough temporary memory is allocated
-  if(n > len) {
-    if(len == 0) {
+  if(n > ilen) {
+    if(ilen == 0) {
       indxc = ivector(n);
       indxr = ivector(n);
       ipiv = ivector(n);
@@ -562,7 +574,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
       indxr = ivresize(indxr, n);
       ipiv = ivresize(ipiv, n);
     }
-    len = n;
+    ilen = n;
   }
 
   for(i=0;i<n;i++)

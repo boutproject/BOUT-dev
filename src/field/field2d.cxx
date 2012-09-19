@@ -986,6 +986,15 @@ void Field2D::applyTDerivBoundary() {
     (*it)->apply_ddt(*this);
 }
 
+void Field2D::cleanup() {
+  for(list<BoutReal**>::iterator it = blocklist.begin(); it != blocklist.end(); it++)
+    free_rmatrix(*it);
+  blocklist.clear();
+  
+  if(nblocks > 0)
+    free(block);
+}
+
 ///////////////////// PRIVATE FUNCTIONS ////////////////////
 
 // GLOBAL VARS
@@ -993,6 +1002,7 @@ void Field2D::applyTDerivBoundary() {
 int Field2D::nblocks = 0;
 int Field2D::max_blocks = 0;
 BoutReal*** Field2D::block = (BoutReal***) NULL;
+list<BoutReal**> Field2D::blocklist;
 
 void Field2D::allocData() {
   if(data != (BoutReal**) NULL)
@@ -1009,7 +1019,8 @@ void Field2D::allocData() {
     if(mesh == NULL)
       throw BoutException("Assignment to Field2D before mesh is created");
     data = rmatrix(mesh->ngx, mesh->ngy);
-
+    
+    blocklist.push_back(data);
   }
 }
 

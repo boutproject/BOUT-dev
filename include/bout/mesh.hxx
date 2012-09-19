@@ -101,7 +101,7 @@ class Mesh {
  public:
   
   Mesh(GridDataSource *s);
-  virtual ~Mesh() { };
+  virtual ~Mesh();
   
   static Mesh* create(GridDataSource *source, Options *opt = NULL); ///< Create a Mesh object
   static Mesh* create(Options *opt = NULL);
@@ -267,6 +267,7 @@ class Mesh {
   
  private:
   int gaussj(BoutReal **a, int n);
+  int *indxc, *indxr, *ipiv, ilen;
 };
 
 /// Define for reading a variable from the grid

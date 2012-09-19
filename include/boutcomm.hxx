@@ -35,11 +35,16 @@ class BoutComm;
 /// Class to represent the 'global' communicator
 class BoutComm {
 public:
+  ~BoutComm();
   /// Get a pointer to the only instance
   static BoutComm* getInstance();
 
   /// Shortcut method
   static MPI_Comm get();
+
+  static void setArgs(int c, char**v);
+  
+  static void cleanup();
 
   // Setting options
   void setComm(MPI_Comm c);
@@ -49,11 +54,14 @@ public:
   bool isSet();
 
  private:
-  bool hasBeenSet;
   BoutComm();
+  
+  int argc; char **argv; ///< Command-line arguments
+  bool hasBeenSet;
+  MPI_Comm comm;
+  
   static BoutComm* instance; ///< The only instance of this class (Singleton)
 
-  MPI_Comm comm;
 };
 
 #endif // __BOUTCOMM_H__

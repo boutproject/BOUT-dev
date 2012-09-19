@@ -130,12 +130,7 @@ void BoutInitialise(int argc, char **argv) {
   // Set the command-line arguments
   PetscLib::setArgs(argc, argv); // PETSc initialisation
   Solver::setArgs(argc, argv);   // Solver initialisation
-  
-  // If no communicator is supplied, initialise MPI
-  if (!BoutComm::getInstance()->isSet()) MPI_Init(&argc,&argv);
-
-  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
-  // but might need to revisit if that isn't the case
+  BoutComm::setArgs(argc, argv); // MPI initialisation
 
   int NPES, MYPE;
   MPI_Comm_size(BoutComm::get(), &NPES);
@@ -342,7 +337,8 @@ int BoutFinalise() {
   // Close the output file
   dump.close();
 
-  // Delete 3D field memory
+  // Delete field memory
+  Field2D::cleanup();
   Field3D::cleanup();
 
   // Cleanup boundary factory
@@ -351,9 +347,18 @@ int BoutFinalise() {
   // Cleanup timer
   Timer::cleanup();
 
-  // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
-  // but might need to revisit if that isn't the case
-  if (!BoutComm::getInstance()->isSet()) MPI_Finalize();
+  // Options tree
+  Options::cleanup();
+  OptionsReader::cleanup();
+
+  // Debugging message stack
+  msg_stack.clear();
+
+  // Logging output
+  Output::cleanup();
+  
+  // MPI communicator, including MPI_Finalize()
+  BoutComm::cleanup();
   
   return 0;
 }

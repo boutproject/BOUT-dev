@@ -101,6 +101,9 @@ void MsgStack::pop(int id) {
 }
 
 void MsgStack::clear() {
+  if(size > 0)
+    free(msg);
+  size = 0;
   nmsg = 0;
 }
 

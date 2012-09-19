@@ -35,6 +35,9 @@ class Field2D;
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
+#include <list>
+using std::list;
+
 /*!
  * \brief 2D X-Y scalar fields
  *
@@ -52,6 +55,8 @@ class Field2D : public Field, public FieldData {
 
   BoutReal **getData() const; // Remove this!
   
+  static void cleanup(); // Frees all memory
+
   /// Ensure data is allocated
   void allocate();
   bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
@@ -180,6 +185,8 @@ class Field2D : public Field, public FieldData {
   // Data stack: Blocks of memory for this class
   static int nblocks, max_blocks;
   static BoutReal ***block; // Pointer to blocks of memory
+
+  static list<BoutReal**> blocklist; ///< All blocks
 
   void allocData();
   void freeData();

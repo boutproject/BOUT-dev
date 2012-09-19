@@ -51,6 +51,11 @@
 BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
+  
+  comm_x = MPI_COMM_NULL;
+  comm_inner = MPI_COMM_NULL;
+  comm_middle = MPI_COMM_NULL;
+  comm_outer = MPI_COMM_NULL;
 }
 
 BoutMesh::~BoutMesh() {
@@ -60,6 +65,20 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for(vector<BoundaryRegion*>::iterator it = boundary.begin(); it != boundary.end(); it++)
     delete (*it);
+
+  delete[] ShiftAngle;
+  
+  
+  if(comm_x != MPI_COMM_NULL)
+    MPI_Comm_free(&comm_x);
+  if(comm_inner != MPI_COMM_NULL)
+    MPI_Comm_free(&comm_inner);
+  if(comm_middle != MPI_COMM_NULL)
+    MPI_Comm_free(&comm_middle);
+  
+  if(comm_outer != MPI_COMM_NULL)
+    MPI_Comm_free(&comm_outer);
+  
 }
 
 int BoutMesh::load() {
@@ -308,7 +327,7 @@ int BoutMesh::load() {
   }
   // Allocate some memory for twist-shift
 
-  ShiftAngle  = rvector(ngx);
+  ShiftAngle  = new BoutReal[ngx];
 
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
@@ -356,6 +375,12 @@ int BoutMesh::load() {
     
     if(MYPE_IN_CORE)
       MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
+    
+    // Free MPI handles
+    if(core_comm != MPI_COMM_NULL)
+      MPI_Comm_free(&core_comm);
+    MPI_Group_free(&grp);
+    MPI_Group_free(&groupw);
     
     msg_stack.pop();
   }
@@ -555,11 +580,15 @@ int BoutMesh::load() {
 	comm_inner = comm_tmp;
 	if(ixseps_lower == ixseps_outer) {
 	  // Between the separatrices is still in the PF region
-	  comm_middle = comm_inner;
+          MPI_Comm_dup(comm_inner, &comm_middle);
 	}else
-	  comm_middle = comm_outer;
+          MPI_Comm_dup(comm_outer, &comm_middle);
       }
       MPI_Group_free(&group);
+      if(group_tmp1 != MPI_GROUP_EMPTY)
+        MPI_Group_free(&group_tmp1);
+      if(group_tmp2 != MPI_GROUP_EMPTY)
+        MPI_Group_free(&group_tmp2);
       
       msg_stack.pop();
     }
@@ -583,12 +612,15 @@ int BoutMesh::load() {
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
 	if(ixseps_upper == ixseps_outer) {
-	  comm_middle = comm_inner;
+          MPI_Comm_dup(comm_inner, &comm_middle);
 	}else
-	  comm_middle = comm_outer;
+          MPI_Comm_dup(comm_outer, &comm_middle);
       }
       MPI_Group_free(&group);
-      
+      if(group_tmp1 != MPI_GROUP_EMPTY)
+        MPI_Group_free(&group_tmp1);
+      if(group_tmp2 != MPI_GROUP_EMPTY)
+        MPI_Group_free(&group_tmp2);
       msg_stack.pop();
     }
     
@@ -618,8 +650,15 @@ int BoutMesh::load() {
       comm_inner = comm_tmp;
       
       if(ixseps_inner == ixseps_outer)
-	comm_middle = comm_inner;
+        MPI_Comm_dup(comm_inner, &comm_middle);
     }
+    
+    if(group_tmp1 != MPI_GROUP_EMPTY)
+      MPI_Group_free(&group_tmp1);
+    if(group_tmp2 != MPI_GROUP_EMPTY)
+      MPI_Group_free(&group_tmp2);
+    MPI_Group_free(&group);
+    
     msg_stack.pop();
   }
   
@@ -642,6 +681,12 @@ int BoutMesh::load() {
 	MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
+        
+        if(group_tmp1 != MPI_GROUP_EMPTY)
+          MPI_Group_free(&group_tmp1);
+        if(group_tmp2 != MPI_GROUP_EMPTY)
+          MPI_Group_free(&group_tmp2);
+        MPI_Group_free(&group);
       }
       msg_stack.pop();
     }else {
@@ -659,10 +704,17 @@ int BoutMesh::load() {
 	MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
 	if(comm_tmp != MPI_COMM_NULL)
 	  comm_middle = comm_tmp;
+        
+        if(group_tmp1 != MPI_GROUP_EMPTY)
+          MPI_Group_free(&group_tmp1);
+        if(group_tmp2 != MPI_GROUP_EMPTY)
+          MPI_Group_free(&group_tmp2);
+        MPI_Group_free(&group);
       }
       msg_stack.pop();
     }
   }
+  MPI_Group_free(&group_world);
   // Now have communicators for all regions.
 
   //////////////////////////////////////////////////////

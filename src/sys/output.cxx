@@ -109,3 +109,11 @@ Output* Output::getInstance() {
   }
   return instance;
 }
+
+void Output::cleanup() {
+  if(instance == NULL)
+    return;
+  
+  delete instance;
+  instance = NULL;
+}
