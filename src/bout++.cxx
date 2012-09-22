@@ -275,7 +275,7 @@ void BoutInitialise(int argc, char **argv) {
     
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
-    output << e.what() << endl;
+    throw e;
   }
 }
 

@@ -14,8 +14,6 @@ MeshFactory *MeshFactory::instance = NULL;
 #define MESH_BOUT  "bout"
 #define MESH_QUILT "quilt"
 
-static char DEFAULT_GRID[] = "data/bout.grd.nc";
-
 MeshFactory* MeshFactory::getInstance() {
   if(instance == NULL) {
     // Create the singleton object
@@ -29,24 +27,32 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
     options = Options::getRoot()->getSection("mesh");
   
   if(source == NULL) {
-    output.write("\nGetting grid data source from options\n");
-    
     string grid_name;
     if(options->isSet("file")) {
       // Specified mesh file
-      options->get("file", grid_name, DEFAULT_GRID);
-    }else {
+      options->get("file", grid_name, "");
+      output << "\nGetting grid data from file " << grid_name << endl; 
+
+      /// Create a grid file, using specified format if given
+      string grid_ext;
+      options->get("format", grid_ext, "");
+      
+      /// Create a grid file
+      source = (GridDataSource*) new GridFile(data_format( (grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str() ), 
+                                              grid_name.c_str());
+    }else if(Options::getRoot()->isSet("grid")){
       // Get the global option
-      Options::getRoot()->get("grid", grid_name, DEFAULT_GRID);
+      Options::getRoot()->get("grid", grid_name, "");
+      output << "\nGetting grid data from file " << grid_name << endl; 
+      string grid_ext;
+      Options::getRoot()->get("format", grid_ext, "");
+      
+      source = (GridDataSource*) new GridFile(data_format( (grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str() ), 
+                                              grid_name.c_str());
+    }else {
+      output << "\nGetting grid data from options\n"; 
+      source = (GridDataSource*) new GridFromOptions(options);
     }
-    
-    /// Create a grid file, using specified format if given
-    string grid_ext;
-    options->get("format", grid_ext, "");
-    
-    // Create a grid file
-    source = (GridDataSource*) new GridFile(data_format( (grid_ext.empty()) ? grid_name.c_str() : grid_ext.c_str() ), 
-                                            grid_name.c_str());
   }
   
   // Get the type of mesh

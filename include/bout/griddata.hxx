@@ -29,6 +29,8 @@
 #include "field2d.hxx"
 #include "vector2d.hxx"
 
+#include "options.hxx"
+
 #include "dataformat.hxx"
 #include "bout_types.hxx"
 
@@ -92,14 +94,34 @@ class GridFile : public GridDataSource {
   virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
   virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
   virtual bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  
-  virtual void open(const char *name = NULL);
-  virtual void close();
+
+  void open(const char* file);
+  void close();
  private:
   DataFormat *file;
   string filename;
   
   bool isOpen;
+};
+
+class GridFromOptions : GridDataSource {
+public:
+  GridFromOptions(Options *opt = NULL); 
+  
+  bool hasVar(const string &name);
+  
+  vector<int> getSize(const char *name); ///< Get size of the variable
+
+  /// Set the (x,y,z) origin for all subsequent calls
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {}
+  
+  /// Get data from the source
+  bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+private:
+  Options *options;
 };
 
 class GridDataGroup : GridDataSource {

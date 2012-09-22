@@ -98,10 +98,10 @@ int BoutMesh::load() {
   // Grid sizes
   
   if(Mesh::get(nx, "nx"))
-    return 1;
+    throw BoutException("Mesh must contain nx");
   
   if(Mesh::get(ny, "ny"))
-    return 1;
+    throw BoutException("Mesh must contain ny");
   
   output << "\tGrid size: " << nx << " by " << ny << endl;
 
@@ -137,9 +137,8 @@ int BoutMesh::load() {
   MY = ny;
   MYSUB = MY / NYPE;
   if((MY % NYPE) != 0) {
-    output.write("\tERROR: Cannot split %d Y points equally between %d processors\n",
-		 MY, NYPE);
-    return 1;
+    throw BoutException("\tERROR: Cannot split %d Y points equally between %d processors\n",
+                        MY, NYPE);
   }
   
   /// Get mesh options
@@ -150,8 +149,7 @@ int BoutMesh::load() {
       MZ++;
       output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
     }else {
-      output.write("Error: Number of toroidal points must be 2^n + 1");
-      return 1;
+      throw BoutException("Error: Number of toroidal points must be 2^n + 1");
     }
   }
   OPTION(options, non_uniform,  false);
@@ -407,11 +405,11 @@ int BoutMesh::load() {
 
   /// Calculate contravariant metric components
   if(calcCovariant())
-    return 1;
+    throw BoutException("Error in calcCovariant call");
 
   /// Calculate Jacobian and Bxy
   if(jacobian())
-    return 1;
+    throw BoutException("Error in jacobian call");
   
   // Attempt to read J from the grid file
   Field2D Jcalc = J;
@@ -720,8 +718,7 @@ int BoutMesh::load() {
   //////////////////////////////////////////////////////
   /// Calculate Christoffel symbols. Needs communication
   if(geometry()) {
-    output << "  Differential geometry failed\n";
-    return 1;
+    throw BoutException("Differential geometry failed\n");
   }
 
   if(periodicX) {

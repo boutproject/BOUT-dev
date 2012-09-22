@@ -8,11 +8,23 @@ TIMESTEP = 1e-1   # time between outputs
 
 MZ = 1
 
-grid = "test_wave.grd.nc"
-
 dump_format = "nc" # Set extension for dump files (nc = NetCDF)
 
 NXPE = 1
+
+##################################################
+# Mesh settings
+[mesh]
+#file = "test_wave.grd.nc"  # If set, read from file
+
+nx = 5    # Minimum 5. Includes 2 boundary cells each side
+ny = 64
+
+dx = 1.0
+dy = 0.015625
+
+ixseps1 = 5
+ixseps2 = 5
 
 ##################################################
 # derivative methods

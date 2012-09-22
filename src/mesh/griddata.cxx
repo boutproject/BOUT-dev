@@ -167,6 +167,67 @@ void GridFile::close() {
   isOpen = false;
 }
 
+/*******************************************************************************
+ * GridFromOptions class
+ * 
+ * 
+ *******************************************************************************/
+
+GridFromOptions::GridFromOptions(Options *opt) : options(opt) {
+  if(options == NULL)
+    options = Options::getRoot()->getSection("mesh");
+}
+
+bool GridFromOptions::hasVar(const string &name) {
+  return options->isSet(name);
+}
+
+vector<int> GridFromOptions::getSize(const char *name) {
+  vector<int> v(1);
+  v[0] = 1;
+  return v;
+}
+
+bool GridFromOptions::fetch(int *var, const char *name, int lx, int ly, int lz) {
+  // Get the value from options. Could improve to use FieldGenerator?
+  int value;
+  options->get(name, value, 0);
+  if(lx < 1)
+    lx = 1;
+  if(ly < 1)
+    ly = 1;
+  if(lz < 1)
+    lz = 1;
+  for(int i=0;i<lx*ly*lz;i++)
+    var[i] = value;
+  
+  return true;
+}
+
+bool GridFromOptions::fetch(int *var, const string &name, int lx, int ly, int lz) {
+  return fetch(var, name.c_str(), lx, ly, lz);
+}
+
+bool GridFromOptions::fetch(BoutReal *var, const char *name, int lx, int ly, int lz) {
+  BoutReal value;
+  options->get(name, value, 0);
+  
+  if(lx < 1)
+    lx = 1;
+  if(ly < 1)
+    ly = 1;
+  if(lz < 1)
+    lz = 1;
+  
+  for(int i=0;i<lx*ly*lz;i++)
+    var[i] = value;
+  
+  return true;
+}
+
+bool GridFromOptions::fetch(BoutReal *var, const string &name, int lx, int ly, int lz) {
+  return fetch(var, name.c_str(), lx, ly, lz);
+}
 
 /*******************************************************************************
  * GridDataGroup class
