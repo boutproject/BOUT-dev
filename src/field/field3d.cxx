@@ -2150,8 +2150,7 @@ memblock3d* Field3D::blocklist = NULL;
 memblock3d* Field3D::free_block = NULL;
 
 /// Get a new block of data, either from free list or allocate
-memblock3d *Field3D::newBlock() const
-{
+memblock3d *Field3D::newBlock() const {
   memblock3d *nb;
   #pragma omp critical
   {
@@ -2186,7 +2185,7 @@ memblock3d *Field3D::newBlock() const
     BoutReal val = 1./0.; // Deliberately non-finite number
     
     // X boundaries
-    for(int i=0;i<2;i++)
+    for(int i=0;i<mesh->xstart;i++)
       for(int j=0;j<mesh->ngy;j++)
         for(int k=0;k<mesh->ngz;k++) {
           nb->data[i][j][k] = val;
@@ -2194,7 +2193,7 @@ memblock3d *Field3D::newBlock() const
         }
     // Y boundaries
     for(int i=0;i<mesh->ngx;i++)
-      for(int j=0;j<2;j++)
+      for(int j=0;j<mesh->ystart;j++)
         for(int k=0;k<mesh->ngz;k++) {
           nb->data[i][j][k] = val;
           nb->data[i][mesh->ngy-j-1][k] = val;
@@ -2207,8 +2206,7 @@ memblock3d *Field3D::newBlock() const
 
 
 /// Makes sure data is allocated and only referenced by this object
-void Field3D::allocData() const
-{
+void Field3D::allocData() const {
   #pragma omp critical (alloc)
   {
   /// Check if any data associated with this object
@@ -2238,8 +2236,7 @@ void Field3D::allocData() const
   } // End of OMP critical section
 }
 
-void Field3D::freeData()
-{
+void Field3D::freeData() {
   // put data block onto stack
   
   // Need to check for either no data, or all data has been cleared

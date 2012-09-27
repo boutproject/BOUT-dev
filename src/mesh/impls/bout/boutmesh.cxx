@@ -109,13 +109,45 @@ int BoutMesh::load() {
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   
-  options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
-  if((NPES % NXPE) != 0) {
-    throw BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
-                            NPES, NXPE);
-  }
+  if(options->isSet("NXPE")) { // Specified NXPE
+    options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
+    if((NPES % NXPE) != 0) {
+      throw BoutException("Number of processors (%d) not divisible by NPs in x direction (%d)\n",
+                          NPES, NXPE);
+    }
+    
+    NYPE = NPES / NXPE;
+  }else {
+    // Choose NXPE
+    
+    MX = nx - 2*MXG;
+    
+    NXPE = -1; // Best option 
+    
+    BoutReal ideal = sqrt(MX * NPES / ny); // Results in square domains
 
-  NYPE = NPES / NXPE;
+    for(int i=1; i<= NPES; i++) { // Loop over all possibilities
+      if( (NPES % i == 0) &&      // Processors divide equally
+          (MX % i == 0) &&        // Mesh in X divides equally
+          (MX / i >= MXG) &&      // Resulting mesh is large enough
+          (ny % (NPES/i) == 0) && // Mesh in Y divides equally
+          (ny / (NPES/i) >= MYG) ) {
+        
+        // Found an acceptable value
+        if((NXPE < 1) || 
+           (fabs(ideal - i) < fabs(ideal - NXPE)))
+          NXPE = i; // Keep value nearest to the ideal
+      }
+    }
+    
+    if(NXPE < 1)
+      throw BoutException("Could not find a valid value for NXPE");
+    
+    NYPE = NPES / NXPE;
+    
+    output.write("\tDomain split (%d, %d) into domains (%d, %d)\n",
+                 NXPE, NYPE, MX / NXPE, ny / NYPE);
+  }
   
   /// Get X and Y processor indices
   PE_YIND = MYPE / NXPE;
@@ -163,8 +195,6 @@ int BoutMesh::load() {
   OPTION(options, periodicX, false); // Periodic in X
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
-
-
   
   // Set global sizes and offsets
   GlobalNx = nx;
@@ -174,8 +204,7 @@ int BoutMesh::load() {
   OffsetX = PE_XIND*MXSUB;
   OffsetY = PE_YIND*MYSUB;
   OffsetZ = 0;
-
-
+  
   if(ShiftXderivs) {
     output.write("Using shifted X derivatives. Interpolation: ");
     if(ShiftOrder == 0) {
@@ -338,7 +367,7 @@ int BoutMesh::load() {
         ShiftAngle[i] = 0.0;
     }
     source->close();
-  }else {
+  }else if(MYG > 0) {
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
 
     if(YPROC(jyseps2_2) == PE_YIND) {
@@ -638,9 +667,11 @@ int BoutMesh::load() {
 #ifdef COMMDEBUG
     output << "CORE2 "<< proc[0] << ", " << proc[1] << endl;
 #endif
-    if( (proc[0] < 0) || (proc[1] < 0) )
-      throw BoutException("Invalid processor range for core processors");
-    MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    if( (proc[0] < 0) || (proc[1] < 0) ) {
+      group_tmp2 = MPI_GROUP_EMPTY;
+    }else {
+      MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
+    }
     
     MPI_Group_union(group_tmp1, group_tmp2, &group);
     MPI_Comm_create(BoutComm::get(), group, &comm_tmp);

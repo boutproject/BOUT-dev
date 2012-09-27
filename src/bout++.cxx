@@ -296,6 +296,18 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
     return 1;
   }
   
+  if (!restart) {
+    /// Write initial state as time-point 0
+    
+    // Run RHS once to ensure all variables set
+    if (physics_run(0.0)) {
+      output.write("Physics RHS call failed\n");
+      return 1;
+    }
+    
+    dump.write();
+  }
+
   /// Run the solver
   output.write("Running simulation\n\n");
   int status;
