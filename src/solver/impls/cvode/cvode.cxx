@@ -29,7 +29,7 @@
 
 #ifdef BOUT_HAS_CVODE
 
-#include <globals.hxx>
+#include <boutcomm.hxx>
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
 

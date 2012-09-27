@@ -31,7 +31,7 @@
 
 #ifdef BOUT_HAS_IDA
 
-#include <globals.hxx>
+#include <boutcomm.hxx>
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
 
