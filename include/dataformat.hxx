@@ -34,6 +34,11 @@ class DataFormat;
 #define __DATAFORMAT_H__
 
 #include "bout_types.hxx"
+#include <string>
+using std::string;
+
+#include <vector>
+using std::vector;
 
 // Can't copy, to control access to file
 class DataFormat {

@@ -35,29 +35,11 @@ class PvodeSolver;
 #ifndef __PVODE_SOLVER_H__
 #define __PVODE_SOLVER_H__
 
-#include <globals.hxx>
-
-#include <field2d.hxx>
-#include <field3d.hxx>
-#include <vector2d.hxx>
-#include <vector3d.hxx>
-
 #include <bout/solver.hxx>
 #include <bout_types.hxx>
-#include <interpolation.hxx>   // Cell interpolation
 
-#include <mpi.h>             // MPI data types and prototypes
 #include <pvode/nvector.h>
 #include <pvode/cvode.h>     // main CVODE header file
-#include <pvode/iterativ.h>  // contains the enum for types of preconditioning
-#include <pvode/cvspgmr.h>   // use CVSPGMR linear solver each internal step
-#include <pvode/pvbbdpre.h>  // band preconditioner function prototypes
-
-#include <stdlib.h>
-#include <vector>
-
-using std::vector;
-
 
 class PvodeSolver : public Solver {
  public:

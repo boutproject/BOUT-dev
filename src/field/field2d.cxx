@@ -23,9 +23,10 @@
  * 
  **************************************************************************/
 
-#include "mpi.h"
+#include <boutcomm.hxx>
+#include <bout/rvec.hxx>
 
-#include <globals.hxx>
+#include <globals.hxx> // for mesh
 
 #include <field2d.hxx>
 

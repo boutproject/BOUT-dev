@@ -20,9 +20,8 @@
  *
  **************************************************************************/
 
+#include <boutcomm.hxx>
 #include <globals.hxx>
-
-#include "mpi.h"
 
 #include <cmath>
 

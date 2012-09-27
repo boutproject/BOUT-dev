@@ -30,6 +30,8 @@
 #ifndef __BOUT_H__
 #define __BOUT_H__
 
+#include "boutcomm.hxx"
+
 #include "globals.hxx"
 
 #include "field2d.hxx"

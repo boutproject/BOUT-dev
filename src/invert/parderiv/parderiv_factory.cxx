@@ -1,5 +1,5 @@
 
-#include <globals.hxx>
+#include <boutcomm.hxx>
 #include <invert_parderiv.hxx>
 #include <boutexception.hxx>
 

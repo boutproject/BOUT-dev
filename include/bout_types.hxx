@@ -22,21 +22,23 @@
 #ifndef __BOUT_TYPES_H__
 #define __BOUT_TYPES_H__
 
+/*
 #include <vector>
 #include <string>
 
 using std::string; // String class 
 using std::vector;
+*/
 
 typedef double BoutReal;
 
-typedef vector<BoutReal> rvec;  // Vector of BoutReals
+//typedef vector<BoutReal> rvec;  // Vector of BoutReals
 
 /// 4 possible variable locations. Default is for passing to functions
 enum CELL_LOC {CELL_DEFAULT, CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW, CELL_VSHIFT};
 
 /// Differential methods. Both central and upwind
-enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT, DIFF_SPLIT, DIFF_NND};
+enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
 
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};

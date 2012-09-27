@@ -42,6 +42,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include "mpi.h"
 
+#include <boutcomm.hxx>
 #include <bout.hxx>
 #include <datafile.hxx>
 #include <bout/solver.hxx>

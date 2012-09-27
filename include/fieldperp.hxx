@@ -29,8 +29,8 @@ class FieldPerp;
 #define __FIELDPERP_H__
 
 #include "field.hxx"
-#include "field2d.hxx"
-#include "field3d.hxx"
+class Field2D; // #include "field2d.hxx"
+class Field3D; // #include "field3d.hxx"
 
 class FieldPerp : public Field {
  public:

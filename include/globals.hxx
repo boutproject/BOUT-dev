@@ -27,16 +27,8 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "mpi.h"
-
-#include "bout_types.hxx"
-#include "field2d.hxx"
-#include "options.hxx"
-
 #include "datafile.hxx"
 #include "bout/mesh.hxx"
-
-#include "boutcomm.hxx"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern

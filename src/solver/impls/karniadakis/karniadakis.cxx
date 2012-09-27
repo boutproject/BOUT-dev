@@ -38,6 +38,7 @@
 
 #include "karniadakis.hxx"
 
+#include <boutcomm.hxx>
 #include <msg_stack.hxx>
 #include <output.hxx>
 

@@ -22,6 +22,7 @@
 
 class Field3D;
 
+#pragma once
 #ifndef __FIELD3D_H__
 #define __FIELD3D_H__
 

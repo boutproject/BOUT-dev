@@ -20,7 +20,7 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
+#include <boutcomm.hxx>
 #include <bout/solver.hxx>
 #include <string.h>
 

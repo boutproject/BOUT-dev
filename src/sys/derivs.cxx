@@ -118,6 +118,17 @@ BoutReal DDX_CWENO2(stencil &f) {
   return (al*dl + ar*dr + ac*dc)/sa;
 }
 
+// Smoothing 2nd order derivative
+BoutReal DDX_S2(stencil &f) {
+  
+  // 4th-order differencing
+  BoutReal result = (8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
+
+  result += SIGN(f.c)*(f.pp - 4.*f.p + 6.*f.c - 4.*f.m + f.mm)/12.;
+  
+  return result;
+}
+
 ///////////////////// SECOND DERIVATIVES ////////////////////
 
 /// Second derivative: Central, 2nd order
@@ -421,6 +432,7 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_W3, "W3", "Third order WENO"},
 					  {DIFF_C4, "C4", "Fourth order central"},
 					  {DIFF_U4, "U4", "Fourth order upwinding"},
+                                          {DIFF_S2, "S2", "Smoothing 2nd order"},
 					  {DIFF_FFT, "FFT", "FFT"},
                                           {DIFF_NND, "NND", "NND"},
                                           {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
@@ -431,6 +443,7 @@ static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     NULL},
 					{DIFF_W2, DDX_CWENO2, NULL},
 					{DIFF_W3, DDX_CWENO3, NULL},
 					{DIFF_C4, DDX_C4,     NULL},
+                                        {DIFF_S2, DDX_S2,     NULL},
 					{DIFF_FFT, NULL,      NULL},
 					{DIFF_DEFAULT}};
 

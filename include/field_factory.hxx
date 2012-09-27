@@ -37,15 +37,17 @@ class FieldFactory;
 
 #include <string>
 #include <map>
-#include <vector>
 #include <sstream>
+#include <list>
+#include <utility>
 
 #include "output.hxx"
 
-using std::vector;
 using std::string;
 using std::map;
 using std::stringstream;
+using std::list;
+using std::pair;
 
 //////////////////////////////////////////////////////////
 // Generates a value at a given (x,y,z) location,

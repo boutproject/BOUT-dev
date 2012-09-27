@@ -35,15 +35,16 @@
 
 class Options;
 
+#pragma once
 #ifndef __OPTIONS_H__
 #define __OPTIONS_H__
 
 #include "bout_types.hxx"
 
 #include <map>
-#include <strings.h>
-
-using namespace std;
+using std::map;
+#include <string>
+using std::string;
 
 struct OptionValue {
   string value;

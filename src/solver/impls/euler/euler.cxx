@@ -1,6 +1,7 @@
 
 #include "euler.hxx"
 
+#include <boutcomm.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
 #include <msg_stack.hxx>

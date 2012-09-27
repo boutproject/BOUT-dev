@@ -26,12 +26,13 @@
  */
 class Field2D;
 
+#pragma once
 #ifndef __FIELD2D_H__
 #define __FIELD2D_H__
 
 #include "field.hxx"
 #include "field_data.hxx"
-#include "field3d.hxx"
+class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 

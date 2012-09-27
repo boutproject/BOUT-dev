@@ -33,13 +33,13 @@
 
 class Vector2D;
 
+#pragma once
 #ifndef __VECTOR2D_H__
 #define __VECTOR2D_H__
 
 #include "field2d.hxx"
-#include "field3d.hxx"
-
-#include "vector3d.hxx"
+class Field3D;  //#include "field3d.hxx"
+class Vector3D; //#include "vector3d.hxx"
 
 class Vector2D : public FieldData {
  public:

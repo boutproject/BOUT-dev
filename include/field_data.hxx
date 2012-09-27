@@ -26,6 +26,7 @@
 
 class FieldData;
 
+#pragma once
 #ifndef __FIELD_DATA_H__
 #define __FIELD_DATA_H__
 
