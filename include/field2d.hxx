@@ -35,8 +35,8 @@ class Field2D;
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
-#include <list>
-using std::list;
+#include <stack>
+using std::stack;
 
 /*!
  * \brief 2D X-Y scalar fields
@@ -183,10 +183,8 @@ class Field2D : public Field, public FieldData {
   BoutReal **data;
 
   // Data stack: Blocks of memory for this class
-  static int nblocks, max_blocks;
-  static BoutReal ***block; // Pointer to blocks of memory
-
-  static list<BoutReal**> blocklist; ///< All blocks
+  static stack<BoutReal**> block;
+  static bool recycle; ///< Re-use blocks rather than freeing/allocating
 
   void allocData();
   void freeData();

@@ -127,12 +127,14 @@ int BoutMesh::load() {
     BoutReal ideal = sqrt(MX * NPES / ny); // Results in square domains
 
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
+      output.write("Testing %d: %d, %d, %d, %d, %d\n",
+                   i, NPES % i, MX % i, MX / i, ny % (NPES/i), ny / (NPES/i));
       if( (NPES % i == 0) &&      // Processors divide equally
           (MX % i == 0) &&        // Mesh in X divides equally
-          (MX / i >= MXG) &&      // Resulting mesh is large enough
+    //      (MX / i >= MXG) &&      // Resulting mesh is large enough
           (ny % (NPES/i) == 0) && // Mesh in Y divides equally
           (ny / (NPES/i) >= MYG) ) {
-        
+        output.write("  Good value: %d\n", i);
         // Found an acceptable value
         if((NXPE < 1) || 
            (fabs(ideal - i) < fabs(ideal - NXPE)))

@@ -939,11 +939,11 @@ void Field2D::applyBoundary(const string &condition) {
 #ifdef CHECK
   msg_stack.push("Field2D::applyBoundary(condition)");
   
-  if(block == NULL)
+  if(data == NULL)
     output << "WARNING: Empty data in Field2D::applyBoundary(condition)" << endl;
 #endif
   
-  if(block == NULL)
+  if(data == NULL)
     return;
 
   /// Get the boundary factory (singleton)
@@ -987,40 +987,35 @@ void Field2D::applyTDerivBoundary() {
 }
 
 void Field2D::cleanup() {
-  for(list<BoutReal**>::iterator it = blocklist.begin(); it != blocklist.end(); it++)
-    free_rmatrix(*it);
-  blocklist.clear();
-  
-  if(nblocks > 0)
-    free(block);
+  // Delete free blocks
+  while(!block.empty()) {
+    free_rmatrix(block.top());
+    block.pop();
+  }
+  recycle = false; // Free each remaining block as objects are deleted
 }
 
 ///////////////////// PRIVATE FUNCTIONS ////////////////////
 
 // GLOBAL VARS
-
-int Field2D::nblocks = 0;
-int Field2D::max_blocks = 0;
-BoutReal*** Field2D::block = (BoutReal***) NULL;
-list<BoutReal**> Field2D::blocklist;
+stack<BoutReal**> Field2D::block;
+bool Field2D::recycle = true;
 
 void Field2D::allocData() {
   if(data != (BoutReal**) NULL)
     return; // already allocated
-
-  if(nblocks > 0) {
+  
+  if(!block.empty()) {
     // Some free blocks
-
-    nblocks--;
-    data = block[nblocks];
+    
+    data = block.top();
+    block.pop();
 
   }else {
     // Need to create another block
     if(mesh == NULL)
       throw BoutException("Assignment to Field2D before mesh is created");
     data = rmatrix(mesh->ngx, mesh->ngy);
-    
-    blocklist.push_back(data);
   }
 }
 
@@ -1030,18 +1025,13 @@ void Field2D::freeData() {
   if(data == (BoutReal**) NULL)
     return; // No data
 
-  if(nblocks == max_blocks) {
-    // need to increase size of stack
-    if(max_blocks == 0) {
-      block = (BoutReal***) malloc(sizeof(BoutReal**));
-    }else {
-      block = (BoutReal***) realloc(block, sizeof(BoutReal**)*(max_blocks+1));
-    }
-    max_blocks++;
+  if(recycle) {
+    // Put block on stack
+    block.push(data);
+  }else {
+    // Free the memory
+    free_rmatrix(data); 
   }
-
-  block[nblocks] = data;
-  nblocks++;
 
   data = (BoutReal**) NULL;
 }
