@@ -1,0 +1,28 @@
+# Test of Laplacian inversion code
+#
+
+NOUT = 0  # No timesteps
+
+MZ = 32    # Z size
+
+dump_format = "nc"  # NetCDF format
+
+myg = 0  # No guard cells in Y
+
+####################################
+# Set mesh sizes
+[mesh]
+
+nx = 40
+ny = 1
+
+dx = 0.1
+dy = 1.
+
+[solver1]  # Options for the first Laplacian solver
+type = tri
+flags = 0
+
+[solver2] # Options for the second Laplacian solver
+type = petsc
+flags = 0
