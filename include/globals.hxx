@@ -27,8 +27,8 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "datafile.hxx"
 #include "bout/mesh.hxx"
+#include "datafile.hxx"
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern

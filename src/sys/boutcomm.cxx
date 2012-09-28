@@ -1,9 +1,9 @@
 #include <boutcomm.hxx>
 #include <bout_types.hxx>
 
-BoutComm* BoutComm::instance = NULL;
+BoutComm* BoutComm::instance = 0;
 
-BoutComm::BoutComm() : argc(0), argv(NULL), hasBeenSet(false), comm(MPI_COMM_NULL) {
+BoutComm::BoutComm() : argc(0), argv(0), hasBeenSet(false), comm(MPI_COMM_NULL) {
 }
 
 BoutComm::~BoutComm() {
@@ -49,7 +49,7 @@ void BoutComm::setArgs(int c, char**v) {
 }
 
 BoutComm* BoutComm::getInstance() {
-  if(instance == NULL) {
+  if(instance == 0) {
     // Create the singleton object
     instance = new BoutComm();
   }
@@ -58,5 +58,5 @@ BoutComm* BoutComm::getInstance() {
 
 void BoutComm::cleanup() {
   delete instance;
-  instance = NULL;
+  instance = 0;
 }
