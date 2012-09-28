@@ -1,0 +1,86 @@
+*****************************
+README.write_polslice
+*****************************
+
+Created: 2012/28/09 I. Joseph 
+
+******************************
+
+
+Steps to generate data for W. Meyer's raytracing code. 
+Need to send 2 files:
+    a) Poloidal slice information, e.g. "east-033068.polslice_64x512_t250.nc"
+    b) Grid vertex information, e.g. "east-033068.vertices_64x512.nc"
+
+
+1) Load data
+    a) g = file_import("gfile.nc")
+    b) load pressure data, e.g. restore, "pressure.sav"
+
+
+2) a) Map data to constant toroidal angle and wirte Fourier harmonics
+        - Must specify NZPERIOD = size od toroidal domain
+        - The Fourier modes P1C, P1S, have full toroidal mode # NMODE=NZPERIOD*NZMODE
+        - By default, NZMODE = 1, but can be set to pick out a certain mode
+
+   b) Check the poloidal & radial resolution nxout, nyout to make sure that it is large enough
+        - Usually needs >512-1024 poloidal points, usually much larger than original mesh
+        - Usually only needs 64-128 radial points, usually much smaller than original mesh
+
+    write_polslice, g, p, nzperiod=5, nzmode = 3, nxout=64, nyout=512, data=data, gout=gout, file='bout.polslice.nc', /time
+
+
+3)  a) Generate vertex information for the new mesh stored in gout
+        - As of now, this only works for single null (both lower & upper)
+
+        gen_vertices, gout, file='bout.vertices.nc', /time 
+
+    b) If you did not use option gout=gout in write_polslice, you can generate a resized grid via
+
+        gout = resize_bgrid(g, nxout=64, nyout=512)
+    
+
+
+4) To view data stored in the files, use 
+
+        data = file_import("file.nc")
+
+
+Example:
+
+IDL> pol =file_import("east-033068.polslice_64x512_t250.nc")
+IDL> help, pol
+** Structure <81451ec>, 18 tags, length=18219024, data length=18219022, refs=1:
+   P1S             FLOAT     Array[64, 512]         <== This is the data used for linear runs
+   P1C             FLOAT     Array[64, 512]         <== This is the data used for linear runs
+   P00             FLOAT     Array[64, 512]
+   PS              FLOAT     Array[64, 512, 33]     <== All harmonics
+   PC              FLOAT     Array[64, 512, 33]     <== All harmonics
+   PZ              FLOAT     Array[64, 512, 64]     <== This is the data mapped to each toroidal angle
+                                                         Can be used for nonlinear runs
+   NMODE           INT             15               <== Full toroidal mode #
+   NZMODE          INT              3               <== Harmonic of interest for P1S, P1C
+   NZPERIOD        INT              5               <== NZPERIOD of domain
+   TI0             FLOAT     Array[64, 512]
+   NI0             FLOAT     Array[64, 512]
+   TE0             FLOAT     Array[64, 512]
+   NE0             FLOAT     Array[64, 512]
+   ZXY             FLOAT     Array[64, 512]
+   RXY             FLOAT     Array[64, 512]
+   NZ              LONG                64
+   NY              INT            512
+   NX              INT             64
+
+
+IDL> gvertex = file_import("east-033068.vertices_64x512.nc")
+IDL>  help, gvertex
+** Structure <8123664>, 55 tags, length=5374368, data length=5374366, refs=1:
+   NXOUT           INT             64
+   NYOUT           INT            512
+...
+   DV              FLOAT     Array[64, 512]        <== Domain index used in gen_domains
+   RV              FLOAT     Array[64, 512, 5]     <== RV[*,*,0] = Rxy, others are surrounding points
+   ZV              FLOAT     Array[64, 512, 5]     <== ZV[*,*,0] = Zxy, others are surrounding points
+
+
+
