@@ -64,7 +64,6 @@ AC_SUBST(EXTRA_LIBS)
 
 # Adding variables for additional sources
 AC_SUBST(PRECON_SOURCE)
-AC_SUBST(FILEIO_SOURCE)
 AC_SUBST(FACETS_SOURCE)
 
 AC_DEFUN([CREATE_DIR],
@@ -488,6 +487,8 @@ fi
 # netCDF support
 #############################################################
 
+NCCONF="" # Configuration script
+
 if test "$with_netcdf" != "no"
 then
   # Try to find a valid NetCDF installation
@@ -498,9 +499,9 @@ then
   then
     # No path specified. Try using nc-config
     if type nc-config > /dev/null 2>&1; then
-      NCPATH=`nc-config --prefix`
-    else
-      NCPATH=""
+      NCCONF="nc-config"
+    elif type ncxx4-config > /dev/null 2>&1; then
+      NCCONF=`ncxx4-config`
     fi
   else
     NCPATH="$with_netcdf"
@@ -515,6 +516,8 @@ then
       echo " -> NO C++ SUPPORT"
       with_netcdf = "no"
     fi
+  elif type ncxx4-config > /dev/null 2>&1; then
+    echo "   -> C++ support included (new style)"
   else
     if type $NCPATH/bin/nc-config > /dev/null 2>&1; then
       if test `$NCPATH/bin/nc-config --has-c++` = "yes"
@@ -524,8 +527,10 @@ then
         echo " -> NO C++ SUPPORT"
         with_netcdf = "no"
       fi
+    elif type $NCPATH/bin/nc-config > /dev/null 2>&1; then
+      echo "   -> C++ support included (new style)"
     else
-      echo " -> nc-config not found. Can't check C++ support"
+      echo " -> nc-config or ncxx4-config not found. Can't check C++ support"
     fi
   fi
 fi
@@ -540,9 +545,6 @@ then
     # Set a compile-time flag
     CXXFLAGS="$CXXFLAGS -DNCDF"
     NCPATH=`nc-config --prefix`
-    
-    # Add extra sources
-    FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
     NCINC=`nc-config --cflags`
     EXTRA_INCS="$EXTRA_INCS $NCINC"
@@ -554,6 +556,20 @@ then
 
     echo " -> NetCDF support enabled"
     echo ""
+  elif type ncxx4-config > /dev/null 2>&1; then
+    NCP=`which ncxx4-config`
+    echo " -> Using $NCP for configuration settings"
+    
+    CXXFLAGS="$CXXFLAGS -DNCDF4"
+    NCPATH=`ncxx4-config --prefix`
+
+    NCINC=`ncxx4-config --cflags`
+    EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+    NCLIB=`ncxx4-config --libs`
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+    
+    file_formats="$file_formats netCDF4"
   else
   # No nc-config. Check the NetCDF path manually
 
@@ -604,9 +620,6 @@ then
     then
       # Set a compile-time flag
       CXXFLAGS="$CXXFLAGS -DNCDF"
-
-      # Add extra sources
-      FILEIO_SOURCE="$FILEIO_SOURCE nc_format.cxx"
 
       if test "$NCPATH" != ""; then
         echo " -> path $NCPATH"
@@ -768,8 +781,6 @@ else
   ## Add PDB support if available
   if test "$with_pdb" = "yes"
   then
-
-    FILEIO_SOURCE="$FILEIO_SOURCE pdb_format.cxx"
     EXTRA_LIBS="$EXTRA_LIBS -lpdb -lpml -lscore \$(shell $PACT/bin/pact -link)"
 
     # Set a compile-time flag. PDBF because PDB already used in score.h

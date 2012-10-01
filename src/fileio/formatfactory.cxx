@@ -6,6 +6,7 @@
 #include "impls/emptyformat.hxx"
 
 #include "impls/pdb/pdb_format.hxx"
+#include "impls/netcdf4/ncxx4.hxx"
 #include "impls/netcdf/nc_format.hxx"
 #include "impls/pnetcdf/pnetcdf.hxx"
 
@@ -34,6 +35,10 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
       return new PncFormat;
 #else
 
+#ifdef NCDF4
+    return new Ncxx4;
+#else
+
 #ifdef NCDF
     //output.write("\tUsing default format (NetCDF)\n");
     return new NcFormat;
@@ -49,6 +54,7 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
 
 #endif // PDBF
 #endif // NCDF
+#endif // NCDF4
 #endif // PNCDF
     throw new BoutException("Parallel I/O disabled, no serial library found");
   }
@@ -81,6 +87,14 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
       output.write("\tUsing Parallel NetCDF format for file '%s'\n", filename);
     return new PncFormat;
     }
+  }
+#endif
+
+#ifdef NCDF4
+  const char *ncdf_match[] = {"cdl", "nc", "ncdf"};
+  if(matchString(s, 3, ncdf_match) != -1) {
+    output.write("\tUsing NetCDF4 format for file '%s'\n", filename);
+    return new Ncxx4;
   }
 #endif
 

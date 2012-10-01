@@ -45,7 +45,6 @@ EXTRA_LIBS		= @EXTRA_LIBS@
 @PETSC@
 
 PRECON_SOURCE	= @PRECON_SOURCE@
-FILEIO_SOURCE	= @FILEIO_SOURCE@
 FACETS_SOURCE   = @FACETS_SOURCE@
 
 ####################################################################
