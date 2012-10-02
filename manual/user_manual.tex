@@ -1883,7 +1883,25 @@ the Neumann condition desired.
 \section{Generating input grids}
 \label{sec:gridgen}
 
-The grid file describes the grid points, geometry, and starting profiles.
+The simulation mesh describes the number and topology of grid points, the spacing between them, and 
+the coordinate system. For many problems, a simple mesh can be created using options. 
+\begin{lstlisting}[language=bash,numbers=none]
+[mesh]
+nx = 260  # X grid size
+ny = 256  # Y grid size
+
+dx = 0.1  # X mesh spacing
+dy = 0.1  # Y mesh spacing
+\end{lstlisting}
+The above options will create a $260\times 256$ mesh in X and Y (MZ option sets Z resolution),
+with mesh spacing of $0.1$ in both directions. By default the coordinate system is 
+cartesian (metric tensor is the identity matrix), but this can be changed by specifying
+the metric tensor components.
+
+\note{Currently only scalars are allowed, not expressions}
+
+More complex meshes can be created by supplying an input grid file to
+describe the grid points, geometry, and starting profiles.
 Currently BOUT++ supports either NetCDF or PDB format binary files.
 During startup, BOUT++ looks in the grid file for the following variables.
 If any are not found, a warning will be printed and the default values used.
@@ -3643,10 +3661,11 @@ Here the format is
 \subsection{boututils}
 
 \begin{itemize}
-\item \lstinline!class Datafile!
+\item \lstinline!class Datafile! provides a convenient way to read and write NetCDF files. There are many different
+  NetCDF libraries available for Python, so this class tries to provide a consistent interface to many of them.
 \item \lstinline!deriv()!
 \item \lstinline!determineNumberOfCPUs()!
-\item \lstinline!file_import()!
+\item \lstinline!file_import()! reads the contents of a NetCDF file into a dictionary
 \item \lstinline!integrate()!
 \item \lstinline!launch()!
 \item \lstinline!linear_regression()!
@@ -3655,9 +3674,16 @@ Here the format is
 \subsection{boutdata}
 
 \begin{itemize}
-\item \lstinline!collect()!
-\item \lstinline!pol_slice()!
-\item \lstinline!gen_surface()!
+\item \lstinline!collect()! provides an interface to read BOUT++ data outputs, returning NumPy arrays of data. 
+  It deals with the processor layout, working out which file contains each part of the domain.
+  \begin{lstlisting}
+    from boutdata import collect
+    
+    t = collect("t_array")  # Collect the time values
+  \end{lstlisting}
+\item \lstinline!pol_slice()! takes a 3 or 4-D data set for a toroidal equilibrium, and calculates a slice
+  through it at fixed toroidal angle.
+\item \lstinline!gen_surface()! is a generator for iterating over flux surfaces
 \end{itemize}
 
 \printindex
