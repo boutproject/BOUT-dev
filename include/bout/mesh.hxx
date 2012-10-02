@@ -107,7 +107,7 @@ class Mesh {
   static Mesh* create(Options *opt = NULL);
   
   // Currently need to create and load mesh in separate calls. Will be removed
-  virtual int load() {}
+  virtual int load() {return 1;}
   virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
 
   // Get routines to request data from mesh file
