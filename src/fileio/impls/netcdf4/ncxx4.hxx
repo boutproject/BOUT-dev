@@ -36,7 +36,7 @@
 #ifndef NCDF4
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat NcFormat;
+typedef EmptyFormat Ncxx4;
 
 #else
 
