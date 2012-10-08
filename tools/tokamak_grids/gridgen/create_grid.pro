@@ -113,14 +113,20 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
   
   np = N_ELEMENTS(ri)
 
-  ; Calculate poloidal distance along starting line
-  drdi = DERIV(INTERPOLATE(R, ri))
-  dzdi = DERIV(INTERPOLATE(Z, zi))
-
-  dldi = SQRT(drdi^2 + dzdi^2)
-  poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
-  ;poldist = FLTARR(np)
-  ;FOR i=1, np-1 DO poldist[i] = poldist[i-1] + 0.5*(dldi[i-1] + dldi[i])
+  IF 0 THEN BEGIN
+    ; Calculate poloidal distance along starting line
+    drdi = DERIV(INTERPOLATE(R, ri))
+    dzdi = DERIV(INTERPOLATE(Z, zi))
+    
+    dldi = SQRT(drdi^2 + dzdi^2)
+    poldist = int_func(findgen(np), dldi) ; Poloidal distance along line
+  ENDIF ELSE BEGIN
+    rpos = INTERPOLATE(R, ri)
+    zpos = INTERPOLATE(Z, zi)
+    dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
+    poldist = FLTARR(np)
+    FOR i=1,np-1 DO poldist[i] = poldist[i-1] + dd[i-1]
+  ENDELSE
   
   IF SIZE(fpsi, /dim) EQ 2 THEN BEGIN
     ; Parallel distance along line
@@ -134,6 +140,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
       bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i])
       bt[i] = INTERPOL(REFORM(fpsi[1,*]), REFORM(fpsi[0,*]), f)
     ENDFOR
+    STOP
   ENDIF ELSE pardist = poldist ; Just use the same poloidal distance
 
   dist = parweight*pardist + (1. - parweight)*poldist
@@ -1533,11 +1540,12 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         start_ind = start_ind[0] ; Got index into the starting line
         ; Find out distance along starting line
         dist = line_dist(R, Z, (*sol_info[solid]).ri, (*sol_info[solid]).zi)
-        ydown_dist = INTERPOLATE(dist, start_ind)
+        d = INTERPOLATE(dist, start_ind)
+        ydown_dist = MIN([d, dist[N_ELEMENTS(dist)-1] - d])
       ENDELSE
 
       xpt_dist[xpt, 1] = ydown_dist
-
+      
       ; Repeat for yup
       yup_dist = xpt_dist[xpt2, 2]
       ; Locate this point on the separatrix (core1)
