@@ -1,13 +1,22 @@
 ; Generate the grid file for a straight linear device like LAPD. 
 ;
 ;
-;$rm -rf *.pdb
+; IDL> set_mesh_cyl, /export, Nr=54, Nz=64, rMin=0.15, rMax=0.45, $
+;                    ni0=2.5e18, te0=5., Bz0=0.08, ni_profile_type=1, $
+;                    phi_profile_type=0, phi0V=0.0, /NOPLOTS
 ;
-;set_mesh_cyl, /export, Nr=54, Nz=64, rMin=0.15, rMax=0.45, ni0=2.5e18, te0=5., Bz0=0.08, ni_profile_type=1, phi_profile_type=0, phi0V=0.0, /NOPLOTS
+; -> Outputs "gridue.nc", "uedgegrd.nc" and "uedgeout.nc"
 ;
-;.compile ../GRD2PDB/grd2pdb.pro
-;read_uedata3, /s, d, /noref, /NOPLOTS
- 
+; IDL> !path=!path+":../tokamak_grids/all/"
+; IDL> uedge2bout
+;
+; Add vacuum region? N
+; Equilibrium correction option: 0 (no correction)
+; Use new hthe? N
+;
+; -> Output "uedge.grd.nc" input grid for BOUT++
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ; for the Helimak
 ; 
@@ -257,7 +266,8 @@ return, ti
 end
 ; ---------------------------------------------------------------------
 
-pro set_mesh_cyl, d1, d2, d3, plotmesh=plotmesh, export=export, noreset=noreset,   $
+pro set_mesh_cyl, d1, d2, d3, plotmesh=plotmesh, export=export, format=format,     $
+                  noreset=noreset,   $
                   Nr=Nr, Nz=Nz,                                                    $
                   rMin=rMin, rMax=rMax, zMin=zMin, zMax=zMax,                      $
                   Bz0=Bz0, bphi0=bphi0,                                            $
@@ -284,9 +294,9 @@ pro set_mesh_cyl, d1, d2, d3, plotmesh=plotmesh, export=export, noreset=noreset,
 ;-Set BOUT mesh for the shifted circle case
 ;----------------------------------------------------------------;
 
-  print,slope_te,slope_ti
-
  if not keyword_set(comment) then comment=''
+
+ IF NOT KEYWORD_SET(format) THEN format = "nc"  ; File output format
 
 ; Tesla
  if not keyword_set(Bz0) then Bz0=0.1
@@ -602,19 +612,20 @@ b=sqrt(br^2+bz^2+bphi^2)
 
 
    IF keyword_set(EXPORT) then begin
-    if not keyword_set(PATH) then PATH='.' 
-      file1=PATH + '/gridue.pdb' 
-      file2=PATH + '/uedgegrd.pdb'
-      file3=PATH + '/uedgeout.pdb'
-
-        print, 'Writing files...'
-        print, file1  
-        print, file2  
-        print, file3  
-
-     pd_export, file1, d1
-     pd_export, file2, d2
-     pd_export, file3, d3
+     if not keyword_set(PATH) then PATH='.' 
+     
+     file1=PATH + '/gridue.'+format 
+     file2=PATH + '/uedgegrd.'+format
+     file3=PATH + '/uedgeout.'+format
+     
+     print, 'Writing files...'
+     print, file1  
+     print, file2  
+     print, file3  
+     
+     status = file_export(file1, d1)
+     status = file_export(file2, d2)
+     status = file_export(file3, d3)
 
      print,"Done exporting"
    ENDIF

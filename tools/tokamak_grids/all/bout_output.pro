@@ -832,81 +832,84 @@ PRO bout_output, data, output=output, input=input,$
   IF MAX(dpdpsi) GT ABS(MIN(dpdpsi)) THEN BEGIN ; dpdpsi must be negative
       dpdpsi = -dpdpsi
   ENDIF
-  
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ; Correct values to make JxB, Jpar and q closer to original
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-  PRINT, "Equilibrium correction options:"
-  PRINT, "  0  No correction"
-  PRINT, "  1  RBt using force balance"
-  PRINT, "  2  hthe and RBt using force balance and q (FAILS)"
-  PRINT, "  3  hthe and RBt using force balance and jpar"
-
-  if keyword_set(INPUT) then copt=input.correct_opt else $
-    copt = get_integer("Enter option:")
 
   hthe = calc_hthe(Rxy, Zxy)
 
-  IF copt EQ 1 THEN BEGIN
-    ;; Correct f = RBt using force balance
-    correct_f, Rxy, Zxy, dpdpsi, hthe, Btxy, Bpxy, Bxy, psixy
-  ENDIF ELSE IF copt EQ 2 THEN BEGIN
-    ;; Correct RBt and hthe using force balance and q
+  IF NOT KEYWORD_SET(default) THEN BEGIN ; Skip this by default
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    ; Correct values to make JxB, Jpar and q closer to original
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-    IF got_qsafe THEN BEGIN
-      
-      horig = hthe
-      btorig = Btxy
+    PRINT, "Equilibrium correction options:"
+    PRINT, "  0  No correction"
+    PRINT, "  1  RBt using force balance"
+    PRINT, "  2  hthe and RBt using force balance and q (FAILS)"
+    PRINT, "  3  hthe and RBt using force balance and jpar"
+    
+    if keyword_set(INPUT) then copt=input.correct_opt else $
+      copt = get_integer("Enter option:")
+    
+    IF copt EQ 1 THEN BEGIN
+      ;; Correct f = RBt using force balance
+      correct_f, Rxy, Zxy, dpdpsi, hthe, Btxy, Bpxy, Bxy, psixy
+    ENDIF ELSE IF copt EQ 2 THEN BEGIN
+      ;; Correct RBt and hthe using force balance and q
 
-      !P.MULTI=[0,0,2,0,0]
-      REPEAT BEGIN
-        ; Use q to set RBt
+      IF got_qsafe THEN BEGIN
+        
+        horig = hthe
+        btorig = Btxy
+        
+        !P.MULTI=[0,0,2,0,0]
+        REPEAT BEGIN
+          ; Use q to set RBt
+          qnew = calc_q(Rxy, hthe, Btxy, Bpxy) 
+          
+          qdiff = MAX(ABS(qnew - qsafe))
+          PRINT, "Maximum difference in q: ", qdiff
+          
+          plot, qsafe
+          oplot, qnew, psym=1
+          
+          ; calculate hthe using force balance
+          nh = correct_hthe(Rxy, psixy, Btxy, Bpxy, Bxy, hthe, dpdpsi, fixhthe=fixhthe)
+          
+          ; Use this difference to calculate f = RBt
+          
+          FOR x=0, nx-1 DO BEGIN
+            Btxy[x,*] = Btxy[x,*] * qsafe[x] / qnew[x]
+          ENDFOR
+          
+          hdiff = MAX(ABS(nh - hthe))
+          
+          PRINT, "Maximum change in hthe: ", hdiff
+          hthe = nh
+          
+          plot, horig[*,FIX(ny/2)]
+          oplot, nh[*,FIX(ny/2)], psym=1
+          
+          cursor, x, y, /down
+        ENDREP UNTIL 0
+      ENDIF ELSE BEGIN
+        PRINT, " => Don't have qsafe. Can't do this correction"
+      ENDELSE
+    ENDIF ELSE IF copt EQ 3 THEN BEGIN
+      ;; Correct hthe and RBt using force balance and jpar
+    
+      IF KEYWORD_SET(fixvals) AND got_qsafe THEN BEGIN
+        ;; Calculate Bt based on q
+        
         qnew = calc_q(Rxy, hthe, Btxy, Bpxy) 
-        
-        qdiff = MAX(ABS(qnew - qsafe))
-        PRINT, "Maximum difference in q: ", qdiff
-        
-        plot, qsafe
-        oplot, qnew, psym=1
-
-        ; calculate hthe using force balance
-        nh = correct_hthe(Rxy, psixy, Btxy, Bpxy, Bxy, hthe, dpdpsi, fixhthe=fixhthe)
-
-        ; Use this difference to calculate f = RBt
         
         FOR x=0, nx-1 DO BEGIN
           Btxy[x,*] = Btxy[x,*] * qsafe[x] / qnew[x]
         ENDFOR
-
-        hdiff = MAX(ABS(nh - hthe))
-
-        PRINT, "Maximum change in hthe: ", hdiff
-        hthe = nh
-        
-        plot, horig[*,FIX(ny/2)]
-        oplot, nh[*,FIX(ny/2)], psym=1
-
-        cursor, x, y, /down
-      ENDREP UNTIL 0
-    ENDIF ELSE BEGIN
-      PRINT, " => Don't have qsafe. Can't do this correction"
-    ENDELSE
-  ENDIF ELSE IF copt EQ 3 THEN BEGIN
-    ;; Correct hthe and RBt using force balance and jpar
-    
-    IF KEYWORD_SET(fixvals) AND got_qsafe THEN BEGIN
-      ;; Calculate Bt based on q
-
-      qnew = calc_q(Rxy, hthe, Btxy, Bpxy) 
+      ENDIF
       
-      FOR x=0, nx-1 DO BEGIN
-        Btxy[x,*] = Btxy[x,*] * qsafe[x] / qnew[x]
-      ENDFOR
+      correct_fh, Rxy, Btxy, Bpxy, hthe, psixy, dpdpsi, jpar, fix=fixvals
     ENDIF
-
-    correct_fh, Rxy, Btxy, Bpxy, hthe, psixy, dpdpsi, jpar, fix=fixvals
-  ENDIF
+  ENDIF ; End of default
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; CALCULATE HTHE
@@ -947,10 +950,12 @@ PRO bout_output, data, output=output, input=input,$
 
   old_hthe = hthe
 
-  if keyword_set(INPUT) then use_new_hthe=input.use_new_hthe else $
-    use_new_hthe=get_yesno("Use new hthe?")
-
-  IF use_new_hthe THEN hthe = nh
+  IF NOT KEYWORD_SET(default) THEN BEGIN
+    if keyword_set(INPUT) then use_new_hthe=input.use_new_hthe else $
+      use_new_hthe=get_yesno("Use new hthe?")
+    
+    IF use_new_hthe THEN hthe = nh
+  ENDIF
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; CALCULATE PARALLEL CURRENT
