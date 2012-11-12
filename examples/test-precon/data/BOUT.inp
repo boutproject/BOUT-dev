@@ -1,0 +1,49 @@
+# Simple preconditioning test
+#
+# Wave equation of two variables. Demonstrates "physics-based"
+# preconditioning method of Schur factorisation
+#
+# CFL timestep = 1
+# 
+#
+
+NOUT = 10
+
+timestep = 10
+
+MZ = 5    # Z size
+
+dump_format = "nc"  # NetCDF format
+
+TwistShift = true
+Ballooning = false
+
+[ddy]
+first=c2
+
+[mesh] # Simple mesh for testing
+nx = 5
+ny = 32
+
+[solver]
+type = cvode          # Need CVODE or PETSc
+use_precon = true     # Use preconditioner
+use_jacobian = false  # Use user-supplied preconditioner?
+rightprec = false     # Use Right preconditioner (default left)
+diagnose = true       # Print additional diagnostics
+start_timestep = 10
+
+[All]
+# Boundary options
+# 0 - constant
+# 1 - Gaussian
+# 2 - Sinusoidal
+# 3 - Mix of mode numbers (semi-random phase)
+
+scale = 0.0
+
+[u]
+function=sin(y)
+scale = 1.0
+
+[v]
