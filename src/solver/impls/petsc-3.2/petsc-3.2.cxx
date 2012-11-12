@@ -27,6 +27,7 @@
 
 #ifdef BOUT_HAS_PETSC_3_2
 
+#include <boutcomm.hxx>
 #include <private/tsimpl.h>
 
 #include <globals.hxx>
@@ -346,7 +347,7 @@ int Petsc32Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
 
       printf(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
       for(k=0;k<nz;k++) {
-        cout << "----- " << k << " -----" << endl;
+        output << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
           // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
