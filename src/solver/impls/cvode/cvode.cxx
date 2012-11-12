@@ -31,6 +31,7 @@
 
 #include <boutcomm.hxx>
 #include <interpolation.hxx> // Cell interpolation
+#include <boutexception.hxx>
 #include <msg_stack.hxx>
 
 #include <cvode/cvode.h>
@@ -91,32 +92,39 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int local_N = getLocalN();
 
   // Get total problem size
+  msg_stack.push("Allreduce localN -> GlobalN");
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
+  msg_stack.pop();
 
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
                 n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
 
+  msg_stack.push("Allocating memory with N_VNew_Parallel");
   if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
+  msg_stack.pop();
 
   // Put the variables into uvec
+  msg_stack.push("Saving variables into uvec");
   if(save_vars(NV_DATA_P(uvec)))
-    bout_error("\tERROR: Initial variable value not set\n");
+    throw BoutException("\tERROR: Initial variable value not set\n");
+  msg_stack.pop();
 
   /// Get options
 
+  msg_stack.push("Getting options");
   BoutReal abstol, reltol;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
   bool use_precon, use_jacobian;
-  BoutReal max_timestep;
+  BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
   int MXSUB = mesh->xend - mesh->xstart + 1;
 
@@ -129,9 +137,11 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
   options->get("maxl", maxl, 5);
-  options->get("use_precon", use_precon, false);
-  options->get("use_jacobian", use_jacobian, false);
-  options->get("max_timestep", max_timestep, -1.);
+  OPTION(options, use_precon,   false);
+  OPTION(options, use_jacobian, false);
+  OPTION(options, max_timestep, -1.);
+  OPTION(options, start_timestep, -1);
+  OPTION(options, diagnose,     false);
 
   int mxsteps; // Maximum number of steps to take between outputs
   options->get("mxstep", mxsteps, 500);
@@ -156,25 +166,38 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int iter = CV_NEWTON;
   if(func_iter)
     iter = CV_FUNCTIONAL;
+  msg_stack.pop();
 
   // Call CVodeCreate
+  msg_stack.push("Calling CVodeCreate");
   if((cvode_mem = CVodeCreate(lmm, iter)) == NULL)
-    bout_error("ERROR: CVodeCreate failed\n");
+    throw BoutException("CVodeCreate failed\n");
+  msg_stack.pop();
 
+  msg_stack.push("Calling CVodeSetUserData");
   if( CVodeSetUserData(cvode_mem, this) < 0 ) // For callbacks, need pointer to solver object
-    bout_error("ERROR: CVodeSetUserData failed\n");
+    throw BoutException("CVodeSetUserData failed\n");
+  msg_stack.pop();
 
+  msg_stack.push("Calling CVodeInit");
   if( CVodeInit(cvode_mem, cvode_rhs, simtime, uvec) < 0 )
-    bout_error("ERROR: CVodeInit failed\n");
+    throw BoutException("CVodeInit failed\n");
+  msg_stack.pop();
 
+  msg_stack.push("Calling CVodeSStolerances");
   if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
-    bout_error("ERROR: CVodeSStolerances failed\n");
+    throw BoutException("CVodeSStolerances failed\n");
+  msg_stack.pop();
 
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
   if(max_timestep > 0.0) {
     // Setting a maximum timestep
     CVodeSetMaxStep(cvode_mem, max_timestep);
+  }
+  
+  if(start_timestep > 0.0) {
+    CVodeSetInitStep(cvode_mem, start_timestep);
   }
 
   if(mxorder > 0) {
@@ -186,9 +209,16 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   if(!func_iter) {
     output.write("\tUsing Newton iteration\n");
     /// Set Preconditioner
+    msg_stack.push("Setting preconditioner");
     if(use_precon) {
 
-      if( CVSpgmr(cvode_mem, PREC_LEFT, maxl) != CVSPILS_SUCCESS )
+      int prectype = PREC_LEFT;
+      bool rightprec;
+      options->get("rightprec", rightprec, false);
+      if(rightprec)
+        prectype = PREC_RIGHT;
+      
+      if( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
         bout_error("ERROR: CVSpgmr failed\n");
 
       if(prefunc == NULL) {
@@ -212,15 +242,18 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
       if( CVSpgmr(cvode_mem, PREC_NONE, maxl) != CVSPILS_SUCCESS )
         bout_error("ERROR: CVSpgmr failed\n");
     }
+    msg_stack.pop();
 
     /// Set Jacobian-vector multiplication function
 
     if((use_jacobian) && (jacfunc != NULL)) {
       output.write("\tUsing user-supplied Jacobian function\n");
 
+      msg_stack.push("Setting Jacobian-vector multiply");
       if( CVSpilsSetJacTimesVecFn(cvode_mem, cvode_jac) != CVSPILS_SUCCESS )
         bout_error("ERROR: CVSpilsSetJacTimesVecFn failed\n");
 
+      msg_stack.pop();
     }else
       output.write("\tUsing difference quotient approximation for Jacobian\n");
   }else {
@@ -231,7 +264,7 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   msg_stack.pop(msg_point);
 #endif
 
-  return(0);
+  return 0;
 }
 
 
@@ -245,7 +278,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
 #endif
 
   if(!initialised)
-    bout_error("CvodeSolver not initialised\n");
+    throw BoutException("CvodeSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
 
@@ -261,7 +294,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
       // Write restart to a different file
       restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
 
-      bout_error("SUNDIALS timestep failed\n");
+      throw BoutException("SUNDIALS timestep failed\n");
     }
 
     /// Write the restart file
@@ -269,6 +302,27 @@ int CvodeSolver::run(MonitorFunc monitor) {
 
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
       restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
+    }
+
+    if(diagnose) {
+      // Print additional diagnostics
+      long int nsteps, nfevals, nniters, npevals, nliters;
+      
+      CVodeGetNumSteps(cvode_mem, &nsteps);
+      CVodeGetNumRhsEvals(cvode_mem, &nfevals);
+      CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
+      CVSpilsGetNumPrecEvals(cvode_mem, &npevals);
+      CVSpilsGetNumLinIters(cvode_mem, &nliters);
+
+      output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
+                   nsteps, nfevals, nniters, npevals, nliters);
+      
+      output.write("    -> Newton iterations per step: %e\n", 
+                   ((double) nniters) / ((double) nsteps));
+      output.write("    -> Linear iterations per Newton iteration: %e\n",
+                   ((double) nliters) / ((double) nniters));
+      output.write("    -> Preconditioner evaluations per Newton: %e\n",
+                   ((double) npevals) / ((double) nniters));
     }
 
     /// Call the monitor function

@@ -82,6 +82,7 @@ class CvodeSolver : public Solver {
     rhsfunc func; // RHS function
     PhysicsPrecon prefunc; // Preconditioner
     Jacobian jacfunc; // Jacobian - vector function
+    bool diagnose; // Output additional diagnostics
   
     N_Vector uvec; // Values
     void *cvode_mem;
