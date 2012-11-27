@@ -7,12 +7,13 @@
 NOUT = 5          # number of time-steps
 TIMESTEP = 0.1       # time between outputs
 archive = 20        # Archive restart files after this number of outputs
-wall_limit = 1.55  # wall time limit (in hours)
+wall_limit = 0.85  # wall time limit (in hours)
 
 ShiftXderivs = true # use shifted radial derivatives?
 TwistShift = true   # use twist-shift condition?
 ShiftOrder = 0      # interpolation order (1 = nearest neighbour, 0=FFT)
 TwistOrder = 0      # order of twist-shift interpolation
+non_uniform = true
 
 MZ = 9             # number of points in z direction (2^n + 1)
 ZPERIOD = 15        # Fraction of a torus to simulate
@@ -20,7 +21,7 @@ ZPERIOD = 15        # Fraction of a torus to simulate
 MXG = 2
 MYG = 2
 
-NXPE = 1            # Number of processor in X
+NXPE = 16            # Number of processor in X
 
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
@@ -45,6 +46,8 @@ group_nonblock = false  # Use non-blocking group operations?
 
 [laplace]
 
+laplace_nonuniform = true
+nonuniform = true
 # max_mode = 16  # Maximum N to solve for
 
 ##################################################
@@ -96,7 +99,19 @@ func_iter = false     # Functional iteration (default is Newton)
 
 [highbeta]
 
-density = 1.0e19       # number density of deuterium [m^-3]
+#hyperbolic tanh profile, N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center) 
+n0_fake_prof = true    #use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file 
+n0_height = 0.55       #the total height of profile of N0, in percentage of Ni_x
+n0_ave = 0.2           #the constant tail of N0 profile, in percentage of Ni_x
+n0_width = 0.1         #the width of the gradient of N0, in percentage of x
+n0_center = 0.633      #the the center of N0, in percentage of x
+n0_bottom_x = 0.81     #the start of flat region of N0 on SOL side, in percentage of x 
+T0_fake_prof = false   #use the costant profile of T0. It is prior to n0_fake_prof
+Tconst = -1.0          #the amplitude of Ti0 and Te0, in percentage of Tibar
+
+constn0 =false         #Using constant density profile. When this is true, both  n0_fake_prof and n0_fake_prof are set to false automaticly 
+
+density = 1.0e20       # number density of deuterium [m^-3]
                        # used to produce output normalisations
 
 evolve_jpar = false     # If true, evolve J raher than Psi
@@ -117,6 +132,27 @@ nonlinear  = true     # include non-linear terms?
 diamag = true         # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
 diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
+
+gyroviscous = true     # gyro viscous terms
+Zeff = 1
+
+##################################################
+# BRACKET_METHOD flags:
+# 0:BRACKET_STD; derivative methods will be determined 
+#   by the choices C or W in this input file
+# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
+
+bm_exb_flag = 0
+bm_mag_flag = 2
+##################################################################
+withflow = false     # With flow or not
+D_0 = 130000        # differential potential
+D_s = 20            # shear parameter
+K_H_term = false    # Contain K-H term
+sign = -1           # flow direction    
+x0 = 0.855          # peak location
+D_min = 3000        #constant	 
+##################################################################
 
 eHall = false         # Include electron pressue effects in Ohm's law?
 AA    = 2.0          # ion mass in units of proton mass 
@@ -163,9 +199,9 @@ vacuum_trans = 0.01   # transition width (fraction of P)
 
 ## Resistivity and Hyper-resistivity
 
-vac_lund = 1.0e7    # Lundquist number in vacuum  (negative -> infinity)
-core_lund = 1.0e7  # Lundquist number in core (negative -> infinity)
-hyperresist = 1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
+vac_lund = 1.0e8    # Lundquist number in vacuum  (negative -> infinity)
+core_lund = 1.0e8  # Lundquist number in core (negative -> infinity)
+hyperresist = -1.e-4 # Hyper-resistivity coefficient (like 1 / Lundquist number)
 
 ## Inner boundary damping
 
@@ -175,7 +211,9 @@ damp_t_const = 1e-2  # Damping time constant
 ## Parallel pressure diffusion
 
 diffusion_par = -1.0e-0   # Parallel pressure diffusion (< 0 = none)
-diffusion_p4 = -1.0e-5     # 4th order Parallel pressure diffusion (< 0 = none)
+diffusion_p4  = -1.0e-5   # parallel hyper-viscous diffusion for pressure (< 0 = none)
+diffusion_u4  = -1.0e-5    # parallel hyper-viscous diffusion for vorticity (< 0 = none)
+diffusion_a4  = -1.0e-5   # parallel hyper-viscous diffusion for vector potential (< 0 = none)
 
 ## heat source in pressure in watts
  

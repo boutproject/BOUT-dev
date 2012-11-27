@@ -33,6 +33,19 @@ Vector2D b0xcv; // Curvature term
 Field2D beta, gradparB;   // Used for Vpar terms
 Field2D phi0;   // When diamagnetic terms used
 
+bool constn0;
+BoutReal n0_height, n0_ave, n0_width, n0_center, n0_bottom_x, Nbar, Tibar, Tebar; //the total height, average width and center of profile of N0
+BoutReal Tconst; //the ampitude of congstant temperature
+//Field3D sourp;
+
+Field2D N0,Ti0,Te0,Ne0;  // number density and temperature
+Field2D Pi0, Pe0;
+Field2D q95;
+Field3D ubyn;
+BoutReal q95_input;
+bool n0_fake_prof, T0_fake_prof;
+BoutReal Zi; // charge number of ion
+
 // B field vectors
 Vector2D B0vec; // B0 field vector
 
@@ -61,6 +74,7 @@ BoutReal Bbar, Lbar, Tbar, Va; // Normalisation constants
 BoutReal dnorm; // For diamagnetic terms: 1 / (2. * wci * Tbar)
 BoutReal dia_fact; // Multiply diamagnetic term by this
 BoutReal delta_i; // Normalized ion skin depth
+BoutReal omega_i; // ion gyrofrequency 
 
 BoutReal diffusion_par;  // Parallel pressure diffusion
 BoutReal diffusion_Vpar;  //xia: Parallel velocitye diffusion
@@ -90,9 +104,14 @@ BoutReal viscos_perp; // Perpendicular viscosity
 BoutReal hyperviscos; // Hyper-viscosity (radial)
 Field3D hyper_mu_x; // Hyper-viscosity coefficient
 
+Field3D Dperp2Phi0, Dperp2Phi, GradPhi02, GradPhi2; //Temporary variables for gyroviscous
+Field3D GradparPhi02, GradparPhi2, GradcPhi, GradcparPhi;
+Field3D Dperp2Pi0, Dperp2Pi, bracketPhi0P, bracketPhiP0, bracketPhiP;
+BoutReal Upara2;
+
 // options
 bool include_curvature, include_jpar0, compress0;
-bool evolve_pressure;
+bool evolve_pressure, gyroviscous;
 
 BoutReal vacuum_pressure;
 BoutReal vacuum_trans; // Transition width
@@ -198,6 +217,65 @@ const Field2D rfpower_exp(BoutReal rf_width_x, BoutReal rf_width_y, BoutReal rf_
 
 const Field3D Grad2_par2new(const Field3D &f); //for 4th order diffusion
 
+const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x);
+
+const Field2D N0tanh(BoutReal n0_height, BoutReal n0_ave, BoutReal n0_width, BoutReal n0_center, BoutReal n0_bottom_x)
+{
+  Field2D result;
+  result.allocate();
+
+  BoutReal Grid_NX, Grid_NXlimit;    //the grid number on x, and the 
+  BoutReal Jysep;
+  mesh->get(Grid_NX, "nx");
+  mesh->get(Jysep, "jyseps1_1");
+  Grid_NXlimit = n0_bottom_x * Grid_NX; 
+  output.write("Jysep1_1 = %i   Grid number = %e\n", int(Jysep), Grid_NX);
+  
+  if (Jysep > 0.) //for single null geometry
+    {
+      BoutReal Jxsep, Jysep2;
+      mesh->get(Jxsep, "ixseps1");
+      mesh->get(Jysep2, "jyseps2_2");
+      //output.write("Jysep2_2 = %i   Ixsep1 = %i\n", int(Jysep2), int(Jxsep));
+
+      for(int jx=0;jx<mesh->ngx;jx++)
+	{
+	  BoutReal mgx = mesh->GlobalX(jx);
+	  BoutReal xgrid_num = (Jxsep+1.)/Grid_NX;
+	  //output.write("mgx = %e xgrid_num = %e\n", mgx);
+	  for (int jy=0;jy<mesh->ngy;jy++)
+	    {
+	      int globaly = mesh->YGLOBAL(jy);
+	      //output.write("local y = %i;   global y: %i\n", jy, globaly);
+	      if ( mgx > xgrid_num || (globaly<=int(Jysep)-4) || (globaly>int(Jysep2)) )
+		mgx = xgrid_num;
+	      BoutReal rlx = mgx - n0_center;
+	      BoutReal temp = exp(rlx/n0_width);
+	      BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+	      result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
+	    }
+	}
+    }
+  else //circular geometry
+    {
+      for(int jx=0;jx<mesh->ngx;jx++)
+	{
+	  BoutReal mgx = mesh->GlobalX(jx);
+	  BoutReal xgrid_num = Grid_NXlimit/Grid_NX;
+	  if (mgx > xgrid_num)
+	    mgx = xgrid_num;
+	  BoutReal rlx = mgx - n0_center;
+	  BoutReal temp = exp(rlx/n0_width);
+	  BoutReal dampr = ((temp - 1.0 / temp) / (temp + 1.0 / temp));
+	  for(int jy=0;jy<mesh->ngy;jy++)
+	    result[jx][jy] = 0.5*(1.0 - dampr) * n0_height + n0_ave;  
+	}
+    }
+  
+  mesh->communicate(result);
+
+  return result;
+}
 
 const Field3D Grad2_par2new(const Field3D &f)
 {
@@ -324,6 +402,16 @@ int physics_init(bool restarting)
   OPTION(options, scaleP,            1.0);  // Multiply P0 by a number
   P0 *= scaleP;              // NOTE: Not self consistent with B field
   
+  OPTION(options, constn0,    true);
+  OPTION(options, n0_fake_prof,    false);   //use the hyperbolic profile of n0. If both  n0_fake_prof and T0_fake_prof are false, use the profiles from grid file 
+  OPTION(options, n0_height,         0.4);   //the total height of profile of N0, in percentage of Ni_x
+  OPTION(options, n0_ave,           0.01);   //the center or average of N0, in percentage of Ni_x
+  OPTION(options, n0_width,          0.1);   //the width of the gradient of N0,in percentage of x
+  OPTION(options, n0_center,       0.633);   //the grid number of the center of N0, in percentage of x
+  OPTION(options, n0_bottom_x,      0.81);  //the start of flat region of N0 on SOL side, in percentage of x 
+  OPTION(options, T0_fake_prof,    false); 
+  OPTION(options, Tconst,           -1.0);   //the amplitude of constant temperature, in percentage
+  
   OPTION(options, density,           1.0e19); // Number density [m^-3]
 
   OPTION(options, evolve_jpar,       false);  // If true, evolve J raher than Psi
@@ -335,6 +423,7 @@ int physics_init(bool restarting)
   OPTION(options, evolve_pressure,   true);
   
   OPTION(options, compress0,          false);
+  OPTION(options, gyroviscous,       false);
   OPTION(options, nonlinear,         false);
 
   OPTION(options, eHall,            false);  // electron Hall or electron parallel pressue gradient effects? 
@@ -554,6 +643,14 @@ int physics_init(bool restarting)
   output.write("                dnorm = %e\n", dnorm);
   output.write("    Resistivity\n");
 
+  if(gyroviscous)
+    {
+      omega_i = 9.58e7*Zeff*Bbar;
+      Upara2 = 0.5/(Tbar*omega_i);
+      //Upara3 = 1.0;
+      output.write("Upara2 = %e     Omega_i = %e\n", Upara2, omega_i);
+    }
+
   if(eHall)
     output.write("                delta_i = %e   AA = %e \n", delta_i, AA);
 
@@ -698,6 +795,79 @@ int physics_init(bool restarting)
   mesh->dx   /= Lbar*Lbar*Bbar;
   I    *= Lbar*Lbar*Bbar;
   
+  if (constn0)
+    {
+      T0_fake_prof = false;
+      n0_fake_prof = false;
+    }
+  else
+    {
+        Nbar = 1.0;
+	Tibar=1000.0;
+	Tebar=1000.0;
+
+      if( (!T0_fake_prof) && n0_fake_prof )
+	{
+	  N0 = N0tanh(n0_height*Nbar, n0_ave*Nbar, n0_width, n0_center, n0_bottom_x);
+
+	  Ti0 = P0/N0/2.0;
+	  Te0 = Ti0;
+	}
+      else if (T0_fake_prof)
+	{
+	  Ti0 = Tconst;
+	  Te0 = Ti0;
+	  N0 = P0/(Ti0+Te0);
+	}
+      else
+	{
+	  if(mesh->get(N0,  "Niexp")) { // N_i0                                          
+	    output.write("Error: Cannot read Ni0 from grid\n");
+	    return 1;
+	  } 
+	  
+	  if(mesh->get(Ti0,  "Tiexp")) { // T_i0                                         
+	    output.write("Error: Cannot read Ti0 from grid\n");
+	    return 1;
+	  }
+
+	  if(mesh->get(Te0,  "Teexp")) { // T_e0  
+	    output.write("Error: Cannot read Te0 from grid\n");
+	    return 1;
+	  }
+	  N0 /= Nbar;
+	  Ti0 /= Tibar;
+	  Te0 /= Tebar;
+	}
+    }
+
+  if (gyroviscous)
+    {
+      Dperp2Phi0.setLocation(CELL_CENTRE);
+      Dperp2Phi0.setBoundary("phi");
+      Dperp2Phi.setLocation(CELL_CENTRE);
+      Dperp2Phi.setBoundary("phi");
+      GradPhi02.setLocation(CELL_CENTRE);
+      GradPhi02.setBoundary("phi");
+      GradcPhi.setLocation(CELL_CENTRE);
+      GradcPhi.setBoundary("phi");
+      Dperp2Pi0.setLocation(CELL_CENTRE);
+      Dperp2Pi0.setBoundary("P");
+      Dperp2Pi.setLocation(CELL_CENTRE);
+      Dperp2Pi.setBoundary("P");
+      bracketPhi0P.setLocation(CELL_CENTRE);
+      bracketPhi0P.setBoundary("P");
+      bracketPhiP0.setLocation(CELL_CENTRE);
+      bracketPhiP0.setBoundary("P");
+      if (nonlinear)
+	{
+	  GradPhi2.setLocation(CELL_CENTRE);
+	  GradPhi2.setBoundary("phi");
+	  bracketPhiP.setLocation(CELL_CENTRE);
+	  bracketPhiP.setBoundary("P");
+	}
+    }
+
   BoutReal pnorm = max(P0, true); // Maximum over all processors
   
   vacuum_pressure *= pnorm; // Get pressure from fraction
@@ -807,6 +977,7 @@ int physics_init(bool restarting)
   Psi.setLocation(CELL_YLOW);
   Jpar.setLocation(CELL_YLOW);
   Vpar.setLocation(CELL_YLOW);
+  //sourp.setLocation(CELL_CENTRE);
 
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -878,9 +1049,12 @@ int physics_init(bool restarting)
   }
 
   // Diamagnetic phi0
-  if(diamag && diamag_phi0) {
+  if(diamag_phi0) {
+    if (constn0)
+      phi0 = -0.5*dnorm*P0/B0;
+    else
     // Stationary equilibrium plasma. ExB velocity balances diamagnetic drift
-    phi0 = -0.5*dnorm*P0/B0;
+      phi0 = -0.5*dnorm*P0/B0/N0;
     SAVE_ONCE(phi0);
   }
 
@@ -889,35 +1063,56 @@ int physics_init(bool restarting)
   SAVE_ONCE2(J0, P0);
   SAVE_ONCE4(density, Lbar, Bbar, Tbar);
   SAVE_ONCE2(Va, B0);
+  SAVE_ONCE2(Dphi0, U0); 
+  SAVE_ONCE(V0);  
+  if (!constn0)
+    SAVE_ONCE3(Ti0, Te0, N0);     
 
   /////////////// CHECK VACUUM ///////////////////////
   // In vacuum region, initial vorticity should equal zero
   
+  //ubyn.setLocation(CELL_YLOW);
+  //ubyn.setBoundary("U");
+
   if(!restarting) {
     // Only if not restarting: Check initial perturbation
 
     // Set U to zero where P0 < vacuum_pressure
     U = where(P0 - vacuum_pressure, U, 0.0);
 
+    if (constn0)
+      {
+	ubyn = U;
     // Phi should be consistent with U
-    phi = invert_laplace(U, phi_flags, NULL);
-    
-    if(diamag) {
-      phi -= 0.5*dnorm * P / B0;
+	phi = invert_laplace(ubyn, phi_flags, NULL);
     }
+    else
+      {
+	ubyn = U/N0;
+	//dump.add(ubyn, "ubyn", 1);
+	//dump.add(sourp, "sourp", 1);
+	phi = invert_laplace(ubyn, phi_flags, NULL, &N0, NULL);
+      }
+    
+    //if(diamag) {
+    //phi -= 0.5*dnorm * P / B0;
+    //}
   }
+
+  
 
   /************** SETUP COMMUNICATIONS **************/
   
   comms.add(U);
   comms.add(Psi);
   comms.add(P);
-  comms.add(phi);
+//  comms.add(phi);
 
   phi.setBoundary("phi"); // Set boundary conditions
   tmpU2.setBoundary("U");
   tmpP2.setBoundary("P");
   tmpA2.setBoundary("J");
+  //sourp.setBoundary("U");
   
   if(evolve_jpar) {
     comms.add(Jpar);
@@ -977,6 +1172,10 @@ bool first_run = true; // For printing out some diagnostics first time around
 
 int physics_run(BoutReal t)
 {
+  // Perform communications
+  mesh->communicate(comms);
+
+
   ////////////////////////////////////////////
   // Transitions from 0 in core to 1 in vacuum
   if(nonlinear) {
@@ -1064,19 +1263,35 @@ int physics_run(BoutReal t)
     C_phi.setBoundaryTo(Ctmp);
 
   }else {
-    // Invert laplacian for phi
+
+    if (constn0)
+      {
     phi = invert_laplace(U, phi_flags, NULL);
     
     if(diamag) {
       phi -= 0.5*dnorm * P / B0;
     }
-    
+      }
+    else
+      {
+	ubyn = U/N0;
+	if (diamag)
+	  {
+	    ubyn -= 0.5*dnorm/(N0*B0) * Delp2(P);
+	    //ubyn.applyBoundary();
+	    mesh->communicate(ubyn);
+	    //sourp = Delp2(P);
+	    //sourp.applyBoundary();
+	    //mesh->communicate(sourp);
+	  }
+    // Invert laplacian for phi
+	phi = invert_laplace(ubyn, phi_flags, NULL, &N0, NULL);
+      }
     // Apply a boundary condition on phi for target plates
-    phi.applyBoundary();
+    //phi.applyBoundary();
+    mesh->communicate(phi); 
   }
 
-  // Perform communications
-  mesh->communicate(comms);
 
   if(!evolve_jpar) {
     // Get J from Psi
@@ -1346,6 +1561,58 @@ int physics_run(BoutReal t)
       output.write("      Max mu_x = %e, Max_DC mu_x = %e\n", max(hyper_mu_x), max(hyper_mu_x.DC()));
     }
   }
+
+  if(gyroviscous)
+    {
+
+      Field3D Pi;
+      Field2D Pi0;
+      Pi = 0.5*P;
+      Pi0 = 0.5*P0;
+
+      Dperp2Phi0 = Field3D(Delp2(B0*phi0));
+      Dperp2Phi0.applyBoundary();
+      mesh->communicate(Dperp2Phi0);
+
+      Dperp2Phi = Delp2(B0*phi);
+      Dperp2Phi.applyBoundary();
+      mesh->communicate(Dperp2Phi);
+
+      Dperp2Pi0 = Field3D(Delp2(Pi0));
+      Dperp2Pi0.applyBoundary();
+      mesh->communicate(Dperp2Pi0);
+
+      Dperp2Pi = Delp2(Pi);
+      Dperp2Pi.applyBoundary();
+      mesh->communicate(Dperp2Pi);
+
+      bracketPhi0P = bracket(B0*phi0, Pi, bm_exb);
+      bracketPhi0P.applyBoundary();
+      mesh->communicate(bracketPhi0P);
+
+      bracketPhiP0 = bracket(B0*phi, Pi0, bm_exb);
+      bracketPhiP0.applyBoundary();
+      mesh->communicate(bracketPhiP0);
+
+      ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi0, bm_exb)/B0;
+      ddt(U) -= 0.5*Upara2*bracket(Pi0, Dperp2Phi, bm_exb)/B0;
+      ddt(U) += 0.5*Upara2*bracket(B0*phi, Dperp2Pi0, bm_exb)/B0;
+      ddt(U) += 0.5*Upara2*bracket(B0*phi0, Dperp2Pi, bm_exb)/B0;
+      ddt(U) -= 0.5*Upara2*Delp2(bracketPhi0P)/B0;
+      ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP0)/B0;
+
+      if (nonlinear)
+	{
+
+	  bracketPhiP = bracket(B0*phi, Pi, bm_exb);
+	  bracketPhiP.applyBoundary();
+	  mesh->communicate(bracketPhiP);
+	  
+	  ddt(U) -= 0.5*Upara2*bracket(Pi, Dperp2Phi, bm_exb)/B0;
+	  ddt(U) += 0.5*Upara2*bracket(B0*phi, Dperp2Pi, bm_exb)/B0;
+	  ddt(U) -= 0.5*Upara2*Delp2(bracketPhiP)/B0;
+	}
+    }
 
   // left edge sink terms 
   if(sink_Ul > 0.0){
