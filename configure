@@ -3747,6 +3747,63 @@ fi
   fi
 fi
 
+# Find fftw-wisdom
+if type fftw-wisdom > /dev/null 2>&1; then
+  echo " -> Found fftw-wisdom executable"
+  # Path to fftw-wisdom, then remove fft-wisdom and bin/
+  FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
+  # Check if the files are there
+  as_ac_File=`$as_echo "ac_cv_file_$FFTWISDOM/include/fftw3.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTWISDOM/include/fftw3.h" >&5
+$as_echo_n "checking for $FFTWISDOM/include/fftw3.h... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$FFTWISDOM/include/fftw3.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$FFTWISDOM/include/fftw3.h" | $as_tr_cpp` 1
+_ACEOF
+FFTPATH=$FFTWISDOM
+fi
+as_ac_File=`$as_echo "ac_cv_file_$FFTWISDOM/lib/libfftw3.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTWISDOM/lib/libfftw3.a" >&5
+$as_echo_n "checking for $FFTWISDOM/lib/libfftw3.a... " >&6; }
+if eval "test \"\${$as_ac_File+set}\"" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$FFTWISDOM/lib/libfftw3.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$FFTWISDOM/lib/libfftw3.a" | $as_tr_cpp` 1
+_ACEOF
+FFTPATH=$FFTWISDOM
+fi
+
+fi
+
 # Try some known paths
 if test "$FFTPATH" = ""
 then

@@ -453,6 +453,15 @@ then
   fi
 fi
 
+# Find fftw-wisdom
+if type fftw-wisdom > /dev/null 2>&1; then
+  echo " -> Found fftw-wisdom executable"
+  # Path to fftw-wisdom, then remove fft-wisdom and bin/
+  FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
+  # Check if the files are there
+  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h $FFTWISDOM/lib/libfftw3.a , FFTPATH=$FFTWISDOM, )
+fi
+
 # Try some known paths
 if test "$FFTPATH" = ""
 then
