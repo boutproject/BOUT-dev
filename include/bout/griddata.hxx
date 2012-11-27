@@ -113,7 +113,7 @@ public:
   vector<int> getSize(const char *name); ///< Get size of the variable
 
   /// Set the (x,y,z) origin for all subsequent calls
-  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {}
+  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {return true;}
   
   /// Get data from the source
   bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
