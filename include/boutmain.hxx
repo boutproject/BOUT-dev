@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
   msg_stack.pop(msg_point);
 
   bout_run(solver, physics_run);
+  
+  delete solver; // Delete the solver
 
   BoutFinalise();
 

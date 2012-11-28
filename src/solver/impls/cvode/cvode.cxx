@@ -35,6 +35,7 @@
 #include <msg_stack.hxx>
 
 #include <cvode/cvode.h>
+#include <cvode/cvode_bbdpre.h>
 #include <nvector/nvector_parallel.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
@@ -44,8 +45,10 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
+typedef long CVINT;
+
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
-static int cvode_bbd_rhs(int Nlocal, BoutReal t, N_Vector u, N_Vector du, 
+static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
 			 void *user_data);
 
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
@@ -65,7 +68,10 @@ CvodeSolver::CvodeSolver() : Solver() {
 }
 
 CvodeSolver::~CvodeSolver() {
-
+  if(initialised) {
+    N_VDestroy_Parallel(uvec);
+    CVodeFree(&cvode_mem);
+  }
 }
 
 /**************************************************************************
@@ -494,7 +500,7 @@ static int cvode_rhs(BoutReal t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(int Nlocal, BoutReal t, 
+static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, 
 			 N_Vector u, N_Vector du, 
 			 void *user_data)
 {
