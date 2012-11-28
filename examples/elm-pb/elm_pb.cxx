@@ -1157,11 +1157,11 @@ int physics_run(BoutReal t)
   }else {
     // Vector potential
       
-    ddt(Psi) = -Grad_parP(B0*phi, CELL_CENTRE) / B0 + eta*Jpar;
+    ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + Jpar*eta;
     //xqx      ddt(Psi) = -Grad_parP(B0*phi, CELL_YLOW) / B0 + eta*Jpar;
 
     if(eHall) {
-      ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0*P, CELL_CENTRE) / B0 
+      ddt(Psi) +=  0.25*delta_i*(Grad_parP(B0*P, CELL_YLOW) / B0 
                                  +b0xGrad_dot_Grad(P0, Psi));   // electron parallel pressure
     }
     if(diamag && diamag_phi0)
