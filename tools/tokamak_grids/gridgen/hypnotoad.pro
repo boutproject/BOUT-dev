@@ -129,6 +129,8 @@ PRO popup_event, event
       
       widget_control, base_info.xpt_dist_field, get_value=xpt_mul
 
+      PRINT, "HYP: psi_inner =", psi_inner
+
       settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
       
       WIDGET_CONTROL, base_info.status, set_value="Generating mesh ..."
@@ -304,7 +306,7 @@ PRO event_handler, event
         widget_control, info.rad_peak_field, get_value=rad_peak
         
 
-        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
       ENDELSE
       
       widget_control, info.xpt_dist_field, get_value=xpt_mul
@@ -321,7 +323,7 @@ PRO event_handler, event
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
       mesh = create_grid((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
-                         boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, $
+                         boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
@@ -361,7 +363,7 @@ PRO event_handler, event
 
         widget_control, info.rad_peak_field, get_value=rad_peak
 
-        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
       ENDELSE
       
 
@@ -377,7 +379,7 @@ PRO event_handler, event
       WIDGET_CONTROL, info.status, set_value="Generating non-orthogonal mesh ..."
       
       mesh = create_nonorthogonal((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
-                         boundary=boundary, strict=info.strict_bndry, rad_peaking=rad_peak, $
+                         boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical)
@@ -406,10 +408,13 @@ PRO event_handler, event
       ENDIF
 
       IF info.rz_grid_valid AND info.flux_mesh_valid THEN BEGIN
+        ; Get settings
+        settings = {calcp:info.calcp, calcbt:info.calcbt, $
+                    calchthe:info.calchthe, calcjpar:info.calcjpar}
         
         process_grid, *(info.rz_grid), *(info.flux_mesh), $
                       output=filename, poorquality=poorquality, /gui, parent=info.draw, $
-                      curv=info.curv_ind, smoothpressure=info.smoothP, smoothhthe=info.smoothH, smoothCurv=info.smoothCurv
+                      curv=info.curv_ind, smoothpressure=info.smoothP, smoothhthe=info.smoothH, smoothCurv=info.smoothCurv, settings=settings
         
         IF poorquality THEN BEGIN
           r = DIALOG_MESSAGE("Poor quality equilibrium", dialog_parent=info.draw)
@@ -471,6 +476,22 @@ PRO event_handler, event
     END
     'smoothCurv' : BEGIN
       info.smoothCurv = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'calcp' : BEGIN
+      info.calcp = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'calcbt' : BEGIN
+      info.calcbt = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'calchthe' : BEGIN
+      info.calchthe = event.select
+      widget_control, event.top, set_UVALUE=info
+    END
+    'calcjpar' : BEGIN
+      info.calcjpar = event.select
       widget_control, event.top, set_UVALUE=info
     END
     'fast': BEGIN
@@ -760,6 +781,22 @@ PRO event_handler, event
         str_set, info, "smoothCurv", oldinfo.smoothCurv
         Widget_Control, info.smoothCurv_check, Set_Button=info.smoothCurv
 
+        str_set, info, "calcp_check", oldinfo.calcp_check, /over        
+        str_set, info, "calcp", oldinfo.calcp
+        Widget_Control, info.calcp_check, Set_Button=info.calcp
+        
+        str_set, info, "calcbt_check", oldinfo.calcbt_check, /over      
+        str_set, info, "calcbt", oldinfo.calcbt
+        Widget_Control, info.calcbt_check, Set_Button=info.calcbt
+        
+        str_set, info, "calchthe_check", oldinfo.calchthe_check, /over      
+        str_set, info, "calchthe", oldinfo.calchthe
+        Widget_Control, info.calchthe_check, Set_Button=info.calchthe
+        
+        str_set, info, "calcjpar_check", oldinfo.calcjpar_check, /over      
+        str_set, info, "calcjpar", oldinfo.calcjpar
+        Widget_Control, info.calcjpar_check, Set_Button=info.calcjpar
+
         str_set, info, "radgrid_check", oldinfo.radgrid_check, /over
         str_set, info, "single_rad_grid", oldinfo.single_rad_grid
         Widget_Control, info.radgrid_check, Set_Button=info.single_rad_grid
@@ -880,7 +917,7 @@ PRO hypnotoad
   
   
   rad_peak_field = CW_FIELD( tab1,                            $
-                             title  = 'Sep. packing:',          $ 
+                             title  = 'Sep. spacing:',          $ 
                              uvalue = 'rad_peak',           $ 
                              /floating,                      $ 
                              value = 1,                    $
@@ -964,6 +1001,26 @@ PRO hypnotoad
   Widget_Control, smoothCurv_check, Set_Button=smoothCurv_default
   
   
+  calcp_default = 0
+  calcp_check = WIDGET_BUTTON(checkboxbase, VALUE="Recalc P", uvalue='calcp', $
+                              tooltip="Recalculate Pressure")
+  Widget_Control, calcp_check, Set_Button=calcp_default
+
+  calcbt_default = 0
+  calcbt_check = WIDGET_BUTTON(checkboxbase, VALUE="Recalc RBt", uvalue='calcbt', $
+                              tooltip="Recalculate R*Bt")
+  Widget_Control, calcbt_check, Set_Button=calcbt_default
+
+  calchthe_default = 0
+  calchthe_check = WIDGET_BUTTON(checkboxbase, VALUE="Recalc hthe", uvalue='calchthe', $
+                              tooltip="Recalculate hthe")
+  Widget_Control, calchthe_check, Set_Button=calchthe_default
+  
+  calcjpar_default = 0
+  calcjpar_check = WIDGET_BUTTON(checkboxbase, VALUE="Recalc Jpar", uvalue='calcjpar', $
+                              tooltip="Recalculate Jpar")
+  Widget_Control, calcjpar_check, Set_Button=calcjpar_default
+
   process_button = WIDGET_BUTTON(tab2, VALUE='Output mesh', $
                                  uvalue='process', tooltip="Process mesh and output to file")
 
@@ -1014,6 +1071,14 @@ PRO hypnotoad
            smoothH:smoothH_default, $ 
            smoothCurv_check:smoothCurv_check, $
            smoothCurv:smoothCurv_default, $
+           calcp_check:calcp_check, $
+           calcp:calcp_default, $
+           calcbt_check:calcbt_check, $
+           calcbt:calcbt_default, $
+           calchthe_check:calchthe_check, $
+           calchthe:calchthe_default, $
+           calcjpar_check:calcjpar_check, $
+           calcjpar:calcjpar_default, $
            fast_check:fast_check, $
            fast:0 $
          } 

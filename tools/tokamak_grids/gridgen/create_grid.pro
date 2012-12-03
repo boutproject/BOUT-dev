@@ -603,13 +603,11 @@ END
 FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                       boundary=boundary, debug=debug, strictbndry=strictbndry, iter=iter, $
                       fpsi = fpsi, $ ; f(psi) = R*Bt current function
-                      nrad_flexible=nrad_flexible, rad_peaking=rad_peaking, $
+                      nrad_flexible=nrad_flexible, $
                       single_rad_grid=single_rad_grid, fast=fast, $
                       xpt_mindist=xpt_mindist, xpt_mul=xpt_mul
 
   IF SIZE(nrad_flexible, /TYPE) EQ 0 THEN nrad_flexible = 0
-  IF NOT KEYWORD_SET(rad_peaking) THEN rad_peaking = 2.0
-  rad_peaking = 1.0 / rad_peaking
 
   ; Create error handler
   err=0;CATCH, err
@@ -794,7 +792,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     npol = TOTAL(settings.npol,/int)
     rad_peaking = settings.rad_peaking[0] ; Just the first region
     pol_peaking = settings.pol_peaking[0]
-    
+
     ; work out where to put the surfaces in the core
     fvals = radial_grid(nrad, f_inner, f_outer, 1, 1, [xpt_f[inner_sep]], rad_peaking)
 
@@ -905,6 +903,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     RETURN, result
     
   ENDIF ELSE BEGIN
+
+    rad_peaking = settings.rad_peaking
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Grid contains at least one x-point
 
@@ -1041,7 +1041,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       
       psi_outer = FLTARR(critical.n_xpoint) + MAX(settings.psi_outer)
     ENDELSE
-
+    
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; Need to work out where the x-points are
     ; and create lines just inside the separatrices
@@ -1240,7 +1240,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                         rad_peaking:settings.rad_peaking, pol_peaking:settings.pol_peaking}
         RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                             boundary=boundary, iter=iter+1, nrad_flexible=nrad_flexible, $
-                            rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, fast=fast)
+                            single_rad_grid=single_rad_grid, fast=fast)
       ENDIF
       dpsi = sol_psi_vals[i,TOTAL(nrad,/int)-nsol-1] - sol_psi_vals[i,TOTAL(nrad,/int)-nsol-2]
       sol_psi_vals[i,(TOTAL(nrad,/int)-nsol):*] = radial_grid(nsol, $
@@ -1823,7 +1823,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
       RETURN, create_grid(F, R, Z, new_settings, critical=critical, $
                           boundary=boundary, strictbndry=strictbndry, $
                           iter=iter+1, nrad_flexible=nrad_flexible, $
-                          rad_peaking=1./rad_peaking, single_rad_grid=single_rad_grid, fast=fast)
+                          single_rad_grid=single_rad_grid, fast=fast)
       
     ENDIF
     

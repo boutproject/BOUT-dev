@@ -399,7 +399,18 @@ END
 PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
                   gui=gui, parent=parent, reverse_bt=reverse_bt, $
                   curv=curv, smoothpressure=smoothpressure, $
-                  smoothhthe=smoothhthe, smoothcurv=smoothcurv
+                  smoothhthe=smoothhthe, smoothcurv=smoothcurv, $
+                  settings=settings
+  
+  IF NOT KEYWORD_SET(settings) THEN BEGIN
+    ; Create an empty structure
+    settings = {dummy:0}
+  ENDIF
+  ; Check settings
+  str_check_present, settings, 'calcp', -1
+  str_check_present, settings, 'calcbt', -1
+  str_check_present, settings, 'calchthe', -1
+  str_check_present, settings, 'calcjpar', -1
   
   ;CATCH, err
   ;IF err NE 0 THEN BEGIN
@@ -696,7 +707,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     SURFACE, pressure, xtitle="X", ytitle="Y", title="Input pressure", chars=2, color=1
     SURFACE, pres, xtitle="X", ytitle="Y", title="New pressure", chars=2,color=1
   
-    IF get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent) THEN BEGIN
+    calcp = settings.calcp
+    
+    IF calcp EQ -1 THEN calcp = get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent)
+    IF calcp EQ 1 THEN BEGIN
       pressure = pres
       dpdpsi = dpdx2
     ENDIF
@@ -706,7 +720,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Correct f = RBt using force balance
 
-  IF get_yesno("Correct f=RBt using force balance?", gui=gui, dialog_parent=parent) THEN BEGIN
+  calcbt = settings.calcbt
+  IF calcbt EQ -1 THEN calcbt = get_yesno("Correct f=RBt using force balance?", gui=gui, dialog_parent=parent)
+  IF calcbt EQ 1 THEN BEGIN
 
     new_Btxy = newton_bt(psixy, Rxy, Btxy, Bpxy, pres, hthe, mesh)
     
@@ -716,8 +732,10 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     !P.MULTI=[0,0,2,0,0]
     SURFACE, Btxy, xtitle="X", ytitle="Y", title="Input Bt", chars=2,color=1
     SURFACE, new_Btxy, xtitle="X", ytitle="Y", title="New Bt", chars=2,color=1
-
-    IF get_yesno("Keep new Bt?", gui=gui, dialog_parent=parent) THEN BEGIN
+    
+    calcbt = settings.calcbt
+    IF calcbt EQ -1 THEN calcbt = get_yesno("Keep new Bt?", gui=gui, dialog_parent=parent)
+    IF calcbt EQ 1 THEN BEGIN
       Btxy = new_Btxy
       Bxy = SQRT(Btxy^2 + Bpxy^2)
     ENDIF
@@ -729,7 +747,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   ; Does not depend on signs
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  IF get_yesno("Adjust hthe using force balance?", gui=gui, dialog_parent=parent) THEN BEGIN
+  calchthe = settings.calchthe
+  IF calchthe EQ -1 THEN calchthe = get_yesno("Adjust hthe using force balance?", gui=gui, dialog_parent=parent) 
+  IF calchthe EQ 1 THEN BEGIN
     ; This doesn't behave well close to the x-points
     fixhthe = FIX(nx / 2)
     nh = correct_hthe(Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=fixhthe)
@@ -975,7 +995,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   !P.multi=0
   
-  IF get_yesno("Use Jpar from curvature?", gui=gui, dialog_parent=parent) THEN BEGIN
+  calcjpar = settings.calcjpar
+  IF calcjpar EQ -1 THEN calcjpar = get_yesno("Use Jpar from curvature?", gui=gui, dialog_parent=parent)
+  IF calcjpar EQ 1 THEN BEGIN
     Jpar0 = Jpar
   ENDIF
   
