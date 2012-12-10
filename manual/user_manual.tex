@@ -59,6 +59,8 @@
 \newcommand{\file}[1]{\texttt{\bf #1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
 
+\newcommand{\bb}[1]{\mathbf{#1}}
+
 %% commands for boxes with important notes
 \newlength{\notewidth}
 \addtolength{\notewidth}{\textwidth}
@@ -3015,6 +3017,219 @@ As with other differential operators, the required location of the result can be
 
 \note{There are subtleties with boundary conditions when staggering variables. The test-staggered example
   manually applies a boundary condition to make the width of the boundary wider}
+
+\section{Advanced methods}
+\label{sec:precon}
+
+This section describes the more advanced methods which can be used to speed up simulations using
+implicit time stepping schemes. At the time of writing (Dec '12), they can be used with either the SUNDIALS CVODE
+or PETSc solvers. 
+
+\subsection{Preconditioning}
+
+At every time step, an implicit scheme such as BDF has to solve a nonlinear problem to find the next
+solution. This is usually done using Newton's method, each step of which involves solving a linear (matrix)
+problem. For $N$ evolving variables is an $N\times N$ matrix and so can be very large. 
+By default matrix-free methods are used, in which the 
+Jacobian $\mathcal{J}$ is approximated by finite differences (see next subsection), and so this matrix
+never needs to be explicitly calculated. Finding a solution to this matrix can still be difficult, particularly
+as $\delta t$ gets large compared with some timescales in the system (i.e. a stiff problem).
+
+A preconditioner is a function which quickly finds an approximate solution to this matrix, speeding up
+convergence to a solution. A preconditioner does not need to include all the terms in the problem being
+solved, as the preconditioner only affects the convergence rate and not the final solution. A good preconditioner
+can therefore concentrate on solving the parts of the problem with the fastest timescales.
+
+A simple example\footnote{Taken from a talk by L.Chacon available here \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a coupled wave equation, solved in the \texttt{test-precon} example code:
+\[
+\frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial v}{\partial t} = \partial_{||} u
+\]
+First, calculate the Jacobian of this set of equations by taking partial derivatives of the time-derivatives with respect to each of the evolving variables
+\[
+\mathcal{J} = \left(\begin{array}{cc}
+\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
+\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
+\end{array}\right) = \left(\begin{array}{cc}
+0 & \partial_{||} \\
+\partial_{||} & 0
+\end{array}\right)
+\]
+In this case $\frac{\partial u}{\partial t}$ doesn't depend on $u$ nor $\frac{\partial v}{\partial t}$ on $v$,
+so the diagonal is empty. Since the equations are linear, the Jacobian doesn't depend on $u$ or $v$ and so
+\[
+\frac{\partial}{\partial t}\left(\begin{array}{c}
+u \\
+v
+\end{array}\right) = \mathcal{J} \left(\begin{array}{c}
+u \\
+v
+\end{array}\right)
+\]
+In general for nonlinear functions $\mathcal{J}$ gives the change in time-derivatives in response to changes
+in the state variables $u$ and $v$. 
+
+In implicit timestepping, the preconditioner needs to solve an equation
+\[
+\mathcal{I} - \gamma \mathcal{J}
+\]
+where $\mathcal{I}$ is the idensity matrix, and $\gamma$ depends on the time step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For the simple wave equation problem, this is
+\[
+\mathcal{I} - \gamma \mathcal{J} = \left(\begin{array}{cc}
+1 & -\gamma\partial_{||} \\
+-\gamma\partial_{||} & 1
+\end{array}\right)
+\]
+This matrix can be block inverted using Schur factorisation\footnote{See paper \url{http://arxiv.org/abs/1209.2054} for an application to 2-fluid equations}
+\[
+\left(\begin{array}{cc}
+  \bb{E} & \bb{U} \\
+  \bb{L} & \bb{D}
+\end{array}\right)^{-1} =
+\left(\begin{array}{cc}
+  \bb{I} & -\bb{E}^{-1}\bb{U} \\
+  0 & \bb{I}
+\end{array}\right)\left(\begin{array}{cc}
+  \bb{E}^{-1} & 0 \\
+  0 & \bb{P}_{Schur}^{-1}
+\end{array}\right)\left(\begin{array}{cc}
+  \bb{I} & 0 \\
+  -\bb{L}\bb{E}^{-1} & \bb{I}
+\end{array}\right)
+\]
+where $\bb{P}_{Schur} = \bb{D} - \bb{L}\bb{E}^{-1}\bb{U}$
+Using this, the wave problem becomes:
+\begin{equation}
+\left(\begin{array}{cc}
+1 & -\gamma\partial_{||} \\
+-\gamma\partial_{||} & 1
+\end{array}\right)^{-1} = \left(\begin{array}{cc}
+1 & \gamma\partial_{||} \\
+0 & 1
+\end{array}\right)\left(\begin{array}{cc}
+1 & 0 \\
+0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+\end{array}\right)\left(\begin{array}{cc}
+1 & 0 \\
+\gamma\partial_{||} & 1
+\end{array}\right)
+\label{eq:precon}
+\end{equation}
+The preconditioner is implemented by defining a function of the form
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  ...
+}
+\end{lstlisting}
+which takes as input the current time, the $\gamma$ factor appearing above, and $\delta$ which is only important for constrained problems (not discussed here... yet). The current state of the system is stored in the state variables (here \lstinline!u! and \lstinline!v!), whilst the vector to be preconditioned is stored in the time derivatives 
+(here \lstinline!ddt(u)! and \lstinline!ddt(v)!). At the end of the preconditioner the result should be in the state variables. A preconditioner which is just the identity matrix and so does nothing is:
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  u = ddt(u);
+  v = ddt(v);
+}
+\end{lstlisting}
+To implement the preconditioner in equation~\ref{eq:precon}, first apply the rightmost matrix to the given
+vector:
+\[
+\left(\begin{array}{c}
+u \\
+v
+\end{array}\right) = \left(\begin{array}{cc}
+1 & 0 \\
+\gamma\partial_{||} & 1
+\end{array}\right)\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right)
+\]
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  mesh->communicate(ddt(u));
+  u = ddt(u);
+  v = gamma*Grad_par(ddt(u)) + ddt(v);
+\end{lstlisting}
+note that since the preconditioner is linear, it doesn't depend on $u$ or $v$ and so we can overwrite their
+values. In the nonlinear case we would need to create new variables to store these intermediate values in.
+As in the RHS function, since we are taking a differential of \texttt{ddt(u)}, it first needs to be communicated
+to exchange guard cell values.
+
+The second matrix
+\[
+\left(\begin{array}{c}
+u \\
+v
+\end{array}\right) \leftarrow \left(\begin{array}{cc}
+1 & 0 \\
+0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+\end{array}\right)\left(\begin{array}{c}
+u \\
+v
+\end{array}\right)
+\]
+doesn't alter $u$, but solves a parabolic equation in the parallel direction. There is a solver class to do this 
+called \texttt{InvertPar} which solves the equation $\left(A + B\partial_{||}^2\right)x = b$ where $A$ and $B$ are
+\lstinline!Field2D! or constants\footnote{This \texttt{InvertPar} class can handle cases with closed field-lines and twist-shift boundary conditions for tokamak simulations}. In \lstinline!physics_init! we create one of these solvers:
+\begin{lstlisting}[numbers=none]
+InvertPar *inv; // Parallel inversion class
+int physics_init(bool restarting) {
+   ...
+   inv = InvertPar::Create();
+   inv->setCoefA(1.0);
+   ...
+}
+\end{lstlisting}
+In the preconditioner we then use this solver to update $v$:
+\begin{lstlisting}[numbers=none]
+  inv->setCoefB(-SQ(gamma));
+  v = inv->solve(v);
+\end{lstlisting}
+which solves $v \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1} v$.
+The final matrix just updates $u$ using this new solution for $v$
+\[
+\left(\begin{array}{c}
+u \\
+v
+\end{array}\right) \leftarrow \left(\begin{array}{cc}
+1 & \gamma\partial_{||} \\
+0 & 1
+\end{array}\right)\left(\begin{array}{c}
+u \\
+v
+\end{array}\right)
+\]
+\begin{lstlisting}[numbers=none]
+  mesh->communicate(v);
+  u = u + gamma*Grad_par(v);
+\end{lstlisting}
+Finally, boundary conditions need to be imposed, which should be consistent with the conditions used in the RHS
+\begin{lstlisting}[numbers=none]
+  u.applyBoundary("dirichlet");
+  v.applyBoundary("dirichlet");
+\end{lstlisting}
+
+To use the preconditioner, pass the function to the solver in \lstinline!physics_init!
+\begin{lstlisting}
+int physics_init(bool restarting) {
+  solver->setPrecon(precon);
+  ...
+}
+\end{lstlisting}
+then in the \texttt{BOUT.inp} settings file switch on the preconditioner
+\begin{lstlisting}[language=bash,numbers=none]
+[solver]
+type = cvode          # Need CVODE or PETSc
+use_precon = true     # Use preconditioner
+rightprec = false     # Use Right preconditioner (default left)
+\end{lstlisting}
+
+\subsection{Jacobian function}
+
+
+
+\subsection{DAE constraint equations}
+
+Using the IDA solver, BOUT++ can solve Differential Algebraic Equations (DAEs), in which 
+algebraic constraints are used for some variables. 
 
 \section{Examples}
 \label{sec:examples}
