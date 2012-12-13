@@ -131,7 +131,7 @@ PRO popup_event, event
 
       PRINT, "HYP: psi_inner =", psi_inner
 
-      settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer}
+      settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
       
       WIDGET_CONTROL, base_info.status, set_value="Generating mesh ..."
       
@@ -150,7 +150,7 @@ PRO popup_event, event
       ; Create the mesh
       mesh = create_grid((*(base_info.rz_grid)).psi, (*(base_info.rz_grid)).r, (*(base_info.rz_grid)).z, $
                          settings, $
-                         boundary=boundary, strict=base_info.strict_bndry, rad_peaking=rad_peak, $
+                         boundary=boundary, strict=base_info.strict_bndry, $
                          single_rad_grid=base_info.single_rad_grid, $
                          critical=(*(base_info.rz_grid)).critical, $
                          fast=base_info.fast, xpt_mul=xpt_mul)

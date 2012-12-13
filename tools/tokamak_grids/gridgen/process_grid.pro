@@ -709,7 +709,9 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
     calcp = settings.calcp
     
-    IF calcp EQ -1 THEN calcp = get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent)
+    IF calcp EQ -1 THEN BEGIN
+      calcp = get_yesno("Keep new pressure?", gui=gui, dialog_parent=parent)
+    ENDIF ELSE WAIT, 2
     IF calcp EQ 1 THEN BEGIN
       pressure = pres
       dpdpsi = dpdx2
