@@ -71,14 +71,21 @@
 ;
 ; Return structure contains:
 ; 
-;   error                  - Non-zero if an error occurred
-;   psi_inner, psi_outer   - Normalised ranges of psi used
-;   nrad, npol             - Number of grid points used in each region
-;   Rixy, Zixy             - 2D arrays of indices into R and Z array
-;   Rxy, Zxy               - 2D arrays of (rad,pol) grid-point locations
-;   psixy                  - 2D array of normalised psi at each point
+;   error                       - Non-zero if an error occurred
+;   psi_inner, psi_outer        - Normalised ranges of psi used
+;   nrad[d], npol[d]            - Number of grid points used in each domain
+;   yup_xsplit[d]               - Upper Y edge of domain. x < xsplit -> inner
+;   yup_xin[d], yup_xout[d]     - Inner and outer domain connections. -1 = none
+;   ydown_xsplit[d]             - Lower Y edge of domain. x < xsplit -> inner
+;   ydown_xin[d], ydown_xout[d] - Inner and outer domain connections
+; 
+;   Rixy[x,y], Zixy[x,y]   - 2D arrays of indices into R and Z array
+;   Rxy[x,y], Zxy[x,y]     - 2D arrays of (rad,pol) grid-point locations
+;   psixy[x,y]             - 2D array of normalised psi at each point
 ;   faxis, fnorm           - Psi normalisation factors
-;   settings               - Final settings used
+;   settings               - Structure containing final settings used
+;   critical               - Structure describing O- and X-points
+;                            (from analyse_equil.pro)
 ;
 
 PRO swap, a, b
