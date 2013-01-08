@@ -70,13 +70,13 @@ class BoutMesh : public Mesh {
 
   const Field3D smoothSeparatrix(const Field3D &f);
 
-  BoutReal GlobalX(int jx);
-  BoutReal GlobalY(int jy);
+  BoutReal GlobalX(int jx) const;
+  BoutReal GlobalY(int jy) const;
 
   void outputVars(Datafile &file);
 
-  int XGLOBAL(int xloc);
-  int YGLOBAL(int yloc);
+  int XGLOBAL(int xloc) const;
+  int YGLOBAL(int yloc) const;
  private:
   int nx, ny;        ///< Size of the grid in the input file
   int MX, MY;        ///< size of the grid excluding boundary regions
@@ -101,12 +101,10 @@ class BoutMesh : public Mesh {
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
   bool IS_MYPROC(int xind, int yind);
-/*  int XGLOBAL(int xloc);*/
-  int XLOCAL(int xglo);
-/*  int YGLOBAL(int yloc);*/
-  int YGLOBAL(int yloc, int yproc);
-  int YLOCAL(int yglo);
-  int YLOCAL(int yglo, int yproc);
+  int XLOCAL(int xglo) const;
+  int YGLOBAL(int yloc, int yproc) const;
+  int YLOCAL(int yglo) const;
+  int YLOCAL(int yglo, int yproc) const;
   int YPROC(int yind);
   int XPROC(int xind);
   

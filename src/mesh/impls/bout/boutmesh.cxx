@@ -1718,37 +1718,31 @@ bool BoutMesh::IS_MYPROC(int xind, int yind)
 }
 
 /// Returns the global X index given a local index
-int BoutMesh::XGLOBAL(int xloc)
-{
+int BoutMesh::XGLOBAL(int xloc) const {
   return xloc + PE_XIND * MXSUB;
 }
 
 /// Returns a local X index given a global index
-int BoutMesh::XLOCAL(int xglo)
-{
+int BoutMesh::XLOCAL(int xglo) const {
   return xglo - PE_XIND * MXSUB;
 }
 
 /// Returns the global Y index given a local index
-int BoutMesh::YGLOBAL(int yloc)
-{
+int BoutMesh::YGLOBAL(int yloc) const {
   return yloc + PE_YIND*MYSUB - MYG;
 }
 
 /// Global Y index given local index and processor
-int BoutMesh::YGLOBAL(int yloc, int yproc)
-{
+int BoutMesh::YGLOBAL(int yloc, int yproc) const {
   return yloc + yproc*MYSUB - MYG;
 }
 
 /// Returns a local Y index given a global index
-int BoutMesh::YLOCAL(int yglo)
-{
+int BoutMesh::YLOCAL(int yglo) const {
   return yglo - PE_YIND*MYSUB + MYG;
 }
 
-int BoutMesh::YLOCAL(int yglo, int yproc)
-{
+int BoutMesh::YLOCAL(int yglo, int yproc) const {
   return yglo - yproc*MYSUB + MYG;
 }
 
@@ -2753,12 +2747,12 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   return result;
 }
 
-BoutReal BoutMesh::GlobalX(int jx) {
+BoutReal BoutMesh::GlobalX(int jx) const {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
   //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
-BoutReal BoutMesh::GlobalY(int jy) {
+BoutReal BoutMesh::GlobalY(int jy) const {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
 

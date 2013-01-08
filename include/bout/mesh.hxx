@@ -192,8 +192,8 @@ class Mesh {
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
   
-  virtual BoutReal GlobalX(int jx) = 0; ///< Continuous X index between 0 and 1
-  virtual BoutReal GlobalY(int jy) = 0; ///< Continuous Y index (0 -> 1)
+  virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
+  virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
   
   //////////////////////////////////////////////////////////
   
@@ -202,8 +202,8 @@ class Mesh {
                                     // so startx on this processor is OffsetX in global
   
   /// Global locator functions
-  virtual int XGLOBAL(int xloc) = 0;
-  virtual int YGLOBAL(int yloc) = 0;
+  virtual int XGLOBAL(int xloc) const = 0;
+  virtual int YGLOBAL(int yloc) const = 0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int ngx, ngy, ngz;
@@ -269,34 +269,6 @@ class Mesh {
   int gaussj(BoutReal **a, int n);
   int *indxc, *indxr, *ipiv, ilen;
 };
-
-/// Define for reading a variable from the grid
-#define GRID_LOAD(var) mesh->get(var, #var)
-#define GRID_LOAD2(var1, var2) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2);}
-#define GRID_LOAD3(var1, var2, var3) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3);}
-#define GRID_LOAD4(var1, var2, var3, var4) { \
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); }
-#define GRID_LOAD5(var1, var2, var3, var4, var5) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); \
-    mesh->get(var5, #var5);}
-#define GRID_LOAD6(var1, var2, var3, var4, var5, var6) {\
-    mesh->get(var1, #var1); \
-    mesh->get(var2, #var2); \
-    mesh->get(var3, #var3); \
-    mesh->get(var4, #var4); \
-    mesh->get(var5, #var5); \
-    mesh->get(var6, #var6);}
 
 #endif // __MESH_H__
 

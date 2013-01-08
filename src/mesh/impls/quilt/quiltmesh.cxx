@@ -536,11 +536,11 @@ vector<BoundaryRegion*> QuiltMesh::getBoundaries() {
   return boundaries;
 }
 
-BoutReal QuiltMesh::GlobalX(int jx) {
+BoutReal QuiltMesh::GlobalX(int jx) const {
   return ((BoutReal) XGLOBAL(jx));
 }
 
-BoutReal QuiltMesh::GlobalY(int jy) {
+BoutReal QuiltMesh::GlobalY(int jy) const {
   return ((BoutReal) YGLOBAL(jy));
 }
 
@@ -548,11 +548,11 @@ void QuiltMesh::outputVars(Datafile &file) {
   
 }
 
-int QuiltMesh::XGLOBAL(int xloc) {
+int QuiltMesh::XGLOBAL(int xloc) const {
   return mydomain->xOrigin() + xloc - MXG;
 }
 
-int QuiltMesh::YGLOBAL(int yloc) {
+int QuiltMesh::YGLOBAL(int yloc) const {
   return mydomain->yOrigin() + yloc - MYG;
 }
 

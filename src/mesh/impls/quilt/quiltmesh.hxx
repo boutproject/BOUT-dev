@@ -64,14 +64,14 @@ class QuiltMesh : public Mesh {
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
 
-  BoutReal GlobalX(int jx); ///< Continuous X index between 0 and 1
-  BoutReal GlobalY(int jy); ///< Continuous Y index (0 -> 1)
+  BoutReal GlobalX(int jx) const; ///< Continuous X index between 0 and 1
+  BoutReal GlobalY(int jy) const; ///< Continuous Y index (0 -> 1)
 
   void outputVars(Datafile &file); ///< Add mesh vars to file
   
   /// Global locator functions
-  int XGLOBAL(int xloc);
-  int YGLOBAL(int yloc);
+  int XGLOBAL(int xloc) const;
+  int YGLOBAL(int yloc) const;
   
  private:
   Options *options;  // Configuration options to use
