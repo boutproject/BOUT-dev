@@ -20,7 +20,6 @@
  *
  **************************************************************************/
 
-#include <globals.hxx>
 #include <field_factory.hxx>
 #include <utils.hxx>
 
@@ -30,16 +29,16 @@
 #include <output.hxx>
 #include <bout/constants.hxx>
 
-BoutReal FieldX::generate(int x, int y, int z) {
-  return mesh->GlobalX(x);
+BoutReal FieldX::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return fieldmesh->GlobalX(x);
 }
 
-BoutReal FieldY::generate(int x, int y, int z) {
-  return TWOPI*mesh->GlobalY(y);
+BoutReal FieldY::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return TWOPI*fieldmesh->GlobalY(y);
 }
 
-BoutReal FieldZ::generate(int x, int y, int z) {
-  return TWOPI*((BoutReal) z) / ((BoutReal) (mesh->ngz-1));
+BoutReal FieldZ::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1));
 }
 
 //////////////////////////////////////////////////////////
@@ -58,9 +57,9 @@ FieldGenerator* FieldBinary::clone(const list<FieldGenerator*> args) {
   return new FieldBinary(args.front(), args.back(), op);
 }
 
-BoutReal FieldBinary::generate(int x, int y, int z) {
-  BoutReal lval = lhs->generate(x,y,z);
-  BoutReal rval = rhs->generate(x,y,z);
+BoutReal FieldBinary::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  BoutReal lval = lhs->generate(fieldmesh, x,y,z);
+  BoutReal rval = rhs->generate(fieldmesh, x,y,z);
   switch(op) {
   case '+': return lval + rval;
   case '-': return lval - rval;
@@ -81,8 +80,8 @@ FieldGenerator* FieldSin::clone(const list<FieldGenerator*> args) {
   return new FieldSin(args.front());
 }
 
-BoutReal FieldSin::generate(int x, int y, int z) {
-  return sin(gen->generate(x,y,z));
+BoutReal FieldSin::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return sin(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldCos::clone(const list<FieldGenerator*> args) {
@@ -94,8 +93,8 @@ FieldGenerator* FieldCos::clone(const list<FieldGenerator*> args) {
   return new FieldCos(args.front());
 }
 
-BoutReal FieldCos::generate(int x, int y, int z) {
-  return cos(gen->generate(x,y,z));
+BoutReal FieldCos::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return cos(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
@@ -107,8 +106,8 @@ FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   return new FieldSinh(args.front());
 }
 
-BoutReal FieldSinh::generate(int x, int y, int z) {
-  return sinh(gen->generate(x,y,z));
+BoutReal FieldSinh::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return sinh(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldCosh::clone(const list<FieldGenerator*> args) {
@@ -120,8 +119,8 @@ FieldGenerator* FieldCosh::clone(const list<FieldGenerator*> args) {
   return new FieldCosh(args.front());
 }
 
-BoutReal FieldCosh::generate(int x, int y, int z) {
-  return cosh(gen->generate(x,y,z));
+BoutReal FieldCosh::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return cosh(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldGaussian::clone(const list<FieldGenerator*> args) {
@@ -140,9 +139,9 @@ FieldGenerator* FieldGaussian::clone(const list<FieldGenerator*> args) {
   return new FieldGaussian(xin, sin);
 }
 
-BoutReal FieldGaussian::generate(int x, int y, int z) {
-  BoutReal sigma = s->generate(x,y,z);
-  return exp(-SQ(X->generate(x,y,z)/sigma)/2.) / (sqrt(TWOPI) * sigma);
+BoutReal FieldGaussian::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  BoutReal sigma = s->generate(fieldmesh, x,y,z);
+  return exp(-SQ(X->generate(fieldmesh, x,y,z)/sigma)/2.) / (sqrt(TWOPI) * sigma);
 }
 
 FieldGenerator* FieldAbs::clone(const list<FieldGenerator*> args) {
@@ -154,8 +153,8 @@ FieldGenerator* FieldAbs::clone(const list<FieldGenerator*> args) {
   return new FieldAbs(args.front());
 }
 
-BoutReal FieldAbs::generate(int x, int y, int z) {
-  return fabs(gen->generate(x,y,z));
+BoutReal FieldAbs::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return fabs(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldSqrt::clone(const list<FieldGenerator*> args) {
@@ -167,8 +166,8 @@ FieldGenerator* FieldSqrt::clone(const list<FieldGenerator*> args) {
   return new FieldSqrt(args.front());
 }
 
-BoutReal FieldSqrt::generate(int x, int y, int z) {
-  return sqrt(gen->generate(x,y,z));
+BoutReal FieldSqrt::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return sqrt(gen->generate(fieldmesh, x,y,z));
 }
 
 FieldGenerator* FieldHeaviside::clone(const list<FieldGenerator*> args) {
@@ -180,14 +179,14 @@ FieldGenerator* FieldHeaviside::clone(const list<FieldGenerator*> args) {
   return new FieldHeaviside(args.front());
 }
 
-BoutReal FieldHeaviside::generate(int x, int y, int z) {
-  return (gen->generate(x,y,z) > 0.0) ? 1.0 : 0.0;
+BoutReal FieldHeaviside::generate(const Mesh *fieldmesh, int x, int y, int z) {
+  return (gen->generate(fieldmesh, x,y,z) > 0.0) ? 1.0 : 0.0;
 }
 
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory() {
+FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
   
   // Add standard binary operations
   addBinaryOp('+', new FieldBinary(NULL, NULL, '+'), 10);
@@ -235,9 +234,9 @@ const Field2D FieldFactory::create2D(const string &value) {
     return result;
   }
   
-  for(int x=0;x<mesh->ngx;x++)
-    for(int y=0;y<mesh->ngy;y++)
-      result[x][y] = gen->generate(x,y,0);
+  for(int x=0;x<fieldmesh->ngx;x++)
+    for(int y=0;y<fieldmesh->ngy;y++)
+      result[x][y] = gen->generate(fieldmesh, x,y,0);
   
   delete gen;
 
@@ -255,10 +254,10 @@ const Field3D FieldFactory::create3D(const string &value) {
     return result;
   }
   
-  for(int x=0;x<mesh->ngx;x++)
-    for(int y=0;y<mesh->ngy;y++)
-      for(int z=0;z<mesh->ngz;z++)
-        result[x][y][z] = gen->generate(x,y,z);
+  for(int x=0;x<fieldmesh->ngx;x++)
+    for(int y=0;y<fieldmesh->ngy;y++)
+      for(int z=0;z<fieldmesh->ngz;z++)
+        result[x][y][z] = gen->generate(fieldmesh, x,y,z);
   
   delete gen;
 

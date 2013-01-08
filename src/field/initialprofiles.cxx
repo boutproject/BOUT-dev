@@ -108,7 +108,7 @@ int initial_profile(const char *name, Field3D &var)
   if(varOpts->isSet("function")) {
     // Form of perturbation specified as string. Use FieldFactory to generate values
     
-    FieldFactory f;
+    FieldFactory f(mesh);
     string s;
     varOpts->get("function", s, "");
     var = scale*f.create3D(s);
@@ -230,7 +230,7 @@ int initial_profile(const char *name, Field2D &var)
   if(varOpts->isSet("function")) {
     // Form of perturbation specified as string. Use FieldFactory to generate values
     
-    FieldFactory f;
+    FieldFactory f(mesh);
     string s;
     varOpts->get("function", s, "");
     var = scale*f.create2D(s);

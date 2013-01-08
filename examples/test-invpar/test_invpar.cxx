@@ -12,7 +12,7 @@
 
 int physics_init(bool restarting) {
   InvertPar *inv = InvertPar::Create();
-  FieldFactory f;
+  FieldFactory f(mesh);
 
   // Get options
   Options *options = Options::getRoot();

@@ -9,7 +9,7 @@
 #include <field_factory.hxx>
 
 int physics_init(bool restarting) {
-  FieldFactory f;
+  FieldFactory f(mesh);
   
   Options *options = Options::getRoot();
 

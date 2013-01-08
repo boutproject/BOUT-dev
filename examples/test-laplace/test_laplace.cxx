@@ -9,7 +9,7 @@
 #include <field_factory.hxx>
 
 int physics_init(bool restarting) {
-  FieldFactory f;
+  FieldFactory f(mesh);
   
   Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(y-pi)*gauss(z-pi)");
   Field2D a = f.create2D("gauss(x) * sin(y)");

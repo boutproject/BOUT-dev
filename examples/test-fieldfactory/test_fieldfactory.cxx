@@ -10,7 +10,7 @@
 #include <field_factory.hxx>
 
 int physics_init(bool restarting) {
-  FieldFactory f;
+  FieldFactory f(mesh);
   
   Field2D a = f.create2D("2.");
   Field2D b = f.create2D("1 - x");

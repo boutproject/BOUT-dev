@@ -33,6 +33,8 @@ class FieldFactory;
 #include "field2d.hxx"
 #include "field3d.hxx"
 
+#include "bout/mesh.hxx"
+
 #include "bout/constants.hxx"
 
 #include <string>
@@ -57,7 +59,7 @@ class FieldGenerator {
 public:
   virtual ~FieldGenerator() { }
   virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
-  virtual BoutReal generate(int x, int y, int z) = 0;
+  virtual BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) = 0;
 };
 
 //////////////////////////////////////////////////////////
@@ -66,7 +68,7 @@ public:
 class FieldValue : public FieldGenerator {
 public:
   FieldValue(BoutReal val) : value(val) {}
-  BoutReal generate(int x, int y, int z) { return value; }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value; }
 private:
   BoutReal value;
 };
@@ -74,19 +76,19 @@ private:
 class FieldX : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 };
 
 class FieldY : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 };
 
 class FieldZ : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 };
 
 //////////////////////////////////////////////////////////
@@ -95,7 +97,7 @@ public:
 class FieldPI : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldPI(); }
-  BoutReal generate(int x, int y, int z) { return PI;}
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return PI;}
 };
 
 //////////////////////////////////////////////////////////
@@ -107,7 +109,7 @@ public:
   ~FieldSin() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -118,7 +120,7 @@ public:
   ~FieldCos() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -129,7 +131,7 @@ public:
   ~FieldSinh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -140,7 +142,7 @@ public:
   ~FieldCosh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -151,7 +153,7 @@ public:
   ~FieldGaussian() {if(X) delete X; if(s) delete s;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *X, *s;
 };
@@ -162,7 +164,7 @@ public:
   ~FieldAbs() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -173,7 +175,7 @@ public:
   ~FieldSqrt() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -184,7 +186,7 @@ public:
   ~FieldHeaviside() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
 };
@@ -202,8 +204,8 @@ public:
     }
     return new FieldUnary(args.front());
   }
-  BoutReal generate(int x, int y, int z) {
-    return -gen->generate(x,y,z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    return -gen->generate(fieldmesh, x,y,z);
   }
 private:
   FieldGenerator *gen;
@@ -215,7 +217,7 @@ public:
   FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
   ~FieldBinary();
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(int x, int y, int z);
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *lhs, *rhs;
   char op;
@@ -226,7 +228,7 @@ private:
 
 class FieldFactory {
 public:
-  FieldFactory();
+  FieldFactory(Mesh *m);
   ~FieldFactory();
   
   const Field2D create2D(const string &value);
@@ -235,6 +237,8 @@ public:
   void addGenerator(string name, FieldGenerator* g);
   void addBinaryOp(char sym, FieldGenerator* b, int precedence);
 private:
+  Mesh *fieldmesh;
+
   map<string, FieldGenerator*> gen;
   map<char, pair<FieldGenerator*, int> > bin_op; // Binary operations
 

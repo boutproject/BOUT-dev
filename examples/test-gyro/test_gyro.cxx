@@ -9,7 +9,7 @@
 #include <gyro_average.hxx>
 
 int physics_init(bool restarting) {
-  FieldFactory f;
+  FieldFactory f(mesh);
   
   Field3D input3d = f.create3D("gauss(x-0.5,0.2)*gauss(y-pi)*sin(3*y - z)");
   SAVE_ONCE(input3d);
