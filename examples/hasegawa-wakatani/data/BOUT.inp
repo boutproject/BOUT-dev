@@ -1,0 +1,48 @@
+timestep = 1.
+nout = 200
+
+#nxpe = 4
+
+MZ = 256
+zmin = 0
+zmax = 8
+myg = 0  # No need for Y communications
+
+[mesh]
+
+nx = 260
+ny = 1
+
+dx = 0.2
+dy = 1.
+
+[laplace]
+
+flags = 0   # Flags for Laplacian inversion
+
+[solver]
+#type=karniadakis
+timestep = 0.001
+
+[hw]
+
+alpha = 1.0
+kappa = 0.5
+Dvort = 1e-4
+Dn    = 1e-4
+
+modified = true
+
+bracket = 2  # 0 = std, 1 = simple, 2 = arakawa
+
+[All]
+scale = 0.
+xs_opt = 3
+zs_opt = 3
+
+bndry_all = dirichlet
+
+[vort]
+
+scale = 0.1
+#function = gauss(x-0.5, 0.2) * sin(2*z - 2*x)
