@@ -508,7 +508,7 @@ MPI_Comm QuiltMesh::getXcomm() const {
   
 }
 
-SurfaceIter* QuiltMesh::iterateSurfaces() {
+MPI_Comm QuiltMesh::getYcomm(int jx) const {
   
 }
 
@@ -520,7 +520,7 @@ const Field3D QuiltMesh::averageY(const Field3D &f) {
 
 }
 
-bool QuiltMesh::surfaceClosed(int jx, BoutReal &ts) {
+bool QuiltMesh::periodicY(int jx, BoutReal &ts) const {
   return yperiodic.intersects(jx);
 }
 

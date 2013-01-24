@@ -2326,19 +2326,13 @@ void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var)
  *                 SURFACE ITERATION
  ****************************************************************/
 
-SurfaceIter* BoutMesh::iterateSurfaces() {
-  return new BoutSurfaceIter(this);
+bool BoutMesh::periodicY(int jx) const {
+  return (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE;
 }
 
-bool BoutMesh::surfaceClosed(int jx)
-{
-  return (jx < ixseps_inner) && MYPE_IN_CORE;
-}
-
-bool BoutMesh::surfaceClosed(int jx, BoutReal &ts)
-{
+bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   ts = 0.;
-  if( (jx < ixseps_inner) && MYPE_IN_CORE) {
+  if( (XGLOBAL(jx) < ixseps_inner) && MYPE_IN_CORE) {
     if(TwistShift)
       ts = ShiftAngle[jx];
     return true;
@@ -2449,229 +2443,53 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
   return r;
 }
 
-BoutSurfaceIter::BoutSurfaceIter(BoutMesh* mi) {
-  m = mi;
-}
-
-int BoutSurfaceIter::ySize() {
-  int xglobal = m->XGLOBAL(xpos);
-  int yglobal = m->YGLOBAL(m->MYG);
+int BoutMesh::ySize(int xpos) const {
+  int xglobal = XGLOBAL(xpos);
+  int yglobal = YGLOBAL(MYG);
   
-  if((xglobal < m->ixseps_lower) && ((yglobal <= m->jyseps1_1) || (yglobal > m->jyseps2_2))) {
+  if((xglobal < ixseps_lower) && ((yglobal <= jyseps1_1) || (yglobal > jyseps2_2))) {
     // Lower PF region
-    return (m->jyseps1_1 + 1) + (m->ny - m->jyseps2_2);
+    return (jyseps1_1 + 1) + (ny - jyseps2_2);
     
-  }else if((xglobal < m->ixseps_upper) && (yglobal > m->jyseps2_1) && (yglobal >= m->jyseps1_2)) {
+  }else if((xglobal < ixseps_upper) && (yglobal > jyseps2_1) && (yglobal >= jyseps1_2)) {
     // Upper PF region
-    return m->jyseps1_2 - m->jyseps2_1;
+    return jyseps1_2 - jyseps2_1;
     
-  }else if(xglobal < m->ixseps_inner) {
+  }else if(xglobal < ixseps_inner) {
     // Core
-    return (m->jyseps2_1 - m->jyseps1_1) + (m->jyseps2_2 - m->jyseps1_2);
+    return (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
     
-  }else if(m->jyseps2_1 == m->jyseps1_2) {
+  }else if(jyseps2_1 == jyseps1_2) {
     // Single null, so in the SOL
-    return m->ny;
+    return ny;
     
-  }else if((xglobal >= m->ixseps_inner) && (xglobal < m->ixseps_outer)) {
+  }else if((xglobal >= ixseps_inner) && (xglobal < ixseps_outer)) {
     // Intermediate SOL in DND
     
-    if(m->ixseps_lower < m->ixseps_upper) {
+    if(ixseps_lower < ixseps_upper) {
       // Connects to lower divertor
-      return (m->jyseps2_1 + 1) + (m->ny - m->jyseps1_2);
+      return (jyseps2_1 + 1) + (ny - jyseps1_2);
     }else {
       // Connects to upper divertor
-      return m->jyseps2_2 - m->jyseps1_1;
+      return jyseps2_2 - jyseps1_1;
     }
-  }else if(yglobal < m->ny_inner) {
+  }else if(yglobal < ny_inner) {
     // Inner SOL
-    return m->ny_inner;
+    return ny_inner;
   }
   // Outer SOL
-  return m->ny - m->ny_inner;
+  return ny - ny_inner;
 }
 
-bool BoutSurfaceIter::closed(BoutReal &ts) {
-  int xglobal = m->XGLOBAL(xpos);
-  int yglobal = m->YGLOBAL(m->MYG);
-  ts = 0.;
-  if(m->TwistShift) {
-    ts = m->ShiftAngle[xpos];
+MPI_Comm BoutMesh::getYcomm(int xpos) const {
+  int xglobal = XGLOBAL(xpos);
+  
+  if(xglobal < ixseps_inner) {
+    return comm_inner;
+  }else if(xglobal < ixseps_outer) {
+    return comm_middle;
   }
-  return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
-}
-
-MPI_Comm BoutSurfaceIter::communicator() {
-  int xglobal = m->XGLOBAL(xpos);
-  
-  if(xglobal < m->ixseps_inner) {
-    return m->comm_inner;
-  }else if(xglobal < m->ixseps_outer) {
-    return m->comm_middle;
-  }
-  return m->comm_outer;
-}
-
-int BoutSurfaceIter::yGlobal(int yloc) {
-  // Communicator for this surface
-  MPI_Comm comm = communicator();
-  
-  // Get number of processors and processor rank
-  int np;
-  MPI_Comm_size(comm, &np);
-  int myp;
-  MPI_Comm_rank(comm, &myp);
-  
-  int yg = myp * m->MYSUB + yloc - m->MYG;
-  if(!SurfaceIter::closed()) {
-    // Need to include boundary points
-    yg += m->MYG;
-  }
-  
-  return yg;
-}
-
-void BoutSurfaceIter::first() {
-  xpos = 0;
-}
-
-void BoutSurfaceIter::next() {
-  if(xpos < 0)
-    return;
-  
-  xpos++;
-  if(xpos >= m->ngx)
-    xpos = -1;
-}
-
-bool BoutSurfaceIter::isDone() {
-  return xpos < 0;
-}
-
-
-/****************************************************************
- *                 Distributed surface iteration
- ****************************************************************/
-
-BoutDistribSurfaceIter::BoutDistribSurfaceIter(BoutMesh* mi) : m(mi) {
-  first();
-}
-
-void BoutDistribSurfaceIter::first() {
-  alldone = 0;
-  xpos = m->PE_XIND; // Assign different surface to each processor
-  if(xpos > m->ngx-1)
-    xpos = -1; // Nothing to do
-}
-
-void BoutDistribSurfaceIter::next() {
-  alldone += m->PE_XIND;
-  if(xpos < 0)
-    return;
-  
-  xpos += m->NXPE;
-  if(xpos > m->ngx-1)
-    xpos = -1; // Nothing to do 
-}
-
-bool BoutDistribSurfaceIter::isDone() {
-  return alldone >= m->ngx;
-}
-
-int BoutDistribSurfaceIter::ysize() {
-  return ysize(xpos);
-}
-
-int BoutDistribSurfaceIter::ysize(int x) {
-  if(x < 0)
-    return 0;
-  
-  // Communicator for this surface
-  MPI_Comm comm = communicator(x);
-  
-  // Get number of processors
-  int np;
-  MPI_Comm_size(comm, &np);
-
-  int n = np * m->MYSUB;
-  BoutReal ts;
-  if(!closed(x, ts))
-    n += 2*m->MYG; // Add boundary points
-
-  return n;
-}
-
-bool BoutDistribSurfaceIter::closed(int x, BoutReal &ts) {
-  if(x < 0)
-    return false;
-  
-  int xglobal = m->XGLOBAL(x);
-  int yglobal = m->YGLOBAL(m->MYG);
-  ts = 0.;
-  if(m->TwistShift) {
-    ts = m->ShiftAngle[x];
-  }
-  return (xglobal < m->ixseps_inner) && m->MYPE_IN_CORE;
-}
-
-bool BoutDistribSurfaceIter::closed(BoutReal &ts) {
-  return closed(xpos, ts);
-}
-
-int BoutDistribSurfaceIter::gather(const Field2D &f, BoutReal *data) {
-  int nsurf = m->ngx - alldone; // Number remaining
-  if(nsurf > m->NXPE) nsurf = m->NXPE;
-  
-  // Loop over processors
-  for(int p = 0; p < nsurf; p++) {
-    int x = alldone + p; // Which X surface?
-    
-    MPI_Comm comm = communicator(x);
-    int np;  MPI_Comm_size(comm, &np);  // Number of processors
-    int myp; MPI_Comm_rank(comm, &myp); // The rank of this one
-    
-    int ystart = m->ystart;
-    int nylocal = m->yend - m->ystart + 1;
-    int nyglobal = ysize(x);
-    
-    BoutReal ts;
-    if(!closed(x, ts)) {
-      
-    }
-    /*
-    MPI_Gather(void *sendbuf, nylocal, 
-               PVEC_REAL_MPI_TYPE,  // Data type sent
-               data, nyglobal, 
-               PVEC_REAL_MPI_TYPE, // Data type received
-               root
-               comm);
-    */
-  }
-}
-
-int BoutDistribSurfaceIter::gather(const Field3D &f, BoutReal **data) {
-  
-}
-
-int BoutDistribSurfaceIter::scatter(BoutReal *data, Field2D &f) {
-  
-}
-
-int BoutDistribSurfaceIter::scatter(BoutReal **data, Field3D &f) {
-  
-}
-
-MPI_Comm BoutDistribSurfaceIter::communicator(int xp) {
-  if(xp < 0)
-    xp = xpos;
-  int xglobal = m->XGLOBAL(xp);
-  
-  if(xglobal < m->ixseps_inner) {
-    return m->comm_inner;
-  }else if(xglobal < m->ixseps_outer) {
-    return m->comm_middle;
-  }
-  return m->comm_outer;
+  return comm_outer;
 }
 
 /****************************************************************

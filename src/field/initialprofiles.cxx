@@ -164,7 +164,7 @@ int initial_profile(const char *name, Field3D &var)
             throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
           }
           BoutReal ts; ///< Twist-shift angle
-          if(mesh->surfaceClosed(jx, ts) && Ballooning) {
+          if(mesh->periodicY(jx, ts) && Ballooning) {
             // Use a truncated Ballooning transform to enforce periodicity
             
             int ball_n = 3; // How many times around in each direction
