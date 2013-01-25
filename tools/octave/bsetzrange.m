@@ -1,5 +1,5 @@
 # Adjust Z range to be read
-function d = bsetZrange(desc, zmin, zmax)
+function d = bsetzrange(desc, zmin, zmax)
   narg = nargin();
   if (narg < 1)
     d = 0;
