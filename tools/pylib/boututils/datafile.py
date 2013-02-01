@@ -265,8 +265,13 @@ class DataFile:
 
                     # Find another with the correct size
                     for dn, d in self.handle.dimensions.iteritems():
-                        if len(d) == size:
-                            return dn
+                        # Some implementations need len(d) here, some just d
+                        if type(d).__name__ == 'int':
+                            if d == size:
+                                return dn
+                        else:
+                            if len(d) == size:
+                                return dn
 
                     # None found, so create a new one
                     i = 2
