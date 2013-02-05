@@ -47,8 +47,6 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 
-#include <bout/surfaceiter.hxx>
-
 #include <cmath>
 
 InvertParSerial::InvertParSerial() {
@@ -78,11 +76,11 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
   result.allocate();
   
   // Loop over flux-surfaces
-  SurfaceIter surf(mesh);
-  for(surf.first(); !surf.isDone(); surf.next()) {
-    int x = surf.xpos;
+  SurfaceIter *surf = mesh->iterateSurfaces();
+  for(surf->first(); !surf->isDone(); surf->next()) {
+    int x = surf->xpos;
     BoutReal ts; // Twist-shift angle
-    if(!surf.closed(ts))
+    if(!surf->closed(ts))
       throw BoutException("InvertParSerial doesn't handle open surfaces");
     
     // Take Fourier transform 

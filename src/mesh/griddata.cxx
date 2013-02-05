@@ -173,7 +173,7 @@ void GridFile::close() {
  * 
  *******************************************************************************/
 
-GridFromOptions::GridFromOptions(Options *opt) : options(opt), fieldmesh(NULL) {
+GridFromOptions::GridFromOptions(Options *opt) : options(opt) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
 }

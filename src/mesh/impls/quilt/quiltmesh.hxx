@@ -48,14 +48,14 @@ class QuiltMesh : public Mesh {
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
   MPI_Comm getXcomm() const;
-  MPI_Comm getYcomm(int jx) const;
   
   /////////////////////////////////////////////
   // Y-Z surface gather/scatter operations
+  SurfaceIter* iterateSurfaces();
   const Field2D averageY(const Field2D &f);
   const Field3D averageY(const Field3D &f);
   
-  bool periodicY(int jx, BoutReal &ts) const;
+  bool surfaceClosed(int jx, BoutReal &ts); ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
   const RangeIterator iterateBndryLowerY() const;

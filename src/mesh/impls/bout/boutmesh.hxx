@@ -47,19 +47,19 @@ class BoutMesh : public Mesh {
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
   MPI_Comm getXcomm() const {return comm_x; }
-  MPI_Comm getYcomm(int jx) const;
   
-  bool periodicX;
-  bool periodicY(int jx, BoutReal &ts) const;
-  bool periodicY(int jx) const;
-
-  int ySize(int jx) const;
-
   /////////////////////////////////////////////
   // Y-Z communications
+  
+  SurfaceIter* iterateSurfaces();
+  friend class BoutSurfaceIter;
+  DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
+  friend class BoutDistribSurfaceIter;
 
   const Field2D averageY(const Field2D&);
   const Field3D averageY(const Field3D &f);
+  bool surfaceClosed(int jx);
+  bool surfaceClosed(int jx, BoutReal &ts);
 
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
@@ -188,6 +188,47 @@ class BoutMesh : public Mesh {
   int pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
   /// Copy data from a buffer back into the fields
   int unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt, BoutReal *buffer);
+};
+
+class BoutSurfaceIter : public SurfaceIter {
+ public:
+  BoutSurfaceIter(BoutMesh* mi);
+  int ySize(); // Return the size of the current surface
+  bool closed(BoutReal &ts);
+  MPI_Comm communicator();
+  
+  int yGlobal(int yloc);
+
+  void first();
+  void next();
+  bool isDone();
+ private:
+  BoutMesh* m;
+};
+
+class BoutDistribSurfaceIter : public DistribSurfaceIter {
+ public:
+  BoutDistribSurfaceIter(BoutMesh* mi);
+  int ysize(); // Return the size of the current surface
+  bool closed(BoutReal &ts);
+
+  void first();
+  void next();
+  bool isDone();
+  
+  int gather(const Field2D &f, BoutReal *data);
+  int gather(const Field3D &f, BoutReal **data);
+  //int gather(const FieldGroup &f, BoutReal *data);
+
+  int scatter(BoutReal *data, Field2D &f);
+  int scatter(BoutReal **data, Field3D &f);
+  //int scatter(BoutReal *data, FieldGroup &f);
+ private:
+  BoutMesh* m;
+  int alldone; ///< How many surfaces have been done already
+  bool closed(int x, BoutReal &ts);
+  MPI_Comm communicator(int xp=-1);
+  int ysize(int x);
 };
 
 #endif // __BOUTMESH_H__

@@ -209,44 +209,6 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
   return len;
 }
 
-bool Mesh::periodicY(int jx) const {
-  BoutReal ts; return periodicY(jx, ts);
-}
-
-int Mesh::ySize(int jx) const {
-  // Get the size of a surface in Y using MPI communicator
-  MPI_Comm comm = getYcomm(jx);
-  
-  int local = yend - ystart + 1;
-  int all;
-  MPI_Allreduce(&local, &all, 1, MPI_INT, MPI_SUM, comm);
-  return all;
-}
-
-bool Mesh::hasBndryLowerY() {
-  static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
-  
-  int mybndry = (int) !(iterateBndryLowerY().isDone());
-  int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
-  answer = (bool) allbndry;
-  calc = true;
-  return answer;
-}
-
-bool Mesh::hasBndryUpperY() {
-  static bool calc = false, answer;
-  if(calc) return answer; // Already calculated
-  
-  int mybndry = (int) !(iterateBndryUpperY().isDone());
-  int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
-  answer = (bool) allbndry;
-  calc = true;
-  return answer;
-}
-
 /**************************************************************************
  * Differential geometry
  * Calculates the covariant metric tensor, and christoffel symbol terms

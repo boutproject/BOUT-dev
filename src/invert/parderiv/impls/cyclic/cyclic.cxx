@@ -44,8 +44,6 @@
 #include <msg_stack.hxx>
 #include <bout/constants.hxx>
 
-#include <bout/surfaceiter.hxx>
-
 #include <cmath>
 
 InvertParCR::InvertParCR() {
@@ -84,16 +82,16 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     new CyclicReduce<dcomplex>();
   
   // Loop over flux-surfaces
-  SurfaceIter surf(mesh);
-  for(surf.first(); !surf.isDone(); surf.next()) {
-    int x = surf.xpos;
+  SurfaceIter *surf = mesh->iterateSurfaces();
+  for(surf->first(); !surf->isDone(); surf->next()) {
+    int x = surf->xpos;
     
     // Setup CyclicReduce object
-    cr->setup(surf.communicator(), mesh->ngy-4);
+    cr->setup(surf->communicator(), mesh->ngy-4);
 
     // Check if surface is periodic
     BoutReal ts; // Twist-shift angle
-    cr->setPeriodic(surf.closed(ts));
+    cr->setPeriodic(surf->closed(ts));
     
     // Take Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
@@ -114,8 +112,8 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     }
     // Twist-shift
     int rank, np;
-    MPI_Comm_rank(surf.communicator(), &rank);
-    MPI_Comm_size(surf.communicator(), &np);
+    MPI_Comm_rank(surf->communicator(), &rank);
+    MPI_Comm_size(surf->communicator(), &np);
     if(rank == 0) {
       for(int k=0; k<nsys; k++) {
 	BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
