@@ -584,7 +584,7 @@ int BoutMesh::load() {
   for(int i=0;i<NXPE;i++) {
     // Lower PF region
 
-    if((jyseps1_1 >= 0) || (jyseps2_2 < ny)) {
+    if((jyseps1_1 >= 0) || (jyseps2_2+1 < ny)) {
       // A lower PF region exists
 
 #ifdef COMMDEBUG
