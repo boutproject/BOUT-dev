@@ -84,7 +84,7 @@ if varyBp:
     # Vary Bp to get shear
     for y in range(ny):
         Bpxy[:,y] = Bp * q / qprof
-    print "Poloidal field varies from "+str(min(Bpxy))+" to "+str(max(Bpxy))
+    print "Poloidal field varies from "+str(amin(Bpxy))+" to "+str(amax(Bpxy))
 else:
     # Constant Bp, but shift angle varies
     Bpxy += Bp
