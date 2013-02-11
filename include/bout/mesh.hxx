@@ -32,8 +32,6 @@
  **************************************************************************/
 
 class Mesh;
-class FieldGroup;
-class SurfaceIter;
 
 #ifndef __MESH_H__
 #define __MESH_H__
@@ -57,45 +55,6 @@ class SurfaceIter;
 #include <list>
 
 typedef void* comm_handle;
-
-/// Iterates over Y-Z surfaces, optionally distributing work between processors
-class SurfaceIter {
- public:
-  int xpos; // X position
-  virtual int ySize() = 0; // Return the size of the current surface
-  
-  virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
-  virtual bool closed() { BoutReal tmp; return closed(tmp); }
-  
-  virtual MPI_Comm communicator() = 0; // Communicator for this surface
-  
-  virtual int yGlobal(int yloc) = 0; // Return global y index of given local index
-
-  virtual void first() = 0;
-  virtual void next() = 0;
-  virtual bool isDone() = 0;
-};
-
-/// Iterates over Y-Z surfaces, distributing work between processors
-class DistribSurfaceIter {
-public:
-  int xpos; // X position
-  virtual int ySize() = 0; // Return the size of the current surface
-  virtual bool closed(BoutReal &ts) = 0; // Test if the current surface is closed
-  
-  virtual void first() = 0;
-  virtual void next() = 0;
-  virtual bool isDone() = 0;
-  
-  virtual int gather(const Field2D &f, BoutReal *data) = 0; // Return zero if no work to do
-  virtual int gather(const Field3D &f, BoutReal *data) = 0;
-  //virtual int gather(const FieldGroup &f, BoutReal *data) = 0; // Interleave fields, going over Z fastest
-  
-  virtual int scatter(BoutReal *data, Field2D &f) = 0;
-  virtual int scatter(BoutReal *data, Field3D &f) = 0;
-  //virtual int scatter(BoutReal *data, FieldGroup &f) = 0;
-private:
-};
 
 class Mesh {
  public:
@@ -131,15 +90,17 @@ class Mesh {
   int communicate(FieldData &f1, FieldData &f2, FieldData &f3);
   int communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4);
   virtual int communicate(FieldGroup &g) = 0; // Returns error code
+  int communicate(FieldPerp &f); // Communicate an X-Z field
+  
   virtual comm_handle send(FieldGroup &g) = 0;  // Return handle
   comm_handle send(FieldData &f);   // Send a single field
-  
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
 
   // X communications
   virtual bool firstX() = 0;
   virtual bool lastX() = 0;
   bool periodicX; // Domain is periodic in X?
+
   int NXPE, PE_XIND; ///< Number of processors in X, and X processor index
   virtual int sendXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual int sendXIn(BoutReal *buffer, int size, int tag) = 0;
@@ -147,44 +108,23 @@ class Mesh {
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
   virtual MPI_Comm getXcomm() const = 0; // Return X communicator
+  virtual MPI_Comm getYcomm(int jx) const = 0; // Return Y communicator
 
-  int communicate(FieldPerp &f); // Communicate an X-Z field
-
-  // Y-Z surface iteration and gather/scatter operations
-  virtual SurfaceIter* iterateSurfaces() = 0;
-  virtual DistribSurfaceIter* iterateSurfacesDistrib() {return NULL;}
+  //virtual bool periodicX() const = 0;                     ///< Test if a surface is periodic in X
+  virtual bool periodicY(int jx) const;                   ///< Test if a surface is closed in Y
+  virtual bool periodicY(int jx, BoutReal &ts) const = 0; ///< Also get the twist-shift angle
+  
+  virtual int ySize(int jx) const;
+  
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
-  virtual bool surfaceClosed(int jx) { BoutReal ts; return surfaceClosed(jx, ts); } ///< Test if a surface is closed (periodic in Y)
-  virtual bool surfaceClosed(int jx, BoutReal &ts) = 0; ///< Test if a surface is closed, and if so get the twist-shift angle
   
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;
   virtual const RangeIterator iterateBndryUpperY() const = 0;
   
-  bool hasBndryLowerY() {
-    static bool calc = false, answer;
-    if(calc) return answer; // Already calculated
-    
-    int mybndry = (int) !(iterateBndryLowerY().isDone());
-    int allbndry;
-    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
-    answer = (bool) allbndry;
-    calc = true;
-    return answer;
-  }
-  
-  bool hasBndryUpperY() {
-    static bool calc = false, answer;
-    if(calc) return answer; // Already calculated
-    
-    int mybndry = (int) !(iterateBndryUpperY().isDone());
-    int allbndry;
-    MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
-    answer = (bool) allbndry;
-    calc = true;
-    return answer;
-  }
+  bool hasBndryLowerY();
+  bool hasBndryUpperY();
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;

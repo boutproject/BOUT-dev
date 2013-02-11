@@ -23,16 +23,18 @@
  *
  *******************************************************************************/
 
+
+class GridDataSource;
+
 #ifndef __GRIDDATA_H__
 #define __GRIDDATA_H__
-
-#include "field2d.hxx"
-#include "vector2d.hxx"
 
 #include "options.hxx"
 
 #include "dataformat.hxx"
 #include "bout_types.hxx"
+
+#include "mesh.hxx"
 
 #include <list>
 
@@ -52,6 +54,9 @@ class GridDataSource {
 
   /// Set the (x,y,z) origin for all subsequent calls
   virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
+
+  /// Specify a mesh. Required for GridFromOptions
+  virtual bool setMesh(Mesh *m) {}
   
   /// Get data from the source
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
@@ -114,6 +119,8 @@ public:
 
   /// Set the (x,y,z) origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {return true;}
+
+  bool setMesh(Mesh *m) {fieldmesh = m;}
   
   /// Get data from the source
   bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -122,6 +129,7 @@ public:
   bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
 private:
   Options *options;
+  Mesh *fieldmesh;
 };
 
 class GridDataGroup : GridDataSource {
