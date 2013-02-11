@@ -1270,3 +1270,9 @@ const Field2D tanh(const Field2D &f) {
 
   return result;
 }
+
+const Field2D copy(const Field2D &f) {
+  Field2D result = f;
+  result.allocate();
+  return result;
+}

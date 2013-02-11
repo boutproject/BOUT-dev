@@ -2812,3 +2812,9 @@ bool finite(const Field3D &f)
 
   return true;
 }
+
+const Field3D copy(const Field3D &f) {
+  Field3D result = f;
+  result.allocate();
+  return result;
+}

@@ -209,5 +209,6 @@ BoutReal min(const Field2D &f, bool allpe=false);
 BoutReal max(const Field2D &f, bool allpe=false);
 bool finite(const Field2D &f);
 
+const Field2D copy(const Field2D &f);
 
 #endif /* __FIELD2D_H__ */

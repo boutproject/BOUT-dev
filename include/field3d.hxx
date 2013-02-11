@@ -301,4 +301,6 @@ const Field3D abs(const Field3D &f);
 BoutReal min(const Field3D &f, bool allpe=false);
 BoutReal max(const Field3D &f, bool allpe=false);
 
+const Field3D copy(const Field3D &f);
+
 #endif /* __FIELD3D_H__ */
