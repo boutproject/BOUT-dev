@@ -176,7 +176,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
 #endif
 
   BoutReal ts; // Twist-shift angle
-  if(!mesh->surfaceClosed(xpos,ts))
+  if(!mesh->periodicY(xpos,ts))
     ts = 0.; // Should be an error, but just separate field-lines
     
   int tshift = ROUND(ts / mesh->dz); // Nearest neighbour

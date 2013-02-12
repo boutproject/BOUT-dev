@@ -437,7 +437,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
             gi = mesh->XGLOBAL(i);
 
             // Check if X and Y are periodic
-            yperiodic = mesh->surfaceClosed(i);
+            yperiodic = mesh->periodicY(i);
             xperiodic = mesh->periodicX;
 
             d = 0;
