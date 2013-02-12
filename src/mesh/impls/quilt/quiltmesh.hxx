@@ -21,14 +21,6 @@ class QuiltMesh : public Mesh {
 
   /// Read in the mesh from data sources
   int load(MPI_Comm comm);
-
-  /////////////////////////////////////////////
-  // Get data
-  
-  int get(Field2D &var, const char *name, BoutReal def=0.0);
-  int get(Field2D &var, const string &name, BoutReal def=0.0);
-  int get(Field3D &var, const char *name);
-  int get(Field3D &var, const string &name);
   
   /////////////////////////////////////////////
   // Communicate variables

@@ -49,7 +49,6 @@ class BoutMesh : public Mesh {
   MPI_Comm getXcomm() const {return comm_x; }
   MPI_Comm getYcomm(int jx) const;
   
-  bool periodicX;
   bool periodicY(int jx, BoutReal &ts) const;
   bool periodicY(int jx) const;
 

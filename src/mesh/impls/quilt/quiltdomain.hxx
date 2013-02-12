@@ -16,6 +16,8 @@ public:
   ~QuiltDomain();
   
   int proc;
+  
+  QuiltDomain *parent;
 };
 
 #endif // __QUILTDOMAIN_H__

@@ -204,113 +204,12 @@ int QuiltMesh::load(MPI_Comm comm) {
   for(RangeIterator *r = &yhigh_range; r != 0; r=r->nextRange())
     boundaries.push_back(new BoundaryRegionYUp("yup", r->min(), r->max()));
   
+  // Get communicators for X and Y communication
+  
+
   output << "done\n";
   
   return 0;
-}
-
-/****************************************************************
- * Getting variables
- ****************************************************************/
-  
-int QuiltMesh::get(Field2D &var, const char *name, BoutReal def) {
-  if(name == NULL)
-    return 1;
-  
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
-#endif
-  
-  if(!source->hasVar(name)) {
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-    var = def;
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 2;
-  }
-  
-  var.allocate(); // Make sure data allocated
-  
-  BoutReal **data = var.getData(); // pointer for faster access
-  
-  // Send an open signal to the source
-  source->open(name);
-  
-  // Get the size of the variable
-  vector<int> size = source->getSize(name);
-  switch(size.size()) {
-  case 1: {
-    // 0 or 1 dimension
-    if(size[0] != 1) {
-      output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
-      source->close();
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 1;
-    }
-    BoutReal val;
-    if(!source->fetch(&val, name)) {
-      output.write("Couldn't read 0D variable '%s'\n", name);
-      source->close();
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 1;
-    }
-    var = val;
-    // Close source
-    source->close();
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 0;
-  }
-  case 2: {
-    // Check size? More complicated now...
-    break;
-  }
-  default: {
-    output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
-                 name, size.size());
-    source->close();
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 1;
-  }
-  }
-  
-  // Read bulk of points
-  read2Dvar(source, name, 
-            mydomain->xOrigin(), mydomain->yOrigin(),  // Coordinates in grid file
-            xstart, ystart,                            // Coordinates in this processor
-            mydomain->xSize(), mydomain->ySize(),      // Number of points to read
-            data);
-  
-  // Close the data source
-  source->close();
-  
-  // Communicate to get guard cell data
-  Mesh::communicate(var);
-  
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-  return 0;
-}
-
-int QuiltMesh::get(Field2D &var, const string &name, BoutReal def) {
-  return get(var, name.c_str());
-}
-
-int QuiltMesh::get(Field3D &var, const char *name) {
-  
-}
-
-int QuiltMesh::get(Field3D &var, const string &name) {
-  return get(var, name.c_str());
 }
 
 /****************************************************************
@@ -513,11 +412,11 @@ MPI_Comm QuiltMesh::getYcomm(int jx) const {
 }
 
 const Field2D QuiltMesh::averageY(const Field2D &f) {
-
+  
 }
 
 const Field3D QuiltMesh::averageY(const Field3D &f) {
-
+  
 }
 
 bool QuiltMesh::periodicY(int jx, BoutReal &ts) const {
@@ -621,10 +520,3 @@ void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<Fie
   }
 }
 
-void QuiltMesh::read2Dvar(GridDataSource *s, const char *name, 
-                          int xs, int ys,
-                          int xd, int yd,
-                          int nx, int ny,
-                          BoutReal **data) {
-  
-}

@@ -50,7 +50,7 @@ class GridDataSource {
   
   virtual bool hasVar(const string &name) = 0; ///< Test if source can supply a variable
   
-  virtual vector<int> getSize(const char *name) = 0; ///< Get size of the variable
+  virtual vector<int> getSize(const string &name) = 0; ///< Get size of the variable
 
   /// Set the (x,y,z) origin for all subsequent calls
   virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
@@ -90,7 +90,7 @@ class GridFile : public GridDataSource {
   
   virtual bool hasVar(const string &name);
   
-  virtual vector<int> getSize(const char *name);
+  virtual vector<int> getSize(const string &name);
 
   virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
 
@@ -115,7 +115,7 @@ public:
   
   bool hasVar(const string &name);
   
-  vector<int> getSize(const char *name); ///< Get size of the variable
+  vector<int> getSize(const string &name); ///< Get size of the variable
 
   /// Set the (x,y,z) origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {return true;}

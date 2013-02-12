@@ -84,14 +84,14 @@ bool GridFile::hasVar(const string &name) {
     return false;
 
   /// Try to get the size of the variable
-  vector<int> s = getSize(name.c_str());
+  vector<int> s = getSize(name);
   
   /// Test if the variable has zero size
   return s.size() != 0;
 }
 
 /// Return the size of variable
-vector<int> GridFile::getSize(const char *name) {
+vector<int> GridFile::getSize(const string &name) {
   vector<int> s;
   
   if(file == NULL)
@@ -182,7 +182,7 @@ bool GridFromOptions::hasVar(const string &name) {
   return options->isSet(name);
 }
 
-vector<int> GridFromOptions::getSize(const char *name) {
+vector<int> GridFromOptions::getSize(const string &name) {
   vector<int> v(1);
   v[0] = 1;
   return v;

@@ -42,8 +42,8 @@ Mesh::~Mesh() {
  **************************************************************************/
 
 /// Get an integer
-int Mesh::get(int &ival, const char *name) {
-  int msg_pos = msg_stack.push("Loading integer: Mesh::get(int, %s)", name);
+int Mesh::get(int &ival, const string &name) {
+  int msg_pos = msg_stack.push("Loading integer: Mesh::get(int, %s)", name.c_str());
 
   if(!source->hasVar(name)) {
     msg_stack.pop(msg_pos);
@@ -63,7 +63,7 @@ int Mesh::get(int &ival, const char *name) {
 }
 
 /// A BoutReal number
-int Mesh::get(BoutReal &rval, const char *name) {
+int Mesh::get(BoutReal &rval, const string &name) {
   if(!source->hasVar(name))
     return 1;
   
@@ -76,17 +76,96 @@ int Mesh::get(BoutReal &rval, const char *name) {
   return 0;
 }
 
+int Mesh::get(Field2D &var, const string &name, BoutReal def) {
+  int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name.c_str());
+  
+  if(!source->hasVar(name)) {
+    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
+    var = def;
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 2;
+  }
+  
+  var.allocate(); // Make sure data allocated
+  
+  BoutReal **data = var.getData(); // pointer for faster access
+  
+  // Send an open signal to the source
+  source->open(name);
+  
+  // Get the size of the variable
+  vector<int> size = source->getSize(name);
+  switch(size.size()) {
+  case 1: {
+    // 0 or 1 dimension
+    if(size[0] != 1) {
+      output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name.c_str(), size[0]);
+      source->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
+      return 1;
+    }
+    BoutReal val;
+    if(!source->fetch(&val, name)) {
+      output.write("Couldn't read 0D variable '%s'\n", name.c_str());
+      source->close();
+#ifdef CHECK
+      msg_stack.pop(msg_pos);
+#endif
+      return 1;
+    }
+    var = val;
+    // Close source
+    source->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 0;
+  }
+  case 2: {
+    // Check size? More complicated now...
+    break;
+  }
+  default: {
+    output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
+                 name.c_str(), size.size());
+    source->close();
+#ifdef CHECK
+    msg_stack.pop(msg_pos);
+#endif
+    return 1;
+  }
+  }
+  
+  // Read bulk of points
+  read2Dvar(source, name, 
+            OffsetX, OffsetY,  // Coordinates in grid file
+            xstart, ystart,    // Coordinates in this processor
+            xend-xstart+1, yend-ystart+1,      // Number of points to read
+            data);
+  
+  // Close the data source
+  source->close();
+  
+  // Communicate to get guard cell data
+  Mesh::communicate(var);
+  
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+  return 0;
+}
+
+int Mesh::get(Field3D &var, const string &name) {
+  
+}
+
 /**************************************************************************
  * Data get routines
  **************************************************************************/
-
-int Mesh::get(Vector2D &var, const char *name) {
-  return get(var, string(name));
-}
-
-int Mesh::get(Vector3D &var, const char *name) {
-  return get(var, string(name));
-}
 
 int Mesh::get(Vector2D &var, const string &name) {
   msg_stack.push("Loading 2D vector: Mesh::get(Vector2D, %s)", name.c_str());
@@ -718,3 +797,20 @@ const Field3D Mesh::averageY(const Field3D &f) {
       
   return result;
 }
+
+void Mesh::read2Dvar(GridDataSource *s, const string &name, 
+                     int xs, int ys,
+                     int xd, int yd,
+                     int nx, int ny,
+                     BoutReal **data) {
+  
+  for(int x=xs;x < xs+nx; x++) {
+    // Set source origin
+    s->setGlobalOrigin(x, ys);
+    // Read in block of data for this x value
+    if(!s->fetch(&data[x-xs+xd][yd], name, 1, ny))
+      throw BoutException("Could not fetch data for '%s'", name.c_str());
+  }
+  s->setGlobalOrigin();
+}
+
