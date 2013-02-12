@@ -5,6 +5,7 @@
 
 #include <bout.hxx>
 #include <boutmain.hxx>
+#include <bout/constants.hxx>
 
 #include <invert_laplace.hxx>
 #include <initialprofiles.hxx>
