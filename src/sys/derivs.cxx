@@ -1722,6 +1722,22 @@ const Field2D D2DZ2(const Field2D &f)
 }
 
 /*******************************************************************************
+ * Fourth derivatives
+ *******************************************************************************/
+
+BoutReal D4DX4_C2(stencil &f) {
+  return (f.pp - 4.*f.p + 6.*f.c - 4.*f.m + f.mm);
+}
+
+const Field3D D4DY4(const Field3D &f) {
+  return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
+}
+
+const Field2D D4DY4(const Field2D &f) {
+  return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
+}
+
+/*******************************************************************************
  * Mixed derivatives
  *******************************************************************************/
 

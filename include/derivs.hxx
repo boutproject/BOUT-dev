@@ -72,6 +72,11 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHO
 const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 const Field2D D2DZ2(const Field2D &f);
 
+/////////// FOURTH DERIVATIVES /////////
+
+const Field3D D4DY4(const Field3D &f);
+const Field2D D4DY4(const Field2D &f);
+
 /////////// MIXED DERIVATIVES //////////
 
 const Field3D D2DXDZ(const Field3D &f);
