@@ -62,6 +62,8 @@ class BoundaryOp {
 
 class BoundaryModifier : public BoundaryOp {
  public:
+  BoundaryModifier() : op(NULL) {}
+  BoundaryModifier(BoundaryOp *operation) : BoundaryOp(operation->bndry), op(operation) {}
   virtual BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args) = 0;
  protected:
   BoundaryOp *op;

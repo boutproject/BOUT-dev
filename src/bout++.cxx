@@ -271,8 +271,10 @@ void BoutInitialise(int argc, char **argv) {
     bndry->add(new BoundaryRobin(), "robin");
     bndry->add(new BoundaryConstGradient(), "constgradient");
     bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
+    bndry->add(new BoundaryZeroLaplace2(), "zerolaplace2");
     bndry->add(new BoundaryConstLaplace(), "constlaplace");
-    bndry->addMod(new BoundaryRelax(10.), "relax");
+    bndry->addMod(new BoundaryRelax(), "relax");
+    bndry->addMod(new BoundaryShifted(), "shifted");
     
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";

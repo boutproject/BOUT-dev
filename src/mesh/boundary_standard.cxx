@@ -239,16 +239,103 @@ void BoundaryZeroLaplace::apply(Field3D &f)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryZeroLaplace2::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryZeroLaplace2\n";
+  }
+  return new BoundaryZeroLaplace2(region);
+}
+
+void BoundaryZeroLaplace2::apply(Field2D &f) {
+  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+    // Can't apply this boundary condition to non-X boundaries
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+  }
+
+  // Constant X derivative
+  int bx = bndry->bx;
+  // Loop over the Y dimension
+  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+    int x = bndry->x;
+    int y = bndry->y;
+    BoutReal g = (f[x-bx][y] - f[x-2*bx][y]) / mesh->dx[x-bx][y];
+    // Loop in X towards edge of domain
+    do {
+      f[x][y] = f[x-bx][y] + g*mesh->dx[x][y];
+      bndry->next();
+      x = bndry->x; y = bndry->y;
+    }while(!bndry->isDone());
+  }
+}
+
+void BoundaryZeroLaplace2::apply(Field3D &f) {
+  static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
+  int ncz = mesh->ngz-1;
+
+  if(c0 == (dcomplex*) NULL) {
+    // allocate memory
+    c0 = new dcomplex[ncz/2 + 1];
+    c1 = new dcomplex[ncz/2 + 1];
+    c2 = new dcomplex[ncz/2 + 1];
+  }
+  
+  if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
+    // Can't apply this boundary condition to non-X boundaries
+    throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
+  }
+  
+  int bx = bndry->bx;
+  // Loop over the Y dimension
+  for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
+    // bndry->(x,y) is the first point in the boundary
+    // bndry->(x-bx,y) is the last "real" point in the domain
+    
+    int x = bndry->x;
+    int y = bndry->y;
+    
+    // Take FFT of last 2 points in domain
+    ZFFT(f[x-bx][y], mesh->zShift[x-bx][y], c1);
+    ZFFT(f[x-2*bx][y], mesh->zShift[x-2*bx][y], c2);
+    
+    // Loop in X towards edge of domain
+    do {
+      for(int jz=0;jz<=ncz/2;jz++) {
+        dcomplex la,lb,lc;
+        laplace_tridag_coefs(x-bx, y, jz, la, lb, lc);
+        if(bx > 0) {
+          // Outer boundary
+          swap(la, lc);
+        }
+        c0[jz] = -(lb*c1[jz] + lc*c2[jz]) / la;
+        /*
+        if((y == 2) && (x == 1)) {
+          output.write("Bndry %d: (%d,%d)\n", bx, x, jz);
+          output << "\t[" << la << ", " << lb << ", " << lc << "]\n";
+          output << "\t[" << c0[jz] << ", " << c1[jz] << ", " << c2[jz] << "]\n";
+        }
+        */
+      }
+      // Reverse FFT
+      ZFFT_rev(c0, mesh->zShift[x][y], f[x][y]);
+      // cycle c0 -> c1 -> c2 -> c0
+      dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
+      
+      bndry->nextX();
+      x = bndry->x; y = bndry->y;
+    }while(!bndry->isDone());
+  }
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryConstLaplace::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
   }
   return new BoundaryConstLaplace(region);
 }
 
-void BoundaryConstLaplace::apply(Field2D &f)
-{
+void BoundaryConstLaplace::apply(Field2D &f) {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
@@ -278,8 +365,7 @@ void BoundaryConstLaplace::apply(Field2D &f)
   }
 }
 
-void BoundaryConstLaplace::apply(Field3D &f)
-{
+void BoundaryConstLaplace::apply(Field3D &f) {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
@@ -422,11 +508,8 @@ void BoundaryDivCurl::apply(Vector3D &var)
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args)
-{
-  BoundaryRelax* result = new BoundaryRelax(r);
-  result->op = operation;
-  result->bndry = operation->bndry;
+BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryRelax* result = new BoundaryRelax(operation, r);
   
   if(!args.empty()) {
     // First argument should be the rate
@@ -438,20 +521,17 @@ BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &a
   return result;
 }
   
-void BoundaryRelax::apply(Field2D &f)
-{
+void BoundaryRelax::apply(Field2D &f) {
   // Just apply the original boundary condition to f
   op->apply(f);
 }
 
-void BoundaryRelax::apply(Field3D &f)
-{
+void BoundaryRelax::apply(Field3D &f) {
   // Just apply the original boundary condition to f
   op->apply(f);
 }
 
-void BoundaryRelax::apply_ddt(Field2D &f)
-{
+void BoundaryRelax::apply_ddt(Field2D &f) {
 #ifdef CHECK
   msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
 #endif
@@ -481,8 +561,7 @@ void BoundaryRelax::apply_ddt(Field2D &f)
 #endif
 }
 
-void BoundaryRelax::apply_ddt(Field3D &f)
-{
+void BoundaryRelax::apply_ddt(Field3D &f) {
 #ifdef CHECK
   msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
 #endif
@@ -510,3 +589,46 @@ void BoundaryRelax::apply_ddt(Field3D &f)
 #endif
 }
 
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryShifted::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryShifted* result = new BoundaryShifted(operation);
+  
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryShifted\n";
+  }
+
+  return result;
+}
+  
+void BoundaryShifted::apply(Field2D &f) {
+  op->apply(f); // Doesn't affect 2D boundary conditions
+}
+
+void BoundaryShifted::apply(Field3D &f) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    Field3D g = f.shiftZ(true); // Shift into orthogonal coordinates
+    op->apply(g);               // Apply the boundary condition
+    f = g.shiftZ(false);        // Shift back to field-aligned
+  }else
+    op->apply(f);
+}
+
+void BoundaryShifted::apply_ddt(Field2D &f) {
+  op->apply_ddt(f);
+}
+
+void BoundaryShifted::apply_ddt(Field3D &f) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift both the field and its time-derivative into orthogonal coordinates
+    // This is in case the boundary condition depends on both (e.g. relaxing)
+    Field3D g = f.shiftZ(true);
+    ddt(g) = ddt(f).shiftZ(true);
+
+    op->apply_ddt(g);             // Apply the boundary condition
+    
+    // Shift the time-derivative back 
+    ddt(f) = ddt(g).shiftZ(false);       // Shift back to field-aligned
+  }else
+    op->apply_ddt(f);
+}

@@ -56,7 +56,17 @@ class BoundaryConstGradient : public BoundaryOp {
 class BoundaryZeroLaplace : public BoundaryOp {
  public:
   BoundaryZeroLaplace() {}
- BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryZeroLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
+/// Zero Laplacian
+class BoundaryZeroLaplace2 : public BoundaryOp {
+ public:
+  BoundaryZeroLaplace2() {}
+  BoundaryZeroLaplace2(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
@@ -66,7 +76,7 @@ class BoundaryZeroLaplace : public BoundaryOp {
 class BoundaryConstLaplace : public BoundaryOp {
  public:
   BoundaryConstLaplace() {}
- BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryConstLaplace(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
@@ -76,7 +86,7 @@ class BoundaryConstLaplace : public BoundaryOp {
 class BoundaryDivCurl : public BoundaryOp {
  public:
   BoundaryDivCurl() {}
- BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryDivCurl(BoundaryRegion *region):BoundaryOp(region) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
@@ -84,10 +94,13 @@ class BoundaryDivCurl : public BoundaryOp {
   void apply(Vector3D &f);
 };
 
+/////////////////////////////////////////////////////////
+
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
  public:
-  BoundaryRelax(BoutReal rate) {r = fabs(rate);}
+  BoundaryRelax() {}
+  BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate);}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);
@@ -96,8 +109,23 @@ class BoundaryRelax : public BoundaryModifier {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  BoundaryRelax() {} // Must be initialised with a rate
   BoutReal r;
+};
+
+/// Apply boundary condition in shifted coordinates
+class BoundaryShifted : public BoundaryModifier {
+public:
+  BoundaryShifted() {}
+  BoundaryShifted(BoundaryOp *operation) : BoundaryModifier(operation) {}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+  
 };
 
 #endif // __BNDRY_STD_H__
