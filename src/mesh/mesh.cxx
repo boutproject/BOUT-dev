@@ -482,13 +482,13 @@ int Mesh::calcCovariant() {
   for(int jx=0;jx<ngx;jx++) {
     for(int jy=0;jy<ngy;jy++) {
       // set elements of g
-      a[0][0] = g11[jx][jy];
-      a[1][1] = g22[jx][jy];
-      a[2][2] = g33[jx][jy];
+      a[0][0] = g11(jx, jy);
+      a[1][1] = g22(jx, jy);
+      a[2][2] = g33(jx, jy);
       
-      a[0][1] = a[1][0] = g12[jx][jy];
-      a[1][2] = a[2][1] = g23[jx][jy];
-      a[0][2] = a[2][0] = g13[jx][jy];
+      a[0][1] = a[1][0] = g12(jx, jy);
+      a[1][2] = a[2][1] = g23(jx, jy);
+      a[0][2] = a[2][0] = g13(jx, jy);
       
       // invert
       if(gaussj(a, 3)) {
@@ -497,13 +497,13 @@ int Mesh::calcCovariant() {
       }
       
       // put elements into g_{ij}
-      g_11[jx][jy] = a[0][0];
-      g_22[jx][jy] = a[1][1];
-      g_33[jx][jy] = a[2][2];
+      g_11(jx, jy) = a[0][0];
+      g_22(jx, jy) = a[1][1];
+      g_33(jx, jy) = a[2][2];
       
-      g_12[jx][jy] = a[0][1];
-      g_13[jx][jy] = a[0][2];
-      g_23[jx][jy] = a[1][2];
+      g_12(jx, jy) = a[0][1];
+      g_13(jx, jy) = a[0][2];
+      g_23(jx, jy) = a[1][2];
     }
   }
 
@@ -565,13 +565,13 @@ int Mesh::calcContravariant() {
   for(int jx=0;jx<ngx;jx++) {
     for(int jy=0;jy<ngy;jy++) {
       // set elements of g
-      a[0][0] = g_11[jx][jy];
-      a[1][1] = g_22[jx][jy];
-      a[2][2] = g_33[jx][jy];
+      a[0][0] = g_11(jx, jy);
+      a[1][1] = g_22(jx, jy);
+      a[2][2] = g_33(jx, jy);
       
-      a[0][1] = a[1][0] = g_12[jx][jy];
-      a[1][2] = a[2][1] = g_23[jx][jy];
-      a[0][2] = a[2][0] = g_13[jx][jy];
+      a[0][1] = a[1][0] = g_12(jx, jy);
+      a[1][2] = a[2][1] = g_23(jx, jy);
+      a[0][2] = a[2][0] = g_13(jx, jy);
       
       // invert
       if(gaussj(a, 3)) {
@@ -580,13 +580,13 @@ int Mesh::calcContravariant() {
       }
       
       // put elements into g_{ij}
-      g11[jx][jy] = a[0][0];
-      g22[jx][jy] = a[1][1];
-      g33[jx][jy] = a[2][2];
+      g11(jx, jy) = a[0][0];
+      g22(jx, jy) = a[1][1];
+      g33(jx, jy) = a[2][2];
       
-      g12[jx][jy] = a[0][1];
-      g13[jx][jy] = a[0][2];
-      g23[jx][jy] = a[1][2];
+      g12(jx, jy) = a[0][1];
+      g13(jx, jy) = a[0][2];
+      g23(jx, jy) = a[1][2];
     }
   }
 
@@ -771,7 +771,6 @@ int Mesh::gaussj(BoutReal **a, int n) {
 const Field3D Mesh::averageY(const Field3D &f) {
   Field3D result;
   result.allocate();
-  BoutReal ***d = result.getData();
 
   Field2D xy;
   xy.allocate();
@@ -780,8 +779,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-
-	xy[jx][jy] = f[jx][jy][jz];
+	xy(jx, jy) = f(jx, jy, jz);
       }
     }
 
@@ -789,8 +787,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-
-	d[jx][jy][jz] = xy[jx][jy];
+	result(jx, jy, jz) = xy(jx, jy);
       }
     }
   }

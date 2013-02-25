@@ -44,15 +44,12 @@
  * The parallel derivative along unperturbed B-field
  *******************************************************************************/
 
-const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Grad_par( Field2D )");
 #endif
 
-
   Field2D result = DDY(var)/sqrt(mesh->g_22); // NOTE: 2D functions not implemented yet
-
 
 #ifdef TRACK
   result.name = "Grad_par("+var.name+")";
@@ -132,7 +129,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   for(int x=1;x<=mesh->ngx-2;x++)
     for(int y=1;y<=mesh->ngy-2;y++)
       for(int z=0;z<ncz;z++) {
-        gys[x][y][z] = (f[x][y+1][z] - f[x][y-1][z])/(0.5*mesh->dy[x][y+1] + mesh->dy[x][y] + 0.5*mesh->dy[x][y-1]);
+        gys(x, y, z) = (f(x, y+1, z) - f(x, y-1, z))/(0.5*mesh->dy(x, y+1) + mesh->dy(x, y) + 0.5*mesh->dy(x, y-1));
       }
 
   // Shift into orthogonal XZ local coordinates
@@ -151,50 +148,50 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   
   for(int x=1;x<=mesh->ngx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      BoutReal by = 1./sqrt(mesh->g_22[x][y]);
+      BoutReal by = 1./sqrt(mesh->g_22(x, y));
       for(int z=0;z<ncz;z++) {
         int zm = (z - 1 + ncz) % ncz;
         int zp = (z + 1) % ncz;
         
         // bx = -DDZ(apar)
-        bx[x][y][z] = (as[x][y][zm] - as[x][y][zp])/(2.*mesh->dz);
+        bx(x, y, z) = (as(x, y, zm) - as(x, y, zp))/(2.*mesh->dz);
         // bz = DDX(f)
-        bz[x][y][z] = (as[x+1][y][z] - as[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+        bz(x, y, z) = (as(x+1, y, z) - as(x-1, y, z))/(0.5*mesh->dx(x-1, y) + mesh->dx(x, y) + 0.5*mesh->dx(x+1, y));
         
         // Now calculate (bx*d/dx + by*d/dy + bz*d/dz) f
         
         // Length dl for predictor
-        BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
-        dl = BOUTMIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
-        dl = BOUTMIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        BoutReal dl = fabs(mesh->dx(x, y)) / (fabs(bx(x, y, z)) + 1e-16);
+        dl = BOUTMIN(dl, fabs(mesh->dy(x, y)) / (fabs(by) + 1e-16));
+        dl = BOUTMIN(dl, mesh->dz / (fabs(bz(x, y, z)) + 1e-16));
         
         BoutReal fp, fm;
         
         // X differencing
-        fp = fs[x+1][y][z] 
-          + (0.25*dl/mesh->dz) * bz[x][y][z] * (fs[x+1][y][zm] - fs[x+1][y][zp])
-          - 0.5*dl * by * gys[x+1][y][z];
+        fp = fs(x+1, y, z)
+          + (0.25*dl/mesh->dz) * bz(x, y, z) * (fs(x+1, y, zm) - fs(x+1, y, zp))
+          - 0.5*dl * by * gys(x+1, y, z);
         
-        fm = fs[x-1][y][z]
-          + (0.25*dl/mesh->dz) * bz[x][y][z] * (fs[x-1][y][zm] - fs[x-1][y][zp])
-          - 0.5*dl * by * gys[x-1][y][z];
+        fm = fs(x-1, y, z)
+          + (0.25*dl/mesh->dz) * bz(x, y, z) * (fs(x-1, y, zm) - fs(x-1, y, zp))
+          - 0.5*dl * by * gys(x-1, y, z);
         
-        result[x][y][z] = bx[x][y][z] * (fp - fm) / (0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+        result(x, y, z) = bx(x, y, z) * (fp - fm) / (0.5*mesh->dx(x-1, y) + mesh->dx(x, y) + 0.5*mesh->dx(x+1, y));
 
         // Z differencing
         
-        fp = fs[x][y][zp]
-          + (0.25*dl/mesh->dx[x][y]) * bx[x][y][z] * (fs[x-1][y][zp] - fs[x+1][y][zp])
-          - 0.5*dl * by * gys[x][y][zp];
+        fp = fs(x, y, zp)
+          + (0.25*dl/mesh->dx(x, y)) * bx(x, y, z) * (fs(x-1, y, zp) - fs(x+1, y, zp))
+          - 0.5*dl * by * gys(x, y, zp);
         
-        fm = fs[x][y][zm]
-          + (0.25*dl/mesh->dx[x][y]) * bx[x][y][z] * (fs[x-1][y][zm] - fs[x+1][y][zm])
-          - 0.5*dl * by * gys[x][y][zm];
+        fm = fs(x, y, zm)
+          + (0.25*dl/mesh->dx(x, y)) * bx(x, y, z) * (fs[x-1][y][zm] - fs(x+1, y, zm))
+          - 0.5*dl * by * gys(x, y, zm);
 
-        result[x][y][z] += bz[x][y][z] * (fp - fm) / (2.*mesh->dz);
+        result(x, y, z) += bz(x, y, z) * (fp - fm) / (2.*mesh->dz);
         
         // Y differencing. Need X derivative
-        gx[x][y][z] = (fs[x+1][y][z] - fs[x-1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+        gx(x, y, z) = (fs(x+1, y, z) - fs(x-1, y, z))/(0.5*mesh->dx(x-1, y) + mesh->dx(x, y) + 0.5*mesh->dx(x+1, y));
         
       }
     }
@@ -211,15 +208,15 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
   // Y differencing
   for(int x=1;x<=mesh->ngx-2;x++) {
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      BoutReal by = 1./sqrt(mesh->g_22[x][y]);
+      BoutReal by = 1./sqrt(mesh->g_22(x, y));
       for(int z=0;z<ncz;z++) {
         int zm = (z - 1 + ncz) % ncz;
         int zp = (z + 1) % ncz;
         
         // Re-calculate dl
-        BoutReal dl = fabs(mesh->dx[x][y]) / (fabs(bx[x][y][z]) + 1e-16);
-        dl = BOUTMIN(dl, fabs(mesh->dy[x][y]) / (fabs(by) + 1e-16));
-        dl = BOUTMIN(dl, mesh->dz / (fabs(bz[x][y][z]) + 1e-16));
+        BoutReal dl = fabs(mesh->dx(x, y)) / (fabs(bx(x, y, z)) + 1e-16);
+        dl = BOUTMIN(dl, fabs(mesh->dy(x, y)) / (fabs(by) + 1e-16));
+        dl = BOUTMIN(dl, mesh->dz / (fabs(bz(x, y, z)) + 1e-16));
         
         BoutReal fp, fm;
 
@@ -244,18 +241,15 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
  * vparallel times the parallel derivative along unperturbed B-field
  *******************************************************************************/
 
-const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f)
-{
+const Field2D Vpar_Grad_par(const Field2D &v, const Field2D &f) {
   return VDDY(v, f)/sqrt(mesh->g_22);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   return VDDY(v, f, outloc, method)/sqrt(mesh->g_22);
 }
 
-const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D Vpar_Grad_par(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
   return Vpar_Grad_par(v, f, outloc, method);
 }
 
@@ -269,9 +263,7 @@ const Field2D Div_par(const Field2D &f) {
   int msg_pos = msg_stack.push("Div_par( Field2D )");
 #endif
 
-
   Field2D result = mesh->Bxy*Grad_par(f/mesh->Bxy);
-
 
 #ifdef TRACK
   result.name = "Div_par("+f.name+")";
@@ -287,9 +279,7 @@ const Field3D Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   int msg_pos = msg_stack.push("Div_par( Field3D )");
 #endif
 
-
   Field3D result = mesh->Bxy*Grad_par(f/mesh->Bxy, outloc, method);
-
 
 #ifdef TRACK
   result.name = "Div_par("+f.name+")";
@@ -341,11 +331,9 @@ const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
  *       thing needs to be thought through.
  *******************************************************************************/
 
-const Field3D Grad_par_CtoL(const Field3D &var)
-{
+const Field3D Grad_par_CtoL(const Field3D &var) {
   Field3D result;
   result.allocate();
-  BoutReal ***d = result.getData();
 
   /*
   bindex bx;
@@ -362,7 +350,7 @@ const Field3D Grad_par_CtoL(const Field3D &var)
   for(int jx=0; jx<mesh->ngx;jx++) {
     for(int jy=1;jy<mesh->ngy;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++) {
-	d[jx][jy][jz] = (var[jx][jy][jz] - var[jx][jy-1][jz]) / (mesh->dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	result(jx, jy, jz) = (var(jx, jy, jz) - var(jx, jy-1, jz)) / (mesh->dy(jx, jy) * sqrt(mesh->g_22(jx, jy)));
       }
     }
   }
@@ -370,14 +358,12 @@ const Field3D Grad_par_CtoL(const Field3D &var)
   return result;
 }
 
-const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f)
-{
+const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   bindex bx;
   bstencil fval, vval;
   Field3D result;
   
   result.allocate();
-  BoutReal ***d = result.getData();
 
   start_index(&bx);
   do {
@@ -385,56 +371,46 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f)
     v.setStencil(&vval, &bx);
     
     // Left side
-    d[bx.jx][bx.jy][bx.jz] = (vval.cc >= 0.0) ? vval.cc * fval.ym : vval.cc * fval.cc;
+    result(bx.jx, bx.jy, bx.jz) = (vval.cc >= 0.0) ? vval.cc * fval.ym : vval.cc * fval.cc;
     // Right side
-    d[bx.jx][bx.jy][bx.jz] -= (vval.yp >= 0.0) ? vval.yp * fval.cc : vval.yp * fval.yp;
+    result(bx.jx, bx.jy, bx.jz) -= (vval.yp >= 0.0) ? vval.yp * fval.cc : vval.yp * fval.yp;
     
   }while(next_index3(&bx));
 
   return result;
 }
 
-const Field3D Grad_par_LtoC(const Field &var)
-{
+const Field3D Grad_par_LtoC(const Field &var) {
   bindex bx;
   bstencil f;
   Field3D result;
   
   result.allocate();
-  BoutReal ***d = result.getData();
 
   start_index(&bx);
   do {
     var.setStencil(&f, &bx);
     
-    d[bx.jx][bx.jy][bx.jz] = (f.yp - f.cc) / (mesh->dy[bx.jx][bx.jy] * sqrt(mesh->g_22[bx.jx][bx.jy]));
+    result(bx.jx, bx.jy, bx.jz) = (f.yp - f.cc) / (mesh->dy(bx.jx, bx.jy) * sqrt(mesh->g_22(bx.jx, bx.jy)));
   }while(next_index3(&bx));
 
   return result;
 }
 
-const Field3D Div_par_LtoC(const Field2D &var)
-{
-  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
-  return result;
+const Field3D Div_par_LtoC(const Field2D &var) {
+  return mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
 }
 
-const Field3D Div_par_LtoC(const Field3D &var)
-{
-  Field3D result = mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
-  return result;
+const Field3D Div_par_LtoC(const Field3D &var) {
+  return mesh->Bxy*Grad_par_LtoC(var/mesh->Bxy);
 }
 
-const Field3D Div_par_CtoL(const Field2D &var)
-{
-  Field3D result = mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
-  return result;
+const Field3D Div_par_CtoL(const Field2D &var) {
+  return mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
 }
 
-const Field3D Div_par_CtoL(const Field3D &var)
-{
-  Field3D result = mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
-  return result;
+const Field3D Div_par_CtoL(const Field3D &var) {
+  return mesh->Bxy*Grad_par_CtoL(var/mesh->Bxy);
 }
 
 /*******************************************************************************
@@ -442,12 +418,10 @@ const Field3D Div_par_CtoL(const Field3D &var)
  * second parallel derivative
  *******************************************************************************/
 
-const Field2D Grad2_par2(const Field2D &f)
-{
+const Field2D Grad2_par2(const Field2D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Grad2_par2( Field2D )");
 #endif
-
 
   Field2D sg = sqrt(mesh->g_22);
   Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/mesh->g_22;
@@ -462,8 +436,7 @@ const Field2D Grad2_par2(const Field2D &f)
   return result;
 }
 
-const Field3D Grad2_par2(const Field3D &f)
-{
+const Field3D Grad2_par2(const Field3D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Grad2_par2( Field3D )");
 #endif
@@ -508,18 +481,15 @@ const Field3D Div_par_K_Grad_par(BoutReal kY, Field3D &f) {
   return kY*Grad2_par2(f);
 }
 
-const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f)
-{
+const Field2D Div_par_K_Grad_par(Field2D &kY, Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f)
-{
+const Field3D Div_par_K_Grad_par(Field2D &kY, Field3D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
-const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f)
-{
+const Field3D Div_par_K_Grad_par(Field3D &kY, Field2D &f) {
   return kY*Grad2_par2(f) + Div_par(kY)*Grad_par(f);
 }
 
@@ -543,8 +513,7 @@ const Field3D Div_K_perp_Grad_perp(const Field2D &kperp, const Field3D &f) {
  * perpendicular Laplacian operator
  *******************************************************************************/
 
-const Field2D Delp2(const Field2D &f)
-{
+const Field2D Delp2(const Field2D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Delp2( Field2D )");
 #endif
@@ -558,8 +527,7 @@ const Field2D Delp2(const Field2D &f)
   return result;
 }
 
-const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
-{
+const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
   Field3D result;
   BoutReal ***fd, ***rd;
 
@@ -593,7 +561,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
     
     #pragma omp parallel for
     for(int jx=0;jx<mesh->ngx;jx++)
-      ZFFT(fd[jx][jy], mesh->zShift[jx][jy], ft[jx]);
+      ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
 
     // Loop over kz
     #pragma omp parallel for
@@ -648,8 +616,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth)
   return result;
 }
 
-const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth)
-{
+const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth) {
   FieldPerp result;
   result.allocate();
   
@@ -676,7 +643,7 @@ const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth)
   
   // Take forward FFT
   for(int jx=0;jx<mesh->ngx;jx++)
-    ZFFT(fd[jx], mesh->zShift[jx][jy], ft[jx]);
+    ZFFT(fd[jx], mesh->zShift(jx, jy), ft[jx]);
 
   // Loop over kz
   for(int jz=0;jz<=ncz/2;jz++) {
@@ -719,8 +686,7 @@ const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth)
  * Full Laplacian operator
  *******************************************************************************/
 
-const Field2D Laplacian(const Field2D &f)
-{
+const Field2D Laplacian(const Field2D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Laplacian( Field2D )");
 #endif
@@ -736,8 +702,7 @@ const Field2D Laplacian(const Field2D &f)
   return result;
 }
 
-const Field3D Laplacian(const Field3D &f)
-{
+const Field3D Laplacian(const Field3D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Laplacian( Field3D )");
 #endif
@@ -759,8 +724,7 @@ const Field3D Laplacian(const Field3D &f)
  * Used for ExB terms and perturbed B field using A_||
  *******************************************************************************/
 
-const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
-{
+const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A) {
   Field2D dpdx, dpdy;
   Field2D vx, vy;
   Field2D result;
@@ -811,8 +775,7 @@ const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A)
   return result;
 }
 
-const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
-{
+const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
   Field2D dpdx, dpdy;
   Field2D vx, vy, vz;
   Field3D result;
@@ -875,8 +838,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A)
   return result;
 }
 
-const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outloc)
-{
+const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outloc) {
   Field3D dpdx, dpdy, dpdz;
   Field3D vx, vy;
   Field3D result;
@@ -931,8 +893,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &p, const Field2D &A, CELL_LOC outl
   return result;
 }
 
-const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc)
-{
+const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC outloc) {
   Field3D dpdx, dpdy, dpdz;
   Field3D vx, vy, vz;
   Field3D result;

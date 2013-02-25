@@ -93,6 +93,9 @@ class Field3D : public Field, public FieldData {
   BoutReal** operator[](int jx) const;
   BoutReal& operator[](bindex &bx) const;
 
+  BoutReal& operator()(int jx, int jy, int jz);
+  const BoutReal& operator()(int jx, int jy, int jz) const;
+
   /// Assignment operators
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);

@@ -583,7 +583,6 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
 void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op) {
-  BoutReal **d2d, ***d3d;
   int i;
   int jz;
  
@@ -596,8 +595,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
+      (*f2d[i].var)(jx, jy) = udata[p];
       p++;
     }
     
@@ -605,8 +603,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
+	(*f3d[i].var)(jx, jy, jz) = udata[p];
 	p++;
       }  
     }
@@ -618,8 +615,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      d2d[jx][jy] = udata[p];
+      (*f2d[i].F_var)(jx, jy) = udata[p];
       p++;
     }
     
@@ -627,8 +623,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
+	(*f3d[i].F_var)(jx, jy, jz) = udata[p];
 	p++;
       }  
     }
@@ -640,8 +635,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
+      udata[p] = (*f2d[i].var)(jx, jy);
       p++;
     }
     
@@ -649,8 +643,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
+	udata[p] = (*f3d[i].var)(jx, jy, jz);
 	p++;
       }  
     }
@@ -661,8 +654,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
-      udata[p] = d2d[jx][jy];
+      udata[p] = (*f2d[i].F_var)(jx, jy);
       p++;
     }
     
@@ -670,8 +662,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
+	udata[p] = (*f3d[i].F_var)(jx, jy, jz);
 	p++;
       }  
     }
@@ -719,8 +710,7 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   }
 }
 
-void Solver::load_vars(BoutReal *udata)
-{
+void Solver::load_vars(BoutReal *udata) {
   unsigned int i;
   
   // Make sure data is allocated
@@ -741,8 +731,7 @@ void Solver::load_vars(BoutReal *udata)
     v3d[i].var->covariant = v3d[i].covariant;
 }
 
-void Solver::load_derivs(BoutReal *udata)
-{
+void Solver::load_derivs(BoutReal *udata) {
   unsigned int i;
   
   // Make sure data is allocated
@@ -764,8 +753,7 @@ void Solver::load_derivs(BoutReal *udata)
 }
 
 // This function only called during initialisation
-int Solver::save_vars(BoutReal *udata)
-{
+int Solver::save_vars(BoutReal *udata) {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
@@ -795,8 +783,7 @@ int Solver::save_vars(BoutReal *udata)
   return(0);
 }
 
-void Solver::save_derivs(BoutReal *dudata)
-{
+void Solver::save_derivs(BoutReal *dudata) {
   unsigned int i;
 
   // Make sure vectors in correct basis
@@ -828,8 +815,7 @@ void Solver::save_derivs(BoutReal *dudata)
  * Running user-supplied functions
  **************************************************************************/
 
-void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD)
-{
+void Solver::setSplitOperator(rhsfunc fC, rhsfunc fD) {
   split_operator = true;
   phys_conv = fC;
   phys_diff = fD;

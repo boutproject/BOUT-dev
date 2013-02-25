@@ -139,9 +139,9 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
   return(*this);
 }
 
-BoutReal* Field2D::operator[](int jx) const
-{
+////////////// Indexing ///////////////////
 
+BoutReal* Field2D::operator[](int jx) const {
 #ifdef CHECK
 
   if(data == (BoutReal**) NULL)
@@ -153,6 +153,32 @@ BoutReal* Field2D::operator[](int jx) const
   
   return(data[jx]);
 }
+
+BoutReal& Field2D::operator()(int jx, int jy) {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: [] operator on empty data");
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+    throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                        jx, jy, mesh->ngx, mesh->ngy);
+#endif
+  
+  return data[jx][jy];
+}
+
+const BoutReal& Field2D::operator()(int jx, int jy) const {
+#if CHECK > 2
+  if(data == (BoutReal**) NULL)
+    throw BoutException("Field2D: [] operator on empty data");
+  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+    throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                        jx, jy, mesh->ngx, mesh->ngy);
+#endif
+  
+  return data[jx][jy];
+}
+
+///////// Operators
 
 Field2D & Field2D::operator+=(const Field2D &rhs) {
 #ifdef CHECK

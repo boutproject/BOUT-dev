@@ -718,8 +718,7 @@ int derivs_init() {
 
 // X derivative
 
-const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field2D result;
   result.allocate(); // Make sure data allocated
 
@@ -743,7 +742,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
     {
       // First index done once
       var.setXStencil(s, bxstart, loc);
-      r[bxstart.jx][bxstart.jy] = func(s) / dd[bxstart.jx][bxstart.jy];
+      r[bxstart.jx][bxstart.jy] = func(s) / dd(bxstart.jx, bxstart.jy);
     }
     
     do {
@@ -756,7 +755,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
       }
       if(workToDo) { // Here workToDo could be different to workToDoGlobal
         var.setXStencil(s, bxlocal, loc);
-        r[bxlocal.jx][bxlocal.jy] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+        r[bxlocal.jx][bxlocal.jy] = func(s) / dd(bxlocal.jx, bxlocal.jy);
       }
     }while(workToDoGlobal);
   }
@@ -778,8 +777,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   return result;
 }
 
-const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   result.allocate(); // Make sure data allocated
 
@@ -807,7 +805,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
       // First index done by single thread
       for(bxstart.jz=0;bxstart.jz<mesh->ngz-1;bxstart.jz++) {
         vs.setXStencil(s, bxstart, loc);
-        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd[bxstart.jx][bxstart.jy];
+        r[bxstart.jx][bxstart.jy][bxstart.jz] = func(s) / dd(bxstart.jx, bxstart.jy);
       }
     }
     
@@ -822,7 +820,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
       if(workToDo) { // Here workToDo could be different to workToDoGlobal
         for(bxlocal.jz=0;bxlocal.jz<mesh->ngz-1;bxlocal.jz++) {
           vs.setXStencil(s, bxlocal, loc);
-          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd[bxlocal.jx][bxlocal.jy];
+          r[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(s) / dd(bxlocal.jx, bxlocal.jy);
         }
       }
     }while(workToDoGlobal);
@@ -832,7 +830,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   do {
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       vs.setXStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
+      r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
 #endif  
@@ -850,8 +848,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 
 // Y derivative
 
-const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field2D result;
   result.allocate(); // Make sure data allocated
   BoutReal **r = result.getData();
@@ -894,7 +891,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   stencil s;
   do{
     var.setYStencil(s, bx, loc);
-    r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
+    r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
   }while(next_index2(&bx));
   //#endif  
 
@@ -906,8 +903,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   return result;
 }
 
-const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
@@ -959,7 +955,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
     //output.write("apply %d %d\n", bx.jx, bx.jy);
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       var.setYStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s) / dd[bx.jx][bx.jy];
+      r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
   //#endif
@@ -974,8 +970,7 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
 
 // Z derivative
 
-const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_LOC loc = CELL_DEFAULT)
-{
+const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
@@ -1022,8 +1017,7 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
 
 ////////////// X DERIVATIVE /////////////////
 
-const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fDDX; // Set to default function
   DiffLookup *table = FirstDerivTable;
   
@@ -1084,18 +1078,15 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Field3D DDX(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D DDX(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return DDX(f, outloc, method);
 }
 
-const Field3D DDX(const Field3D &f, DIFF_METHOD method)
-{
+const Field3D DDX(const Field3D &f, DIFF_METHOD method) {
   return DDX(f, CELL_DEFAULT, method);
 }
 
-const Field2D DDX(const Field2D &f)
-{
+const Field2D DDX(const Field2D &f) {
   return applyXdiff(f, fDDX, mesh->dx);
 }
 
@@ -1160,18 +1151,15 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return interp_to(result, outloc); // Interpolate if necessary
 }
 
-const Field3D DDY(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D DDY(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return DDY(f, outloc, method);
 }
 
-const Field3D DDY(const Field3D &f, DIFF_METHOD method)
-{
+const Field3D DDY(const Field3D &f, DIFF_METHOD method) {
   return DDY(f, CELL_DEFAULT, method);
 }
 
-const Field2D DDY(const Field2D &f)
-{
+const Field2D DDY(const Field2D &f) {
   return applyYdiff(f, fDDY, mesh->dy);
 }
 
@@ -1189,7 +1177,7 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
       F.setYStencil(fs, bx);
       u.setYStencil(us, bx);
       
-      r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy[bx.jx][bx.jy];
+      r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
   
@@ -1198,8 +1186,7 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry)
-{
+const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry) {
   deriv_func func = fDDZ; // Set to default function
   DiffLookup *table = FirstDerivTable;
  
@@ -1337,30 +1324,25 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
   return interp_to(result, outloc);
 }
 
-const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry)
-{
+const Field3D DDZ(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc, bool inc_xbndry) {
   return DDZ(f, outloc, method, inc_xbndry);
 }
 
-const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry)
-{
+const Field3D DDZ(const Field3D &f, DIFF_METHOD method, bool inc_xbndry) {
   return DDZ(f, CELL_DEFAULT, method, inc_xbndry);
 }
 
-const Field3D DDZ(const Field3D &f, bool inc_xbndry)
-{
+const Field3D DDZ(const Field3D &f, bool inc_xbndry) {
   return DDZ(f, CELL_DEFAULT, DIFF_DEFAULT, inc_xbndry);
 }
 
-const Field2D DDZ(const Field2D &f)
-{
+const Field2D DDZ(const Field2D &f) {
   Field2D result;
   result = 0.0;
   return result;
 }
 
-const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
   Vector3D result;
 
   result.covariant = v.covariant;
@@ -1372,13 +1354,11 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Vector3D DDZ(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
   return DDZ(v, outloc, method);
 }
 
-const Vector2D DDZ(const Vector2D &v)
-{
+const Vector2D DDZ(const Vector2D &v) {
   Vector2D result;
 
   result.covariant = v.covariant;
@@ -1396,8 +1376,7 @@ const Vector2D DDZ(const Vector2D &v)
 
 ////////////// X DERIVATIVE /////////////////
 
-const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DX2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1469,13 +1448,11 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   return result;
 }
 
-const Field3D D2DX2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D D2DX2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return D2DX2(f, outloc, method);
 }
 
-const Field2D D2DX2(const Field2D &f)
-{
+const Field2D D2DX2(const Field2D &f) {
   Field2D result;
 
   result = applyXdiff(f, fD2DX2, (mesh->dx*mesh->dx));
@@ -1490,8 +1467,7 @@ const Field2D D2DX2(const Field2D &f)
 
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DY2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1550,13 +1526,11 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   return interp_to(result, outloc);
 }
 
-const Field3D D2DY2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D D2DY2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return D2DY2(f, outloc, method);
 }
 
-const Field2D D2DY2(const Field2D &f)
-{
+const Field2D D2DY2(const Field2D &f) {
   Field2D result;
 
   result = applyYdiff(f, fD2DY2, (mesh->dy*mesh->dy));
@@ -1571,8 +1545,7 @@ const Field2D D2DY2(const Field2D &f)
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1708,14 +1681,12 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
   return interp_to(result, outloc);
 }
 
-const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   return D2DZ2(f, outloc, method);
 }
 
 
-const Field2D D2DZ2(const Field2D &f)
-{
+const Field2D D2DZ2(const Field2D &f) {
   Field2D result;
   result = 0.0;
   return result;
@@ -1742,8 +1713,7 @@ const Field2D D4DY4(const Field2D &f) {
  *******************************************************************************/
 
 /// X-Z mixed derivative
-const Field3D D2DXDZ(const Field3D &f)
-{
+const Field3D D2DXDZ(const Field3D &f) {
   Field3D result;
   
   // Take derivative in Z, including in X boundaries. Then take derivative in X
@@ -1762,8 +1732,7 @@ const Field3D D2DXDZ(const Field3D &f)
 ////////////// X DERIVATIVE /////////////////
 
 /// Special case where both arguments are 2D. Output location ignored for now
-const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   upwind_func func = fVDDX;
 
   if(method != DIFF_DEFAULT) {
@@ -1782,7 +1751,7 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
     f.setXStencil(fs, bx);
     v.setXStencil(vs, bx);
     
-    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx[bx.jx][bx.jy];
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx(bx.jx, bx.jy);
   }while(next_index2(&bx));
 
 #ifdef CHECK
@@ -1793,14 +1762,12 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   return result;
 }
 
-const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method)
-{
+const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
   return VDDX(v, f, CELL_DEFAULT, method);
 }
 
 /// General version for 2 or 3-D objects
-const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   upwind_func func = fVDDX;
   DiffLookup *table = UpwindTable;
 
@@ -1876,7 +1843,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
         vp->setXStencil(vval, bxstart, diffloc);
         fp->setXStencil(fval, bxstart); // Location is always the same as input
     
-        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval) / mesh->dx[bxstart.jx][bxstart.jy];
+        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval) / mesh->dx(bxstart.jx, bxstart.jy);
       }
     }
     
@@ -1893,7 +1860,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
           vp->setXStencil(vval, bxlocal, diffloc);
           fp->setXStencil(fval, bxlocal); // Location is always the same as input
     
-          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval) / mesh->dx[bxlocal.jx][bxlocal.jy];
+          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval) / mesh->dx(bxlocal.jx, bxlocal.jy);
         }
       }
     }while(workToDoGlobal);
@@ -1905,7 +1872,7 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     vp->setXStencil(vval, bx, diffloc);
     fp->setXStencil(fval, bx); // Location is always the same as input
     
-    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx[bx.jx][bx.jy];
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx(bx.jx, bx.jy);
   }while(next_index3(&bx));
 #endif
   
@@ -1926,16 +1893,14 @@ const Field3D VDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   return interp_to(result, outloc);
 }
 
-const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDX(v, f, outloc, method);
 }
 
 ////////////// Y DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   upwind_func func = fVDDY;
   DiffLookup *table = UpwindTable;
 
@@ -1988,7 +1953,7 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   do {
     f.setYStencil(fval, bx);
     v.setYStencil(vval, bx, diffloc);
-    d[bx.jx][bx.jy] = func(vval,fval)/mesh->dy[bx.jx][bx.jy];
+    d[bx.jx][bx.jy] = func(vval,fval)/mesh->dy(bx.jx, bx.jy);
   }while(next_index2(&bx));
 
   result.setLocation(inloc);
@@ -2001,14 +1966,12 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_MET
   return interp_to(result, outloc);
 }
 
-const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method)
-{
+const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method) {
   return VDDY(v, f, CELL_DEFAULT, method);
 }
 
 // general case
-const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   upwind_func func = fVDDY;
   DiffLookup *table = UpwindTable;
 
@@ -2075,7 +2038,7 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
         v.setYStencil(vval, bxstart, diffloc);
         f.setYStencil(fval, bxstart);
     
-        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dy[bxstart.jx][bxstart.jy];
+        d[bxstart.jx][bxstart.jy][bxstart.jz] = func(vval, fval)/mesh->dy(bxstart.jx, bxstart.jy);
       }
     }
     
@@ -2092,7 +2055,7 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
           v.setYStencil(vval, bxlocal, diffloc);
           f.setYStencil(fval, bxlocal);
     
-          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dy[bxlocal.jx][bxlocal.jy];
+          d[bxlocal.jx][bxlocal.jy][bxlocal.jz] = func(vval, fval)/mesh->dy(bxlocal.jx, bxlocal.jy);
         }
       }
     }while(workToDoGlobal);
@@ -2104,7 +2067,7 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
     v.setYStencil(vval, bx, diffloc);
     f.setYStencil(fval, bx);
     
-    d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dy[bx.jx][bx.jy];
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval)/mesh->dy(bx.jx, bx.jy);
   }while(next_index3(&bx));
 #endif
   
@@ -2118,32 +2081,28 @@ const Field3D VDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   return interp_to(result, outloc);
 }
 
-const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDY(v, f, outloc, method);
 }
 
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
-const Field2D VDDZ(const Field2D &v, const Field2D &f)
-{
+const Field2D VDDZ(const Field2D &v, const Field2D &f) {
   Field2D result;
   result = 0.0;
   return result;
 }
 
 // Note that this is zero because no compression is included
-const Field2D VDDZ(const Field3D &v, const Field2D &f)
-{
+const Field2D VDDZ(const Field3D &v, const Field2D &f) {
   Field2D result;
   result = 0.0;
   return result;
 }
 
 // general case
-const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
   upwind_func func = fVDDZ;
   DiffLookup *table = UpwindTable;
 
@@ -2253,8 +2212,7 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
   return interp_to(result, outloc);
 }
 
-const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDZ(v, f, outloc, method);
 }
 
@@ -2262,18 +2220,15 @@ const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC 
  * Flux conserving schemes
  *******************************************************************************/
 
-const Field2D FDDX(const Field2D &v, const Field2D &f)
-{
+const Field2D FDDX(const Field2D &v, const Field2D &f) {
   return FDDX(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D FDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDX(v, f, method, outloc);
 }
 
-const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc) {
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2296,7 +2251,7 @@ const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_
     f.setXStencil(fs, bx);
     v.setXStencil(vs, bx);
     
-    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx[bx.jx][bx.jy];
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dx(bx.jx, bx.jy);
   }while(next_index2(&bx));
 
 #ifdef CHECK
@@ -2307,18 +2262,15 @@ const Field2D FDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_
   return result;
 }
 
-const Field3D FDDX(const Field3D &v, const Field3D &f)
-{
+const Field3D FDDX(const Field3D &v, const Field3D &f) {
   return FDDX(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D FDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDX(v, f, method, outloc);
 }
 
-const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2410,18 +2362,15 @@ const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
 
 /////////////////////////////////////////////////////////////////////////
 
-const Field2D FDDY(const Field2D &v, const Field2D &f)
-{
+const Field2D FDDY(const Field2D &v, const Field2D &f) {
   return FDDY(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D FDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDY(v, f, method, outloc);
 }
 
-const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc) {
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2444,7 +2393,7 @@ const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_
     f.setYStencil(fs, bx);
     v.setYStencil(vs, bx);
     
-    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dy[bx.jx][bx.jy];
+    d[bx.jx][bx.jy] = func(vs, fs) / mesh->dy(bx.jx, bx.jy);
   }while(next_index2(&bx));
 
 #ifdef CHECK
@@ -2455,18 +2404,15 @@ const Field2D FDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_
   return result;
 }
 
-const Field3D FDDY(const Field3D &v, const Field3D &f)
-{
+const Field3D FDDY(const Field3D &v, const Field3D &f) {
   return FDDY(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D FDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDY(v, f, method, outloc);
 }
 
-const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   //output.write("fddy: %d %d %d : %u %u \n", v.getLocation(), f.getLocation(), method, fFDDY, sfFDDY);
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
@@ -2532,7 +2478,7 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
     v.setYStencil(vval, bx, diffloc);
     f.setYStencil(fval, bx); // Location is always the same as input
     
-    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dy[bx.jx][bx.jy];
+    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dy(bx.jx, bx.jy);
 
   }while(next_index3(&bx));
 
@@ -2548,18 +2494,15 @@ const Field3D FDDY(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
 
 /////////////////////////////////////////////////////////////////////////
 
-const Field2D FDDZ(const Field2D &v, const Field2D &f)
-{
+const Field2D FDDZ(const Field2D &v, const Field2D &f) {
   return FDDZ(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field2D FDDZ(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDZ(v, f, method, outloc);
 }
 
-const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_LOC outloc) {
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2593,18 +2536,15 @@ const Field2D FDDZ(const Field2D &v, const Field2D &f, DIFF_METHOD method, CELL_
   return result;
 }
 
-const Field3D FDDZ(const Field3D &v, const Field3D &f)
-{
+const Field3D FDDZ(const Field3D &v, const Field3D &f) {
   return FDDZ(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
-const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D FDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return FDDZ(v, f, method, outloc);
 }
 
-const Field3D FDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
+const Field3D FDDZ(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)

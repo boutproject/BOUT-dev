@@ -70,7 +70,10 @@ class Field2D : public Field, public FieldData {
   Field2D & operator=(const Field2D &rhs);
   Field2D & operator=(const BoutReal rhs);
 
+  // Data indexing
   BoutReal* operator[](int jx) const;
+  BoutReal& operator()(int jx, int jy);
+  const BoutReal& operator()(int jx, int jy) const;
 
   Field2D & operator+=(const Field2D &rhs);
   Field2D & operator+=(const BoutReal rhs);
