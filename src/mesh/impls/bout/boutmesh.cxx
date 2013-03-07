@@ -124,7 +124,7 @@ int BoutMesh::load() {
     
     NXPE = -1; // Best option 
     
-    BoutReal ideal = sqrt(MX * NPES / ny); // Results in square domains
+    BoutReal ideal = sqrt(MX * NPES / ((double) ny)); // Results in square domains
 
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
       //output.write("Testing %d: %d, %d, %d, %d, %d\n",
