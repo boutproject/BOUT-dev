@@ -63,11 +63,12 @@ InvertParCR::InvertParCR() {
 
 InvertParCR::~InvertParCR() {
   free_cmatrix(rhs);
-  delete[] rhsk;
-  delete[] xk;
-  delete[] a;
-  delete[] b;
-  delete[] c;
+  
+  free_cmatrix(rhsk);
+  free_cmatrix(xk);
+  free_cmatrix(a);
+  free_cmatrix(b);
+  free_cmatrix(c);
 }
 
 const Field3D InvertParCR::solve(const Field3D &f) {
