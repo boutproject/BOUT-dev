@@ -81,7 +81,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax);
 
 // second parallel derivative
 const Field2D Grad2_par2(const Field2D &f);
-const Field3D Grad2_par2(const Field3D &f);
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc=CELL_DEFAULT);
 
 // Parallel derivatives, converting between cell-centred and lower cell boundary
 // These are a simple way to do staggered differencing

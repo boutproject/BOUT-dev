@@ -30,6 +30,15 @@ class QuiltMesh : public Mesh {
   int wait(comm_handle handle); // Wait for the handle, return error code
   
   /////////////////////////////////////////////
+  // non-local communications
+  MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
+  comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag);
+  int getNXPE();
+  int getNYPE();
+  int getXProcIndex();
+  int getYProcIndex();
+  
+  /////////////////////////////////////////////
   // X communications
   
   bool firstX();
@@ -41,6 +50,22 @@ class QuiltMesh : public Mesh {
   
   MPI_Comm getXcomm() const;
   MPI_Comm getYcomm(int jx) const;
+  
+  /////////////////////////////////////////////
+  // Y communications
+  
+  bool firstY();
+  bool lastY();
+  int UpXSplitIndex();
+  int DownXSplitIndex();
+  int sendYOutIndest(BoutReal *buffer, int size, int tag);
+  int sendYOutOutdest(BoutReal *buffer, int size, int tag);
+  int sendYInIndest(BoutReal *buffer, int size, int tag);
+  int sendYInOutdest(BoutReal *buffer, int size, int tag);
+  comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag);
+  comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag);
+  comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag);
+  comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag);
   
   /////////////////////////////////////////////
   // Y-Z surface gather/scatter operations

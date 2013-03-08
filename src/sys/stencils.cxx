@@ -880,3 +880,98 @@ int next_indexperp(bindex *bx)
   return(1);
 }
 
+/* Resets the index bx to the end of the region*/
+void reverse_start_index(bindex *bx, REGION region)
+{
+	// Initialize it to something
+  bx->jx = mesh->ngx-1;
+
+  if((region == RGN_NOBNDRY) || (region == RGN_NOX))
+    bx->jx = mesh->xend;
+  
+  bx->jy = mesh->yend;
+  bx->jz = mesh->ngz-2;
+
+  bx->region = region;
+
+  calc_index(bx);
+}
+
+/* Resets the index bx to the first x and z but last y values */
+void start_index_lasty(bindex *bx, REGION region)
+{
+	// Initialize it to something
+  bx->jx = 0;
+
+  if((region == RGN_NOBNDRY) || (region == RGN_NOX))
+    bx->jx = mesh->xstart;
+  
+  bx->jy = mesh->yend;
+  bx->jz = 0;
+
+  bx->region = region;
+
+  calc_index(bx);
+}
+
+/* Loops the index backwards over all points. Returns 0 when no more */
+int reverse_next_index3(bindex *bx)
+{
+  bx->jz--;
+  if(bx->jz < 0) {
+    
+    bx->jz = mesh->ngz-2;
+    bx->jy--;
+    
+    if(bx->jy < mesh->ystart) {
+      bx->jy =mesh->yend;
+      bx->jx--;
+      
+      if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
+	// Missing out X boundary
+	if(bx->jx < mesh->xstart) {
+	  bx->jx = mesh->xend;
+	  return(0);
+	}
+      }else {
+	// Including X boundary regions
+	if(bx->jx < 0) {
+	  bx->jx = mesh->ngx-1;
+	  return(0);
+	}
+      }
+    }
+  }
+  
+  calc_index(bx);
+
+  return(1);
+}
+
+/* Loops the index along y points. Returns 0 when no more */
+int next_index_y(bindex *bx)
+{
+  bx->jy++;
+  if(bx->jy > mesh->yend) {
+    bx->jy--;
+    return(0);
+  }
+  
+  calc_index(bx);
+
+  return(1);
+}
+
+/* Loops the index backwards along y points. Returns 0 when no more */
+int previous_index_y(bindex *bx)
+{
+  bx->jy--;
+  if(bx->jy < mesh->ystart) {
+    bx->jy++;
+    return(0);
+  }
+  
+  calc_index(bx);
+
+  return(1);
+}

@@ -92,6 +92,14 @@ class Mesh {
   comm_handle send(FieldData &f);   // Send a single field
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
 
+  // non-local communications
+  virtual MPI_Request sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) = 0;
+  virtual int getNXPE() = 0;
+  virtual int getNYPE() = 0;
+  virtual int getXProcIndex() = 0;
+  virtual int getYProcIndex() = 0;
+  
   // X communications
   virtual bool firstX() = 0;
   virtual bool lastX() = 0;
@@ -111,6 +119,21 @@ class Mesh {
   virtual bool periodicY(int jx, BoutReal &ts) const = 0; ///< Also get the twist-shift angle
   
   virtual int ySize(int jx) const;
+
+  // Y communications
+  virtual bool firstY() = 0;
+  virtual bool lastY() = 0;
+  virtual int UpXSplitIndex() = 0;
+  virtual int DownXSplitIndex() = 0;
+  virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
+  virtual int sendYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
+  virtual int sendYInIndest(BoutReal *buffer, int size, int tag) = 0;
+  virtual int sendYInOutdest(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvYOutIndest(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
+  virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
+  
   
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
