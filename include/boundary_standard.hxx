@@ -25,11 +25,14 @@ class BoundaryDirichlet : public BoundaryOp {
 /// Neumann (zero-gradient) boundary condition
 class BoundaryNeumann : public BoundaryOp {
  public:
-  BoundaryNeumann() {}
-  BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryNeumann(): val(0.) {}
+  BoundaryNeumann(const BoutReal setval): val(setval) {}
+  BoundaryNeumann(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
+ private:
+  BoutReal val;
 };
 
 /// Neumann (zero-gradient) boundary condition, using 2nd order on boundary

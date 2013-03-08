@@ -51,7 +51,11 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
-    output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
+    //output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
+    output << "WARNING: arguments is set to BoundaryNeumann None Zero Gradient\n";
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryNeumann(region, val);
   }
   return new BoundaryNeumann(region);
 }
@@ -59,13 +63,13 @@ BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &a
 void BoundaryNeumann::apply(Field2D &f) {
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by];
+    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by] - val*mesh->dx[bndry->x][bndry->y];
 }
 
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z]- val*mesh->dx[bndry->x][bndry->y];
 }
 
 ///////////////////////////////////////////////////////////////
