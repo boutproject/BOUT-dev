@@ -1,5 +1,12 @@
 Simulation of the Orszag-Tang vortex, a standard test problem for MHD codes.
-Intended to be used with the mhd.cpp physics module
+Intended to be used with the mhd.cxx physics module
 
-To generate the grid, use generate1d in burgers test (all variables zero)
+To generate the grid:
 
+IDL> generate
+
+The resolution can be adjusted by setting the 'n' keyword
+
+IDL> generate, n = 256
+
+ 

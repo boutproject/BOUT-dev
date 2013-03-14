@@ -4,22 +4,17 @@
 ##################################################
 # settings used by the core code
 
-NOUT = 1       # number of time-steps
-TIMESTEP = 1.0   # time between outputs
+NOUT = 20       # number of time-steps
+TIMESTEP = 0.02   # time between outputs
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 2     # number of points in z direction (2^n + 1)
-ZMIN = 0.0
-ZMAX = 1.0
+MZ = 1     # number of points in z direction (2^n + 1)
 
-MXG = 2
-MYG = 2
+periodicX = true  # periodic in X
 
 grid="data/otv.grd.nc"
-
-NXPE = 1
 
 ##################################################
 # derivative methods
@@ -50,6 +45,7 @@ upwind = U1
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-10 # absolute tolerance
 RTOL = 1.0e-5  # relative tolerance
+mxstep = 5000  # Maximum number of internal steps
 
 ##################################################
 # settings for mhd code
@@ -60,10 +56,5 @@ RTOL = 1.0e-5  # relative tolerance
 [All]
 scale = 0.0 # default size of initial perturbations
 
-# periodic in x
-
-xinner = 10
-xouter = 10
-
-# periodic in y
+# Domain is periodic in x and y, so no boundary conditions
 
