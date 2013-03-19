@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../..
 
-DIRS            = bout quilt
+DIRS            = bout 
 SOURCEC		= domain.cxx partition.cxx
 SOURCEH		= domain.hxx partition.hxx
 TARGET		= lib

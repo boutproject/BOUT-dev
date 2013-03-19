@@ -44,6 +44,7 @@ class Mesh;
 #include "field3d.hxx"
 #include "datafile.hxx"
 #include "options.hxx"
+#include "dcomplex.hxx" // For poloidal lowpass filter
 
 #include "fieldgroup.hxx"
 
@@ -165,6 +166,14 @@ class Mesh {
   /// Global locator functions
   virtual int XGLOBAL(int xloc) const = 0;
   virtual int YGLOBAL(int yloc) const = 0;
+
+
+  // poloidal lowpass filter for n=0 mode
+  virtual void slice_r_y(BoutReal *, BoutReal *, int , int)=0;
+  virtual void get_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
+  virtual void set_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
+  virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
+  //=============================================================
 
   /// Size of the mesh on this processor including guard/boundary cells
   int ngx, ngy, ngz;

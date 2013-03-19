@@ -3072,3 +3072,116 @@ void BoutMesh::outputVars(Datafile &file) {
   
   file.add(J,     "J",     0);
 }
+
+
+//================================================================
+// Poloidal lowpass filter for n=0 mode, keeping 0<=m<=mmax
+// Developed by T. Rhee and S. S. Kim
+//================================================================
+
+void BoutMesh::slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy)
+{
+  int i,j;
+  for(i=0;i<ncy;i++)
+      fxy[i]=fori[i+ystart];
+}
+
+void BoutMesh::get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag)
+{
+  for(int i=0;i<ncy;i++){
+    ayn_Real[i]=ayn[i].Real();
+    ayn_Imag[i]=ayn[i].Imag();
+  }
+}
+
+void BoutMesh::set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag)
+{
+  for(int i=0;i<ncy;i++){
+    ayn[i]=dcomplex(ayn_Real[i],ayn_Imag[i]);
+  }
+}
+
+// Lowpass filter for n=0 mode, keeping poloidal mode number 0<=m<=mmax
+const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
+{
+  Field2D result;
+  static BoutReal *f1d = (BoutReal *) NULL;
+  static dcomplex *aynall = (dcomplex*)NULL;
+  static BoutReal *aynall_Real = (BoutReal *) NULL;
+  static BoutReal *aynall_Imag = (BoutReal *) NULL;
+  static dcomplex *ayn = (dcomplex*) NULL;
+  static BoutReal *aynReal = (BoutReal *) NULL;
+  static BoutReal *aynImag = (BoutReal *) NULL;
+
+  int ncx, ncy;
+  int jx, jy;
+  int ncyall,ncyall2;   // nype is number of processors in the Y dir.
+  int t1; //return value for setData of Field2D
+  int i,j,k;
+  int mmax1;
+
+  mmax1 = mmax+1;
+  ncx = ngx;
+  ncy = yend - ystart + 1;
+  ncyall = ncy*NYPE;
+  ncyall2 = ncyall/2;
+
+  result.allocate();  //initialize
+  if(f1d == (BoutReal*) NULL)
+     f1d = new BoutReal[ncy];  
+  if(ayn == (dcomplex*) NULL)
+     ayn = new dcomplex[ncy];  
+  if(aynall == (dcomplex*) NULL)
+     aynall = new dcomplex[ncyall];  
+  if(aynall_Real == (BoutReal*) NULL)
+     aynall_Real = new BoutReal[ncyall];  
+  if(aynall_Imag == (BoutReal*) NULL)
+     aynall_Imag = new BoutReal[ncyall];  
+  if(aynReal == (BoutReal*) NULL)
+     aynReal = new BoutReal[ncy];  
+  if(aynImag == (BoutReal*) NULL)
+     aynImag = new BoutReal[ncy];  
+
+  for(jx=0;jx<ncx;jx++){ //start x
+     //saving the real 2D data
+     slice_r_y(*(var.getData()+jx),f1d,ystart,ncy); // 2d -> 1d
+
+     for(jy=0;jy<ncy;jy++)
+       ayn[jy]=dcomplex(f1d[jy],0.);
+
+     // allgather from ayn to aynall
+     get_ri(ayn,ncy,aynReal,aynImag); 
+     MPI_Allgather(aynReal, ncy, MPI_DOUBLE, aynall_Real, 
+                      ncy, MPI_DOUBLE, comm_inner);
+     MPI_Allgather(aynImag, ncy, MPI_DOUBLE, aynall_Imag, 
+                      ncy, MPI_DOUBLE, comm_inner);
+     set_ri(aynall,ncyall,aynall_Real,aynall_Imag); 
+
+     // FFT in y over extended domain
+     cfft(aynall, ncyall, -1); 
+
+     // lowpass filter
+     for(jy=mmax1;jy<=(ncyall-mmax1);jy++)
+       aynall[jy]= dcomplex(0.,0.); 
+
+     // inverse FFT in y over extended domain
+     cfft(aynall, ncyall, 1);
+
+     // scatter data
+     get_ri(aynall,ncyall,aynall_Real,aynall_Imag); 
+     MPI_Scatter(aynall_Real, ncy, MPI_DOUBLE, aynReal, 
+                      ncy, MPI_DOUBLE, 0,comm_inner);
+     MPI_Scatter(aynall_Imag, ncy, MPI_DOUBLE, aynImag, 
+                      ncy, MPI_DOUBLE, 0,comm_inner);
+     set_ri(ayn,ncy,aynReal,aynImag);
+
+     for(jy=0;jy<ncy;jy++)
+      f1d[jy]=ayn[jy].Real();
+
+    for(jy=0;jy<ncy;jy++)
+      t1=result.setData(jx,jy+ystart,1,f1d+jy); 
+  }//end of x
+
+  return result; 
+} 
+
