@@ -254,7 +254,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
       if(mesh->firstX()) {
 	// INNER BOUNDARY ON THIS PROCESSOR
 	
-	if(!(flags & INVERT_IN_RHS)) {
+	if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
 	  for(ix=0;ix<xbndry;ix++)
 	    bk[kz][ix] = 0.;
 	}
@@ -270,7 +270,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	      cvec[kz][ix] = -1.;
 	    }
 	  }else {
-	    // Zero value at inner boundary
+	    // Zero value at inner boundary or INVERT_IN_SET
 	    for (ix=0;ix<xbndry;ix++){
 	      avec[kz][ix] = 0.;
 	      bvec[kz][ix] = 1.;
@@ -297,7 +297,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	      cvec[kz][ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
 	    }
 	  }else {
-	    // Zero value at inner boundary
+	    // Zero value at inner boundary or INVERT_IN_SET
 	    for (ix=0;ix<xbndry;ix++){
 	      avec[kz][ix]=dcomplex(0.,0.);
 	      bvec[kz][ix]=dcomplex(1.,0.);
@@ -308,7 +308,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
       }else if(mesh->lastX()) {
 	// OUTER BOUNDARY
       
-	if(!(flags & INVERT_OUT_RHS)) {
+	if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
 	  for (ix=0;ix<xbndry;ix++)
 	    bk[kz][ncx-ix] = 0.;
 	}
@@ -324,7 +324,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	      avec[kz][ncx-ix]=dcomplex(-1.,0.);
 	    }
 	  }else {
-	    // Zero value at outer boundary
+	    // Zero value at outer boundary or INVERT_OUT_SET
 	    for (ix=0;ix<xbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
@@ -350,7 +350,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	      cvec[kz][ncx-ix] = 0.0;
 	    }
 	  }else {
-	    // Zero value at outer boundary
+	    // Zero value at outer boundary or LAPLACE_OUT_SET
 	    for (ix=0;ix<xbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);

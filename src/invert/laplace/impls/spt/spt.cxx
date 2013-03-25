@@ -50,7 +50,27 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
     allocated = true;
   }
   
-  start(b, data);
+  if(flags & (INVERT_IN_SET | INVERT_OUT_SET)) {
+    FieldPerp bs = copy(b);
+    
+    int xbndry = 2;
+    if(flags & INVERT_BNDRY_ONE)
+      xbndry = 1;
+    if((flags & INVERT_IN_SET) && mesh->firstX()) {
+      // Copy x0 inner boundary into bs
+      for(int ix=0;ix<xbndry;ix++)
+        for(int iz=0;iz<mesh->ngz-1;iz++)
+          bs[ix][iz] = x0[ix][iz];
+    }
+    if((flags & INVERT_OUT_SET) && mesh->lastX()) {
+      // Copy x0 outer boundary into bs
+      for(int ix=mesh->ngx-1;ix>=mesh->ngx-xbndry;ix--)
+        for(int iz=0;iz<mesh->ngz-1;iz++)
+          bs[ix][iz] = x0[ix][iz];
+    }
+    start(bs, data);
+  }else
+    start(b, data);
   finish(data, x);
   
   return x;
@@ -72,9 +92,6 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY())
     ye = mesh->ngy-1; // Contains upper boundary
-
-  if(flags & (INVERT_IN_SET | INVERT_OUT_SET))
-    throw BoutException("SPT doesn't support IN_SET or OUT_SET flags");
 
   static SPT_data *data = NULL;
   if(data == NULL) {
@@ -112,6 +129,34 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   }
   
   return x;
+}
+
+const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
+  if(  ((flags & INVERT_IN_SET) && mesh->firstX()) ||
+       ((flags & INVERT_OUT_SET) && mesh->lastX()) ) {
+    Field3D bs = copy(b);
+    
+    int xbndry = 2;
+    if(flags & INVERT_BNDRY_ONE)
+      xbndry = 1;
+    
+    if((flags & INVERT_IN_SET) && mesh->firstX()) {
+      // Copy x0 inner boundary into bs
+      for(int ix=0;ix<xbndry;ix++)
+        for(int iy=0;iy<mesh->ngy;iy++)
+          for(int iz=0;iz<mesh->ngz-1;iz++)
+            bs(ix,iy,iz) = x0(ix,iy,iz);
+    }
+    if((flags & INVERT_OUT_SET) && mesh->lastX()) {
+      // Copy x0 outer boundary into bs
+      for(int ix=mesh->ngx-1;ix>=mesh->ngx-xbndry;ix--)
+        for(int iy=0;iy<mesh->ngy;iy++)
+          for(int iz=0;iz<mesh->ngz-1;iz++)
+            bs(ix,iy,iz) = x0(ix,iy,iz);
+    }
+    return solve(bs);
+  }
+  return solve(b);
 }
 
 /// This is the first half of the Thomas algorithm for parallel calculations

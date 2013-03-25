@@ -70,6 +70,7 @@ public:
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
   
   const Field3D solve(const Field3D &b);
+  const Field3D solve(const Field3D &b, const Field3D &x0);
 private:
   Field2D A, C, D;
   
