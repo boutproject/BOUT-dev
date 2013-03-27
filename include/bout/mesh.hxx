@@ -157,8 +157,6 @@ class Mesh {
   
   //////////////////////////////////////////////////////////
   
-
-
   int GlobalNx, GlobalNy, GlobalNz; // Size of the global arrays. Note: can have holes
   int OffsetX, OffsetY, OffsetZ;    // Offset of this mesh within the global array
                                     // so startx on this processor is OffsetX in global
@@ -167,13 +165,16 @@ class Mesh {
   virtual int XGLOBAL(int xloc) const = 0;
   virtual int YGLOBAL(int yloc) const = 0;
 
-
   // poloidal lowpass filter for n=0 mode
   virtual void slice_r_y(BoutReal *, BoutReal *, int , int)=0;
   virtual void get_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual void set_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
-  //=============================================================
+
+  /// volume integral
+  virtual BoutReal Average_XY(const Field2D &var)=0;
+  virtual const Field3D Switch_YZ(const Field3D &var)=0;
+  virtual BoutReal Vol_Integral(const Field2D &var)=0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int ngx, ngy, ngz;

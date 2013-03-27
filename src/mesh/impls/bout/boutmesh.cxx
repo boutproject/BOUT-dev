@@ -3185,3 +3185,87 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
   return result; 
 } 
 
+/*================================================================
+// Volume integral of Field2D variable
+// Developed by T. Rhee and S. S. Kim
+//================================================================*/
+
+//BoutReal Vol_Average(const Field2D &var);
+BoutReal BoutMesh::Average_XY(const Field2D &var)
+{
+  Field2D result;
+  BoutReal Vol_Loc, Vol_Glb;
+  int i;
+  result.allocate();  //initialize
+  result=averageY(var);
+
+  Vol_Loc = 0.;
+  Vol_Glb = 0.;
+
+  for (i=xstart;i<=xend;i++)
+      Vol_Loc +=  result[i][0];
+
+  MPI_Allreduce(&Vol_Loc,&Vol_Glb,1,MPI_DOUBLE,MPI_SUM,comm_x);
+  Vol_Glb /= (BoutReal)(nx - 2*MXG);
+
+  return Vol_Glb;
+}
+BoutReal BoutMesh::Vol_Integral(const Field2D &var)
+{
+  Field2D result;
+  BoutReal Int_Glb;
+  result.allocate();  //initialize
+  result = J * var * dx * dy;
+
+  Int_Glb = 0.;
+  Int_Glb = Average_XY(result);
+  Int_Glb *= (BoutReal) ( (nx - 2*MXG)*ny )*PI * 2.;
+
+  return Int_Glb;
+}
+
+
+const Field3D BoutMesh::Switch_YZ(const Field3D &var)
+{
+  static BoutReal **ayz = (BoutReal **) NULL;
+  static BoutReal **ayz_all = (BoutReal **) NULL;
+  Field3D  result;
+  int ncy, ncy_all,ncz;
+  int i,j,ix;
+  ncy = yend - ystart + 1;
+  ncy_all = MY;
+  ncz = ngz-1 ;
+
+  if(MY != ngz-1){
+    throw new BoutException("Y and Z dimension is not same in Switch_YZ code"); }
+
+  //memory allocation
+  result.allocate();
+  if(ayz == (BoutReal**) NULL)
+    ayz=rmatrix(ncy,ncz);
+  if(ayz_all == (BoutReal**) NULL)
+    ayz_all=rmatrix(ncy_all,ncz);
+
+  for(ix=xstart;ix<=xend;ix++){
+    //Field 3D to rmatrix of local
+    for (i=0;i<ncy;i++)
+      for(j = 0;j<ncz;j++)
+        ayz[i][j]=var[ix][i+ystart][j];
+
+    //Collect to rmatrix of global from local
+    MPI_Allgather(ayz[0],ncy*ncz,MPI_DOUBLE,ayz_all[0],ncy*ncz,
+                MPI_DOUBLE,comm_inner);
+
+    //Y 2 Z switch
+    for(i=ystart;i<=yend;i++)
+      for(j=0;j<ncz;j++)
+        result[ix][i][j]=ayz_all[j][YGLOBAL(i)];
+
+    //boundary at ngz
+    for(i=0;i<ncy;i++)
+        result[ix][i+ystart][ncz]=result[ix][i+ystart][0];
+  }
+
+  return result;
+}
+
