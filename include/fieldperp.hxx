@@ -136,4 +136,6 @@ const FieldPerp operator*(const BoutReal lhs, const FieldPerp &rhs);
 const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs);
 const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs);
 
+const FieldPerp copy(const FieldPerp &f);
+
 #endif

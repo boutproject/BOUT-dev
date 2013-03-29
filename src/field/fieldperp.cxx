@@ -33,30 +33,25 @@
 
 extern BoutReal** rmatrix(int nx, int ny);
 
-FieldPerp::FieldPerp()
-{
+FieldPerp::FieldPerp() {
   data = (BoutReal**) NULL;
   yindex = -1;
 }
 
-FieldPerp::FieldPerp(const FieldPerp &f)
-{
+FieldPerp::FieldPerp(const FieldPerp &f) {
   data = (BoutReal**) NULL;
   *this = f;
 }
 
-FieldPerp::~FieldPerp()
-{
+FieldPerp::~FieldPerp() {
   freeData();
 }
 
-FieldPerp* FieldPerp::clone() const
-{
+FieldPerp* FieldPerp::clone() const {
   return new FieldPerp(*this);
 }
 
-void FieldPerp::set(const Field3D &f, int y)
-{
+void FieldPerp::set(const Field3D &f, int y) {
   int jx, jz;
   BoutReal ***d = f.getData();
 
@@ -74,8 +69,7 @@ void FieldPerp::set(const Field3D &f, int y)
       data[jx][jz] = d[jx][y][jz];
 }
 
-void FieldPerp::allocate()
-{
+void FieldPerp::allocate() {
   allocData();
 }
 
@@ -920,3 +914,8 @@ const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs)
   return(result);
 }
 
+const FieldPerp copy(const FieldPerp &f) {
+  FieldPerp fcopy = f;
+  fcopy.allocate();
+  return fcopy;
+}
