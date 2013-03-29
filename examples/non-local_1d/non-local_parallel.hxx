@@ -31,7 +31,7 @@
 #define CALCULATE_FRICTION
 
 #define BC_HEATFLUX
-// #define BC_VISCOSITY
+#define BC_VISCOSITY
 
 #define DRIVE_GRADT
 #define DRIVE_GRADV
@@ -129,12 +129,12 @@ private:
     Field3D gradV_driveterm;
     Field3D gradV_electron;
     CubicSpline cubic_spline_gradV_driveterm;
-    CubicSpline cubic_spline_gradV;
+    CubicSpline cubic_spline_one;
   #endif
   #ifdef DRIVE_VEMINUSVI
     Field3D VeminusVi_driveterm;
     CubicSpline cubic_spline_VeminusVi_driveterm;
-    CubicSpline cubic_spline_one;
+    CubicSpline cubic_spline_VeminusVi;
   #endif
   #ifdef CALCULATE_HEATFLUX
     #ifdef DRIVE_GRADT

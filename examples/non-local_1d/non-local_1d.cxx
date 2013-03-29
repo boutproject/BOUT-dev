@@ -76,6 +76,7 @@ Field3D j_parallel; // Parallel current electron_charge*n_ion*(Vpar_ion-Vpar_ele
 Field3D tau_ii; //Ion-ion collision time
 Field3D tau_ei; //Electron-ion collision time
 Field3D nTtau_ion; //used in calculating the viscosity tensor (parallel components) and ion heat flux
+Field3D VeminusVi;
 
 BoutReal massunit;
 BoutReal energyunit;
@@ -151,6 +152,7 @@ int physics_init(bool restarting) {
   
   // Set non-default cell locations
   Vpar_ion.setLocation(CELL_YLOW); // Staggered relative to n_ion, etc.
+  VeminusVi.setLocation(CELL_YLOW);
   ratio.setLocation(CELL_YLOW);
   #ifdef IONVISCOSITYLIMITER
     grad_par_viscosity.setLocation(CELL_YLOW);
@@ -239,17 +241,17 @@ int physics_run(BoutReal t) {
 	  BoutReal sheath_potential = 0.5*Te_here*log(2*PI*electron_mass/ion_mass*(1+gamma_factor*Ti_here/Te_here));
 	  #ifdef FLUXLIMITER
 	    // Include the flux limiter in the boundary condition: i.e. find the gradient needed to give the right boundary heat-flux AFTER applying the flux-limiter
-	    BoutReal qbc_over_n = -(2.0*Te_here-sheath_potential)
-				    *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass);
+	    BoutReal qbc_over_n = -((2.0-2.5)*Te_here-sheath_potential)
+				    *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	    BoutReal qBrag_over_n = 1./(1./qbc_over_n-1./electron_flux_limiter/( -sqrt(2./electron_mass)*pow(Te_here,1.5) ));
 	    BoutReal gradient_T_electron = qBrag_over_n
 					      /(-3.16*Te_here*tauei_here/electron_mass)
 					      *mesh->dy[rlow.ind][mesh->ystart]*sqrt(mesh->g_22[rlow.ind][mesh->ystart]);
 	  #else
-	    BoutReal gradient_T_electron = -(2.0*Te_here-sheath_potential)
+	    BoutReal gradient_T_electron = -((2.0-2.5)*Te_here-sheath_potential)
 					      *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass)
 					      /(-3.16*Te_here*tauei_here/electron_mass)
-					      *mesh->dy[rlow.ind][mesh->ystart]*sqrt(mesh->g_22[rlow.ind][mesh->ystart]);
+					      *mesh->dy[rlow.ind][mesh->ystart]*sqrt(mesh->g_22[rlow.ind][mesh->ystart]); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	  #endif
 	#else
   //       BoutReal gradient_T_electron = (-11.*T_electron[rlow.ind][mesh->ystart][jz] + 18.*T_electron[rlow.ind][mesh->ystart+1][jz] - 9.*T_electron[rlow.ind][mesh->ystart+2][jz] + 2.*T_electron[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
@@ -291,17 +293,17 @@ int physics_run(BoutReal t) {
 	    BoutReal sheath_potential = 0.5*Te_here*log(2*PI*electron_mass/ion_mass*(1+gamma_factor*Ti_here/Te_here));
 	    #ifdef FLUXLIMITER
 	      // Include the flux limiter in the boundary condition: i.e. find the gradient needed to give the right boundary heat-flux AFTER applying the flux-limiter
-	      BoutReal qbc_over_n = (2.0*Te_here-sheath_potential)
-				      *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass);
+	      BoutReal qbc_over_n = ((2.0-2.5)*Te_here-sheath_potential)
+				      *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	      BoutReal qBrag_over_n = 1./(1./qbc_over_n-1./electron_flux_limiter/( sqrt(2./electron_mass)*pow(Te_here,1.5) ));
 	      BoutReal gradient_T_electron = qBrag_over_n
 						/(-3.16*Te_here*tauei_here/electron_mass)
 						*mesh->dy[rup.ind][mesh->yend-1]*sqrt(mesh->g_22[rup.ind][mesh->yend-1]);
 	    #else
-	      BoutReal gradient_T_electron = (2.0*Te_here-sheath_potential)
+	      BoutReal gradient_T_electron = ((2.0-2.5)*Te_here-sheath_potential)
 						*sqrt((Te_here+gamma_factor*Ti_here)/ion_mass)
 						/(-3.16*Te_here*tauei_here/electron_mass)
-						*mesh->dy[rup.ind][mesh->yend-1]*sqrt(mesh->g_22[rup.ind][mesh->yend-1]);
+						*mesh->dy[rup.ind][mesh->yend-1]*sqrt(mesh->g_22[rup.ind][mesh->yend-1]); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	    #endif
 	  #else
   //         BoutReal gradient_T_electron = (11.*T_electron[rup.ind][mesh->yend-1][jz] - 18.*T_electron[rup.ind][mesh->yend-2][jz] + 9.*T_electron[rup.ind][mesh->yend-3][jz] - 2.*T_electron[rup.ind][mesh->yend-4][jz]) / 6. / mesh->dy[rup.ind][mesh->yend] / sqrt((mesh->g_22[rup.ind][mesh->yend-1]+mesh->g_22[rup.ind][mesh->yend-2]+mesh->g_22[rup.ind][mesh->yend-3]+mesh->g_22[rup.ind][mesh->yend-4])/4.);
@@ -333,17 +335,17 @@ int physics_run(BoutReal t) {
 	    BoutReal sheath_potential = 0.5*T_electron[rup.ind][mesh->yend][jz]*log(2*PI*electron_mass/ion_mass*(1+gamma_factor*T_ion[rup.ind][mesh->yend][jz]/T_electron[rup.ind][mesh->yend][jz]));
 	    #ifdef FLUXLIMITER
 	      // Include the flux limiter in the boundary condition: i.e. find the gradient needed to give the right boundary heat-flux AFTER applying the flux-limiter
-	      BoutReal qbc_over_n = (2.0*T_electron[rup.ind][mesh->yend][jz]-sheath_potential)
-				      *sqrt((T_electron[rup.ind][mesh->yend][jz]+gamma_factor*T_ion[rup.ind][mesh->yend][jz])/ion_mass);
+	      BoutReal qbc_over_n = ((2.0-2.5)*T_electron[rup.ind][mesh->yend][jz]-sheath_potential)
+				      *sqrt((T_electron[rup.ind][mesh->yend][jz]+gamma_factor*T_ion[rup.ind][mesh->yend][jz])/ion_mass); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	      BoutReal qBrag_over_n = 1./(1./qbc_over_n-1./electron_flux_limiter/( sqrt(2./electron_mass)*pow(T_electron[rup.ind][mesh->yend][jz],1.5) ));
 	      BoutReal gradient_T_electron = qBrag_over_n
 						/(-3.16*T_electron[rup.ind][mesh->yend][jz]*tau_ei[rup.ind][mesh->yend][jz]/electron_mass)
 						*mesh->dy[rup.ind][mesh->yend-1]*sqrt(mesh->g_22[rup.ind][mesh->yend-1]);
 	    #else
-	      BoutReal gradient_T_electron = (2.0*T_electron[rup.ind][mesh->yend][jz]-sheath_potential)
+	      BoutReal gradient_T_electron = ((2.0-2.5)*T_electron[rup.ind][mesh->yend][jz]-sheath_potential)
 						*sqrt((T_electron[rup.ind][mesh->yend][jz]+gamma_factor*T_ion[rup.ind][mesh->yend][jz])/ion_mass)
 						/(-3.16*T_electron[rup.ind][mesh->yend][jz]*tau_ei[rup.ind][mesh->yend][jz]/electron_mass)
-						*mesh->dy[rup.ind][mesh->yend]*sqrt(mesh->g_22[rup.ind][mesh->yend]);
+						*mesh->dy[rup.ind][mesh->yend]*sqrt(mesh->g_22[rup.ind][mesh->yend]); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	    #endif
 	  #else
   //         BoutReal gradient_T_electron = (11.*T_electron[rup.ind][mesh->yend][jz] - 18.*T_electron[rup.ind][mesh->yend-1][jz] + 9.*T_electron[rup.ind][mesh->yend-2][jz] - 2.*T_electron[rup.ind][mesh->yend-3][jz]) / 6. / mesh->dy[rup.ind][mesh->yend] / sqrt((mesh->g_22[rup.ind][mesh->yend]+mesh->g_22[rup.ind][mesh->yend-1]+mesh->g_22[rup.ind][mesh->yend-2]+mesh->g_22[rup.ind][mesh->yend-3])/4.);
@@ -455,7 +457,7 @@ int physics_run(BoutReal t) {
 	BoutReal V_here = Vpar_ion[rlow.ind][mesh->ystart][jz];
 	BoutReal n_here = nonlocal_parallel.interp_to_point_YLOW(n_ion,position);
 	BoutReal sheath_potential = 0.5*Te_here*log(2*PI*electron_mass*pow(V_here,2)/Te_here);
-	heat_flux_boundary_condition[rlow.ind][mesh->ystart][jz] = (2.0*Te_here-sheath_potential)*n_here*V_here;
+	heat_flux_boundary_condition[rlow.ind][mesh->ystart][jz] = ((2.0-2.5)*Te_here-sheath_potential)*n_here*V_here; // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
       }
   
     for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
@@ -468,13 +470,13 @@ int physics_run(BoutReal t) {
 	BoutReal V_here = Vpar_ion[rup.ind][mesh->yend][jz];
 	BoutReal n_here = nonlocal_parallel.interp_to_point_YLOW(n_ion,position);
 	BoutReal sheath_potential = 0.5*Te_here*log(2*PI*electron_mass*pow(V_here,2)/Te_here);
-	heat_flux_boundary_condition[rup.ind][mesh->yend][jz] = (2.0*Te_here-sheath_potential)*n_here*V_here;
+	heat_flux_boundary_condition[rup.ind][mesh->yend][jz] = ((2.0-2.5)*Te_here-sheath_potential)*n_here*V_here; // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
       }
     
-    Field3D VeminusVi = -j_parallel/n_ion/electron_charge;
+    VeminusVi = -j_parallel/n_ion/electron_charge;
     Field3D zero = 0.;
-//     nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition, zero);
-    nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition);
+    nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition, zero);
+//     nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition);
   
     #ifdef CUSTOMBCS
       nonlocal_parallel.set_boundary_gradients();
@@ -536,8 +538,8 @@ int physics_run(BoutReal t) {
     #ifdef IONVISCOSITYLIMITER
 								  - grad_par_viscosity)
     #else
-								  + ion_viscosity_fudge*4./3.*0.96*Grad_par(nTtau_ion,CELL_YLOW)*Grad_par(Vpar_ion,CELL_YLOW))
-		    + 1./ion_mass * ion_viscosity_fudge*4./3.*0.96*interp_to(T_ion * sqrt(2) * tau_ii,CELL_YLOW) * Grad2_par2(Vpar_ion,CELL_YLOW)
+								  + 4./3.*0.96*Grad_par(nTtau_ion,CELL_YLOW)*Grad_par(Vpar_ion,CELL_YLOW))
+		    + 1./ion_mass * 4./3.*0.96*interp_to(T_ion * sqrt(2) * tau_ii,CELL_YLOW) * Grad2_par2(Vpar_ion,CELL_YLOW)
     #endif
 		    - Vpar_ion*interp_to(sources.particle_source(t)/n_ion,CELL_YLOW);		// The sources of heat and particles do not add any momentum, so V decreases in proportion to the increase in n.
   
@@ -565,9 +567,8 @@ int physics_run(BoutReal t) {
     #ifdef IONVISCOSITYLIMITER
 		- 2./3./n_ion * viscosity*grad_par_V_centre
     #else
-		+ 2./3./n_ion * ion_viscosity_fudge*4./3.*0.96*nTtau_ion*(Grad_par(Vpar_ion,CELL_CENTRE)^2)
+		+ 2./3./n_ion * 4./3.*0.96*nTtau_ion*(Grad_par(Vpar_ion,CELL_CENTRE)^2)
     #endif
-		+ 2.*(electron_mass/ion_mass/tau_ei*(T_electron-T_ion))
 		+ 2./3./n_ion * sources.ion_heat_source(t) - T_ion/n_ion*sources.particle_source(t);
   
   ddt(j_parallel) = 0.;

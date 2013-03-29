@@ -129,14 +129,14 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
       cubic_spline_gradT.initialise('y',true,false); // will fix up the boundary guard cells with forward/backward derivatives, since at least one guard cell value will be needed
     #endif
     #ifdef DRIVE_GRADV
-      cubic_spline_gradV_driveterm.initialise('y',true,true); // CELL_CENTRE quantity, so must be adjusted when the grids are staggered.
-      cubic_spline_gradV.initialise('y',true,false);  // will fix up the boundary guard cells with forward/backward derivatives, since at least one guard cell value will be needed
-    #endif
-    #ifdef DRIVE_VEMINUSVI
-      cubic_spline_one.initialise('y',true,true);
+      cubic_spline_gradV_driveterm.initialise('y',false,true); // CELL_CENTRE quantity, so must be adjusted when the grids are staggered.
+      cubic_spline_one.initialise('y',true,false);
       Field3D one = 1.;
       cubic_spline_one.calculate(one);
-      cubic_spline_VeminusVi_driveterm.initialise('y',true,false);
+    #endif
+    #ifdef DRIVE_VEMINUSVI
+      cubic_spline_VeminusVi_driveterm.initialise('y',true,true);
+      cubic_spline_VeminusVi.initialise('y',true,false);
     #endif
   }
   else {
@@ -173,7 +173,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
       electron_heat_flux.setLocation(CELL_YLOW);
     #endif
     #ifdef CALCULATE_VISCOSITY
-      electron_viscosity.setLocation(CELL_YLOW); // should really have this as CELL_CENTRE quantity, but that would make its boundary condition a pain.
+      electron_viscosity.setLocation(CELL_YLOW); // should really have this as CELL_CENTRE quantity, but then would have to calculate the integrals on both CELL_CENTRE and CELL_YLOW which is perfectly possible but has not been implemented yet
     #endif
     #ifdef CALCULATE_FRICTION
       electron_friction.setLocation(CELL_YLOW);
@@ -183,11 +183,10 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
       gradT_electron=0.;
     #endif
     #ifdef DRIVE_GRADV
-      gradV_electron.setLocation(CELL_YLOW);
-      gradV_electron=0.;
+      // No CELL_YLOW drive terms here
     #endif
     #ifdef DRIVE_VEMINUSVI
-      VeminusVi_driveterm.setLocation(CELL_YLOW);
+      // VeminusVi already CELL_YLOW
     #endif
   }
   
@@ -832,7 +831,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     #endif
   }
   
-  bout_error("cell_centre version of boundary conditions code needs checking, at the moment it has just been cut&pasted from cell_ylow");
+//   bout_error("cell_centre version of boundary conditions code needs checking, at the moment it has just been cut&pasted from cell_ylow");
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
     for (int jz=0; jz<mesh->ngz-1; jz++) {
       position->jx=rup.ind;
@@ -1238,11 +1237,12 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     gradT_electron = Grad_par(T_electron,CELL_YLOW);
   #endif
   #ifdef DRIVE_GRADV
-    gradV_driveterm = -0.5 * n_electron / sqrt(2.*T_electron/electron_mass) / lambdaC_inverse;
-    gradV_electron = Grad_par(V_electron,CELL_YLOW); // would be more consistent to put this on CELL_CENTRE, but that would make imposing a boundary condition a pain.
+    gradV_driveterm = -0.5 * n_electron / sqrt(2.*T_electron/electron_mass) * Grad_par(V_electron,CELL_CENTRE) / lambdaC_inverse;
+//     gradV_electron = Grad_par(V_electron,CELL_YLOW); // would be more consistent to put this on CELL_CENTRE, but that would make imposing a boundary condition a pain.
   #endif
   #ifdef DRIVE_VEMINUSVI
-    VeminusVi_driveterm = -2./sqrt(PI) * VeminusVi * n_electron / sqrt(2.*T_electron/electron_mass);
+    VeminusVi_driveterm = -2./sqrt(PI) * n_electron / sqrt(2.*T_electron/electron_mass);
+    // VeminusVi is already CELL_YLOW. If calculating VeminusVi from parallel current ~n_e(V_e - V_i)*electron_charge should perhaps move the n_e from the driveterm to an nVeminusVi term
   #endif
   // Calculate target boundary guard cell derivitives (at YLOW) for gradT_electron with 4th order forward/backward differences from T_electron (at CENTRE)
   // Also check for unphysical lambdaC_inverse
@@ -1254,8 +1254,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 	  if (abs(gradT_driveterm[rlow.ind][jy][jz])>1.e37 || gradT_driveterm[rlow.ind][jy][jz]!=gradT_driveterm[rlow.ind][jy][jz]) gradT_driveterm[rlow.ind][jy][jz] = 1.e37;
 	#endif
 	#ifdef DRIVE_GRADV
-	  gradV_electron[rlow.ind][jy][jz]=(-93.*V_electron[rlow.ind][jy][jz] + 229.*V_electron[rlow.ind][jy+1][jz] - 225.*V_electron[rlow.ind][jy+2][jz] + 111.*V_electron[rlow.ind][jy+3][jz] - 22.*V_electron[rlow.ind][jy+4][jz])/48./mesh->dy[rlow.ind][jy]/sqrt((mesh->g_22[rlow.ind][jy] + mesh->g_22[rlow.ind][jy+1] + mesh->g_22[rlow.ind][jy+2] + mesh->g_22[rlow.ind][jy+3] + mesh->g_22[rlow.ind][jy+4])/5.);
-	  if (abs(gradV_driveterm[rlow.ind][jy][jz])>1.e37 || gradV_driveterm[rlow.ind][jy][jz]!=gradV_driveterm[rlow.ind][jy][jz]) gradV_driveterm[rlow.ind][jy][jz] = 1.e37;
+	  // Nothing to be done here: gradV_driveterm is CELL_CENTRE and the guard cell values are not used
 	#endif
 	#ifdef DRIVE_VEMINUSVI
 	  if (abs(VeminusVi_driveterm[rlow.ind][jy][jz])>1.e37 || VeminusVi_driveterm[rlow.ind][jy][jz]!=VeminusVi_driveterm[rlow.ind][jy][jz]) VeminusVi_driveterm[rlow.ind][jy][jz] = 1.e37;
@@ -1268,17 +1267,13 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #ifdef DRIVE_GRADT
 	gradT_electron[rup.ind][mesh->yend][jz] = (T_electron[rup.ind][mesh->yend-2][jz]-27.*T_electron[rup.ind][mesh->yend-1][jz]+27.*T_electron[rup.ind][mesh->yend][jz]-T_electron[rup.ind][mesh->yend+1][jz])/24./mesh->dy[rup.ind][mesh->yend+1]/sqrt((mesh->g_22[rup.ind][mesh->yend-1] + mesh->g_22[rup.ind][mesh->yend] + mesh->g_22[rup.ind][mesh->yend+1] + mesh->g_22[rup.ind][mesh->yend+2])/4.);
       #endif
-      #ifdef DRIVE_GRADV
-	gradV_electron[rup.ind][mesh->yend][jz] = (V_electron[rup.ind][mesh->yend-2][jz]-27.*V_electron[rup.ind][mesh->yend-1][jz]+27.*V_electron[rup.ind][mesh->yend][jz]-V_electron[rup.ind][mesh->yend+1][jz])/24./mesh->dy[rup.ind][mesh->yend+1]/sqrt((mesh->g_22[rup.ind][mesh->yend-1] + mesh->g_22[rup.ind][mesh->yend] + mesh->g_22[rup.ind][mesh->yend+1] + mesh->g_22[rup.ind][mesh->yend+2])/4.);
-      #endif
       for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
 	#ifdef DRIVE_GRADT
 	  gradT_electron[rup.ind][jy][jz]=(93.*T_electron[rup.ind][jy-1][jz] - 229.*T_electron[rup.ind][jy-2][jz] + 225.*T_electron[rup.ind][jy-3][jz] - 111.*T_electron[rup.ind][jy-4][jz] + 22.*T_electron[rup.ind][jy-5][jz])/48./mesh->dy[rup.ind][jy-1]/sqrt((mesh->g_22[rup.ind][jy-1] + mesh->g_22[rup.ind][jy-2] + mesh->g_22[rup.ind][jy-3] + mesh->g_22[rup.ind][jy-4] + mesh->g_22[rup.ind][jy-5])/5.);
 	  if (abs(gradT_driveterm[rup.ind][jy][jz])>1.e37 || gradT_driveterm[rup.ind][jy][jz]!=gradT_driveterm[rup.ind][jy][jz]) gradT_driveterm[rup.ind][jy][jz] = 1.e37;
 	#endif
 	#ifdef DRIVE_GRADV
-	  gradV_electron[rup.ind][jy][jz]=(93.*V_electron[rup.ind][jy-1][jz] - 229.*V_electron[rup.ind][jy-2][jz] + 225.*V_electron[rup.ind][jy-3][jz] - 111.*V_electron[rup.ind][jy-4][jz] + 22.*V_electron[rup.ind][jy-5][jz])/48./mesh->dy[rup.ind][jy-1]/sqrt((mesh->g_22[rup.ind][jy-1] + mesh->g_22[rup.ind][jy-2] + mesh->g_22[rup.ind][jy-3] + mesh->g_22[rup.ind][jy-4] + mesh->g_22[rup.ind][jy-5])/5.);
-	  if (abs(gradV_driveterm[rup.ind][jy][jz])>1.e37 || gradV_driveterm[rup.ind][jy][jz]!=gradV_driveterm[rup.ind][jy][jz]) gradV_driveterm[rup.ind][jy][jz] = 1.e37;
+	  // Nothing to be done here: gradV_driveterm is CELL_CENTRE and the guard cell values are not used
 	#endif
 	#ifdef DRIVE_VEMINUSVI
 	  if (abs(VeminusVi_driveterm[rup.ind][jy][jz])>1.e37 || VeminusVi_driveterm[rup.ind][jy][jz]!=VeminusVi_driveterm[rup.ind][jy][jz]) VeminusVi_driveterm[rup.ind][jy][jz] = 1.e37;
@@ -1291,7 +1286,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     mesh->communicate(gradT_electron);
   #endif
   #ifdef DRIVE_GRADV
-    mesh->communicate(gradV_electron);
+    mesh->communicate(gradV_driveterm);
   #endif
   // No gradient term to communicate for VeminusVi
   
@@ -1380,7 +1375,6 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   #ifdef DRIVE_GRADV
     // gradV drive gives no zero eigenvalue contribution
     cubic_spline_gradV_driveterm.calculate(gradV_driveterm);
-    cubic_spline_gradV.calculate(gradV_electron);
   #endif
   #ifdef DRIVE_VEMINUSVI
     #ifdef CALCULATE_HEATFLUX
@@ -1391,6 +1385,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       electron_friction += -friction_VeminusVi_zerocoeff * VeminusVi_driveterm;
     #endif
     cubic_spline_VeminusVi_driveterm.calculate(VeminusVi_driveterm);
+    cubic_spline_VeminusVi.calculate(VeminusVi);
   #endif
   
   for (int i=0; i<number_of_negative_eigenvalues; i++) {
@@ -1407,7 +1402,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_GRADV
-      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below, dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_gradV_driveterm, cubic_spline_gradV, i+number_of_negative_eigenvalues);
+      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below, dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_gradV_driveterm, cubic_spline_one, i+number_of_negative_eigenvalues);
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += heatflux_gradV_coefficients[i]*integration.integral_below;
       #endif
@@ -1419,7 +1414,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_VEMINUSVI
-      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_one, cubic_spline_VeminusVi_driveterm, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralBelow_cell_ylow, but tedious).
+      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_VeminusVi, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralBelow_cell_ylow, but tedious).
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += heatflux_VeminusVi_coefficients[i]*integration.integral_below;
       #endif
@@ -1445,7 +1440,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_GRADV
-      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below, dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_gradV_driveterm, cubic_spline_gradV, i+number_of_negative_eigenvalues);
+      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below, dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_gradV_driveterm, cubic_spline_one, i+number_of_negative_eigenvalues);
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += -heatflux_gradV_coefficients[i]*integration.integral_above; //gives \hat(n)^A //gives \hat(n)^A/(T_electron^1.5)
       #endif
@@ -1457,7 +1452,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_VEMINUSVI
-      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_one, cubic_spline_VeminusVi_driveterm, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralAbove_cell_ylow, but tedious).
+      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_VeminusVi, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralAbove_cell_ylow, but tedious).
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += -heatflux_VeminusVi_coefficients[i]*integration.integral_above; //gives \hat(n)^A //gives \hat(n)^A/(T_electron^1.5)
       #endif

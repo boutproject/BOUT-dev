@@ -14,8 +14,6 @@ dump_format="nc"     # Write NetCDF format files
 
 grid="conduct_grid.nc"
 
-#dump_float = false
-
 StaggerGrids = true
 
 ##################################################
@@ -49,24 +47,10 @@ atol = 1.0e-10 # absolute tolerance
 rtol = 1.0e-7  # relative tolerance
 use_vector_abstol=true
 
-# KARNIADAKIS #
-#type = karniadakis
-#timestep = 1.0e-8
-
-# RK4 #
-#type = rk4
-#atol = 1.0e-10
-#rtol = 1.0e-5
-#max_timestep = 4.0e-8
-#start_timestep = 1.0e-9
-
 ##################################################
 [output] # Output settings
 #low_prec = false
 floats = false
-
-##################################################
-[conduction]  # Settings for the conduction model
 
 ##################################################
 [non_local_parallel] # Settings for the heat flux model
@@ -78,10 +62,7 @@ moments_number = 10
 [sources]  # Settings for the sources
 
 # the sources have a sine envelope around the centre of the domain, extending until it first reaches zero at +/- source_extent/2.
-# alternatively the sources may have a gaussian envelope with standard deviation source_length/4
 # the base amplitude is increased between on_time and off_time to *_amplitude + *_transient_amplitude
-#sources.lower_source_yindex =  35 # 35	# grid y-index where the source should start
-#sources.upper_source_yindex =  92 # 92	# grid y-index where the source should end
 sources.source_length = 25. # in m
 
 # 40eV, 1e19m^-3
@@ -164,7 +145,6 @@ sources.ion_heat_transient_amplitude		= 2.04740372595188e27	# in eV/m^3/s
 #sources.ion_heat_transient_amplitude		= 6.142211177855659e26	# in eV/m^3/s
 
 ##################################################
-# USED IN BOTH conduction.cxx AND four-fluid_ELM.cxx #
 [all] # Settings for all variables
 
 scale=1.0
@@ -172,18 +152,15 @@ bndry_target = none
 #bndry_target = neumann
 
 ##################################################
-# USED IN BOTH conduction.cxx AND four-fluid_ELM.cxx #
 [Vpar_ion] # Settings for the Vpar_ion variable
 
 atol = 1.0e-6
 
 #function = 0.
 function = 107000.*(y-pi+pi/256)/pi # 0 # -cos(y/2)*sqrt((2*10.)/(3.34358348e-27/1.602176565e-19))
-#bndry_target = none # dirichlet(10000)
-#bndry_target = neumann
 
 ##################################################
-[j_parallel] # Settings for the Vpar_ion variable
+[j_parallel] # Settings for the j_parallel variable
 
 atol = 1.0e-6
 
@@ -192,15 +169,6 @@ function = 0.
 bndry_target = neumann
 
 ##################################################
-# USED IN four-fluid_ELM.cxx #
-[U_electron] # Settings for the U_electron variable
-
-atol = 1.0e-6
-
-function = 0.
-
-##################################################
-# USED IN conduction.cxx #
 [T_electron] # Settings for the T_electron variable
 
 atol = 1.0e-10
@@ -209,92 +177,16 @@ atol = 1.0e-10
 function = (100.0 + 0.0*gauss(y-pi+pi/256, (2*pi/10)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
 #function = (30.0 + 10.*cos((y-pi+pi/128)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
 
-#bndry_target = dirichlet(1.0e-19/1.0e-20)	#in J/energyunit
-#bndry_target = dirichlet(1.0 + 10.0*gauss(-pi, (2*pi/10)))	#in eV
-#bndry_target = dirichlet(1.0)	#in eV
-
 ##################################################
-# USED IN conduction.cxx #
 [n_ion] # Settings for the n_ion variable
 
 atol = 1.0e9
 
 function = 1.e19*(1. + 0.*gauss(y-pi))
-#bndry_target = neumann
-#bndry_target = dirichlet(1.0)
 
 ##################################################
-# USED IN conduction.cxx #
 [T_ion] # Settings for the T_ion variable
 
 atol = 1.0e-10
 
 function = (150.0 + 0.0*gauss(y-pi, (2*pi/10)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
-#bndry_target = dirichlet(1.0 + 10.0*gauss(-pi, (2*pi/10)))	#in eV
-#bndry_target = dirichlet(1.0)	#in eV
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[T_background_electron] # Settings for the T_background_electron variable
-
-atol = 1.0e-10
-
-#function = (1.0 + 1.0*gauss(y-pi, (2*pi/10)))*1.0e-19/1.0e-20  # The form of the initial perturbation. y from 0 to 2*pi, in J/energyunit
-function = (100.0 + 0.0*gauss(y-pi+pi/256, (2*pi/10)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
-#function = (30.0 + 10.*cos((y-pi+pi/128)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
-
-#bndry_target = dirichlet(1.0e-19/1.0e-20)	#in J/energyunit
-#bndry_target = dirichlet(1.0 + 10.0*gauss(-pi, (2*pi/10)))	#in eV
-#bndry_target = dirichlet(1.0)	#in eV
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[n_background_ion] # Settings for the n_background_ion variable
-
-atol = 1.0e9
-
-function = 1.e19*(1. + 0.*gauss(y-pi))
-#bndry_target = neumann
-#bndry_target = dirichlet(1.0)
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[T_background_ion] # Settings for the T_background_ion variable
-
-atol = 1.0e-10
-
-function = (150.0 + 0.0*gauss(y-pi, (2*pi/10)))  # The form of the initial perturbation. y from 0 to 2*pi, in eV
-#bndry_target = dirichlet(1.0 + 10.0*gauss(-pi, (2*pi/10)))	#in eV
-#bndry_target = dirichlet(1.0)	#in eV
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[n_ELM_electron] # Settings for the n_ELM_electron variable
-
-atol = 1.0e9
-
-function = 1.e17
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[T_ELM_electron] # Settings for the T_ELM_electron variable
-
-atol = 1.0e-10
-
-function = 1500.
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[n_ELM_ion] # Settings for the n_ELM_ion variable
-
-atol = 1.0e9
-
-function = 1.e17
-
-##################################################
-# USED IN four-fluid_ELM.cxx #
-[T_ELM_ion] # Settings for the T_ELM_ion variable
-
-atol = 1.0e-10
-
-function = 1500.
