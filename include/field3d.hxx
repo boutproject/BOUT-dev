@@ -202,28 +202,11 @@ class Field3D : public Field, public FieldData {
   BoutReal min(bool allpe=false) const;
   BoutReal max(bool allpe=false) const;
 
-  // Friend operators
-  friend const Field3D operator-(const BoutReal &lhs, const Field3D &rhs);
-  friend const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
-
   // Friend functions
-
-  friend const Field3D exp(const Field3D &f);
-  friend const Field3D log(const Field3D &f);
-  
-  friend const Field3D sin(const Field3D &f);
-  friend const Field3D cos(const Field3D &f);
-  friend const Field3D tan(const Field3D &f);
-
-  friend const Field3D sinh(const Field3D &f);
-  friend const Field3D cosh(const Field3D &f);
-  friend const Field3D tanh(const Field3D &f);
 
   friend const Field3D filter(const Field3D &var, int N0);
   friend const Field3D lowPass(const Field3D &var, int zmax);
   friend const Field3D lowPass(const Field3D &var, int zmax, int zmin);
-
-  friend bool finite(const Field3D &var);
 
   // FieldData virtual functions
   
@@ -303,6 +286,19 @@ const Field3D sqrt(const Field3D &f);
 const Field3D abs(const Field3D &f);
 BoutReal min(const Field3D &f, bool allpe=false);
 BoutReal max(const Field3D &f, bool allpe=false);
+
+const Field3D exp(const Field3D &f);
+const Field3D log(const Field3D &f);
+
+const Field3D sin(const Field3D &f);
+const Field3D cos(const Field3D &f);
+const Field3D tan(const Field3D &f);
+
+const Field3D sinh(const Field3D &f);
+const Field3D cosh(const Field3D &f);
+const Field3D tanh(const Field3D &f);
+
+bool finite(const Field3D &var);
 
 const Field3D copy(const Field3D &f);
 
