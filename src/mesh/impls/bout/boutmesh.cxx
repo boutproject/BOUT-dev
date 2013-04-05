@@ -252,11 +252,11 @@ int BoutMesh::load() {
   
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
-    ixseps1 = ngx;
+    ixseps1 = GlobalNx;
     output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
   }
   if(Mesh::get(ixseps2, "ixseps2")) {
-    ixseps2 = ngx;
+    ixseps2 = GlobalNx;
     output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
   }
   if(Mesh::get(jyseps1_1,"jyseps1_1")) {
