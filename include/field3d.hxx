@@ -277,6 +277,8 @@ class Field3D : public Field, public FieldData {
 
 // Non-member overloaded operators
 
+const Field3D operator-(const BoutReal &lhs, const Field3D &rhs);
+const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
 const Field3D operator*(const BoutReal lhs, const Field3D &rhs);
 const Field3D operator/(const BoutReal lhs, const Field3D &rhs);
 const Field3D operator^(const BoutReal lhs, const Field3D &rhs);
