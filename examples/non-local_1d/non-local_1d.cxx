@@ -76,7 +76,7 @@ Field3D j_parallel; // Parallel current electron_charge*n_ion*(Vpar_ion-Vpar_ele
 Field3D tau_ii; //Ion-ion collision time
 Field3D tau_ei; //Electron-ion collision time
 Field3D nTtau_ion; //used in calculating the viscosity tensor (parallel components) and ion heat flux
-Field3D VeminusVi;
+// Field3D VeminusVi;
 
 BoutReal massunit;
 BoutReal energyunit;
@@ -152,7 +152,7 @@ int physics_init(bool restarting) {
   
   // Set non-default cell locations
   Vpar_ion.setLocation(CELL_YLOW); // Staggered relative to n_ion, etc.
-  VeminusVi.setLocation(CELL_YLOW);
+  j_parallel.setLocation(CELL_YLOW);
   ratio.setLocation(CELL_YLOW);
   #ifdef IONVISCOSITYLIMITER
     grad_par_viscosity.setLocation(CELL_YLOW);
@@ -473,9 +473,9 @@ int physics_run(BoutReal t) {
 	heat_flux_boundary_condition[rup.ind][mesh->yend][jz] = ((2.0-2.5)*Te_here-sheath_potential)*n_here*V_here; // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
       }
     
-    VeminusVi = -j_parallel/n_ion/electron_charge;
+//     VeminusVi = -j_parallel/n_ion/electron_charge;
     Field3D zero = 0.;
-    nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition, zero);
+    nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+j_parallel/electron_charge/interp_to(n_ion,CELL_YLOW), j_parallel, heat_flux_boundary_condition, zero);
 //     nonlocal_parallel.calculate_nonlocal_closures(n_ion, T_electron, Vpar_ion+VeminusVi, VeminusVi, heat_flux_boundary_condition);
   
     #ifdef CUSTOMBCS

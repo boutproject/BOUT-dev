@@ -136,7 +136,7 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
     #endif
     #ifdef DRIVE_VEMINUSVI
       cubic_spline_VeminusVi_driveterm.initialise('y',true,true);
-      cubic_spline_VeminusVi.initialise('y',true,false);
+      cubic_spline_jpar.initialise('y',true,false);
     #endif
   }
   else {
@@ -586,7 +586,7 @@ void NonLocalParallel::calculate_nonlocal_closures(const Field3D &n_electron, co
 						      , const Field3D &V_electron
 						    #endif
 						    #ifdef DRIVE_VEMINUSVI
-						      , const Field3D &VeminusVi
+						      , const Field3D &jpar
 						    #endif
 						    #ifdef BC_HEATFLUX
 						      , const Field3D &heat_flux_boundary_condition
@@ -601,7 +601,7 @@ void NonLocalParallel::calculate_nonlocal_closures(const Field3D &n_electron, co
 					    , V_electron
 					  #endif
 					  #ifdef DRIVE_VEMINUSVI
-					    , VeminusVi
+					    , jpar
 					  #endif
 					  #ifdef BC_HEATFLUX
 					    , heat_flux_boundary_condition
@@ -616,7 +616,7 @@ void NonLocalParallel::calculate_nonlocal_closures(const Field3D &n_electron, co
 					      , V_electron
 					    #endif
 					    #ifdef DRIVE_VEMINUSVI
-					      , VeminusVi
+					      , jpar
 					    #endif
 					    #ifdef BC_HEATFLUX
 					      , heat_flux_boundary_condition
@@ -637,7 +637,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
 								  , const Field3D &V_electron
 								#endif
 								#ifdef DRIVE_VEMINUSVI
-								  , const Field3D &VeminusVi
+								  , const Field3D &jpar
 								#endif
 								#ifdef BC_HEATFLUX
 								  , const Field3D &heat_flux_boundary_condition
@@ -658,7 +658,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     mesh->communicate(gradV_driveterm);
   #endif
   #ifdef DRIVE_VEMINUSVI
-    VeminusVi_driveterm = -2./sqrt(PI) * VeminusVi * n_electron / sqrt(2.*T_electron/electron_mass);
+    VeminusVi_driveterm = -2./sqrt(PI) * (-jpar/electron_charge) / sqrt(2.*T_electron/electron_mass);
     mesh->communicate(VeminusVi_driveterm);
   #endif
   
@@ -710,7 +710,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   if (is_upper_boundary)
     total_dimensionless_length = increasing_dimensionless_length.slice(mesh->yend);
 
-  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, (mesh->getNYPE()-1) * mesh->getNXPE() + mesh->getXProcIndex());
+  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, mesh->getNYPE()-1);
   
   decreasing_dimensionless_length = -increasing_dimensionless_length;
   for (int jy=mesh->ystart; jy<=mesh->yend; jy++) {
@@ -1093,10 +1093,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   }
 
   #ifdef BC_HEATFLUX
-    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, mesh->getXProcIndex());
+    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
   #endif
   #ifdef BC_VISCOSITY
-    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, mesh->getXProcIndex());
+    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
   #endif
   
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
@@ -1208,7 +1208,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
   #endif
   #ifdef CALCULATE_FRICTION
     electron_friction *= 2.*T_electron/3.*lambdaC_inverse;
-    electron_friction += -2.*n_electron*sqrt(2.*electron_mass*T_electron)*lambdaC_inverse*VeminusVi; // Need to include also the friction due directly to the Maxwellian part of the distribution function
+    electron_friction += -2.*sqrt(2.*electron_mass*T_electron)*lambdaC_inverse*(-jpar/electron_charge); // Need to include also the friction due directly to the Maxwellian part of the distribution function
     mesh->communicate(electron_friction);
   #endif
 }
@@ -1220,7 +1220,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 								  , const Field3D &V_electron
 								#endif
 								#ifdef DRIVE_VEMINUSVI
-								  , const Field3D &VeminusVi
+								  , const Field3D &jpar
 								#endif
 								#ifdef BC_HEATFLUX
 								  , const Field3D &heat_flux_boundary_condition
@@ -1241,8 +1241,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 //     gradV_electron = Grad_par(V_electron,CELL_YLOW); // would be more consistent to put this on CELL_CENTRE, but that would make imposing a boundary condition a pain.
   #endif
   #ifdef DRIVE_VEMINUSVI
-    VeminusVi_driveterm = -2./sqrt(PI) * n_electron / sqrt(2.*T_electron/electron_mass);
-    // VeminusVi is already CELL_YLOW. If calculating VeminusVi from parallel current ~n_e(V_e - V_i)*electron_charge should perhaps move the n_e from the driveterm to an nVeminusVi term
+    VeminusVi_driveterm = -2./sqrt(PI) * (-1./electron_charge) / sqrt(2.*T_electron/electron_mass);
+    // jpar is already CELL_YLOW.
   #endif
   // Calculate target boundary guard cell derivitives (at YLOW) for gradT_electron with 4th order forward/backward differences from T_electron (at CENTRE)
   // Also check for unphysical lambdaC_inverse
@@ -1344,7 +1344,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     total_dimensionless_length = increasing_dimensionless_length.slice(mesh->yend);
   }
 
-  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, (mesh->getNYPE()-1) * mesh->getNXPE() + mesh->getXProcIndex());
+  y_broadcast(*total_dimensionless_length.getData(), mesh->ngx*mesh->ngz, mesh->getNYPE()-1);
   
   decreasing_dimensionless_length = -increasing_dimensionless_length;
   for (int jy=mesh->ystart; jy<=mesh->yend; jy++) {
@@ -1378,14 +1378,14 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   #endif
   #ifdef DRIVE_VEMINUSVI
     #ifdef CALCULATE_HEATFLUX
-      electron_heat_flux += -heatflux_VeminusVi_zerocoeff * VeminusVi_driveterm;
+      electron_heat_flux += -heatflux_VeminusVi_zerocoeff * interp_to(VeminusVi_driveterm,CELL_YLOW)*jpar;
     #endif
     // viscosity gets no zero eigenvalue contribution
     #ifdef CALCULATE_FRICTION
-      electron_friction += -friction_VeminusVi_zerocoeff * VeminusVi_driveterm;
+      electron_friction += -friction_VeminusVi_zerocoeff * interp_to(VeminusVi_driveterm,CELL_YLOW)*jpar;
     #endif
     cubic_spline_VeminusVi_driveterm.calculate(VeminusVi_driveterm);
-    cubic_spline_VeminusVi.calculate(VeminusVi);
+    cubic_spline_jpar.calculate(jpar);
   #endif
   
   for (int i=0; i<number_of_negative_eigenvalues; i++) {
@@ -1414,7 +1414,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_VEMINUSVI
-      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_VeminusVi, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralBelow_cell_ylow, but tedious).
+      integration.calculateIntegralBelow_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_jpar, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralBelow_cell_ylow, but tedious).
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += heatflux_VeminusVi_coefficients[i]*integration.integral_below;
       #endif
@@ -1452,7 +1452,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
       #endif
     #endif
     #ifdef DRIVE_VEMINUSVI
-      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_VeminusVi, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralAbove_cell_ylow, but tedious).
+      integration.calculateIntegralAbove_cell_ylow(eigenvalues[i], dimensionless_length_deltas_below,dimensionless_length_deltas_above, cubic_spline_inverse_lambdaC, cubic_spline_VeminusVi_driveterm, cubic_spline_jpar, i+2*number_of_negative_eigenvalues); // The driveterm here is CELL_YLOW while there is no CELL_CENTRE quantity mulitplying it, so use a cubic spline of a constant field with value 1. everywhere instead (would be slightly more efficient to write a different calculateIntegralAbove_cell_ylow, but tedious).
       #ifdef CALCULATE_HEATFLUX
 	electron_heat_flux += -heatflux_VeminusVi_coefficients[i]*integration.integral_above; //gives \hat(n)^A //gives \hat(n)^A/(T_electron^1.5)
       #endif
@@ -1726,10 +1726,10 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   }
 
   #ifdef BC_HEATFLUX
-    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, mesh->getXProcIndex());
+    y_broadcast(heatflux_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
   #endif
   #ifdef BC_VISCOSITY
-    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, mesh->getXProcIndex());
+    y_broadcast(viscosity_transients_factors, (mesh->xend-mesh->xstart+1)*(mesh->ngz-1)*2, 0);
   #endif
   
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
@@ -1841,7 +1841,7 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
   #endif
   #ifdef CALCULATE_FRICTION
     electron_friction *= 2.*T_electron/3.*lambdaC_inverse;
-    electron_friction += -2.*n_electron*sqrt(2.*electron_mass*T_electron)*lambdaC_inverse*VeminusVi;
+    electron_friction += -2.*sqrt(2.*electron_mass*T_electron)*lambdaC_inverse*(-jpar/electron_charge);
   #endif
 }
 

@@ -79,7 +79,7 @@ public:
 				     , const Field3D &V_electron
 				   #endif
 				   #ifdef DRIVE_VEMINUSVI
-				     , const Field3D &VeminusVi
+				     , const Field3D &jpar
 				   #endif
 				   #ifdef BC_HEATFLUX
 				    , const Field3D &heat_flux_boundary_condition
@@ -134,7 +134,7 @@ private:
   #ifdef DRIVE_VEMINUSVI
     Field3D VeminusVi_driveterm;
     CubicSpline cubic_spline_VeminusVi_driveterm;
-    CubicSpline cubic_spline_VeminusVi;
+    CubicSpline cubic_spline_jpar;
   #endif
   #ifdef CALCULATE_HEATFLUX
     #ifdef DRIVE_GRADT
@@ -220,7 +220,7 @@ private:
 						   , const Field3D &V_electron
 						 #endif
 						 #ifdef DRIVE_VEMINUSVI
-						   , const Field3D &VeminusVi
+						   , const Field3D &jpar
 						 #endif
 						 #ifdef BC_HEATFLUX
 						  , const Field3D &heat_flux_boundary_condition
@@ -234,7 +234,7 @@ private:
 						 , const Field3D &V_electron
 					       #endif
 					       #ifdef DRIVE_VEMINUSVI
-						 , const Field3D &VeminusVi
+						 , const Field3D &jpar
 					       #endif
 					       #ifdef BC_HEATFLUX
 						, const Field3D &heat_flux_boundary_condition
