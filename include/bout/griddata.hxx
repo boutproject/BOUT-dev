@@ -56,7 +56,7 @@ class GridDataSource {
   virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
 
   /// Specify a mesh. Required for GridFromOptions
-  virtual bool setMesh(Mesh *m) {}
+  virtual bool setMesh(Mesh *m) {return true;}
   
   /// Get data from the source
   virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
@@ -120,7 +120,7 @@ public:
   /// Set the (x,y,z) origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {return true;}
 
-  bool setMesh(Mesh *m) {fieldmesh = m;}
+  bool setMesh(Mesh *m) {fieldmesh = m; return true;}
   
   /// Get data from the source
   bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
