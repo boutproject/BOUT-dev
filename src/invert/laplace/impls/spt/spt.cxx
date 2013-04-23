@@ -251,19 +251,19 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   if(data.bk == NULL) {
     /// Allocate memory
-    
+    int mm = (mesh->ngz - 1)/2 + 1;
     // RHS vector
-    data.bk = cmatrix(maxmode + 1, mesh->ngx);
-    data.xk = cmatrix(maxmode + 1, mesh->ngx);
+    data.bk = cmatrix(mm, mesh->ngx);
+    data.xk = cmatrix(mm, mesh->ngx);
     
-    data.gam = cmatrix(maxmode + 1, mesh->ngx);
+    data.gam = cmatrix(mm, mesh->ngx);
 
     // Matrix to be solved
-    data.avec = cmatrix(maxmode + 1, mesh->ngx);
-    data.bvec = cmatrix(maxmode + 1, mesh->ngx);
-    data.cvec = cmatrix(maxmode + 1, mesh->ngx);
+    data.avec = cmatrix(mm, mesh->ngx);
+    data.bvec = cmatrix(mm, mesh->ngx);
+    data.cvec = cmatrix(mm, mesh->ngx);
     
-    data.buffer  = new BoutReal[4*(maxmode + 1)];
+    data.buffer  = new BoutReal[4*mm];
   }
 
   /// Take FFTs of data
