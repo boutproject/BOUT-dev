@@ -2332,6 +2332,10 @@ const Field3D operator^(const BoutReal lhs, const Field3D &rhs) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
+const Field3D SQ(const Field3D &f) {
+  return f * f;
+}
+
 const Field3D sqrt(const Field3D &f) {
   return f.sqrt();
 }
