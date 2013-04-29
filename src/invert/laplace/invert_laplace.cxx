@@ -116,6 +116,8 @@ const Field3D Laplacian::solve(const Field3D &b) {
   msg_stack.pop();
 #endif
 
+  x.setLocation(b.getLocation());
+
   return x;
 }
 
@@ -147,6 +149,8 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 #ifdef CHECK
   msg_stack.pop();
 #endif
+
+  x.setLocation(b.getLocation());
 
   return x;
 }
@@ -371,12 +375,11 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 
 /// Returns the coefficients for a tridiagonal matrix for laplace. Used by Delp2 too
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, 
-                          const Field2D *ccoef, const Field2D *d)
-{
+                          const Field2D *ccoef, const Field2D *d) {
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
 }
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d){
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Laplacian *lap = Laplacian::defaultInstance();
   
