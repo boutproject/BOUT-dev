@@ -128,6 +128,8 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     x = xperp;
   }
   
+  x.setLocation(b.getLocation());
+
   return x;
 }
 
@@ -156,6 +158,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
     }
     return solve(bs);
   }
+  
   return solve(b);
 }
 

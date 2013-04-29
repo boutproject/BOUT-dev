@@ -96,6 +96,9 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
       x = xperp;
     }
   }
+
+  x.setLocation(b.getLocation()); 
+
   return x;
 }
 
