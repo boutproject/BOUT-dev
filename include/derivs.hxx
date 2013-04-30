@@ -74,8 +74,12 @@ const Field2D D2DZ2(const Field2D &f);
 
 /////////// FOURTH DERIVATIVES /////////
 
+const Field3D D4DX4(const Field3D &f);
+const Field2D D4DX4(const Field2D &f);
 const Field3D D4DY4(const Field3D &f);
 const Field2D D4DY4(const Field2D &f);
+const Field3D D4DZ4(const Field3D &f);
+const Field2D D4DZ4(const Field2D &f);
 
 /////////// MIXED DERIVATIVES //////////
 
