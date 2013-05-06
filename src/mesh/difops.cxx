@@ -31,6 +31,7 @@
 #include <derivs.hxx>
 #include <fft.hxx>
 #include <msg_stack.hxx>
+#include <bout/assert.hxx>
 
 #include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
 
@@ -529,26 +530,22 @@ const Field2D Delp2(const Field2D &f) {
 }
 
 const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
-  Field3D result;
-  BoutReal ***fd, ***rd;
-
-#ifdef CHECK
   int msg_pos = msg_stack.push("Delp2( Field3D )");
-#endif
 
   //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
-  // NEW: SOLVE USING FFT
-
-  static dcomplex **ft = (dcomplex**) NULL, **delft;
-
+  ASSERT2(mesh->xstart > 0); // Need at least one guard cell
+  
+  Field3D result;
   result.allocate();
 
+  BoutReal ***fd, ***rd;
   fd = f.getData();
   rd = result.getData();
 
   int ncz = mesh->ngz-1;
   
+  static dcomplex **ft = (dcomplex**) NULL, **delft;
   if(ft == (dcomplex**) NULL) {
     //.allocate memory
     ft = cmatrix(mesh->ngx, ncz/2 + 1);
@@ -573,7 +570,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
       if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
 
       // No smoothing in the x direction
-      for(int jx=2;jx<(mesh->ngx-2);jx++) {
+      for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
 	// Perform x derivative
 	
 	laplace_tridag_coefs(jx, jy, jz, a, b, c);
@@ -594,7 +591,7 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
   
     // Reverse FFT
     #pragma omp parallel for
-    for(int jx=1;jx<(mesh->ngx-1);jx++) {
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
 
       ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
       rd[jx][jy][ncz] = rd[jx][jy][0];
@@ -606,10 +603,8 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
       rd[mesh->ngx-1][jy][jz] = 0.0;
     }
   }
-
-#ifdef CHECK
+  
   msg_stack.pop(msg_pos);
-#endif
 
   // Set the output location
   result.setLocation(f.getLocation());

@@ -1700,12 +1700,28 @@ BoutReal D4DX4_C2(stencil &f) {
   return (f.pp - 4.*f.p + 6.*f.c - 4.*f.m + f.mm);
 }
 
+const Field3D D4DX4(const Field3D &f) {
+  return applyXdiff(f, D4DX4_C2, SQ(SQ(mesh->dx)));
+}
+
+const Field2D D4DX4(const Field2D &f) {
+  return applyXdiff(f, D4DX4_C2, SQ(SQ(mesh->dx)));
+}
+
 const Field3D D4DY4(const Field3D &f) {
   return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
 }
 
 const Field2D D4DY4(const Field2D &f) {
   return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
+}
+
+const Field3D D4DZ4(const Field3D &f) {
+  return applyZdiff(f, D4DX4_C2, SQ(SQ(mesh->dz)));
+}
+
+const Field2D D4DZ4(const Field2D &f) {
+  return Field2D(0.0);
 }
 
 /*******************************************************************************
