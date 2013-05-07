@@ -35,7 +35,7 @@ class EmptySolver;
 
 class EmptySolver : public Solver {
 public:
-  EmptySolver() {throw BoutException("Solver not enabled!");}
+  EmptySolver(Options *opt = NULL) {throw BoutException("Solver not enabled!");}
   
   int run(MonitorFunc f) {return 0;}
   BoutReal run(BoutReal tout, int &ncalls, BoutReal &rhstime) {return 0;}
