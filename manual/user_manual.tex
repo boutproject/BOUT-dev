@@ -1570,8 +1570,8 @@ rtol & Relative tolerance & rk4, pvode, cvode, ida \\
 mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
 max\_timestep & Maxmimum timestep & rk4, cvode \\
-start\_timestep & Starting guess for timestep & rk4 \\
-timestep & Fixed timestep & karniadakis \\
+timestep & Starting timestep & rk4, karniadakis \\
+adaptive & Adapt timestep? & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
 mukeep, mlkeep & & \\

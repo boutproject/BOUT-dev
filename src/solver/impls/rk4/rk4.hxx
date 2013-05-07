@@ -47,9 +47,8 @@ class RK4Solver : public Solver {
   
   int run(MonitorFunc f);
  private:
-  BoutReal atol, rtol; // Tolerances for adaptive timestepping
+  BoutReal atol, rtol;   // Tolerances for adaptive timestepping
   BoutReal max_timestep; // Maximum timestep
-  BoutReal start_timestep; // Starting timestep
   int mxstep; // Maximum number of internal steps between outputs
   
   BoutReal *f0, *f1, *f2;
@@ -59,11 +58,16 @@ class RK4Solver : public Solver {
   
   BoutReal timestep; // The internal timestep
   
+  bool adaptive;   // Adapt timestep?
+
   int nlocal, neq; // Number of variables on local processor and in total
   
   void take_step(BoutReal curtime, BoutReal dt, 
                  BoutReal *start, BoutReal *result); // Take a single step to calculate f1
+  
+  BoutReal *k1, *k2, *k3, *k4, *k5; // Time-stepping arrays
+  
 };
 
-#endif // __KARNIADAKIS_SOLVER_H__
+#endif // __RK4_SOLVER_H__
 
