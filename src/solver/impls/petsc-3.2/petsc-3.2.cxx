@@ -23,9 +23,9 @@
  *
  **************************************************************************/
 
-#include "petsc-3.2.hxx"
-
 #ifdef BOUT_HAS_PETSC_3_2
+
+#include "petsc-3.2.hxx"
 
 #include <boutcomm.hxx>
 #include <private/tsimpl.h>
@@ -44,7 +44,7 @@ extern PetscErrorCode solver_if(TS,BoutReal,Vec,Vec,Vec,void*);
 extern PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 extern PetscErrorCode solver_ijacobianfd(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 
-Petsc32Solver::Petsc32Solver() {
+PetscSolver::PetscSolver() {
   has_constraints = false; // No constraints
   J = 0;
   Jmf = 0;
@@ -52,7 +52,7 @@ Petsc32Solver::Petsc32Solver() {
   interpolate = PETSC_TRUE;
 }
 
-Petsc32Solver::~Petsc32Solver() {
+PetscSolver::~PetscSolver() {
   if(initialised) {
     // Free CVODE memory
 
@@ -70,14 +70,14 @@ Petsc32Solver::~Petsc32Solver() {
  * Setup
  **************************************************************************/
 
-int Petsc32Solver::setup(int argc, char **argv) {
+int PetscSolver::setup(int argc, char **argv) {
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int Petsc32Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -487,8 +487,7 @@ int Petsc32Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode Petsc32Solver::run(MonitorFunc mon)
-{
+PetscErrorCode PetscSolver::run(MonitorFunc mon) {
   integer steps;
   BoutReal ftime;
 
@@ -504,8 +503,7 @@ PetscErrorCode Petsc32Solver::run(MonitorFunc mon)
  * RHS function
  **************************************************************************/
 
-PetscErrorCode Petsc32Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
-{
+PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   int flag;
   BoutReal *udata_array, *dudata_array;
 
@@ -544,13 +542,12 @@ PetscErrorCode Petsc32Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
  **************************************************************************/
 #undef __FUNCT__  
 #define __FUNCT__ "solver_f"
-PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
-{
-  Petsc32Solver *s;
+PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
+  PetscSolver *s;
 
   PetscFunctionBegin;
   //printf("solver_f(), t %g\n",t);
-  s = (Petsc32Solver*) f_data;
+  s = (PetscSolver*) f_data;
   PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
 }
 
@@ -559,8 +556,7 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 */
 #undef __FUNCT__  
 #define __FUNCT__ "solver_if"
-PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data)
-{
+PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
   PetscReal      unorm,fnorm;
 
@@ -578,8 +574,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
 
 #undef __FUNCT__  
 #define __FUNCT__ "solver_rhsjacobian"
-PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
-{
+PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -599,8 +594,7 @@ PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre
 */
 #undef __FUNCT__
 #define __FUNCT__ "solver_ijacobian"
-PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
-{
+PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -615,8 +609,7 @@ PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,Pe
 */
 #undef __FUNCT__
 #define __FUNCT__ "solver_ijacobianfd"
-PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data)
-{
+PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,PetscReal a,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
   PetscErrorCode ierr;
 
   PetscFunctionBegin;
@@ -628,10 +621,9 @@ PetscErrorCode solver_ijacobianfd(TS ts,BoutReal t,Vec globalin,Vec globalindot,
 
 #undef __FUNCT__
 #define __FUNCT__ "PetscMonitor"
-PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx)
-{
+PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
   PetscErrorCode ierr;
-  Petsc32Solver *s = (Petsc32Solver *)ctx;
+  PetscSolver *s = (PetscSolver *)ctx;
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;

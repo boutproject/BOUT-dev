@@ -24,16 +24,12 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_PETSC_3_2
+#ifdef BOUT_HAS_PETSC_3_2
 
-#include "../emptysolver.hxx"
-typedef EmptySolver Petsc32Solver;
- 
-#else
-class Petsc32Solver;
+class PetscSolver;
 
-#ifndef __PETSC32_SOLVER_H__
-#define __PETSC32_SOLVER_H__
+#ifndef __PETSC_SOLVER_H__
+#define __PETSC_SOLVER_H__
 
 #include <petsc.h>
 
@@ -61,10 +57,10 @@ extern BoutReal simtime;
 extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class Petsc32Solver: public Solver {
+class PetscSolver: public Solver {
  public:
-  Petsc32Solver();
-  ~Petsc32Solver();
+  PetscSolver();
+  ~PetscSolver();
   
   int setup(int argc, char **argv);
   

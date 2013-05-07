@@ -92,7 +92,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-  int msg_point = msg_stack.push("Initialising PETSc solver");
+  int msg_point = msg_stack.push("Initialising PETSc-dev solver");
 
   PetscFunctionBegin;
   PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
@@ -103,7 +103,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   Solver::init(f, restarting, NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
-  output.write("Initialising PETSc solver\n");
+  output.write("Initialising PETSc-dev solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
