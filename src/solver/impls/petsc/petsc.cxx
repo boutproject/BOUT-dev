@@ -92,7 +92,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   MPI_Comm        comm = PETSC_COMM_WORLD;
   PetscMPIInt     rank;
 
-  int msg_point = msg_stack.push("Initialising PETSc solver");
+  int msg_point = msg_stack.push("Initialising PETSc-dev solver");
 
   PetscFunctionBegin;
   PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
@@ -103,7 +103,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   Solver::init(f, restarting, NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
-  output.write("Initialising PETSc solver\n");
+  output.write("Initialising PETSc-dev solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
@@ -218,12 +218,12 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   SNES            snes, psnes;
   KSP             ksp, nksp;
   PC              pc, npc;
-  const PCType    pctype;
-  const TSType    tstype;
+  PCType          pctype;
+  TSType          tstype;
   PetscBool       pcnone=PETSC_TRUE;
 
   ierr = TSGetSNES(ts,&snes);CHKERRQ(ierr);
-  ierr = TSSetExactFinalTime(ts,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_INTERPOLATE);CHKERRQ(ierr);
 
   ierr = PetscOptionsGetBool(PETSC_NULL,"-interpolate",&interpolate,PETSC_NULL);CHKERRQ(ierr);
 
@@ -363,7 +363,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
     if (J_slowfd) { // create Jacobian matrix by slow fd
       MatStructure flg;
 
-      ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobian,PETSC_NULL);CHKERRQ(ierr);
+      ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefault,PETSC_NULL);CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"SNESComputeJacobian J by slow fd...\n");CHKERRQ(ierr);
 
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
@@ -528,7 +528,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
   ierr = MatFDColoringSetFunction(matfdcoloring,(PetscErrorCode (*)(void))solver_f,this);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes,J,J,SNESComputeJacobianDefaultColor,matfdcoloring);CHKERRQ(ierr);
 
   // Write J in binary for study - see ~petsc/src/mat/examples/tests/ex124.c
   ierr = PetscOptionsHasName(PETSC_NULL,"-J_write",&J_write);CHKERRQ(ierr);
@@ -564,7 +564,6 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
 PetscErrorCode PetscSolver::run(MonitorFunc mon) {
   PetscErrorCode ierr;
   integer steps;
-  BoutReal ftime;
   FILE *fp = NULL;
 
   // Set when the next call to monitor is desired
@@ -578,7 +577,7 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon) {
     bout_snes_time = MPI_Wtime();
   }
 
-  ierr = TSSolve(ts,u,&ftime);CHKERRQ(ierr);
+  ierr = TSSolve(ts,u);CHKERRQ(ierr);
 
   // Gawd, everything is a hack
   if(this->output_flag) {

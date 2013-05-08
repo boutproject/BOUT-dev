@@ -831,12 +831,15 @@ BoutReal Field2D::max(bool allpe) const {
     msg_stack.push("Field2D::Max()");
 #endif
 
-  BoutReal result = data[0][0];
+  BoutReal result = data[mesh->xstart][mesh->ystart];
 
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
+  for(int jx=mesh->xstart;jx<mesh->xend;jx++)
+    for(int jy=mesh->ystart;jy<mesh->yend;jy++) {
+      //if(!isfinite(data[jx][jy]))
+      //  output.write("Non-finite number at %d,%d\n", jx, jy);
       if(data[jx][jy] > result)
 	result = data[jx][jy];
+    }
   
   if(allpe) {
     // MPI reduce
@@ -1011,6 +1014,30 @@ void Field2D::applyBoundary(const string &condition) {
 void Field2D::applyTDerivBoundary() {
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply_ddt(*this);
+}
+
+void Field2D::setBoundaryTo(const Field2D &f2d) {
+  allocate(); // Make sure data allocated
+#ifdef CHECK
+  msg_stack.push("Field2D::setBoundary(const Field2D&)");
+  
+  if(f2d.data == NULL)
+    throw BoutException("Setting boundary condition to empty data\n");
+#endif
+
+  /// Get the mesh boundary regions
+  vector<BoundaryRegion*> reg = mesh->getBoundaries();
+  
+  /// Loop over boundary regions
+  for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
+    BoundaryRegion* bndry= *it;
+    /// Loop within each region
+    for(bndry->first(); !bndry->isDone(); bndry->next())
+      data[bndry->x][bndry->y] = f2d.data[bndry->x][bndry->y];
+  }
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 }
 
 void Field2D::cleanup() {

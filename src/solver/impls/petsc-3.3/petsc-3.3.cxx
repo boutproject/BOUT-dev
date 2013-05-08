@@ -23,11 +23,12 @@
  *
  **************************************************************************/
 
-#include "petsc-3.3.hxx"
-
 #ifdef BOUT_HAS_PETSC_3_3
 
-#include <private/tsimpl.h>
+#include "petsc-3.3.hxx"
+
+#include <petsc-private/tsimpl.h>
+#include <petsc.h>
 
 #include <globals.hxx>
 
@@ -36,6 +37,7 @@
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
 #include <output.hxx>
+#include <boutcomm.hxx>
 
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
@@ -50,7 +52,7 @@ extern PetscErrorCode PhysicsPCApply(PC,Vec x,Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
-Petsc33Solver::Petsc33Solver() {
+PetscSolver::PetscSolver() {
   has_constraints = false; // No constraints
   J = 0;
   Jmf = 0;
@@ -65,7 +67,7 @@ Petsc33Solver::Petsc33Solver() {
   output_flag = PETSC_FALSE;
 }
 
-Petsc33Solver::~Petsc33Solver() {
+PetscSolver::~PetscSolver() {
   if(initialised) {
     // Free memory
 
@@ -84,7 +86,7 @@ Petsc33Solver::~Petsc33Solver() {
  * Setup
  **************************************************************************/
 
-int Petsc33Solver::setup(int argc, char **argv) {
+int PetscSolver::setup(int argc, char **argv) {
   output << "Initialising PETc\n";
   PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
   PetscLogEventBegin(USER_EVENT,0,0,0,0);
@@ -95,7 +97,7 @@ int Petsc33Solver::setup(int argc, char **argv) {
  * Initialise
  **************************************************************************/
 
-int Petsc33Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -106,19 +108,19 @@ int Petsc33Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
   PetscMPIInt     rank;
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc solver");
+  int msg_point = msg_stack.push("Initialising PETSc-3.3 solver");
 #endif
 
   PetscFunctionBegin;
-  PetscLogEventRegister("Petsc33Solver::init",PETSC_VIEWER_CLASSID,&init_event);
+  PetscLogEventRegister("PetscSolver::init",PETSC_VIEWER_CLASSID,&init_event);
   PetscLogEventRegister("loop_vars",PETSC_VIEWER_CLASSID,&loop_event);
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(f, argc, argv, restarting, NOUT, TIMESTEP);
+  Solver::init(f, restarting, NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
-  output.write("Initialising PETSc solver\n");
+  output.write("Initialising PETSc-3.3 solver\n");
   ierr = MPI_Comm_rank(comm, &rank);CHKERRQ(ierr);
 
   // Save NOUT and TIMESTEP for use later
@@ -310,12 +312,12 @@ int Petsc33Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
   ierr = TSGetType(ts,&tstype);CHKERRQ(ierr);
   output.write("\tTS type %s, PC type %s\n",tstype,pctype);
 
-  ierr = PetscTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)pc,PCNONE,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
-  ierr = PetscTypeCompare((PetscObject)pc,PCSHELL,&pcnone);CHKERRQ(ierr);
+  ierr = PetscObjectTypeCompare((PetscObject)pc,PCSHELL,&pcnone);CHKERRQ(ierr);
   if (pcnone) {
     ierr = PetscLogEventEnd(init_event,0,0,0,0);CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -430,9 +432,9 @@ int Petsc33Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
       // Need to figure out how to tell if y is periodic
       bool yperiodic = true;
 
-      printf(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
+      output.write(" dof %d,dim %d: %d %d %d\n",dof,dim,dims[0],dims[1],dims[2]);
       for(k=0;k<nz;k++) {
-        cout << "----- " << k << " -----" << endl;
+        output << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
           // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
@@ -573,7 +575,7 @@ int Petsc33Solver::init(rhsfunc f, int argc, char **argv, bool restarting, int N
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode Petsc33Solver::run(MonitorFunc mon) {
+PetscErrorCode PetscSolver::run(MonitorFunc mon) {
   PetscErrorCode ierr;
   integer steps;
   BoutReal ftime;
@@ -609,7 +611,7 @@ PetscErrorCode Petsc33Solver::run(MonitorFunc mon) {
  * RHS function
  **************************************************************************/
 
-PetscErrorCode Petsc33Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
+PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   int flag;
   BoutReal *udata_array, *dudata_array;
 
@@ -642,7 +644,7 @@ PetscErrorCode Petsc33Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
  * Preconditioner function
  **************************************************************************/
 
-PetscErrorCode Petsc33Solver::pre(PC pc, Vec x, Vec y) {
+PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Petsc33Solver::pre()");
 #endif
@@ -682,7 +684,7 @@ PetscErrorCode Petsc33Solver::pre(PC pc, Vec x, Vec y) {
  * User-supplied Jacobian function J(state) * x = y
  **************************************************************************/
 
-PetscErrorCode Petsc33Solver::jac(Vec x, Vec y) {
+PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Petsc33Solver::jac()");
 #endif
@@ -725,10 +727,10 @@ PetscErrorCode Petsc33Solver::jac(Vec x, Vec y) {
 #undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
-  Petsc33Solver *s;
+  PetscSolver *s;
 
   PetscFunctionBegin;
-  s = (Petsc33Solver*) f_data;
+  s = (PetscSolver*) f_data;
   PetscLogEventBegin(s->solver_event,0,0,0,0);
   s->rhs(ts, t, globalin, globalout);
   PetscLogEventEnd(s->solver_event,0,0,0,0);
@@ -785,7 +787,7 @@ PetscErrorCode solver_ijacobian(TS ts,BoutReal t,Vec globalin,Vec globalindot,Pe
   ierr = solver_rhsjacobian(ts,t,globalin,J,Jpre,str,(void *)f_data);CHKERRQ(ierr);
 
   ////// Save data for preconditioner
-  Petsc33Solver *solver = (Petsc33Solver*) f_data;
+  PetscSolver *solver = (PetscSolver*) f_data;
 
   if(solver->diagnose)
     output << "Saving state, t = " << t << ", a = " << a << endl;
@@ -852,7 +854,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
   int ierr;
 
   // Get the context
-  Petsc33Solver *s;
+  PetscSolver *s;
   ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
 
   PetscFunctionReturn(s->pre(pc, x, y));
@@ -862,7 +864,7 @@ PetscErrorCode PhysicsPCApply(PC pc,Vec x,Vec y) {
 #define __FUNCT__ "PhysicsJacobianApply"
 PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
   // Get the context
-  Petsc33Solver *s;
+  PetscSolver *s;
   int ierr = MatShellGetContext(J, (void**)&s); CHKERRQ(ierr);
   PetscFunctionReturn(s->jac(x, y));
 }
@@ -871,7 +873,7 @@ PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y) {
 #define __FUNCT__ "PetscMonitor"
 PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
   PetscErrorCode ierr;
-  Petsc33Solver *s = (Petsc33Solver *)ctx;
+  PetscSolver *s = (PetscSolver *)ctx;
   PetscReal tfinal, dt;
   Vec interpolatedX;
   const PetscScalar *x;
@@ -891,7 +893,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
     s->load_vars((BoutReal *)x);
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    if (s->monitor(simtime,i++,s->nout)) {
+    if (s->monitor(s, simtime,i++,s->nout)) {
       s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");
@@ -912,13 +914,12 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
 
 #undef __FUNCT__
 #define __FUNCT__ "PetscSNESMonitor"
-PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *ctx)
-{
+PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *ctx) {
   PetscErrorCode ierr;
   PetscInt linear_its=0;
   BoutReal tmp = .0;
   snes_info row;
-  Petsc33Solver *s = (Petsc33Solver*)ctx;
+  PetscSolver *s = (PetscSolver*)ctx;
 
   PetscFunctionBegin;
 
@@ -936,4 +937,4 @@ PetscErrorCode PetscSNESMonitor(SNES snes, PetscInt its, PetscReal norm, void *c
   PetscFunctionReturn(0);
 }
 
-#endif
+#endif // BOUT_HAS_PETSC_3_3

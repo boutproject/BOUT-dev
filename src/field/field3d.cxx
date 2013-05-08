@@ -211,8 +211,27 @@ BoutReal** Field3D::operator[](int jx) const {
   return block->data[jx];
 }
 
-BoutReal& Field3D::operator[](bindex &bx) const {
-#ifdef CHECK
+BoutReal& Field3D::operator[](bindex &bx) {
+#if CHECK > 2
+  if(block == NULL) {
+    throw BoutException("Field3D: [bindex] operator on empty data");
+  }
+  if((bx.jx < 0) || (bx.jx >= mesh->ngx)) {
+    throw BoutException("Field3D: [bindex.jx = %d] out of range", bx.jx);
+  }
+  if((bx.jy < 0) || (bx.jy >= mesh->ngy)) {
+    throw BoutException("Field3D: [bindex.jy = %d] out of range", bx.jy);
+  }
+  if((bx.jz < 0) || (bx.jz >= mesh->ngz)) {
+    throw BoutException("Field3D: [bindex.jz = %d] out of range", bx.jz);
+  }
+#endif
+
+  return block->data[bx.jx][bx.jy][bx.jz];
+}
+
+const BoutReal& Field3D::operator[](bindex &bx) const {
+#if CHECK > 2
   if(block == NULL) {
     throw BoutException("Field3D: [bindex] operator on empty data");
   }

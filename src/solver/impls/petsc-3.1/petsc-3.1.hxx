@@ -24,16 +24,11 @@
  *
  **************************************************************************/
 
-#ifndef BOUT_HAS_PETSC_3_1
+#ifdef BOUT_HAS_PETSC_3_1
+class PetscSolver;
 
-#include "../emptysolver.hxx"
-typedef EmptySolver Petsc31Solver;
-
-#else
-class Petsc31Solver;
-
-#ifndef __PETSC31_SOLVER_H__
-#define __PETSC31_SOLVER_H__
+#ifndef __PETSC_SOLVER_H__
+#define __PETSC_SOLVER_H__
 
 #include <petscts.h>
 
@@ -61,10 +56,10 @@ EXTERN PetscErrorCode PreStep(TS);
 EXTERN PetscErrorCode PostStep(TS);
 EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
-class Petsc31Solver : public Solver {
+class PetscSolver : public Solver {
  public:
-  Petsc31Solver();
-  ~Petsc31Solver();
+  PetscSolver();
+  ~PetscSolver();
   
   int setup(int argc, char **argv);
   

@@ -32,6 +32,8 @@ class Field3D;
 #include "stencils.hxx"
 #include "bout_types.hxx"
 
+#include "bout/deprecated.hxx"
+
 /// Structure to store blocks of memory for Field3D class
 struct memblock3d {
   /// memory block
@@ -69,7 +71,7 @@ class Field3D : public Field, public FieldData {
   /// Destructor
   ~Field3D();
 
-  Field3D* clone() const;
+  DEPRECATED(Field3D* clone() const);
 
   /// Ensures that memory is allocated
   void allocate() const;
@@ -91,8 +93,10 @@ class Field3D : public Field, public FieldData {
   
   /// Allows access to internal data using square-brackets
   BoutReal** operator[](int jx) const;
-  BoutReal& operator[](bindex &bx) const;
-
+  
+  BoutReal& operator[](bindex &bx);
+  const BoutReal& operator[](bindex &bx) const;
+  
   BoutReal& operator()(int jx, int jy, int jz);
   const BoutReal& operator()(int jx, int jy, int jz) const;
 

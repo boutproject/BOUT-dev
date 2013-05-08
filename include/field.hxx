@@ -35,6 +35,8 @@ class Field;
 #include "stencils.hxx"
 #include <bout/rvec.hxx>
 
+#include "bout/deprecated.hxx"
+
 /*!
  * \brief Base class for fields
  *
@@ -58,7 +60,7 @@ class Field {
     This is useful where a const field must be modified within a function
     and is used in the deriv.cpp functions.
   */
-  virtual Field* clone() const = 0;
+  DEPRECATED(virtual Field* clone() const) = 0;
 
   virtual void shiftToReal(bool toBoutReal) {
     // Does nothing by default

@@ -23,11 +23,12 @@
  *
  **************************************************************************/
 
-#include "petsc-3.1.hxx"
-
 #ifdef BOUT_HAS_PETSC_3_1
 
+#include "petsc-3.1.hxx"
+
 #include <globals.hxx>
+#include <boutcomm.hxx>
 
 #include <stdlib.h>
 
@@ -40,13 +41,13 @@
 
 EXTERN PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data);
 
-Petsc31Solver::Petsc31Solver() {
+PetscSolver::PetscSolver() {
   has_constraints = false; // No constraints
   this->J = 0;
   this->matfdcoloring = 0;
 }
 
-Petsc31Solver::~Petsc31Solver() {
+PetscSolver::~PetscSolver() {
   if(initialised) {
     // Free CVODE memory
 
@@ -63,15 +64,14 @@ Petsc31Solver::~Petsc31Solver() {
  * Setup
  **************************************************************************/
 
-int Petsc31Solver::setup(int argc, char **argv) {
+int PetscSolver::setup(int argc, char **argv) {
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
-{
+int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -85,13 +85,13 @@ int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
   tstep = TIMESTEP;
 
 #ifdef CHECK
-  int msg_point = msg_stack.push("Initialising PETSc solver");
+  int msg_point = msg_stack.push("Initialising PETSc-3.1 solver");
 #endif
 
   /// Call the generic initialisation first
   Solver::init(f, restarting, NOUT, TIMESTEP);
 
-  output.write("Initialising PETSc solver\n");
+  output.write("Initialising PETSc-3.1 solver\n");
 
   PetscInt n2d = n2Dvars();       // Number of 2D variables
   PetscInt n3d = n3Dvars();       // Number of 3D variables
@@ -256,7 +256,7 @@ int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
-    cout << "n: " << n << "\t\t local_N: " << local_N << endl;
+    output << "n: " << n << "\t\t local_N: " << local_N << endl;
     ierr = MatSetSizes(J,local_N, local_N, PETSC_DECIDE,PETSC_DECIDE);CHKERRQ(ierr);
     ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
@@ -318,7 +318,7 @@ int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
       bool yperiodic = true;
       
       for(k=0;k<nz;k++) {
-        cout << "----- " << k << " -----" << endl;
+        output << "----- " << k << " -----" << endl;
         for(j=mesh->ystart; j <= mesh->yend; j++) {
           // cout << "j " << mesh->YGLOBAL(j) << ": ";
           gj = mesh->YGLOBAL(j);
@@ -401,9 +401,7 @@ int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
             ierr = MatSetValuesBlockedStencil(J, 1, stencil, cols, stencil, one, INSERT_VALUES);CHKERRQ(ierr);
 
           }
-          // cout << endl;
         }
-        // cout << endl;
       }
 
       ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
@@ -450,7 +448,7 @@ int Petsc31Solver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP)
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode Petsc31Solver::run(MonitorFunc mon)
+PetscErrorCode PetscSolver::run(MonitorFunc mon)
 {
   integer steps;
   BoutReal ftime;
@@ -468,7 +466,7 @@ PetscErrorCode Petsc31Solver::run(MonitorFunc mon)
  * RHS function
  **************************************************************************/
 
-PetscErrorCode Petsc31Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
+PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 {
   int flag;
   BoutReal *udata_array, *dudata_array;
@@ -542,10 +540,10 @@ PetscErrorCode Petsc31Solver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
 #define __FUNCT__ "Petsc31Solver::solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data)
 {
-  Petsc31Solver *s;
+  PetscSolver *s;
   
   PetscFunctionBegin;
-  s = (Petsc31Solver*) f_data;
+  s = (PetscSolver*) f_data;
   PetscFunctionReturn(s->rhs(ts, t, globalin, globalout));
 }
 
@@ -553,7 +551,7 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 #define __FUNCT__ "Petsc31Solver::PreUpdate"
 PetscErrorCode PreStep(TS ts) 
 {
-  Petsc31Solver *s;
+  PetscSolver *s;
 	PetscReal t, dt;
   PetscErrorCode ierr;
   
