@@ -75,6 +75,8 @@ Laplacian::Laplacian(Options *options) {
   OPTION3(options, low_mem, all_terms, nonuniform, false);
   
   OPTION(options, flags, 0);
+  
+  OPTION(options, include_yguards, true);
 }
 
 Laplacian* Laplacian::create(Options *opts) {
@@ -94,16 +96,17 @@ Laplacian* Laplacian::defaultInstance() {
  **********************************************************************************/
 
 const Field3D Laplacian::solve(const Field3D &b) {
+  Timer timer("invert");
 #ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D)");
 #endif
 
   int ys = mesh->ystart, ye = mesh->yend;
 
-  if(mesh->hasBndryLowerY())
-    ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
-    ye = mesh->ngy-1; // Contains upper boundary
+  if(mesh->hasBndryLowerY() && include_yguards)
+    ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+  if(mesh->hasBndryUpperY() && include_yguards)
+    ye = mesh->ngy-1; // Contains upper boundary and we are solving in the guard cells
 
   Field3D x;
   x.allocate();
@@ -129,7 +132,8 @@ const Field2D Laplacian::solve(const Field2D &b) {
 }
 
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
-  #ifdef CHECK
+  Timer timer("invert");
+#ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D, Field3D)");
 #endif
 

@@ -107,6 +107,7 @@ protected:
   bool low_mem;    ///< If true, reduce the amount of memory used
   bool all_terms;  // applies to Delp2 operator and laplacian inversion
   bool nonuniform; // Non-uniform mesh correction
+  bool include_yguards; // solve in y-guard cells, default true.
   
   int flags;       ///< Default flags
 
