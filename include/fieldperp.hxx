@@ -29,6 +29,9 @@ class FieldPerp;
 #define __FIELDPERP_H__
 
 #include "field.hxx"
+
+#include "bout/deprecated.hxx"
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
@@ -38,15 +41,15 @@ class FieldPerp : public Field {
   FieldPerp(const FieldPerp& f); // Copy constructor
   ~FieldPerp();
 
-  FieldPerp* clone() const;
+  DEPRECATED(FieldPerp* clone() const);
   
   void set(const Field3D &f, int y);
 
   void setData(BoutReal **d) {data = d;}
   BoutReal **getData() const { return data; }
 
-  int getIndex() const { return yindex; }
-  void setIndex(int y) { yindex = y; }
+  int getIndex() const;
+  void setIndex(int y);
 
   void allocate();
 

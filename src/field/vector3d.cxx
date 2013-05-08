@@ -510,8 +510,7 @@ void Vector3D::setLocation(CELL_LOC loc) {
  *               Z SHIFTING
  ***************************************************************/
 
-const Vector3D Vector3D::shiftZ(const BoutReal zangle) const
-{
+const Vector3D Vector3D::shiftZ(const BoutReal zangle) const {
   Vector3D result;
 
   result.covariant = covariant;
@@ -527,13 +526,11 @@ const Vector3D Vector3D::shiftZ(const BoutReal zangle) const
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
-const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs)
-{
+const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs) {
   return(rhs * lhs);
 }
 
-const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs)
-{
+const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs) {
   return(rhs * lhs);
 }
 

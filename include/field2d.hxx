@@ -36,6 +36,8 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
+#include "bout/deprecated.hxx"
+
 #include <stack>
 using std::stack;
 
@@ -52,7 +54,7 @@ class Field2D : public Field, public FieldData {
   Field2D(BoutReal val);
   ~Field2D();
 
-  Field2D* clone() const;
+  DEPRECATED(Field2D* clone() const);
 
   BoutReal **getData() const; // Remove this!
   
@@ -182,6 +184,7 @@ class Field2D : public Field, public FieldData {
   void applyBoundary();
   void applyBoundary(const string &condition);
   void applyTDerivBoundary();
+  void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
  private:
   BoutReal **data;
