@@ -96,8 +96,125 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
   MatCreate( comm, &MatA );                                
   MatSetSizes( MatA, localN, localN, size, size );
   MatSetFromOptions(MatA);
-  if (fourth_order) MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
-  else MatMPIAIJSetPreallocation( MatA, 9, PETSC_NULL, 3, PETSC_NULL );
+  //   if (fourth_order) MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
+//   else MatMPIAIJSetPreallocation( MatA, 9, PETSC_NULL, 3, PETSC_NULL );
+  PetscInt *d_nnz, *o_nnz;
+  PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
+  PetscMalloc( (localN)*sizeof(PetscInt), &o_nnz );
+  if (fourth_order) {
+    // first and last 2*(mesh-ngz-1) entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    if ( mesh->firstX() && mesh->lastX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=15;
+	d_nnz[localN-1-i]=15;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=0;
+      }
+      for (int i=(mesh->ngz-1); i<2*(mesh->ngz-1); i++) {
+	d_nnz[i]=20;
+	d_nnz[localN-1-i]=20;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=0;
+      }
+    }
+    else if ( mesh->firstX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=15;
+	d_nnz[localN-1-i]=15;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=10;
+      }
+      for (int i=(mesh->ngz-1); i<2*(mesh->ngz-1); i++) {
+	d_nnz[i]=20;
+	d_nnz[localN-1-i]=20;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=5;
+      }
+    }
+    else if ( mesh->lastX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=15;
+	d_nnz[localN-1-i]=15;
+	o_nnz[i]=10;
+	o_nnz[localN-1-i]=0;
+      }
+      for (int i=(mesh->ngz-1); i<2*(mesh->ngz-1); i++) {
+	d_nnz[i]=20;
+	d_nnz[localN-1-i]=20;
+	o_nnz[i]=5;
+	o_nnz[localN-1-i]=0;
+      }
+    }
+    else {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=15;
+	d_nnz[localN-1-i]=15;
+	o_nnz[i]=10;
+	o_nnz[localN-1-i]=10;
+      }
+      for (int i=(mesh->ngz-1); i<2*(mesh->ngz-1); i++) {
+	d_nnz[i]=20;
+	d_nnz[localN-1-i]=20;
+	o_nnz[i]=5;
+	o_nnz[localN-1-i]=5;
+      }
+    }
+    
+    for (int i=mesh->ngz-1; i<localN-2*((mesh->ngz-1));i++) {
+      d_nnz[i]=25;
+	d_nnz[localN-1-i]=25;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=0;
+    }
+    
+    MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
+  }
+  else {
+    // first and last (mesh-ngz-1) entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
+    if ( mesh->firstX() && mesh->lastX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=6;
+	d_nnz[localN-1-i]=6;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=0;
+      }
+    }
+    else if ( mesh->firstX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=6;
+	d_nnz[localN-1-i]=6;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=3;
+      }
+    }
+    else if ( mesh->lastX() ) {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=6;
+	d_nnz[localN-1-i]=6;
+	o_nnz[i]=3;
+	o_nnz[localN-1-i]=0;
+      }
+    }
+    else {
+      for (int i=0; i<mesh->ngz-1; i++) {
+	d_nnz[i]=6;
+	d_nnz[localN-1-i]=6;
+	o_nnz[i]=3;
+	o_nnz[localN-1-i]=3;
+      }
+    }
+    
+    for (int i=mesh->ngz-1; i<localN-(mesh->ngz-1);i++) {
+      d_nnz[i]=9;
+	d_nnz[localN-1-i]=9;
+	o_nnz[i]=0;
+	o_nnz[localN-1-i]=0;
+    }
+    
+    MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, d_nnz );
+  }
+  PetscFree( d_nnz );
+  PetscFree( o_nnz );
   MatSetUp(MatA); 
 
   // Declare KSP Context 
