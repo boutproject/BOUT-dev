@@ -116,8 +116,8 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
                         ydown_dist=ydown_dist, yup_dist=yup_dist, $
                         ydown_space=ydown_space, yup_space=yup_space
 
-  IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0
-  
+  IF NOT KEYWORD_SET(parweight) THEN parweight = 0.0  ; Default is poloidal distance
+
   np = N_ELEMENTS(ri)
 
   IF 0 THEN BEGIN
@@ -131,11 +131,12 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     rpos = INTERPOLATE(R, ri)
     zpos = INTERPOLATE(Z, zi)
     dd = SQRT((zpos[1:*] - zpos[0:(np-2)])^2 + (rpos[1:*] - rpos[0:(np-2)])^2)
+    dd = [dd, SQRT((zpos[0] - zpos[np-1])^2 + (rpos[0] - rpos[np-1])^2)]
     poldist = FLTARR(np)
     FOR i=1,np-1 DO poldist[i] = poldist[i-1] + dd[i-1]
   ENDELSE
-  
-  IF SIZE(fpsi, /dim) EQ 2 THEN BEGIN
+
+  IF SIZE(fpsi, /n_dim) EQ 2 THEN BEGIN
     ; Parallel distance along line
     ; Need poloidal and toroidal field
     ni = N_ELEMENTS(ri)
@@ -144,11 +145,27 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     FOR i=0, ni-1 DO BEGIN
       local_gradient, interp_data, ri[i], zi[i], status=status, $
         f=f, dfdr=dfdr, dfdz=dfdz
+      ; dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
+      dfdr /= INTERPOLATE(DERIV(R),ri[i])
+      dfdz /= INTERPOLATE(DERIV(Z),zi[i])
+      
+      IF i EQ 0 THEN BEGIN
+        btr = INTERPOL(REFORM(fpsi[1,*]), REFORM(fpsi[0,*]), f)
+      ENDIF
+      
       bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i])
-      bt[i] = INTERPOL(REFORM(fpsi[1,*]), REFORM(fpsi[0,*]), f)
+      bt[i] = ABS( btr / INTERPOLATE(R, ri[i]))
     ENDFOR
-    STOP
+    b = SQRT(bt^2 + bp^2)
+    ddpar = dd * b / bp
+    pardist = FLTARR(np)
+    FOR i=1,np-1 DO BEGIN
+      ip = (i + 1) MOD np
+      pardist[i] = pardist[i-1] + 0.5*(ddpar[i-1] + ddpar[ip])
+    ENDFOR
   ENDIF ELSE pardist = poldist ; Just use the same poloidal distance
+
+  PRINT, "PARWEIGHT: ", parweight
 
   dist = parweight*pardist + (1. - parweight)*poldist
 
@@ -188,7 +205,7 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
 
   ; Get indices in ri, zi
   ind = INTERPOL(FINDGEN(np), dist, dloc)
-  
+
   RETURN, ind
 END
 
@@ -214,6 +231,7 @@ FUNCTION grid_region, interp_data, R, Z, $
                       boundary=boundary, $
                       ffirst=ffirst, flast=flast, $
                       fpsi=fpsi, $ ; f(psi) = R*Bt optional current function
+                      parweight=parweight, $ ; Space equally in parallel (1) or poloidal (0) distance
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
                       ydown_space=ydown_space, yup_space=yup_space
   
@@ -249,7 +267,8 @@ FUNCTION grid_region, interp_data, R, Z, $
 
   ind = poloidal_grid(interp_data, R, Z, ri, zi, npar, fpsi=fpsi, $
                       ydown_dist=ydown_dist, yup_dist=yup_dist, $
-                      ydown_space=ydown_space, yup_space=yup_space)
+                      ydown_space=ydown_space, yup_space=yup_space, $
+                      parweight=parweight)
   
   rii = INTERPOLATE(ri, ind)
   zii = INTERPOLATE(zi, ind)
@@ -646,7 +665,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                 nrad:36, $
                 npol:64, $
                 rad_peaking:0.0, $
-                pol_peaking:0.0}
+                pol_peaking:0.0, $
+                parweight:0.0}
   ENDIF ELSE BEGIN
     PRINT, "Checking settings"
     settings = in_settings ; So the input isn't changed
@@ -656,6 +676,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     str_check_present, settings, 'npol', 64
     str_check_present, settings, 'rad_peaking', 0.0
     str_check_present, settings, 'pol_peaking', 0.0
+    str_check_present, settings, 'parweight', 0.0
   ENDELSE
 
   s = SIZE(F, /DIMENSION)
@@ -851,7 +872,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                     start_ri, start_zi, $
                     fvals, $
                     sind, $
-                    npol, fpsi=fpsi, /oplot)
+                    npol, fpsi=fpsi, $
+                    parweight=settings.parweight, $
+                    /oplot)
     
     OPLOT, [REFORM(a.rxy[0,*]), a.rxy[0,0]], [REFORM(a.zxy[0,*]), a.zxy[0,0]], color=4
       

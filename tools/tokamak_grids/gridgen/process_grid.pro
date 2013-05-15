@@ -437,6 +437,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     yi = gen_surface(period=period, last=last, xi=xi)
     IF period THEN BEGIN
       rm = MAX(mesh.Rxy[xi,yi], ymid)
+      ymid = yi[ymid]
       BREAK
     ENDIF
   ENDREP UNTIL last
