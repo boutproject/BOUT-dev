@@ -1773,8 +1773,7 @@ int BoutMesh::XPROC(int xind) {
  ****************************************************************/
 
 /// Connection initialisation: Set processors in a simple 2D grid
-void BoutMesh::default_connections()
-{
+void BoutMesh::default_connections() {
   DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
   DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
 
@@ -1801,8 +1800,7 @@ void BoutMesh::default_connections()
  * Set ypos1 and ypos2 to be neighbours in the range xge <= x < xlt.
  * Optional argument ts sets whether to use twist-shift condition
  */
-void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
-{
+void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   int ype1, ype2; // the two Y processor indices
   int ypeup, ypedown;
   int yind1, yind2;
@@ -1872,9 +1870,11 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       output.write("=> This processor sending in up\n");
     }else {
       /* Connect on the outside */
+      if(UDATA_XSPLIT <= 0)
+        UDATA_INDEST = UDATA_OUTDEST;
       UDATA_XSPLIT = xge;
       UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == 0)
+      if(UDATA_XSPLIT <= 0)
 	UDATA_INDEST = -1;
 
       TS_up_out = ts;
@@ -1896,6 +1896,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       output.write("=> This processor sending in down\n");
     }else {
       /* Connect on the outside */
+      if(DDATA_XSPLIT <= 0)
+        DDATA_INDEST = DDATA_OUTDEST;
       DDATA_XSPLIT = xge;
       DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup);
       if(DDATA_XSPLIT == 0)
@@ -1908,12 +1910,83 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
   }
 }
 
+/// Add a divertor target or limiter
+/*!
+ * ypos is the y index which will become an upper target
+ * ypos+1 will become a lower target.
+ * Target created in the range xge <= x < xlt.
+ */
+void BoutMesh::add_target(int ypos, int xge, int xlt) {
+  if(xlt <= xge)
+    return;
+
+  if((ypos < 0) || (ypos >= MY)) {
+    output.write("WARNING adding target: poloidal index %d out of range\n", ypos);
+    return;
+  }
+  
+  int ypeup = YPROC(ypos);
+  int ypedown = YPROC(ypos+1);
+  if(ypeup == ypedown) {
+    throw BoutException("Adding target at y=%d in middle of processor %d\n", ypos, ypeup);
+  }
+
+  output.write("Target at top of Y processor %d and bottom of %d in range %d <= x < %d\n", ypeup, ypedown, xge, xlt);
+
+  // Convert X coordinates into local indices
+  xge = XLOCAL(xge);
+  xlt = XLOCAL(xlt);
+  if(( xge >= ngx ) || ( xlt <= 0 )) {
+    return; // Not in this x domain
+  }
+
+  if(MYPE == PROC_NUM(PE_XIND, ypeup)) {
+    // Target on upper processor boundary
+    if(xge <= MXG) {
+      // Target on inside
+      UDATA_XSPLIT = xlt;
+      UDATA_INDEST = -1;
+      if(xlt >= ngx)
+        UDATA_OUTDEST = -1;
+      output.write("=> This processor has target upper inner\n");
+    }else {
+      // Target on outside
+      if(UDATA_XSPLIT <= 0)
+        UDATA_INDEST = UDATA_OUTDEST;
+      UDATA_XSPLIT = xge;
+      UDATA_OUTDEST = -1;
+      if(xge <= 0)
+        UDATA_INDEST = -1;
+      output.write("=> This processor has target upper outer\n");
+    }
+  }
+  if(MYPE == PROC_NUM(PE_XIND, ypedown)) {
+    // Target on upper processor boundary
+    if(xge <= MXG) {
+      // Target on inside
+      DDATA_XSPLIT = xlt;
+      DDATA_INDEST = -1;
+      if(xlt >= ngx)
+        DDATA_OUTDEST = -1;
+      output.write("=> This processor has target lower inner\n");
+    }else {
+      // Target on outside
+      if(DDATA_XSPLIT <= 0)
+        DDATA_INDEST = DDATA_OUTDEST;
+      DDATA_XSPLIT = xge;
+      DDATA_OUTDEST = -1;
+      if(xge <= 0)
+        DDATA_INDEST = -1;
+      output.write("=> This processor has target lower outer\n");
+    }
+  }
+}
+
 /****************************************************************
  *                MAIN TOPOLOGY FUNCTION
  ****************************************************************/
 
-void BoutMesh::topology()
-{ 
+void BoutMesh::topology() {
   // Perform checks common to all topologies
 
   if (NPES != NXPE*NYPE) {
@@ -1985,12 +2058,20 @@ void BoutMesh::topology()
     /* Upper x-point */
     set_connection(jyseps2_1  , jyseps1_2+1, 0, ixseps_upper, ixseps1 > ixseps2); /* Core */
     set_connection(jyseps2_1+1, jyseps1_2  , 0, ixseps_upper); /* PF   */
+    
+    // Add target plates at the top
+    add_target(ny_inner-1, 0, nx);
   }
 
   MYPE_IN_CORE = 0; // processor not in core
   if( (ixseps_inner > 0) && ( ((PE_YIND*MYSUB > jyseps1_1) && (PE_YIND*MYSUB <= jyseps2_1)) || ((PE_YIND*MYSUB > jyseps1_2) && (PE_YIND*MYSUB <= jyseps2_2)) ) ) {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
+  
+  if(DDATA_XSPLIT > ngx)
+    DDATA_XSPLIT = ngx;
+  if(UDATA_XSPLIT > ngx)
+    UDATA_XSPLIT = ngx;
 
   // Print out settings
   output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
@@ -2000,7 +2081,7 @@ void BoutMesh::topology()
 	       UDATA_XSPLIT, UDATA_INDEST, UDATA_OUTDEST);
   output.write("\tXIN = %d, XOUT = %d\n",
 	       IDATA_DEST, ODATA_DEST);
-
+  
   output.write("\tTwist-shift: ");
   if(TS_down_in)
     output.write("DI ");
@@ -2017,8 +2098,7 @@ void BoutMesh::topology()
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
-{
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
   if(comm_list.empty()) {
     // Allocate a new CommHandle
     
@@ -2316,11 +2396,11 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
 }
 
 void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var) {
-  int i;
-  for(i=xge;i!=xlt;i++)
+  msg_stack.push("cpy_2d_data(%d,%d,%d,%d)", yfrom, yto, xge, xlt);
+  for(int i=xge;i<xlt;i++)
     var[i][yto] = var[i][yfrom];
+  msg_stack.pop();
 }
-
 
 /****************************************************************
  *                 SURFACE ITERATION
@@ -2576,8 +2656,8 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 }
 
 BoutReal BoutMesh::GlobalX(int jx) const {
-  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
-  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {

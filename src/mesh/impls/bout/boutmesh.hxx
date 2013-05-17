@@ -126,6 +126,7 @@ class BoutMesh : public Mesh {
 
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
+  void add_target(int ypos, int xge, int xlt);
   void topology();
 
   vector<BoundaryRegion*> boundary; // Vector of boundary regions
