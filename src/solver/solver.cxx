@@ -36,8 +36,8 @@
 
 // Static member variables
 
-int Solver::argc = 0;
-char** Solver::argv = 0;
+int* Solver::pargc = 0;
+char*** Solver::pargv = 0;
 
 /**************************************************************************
  * Constructor

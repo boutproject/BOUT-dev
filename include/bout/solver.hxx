@@ -120,12 +120,12 @@ class Solver {
   static Solver* create(Options *opts = NULL);
   static Solver* create(SolverType &type, Options *opts = NULL);
   
-  static void setArgs(int c, char **v) { argc = c; argv = v;}
+  static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
 protected:
 
   // Command-line arguments
-  static int argc;
-  static char** argv;
+  static int* pargc;
+  static char*** pargv;
 
   // Settings to use during initialisation (set by constructor)
   Options *options;

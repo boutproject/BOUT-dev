@@ -113,7 +113,7 @@ int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, &argc, &argv);
+  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
 
   if (machEnv == NULL) {
     throw BoutException("\tError: PVecInitMPI failed\n");

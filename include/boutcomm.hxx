@@ -42,7 +42,7 @@ public:
   /// Shortcut method
   static MPI_Comm get();
 
-  static void setArgs(int c, char**v);
+  static void setArgs(int &c, char** &v);
   
   static void cleanup();
 
@@ -56,7 +56,7 @@ public:
  private:
   BoutComm();
   
-  int argc; char **argv; ///< Command-line arguments
+  int *pargc; char ***pargv; ///< Command-line arguments. These can be modified by MPI init, so pointers are used
   bool hasBeenSet;
   MPI_Comm comm;
   

@@ -3,7 +3,7 @@
 
 BoutComm* BoutComm::instance = 0;
 
-BoutComm::BoutComm() : argc(0), argv(0), hasBeenSet(false), comm(MPI_COMM_NULL) {
+BoutComm::BoutComm() : pargc(0), pargv(0), hasBeenSet(false), comm(MPI_COMM_NULL) {
 }
 
 BoutComm::~BoutComm() {
@@ -18,7 +18,8 @@ BoutComm::~BoutComm() {
 }
 
 void BoutComm::setComm(MPI_Comm c) {
-  MPI_Comm_free(&comm);
+  if(comm != MPI_COMM_NULL)
+    MPI_Comm_free(&comm);
   MPI_Comm_dup(c, &comm);
   hasBeenSet = true;
 }
@@ -26,7 +27,7 @@ void BoutComm::setComm(MPI_Comm c) {
 MPI_Comm BoutComm::getComm() {
   if(comm == MPI_COMM_NULL) {
     // No communicator set. Initialise MPI
-    MPI_Init(&argc,&argv);
+    MPI_Init(pargc,pargv);
     
     // Duplicate MPI_COMM_WORLD
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
@@ -43,9 +44,9 @@ MPI_Comm BoutComm::get() {
   return getInstance()->getComm();
 }
 
-void BoutComm::setArgs(int c, char**v) {
-  getInstance()->argc = c;
-  getInstance()->argv = v;
+void BoutComm::setArgs(int &c, char**&v) {
+  getInstance()->pargc = &c;
+  getInstance()->pargv = &v;
 }
 
 BoutComm* BoutComm::getInstance() {
