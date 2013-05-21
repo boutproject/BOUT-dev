@@ -79,25 +79,13 @@ PetscSolver::~PetscSolver() {
 
     initialised = false;
   }
-  PetscLogEventEnd(USER_EVENT,0,0,0,0);
-}
-
-/**************************************************************************
- * Setup
- **************************************************************************/
-
-int PetscSolver::setup(int argc, char **argv) {
-  output << "Initialising PETc\n";
-  PetscLogEventRegister("Total BOUT++",PETSC_VIEWER_CLASSID,&USER_EVENT);
-  PetscLogEventBegin(USER_EVENT,0,0,0,0);
-  return 0;
 }
 
 /**************************************************************************
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;

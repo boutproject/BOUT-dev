@@ -62,8 +62,6 @@ class PetscSolver: public Solver {
   PetscSolver();
   ~PetscSolver();
   
-  int setup(int argc, char **argv);
-  
   int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run(MonitorFunc f);

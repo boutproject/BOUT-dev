@@ -75,9 +75,7 @@ class PetscSolver : public Solver {
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   void setJacobian(Jacobian j) {jacfunc = j; }
 
-  int setup(int argc, char **argv);
-
-  int init(rhsfunc f, int argc, char **argv, bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run(MonitorFunc f);
 
@@ -115,8 +113,6 @@ class PetscSolver : public Solver {
   BoutReal next_output;  // When the monitor should be called next
 
   PetscBool interpolate; // Whether to interpolate or not
-
-  PetscLogEvent USER_EVENT;
 
   char output_name[PETSC_MAX_PATH_LEN];
   PetscBool output_flag;
