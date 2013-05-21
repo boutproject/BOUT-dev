@@ -2656,8 +2656,8 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 }
 
 BoutReal BoutMesh::GlobalX(int jx) const {
-  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
-  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+  return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
+  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
