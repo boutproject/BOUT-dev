@@ -10,6 +10,7 @@
 #include <derivs.hxx>
 #include <interpolation.hxx>
 #include <invert_laplace.hxx>
+#include <boutexception.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -105,11 +106,10 @@ FieldGroup comms;
 // BOUT-06 L1
 const Field2D Perp_Grad_dot_Grad(const Field2D &p, const Field2D &f);
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
-  output.write("Solving 6-variable 2-fluid equations\n");
+  output.write("Solving LAPD drift test case\n");
 
   /************* LOAD DATA FROM GRID FILE ****************/
 
@@ -150,9 +150,6 @@ int physics_init(bool restarting)
 
   Ni_x *= 1.0e14;
   bmag *= 1.0e4;
-
-
-
 
   /*************** READ OPTIONS *************************/
   // Read some parameters
@@ -241,8 +238,6 @@ int physics_init(bool restarting)
   OPTION(option_te, te_nu_tet,    false);
   OPTION(option_te, te_jpar,      false);
   OPTION(option_te, te_diff,      false);
-
-
 
   if(ZeroElMass)
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
@@ -351,19 +346,19 @@ int physics_init(bool restarting)
   // Tell BOUT++ which variables to evolve
   // add evolving variables to the communication object
   if(evolve_rho) {
-    bout_solve(rho, "rho");
+    SOLVE_FOR(rho);
     comms.add(rho);
   }else
     initial_profile("rho", rho);
 
   if(evolve_ni) {
-    bout_solve(ni, "ni");
+    SOLVE_FOR(ni);
     comms.add(ni);
   }else
     initial_profile("ni", ni);
 
   if(evolve_ajpar) {
-    bout_solve(ajpar, "ajpar");
+    SOLVE_FOR(ajpar);
     comms.add(ajpar);
   }else {
     initial_profile("ajpar", ajpar);
@@ -372,7 +367,7 @@ int physics_init(bool restarting)
   }
 
   if(evolve_te) {
-    bout_solve(te, "te");
+    SOLVE_FOR(te);
     comms.add(te);
   }else
     initial_profile("te", te);
@@ -382,7 +377,7 @@ int physics_init(bool restarting)
   VEt.setBoundary("VEt");
 
   if(evolve_source_ni) {
-    bout_solve(Sn, "Sn");
+    SOLVE_FOR(Sn);
   }
   if(input_source) {
     mesh->get(Sn, "Sn");
@@ -390,10 +385,9 @@ int physics_init(bool restarting)
   }
 
   if(evolve_source_te) {
-    bout_solve(St, "St");
+    SOLVE_FOR(St);
   }
 
-  
   /************** SETUP COMMUNICATIONS **************/
 
   // add extra variables to communication
@@ -412,9 +406,7 @@ int physics_init(bool restarting)
   SAVE_ONCE6(mui_hat,nu_hat,nuIonNeutral,beta_p,time_step,hthe0);
   SAVE_ONCE3(ni_perpdiff,rho_perpdiff,te_perpdiff);
 
-
-
-  return(0);
+  return 0;
 }
 // End of physics_init()
 //////////////////////////////////////////////////////////////////
@@ -429,11 +421,7 @@ const Field3D vE_Grad(const Field3D &f, const Field3D &p);
 ///////////////////////////////////////////////////////////////////
 // Function called at each time step
 // Time derivatives calculated here
-int physics_run(BoutReal t)
-{
-
-
-
+int physics_run(BoutReal t) {
   // Invert vorticity to get phi
   
   // Solves \nabla^2_\perp x + (1./c)*\nabla_perp c\cdot\nabla_\perp x + a x = b
@@ -472,29 +460,24 @@ int physics_run(BoutReal t)
   }else
       source_alpha = source_response;
 
-  
   // Exit if the density goes negative
   if(nonlinear && min(Nit) < 0.0) {
     output.enable();  // Use stdout for the next line
-    output.write("Unphysical negative density encountered. Exiting...\n");
-    exit(1);
+    throw BoutException("Unphysical negative density encountered. Exiting...\n");
   }
 
 
   // Exit if the temperature goes negative or make negatives zero
   if(nonlinear && evolve_te && min(Tet) < 0.0) {
     output.enable();  // Use stdout for the next line
-    output.write("Unphysical negative temperature encountered. Exiting...\n");
-    exit(1);
+    throw BoutException("Unphysical negative temperature encountered. Exiting...\n");
   }
   
-
   // Update non-linear coefficients
   nu      = nu_hat * Nit / (Tet^1.5);
   mu_i    = mui_hat * (Tit^2.5)/Nit;
   //kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
   //kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
-
   
   // Calculate pressures
   //pei = (Tet+Tit)*Nit;

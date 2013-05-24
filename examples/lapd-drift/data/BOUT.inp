@@ -4,18 +4,15 @@
 # settings used by the core code
 
 NOUT = 400       # number of time-steps
-TIMESTEP = 2.e1	   # time between outputs
+TIMESTEP = 2.	   # time between outputs
 
 archive = 500
 
 ShiftXderivs = false # use shifted radial derivatives?
 TwistShift = false  # use twist-shift condition?
 
-MZ = 513     # number of points in z direction (2^n + 1)
-ZPERIOD = 1  # Number of periods
-
-#ZMIN=0.0
-#ZMAX=2.e-2  # Non-integer period for comparison with BOUT-06
+MZ = 32     # number of points in z direction (2^n + 1)
+ZPERIOD = 5  # Number of periods
 
 MXG = 2
 MYG = 2
@@ -24,11 +21,7 @@ grid="uedge.grd.nc"
 
 dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
 
-#StaggerGrids = true
-
 non_uniform = true
-
-NXPE = 1 # Decompose in X direction
 
 ##################################################
 # derivative methods
@@ -37,19 +30,19 @@ NXPE = 1 # Decompose in X direction
 
 first = C4    # C4 = 4th order central, C2 = 2nd order central
 second = C4
-upwind = U1   # U1 = 1st order upwind, W3 = 3rd order WENO
+upwind = W3   # U1 = 1st order upwind, W3 = 3rd order WENO
 
 [ddy]
 
 first = C4
 second = C4
-upwind = U1
+upwind = W3
 
 [ddz]
 
 first = C4
 second = C4
-upwind = U1
+upwind = W3
 
 ##################################################
 # Laplacian inversion settings
@@ -63,6 +56,7 @@ laplace_nonuniform = true
 # Solver settings
 
 [solver]
+type = pvode
 
 # mudq, mldq, mukeep, mlkeep preconditioner options
 ATOL = 1.0e-10 # absolute tolerance
@@ -95,10 +89,10 @@ ShearFactor = 0.0
 arakawa = false     # Use Arakawa scheme for ExB advection   
 bout_exb = true   # Use the BOUT-06 subset of ExB terms
 
-remove_tor_av_ni = false
+remove_tor_av_ni = true
 remove_tor_av_te = false
 
-evolve_source_ni = true
+evolve_source_ni = false
 evolve_source_te = false
 
 filter_z = false    # Filter in Z
