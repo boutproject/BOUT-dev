@@ -1773,8 +1773,7 @@ const Field3D Field3D::abs() const {
   return result;
 }
 
-BoutReal Field3D::min(bool allpe) const
-{
+BoutReal Field3D::min(bool allpe) const {
 #ifdef CHECK
   if(block == NULL)
     throw BoutException("Field3D: min() method on empty data");
@@ -1785,22 +1784,14 @@ BoutReal Field3D::min(bool allpe) const
     msg_stack.push("Field3D::Min()");
 #endif
 
-  BoutReal result = block->data[0][0][0];
+  BoutReal result = block->data[mesh->xstart][mesh->ystart][0];
   
-  #pragma omp parallel 
-  {
-    BoutReal r = result;
-    #pragma omp for nowait
-    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
-      if(block->data[0][0][j] < r)
-        r = block->data[0][0][j];
-    #pragma omp critical
-    {
-      if(r < result)
-        result = r;
-    }
-  }
-
+  for(int i=mesh->xstart; i<=mesh->xend; i++)
+    for(int j=mesh->ystart; j<=mesh->yend; j++)
+      for(int k=0;k<mesh->ngz-1;k++)
+        if(block->data[i][j][k] < result)
+          result = block->data[i][j][k];
+  
   if(allpe) {
     // MPI reduce
     BoutReal localresult = result;
@@ -1825,22 +1816,14 @@ BoutReal Field3D::max(bool allpe) const
     msg_stack.push("Field3D::Max()");
 #endif
   
-  BoutReal result = block->data[0][0][0];
+  BoutReal result = block->data[mesh->xstart][mesh->ystart][0];
   
-  #pragma omp parallel 
-  {
-    BoutReal r = result;
-    #pragma omp for nowait
-    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++)
-      if(block->data[0][0][j] > r)
-        r = block->data[0][0][j];
-    #pragma omp critical
-    {
-      if(r > result)
-        result = r;
-    }
-  }
-
+  for(int i=mesh->xstart; i<=mesh->xend; i++)
+    for(int j=mesh->ystart; j<=mesh->yend; j++)
+      for(int k=0;k<mesh->ngz-1;k++)
+        if(block->data[i][j][k] > result)
+          result = block->data[i][j][k];
+  
   if(allpe) {
     // MPI reduce
     BoutReal localresult = result;
