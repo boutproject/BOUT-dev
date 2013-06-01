@@ -85,7 +85,18 @@ char get_spin();                    // Produces a spinning bar
 
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
 
-void BoutInitialise(int argc, char **argv) {
+/*!
+  Initialise BOUT++
+  
+  Inputs
+  ------
+  
+  The command-line arguments argc and argv are passed by
+  reference, and pointers to these will be stored in various
+  places in BOUT++.
+  
+ */
+void BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
