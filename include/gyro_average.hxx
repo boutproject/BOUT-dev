@@ -33,7 +33,7 @@
 #include "field3d.hxx"
 #include "invert_laplace.hxx"
 
-const int GYRO_FLAGS = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS;
+const int GYRO_FLAGS = INVERT_IN_RHS | INVERT_OUT_RHS;
 
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho);
 
@@ -56,6 +56,9 @@ const Field3D gyroPade0(const Field3D &f, BoutReal rho,
 const Field3D gyroPade1(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
 const Field3D gyroPade2(const Field3D &f, BoutReal rho, 
+                        int flags=GYRO_FLAGS);
+
+const Field2D gyroPade1(const Field2D &f, const Field2D &rho,
                         int flags=GYRO_FLAGS);
 
 #endif // __GYRO_AVERAGE_H__

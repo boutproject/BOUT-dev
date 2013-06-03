@@ -178,7 +178,7 @@ void BoundaryZeroLaplace::apply(Field2D &f)
     // Loop in X towards edge of domain
     do {
       f[x][y] = f[x-bx][y] + g*mesh->dx[x][y];
-      bndry->next();
+      bndry->nextX();
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }
@@ -262,7 +262,7 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
     // Loop in X towards edge of domain
     do {
       f[x][y] = f[x-bx][y] + g*mesh->dx[x][y];
-      bndry->next();
+      bndry->nextX();
       x = bndry->x; y = bndry->y;
     }while(!bndry->isDone());
   }

@@ -37,7 +37,7 @@ class BoundaryFactory {
   void addMod(BoundaryModifier* bmod, const char *name);
 
  private:
-  BoundaryFactory() {} // Prevent instantiation of this class
+  BoundaryFactory(); // Prevent instantiation of this class
   static BoundaryFactory* instance; ///< The only instance of this class (Singleton)
 
   // Database of available boundary conditions and modifiers

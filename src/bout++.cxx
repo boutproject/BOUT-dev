@@ -51,10 +51,9 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 #include <derivs.hxx>
 #include <msg_stack.hxx>
 
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-
 #include <bout/sys/timer.hxx>
+
+#include <boundary_factory.hxx>
 
 #include <bout/petsclib.hxx>
 
@@ -274,18 +273,6 @@ void BoutInitialise(int &argc, char **&argv) {
     mesh = Mesh::create();  ///< Create the mesh
     mesh->load();           ///< Load from sources. Required for Field initialisation
     mesh->outputVars(dump); ///< Save mesh configuration into output file
-
-    /// Setup the boundaries
-    BoundaryFactory* bndry = BoundaryFactory::getInstance();
-    bndry->add(new BoundaryDirichlet(), "dirichlet");
-    bndry->add(new BoundaryNeumann(), "neumann");
-    bndry->add(new BoundaryRobin(), "robin");
-    bndry->add(new BoundaryConstGradient(), "constgradient");
-    bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
-    bndry->add(new BoundaryZeroLaplace2(), "zerolaplace2");
-    bndry->add(new BoundaryConstLaplace(), "constlaplace");
-    bndry->addMod(new BoundaryRelax(), "relax");
-    bndry->addMod(new BoundaryShifted(), "shifted");
     
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";

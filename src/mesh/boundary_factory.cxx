@@ -1,6 +1,7 @@
 
 #include <globals.hxx>
 #include <boundary_factory.hxx>
+#include <boundary_standard.hxx>
 #include <utils.hxx>
 
 #include <list>
@@ -12,8 +13,19 @@ using std::string;
 
 BoundaryFactory* BoundaryFactory::instance = NULL;
 
-BoundaryFactory::~BoundaryFactory()
-{
+BoundaryFactory::BoundaryFactory() {
+  add(new BoundaryDirichlet(), "dirichlet");
+  add(new BoundaryNeumann(), "neumann");
+  add(new BoundaryRobin(), "robin");
+  add(new BoundaryConstGradient(), "constgradient");
+  add(new BoundaryZeroLaplace(), "zerolaplace");
+  add(new BoundaryZeroLaplace2(), "zerolaplace2");
+  add(new BoundaryConstLaplace(), "constlaplace");
+  addMod(new BoundaryRelax(), "relax");
+  addMod(new BoundaryShifted(), "shifted");
+}
+
+BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
   for(map<string, BoundaryOp*>::iterator it = opmap.begin(); it != opmap.end(); it++) {
     delete it->second;
@@ -56,10 +68,8 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
       return NULL;
 
     BoundaryOp *op = findBoundaryOp(trim(name));
-    if(op == NULL) {
-      output << "\tERROR: Could not find boundary condition '" << name << "'" << endl;
-      return NULL;
-    }
+    if(op == NULL)
+      throw BoutException("Could not find boundary condition '%s'",  name.c_str());
     
     // Clone the boundary operation, passing the region to operate over and an empty args list
     list<string> args;

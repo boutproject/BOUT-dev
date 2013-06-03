@@ -183,6 +183,7 @@ class Field2D : public Field, public FieldData {
   
   void applyBoundary();
   void applyBoundary(const string &condition);
+  void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
   
