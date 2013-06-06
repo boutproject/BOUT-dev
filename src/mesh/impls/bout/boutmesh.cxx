@@ -52,6 +52,8 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
+  OPTION(options, symmetricGlobalX,  false);
+
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -2656,8 +2658,11 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 }
 
 BoutReal BoutMesh::GlobalX(int jx) const {
+  if(symmetricGlobalX) {
+    // Symmetric X index, mainly for reconnection studies
+    return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+  }
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
-  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
