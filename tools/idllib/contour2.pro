@@ -102,7 +102,7 @@ PRO contour2, data, x, y, t=t, nlev=nlev, centre=centre, redblue=redblue, color=
   ;PLOTS, [loc(0), loc(0), loc(2), loc(2), loc(0)], $
   ;  [loc(1), loc(3), loc(3), loc(1), loc(1)], /NORMAL, color=color
   
-  PLOT, lev, [0,1], POSITION=loc, /nodata, /noerase, yticks=1, yminor=1, ystyle=4, color=color
+  PLOT, lev, [0,1], POSITION=loc, /nodata, /noerase, yticks=1, yminor=1, ystyle=4, xstyle=1, color=color
   
   ; Restore the contour plot axes
   !x = xaxis

@@ -654,6 +654,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Get outboard midplane
     IF period AND xi EQ 0 THEN BEGIN
       m = MAX(Rxy[0,yi], ymidplane)
+      ymidplane = yi[ymidplane]
     ENDIF
   ENDREP UNTIL last
 
