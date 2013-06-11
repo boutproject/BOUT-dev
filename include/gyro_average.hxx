@@ -33,7 +33,7 @@
 #include "field3d.hxx"
 #include "invert_laplace.hxx"
 
-const int GYRO_FLAGS = INVERT_IN_RHS | INVERT_OUT_RHS;
+const int GYRO_FLAGS = INVERT_BNDRY_ONE | INVERT_IN_RHS | INVERT_OUT_RHS;
 
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho);
 
