@@ -2667,22 +2667,25 @@ BoutReal BoutMesh::GlobalX(int jx) const {
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
-  int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
+  int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if(MYPE_IN_CORE) {
     // Turn ly into an index over the core cells only
-    if(ly < jyseps1_2) {
+    if(ly <= jyseps2_1) {
       ly -= jyseps1_1+1;
     }else
-      ly -= jyseps1_1+1 + (jyseps2_1 - jyseps1_2);
+      ly -= jyseps1_1+1 + (jyseps1_2 - jyseps2_1);
   }else {
     // Not in core. Need to get the last "core" value
     if(ly <= jyseps1_1) {
       // Inner lower leg
       ly = 0;
+    }else if(ly <= jyseps1_2) {
+      // Upper legs
+      ly = jyseps2_1 - jyseps1_1;
     }else if(ly > jyseps2_2) {
       // Outer lower leg
-      ly = nycore-1;
+      ly = nycore;
     }
   }
   
