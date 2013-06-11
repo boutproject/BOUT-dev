@@ -45,7 +45,7 @@ class RK4Solver : public Solver {
   
   int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
-  int run(MonitorFunc f);
+  int run();
  private:
   BoutReal atol, rtol;   // Tolerances for adaptive timestepping
   BoutReal max_timestep; // Maximum timestep

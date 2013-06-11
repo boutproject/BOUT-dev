@@ -93,7 +93,7 @@ int RK4Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
-int RK4Solver::run(MonitorFunc monitor) {
+int RK4Solver::run() {
   int msg_point = msg_stack.push("RK4Solver::run()");
   
   for(int s=0;s<nsteps;s++) {
@@ -173,7 +173,7 @@ int RK4Solver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(this, simtime, s, nsteps)) {
+    if(call_monitors(simtime, s, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file

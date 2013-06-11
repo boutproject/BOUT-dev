@@ -69,7 +69,7 @@ int EulerSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
-int EulerSolver::run(MonitorFunc monitor) {
+int EulerSolver::run() {
   int msg_point = msg_stack.push("EulerSolver::run()");
   
   timestep = start_timestep;
@@ -135,7 +135,7 @@ int EulerSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(this, simtime, s, nsteps)) {
+    if(call_monitors(simtime, s, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file

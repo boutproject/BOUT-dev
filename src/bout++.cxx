@@ -308,6 +308,9 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
     
     dump.write();
   }
+  
+  // Add the monitor function
+  solver->addMonitor(bout_monitor);
 
   /// Run the solver
   output.write("Running simulation\n\n");
@@ -315,9 +318,9 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   try {
     time_t start_time = time((time_t*) NULL);
     output.write("\nRun started at  : %s\n", ctime(&start_time));
-    
+   
     Timer timer("run"); // Start timer
-    status = solver->run(bout_monitor);
+    status = solver->run();
 
     time_t end_time = time((time_t*) NULL);
     output.write("\nRun finished at  : %s\n", ctime(&end_time));

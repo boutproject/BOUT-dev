@@ -112,7 +112,7 @@ int KarniadakisSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep
   return 0;
 }
 
-int KarniadakisSolver::run(MonitorFunc monitor) {
+int KarniadakisSolver::run() {
   int msg_point = msg_stack.push("KarniadakisSolver::run()");
   
   for(int i=0;i<nsteps;i++) {
@@ -150,7 +150,7 @@ int KarniadakisSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(this, simtime, i, nsteps)) {
+    if(call_monitors(simtime, i, nsteps)) {
       // User signalled to quit
       
       // Write restart to a different file

@@ -205,7 +205,7 @@ IdaSolver::~IdaSolver()
  * Run - Advance time
  **************************************************************************/
 
-int IdaSolver::run(MonitorFunc monitor) {
+int IdaSolver::run() {
 #ifdef CHECK
   int msg_point = msg_stack.push("IDA IdaSolver::run()");
 #endif
@@ -239,7 +239,7 @@ int IdaSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(this, simtime, i, NOUT)) {
+    if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
       
       // Write restart to a different file
