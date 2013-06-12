@@ -111,6 +111,7 @@ int main(int argc, char **argv) {
   if (physics_init(restart)) {
     output.write("Failed to initialise physics. Aborting\n");
     delete solver;
+    BoutFinalise();
     return 1;
   }
   msg_stack.pop(msg_point);

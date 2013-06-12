@@ -276,6 +276,7 @@ void BoutInitialise(int &argc, char **&argv) {
     
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
+    BoutComm::cleanup();
     throw e;
   }
 }
