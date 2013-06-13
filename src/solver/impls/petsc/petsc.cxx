@@ -561,14 +561,13 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode PetscSolver::run(MonitorFunc mon) {
+PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
   integer steps;
   FILE *fp = NULL;
 
   // Set when the next call to monitor is desired
   // next_output = simtime + tstep;
-  monitor = mon; // Store the monitor function pointer
 
   PetscFunctionBegin;
 
@@ -878,7 +877,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
     s->load_vars((BoutReal *)x);
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    if (s->monitor(s, simtime,i++,s->nout)) {
+    if (s->call_monitors(simtime,i++,s->nout)) {
       s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");

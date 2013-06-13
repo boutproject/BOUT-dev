@@ -67,13 +67,6 @@ PetscSolver::~PetscSolver() {
 }
 
 /**************************************************************************
- * Setup
- **************************************************************************/
-
-int PetscSolver::setup(int argc, char **argv) {
-}
-
-/**************************************************************************
  * Initialise
  **************************************************************************/
 
@@ -493,7 +486,6 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon) {
 
   // Set when the next call to monitor is desired
   // next_output = simtime + tstep;
-  monitor = mon; // Store the monitor function pointer
 
   PetscFunctionBegin;
   PetscFunctionReturn(TSSolve(ts,u,&ftime));
@@ -643,7 +635,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
     s->load_vars((BoutReal *)x);
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
-    if (s->monitor(s, simtime,i++,s->nout)) {
+    if (s->callmonitors(simtime,i++,s->nout)) {
       s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
 
       output.write("Monitor signalled to quit. Returning\n");

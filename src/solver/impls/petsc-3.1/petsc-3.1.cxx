@@ -61,13 +61,6 @@ PetscSolver::~PetscSolver() {
 }
 
 /**************************************************************************
- * Setup
- **************************************************************************/
-
-int PetscSolver::setup(int argc, char **argv) {
-}
-
-/**************************************************************************
  * Initialise
  **************************************************************************/
 
@@ -455,7 +448,6 @@ PetscErrorCode PetscSolver::run(MonitorFunc mon)
   
   // Set when the next call to monitor is desired
   next_time = simtime + tstep;
-  monitor = mon; // Store the monitor function pointer
   outputnext = false;
 
   PetscFunctionBegin;
@@ -500,7 +492,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     
     // Call the monitor function
     /*
-    if(monitor(simtime, iteration, nout)) {
+    if(call_monitors(simtime, iteration, nout)) {
       // User signalled to quit
       
       // Write restart to a different file

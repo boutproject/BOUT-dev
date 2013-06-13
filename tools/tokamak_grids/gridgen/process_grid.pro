@@ -437,6 +437,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     yi = gen_surface(period=period, last=last, xi=xi)
     IF period THEN BEGIN
       rm = MAX(mesh.Rxy[xi,yi], ymid)
+      ymid = yi[ymid]
       BREAK
     ENDIF
   ENDREP UNTIL last
@@ -653,6 +654,7 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ; Get outboard midplane
     IF period AND xi EQ 0 THEN BEGIN
       m = MAX(Rxy[0,yi], ymidplane)
+      ymidplane = yi[ymidplane]
     ENDIF
   ENDREP UNTIL last
 

@@ -52,6 +52,8 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
+  OPTION(options, symmetricGlobalX,  false);
+
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -87,6 +89,9 @@ int BoutMesh::load() {
 #endif
   
   output << "Loading mesh" << endl;
+  
+  // Use root level options
+  Options *options = Options::getRoot();
 
   //////////////
   // Number of processors
@@ -103,12 +108,80 @@ int BoutMesh::load() {
   if(Mesh::get(ny, "ny"))
     throw BoutException("Mesh must contain ny");
   
-  output << "\tGrid size: " << nx << " by " << ny << endl;
+  int MZ;
+  OPTION(options, MZ,           65);
+  if(!is_pow2(MZ-1)) {
+    if(is_pow2(MZ)) {
+      MZ++;
+      output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
+    }else {
+      throw BoutException("Error: Number of toroidal points must be 2^n + 1");
+    }
+  }
 
-  Options *options = Options::getRoot();
+  output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
+
+  // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 4;
+  GlobalNz = MZ;
+
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   
+  // separatrix location
+  if(Mesh::get(ixseps1, "ixseps1")) {
+    ixseps1 = GlobalNx;
+    output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
+  }
+  if(Mesh::get(ixseps2, "ixseps2")) {
+    ixseps2 = GlobalNx;
+    output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
+  }
+  if(Mesh::get(jyseps1_1,"jyseps1_1")) {
+    jyseps1_1 = -1;
+    output.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n", jyseps1_1);
+  }
+  if(Mesh::get(jyseps1_2,"jyseps1_2")) {
+    jyseps1_2 = ny/2;
+    output.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n", jyseps1_2);
+  }
+  if(Mesh::get(jyseps2_1,"jyseps2_1")) {
+    jyseps2_1 = jyseps1_2;
+    output.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n", jyseps2_1);
+  }
+  if(Mesh::get(jyseps2_2,"jyseps2_2")) {
+    jyseps2_2 = ny-1;
+    output.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
+  }
+
+  if(Mesh::get(ny_inner,"ny_inner")) {
+    ny_inner = jyseps2_1;
+    output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
+  }
+
+  /// Check inputs
+  if(jyseps1_1 < -1) {
+    output.write("\tWARNING: jyseps1_1 (%d) must be >= -1. Setting to -1\n", jyseps1_1);
+    jyseps1_1 = -1;
+  }
+  
+  if(jyseps2_1 <= jyseps1_1) {
+    output.write("\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n",
+                 jyseps2_1, jyseps1_1, jyseps1_1+1);
+    jyseps2_1 = jyseps1_1 + 1;
+  }
+  if(jyseps1_2 < jyseps2_1) {
+    output.write("\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
+                 jyseps1_2, jyseps2_1, jyseps2_1);
+    jyseps1_2 = jyseps2_1;
+  }
+  if(jyseps2_2 >= ny) {
+    output.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
+                 jyseps2_2, ny, ny-1);
+    jyseps2_2 = ny - 1;
+  }
+
   if(options->isSet("NXPE")) { // Specified NXPE
     options->get("NXPE", NXPE, 1); // Decomposition in the radial direction
     if((NPES % NXPE) != 0) {
@@ -126,16 +199,73 @@ int BoutMesh::load() {
     
     BoutReal ideal = sqrt(MX * NPES / ((double) ny)); // Results in square domains
 
+    output.write("Finding value for NXPE\n");
+
     for(int i=1; i<= NPES; i++) { // Loop over all possibilities
       //output.write("Testing %d: %d, %d, %d, %d, %d\n",
       //             i, NPES % i, MX % i, MX / i, ny % (NPES/i), ny / (NPES/i));
       if( (NPES % i == 0) &&      // Processors divide equally
           (MX % i == 0) &&        // Mesh in X divides equally
     //      (MX / i >= MXG) &&      // Resulting mesh is large enough
-          (ny % (NPES/i) == 0) && // Mesh in Y divides equally
-          (ny / (NPES/i) >= MYG) ) {
+          (ny % (NPES/i) == 0) ) { // Mesh in Y divides equally
         
-        output.write("  Good value: %d\n", i);
+        output.write("\tCandidate value: %d\n", i);
+        
+        int nyp = NPES/i;
+        int ysub = ny / nyp;
+        
+        // Check size of Y mesh
+        if(ysub < MYG) {
+          output.write("\t -> ny/NYPE (%d/%d = %d) must be >= MYG (%d)\n", ny, nyp, ysub, MYG);
+          continue;
+        }
+        // Check branch cuts
+        if( (jyseps1_1+1) % ysub != 0 ) {
+          output.write("\t -> Leg region jyseps1_1+1 (%d) must be a multiple of MYSUB (%d)\n", jyseps1_1+1, ysub);
+          continue;
+        }
+        
+        if(jyseps2_1 != jyseps1_2) {
+          // Double Null
+          
+          if( (jyseps2_1-jyseps1_1) % ysub != 0 ) {
+            output.write("\t -> Core region jyseps2_1-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n", 
+                         jyseps2_1, jyseps1_1, jyseps2_1-jyseps1_1, ysub);
+            continue;
+          }
+          
+          if( (jyseps2_2 - jyseps1_2) % ysub != 0 ) {
+            output.write("\t -> Core region jyseps2_2-jyseps1_2 (%d-%d = %d) must be a multiple of MYSUB (%d)\n", 
+                         jyseps2_2, jyseps1_2, jyseps2_2-jyseps1_2, ysub);
+            continue;
+          }
+          
+          // Check upper legs
+          if( (ny_inner - jyseps2_1-1) % ysub != 0 ) {
+            output.write("\t -> leg region ny_inner-jyseps2_1-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n", 
+                         ny_inner, jyseps2_1, ny_inner-jyseps2_1-1, ysub);
+            continue;
+          }
+          if( (jyseps1_2-ny_inner+1) % ysub != 0 ) {
+            output.write("\t -> leg region jyseps1_2-ny_inner+1 (%d-%d+1 = %d) must be a multiple of MYSUB (%d)\n", 
+                         jyseps1_2, ny_inner, jyseps1_2-ny_inner+1, ysub);
+            continue;
+          }
+        }else {
+          // Single Null
+          if( (jyseps2_2-jyseps1_1) % ysub != 0 ) {
+            output.write("\t -> Core region jyseps2_2-jyseps1_1 (%d-%d = %d) must be a multiple of MYSUB (%d)\n", 
+                         jyseps2_2, jyseps1_1, jyseps2_2-jyseps1_1, ysub);
+            continue;
+          }
+        }
+        
+        if( (ny - jyseps2_2 - 1) % ysub != 0) {
+          output.write("\t -> leg region ny-jyseps2_2-1 (%d-%d-1 = %d) must be a multiple of MYSUB (%d)\n", 
+                       ny, jyseps2_2, ny - jyseps2_2 - 1, ysub);
+          continue;
+        }
+        output.write("\t -> Good value\n");
         // Found an acceptable value
         if((NXPE < 1) || 
            (fabs(ideal - i) < fabs(ideal - NXPE)))
@@ -177,16 +307,6 @@ int BoutMesh::load() {
   }
   
   /// Get mesh options
-  int MZ;
-  OPTION(options, MZ,           65);
-  if(!is_pow2(MZ-1)) {
-    if(is_pow2(MZ)) {
-      MZ++;
-      output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
-    }else {
-      throw BoutException("Error: Number of toroidal points must be 2^n + 1");
-    }
-  }
   OPTION(options, non_uniform,  false);
   OPTION(options, TwistShift,   false);
   OPTION(options, TwistOrder,   0);
@@ -199,10 +319,7 @@ int BoutMesh::load() {
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
   
-  // Set global sizes and offsets
-  GlobalNx = nx;
-  GlobalNy = ny + 4; //
-  GlobalNz = MZ;
+  // Set global offsets
   
   OffsetX = PE_XIND*MXSUB;
   OffsetY = PE_YIND*MYSUB;
@@ -249,57 +366,6 @@ int BoutMesh::load() {
   yend = MYG + MYSUB - 1;
   
   ///////////////////// TOPOLOGY //////////////////////////
-  
-  // separatrix location
-  if(Mesh::get(ixseps1, "ixseps1")) {
-    ixseps1 = GlobalNx;
-    output.write("\tWARNING: Separatrix location 'ixseps1' not found. Setting to %d\n", ixseps1);
-  }
-  if(Mesh::get(ixseps2, "ixseps2")) {
-    ixseps2 = GlobalNx;
-    output.write("\tWARNING: Separatrix location 'ixseps2' not found. Setting to %d\n", ixseps2);
-  }
-  if(Mesh::get(jyseps1_1,"jyseps1_1")) {
-    jyseps1_1 = -1;
-    output.write("\tWARNING: Branch-cut 'jyseps1_1' not found. Setting to %d\n", jyseps1_1);
-  }
-  if(Mesh::get(jyseps1_2,"jyseps1_2")) {
-    jyseps1_2 = ny/2;
-    output.write("\tWARNING: Branch-cut 'jyseps1_2' not found. Setting to %d\n", jyseps1_2);
-  }
-  if(Mesh::get(jyseps2_1,"jyseps2_1")) {
-    jyseps2_1 = jyseps1_2;
-    output.write("\tWARNING: Branch-cut 'jyseps2_1' not found. Setting to %d\n", jyseps2_1);
-  }
-  if(Mesh::get(jyseps2_2,"jyseps2_2")) {
-    jyseps2_2 = ny-1;
-    output.write("\tWARNING: Branch-cut 'jyseps2_2' not found. Setting to %d\n", jyseps2_2);
-  }
-
-  if(Mesh::get(ny_inner,"ny_inner")) {
-    ny_inner = jyseps2_1;
-    output.write("\tWARNING: Number of inner y points 'ny_inner' not found. Setting to %d\n", ny_inner);
-  }
-  
-
-  /// Check inputs
-  if(jyseps2_1 <= jyseps1_1) {
-    output.write("\tWARNING: jyseps2_1 (%d) must be > jyseps1_1 (%d). Setting to %d\n",
-                 jyseps2_1, jyseps1_1, jyseps1_1+1);
-    jyseps2_1 = jyseps1_1 + 1;
-  }
-  if(jyseps1_2 < jyseps2_1) {
-    output.write("\tWARNING: jyseps1_2 (%d) must be >= jyseps2_1 (%d). Setting to %d\n",
-                 jyseps1_2, jyseps2_1, jyseps2_1);
-    jyseps1_2 = jyseps2_1;
-  }
-  if(jyseps2_2 >= ny) {
-    output.write("\tWARNING: jyseps2_2 (%d) must be < ny (%d). Setting to %d\n",
-                 jyseps2_2, ny, ny-1);
-    jyseps2_2 = ny - 1;
-  }
-
-
   /// Call topology to set layout of grid
   topology();
   
@@ -2007,8 +2073,7 @@ int BoutMesh::XPROC(int xind) {
  ****************************************************************/
 
 /// Connection initialisation: Set processors in a simple 2D grid
-void BoutMesh::default_connections()
-{
+void BoutMesh::default_connections() {
   DDATA_XSPLIT = UDATA_XSPLIT = 0;  // everything by default outside (arb. choice)
   DDATA_INDEST = UDATA_INDEST = -1; // since nothing inside
 
@@ -2035,8 +2100,7 @@ void BoutMesh::default_connections()
  * Set ypos1 and ypos2 to be neighbours in the range xge <= x < xlt.
  * Optional argument ts sets whether to use twist-shift condition
  */
-void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
-{
+void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts) {
   int ype1, ype2; // the two Y processor indices
   int ypeup, ypedown;
   int yind1, yind2;
@@ -2106,9 +2170,11 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       output.write("=> This processor sending in up\n");
     }else {
       /* Connect on the outside */
+      if(UDATA_XSPLIT <= 0)
+        UDATA_INDEST = UDATA_OUTDEST;
       UDATA_XSPLIT = xge;
       UDATA_OUTDEST = PROC_NUM(PE_XIND, ypedown);
-      if(UDATA_XSPLIT == 0)
+      if(UDATA_XSPLIT <= 0)
 	UDATA_INDEST = -1;
 
       TS_up_out = ts;
@@ -2130,6 +2196,8 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
       output.write("=> This processor sending in down\n");
     }else {
       /* Connect on the outside */
+      if(DDATA_XSPLIT <= 0)
+        DDATA_INDEST = DDATA_OUTDEST;
       DDATA_XSPLIT = xge;
       DDATA_OUTDEST = PROC_NUM(PE_XIND, ypeup);
       if(DDATA_XSPLIT == 0)
@@ -2142,12 +2210,83 @@ void BoutMesh::set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts)
   }
 }
 
+/// Add a divertor target or limiter
+/*!
+ * ypos is the y index which will become an upper target
+ * ypos+1 will become a lower target.
+ * Target created in the range xge <= x < xlt.
+ */
+void BoutMesh::add_target(int ypos, int xge, int xlt) {
+  if(xlt <= xge)
+    return;
+
+  if((ypos < 0) || (ypos >= MY)) {
+    output.write("WARNING adding target: poloidal index %d out of range\n", ypos);
+    return;
+  }
+  
+  int ypeup = YPROC(ypos);
+  int ypedown = YPROC(ypos+1);
+  if(ypeup == ypedown) {
+    throw BoutException("Adding target at y=%d in middle of processor %d\n", ypos, ypeup);
+  }
+
+  output.write("Target at top of Y processor %d and bottom of %d in range %d <= x < %d\n", ypeup, ypedown, xge, xlt);
+
+  // Convert X coordinates into local indices
+  xge = XLOCAL(xge);
+  xlt = XLOCAL(xlt);
+  if(( xge >= ngx ) || ( xlt <= 0 )) {
+    return; // Not in this x domain
+  }
+
+  if(MYPE == PROC_NUM(PE_XIND, ypeup)) {
+    // Target on upper processor boundary
+    if(xge <= MXG) {
+      // Target on inside
+      UDATA_XSPLIT = xlt;
+      UDATA_INDEST = -1;
+      if(xlt >= ngx)
+        UDATA_OUTDEST = -1;
+      output.write("=> This processor has target upper inner\n");
+    }else {
+      // Target on outside
+      if(UDATA_XSPLIT <= 0)
+        UDATA_INDEST = UDATA_OUTDEST;
+      UDATA_XSPLIT = xge;
+      UDATA_OUTDEST = -1;
+      if(xge <= 0)
+        UDATA_INDEST = -1;
+      output.write("=> This processor has target upper outer\n");
+    }
+  }
+  if(MYPE == PROC_NUM(PE_XIND, ypedown)) {
+    // Target on upper processor boundary
+    if(xge <= MXG) {
+      // Target on inside
+      DDATA_XSPLIT = xlt;
+      DDATA_INDEST = -1;
+      if(xlt >= ngx)
+        DDATA_OUTDEST = -1;
+      output.write("=> This processor has target lower inner\n");
+    }else {
+      // Target on outside
+      if(DDATA_XSPLIT <= 0)
+        DDATA_INDEST = DDATA_OUTDEST;
+      DDATA_XSPLIT = xge;
+      DDATA_OUTDEST = -1;
+      if(xge <= 0)
+        DDATA_INDEST = -1;
+      output.write("=> This processor has target lower outer\n");
+    }
+  }
+}
+
 /****************************************************************
  *                MAIN TOPOLOGY FUNCTION
  ****************************************************************/
 
-void BoutMesh::topology()
-{ 
+void BoutMesh::topology() {
   // Perform checks common to all topologies
 
   if (NPES != NXPE*NYPE) {
@@ -2219,12 +2358,20 @@ void BoutMesh::topology()
     /* Upper x-point */
     set_connection(jyseps2_1  , jyseps1_2+1, 0, ixseps_upper, ixseps1 > ixseps2); /* Core */
     set_connection(jyseps2_1+1, jyseps1_2  , 0, ixseps_upper); /* PF   */
+    
+    // Add target plates at the top
+    add_target(ny_inner-1, 0, nx);
   }
 
   MYPE_IN_CORE = 0; // processor not in core
   if( (ixseps_inner > 0) && ( ((PE_YIND*MYSUB > jyseps1_1) && (PE_YIND*MYSUB <= jyseps2_1)) || ((PE_YIND*MYSUB > jyseps1_2) && (PE_YIND*MYSUB <= jyseps2_2)) ) ) {
     MYPE_IN_CORE = 1; /* processor is in the core */
   }
+  
+  if(DDATA_XSPLIT > ngx)
+    DDATA_XSPLIT = ngx;
+  if(UDATA_XSPLIT > ngx)
+    UDATA_XSPLIT = ngx;
 
   // Print out settings
   output.write("\tMYPE_IN_CORE = %d\n", MYPE_IN_CORE);
@@ -2234,7 +2381,7 @@ void BoutMesh::topology()
 	       UDATA_XSPLIT, UDATA_INDEST, UDATA_OUTDEST);
   output.write("\tXIN = %d, XOUT = %d\n",
 	       IDATA_DEST, ODATA_DEST);
-
+  
   output.write("\tTwist-shift: ");
   if(TS_down_in)
     output.write("DI ");
@@ -2251,8 +2398,7 @@ void BoutMesh::topology()
  *                     Communication handles
  ****************************************************************/
 
-BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen)
-{
+BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
   if(comm_list.empty()) {
     // Allocate a new CommHandle
     
@@ -2550,11 +2696,11 @@ int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname,
 }
 
 void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var) {
-  int i;
-  for(i=xge;i!=xlt;i++)
+  msg_stack.push("cpy_2d_data(%d,%d,%d,%d)", yfrom, yto, xge, xlt);
+  for(int i=xge;i<xlt;i++)
     var[i][yto] = var[i][yfrom];
+  msg_stack.pop();
 }
-
 
 /****************************************************************
  *                 SURFACE ITERATION
@@ -2810,28 +2956,34 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 }
 
 BoutReal BoutMesh::GlobalX(int jx) const {
+  if(symmetricGlobalX) {
+    // Symmetric X index, mainly for reconnection studies
+    return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+  }
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
-  //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
-  int nycore = (jyseps1_2 - jyseps1_1) + (jyseps2_2 - jyseps2_1);
+  int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
   if(MYPE_IN_CORE) {
     // Turn ly into an index over the core cells only
-    if(ly < jyseps1_2) {
+    if(ly <= jyseps2_1) {
       ly -= jyseps1_1+1;
     }else
-      ly -= jyseps1_1+1 + (jyseps2_1 - jyseps1_2);
+      ly -= jyseps1_1+1 + (jyseps1_2 - jyseps2_1);
   }else {
     // Not in core. Need to get the last "core" value
     if(ly <= jyseps1_1) {
       // Inner lower leg
       ly = 0;
+    }else if(ly <= jyseps1_2) {
+      // Upper legs
+      ly = jyseps2_1 - jyseps1_1;
     }else if(ly > jyseps2_2) {
       // Outer lower leg
-      ly = nycore-1;
+      ly = nycore;
     }
   }
   

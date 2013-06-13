@@ -58,7 +58,7 @@
 const BoutReal BOUT_VERSION = 1.1;  ///< Version number
 
 // BOUT++ main functions
-void BoutInitialise(int argc, char **argv);
+void BoutInitialise(int &argc, char **&argv);
 int bout_run(Solver *solver, rhsfunc physics_run);
 int BoutFinalise();
 

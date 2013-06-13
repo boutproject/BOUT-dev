@@ -36,8 +36,8 @@
 
 // Static member variables
 
-int Solver::argc = 0;
-char** Solver::argv = 0;
+int* Solver::pargc = 0;
+char*** Solver::pargv = 0;
 
 /**************************************************************************
  * Constructor
@@ -521,6 +521,24 @@ int Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   msg_stack.pop(msg_point);
 #endif
 
+  return 0;
+}
+
+void Solver::addMonitor(MonitorFunc f) {
+  monitors.push_front(f);
+}
+
+void Solver::removeMonitor(MonitorFunc f) {
+  monitors.remove(f);
+}
+
+int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
+    // Call each monitor one by one
+    int ret = (*it)(this, simtime,iter, NOUT);
+    if(ret)
+      return ret; // Return first time an error is encountered
+  }
   return 0;
 }
 

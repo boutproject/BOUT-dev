@@ -58,4 +58,7 @@ const Field3D gyroPade1(const Field3D &f, BoutReal rho,
 const Field3D gyroPade2(const Field3D &f, BoutReal rho, 
                         int flags=GYRO_FLAGS);
 
+const Field2D gyroPade1(const Field2D &f, const Field2D &rho,
+                        int flags=GYRO_FLAGS);
+
 #endif // __GYRO_AVERAGE_H__

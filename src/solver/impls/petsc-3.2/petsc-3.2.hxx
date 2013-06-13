@@ -62,11 +62,9 @@ class PetscSolver: public Solver {
   PetscSolver();
   ~PetscSolver();
   
-  int setup(int argc, char **argv);
-  
   int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
 
-  int run(MonitorFunc f);
+  int run();
 
   // These functions used internally (but need to be public)
   PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
@@ -82,7 +80,6 @@ class PetscSolver: public Solver {
 
   int nout;   // The number of outputs
   BoutReal tstep; // Time between outputs
-  MonitorFunc monitor; // Monitor function to call regularly
 
   BoutReal next_output;  // When the monitor should be called next
 

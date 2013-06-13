@@ -140,7 +140,7 @@ const Field2D where(const Field2D &test, const Field2D &gt0, const Field2D &le0)
   return result;
 }
 
-const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal &le0) {
+const Field2D where(const Field2D &test, const Field2D &gt0, BoutReal le0) {
   Field2D result;
   
   result.allocate();

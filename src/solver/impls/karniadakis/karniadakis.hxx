@@ -49,7 +49,7 @@ class KarniadakisSolver : public Solver {
 
   int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
-  int run(MonitorFunc f);
+  int run();
  private:
   
   BoutReal *f1, *f0, *fm1, *fm2; // System state at current, and two previous time points

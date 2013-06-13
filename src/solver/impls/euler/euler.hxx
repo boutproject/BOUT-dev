@@ -45,7 +45,7 @@ class EulerSolver : public Solver {
   
   int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
-  int run(MonitorFunc f);
+  int run();
  private:
   BoutReal start_timestep; // Starting timestep
   int mxstep; // Maximum number of internal steps between outputs

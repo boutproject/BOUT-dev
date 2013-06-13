@@ -3231,6 +3231,41 @@ rightprec = false     # Use Right preconditioner (default left)
 Using the IDA solver, BOUT++ can solve Differential Algebraic Equations (DAEs), in which 
 algebraic constraints are used for some variables. 
 
+
+\subsection{Monitoring the simulation output}
+
+At every output timestep the solver calls a monitor function, which writes the output dump file,  calculates and prints timing information and estimated time remaining. If you want to run additional code or write data to a different file, you can add monitor function(s).
+
+You can call your monitor function whatever you like, but it must have 4 inputs and return an int:
+\begin{lstlisting}
+int my_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+  ...
+}
+\end{lstlisting}
+
+The first input is the solver object, the second is the current simulation time, the third is the output number, and the last is the total number of outputs requested. To get the solver to call this function every output time, put in your \lstinline!physics\_init! code:
+\begin{lstlisting}
+  solver->addMonitor(my_monitor);
+\end{lstlisting}
+If you want to later remove a monitor, you can do so with
+\begin{lstlisting}
+  solver->removeMonitor(my_monitor);
+\end{lstlisting}
+
+A simple example using this monitor is:
+\begin{lstlisting}
+int my_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+  output.write("My monitor, time = %e, dt = %e\n", 
+      simtime, solver->getCurrentTimestep());
+}
+
+int physics_init(bool restarting) {
+  solver->addMonitor(my_monitor);
+}
+\end{lstlisting}
+
+See the monitor example (\file{examples/monitor}) for full code.
+
 \section{Examples}
 \label{sec:examples}
 

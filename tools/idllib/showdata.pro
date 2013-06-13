@@ -51,7 +51,8 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
               az=az, delay=delay, _extra=_extra, $
               noscale=noscale, uedge=uedge, period=period, $
               addsym=addsym, bw=bw, bmp=bmp, output=output, $
-              numoff=numoff, nobuffer=nobuffer, mpeg=mpeg
+              numoff=numoff, nobuffer=nobuffer, mpeg=mpeg, $
+              loop=loop
 
   on_error,2  ; If an error occurs, return to caller
 
@@ -140,7 +141,7 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
           device, decomposed=0
                                 ;safe_colors, /first      
 
-
+          REPEAT BEGIN
           FOR i=0, nt-1 DO BEGIN
               contour, reform(val[*,*,i]), chars=chars, zr=yr, zstyle=1, $
                 /fill, nlev=50, color=color, $
@@ -173,7 +174,8 @@ PRO showdata, data, contour=contour, yr=yr, color=color, $
                   MPEG_PUT, mpegid, image=frame, frame=i
               ENDIF
 
-          ENDFOR
+            ENDFOR
+        ENDREP UNTIL NOT KEYWORD_SET(loop)
       ENDIF ELSE BEGIN
           PRINT, "chars=", chars
           FOR i=0, nt-1 DO BEGIN

@@ -54,14 +54,14 @@ public:
   PetscLib();
   ~PetscLib();
   
-  static void setArgs(int c, char** v) { argc = c; argv = v;}
+  static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
 private:
   static int count; // How many instances?
   static char help[]; // Help string
   
   // Command-line arguments
-  static int argc;
-  static char** argv;
+  static int* pargc;
+  static char*** pargv;
   
   static PetscLogEvent USER_EVENT;
 };
@@ -73,7 +73,7 @@ public:
   PetscLib() {}
   ~PetscLib() {}
   
-  static void setArgs(int c, char** v) {}
+  static void setArgs(int &c, char** &v) {}
 };
 
 #endif // BOUT_HAS_PETSC

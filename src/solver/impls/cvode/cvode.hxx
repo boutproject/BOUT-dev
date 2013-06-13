@@ -67,7 +67,7 @@ class CvodeSolver : public Solver {
 
     int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
 
-    int run(MonitorFunc f);
+    int run();
     BoutReal run(BoutReal tout);
 
     // These functions used internally (but need to be public)

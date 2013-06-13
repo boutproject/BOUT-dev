@@ -51,10 +51,9 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 #include <derivs.hxx>
 #include <msg_stack.hxx>
 
-#include <boundary_factory.hxx>
-#include <boundary_standard.hxx>
-
 #include <bout/sys/timer.hxx>
+
+#include <boundary_factory.hxx>
 
 #include <bout/petsclib.hxx>
 
@@ -85,7 +84,18 @@ char get_spin();                    // Produces a spinning bar
 
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
 
-void BoutInitialise(int argc, char **argv) {
+/*!
+  Initialise BOUT++
+  
+  Inputs
+  ------
+  
+  The command-line arguments argc and argv are passed by
+  reference, and pointers to these will be stored in various
+  places in BOUT++.
+  
+ */
+void BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
@@ -263,21 +273,10 @@ void BoutInitialise(int argc, char **argv) {
     mesh = Mesh::create();  ///< Create the mesh
     mesh->load();           ///< Load from sources. Required for Field initialisation
     mesh->outputVars(dump); ///< Save mesh configuration into output file
-
-    /// Setup the boundaries
-    BoundaryFactory* bndry = BoundaryFactory::getInstance();
-    bndry->add(new BoundaryDirichlet(), "dirichlet");
-    bndry->add(new BoundaryNeumann(), "neumann");
-    bndry->add(new BoundaryRobin(), "robin");
-    bndry->add(new BoundaryConstGradient(), "constgradient");
-    bndry->add(new BoundaryZeroLaplace(), "zerolaplace");
-    bndry->add(new BoundaryZeroLaplace2(), "zerolaplace2");
-    bndry->add(new BoundaryConstLaplace(), "constlaplace");
-    bndry->addMod(new BoundaryRelax(), "relax");
-    bndry->addMod(new BoundaryShifted(), "shifted");
     
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
+    BoutComm::cleanup();
     throw e;
   }
 }
@@ -310,6 +309,9 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
     
     dump.write();
   }
+  
+  // Add the monitor function
+  solver->addMonitor(bout_monitor);
 
   /// Run the solver
   output.write("Running simulation\n\n");
@@ -317,9 +319,9 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   try {
     time_t start_time = time((time_t*) NULL);
     output.write("\nRun started at  : %s\n", ctime(&start_time));
-    
+   
     Timer timer("run"); // Start timer
-    status = solver->run(bout_monitor);
+    status = solver->run();
 
     time_t end_time = time((time_t*) NULL);
     output.write("\nRun finished at  : %s\n", ctime(&end_time));

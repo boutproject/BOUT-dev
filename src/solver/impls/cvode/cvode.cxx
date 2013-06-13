@@ -45,7 +45,7 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-typedef long CVINT;
+typedef int CVINT;
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
@@ -313,7 +313,7 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
  * Run - Advance time
  **************************************************************************/
 
-int CvodeSolver::run(MonitorFunc monitor) {
+int CvodeSolver::run() {
 #ifdef CHECK
   int msg_point = msg_stack.push("CvodeSolver::run()");
 #endif
@@ -368,7 +368,7 @@ int CvodeSolver::run(MonitorFunc monitor) {
 
     /// Call the monitor function
 
-    if(monitor(this, simtime, i, NOUT)) {
+    if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
 
       // Write restart to a different file

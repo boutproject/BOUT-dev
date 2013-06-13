@@ -144,6 +144,8 @@ class BoutMesh : public Mesh {
   bool TwistShift;   // Use a twist-shift condition in core?
   //int  TwistOrder;   // Order of twist-shift interpolation
   
+  bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
+
   int  zperiod; 
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   
@@ -151,6 +153,7 @@ class BoutMesh : public Mesh {
 
   void default_connections();
   void set_connection(int ypos1, int ypos2, int xge, int xlt, bool ts = false);
+  void add_target(int ypos, int xge, int xlt);
   void topology();
 
   vector<BoundaryRegion*> boundary; // Vector of boundary regions

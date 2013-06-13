@@ -99,7 +99,7 @@ class BoundaryDivCurl : public BoundaryOp {
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
  public:
-  BoundaryRelax() {}
+  BoundaryRelax() : r(10.) {}  // Set default rate
   BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate);}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   

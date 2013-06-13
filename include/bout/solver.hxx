@@ -41,6 +41,7 @@ class Solver;
 #include "vector3d.hxx"
 
 #include <string>
+#include <list>
 using std::string;
 
 #define SolverType const char*
@@ -105,8 +106,11 @@ class Solver {
   ///       Needed because of how the PETSc TS code works
   virtual int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
   
-  /// Run the solver, calling MonitorFunc nout times, at intervals of tstep
-  virtual int run(MonitorFunc f) = 0;
+  void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
+  void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
+
+  /// Run the solver, calling monitors nout times, at intervals of tstep
+  virtual int run() = 0;
   
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
@@ -120,12 +124,12 @@ class Solver {
   static Solver* create(Options *opts = NULL);
   static Solver* create(SolverType &type, Options *opts = NULL);
   
-  static void setArgs(int c, char **v) { argc = c; argv = v;}
+  static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
 protected:
 
   // Command-line arguments
-  static int argc;
-  static char** argv;
+  static int* pargc;
+  static char*** pargv;
 
   // Settings to use during initialisation (set by constructor)
   Options *options;
@@ -169,6 +173,8 @@ protected:
   int run_convective(BoutReal t); ///< Calculate only the convective parts
   int run_diffusive(BoutReal t); ///< Calculate only the diffusive parts
   
+  int call_monitors(BoutReal simtime, int iter, int NOUT); ///< Calls all monitor functions
+
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal *udata);
   void load_derivs(BoutReal *udata);
@@ -179,6 +185,8 @@ protected:
  private:
   rhsfunc phys_run; ///< The user's RHS function
   
+  std::list<MonitorFunc> monitors; ///< List of monitor functions
+
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
   

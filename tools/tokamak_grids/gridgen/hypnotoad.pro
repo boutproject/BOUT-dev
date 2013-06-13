@@ -304,9 +304,10 @@ PRO event_handler, event
         widget_control, info.psi_outer_field, get_value=psi_outer
 
         widget_control, info.rad_peak_field, get_value=rad_peak
-        
 
-        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
+        widget_control, info.parweight_field, get_value=parweight
+
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak, parweight:parweight}
       ENDELSE
       
       widget_control, info.xpt_dist_field, get_value=xpt_mul
@@ -322,12 +323,17 @@ PRO event_handler, event
         
       WIDGET_CONTROL, info.status, set_value="Generating mesh ..."
       
+      fpsi = FLTARR(2, N_ELEMENTS((*(info.rz_grid)).fpol))
+      fpsi[0,*] = (*(info.rz_grid)).simagx + (*(info.rz_grid)).npsigrid * ( (*(info.rz_grid)).sibdry - (*(info.rz_grid)).simagx )
+      fpsi[1,*] = (*(info.rz_grid)).fpol
+
       mesh = create_grid((*(info.rz_grid)).psi, (*(info.rz_grid)).r, (*(info.rz_grid)).z, settings, $
                          boundary=boundary, strict=info.strict_bndry, $
                          /nrad_flexible, $
                          single_rad_grid=info.single_rad_grid, $
                          critical=(*(info.rz_grid)).critical, $
-                         fast=info.fast, xpt_mul=xpt_mul)
+                         fast=info.fast, xpt_mul=xpt_mul, $
+                         fpsi = fpsi)
       IF mesh.error EQ 0 THEN BEGIN
         PRINT, "Successfully generated mesh"
         WIDGET_CONTROL, info.status, set_value="Successfully generated mesh. All glory to the Hypnotoad!"
@@ -363,7 +369,9 @@ PRO event_handler, event
 
         widget_control, info.rad_peak_field, get_value=rad_peak
 
-        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak}
+        widget_control, info.parweight_field, get_value=parweight
+
+        settings = {nrad:nrad, npol:npol, psi_inner:psi_inner, psi_outer:psi_outer, rad_peaking:rad_peak, parweight:parweight}
       ENDELSE
       
 
@@ -924,6 +932,14 @@ PRO hypnotoad
                              xsize=8                         $
                            )
   
+  parweight_field = CW_FIELD( tab1,                            $
+                             title  = 'Par. vs pol:',          $ 
+                             uvalue = 'parweight',           $ 
+                             /floating,                      $ 
+                             value = 0.0,                    $
+                             xsize=8                         $
+                           )
+
   xpt_dist_field = CW_FIELD( tab1,                            $
                              title  = 'Xpt dist x:',          $ 
                              uvalue = 'xpt_mul',           $ 
@@ -1053,6 +1069,7 @@ PRO hypnotoad
            detail_set:0, $ ; 1 if using detailed settings
            psi_inner_field:psi_inner_field, psi_outer_field:psi_outer_field, $
            rad_peak_field:rad_peak_field, $
+           parweight_field:parweight_field, $
            xpt_dist_field:xpt_dist_field, $
            status:status_box, $
            leftbargeom:leftbargeom, $

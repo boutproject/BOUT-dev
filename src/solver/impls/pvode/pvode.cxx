@@ -113,7 +113,7 @@ int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
 	       n3d, n2d, neq, local_N);
 
   // Set machEnv block
-  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, &argc, &argv);
+  machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
 
   if (machEnv == NULL) {
     throw BoutException("\tError: PVecInitMPI failed\n");
@@ -207,7 +207,7 @@ int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
  * Run - Advance time
  **************************************************************************/
 
-int PvodeSolver::run(MonitorFunc monitor) {
+int PvodeSolver::run() {
 #ifdef CHECK
   int msg_point = msg_stack.push("PvodeSolver::run()");
 #endif
@@ -241,7 +241,7 @@ int PvodeSolver::run(MonitorFunc monitor) {
     
     /// Call the monitor function
     
-    if(monitor(this, simtime, i, NOUT)) {
+    if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
       
       // Write restart to a different file
