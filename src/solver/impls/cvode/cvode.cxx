@@ -45,7 +45,7 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-typedef int CVINT;
+typedef long CVINT;
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
