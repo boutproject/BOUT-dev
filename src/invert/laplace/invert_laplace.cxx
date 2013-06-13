@@ -100,7 +100,6 @@ const Field3D Laplacian::solve(const Field3D &b) {
 #ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D)");
 #endif
-
   int ys = mesh->ystart, ye = mesh->yend;
 
   if(mesh->hasBndryLowerY() && include_yguards)
@@ -138,9 +137,9 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 #endif
 
   int ys = mesh->ystart, ye = mesh->yend;
-  if(mesh->hasBndryLowerY())
+  if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
+  if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->ngy-1; // Contains upper boundary
   
   Field3D x;
@@ -406,6 +405,8 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
   
   x = lap->solve(b);
   
+  x.setLocation(b.getLocation());
+
   return 0;
 }
 
@@ -436,6 +437,8 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 
   x = lap->solve(b, x);
   
+  x.setLocation(b.getLocation());
+
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
@@ -462,6 +465,8 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
   
   Field3D x = lap->solve(b);
   
+  x.setLocation(b.getLocation());
+
   return x;
 }
 

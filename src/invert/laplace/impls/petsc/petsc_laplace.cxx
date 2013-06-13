@@ -41,7 +41,7 @@
 #define KSP_BICG        "bicg"
 #define KSP_PREONLY     "preonly"
 
-LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0), Ex(0.0), Ez(0.0) {
 
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
@@ -57,7 +57,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
 		      + INVERT_IN_RHS
 		      + INVERT_OUT_RHS
 		      ;
-    if ( flags & !implemented_flags) {
+    if ( flags & ~implemented_flags) {
       if (flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
     }
@@ -285,7 +285,92 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   int i = Istart;
 { Timer timer("petscsetup");
   
-  if(coefchanged || (flags != lastflag)) { // Coefficients or settings changed
+  if(Acoefchanged && !coefchanged) {
+    if( mesh->firstX() ) 
+    {
+      for(int x=0; x<mesh->xstart; x++)
+	{
+	  for(int z=0; z<mesh->ngz-1; z++) 
+	    {
+	      // Set Components of RHS and Trial Solution
+	      PetscScalar  val=0;
+	      if( flags & INVERT_IN_RHS )         val = b[x][z];
+	      else if( flags & INVERT_IN_SET )    val = x0[x][z];
+	      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+
+	      val = x0[x][z];
+	      VecSetValues( xs, 1, &i, &val, INSERT_VALUES );
+	      
+	      i++; // Increment row in Petsc matrix
+	    }
+	}
+    }
+    // Main domain with Laplacian operator
+    for(int x=mesh->xstart; x <= mesh->xend; x++)
+    {
+      for(int z=0; z<mesh->ngz-1; z++) 
+	{
+	  BoutReal A0, A1, A2;
+	  A0 = A[x][y][z];
+	  Coeffs( x, y, z, A1, A2 );
+	  
+	  BoutReal dx2  = pow( mesh->dx[x][y] , 2.0 );
+	  BoutReal dz2  = pow( mesh->dz, 2.0 );
+	  
+	  // Set Matrix Elements
+	  PetscScalar val=0.;
+	  if (fourth_order) {
+	    // f(i,j) = f(x,z)
+	    val = A0 - (5.0/2.0)*( (A1 / dx2) + (A2 / dz2) );
+	    Element(i,x,z, 0, 0, val, MatA );
+	  }
+	  else {
+	    // f(i,j) = f(x,z)
+	    val = A0 - 2.0*( (A1 / dx2) + (A2 / dz2) ); 
+	    Element(i,x,z, 0, 0, val, MatA );
+	  }
+	  // Set Components of RHS Vector
+	  val  = b[x][z];
+	  VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+
+	  // Set Components of Trial Solution Vector
+	  val = x0[x][z];
+	  VecSetValues( xs, 1, &i, &val, INSERT_VALUES ); 
+	  i++;
+	}
+    }
+    if( mesh->lastX() ) 
+    {
+      for(int x=mesh->xend+1; x<mesh->ngx; x++)
+	{
+	  for(int z=0; z<mesh->ngz-1; z++) 
+	    {
+	      PetscScalar val=0;
+	      if( flags & INVERT_OUT_RHS )        val = b[x][z];
+	      else if( flags & INVERT_OUT_SET )   val = x0[x][z];
+	      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+
+	      val = x0[x][z];
+	      VecSetValues( xs, 1, &i, &val, INSERT_VALUES );
+	      
+	      i++; // Increment row in Petsc matrix
+	    }
+	}
+    }
+      
+    if(i != Iend) {
+      throw BoutException("Petsc index sanity check failed");
+    }
+    
+    // Assemble Matrix
+    MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
+    MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
+
+    // Record which flags were used for this matrix
+    lastflag = flags;
+    Acoefchanged = false;
+  }
+  else if(coefchanged || (flags != lastflag)) { // Coefficients or settings changed
     
 //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
     
@@ -301,10 +386,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
           {
             for(int z=0; z<mesh->ngz-1; z++) 
               {
-                // Set Diagonal Values to 1
-                PetscScalar val = 1;
-		Element(i,x,z, 0, 0, val, MatA );
-                
+		PetscScalar val;
                 // Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
                 if(flags & INVERT_AC_IN_GRAD) 
 		  {
@@ -329,6 +411,10 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 		  }
 		else
 		  {
+		    // Set Diagonal Values to 1
+		    val = 1;
+		    Element(i,x,z, 0, 0, val, MatA );
+		    
 		    // Set off diagonal elements to zero
 		    Element(i,x,z, 1, 0, 0.0, MatA );
 		    Element(i,x,z, 2, 0, 0.0, MatA );
@@ -582,7 +668,10 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 
     // Record which flags were used for this matrix
     lastflag = flags;
-  }else {
+    coefchanged = false;
+    Acoefchanged = false;
+  }
+  else {
     // Matrix hasn't changed. Only need to set Vec values
     
     if( mesh->firstX() ) 
@@ -823,5 +912,24 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 	}
     }
   
+  // Additional 1st derivative terms to allow for solution field to be component of vector
+  // NB multiply by D or Grad_perp(C)/C as appropriate before passing to setCoefEx()/setCoefEz() because both (in principle) are needed and we don't know how to split them up here
+  coef4 += Ex[x][y][z];
+  coef5 += Ez[x][y][z];
+  
+}
+
+void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2 )
+{
+  coef1 = mesh->g11[x][y];     // X 2nd derivative coefficient
+  coef2 = mesh->g33[x][y];     // Z 2nd derivative coefficient
+  
+  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+    // d2dz2 term
+    coef2 += mesh->g11[x][y] * mesh->IntShiftTorsion[x][y] * mesh->IntShiftTorsion[x][y];
+  }
+  
+  coef1 *= D[x][y][z];
+  coef2 *= D[x][y][z];
 }
 
