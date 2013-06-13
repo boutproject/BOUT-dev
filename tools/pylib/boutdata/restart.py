@@ -6,6 +6,8 @@ except ImportError:
     print "ERROR: restart module needs DataFile"
     raise
 
+from numpy import mean
+
 try:
     import os
     import sys
@@ -147,3 +149,80 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
     ind = file_list[0].rfind(".")
     
 
+def create(averagelast=1, path="data", output="./", informat="nc", outformat=None):
+    """
+    Create restart files from data (dmp) files.
+
+    Inputs
+    ======
+
+    averagelast   Number of time points to average over.
+                  Default is 1 i.e. just take last time-point
+
+    path          Path to the input data files
+
+    output        Path where the output restart files should go
+
+    informat      Format of the input data files
+
+    outformat     Format of the output restart files
+    
+    """
+    
+    if outformat == None:
+        outformat = informat
+    
+    file_list = glob.glob(os.path.join(path, "BOUT.dmp.*."+informat))
+    nfiles = len(file_list)
+    
+    print "Number of data files: ", nfiles
+
+    for i in range(nfiles):
+        # Open each data file
+        infname  = os.path.join(path, "BOUT.dmp."+str(i)+"."+informat)
+        outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
+
+        print infname, " -> ", outfname
+        
+        infile = DataFile(infname)
+        outfile = DataFile(outfname, create=True)
+
+        # Get the data always needed in restart files
+        hist_hi = infile.read("iteration")
+        print "hist_hi = ", hist_hi
+        outfile.write("hist_hi", hist_hi)
+        
+        t_array = infile.read("t_array")
+        tt = t_array[-1]
+        print "tt = ", tt
+        outfile.write("tt", tt)
+
+        NXPE = infile.read("NXPE")
+        NYPE = infile.read("NYPE")
+        NPES = NXPE * NYPE
+        print "NPES = ", NPES, " NXPE = ", NXPE
+        outfile.write("NPES", NPES)
+        outfile.write("NXPE", NXPE)
+        
+        # Get a list of variables
+        varnames = infile.list()
+
+        for var in varnames:
+            if infile.ndims(var) == 4:
+                # Could be an evolving variable
+
+                print " -> ", var
+                
+                data = infile.read(var)
+
+                if averagelast == 1:
+                    slice = data[-1,:,:,:]
+                else:
+                    slice = mean(data[(-averagelast - 1):-1,:,:,:], axis=0)
+
+                print slice.shape
+                
+                outfile.write(var, slice)
+        
+        infile.close()
+        outfile.close()
