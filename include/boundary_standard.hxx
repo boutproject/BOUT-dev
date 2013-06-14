@@ -32,6 +32,7 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 
+/// Robin (mix of Dirichlet and Neumann)
 class BoundaryRobin : public BoundaryOp {
  public:
   BoundaryRobin() : aval(0.), bval(0.), gval(0.) {}
@@ -43,6 +44,7 @@ private:
   BoutReal aval, bval, gval;
 };
 
+/// Constant gradient (zero second derivative)
 class BoundaryConstGradient : public BoundaryOp {
  public:
   BoundaryConstGradient() {}
@@ -126,6 +128,22 @@ public:
   void apply_ddt(Field3D &f);
 private:
   
+};
+
+/// Increase the width of a boundary
+class BoundaryWidth : public BoundaryModifier {
+public:
+  BoundaryWidth() : width(2) {}
+  BoundaryWidth(BoundaryOp *operation, int wid) : BoundaryModifier(operation), width(wid) {}
+  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+private:
+  int width;
 };
 
 #endif // __BNDRY_STD_H__
