@@ -153,16 +153,14 @@ BoundaryOp* BoundaryConstGradient::clone(BoundaryRegion *region, const list<stri
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryZeroLaplace::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryZeroLaplace\n";
   }
   return new BoundaryZeroLaplace(region);
 }
 
-void BoundaryZeroLaplace::apply(Field2D &f)
-{
+void BoundaryZeroLaplace::apply(Field2D &f) {
   if((bndry->location != BNDRY_XIN) && (bndry->location != BNDRY_XOUT)) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
@@ -184,8 +182,7 @@ void BoundaryZeroLaplace::apply(Field2D &f)
   }
 }
 
-void BoundaryZeroLaplace::apply(Field3D &f)
-{
+void BoundaryZeroLaplace::apply(Field3D &f) {
   static dcomplex *c0 = (dcomplex*) NULL, *c1;
   int ncz = mesh->ngz-1;
   
@@ -429,21 +426,18 @@ void BoundaryConstLaplace::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
-BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args)
-{
+BoundaryOp* BoundaryDivCurl::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     output << "WARNING: Ignoring arguments to BoundaryDivCurl\n";
   }
   return new BoundaryDivCurl(region);
 }
 
-void BoundaryDivCurl::apply(Vector2D &f)
-{
+void BoundaryDivCurl::apply(Vector2D &f) {
   throw BoutException("ERROR: DivCurl boundary not yet implemented for 2D vectors\n");
 }
 
-void BoundaryDivCurl::apply(Vector3D &var)
-{
+void BoundaryDivCurl::apply(Vector3D &var) {
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
   
@@ -632,3 +626,49 @@ void BoundaryShifted::apply_ddt(Field3D &f) {
   }else
     op->apply_ddt(f);
 }
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryWidth::cloneMod(BoundaryOp *operation, const list<string> &args) {
+  BoundaryWidth* result = new BoundaryWidth(operation, width);
+  
+  if(args.empty()) {
+    output << "WARNING: BoundaryWidth expected 1 argument\n";
+  }else {
+    // First argument should be the rate
+    int val = stringToInt(args.front());
+    result->width = val;
+  }
+  
+  return result;
+}
+
+void BoundaryWidth::apply(Field2D &f) {
+  // Pointer to boundary region shared between all BoundaryOp, BoundaryModifiers
+  int oldwid = bndry->width;
+  bndry->width = width;
+  op->apply(f);
+  bndry->width = oldwid;
+}
+
+void BoundaryWidth::apply(Field3D &f) {
+  int oldwid = bndry->width;
+  bndry->width = width;
+  op->apply(f);
+  bndry->width = oldwid;
+}
+  
+void BoundaryWidth::apply_ddt(Field2D &f) {
+  int oldwid = bndry->width;
+  bndry->width = width;
+  op->apply_ddt(f);
+  bndry->width = oldwid;
+}
+
+void BoundaryWidth::apply_ddt(Field3D &f) {
+  int oldwid = bndry->width;
+  bndry->width = width;
+  op->apply_ddt(f);
+  bndry->width = oldwid;
+}
+

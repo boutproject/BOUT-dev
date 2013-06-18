@@ -338,6 +338,13 @@ BoutReal stringToReal(const std::string &s) {
   return val;
 }
 
+int stringToInt(const std::string &s) {
+  std::stringstream ss(s);
+  int val;
+  ss >> val;
+  return val;
+}
+
 std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;

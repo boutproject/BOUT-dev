@@ -23,6 +23,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryConstLaplace(), "constlaplace");
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryShifted(), "shifted");
+  addMod(new BoundaryWidth(), "width");
 }
 
 BoundaryFactory::~BoundaryFactory() {
@@ -35,8 +36,7 @@ BoundaryFactory::~BoundaryFactory() {
   }
 }
 
-BoundaryFactory* BoundaryFactory::getInstance()
-{
+BoundaryFactory* BoundaryFactory::getInstance() {
   if(instance == NULL) {
     // Create the singleton object
     instance = new BoundaryFactory();
@@ -44,8 +44,7 @@ BoundaryFactory* BoundaryFactory::getInstance()
   return instance;
 }
 
-void BoundaryFactory::cleanup()
-{
+void BoundaryFactory::cleanup() {
   if(instance == NULL)
     return;
   
@@ -54,8 +53,7 @@ void BoundaryFactory::cleanup()
   instance = NULL;
 }
 
-BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
-{
+BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) {
   //output <<  name;
   
   // Search for a string of the form: modifier(operation)  
@@ -118,13 +116,11 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region)
   return NULL;
 }
 
-BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region)
-{
+BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region) {
   return create(string(name), region);
 }
 
-BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegion *region)
-{
+BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegion *region) {
   if(region == NULL)
     return NULL;
   
@@ -199,13 +195,11 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   // values. If a user want to override, specify "none" or "null"
 }
 
-BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegion *region)
-{
+BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegion *region) {
   return createFromOptions(string(varname), region);
 }
 
-void BoundaryFactory::add(BoundaryOp* bop, const string &name)
-{
+void BoundaryFactory::add(BoundaryOp* bop, const string &name) {
   if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
     output << "ERROR: Trying to add an already existing boundary: " << name << endl;
@@ -214,13 +208,11 @@ void BoundaryFactory::add(BoundaryOp* bop, const string &name)
   opmap[lowercase(name)] = bop;
 }
 
-void BoundaryFactory::add(BoundaryOp* bop, const char *name)
-{
+void BoundaryFactory::add(BoundaryOp* bop, const char *name) {
   add(bop, string(name));
 }
 
-void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name)
-{
+void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name) {
   if( (findBoundaryMod(name) != NULL) || (findBoundaryOp(name) != NULL) ) {
     // error - already exists
     output << "ERROR: Trying to add an already existing boundary modifier: " << name << endl;
@@ -229,13 +221,11 @@ void BoundaryFactory::addMod(BoundaryModifier* bmod, const string &name)
   modmap[lowercase(name)] = bmod;
 }
 
-void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name)
-{
+void BoundaryFactory::addMod(BoundaryModifier* bmod, const char *name) {
   addMod(bmod, string(name));
 }
 
-BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s)
-{
+BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s) {
   map<string,BoundaryOp*>::iterator it;
   it = opmap.find(lowercase(s));
   if(it == opmap.end())
@@ -243,8 +233,7 @@ BoundaryOp* BoundaryFactory::findBoundaryOp(const string &s)
   return it->second;
 }
 
-BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s)
-{
+BoundaryModifier* BoundaryFactory::findBoundaryMod(const string &s) {
   map<string,BoundaryModifier*>::iterator it;
   it = modmap.find(lowercase(s));
   if(it == modmap.end())

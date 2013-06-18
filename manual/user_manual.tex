@@ -88,7 +88,7 @@
 
 \title{BOUT++ Users Manual}
 \author{B.Dudson, University of York}
-\date{July 14, 2010}
+\date{July 14, 2013}
 \maketitle
 
 \tableofcontents
@@ -1716,6 +1716,7 @@ U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + 
 \subsubsection{Expressions}
 \index{FieldFactory}
 \index{function}
+\index{Expressions}
 
 If a more general function is needed, a variable can be initialised using the \code{function} option
 for each variable. This overrides the original method for that variable. e.g.
@@ -1734,7 +1735,7 @@ function = 1 + gauss(x-0.5)*gauss(y)*sin(z)
 \end{lstlisting}
 will use the original method to set $U$, but use the given expression to set $p$.
 
-The expression used can include the following values
+Expressions can include the usual operators (\code{+},\code{-},\code{*},\code{/}), including \code{\^} for exponents. The following values are also already defined:
 \begin{table}[htb!]
 \centering
 \caption{Initialisation expression values}
@@ -1750,8 +1751,19 @@ pi & $3.1415\ldots$\\
 \hline
 \end{tabular}
 \end{table}
+By default, $x$ is defined as \code{i / (nx - 2*MXG)}, where \code{MXG} is the width of the boundary region,
+by default 2. Hence $x$ actually goes from 0 on the leftmost point to \code{(nx-1)/(nx-4)} on the rightmost point. This is not a particularly good definition, but for most cases its sufficient to create some initial profiles.
+\index{Symmetric initial conditions}
+For some problems like island reconnection simulations, it's useful to define $x$ in a
+particular way which is more symmetric than the default. To do this, set in BOUT.inp
+\begin{lstlisting}[language=bash,numbers=none]
+  [mesh]
+  symmetricGlobalX = true
+\end{lstlisting}
+This will change the definition of $x$ to \code{i / (nx - 1)}, so $x$ is then between $0$ and $1$
+everywhere.
 
-and the following functions
+The following functions are also available in expressions:
 \begin{table}[htb!]
 \centering
 \caption{Initialisation expression functions}
@@ -1781,7 +1793,8 @@ Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
 \code{[All]}. Boundary conditions are specified for each variable, being 
 applied to variable itself during initialisation, and the time-derivatives
-at each timestep.
+at each timestep. They are a combination of a basic boundary condition, and
+optional modifiers.
 
 When finding the boundary condition for a variable \code{var} on a boundary region, 
 the options are checked in order from most to least specific:
@@ -1806,7 +1819,13 @@ Currently implemented boundary conditions are:
 \item \code{dirichlet(<number>)} - Set to some number e.g. \code{dirichlet(1)}
 sets the boundary to $1.0$
 \item \code{neumann} - Zero gradient
+\item \code{robin} - A combination of zero-gradient and zero-value $a f + b\deriv{f}{x} = g$
+  where the syntax is \code{robin(a, b, g)}.
+\item \code{constgradient} - Constant gradient across boundary
+
 \item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
+\item \code{zerolaplace2} - Laplacian = 0, using coefficients from the Laplacian inversion
+  and Delp2 operator.
 \item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
 \end{itemize}
 The zero- or constant-Laplacian boundary conditions works as follows:
@@ -1824,6 +1843,18 @@ which has the solution
 \]
 Assuming that the solution should decay away from the domain, on the inner
 $x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
+
+\index{Boundary modifiers}
+Boundary modifiers change the behavior of boundary conditions, and more than one modifier
+can be used. Currently the following are available:
+\begin{itemize}
+\item \code{relax} - Relaxing boundaries. Evolve the variable towards the given boundary condition at
+  a given rate
+\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates, rather than
+  field-aligned
+\item \code{width} - Modifies the width of the region over which the boundary condition is applied
+\end{itemize}
+These are described in the following subsections.
 
 \subsubsection{Relaxing boundaries}
 
@@ -1848,6 +1879,47 @@ discontinuities.
 
 By default, the relaxation rate is set to $10$ (i.e. a timescale of $\tau=0.1$).
 To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
+
+\subsubsection{Shifted boundaries}
+
+By default boundary conditions are applied in field-aligned coordinates, where $y$ is along field-lines but
+$x$ has a discontinuity at the twist-shift location. If radial derivatives are being done in shifted
+coordinates where $x$ and $z$ are orthogonal, then boundary conditions should also be applied in
+shifted coordinates. To do this, the \code{shifted} boundary modifier applies a $z$ shift, applies
+the boundary condition, then shifts back. For example:
+\begin{lstlisting}[numbers=none]
+bndry_core = shifted( neumann )
+\end{lstlisting}
+would ensure that radial derivatives were zero in shifted coordinates on the core boundary.
+
+\subsubsection{Changing the width of boundaries}
+
+To change the width of a boundary region, the \code{width} modifier
+changes the width of a boundary region before applying the boundary condition,
+then changes the width back afterwards. To use, specify the boundary condition and the width,
+for example
+\begin{lstlisting}[numbers=none]
+bndry_core = width( neumann , 4 )
+\end{lstlisting}
+would apply a Neumann boundary condition on the innermost 4 cells in the core, rather than the usual 2. 
+When combining with other boundary modifiers, this should be applied first e.g.
+\begin{lstlisting}[numbers=none]
+bndry_sol = width( relax( dirichlet ), 3)
+\end{lstlisting}
+would relax the last 3 cells towards zero, whereas
+\begin{lstlisting}[numbers=none]
+bndry_sol = relax( width( dirichlet, 3) )
+\end{lstlisting}
+would only apply to the usual 2, since relax didn't use the updated width.
+
+Limitations: 
+\begin{enumerate}
+  \item Because it modifies then restores a globally-used BoundaryRegion,
+    this code is not thread safe.
+
+  \item Boundary conditions can't be applied across processors, and no checks
+    are done that the width asked for fits within a single processor.
+\end{enumerate}
 
 \subsubsection{Examples}
 

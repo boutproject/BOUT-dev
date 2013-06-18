@@ -3,7 +3,7 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchanan
+ * Copyright 2013 J. Buchan
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
