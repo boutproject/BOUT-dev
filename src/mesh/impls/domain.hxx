@@ -17,7 +17,7 @@ using std::string;
 using std::list;
 using std::find;
 
-#include <uncopyable.hxx>
+#include <bout/sys/uncopyable.hxx>
 
 class DomainIterator : public std::iterator<std::forward_iterator_tag, Domain> {
 public:
