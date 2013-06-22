@@ -5,7 +5,7 @@ class MeshFactory;
 #define __MESH_FACTORY_H__
 
 #include <bout/mesh.hxx>
-#include <uncopyable.hxx>
+#include <bout/sys/uncopyable.hxx>
 #include <bout/griddata.hxx>
 
 class MeshFactory : private Uncopyable {

@@ -109,10 +109,17 @@ const Field3D Laplacian::solve(const Field3D &b) {
 
   Field3D x;
   x.allocate();
-
-  for(int jy=ys; jy <= ye; jy++) {
-    x = solve(b.slice(jy));
+  
+  int status = 0;
+  try {
+    for(int jy=ys; jy <= ye; jy++) {
+      x = solve(b.slice(jy));
+    }
   }
+  catch (BoutIterationFail itfail) {
+    status = 1;
+  }
+  BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
   
 #ifdef CHECK
   msg_stack.pop();
@@ -144,10 +151,17 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
   
   Field3D x;
   x.allocate();
-
-  for(int jy=ys; jy <= ye; jy++) {
-    x = solve(b.slice(jy), x0.slice(jy));
+  
+  int status = 0;
+  try {
+    for(int jy=ys; jy <= ye; jy++) {
+      x = solve(b.slice(jy), x0.slice(jy));
+    }
   }
+  catch (BoutIterationFail itfail) {
+    status = 1;
+  }
+  BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
   
 #ifdef CHECK
   msg_stack.pop();

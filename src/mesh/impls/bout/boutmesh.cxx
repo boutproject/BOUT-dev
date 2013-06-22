@@ -2978,7 +2978,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
     if(ly <= jyseps1_1) {
       // Inner lower leg
       ly = 0;
-    }else if(ly <= jyseps1_2 && ly > jyseps2_1) {
+    }else if((ly > jyseps2_1) && (ly <= jyseps1_2)) {
       // Upper legs
       ly = jyseps2_1 - jyseps1_1;
     }else if(ly > jyseps2_2) {

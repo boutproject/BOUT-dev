@@ -9,6 +9,8 @@ class BoutException;
 
 using namespace std;
 
+void BoutParallelThrowRhsFail(int &status, const char* message);
+
 class BoutException : public exception {
 public:
   BoutException(const char *, ...);
@@ -18,6 +20,16 @@ public:
 
 protected:
   string message;
+};
+
+class BoutRhsFail : public BoutException {
+public:
+  BoutRhsFail(const char *, ...);
+};
+
+class BoutIterationFail : public BoutException {
+public:
+  BoutIterationFail(const char *, ...);
 };
 
 #endif

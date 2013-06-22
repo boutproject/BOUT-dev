@@ -6,7 +6,7 @@ class FormatFactory;
 
 #include "dataformat.hxx"
 
-#include <uncopyable.hxx>
+#include <bout/sys/uncopyable.hxx>
 
 class FormatFactory : private Uncopyable {
 public:

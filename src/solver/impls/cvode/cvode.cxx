@@ -529,8 +529,13 @@ static int cvode_rhs(BoutReal t,
   CvodeSolver *s = (CvodeSolver*) user_data;
   
   // Calculate RHS function
-  s->rhs(t, udata, dudata);
-
+  int rhs_status = 0;
+  try {
+    s->rhs(t, udata, dudata);
+  }
+  catch (BoutRhsFail error) {
+    return 1;
+  }
   return 0;
 }
 
