@@ -212,7 +212,7 @@ int physics_init(bool restarting) {
 
 int physics_run(BoutReal t) {
   
-//   output<<"\r"<<t<<std::flush;
+  output<<"\r"<<t<<std::flush;
   
   mesh->communicate(T_electron, n_ion, Vpar_ion, T_ion);// Communicate guard cells
   
