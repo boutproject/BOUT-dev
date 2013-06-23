@@ -160,7 +160,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
       }
     }
     
-    for (int i=mesh->ngz-1; i<localN-2*((mesh->ngz-1));i++) {
+    for (int i=2*(mesh->ngz-1); i<localN-2*((mesh->ngz-1));i++) {
       d_nnz[i]=25;
 	d_nnz[localN-1-i]=25;
 	o_nnz[i]=0;
@@ -259,7 +259,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
   opts->get("rtol",rtol,pow(10.0,-5),true);
   opts->get("atol",atol,pow(10.0,-50),true);
   opts->get("dtol",dtol,pow(10.0,5),true);
-  opts->get("maxits",maxits,pow(10.0,5),true);
+  opts->get("maxits",maxits,pow(10,5),true);
 
   // Get direct solver switch
   opts->get("direct", direct, false);

@@ -77,6 +77,8 @@ Laplacian::Laplacian(Options *options) {
   OPTION(options, flags, 0);
   
   OPTION(options, include_yguards, true);
+  
+  OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
 Laplacian* Laplacian::create(Options *opts) {
@@ -102,10 +104,18 @@ const Field3D Laplacian::solve(const Field3D &b) {
 #endif
   int ys = mesh->ystart, ye = mesh->yend;
 
-  if(mesh->hasBndryLowerY() && include_yguards)
-    ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
-  if(mesh->hasBndryUpperY() && include_yguards)
-    ye = mesh->ngy-1; // Contains upper boundary and we are solving in the guard cells
+  if(mesh->hasBndryLowerY()) {
+    if (include_yguards)
+      ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+    
+    ys += extra_yguards_lower;
+  }
+  if(mesh->hasBndryUpperY()) {
+    if (include_yguards)
+      ye = mesh->ngy-1; // Contains upper boundary and we are solving in the guard cells
+      
+    ye -= extra_yguards_upper;
+  }
 
   Field3D x;
   x.allocate();

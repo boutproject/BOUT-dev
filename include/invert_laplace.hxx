@@ -116,6 +116,8 @@ protected:
   bool all_terms;  // applies to Delp2 operator and laplacian inversion
   bool nonuniform; // Non-uniform mesh correction
   bool include_yguards; // solve in y-guard cells, default true.
+  int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
   int flags;       ///< Default flags
 
