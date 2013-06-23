@@ -167,7 +167,12 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
 	o_nnz[localN-1-i]=0;
     }
     
-    MatMPIAIJSetPreallocation( MatA, 25, PETSC_NULL, 10, PETSC_NULL );
+    if (mesh->getNXPE()>1) {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
+    }
+    else {
+      MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    }
   }
   else {
     // first and last (mesh-ngz-1) entries are the edge x-values that (may) have 'off-diagonal' components (i.e. on another processor)
@@ -211,7 +216,12 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
 	o_nnz[localN-1-i]=0;
     }
     
-    MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, d_nnz );
+    if (mesh->getNXPE()>1) {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
+    }
+    else {
+      MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    }
   }
   PetscFree( d_nnz );
   PetscFree( o_nnz );
