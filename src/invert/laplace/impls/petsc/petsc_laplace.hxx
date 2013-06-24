@@ -57,17 +57,17 @@ public:
     MatDestroy( &MatA );
   }
   
-  void setCoefA(const Field2D &val) { A = val; Acoefchanged = true;}
-  void setCoefC(const Field2D &val) { C = val; coefchanged = true;}
-  void setCoefD(const Field2D &val) { D = val; coefchanged = true;}
-  void setCoefEx(const Field2D &val) { Ex = val; coefchanged = true;}
-  void setCoefEz(const Field2D &val) { Ez = val; coefchanged = true;}
+  void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/}
+  void setCoefC(const Field2D &val) { C = val; /*coefchanged = true;*/}
+  void setCoefD(const Field2D &val) { D = val; /*coefchanged = true;*/}
+  void setCoefEx(const Field2D &val) { Ex = val; /*coefchanged = true;*/}
+  void setCoefEz(const Field2D &val) { Ez = val; /*coefchanged = true;*/}
 
-  void setCoefA(const Field3D &val) { A = val; Acoefchanged = true;}
-  void setCoefC(const Field3D &val) { C = val; coefchanged = true;}
-  void setCoefD(const Field3D &val) { D = val; coefchanged = true;}
-  void setCoefEx(const Field3D &val) { Ex = val; coefchanged = true;}
-  void setCoefEz(const Field3D &val) { Ez = val; coefchanged = true;}
+  void setCoefA(const Field3D &val) { A = val; /*Acoefchanged = true;*/}
+  void setCoefC(const Field3D &val) { C = val; /*coefchanged = true;*/}
+  void setCoefD(const Field3D &val) { D = val; /*coefchanged = true;*/}
+  void setCoefEx(const Field3D &val) { Ex = val; /*coefchanged = true;*/}
+  void setCoefEz(const Field3D &val) { Ez = val; /*coefchanged = true;*/}
   
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
@@ -75,11 +75,12 @@ public:
 private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
-  void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2 );
   
   Field3D A, C, D, Ex, Ez;
-  bool coefchanged;           // Set to true when C, D, Ex or Ez coefficients are changed
-  bool Acoefchanged;	      // Set to true when A coefficient is changed
+// Metrics are not constant in y-direction, so matrix always changes as you loop over the grid
+// Hence using coefchanged switch to avoid recomputing the mmatrix is not a useful thing to do (unless maybe in a cylindrical machine, but not worth implementing just for that)
+//   bool coefchanged;           // Set to true when C, D, Ex or Ez coefficients are changed
+//   bool Acoefchanged;	      // Set to true when A coefficient is changed
   int lastflag;               // The flag used to construct the matrix
 
   FieldPerp sol;              // solution Field
@@ -95,6 +96,7 @@ private:
   
   Options *opts;              // Laplace Section Options Object
   KSPType ksptype;            // Solver Type;
+  PCType pctype;	      // Preconditioner type
 
   // Values specific to particular solvers
   BoutReal richardson_damping_factor;  
