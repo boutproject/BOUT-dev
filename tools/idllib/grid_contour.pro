@@ -18,7 +18,6 @@ PRO grid_contour, g, data2d, nlev=nlev, scale=scale, _extra=_extra
 
   nx = g.nx
   ny = g.ny
-  ny_inner = g.ny_inner
 
   j1_1 = g.jyseps1_1
   j1_2 = g.jyseps1_2
@@ -44,9 +43,16 @@ PRO grid_contour, g, data2d, nlev=nlev, scale=scale, _extra=_extra
   ; plot to get ranges
   plot, g.rxy, g.zxy, /iso, /nodata, _extra=_extra
   
+  IF ix2 EQ nx THEN ix2 = ix1
+
   IF ix2 EQ ix1 THEN BEGIN
     ; Single null or connected double 
     
+    IF ix1 GT nx-1 THEN BEGIN
+      ix1 = nx-1
+      ix2 = ix1
+    ENDIF
+
     ; core
     yinds = [range(j1_1+1, j1_2), range(j2_1+1, j2_2), j1_1+1]
     
@@ -54,35 +60,41 @@ PRO grid_contour, g, data2d, nlev=nlev, scale=scale, _extra=_extra
       g.rxy[0:ix1, yinds], g.zxy[0:ix1, yinds], $
       /over, /fill, lev=lev, c_col=col
     
-    IF j1_2 EQ j2_1 THEN BEGIN
-      ; No upper PF region. Only one SOL
-      yinds = range(0, ny-1)
+    IF ix1 LT nx-1 THEN BEGIN
+      ; X-point, otherwise just core
       
-      contour, data2d[ix1:*, yinds], $
-        g.rxy[ix1:*, yinds], g.zxy[ix1:*, yinds], $
+      IF j1_2 EQ j2_1 THEN BEGIN
+        ; No upper PF region. Only one SOL
+        yinds = range(0, ny-1)
+        
+        contour, data2d[ix1:*, yinds], $
+          g.rxy[ix1:*, yinds], g.zxy[ix1:*, yinds], $
+          /over, /fill, lev=lev, c_col=col
+        
+      ENDIF ELSE BEGIN
+        ; Inner SOL
+        
+        
+      ENDELSE
+      
+      ; Lower PF region
+      yinds = [range(0, j1_1), range(j2_2+1,ny-1)]
+      contour, data2d[0:ix1, yinds], $
+        g.rxy[0:ix1, yinds], g.zxy[0:ix1, yinds], $
         /over, /fill, lev=lev, c_col=col
       
-    ENDIF ELSE BEGIN
-      ; Inner SOL
+      ; Lower x-point
+      d = [[data2d[ix1,j1_1], data2d[ix1,j2_2+1]], [data2d[ix1,j1_1+1], data2d[ix1,j2_2]]]
+      r = [[g.rxy[ix1,j1_1], g.rxy[ix1,j2_2+1]], [g.rxy[ix1,j1_1+1], g.rxy[ix1,j2_2]]]
+      z = [[g.zxy[ix1,j1_1], g.zxy[ix1,j2_2+1]], [g.zxy[ix1,j1_1+1], g.zxy[ix1,j2_2]]]
       
-      
-    ENDELSE
-    
-    ; Lower PF region
-    yinds = [range(0, j1_1), range(j2_2+1,ny-1)]
-    contour, data2d[0:ix1, yinds], $
-      g.rxy[0:ix1, yinds], g.zxy[0:ix1, yinds], $
-      /over, /fill, lev=lev, c_col=col
-    
-    ; Lower x-point
-    d = [[data2d[ix1,j1_1], data2d[ix1,j2_2+1]], [data2d[ix1,j1_1+1], data2d[ix1,j2_2]]]
-    r = [[g.rxy[ix1,j1_1], g.rxy[ix1,j2_2+1]], [g.rxy[ix1,j1_1+1], g.rxy[ix1,j2_2]]]
-    z = [[g.zxy[ix1,j1_1], g.zxy[ix1,j2_2+1]], [g.zxy[ix1,j1_1+1], g.zxy[ix1,j2_2]]]
-
-    contour, d, r, z, $
-      /over, /fill, lev=lev, c_col=col
+      contour, d, r, z, $
+        /over, /fill, lev=lev, c_col=col
+    ENDIF
   ENDIF ELSE BEGIN
     ; Unbalanced double null
+    
+    ny_inner = g.ny_inner
     
     ; core
     yinds = [range(j1_1+1, j2_1), range(j1_2+1, j2_2), j1_1+1]
