@@ -45,6 +45,8 @@ class Datafile {
   bool openw(const char *filename, ...); // Overwrites existing file
   bool opena(const char *filename, ...); // Appends if exists
   
+  bool isValid();  // Checks if the data source is valid
+
   void close();
 
   void setLowPrecision(); ///< Only output floats

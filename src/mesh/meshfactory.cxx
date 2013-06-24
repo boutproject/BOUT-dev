@@ -5,6 +5,7 @@
 #include <strings.h>
 #include <output.hxx>
 #include <dataformat.hxx>
+#include <boutexception.hxx>
 
 #include "impls/bout/boutmesh.hxx"
 #include "impls/quilt/quiltmesh.hxx"
@@ -55,6 +56,9 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
     }
   }
   
+  if(!source->isValid())
+    throw BoutException("Invalid data source. Maybe the wrong grid file name?");
+
   // Get the type of mesh
   string type;
   options->get("type", type, MESH_BOUT);

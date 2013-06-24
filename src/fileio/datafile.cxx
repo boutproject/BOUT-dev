@@ -171,6 +171,16 @@ bool Datafile::opena(const char *format, ...) {
   return true;
 }
 
+bool Datafile::isValid() {
+  if(!enabled)
+    return true; // Pretend to be valid
+  
+  if(!file)
+    return false;
+  
+  return file->is_valid();
+}
+
 void Datafile::close() {
   if(!file)
     return;

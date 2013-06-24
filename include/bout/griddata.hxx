@@ -48,6 +48,8 @@ class GridDataSource {
  public:
   virtual ~GridDataSource() { }
   
+  virtual bool isValid() {return true;}  ///< Check if the data is valid
+
   virtual bool hasVar(const string &name) = 0; ///< Test if source can supply a variable
   
   virtual vector<int> getSize(const string &name) = 0; ///< Get size of the variable
@@ -86,6 +88,8 @@ class GridFile : public GridDataSource {
   ~GridFile();
   GridFile(DataFormat *format, const char *gridfilename);
   
+  bool isValid();
+
   void setFile(DataFormat *format, const char *gridfilename);
   
   virtual bool hasVar(const string &name);

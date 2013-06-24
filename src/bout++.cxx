@@ -143,9 +143,8 @@ void BoutInitialise(int &argc, char **&argv) {
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
 
-  int NPES, MYPE;
-  MPI_Comm_size(BoutComm::get(), &NPES);
-  MPI_Comm_rank(BoutComm::get(), &MYPE);
+  int NPES = BoutComm::size();
+  int MYPE = BoutComm::rank();
 
   /// Set up the output
   if (MYPE == 0) output.enable(); // Enable writing to stdout

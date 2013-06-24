@@ -71,6 +71,24 @@ GridFile::GridFile(DataFormat *format, const char *gridfilename) {
   setFile(format, gridfilename);
 }
 
+bool GridFile::isValid() {
+  if(!file)
+    return false;
+  
+  if(!isOpen) {
+    // File not open, so need to open
+    if(!file->openr(filename))
+      return false;
+  }
+  
+  bool valid = file->is_valid();
+  
+  if(!isOpen)
+    file->close();
+
+  return valid;
+}
+
 void GridFile::setFile(DataFormat *format, const char *gridfilename) {
   if(file != NULL)
     delete file;
