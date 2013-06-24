@@ -46,6 +46,9 @@ public:
   
   static void cleanup();
 
+  static int rank(); ///< Rank: my processor number
+  static int size(); ///< Size: number of processors
+
   // Setting options
   void setComm(MPI_Comm c);
 

@@ -49,6 +49,18 @@ void BoutComm::setArgs(int &c, char**&v) {
   getInstance()->pargv = &v;
 }
 
+int BoutComm::rank() {
+  int MYPE;
+  MPI_Comm_rank(get(), &MYPE);
+  return MYPE;
+}
+
+int BoutComm::size() {
+  int NPES;
+  MPI_Comm_size(get(), &NPES);
+  return NPES;
+}
+
 BoutComm* BoutComm::getInstance() {
   if(instance == 0) {
     // Create the singleton object
