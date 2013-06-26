@@ -351,7 +351,7 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
   for(int jx=0; jx<mesh->ngx;jx++) {
     for(int jy=1;jy<mesh->ngy;jy++) {
       for(int jz=0;jz<mesh->ngz;jz++) {
-	result(jx, jy, jz) = (var(jx, jy, jz) - var(jx, jy-1, jz)) / (mesh->dy(jx, jy) * sqrt(mesh->g_22(jx, jy)));
+	result(jx, jy, jz) = 2.*(var(jx, jy, jz) - var(jx, jy-1, jz)) / (mesh->dy(jx, jy) * sqrt(mesh->g_22(jx, jy)) + mesh->dy(jx, jy-1) * sqrt(mesh->g_22(jx, jy-1)));
       }
     }
   }
@@ -381,10 +381,21 @@ const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   return result;
 }
 
-const Field3D Grad_par_LtoC(const Field &var) {
+const Field3D Grad_par_LtoC(const Field3D &var) {
+  Field3D result;
+  result.allocate();
+  
+  for(int jx=0; jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy-1;jy++) {
+      for(int jz=0;jz<mesh->ngz;jz++) {
+	result(jx, jy, jz) = (var(jx, jy+1, jz) - var(jx, jy, jz)) / (mesh->dy(jx, jy) * sqrt(mesh->g_22(jx, jy)));
+      }
+    }
+  }
+  
+  /*
   bindex bx;
   bstencil f;
-  Field3D result;
   
   result.allocate();
 
@@ -394,7 +405,8 @@ const Field3D Grad_par_LtoC(const Field &var) {
     
     result(bx.jx, bx.jy, bx.jz) = (f.yp - f.cc) / (mesh->dy(bx.jx, bx.jy) * sqrt(mesh->g_22(bx.jx, bx.jy)));
   }while(next_index3(&bx));
-
+  */
+  
   return result;
 }
 
@@ -417,6 +429,10 @@ const Field3D Div_par_CtoL(const Field3D &var) {
 /*******************************************************************************
  * Grad2_par2
  * second parallel derivative
+ *
+ * (b dot Grad)(b dot Grad)
+ *
+ * Note: For parallel Laplacian use LaplacePerp
  *******************************************************************************/
 
 const Field2D Grad2_par2(const Field2D &f) {
@@ -677,18 +693,49 @@ const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth) {
 }
 
 /*******************************************************************************
- * Laplacian
- * Full Laplacian operator
+ * LaplacePerp
+ * Full perpendicular Laplacian operator on scalar field
+ *
+ * Laplace_perp = Laplace - Laplace_par
  *******************************************************************************/
 
-const Field2D Laplacian(const Field2D &f) {
+const Field2D Laplace_perp(const Field2D &f) {
+  return Laplace(f) - Laplace_par(f);
+}
+
+const Field3D Laplace_perp(const Field3D &f) {
+  return Laplace(f) - Laplace_par(f);
+}
+
+/*******************************************************************************
+ * LaplacePar
+ * Full parallel Laplacian operator on scalar field
+ *
+ * LaplacePar(f) = Div( b (b dot Grad(f)) ) 
+ *
+ *******************************************************************************/
+
+const Field2D Laplace_par(const Field2D &f) {
+  return D2DY2(f)/mesh->g_22 + DDY(mesh->J/mesh->g_22)*DDY(f)/mesh->J;
+}
+
+const Field3D Laplace_par(const Field3D &f) {
+  return D2DY2(f)/mesh->g_22 + DDY(mesh->J/mesh->g_22)*DDY(f)/mesh->J;
+}
+
+/*******************************************************************************
+ * Laplacian
+ * Full Laplacian operator on scalar field
+ *******************************************************************************/
+
+const Field2D Laplace(const Field2D &f) {
 #ifdef CHECK
-  int msg_pos = msg_stack.push("Laplacian( Field2D )");
+  int msg_pos = msg_stack.push("Laplace( Field2D )");
 #endif
 
   Field2D result =  mesh->G1*DDX(f) + mesh->G2*DDY(f)
-      + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f);
-  // + 2.0*mesh->g12*D2DXDY(f);
+    + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f)
+    + 2.0*mesh->g12*D2DXDY(f);
 
 #ifdef CHECK
   msg_stack.pop(msg_pos);
@@ -697,14 +744,14 @@ const Field2D Laplacian(const Field2D &f) {
   return result;
 }
 
-const Field3D Laplacian(const Field3D &f) {
+const Field3D Laplace(const Field3D &f) {
 #ifdef CHECK
-  int msg_pos = msg_stack.push("Laplacian( Field3D )");
+  int msg_pos = msg_stack.push("Laplace( Field3D )");
 #endif
 
   Field3D result  = mesh->G1*DDX(f) + mesh->G2*DDY(f) + mesh->G3*DDZ(f)
-      + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f) + mesh->g33*D2DZ2(f);
-  // + 2.0*(mesh->g12*D2DXDY(f) + mesh->g13*D2DXDZ(f) + mesh->g23*D2DYDZ(f));
+    + mesh->g11*D2DX2(f) + mesh->g22*D2DY2(f) + mesh->g33*D2DZ2(f)
+    + 2.0*(mesh->g12*D2DXDY(f) + mesh->g13*D2DXDZ(f) + mesh->g23*D2DYDZ(f));
 
 #ifdef CHECK
   msg_stack.pop(msg_pos);

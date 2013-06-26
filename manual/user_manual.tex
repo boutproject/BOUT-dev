@@ -2988,10 +2988,27 @@ in Clebsh form as \index{Clebsh}
 \mathbf{B}_0 = \nabla z\times\nabla x \qquad \left|B_0\right| = \frac{\sqrt{g_{yy}}}{J}
 \]
 
+\begin{table}[htb!]
+\centering
+\caption{Clebsch operators}
+\label{tab:solvers}
+\begin{tabular}{l c}
+\hline
+Function & Formula \\
+\hline
+\code{Grad\_par} & $\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}$ \\
+\code{Div\_par} & $\displaystyle \nabla^0_{||}F = B_0\partial^0_{||}\left(\frac{F}{B_0}\right)$ \\
+\code{Grad2\_par2} & $\displaystyle \partial^2_{||}\phi = \partial^0_{||}\left(\partial^0_{||}\phi\right) = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}$ \\
+\code{Laplace\_par} & $\displaystyle \nabla_{||}^2\phi = \nabla\cdot\mathbf{b}\mathbf{b}\cdot\nabla\phi = \frac{1}{J}\deriv{}{y}\left(\frac{J}{g_{yy}}\deriv{\phi}{y}\right)$ \\
+\code{Laplace\_perp} & $\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2$ \\
+\code{Delp2} & Perpendicular Laplacian, neglecting all $y$ derivatives \\
+             & The \code{Laplacian} solver performs the inverse operation \\
+\code{}
+\hline
+\end{tabular}
+\end{table}
+
 \begin{eqnarray*}
-\partial^0_{||} &=& \mathbf{b}_0\cdot\nabla = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y} \\
-\nabla^0_{||}F &=& B_0\partial^0_{||}\left(\frac{F}{B_0}\right) \\
-\partial^2_{||}\phi &=& \partial^0_{||}\left(\partial^0_{||}\phi\right) = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2} \\
 \mathbf{b}_0\cdot\nabla\phi\times\nabla A &=& \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} - g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x} - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} + \left(g_{xy}\deriv{\phi}{y} - g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
 \end{eqnarray*}
 

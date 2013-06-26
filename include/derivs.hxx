@@ -76,14 +76,23 @@ const Field2D D2DZ2(const Field2D &f);
 
 const Field3D D4DX4(const Field3D &f);
 const Field2D D4DX4(const Field2D &f);
+
 const Field3D D4DY4(const Field3D &f);
 const Field2D D4DY4(const Field2D &f);
+
 const Field3D D4DZ4(const Field3D &f);
 const Field2D D4DZ4(const Field2D &f);
 
 /////////// MIXED DERIVATIVES //////////
 
+const Field2D D2DXDY(const Field2D &f);
+const Field3D D2DXDY(const Field3D &f);
+
+const Field2D D2DXDZ(const Field2D &f);
 const Field3D D2DXDZ(const Field3D &f);
+
+const Field2D D2DYDZ(const Field2D &f);
+const Field3D D2DYDZ(const Field3D &f);
 
 ///////// UPWINDING METHODS /////////////
 // For terms of form v * grad(f)

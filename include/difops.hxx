@@ -87,7 +87,7 @@ const Field3D Grad2_par2(const Field3D &f);
 // These are a simple way to do staggered differencing
 const Field3D Grad_par_CtoL(const Field3D &var);
 const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f);
-const Field3D Grad_par_LtoC(const Field &var);
+const Field3D Grad_par_LtoC(const Field3D &var);
 const Field3D Div_par_LtoC(const Field2D &var);
 const Field3D Div_par_LtoC(const Field3D &var);
 const Field3D Div_par_CtoL(const Field2D &var);
@@ -109,9 +109,17 @@ const Field2D Delp2(const Field2D &f);
 const Field3D Delp2(const Field3D &f, BoutReal zsmooth=-1.0);
 const FieldPerp Delp2(const FieldPerp &f, BoutReal zsmooth=-1.0);
 
-// Full Laplacian operator
-const Field2D Laplacian(const Field2D &f);
-const Field3D Laplacian(const Field3D &f);
+// Perpendicular Laplacian, keeping y derivatives
+const Field2D Laplace_perp(const Field2D &f);
+const Field3D Laplace_perp(const Field3D &f);
+
+// Parallel Laplacian operator
+const Field2D Laplace_par(const Field2D &f);
+const Field3D Laplace_par(const Field3D &f);
+
+// Full Laplacian operator (par + perp)
+const Field2D Laplace(const Field2D &f);
+const Field3D Laplace(const Field3D &f);
 
 // Terms of form b0 x Grad(phi) dot Grad(A)
 const Field2D b0xGrad_dot_Grad(const Field2D &phi, const Field2D &A);

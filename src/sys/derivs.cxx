@@ -1728,6 +1728,44 @@ const Field2D D4DZ4(const Field2D &f) {
  * Mixed derivatives
  *******************************************************************************/
 
+const Field2D D2DXDY(const Field2D &f) {
+  return Field2D(0.0);
+  /*
+    Note: Missing corners, so following will break
+  Field2D result;
+  result.allocate();
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++) {
+      result(i,j) = 0.25*( +(f(i+1,j+1) - f(i-1,j+1))/(mesh->dx(i,j+1))
+                           -(f(i+1,j-1) - f(i-1,j-1))/(mesh->dx(i,j-1)) )
+        / mesh->dy(i,j);
+    }
+  return result;
+  */
+}
+
+const Field3D D2DXDY(const Field3D &f) {
+  return Field3D(0.0);
+  /*
+    Note: Missing corners, so following will break
+    
+  Field3D result;
+  result.allocate();
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++) 
+      for(int k=0;k<mesh->ngz;k++) {
+        result(i,j,k) = 0.25*( +(f(i+1,j+1,k) - f(i-1,j+1,k))/(mesh->dx(i,j+1))
+                               -(f(i+1,j-1,k) - f(i-1,j-1,k))/(mesh->dx(i,j-1)) )
+          / mesh->dy(i,j);
+      }
+  return result;
+  */
+}
+
+const Field2D D2DXDZ(const Field2D &f) {
+  return Field2D(0.0);
+}
+
 /// X-Z mixed derivative
 const Field3D D2DXDZ(const Field3D &f) {
   Field3D result;
@@ -1736,6 +1774,25 @@ const Field3D D2DXDZ(const Field3D &f) {
   // Maybe should average results of DDX(DDZ) and DDZ(DDX)?
   result = DDX(DDZ(f, true));
   
+  return result;
+}
+
+const Field2D D2DYDZ(const Field2D &f) {
+  return Field2D(0.0);
+}
+
+const Field3D D2DYDZ(const Field3D &f) {
+  Field3D result;
+  result.allocate();
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart;j<=mesh->yend;j++) 
+      for(int k=0;k<mesh->ngz-1;k++) {
+        int kp = (k+1) % (mesh->ngz-1);
+        int km = (k-1+mesh->ngz-1) % (mesh->ngz-1);
+        result(i,j,k) = 0.25*( +(f(i,j+1,kp) - f(i,j-1,kp))/(mesh->dy(i,j+1))
+                               -(f(i,j+1,km) - f(i,j-1,km))/(mesh->dy(i,j-1)) )
+          / mesh->dz;
+      }
   return result;
 }
 
