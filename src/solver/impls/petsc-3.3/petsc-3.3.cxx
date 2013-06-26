@@ -563,7 +563,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
  * Run - Advance time
  **************************************************************************/
 
-PetscErrorCode PetscSolver::run(MonitorFunc mon) {
+PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
   integer steps;
   BoutReal ftime;
