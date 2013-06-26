@@ -4,15 +4,15 @@
 #include <boundary_factory.hxx>
 #include <output.hxx>
 
-FieldData::~FieldData()
-{
-  // Delete the boundary operations
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    delete (*it);
+FieldData::~FieldData() {
+  if(!boundaryIsCopy) {
+    // Delete the boundary operations
+    for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
+      delete (*it);
+  }
 }
 
-void FieldData::setBoundary(const string &name)
-{
+void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
@@ -29,10 +29,10 @@ void FieldData::setBoundary(const string &name)
   }
 
   boundaryIsSet = true;
+  boundaryIsCopy = false;
 }
 
-void FieldData::setBoundary(const string &region, BoundaryOp *op)
-{
+void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
  
@@ -46,7 +46,10 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op)
       output << "Replacing ";
     }
   }
-  
-  
-  
+}
+
+void FieldData::copyBoundary(const FieldData &f) {
+  bndry_op = f.bndry_op;
+  boundaryIsCopy = true;
+  boundaryIsSet = true;
 }

@@ -81,11 +81,15 @@ class FieldData {
   // Boundary conditions
   void setBoundary(const string &name); ///< Set the boundary conditions
   void setBoundary(const string &region, BoundaryOp *op); ///< Manually set
+
+  void copyBoundary(const FieldData &f); ///< Copy the boundary conditions from another field
+
   virtual void applyBoundary() {}
   virtual void applyTDerivBoundary() {};
  protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
-
+  bool boundaryIsCopy; // True if bndry_op is a copy
+  
   bool boundaryIsSet; // Set to true when setBoundary called
 };
 
