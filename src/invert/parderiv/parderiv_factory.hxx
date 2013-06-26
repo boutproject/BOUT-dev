@@ -12,7 +12,7 @@ class ParDerivFactory {
   static ParDerivFactory* getInstance();
   
   InvertPar* createInvertPar();
-  InvertPar* createInvertPar(const char* type);
+  InvertPar* createInvertPar(const char* type, Options *opt = NULL);
   InvertPar* createInvertPar(Options *opts);
  private:
   ParDerivFactory() {} // Prevent instantiation of this class

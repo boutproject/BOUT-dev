@@ -44,14 +44,17 @@
 
 class InvertParCR : public InvertPar {
 public:
-  InvertParCR();
+  InvertParCR(Options *opt);
   ~InvertParCR();
   const Field3D solve(const Field3D &f);
   
   void setCoefA(const Field2D &f) {A = f;}
   void setCoefB(const Field2D &f) {B = f;}
+  void setCoefC(const Field2D &f) {C = f;}
+  void setCoefD(const Field2D &f) {D = f;}
+  void setCoefE(const Field2D &f) {E = f;}
 private:
-  Field2D A, B;
+  Field2D A, B, C, D, E;
   
   int nsys;
   

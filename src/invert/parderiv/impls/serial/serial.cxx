@@ -51,7 +51,7 @@
 
 #include <cmath>
 
-InvertParSerial::InvertParSerial() {
+InvertParSerial::InvertParSerial(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   rhs = cmatrix(mesh->ngy, (mesh->ngz-1)/2 + 1);
   rhsk = new dcomplex[mesh->ngy-4];
   xk = new dcomplex[mesh->ngy-4];
@@ -89,20 +89,6 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     for(int y=0;y<mesh->ngy-4;y++)
       rfft(f[x][y+2], mesh->ngz-1, rhs[y]);
     
-    // Set up tridiagonal system. Same for all k
-    // except for phase shift at twist-shift
-    for(int y=0;y<mesh->ngy-4;y++) {
-      BoutReal acoef = A[x][y+2];
-      BoutReal bcoef = B[x][y+2] / (mesh->g_22[x][y+2] * SQ(mesh->dy[x][y+2]));
-      
-      a[y] =            bcoef;
-      b[y] = acoef - 2.*bcoef;
-      c[y] =            bcoef;
-    }
-    
-    dcomplex a0 = a[0]; // Will be modified later
-    dcomplex cn = c[mesh->ngy-5];
-    
     // Solve cyclic tridiagonal system for each k
     int nyq = (mesh->ngz-1)/2;
     for(int k=0;k<=nyq;k++) {
@@ -110,11 +96,32 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
       for(int y=0;y<mesh->ngy-4;y++)
         rhsk[y] = rhs[y][k];
       
-      // Modify coefficients across twist-shift
       BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      
+      // Set up tridiagonal system
+      for(int y=0;y<mesh->ngy-4;y++) {
+        BoutReal acoef = A(x, y+2);                     // Constant
+	BoutReal bcoef = B(x, y+2) / mesh->g_22(x,y+2); // d2dy2
+        BoutReal ccoef = C(x, y+2);                     // d2dydz
+        BoutReal dcoef = D(x, y+2);                     // d2dz2
+        BoutReal ecoef = E(x, y+2);                     // ddy
+	
+        bcoef /= SQ(mesh->dy(x, y+2));
+        ccoef /= mesh->dy(x,y+2)*mesh->dz;
+        dcoef /= SQ(mesh->dz);
+        ecoef /= mesh->dy(x,y+2);
+        
+        //     const     d2dy2        d2dydz             d2dz2           ddy
+        //     -----     -----        ------             -----           ---
+	a[y] =            bcoef - 0.5*Im*kwave*ccoef                  -0.5*ecoef;
+	b[y] = acoef - 2.*bcoef                     - SQ(kwave)*dcoef;
+	c[y] =            bcoef + 0.5*Im*kwave*ccoef                  +0.5*ecoef;
+      }
+      
+      // Modify coefficients across twist-shift
       dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
-      a[0] = a0 * phase;
-      c[mesh->ngy-5] = cn / phase;
+      a[0] *= phase;
+      c[mesh->ngy-5] /= phase;
       
       // Solve cyclic tridiagonal system
       cyclic_tridag(a, b, c, rhsk, xk, mesh->ngy-4);

@@ -36,6 +36,36 @@ int SurfaceIter::yGlobal(int yloc) {
   return 0;
 }
 
+bool SurfaceIter::firstY() { ///< Is this processor at the lower end?
+  if(closed())
+    return false;
+  
+  // Communicator for this surface
+  MPI_Comm comm = communicator();
+  
+  // Get processor rank
+  int myp;
+  MPI_Comm_rank(comm, &myp);
+  
+  return myp == 0;
+}
+
+bool SurfaceIter::lastY() {
+  if(closed())
+    return false;
+  
+  // Communicator for this surface
+  MPI_Comm comm = communicator();
+  
+  // Get number of processors and processor rank
+  int np;
+  MPI_Comm_size(comm, &np);
+  int myp;
+  MPI_Comm_rank(comm, &myp);
+  
+  return myp == np-1;
+}
+
 void SurfaceIter::first() {
   xpos = 0;
 }

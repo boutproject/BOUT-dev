@@ -4,7 +4,7 @@
  * 
  * Inverts a matrix of the form 
  *
- * A + B * Grad2_par2
+ * A + B * Grad2_par2 + C*D2DYDZ + D*D2DZ2 + E*DDY
  * 
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -33,6 +33,7 @@
 
 #include "field3d.hxx"
 #include "field2d.hxx"
+#include "options.hxx"
 
 // Parderiv implementations
 #define PARDERIVSERIAL "serial"
@@ -41,7 +42,7 @@
 /// Base class for parallel inversion solvers
 class InvertPar {
 public:
-  InvertPar() {}
+  InvertPar(Options *opt) {}
   virtual ~InvertPar() {}
   
   static InvertPar* Create();
@@ -59,6 +60,18 @@ public:
   virtual void setCoefB(const Field2D &f) = 0;
   virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
   virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
+  
+  virtual void setCoefC(const Field2D &f) = 0;
+  virtual void setCoefC(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefC(const BoutReal f) {setCoefB(Field2D(f));}
+  
+  virtual void setCoefD(const Field2D &f) = 0;
+  virtual void setCoefD(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefD(const BoutReal f) {setCoefB(Field2D(f));}
+  
+  virtual void setCoefE(const Field2D &f) = 0;
+  virtual void setCoefE(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefE(const BoutReal f) {setCoefB(Field2D(f));}
   
 private:
 };

@@ -53,6 +53,7 @@ public:
   
   CyclicReduce() {
     nprocs = 0;
+    myproc = -1;
     N = 0;
     Nsys = 0;
   }
@@ -64,12 +65,16 @@ public:
   
   void setup(MPI_Comm c, int size) {
     comm = c;
-    if(size != N)
+    
+    int np, myp;
+    MPI_Comm_size(c, &np);
+    MPI_Comm_rank(c, &myp);
+    if((size != N) || (np != nprocs) || (myp != myproc))
       freeMemory(); // Need to re-size
     N = size;
     periodic = false;
-    MPI_Comm_size(c, &nprocs);
-    MPI_Comm_rank(c, &myproc);
+    nprocs = np;
+    myproc = myp;
   }
 
   ~CyclicReduce() {
@@ -85,7 +90,7 @@ public:
   
   void setCoefs(int nsys, T **a, T **b, T **c) {
     // Make sure correct memory arrays allocated
-    allocMemory(nsys, N);
+    allocMemory(nprocs, nsys, N);
 
     // Fill coefficient array
     for(int j=0;j<Nsys;j++)
@@ -188,7 +193,7 @@ public:
         if(p != MPI_UNDEFINED) {
           // p is the processor number. Copy data
 #ifdef DIAGNOSE
-          output << "Copying received data" << endl;
+          output << "Copying received data from " << p << endl;
 #endif
           for(int i=0;i<myns; i++)
             for(int j=0;j<8;j++) {
@@ -361,15 +366,16 @@ private:
   T *ifp;     // Interface equations returned to processor p
   T *x1, *xn; // Interface solutions for back-solving
   
-  void allocMemory(int nsys, int n) {
-    if( (nsys == Nsys) && (n == N))
+  void allocMemory(int np, int nsys, int n) {
+    if( (nsys == Nsys) && (n == N) && (np == nprocs))
       return; // No need to allocate memory
     
     if(Nsys > 0)
       freeMemory(); // Free existing memory
     
-    Nsys = nsys;
-    N = n;
+    nprocs = np;
+    Nsys   = nsys;
+    N      = n;
 
     // Work out how many systems are going to be solved on this processor
     int ns = nsys / nprocs; // Number of systems to assign to all processors

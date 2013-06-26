@@ -3,7 +3,7 @@
  * 
  * Inverts a matrix of the form 
  *
- * A + B * Grad2_par2
+ * A + B * Grad2_par2 + C*D2DYDZ + + D*D2DZ2 + E*DDY
  * 
  * Parallel algorithm, using Cyclic Reduction
  *
@@ -48,17 +48,35 @@
 
 #include <cmath>
 
-InvertParCR::InvertParCR() {
+InvertParCR::InvertParCR(Options *opt) : InvertPar(opt), A(1.0), B(0.0), C(0.0), D(0.0), E(0.0) {
   // Number of k equations to solve for each x location
   nsys = 1 + (mesh->ngz-1)/2; 
 
   rhs = cmatrix(mesh->ngy, nsys);
   
-  rhsk = cmatrix(nsys, mesh->ngy-4);
-  xk = cmatrix(nsys, mesh->ngy-4);
-  a = cmatrix(nsys, mesh->ngy-4);
-  b = cmatrix(nsys, mesh->ngy-4);
-  c = cmatrix(nsys, mesh->ngy-4);
+  // Find out if we are on a boundary
+  int size = mesh->ngy-4;
+  SurfaceIter surf(mesh);
+  for(surf.first(); !surf.isDone(); surf.next()) {
+    BoutReal ts;
+    int n = mesh->ngy-4;
+    if(!surf.closed(ts)) {
+      // Open field line
+      if(surf.firstY())
+        n += 2;
+      if(surf.lastY())
+        n += 2;
+      
+      if(n > size)
+        size = n; // Maximum size
+    }
+  }
+  
+  rhsk = cmatrix(nsys, size);
+  xk = cmatrix(nsys, size);
+  a = cmatrix(nsys, size);
+  b = cmatrix(nsys, size);
+  c = cmatrix(nsys, size);
 }
 
 InvertParCR::~InvertParCR() {
@@ -89,46 +107,97 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   for(surf.first(); !surf.isDone(); surf.next()) {
     int x = surf.xpos;
     
-    // Setup CyclicReduce object
-    cr->setup(surf.communicator(), mesh->ngy-4);
+    // Test if open or closed field-lines
+    BoutReal ts;
+    bool closed = surf.closed(ts);
 
-    // Check if surface is periodic
-    BoutReal ts; // Twist-shift angle
-    cr->setPeriodic(surf.closed(ts));
+    // Number of rows
+    int y0 = 0, size = mesh->ngy-4; // If no boundaries
+    if(!closed) {
+      if(surf.firstY()) {
+        y0 += 2;
+        size += 2;
+      }
+      if(surf.lastY())
+        size += 2;
+    }
+      
+    // Setup CyclicReduce object
+    cr->setup(surf.communicator(), size);
+    cr->setPeriodic(closed);
     
     // Take Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
-      rfft(f[x][y+2], mesh->ngz-1, rhs[y]);
+      rfft(f[x][y+2], mesh->ngz-1, rhs[y+y0]);
     
-    // Set up tridiagonal system. Same for all k
+    // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
+      BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
       for(int y=0;y<mesh->ngy-4;y++) {
-	BoutReal acoef = A[x][y+2];
-	BoutReal bcoef = B[x][y+2] / (mesh->g_22[x][y+2] * SQ(mesh->dy[x][y+2]));
+        
+	BoutReal acoef = A(x, y+2);                     // Constant
+	BoutReal bcoef = B(x, y+2) / mesh->g_22(x,y+2); // d2dy2
+        BoutReal ccoef = C(x, y+2);                     // d2dydz
+        BoutReal dcoef = D(x, y+2);                     // d2dz2
+        BoutReal ecoef = E(x, y+2);                     // ddy
 	
-	a[k][y] =            bcoef;
-	b[k][y] = acoef - 2.*bcoef;
-	c[k][y] =            bcoef;
+        bcoef /= SQ(mesh->dy(x, y+2));
+        ccoef /= mesh->dy(x,y+2)*mesh->dz;
+        dcoef /= SQ(mesh->dz);
+        ecoef /= mesh->dy(x,y+2);
+        
+        //           const     d2dy2        d2dydz             d2dz2           ddy
+        //           -----     -----        ------             -----           ---
+	a[k][y+y0] =            bcoef - 0.5*Im*kwave*ccoef                  -0.5*ecoef;
+	b[k][y+y0] = acoef - 2.*bcoef                     - SQ(kwave)*dcoef;
+	c[k][y+y0] =            bcoef + 0.5*Im*kwave*ccoef                  +0.5*ecoef;
 	
-	rhsk[k][y] = rhs[y][k]; // Transpose
+	rhsk[k][y+y0] = rhs[y+y0][k]; // Transpose
       }
     }
-    // Twist-shift
-    int rank, np;
-    MPI_Comm_rank(surf.communicator(), &rank);
-    MPI_Comm_size(surf.communicator(), &np);
-    if(rank == 0) {
-      for(int k=0; k<nsys; k++) {
-	BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
-	a[k][0] *= phase;
+
+    if(closed) {
+      // Twist-shift
+      int rank, np;
+      MPI_Comm_rank(surf.communicator(), &rank);
+      MPI_Comm_size(surf.communicator(), &np);
+      if(rank == 0) {
+        for(int k=0; k<nsys; k++) {
+          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
+          a[k][0] *= phase;
+        }
       }
-    }
-    if(rank == np-1) {
-      for(int k=0; k<nsys; k++) {
-	BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
-	c[k][mesh->ngy-5] *= phase;
+      if(rank == np-1) {
+        for(int k=0; k<nsys; k++) {
+          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
+          c[k][mesh->ngy-5] *= phase;
+        }
+      }
+    }else {
+      // Open surface, so may have boundaries
+      if(surf.firstY()) {
+        for(int k=0; k<nsys; k++) {
+          for(int y=0;y<2;y++) {
+            a[k][y] =  0.;
+            b[k][y] =  1.;
+            c[k][y] = -1.;
+            
+            rhsk[k][y] = 0.;
+          }
+        }
+      }
+      if(surf.lastY()) {
+        for(int k=0; k<nsys; k++) {
+          for(int y=size-2;y<size;y++) {
+            a[k][y] = -1.;
+            b[k][y] =  1.;
+            c[k][y] =  0.;
+            
+            rhsk[k][y] = 0.;
+          }
+        }
       }
     }
     
@@ -138,13 +207,13 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Put back into rhs array
     for(int k=0;k<nsys;k++) {
-      for(int y=0;y<mesh->ngy-4;y++)
+      for(int y=0;y<size;y++)
         rhs[y][k] = xk[k][y];
     }
     
     // Inverse Fourier transform 
-    for(int y=0;y<mesh->ngy-4;y++)
-      irfft(rhs[y], mesh->ngz-1, result[x][y+2]);
+    for(int y=0;y<size;y++)
+      irfft(rhs[y], mesh->ngz-1, result[x][y+2-y0]);
     
   }
   

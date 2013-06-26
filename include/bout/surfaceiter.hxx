@@ -22,6 +22,9 @@ class SurfaceIter {
   
   int yGlobal(int yloc); // Return global y index of given local index
 
+  bool firstY(); ///< Is this processor at the lower end?
+  bool lastY();  ///< Is this processor at the upper end?
+
   void first();
   void next();
   bool isDone();
