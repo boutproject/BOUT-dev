@@ -687,6 +687,25 @@ installed, this points to the IDL install (e.g. something like \texttt{/usr/comm
 \end{verbatim}
 ``which install'' should now print the install in your local bin directory.
 
+\subsubsection{Compiling cvode.cxx fails}
+\index{cvode.cxx}
+Occasionally compiling the CVODE solver interface will fail with an error similar to:
+\begin{verbatim}
+cvode.cxx: In member function ‘virtual int CvodeSolver::init(rhsfunc, bool, int, BoutR...
+cvode.cxx:234:56: error: invalid conversion from ‘int (*)(CVINT...
+...
+\end{verbatim}
+
+This is caused by different sizes of ints used in compiling the CVODE library. To fix, edit
+\file{src/solver/impls/cvode/cvode.cxx}, and change line 48 from
+\begin{lstlisting}[numbers=none]
+typedef int CVINT;
+\end{lstlisting}
+to
+\begin{lstlisting}[numbers=none]
+typedef long CVINT;
+\end{lstlisting}
+
 \section{Running BOUT++}
 \label{sec:running}
 
@@ -695,7 +714,7 @@ The \texttt{examples/} directory contains some test cases for a variety of fluid
 The simplest example to start with is \file{examples/conduction/}. This solves a single equation for
 a 3D scalar field $T$:
 \[
-\deriv{T}{t} = \nabla_{||}\left(\chi\partial_{||}\right)
+\deriv{T}{t} = \nabla_{||}\left(\chi\partial_{||} T\right)
 \]
 There are several files involved:
 \begin{itemize}
@@ -3003,7 +3022,6 @@ Function & Formula \\
 \code{Laplace\_perp} & $\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2$ \\
 \code{Delp2} & Perpendicular Laplacian, neglecting all $y$ derivatives \\
              & The \code{Laplacian} solver performs the inverse operation \\
-\code{}
 \hline
 \end{tabular}
 \end{table}
