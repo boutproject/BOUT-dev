@@ -25,6 +25,8 @@
  **************************************************************************/
 #include "petsc_laplace.hxx"
 
+#ifdef BOUT_HAS_PETSC_3_3
+
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
 
@@ -837,3 +839,5 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   coef5 += Ez[x][y][z];
   
 }
+
+#endif // BOUT_HAS_PETSC_3_3

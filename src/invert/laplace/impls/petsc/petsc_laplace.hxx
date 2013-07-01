@@ -31,10 +31,20 @@ class LaplacePetsc;
 #ifndef BOUT_HAS_PETSC_3_3
 
 #include <boutexception.hxx>
+#include <invert_laplace.hxx>
 
 class LaplacePetsc : public Laplacian {
 public:
   LaplacePetsc(Options *opt = NULL) { throw BoutException("No PETSc solver available"); }
+  
+  void setCoefA(const Field2D &val) {}
+  void setCoefB(const Field2D &val) {}
+  void setCoefC(const Field2D &val) {}
+  void setCoefD(const Field2D &val) {}
+  void setCoefEx(const Field2D &val) {}
+  void setCoefEz(const Field2D &val) {}
+  
+  const FieldPerp solve(const FieldPerp &b) {}
 };
 
 #else
