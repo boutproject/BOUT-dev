@@ -75,6 +75,10 @@ Laplacian::Laplacian(Options *options) {
   OPTION3(options, low_mem, all_terms, nonuniform, false);
   
   OPTION(options, flags, 0);
+  
+  OPTION(options, include_yguards, true);
+  
+  OPTION2(options, extra_yguards_lower, extra_yguards_upper, 0);
 }
 
 Laplacian* Laplacian::create(Options *opts) {
@@ -94,23 +98,38 @@ Laplacian* Laplacian::defaultInstance() {
  **********************************************************************************/
 
 const Field3D Laplacian::solve(const Field3D &b) {
+  Timer timer("invert");
 #ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D)");
 #endif
-
   int ys = mesh->ystart, ye = mesh->yend;
 
-  if(mesh->hasBndryLowerY())
-    ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
-    ye = mesh->ngy-1; // Contains upper boundary
+  if(mesh->hasBndryLowerY()) {
+    if (include_yguards)
+      ys = 0; // Mesh contains a lower boundary and we are solving in the guard cells
+    
+    ys += extra_yguards_lower;
+  }
+  if(mesh->hasBndryUpperY()) {
+    if (include_yguards)
+      ye = mesh->ngy-1; // Contains upper boundary and we are solving in the guard cells
+      
+    ye -= extra_yguards_upper;
+  }
 
   Field3D x;
   x.allocate();
-
-  for(int jy=ys; jy <= ye; jy++) {
-    x = solve(b.slice(jy));
+  
+  int status = 0;
+  try {
+    for(int jy=ys; jy <= ye; jy++) {
+      x = solve(b.slice(jy));
+    }
   }
+  catch (BoutIterationFail itfail) {
+    status = 1;
+  }
+  BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
   
 #ifdef CHECK
   msg_stack.pop();
@@ -129,22 +148,30 @@ const Field2D Laplacian::solve(const Field2D &b) {
 }
 
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
-  #ifdef CHECK
+  Timer timer("invert");
+#ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D, Field3D)");
 #endif
 
   int ys = mesh->ystart, ye = mesh->yend;
-  if(mesh->hasBndryLowerY())
+  if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
+  if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->ngy-1; // Contains upper boundary
   
   Field3D x;
   x.allocate();
-
-  for(int jy=ys; jy <= ye; jy++) {
-    x = solve(b.slice(jy), x0.slice(jy));
+  
+  int status = 0;
+  try {
+    for(int jy=ys; jy <= ye; jy++) {
+      x = solve(b.slice(jy), x0.slice(jy));
+    }
   }
+  catch (BoutIterationFail itfail) {
+    status = 1;
+  }
+  BoutParallelThrowRhsFail(status, "Laplacian inversion took too many iterations.");
   
 #ifdef CHECK
   msg_stack.pop();
@@ -402,6 +429,8 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
   
   x = lap->solve(b);
   
+  x.setLocation(b.getLocation());
+
   return 0;
 }
 
@@ -432,6 +461,8 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
 
   x = lap->solve(b, x);
   
+  x.setLocation(b.getLocation());
+
 }
 const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
@@ -458,6 +489,8 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
   
   Field3D x = lap->solve(b);
   
+  x.setLocation(b.getLocation());
+
   return x;
 }
 

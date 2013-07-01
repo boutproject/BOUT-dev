@@ -45,7 +45,7 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-typedef int CVINT;
+typedef long CVINT;
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
@@ -126,10 +126,11 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
 
   msg_stack.push("Getting options");
   BoutReal abstol, reltol;
+  N_Vector abstolvec;
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
-  bool use_precon, use_jacobian;
+  bool use_precon, use_jacobian, use_vector_abstol;
   BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
   int MXSUB = mesh->xend - mesh->xstart + 1;
@@ -142,6 +143,28 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
+  options->get("use_vector_abstol",use_vector_abstol,false);
+  if (use_vector_abstol) {
+    Options *abstol_options = Options::getRoot();
+    BoutReal tempabstol;
+    if((abstolvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
+      bout_error("ERROR: SUNDIALS memory allocation (abstol vector) failed\n");
+    vector<BoutReal> f2dtols;
+    vector<BoutReal> f3dtols;
+    BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
+    for (int i=0; i<f2d.size(); i++) {
+      abstol_options = Options::getRoot()->getSection(f2d[i].name);
+      abstol_options->get("abstol", tempabstol, abstol);
+      f2dtols.push_back(tempabstol);
+    }
+    for (int i=0; i<f3d.size(); i++) {
+      abstol_options = Options::getRoot()->getSection(f3d[i].name);
+      abstol_options->get("atol", tempabstol, abstol);
+      f3dtols.push_back(tempabstol);
+    }
+    set_abstol_values(abstolvec_data, f2dtols, f3dtols);
+  }
+  
   options->get("maxl", maxl, 5);
   OPTION(options, use_precon,   false);
   OPTION(options, use_jacobian, false);
@@ -190,16 +213,28 @@ int CvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
     throw BoutException("CVodeInit failed\n");
   msg_stack.pop();
 
-  msg_stack.push("Calling CVodeSStolerances");
-  if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
-    throw BoutException("CVodeSStolerances failed\n");
+  if (use_vector_abstol) {
+    msg_stack.push("Calling CVodeSStolerances");
+    if( CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0 )
+      throw BoutException("CVodeSStolerances failed\n");
   msg_stack.pop();
+  }
+  else {
+    if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
+      throw BoutException("CVodeSStolerances failed\n");
+    msg_stack.pop();
+  }
 
   CVodeSetMaxNumSteps(cvode_mem, mxsteps);
 
   if(max_timestep > 0.0) {
     // Setting a maximum timestep
     CVodeSetMaxStep(cvode_mem, max_timestep);
+  }
+
+  if(start_timestep > 0.0) {
+    // Setting a user-supplied initial guess for the appropriate timestep
+    CVodeSetInitStep(cvode_mem, start_timestep);
   }
   
   if(start_timestep > 0.0) {
@@ -494,8 +529,13 @@ static int cvode_rhs(BoutReal t,
   CvodeSolver *s = (CvodeSolver*) user_data;
   
   // Calculate RHS function
-  s->rhs(t, udata, dudata);
-
+  int rhs_status = 0;
+  try {
+    s->rhs(t, udata, dudata);
+  }
+  catch (BoutRhsFail error) {
+    return 1;
+  }
   return 0;
 }
 
@@ -539,6 +579,65 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
   s->jac(t, ydata, vdata, Jvdata);
   
   return 0;
+}
+
+/**************************************************************************
+ * vector abstol functions
+ **************************************************************************/
+
+void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
+  int jx, jy;
+  int p = 0; // Counter for location in abstolvec_data array
+
+  int MYSUB = mesh->yend - mesh->ystart + 1;
+
+  // Inner X boundary
+  if(mesh->firstX() && !mesh->periodicX) {
+    for(jx=0;jx<mesh->xstart;jx++)
+      for(jy=0;jy<MYSUB;jy++)
+	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols);
+  }
+
+  // Lower Y boundary region
+  for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
+    for(jy=0;jy<mesh->ystart;jy++)
+      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols);
+  }
+
+  // Bulk of points
+  for (jx=mesh->xstart; jx <= mesh->xend; jx++)
+    for (jy=mesh->ystart; jy <= mesh->yend; jy++)
+      loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols);
+  
+  // Upper Y boundary condition
+  for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
+    for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
+      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols);
+  }
+
+  // Outer X boundary
+  if(mesh->lastX() && !mesh->periodicX) {
+    for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
+      for(jy=mesh->ystart;jy<=mesh->yend;jy++)
+	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols);
+  }
+}
+
+void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
+  // Loop over 2D variables
+  for(int i=0;i<f2dtols.size();i++) {
+    abstolvec_data[p] = f2dtols[i];
+    p++;
+  }
+  
+  for (int jz=0; jz < mesh->ngz-1; jz++) {
+    
+    // Loop over 3D variables
+    for(int i=0;i<f3dtols.size();i++) {
+      abstolvec_data[p] = f3dtols[i];
+      p++;
+    }  
+  }
 }
 
 #endif

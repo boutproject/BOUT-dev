@@ -110,11 +110,13 @@ class Field3D : public Field, public FieldData {
   /// Addition operators
   Field3D & operator+=(const Field3D &rhs);
   Field3D & operator+=(const Field2D &rhs);
+  Field3D & operator+=(const FieldPerp &rhs);
   Field3D & operator+=(const BoutReal &rhs);
   
   /// Subtraction
   Field3D & operator-=(const Field3D &rhs);
   Field3D & operator-=(const Field2D &rhs);
+  Field3D & operator-=(const FieldPerp &rhs);
   Field3D & operator-=(const BoutReal &rhs);
 
   /// Multiplication

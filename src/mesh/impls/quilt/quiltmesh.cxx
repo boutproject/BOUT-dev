@@ -349,6 +349,33 @@ int QuiltMesh::wait(comm_handle handle) {
   return 0;
 }
 
+/***************************************************************
+ *             Non-Local Communications
+ ***************************************************************/
+
+MPI_Request QuiltMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) {
+  throw BoutException("sendToProc() is not implemented in QuiltMesh");
+}
+
+comm_handle QuiltMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) {
+  throw BoutException("receiveFromProc() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::getNXPE() {
+  throw BoutException("getNXPE() makes no sense in QuiltMesh");
+}
+
+int QuiltMesh::getNYPE() {
+  throw BoutException("getNYPE() makes no sense in QuiltMesh");
+}
+
+int QuiltMesh::getXProcIndex() {
+  throw BoutException("getXProcIndex() makes no sense in QuiltMesh");
+}
+
+int QuiltMesh::getYProcIndex() {
+  throw BoutException("getYProcIndex() makes no sense in QuiltMesh");
+}
 
 /****************************************************************
  * X communications
@@ -520,3 +547,51 @@ void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<Fie
   }
 }
 
+
+bool QuiltMesh::firstY() {
+  throw BoutException("firstY() is not implemented in QuiltMesh");
+}
+
+bool QuiltMesh::lastY() {
+  throw BoutException("lastY() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::UpXSplitIndex() {
+  throw BoutException("UpXSplitIndex() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::DownXSplitIndex() {
+  throw BoutException("DownXSplitIndex() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::sendYOutIndest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("sendYOutIndest() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::sendYOutOutdest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("sendYOutOutdest() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::sendYInIndest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("sendYInIndest() is not implemented in QuiltMesh");
+}
+
+int QuiltMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("sendYInOutdest() is not implemented in QuiltMesh");
+}
+
+comm_handle QuiltMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("irecvYOutIndest() is not implemented in QuiltMesh");
+}
+
+comm_handle QuiltMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("irecvYOutOutdest() is not implemented in QuiltMesh");
+}
+
+comm_handle QuiltMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("irecvYInIndest() is not implemented in QuiltMesh");
+}
+
+comm_handle QuiltMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
+  throw BoutException("irecvYInOutdest() is not implemented in QuiltMesh");
+}

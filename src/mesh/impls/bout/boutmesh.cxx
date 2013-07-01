@@ -1678,6 +1678,59 @@ int BoutMesh::wait(comm_handle handle) {
   return 0;
 }
 
+/***************************************************************
+ *             Non-Local Communications
+ ***************************************************************/
+
+MPI_Request BoutMesh::sendToProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) {
+  Timer timer("comms");
+  
+  MPI_Request request;
+  
+  MPI_Isend(buffer, size, PVEC_REAL_MPI_TYPE,
+	   PROC_NUM(xproc,yproc),
+	   tag,
+	   BoutComm::get(),
+	   &request);
+	   
+  return request;
+}
+
+comm_handle BoutMesh::receiveFromProc(int xproc, int yproc, BoutReal *buffer, int size, int tag) {
+  Timer timer("comms");
+  
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0,0);
+  
+  MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    PROC_NUM(xproc,yproc),
+	    tag,
+	    BoutComm::get(),
+	    ch->request);
+	    
+  ch->in_progress = true;
+  
+  return (comm_handle) ch;
+}
+
+int BoutMesh::getNXPE() {
+  return NXPE;
+}
+
+int BoutMesh::getNYPE() {
+  return NYPE;
+}
+
+int BoutMesh::getXProcIndex() {
+  return PE_XIND;
+}
+
+int BoutMesh::getYProcIndex() {
+  return PE_YIND;
+}
+
 /****************************************************************
  *                 X COMMUNICATIONS
  * 
@@ -1758,6 +1811,187 @@ comm_handle BoutMesh::irecvXIn(BoutReal *buffer, int size, int tag) {
 	    tag,
 	    BoutComm::get(),
 	    ch->request);
+  
+  ch->in_progress = true;
+
+  return (comm_handle) ch;
+}
+
+/****************************************************************
+ *                 Y COMMUNICATIONS
+ * 
+ * Intended mainly to handle the non-local heat flux integrations
+ ****************************************************************/
+
+bool BoutMesh::firstY() {
+  return PE_YIND == 0;
+}
+
+bool BoutMesh::lastY() {
+  return PE_YIND == NYPE-1;
+}
+
+int BoutMesh::UpXSplitIndex() {
+  return UDATA_XSPLIT;
+}
+
+int BoutMesh::DownXSplitIndex() {
+  return DDATA_XSPLIT;
+}
+
+int BoutMesh::sendYOutIndest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == NYPE-1)
+    return 1;
+  
+  Timer timer("comms");
+
+  if (UDATA_INDEST != -1)
+    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   UDATA_INDEST,
+	   tag,
+	   BoutComm::get());
+  else throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
+  return 0;
+}
+
+int BoutMesh::sendYOutOutdest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == NYPE-1)
+    return 1;
+  
+  Timer timer("comms");
+	   
+  if (UDATA_OUTDEST != -1)
+    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   UDATA_OUTDEST,
+	   tag,
+	   BoutComm::get());
+  else throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
+
+  return 0;
+}
+
+int BoutMesh::sendYInIndest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == 0)
+    return 1;
+  
+  Timer timer("comms");
+
+  if (DDATA_INDEST != -1)
+    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   DDATA_INDEST,
+	   tag,
+	   BoutComm::get());
+  else throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
+
+  return 0;
+}
+
+int BoutMesh::sendYInOutdest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == 0)
+    return 1;
+  
+  Timer timer("comms");
+
+  if (DDATA_OUTDEST != -1)
+    MPI_Send(buffer, size, PVEC_REAL_MPI_TYPE,
+	   DDATA_OUTDEST,
+	   tag,
+	   BoutComm::get());
+  else throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
+
+  return 0;
+}
+
+comm_handle BoutMesh::irecvYOutIndest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == NYPE-1)
+    return NULL;
+
+  Timer timer("comms");
+  
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0,0);
+
+  if (UDATA_INDEST != -1)
+    MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    UDATA_INDEST,
+	    tag,
+	    BoutComm::get(),
+	    ch->request);
+  else throw BoutException("Expected UDATA_INDEST to exist, but it does not.");
+  
+  ch->in_progress = true;
+
+  return (comm_handle) ch;
+}
+
+comm_handle BoutMesh::irecvYOutOutdest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == NYPE-1)
+    return NULL;
+
+  Timer timer("comms");
+  
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0,0);
+
+  if (UDATA_OUTDEST != -1)
+    MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    UDATA_OUTDEST,
+	    tag,
+	    BoutComm::get(),
+	    ch->request);
+  else throw BoutException("Expected UDATA_OUTDEST to exist, but it does not.");
+  
+  ch->in_progress = true;
+
+  return (comm_handle) ch;
+}
+
+comm_handle BoutMesh::irecvYInIndest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == 0)
+    return NULL;
+  
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0,0);
+
+  if (DDATA_INDEST != -1)
+    MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    DDATA_INDEST,
+	    tag,
+	    BoutComm::get(),
+	    ch->request);
+  else throw BoutException("Expected DDATA_INDEST to exist, but it does not.");
+  
+  ch->in_progress = true;
+
+  return (comm_handle) ch;
+}
+
+comm_handle BoutMesh::irecvYInOutdest(BoutReal *buffer, int size, int tag) {
+  if(PE_YIND == 0)
+    return NULL;
+  
+  Timer timer("comms");
+
+  // Get a communications handle. Not fussy about size of arrays
+  CommHandle *ch = get_handle(0,0);
+
+  if (DDATA_OUTDEST != -1)
+    MPI_Irecv(buffer,
+	    size,
+	    PVEC_REAL_MPI_TYPE,
+	    DDATA_OUTDEST,
+	    tag,
+	    BoutComm::get(),
+	    ch->request);
+  else throw BoutException("Expected DDATA_OUTDEST to exist, but it does not.");
   
   ch->in_progress = true;
 

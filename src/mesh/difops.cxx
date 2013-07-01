@@ -453,7 +453,8 @@ const Field2D Grad2_par2(const Field2D &f) {
   return result;
 }
 
-const Field3D Grad2_par2(const Field3D &f) {
+const Field3D Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("Grad2_par2( Field3D )");
 #endif
@@ -469,10 +470,10 @@ const Field3D Grad2_par2(const Field3D &f) {
     }
     
     #pragma omp section
-    result = DDY(f);
+    result = DDY(f,outloc);
     
     #pragma omp section
-    r2 = D2DY2(f)/mesh->g_22;
+    r2 = D2DY2(f,outloc)/mesh->g_22;
   }
   result = sg*result + r2;
   

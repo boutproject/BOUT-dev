@@ -23,7 +23,6 @@
  *
  **************************************************************************/
 
-#pragma once
 #ifndef __STENCILS_H__
 #define __STENCILS_H__
 
@@ -196,5 +195,10 @@ void start_index(bindex *bx, REGION region = RGN_NOBNDRY); // Doesn't loop over 
 int next_index3(bindex *bx);
 int next_index2(bindex *bx);
 int next_indexperp(bindex *bx);
+void reverse_start_index(bindex *bx, REGION region = RGN_NOBNDRY); // Doesn't loop over boundary regions
+void start_index_lasty(bindex *bx, REGION region = RGN_NOBNDRY);
+int reverse_next_index3(bindex *bx);
+int next_index_y(bindex *bx);
+int previous_index_y(bindex *bx);
 
 #endif /* __STENCILS_H__ */

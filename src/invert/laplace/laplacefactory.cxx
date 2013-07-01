@@ -9,11 +9,13 @@
 #include "impls/serial_band/serial_band.hxx"
 #include "impls/pdd/pdd.hxx"
 #include "impls/spt/spt.hxx"
+#include "impls/petsc/petsc_laplace.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
 #define LAPLACE_TRI  "tri"
 #define LAPLACE_BAND "band"
+#define LAPLACE_PETSC "petsc"
 
 LaplaceFactory* LaplaceFactory::instance = NULL;
 
@@ -42,6 +44,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
       return new LaplaceSerialBand(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
       return new LaplaceSPT(options);
+    }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
+      return new LaplacePetsc(options);
     }else {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
@@ -53,6 +57,8 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
     return new LaplacePDD(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
     return new LaplaceSPT(options);
+  }else if(strcasecmp(type.c_str(), LAPLACE_PETSC) == 0) {
+    return new LaplacePetsc(options);
   }else {
     throw BoutException("Unknown parallel Laplacian solver type '%s'", type.c_str());
   }

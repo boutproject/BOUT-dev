@@ -83,6 +83,14 @@ public:
   virtual void setCoefD(const Field3D &val) { setCoefD(val.DC()); }
   virtual void setCoefD(const BoutReal &r) { Field2D f(r); setCoefD(f); }
   
+  virtual void setCoefEx(const Field2D &val) = 0;
+  virtual void setCoefEx(const Field3D &val) { setCoefEx(val.DC()); }
+  virtual void setCoefEx(const BoutReal &r) { Field2D f(r); setCoefEx(f); }
+  
+  virtual void setCoefEz(const Field2D &val) = 0;
+  virtual void setCoefEz(const Field3D &val) { setCoefEz(val.DC()); }
+  virtual void setCoefEz(const BoutReal &r) { Field2D f(r); setCoefD(f); }
+  
   virtual void setFlags(int f) {flags = f;}
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
@@ -107,6 +115,9 @@ protected:
   bool low_mem;    ///< If true, reduce the amount of memory used
   bool all_terms;  // applies to Delp2 operator and laplacian inversion
   bool nonuniform; // Non-uniform mesh correction
+  bool include_yguards; // solve in y-guard cells, default true.
+  int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
+  int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
   int flags;       ///< Default flags
 

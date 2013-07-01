@@ -510,6 +510,47 @@ Field3D & Field3D::operator+=(const Field2D &rhs) {
   return(*this);
 }
 
+Field3D & Field3D::operator+=(const FieldPerp &rhs) {
+  BoutReal **d;
+  
+  int jy = rhs.getIndex();
+  
+  d = rhs.getData();
+
+#ifdef CHECK
+  if(d == (BoutReal**) NULL) {
+    // No data
+    throw BoutException("Field3D: No data in assignment from FieldPerp");
+  }
+  
+  /// Test rhs values
+  for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      if(!finite(d[jx][jz])) {
+	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
+      }
+#endif
+
+#ifdef TRACK
+  name = "F3D("+rhs.name+")";
+#endif
+
+  allocate();
+
+  /// Copy data
+  
+  #pragma omp parallel
+  {
+    for(int jx=0;jx<mesh->ngx;jx++) {
+      #pragma omp for
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] += d[jx][jz];
+    }
+  }
+
+  return(*this);
+}
+
 Field3D & Field3D::operator+=(const BoutReal &rhs) {
 #ifdef CHECK
   msg_stack.push("Field3D: += ( BoutReal )");
@@ -625,6 +666,47 @@ Field3D & Field3D::operator-=(const Field2D &rhs) {
 #ifdef CHECK
   msg_stack.pop();
 #endif
+
+  return(*this);
+}
+
+Field3D & Field3D::operator-=(const FieldPerp &rhs) {
+  BoutReal **d;
+  
+  int jy = rhs.getIndex();
+  
+  d = rhs.getData();
+
+#ifdef CHECK
+  if(d == (BoutReal**) NULL) {
+    // No data
+    throw BoutException("Field3D: No data in assignment from FieldPerp");
+  }
+  
+  /// Test rhs values
+  for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      if(!finite(d[jx][jz])) {
+	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
+      }
+#endif
+
+#ifdef TRACK
+  name = "F3D("+rhs.name+")";
+#endif
+
+  allocate();
+
+  /// Copy data
+  
+  #pragma omp parallel
+  {
+    for(int jx=0;jx<mesh->ngx;jx++) {
+      #pragma omp for
+      for(int jz=0;jz<mesh->ngz;jz++)
+        block->data[jx][jy][jz] -= d[jx][jz];
+    }
+  }
 
   return(*this);
 }

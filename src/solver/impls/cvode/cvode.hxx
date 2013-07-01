@@ -89,6 +89,9 @@ class CvodeSolver : public Solver {
 
     BoutReal pre_Wtime; // Time in preconditioner
     BoutReal pre_ncalls; // Number of calls to preconditioner
+    
+    void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
+    void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
 };
 
 #endif // __SUNDIAL_SOLVER_H__

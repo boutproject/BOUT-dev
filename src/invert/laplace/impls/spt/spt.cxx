@@ -30,6 +30,7 @@
 #include <boutexception.hxx>
 #include <utils.hxx>
 #include <fft.hxx>
+#include <bout/sys/timer.hxx>
 
 #include "spt.hxx"
 
@@ -83,6 +84,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
  * in the config file uses less memory, and less communication overlap
  */
 const Field3D LaplaceSPT::solve(const Field3D &b) {
+  Timer timer("invert");
   Field3D x;
   x.allocate();
 
@@ -127,6 +129,8 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
     finish(data[jy], xperp);
     x = xperp;
   }
+  
+  x.setLocation(b.getLocation());
   
   x.setLocation(b.getLocation());
 
