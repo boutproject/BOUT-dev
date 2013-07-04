@@ -2467,7 +2467,7 @@ const Field3D log(const Field3D &f) {
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-        ASSERT2(f(jx, jy, jz) > 0.);
+        //ASSERT2(f(jx, jy, jz) > 0.);
         result(jx, jy, jz) = log(f(jx, jy, jz));
       }
 
