@@ -12,7 +12,7 @@
 ;  Extra keywords passed through to the initial call to plot
 ; 
 
-PRO grid_contour, g, data2d, nlev=nlev, scale=scale, _extra=_extra
+PRO grid_contour, g, data2d, nlev=nlev, scale=scale, maxd=maxd, mind=mind, _extra=_extra
   
   IF NOT KEYWORD_SET(nlev) THEN nlev=50
 
@@ -29,9 +29,11 @@ PRO grid_contour, g, data2d, nlev=nlev, scale=scale, _extra=_extra
   ix2 = g.ixseps2
   
   ; get data range
-  mind = MIN(data2d)
-  maxd = MAX(data2d)
+  IF NOT KEYWORD_SET(mind) THEN mind = MIN(data2d) ELSE mind = FLOAT(mind)
+  IF NOT KEYWORD_SET(maxd) THEN maxd = MAX(data2d) ELSE maxd = FLOAT(maxd)
   
+  
+
   IF KEYWORD_SET(centre) THEN BEGIN
     ; make zero white
     IF mind + maxd GT 0.0 THEN mind = -maxd ELSE maxd = -mind
