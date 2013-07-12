@@ -679,6 +679,11 @@ int BoutMesh::load() {
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
+	if(ixseps_lower == ixseps_outer) {
+	  // Between the separatrices is still in the PF region
+          MPI_Comm_dup(comm_inner, &comm_middle);
+	}else
+          MPI_Comm_dup(comm_outer, &comm_middle);
       }
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY) {
@@ -712,6 +717,10 @@ int BoutMesh::load() {
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
+	if(ixseps_upper == ixseps_outer) {
+          MPI_Comm_dup(comm_inner, &comm_middle);
+	}else
+          MPI_Comm_dup(comm_outer, &comm_middle);
       }
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY)
@@ -747,6 +756,9 @@ int BoutMesh::load() {
     MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
     if(comm_tmp != MPI_COMM_NULL) {
       comm_inner = comm_tmp;
+      
+      if(ixseps_inner == ixseps_outer)
+        MPI_Comm_dup(comm_inner, &comm_middle);
     }
     
     if(group_tmp1 != MPI_GROUP_EMPTY)
