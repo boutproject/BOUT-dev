@@ -22,34 +22,6 @@ PRO plot_region, R, Z, ymin, ymax, _extra=_extra
   ENDFOR
 END
 
-PRO plot_rz_equil, data
-  nlev = 100
-  minf = MIN(data.psi)
-  maxf = MAX(data.psi)
-  levels = findgen(nlev)*(maxf-minf)/FLOAT(nlev-1) + minf
-  
-  safe_colors, /first
-  CONTOUR, data.psi, data.r, data.z, levels=levels, /iso, color=1
-  IF data.nlim GT 2 THEN OPLOT, [data.rlim, data.rlim[0]], $
-                                [data.zlim, data.zlim[0]], $
-                                color = 2, thick=2
-  critical = data.critical
-  IF data.nlim GT 2 THEN BEGIN
-    OPLOT, [REFORM(data.rlim), data.rlim[0]], [REFORM(data.zlim), data.zlim[0]], $
-           thick=2,color=2
-    
-    ; Check that the critical points are inside the boundary
-    bndryi = FLTARR(2, data.nlim)
-    bndryi[0,*] = INTERPOL(FINDGEN(data.nr), data.R, data.rlim)
-    bndryi[1,*] = INTERPOL(FINDGEN(data.nz), data.Z, data.zlim)
-    
-    critical = critical_bndry(critical, bndryi)
-  ENDIF
-  ; Overplot the separatrices, O-points
-  oplot_critical, data.psi, data.r, data.z, critical
-END
-
-
 PRO oplot_mesh, rz_mesh, flux_mesh
   ; Plot X-points and separatrices
   FOR i=0, flux_mesh.critical.n_xpoint-1 DO BEGIN
@@ -236,6 +208,39 @@ PRO event_handler, event
         ; Couldn't read data
         PRINT, "ERROR: Failed to read grid file"
         WIDGET_CONTROL, info.status, set_value="   *** Failed to read G-EQDSK file "+filename+" ***"
+      ENDELSE
+    END
+    'restorerz': BEGIN
+      ; Restore a file containing rz_grid
+      filename = DIALOG_PICKFILE(dialog_parent=event.top, /read)
+      
+      RESTORE, filename
+      
+      IF SIZE(rz_grid, /type) NE 8 THEN BEGIN
+        PRINT, "Error: File does not contain a variable called 'rz_grid'"
+        WIDGET_CONTROL, info.status, set_value="   *** Failed to restore file "+filename+" ***"
+      ENDIF ELSE BEGIN
+      
+        IF info.rz_grid_valid GT 0 THEN BEGIN
+          ; Need to free existing data
+          PTR_FREE, info.rz_grid
+        ENDIF
+        
+        ; Put pointer to data into info struct
+        info.rz_grid = PTR_NEW(rz_grid)
+        info.rz_grid_valid = 1
+        
+        ; Plot the equilibrium
+        plot_rz_equil, rz_grid
+        
+        ; Set info to new values
+        widget_control, event.top, set_UVALUE=info
+        
+        IF rz_grid.nlim LT 3 THEN BEGIN
+          PRINT, "WARNING: No boundary found!"
+        ENDIF
+
+        WIDGET_CONTROL, info.status, set_value="Restored R-Z data from "+filename
       ENDELSE
     END
     'bndry': BEGIN
@@ -889,6 +894,9 @@ PRO hypnotoad
   
   read_button = WIDGET_BUTTON(tab1, VALUE='Read G-EQDSK', $
                               uvalue='aandg', tooltip="Read RZ equilibrium from EFIT")
+
+  restore_rz_button = WIDGET_BUTTON(tab1, VALUE='Restore R-Z', $
+                                    uvalue='restorerz', tooltip="Restore R-Z equilibrium")
 
   bndry_button = WIDGET_BUTTON(tab1, VALUE='Read boundary', $
                                uvalue='bndry', tooltip="Read boundary from g-eqdsk file")
