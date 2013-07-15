@@ -247,6 +247,7 @@ class Field3D : public Field, public FieldData {
   void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
   void applyBoundary();
   void applyBoundary(const string &condition);
+  void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
   
