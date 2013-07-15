@@ -46,7 +46,7 @@
 
 #define PVEC_REAL_MPI_TYPE MPI_DOUBLE
 
-//#define COMMDEBUG 1
+//#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
 BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
@@ -662,7 +662,9 @@ int BoutMesh::load() {
       if(jyseps1_1 >= 0) {
 	proc[0] = PROC_NUM(i, 0);
 	proc[1] = PROC_NUM(i, YPROC(jyseps1_1));
-	//output << "PF1 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+	output << "PF1 "<< proc[0] << ", " << proc[1] << endl;
+#endif
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       }else
 	group_tmp1 = MPI_GROUP_EMPTY;
@@ -670,7 +672,9 @@ int BoutMesh::load() {
       if(jyseps2_2+1 < ny) {
 	proc[0] = PROC_NUM(i, YPROC(jyseps2_2+1));
 	proc[1] = PROC_NUM(i, NYPE-1);
-	//output << "PF2 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+	output << "PF2 "<< proc[0] << ", " << proc[1] << endl;
+#endif
 	MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       }else
 	group_tmp2 = MPI_GROUP_EMPTY;
@@ -681,10 +685,22 @@ int BoutMesh::load() {
 	comm_inner = comm_tmp;
 	if(ixseps_lower == ixseps_outer) {
 	  // Between the separatrices is still in the PF region
-          MPI_Comm_dup(comm_inner, &comm_middle);
-	}else
-          MPI_Comm_dup(comm_outer, &comm_middle);
+#ifdef COMMDEBUG
+          output << "-> Inner and middle\n";
+#endif
+          comm_middle = comm_inner;
+          //MPI_Comm_dup(comm_inner, &comm_middle);
+	}else {
+#ifdef COMMDEBUG
+          output << "-> Outer and middle\n";
+#endif
+          comm_middle = comm_outer;
+          //MPI_Comm_dup(comm_outer, &comm_middle); // Error! Needs to be collective on comm_outer
+        }
       }
+#ifdef COMMDEBUG
+      output << "Freeing\n";
+#endif
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp1);
@@ -692,7 +708,9 @@ int BoutMesh::load() {
       if(group_tmp2 != MPI_GROUP_EMPTY) {
         MPI_Group_free(&group_tmp2);
       }
-      
+#ifdef COMMDEBUG
+      output << "done lower PF\n";
+#endif
       msg_stack.pop();
     }
 
@@ -707,27 +725,46 @@ int BoutMesh::load() {
 
       proc[0] = PROC_NUM(i, YPROC(ny_inner));
       proc[1] = PROC_NUM(i, YPROC(jyseps1_2));
-      //output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+      output << "PF3 "<< proc[0] << ", " << proc[1] << endl;
+#endif
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp1);
       proc[0] = PROC_NUM(i, YPROC(jyseps2_1+1));
       proc[1] = PROC_NUM(i, YPROC(ny_inner-1));
-      //output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
+#ifdef COMMDEBUG
+      output << "PF4 "<< proc[0] << ", " << proc[1] << endl;
+#endif
       MPI_Group_range_incl(group_world, 1, &proc, &group_tmp2);
       MPI_Group_union(group_tmp1, group_tmp2, &group);
       MPI_Comm_create(BoutComm::get(), group, &comm_tmp);
       if(comm_tmp != MPI_COMM_NULL) {
 	comm_inner = comm_tmp;
 	if(ixseps_upper == ixseps_outer) {
-          MPI_Comm_dup(comm_inner, &comm_middle);
-	}else
-          MPI_Comm_dup(comm_outer, &comm_middle);
+#ifdef COMMDEBUG
+          output << "-> Inner and middle\n";
+#endif
+          comm_middle = comm_inner;
+          //MPI_Comm_dup(comm_inner, &comm_middle);
+	}else {
+#ifdef COMMDEBUG
+          output << "-> Outer and middle\n";
+#endif
+          comm_middle = comm_outer;
+          //MPI_Comm_dup(comm_outer, &comm_middle);
+        }
       }
+#ifdef COMMDEBUG
+      output << "Freeing\n";
+#endif
       MPI_Group_free(&group);
       if(group_tmp1 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp1);
       if(group_tmp2 != MPI_GROUP_EMPTY)
         MPI_Group_free(&group_tmp2);
       msg_stack.pop();
+#ifdef COMMDEBUG
+      output << "done upper PF\n";
+#endif
     }
     
     // Core region
