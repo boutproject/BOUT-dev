@@ -75,8 +75,8 @@ BoutMesh::~BoutMesh() {
     MPI_Comm_free(&comm_x);
   if(comm_inner != MPI_COMM_NULL)
     MPI_Comm_free(&comm_inner);
-  if(comm_middle != MPI_COMM_NULL)
-    MPI_Comm_free(&comm_middle);
+  //if(comm_middle != MPI_COMM_NULL)
+  //  MPI_Comm_free(&comm_middle); // Already freed
   
   if(comm_outer != MPI_COMM_NULL)
     MPI_Comm_free(&comm_outer);
