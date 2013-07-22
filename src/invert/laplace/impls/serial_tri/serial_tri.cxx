@@ -34,6 +34,8 @@
 #include <bout/constants.hxx>
 #include <cmath>
 
+#include <output.hxx>
+
 LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   
   if(!mesh->firstX() || !mesh->lastX()) {
@@ -79,17 +81,23 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   
   int ncz = mesh->ngz-1;
   int ncx = mesh->ngx-1;
-
-  int xbndry = 2; // Width of the x boundary
-  if(flags & INVERT_BNDRY_ONE)
-    xbndry = 1;
+  
+  int inbndry = 2, outbndry=2;
+  
+  if(flags & INVERT_BNDRY_ONE) {
+    inbndry = outbndry = 1;
+  }
+  if(flags & INVERT_BNDRY_IN_ONE)
+    inbndry = 1;
+  if(flags & INVERT_BNDRY_OUT_ONE)
+    outbndry = 1;
   
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
-    if(((ix < xbndry) && (flags & INVERT_IN_SET)) ||
-       ((ncx-ix < xbndry) && (flags & INVERT_OUT_SET))) {
+    if(((ix < inbndry) && (flags & INVERT_IN_SET)) ||
+       ((ncx-ix < outbndry) && (flags & INVERT_OUT_SET))) {
       // Use the values in x0 in the boundary
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
       
@@ -109,7 +117,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     
     ///////// PERFORM INVERSION /////////
       
-    for(int ix=xbndry;ix<=ncx-xbndry;ix++) {
+    for(int ix=inbndry;ix<=ncx-outbndry;ix++) {
       tridagCoefs(ix, jy, iz, avec[ix], bvec[ix], cvec[ix], &C, &D);
       
       bvec[ix] += A[ix][jy];
@@ -119,11 +127,11 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       // Need boundary conditions
       /// By default, set RHS to zero, unless INVERT_*_RHS set
       if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
-        for(int ix=0;ix<xbndry;ix++)
+        for(int ix=0;ix<inbndry;ix++)
           bk1d[ix] = 0.;
       }
       if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
-        for(int ix=mesh->ngx-xbndry;ix<mesh->ngx;ix++)
+        for(int ix=mesh->ngx-outbndry;ix<mesh->ngx;ix++)
           bk1d[ix] = 0.;
       }
 	
@@ -136,47 +144,73 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         if(flags & INVERT_DC_IN_GRAD) {
           // Zero gradient at inner boundary
 	    
-          if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
+          if((flags & INVERT_IN_SYM) && (inbndry > 1) && mesh->BoundaryOnCell) {
             // Use symmetric boundary to set zero-gradient
 	      
-            for (int ix=0;ix<xbndry-1;ix++) {
+            for (int ix=0;ix<inbndry-1;ix++) {
               avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
             }
             // Symmetric on last point
-            avec[xbndry-1] = 1.0; bvec[xbndry-1] = 0.0; cvec[xbndry-1] = -1.0;
+            avec[inbndry-1] = 1.0; bvec[inbndry-1] = 0.0; cvec[inbndry-1] = -1.0;
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<inbndry;ix++){
               avec[ix]=dcomplex(0.0,0.0);
               bvec[ix]=dcomplex(1.,0.);
               cvec[ix]=dcomplex(-1.,0.);
             }
           }
+        }else if(flags & INVERT_DC_IN_GRADPAR) {
+          for (int ix=0;ix<inbndry;ix++) {
+            avec[ix] =  0.0;
+            bvec[ix] =  1.0/sqrt(mesh->g_22(ix,jy));
+            cvec[ix] = -1.0/sqrt(mesh->g_22(ix+1,jy));
+          }
+        }else if(flags & INVERT_DC_IN_GRADPARINV) {
+          for (int ix=0;ix<inbndry;ix++) {
+            avec[ix] =  0.0;
+            bvec[ix] =  sqrt(mesh->g_22(ix,jy));
+            cvec[ix] = -sqrt(mesh->g_22(ix+1,jy));
+          }
         }else if(flags & INVERT_IN_SET) {
-          for(int ix=0;ix<xbndry;ix++) {
+          for(int ix=0;ix<inbndry;ix++) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
             cvec[ix] = 0.0;
           }
+        }else if (flags & INVERT_DC_IN_LAP) {
+          // Decaying boundary conditions
+          BoutReal ksq = -(A(inbndry, jy));
+          if(ksq < 0.0)
+            throw BoutException("ksq must be positive");
+          BoutReal k = sqrt(ksq);
+          //output << "k = " << k << endl;
+          for(int ix=0;ix<inbndry;ix++){
+            avec[ix] =  0.;
+            bvec[ix] =  1.;
+            //output << "factor = " << exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy))) << endl;
+            cvec[ix] = -exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy)));
+          }
+          
         }else {
           // Zero value at inner boundary
           if(flags & INVERT_IN_SYM) {
             // Use anti-symmetric boundary to set zero-value
 	    
             // Zero-gradient for first point(s)
-            for(int ix=0;ix<xbndry-1;ix++) {
+            for(int ix=0;ix<inbndry-1;ix++) {
               avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
             }
 
             if(mesh->BoundaryOnCell) {
               // Antisymmetric about boundary on cell
-              avec[xbndry-1]=1.0; bvec[xbndry-1]=0.0; cvec[xbndry-1]= 1.0;
+              avec[inbndry-1]=1.0; bvec[inbndry-1]=0.0; cvec[inbndry-1]= 1.0;
             }else { 
               // Antisymmetric across boundary between cells
-              avec[xbndry-1]=0.0; bvec[xbndry-1]=1.0; cvec[xbndry-1]= 1.0;
+              avec[inbndry-1]=0.0; bvec[inbndry-1]=1.0; cvec[inbndry-1]= 1.0;
             }
 	    
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<inbndry;ix++){
               avec[ix]=dcomplex(0.,0.);
               bvec[ix]=dcomplex(1.,0.);
               cvec[ix]=dcomplex(0.,0.);
@@ -188,18 +222,18 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         if(flags & INVERT_DC_OUT_GRAD) {
           // Zero gradient at outer boundary
 
-          if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
+          if((flags & INVERT_OUT_SYM) && (outbndry > 1) && mesh->BoundaryOnCell) {
             // Use symmetric boundary to set zero-gradient
 	    
-            for (int ix=0;ix<xbndry-1;ix++) {
+            for (int ix=0;ix<outbndry-1;ix++) {
               avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
             // Symmetric on last point
-            int ix = xbndry-1;
+            int ix = outbndry-1;
             avec[ncx-ix] = 1.0; bvec[ncx-ix] = 0.0; cvec[ncx-ix] = -1.0;
 	    
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<outbndry;ix++){
               cvec[ncx-ix]=dcomplex(0.,0.);
               bvec[ncx-ix]=dcomplex(1.,0.);
               avec[ncx-ix]=dcomplex(-1.,0.);
@@ -207,7 +241,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
           }
         }else if(flags & INVERT_OUT_SET) {
           // Setting the values in the outer boundary
-          for(int ix=0;ix<xbndry;ix++) {
+          for(int ix=0;ix<outbndry;ix++) {
             avec[ncx-ix] = 0.0;
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
@@ -218,10 +252,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
             // Use anti-symmetric boundary to set zero-value
 	    
             // Zero-gradient for first point(s)
-            for(int ix=0;ix<xbndry-1;ix++) {
+            for(int ix=0;ix<outbndry-1;ix++) {
               avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
-            int ix = xbndry-1;
+            int ix = outbndry-1;
             if(mesh->BoundaryOnCell) {
               // Antisymmetric about boundary on cell
               avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
@@ -230,7 +264,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
               avec[ncx-ix]=1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<outbndry;ix++){
               cvec[ncx-ix]=dcomplex(0.,0.);
               bvec[ncx-ix]=dcomplex(1.,0.);
               avec[ncx-ix]=dcomplex(0.,0.);
@@ -244,16 +278,16 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         if(flags & INVERT_AC_IN_GRAD) {
           // Zero gradient at inner boundary
 	  
-          if((flags & INVERT_IN_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
+          if((flags & INVERT_IN_SYM) && (inbndry > 1) && mesh->BoundaryOnCell) {
             // Use symmetric boundary to set zero-gradient
 	    
-            for (int ix=0;ix<xbndry-1;ix++) {
+            for (int ix=0;ix<inbndry-1;ix++) {
               avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
             }
             // Symmetric on last point
-            avec[xbndry-1] = 1.0; bvec[xbndry-1] = 0.0; cvec[xbndry-1] = -1.0;
+            avec[inbndry-1] = 1.0; bvec[inbndry-1] = 0.0; cvec[inbndry-1] = -1.0;
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<inbndry;ix++){
               avec[ix]=dcomplex(0.,0.);
               bvec[ix]=dcomplex(1.,0.);
               cvec[ix]=dcomplex(-1.,0.);
@@ -261,7 +295,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
           }
         }else if(flags & INVERT_IN_SET) {
           // Setting the values in the boundary
-          for(int ix=0;ix<xbndry;ix++) {
+          for(int ix=0;ix<inbndry;ix++) {
             avec[ix] = 0.0;
             bvec[ix] = 1.0;
             cvec[ix] = 0.0;
@@ -269,7 +303,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         }else if(flags & INVERT_AC_IN_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
           BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-          for (int ix=0;ix<xbndry;ix++) {
+          for (int ix=0;ix<inbndry;ix++) {
             avec[ix] = 0.0;
             bvec[ix] = -1.0;
             cvec[ix] = exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
@@ -281,20 +315,20 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
             // Use anti-symmetric boundary to set zero-value
 	    
             // Zero-gradient for first point(s)
-            for(int ix=0;ix<xbndry-1;ix++) {
+            for(int ix=0;ix<inbndry-1;ix++) {
               avec[ix]=0.0; bvec[ix]=1.0; cvec[ix]= -1.0;
             }
 
             if(mesh->BoundaryOnCell) {
               // Antisymmetric about boundary on cell
-              avec[xbndry-1]=1.0; bvec[xbndry-1]=0.0; cvec[xbndry-1]= 1.0;
+              avec[inbndry-1]=1.0; bvec[inbndry-1]=0.0; cvec[inbndry-1]= 1.0;
             }else { 
               // Antisymmetric across boundary between cells
-              avec[xbndry-1]=0.0; bvec[xbndry-1]=1.0; cvec[xbndry-1]= 1.0;
+              avec[inbndry-1]=0.0; bvec[inbndry-1]=1.0; cvec[inbndry-1]= 1.0;
             }
 	    
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<inbndry;ix++){
               avec[ix]=dcomplex(0.,0.);
               bvec[ix]=dcomplex(1.,0.);
               cvec[ix]=dcomplex(0.,0.);
@@ -306,18 +340,18 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         if(flags & INVERT_AC_OUT_GRAD) {
           // Zero gradient at outer boundary
 	  
-          if((flags & INVERT_OUT_SYM) && (xbndry > 1) && mesh->BoundaryOnCell) {
+          if((flags & INVERT_OUT_SYM) && (outbndry > 1) && mesh->BoundaryOnCell) {
             // Use symmetric boundary to set zero-gradient
 	    
-            for (int ix=0;ix<xbndry-1;ix++) {
+            for (int ix=0;ix<outbndry-1;ix++) {
               avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
             // Symmetric on last point
-            int ix = xbndry-1;
+            int ix = outbndry-1;
             avec[ncx-ix] = 1.0; bvec[ncx-ix] = 0.0; cvec[ncx-ix] = -1.0;
 	    
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<outbndry;ix++){
               cvec[ncx-ix]=dcomplex(0.,0.);
               bvec[ncx-ix]=dcomplex(1.,0.);
               avec[ncx-ix]=dcomplex(-1.,0.);
@@ -326,14 +360,14 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         }else if(flags & INVERT_AC_OUT_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
           BoutReal kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-          for (int ix=0;ix<xbndry;ix++) {
+          for (int ix=0;ix<outbndry;ix++) {
             avec[ncx-ix] = exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
             bvec[ncx-ix] = -1.0;
             cvec[ncx-ix] = 0.0;
           }
         }else if(flags & INVERT_OUT_SET) {
           // Setting the values in the outer boundary
-          for(int ix=0;ix<xbndry;ix++) {
+          for(int ix=0;ix<outbndry;ix++) {
             avec[ncx-ix] = 0.0;
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
@@ -345,10 +379,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
             // Use anti-symmetric boundary to set zero-value
 	    
             // Zero-gradient for first point(s)
-            for(int ix=0;ix<xbndry-1;ix++) {
+            for(int ix=0;ix<outbndry-1;ix++) {
               avec[ncx-ix]=-1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
-            int ix = xbndry-1;
+            int ix = outbndry-1;
             if(mesh->BoundaryOnCell) {
               // Antisymmetric about boundary on cell
               avec[ncx-ix]=1.0; bvec[ncx-ix]=0.0; cvec[ncx-ix]= 1.0;
@@ -357,7 +391,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
               avec[ncx-ix]=1.0; bvec[ncx-ix]=1.0; cvec[ncx-ix]= 0.0;
             }
           }else {
-            for (int ix=0;ix<xbndry;ix++){
+            for (int ix=0;ix<outbndry;ix++){
               cvec[ncx-ix]=dcomplex(0.,0.);
               bvec[ncx-ix]=dcomplex(1.,0.);
               avec[ncx-ix]=dcomplex(0.,0.);
@@ -369,36 +403,36 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
       
-      if((flags & INVERT_IN_SYM) && (xbndry > 1)) {
+      if((flags & INVERT_IN_SYM) && (inbndry > 1)) {
         // (Anti-)symmetry on inner boundary. Nothing to do if only one boundary cell
-        int xloc = 2*xbndry;
+        int xloc = 2*inbndry;
         if(!mesh->BoundaryOnCell)
           xloc--;
 	  
         if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {
           // Inner gradient zero - symmetric
-          for(int ix=0;ix<xbndry-1;ix++)
+          for(int ix=0;ix<inbndry-1;ix++)
             xk1d[ix] = xk1d[xloc-ix];
         }else {
           // Inner value zero - antisymmetric
-          for(int ix=0;ix<xbndry-1;ix++)
+          for(int ix=0;ix<inbndry-1;ix++)
             xk1d[ix] = -xk1d[xloc-ix];
         }
       }
-      if((flags & INVERT_OUT_SYM) && (xbndry > 1)) {
+      if((flags & INVERT_OUT_SYM) && (outbndry > 1)) {
         // (Anti-)symmetry on outer boundary. Nothing to do if only one boundary cell
 	  
-        int xloc =  mesh->ngx - 2*xbndry;
+        int xloc =  mesh->ngx - 2*outbndry;
         if(mesh->BoundaryOnCell)
           xloc--;
 	
         if( ((iz == 0) && (flags & INVERT_DC_IN_GRAD)) || ((iz != 0) && (flags & INVERT_AC_IN_GRAD)) ) {
           // Outer gradient zero - symmetric
-          for(int ix=0;ix<xbndry-1;ix++)
+          for(int ix=0;ix<outbndry-1;ix++)
             xk1d[ncx-ix] = xk1d[xloc + ix];
         }else {
           // Outer value zero - antisymmetric
-          for(int ix=0;ix<xbndry-1;ix++)
+          for(int ix=0;ix<outbndry-1;ix++)
             xk1d[ncx-ix] = -xk1d[xloc + ix];
         }
       }

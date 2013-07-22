@@ -33,6 +33,10 @@
 #include <lapack_routines.hxx>
 #include <bout/constants.hxx>
 
+#include <output.hxx>
+
+//#define SECONDORDER // Define to use 2nd order differencing
+
 LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   if(!mesh->firstX() || !mesh->lastX())
     throw BoutException("LaplaceSerialBand only works for mesh->NXPE = 1");
@@ -77,7 +81,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int xbndry = 2; // Width of the x boundary
   if(flags & INVERT_BNDRY_ONE)
     xbndry = 1;
-  
+
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
@@ -119,7 +123,18 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     // Fill in interior points
 
     for(int ix=xstart;ix<=xend;ix++) {
-
+#ifdef SECONDORDER 
+      // Use second-order differencing. Useful for testing the tridiagonal solver
+      // with different boundary conditions
+      dcomplex a,b,c;
+      tridagCoefs(ix, jy, iz, a, b, c, &Ccoef, &Dcoef);
+      
+      A[ix][0] = 0.;
+      A[ix][1] = a;
+      A[ix][2] = b + Acoef[ix][jy];
+      A[ix][3] = c;
+      A[ix][4] = 0.;
+#else
       // Set coefficients
       coef1 = mesh->g11[ix][jy];  // X 2nd derivative
       coef2 = mesh->g33[ix][jy];  // Z 2nd derivative
@@ -163,6 +178,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       A[ix][2] = dcomplex(-30.*coef1 - coef2 + coef6, coef5);
       A[ix][3] = dcomplex( 16.*coef1 + 8*coef4 ,  8.*coef3 );
       A[ix][4] = dcomplex(    -coef1 -   coef4 ,    -coef3 );
+#endif
     }
 
     if(xbndry < 2) {
@@ -220,11 +236,42 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
 	
       // Inner boundary
       if(flags & INVERT_DC_IN_GRAD) {
-        // Zero gradient at inner boundary
-        for (int ix=0;ix<xbndry;ix++)
-          A[ix][3] = -1.0;
+        // Zero gradient at inner boundary. 2nd-order accurate
+        // One-sided differences
+        for (int ix=0;ix<xbndry;ix++) {
+          A[ix][0] =  0.;
+          A[ix][1] =  0.;
+          A[ix][2] =  -3.;
+          A[ix][3] =  4.;
+          A[ix][4] =  -1.;
+        }
+        
+      }else if(flags & INVERT_DC_IN_GRADPAR) {
+        for (int ix=0;ix<xbndry;ix++) {
+          A[ix][0] =  0.;
+          A[ix][1] =  0.;
+          A[ix][2] =  -3./sqrt(mesh->g_22(ix,jy));
+          A[ix][3] =  4./sqrt(mesh->g_22(ix+1,jy));
+          A[ix][4] =  -1./sqrt(mesh->g_22(ix+2,jy));
+        }
+      }else if(flags & INVERT_DC_IN_GRADPARINV) {
+        for (int ix=0;ix<xbndry;ix++) {
+          A[ix][0] =  0.;
+          A[ix][1] =  0.;
+          A[ix][2] =  -3.*sqrt(mesh->g_22(ix,jy));
+          A[ix][3] =  4.*sqrt(mesh->g_22(ix+1,jy));
+          A[ix][4] =  -sqrt(mesh->g_22(ix+2,jy));
+        }
+      }else if (flags & INVERT_DC_IN_LAP) {
+        for (int ix=0;ix<xbndry;ix++) {
+          A[ix][0] = 0.;
+          A[ix][1] = 0.;
+          A[ix][2] = 1.;
+          A[ix][3] = -2;
+          A[ix][4] = 1.;
+        }
       }
-	
+      
       // Outer boundary
       if(flags & INVERT_DC_OUT_GRAD) {
         // Zero gradient at outer boundary
@@ -312,10 +359,10 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
         A[ncx][4] = 0.0;
       }
     }
-      
+    
     // Perform inversion
     cband_solve(A, mesh->ngx, 2, 2, bk1d);
-      
+
     if((flags & INVERT_KX_ZERO) && (iz == 0)) {
       // Set the Kx = 0, n = 0 component to zero. For now just subtract
       // Should do in the inversion e.g. Sherman-Morrison formula

@@ -263,9 +263,15 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
   
   int ncx = mesh->ngx-1;
 
-  int xbndry = 2;
-  if(flags & INVERT_BNDRY_ONE)
-    xbndry = 1;
+  int inbndry = 2, outbndry=2;
+  
+  if(flags & INVERT_BNDRY_ONE) {
+    inbndry = outbndry = 1;
+  }
+  if(flags & INVERT_BNDRY_IN_ONE)
+    inbndry = 1;
+  if(flags & INVERT_BNDRY_OUT_ONE)
+    outbndry = 1;
   
   for(kz = 0; kz <= maxmode; kz++) {
     
@@ -286,7 +292,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	// INNER BOUNDARY ON THIS PROCESSOR
 	
 	if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
-	  for(ix=0;ix<xbndry;ix++)
+	  for(ix=0;ix<inbndry;ix++)
 	    bk[kz][ix] = 0.;
 	}
 	
@@ -295,14 +301,41 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  
 	  if(flags & INVERT_DC_IN_GRAD) {
 	    // Zero gradient at inner boundary
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<inbndry;ix++){
 	      avec[kz][ix] =  0.;
 	      bvec[kz][ix] =  1.;
 	      cvec[kz][ix] = -1.;
 	    }
-	  }else {
+	  }else if(flags & INVERT_DC_IN_GRADPAR) {
+            for (int ix=0;ix<inbndry;ix++) {
+              avec[kz][ix] =  0.0;
+              bvec[kz][ix] =  1.0/sqrt(mesh->g_22(ix,jy));
+              cvec[kz][ix] = -1.0/sqrt(mesh->g_22(ix+1,jy));
+            }
+          }else if(flags & INVERT_DC_IN_GRADPARINV) {
+            for (int ix=0;ix<inbndry;ix++) {
+              avec[kz][ix] =  0.0;
+              bvec[kz][ix] =  sqrt(mesh->g_22(ix,jy));
+              cvec[kz][ix] = -sqrt(mesh->g_22(ix+1,jy));
+            }
+          }else if (flags & INVERT_DC_IN_LAP) {
+            // Decaying boundary conditions
+            BoutReal k = 0.0;
+            if(a != (Field2D*) NULL) {
+              BoutReal ksq = -((*a)(inbndry, jy));
+              if(ksq < 0.0)
+                throw BoutException("ksq must be positive");
+              k = sqrt(ksq);
+            }
+            for (ix=0;ix<inbndry;ix++){
+	      avec[kz][ix] =  0.;
+	      bvec[kz][ix] =  1.;
+	      cvec[kz][ix] = -exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy)));
+	    }
+            
+          }else {
 	    // Zero value at inner boundary or INVERT_IN_SET
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<inbndry;ix++){
 	      avec[kz][ix] = 0.;
 	      bvec[kz][ix] = 1.;
 	      cvec[kz][ix] = 0.;
@@ -314,7 +347,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	
 	  if(flags & INVERT_AC_IN_GRAD) {
 	    // Zero gradient at inner boundary
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<inbndry;ix++){
 	      avec[kz][ix]=dcomplex(0.,0.);
 	      bvec[kz][ix]=dcomplex(1.,0.);
 	      cvec[kz][ix]=dcomplex(-1.,0.);
@@ -322,14 +355,14 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  }else if(flags & INVERT_AC_IN_LAP) {
 	    // Use decaying zero-Laplacian solution in the boundary
 	    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<xbndry;ix++) {
+	    for (ix=0;ix<inbndry;ix++) {
 	      avec[kz][ix] = 0.0;
 	      bvec[kz][ix] = 1.0;
 	      cvec[kz][ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
 	    }
 	  }else {
 	    // Zero value at inner boundary or INVERT_IN_SET
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<inbndry;ix++){
 	      avec[kz][ix]=dcomplex(0.,0.);
 	      bvec[kz][ix]=dcomplex(1.,0.);
 	      cvec[kz][ix]=dcomplex(0.,0.);
@@ -340,7 +373,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	// OUTER BOUNDARY
       
 	if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
-	  for (ix=0;ix<xbndry;ix++)
+	  for (ix=0;ix<outbndry;ix++)
 	    bk[kz][ncx-ix] = 0.;
 	}
 
@@ -349,14 +382,14 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	
 	  if(flags & INVERT_DC_OUT_GRAD) {
 	    // Zero gradient at outer boundary
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<outbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
 	      avec[kz][ncx-ix]=dcomplex(-1.,0.);
 	    }
 	  }else {
 	    // Zero value at outer boundary or INVERT_OUT_SET
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<outbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
 	      avec[kz][ncx-ix]=dcomplex(0.,0.);
@@ -367,7 +400,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	
 	  if(flags & INVERT_AC_OUT_GRAD) {
 	    // Zero gradient at outer boundary
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<outbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
 	      avec[kz][ncx-ix]=dcomplex(-1.,0.);
@@ -375,14 +408,14 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
 	  }else if(flags & INVERT_AC_OUT_LAP) {
 	    // Use decaying zero-Laplacian solution in the boundary
 	    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<xbndry;ix++) {
+	    for (ix=0;ix<outbndry;ix++) {
 	      avec[kz][ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
 	      bvec[kz][ncx-ix] = 1.0;
 	      cvec[kz][ncx-ix] = 0.0;
 	    }
 	  }else {
 	    // Zero value at outer boundary or LAPLACE_OUT_SET
-	    for (ix=0;ix<xbndry;ix++){
+	    for (ix=0;ix<outbndry;ix++){
 	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
 	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
 	      avec[kz][ncx-ix]=dcomplex(0.,0.);
