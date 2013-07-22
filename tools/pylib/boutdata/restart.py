@@ -149,7 +149,7 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
     ind = file_list[0].rfind(".")
     
 
-def create(averagelast=1, path="data", output="./", informat="nc", outformat=None):
+def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
     """
     Create restart files from data (dmp) files.
 
@@ -158,6 +158,8 @@ def create(averagelast=1, path="data", output="./", informat="nc", outformat=Non
 
     averagelast   Number of time points to average over.
                   Default is 1 i.e. just take last time-point
+
+    final         The last time point to use. Default is last (-1)
 
     path          Path to the input data files
 
@@ -193,7 +195,7 @@ def create(averagelast=1, path="data", output="./", informat="nc", outformat=Non
         outfile.write("hist_hi", hist_hi)
         
         t_array = infile.read("t_array")
-        tt = t_array[-1]
+        tt = t_array[final]
         print "tt = ", tt
         outfile.write("tt", tt)
 
@@ -216,9 +218,9 @@ def create(averagelast=1, path="data", output="./", informat="nc", outformat=Non
                 data = infile.read(var)
 
                 if averagelast == 1:
-                    slice = data[-1,:,:,:]
+                    slice = data[final,:,:,:]
                 else:
-                    slice = mean(data[(-averagelast - 1):-1,:,:,:], axis=0)
+                    slice = mean(data[(final - averagelast):final,:,:,:], axis=0)
 
                 print slice.shape
                 
