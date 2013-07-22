@@ -70,6 +70,48 @@ void BoundaryNeumann::apply(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
+BoundaryOp* BoundaryNeumann2::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
+  }
+  return new BoundaryNeumann2(region);
+}
+
+void BoundaryNeumann2::apply(Field2D &f) {
+  // Loop over all elements and use one-sided differences
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    f(bndry->x, bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by))/3.;
+}
+
+void BoundaryNeumann2::apply(Field3D &f) {
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      f(bndry->x, bndry->y, z) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, z))/3.;
+}
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryNeumann2\n";
+  }
+  return new BoundaryNeumannPar(region);
+}
+
+
+void BoundaryNeumannPar::apply(Field2D &f) {
+  // Loop over all elements and set equal to the next point in
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    f(bndry->x, bndry->y) = f(bndry->x - bndry->bx, bndry->y - bndry->by)*sqrt(mesh->g_22(bndry->x, bndry->y)/mesh->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+}
+
+void BoundaryNeumannPar::apply(Field3D &f) {
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      f(bndry->x,bndry->y,z) = f(bndry->x - bndry->bx,bndry->y - bndry->by,z)*sqrt(mesh->g_22(bndry->x, bndry->y)/mesh->g_22(bndry->x - bndry->bx, bndry->y - bndry->by));
+}
+
+///////////////////////////////////////////////////////////////
+
 BoundaryOp* BoundaryRobin::clone(BoundaryRegion *region, const list<string> &args) {
   BoutReal a = 0.5, b = 1.0, g = 0.;
   

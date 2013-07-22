@@ -32,6 +32,27 @@ class BoundaryNeumann : public BoundaryOp {
   void apply(Field3D &f);
 };
 
+/// Neumann (zero-gradient) boundary condition, using 2nd order on boundary
+class BoundaryNeumann2 : public BoundaryOp {
+ public:
+  BoundaryNeumann2() {}
+  BoundaryNeumann2(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
+/// NeumannPar (zero-gradient) boundary condition on
+/// the variable / sqrt(g_22)
+class BoundaryNeumannPar : public BoundaryOp {
+ public:
+  BoundaryNeumannPar() {}
+  BoundaryNeumannPar(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+
 /// Robin (mix of Dirichlet and Neumann)
 class BoundaryRobin : public BoundaryOp {
  public:

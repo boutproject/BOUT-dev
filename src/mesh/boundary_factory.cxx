@@ -16,6 +16,8 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
   add(new BoundaryNeumann(), "neumann");
+  add(new BoundaryNeumann2(), "neumann2");
+  add(new BoundaryNeumannPar(), "neumannpar");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
