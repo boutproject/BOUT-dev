@@ -46,6 +46,7 @@ AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
+AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -263,6 +264,73 @@ then
 fi
 
 echo
+
+#############################################################
+# MUMPS library
+#############################################################
+
+if test "$with_mumps" != "" && test "$with_mumps" != "no"
+then
+  MUMPS=""
+  echo "Searching for MUMPS"
+  if test "$with_mumps" != "yes"
+  then
+    # User specified a directory
+    MUMPS="$with_mumps"
+    
+    # Check for libraries
+      
+    MUMPS_INC=$MUMPS/include
+    MUMPS_LIB=$MUMPS/lib
+  fi
+  
+  if test "$MUMPS" == ""
+  then
+    # Look in some standard locations
+    AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/".
+    AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
+    
+    # Check for libraries
+    
+    MUMPS_INC=$MUMPS/include
+    MUMPS_LIB=$MUMPS/lib
+  fi
+  
+  if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
+  then
+    # Try PETSc installation
+    
+    mumps_dir=`ls $PETSC_DIR/externalpackages/ | grep MUMPS`
+    
+    if test "$mumps_dir" != ""
+    then
+      # PETSc has a MUMPS installation
+      MUMPS_INC=$PETSC_DIR/externalpackages/$mumps_dir/include
+      MUMPS_LIB=$PETSC_DIR/$PETSC_ARCH/lib
+      MUMPS=$PETSC_DIR/externalpackages/$mumps_dir
+    fi
+  fi
+  
+  if test "$MUMPS" != ""
+  then
+    # Check all files needed
+    AC_CHECK_FILES( $MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a, ,[ MUMPS="" ])
+  fi
+  
+  if test "$MUMPS" == ""
+  then
+    echo " -> MUMPS not found"
+  else
+    echo " -> MUMPS support enabled"
+    echo "   Includes : $MUMPS_INC"
+    echo "   Libraries: $MUMPS_LIB"
+    
+    EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
+    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lblas -lparmetis -lmetis -lptscotch -lptesmumps"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
+  fi
+  echo
+fi
 
 #############################################################
 # Solver choice: SUNDIALS' IDA, SUNDIALS' CVODE, PVODE
@@ -1176,6 +1244,13 @@ then
   echo "  Hypre support: no" | tee -a config-build.log
 else
   echo "  Hypre support: yes" | tee -a config-build.log
+fi
+
+if test "$MUMPS" = ""
+then
+  echo "  MUMPS support: no" | tee -a config-build.log
+else
+  echo "  MUMPS support: yes" | tee -a config-build.log
 fi
 
 echo ""
