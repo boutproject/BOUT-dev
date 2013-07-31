@@ -142,6 +142,8 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
     ni = N_ELEMENTS(ri)
     bp = FLTARR(ni)
     bt = FLTARR(ni)
+    m = interp_data.method
+    interp_data.method = 2
     FOR i=0, ni-1 DO BEGIN
       local_gradient, interp_data, ri[i], zi[i], status=status, $
         f=f, dfdr=dfdr, dfdz=dfdz
@@ -156,12 +158,13 @@ FUNCTION poloidal_grid, interp_data, R, Z, ri, zi, n, fpsi=fpsi, parweight=parwe
       bp[i] = SQRT(dfdr^2 + dfdz^2) / INTERPOLATE(R, ri[i])
       bt[i] = ABS( btr / INTERPOLATE(R, ri[i]))
     ENDFOR
+    interp_data.method = m
     b = SQRT(bt^2 + bp^2)
     ddpar = dd * b / bp
     pardist = FLTARR(np)
     FOR i=1,np-1 DO BEGIN
       ip = (i + 1) MOD np
-      pardist[i] = pardist[i-1] + 0.5*(ddpar[i-1] + ddpar[ip])
+      pardist[i] = pardist[i-1] + ddpar[i] ;0.5*(ddpar[i-1] + ddpar[ip])
     ENDFOR
   ENDIF ELSE pardist = poldist ; Just use the same poloidal distance
 
@@ -733,23 +736,17 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     bndryi[1,*] = [1, 1, ny-2, ny-2]
   ENDIF
   
-  ;;;;;;;;;;;;;;; Calculate DCT ;;;;;;;;;;;;;;
+  ;;;;;;;;;;;;;;; Psi interpolation data ;;;;;;;;;;;;;;
   
+  interp_data = {nx:nx, ny:ny, $
+                 method:0, $
+                 f: F}       ; Always include function
+               
   IF KEYWORD_SET(fast) THEN BEGIN
     PRINT, "Using Fast settings"
-    interp_data = {nx:nx, ny:ny, $
-                   method:1, $
-                   f: f}  ; Just need the function itself
-  ENDIF ELSE BEGIN
-    dct = DCT2D(F)
-
-    ; Create a structure containing interpolation settings and data
-    interp_data = {nx:nx, ny:ny, $
-                   method:0, $
-                   f: F, $       ; Always include function
-                   dct: dct} ; Pass the DCT coefficients
-  ENDELSE
-    
+    interp_data.method = 2
+  ENDIF
+  
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
   nlev = 100
@@ -894,6 +891,8 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     dpsidR = FLTARR(nrad, npol)
     dpsidZ = dpsidR
     
+    interp_data.method = 2
+
     FOR i=0,nrad-1 DO BEGIN
       FOR j=0,npol-1 DO BEGIN
         local_gradient, interp_data, a.Rixy[i,j], a.Zixy[i,j], status=status, $
@@ -903,7 +902,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
         dpsidZ[i,j] = dfdz/INTERPOLATE(DERIV(Z),a.Zixy[i,j]) 
       ENDFOR
     ENDFOR
-    
+
     ; Set topology to connect in the core
     yup_xsplit = [nrad]
     ydown_xsplit = [nrad]
@@ -1866,7 +1865,9 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
     ; Calculate magnetic field components
     dpsidR = FLTARR(TOTAL(nrad, /int), TOTAL(npol, /int))
     dpsidZ = dpsidR
-    
+
+    interp_data.method = 2
+
     FOR i=0,TOTAL(nrad,/int)-1 DO BEGIN
       FOR j=0,TOTAL(npol,/int)-1 DO BEGIN
         local_gradient, interp_data, Rixy[i,j], Zixy[i,j], status=status, $

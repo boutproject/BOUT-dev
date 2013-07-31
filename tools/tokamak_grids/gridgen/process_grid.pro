@@ -549,19 +549,21 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   Brxy = mesh.dpsidZ / Rxy
   Bzxy = -mesh.dpsidR / Rxy
   Bpxy = SQRT(Brxy^2 + Bzxy^2)
-  
   ; Determine direction (dot B with grad y vector)
   
   dot = Brxy[0,ymid]*(Rxy[0,ymid+1] - Rxy[0,ymid-1]) + $
     Bzxy[0,ymid]*(Zxy[0,ymid+1] - Zxy[0,ymid-1])
   
-  bpsign = 1.0
+  
   IF dot LT 0. THEN BEGIN
     PRINT, "**** Poloidal field is in opposite direction to Grad Theta -> Bp negative"
     Bpxy = -Bpxy
-    IF bpsign GT 0 THEN STOP
+    IF bpsign GT 0 THEN STOP ; Should be negative
     bpsign = -1.0
-  ENDIF
+  ENDIF ELSE BEGIN
+    IF bpsign LT 0 THEN STOP ; Should be positive
+    bpsign = 1.
+  ENDELSE
 
   ; Get toroidal field from poloidal current function fpol
   Btxy = FLTARR(nx, ny)
