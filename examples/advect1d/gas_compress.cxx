@@ -79,8 +79,8 @@ int physics_run(BoutReal t)
   if(include_viscosity) {
     // Add viscosity
     
-    ddt(V).y += nu*Laplacian(V.y);
-    ddt(V).z += nu*Laplacian(V.z);
+    ddt(V).y += nu*Laplace(V.y);
+    ddt(V).z += nu*Laplace(V.z);
   }
   
   // Pressure
