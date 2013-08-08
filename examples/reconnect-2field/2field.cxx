@@ -5,10 +5,11 @@
 
 #include <bout.hxx>
 #include <boutmain.hxx>
-#include <bout/constants.hxx>
 
 #include <invert_laplace.hxx>
+#include <invert_parderiv.hxx>
 #include <initialprofiles.hxx>
+#include <bout/constants.hxx>
 
 #include <math.h>
 #include <stdio.h>
@@ -52,6 +53,9 @@ bool nonlinear;
 bool parallel_lc;
 bool include_jpar0;
 int jpar_bndry;
+
+int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
+InvertPar *inv; // Parallel inversion class used in preconditioner
 
 int physics_init(bool restarting) {
 
@@ -188,6 +192,14 @@ int physics_init(bool restarting) {
   
   initial_profile("Apar_coil", Apar_coil);
   SAVE_ONCE(Apar_coil);
+
+  // Give the solver the preconditioner function
+  solver->setPrecon(precon);
+  // Initialise parallel inversion class
+  inv = InvertPar::Create();
+  inv->setCoefA(1.0);
+  U.setBoundary("U");
+  Apar.setBoundary("Apar");
   
   return 0;
 }
@@ -284,3 +296,49 @@ int physics_run(BoutReal t) {
   return 0;
 }
 
+/*********************************************************
+ * Preconditioner
+ *
+ * o System state in variables (as in rhs function)
+ * o Values to be inverted in F_vars
+ *
+ * o Return values should be in vars (overwriting system state)
+ * 
+ *********************************************************/
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  mesh->communicate(ddt(Apar));
+  Field3D Jp = -Delp2(ddt(Apar));
+  mesh->communicate(Jp);
+
+  if(jpar_bndry > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_bndry;i>=0;i--)
+	for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    Jp[i][j][k] = Jp[i+1][j][k];
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
+	for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    Jp[i][j][k] = Jp[i-1][j][k];
+	  }
+    }
+  }
+  
+  Field3D U1 = ddt(U) + gamma*SQ(mesh->Bxy)*Grad_par_LtoC(Jp/mesh->Bxy);
+  
+  inv->setCoefB(-SQ(gamma*mesh->Bxy)/beta_hat);
+  U = inv->solve(U1);
+  U.applyBoundary();
+  
+  Field3D phip = invert_laplace(mesh->Bxy*U, phi_flags);
+  mesh->communicate(phip);
+  
+  Apar = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(phip);
+  Apar.applyBoundary();
+
+  return 0;
+}

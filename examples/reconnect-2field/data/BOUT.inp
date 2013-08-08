@@ -32,6 +32,10 @@ restart_format = "nc"   # Restart file format
 StaggerGrids = false    # Use staggered grids (EXPERIMENTAL)
 
 ##################################################
+[mesh]
+symmetricGlobalX = true
+
+##################################################
 # Communications
 # Fastest setting depends on machine and MPI
 # implementation. Do not affect result.
