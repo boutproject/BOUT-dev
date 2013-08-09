@@ -48,6 +48,7 @@ using std::vector;
 */
 class FieldData {
  public:
+  FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {}
   virtual ~FieldData();
 
   // Defines interface which must be implemented
