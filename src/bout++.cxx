@@ -292,7 +292,8 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   OPTION(options, TIMESTEP, 1.0);
   
   /// Initialise the solver
-  if (solver->init(physics_run, restart, NOUT, TIMESTEP)) {
+  solver->setRHS(physics_run);
+  if (solver->init(restart, NOUT, TIMESTEP)) {
     output.write("Failed to initialise solver-> Aborting\n");
     return 1;
   }

@@ -192,9 +192,10 @@ MFILE
 
   if test "$HAS_SUNDIALS" == "0"
   then
-    echo "Error - PETSc must have SUNDIALS support"
-    rm petscmake$$
-    exit
+    echo "Warning - PETSc has no SUNDIALS support"
+    PETSC_HAS_SUNDIALS="no"
+  else
+    PETSC_HAS_SUNDIALS="yes"
   fi
 
   if test "$HAS_CXX" == "0"
@@ -248,7 +249,6 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-
 else
    PETSC=
 fi
@@ -261,6 +261,11 @@ then
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
+  
+  if test "$PETSC_HAS_SUNDIALS" == "yes"
+  then
+    CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
+  fi
 fi
 
 echo
@@ -1202,6 +1207,7 @@ then
   echo "  PETSc support: no" | tee -a config-build.log
 else
   echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
+  echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
 if test "$IDALIBS" = ""

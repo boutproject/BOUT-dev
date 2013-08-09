@@ -43,7 +43,7 @@ class EulerSolver : public Solver {
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
   
-  int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
+  int init(bool restarting, int nout, BoutReal tstep);
   
   int run();
  private:

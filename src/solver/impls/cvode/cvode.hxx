@@ -65,7 +65,7 @@ class CvodeSolver : public Solver {
     
     BoutReal getCurrentTimestep() { return hcur; }
 
-    int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
+    int init(bool restarting, int nout, BoutReal tstep);
 
     int run();
     BoutReal run(BoutReal tout);
@@ -78,8 +78,7 @@ class CvodeSolver : public Solver {
     int NOUT; // Number of outputs. Specified in init, needed in run
     BoutReal TIMESTEP; // Time between outputs
     BoutReal hcur; // Current internal timestep
-
-    rhsfunc func; // RHS function
+  
     PhysicsPrecon prefunc; // Preconditioner
     Jacobian jacfunc; // Jacobian - vector function
     bool diagnose; // Output additional diagnostics

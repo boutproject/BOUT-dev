@@ -49,7 +49,7 @@
 #define ONE         RCONST(1.0)
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_bbd_res(int Nlocal, BoutReal t, 
+static int ida_bbd_res(long int Nlocal, BoutReal t, 
 		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
 static int ida_pre(BoutReal t, N_Vector yy, 	 
 		   N_Vector yp, N_Vector rr, 	 
@@ -78,12 +78,12 @@ IdaSolver::~IdaSolver()
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
+ int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising IDA solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(f, restarting, nout, tstep))
+  if(Solver::init(restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -665,7 +665,7 @@ static int idares(BoutReal t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(int Nlocal, BoutReal t, 
+static int ida_bbd_res(long int Nlocal, BoutReal t, 
 		       N_Vector u, N_Vector du, N_Vector rr, 
 		       void *user_data)
 {

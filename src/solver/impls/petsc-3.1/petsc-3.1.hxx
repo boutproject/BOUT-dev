@@ -61,7 +61,7 @@ class PetscSolver : public Solver {
   PetscSolver();
   ~PetscSolver();
   
-  int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run();
 

@@ -51,8 +51,6 @@ typedef PetscBool boole;
 
 using std::vector;
 
-typedef int (*rhsfunc)(BoutReal);
-
 extern BoutReal simtime;
 extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
@@ -62,7 +60,7 @@ class PetscSolver: public Solver {
   PetscSolver();
   ~PetscSolver();
   
-  int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run();
 

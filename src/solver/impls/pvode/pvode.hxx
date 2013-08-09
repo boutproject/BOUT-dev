@@ -45,12 +45,10 @@ class PvodeSolver : public Solver {
  public:
   PvodeSolver(Options *opts);
   ~PvodeSolver();
-
-  void setPrecon(PhysicsPrecon f) {} // Doesn't do much yet
   
   BoutReal getCurrentTimestep() { return hcur; }
   
-  int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
+  int init(bool restarting, int nout, BoutReal tstep);
   
   int run();
   BoutReal run(BoutReal tout);
@@ -67,9 +65,6 @@ class PvodeSolver : public Solver {
   pvode::N_Vector u;
   pvode::machEnvType machEnv;
   void *cvode_mem;
-  
-  rhsfunc func; // RHS function
-  rhsfunc gfunc; // Preconditioner function
 };
 
 #endif // __PVODE_SOLVER_H__

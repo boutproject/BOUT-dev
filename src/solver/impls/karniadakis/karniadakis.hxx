@@ -47,7 +47,7 @@ class KarniadakisSolver : public Solver {
 
   BoutReal getCurrentTimestep() {return timestep; }
 
-  int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
+  int init(bool restarting, int nout, BoutReal tstep);
   
   int run();
  private:

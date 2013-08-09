@@ -55,14 +55,19 @@ using std::string;
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
+///////////////////////////////////////////////////////////////////
+// C function pointers
+
 /// RHS function pointer
-typedef int (*rhsfunc)(BoutReal);
+typedef int (*rhsfunc)(BoutReal); // C-style function pointer
 
 /// User-supplied preconditioner function
 typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
 
 /// User-supplied Jacobian function
 typedef int (*Jacobian)(BoutReal t);
+
+///////////////////////////////////////////////////////////////////
 
 /// Solution monitor, called each timestep
 typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
@@ -71,7 +76,7 @@ class Solver {
  public:
   Solver(Options *opts = NULL);
   virtual ~Solver() { }
-  
+
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
   virtual void add(Field2D &v, const char* name);
@@ -87,6 +92,9 @@ class Solver {
   virtual void constraint(Vector2D &v, Vector2D &C_v, const char* name);
   virtual void constraint(Vector3D &v, Vector3D &C_v, const char* name);
 
+  /// Set the RHS function
+  void setRHS(rhsfunc f) { phys_run = f; }
+
   /// Specify a preconditioner (optional)
   virtual void setPrecon(PhysicsPrecon f) {}
   
@@ -101,10 +109,10 @@ class Solver {
   /// Return the current internal timestep 
   virtual BoutReal getCurrentTimestep() {return 0.0;}
   
-  /// Initialise the solver, passing the RHS function
+  /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
-  virtual int init(rhsfunc f, bool restarting, int nout, BoutReal tstep);
+  virtual int init(bool restarting, int nout, BoutReal tstep);
   
   void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
   void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
@@ -183,7 +191,8 @@ protected:
   
   BoutReal max_dt; ///< Maximum internal timestep
  private:
-  rhsfunc phys_run; ///< The user's RHS function
+  
+  rhsfunc phys_run;       ///< The user's RHS function
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
 

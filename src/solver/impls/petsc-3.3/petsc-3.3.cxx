@@ -85,7 +85,7 @@ PetscSolver::~PetscSolver() {
  * Initialise
  **************************************************************************/
 
-int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
+int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscErrorCode  ierr;
   int             neq;
   int             mudq, mldq, mukeep, mlkeep;
@@ -105,7 +105,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscLogEventRegister("solver_f",PETSC_VIEWER_CLASSID,&solver_event);
 
   /// Call the generic initialisation first
-  Solver::init(f, restarting, NOUT, TIMESTEP);
+  Solver::init(restarting, NOUT, TIMESTEP);
 
   ierr = PetscLogEventBegin(init_event,0,0,0,0);CHKERRQ(ierr);
   output.write("Initialising PETSc-3.3 solver\n");
@@ -158,7 +158,9 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   // Create timestepper
   ierr = TSCreate(BoutComm::get(),&ts);CHKERRQ(ierr);
   ierr = TSSetProblemType(ts,TS_NONLINEAR);CHKERRQ(ierr);
+#ifdef PETSC_HAS_SUNDIALS
   ierr = TSSetType(ts,TSSUNDIALS);CHKERRQ(ierr);
+#endif
   ierr = TSSetApplicationContext(ts, this);CHKERRQ(ierr);
 
   // Set user provided RHSFunction
@@ -183,6 +185,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
   OPTION(options, precon_tol, 1.0e-4);
   OPTION(options, diagnose,     false);
 
+#ifdef PETSC_HAS_SUNDIALS
   // Set Sundials tolerances
   BoutReal abstol, reltol;
   options->get("ATOL", abstol, 1.0e-12);
@@ -201,6 +204,7 @@ int PetscSolver::init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP) {
     output.write("\tUsing BDF method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
+#endif
 
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal start_timestep;

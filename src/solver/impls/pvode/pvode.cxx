@@ -52,8 +52,6 @@ long int iopt[OPT_SIZE];
 BoutReal ropt[OPT_SIZE];
 
 PvodeSolver::PvodeSolver(Options *options) : Solver() {
-  gfunc = (rhsfunc) NULL;
-
   has_constraints = false; ///< This solver doesn't have constraints
 }
 
@@ -73,7 +71,7 @@ PvodeSolver::~PvodeSolver()
  * Initialise
  **************************************************************************/
 
-int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
+int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int mudq, mldq, mukeep, mlkeep;
   boole optIn;
   int i;
@@ -87,7 +85,7 @@ int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising PVODE solver");
 
   /// Call the generic initialisation first
-  if(Solver::init(f, restarting, nout, tstep))
+  if(Solver::init(restarting, nout, tstep))
     return 1;
   
   // Save nout and tstep for use in run
@@ -95,11 +93,6 @@ int PvodeSolver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
   TIMESTEP = tstep;
 
   output.write("Initialising PVODE solver\n");
-  
-  // Set the rhs solver function
-  func = f;
-  if(gfunc == (rhsfunc) NULL)
-    gfunc = f; // If preconditioner function not specified, use f
 
   int local_N = getLocalN();
   
@@ -321,9 +314,6 @@ void PvodeSolver::rhs(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
 }
 
 void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
-  int flag;
-  BoutReal tstart;
-
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: PvodeSolver::gloc(%e)", t);
 #endif
@@ -334,7 +324,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
   load_vars(udata);
 
   // Call function
-  flag = (*gfunc)(t);
+  int flag = run_rhs(t);
 
   // Save derivatives to CVODE
   save_derivs(dudata);

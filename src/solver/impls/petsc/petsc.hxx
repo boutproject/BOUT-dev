@@ -76,7 +76,7 @@ class PetscSolver : public Solver {
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
   void setJacobian(Jacobian j) {jacfunc = j; }
 
-  int init(rhsfunc f, bool restarting, int NOUT, BoutReal TIMESTEP);
+  int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run();
 

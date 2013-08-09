@@ -394,7 +394,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
  * Initialisation
  **************************************************************************/
 
-int Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
+int Solver::init(bool restarting, int nout, BoutReal tstep) {
   
 #ifdef CHECK
   int msg_point = msg_stack.push("Solver::init()");
@@ -402,8 +402,6 @@ int Solver::init(rhsfunc f, bool restarting, int nout, BoutReal tstep) {
 
   if(initialised)
     throw BoutException("ERROR: Solver is already initialised\n");
-
-  phys_run = f;
 
   output.write("Initialising solver\n");
 
