@@ -388,6 +388,7 @@ Configuration summary
   Parallel-NetCDF support: no
   PDB support: no
   Hypre support: no
+  MUMPS support: no
 \end{verbatim}
 
 If not, see section~\ref{sec:advancedinstall} for some things you can
@@ -658,6 +659,19 @@ and to specify a non-standard path
 \begin{verbatim}
 ./configure --with-lapack=/path/to/lapack
 \end{verbatim}
+
+\subsection{MUMPS}
+
+This is still experimetal, but does work on at least some systems at York. 
+The PETSc library can be used to call MUMPS for directly solving matrices
+(e.g. for Laplacian inversions), or MUMPS can be used directly. 
+To enable MUMPS, configure with
+\begin{verbatim}
+./configure --with-mumps
+\end{verbatim}
+MUMPS has many dependencies, including ScaLapack and ParMetis, which the configuration script
+assumes are in the same place as MUMPS. The easiest way to get MUMPS installed is to install
+PETSc with MUMPS, as the configuration script will check the PETSc directory.
 
 \subsection{MPI compilers}
 
@@ -1155,7 +1169,9 @@ This is a more recent addition, and so is not yet as developed as the IDL suppor
 
 \subsection{Note on reading PDB files}
 
-IDL comes with routines to manipulate NetCDF files, but to read PDB files you will need the PDB2IDL library
+You should never need to use PDB files with BOUT++, as all input and output routines have now
+been changed to use NetCDF. For backwards compatibility with BOUT, PDB files can still be used
+if needed. IDL comes with routines to manipulate NetCDF files, but to read PDB files you will need the PDB2IDL library
 supplied with BOUT++:
 \begin{verbatim}
 cd PDB2IDL
@@ -1297,7 +1313,7 @@ data = file_import("filename")
 
 and to write a structure to file:
 \begin{verbatim}
-status = file_export("filename, data)
+status = file_export("filename", data)
 \end{verbatim}
 
 Converting file types can now be done using
@@ -1308,7 +1324,7 @@ s = file_export("somefile.nc", d)
 
 Note that this will mess up the case of the variable names,
 and names may be changed to become valid IDL variable names.
-To convert PDB files to NetCDF there is also pdb2cdf in bout/archiving/
+To convert PDB files to NetCDF there is also a code \file{pdb2cdf} in \file{BOUT/tools/archiving/pdb2cdf}.
 
 \subsection{IDL analysis routines}
 
@@ -1590,7 +1606,7 @@ mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
 max\_timestep & Maxmimum timestep & rk4, cvode \\
 timestep & Starting timestep & rk4, karniadakis \\
-adaptive & Adapt timestep? & rk4 \\
+adaptive & Adapt timestep? (Y/N) & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
 mukeep, mlkeep & & \\
@@ -1639,6 +1655,7 @@ determines whether asyncronous MPI sends are used; which method is faster varies
 with machine and problem.
 
 \subsection{Differencing methods}
+\label{sec:diffmethodoptions}
 \index{differencing}
 Differencing methods are specified in three section (\code{[ddx]}, \code{[ddy]} and \code{[ddz]}), one
 for each dimension. 
@@ -1794,6 +1811,7 @@ Name & Description \\
 abs(x) & Absolute value $\left|x\right|$\\
 cos(x) & Cosine\\
 cosh(x) & Hyperbolic cosine\\
+tanh(x) & Hyperbolic tangent \\
 gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
 gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
 sin(x) & Sine\\
@@ -2956,6 +2974,44 @@ Both of these methods avoid overshoots (Gibbs phenomena) at sharp gradients such
 but the simple 1st-order method has very large artificial diffusion. WENO schemes are
 a development of the ENO reconstruction schemes which combine good handling of sharp-gradient
 regions with high accuracy in smooth regions.
+
+To use these differencing operators directly, add the following to the top of your physics module
+\begin{lstlisting}
+#include <derivs.hxx>
+\end{lstlisting}
+
+\begin{table}[htb!]
+\centering
+\caption{Coordinate derivatives}
+\label{tab:solvers}
+\begin{tabular}{l c}
+\hline
+Function & Formula \\
+\hline
+DDX(f) & $\partial f / \partial x$ \\
+DDY(f) & $\partial f / \partial y$ \\
+DDZ(f) & $\partial f / \partial z$ \\
+D2DX2(f) & $\partial^2 f / \partial x^2$\\
+D2DY2(f) & $\partial^2 f / \partial y^2$\\
+D2DZ2(f) & $\partial^2 f / \partial z^2$\\
+D2DX4(f) & $\partial^4 f / \partial x^4$\\
+D2DY4(f) & $\partial^4 f / \partial y^4$\\
+D2DZ4(f) & $\partial^4 f / \partial z^4$\\
+D2DXDZ(f) & $\partial^2 f / \partial x\partial z$\\
+D2DYDZ(f) & $\partial^2 f / \partial y\partial z$\\
+\hline
+VDDX(f, g) & $f \partial g / \partial x$\\
+VDDY(f, g) & $f \partial g / \partial y$\\
+VDDZ(f, g) & $f \partial g / \partial z$\\
+\hline
+FDDX(f, g) & $\partial/\partial x\left( f * g \right)$ \\
+FDDY(f, g) & $\partial/\partial x\left( f * g \right)$ \\
+FDDZ(f, g) & $\partial/\partial x\left( f * g \right)$ \\
+\hline
+\end{tabular}
+\end{table}
+
+By default the method used will be the one specified in the options input file (see section~\ref{sec:diffmethodoptions}), but most of these methods can take an optional \lstinline!DIFF\_METHOD! argument, specifying exactly which method to use.
 
 \subsection{Non-uniform meshes}
 \index{non-uniform mesh}
