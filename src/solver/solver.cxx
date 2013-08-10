@@ -43,7 +43,7 @@ char*** Solver::pargv = 0;
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts) {
+Solver::Solver(Options *opts) : options(opts), model(0) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
 
@@ -63,9 +63,32 @@ Solver::Solver(Options *opts) : options(opts) {
     Options::getRoot()->get("datadir", restartdir, "data");
   }
   
+  // Restart option
+  Options::getRoot()->get("restart", restarting, false);
+
   // Split operator
   split_operator = false;
   max_dt = -1.0;
+}
+
+/**************************************************************************
+ * Add physics models
+ **************************************************************************/
+
+void Solver::setModel(PhysicsModel *m) {
+  if(model)
+    throw BoutException("Solver can only evolve one model");
+  
+  if(initialised)
+    throw BoutException("Solver already initialised");
+  
+  if(m->initialise(this, restarting))
+    throw BoutException("Couldn't initialise physics model");
+  
+  // Check if the model is split operator
+  split_operator = m->splitOperator();
+  
+  model = m;
 }
 
 /**************************************************************************
@@ -389,6 +412,72 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
   msg_stack.pop(msg_point);
 #endif
 }
+
+/**************************************************************************
+ * Initialisation
+ **************************************************************************/
+
+int Solver::solve() {
+  /// Get options
+  Options *options = Options::getRoot();
+  int NOUT;
+  OPTION(options, NOUT, 1);
+  BoutReal TIMESTEP;
+  OPTION(options, TIMESTEP, 1.0);
+
+  // Initialise
+  if(init(restarting, NOUT, TIMESTEP)) {
+    output.write("Failed to initialise solver-> Aborting\n");
+    return 1;
+  }
+  
+  if (!restarting) {
+    /// Write initial state as time-point 0
+    
+    // Run RHS once to ensure all variables set
+    if (run_rhs(0.0)) {
+      output.write("Physics RHS call failed\n");
+      return 1;
+    }
+    
+    dump.write();
+  }
+  
+  /// Run the solver
+  output.write("Running simulation\n\n");
+  int status;
+  try {
+    time_t start_time = time((time_t*) NULL);
+    output.write("\nRun started at  : %s\n", ctime(&start_time));
+   
+    Timer timer("run"); // Start timer
+    status = run();
+
+    time_t end_time = time((time_t*) NULL);
+    output.write("\nRun finished at  : %s\n", ctime(&end_time));
+    output.write("Run time : ");
+
+    int dt = end_time - start_time;
+    int i = (int) (dt / (60.*60.));
+    if (i > 0) {
+      output.write("%d h ", i);
+      dt -= i*60*60;
+    }
+    i = (int) (dt / 60.);
+    if (i > 0) {
+      output.write("%d m ", i);
+      dt -= i*60;
+    }
+    output.write("%d s\n", dt);
+  }catch(BoutException *e) {
+    output << "Error encountered during initialisation\n";
+    output << e->what() << endl;
+    return 1;
+  }
+
+  return 0;
+}
+
 
 /**************************************************************************
  * Initialisation
@@ -853,17 +942,31 @@ int Solver::run_rhs(BoutReal t) {
       tmp2 = new BoutReal[nv];
     }
     save_vars(tmp); // Copy variables into tmp
-    status = run_func(t, phys_conv);
+    if(model) {
+      status = model->runConvective(t);
+    }else 
+      status = (*phys_conv)(t);
+    post_rhs(); // Check variables, apply boundary conditions
+    
     load_vars(tmp); // Reset variables
     save_derivs(tmp); // Save time derivatives
-    status = run_func(t, phys_diff);
+    if(model) {
+      status = model->runDiffusive(t);
+    }else
+      status = (*phys_diff)(t);
+    post_rhs();
     save_derivs(tmp2); // Save time derivatives
     for(int i=0;i<nv;i++)
       tmp[i] += tmp2[i];
     load_derivs(tmp); // Put back time-derivatives
-  }else
-    status = run_func(t, phys_run);
-  
+  }else {
+    if(model) {
+      status = model->runRHS(t);
+    }else
+      status = (*phys_run)(t);
+    post_rhs();
+  }
+
   rhs_ncalls++;
 
   return status;
@@ -875,11 +978,18 @@ int Solver::run_convective(BoutReal t) {
   Timer timer("rhs");
   
   if(split_operator) {
-    status =  run_func(t, phys_conv);
+    if(model) {
+      status = model->runConvective(t);
+    }else
+      status = (*phys_conv)(t);
   }else {
     // Return total
-    status = run_func(t, phys_run);
+    if(model) {
+      status = model->runRHS(t);
+    }else
+      status = (*phys_run)(t);
   }
+  post_rhs();
   
   rhs_ncalls++;
   
@@ -892,7 +1002,11 @@ int Solver::run_diffusive(BoutReal t) {
   Timer timer("rhs");
 
   if(split_operator) {
-    status = run_func(t, phys_diff);
+    if(model) {
+      status = model->runDiffusive(t);
+    }else 
+      status = (*phys_diff)(t);
+    post_rhs();
   }else {
     // Zero if not split
     for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
@@ -904,8 +1018,7 @@ int Solver::run_diffusive(BoutReal t) {
   return status;
 }
 
-int Solver::run_func(BoutReal t, rhsfunc f) {
-  int status = (*f)(t);
+void Solver::post_rhs() {
 
   // Make sure vectors in correct basis
   for(int i=0;i<v2d.size();i++) {
@@ -946,8 +1059,6 @@ int Solver::run_func(BoutReal t, rhsfunc f) {
     it->F_var->checkData();
   msg_stack.pop();
 #endif
-  
-  return status;
 }
 
 bool Solver::varAdded(const string &name) {

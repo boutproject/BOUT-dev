@@ -82,8 +82,6 @@ int iteration;
 const string time_to_hms(BoutReal t);   // Converts to h:mm:ss.s format
 char get_spin();                    // Produces a spinning bar
 
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); // Function called by the solver each timestep
-
 /*!
   Initialise BOUT++
   
@@ -281,70 +279,15 @@ void BoutInitialise(int &argc, char **&argv) {
 }
 
 int bout_run(Solver *solver, rhsfunc physics_run) {
-  // Get options
-  Options *options = Options::getRoot();
   
-  bool restart;
-  OPTION(options, restart, false);
-  int NOUT;
-  OPTION(options, NOUT, 1);
-  BoutReal TIMESTEP;
-  OPTION(options, TIMESTEP, 1.0);
-  
-  /// Initialise the solver
+  /// Set the RHS function
   solver->setRHS(physics_run);
-  if (solver->init(restart, NOUT, TIMESTEP)) {
-    output.write("Failed to initialise solver-> Aborting\n");
-    return 1;
-  }
   
-  if (!restart) {
-    /// Write initial state as time-point 0
-    
-    // Run RHS once to ensure all variables set
-    if (physics_run(0.0)) {
-      output.write("Physics RHS call failed\n");
-      return 1;
-    }
-    
-    dump.write();
-  }
-  
-  // Add the monitor function
+  /// Add the monitor function
   solver->addMonitor(bout_monitor);
 
-  /// Run the solver
-  output.write("Running simulation\n\n");
-  int status;
-  try {
-    time_t start_time = time((time_t*) NULL);
-    output.write("\nRun started at  : %s\n", ctime(&start_time));
-   
-    Timer timer("run"); // Start timer
-    status = solver->run();
-
-    time_t end_time = time((time_t*) NULL);
-    output.write("\nRun finished at  : %s\n", ctime(&end_time));
-    output.write("Run time : ");
-
-    int dt = end_time - start_time;
-    int i = (int) (dt / (60.*60.));
-    if (i > 0) {
-      output.write("%d h ", i);
-      dt -= i*60*60;
-    }
-    i = (int) (dt / 60.);
-    if (i > 0) {
-      output.write("%d m ", i);
-      dt -= i*60;
-    }
-    output.write("%d s\n", dt);
-  }catch(BoutException *e) {
-    output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
-    return 1;
-  }
-  return status;
+  /// Run the simulation
+  return solver->solve();
 }
 
 int BoutFinalise() {

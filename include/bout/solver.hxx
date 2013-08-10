@@ -7,6 +7,10 @@
  *    * Major overhaul, and changed API. Trying to make consistent
  *      interface to PETSc and SUNDIALS solvers
  * 
+ * 2013-08 Ben Dudson
+ *    * Added OO-style API, to allow multiple physics models to coexist
+ *      For now both APIs are supported
+ * 
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -31,6 +35,26 @@
 
 class Solver;
 
+#include <bout_types.hxx>
+
+///////////////////////////////////////////////////////////////////
+// C function pointer types
+
+/// RHS function pointer
+typedef int (*rhsfunc)(BoutReal); // C-style function pointer
+
+/// User-supplied preconditioner function
+typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
+
+/// User-supplied Jacobian function
+typedef int (*Jacobian)(BoutReal t);
+
+
+/// Solution monitor, called each timestep
+typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
+
+///////////////////////////////////////////////////////////////////
+
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
@@ -39,6 +63,8 @@ class Solver;
 #include "field3d.hxx"
 #include "vector2d.hxx"
 #include "vector3d.hxx"
+
+#include "physicsmodel.hxx"
 
 #include <string>
 #include <list>
@@ -56,27 +82,26 @@ using std::string;
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 ///////////////////////////////////////////////////////////////////
-// C function pointers
-
-/// RHS function pointer
-typedef int (*rhsfunc)(BoutReal); // C-style function pointer
-
-/// User-supplied preconditioner function
-typedef int (*PhysicsPrecon)(BoutReal t, BoutReal gamma, BoutReal delta);
-
-/// User-supplied Jacobian function
-typedef int (*Jacobian)(BoutReal t);
-
-///////////////////////////////////////////////////////////////////
-
-/// Solution monitor, called each timestep
-typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
 
 class Solver {
  public:
   Solver(Options *opts = NULL);
   virtual ~Solver() { }
 
+  /////////////////////////////////////////////
+  // New API
+  
+  void setModel(PhysicsModel *model); ///< Specify physics model to solve
+
+  /////////////////////////////////////////////
+  // Old API
+  
+  void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
+  virtual void setPrecon(PhysicsPrecon f) {} ///< Specify a preconditioner (optional)
+  virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
+  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
+
+  /////////////////////////////////////////////
   // Routines to add variables. Solvers can just call these
   // (or leave them as-is)
   virtual void add(Field2D &v, const char* name);
@@ -91,24 +116,14 @@ class Solver {
   virtual void constraint(Field3D &v, Field3D &C_v, const char* name);
   virtual void constraint(Vector2D &v, Vector2D &C_v, const char* name);
   virtual void constraint(Vector3D &v, Vector3D &C_v, const char* name);
-
-  /// Set the RHS function
-  void setRHS(rhsfunc f) { phys_run = f; }
-
-  /// Specify a preconditioner (optional)
-  virtual void setPrecon(PhysicsPrecon f) {}
-  
-  /// Specify a Jacobian (optional)
-  virtual void setJacobian(Jacobian j) {}
-  
-  /// Split operator solves
-  virtual void setSplitOperator(rhsfunc fC, rhsfunc fD);
   
   /// Set a maximum internal timestep (only for explicit schemes)
   virtual void setMaxTimestep(BoutReal dt) {max_dt = dt;}
   /// Return the current internal timestep 
   virtual BoutReal getCurrentTimestep() {return 0.0;}
   
+  int solve();
+
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
@@ -134,7 +149,8 @@ class Solver {
   
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
 protected:
-
+  bool restarting;
+  
   // Command-line arguments
   static int* pargc;
   static char*** pargv;
@@ -191,15 +207,15 @@ protected:
   
   BoutReal max_dt; ///< Maximum internal timestep
  private:
+  PhysicsModel *model;    ///< physics model being evolved
   
   rhsfunc phys_run;       ///< The user's RHS function
-  
-  std::list<MonitorFunc> monitors; ///< List of monitor functions
-
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
   
-  int run_func(BoutReal, rhsfunc f);
+  std::list<MonitorFunc> monitors; ///< List of monitor functions
+
+  void post_rhs(); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver
   void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
