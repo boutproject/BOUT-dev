@@ -270,7 +270,11 @@ int Mesh::communicate(FieldPerp &f) {
   // Send data
   sendXIn(fd[xstart], nin*ngz, 1);
   sendXOut(fd[xend-nout+1], nout*ngz, 0);
-  
+ 
+  // Wait for receive
+  wait(recv[0]);
+  wait(recv[1]);
+
   return 0;
 }
 
