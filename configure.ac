@@ -200,12 +200,14 @@ MFILE
 
   if test "$HAS_CXX" == "0"
   then
-    echo "Error - PETSc must have C++ support"
-    rm petscmake$$
-    exit
+    echo "Warning - PETSc must have C++ support"
+    #rm petscmake$$
+    #exit
   fi
 
-  MPICXX=$CXX
+
+  echo "PETSc used C++ compiler $CXX"
+  #MPICXX=$CXX
 
   rm petscmake$$
 

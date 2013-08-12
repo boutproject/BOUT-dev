@@ -23,6 +23,7 @@
 #include <boutcomm.hxx>
 #include <bout/solver.hxx>
 #include <string.h>
+#include <time.h>
 
 #include <initialprofiles.hxx>
 #include <interpolation.hxx>

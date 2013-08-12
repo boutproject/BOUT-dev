@@ -75,7 +75,7 @@ class PetscSolver : public Solver {
 
   int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
-  int run() {return 17;};
+  int run();
   PetscErrorCode run(MonitorFunc mon);
 
   // These functions used internally (but need to be public)

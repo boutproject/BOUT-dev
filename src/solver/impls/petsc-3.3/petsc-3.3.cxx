@@ -185,13 +185,12 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   OPTION(options, precon_tol, 1.0e-4);
   OPTION(options, diagnose,     false);
 
-#ifdef PETSC_HAS_SUNDIALS
-  // Set Sundials tolerances
   BoutReal abstol, reltol;
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
-  //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
 
+#ifdef PETSC_HAS_SUNDIALS
+  // Set Sundials tolerances
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
@@ -330,8 +329,8 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     ierr = PetscViewerDestroy(&fd);CHKERRQ(ierr);
   } else { // create Jacobian matrix
 
-    PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
-    PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
+    //PetscInt MXSUB = mesh->xend - mesh->xstart + 1;
+    //PetscInt MYSUB = mesh->yend - mesh->ystart + 1;
 
     PetscInt nx = mesh->xend;//MXSUB;
     PetscInt ny = mesh->yend;//MYSUB;
@@ -569,7 +568,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
 PetscErrorCode PetscSolver::run() {
   PetscErrorCode ierr;
-  integer steps;
+  //integer steps;
   BoutReal ftime;
   FILE *fp = NULL;
 
@@ -603,7 +602,6 @@ PetscErrorCode PetscSolver::run() {
  **************************************************************************/
 
 PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
-  int flag;
   BoutReal *udata_array, *dudata_array;
 
   PetscFunctionBegin;
@@ -617,7 +615,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
   VecRestoreArray(udata, &udata_array);
 
   // Call RHS function
-  flag = run_rhs(t);
+  int flag = run_rhs(t);
 
   // Save derivatives to PETSc
   VecGetArray(dudata, &dudata_array);
@@ -735,7 +733,7 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 #define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
-  PetscReal      unorm,fnorm;
+  //PetscReal      unorm,fnorm;
 
   PetscFunctionBegin;
   ierr = solver_f(ts,t, globalin,globalout, (void *)f_data);CHKERRQ(ierr);
