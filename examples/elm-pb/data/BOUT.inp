@@ -20,8 +20,6 @@ ZPERIOD = 15        # Fraction of a torus to simulate
 MXG = 2
 MYG = 2
 
-NXPE = 16            # Number of processor in X
-
 #grid = "data/cbm18_8_y064_x516_090309.nc"  # Grid file
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 

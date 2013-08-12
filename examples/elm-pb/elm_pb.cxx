@@ -5,17 +5,19 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
-#include "interpolation.hxx"
-#include "derivs.hxx"
-#include <math.h>
-#include "sourcex.hxx"
+#include <bout.hxx>
+#include <initialprofiles.hxx>
+#include <invert_laplace.hxx>
+#include <invert_parderiv.hxx>
+#include <interpolation.hxx>
+#include <derivs.hxx>
+#include <sourcex.hxx>
 #include <boutmain.hxx>
 #include <bout/constants.hxx>
 #include <msg_stack.hxx>
+#include <utils.hxx>
 
+#include <math.h>
 
 //xia:       rf waves
 BoutReal Prf; // power of rf waves 
@@ -127,6 +129,7 @@ bool parallel_lr_diff; // Use left and right shifted stencils for parallel diffe
 bool parallel_lagrange; // Use (semi-) Lagrangian method for parallel derivatives
 bool parallel_project;  // Use Apar to project field-lines
 
+bool psi_inner_ideal, psi_outer_ideal; // Apply ideal MHD conditions to psi (through dpsi/dt)
 
 
 //********************
@@ -174,6 +177,8 @@ const BoutReal Mi = 2.0*1.6726e-27; // Ion mass
 
 // Communication objects
 FieldGroup comms;
+
+int precon(BoutReal t, BoutReal cj, BoutReal delta);
 
 int jacobian(BoutReal t); // Jacobian-vector multiply
 
@@ -411,6 +416,9 @@ int physics_init(bool restarting)
   OPTION(options, sp_width,         0.05);  //  the percentage of radial grid points for sink profile radial width in pressure
   OPTION(options, sp_length,        0.04);  //  the percentage of radial grid points for sink profile radial domain in pressure
 
+  OPTION(options, psi_inner_ideal, false);
+  OPTION(options, psi_outer_ideal, false);
+  
 
   // left edge sink factor in vorticity
   OPTION(options, sink_Ul,           -1.0);  //  left edge sink in vorticity
@@ -855,6 +863,9 @@ int physics_init(bool restarting)
 
     // Set Jacobian
     solver->setJacobian(jacobian);
+    
+    // Set preconditioner
+    solver->setPrecon(precon);
   }
 
   // Diamagnetic phi0
@@ -1193,8 +1204,6 @@ int physics_run(BoutReal t)
       ddt(Psi) -= diffusion_psiP * Grad2_par2new(Grad2_par2new(Psi));
     }
 
-
-
     // Vacuum solution
     if(relax_j_vac) {
       // Calculate the J and Psi profile we're aiming for
@@ -1212,6 +1221,32 @@ int physics_run(BoutReal t)
       {
 	ddt(Psi) -= Bbar*Tbar/(2.*1836*MU0*B0*Lbar*Lbar)*Frf;
       }
+    
+    // Boundary condition
+    if(psi_inner_ideal && mesh->firstX()) {
+      // Ideal MHD inner boundary condition: ddt(psi) = -Grad_parP(B0*phi, CELL_YLOW)
+      
+      for(int x=0;x<mesh->xstart;x++) {
+        for(int y=mesh->ystart; y <= mesh->yend; y++) {
+          for(int z=0;z<mesh->ngz-1; z++) {
+            // For each grid cell in the inner boundary
+            BoutReal dphidy = (8.*phi[x][y+1][z] - 8.*phi[x][y-1][z] + phi[x][y-2][z] - phi[x][y+2][z])/(12.*mesh->dy[x][y]);
+            ddt(Psi)[x][y][z] = - dphidy/sqrt(mesh->g_22[x][y]);
+          }
+        }
+      }
+    }
+    if(psi_outer_ideal && mesh->lastX()) {
+      for(int x=mesh->xend+1;x<mesh->ngx;x++) {
+        for(int y=mesh->ystart; y <= mesh->yend; y++) {
+          for(int z=0;z<mesh->ngz-1; z++) {
+            // For each grid cell in the inner boundary
+            BoutReal dphidy = (8.*phi[x][y+1][z] - 8.*phi[x][y-1][z] + phi[x][y-2][z] - phi[x][y+2][z])/(12.*mesh->dy[x][y]);
+            ddt(Psi)[x][y][z] = - dphidy/sqrt(mesh->g_22[x][y]);
+          }
+        }
+      }
+    }
   }
 
   if(parallel_lagrange) {
@@ -1445,7 +1480,7 @@ int physics_run(BoutReal t)
 
 
 /*******************************************************************************
- * Preconditioner described in elm_reduced.cpp
+ * Preconditioner
  *
  * o System state in variables (as in rhs function)
  * o Values to be inverted in F_vars
@@ -1456,44 +1491,56 @@ int physics_run(BoutReal t)
  * enable by setting solver / use_precon = true in BOUT.inp
  *******************************************************************************/
 
-const Field3D Lp(const Field3D &f)
-{
-  return b0xcv*Grad(f);
-}
-
-const Field3D Lpsi(const Field3D &f)
-{
-  Field3D jpre = Delp2(f);
-  jpre.setBoundary("J");
-  jpre.applyBoundary();
-
-  mesh->communicate(jpre);
-
-  Field3D result = b0xGrad_dot_Grad(f, J0);
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  // First matrix, applying L
+  mesh->communicate(ddt(Psi));
+  Field3D Jrhs = Delp2(ddt(Psi));
+  Jrhs.applyBoundary("neumann");
   
-  return (B0^2)*(result - Grad_parP(jpre) );
-}
-
-const Field3D Pschur(const Field3D &f)
-{
-  Field3D phitmp = invert_laplace(f, phitmp, phi_flags, NULL);
-  // Need to communicate phi
-  mesh->communicate(phitmp);
-
-  Field3D dP = b0xGrad_dot_Grad(phitmp, P0);
-  Field3D dPsi = Grad_parP(B0*phitmp) / B0;
-  dP.setBoundary("P"); dP.applyBoundary();
-  dPsi.setBoundary("Psi"); dPsi.applyBoundary();
+  if(jpar_bndry_width > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_bndry_width;i>=0;i--)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jrhs[i][j][k] = 0.5*Jrhs[i+1][j][k];
+          }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_bndry_width-1;i<mesh->ngx;i++)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jrhs[i][j][k] = 0.5*Jrhs[i-1][j][k];
+          }
+    }
+  }
   
-  Field3D dJ = Delp2(dPsi);
-  dJ.setBoundary("J"); dJ.applyBoundary();
+  mesh->communicate(Jrhs, ddt(P));
+  
+  Field3D U1 = ddt(U);
+  U1 += (gamma*B0*B0)*Grad_par(Jrhs, CELL_CENTRE) + (gamma*b0xcv)*Grad(P);
+  
+  // Second matrix, solving Alfven wave dynamics
+  static InvertPar *invU = 0;
+  if(!invU)
+    invU = InvertPar::Create();
+  
+  invU->setCoefA(1.);
+  invU->setCoefB(-SQ(gamma)*B0*B0);
+  U = invU->solve(U1);
+  U.applyBoundary();
+  
+  // Third matrix, applying U
+  Field3D phi3 = invert_laplace(U, phi_flags, NULL);
+  mesh->communicate(phi3);
+  phi3.applyBoundary("neumann");
 
-  mesh->communicate(dP, dPsi, dJ);
+  Psi = ddt(Psi) - gamma*Grad_par(B0*phi3)/B0;
+  Psi.applyBoundary();
   
-  Field3D result = b0xcv*Grad(dP) + (B0^2)*(Grad_par(dJ) - b0xGrad_dot_Grad(dPsi, J0));
-  result.setBoundary("U"); result.applyBoundary();
+  P = ddt(P);// Not preconditioned
   
-  return result;
+  return 0;
 }
 
 /*******************************************************************************
