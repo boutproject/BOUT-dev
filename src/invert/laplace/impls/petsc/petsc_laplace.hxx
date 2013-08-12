@@ -44,7 +44,7 @@ public:
   void setCoefEx(const Field2D &val) {}
   void setCoefEz(const Field2D &val) {}
   
-  const FieldPerp solve(const FieldPerp &b) {}
+  const FieldPerp solve(const FieldPerp &b) {throw BoutException("PETSc not available");}
 };
 
 #else
