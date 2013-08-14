@@ -3,7 +3,7 @@
  *                           Using MUMPS Solver
  *
  **************************************************************************
- * Copyright 2013 Copyright 2013 J. Omotani (based on petsc_laplace (C) J. Buchan)
+ * Copyright 2013 Copyright 2013 J. Omotani (based on petsc_laplace (C) J. Buchanan)
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -24,8 +24,6 @@
  *
  **************************************************************************/
 #include "mumps_laplace.hxx"
-
-#ifdef BOUT_HAS_MUMPS
 
 // #include "mpi.h"
 #include <bout/sys/timer.hxx>
@@ -48,8 +46,8 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 		      + INVERT_AC_OUT_GRAD
 		      + INVERT_START_NEW
 // 		      + INVERT_4TH_ORDER
-		      + INVERT_IN_SET
-		      + INVERT_OUT_SET
+// 		      + INVERT_IN_SET
+// 		      + INVERT_OUT_SET
 		      + INVERT_IN_RHS
 		      + INVERT_OUT_RHS
 		      ;
@@ -554,6 +552,22 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
   sol = 0.;
   sol.setIndex(y);
   
+  // Set Dirichlet boundary conditions through rhs if needed
+  if (!(flags && INVERT_AC_IN_GRAD+INVERT_IN_RHS)) {
+    if (mesh->firstX())
+      for (int z=0; z<mesh->ngz-1; z++)
+	for (int x=mesh->xstart-1; x>=0; x--) {
+	  b[x][z]=0.;
+	}
+  }
+  if (!(flags && INVERT_AC_OUT_GRAD+INVERT_OUT_RHS)) {
+    if (mesh->lastX())
+      for (int z=0; z<mesh->ngz-1; z++)
+	for (int x=mesh->xend+1; x<mesh->ngx; x++) {
+	  b[x][z]=0.;
+	}
+  }
+  
   BoutReal* bdata = *b.getData();
   int xs,xe;
   if (mesh->firstX()) xs=0;
@@ -898,6 +912,3 @@ void LaplaceMumps::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   }
   
 }
-
-#endif // BOUT_HAS_MUMPS
-
