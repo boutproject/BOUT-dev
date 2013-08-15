@@ -117,8 +117,9 @@ specify a new problem (grid and equations) to be solved. In either case, it's as
 the user isn't all that interested in the details of the code.
 For a more detailed descriptions of the code internals, see the developer
 and reference quides.
-After describing how to install BOUT++ (section~\ref{sec:install}) and run a few examples 
-(section~\ref{sec:runexamples}, but described in detail in section~\ref{sec:examples}), increasingly sophisticated ways to modify the problem being solved are introduced.
+After describing how to install BOUT++ (section~\ref{sec:install}), run the test suite
+(section~\ref{sec:runtestsuite}) and a few examples 
+(section~\ref{sec:running}, more detail in section~\ref{sec:examples}), increasingly sophisticated ways to modify the problem being solved are introduced.
 The simplest way to modify a simulation case is by altering the input options, described in
 section~\ref{sec:options}. Checking that the options are doing what you think they should be
 by looking at the output logs is described in section~\ref{sec:running}, and an overview of the IDL analysis routines
@@ -186,6 +187,7 @@ when using this code:
 \end{enumerate}
 
 \section{Getting started}
+\label{sec:install}
 
 This section goes through the process of getting, installing, and
 starting to run BOUT++. Only the basic functionality needed to use BOUT++
@@ -2235,7 +2237,8 @@ is given in the file \texttt{mhd.cxx} in the BOUT++ examples directory. The equa
 \deriv{\mathbf{B}}{t} &=& \nabla\times\left(\mathbf{v}\times\mathbf{B}\right)
 \end{eqnarray*}
 
-To specify a set of equations to solve in BOUT++, two functions need to be written:
+There are two ways to specify a set of equations to solve in BOUT++. For advanced users, an object-oriented interface is available and described in section~\ref{sec:newapi}. The simplest way to start is to
+use a C-like interface and define two functions:
 \begin{lstlisting}
 int physics_init(bool restarting) {
   return 0;
@@ -2925,6 +2928,84 @@ which can also take arguments in \code{printf} format, as with \code{output.writ
 If an error occurs, the message stack is printed out, and this can then
 help track down where the error originated.
 
+\section{Object-orientated interface}
+\label{sec:newapi}
+
+If you prefer to create classes rather than global variables and C functions for your physics model,
+this can be done using a (somewhat experimental) interface. To see the difference,
+compare \file{examples/advect1d/gas\_compress.cxx} with\\
+\file{examples/advect1d-newapi/gas\_compress.cxx}. The disadvantage of this interface 
+is that it's marginally more complicated to set up, but it has several advantages: It makes splitting
+the model into multiple files easier (sharing global variables is a pain), models can be combined
+together to enable coupling of models, and BOUT++ can be more easily used alongside other libraries. 
+For large models, it's recommended to use this method. Converting
+C-style interface to a class is also quite straightforward, and discussed below.
+
+In a header file (e.g. \file{examples/advect1d-newapi/gas\_compress.hxx}), first put
+\begin{lstlisting}
+#include <bout/physicsmodel.hxx>
+\end{lstlisting}
+(do NOT include \file{boutmain.hxx}, as that defines the C-like interface and a \lstinline!main()! function).
+
+Next define a class which inherits from \lstinline!PhysicsModel! 
+\begin{lstlisting}
+class GasCompress : public PhysicsModel {
+protected:
+  int init(bool restarting);
+  int rhs(BoutReal t);
+private:
+  // Evolving variables, parameters etc. here
+};
+\end{lstlisting}
+As a minimum, you need to define the initialisation function \lstinline!init! (it's a pure virtual
+member of PhysicsModel, so if you don't you'll get a compile-time error). Any variables being evolved
+should now be members of this class. If you are converting a C-style model, just move all the global variables into the \lstinline!private! section.
+
+Next create a source file (e.g. \file{examples/advect1d-newapi/gas\_compress.cxx}, which
+includes your header file
+\begin{lstlisting}
+#include "gas_compress.hxx"
+\end{lstlisting}
+
+Then implement the init and rhs functions:
+\begin{lstlisting}
+int GasCompress::init(bool restarting) {
+  ...
+}
+
+int GasCompress::rhs(BoutReal t) {
+  ...
+}
+\end{lstlisting}
+To convert simple physics models, just rename \lstinline!physics\_init! to \lstinline!YourModel::init!,
+and \lstinline!physics\_run! to \lstinline!YourModel::run!. 
+
+Finally, you need to create a \lstinline!main()! function for your code. The easiest way to do this
+is to use the macro \lstinline!BOUTMAIN!:
+\begin{lstlisting}
+BOUTMAIN(GasCompress);
+\end{lstlisting}
+This is defined in \file{include/bout/physicsmodel.hxx}, and expands to
+\begin{lstlisting}
+  int main(int argc, char **argv) {
+    BoutInitialise(argc, argv); // Initialise BOUT++
+    
+    GasCompress *model = new GasCompress(); // Create a model
+    
+    Solver *solver = Solver::create(); // Create a solver
+    solver->setModel(model); // Specify the model to solve
+    solver->addMonitor(bout_monitor); // Monitor the solver
+    
+    solver->solve(); // Run the solver
+    
+    delete model;
+    delete solver;
+    BoutFinalise(); // Finished with BOUT++
+    return 0;
+  }
+\end{lstlisting}
+If you like, you can define your own \lstinline!main()! function, making it easier to combine
+BOUT++ with other libraries. 
 
 \section{Differential operators}
 \label{sec:diffops}
@@ -3533,44 +3614,6 @@ efficient implementation of the Fields classes}.
 \bibliographystyle{unsrt}
 
 \appendix
-
-\section{Useful quantities}
-
-\subsection{Divergence of ExB velocity}
-
-\[
-\underline{v}_{ExB} = \frac{\underline{b}\times\nabla\phi}{B}
-\]
-Using
-\[
-\nabla\cdot\left(\underline{F}\times\underline{G}\right) = \left(\nabla\times\underline{F}\right)\cdot\underline{G} - \underline{F}\cdot\left(\nabla\times\underline{G}\right)
-\]
-the divergence of the $\underline{E}\times\underline{B}$ velocity
-can be written as 
-\begin{equation}
-\nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = \left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi - \frac{1}{B}\underline{b}\cdot\nabla\times\nabla\phi
-\label{eq:exb1}
-\end{equation}
-The second term on the right is identically zero (curl of a gradient). The first term on the right can be expanded as
-\[
-\left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi = \left[\nabla\left(\frac{1}{B}\right)\times\underline{b} + \frac{1}{B}\nabla\times\underline{b}\right]\cdot\nabla\phi
-\]
-Using
-\[
-\underline{b}\times\underline{\kappa} = \nabla\times\underline{b} - \underline{b}\left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]
-\]
-this becomes:
-\begin{eqnarray*}
-  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = &-&\underline{b}\times\nabla\left(\frac{1}{B}\right)\cdot\nabla\phi \\
-  &+& \frac{1}{B}\underline{b}\times\underline{\kappa}\cdot\nabla\phi \\
-  &+& \left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]\underline{b}\cdot\nabla\phi
-\end{eqnarray*}
-
-Alternatively, equation~\ref{eq:exb1} can be expanded as
-\begin{eqnarray*}
-  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\nabla\times\underline{B}\cdot\nabla\phi \\
-  &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\underline{J}\cdot\nabla\phi
-\end{eqnarray*}
 
 \section{Installing PACT}
 \label{apx:pact}

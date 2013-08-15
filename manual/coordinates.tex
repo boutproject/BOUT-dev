@@ -912,4 +912,40 @@ Cross-product relation between contravariant and covariant vectors:
 \label{eq:cross_relation}
 \end{equation}
 
+\section{Divergence of ExB velocity}
+
+\[
+\underline{v}_{ExB} = \frac{\underline{b}\times\nabla\phi}{B}
+\]
+Using
+\[
+\nabla\cdot\left(\underline{F}\times\underline{G}\right) = \left(\nabla\times\underline{F}\right)\cdot\underline{G} - \underline{F}\cdot\left(\nabla\times\underline{G}\right)
+\]
+the divergence of the $\underline{E}\times\underline{B}$ velocity
+can be written as 
+\begin{equation}
+\nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = \left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi - \frac{1}{B}\underline{b}\cdot\nabla\times\nabla\phi
+\label{eq:exb1}
+\end{equation}
+The second term on the right is identically zero (curl of a gradient). The first term on the right can be expanded as
+\[
+\left[\nabla\times\left(\frac{1}{B}\underline{b}\right)\right]\cdot\nabla\phi = \left[\nabla\left(\frac{1}{B}\right)\times\underline{b} + \frac{1}{B}\nabla\times\underline{b}\right]\cdot\nabla\phi
+\]
+Using
+\[
+\underline{b}\times\underline{\kappa} = \nabla\times\underline{b} - \underline{b}\left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]
+\]
+this becomes:
+\begin{eqnarray*}
+  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) = &-&\underline{b}\times\nabla\left(\frac{1}{B}\right)\cdot\nabla\phi \\
+  &+& \frac{1}{B}\underline{b}\times\underline{\kappa}\cdot\nabla\phi \\
+  &+& \left[\underline{b}\cdot\left(\nabla\times\underline{b}\right)\right]\underline{b}\cdot\nabla\phi
+\end{eqnarray*}
+
+Alternatively, equation~\ref{eq:exb1} can be expanded as
+\begin{eqnarray*}
+  \nabla\cdot\left(\frac{1}{B}\underline{b}\times\nabla\phi\right) &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\nabla\times\underline{B}\cdot\nabla\phi \\
+  &=& -B\underline{b}\times\nabla\left(\frac{1}{B^2}\right)\cdot\nabla\phi + \frac{1}{B^2}\underline{J}\cdot\nabla\phi
+\end{eqnarray*}
+
 \end{document}
