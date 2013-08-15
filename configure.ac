@@ -254,7 +254,7 @@ MFILE
 else
    PETSC=
 fi
-AC_SUBST(PETSC, $PETSC)
+#AC_SUBST(PETSC, $PETSC)
 
 if test "$PETSC" != ""
 then
