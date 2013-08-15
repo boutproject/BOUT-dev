@@ -168,9 +168,10 @@ then
 ### This still needs to check for PETSC_ARCH
   if test "$with_petsc" != "yes"
   then
-    PETSC="$with_petsc"
+    PETSC_DIR="$with_petsc"
+    
   else
-    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, PETSC="include \$(PETSC_DIR)/conf/variables",
+    AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, ,
     echo "Error - can't find PETSc distribution"
     exit)
   fi
@@ -251,10 +252,11 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
+  PETSC="include \$(PETSC_DIR)/conf/variables"
 else
    PETSC=
 fi
-#AC_SUBST(PETSC, $PETSC)
+AC_SUBST(PETSC, $PETSC)
 
 if test "$PETSC" != ""
 then

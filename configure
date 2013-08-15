@@ -653,6 +653,7 @@ RANLIB
 SET_MAKE
 LN_S
 PACT
+PETSC
 FACETS_SOURCE
 PRECON_SOURCE
 MKDIR
@@ -2195,7 +2196,8 @@ then
 ### This still needs to check for PETSC_ARCH
   if test "$with_petsc" != "yes"
   then
-    PETSC="$with_petsc"
+    PETSC_DIR="$with_petsc"
+
   else
     as_ac_File=`$as_echo "ac_cv_file_$PETSC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
 { $as_echo "$as_me:$LINENO: checking for $PETSC_DIR/$PETSC_ARCH/conf" >&5
@@ -2220,7 +2222,7 @@ $as_echo "$ac_res" >&6; }
 as_val=`eval 'as_val=${'$as_ac_File'}
 		 $as_echo "$as_val"'`
    if test "x$as_val" = x""yes; then
-  PETSC="include \$(PETSC_DIR)/conf/variables"
+  :
 else
   echo "Error - can't find PETSc distribution"
     exit
@@ -2304,10 +2306,12 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
+  PETSC="include \$(PETSC_DIR)/conf/variables"
 else
    PETSC=
 fi
-#AC_SUBST(PETSC, $PETSC)
+PETSC=$PETSC
+
 
 if test "$PETSC" != ""
 then
