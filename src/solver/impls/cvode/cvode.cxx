@@ -1,7 +1,6 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
  * 
- * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -45,7 +44,7 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-typedef long int CVINT;
+typedef int CVINT;
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
 static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
@@ -446,8 +445,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
  * Preconditioner function
  **************************************************************************/
 
-void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
-{
+void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running preconditioner: CvodeSolver::pre(%e)", t);
 #endif
@@ -471,8 +469,8 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
   
   (*prefunc)(t, gamma, delta);
 
-  // Save the solution from vars
-  save_vars(zvec);
+  // Save the solution from F_vars
+  save_derivs(zvec);
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;
@@ -486,8 +484,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
  * Jacobian-vector multiplication function
  **************************************************************************/
 
-void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata)
-{
+void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
 #endif
@@ -505,7 +502,7 @@ void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jv
   (*jacfunc)(t);
 
   // Save Jv from vars
-  save_vars(Jvdata);
+  save_derivs(Jvdata);
 
 #ifdef CHECK
   msg_stack.pop(msg_point);

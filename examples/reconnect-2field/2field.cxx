@@ -300,9 +300,9 @@ int physics_run(BoutReal t) {
  * Preconditioner
  *
  * o System state in variables (as in rhs function)
- * o Values to be inverted in F_vars
+ * o Values to be inverted in time derivatives
  *
- * o Return values should be in vars (overwriting system state)
+ * o Return values should be in time derivatives
  * 
  *********************************************************/
 int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
@@ -331,14 +331,14 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   Field3D U1 = ddt(U) + gamma*SQ(mesh->Bxy)*Grad_par_LtoC(Jp/mesh->Bxy);
   
   inv->setCoefB(-SQ(gamma*mesh->Bxy)/beta_hat);
-  U = inv->solve(U1);
-  U.applyBoundary();
+  ddt(U) = inv->solve(U1);
+  ddt(U).applyBoundary();
   
   Field3D phip = invert_laplace(mesh->Bxy*U, phi_flags);
   mesh->communicate(phip);
   
-  Apar = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(phip);
-  Apar.applyBoundary();
+  ddt(Apar) = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(phip);
+  ddt(Apar).applyBoundary();
 
   return 0;
 }

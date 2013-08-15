@@ -47,9 +47,9 @@ int physics_run(BoutReal t) {
  * Preconditioner
  *
  * o System state in variables (as in rhs function)
- * o Values to be inverted in F_vars
+ * o Values to be inverted in time derivatives
  *
- * o Return values should be in vars (overwriting system state)
+ * o Return values should be in time derivatives
  * 
  *********************************************************/
 int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
@@ -61,23 +61,23 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   // First matrix 
   //  | I   -U |
   //  | 0    I |
-  u = ddt(u) + gamma*Grad_par(ddt(v));
-  v = ddt(v);
+  ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
+  //ddt(v) = ddt(v);
   
   // Second matrix, containing Schur complement
   // | (1 - UL)^-1  0 | 
   // |   0          I |
   inv->setCoefB(-SQ(gamma));
-  u = inv->solve(u);
+  ddt(u) = inv->solve(ddt(u));
   
   // Third matrix
   // |  I  0 |
   // | -L  I |
-  mesh->communicate(u);
-  v = gamma*Grad_par(u) + v;
+  mesh->communicate(ddt(u));
+  ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
 
-  u.applyBoundary("dirichlet");
-  v.applyBoundary("dirichlet");
+  ddt(u).applyBoundary("dirichlet");
+  ddt(v).applyBoundary("dirichlet");
   
   return 0;
 }
@@ -88,16 +88,18 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
  * o System state in variables (as in RHS function)
  * o Vector to be multiplied is in time derivatives
  *
- * o Output Jacobian-vector multiplied Jv should be in variables
+ * o Output Jacobian-vector multiplied Jv should be in time derivatives
  *
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *********************************************************/
 
 int jacobian(BoutReal t) {
   mesh->communicate(ddt(u), ddt(v));
-  u = Grad_par(ddt(v));
-  v = Grad_par(ddt(u));
-  u.applyBoundary("dirichlet");
-  v.applyBoundary("dirichlet");
+  Field3D utmp = Grad_par(ddt(v)); // Shouldn't overwrite ddt(u) before using it
+  ddt(v) = Grad_par(ddt(u));
+  ddt(u) = utmp;
+  ddt(u).applyBoundary("dirichlet");
+  ddt(v).applyBoundary("dirichlet");
   return 0;
 }
+

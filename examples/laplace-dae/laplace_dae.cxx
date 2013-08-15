@@ -114,18 +114,15 @@ int physics_run(BoutReal time) {
  * Currently only possible with the IDA solver
  *
  * o System state in variables (as in rhs function)
- * o Values to be inverted in F_vars
+ * o Values to be inverted in time derivatives
  * 
- * o Return values should be in vars (overwriting system state)
+ * o Return values should be in time derivatives
  *******************************************************************************/
 
 int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
   // Not preconditioning U or Apar equation
   
-  U = ddt(U);
-  Apar = ddt(Apar);
-  
-  phi = invert_laplace(ddt(phi) - ddt(U), flags);
+  ddt(phi) = invert_laplace(ddt(phi) - ddt(U), flags);
   
   return 0;
 }
@@ -137,7 +134,7 @@ int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
  *   System state is in variables
  *   Vector v is in time-derivatives
  * Output
- *   Jacobian-vector multiplied Jv should be in system state
+ *   Jacobian-vector multiplied Jv should be in time derivatives
  * 
  *******************************************************************************/
 
@@ -149,8 +146,8 @@ int jacobian(BoutReal t) {
   Field3D Jjpar = Delp2(ddt(Apar));
   mesh->communicate(Jjpar);
   
-  U = Grad_par(Jjpar);  // Dense matrix in evolving U
-  Apar = Grad_par(Jphi);
+  ddt(U) = Grad_par(Jjpar);  // Dense matrix in evolving U
+  ddt(Apar) = Grad_par(Jphi);
   
   return 0;
 }
@@ -174,5 +171,9 @@ int jacobian_constrain(BoutReal t) {
   
   phi.setBoundaryTo(phibdry);
   
+  ddt(phi) = phi;
+  ddt(U) = U;
+  ddt(Apar) = Apar;
+
   return 0;
 }

@@ -326,8 +326,7 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
  * Preconditioner function
  **************************************************************************/
 
-void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec)
-{
+void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running preconditioner: IdaSolver::pre(%e)", t);
 #endif
@@ -351,8 +350,8 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
   
   (*prefunc)(t, cj, delta);
 
-  // Save the solution from vars
-  save_vars(zvec);
+  // Save the solution from F_vars
+  save_derivs(zvec);
 
   pre_Wtime += MPI_Wtime() - tstart;
   pre_ncalls++;

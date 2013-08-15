@@ -57,8 +57,7 @@ FieldGroup comms;
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
 int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
   output << "Solving 6-variable 2-fluid equations\n";
@@ -441,8 +440,7 @@ int physics_run(BoutReal t)
 #include <invert_laplace.hxx>
 
 // Performs inversion of rho (r) to get phi (p)
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags)
-{
+int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {
   //output.write("Solving phi: %e, %e -> %e\n", max(abs(r)), min(Ni0), max(abs(r/Ni0)));
 
   if(invert_laplace(r/Ni0, p, flags, NULL)) {
@@ -454,8 +452,7 @@ int solve_phi_tridag(Field3D &r, Field3D &p, int flags)
   return(0);
 }
 
-int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags)
-{
+int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags) {
   static Field2D a;
   static int set = 0;
 
@@ -471,66 +468,3 @@ int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags)
   return(0);
 }
 
-/*******************************************************************************
- *                       ITERATIVE PHI SOLVER
- *******************************************************************************/
-
-/* NOTE: NOT FINISHED PORTING TO C++ YET
-Field3D Ntot;
-
-// Phi preconditioner - takes b = (rho - a) as rhs, produces phi
-int phi_precon(FieldPerp &b, FieldPerp &a, FieldPerp &p, int flags)
-{
-  if(invert_laplace((a+b)/Ni0, p, flags, NULL)) {
-    return 1;
-  }
-
-  //Field3D pertPi = Ti*Ni0 + Ni*Ti0;
-  //p -= pertPi/Ni0;
-}
-
-int phi_precon(Field3D &b, Field3D &a, Field3D &p, int flags)
-{
-  if(invert_laplace((a+b)/Ni0, p, flags, NULL)) {
-    return 1;
-  }
-
-  //Field3D pertPi = Ti*Ni0 + Ni*Ti0;
-  //p -= pertPi/Ni0;
-}
-
-int phi_full_operator(FieldPerp &b, FieldPerp &x, void *params)
-{
-  FieldPerp b2;
-  int flags = *((int*) params);
-  
-  b2 = Nit*Delp2(x) + Gradp_dot_Gradp(Ntot, x);
-  
-  // Call preconditioner, passing b2, returning b
-  phi_precon(b2, a, b, flags);
-  
-  return 0;
-}
-
-int solve_phi_full(Field3D &r, Field3D &p, int flags)
-{
-  Field3D a, b;
-  int jy;
-  
-  Ntot = Ni0 + Ni;
-
-  // a = Ni*Delp2(phi0) + Gradp_dot_Gradp(phi0, Ni) + Delp2(Pi);
-  a = 0.0;
-  
-  // Call preconditioner to get b
-  phi_precon(r-a, a, b, flags);
-
-  if(flags & INVERT_START_NEW) {
-    p = b;
-  }
-  
-  iter_solve_bndry(b, p, phi_full_operator, flags, &flags);
-
-  return 0;
-}
-*/

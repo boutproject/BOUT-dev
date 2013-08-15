@@ -1483,9 +1483,9 @@ int physics_run(BoutReal t)
  * Preconditioner
  *
  * o System state in variables (as in rhs function)
- * o Values to be inverted in F_vars
+ * o Values to be inverted in time derivatives
  * 
- * o Return values should be in vars (overwriting system state)
+ * o Return values should be in time derivatives
  *
  * NOTE: EXPERIMENTAL
  * enable by setting solver / use_precon = true in BOUT.inp
@@ -1527,18 +1527,16 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   
   invU->setCoefA(1.);
   invU->setCoefB(-SQ(gamma)*B0*B0);
-  U = invU->solve(U1);
-  U.applyBoundary();
+  ddt(U) = invU->solve(U1);
+  ddt(U).applyBoundary();
   
   // Third matrix, applying U
-  Field3D phi3 = invert_laplace(U, phi_flags, NULL);
+  Field3D phi3 = invert_laplace(ddt(U), phi_flags, NULL);
   mesh->communicate(phi3);
   phi3.applyBoundary("neumann");
 
-  Psi = ddt(Psi) - gamma*Grad_par(B0*phi3)/B0;
-  Psi.applyBoundary();
-  
-  P = ddt(P);// Not preconditioned
+  ddt(Psi) = ddt(Psi) - gamma*Grad_par(B0*phi3)/B0;
+  ddt(Psi).applyBoundary();
   
   return 0;
 }
@@ -1556,8 +1554,7 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *******************************************************************************/
 
-int jacobian(BoutReal t)
-{
+int jacobian(BoutReal t) {
   // NOTE: LINEAR ONLY!
   
   // Communicate
@@ -1580,11 +1577,11 @@ int jacobian(BoutReal t)
     + (B0^2) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
   JU.setBoundary("U"); JU.applyBoundary();
 
-  // Put result into vars
+  // Put result into time-derivatives
 
-  P = JP;
-  Psi = JPsi;
-  U = JU;
+  ddt(P) = JP;
+  ddt(Psi) = JPsi;
+  ddt(U) = JU;
 
   return 0;
 }
@@ -1599,16 +1596,8 @@ int jacobian(BoutReal t)
  * o Return values should be in vars (overwriting system state)
  *******************************************************************************/
 
-int precon_phi(BoutReal t, BoutReal cj, BoutReal delta)
-{
-  P = ddt(P);
-  Psi = ddt(Psi);
-  /*
-  invert_laplace(F_U, phi, phi_flags, NULL);
-  phi = C_phi + phi;
-  */
-  phi = invert_laplace(C_phi - ddt(U), phi_flags, NULL);
-  U = ddt(U);
+int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
+  ddt(phi) = invert_laplace(C_phi - ddt(U), phi_flags, NULL);
   return 0;
 }
 

@@ -614,9 +614,6 @@ BOUT++ can use PETSc for time-integration:
 ./configure --with-petsc
 \end{verbatim}
 
-This will allow use of a greater number of sophisticated time-integration
-packages and preconditioning methods, and is under development.
-
 The development version of PETSc has the latest and greatest, and is needed for some 
 shiny features like timestepping. To install it, follow the instructions here:
 \url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
@@ -1614,6 +1611,7 @@ maxl & & \\
 use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
 adams\_moulton & Use Adams-Moulton method & cvode \\
  & rather than BDF & \\
+diagnose & Collect and print additional diagnostics & cvode \\
 \hline
 \end{tabular}
 \end{table}
@@ -3284,19 +3282,20 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
 }
 \end{lstlisting}
 which takes as input the current time, the $\gamma$ factor appearing above, and $\delta$ which is only important for constrained problems (not discussed here... yet). The current state of the system is stored in the state variables (here \lstinline!u! and \lstinline!v!), whilst the vector to be preconditioned is stored in the time derivatives 
-(here \lstinline!ddt(u)! and \lstinline!ddt(v)!). At the end of the preconditioner the result should be in the state variables. A preconditioner which is just the identity matrix and so does nothing is:
+(here \lstinline!ddt(u)! and \lstinline!ddt(v)!). At the end of the preconditioner the result should be in the time derivatives. A preconditioner which is just the identity matrix and so does nothing is therefore:
 \begin{lstlisting}[numbers=none]
 int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  u = ddt(u);
-  v = ddt(v);
 }
 \end{lstlisting}
+\note{This changed in github/bendudson on 15th Aug 2014. In older versions the result must be returned
+in the state variables}
+
 To implement the preconditioner in equation~\ref{eq:precon}, first apply the rightmost matrix to the given
 vector:
 \[
 \left(\begin{array}{c}
-u \\
-v
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
 \end{array}\right) = \left(\begin{array}{cc}
 1 & 0 \\
 \gamma\partial_{||} & 1
@@ -3308,25 +3307,24 @@ v
 \begin{lstlisting}[numbers=none]
 int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   mesh->communicate(ddt(u));
-  u = ddt(u);
-  v = gamma*Grad_par(ddt(u)) + ddt(v);
+  //ddt(u) = ddt(u);
+  ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
 \end{lstlisting}
-note that since the preconditioner is linear, it doesn't depend on $u$ or $v$ and so we can overwrite their
-values. In the nonlinear case we would need to create new variables to store these intermediate values in.
-As in the RHS function, since we are taking a differential of \texttt{ddt(u)}, it first needs to be communicated
-to exchange guard cell values.
+note that since the preconditioner is linear, it doesn't depend on $u$ or $v$. 
+As in the RHS function, since we are taking a differential of \texttt{ddt(u)},
+it first needs to be communicated to exchange guard cell values.
 
 The second matrix
 \[
 \left(\begin{array}{c}
-u \\
-v
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
 \end{array}\right) \leftarrow \left(\begin{array}{cc}
 1 & 0 \\
 0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
 \end{array}\right)\left(\begin{array}{c}
-u \\
-v
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
 \end{array}\right)
 \]
 doesn't alter $u$, but solves a parabolic equation in the parallel direction. There is a solver class to do this 
@@ -3344,30 +3342,30 @@ int physics_init(bool restarting) {
 In the preconditioner we then use this solver to update $v$:
 \begin{lstlisting}[numbers=none]
   inv->setCoefB(-SQ(gamma));
-  v = inv->solve(v);
+  ddt(v) = inv->solve(ddt(v));
 \end{lstlisting}
-which solves $v \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1} v$.
+which solves $ddt(v) \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1} ddt(v)$.
 The final matrix just updates $u$ using this new solution for $v$
 \[
 \left(\begin{array}{c}
-u \\
-v
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
 \end{array}\right) \leftarrow \left(\begin{array}{cc}
 1 & \gamma\partial_{||} \\
 0 & 1
 \end{array}\right)\left(\begin{array}{c}
-u \\
-v
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
 \end{array}\right)
 \]
 \begin{lstlisting}[numbers=none]
-  mesh->communicate(v);
-  u = u + gamma*Grad_par(v);
+  mesh->communicate(ddt(v));
+  ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
 \end{lstlisting}
 Finally, boundary conditions need to be imposed, which should be consistent with the conditions used in the RHS
 \begin{lstlisting}[numbers=none]
-  u.applyBoundary("dirichlet");
-  v.applyBoundary("dirichlet");
+  ddt(u).applyBoundary("dirichlet");
+  ddt(v).applyBoundary("dirichlet");
 \end{lstlisting}
 
 To use the preconditioner, pass the function to the solver in \lstinline!physics_init!

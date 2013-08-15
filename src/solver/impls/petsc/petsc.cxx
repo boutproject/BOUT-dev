@@ -655,9 +655,9 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   // Call the preconditioner
   (*prefunc)(ts_time, 1./shift, 0.0);
 
-  // Save the solution from vars
+  // Save the solution from time derivatives
   VecGetArray(y, &data);
-  save_vars(data);
+  save_derivs(data);
   VecRestoreArray(y, &data);
 
   // Petsc's definition of Jacobian differs by a factor from Sundials'
@@ -696,9 +696,9 @@ PetscErrorCode PetscSolver::jac(Vec x, Vec y) {
   // Call the Jacobian function
   (*jacfunc)(ts_time);
 
-  // Save the solution from vars
+  // Save the solution from time derivatives
   VecGetArray(y, &data);
-  save_vars(data);
+  save_derivs(data);
   VecRestoreArray(y, &data);
 
   // y = a * x - y
