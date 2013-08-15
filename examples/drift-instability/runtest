@@ -8,7 +8,7 @@ nproc = 2       # Number of processors to run on
 
 # Relative tolerance in frequency and growth rate
 omega_tol = 1e-2
-gamma_tol = 1e-3
+gamma_tol = 1e-2
 
 from boututils import shell, launch, file_import, deriv, linear_regression
 from boutdata import collect
