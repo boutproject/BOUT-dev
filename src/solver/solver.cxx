@@ -511,7 +511,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   restartext = string(restart_ext);
   
   // Set up restart options
-  restart = Datafile(options->getSection("restart"));
+  restart = Datafile(Options::getRoot()->getSection("restart"));
   
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);
