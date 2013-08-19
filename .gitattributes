@@ -1,0 +1,11 @@
+# Set default behaviour, in case users don't have core.autocrlf set.
+* text=auto
+
+*.c text
+*.h text
+*.cxx text
+*.hxx text
+*.tex text
+
+
+
