@@ -77,6 +77,10 @@ FUNCTION file_read, file, varname, inds=inds
     value = REFORM(value, count)
   ENDELSE
   
+  ; Check if variable is a string
+  varinfo = CALL_FUNCTION("NCDF_VarInq", handle.id, id)
+  IF varinfo.datatype EQ 'CHAR' THEN value = STRING(value)
+
   ; Reverse data. Not very efficient.
   value = reverse_inds(value)
 
