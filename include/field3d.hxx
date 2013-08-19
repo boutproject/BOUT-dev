@@ -312,4 +312,6 @@ bool finite(const Field3D &var);
 
 const Field3D copy(const Field3D &f);
 
+const Field3D floor(const Field3D &var, BoutReal f);
+
 #endif /* __FIELD3D_H__ */

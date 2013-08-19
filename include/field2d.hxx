@@ -218,4 +218,6 @@ bool finite(const Field2D &f);
 
 const Field2D copy(const Field2D &f);
 
+const Field2D floor(const Field2D &var, BoutReal f);
+
 #endif /* __FIELD2D_H__ */

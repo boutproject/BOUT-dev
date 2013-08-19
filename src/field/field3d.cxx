@@ -2915,3 +2915,16 @@ const Field3D copy(const Field3D &f) {
   result.allocate();
   return result;
 }
+
+const Field3D floor(const Field3D &var, BoutReal f) {
+  Field3D result = copy(var);
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz;jz++) {
+        if(result(jx, jy, jz) < f)
+          result(jx, jy, jz) = f;
+      }
+  return result;
+}
+
