@@ -3,7 +3,7 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchan
+ * Copyright 2013 J. Buchanan, J.Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -26,8 +26,6 @@
 #ifdef BOUT_HAS_PETSC_3_3
 
 #include "petsc_laplace.hxx"
-
-#ifdef BOUT_HAS_PETSC_3_3
 
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
