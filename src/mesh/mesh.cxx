@@ -47,6 +47,7 @@ int Mesh::get(int &ival, const string &name) {
 
   if(!source->hasVar(name)) {
     msg_stack.pop(msg_pos);
+    output << "Source doesn't have var: " << name << endl;
     return 1;
   }
   
@@ -57,6 +58,7 @@ int Mesh::get(int &ival, const string &name) {
   msg_stack.pop(msg_pos);
 
   if(!success) {
+    output << "Failed to read var: " << name << endl;
     return 2;
   }
   return 0;
@@ -160,7 +162,7 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 }
 
 int Mesh::get(Field3D &var, const string &name) {
-  
+  return 1;  // Not yet implemented
 }
 
 /**************************************************************************
