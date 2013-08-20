@@ -3,7 +3,7 @@
  *                           Using PETSc Solvers
  *
  **************************************************************************
- * Copyright 2013 J. Buchan
+ * Copyright 2013 J. Buchanan, J.Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -23,9 +23,9 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#include "petsc_laplace.hxx"
-
 #ifdef BOUT_HAS_PETSC_3_3
+
+#include "petsc_laplace.hxx"
 
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
@@ -43,7 +43,11 @@
 #define KSP_BICG        "bicg"
 #define KSP_PREONLY     "preonly"
 
-LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0), Ex(0.0), Ez(0.0) {
+LaplacePetsc::LaplacePetsc(Options *opt) : 
+  Laplacian(opt),
+  A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
+  issetD(false), issetC(false), issetE(false)
+{
 
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
@@ -239,20 +243,39 @@ LaplacePetsc::LaplacePetsc(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0
   if(strcasecmp(type.c_str(), KSP_RICHARDSON) == 0)     ksptype = KSPRICHARDSON;
   else if(strcasecmp(type.c_str(), KSP_CHEBYSHEV) == 0) ksptype = KSPCHEBYSHEV;
   else if(strcasecmp(type.c_str(), KSP_CG) == 0)        ksptype = KSPCG;
+  else if(type == "cgne")			ksptype = KSPCGNE;
+  else if(type == "nash")			ksptype = KSPNASH;
+  else if(type == "stcg")			ksptype = KSPSTCG;
+  else if(type == "gltr")			ksptype = KSPGLTR;
   else if(strcasecmp(type.c_str(), KSP_GMRES) == 0)     ksptype = KSPGMRES;
+  else if(type == "fgmres")			ksptype = KSPFGMRES;
+  else if(type == "lgmres")			ksptype = KSPLGMRES;
+  else if(type == "dgmres")			ksptype = KSPDGMRES;
+  else if(type == "pgmres")			ksptype = KSPPGMRES;
   else if(strcasecmp(type.c_str(), KSP_TCQMR) == 0)     ksptype = KSPTCQMR;
   else if(strcasecmp(type.c_str(), KSP_BCGS) == 0)      ksptype = KSPBCGS;
+  else if(type == "ibcgs")			ksptype = KSPIBCGS;
+  else if(type == "fbcgs")			ksptype = KSPFBCGS;
+  else if(type == "bcgsl")			ksptype = KSPBCGSL;
   else if(strcasecmp(type.c_str(), KSP_CGS) == 0)       ksptype = KSPCGS;
   else if(strcasecmp(type.c_str(), KSP_TFQMR) == 0)     ksptype = KSPTFQMR;
   else if(strcasecmp(type.c_str(), KSP_CR) == 0)        ksptype = KSPCR;
   else if(strcasecmp(type.c_str(), KSP_LSQR) == 0)      ksptype = KSPLSQR;
   else if(strcasecmp(type.c_str(), KSP_BICG) == 0)      ksptype = KSPBICG;
   else if(strcasecmp(type.c_str(), KSP_PREONLY) == 0)   ksptype = KSPPREONLY;
+  else if(type == "qcg")			ksptype = KSPQCG;
+  else if(type == "bicg")			ksptype = KSPBICG;
+  else if(type == "minres")			ksptype = KSPMINRES;
+  else if(type == "symmlq")			ksptype = KSPSYMMLQ;
+  else if(type == "lcd")			ksptype = KSPLCD;
+  else if(type == "python")			ksptype = KSPPYTHON;
+  else if(type == "gcr")			ksptype = KSPGCR;
+  else if(type == "specest")			ksptype = KSPSPECEST;
   else 
     throw BoutException("Unknown Krylov solver type '%s'", type.c_str());
   
   // Get preconditioner type
-  // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi might be a useful choice?)
+  // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
   string pctypeoption;
   opts->get("pctype", pctypeoption, "none", true);
   if (pctypeoption == "none") pctype = PCNONE;
@@ -662,6 +685,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     {
       KSPGetPC(ksp,&pc);
       PCSetType(pc,PCLU);
+      PCFactorSetMatSolverPackage(pc,"mumps");
     }
   else
     {
@@ -797,18 +821,18 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
     coef3 = 0.0; // This cancels out
   }
   
+  if (issetD) {
   coef1 *= D[x][y][z];
   coef2 *= D[x][y][z];
   coef3 *= D[x][y][z];
   coef4 *= D[x][y][z];
   coef5 *= D[x][y][z];
+  }
   
   // A second/fourth order derivative term
+  if (issetC) {
 //   if( (x > 0) && (x < (mesh->ngx-1)) ) //Valid if doing second order derivative, not if fourth: should only be called for xstart<=x<=xend anyway
-  if( (x > 1) && (x < (mesh->ngx-2)) )
-    {
-      if( C[x][y][z] != 0 )
-	{
+    if( (x > 1) && (x < (mesh->ngx-2)) ) {
 	  int zp = z+1;
 	  if (zp > meshz-1) zp -= meshz;
 	  int zm = z-1;
@@ -820,12 +844,12 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 	    if (zpp > meshz-1) zpp -= meshz;
 	    int zmm = z-2;
 	    if (zmm<0) zmm += meshz;
-	    ddx_C = (-C[x+2][y][z] + 8.*C[x+1][y][z] - 8.*C[x-1][y][z] + C[x-2][y][z]) / (12.*mesh->dx[x][y]*(C[x][y][z]));
-	    ddz_C = (-C[x][y][zpp] + 8.*C[x][y][zp] - 8.*C[x][y][zm] + C[x][y][zmm]) / (12.*mesh->dz*(C[x][y][z]));
+	ddx_C = (-C2[x+2][y][z] + 8.*C2[x+1][y][z] - 8.*C2[x-1][y][z] + C2[x-2][y][z]) / (12.*mesh->dx[x][y]*(C1[x][y][z]));
+	ddz_C = (-C2[x][y][zpp] + 8.*C2[x][y][zp] - 8.*C2[x][y][zm] + C2[x][y][zmm]) / (12.*mesh->dz*(C1[x][y][z]));
 	  }
 	  else {
-	    ddx_C = (C[x+1][y][z] - C[x-1][y][z]) / (2.*mesh->dx[x][y]*(C[x][y][z]));
-	    ddz_C = (C[x][y][zp] - C[x][y][zm]) / (2.*mesh->dz*(C[x][y][z]));
+	ddx_C = (C2[x+1][y][z] - C2[x-1][y][z]) / (2.*mesh->dx[x][y]*(C1[x][y][z]));
+	ddz_C = (C2[x][y][zp] - C2[x][y][zm]) / (2.*mesh->dz*(C1[x][y][z]));
 	  }
 	  
 	  coef4 += mesh->g11[x][y] * ddx_C + mesh->g13[x][y] * ddz_C;
@@ -835,8 +859,10 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   
   // Additional 1st derivative terms to allow for solution field to be component of vector
   // NB multiply by D or Grad_perp(C)/C as appropriate before passing to setCoefEx()/setCoefEz() because both (in principle) are needed and we don't know how to split them up here
+  if (issetE) {
   coef4 += Ex[x][y][z];
   coef5 += Ez[x][y][z];
+  }
   
 }
 

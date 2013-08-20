@@ -1368,3 +1368,14 @@ const Field2D copy(const Field2D &f) {
   result.allocate();
   return result;
 }
+
+const Field2D floor(const Field2D &var, BoutReal f) {
+  Field2D result = copy(var);
+
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++) {
+      if(result(jx, jy) < f)
+        result(jx, jy) = f;
+    }
+  return result;
+}

@@ -334,7 +334,7 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   ddt(U) = inv->solve(U1);
   ddt(U).applyBoundary();
   
-  Field3D phip = invert_laplace(mesh->Bxy*U, phi_flags);
+  Field3D phip = invert_laplace(mesh->Bxy*ddt(U), phi_flags);
   mesh->communicate(phip);
   
   ddt(Apar) = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(phip);

@@ -107,6 +107,7 @@ void Solver::add(Field2D &v, const char* name) {
   
   // Set boundary conditions
   v.setBoundary(name);
+  ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   VarStr<Field2D> d;
   
@@ -146,6 +147,7 @@ void Solver::add(Field3D &v, const char* name) {
 
   // Set boundary conditions
   v.setBoundary(name);
+  ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   if(mesh->StaggerGrids && (v.getLocation() != CELL_CENTRE)) {
     output.write("\tVariable %s shifted to %s\n", name, strLocation(v.getLocation()));
@@ -187,6 +189,7 @@ void Solver::add(Vector2D &v, const char* name) {
 
   // Set boundary conditions
   v.setBoundary(name);
+  ddt(v).copyBoundary(v); // Set boundary to be the same as v
   
   VarStr<Vector2D> d;
   
@@ -230,6 +233,7 @@ void Solver::add(Vector3D &v, const char* name) {
   
   // Set boundary conditions
   v.setBoundary(name);
+  ddt(v).copyBoundary(v); // Set boundary to be the same as v
 
   VarStr<Vector3D> d;
   
@@ -511,7 +515,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   restartext = string(restart_ext);
   
   // Set up restart options
-  restart = Datafile(options->getSection("restart"));
+  restart = Datafile(Options::getRoot()->getSection("restart"));
   
   /// Add basic variables to the restart file
   restart.add(simtime,  "tt",    0);

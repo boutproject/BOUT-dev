@@ -11,9 +11,14 @@
 *.bbl
 *.blg
 *.toc
+*.idx
 autom4te.cache/
 include/pvode
 lib/
 externalpackages/
 data_*
 test*.py
+*.o
+*.svn/
+*.CVS/
+

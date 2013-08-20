@@ -2,6 +2,8 @@
  * Perpendicular Laplacian inversion. 
  *                           Using PETSc Solvers
  *
+ * Equation solved is: d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
+ *
  **************************************************************************
  * Copyright 2013 J. Buchan
  *
@@ -68,16 +70,20 @@ public:
   }
   
   void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/}
-  void setCoefC(const Field2D &val) { C = val; /*coefchanged = true;*/}
-  void setCoefD(const Field2D &val) { D = val; /*coefchanged = true;*/}
-  void setCoefEx(const Field2D &val) { Ex = val; /*coefchanged = true;*/}
-  void setCoefEz(const Field2D &val) { Ez = val; /*coefchanged = true;*/}
+  void setCoefC(const Field2D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/}
+  void setCoefC1(const Field2D &val) { C1 = val; issetC = true; }
+  void setCoefC2(const Field2D &val) { C2 = val; issetC = true; }
+  void setCoefD(const Field2D &val) { D = val; issetD = true; /*coefchanged = true;*/}
+  void setCoefEx(const Field2D &val) { Ex = val; issetE = true; /*coefchanged = true;*/}
+  void setCoefEz(const Field2D &val) { Ez = val; issetE = true; /*coefchanged = true;*/}
 
   void setCoefA(const Field3D &val) { A = val; /*Acoefchanged = true;*/}
-  void setCoefC(const Field3D &val) { C = val; /*coefchanged = true;*/}
-  void setCoefD(const Field3D &val) { D = val; /*coefchanged = true;*/}
-  void setCoefEx(const Field3D &val) { Ex = val; /*coefchanged = true;*/}
-  void setCoefEz(const Field3D &val) { Ez = val; /*coefchanged = true;*/}
+  void setCoefC(const Field3D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/}
+  void setCoefC1(const Field3D &val) { C1 = val; issetC = true; }
+  void setCoefC2(const Field3D &val) { C2 = val; issetC = true; }
+  void setCoefD(const Field3D &val) { D = val; issetD = true; /*coefchanged = true;*/}
+  void setCoefEx(const Field3D &val) { Ex = val; issetE = true; /*coefchanged = true;*/}
+  void setCoefEz(const Field3D &val) { Ez = val; issetE = true; /*coefchanged = true;*/}
   
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
@@ -86,11 +92,14 @@ private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
   
-  Field3D A, C, D, Ex, Ez;
+  Field3D A, C1, C2, D, Ex, Ez;
 // Metrics are not constant in y-direction, so matrix always changes as you loop over the grid
 // Hence using coefchanged switch to avoid recomputing the mmatrix is not a useful thing to do (unless maybe in a cylindrical machine, but not worth implementing just for that)
 //   bool coefchanged;           // Set to true when C, D, Ex or Ez coefficients are changed
 //   bool Acoefchanged;	      // Set to true when A coefficient is changed
+  bool issetD;
+  bool issetC;
+  bool issetE;
   int lastflag;               // The flag used to construct the matrix
 
   FieldPerp sol;              // solution Field

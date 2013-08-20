@@ -94,7 +94,10 @@ FUNCTION file_write, handle, varname, data
         3: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         4: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /FLOAT)
         5: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /DOUBLE)
-        7: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /CHAR)
+        7: BEGIN ; String
+           dim = file_nc_find_dim(handle, "strlen", STRLEN(data))
+           vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, dim, /CHAR)
+        END
         12: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         13: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         14: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
@@ -105,7 +108,7 @@ FUNCTION file_write, handle, varname, data
           RETURN, 1
         ENDELSE
       ENDCASE
-      
+      IF vid LT 0 THEN STOP
     ENDIF ELSE BEGIN
       dimsize = REVERSE(SIZE(data, /DIMEN)) ; Reverse indices
       
@@ -152,7 +155,10 @@ FUNCTION file_write, handle, varname, data
         3: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /LONG)
         4: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /FLOAT)
         5: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /DOUBLE)
-        7: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, did, /CHAR)
+        7: BEGIN ; Array of strings
+           PRINT, "Sorry, arrays of strings not supported"
+           RETURN, 1
+        END
         12: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         13: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)
         14: vid = CALL_FUNCTION('NCDF_VARDEF', handle.id, varname, /LONG)

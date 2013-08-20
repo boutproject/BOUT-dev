@@ -64,6 +64,8 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 #include <list>
 using std::string;
 using std::list;
+#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -165,6 +167,8 @@ void BoutInitialise(int &argc, char **&argv) {
   output.write("Based on BOUT by Xueqiao Xu, 1999\n\n");
 
   output.write("Processor number: %d of %d\n\n", MYPE, NPES);
+
+  output.write("pid: %d\n\n",getpid());
 
   /// Print compile-time options
 
