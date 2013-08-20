@@ -276,9 +276,9 @@ void BoutInitialise(int &argc, char **&argv) {
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
-    output << "Error encountered during initialisation\n";
+    output.write("Error encountered during initialisation: %s\n", e.what());
     BoutComm::cleanup();
-    throw e;
+    throw;
   }
 }
 
