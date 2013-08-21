@@ -4,10 +4,12 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils import shell,launch
+from boututils import shell,launch,getmpirun
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit
+
+MPIRUN=getmpirun()
 
 print "Making I/O test"
 shell("make > make.log")
@@ -35,7 +37,7 @@ for nproc in [1,2,4]:
   # Run test case
   
   print "   %d processor...." % (nproc)
-  s, out = launch(cmd, nproc=nproc, pipe=True)
+  s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
   f = open("run.log."+str(nproc), "w")
   f.write(out)
   f.close()

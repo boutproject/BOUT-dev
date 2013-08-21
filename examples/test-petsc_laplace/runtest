@@ -15,10 +15,12 @@ vars = [['max_error1',2.e-4],
 	['max_error8',2.e-5]]  
 #tol = 1e-4                  # Absolute (?) tolerance
 
-from boututils import shell,launch
+from boututils import shell,launch,getmpirun
 from boutdata import collect
 #import numpy as np
 from sys import stdout, exit
+
+MPIRUN=getmpirun()
 
 print "Making PETSc Laplacian inversion test"
 shell("make > make.log")
@@ -36,7 +38,7 @@ for nproc in [1,2,4]:
   shell("rm data/BOUT.dmp.*.nc")
 
   print "   %d processors...." % nproc
-  s, out = launch(cmd, nproc=nproc, pipe=True)
+  s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True,verbose=True)
   f = open("run.log."+str(nproc), "w")
   f.write(out)
   f.close()

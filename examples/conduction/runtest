@@ -4,16 +4,20 @@
 # Runs the conduction example, produces some output
 # 
 
+
+
 nproc = 2  # Number of processors to use
 
-from boututils import shell, launch, plotdata
+from boututils import shell, launch, plotdata, getmpirun
 from boutdata import collect
 import numpy as np
+
+MPIRUN = getmpirun()
 
 print "Making conduction example"
 shell("make > make.log")
 
-s, out = launch("./conduction ", nproc=nproc, pipe=True)
+s, out = launch("./conduction ", runcmd=MPIRUN, nproc=nproc, pipe=True)
 f = open("run.log", "w") # Save the output in a log file
 f.write(out)
 f.close()

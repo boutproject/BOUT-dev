@@ -3,6 +3,11 @@
 #
 # Run the test suite, report failures
 #
+# To set command for running parallel jobs, define environment variable
+# e.g. for bash
+# export MPIRUN="mpirun -np"
+# export MPIRUN="aprun -n"
+
 
 # List of directories containing test cases
 tests = ['test-io', 'test-fieldfactory', 'test-laplace', 
