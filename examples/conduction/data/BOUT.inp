@@ -2,7 +2,7 @@
 # Input file for conduction case
 #
 
-nout = 10       # Number of output timesteps
+nout = 100       # Number of output timesteps
 timestep = 0.1  # Time between outputs
 
 MZ = 1          # Number of points in z
