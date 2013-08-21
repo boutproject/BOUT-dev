@@ -53,4 +53,8 @@ except:
     print "No launch command"
     raise
 
-
+try:
+    from getmpirun import getmpirun
+except:
+    print "No getmpirun command"
+ 

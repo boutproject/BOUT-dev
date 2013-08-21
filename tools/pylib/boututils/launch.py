@@ -5,11 +5,12 @@
 
 from boututils import shell, determineNumberOfCPUs
 
-def launch(command, nproc=None, output=None, pipe=False):
+def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, verbose=False):
     """Launch parallel MPI jobs
     
     status = launch(command, nproc, output=None)
-    
+
+    runcmd     Command for running parallel job; defaults to "mpirun -np"    
     command    The command to run (string)
     nproc      Number of processors (integer)
     output     Optional name of file for output
@@ -19,10 +20,12 @@ def launch(command, nproc=None, output=None, pipe=False):
         # Determine number of CPUs on this machine
         nproc = determineNumberOfCPUs()
 
-    cmd = "mpirun -np " + str(nproc) + " " + command
+    cmd = runcmd + " " + str(nproc) + " " + command
     
     if output != None:
         cmd = cmd + " > "+output
-    
-    return shell(cmd, pipe=pipe)
 
+    if verbose == True:
+         print cmd    
+
+    return shell(cmd, pipe=pipe)
