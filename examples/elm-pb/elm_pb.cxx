@@ -5,16 +5,19 @@
  * Can also include the Vpar compressional term
  *******************************************************************************/
 
-#include "bout.hxx"
-#include "initialprofiles.hxx"
-#include "invert_laplace.hxx"
-#include "interpolation.hxx"
-#include "derivs.hxx"
-#include <math.h>
-#include "sourcex.hxx"
+#include <bout.hxx>
+#include <initialprofiles.hxx>
+#include <invert_laplace.hxx>
+#include <invert_parderiv.hxx>
+#include <interpolation.hxx>
+#include <derivs.hxx>
+#include <sourcex.hxx>
 #include <boutmain.hxx>
 #include <bout/constants.hxx>
 #include <msg_stack.hxx>
+#include <utils.hxx>
+
+#include <math.h>
 
 // 2D inital profiles
 Field2D J0, P0; // Current and pressure
@@ -1673,100 +1676,63 @@ int physics_run(BoutReal t)
 
 
 /*******************************************************************************
- * Preconditioner described in elm_reduced.cpp
+ * Preconditioner
  *
  * o System state in variables (as in rhs function)
- * o Values to be inverted in F_vars
+ * o Values to be inverted in time derivatives
  * 
- * o Return values should be in vars (overwriting system state)
+ * o Return values should be in time derivatives
  *
- * NOTE: EXPERIMENTAL
  * enable by setting solver / use_precon = true in BOUT.inp
  *******************************************************************************/
 
-const Field3D Lp(const Field3D &f)
-{
-  return b0xcv*Grad(f);
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  // First matrix, applying L
+  mesh->communicate(ddt(Psi));
+  Field3D Jrhs = Delp2(ddt(Psi));
+  Jrhs.applyBoundary("neumann");
+
+  if(jpar_bndry_width > 0) {
+    // Boundary in jpar
+    if(mesh->firstX()) {
+      for(int i=jpar_bndry_width;i>=0;i--)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jrhs[i][j][k] = 0.5*Jrhs[i+1][j][k];
 }
 
-const Field3D Lpsi(const Field3D &f)
-{
-  Field3D jpre = Delp2(f);
-  jpre.setBoundary("J");
-  jpre.applyBoundary();
-
-  mesh->communicate(jpre);
-
-  Field3D result = b0xGrad_dot_Grad(f, J0);
-  
-  return (B0^2)*(result - Grad_parP(jpre) );
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-jpar_bndry_width-1;i<mesh->ngx;i++)
+        for(int j=0;j<mesh->ngy;j++)
+          for(int k=0;k<mesh->ngz-1;k++) {
+            Jrhs[i][j][k] = 0.5*Jrhs[i-1][j][k];
+          }
+    }
 }
 
-const Field3D Pschur(const Field3D &f)
-{
-  Field3D phitmp = invert_laplace(f, phitmp, phi_flags, NULL);
-  // Need to communicate phi
-  mesh->communicate(phitmp);
+  mesh->communicate(Jrhs, ddt(P));
 
-  Field3D dP = b0xGrad_dot_Grad(phitmp, P0);
-  Field3D dPsi = Grad_parP(B0*phitmp) / B0;
-  dP.setBoundary("P"); dP.applyBoundary();
-  dPsi.setBoundary("Psi"); dPsi.applyBoundary();
-  
-  Field3D dJ = Delp2(dPsi);
-  dJ.setBoundary("J"); dJ.applyBoundary();
+  Field3D U1 = ddt(U);
+  U1 += (gamma*B0*B0)*Grad_par(Jrhs, CELL_CENTRE) + (gamma*b0xcv)*Grad(P);
 
-  mesh->communicate(dP, dPsi, dJ);
-  
-  Field3D result = b0xcv*Grad(dP) + (B0^2)*(Grad_par(dJ) - b0xGrad_dot_Grad(dPsi, J0));
-  result.setBoundary("U"); result.applyBoundary();
-  
-  return result;
-}
+  // Second matrix, solving Alfven wave dynamics
+  static InvertPar *invU = 0;
+  if(!invU)
+    invU = InvertPar::Create();
 
-int precon(BoutReal t, BoutReal gamma, BoutReal delta)
-{
-  Field3D U1;
-  Field3D P2, Psi2, U2;
-  Field3D P3, Psi3, U3;
-
-  //output.write("precon t = %e, gamma = %e\n", t, gamma);
-
-  mesh->communicate(ddt(P), ddt(Psi), ddt(U));
-
-  // First matrix. Only modifies vorticity
+  invU->setCoefA(1.);
+  invU->setCoefB(-SQ(gamma)*B0*B0);
+  ddt(U) = invU->solve(U1);
+  ddt(U).applyBoundary();
   
-  U1 = ddt(U) + gamma*(Lp(ddt(P)) + Lpsi(ddt(Psi)));
-  U1.setBoundary("U"); U1.applyBoundary();
+  // Third matrix, applying U
+  Field3D phi3 = invert_laplace(ddt(U), phi_flags, NULL);
+  mesh->communicate(phi3);
+  phi3.applyBoundary("neumann");
   
-  // Second matrix. If linear, only modify vorticity
-  // NB: This is the key step, inverting Pschur
-  
-  P2 = ddt(P);
-  Psi2 = ddt(Psi);
-
-  U2=U1;
-  //  U2 = invert_parderiv(1.0, -gamma*gamma*B0*B0, U1);
-  U2 = U1 + gamma*gamma*Pschur(U1); // Binomial expansion of P^-1
-  
-  // Third matrix
-  
-  Field3D phitmp = invert_laplace(U2, phi_flags, NULL);
-  mesh->communicate(phitmp);
-  
-  P3 = P2 + gamma*b0xGrad_dot_Grad(phitmp, P0);
-  Psi3 = Psi2 + gamma*Grad_par(B0*phitmp) / B0;
-  U3 = U2;
-  
-  // Put result into system state
-  
-  P = P3;
-  Psi = Psi3;
-  U = U3;
-  
-  P.applyBoundary();
-  Psi.applyBoundary();
-  U.applyBoundary();
+  ddt(Psi) = ddt(Psi) - gamma*Grad_par(B0*phi3)/B0;
+  ddt(Psi).applyBoundary();
   
   return 0;
 }
@@ -1784,8 +1750,7 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta)
  * enable by setting solver / use_jacobian = true in BOUT.inp
  *******************************************************************************/
 
-int jacobian(BoutReal t)
-{
+int jacobian(BoutReal t) {
   // NOTE: LINEAR ONLY!
   
   // Communicate
@@ -1808,11 +1773,11 @@ int jacobian(BoutReal t)
     + (B0^2) * b0xGrad_dot_Grad(ddt(Psi), J0, CELL_CENTRE);
   JU.setBoundary("U"); JU.applyBoundary();
 
-  // Put result into vars
+  // Put result into time-derivatives
 
-  P = JP;
-  Psi = JPsi;
-  U = JU;
+  ddt(P) = JP;
+  ddt(Psi) = JPsi;
+  ddt(U) = JU;
 
   return 0;
 }
@@ -1827,16 +1792,8 @@ int jacobian(BoutReal t)
  * o Return values should be in vars (overwriting system state)
  *******************************************************************************/
 
-int precon_phi(BoutReal t, BoutReal cj, BoutReal delta)
-{
-  P = ddt(P);
-  Psi = ddt(Psi);
-  /*
-  invert_laplace(F_U, phi, phi_flags, NULL);
-  phi = C_phi + phi;
-  */
-  phi = invert_laplace(C_phi - ddt(U), phi_flags, NULL);
-  U = ddt(U);
+int precon_phi(BoutReal t, BoutReal cj, BoutReal delta) {
+  ddt(phi) = invert_laplace(C_phi - ddt(U), phi_flags, NULL);
   return 0;
 }
 
