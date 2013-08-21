@@ -4,9 +4,11 @@
 # Run the test, check it completed successfully
 #
 
-from boututils import shell,launch
+from boututils import shell,launch,getmpirun
 from boutdata import collect
 from sys import stdout, exit
+
+MPIRUN=getmpirun()
 
 print "Making parallel inversion test"
 
@@ -26,7 +28,7 @@ for nproc in [1,2,4]:
         shell("rm data/BOUT.dmp.* 2> err.log")
         
         # Run the case
-        s, out = launch(cmd+" "+f, nproc=nproc, pipe=True)
+        s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True, verbose=True)
         f = open("run.log."+str(nproc)+"."+str(r), "w")
         f.write(out)
         f.close()

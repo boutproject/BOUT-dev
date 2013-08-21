@@ -8,10 +8,12 @@
 vars = ['yavg2d', 'yavg3d', 'sm3d']
 tol = 1e-10                  # Absolute tolerance
 
-from boututils import shell,launch
+from boututils import shell,launch,getmpirun
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit
+
+MPIRUN=getmpirun()
 
 print "Making smoothing operator test"
 shell("make > make.log")
@@ -33,7 +35,7 @@ for nype in [1,2]:
     shell("rm data/BOUT.dmp.*.nc")
 
     print "   %d processor (%d x %d)...." % (nproc, nxpe, nype)
-    s, out = launch(cmd+" nxpe="+str(nxpe), nproc=nproc, pipe=True)
+    s, out = launch(cmd+" nxpe="+str(nxpe), runcmd=MPIRUN, nproc=nproc, pipe=True)
     f = open("run.log."+str(nproc), "w")
     f.write(out)
     f.close()

@@ -10,10 +10,12 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils import shell, launch, file_import, deriv, linear_regression
+from boututils import shell, launch, file_import, deriv, linear_regression, getmpirun
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit
+
+MPIRUN = getmpirun()
 
 print "Making resistive drift instability test"
 shell("make > make.log")
@@ -64,7 +66,7 @@ for zeff in zlist:
     print "Running drift instability test, zeff = ", zeff
 
     # Run the case
-    s, out = launch("./2fluid timestep="+str(timestep), nproc=nproc, pipe=True)
+    s, out = launch("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, pipe=True)
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()

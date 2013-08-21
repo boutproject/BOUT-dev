@@ -7,10 +7,12 @@
 nproc = 2       # Number of processors to run on
 reltol = 1.e-3  # Allowed relative tolerance in growth-rate
 
-from boututils import shell,launch
+from boututils import shell,launch,getmpirun
 from boutdata import collect
 import numpy as np
 from sys import stdout, exit
+
+MPIRUN = getmpirun()
 
 print "Making interchange instability test"
 shell("make > make.log")
@@ -19,7 +21,7 @@ def growth_rate(path, nproc, log=False):
     pipe = False
     if log != False:
         pipe = True
-    s, out = launch("./2fluid -d "+path, nproc=nproc, pipe=pipe)
+    s, out = launch("./2fluid -d "+path, runcmd=MPIRUN, nproc=nproc, pipe=pipe)
     if pipe:
         f = open(log, "w")
         f.write(out)
