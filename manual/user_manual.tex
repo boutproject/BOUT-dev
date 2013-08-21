@@ -289,7 +289,10 @@ and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
 
 After getting an MPI compiler, the next step is to make sure the
 libraries BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3
-library, and to run any of the examples you'll also need NetCDF-4 installed. 
+library, and to run any of the examples you'll also need NetCDF-4 (prior to 4.2) installed. 
+
+\note{There are currently issues with support for NetCDF's new C++ API, which appeared in 4.2. 
+For now use NetCDF 4.1.x}
 
 Most large machines (e.g. NERSC Hopper, HECToR, HPC-FF etc.)
 will have these libraries and many more already installed, but you may 
@@ -524,9 +527,10 @@ SUNDIALS and PETSc.
 
 \subsection{File formats}
 
-BOUT++ can currently use two different file formats: Portable Data Binary
-(PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}}, and
-NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}.
+BOUT++ can currently use three different file formats: Portable Data Binary
+(PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}}, 
+NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}},
+and experimental support for Parallel NetCDF.
 PDB was developed at LLNL, was used in the UEDGE and BOUT codes, and 
 was the original format used by BOUT++. NetCDF is a more widely used
 format and so has many more tools for viewing and manipulating files.
@@ -611,7 +615,8 @@ for more details on how to do this.
 
 \subsection{PETSc}
 
-BOUT++ can use PETSc for time-integration:
+BOUT++ can use PETSc for time-integration and for solving elliptic problems, such as inverting
+Poisson and Helmholtz equations.
 \begin{verbatim}
 ./configure --with-petsc
 \end{verbatim}
@@ -627,13 +632,23 @@ cd petsc-dev
 hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
 \end{verbatim}
 
-then configure PETSc, making sure to enable C++ and SUNDIALS support
+then configure PETSc, making sure to enable C++. 
 \begin{verbatim}
 ./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
             --with-sundials=1 --with-sundials-dir=$HOME/local/
 \end{verbatim}
-replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation. Finally
-compile PETSc:
+You can add SUNDIALS support, but it is not required. To do this, add the following
+to the end of the configure command:
+\begin{verbatim}
+--with-sundials=1 --with-sundials-dir=$HOME/local/
+\end{verbatim}
+replacing \texttt{\$HOME/local/} with the location of your SUNDIALS installation.
+It is also useful to get PETSc to download and install MUMPS (see below), by adding
+\begin{verbatim}
+--download-mumps
+\end{verbatim}
+
+Finally compile PETSc:
 \begin{verbatim}
 make
 \end{verbatim}
@@ -709,14 +724,16 @@ cvode.cxx:234:56: error: invalid conversion from ‘int (*)(CVINT...
 ...
 \end{verbatim}
 
-This is caused by different sizes of ints used in compiling the CVODE library. To fix, edit
+This is caused by different sizes of ints used in different versions of the CVODE library. 
+The configure script tries to determine the correct type to use, but may fail in unusual circumstances.
+To fix, edit
 \file{src/solver/impls/cvode/cvode.cxx}, and change line 48 from
 \begin{lstlisting}[numbers=none]
-typedef int CVINT;
+typedef int CVODEINT;
 \end{lstlisting}
 to
 \begin{lstlisting}[numbers=none]
-typedef long CVINT;
+typedef long CVODEINT;
 \end{lstlisting}
 
 \section{Running BOUT++}
@@ -771,7 +788,8 @@ produce a bunch of files in the \file{data/} subdirectory.
   The one from processor $0$ will be the same as what was printed to the screen. This is mainly useful because
   if one process crashes it may only put an error message into its own log.
 \item \file{BOUT.restart.*.nc} are the restart files for the last time point. 
-  As of June 2012 each processor saves its own state in a separate file, but this is being worked on.
+  Currently each processor saves its own state in a separate file, but there is experimental
+  support for parallel I/O. For the settings, see section~\ref{sec:iooptions}.
 \item \file{BOUT.dmp.*.nc} contain the output data, including time history. As with the restart
   files, each processor currently outputs a separate file.
 \end{itemize}
@@ -826,6 +844,25 @@ and to make this a coloured contour plot
 IDL> showdata, T[*,*,0,*], /cont
 \end{verbatim}
 
+The equivalent commands in Python are as follows. To print a list of variables
+in a file:
+\begin{verbatim}
+>>> from boututils import DataFile
+>>> DataFile("BOUT.dmp.0.nc").list()
+\end{verbatim}
+To collect a variable,
+\begin{verbatim}
+>>> from boutdata import collect
+>>> T = collect("T")
+>>> T.shape
+\end{verbatim}
+Note that the order of the indices is different in Python and IDL: In Python,
+4D variables are arranged as \code{[t, x, y, z]}.
+To show an animation
+\begin{verbatim}
+>>> from boututils import showdata
+>>> showdata.showdata(T[:,:,:,0])
+\end{verbatim}
 
 The next example to look at is \file{test-wave}, which is solving a wave equation using
 \[
@@ -1419,6 +1456,11 @@ from boutdata import collect
 Ni = collect("Ni")  # Collect the variable "Ni"
 \end{lstlisting}
 
+\subsection{Matlab routines}
+
+There are Matlab routines for collecting data, showing animations, and performing some basic analysis.
+See the \file{tools/matlablib/} directory and \file{README.txt} file.
+
 \subsection{Octave routines}
 
 There is minimal support for reading data into Octave, which has been tested on
@@ -1604,7 +1646,7 @@ rtol & Relative tolerance & rk4, pvode, cvode, ida \\
 mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
 max\_timestep & Maxmimum timestep & rk4, cvode \\
-timestep & Starting timestep & rk4, karniadakis \\
+timestep & Starting timestep & rk4, karniadakis, euler \\
 adaptive & Adapt timestep? (Y/N) & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
 mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
@@ -1619,6 +1661,43 @@ diagnose & Collect and print additional diagnostics & cvode \\
 \end{table}
 The most commonly changed options are the  absolute and relative solver tolerances,
 \code{ATOL} and \code{RTOL} which should be varied to check convergence.
+
+\subsection{Input and Output}
+\label{sec:iooptions}
+
+The output (dump) files with time-history are controlled by settings in a section called ``output''. 
+Restart files contain a single time-slice, and are controlled by a section called ``restart''. The options
+available are listed in table~\ref{tab:outputopts}.
+
+\begin{table}[htb!]
+\centering
+\caption{Output file options}
+\label{tab:outputopts}
+\begin{tabular}{c | c | c}
+\hline
+Option & Description & Default\\
+       &             & value\\
+\hline
+enabled & Writing is enabled & true \\
+floats & Write floats rather than doubles & true (dmp)\\
+flush & Flush the file to disk after each write & true \\
+guards & Output guard cells & true \\
+openclose & Re-open the file for each write, and close after & true \\
+parallel & Use parallel I/O & false \\
+\hline
+\end{tabular}
+\end{table}
+
+{\bf enabled} is useful mainly for doing performance or scaling tests, where you want to exclude
+I/O from the timings. {\bf floats} is used to reduce the size of the output files: restart files are
+stored as double by default (since these will be used to restart a simulation), but output dump files
+are set to floats by default.
+
+To enable parallel I/O for either output or restart files, set 
+\begin{lstlisting}
+parallel = true
+\end{lstlisting}
+in the output or restart section. 
 
 \subsection{Laplacian inversion}
 \index{Laplacian inversion}
@@ -2065,11 +2144,17 @@ output from different codes and converting into input to BOUT++.
 \label{fig:gridgen}
 \end{figure}
 
-\subsection{Converting grid files}
-\index{ELITE}\index{GATO}
+\subsection{From EFIT files}
+\index{EFIT}\index{Hypnotoad}
+An IDL code called ``Hypnotoad'' has been developed to create BOUT++ input files from
+R-Z equilibria. This can read EFIT 'g' files, find flux surfaces, and calculate metric coefficients.
+The code is in \file{tools/tokamak\_grids/gridgen}, and has its own manual under the \file{doc} subdirectory.
+
+\subsection{From ELITE and GATO files}
+\index{ELITE}\index{GATO}\index{dskgato}
 Currently conversions exist for ELITE \code{.eqin} and GATO \code{dskgato} equilibrium files.
 Conversion of these into BOUT++ input grids is in two stages: In the first, both these
-input files are converted into a common PDB format which describes the Grad-Shafranov equilibrium.
+input files are converted into a common NetCDF or PDB format which describes the Grad-Shafranov equilibrium.
 These intermediate files are then converted to BOUT++ grids using an interactive IDL script.
 
 
