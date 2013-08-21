@@ -44,10 +44,12 @@
 #define ZERO        RCONST(0.)
 #define ONE         RCONST(1.0)
 
-typedef int CVINT;
+#ifndef CVODEINT
+typedef int CVODEINT;
+#endif
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
-static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
+static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
 			 void *user_data);
 
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
@@ -534,7 +536,7 @@ static int cvode_rhs(BoutReal t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(CVINT Nlocal, BoutReal t, 
+static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, 
 			 N_Vector u, N_Vector du, 
 			 void *user_data)
 {
