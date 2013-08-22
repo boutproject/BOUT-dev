@@ -1514,6 +1514,29 @@ finally = "some text"   # a string
 
 Have a look through the examples to see how the options are used.
 
+\subsection{Command line options}
+\index{Command line}
+All options can be set on the command line, and will override those set in BOUT.inp. 
+The most commonly used are ``restart'' and ``append'', described in section~\ref{sec:running}.
+If values are not given for command-line arguments, then the value is set to \lstinline!true!, so
+putting \lstinline!restart! is equivalent to \lstinline!restart=true!. 
+
+Values can be specified on the command line for other settings, such as the fraction of a
+torus to simulate (ZPERIOD):
+\begin{verbatim}
+ ./command zperiod=10
+\end{verbatim}
+Remember {\bf no} spaces around the '=' sign. Like the BOUT.inp file, setting names are not case sensitive.
+
+Sections are currently separated by underscores '\_', so to set the solver type (section~\ref{sec:timeoptions})
+you can either put this in BOUT.inp:
+\begin{verbatim}
+[solver]
+type = rk4
+\end{verbatim}
+or put \lstinline!solver_type=rk4! on the command line. This capability is used in many test suite cases
+to change the parameters for each run.
+
 \subsection{General options}
 
 At the top of the BOUT.inp file (before any section headers), 
@@ -1697,7 +1720,12 @@ To enable parallel I/O for either output or restart files, set
 \begin{lstlisting}
 parallel = true
 \end{lstlisting}
-in the output or restart section. 
+in the output or restart section. If you have compiled BOUT++ with a parallel I/O library
+such as pnetcdf (see section~\ref{sec:advancedinstall}), then rather than outputting one file per processor, all 
+processors will output to the same file. For restart files this is particularly useful,
+as it means that you can restart a job with a different number of processors. 
+Note that this feature is still experimental, and incomplete: output dump files are
+not yet supported by the collect routines.
 
 \subsection{Laplacian inversion}
 \index{Laplacian inversion}
