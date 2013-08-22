@@ -7,6 +7,8 @@
 
 #include <field_factory.hxx>
 
+#include <cmath>
+
 //////////////////////////////////////////////////////////
 // Basic generators: Numerical value, 'x', 'y' and 'z'
 
@@ -60,6 +62,66 @@ public:
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
+};
+
+// Template class to define generators around a C function
+typedef BoutReal(*single_arg_op)(BoutReal);
+template<single_arg_op Op>
+class FieldGenOneArg : public FieldGenerator { ///< Template for single-argument function
+public:
+  FieldGenOneArg(FieldGenerator* g) : gen(g) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() != 1) {
+      output << "FieldFactory error: Incorrect number of arguments to function. Expecting 1, got " << args.size() << endl;
+      return NULL;
+    }
+    return new FieldGenOneArg<Op>(args.front());
+  }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    return Op(gen->generate(fieldmesh, x,y,z));
+  }
+private:
+  FieldGenerator *gen;
+};
+
+typedef BoutReal(*double_arg_op)(BoutReal, BoutReal);
+template<double_arg_op Op>
+class FieldGenTwoArg : public FieldGenerator { ///< Template for two-argument function
+public:
+  FieldGenTwoArg(FieldGenerator* a, FieldGenerator* b) : A(a), B(b) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() != 2) {
+      output << "FieldFactory error: Incorrect number of arguments to function. Expecting 2, got " << args.size() << endl;
+      return NULL;
+    }
+    return new FieldGenTwoArg<Op>(args.front(), args.back());
+  }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    return Op(A->generate(fieldmesh, x,y,z), B->generate(fieldmesh, x,y,z));
+  }
+private:
+  FieldGenerator *A, *B;
+};
+
+class FieldATan : public FieldGenerator { // Arc Tangent
+public:
+  FieldATan(FieldGenerator* a, FieldGenerator* b=NULL) : A(a), B(b) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() == 1) {
+      return new FieldATan(args.front());
+    }else if(args.size() == 2) {
+      return new FieldATan(args.front(), args.back());
+    }
+    output << "FieldFactory error: Incorrect number of arguments to atan function. Expecting 1 or 2, got " << args.size() << endl;
+    return NULL;
+  }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    if(B == NULL)
+      return atan(A->generate(fieldmesh, x,y,z));
+    return atan2(A->generate(fieldmesh, x,y,z), B->generate(fieldmesh, x,y,z));
+  }
+private:
+  FieldGenerator *A, *B;
 };
 
 class FieldSinh : public FieldGenerator {
@@ -169,6 +231,66 @@ public:
 private:
   FieldGenerator *lhs, *rhs;
   char op;
+};
+
+/// Minimum
+class FieldMin : public FieldGenerator {
+public:
+  FieldMin() {}
+  FieldMin(const list<FieldGenerator*> args) : input(args) {}
+  ~FieldMin() {
+    for(list<FieldGenerator*>::iterator it=input.begin(); it != input.end(); it++)
+      delete (*it);
+  }
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() == 0) {
+      output << "FieldFactory error: min function must have some inputs\n";
+      return NULL;
+    }
+    return new FieldMin(args);
+  }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    list<FieldGenerator*>::iterator it=input.begin();
+    BoutReal result = (*it)->generate(fieldmesh, x,y,z);
+    for(;it != input.end(); it++) {
+      BoutReal val = (*it)->generate(fieldmesh, x,y,z);
+      if(val < result)
+        result = val;
+    }
+    return result;
+  }
+private:
+  list<FieldGenerator*> input;
+};
+
+/// Maximum
+class FieldMax : public FieldGenerator {
+public:
+  FieldMax() {}
+  FieldMax(const list<FieldGenerator*> args) : input(args) {}
+  ~FieldMax() {
+    for(list<FieldGenerator*>::iterator it=input.begin(); it != input.end(); it++)
+      delete (*it);
+  }
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() == 0) {
+      output << "FieldFactory error: max function must have some inputs\n";
+      return NULL;
+    }
+    return new FieldMax(args);
+  }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+    list<FieldGenerator*>::iterator it=input.begin();
+    BoutReal result = (*it)->generate(fieldmesh, x,y,z);
+    for(;it != input.end(); it++) {
+      BoutReal val = (*it)->generate(fieldmesh, x,y,z);
+      if(val > result)
+        result = val;
+    }
+    return result;
+  }
+private:
+  list<FieldGenerator*> input;
 };
 
 #endif // __FIELDGENERATORS_H__

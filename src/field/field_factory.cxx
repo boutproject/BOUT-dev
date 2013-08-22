@@ -54,13 +54,25 @@ FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
   // Some standard functions
   addGenerator("sin", new FieldSin(NULL));
   addGenerator("cos", new FieldCos(NULL));
+  addGenerator("tan", new FieldGenOneArg<tan>(NULL));
+  
+  addGenerator("acos", new FieldGenOneArg<acos>(NULL));
+  addGenerator("asin", new FieldGenOneArg<asin>(NULL));
+  addGenerator("atan", new FieldATan(NULL));
+  
   addGenerator("sinh", new FieldSinh(NULL));
   addGenerator("cosh", new FieldCosh(NULL));
   addGenerator("tanh", new FieldTanh());
+
+  addGenerator("exp", new FieldGenOneArg<exp>(NULL));
+  addGenerator("log", new FieldGenOneArg<log>(NULL));
   addGenerator("gauss", new FieldGaussian(NULL, NULL));
   addGenerator("abs", new FieldAbs(NULL));
   addGenerator("sqrt", new FieldSqrt(NULL));
   addGenerator("h", new FieldHeaviside(NULL));
+
+  addGenerator("min", new FieldMin());
+  addGenerator("max", new FieldMax());
 }
 
 FieldFactory::~FieldFactory() {
