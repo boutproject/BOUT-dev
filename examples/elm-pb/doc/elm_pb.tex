@@ -1,0 +1,644 @@
+%% Manual for simulating ELMs using BOUT++
+
+\documentclass[12pt, a4paper]{article}
+\usepackage[nofoot]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+%% Modify margins
+\addtolength{\oddsidemargin}{-.25in}
+\addtolength{\evensidemargin}{-.25in}
+\addtolength{\textwidth}{0.5in}
+\addtolength{\textheight}{0.25in}
+%% SET HEADERS AND FOOTERS
+
+\pagestyle{fancy}
+\fancyfoot{}
+\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
+  \markright{\thesection.\ #1}}
+\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
+                                        % pages and right on odd pages 
+\renewcommand{\headrulewidth}{0.3pt}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\file}[1]{\texttt{\bf #1}}
+
+%% commands for boxes with important notes
+\newlength{\notewidth}
+\addtolength{\notewidth}{\textwidth}
+\addtolength{\notewidth}{-3.\parindent}
+\newcommand{\note}[1]{
+\fbox{
+\begin{minipage}{\notewidth}
+{\bf NOTE}: #1
+\end{minipage}
+}}
+
+\newcommand{\pow}{\ensuremath{\wedge} }
+\newcommand{\poweq}{\ensuremath{\wedge =} }
+
+\newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
+\newcommand{\Vpar}{\ensuremath{V_{||}}}
+\newcommand{\Gradpar}{\ensuremath{\partial_{||}}}
+\newcommand{\Divpar}{\ensuremath{\nabla_{||}}}
+\newcommand{\DivXgradX}[2]{\ensuremath{\nabla_\psi\left(#1\partial_\psi #2\right)}}
+\newcommand{\DivParGradPar}[2]{\ensuremath{\nabla_{||}\left(#1\partial_{||} #2\right)}}
+
+\newcommand{\apar}{\ensuremath{A_{||}}}
+\newcommand{\hthe}{\ensuremath{h_\theta}}
+\newcommand{\Bp}{\ensuremath{B_\theta}}
+\newcommand{\Bt}{\ensuremath{B_\zeta}}
+
+\newcommand{\Vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\bvec}{\Vec{b}}
+\newcommand{\kvec}{\Vec{\kappa}}
+\newcommand{\bxk}{\bvec\times\kvec\cdot\nabla}
+\newcommand{\Bvec}{\Vec{B}}
+\newcommand{\Bbar}{\overline{B}}
+\newcommand{\Lbar}{\overline{L}}
+\newcommand{\Tbar}{\overline{T}}
+\newcommand{\Jvec}{\Vec{J}}
+\newcommand{\Jpar}{J_{||}}
+\newcommand{\delp}{\nabla_\perp^2}
+\newcommand{\Div}[1]{\ensuremath{\nabla\cdot #1 }}
+\newcommand{\Curl}[1]{\ensuremath{\nabla\times #1 }}
+\newcommand{\rbp}{\ensuremath{R\Bp}}
+\newcommand{\rbpsq}{\ensuremath{\left(\rbp\right)^2}}
+
+\begin{document}
+
+\title{Simulation of ELMs using BOUT++}
+\author{B.Dudson, University of York}
+
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+This manual describes the simulation of ELMs using the \code{elm\_pb} BOUT++ model.
+For a more general introduction to BOUT++ see the users' guide and papers, which
+also describe the internal workings of the code. 
+
+Setting up input files and running a simulation are described in sections~\ref{sec:inputs} and
+\ref{sec:running}. Analysing the resulting data using IDL is then described in section~\ref{sec:analyse}.
+These sections, together with relevant sections of the users manual, should enable a new user to 
+begin running useful ELM simulations using BOUT++.
+
+The remainder of this manual describes the physics model (section~\ref{sec:equations}) which evolves
+pressure $P$, vorticity $U$ and magnetic potential $\psi$:
+\begin{eqnarray}
+\rho \frac{dU}{dt} &=& B^2\bvec\cdot\nabla\left(\frac{\Jpar}{B}\right) + 2\bxk P \label{eq:vort} \\
+\deriv{\psi}{t} &=& -\frac{1}{B_0}\nabla_{||}\phi \label{eq:psi} \\
+\deriv{P}{t} &=& -\frac{1}{B_0}\bvec_0\times\nabla\phi\cdot\nabla P \label{eq:pressure} \\
+U &=& \frac{1}{B_0}\delp\phi \qquad \Jpar = J_{||0} - \frac{1}{\mu_0}B_0\delp\psi 
+\end{eqnarray}
+The coordinate system used is described in the BOUT++ coordinates manual. The normalisation
+used in this BOUT++ model is the MHD one, given in section~\ref{sec:mhdnorm}.
+
+
+\note{All quantities here are in SI units except where otherwise stated}
+
+
+\section{Inputs}
+\label{sec:inputs}
+The general options for BOUT++ are described in the user manual. 
+The following options control the behavior of the elm\_pb physics model, and are
+put under the [highbeta] section of BOUT.inp.
+
+Currently, the model used has constant mass density:
+\begin{verbatim}
+density = 1.0e19      # number density of deuterium [m^-3]
+\end{verbatim}
+This doesn't affect the result, but scales the time normalisation (through the Alfv\'en speed). 
+
+\begin{verbatim}
+evolve_jpar = false   # If true, evolve J raher than Psi
+\end{verbatim}
+By default, the magnetic potential $\psi$ is evolved. Setting this option to true evolves
+the parallel current $J_{||}$ instead using equation~\ref{eq:jparevolve}.
+This does suppress currents in the vacuum region,
+but results in significantly higher growth-rates than evolving $\psi$. For now,
+setting this option to true is not recommended.
+
+There are also a lot of switches to change which effects are included. The first two:
+\begin{verbatim}
+include_jpar0 = true     # determines whether to include jpar0 terms
+include_curvature = true # include curvature drive term?
+\end{verbatim}
+determine which drive terms are included in the vorticity equation (eq.~\ref{eq:psi}).
+
+\begin{verbatim}
+compress = false      # set compressible (evolve Vpar)
+\end{verbatim}
+If this is set to true, parallel velocity is also evolved (see section~\ref{sec:parvel}).
+
+\begin{verbatim}
+nonlinear  = true
+\end{verbatim}
+This determines whether the nonlinear terms are included (v.important!)
+
+\begin{verbatim}
+diamag = false
+\end{verbatim}
+
+\begin{verbatim}
+relax_j_vac = true    # Relax to zero-current in the vacuum (EXPERIMENTAL)
+\end{verbatim}
+
+\begin{verbatim}
+filter_z = false  # remove all except one mode
+filter_z_mode = 1 # Leave only fundamental
+\end{verbatim}
+
+\begin{verbatim}
+simple_rmp = false   # Enable/disable
+rmp_n = 3           # Toroidal mode number
+rmp_m = 6           # Poloidal mode number
+rmp_factor = 1.e-4  # Amplitude of Apar [Tm]
+rmp_ramp = 1.e-4    # Timescale [s] of ramp
+\end{verbatim}
+
+
+\begin{verbatim}
+vacuum_pressure = 0.02 # the pressure below which it is considered vacuum
+                       # fraction of peak pressure
+vacuum_trans = 0.01    # transition width (fraction of P)
+\end{verbatim}
+
+\begin{verbatim}
+vac_lund = -1   # Lundquist number in vacuum
+core_lund = 1e4   # Lundquist number in core
+\end{verbatim}
+
+\begin{verbatim}
+viscos_par = 0.1   # Parallel viscosity
+\end{verbatim}
+
+\begin{verbatim}
+phi_flags = 202  # inversion flags for phi
+\end{verbatim}
+
+\begin{verbatim}
+apar_flags = 384
+\end{verbatim}
+
+\section{Flute-Reduced MHD}
+\label{sec:equations}
+
+Some notation:
+Unit magnetic field vector
+\[
+\Vec{b} = \frac{\Bvec}{B}
+\]
+Perpendicular Del operator
+\[
+\nabla_\perp f = \nabla f - \Vec{b}\left(\Vec{b}\cdot\nabla f\right)
+\]
+
+\subsection{Curvature vector}
+
+The field-line curvature vector $\Vec{\kappa}$ is defined as
+\begin{equation}
+\Vec{\kappa} \equiv \Vec{b}\cdot\nabla\Vec{b} = \left(\nabla\times\Vec{b}\right)\times\Vec{b}
+\end{equation}
+This can be re-written as
+\[
+\Vec{\kappa} = \left[\frac{1}{B}\Curl{\Bvec} - \Bvec\times\nabla\left(\frac{1}{B}\right)\right]\times\Vec{b}
+\]
+Using $\nabla\left(\frac{1}{B}\right) = -\nabla\left(B\right) / B^2$, this becomes
+\begin{eqnarray}
+\Vec{\kappa} &=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\left(\Vec{b}\times\nabla B\right)\times\Vec{b} \nonumber \\
+&=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\nabla_\perp B \label{eq:kappajxb}
+\end{eqnarray}
+
+
+\subsection{Shear-Alfv\'en Law}
+
+Following the derivation in Hazeltine\& Meiss, we start with a fairly general fluid momentum equation:
+\begin{equation}
+\rho\frac{d\Vec{V}}{dt} + \Div{\Pi} = -\nabla P + \Jvec\times\Bvec
+\label{eq:genfluid}
+\end{equation}
+where the usual convective derivative is used:
+\[
+\frac{d}{dt} = \deriv{}{t} + \Vec{V}\cdot\nabla
+\]
+Taking the parallel component of the curl of this equation (i.e. apply $\Bvec\cdot\nabla\times$ to each side)
+\[
+\Bvec\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right] = \underbrace{-\Bvec\cdot\nabla\times\nabla P}_{\Rightarrow 0} + \Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right)
+\]
+
+The $\Jvec\times\Bvec$ term can be written as:
+\begin{eqnarray}
+\Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right) &=& \nabla\cdot\left[\left(\Jvec\times\Bvec\right)\times\Bvec\right] \nonumber \\
+&=& B^2\Bvec\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{B^2}\Bvec\times\left(\Jvec\times\Bvec\right)\cdot\nabla_\perp B^2
+\end{eqnarray}
+
+\begin{eqnarray}
+\Jvec\times\Bvec &=& \frac{1}{\mu_0}\left(\nabla\times\Bvec\right)\times\Bvec \nonumber \\
+&=& \frac{1}{\mu_0}\left[B^2\left(\nabla\times\Vec{b}\right)\times\Vec{b} + B\left(\nabla B\times\Vec{b}\right)\times\Vec{b}\right] \nonumber \\
+&=& \frac{1}{\mu_0}\left[B^2\Vec{\kappa} - B\nabla_\perp B\right]
+\end{eqnarray}
+
+When crossed with $\Bvec$, and dotted with $\nabla_\perp B^2$, the $\nabla_\perp B$ term vanishes, and so
+\begin{equation}
+\Vec{b}\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right] = B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{\mu_0}\Vec{b}\times\Vec{\kappa}\cdot\nabla_\perp B^2
+\label{eq:sa1}
+\end{equation}
+
+Denoting the LHS of equation \ref{eq:genfluid} as $\Vec{f}$, and using the expression
+for the curvature in equation \ref{eq:kappajxb} gives:
+\begin{eqnarray*}
+\Vec{\kappa} &=& \frac{\mu_0}{B^2}\left(\Vec{f} + \nabla P\right) + \frac{1}{B}\nabla_\perp B \\
+\Rightarrow \nabla_\perp B^2 &=& 2B^2\Vec{\kappa} - 2\mu_0\left(\Vec{f} + \nabla P\right)
+\end{eqnarray*}
+Substituting this into equation~\ref{eq:sa1} gives:
+\begin{eqnarray*}
+\Vec{b}\cdot\Curl{\Vec{f}} &=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{\mu_0}\Vec{b}\times\Vec{\kappa}\cdot\left[-2\mu_0\left(\Vec{f} + \nabla P\right) + 2B^2\kappa\right] \\
+&=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) + 2\Vec{b}\times\Vec{\kappa}\cdot\Vec{f} + 2\Vec{b}\times\Vec{\kappa}\cdot\nabla P
+\end{eqnarray*}
+
+\begin{equation}
+\Vec{b}\cdot\left[\Curl{\Vec{f}} - 2\Vec{\kappa}\times\Vec{f}\right] = B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) + 2\Vec{b}\times\Vec{\kappa}\cdot\nabla P
+\label{eq:shearalfven}
+\end{equation}
+
+The LHS side of this is primarily the parallel component of the vorticity
+$\Curl{\Vec{V}}$, so this equation is often called the vorticity equation.
+
+\subsection{Flute reduction}
+
+This is a reduction for perturbations which are aligned to the magnetic field. Formally,
+this is done by setting
+\[
+k_{||} \sim \epsilon k_\perp
+\]
+with a small parameter $\epsilon$. The perturbed magnetic field is written
+\begin{equation}
+\Bvec_1 = \nabla\psi\times\Bvec_0 + B_{||}\Vec{b}_0
+\end{equation}
+where $\psi$ is a normalised $A_{||}$ with units of length. Hence the parallel
+divergence can be written:
+\begin{equation}
+\nabla_{||} \equiv \Vec{b}\cdot\nabla = \Vec{b}_0\cdot\nabla - \Vec{b}_0\cdot\nabla\psi\times\nabla
+\end{equation}
+where the $B_{||}$ term is dropped because this is a higher order of $\epsilon$.
+
+\subsection{High-$\beta$ MHD closure}
+
+This is an assumption of small $\beta$, but is called ``High-$\beta$'' because it assumes $\beta \sim \epsilon$,
+rather than the Low-$\beta$ model which assumes $\beta \sim \epsilon^2$
+
+This assumption means that the parallel velocity can be dropped from the above equations. This means the
+plasma is incompressible, and hence in the pressure can never go outside the initial bounds.
+
+\note{This is not a rigorous derivation, but is intended to make sense of the equations in terms I can understand.
+For a more rigorous but highly confusing derivation see the Hazeltine textbook.}
+
+\subsubsection{Vorticity}
+
+Taking equation~\ref{eq:shearalfven} and neglecting anisotropic pressure $\Pi$, variation in mass density
+$\rho$ and the curvature term gives:
+\[
+b\cdot\left[\Curl{\Vec{f}} - 2\Vec{\kappa}\times\Vec{f}\right] \simeq \rho\frac{dU}{dt}
+\]
+where $U$ is the vorticity:
+\begin{eqnarray}
+U &\equiv& \Vec{b}\cdot\Curl{\Vec{V}} \label{eq:vorticity_def} \\
+\rho \frac{dU}{dt} &=& B^2\bvec\cdot\nabla\left(\frac{\Jpar}{B}\right) + 2\bxk P \label{eq:vorticity}
+\end{eqnarray}
+
+To first order, the perpendicular velocity is the $\Vec{E\times B}$ velocity:
+\[
+\Vec{V}\simeq\Vec{V}_E = \frac{1}{B^2}\Bvec\times\nabla\phi
+\]
+Taking the curl of this gives:
+\begin{eqnarray*}
+\Curl{\Vec{V}_E} &=& \frac{\bvec}{B}\Div{\nabla\phi} - \nabla\phi\left(\Div{\frac{\bvec}{B}}\right) + \left(\nabla\phi\cdot\nabla\right)\frac{\bvec}{B} - \left(\frac{\bvec}{B}\cdot\nabla\right)\nabla\phi \\
+&\simeq& \frac{\bvec}{B}\delp\phi
+\end{eqnarray*}
+where only the first term has been kept, and parallel derivatives neglected (flute assumption). Electrostatic potential
+can therefore be related to vorticity by:
+\begin{equation}
+U = \frac{1}{B}\delp\phi
+\label{eq:phi_solve}
+\end{equation}
+
+\subsubsection{Magnetic field}
+
+In perturbed magnetic field $\Bvec$ can be written as $\Bvec = \Curl{\Vec{A}}$. Here only the parallel component
+component is evolved, so the perturbed field is
+\begin{eqnarray*}
+\Bvec_1 &=& \Curl{\left(\bvec_0\apar\right)} = \apar\Curl{b_0} + \nabla\apar\times\bvec_0 \\
+&\simeq& \nabla\apar\times\bvec_0
+\end{eqnarray*}
+In Hazeltine, $\psi = \apar / B_0$ is used instead:
+\begin{eqnarray}
+\Bvec_1 &=& \Curl{\left(\Bvec_0\psi\right)} = \apar\Curl{\Bvec_0} + \nabla\psi\times\Bvec_0 \nonumber \\
+&\simeq& \nabla\psi\times\Bvec_0 \label{eq:psidef}
+\end{eqnarray}
+
+
+The total current is then:
+\begin{eqnarray*}
+\Jvec &=& \Jvec_0 + \frac{1}{\mu_0}\Curl{\Bvec_1} = \Jvec_0 + \frac{1}{\mu_0}\Curl{\nabla\psi\times\Bvec_0} \\
+\Curl{\nabla\psi\times\Bvec_0} &=& \nabla\psi\left(\Div{\Bvec_0}\right) - \Bvec_0 \nabla^2\psi \\
+&+& \left(\Bvec_0\cdot\nabla\right)\nabla\psi - \left(\nabla\psi\cdot\nabla\right)\Bvec_0
+\end{eqnarray*}
+The first term of this is identically zero, and only the second term is kept. 
+As before, parallel derivatives are neglected, and taking the parallel component of this equation gives
+\begin{equation}
+\Jpar = J_{||0} - \frac{1}{\mu_0}B_0\delp\psi
+\label{eq:jpar}
+\end{equation}
+
+The evolution equation for $\psi$ comes from the parallel electric field (Ohm's law). Here resistivity
+is neglected, so
+\[
+E_{||} = \bvec_0\cdot\left(-\nabla\phi - \deriv{\apar}{t}\right) = 0
+\]
+and since $\apar = \psi B_0$,
+\begin{equation}
+\deriv{\psi}{t} = -\frac{1}{B_0}\nabla_{||}\phi
+\label{eq:psievolve}
+\end{equation}
+
+The total $\bvec$ unit vector (equilibrium + perturbation) can be written
+\[
+\bvec = \frac{\Bvec_0 + \Bvec_1}{\left|\Bvec_0 + \Bvec_1\right|} \simeq \bvec_0 + \frac{\Bvec_1}{B_0}
+\]
+for small perturbations. Hence the parallel derivative becomes
+\[
+\bvec\cdot\nabla \simeq \bvec_0\cdot\nabla - \bvec_0\times\nabla\psi\cdot\nabla
+\]
+
+\subsubsection{Pressure}
+
+The only remaining equation is that for the pressure. We have used that the perpendicular velocity
+is just the $\Vec{E\times B}$ velocity $\Vec{V}_E = \left(\bvec_0\times\nabla\phi\right) / B_0$, so 
+
+\begin{equation}
+\deriv{P}{t} = -\frac{1}{B_0}\bvec_0\times\nabla\phi\cdot\nabla P
+\end{equation}
+Where $P$ is the total pressure.
+
+\subsubsection{Summary}
+\label{sec:eqsummary}
+
+The equations derived above for vorticity $U$, pressure $P$, and vector potential (ish) $\psi = \apar / B_0 $ are
+\begin{eqnarray*}
+\rho \frac{dU}{dt} &=& B^2\bvec\cdot\nabla\left(\frac{\Jpar}{B}\right) + 2\bxk P \\
+\deriv{\psi}{t} &=& -\frac{1}{B_0}\nabla_{||}\phi \\
+\deriv{P}{t} &=& -\frac{1}{B_0}\bvec_0\times\nabla\phi\cdot\nabla P \\
+U &=& \frac{1}{B_0}\delp\phi \\
+\Jpar &=& J_{||0} - \frac{1}{\mu_0}B_0\delp\psi 
+\end{eqnarray*}
+
+with everything in SI units. Splitting into equilibrium (subscript 0) and evolving (subscript 1), 
+making explicit which terms are non-linear gives:
+
+\begin{eqnarray}
+\rho_0 \deriv{U_1}{t} &=& - \frac{\rho_0}{B_0}\bvec_0\times\nabla\phi_1\cdot\nabla U_1 \nonumber \\
+&+& B_0^2\left[\bvec_0\cdot\nabla\left(\frac{J_{||1}}{B_0}\right) - \bvec_0\times\nabla\psi_1\cdot\nabla\left(\frac{J_{||0} + J_{||1}}{B_0}\right)\right] \nonumber \\
+&+& 2\bxk P_1 \\
+\deriv{\psi_1}{t} &=& -\frac{1}{B_0}\bvec_0\cdot\nabla\phi_1 \\
+\deriv{P_1}{t} &=& -\frac{1}{B_0}\bvec_0\times\nabla\phi_1\cdot\nabla\left(P_0 + P_1\right) \\
+U_1 &=& \frac{1}{B_0}\delp\phi_1 \\
+J_{||1} &=& -\frac{1}{\mu_0}B_0\delp\psi_1
+\end{eqnarray}
+
+\subsection{Normalisation}
+
+\subsubsection{Hazeltine-Meiss}
+
+Relating the above set of equations to that given in Hazeltine, define:
+\begin{eqnarray*}
+\Im &=& -\frac{\mu_0}{B_0}J_{||1} \\
+\Phi &=& \frac{\phi}{B_0} \\
+\beta &=& \frac{2\mu_0 P_0}{\Bbar^2} \\
+p &=& \frac{2\mu_0 P_1}{\Bbar^2}
+\end{eqnarray*}
+where $\Bbar$ is a constant normalisation factor.
+Note the minus sign on the perturbed current. Substituting into the vorticity equation this gives:
+\[
+\rho \frac{dU}{dt} = -\frac{B^2}{\mu_0}\bvec\cdot\nabla\Im + \frac{\Bbar^2}{\mu_0}\bxk p
+\]
+Multiplying through by $\mu_0/\Bbar^2$ and noting that the Alf\'en speed $\overline{V_A}^2 = \Bbar^2 / \mu_0\rho$
+gives the Hazeltine-Meiss vorticity equation
+\[
+\frac{1}{\overline{V_A}^2} \frac{dU}{dt} = -\frac{B^2}{\Bbar^2}\bvec\cdot\nabla\Im + \bxk p 
+\]
+The pressure equation can be re-written as
+\[
+\deriv{p}{t} + \bvec_0\times\nabla\Phi\cdot\nabla p = -\bvec_0\times\nabla\Phi\cdot\nabla\beta
+\]
+which becomes
+\[
+\frac{dp}{dt} = -\bvec_0\times\nabla\Phi\cdot\nabla\beta
+\]
+because the convective derivative can be written as
+\[
+\frac{d}{dt} = \deriv{}{t} + \bvec_0\times\nabla\Phi\cdot\nabla
+\]
+The other equations become
+\begin{eqnarray*}
+\deriv{\psi}{t} &=& -\frac{1}{B_0}\nabla_{||}B_0\Phi \\
+U &=& \delp\Phi \\
+\Im &=& \delp\psi 
+\end{eqnarray*}
+where terms like $\delp\left(1 / B_0\right)$ are neglected.
+
+\subsubsection{BOUT}
+
+Choose typical magnetic field $B_x$, density $N_{ix}$ and temperature $T_{ex}$
+to get the normalisation factors
+
+\[
+\omega_{cix} = \frac{eB_x}{m_i} \qquad C_{sx} = \sqrt{\frac{eT_{ex}}{m_i}} \qquad \rho_{sx} = C_{sx} / \omega_{cix} \qquad \beta_x = \frac{2\mu_0 N_{ix}T_{ex}}{B_x^2}
+\]
+and the normalisations
+\[
+\hat{t} = \omega_{cix} t \qquad \hat{\nabla} = \rho_{sx}\nabla \qquad \hat{B}_0 = B_0 / B_x \qquad \hat{N_i} = \frac{\rho}{N_{ix}m_i} \qquad \hat{\kappa} = \rho_{sx}\kappa
+\]
+Evolving variables normalised as (note that vorticity includes density evolution)
+\[
+\hat{A_{||}} = \frac{m_i}{m_e}\frac{A_{||}}{B_x\rho_{sx}} \qquad \hat{\omega} = \frac{\rho U B_0}{B_x N_{ix} m_i \omega_{cix}} \qquad \hat{P} = \frac{P}{eN_{ix} T_{ex}}
+\]
+and auxilliary variables
+\[
+\hat{J_{||}} = \frac{J_{||}}{eN_{ix} C_{sx}} \qquad \hat{\phi} = \frac{\phi}{T_{ex}}
+\]
+so the equations become:
+\begin{eqnarray*}
+\frac{d\hat{\omega}}{d\hat{t}} &=& \hat{B}_0^3 \mathbf{b}\cdot\hat{\nabla}\left(\frac{\hat{J_{||}}}{\hat{B}_0}\right) + 2\hat{B}_0\mathbf{b}_0\times\hat{\kappa}\cdot\hat{\nabla}\hat{P} \\
+\deriv{\hat{A}_{||}}{\hat{t}} &=& -\frac{m_i}{m_e}\mathbf{b}_0\cdot\hat{\nabla}\hat{\phi} \\
+\deriv{\hat{P}}{\hat{t}} &=& -\frac{1}{\hat{B}_0}\mathbf{b}_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P} \\
+\hat{\nabla}_\perp^2\hat{A}_{||} &=& -\frac{1}{2}\beta_x\frac{m_i}{m_e}\hat{J}_{||} \\
+\hat{\nabla}_\perp^2\hat{\phi} &=& \frac{\hat{\omega}}{\hat{N}}
+\end{eqnarray*}
+with the full parallel derivative
+\[
+\mathbf{b}\cdot\hat{\nabla} = \mathbf{b}_0\cdot\hat{\nabla} - \frac{m_e}{m_i}\frac{1}{\hat{B}_0}\mathbf{b}_0\times\hat{\nabla}\hat{A}_{||}\cdot\hat{\nabla}
+\]
+
+\subsubsection{MHD}
+\label{sec:mhdnorm}
+
+\note{This is the normalisation used in the elm\_pb code}
+
+Define typical length scale $\Lbar$, timescale $\Tbar$ and magnetic field $\Bbar$, related
+by $\overline{V_A}^2 = \Bbar^2 / \mu_0\rho = \Lbar / \Tbar$.
+
+\[
+\hat{t} = \frac{t}{\Tbar} \qquad \hat{B} = \frac{B}{\Bbar} \qquad \hat{\nabla} = \Lbar\nabla \qquad \hat{\kappa} = \Lbar\kappa
+\]
+
+Evolving variables are then normalised as:
+\[
+\hat{U} = \Tbar U \qquad \hat{\psi} = \frac{\psi}{\Lbar} \qquad \hat{P} = \frac{2\mu_0 P}{\Bbar^2}
+\]
+and auxillary variables
+\[
+\hat{\Jpar} = -\frac{\mu_0\Lbar}{B_0}\Jpar \qquad \hat{\phi} = \frac{\phi}{\overline{V_A}\Lbar B_0}
+\]
+The normalised high-$\beta$ reduced MHD equations are
+\begin{eqnarray*}
+\frac{d\hat{U}}{d\hat{t}} &=& -\hat{B}_0^2 \bvec\cdot\hat{\nabla}\hat{\Jpar} + \bvec\times\hat{\kappa}\cdot\hat{\nabla}\hat{P} \\
+\deriv{\hat{\psi}}{\hat{t}} &=& -\frac{1}{\hat{B}_0}\hat{\nabla}_{||}\left(\hat{B}_0\hat{\phi}\right) \\
+\frac{d\hat{P}_1}{d\hat{t}} &=& -\bvec_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P}_0 \\
+\frac{d}{dt} &=& \deriv{}{t} + \bvec_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla} \\
+\hat{U} = \hat{\delp}\hat{\phi}  &\qquad& \hat{\Jpar} = \hat{\delp}\hat{\psi}
+\end{eqnarray*}
+
+\subsection{Parallel velocity}
+\label{sec:parvel}
+
+In SI units
+\[
+\rho\frac{dV_{||}}{dt} = -\nabla_{||} P_1 + \mathbf{b}_0\times\nabla\psi\cdot\nabla P_0
+\]
+
+\[
+\frac{dP_1}{dt} + \frac{1}{B_0}\mathbf{b}_0\times\nabla\phi\cdot\nabla P_0 = \frac{B_0^2}{\mu_0}\frac{v_s^2}{v_A^2 + v_s^2}\left[-\frac{2}{B_0}\mathbf{b}_0\times\mathbf{\kappa}_0\cdot\nabla\phi - \nabla_{||} V_{||} + \frac{V_{||}}{B_0}\mathbf{b}_0\cdot\nabla B_0\right] 
+\]
+
+
+MHD units:
+
+\[
+2\frac{d\hat{V}_{||}}{d\hat{t}} = - \hat{\nabla}_{||} \hat{P}_1 + \mathbf{b}_0\times\hat{\nabla}\hat{\psi}\cdot\hat{\nabla}\hat{P}_0
+\]
+
+\[
+\frac{d\hat{P}_1}{dt} + \mathbf{b}_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P}_0 = 2\hat{B}_0^2 \frac{v_s^2}{v_A^2 + v_s^2}\left[-2\mathbf{b}_0\times\mathbf{\hat{\kappa}}_0\cdot\hat{\nabla}\hat{\phi} - \hat{\nabla}_{||} \hat{V}_{||} + \frac{\hat{V}_{||}}{\hat{B}_0}\mathbf{b}_0\cdot\hat{\nabla} \hat{B}_0\right] 
+\]
+
+In \file{elm\_pb.cxx}, the factor in front of the square brackets is \code{beta}:
+\[
+\beta \equiv 2\hat{B}_0^2 \frac{v_s^2}{v_A^2 + v_s^2} = \hat{B}_0^2 / \left(\frac{\hat{B}_0^2}{\gamma \hat{P}_0} + \frac{1}{2}\right)
+\]
+
+\subsection{Diamagnetic effects}
+
+When including the diamagnetic drift, the vorticity $U$ (eq.~\ref{eq:vorticity_def}) now includes the diamagnetic
+drift:
+\[
+\mathbf{V}\simeq \mathbf{V}_E + \mathbf{V}_D = \frac{1}{B^2}\mathbf{B}\times\nabla\phi + \frac{1}{enB^2}\mathbf{B}\times\nabla P
+\]
+NOTE: Using the ion drift direction. For {\bf constant density} $n$, this gives
+\begin{equation}
+U = \frac{1}{B}\delp\left(\phi + \frac{P}{en}\right)
+\label{eq:vorticity_dia}
+\end{equation}
+
+Another term is the modification to the parallel electric field {\bf CHECK}:
+\[
+\deriv{\apar}{t} = -\nabla_{||}\phi + 1.71\nabla_{||} T_e + \frac{Te}{n}\nabla_{||} n
+\]
+
+For highbeta\_reduced (MHD units), $n$ is constant (so $\nabla_{||} n = 0$), and the modified expression
+for vorticity (eq. \ref{eq:vorticity_dia}) becomes:
+\[
+\hat{U} = \hat{\delp}\left[\hat{\phi} + \left(\frac{m_i}{2e\Tbar \Bbar}\right) \hat{P} / \hat{B_0}\right]
+\]
+where the term in round brackets is called \code{dnorm}. Since $P = 2enT$ for $Te = Ti$, 
+\[
+\deriv{\hat{\psi}}{\hat{t}} = -\frac{1}{\hat{B}_0}\hat{\nabla}_{||}\left(\hat{B}_0\hat{\phi}\right) + 1.71\left(\frac{m_i}{2e\Tbar \Bbar}\right)\frac{1}{\hat{B}_0}\nabla_{||}\hat{P}/2
+\]
+
+\subsection{Plasma-vacuum interface}
+
+One issue in modelling of edge plasmas is the handling of the vacuum region,
+and the plasma-vacuum boundary. This is an active research area, so there is no
+single ``correct'' answer at the moment and it needs an introduction here.
+
+Initial simulations using BOUT++ ignored the issue and treated the entire
+domain as an ideal plasma. This made life easier, but meant that the result
+would contain currents driven in the ``vacuum'' region, which is obviously unphysical.
+Correct handling of current-driven instabilities such as peeling modes is
+very sensitive to the vacuum region, so this may be a big problem for handling these modes.
+
+The first attempt to remove these unphysical currents was to alter the evolution
+equations so that no currents could be driven in the vacuum. Taking $\delp$ of
+equation~\ref{eq:psi}, and assuming that $\nabla_{||}$ commutes with $\delp$
+(which it doesn't) gives
+\begin{equation}
+\deriv{\Jpar}{t} \simeq -\nabla_{||}\left(\frac{1}{B_0}\delp\phi\right) \simeq -\nabla_{||} U
+\label{eq:jparevolve}
+\end{equation}
+Since at the start of the simulation $U=0$ and $\nabla P=0$ in the vacuum, $\Jpar$ is
+zero for all time. Unfortunately, whilst this system does suppress currents in the vacuum,
+it also greatly increases ELM growth-rates for unknown reasons: evidently the discarded terms
+are important.
+
+Another approach, which is commonly used in other simulation codes, is to treat the
+vacuum as a resistive plasma. This is implemented here by specifying Lundquist numbers
+for the core and vacuum regions, and then using a tanh function of pressure $\Theta$ to
+produce a smooth transition between regions: 
+\begin{equation}
+\Theta = \frac{1}{2}\left[1-\tanh\left(\frac{P - P_{vac}}{\Delta P_{vac}}\right)\right]
+\label{eq:vacmask}
+\end{equation}
+where $P_{vac}$ is the pressure at the plasma-vacuum interface, and $\Delta P_{vac}$
+is the transition width. $\Theta$ is therefore $0$ in the core and $1$ in vacuum. Using this, the
+resistivity is given by
+\begin{equation}
+\eta = \eta_{vac}\Theta + \eta_{core}\left(1-\Theta\right)
+\end{equation}
+There are two problems with this method: current tends
+to diffuse from the plasma into the vacuum (making the situation worse), and the timestep
+becomes small. The second issue is the most troublesome, since the diffusion timestep
+dominates the solution, making the simulation harder to run.
+
+Modelling a vacuum region as a resistive plasma is not a particularly good approximation: in a vacuum
+magnetic fields propagate at the speed of light, rather than diffuse on resistive timescales. 
+A better model for a vacuum might be to treat the propagation of $\Bvec$ as instantaneous i.e.
+at any given time calculate the vacuum field based on only the currents in the plasma.
+This is done in BOUT++ using a relaxation process. At any given time, the solution
+$\psi\left(\mathbf{x},t\right)$ gives a current $\Jpar^{sol}$
+\[
+\Jpar^{sol} = -\frac{1}{\mu_0}B_0\delp\psi
+\]
+which may or may not include currents in the vacuum region. From this, a ``target''
+current $\Jpar^{target}$ is calculated by setting all vacuum currents to zero
+\[
+\Jpar^{target} = \Jpar^{sol} \left(1 - \Theta\right)
+\]
+This is the closest physically acceptable solution to the current result. From this, 
+a target $\psi$ can be calculated
+\[
+\psi^{target} = \nabla_\perp^{-2}\left(\mu_0 \Jpar^{target} / B_0\right)
+\]
+In the vacuum region, this is the solution which would give zero current, but simply
+setting $\psi$ to this value in the vacuum would result in an inconsistency because $\psi$ in the
+core is affected by currents in the vacuum. Instead, by making
+$\psi$ converge on the target value with a small time-constant $\tau_{jvac}$, it can evolve to a
+self-consistent state with zero current in the vacuum region:
+\[
+\deriv{\psi}{t} = -\left(1-\Theta\right)\frac{1}{B_0}\nabla_{||}\phi +  \Theta\left(\psi^{target} - \psi\right) / \tau_{jvac}
+\]
+
+
+\end{document}
