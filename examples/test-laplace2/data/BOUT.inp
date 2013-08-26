@@ -9,6 +9,8 @@ dump_format = "nc"  # NetCDF format
 
 myg = 0  # No guard cells in Y
 
+ccoef = sin(x) * gauss(x-0.5) * (1.0 + 0.5*cos(z))
+
 ####################################
 # Set mesh sizes
 [mesh]
@@ -26,3 +28,13 @@ flags = 0
 [solver2] # Options for the second Laplacian solver
 type = petsc
 flags = 0
+pctype = user      # Use another solver as preconditioner
+pcoptions = precon # Set the section to look in for options
+rightprec = true   # Switch right or left preconditioning
+
+[precon] # Options for the preconditioner
+all_terms=true
+nonuniform=true
+filter = 0.     # Must not filter solution
+flags = 49152   # set_rhs i.e. identity matrix in boundaries
+

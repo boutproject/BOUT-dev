@@ -23,14 +23,15 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
-#ifdef BOUT_HAS_PETSC_3_3
+#ifdef BOUT_HAS_PETSC
 
 #include "petsc_laplace.hxx"
 
 #include <bout/sys/timer.hxx>
 #include <boutcomm.hxx>
+#include <bout/assert.hxx>
 
-#define KSP_RICHARDSON  "richardson"
+#define KSP_RICHARDSON "richardson"
 #define KSP_CHEBYSHEV   "chebyshev"
 #define KSP_CG          "cg"
 #define KSP_GMRES       "gmres"
@@ -42,6 +43,18 @@
 #define KSP_LSQR        "lsqr"
 #define KSP_BICG        "bicg"
 #define KSP_PREONLY     "preonly"
+
+#undef __FUNCT__
+#define __FUNCT__ "laplacePCapply"
+static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
+  int ierr;
+  
+  // Get the context
+  LaplacePetsc *s;
+  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  
+  PetscFunctionReturn(s->precon(x, y));
+}
 
 LaplacePetsc::LaplacePetsc(Options *opt) : 
   Laplacian(opt),
@@ -240,8 +253,10 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   string type;
   opts->get("ksptype", type, KSP_GMRES);
   
-  if(strcasecmp(type.c_str(), KSP_RICHARDSON) == 0)     ksptype = KSPRICHARDSON;
+  if(strcasecmp(type.c_str(), KSP_RICHARDSON) == 0) ksptype = KSPRICHARDSON;
+#ifdef KSPCHEBYSHEV
   else if(strcasecmp(type.c_str(), KSP_CHEBYSHEV) == 0) ksptype = KSPCHEBYSHEV;
+#endif
   else if(strcasecmp(type.c_str(), KSP_CG) == 0)        ksptype = KSPCG;
   else if(type == "cgne")			ksptype = KSPCGNE;
   else if(type == "nash")			ksptype = KSPNASH;
@@ -251,11 +266,15 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if(type == "fgmres")			ksptype = KSPFGMRES;
   else if(type == "lgmres")			ksptype = KSPLGMRES;
   else if(type == "dgmres")			ksptype = KSPDGMRES;
+#ifdef KSPPGMRES
   else if(type == "pgmres")			ksptype = KSPPGMRES;
+#endif
   else if(strcasecmp(type.c_str(), KSP_TCQMR) == 0)     ksptype = KSPTCQMR;
   else if(strcasecmp(type.c_str(), KSP_BCGS) == 0)      ksptype = KSPBCGS;
   else if(type == "ibcgs")			ksptype = KSPIBCGS;
+#ifdef KSPFBCGS
   else if(type == "fbcgs")			ksptype = KSPFBCGS;
+#endif
   else if(type == "bcgsl")			ksptype = KSPBCGSL;
   else if(strcasecmp(type.c_str(), KSP_CGS) == 0)       ksptype = KSPCGS;
   else if(strcasecmp(type.c_str(), KSP_TFQMR) == 0)     ksptype = KSPTFQMR;
@@ -279,6 +298,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   string pctypeoption;
   opts->get("pctype", pctypeoption, "none", true);
   if (pctypeoption == "none") pctype = PCNONE;
+  else if (pctypeoption == "user") pctype = PCSHELL;
   else if (pctypeoption == "jacobi") pctype = PCJACOBI;
   else if (pctypeoption == "sor") pctype = PCSOR;
   else if (pctypeoption == "lu") pctype = PCLU;
@@ -321,7 +341,9 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if (pctypeoption == "sacusppoly") pctype = PCSACUSPPOLY;
   else if (pctypeoption == "bicgstabcusp") pctype = PCBICGSTABCUSP;
   else if (pctypeoption == "ainvcusp") pctype = PCAINVCUSP;
+#ifdef PCBDDC
   else if (pctypeoption == "bddc") pctype = PCBDDC;
+#endif
   else 
     throw BoutException("Unknown KSP preconditioner type '%s'", pctypeoption.c_str());
 
@@ -344,8 +366,28 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
       output << endl << "Using LU decompostion for direct solution of system" << endl << endl;
     }
   
+  pcsolve = NULL;
+  if(pctype == PCSHELL) {
+    // User-supplied preconditioner
+    
+    string pcoptions;
+    OPTION(opts, pcoptions, "");
+    if(pcoptions.length() == 0) {
+      output.write("WARNING: No preconditioner options specified. No preconditioning.\n");
+      // No preconditioner
+      pctype = PCNONE;
+    }else {
+      // Get options for preconditioner solver. This could be done as a sub-section
+      // of the solver e.g. opts->getSection("precon")  but BOUT.inp can't yet handle sub-sections
+      
+      OPTION(opts, rightprec, true);
+      Options *pcopts = Options::getRoot()->getSection(pcoptions);
+      pcsolve = Laplacian::create(pcopts);
+    }
+  }
+
   // Ensure that the matrix is constructed first time
-//   coefchanged = true;
+  //   coefchanged = true;
   lastflag = -1;
 }
 
@@ -364,14 +406,15 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   int y = b.getIndex();           // Get the Y index
   sol.setIndex(y);// Initialize the solution field.
   sol = 0.;
+  int ierr; // Error flag for PETSc
 
   // Determine which row/columns of the matrix are locally owned
   MatGetOwnershipRange( MatA, &Istart, &Iend );
 
   int i = Istart;
-{ Timer timer("petscsetup");
+  { Timer timer("petscsetup");
   
-//     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
+    //     if ((fourth_order) && !(lastflag&INVERT_4TH_ORDER)) throw BoutException("Should not change INVERT_4TH_ORDER flag in LaplacePetsc: 2nd order and 4th order require different pre-allocation to optimize PETSc solver");
     
   // Set Matrix Elements
 
@@ -681,35 +724,47 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 
   PC pc;
  
-  if(direct)
-    {
-      KSPGetPC(ksp,&pc);
-      PCSetType(pc,PCLU);
-      PCFactorSetMatSolverPackage(pc,"mumps");
+  if(direct) {
+    KSPGetPC(ksp,&pc);
+    PCSetType(pc,PCLU);
+    PCFactorSetMatSolverPackage(pc,"mumps");
+  }else {
+    KSPSetType( ksp, ksptype );
+    
+    if( ksptype == KSPRICHARDSON )     KSPRichardsonSetScale( ksp, richardson_damping_factor );
+#ifdef KSPCHEBYSHEV
+    else if( ksptype == KSPCHEBYSHEV ) KSPChebyshevSetEigenvalues( ksp, chebyshev_max, chebyshev_min );
+#endif
+    else if( ksptype == KSPGMRES )     KSPGMRESSetRestart( ksp, gmres_max_steps );
+    
+    KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
+    
+    if( !( flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    
+    KSPGetPC(ksp,&pc);
+    
+    PCSetType(pc, pctype);
+    if(pctype == PCSHELL) {
+      // User-supplied preconditioner function
+      PCShellSetApply(pc,laplacePCapply);
+      PCShellSetContext(pc,this);
+      if(rightprec) {
+        KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+      }else
+        KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+      //ierr = PCShellSetApply(pc,laplacePCapply);CHKERRQ(ierr);
+      //ierr = PCShellSetContext(pc,this);CHKERRQ(ierr);
+      //ierr = KSPSetPCSide(ksp, PC_RIGHT);CHKERRQ(ierr);
     }
-  else
-    {
-      KSPSetType( ksp, ksptype );
-      
-      if( ksptype == KSPRICHARDSON )     KSPRichardsonSetScale( ksp, richardson_damping_factor );
-      else if( ksptype == KSPCHEBYSHEV ) KSPChebyshevSetEigenvalues( ksp, chebyshev_max, chebyshev_min );
-      else if( ksptype == KSPGMRES )     KSPGMRESSetRestart( ksp, gmres_max_steps );
-      
-      KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
-      
-      if( !( flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
-      
-      KSPGetPC(ksp,&pc);
-      PCSetType(pc, pctype);
-      
-      KSPSetFromOptions( ksp );           
-    }
+    
+    KSPSetFromOptions( ksp );           
+  }
+  }
   
-}
-{ Timer timer("petscsolve");
-  // Solve the system
-  KSPSolve( ksp, bs, xs );
-}
+  { Timer timer("petscsolve");
+    // Solve the system
+    KSPSolve( ksp, bs, xs );
+  }
   
   KSPConvergedReason reason;
   KSPGetConvergedReason( ksp, &reason );
@@ -864,6 +919,98 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
   coef5 += Ez[x][y][z];
   }
   
+}
+
+
+void LaplacePetsc::vecToField(Vec xs, FieldPerp &f) {
+  f.allocate();
+  int i = Istart;
+  if(mesh->firstX()) 
+    {
+      for(int x=0; x<mesh->xstart; x++)
+	{
+	  for(int z=0; z<mesh->ngz-1; z++) 
+	    {
+	      PetscScalar val;
+	      VecGetValues(xs, 1, &i, &val ); 
+	      f[x][z] = val;
+	      i++; // Increment row in Petsc matrix
+	    }
+	}
+    }
+  
+  for(int x=mesh->xstart; x <= mesh->xend; x++)
+    {
+      for(int z=0; z<mesh->ngz-1; z++) 
+	{
+	  PetscScalar val;
+	  VecGetValues(xs, 1, &i, &val ); 
+	  f[x][z] = val;
+	  i++; // Increment row in Petsc matrix
+	}
+    }
+
+  if(mesh->lastX()) 
+    {
+      for(int x=mesh->xend+1; x<mesh->ngx; x++)
+	{
+	  for(int z=0;z < mesh->ngz-1; z++) 
+	    {
+	      PetscScalar val;
+	      VecGetValues(xs, 1, &i, &val ); 
+	      f[x][z] = val;
+	      i++; // Increment row in Petsc matrix
+	    }	
+	}
+    }
+  ASSERT1(i == Iend);
+}
+
+void LaplacePetsc::fieldToVec(const FieldPerp &f, Vec bs) {
+  int i = Istart;
+  if(mesh->firstX()) {
+    for(int x=0; x<mesh->xstart; x++) {
+      for(int z=0; z<mesh->ngz-1; z++) {
+        PetscScalar val = f[x][z];
+        VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+        i++; // Increment row in Petsc matrix
+      }
+    }
+  }
+  
+  for(int x=mesh->xstart; x <= mesh->xend; x++) {
+    for(int z=0; z<mesh->ngz-1; z++) {
+      PetscScalar val = f[x][z];
+      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+      i++; // Increment row in Petsc matrix
+    }
+  }
+
+  if(mesh->lastX()) {
+    for(int x=mesh->xend+1; x<mesh->ngx; x++) {
+      for(int z=0;z < mesh->ngz-1; z++) {
+        PetscScalar val = f[x][z];
+        VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
+        i++; // Increment row in Petsc matrix
+      }	
+    }
+  }
+  ASSERT1(i == Iend);
+}
+
+/// Preconditioner function
+int LaplacePetsc::precon(Vec x, Vec y) {
+  // Get field to be preconditioned
+  FieldPerp xfield;
+  vecToField(x, xfield); 
+  xfield.setIndex(sol.getIndex()); // y index stored in sol variable
+  
+  // Call the preconditioner solver
+  FieldPerp yfield = pcsolve->solve(xfield);
+
+  // Put result into y
+  fieldToVec(yfield, y);
+  return 0;
 }
 
 #endif // BOUT_HAS_PETSC_3_3

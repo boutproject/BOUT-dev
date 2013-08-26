@@ -13,17 +13,28 @@ int physics_init(bool restarting) {
   
   Options *options = Options::getRoot();
 
-  Field3D input = f.create3D("(1-gauss(x-0.5,0.2))*gauss(z-pi)");
-  Field2D a = f.create2D("gauss(x)");
-  Field2D c = f.create2D("sin(x) * gauss(x-0.5)");
+  string in, acoef, ccoef;
+  OPTION(options, in, "(1-gauss(x-0.5,0.2))*gauss(z-pi)");
+  OPTION(options, acoef, "gauss(x)");
+  OPTION(options, ccoef, "sin(x) * gauss(x-0.5)");  
+
+  Field3D input = f.create3D(in);
+  Field2D a = f.create2D(acoef);
+  Field3D c = f.create3D(ccoef);
   SAVE_ONCE3(input, a, c);
   
   // Create two solvers, using different options
-  class Laplacian *solver1 = Laplacian::create(options->getSection("solver1"));
-  class Laplacian *solver2 = Laplacian::create(options->getSection("solver2"));
+  Laplacian *solver1 = Laplacian::create(options->getSection("solver1"));
+  Laplacian *solver2 = Laplacian::create(options->getSection("solver2"));
   
+  solver1->setCoefA(a);
+  solver1->setCoefC(c);
+
+  solver2->setCoefA(a);
+  solver2->setCoefC(c);
+
   Field3D result1 = solver1->solve(input);
-  Field3D result2 = solver2->solve(input);
+  Field3D result2 = solver2->solve(input, result1);
 
   SAVE_ONCE2(result1, result2);
   

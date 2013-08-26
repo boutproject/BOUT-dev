@@ -5,7 +5,7 @@
  * Equation solved is: d*\nabla^2_\perp x + (1/c1)\nabla_perp c2\cdot\nabla_\perp x + a x = b
  *
  **************************************************************************
- * Copyright 2013 J. Buchan
+ * Copyright 2013 J. Buchanan, J. Omotani
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -30,7 +30,7 @@ class LaplacePetsc;
 #ifndef __PETSC_LAPLACE_H__
 #define __PETSC_LAPLACE_H__
 
-#ifndef BOUT_HAS_PETSC_3_3
+#ifndef BOUT_HAS_PETSC
 
 #include <boutexception.hxx>
 #include <invert_laplace.hxx>
@@ -69,24 +69,26 @@ public:
     MatDestroy( &MatA );
   }
   
-  void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/}
-  void setCoefC(const Field2D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/}
-  void setCoefC1(const Field2D &val) { C1 = val; issetC = true; }
-  void setCoefC2(const Field2D &val) { C2 = val; issetC = true; }
-  void setCoefD(const Field2D &val) { D = val; issetD = true; /*coefchanged = true;*/}
-  void setCoefEx(const Field2D &val) { Ex = val; issetE = true; /*coefchanged = true;*/}
-  void setCoefEz(const Field2D &val) { Ez = val; issetE = true; /*coefchanged = true;*/}
+  void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
+  void setCoefC(const Field2D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val);  }
+  void setCoefC1(const Field2D &val) { C1 = val; issetC = true;}
+  void setCoefC2(const Field2D &val) { C2 = val; issetC = true;}
+  void setCoefD(const Field2D &val) { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
+  void setCoefEx(const Field2D &val) { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
+  void setCoefEz(const Field2D &val) { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
 
-  void setCoefA(const Field3D &val) { A = val; /*Acoefchanged = true;*/}
-  void setCoefC(const Field3D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/}
-  void setCoefC1(const Field3D &val) { C1 = val; issetC = true; }
-  void setCoefC2(const Field3D &val) { C2 = val; issetC = true; }
-  void setCoefD(const Field3D &val) { D = val; issetD = true; /*coefchanged = true;*/}
-  void setCoefEx(const Field3D &val) { Ex = val; issetE = true; /*coefchanged = true;*/}
-  void setCoefEz(const Field3D &val) { Ez = val; issetE = true; /*coefchanged = true;*/}
-  
+  void setCoefA(const Field3D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val);}
+  void setCoefC(const Field3D &val) { C1 = val; C2 = val; issetC = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefC(val); }
+  void setCoefC1(const Field3D &val) { C1 = val; issetC = true;}
+  void setCoefC2(const Field3D &val) { C2 = val; issetC = true;}
+  void setCoefD(const Field3D &val) { D = val; issetD = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefD(val); }
+  void setCoefEx(const Field3D &val) { Ex = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEx(val); }
+  void setCoefEz(const Field3D &val) { Ez = val; issetE = true; /*coefchanged = true;*/ if(pcsolve) pcsolve->setCoefEz(val); }
+
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+
+  int precon(Vec x, Vec y); ///< Preconditioner function
 
 private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
@@ -130,6 +132,13 @@ private:
   bool fourth_order;
 
   PetscLib lib;
+  
+  bool use_precon;  // Switch for preconditioning
+  bool rightprec;   // Right preconditioning
+  Laplacian *pcsolve; // Laplacian solver for preconditioning
+  
+  void vecToField(Vec x, FieldPerp &f);        // Copy a vector into a fieldperp
+  void fieldToVec(const FieldPerp &f, Vec x);  // Copy a fieldperp into a vector
   
   #ifdef CHECK
     int implemented_flags;
