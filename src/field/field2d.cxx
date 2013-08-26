@@ -963,6 +963,7 @@ void Field2D::applyBoundary() {
 #endif
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
     (*it)->apply(*this);
+  msg_stack.pop();
 }
 
 void Field2D::applyBoundary(const string &condition) {
