@@ -23,8 +23,7 @@ Vector2D V0;
 
 Vector2D g; // Acceleration
 
-int physics_init(bool restarting)
-{
+int physics_init(bool restarting) {
   BoutReal v0_multiply;
 
   // Read initial conditions
@@ -67,8 +66,7 @@ int physics_init(bool restarting)
   return 0;
 }
 
-int physics_run(BoutReal t)
-{
+int physics_run(BoutReal t) {
   // Communicate variables
   mesh->communicate(N,P,V);
 
@@ -87,8 +85,8 @@ int physics_run(BoutReal t)
   if(include_viscosity) {
     // Add viscosity
     
-    ddt(V).y += nu*Laplacian(V.y);
-    ddt(V).z += nu*Laplacian(V.z);
+    ddt(V).y += nu*Laplace(V.y);
+    ddt(V).z += nu*Laplace(V.z);
   }
   
   // Pressure
