@@ -58,6 +58,8 @@ public:
   ~PetscLib();
   
   static void setArgs(int &c, char** &v) { pargc = &c; pargv = &v;}
+  
+  static void cleanup(); // Force cleanup
 private:
   static int count; // How many instances?
   static char help[]; // Help string
@@ -77,6 +79,8 @@ public:
   ~PetscLib() {}
   
   static void setArgs(int &c, char** &v) {}
+  
+  static void cleanup() {}
 };
 
 #endif // BOUT_HAS_PETSC

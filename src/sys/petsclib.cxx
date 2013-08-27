@@ -34,5 +34,16 @@ PetscLib::~PetscLib() {
   }
 }
 
+void PetscLib::cleanup() {
+  if(count == 0)
+    return; // Either never initialised, or already cleaned up
+
+  output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
+  PetscLogEventEnd(USER_EVENT,0,0,0,0);
+  PetscFinalize();
+  
+  count = 0; // ensure that finalise is not called again later
+}
+
 #endif // BOUT_HAS_PETSC
 
