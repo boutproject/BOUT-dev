@@ -29,12 +29,10 @@ flags = 0
 type = petsc
 flags = 0
 pctype = user      # Use another solver as preconditioner
-pcoptions = precon # Set the section to look in for options
 rightprec = true   # Switch right or left preconditioning
 
-[precon] # Options for the preconditioner
-all_terms=true
-nonuniform=true
-filter = 0.     # Must not filter solution
-flags = 49152   # set_rhs i.e. identity matrix in boundaries
-
+[solver2:precon] # Options for the preconditioner 
+all_terms  = true
+nonuniform = true
+filter     = 0.     # Must not filter solution
+flags      = 49152  # set_rhs i.e. identity matrix in boundaries

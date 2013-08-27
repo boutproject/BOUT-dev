@@ -169,7 +169,7 @@ void Options::get(const string &key, string &val, const string &def, bool log) {
 
 Options* Options::getSection(const string &name) {
   if(name.empty()) {
-    return NULL;
+    return this;
   }
   map<string, Options*>::iterator it(sections.find(lowercase(name)));
   if(it != sections.end())

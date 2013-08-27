@@ -16,8 +16,8 @@ shell("make > make.log")
 exefile = "./test_delp2"
 
 # List of settings to apply
-settings = ["mxg=2 mesh_nx=36", 
-            "mxg=1 mesh_nx=34"]
+settings = ["mxg=2 mesh:nx=36", 
+            "mxg=1 mesh:nx=34"]
 
 
 success = True

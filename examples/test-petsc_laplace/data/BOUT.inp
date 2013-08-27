@@ -15,11 +15,7 @@ second=C4
 first=C4
 second=C4
 
-[petscprecon]
-all_terms=true
-nonuniform=true
-filter = 0.
-flags = 49152
+#############################################
 
 [petsc2nd]
 type=petsc
@@ -31,9 +27,17 @@ maxits=1000
 
 gmres_max_steps = 300
 
-pctype = user #sor
-rightprec=true
-pcoptions=petscprecon
+pctype = user    # Supply a second solver as a preconditioner
+rightprec=true   # Right precondition
+
+[petsc2nd:precon] # Options for the preconditioning solver
+                  # Leave default type (tri or spt)
+all_terms  = true
+nonuniform = true
+filter     = 0.    # Must not filter
+flags      = 49152 # Identity in boundary
+
+#############################################
 
 [petsc4th]
 type=petsc
@@ -44,11 +48,18 @@ include_yguards=false
 maxits=1000
 fourth_order=true
 
-gmres_max_steps = 300
+gmres_max_steps = 30
 
-pctype = user #sor
+pctype = user
 rightprec=true
-pcoptions = petscprecon
+
+[petsc4th:precon]
+all_terms  = true
+nonuniform = true
+filter     = 0.
+flags      = 49152
+
+#############################################
 
 [SPT]
 #type=spt

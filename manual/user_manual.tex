@@ -1512,6 +1512,11 @@ finally = "some text"   # a string
 \end{lstlisting}
 \note{Options are NOT case-sensitive: \code{TwistShift} and \code{twistshift} are the same variable}
 
+Subsections can also be used, separated by colons ':', e.g.
+\begin{lstlisting}[language=bash,numbers=none]
+[section:subsection]
+\end{lstlisting}
+
 Have a look through the examples to see how the options are used.
 
 \subsection{Command line options}
@@ -1528,13 +1533,13 @@ torus to simulate (ZPERIOD):
 \end{verbatim}
 Remember {\bf no} spaces around the '=' sign. Like the BOUT.inp file, setting names are not case sensitive.
 
-Sections are currently separated by underscores '\_', so to set the solver type (section~\ref{sec:timeoptions})
+Sections are separated by colons ':', so to set the solver type (section~\ref{sec:timeoptions})
 you can either put this in BOUT.inp:
 \begin{verbatim}
 [solver]
 type = rk4
 \end{verbatim}
-or put \lstinline!solver_type=rk4! on the command line. This capability is used in many test suite cases
+or put \lstinline!solver:type=rk4! on the command line. This capability is used in many test suite cases
 to change the parameters for each run.
 
 \subsection{General options}
@@ -1623,16 +1628,16 @@ grid = "data/cbm18_8_y064_x260.pdb"
 BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
 and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
 
-The solver library used is set using the \code{solver\_type} option, so either in BOUT.inp:
+The solver library used is set using the \code{solver:type} option, so either in BOUT.inp:
 \begin{lstlisting}[language=bash,numbers=none]
 [solver]
 type = rk4  # Set the solver to use
 \end{lstlisting}
-or on the command line by adding \code{solver\_type=pvode} for example:
+or on the command line by adding \code{solver:type=pvode} for example:
 \begin{lstlisting}[language=bash,numbers=none]
-mpirun -np 4 ./2fluid solver_type=rk4
+mpirun -np 4 ./2fluid solver:type=rk4
 \end{lstlisting}
-{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver\_type =pvode} won't work.
+{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver:type =pvode} won't work (probably).
 Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
 options needed to make the solver available.
 \begin{table}[htb!]

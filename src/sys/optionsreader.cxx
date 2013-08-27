@@ -97,11 +97,10 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       if(!startdash) {
         // Only split into sections if no dash at start
         size_t scorepos;
-        if((scorepos = key.find_first_of("_")) != string::npos) {
+        while((scorepos = key.find_first_of(":")) != string::npos) {
           // sub-section
           string section = key.substr(0,scorepos);
           key = trim(key.substr(scorepos+1));
-          
           options = options->getSection(section);
         }
       }

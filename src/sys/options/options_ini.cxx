@@ -5,8 +5,10 @@
  * File is an ini file with sections
  * [section]
  * and variables as
- * name = string ; comment
+ * name = string # comment
  *
+ * [section:subsection]  # Sub-sections separated by colons. Arbitrary depth.
+ * 
  * ChangeLog
  * =========
  *
@@ -51,20 +53,17 @@
 #include <boutexception.hxx>
 #include "options_ini.hxx"
 
-OptionINI::OptionINI()
-{
+OptionINI::OptionINI() {
 }
 
-OptionINI::~OptionINI()
-{
+OptionINI::~OptionINI() {
 }
 
 /**************************************************************************
  * Read input file
  **************************************************************************/
 
-void OptionINI::read(Options *options, const string &filename)
-{
+void OptionINI::read(Options *options, const string &filename) {
   ifstream fin;
   fin.open(filename.c_str());
 
@@ -84,15 +83,26 @@ void OptionINI::read(Options *options, const string &filename)
       endpos   = buffer.find_last_of("]");
 
       if (startpos != string::npos) {
+        // A section header
         if (endpos == string::npos) throw BoutException("\t'%s': Missing ']'\n\tLine: %s", filename.c_str(), buffer.c_str());
 
         buffer = trim(buffer, "[]");
 
         if(buffer.empty()) throw BoutException("\t'%s': Missing section name\n\tLine: %s", filename.c_str(), buffer.c_str());
-
-        section = options->getSection(buffer);
+        
+        section = options;
+        size_t scorepos;
+        while((scorepos = buffer.find_first_of(":")) != string::npos) {
+          // sub-section
+          string sectionname = trim(buffer.substr(0,scorepos));
+          buffer = trim(buffer.substr(scorepos+1));
+          
+          section = section->getSection(sectionname);
+        }
+        section = section->getSection(buffer);
       } else {
-
+        // A key=value pair
+        
         string key, value;
         // Get a key = value pair
         parse(buffer, key, value);
@@ -110,8 +120,7 @@ void OptionINI::read(Options *options, const string &filename)
  **************************************************************************/
 
 // Returns the next useful line, stripped of comments and whitespace
-string OptionINI::getNextLine(ifstream &fin)
-{
+string OptionINI::getNextLine(ifstream &fin) {
   string line;
 
   getline(fin, line);

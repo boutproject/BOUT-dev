@@ -370,20 +370,10 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   if(pctype == PCSHELL) {
     // User-supplied preconditioner
     
-    string pcoptions;
-    OPTION(opts, pcoptions, "");
-    if(pcoptions.length() == 0) {
-      output.write("WARNING: No preconditioner options specified. No preconditioning.\n");
-      // No preconditioner
-      pctype = PCNONE;
-    }else {
-      // Get options for preconditioner solver. This could be done as a sub-section
-      // of the solver e.g. opts->getSection("precon")  but BOUT.inp can't yet handle sub-sections
-      
-      OPTION(opts, rightprec, true);
-      Options *pcopts = Options::getRoot()->getSection(pcoptions);
-      pcsolve = Laplacian::create(pcopts);
-    }
+    OPTION(opts, rightprec, true); // Right preconditioning by default
+    
+    // Options for preconditioner are in a subsection
+    pcsolve = Laplacian::create(opts->getSection("precon"));
   }
 
   // Ensure that the matrix is constructed first time

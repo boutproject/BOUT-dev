@@ -13,11 +13,13 @@ int physics_init(bool restarting) {
   
   Options *options = Options::getRoot();
 
+  // Read strings containing coefficients
   string in, acoef, ccoef;
   OPTION(options, in, "(1-gauss(x-0.5,0.2))*gauss(z-pi)");
   OPTION(options, acoef, "gauss(x)");
   OPTION(options, ccoef, "sin(x) * gauss(x-0.5)");  
 
+  // Create the coefficients
   Field3D input = f.create3D(in);
   Field2D a = f.create2D(acoef);
   Field3D c = f.create3D(ccoef);
