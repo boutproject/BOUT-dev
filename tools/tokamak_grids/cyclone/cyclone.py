@@ -56,7 +56,7 @@ dr = r_wid * rho_i       # Width of domain [m]
 theta = 2.*pi * arange(0,float(ny)) / float(ny)
 
 Rxy = zeros([nx, ny])
-Zxy = Rxy
+Zxy = Rxy.copy()
 for i in range(ny):
     Rxy[:,i] = Rmaj - rminor*cos(theta[i])
     Zxy[:,i] = rminor * sin(theta[i])
