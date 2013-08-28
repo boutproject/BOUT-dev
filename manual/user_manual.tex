@@ -1461,6 +1461,29 @@ Ni = collect("Ni")  # Collect the variable "Ni"
 There are Matlab routines for collecting data, showing animations, and performing some basic analysis.
 See the \file{tools/matlablib/} directory and \file{README.txt} file.
 
+\subsection{Mathematica routines}
+
+A package to read BOUT++ output data into Mathematica is in \file{tools/mathematicalib}. 
+To read data into Mathematica, first add this directory to Mathematica's path by putting
+\begin{verbatim}
+   AppendTo[$Path,"<full_path_to_BOUT>/tools/mathematicalib"]
+\end{verbatim}
+in your Mathematica startup file (usually \lstinline!\$HOME/.Mathematica/Kernel/init.m!). To use
+the package, call
+\begin{verbatim}
+   Import["BoutCollect.m"]
+\end{verbatim}
+from inside Mathematica. Then you can use e.g.
+\begin{verbatim}
+   f=BoutCollect[variable,path->"data"]
+\end{verbatim}
+or
+\begin{verbatim}
+   f=BoutCollect[variable,path->"data"]
+\end{verbatim}
+'\lstinline!bc!' is a shorthand for '\lstinline!BoutCollect!'. All options supported by the Python \lstinline!collect()!
+function are included, though Info does nothing yet.
+
 \subsection{Octave routines}
 
 There is minimal support for reading data into Octave, which has been tested on
@@ -3101,8 +3124,8 @@ int GasCompress::rhs(BoutReal t) {
   ...
 }
 \end{lstlisting}
-To convert simple physics models, just rename \lstinline!physics\_init! to \lstinline!YourModel::init!,
-and \lstinline!physics\_run! to \lstinline!YourModel::run!. 
+To convert simple physics models, just rename \lstinline!physics_init! to \lstinline!YourModel::init!,
+and \lstinline!physics_run! to \lstinline!YourModel::run!. 
 
 Finally, you need to create a \lstinline!main()! function for your code. The easiest way to do this
 is to use the macro \lstinline!BOUTMAIN!:
