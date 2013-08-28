@@ -16,7 +16,7 @@ Module[
 	Info=OptionValue[info];
 	Prefix=OptionValue[prefix];
 	varnameissymbol=False;
-	If[ValueQ[varname],1,varname=SymbolName[varname];varnameissymbol=True];
+	If[ValueQ[varname] || StringQ[varname],1,varname=SymbolName[varname];varnameissymbol=True];
 	If[StringQ[varname],1,Print["Variable name error"];Return[]];
 	files=FileNames[StringJoin[Prefix,"*.nc"],Path];
 	nfiles=Length[files];
@@ -42,6 +42,7 @@ Module[
 	];
 	dimensions=Import[files[[1]],{"Dimensions",position}];
 	If[nfiles==1,
+		data=Import[files[[1]],{"Data",position}];
 		Switch[Length[dimensions],
 			0,1,
 			1,data=data[[ts;;te]],
@@ -55,8 +56,8 @@ Module[
 		]
 	,
 		Switch[Length[dimensions],
-			0,1,
-			1,data=data[[ts;;te]],
+			0,data=Import[files[[1]],{"Data",position}],
+			1,data=Import[files[[1]],{"Data",position}][[ts;;te]],
 			2,data={};
 				Do[
 					tempdata={{}};
