@@ -19,16 +19,16 @@
 Field2D Jpar0, Te0, Ni0;
 
 // 3D evolving fields
-Field3D U, Apar;
+Field3D Upar, Apar;
 
 // Derived 3D variables
-Field3D phi, jpar;
+Field3D Phi, Jpar;
 
-// External coil field
-Field3D Apar_coil;
+// External fields
+Field3D Apar_ext, Jpar_ext, Phi0_ext, Upar0_ext;
 
 // Metric coefficients
-Field2D Rxy, Bpxy, Btxy, hthe;
+Field2D Rxy, Bpxy, Btxy, hthe, Bxy;
 
 // Constants
 const BoutReal MU0 = 4.0e-7*PI;
@@ -54,6 +54,8 @@ bool parallel_lc;
 bool include_jpar0;
 int jpar_bndry;
 
+void smooth_bndry(Field3D f, int bndry = 2);
+void set_bndry(Field3D f, BoutReal val=0.0, int bndry=2);
 int precon(BoutReal t, BoutReal cj, BoutReal delta); // Preconditioner
 InvertPar *inv; // Parallel inversion class used in preconditioner
 
@@ -69,6 +71,7 @@ int physics_init(bool restarting) {
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
   mesh->get(mesh->Bxy,  "Bxy");
+  Bxy=mesh->Bxy;
   
   // Read some parameters
   Options *globalOptions = Options::getRoot();
@@ -153,6 +156,7 @@ int physics_init(bool restarting) {
   Bpxy /= Bnorm;
   Btxy /= Bnorm;
   mesh->Bxy /= Bnorm;
+  Bxy /= Bnorm;
   
   // Plasma quantities
   Jpar0 /= Nenorm*Charge*Cs;
@@ -178,27 +182,40 @@ int physics_init(bool restarting) {
   mesh->geometry();
 
   // Tell BOUT++ which variables to evolve
-  SOLVE_FOR2(U, Apar);
+  SOLVE_FOR2(Upar, Apar);
   
   // Set boundary conditions
-  jpar.setBoundary("jpar");
-  phi.setBoundary("phi");
+  Jpar.setBoundary("Jpar");
+  Phi.setBoundary("Phi");
   
   // Add any other variables to be dumped to file
-  SAVE_REPEAT2(phi, jpar);
+  SAVE_REPEAT2(Phi, Jpar);
   SAVE_ONCE(Jpar0);
   
-  // Generate external field
-  
-  initial_profile("Apar_coil", Apar_coil);
-  SAVE_ONCE(Apar_coil);
+  // Generate external fields
+  Apar_ext=0;
+  Jpar_ext=0;
+  initial_profile("Apar_ext", Apar_ext);
+  Jpar_ext = -Delp2(Apar_ext);
+  set_bndry(Jpar_ext,0.0,2);
+  // Use vacuum field if requested
+  mesh->communicate(Apar_ext,Jpar_ext);
+  SAVE_ONCE2(Apar_ext,Jpar_ext);
+
+  Phi0_ext=0;
+  Upar0_ext=0;
+  initial_profile("Phi0_ext", Phi0_ext);
+  Upar0_ext = -Delp2(Phi0_ext)/Bxy;
+  set_bndry(Upar0_ext,0.0,2);
+  mesh->communicate(Phi0_ext,Upar0_ext);
+  SAVE_ONCE2(Phi0_ext,Upar0_ext);
 
   // Give the solver the preconditioner function
   solver->setPrecon(precon);
   // Initialise parallel inversion class
   inv = InvertPar::Create();
   inv->setCoefA(1.0);
-  U.setBoundary("U");
+  Upar.setBoundary("Upar");
   Apar.setBoundary("Apar");
   
   return 0;
@@ -209,14 +226,14 @@ const Field3D Grad_parP_LtoC(const Field3D &f) {
   if(parallel_lc) {
     result = Grad_par_LtoC(f);
     if(nonlinear) {
-      result -= beta_hat * bracket(Apar_coil+Apar, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext+Apar, f, BRACKET_ARAKAWA);
     }else
-      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
   }else {
     if(nonlinear) {
-      result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
     }else {
-      result = Grad_parP(Apar_coil*beta_hat, f);
+      result = Grad_parP(Apar_ext*beta_hat, f);
     }
   }
   return result;
@@ -227,15 +244,15 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
   if(parallel_lc) {
     result = Grad_par_CtoL(f);
     if(nonlinear) {
-      result -= beta_hat * bracket(Apar + Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar + Apar_ext, f, BRACKET_ARAKAWA);
     }else {
-      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
     }
   }else {
     if(nonlinear) {
-      result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
     }else {
-      result = Grad_parP(Apar_coil*beta_hat, f);
+      result = Grad_parP(Apar_ext*beta_hat, f);
     }
   }
   return result;
@@ -244,54 +261,42 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
 int physics_run(BoutReal t) {
   // Solve EM fields
 
-  // U = (1/B) * Delp2(phi)
-  phi = invert_laplace(mesh->Bxy*U, phi_flags);
-  phi.applyBoundary(); // For target plates only
+  // Upar = (1/B) * Delp2(Phi)
+  Phi = invert_laplace(Bxy*Upar, phi_flags);
+  Phi.applyBoundary(); // For target plates only
   
-  mesh->communicate(U, phi, Apar);
+  mesh->communicate(Upar, Phi, Apar);
   
-  jpar = -Delp2(Apar);
-  jpar.applyBoundary();
-  mesh->communicate(jpar);
+  Jpar = -Delp2(Apar+Apar_ext); // Jpar includes external current
+  Jpar.applyBoundary();
+  mesh->communicate(Jpar);
   
-  if(jpar_bndry > 0) {
-    // Boundary in jpar
-    if(mesh->firstX()) {
-      for(int i=jpar_bndry;i>=0;i--)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
-	    jpar[i][j][k] = jpar[i+1][j][k];
-	  }
-    }
-    if(mesh->lastX()) {
-      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
-	    jpar[i][j][k] = jpar[i-1][j][k];
-	  }
-    }
-  }
+///  if(jpar_bndry > 0) 
+///    smooth_bndry(Jpar,jpar_bndry);
 
   // VORTICITY
-  ddt(U) = SQ(mesh->Bxy)*Grad_parP_LtoC(jpar/mesh->Bxy);
+  ddt(Upar) = SQ(Bxy)*Grad_parP_LtoC(Jpar/Bxy);
 
   if(include_jpar0) {
-   ddt(U) -= SQ(mesh->Bxy)*beta_hat * bracket(Apar+Apar_coil, Jpar0/mesh->Bxy, BRACKET_ARAKAWA);
+   ddt(Upar) -= SQ(Bxy)*beta_hat * bracket(Apar+Apar_ext, Jpar0/Bxy, BRACKET_ARAKAWA);
   }
-  
+
+    //ExB advection
+  ddt(Upar) -= bracket(Phi0_ext, Upar, bm);   
+ // ddt(Upar) -= bracket(Phi, Upar0_ext, bm);  
   if(nonlinear) {
-    ddt(U) -= bracket(phi, U, bm); // ExB advection
+    ddt(Upar) -= bracket(Phi, Upar, bm);  
   }
-  
+    //Viscosity
   if(mu > 0.)
-    ddt(U) += mu*Delp2(U);
+    ddt(Upar) += mu*Delp2(Upar);
 
   // APAR
-  
-  ddt(Apar) = -Grad_parP_CtoL(phi) / beta_hat;
-  
+ //   ddt(Apar) = -Grad_parP_CtoL(Phi) / beta_hat;
+    ddt(Apar) = -Grad_parP_CtoL(Phi+Phi0_ext) / beta_hat;
+
   if(eta > 0.)
-    ddt(Apar) -= eta*jpar / beta_hat;
+    ddt(Apar) -= eta*Jpar / beta_hat;
 
   return 0;
 }
@@ -307,38 +312,62 @@ int physics_run(BoutReal t) {
  *********************************************************/
 int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   mesh->communicate(ddt(Apar));
-  Field3D Jp = -Delp2(ddt(Apar));
+  Field3D Jp;
+  
+  Jp = -Delp2(ddt(Apar));
   mesh->communicate(Jp);
 
-  if(jpar_bndry > 0) {
-    // Boundary in jpar
-    if(mesh->firstX()) {
-      for(int i=jpar_bndry;i>=0;i--)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
-	    Jp[i][j][k] = Jp[i+1][j][k];
-	  }
-    }
-    if(mesh->lastX()) {
-      for(int i=mesh->ngx-jpar_bndry-1;i<mesh->ngx;i++)
-	for(int j=0;j<mesh->ngy;j++)
-	  for(int k=0;k<mesh->ngz-1;k++) {
-	    Jp[i][j][k] = Jp[i-1][j][k];
-	  }
-    }
-  }
+///  if(jpar_bndry > 0)
+///    smooth_bndry(Jp,jpar_bndry);
   
-  Field3D U1 = ddt(U) + gamma*SQ(mesh->Bxy)*Grad_par_LtoC(Jp/mesh->Bxy);
+  Field3D Upar1 = ddt(Upar) + gamma*SQ(Bxy)*Grad_par_LtoC(Jp/Bxy);
   
-  inv->setCoefB(-SQ(gamma*mesh->Bxy)/beta_hat);
-  ddt(U) = inv->solve(U1);
-  ddt(U).applyBoundary();
+  inv->setCoefB(-SQ(gamma*Bxy)/beta_hat);
+  ddt(Upar) = inv->solve(Upar1);
+  ddt(Upar).applyBoundary();
   
-  Field3D phip = invert_laplace(mesh->Bxy*ddt(U), phi_flags);
-  mesh->communicate(phip);
+  Field3D Phip = invert_laplace(Bxy*ddt(Upar), phi_flags);
+  mesh->communicate(Phip);
   
-  ddt(Apar) = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(phip);
+  ddt(Apar) = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(Phip);
   ddt(Apar).applyBoundary();
 
   return 0;
 }
+
+void smooth_bndry(Field3D f, int bndry)
+{
+    if(mesh->firstX()) {
+      for(int i=bndry;i>=0;i--)
+	  for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    f[i][j][k] = f[i+1][j][k];
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-bndry-1;i<mesh->ngx;i++)
+	  for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    f[i][j][k] = f[i-1][j][k];
+	  }
+    }
+}
+
+void set_bndry(Field3D f, BoutReal val, int bndry)
+{
+    if(mesh->firstX()) {
+      for(int i=bndry;i>=0;i--)
+	  for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    f[i][j][k] = val;
+	  }
+    }
+    if(mesh->lastX()) {
+      for(int i=mesh->ngx-bndry-1;i<mesh->ngx;i++)
+	  for(int j=0;j<mesh->ngy;j++)
+	  for(int k=0;k<mesh->ngz-1;k++) {
+	    f[i][j][k] = val;
+	  }
+    }
+}
+
