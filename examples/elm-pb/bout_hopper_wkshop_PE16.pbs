@@ -1,0 +1,10 @@
+#PBS -q regular
+#PBS -l mppwidth=16
+#PBS -l mppnppn=12
+#PBS -l walltime=0:30:00
+#PBS -l advres=bout.xxxx
+#PBS -j eo
+#PBS -V
+
+cd $PBS_O_WORKDIR
+aprun -n 16 -N 12 -S3 ./elm_pb
