@@ -1,0 +1,126 @@
+# settings file for BOUT++
+#
+# Blob simulation in a slab
+#
+
+# settings used by the core code
+
+NOUT = 50    # number of time-steps
+TIMESTEP = 1  # time between output
+MXG = 2
+MYG = 2
+
+MZ = 129      # number of points in z direction (2^n + 1)
+ZMAX = 160   # Chosen to match with dx
+dump_format = "nc" # Output format. nc = NetCDF
+
+non_uniform = false
+
+[mesh]
+
+nx = 132
+ny = 2
+
+dx = 8.0
+dy = 10000 #this is reset in the physics module to be independant of rho_s
+
+ixseps1 = -1
+ixseps2 = -1
+
+##################################################
+# derivative methods
+
+[ddx]
+
+first = C2  
+second = C2
+upwind = W3
+
+[ddy]
+
+first = C2
+second = C2
+upwind = W3
+
+[ddz]
+
+first = FFT
+second = FFT
+upwind = W3
+
+###################################################
+# Time-integration solver
+
+[solver]
+
+ATOL = 1.0e-10  # absolute tolerance
+RTOL = 1.0e-5   # relative tolerance
+mxstep = 10000  # Maximum internal steps per output
+
+###################################################
+# Electrostatic potential solver
+
+[phiSolver]
+type = petsc  # Needed if Boussinesq = false
+pctype = user  # Preconditioning type
+
+flags = 0  # inversion flags for phi
+             # 0  = Zero value
+	     # 10 = Zero gradient AC inner & outer
+	     # 15 = Zero gradient AC and DC 
+	     # 768 = Zero laplace inner & outer 
+
+[phiSolver:precon]  # Preconditioner (if pctype=user)
+filter     = 0.     # Must not filter solution
+flags      = 49152  # set_rhs i.e. identity matrix in boundaries
+
+##################################################
+# general settings for the model
+
+[model]
+
+Te0 = 5    # Electron Temperature (eV)
+
+n0 = 2e18  # Background plasma density (m^-3)
+
+compressible = false  # Compressibility? 
+
+sheath_limited = true # Sheath Limited?
+
+boussinesq = false  # Boussinesq approximation (no perturbed n in vorticity)
+
+D_vort = 0  # Viscosity
+D_n = 0     # Diffusion
+  
+R_c = 1.5  # Radius of curvature (m) 
+
+# settings for individual variables
+# The section "All" defines default settings for all variables
+# These can be overridden for individual variables in
+# a section of that name.
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# boundary conditions (see boundary.h for values)
+# 0 = none applied
+# 1 = zero value
+# 2 = zero gradient
+# 3 = laplacian
+# 4 = laplacian with zero-gradient
+
+bndry_all = neumann # Zero-gradient on all boundaries
+
+[Density]
+scale = 1.0 # size of perturbation
+
+function = 1 + 0.27*gauss(x-0.25, 0.08333)*gauss(z-pi,0.52)
+
+[Vorticity]
+
+[phi]
+bndry_xin = none
+bndry_xout = none
+
+[Jpar]
+
