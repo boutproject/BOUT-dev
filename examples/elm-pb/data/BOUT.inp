@@ -17,10 +17,6 @@ TwistOrder = 0      # order of twist-shift interpolation
 MZ = 17             # number of points in z direction (2^n + 1)
 ZPERIOD = 15        # Fraction of a torus to simulate
 
-MXG = 2
-MYG = 2
-
-#grid = "data/cbm18_8_y064_x516_090309.nc"  # Grid file
 grid = "cbm18_dens8.grid_nx68ny64.nc"  # Grid file
 
 dump_format = "nc"      # Dump file format. "nc" = NetCDF, "pdb" = PDB
@@ -117,11 +113,26 @@ diamag = true         # Include diamagnetic effects?
 diamag_grad_t = false  # Include Grad_par(Te) term in Psi equation
 diamag_phi0 = true    # Balance ExB against Vd for stationary equilibrium
 
+##################################################
+# BRACKET_METHOD flags:
+# 0:BRACKET_STD; derivative methods will be determined 
+#   by the choices C or W in this input file
+# 1:BRACKET_SIMPLE; 2:BRACKET_ARAKAWA; 3:BRACKET_CTU.
+
+bm_exb_flag = 0
+bm_mag_flag = 0
+##################################################################
+withflow = false     # With flow or not
+D_0 = 130000        # differential potential
+D_s = 20            # shear parameter
+K_H_term = false    # Contain K-H term
+sign = -1           # flow direction    
+x0 = 0.855          # peak location
+D_min = 3000        #constant	 
+##################################################################
+
 eHall = false         # Include electron pressue effects in Ohm's law?
 AA    = 2.0          # ion mass in units of proton mass 
-
-Vt0 = 0.0    # Equilibrium toroidal rotation normalized to Alfven velocity
-Vp0 =  0.0    # Equilibrium poloidal rotation normalized to Alfven velocity
 
 noshear = false        # zero all shear
 
@@ -273,6 +284,7 @@ bndry_all = dirichlet # Default to zero-value
 scale = 1.0e-5
 
 [P]  # pressure
+bndry_core = neumann
 #scale = 1.0e-5
 
 [Psi]  # Vector potential
