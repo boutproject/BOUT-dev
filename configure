@@ -2971,7 +2971,7 @@ fi
     echo "   Libraries: $MUMPS_LIB"
 
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
-    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lblas -lparmetis -lmetis -lptscotch -lptesmumps"
+    EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
   fi
   echo
