@@ -1,5 +1,3 @@
-# DALF3 model settings
-
 ##################################################
 # Global settings used by the core code
 
@@ -172,3 +170,4 @@ bndry_xout = none
 
 function = x*x*sin(3*y - z)
 scale = 1.e-3
+
