@@ -17,7 +17,7 @@ moment_xyzt,jp,rms=rmsjp,dc=dcjp
 u=collect(path='data',var='u')
 moment_xyzt,u,rms=rmsu,dc=dcu
 
-g=file_import("data/cbm18_dens8.grid_nx68ny64.nc")
+g=file_import("cbm18_dens8.grid_nx68ny64.nc")
 
 gr=deriv(alog(rmsp[42,32,*]))
 psn=(g.psixy[*,32]-g.psi_axis)/(g.psi_bndry-g.psi_axis)
