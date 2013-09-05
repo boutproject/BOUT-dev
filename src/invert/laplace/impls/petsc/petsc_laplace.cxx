@@ -986,6 +986,9 @@ void LaplacePetsc::fieldToVec(const FieldPerp &f, Vec bs) {
     }
   }
   ASSERT1(i == Iend);
+  
+  VecAssemblyBegin(bs);
+  VecAssemblyEnd(bs);
 }
 
 /// Preconditioner function
