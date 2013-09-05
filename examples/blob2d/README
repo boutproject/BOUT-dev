@@ -1,8 +1,6 @@
-This module allows 2D or 3D simulations of blobs in a slab geometry with curvature
+This module allows 2D simulations of blobs in a slab geometry with curvature
 
 The model is gyro-bohm normalized (length scales normalized to rho_s, time normalized to Omega_i)
 
-Sheath boundary conditions are implemented. To run in 2D set ny = 2 in the input file. 
-To set parallel length scale use dy. 
 
 
