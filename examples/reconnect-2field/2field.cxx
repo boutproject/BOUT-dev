@@ -225,15 +225,17 @@ const Field3D Grad_parP_LtoC(const Field3D &f) {
   Field3D result;
   if(parallel_lc) {
     result = Grad_par_LtoC(f);
+    if(nonlinear) {
+      result -= beta_hat * bracket(Apar_ext+Apar, f, BRACKET_ARAKAWA);
+    }else
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
   }else {
-    result = Grad_par(f);
+    if(nonlinear) {
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
+    }else {
+      result = Grad_parP(Apar_ext*beta_hat, f);
+    }
   }
-  if(nonlinear) {
-    result -= beta_hat * bracket(Apar_ext+Apar, f, BRACKET_ARAKAWA);
-  }else {
-    result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
-  }
-
   return result;
 }
 
@@ -241,16 +243,18 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
   Field3D result;
   if(parallel_lc) {
     result = Grad_par_CtoL(f);
+    if(nonlinear) {
+      result -= beta_hat * bracket(Apar + Apar_ext, f, BRACKET_ARAKAWA);
+    }else {
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
+    }
   }else {
-    result = Grad_par(f);
+    if(nonlinear) {
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
+    }else {
+      result = Grad_parP(Apar_ext*beta_hat, f);
+    }
   }
-  
-  if(nonlinear) {
-    result -= beta_hat * bracket(Apar_ext+Apar, f, BRACKET_ARAKAWA);
-  }else {
-    result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
-  }
-
   return result;
 }
 
@@ -277,18 +281,19 @@ int physics_run(BoutReal t) {
    ddt(Upar) -= SQ(Bxy)*beta_hat * bracket(Apar+Apar_ext, Jpar0/Bxy, BRACKET_ARAKAWA);
   }
 
-  // ExB advection
+    //ExB advection
   ddt(Upar) -= bracket(Phi0_ext, Upar, bm);   
  // ddt(Upar) -= bracket(Phi, Upar0_ext, bm);  
   if(nonlinear) {
     ddt(Upar) -= bracket(Phi, Upar, bm);  
   }
-  // Viscosity
+    //Viscosity
   if(mu > 0.)
     ddt(Upar) += mu*Delp2(Upar);
 
   // APAR
-  ddt(Apar) = -Grad_parP_CtoL(Phi+Phi0_ext) / beta_hat;
+ //   ddt(Apar) = -Grad_parP_CtoL(Phi) / beta_hat;
+    ddt(Apar) = -Grad_parP_CtoL(Phi+Phi0_ext) / beta_hat;
 
   if(eta > 0.)
     ddt(Apar) -= eta*Jpar / beta_hat;
@@ -325,7 +330,7 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   mesh->communicate(Phip);
   
   ddt(Apar) = ddt(Apar) - (gamma / beta_hat)*Grad_par_CtoL(Phip);
-  //ddt(Apar).applyBoundary();
+  ddt(Apar).applyBoundary();
 
   return 0;
 }
