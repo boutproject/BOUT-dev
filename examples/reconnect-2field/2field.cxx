@@ -25,7 +25,7 @@ Field3D U, Apar;
 Field3D phi, jpar;
 
 // External coil field
-Field3D Apar_coil;
+Field3D Apar_ext, Jpar_ext, Phi0_ext, U0_ext;
 
 // Metric coefficients
 Field2D Rxy, Bpxy, Btxy, hthe;
@@ -190,8 +190,14 @@ int physics_init(bool restarting) {
   
   // Generate external field
   
-  initial_profile("Apar_coil", Apar_coil);
-  SAVE_ONCE(Apar_coil);
+  initial_profile("Apar_ext", Apar_ext);
+  Jpar_ext = -Delp2(Apar_ext);
+  SAVE_ONCE2(Apar_ext,Jpar_ext);
+
+  initial_profile("Phi0_ext", Phi0_ext);
+  U0_ext = -Delp2(Phi0_ext)/mesh->Bxy;
+  SAVE_ONCE2(Phi0_ext,U0_ext);  
+  
 
   // Give the solver the preconditioner function
   solver->setPrecon(precon);
@@ -209,14 +215,14 @@ const Field3D Grad_parP_LtoC(const Field3D &f) {
   if(parallel_lc) {
     result = Grad_par_LtoC(f);
     if(nonlinear) {
-      result -= beta_hat * bracket(Apar_coil+Apar, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext+Apar, f, BRACKET_ARAKAWA);
     }else
-      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
   }else {
     if(nonlinear) {
-      result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
     }else {
-      result = Grad_parP(Apar_coil*beta_hat, f);
+      result = Grad_parP(Apar_ext*beta_hat, f);
     }
   }
   return result;
@@ -227,15 +233,15 @@ const Field3D Grad_parP_CtoL(const Field3D &f) {
   if(parallel_lc) {
     result = Grad_par_CtoL(f);
     if(nonlinear) {
-      result -= beta_hat * bracket(Apar + Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar + Apar_ext, f, BRACKET_ARAKAWA);
     }else {
-      result -= beta_hat * bracket(Apar_coil, f, BRACKET_ARAKAWA);
+      result -= beta_hat * bracket(Apar_ext, f, BRACKET_ARAKAWA);
     }
   }else {
     if(nonlinear) {
-      result = Grad_parP((Apar+Apar_coil)*beta_hat, f);
+      result = Grad_parP((Apar+Apar_ext)*beta_hat, f);
     }else {
-      result = Grad_parP(Apar_coil*beta_hat, f);
+      result = Grad_parP(Apar_ext*beta_hat, f);
     }
   }
   return result;
@@ -250,7 +256,7 @@ int physics_run(BoutReal t) {
   
   mesh->communicate(U, phi, Apar);
   
-  jpar = -Delp2(Apar);
+  jpar = -Delp2(Apar + Apar_ext);//total Apar
   jpar.applyBoundary();
   mesh->communicate(jpar);
   
@@ -276,9 +282,11 @@ int physics_run(BoutReal t) {
   ddt(U) = SQ(mesh->Bxy)*Grad_parP_LtoC(jpar/mesh->Bxy);
 
   if(include_jpar0) {
-   ddt(U) -= SQ(mesh->Bxy)*beta_hat * bracket(Apar+Apar_coil, Jpar0/mesh->Bxy, BRACKET_ARAKAWA);
+   ddt(U) -= SQ(mesh->Bxy)*beta_hat * bracket(Apar+Apar_ext, Jpar0/mesh->Bxy, BRACKET_ARAKAWA);
   }
-  
+
+  ddt(U) -= bracket(Phi0_ext, U, bm); // ExB advection
+  //ddt(U) -= bracket(phi, U0_ext, bm); // ExB advection
   if(nonlinear) {
     ddt(U) -= bracket(phi, U, bm); // ExB advection
   }
@@ -289,6 +297,7 @@ int physics_run(BoutReal t) {
   // APAR
   
   ddt(Apar) = -Grad_parP_CtoL(phi) / beta_hat;
+  ddt(Apar) += -Grad_parP_CtoL(Phi0_ext) / beta_hat;
   
   if(eta > 0.)
     ddt(Apar) -= eta*jpar / beta_hat;
@@ -342,3 +351,5 @@ int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
 
   return 0;
 }
+
+
