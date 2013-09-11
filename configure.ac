@@ -1099,7 +1099,7 @@ then
 
     #include <stdlib.h>
 
-    static int cvode_bbd_rhs(CVODEINT Nlocal,
+    extern int cvode_bbd_rhs(CVODEINT Nlocal,
                    double, N_Vector u, N_Vector du,
                    void *user_data);
 
@@ -1120,7 +1120,14 @@ MYEOF
   then
     CVODEINT=int
   else
-    CVODEINT=long
+    $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=long  >> config-build.log 2>&1
+    if test "$?" = "0"
+    then
+      CVODEINT=long
+    else
+      echo "HEELP! Cannot compile CVODE with either long or int"
+      exit
+    fi
   fi
   echo "  CVODE BBD uses '$CVODEINT' type" | tee -a config-build.log
   
@@ -1135,7 +1142,7 @@ then
     #include <ida/ida_bbdpre.h>
 
     #include <stdlib.h>
-    static int ida_bbd_res(IDAINT Nlocal, double, 
+    extern int ida_bbd_res(IDAINT Nlocal, double, 
 		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
 
     int main() {
@@ -1155,7 +1162,14 @@ MYEOF
   then
     IDAINT=int
   else
-    IDAINT=long
+    $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=int  >> config-build.log 2>&1
+    if test "$?" = "0"
+    then
+      IDAINT=long
+    else
+      echo "HEELP! Cannot compile IDA with either long or int"
+      exit
+    fi
   fi
   echo "  IDA BBD uses '$CVODEINT' type" | tee -a config-build.log
   
