@@ -1162,7 +1162,7 @@ MYEOF
   then
     IDAINT=int
   else
-    $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=int  >> config-build.log 2>&1
+    $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=long  >> config-build.log 2>&1
     if test "$?" = "0"
     then
       IDAINT=long
@@ -1171,7 +1171,7 @@ MYEOF
       exit
     fi
   fi
-  echo "  IDA BBD uses '$CVODEINT' type" | tee -a config-build.log
+  echo "  IDA BBD uses '$IDAINT' type" | tee -a config-build.log
   
   CXXFLAGS="$CXXFLAGS -DIDAINT=$IDAINT"
 fi
