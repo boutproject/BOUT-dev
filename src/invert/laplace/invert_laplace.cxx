@@ -196,9 +196,18 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c, 
                             const Field2D *ccoef, const Field2D *d) {
   
-  BoutReal coef1, coef2, coef3, coef4, coef5, kwave;
+  BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
   
-  kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+  tridagCoefs(jx, jy, kwave, 
+              a, b, c, 
+              ccoef, d);
+}
+
+void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave, 
+                            dcomplex &a, dcomplex &b, dcomplex &c, 
+                            const Field2D *ccoef, const Field2D *d) {
+  
+  BoutReal coef1, coef2, coef3, coef4, coef5;
   
   coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
   coef2=mesh->g33[jx][jy];     ///< Z 2nd derivative coefficient
@@ -259,8 +268,24 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              dcomplex **bk, int jy, int flags, 
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d) {
-  int ix, kz;
-  
+  for(int kz = 0; kz <= maxmode; kz++) {
+    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    
+    
+    tridagMatrix(avec[kz], bvec[kz], cvec[kz],
+                 bk[kz], 
+                 jy, 
+                 kz == 0, kwave, 
+                 flags, 
+                 a, ccoef, d);
+  }
+}
+
+void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
+                             dcomplex *bk, int jy, bool dc, BoutReal kwave, 
+                             int flags, 
+                             const Field2D *a, const Field2D *ccoef, 
+                             const Field2D *d) {
   int ncx = mesh->ngx-1;
 
   int inbndry = 2, outbndry=2;
@@ -272,159 +297,154 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
     inbndry = 1;
   if(flags & INVERT_BNDRY_OUT_ONE)
     outbndry = 1;
-  
-  for(kz = 0; kz <= maxmode; kz++) {
     
-    // Entire domain. Change to boundaries later
-
-    for(ix=0;ix<=ncx;ix++) {
-
-      tridagCoefs(ix, jy, kz, avec[kz][ix], bvec[kz][ix], cvec[kz][ix], ccoef, d);
+  // Entire domain. Change to boundaries later
+  
+  for(int ix=0;ix<=ncx;ix++) {
+    
+    tridagCoefs(ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
       
-      if(a != (Field2D*) NULL)
-	bvec[kz][ix] += (*a)[ix][jy];
-    }
+    if(a != (Field2D*) NULL)
+      bvec[ix] += (*a)[ix][jy];
+  }
 
-    if(!mesh->periodicX) {
-      // Boundary conditions
+  if(!mesh->periodicX) {
+    // Boundary conditions
+    
+    if(mesh->firstX()) {
+      // INNER BOUNDARY ON THIS PROCESSOR
       
-      if(mesh->firstX()) {
-	// INNER BOUNDARY ON THIS PROCESSOR
-	
-	if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
-	  for(ix=0;ix<inbndry;ix++)
-	    bk[kz][ix] = 0.;
-	}
-	
-	if(kz == 0) {
-	  // DC
+      if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
+        for(int ix=0;ix<inbndry;ix++)
+          bk[ix] = 0.;
+      }
+      
+      if(dc) {
+        // DC i.e. kz = 0
 	  
-	  if(flags & INVERT_DC_IN_GRAD) {
-	    // Zero gradient at inner boundary
-	    for (ix=0;ix<inbndry;ix++){
-	      avec[kz][ix] =  0.;
-	      bvec[kz][ix] =  1.;
-	      cvec[kz][ix] = -1.;
-	    }
-	  }else if(flags & INVERT_DC_IN_GRADPAR) {
-            for (int ix=0;ix<inbndry;ix++) {
-              avec[kz][ix] =  0.0;
-              bvec[kz][ix] =  1.0/sqrt(mesh->g_22(ix,jy));
-              cvec[kz][ix] = -1.0/sqrt(mesh->g_22(ix+1,jy));
-            }
-          }else if(flags & INVERT_DC_IN_GRADPARINV) {
-            for (int ix=0;ix<inbndry;ix++) {
-              avec[kz][ix] =  0.0;
-              bvec[kz][ix] =  sqrt(mesh->g_22(ix,jy));
-              cvec[kz][ix] = -sqrt(mesh->g_22(ix+1,jy));
-            }
-          }else if (flags & INVERT_DC_IN_LAP) {
-            // Decaying boundary conditions
-            BoutReal k = 0.0;
-            if(a != (Field2D*) NULL) {
-              BoutReal ksq = -((*a)(inbndry, jy));
-              if(ksq < 0.0)
-                throw BoutException("ksq must be positive");
-              k = sqrt(ksq);
-            }
-            for (ix=0;ix<inbndry;ix++){
-	      avec[kz][ix] =  0.;
-	      bvec[kz][ix] =  1.;
-	      cvec[kz][ix] = -exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy)));
-	    }
+        if(flags & INVERT_DC_IN_GRAD) {
+          // Zero gradient at inner boundary
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix] =  0.;
+            bvec[ix] =  1.;
+            cvec[ix] = -1.;
+          }
+        }else if(flags & INVERT_DC_IN_GRADPAR) {
+          for (int ix=0;ix<inbndry;ix++) {
+            avec[ix] =  0.0;
+            bvec[ix] =  1.0/sqrt(mesh->g_22(ix,jy));
+            cvec[ix] = -1.0/sqrt(mesh->g_22(ix+1,jy));
+          }
+        }else if(flags & INVERT_DC_IN_GRADPARINV) {
+          for (int ix=0;ix<inbndry;ix++) {
+            avec[ix] =  0.0;
+            bvec[ix] =  sqrt(mesh->g_22(ix,jy));
+            cvec[ix] = -sqrt(mesh->g_22(ix+1,jy));
+          }
+        }else if (flags & INVERT_DC_IN_LAP) {
+          // Decaying boundary conditions
+          BoutReal k = 0.0;
+          if(a != (Field2D*) NULL) {
+            BoutReal ksq = -((*a)(inbndry, jy));
+            if(ksq < 0.0)
+              throw BoutException("ksq must be positive");
+            k = sqrt(ksq);
+          }
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix] =  0.;
+            bvec[ix] =  1.;
+            cvec[ix] = -exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy)));
+          }
             
-          }else {
-	    // Zero value at inner boundary or INVERT_IN_SET
-	    for (ix=0;ix<inbndry;ix++){
-	      avec[kz][ix] = 0.;
-	      bvec[kz][ix] = 1.;
-	      cvec[kz][ix] = 0.;
-	    }
-	  }
+        }else {
+          // Zero value at inner boundary or INVERT_IN_SET
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix] = 0.;
+            bvec[ix] = 1.;
+            cvec[ix] = 0.;
+          }
+        }
 	  
-	}else {
-	  // AC
+      }else {
+        // AC
 	
-	  if(flags & INVERT_AC_IN_GRAD) {
-	    // Zero gradient at inner boundary
-	    for (ix=0;ix<inbndry;ix++){
-	      avec[kz][ix]=dcomplex(0.,0.);
-	      bvec[kz][ix]=dcomplex(1.,0.);
-	      cvec[kz][ix]=dcomplex(-1.,0.);
-	    }
-	  }else if(flags & INVERT_AC_IN_LAP) {
-	    // Use decaying zero-Laplacian solution in the boundary
-	    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<inbndry;ix++) {
-	      avec[kz][ix] = 0.0;
-	      bvec[kz][ix] = 1.0;
-	      cvec[kz][ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
-	    }
-	  }else {
-	    // Zero value at inner boundary or INVERT_IN_SET
-	    for (ix=0;ix<inbndry;ix++){
-	      avec[kz][ix]=dcomplex(0.,0.);
-	      bvec[kz][ix]=dcomplex(1.,0.);
-	      cvec[kz][ix]=dcomplex(0.,0.);
-	    }
-	  }
-	}
-      }else if(mesh->lastX()) {
-	// OUTER BOUNDARY
+        if(flags & INVERT_AC_IN_GRAD) {
+          // Zero gradient at inner boundary
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix]=dcomplex(0.,0.);
+            bvec[ix]=dcomplex(1.,0.);
+            cvec[ix]=dcomplex(-1.,0.);
+          }
+        }else if(flags & INVERT_AC_IN_LAP) {
+          // Use decaying zero-Laplacian solution in the boundary
+          for (int ix=0;ix<inbndry;ix++) {
+            avec[ix] = 0.0;
+            bvec[ix] = 1.0;
+            cvec[ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
+          }
+        }else {
+          // Zero value at inner boundary or INVERT_IN_SET
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix]=dcomplex(0.,0.);
+            bvec[ix]=dcomplex(1.,0.);
+            cvec[ix]=dcomplex(0.,0.);
+          }
+        }
+      }
+    }else if(mesh->lastX()) {
+      // OUTER BOUNDARY
       
-	if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
-	  for (ix=0;ix<outbndry;ix++)
-	    bk[kz][ncx-ix] = 0.;
-	}
+      if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
+        for (int ix=0;ix<outbndry;ix++)
+          bk[ncx-ix] = 0.;
+      }
 
-	if(kz == 0) {
-	  // DC
+      if(dc) {
+        // DC
 	
-	  if(flags & INVERT_DC_OUT_GRAD) {
-	    // Zero gradient at outer boundary
-	    for (ix=0;ix<outbndry;ix++){
-	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
-	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
-	      avec[kz][ncx-ix]=dcomplex(-1.,0.);
-	    }
-	  }else {
-	    // Zero value at outer boundary or INVERT_OUT_SET
-	    for (ix=0;ix<outbndry;ix++){
-	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
-	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
-	      avec[kz][ncx-ix]=dcomplex(0.,0.);
-	    }
-	  }
-	}else {
-	  // AC
+        if(flags & INVERT_DC_OUT_GRAD) {
+          // Zero gradient at outer boundary
+          for (int ix=0;ix<outbndry;ix++){
+            cvec[ncx-ix]=dcomplex(0.,0.);
+            bvec[ncx-ix]=dcomplex(1.,0.);
+            avec[ncx-ix]=dcomplex(-1.,0.);
+          }
+        }else {
+          // Zero value at outer boundary or INVERT_OUT_SET
+          for (int ix=0;ix<outbndry;ix++){
+            cvec[ncx-ix]=dcomplex(0.,0.);
+            bvec[ncx-ix]=dcomplex(1.,0.);
+            avec[ncx-ix]=dcomplex(0.,0.);
+          }
+        }
+      }else {
+        // AC
 	
-	  if(flags & INVERT_AC_OUT_GRAD) {
-	    // Zero gradient at outer boundary
-	    for (ix=0;ix<outbndry;ix++){
-	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
-	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
-	      avec[kz][ncx-ix]=dcomplex(-1.,0.);
-	    }
-	  }else if(flags & INVERT_AC_OUT_LAP) {
-	    // Use decaying zero-Laplacian solution in the boundary
-	    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	    for (ix=0;ix<outbndry;ix++) {
-	      avec[kz][ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
-	      bvec[kz][ncx-ix] = 1.0;
-	      cvec[kz][ncx-ix] = 0.0;
-	    }
-	  }else {
-	    // Zero value at outer boundary or LAPLACE_OUT_SET
-	    for (ix=0;ix<outbndry;ix++){
-	      cvec[kz][ncx-ix]=dcomplex(0.,0.);
-	      bvec[kz][ncx-ix]=dcomplex(1.,0.);
-	      avec[kz][ncx-ix]=dcomplex(0.,0.);
-	    }
-	  }
-	}
+        if(flags & INVERT_AC_OUT_GRAD) {
+          // Zero gradient at outer boundary
+          for (int ix=0;ix<outbndry;ix++){
+            cvec[ncx-ix]=dcomplex(0.,0.);
+            bvec[ncx-ix]=dcomplex(1.,0.);
+            avec[ncx-ix]=dcomplex(-1.,0.);
+          }
+        }else if(flags & INVERT_AC_OUT_LAP) {
+          // Use decaying zero-Laplacian solution in the boundary
+          for (int ix=0;ix<outbndry;ix++) {
+            avec[ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
+            bvec[ncx-ix] = 1.0;
+            cvec[ncx-ix] = 0.0;
+          }
+        }else {
+          // Zero value at outer boundary or LAPLACE_OUT_SET
+          for (int ix=0;ix<outbndry;ix++){
+            cvec[ncx-ix]=dcomplex(0.,0.);
+            bvec[ncx-ix]=dcomplex(1.,0.);
+            avec[ncx-ix]=dcomplex(0.,0.);
+          }
+        }
       }
     }
-  }  
+  }
 }
 
 /**********************************************************************************
