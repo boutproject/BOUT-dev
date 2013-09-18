@@ -34,7 +34,7 @@
 #include <bout/sys/timer.hxx>
 #include <bout/constants.hxx>
 
-#include "cyclic.hxx"
+#include "cyclic_laplace.hxx"
 
 LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   // Get options

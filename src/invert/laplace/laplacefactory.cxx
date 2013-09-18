@@ -11,7 +11,7 @@
 #include "impls/spt/spt.hxx"
 #include "impls/petsc/petsc_laplace.hxx"
 #include "impls/mumps/mumps_laplace.hxx"
-#include "impls/cyclic/cyclic.hxx"
+#include "impls/cyclic/cyclic_laplace.hxx"
 
 #define LAPLACE_SPT  "spt"
 #define LAPLACE_PDD  "pdd"
