@@ -51,7 +51,8 @@ public:
   void setCoefEx(const Field2D &val) { bout_error("LaplaceCyclic does not have Ex coefficient"); }
   void setCoefEz(const Field2D &val) { bout_error("LaplaceCyclic does not have Ez coefficient"); }
   
-  const FieldPerp solve(const FieldPerp &b);
+  const FieldPerp solve(const FieldPerp &b) {return solve(b,b);}
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
 private:
   Field2D A, C, D;
   

@@ -285,9 +285,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, bool dc, BoutReal kwave, 
                              int flags, 
                              const Field2D *a, const Field2D *ccoef, 
-                             const Field2D *d) {
-  int ncx = mesh->ngx-1;
-
+                             const Field2D *d,
+                             bool includeguards) {
+  int xs = 0;
+  int xe = mesh->ngx-1;
+  if(!includeguards) {
+    if(!mesh->firstX()) 
+      xs = mesh->xstart; // Inner edge is a guard cell
+    if(!mesh->lastX())
+      xe = mesh->xend; // Outer edge is a guard cell
+  }
+  int ncx = xe - xs;
+  
   int inbndry = 2, outbndry=2;
   
   if(flags & INVERT_BNDRY_ONE) {
@@ -302,10 +311,10 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   
   for(int ix=0;ix<=ncx;ix++) {
     
-    tridagCoefs(ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
+    tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
       
     if(a != (Field2D*) NULL)
-      bvec[ix] += (*a)[ix][jy];
+      bvec[ix] += (*a)[xs+ix][jy];
   }
 
   if(!mesh->periodicX) {
@@ -391,12 +400,14 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           }
         }
       }
-    }else if(mesh->lastX()) {
+    }
+    if(mesh->lastX()) {
       // OUTER BOUNDARY
       
       if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
-        for (int ix=0;ix<outbndry;ix++)
+        for (int ix=0;ix<outbndry;ix++) {
           bk[ncx-ix] = 0.;
+        }
       }
 
       if(dc) {
@@ -430,7 +441,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
         }else if(flags & INVERT_AC_OUT_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
           for (int ix=0;ix<outbndry;ix++) {
-            avec[ncx-ix] = -exp(-1.0*sqrt(mesh->g33[ncx-ix][jy]/mesh->g11[ncx-ix][jy])*kwave*mesh->dx[ncx-ix][jy]);;
+            avec[ncx-ix] = -exp(-1.0*sqrt(mesh->g33[xe-ix][jy]/mesh->g11[xe-ix][jy])*kwave*mesh->dx[xe-ix][jy]);;
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
           }

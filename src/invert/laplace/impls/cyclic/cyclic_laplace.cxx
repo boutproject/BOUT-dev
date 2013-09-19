@@ -39,16 +39,16 @@
 LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   // Get options
   
-  nmode = (mesh->ngz-1)/2 + 1; // Number of Z modes 
+  nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
 
   // Allocate arrays
 
   int nsys = nmode;     // Number of tridiagonal systems to solve simulaneously
   
-  int xs = mesh->xstart; // Starting X index
+  xs = mesh->xstart; // Starting X index
   if(mesh->firstX())
     xs = 0;
-  int xe = mesh->xend;  // Last X index
+  xe = mesh->xend;  // Last X index
   if(mesh->lastX())
     xe = mesh->ngx-1;
   
@@ -61,7 +61,7 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   xcmplx = matrix<dcomplex>(nsys, n);
   bcmplx = matrix<dcomplex>(nsys, n);
   
-  k1d = new dcomplex[nmode]; 
+  k1d = new dcomplex[(mesh->ngz-1)/2 + 1]; // ZFFT routine expects input of this length
   
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), n);
@@ -83,17 +83,35 @@ LaplaceCyclic::~LaplaceCyclic() {
   delete cr;
 }
 
-const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs) {
+const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
   FieldPerp x;  // Result
   x.allocate();
   
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
   
+  // Get the width of the boundary
+  
+  int inbndry = 2, outbndry=2;
+  if(flags & INVERT_BNDRY_ONE) {
+    inbndry = outbndry = 1;
+  }
+  if(flags & INVERT_BNDRY_IN_ONE)
+    inbndry = 1;
+  if(flags & INVERT_BNDRY_OUT_ONE)
+    outbndry = 1;
+
   // Loop over X indices, including boundaries but not guard cells
   for(int ix=xs; ix <= xe; ix++) {
     // Take FFT in Z direction, apply shift, and put result in k1d
-    ZFFT(rhs[ix], mesh->zShift(ix, jy), k1d);
+    
+    if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
+       ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+      // Use the values in x0 in the boundary
+      ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
+    }else {
+      ZFFT(rhs[ix], mesh->zShift(ix, jy), k1d);
+    }
     
     // Copy into array, transposing so kz is first index
     for(int kz = 0; kz < nmode; kz++)
@@ -111,19 +129,23 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs) {
                  kz == 0, // True for the component constant (DC) in Z
                  kwave,   // Z wave number
                  flags, 
-                 &A, &C, &D);
+                 &A, &C, &D,
+                 false);  // Don't include guard cells in arrays
   }
   
   // Solve tridiagonal systems
   
   cr->setCoefs(nmode, a, b, c);
   cr->solve(nmode, bcmplx, xcmplx);
-  
+
   // FFT back to real space
   for(int ix=xs; ix <= xe; ix++) {
     for(int kz = 0; kz < nmode; kz++)
       k1d[kz] = xcmplx[kz][ix-xs];
     
+    for(int kz=nmode;kz<(mesh->ngz-1)/2 + 1;kz++)
+      k1d[kz] = 0.0; // Filtering out all higher harmonics
+
     ZFFT_rev(k1d, mesh->zShift(ix, jy), x[ix]);
     
     x[ix][mesh->ngz-1] = x[ix][0]; // probably unnecessary

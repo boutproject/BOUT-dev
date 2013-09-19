@@ -139,7 +139,8 @@ protected:
                     dcomplex *bk, int jy, bool dc, BoutReal kwave, 
                     int flags, 
                     const Field2D *a, const Field2D *ccoef, 
-                    const Field2D *d);
+                    const Field2D *d,
+                    bool includeguards=true);
 private:
   /// Singleton instance
   static Laplacian *instance;
