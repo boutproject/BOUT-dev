@@ -1,0 +1,6 @@
+This module allows 2D simulations of blobs in a slab geometry with curvature
+
+The model is gyro-bohm normalized (length scales normalized to rho_s, time normalized to Omega_i)
+
+
+

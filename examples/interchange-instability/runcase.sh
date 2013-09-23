@@ -1,24 +1,31 @@
 #!/bin/sh
+#
+# Usage example: ./runcase.sh -m "aprun -n" -n 2
+#================================================#
+
 
 NO_ARGS=0 
 OPTERROR=65
 
-if [ $# -eq "$NO_ARGS" ]  # Script invoked with no command-line args?
-then
-    MPIEXEC="mpirun -np "
-    NP=4
-fi  
-# Usage: scriptname -options
-# Note: dash (-) necessary
+
+##-setting defaults
+MPIEXEC="mpirun -np "
+NP=4
 
 
-while getopts ":n:np" Option
-do
-  case $Option in
-    n ) MPIEXEC="mpirun -np";NP=$OPTARG;;
-    * ) ;;   # DEFAULT
+while getopts m:n: option; do
+    case $option in
+n) 
+   NP=$OPTARG;
+   ;;
+m) 
+   MPIEXEC=$OPTARG;
+   ;;
   esac
 done
+
+
+echo "Running command: " $MPIEXEC $NP
 
 
 #-compile/build local executable
@@ -37,4 +44,5 @@ rm -f data
 
 
 #-check the result
-#idl runidl.pro
+idl runidl.pro
+

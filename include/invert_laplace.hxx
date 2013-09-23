@@ -128,10 +128,19 @@ protected:
   
   int flags;       ///< Default flags
 
+  void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
+
   void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                     dcomplex **bk, int jy, int flags, 
                     const Field2D *a = NULL, const Field2D *ccoef=NULL, 
                     const Field2D *d = NULL);
+  
+  void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
+                    dcomplex *bk, int jy, bool dc, BoutReal kwave, 
+                    int flags, 
+                    const Field2D *a, const Field2D *ccoef, 
+                    const Field2D *d,
+                    bool includeguards=true);
 private:
   /// Singleton instance
   static Laplacian *instance;

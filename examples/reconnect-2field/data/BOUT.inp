@@ -1,5 +1,3 @@
-# DALF3 model settings
-
 ##################################################
 # Global settings used by the core code
 
@@ -104,7 +102,7 @@ func_iter = false     # Functional iteration (default is Newton)
 
 [2field]
 
-eta = -1  # Resistivity
+eta = 1.e-5  # Resistivity
 mu = -1  # Viscosity
 
 bracket_method = 2 # Method to use for [f,g] terms
@@ -156,19 +154,24 @@ bndry_all = neumann
 [Apar]
 
 function = (1 - 4*(x-0.5)^2 )*sin(3*y - z)
-scale = -1.0
+scale = 0.0
 
 ########### Auxilliary variables
 
 [jpar]
 
 [phi]
-bndry_xin = none   # Radial boundaries specified in inversion
-bndry_xout = none
+bndry_xin = dirichlet   # Radial boundaries specified in inversion
+bndry_xout = dirichlet
 
 ########## External field
 
-[Apar_coil]
+[Apar_ext]
 
-function = x*x*sin(3*y - z)
-scale = 1.e-3
+function = (1-4*x*(1-x))*sin(3*y - z)
+scale = 1.e-2
+
+[Phi0_ext]
+function = x
+scale = 0.
+
