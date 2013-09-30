@@ -14,7 +14,7 @@ Vector3D v, B;  // velocity, magnetic field
 Field3D divB; // Divergence of B (for monitoring)
 
 // parameters
-BoutReal gamma;
+BoutReal g;
 bool include_viscos;
 BoutReal viscos;
 
@@ -26,7 +26,7 @@ int physics_init(bool restarting) {
   // read options
   Options *globalOptions = Options::getRoot();
   Options *options = globalOptions->getSection("mhd");
-  OPTION(options, gamma,          5.0/3.0);
+  OPTION(options, g,          5.0/3.0);
   OPTION(options, include_viscos, false);
   OPTION(options, viscos,         0.1);
   
@@ -81,16 +81,16 @@ int physics_run(BoutReal t) {
 
   msg_stack.pop(); msg_stack.push("F_p");
 
-  ddt(p) = -V_dot_Grad(v, p) - gamma*p*Div(v);
+  ddt(p) = -V_dot_Grad(v, p) - g*p*Div(v);
   
   msg_stack.pop(); msg_stack.push("F_v");
   
   ddt(v) = -V_dot_Grad(v, v) + ((Curl(B)^B) - Grad(p))/rho;
 
   if(include_viscos) {
-    ddt(v).x += viscos * Laplacian(v.x);
-    ddt(v).y += viscos * Laplacian(v.y);
-    ddt(v).z += viscos * Laplacian(v.z);
+    ddt(v).x += viscos * Laplace(v.x);
+    ddt(v).y += viscos * Laplace(v.y);
+    ddt(v).z += viscos * Laplace(v.z);
   }
   
   msg_stack.pop(); msg_stack.push("F_B");
