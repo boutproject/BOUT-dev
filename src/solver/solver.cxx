@@ -567,9 +567,9 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     
     /// Load restart file
     if(!restart.openr("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-      throw new BoutException("Error: Could not open restart file\n");
+      throw BoutException("Error: Could not open restart file\n");
     if(!restart.read())
-      throw new BoutException("Error: Could not read restart file\n");
+      throw BoutException("Error: Could not read restart file\n");
     restart.close();
 
     if(NPES == 0) {
@@ -604,7 +604,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   
   /// Open the restart file for writing
   if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-    throw new BoutException("Error: Could not open restart file for writing\n");
+    throw BoutException("Error: Could not open restart file for writing\n");
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
