@@ -30,10 +30,10 @@ class FieldFactory;
 #ifndef __FIELD_FACTORY_H__
 #define __FIELD_FACTORY_H__
 
+#include "bout/mesh.hxx"
+
 #include "field2d.hxx"
 #include "field3d.hxx"
-
-#include "bout/mesh.hxx"
 
 #include "bout/constants.hxx"
 
