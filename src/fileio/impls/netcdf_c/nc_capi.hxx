@@ -33,31 +33,30 @@
  *
  */
 
-#ifndef NCDF4
+#ifndef NCDFCAPI
 
 #include "../emptyformat.hxx"
-typedef EmptyFormat Nc4;
+typedef EmptyFormat NcdfCapi;
 
 #else
 
-class Nc4;
+class NcdfCapi;
 
-#ifndef __NCFORMAT4C_H__
-#define __NCFORMAT4C_H__
+#ifndef __NCFORMATCAPI_H__
+#define __NCFORMATCAPI_H__
 
 #include "dataformat.hxx"
 
-#include <netcdf>
+#include <netcdf.h>
 
 #include <map>
 #include <string>
-#include <vector>
 
-class Nc4 : public DataFormat {
+class NcdfCapi : public DataFormat {
  public:
-  Nc4();
-  Nc4(const std::string &name);
-  ~Nc4();
+  NcdfCapi();
+  NcdfCapi(const std::string &name);
+  ~NcdfCapi();
   
   bool openr(const std::string &name);
   bool openw(const std::string &name, bool append=false);
@@ -67,8 +66,6 @@ class Nc4 : public DataFormat {
   void close();
   
   void flush();
-
-  const char* filename() { return fname; };
 
   const vector<int> getSize(const string &var);
   
@@ -96,9 +93,6 @@ class Nc4 : public DataFormat {
   void setLowPrecision() { lowPrecision = true; }
 
  private:
-
-  char *fname; ///< Current file name
-
   /// netCDF file ID
   int datafile;
   
@@ -117,6 +111,6 @@ class Nc4 : public DataFormat {
   
 };
 
-#endif // __NCFORMAT4C_H__
+#endif // __NCFORMATCAPI_H__
 
-#endif // NCDF4
+#endif // NCDFCAPI

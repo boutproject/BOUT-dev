@@ -9,6 +9,7 @@
 #include "impls/netcdf4/ncxx4.hxx"
 #include "impls/netcdf/nc_format.hxx"
 #include "impls/pnetcdf/pnetcdf.hxx"
+#include "impls/netcdf_c/nc_capi.hxx"
 
 #include <boutexception.hxx>
 #include <output.hxx>
@@ -35,6 +36,10 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
       return new PncFormat;
 #else
 
+#ifdef NCDFCAPI
+    return new NcdfCapi;
+#else
+
 #ifdef NCDF4
     return new Ncxx4;
 #else
@@ -47,7 +52,6 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
 #ifdef PDBF
     //output.write("\tUsing default format (PDB)\n");
     return new PdbFormat;
-
 #else
 
 #error No file format available; aborting.
@@ -55,6 +59,7 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
 #endif // PDBF
 #endif // NCDF
 #endif // NCDF4
+#endif // NCDFCAPI
 #endif // PNCDF
     throw new BoutException("Parallel I/O disabled, no serial library found");
   }
@@ -87,6 +92,14 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
       output.write("\tUsing Parallel NetCDF format for file '%s'\n", filename);
     return new PncFormat;
     }
+  }
+#endif
+
+#ifdef NCDFCAPI
+  const char* ncc_match[] = {"cdl", "nc", "ncdf"};
+  if(matchString(s, 3, ncc_match) != -1) {
+    output.write("\tUsing NetCDF C API for file '%s'\n", filename);
+    return new NcdfCapi;
   }
 #endif
 

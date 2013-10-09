@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../../..
 
-SOURCEC		= nc4.cxx
+SOURCEC		= nc_capi.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx) 
 TARGET		= lib
 
