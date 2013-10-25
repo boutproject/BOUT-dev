@@ -446,6 +446,14 @@ const Field3D QuiltMesh::averageY(const Field3D &f) {
   
 }
 
+const Field2D QuiltMesh::averageX(const Field2D &f) {
+  
+}
+
+const Field3D QuiltMesh::averageX(const Field3D &f) {
+  
+}
+
 bool QuiltMesh::periodicY(int jx, BoutReal &ts) const {
   return yperiodic.intersects(jx);
 }

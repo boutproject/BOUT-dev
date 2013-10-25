@@ -801,6 +801,38 @@ const Field3D Mesh::averageY(const Field3D &f) {
   return result;
 }
 
+/*******************************************************************************
+ * AverageX
+ *******************************************************************************/
+
+/// Not very efficient version, as a fallback
+const Field3D Mesh::averageX(const Field3D &f) {
+  Field3D result;
+  result.allocate();
+
+  Field2D xy;
+  xy.allocate();
+
+  for(int jz=0; jz<ngz;jz++) {
+
+    for(int jx=0; jx<ngx;jx++) {
+      for(int jy=0; jy<ngy;jy++) {
+	xy(jx, jy) = f(jx, jy, jz);
+      }
+    }
+
+    xy = averageX(xy);
+
+    for(int jx=0; jx<ngx;jx++) {
+      for(int jy=0; jy<ngy;jy++) {
+	result(jx, jy, jz) = xy(jx, jy);
+      }
+    }
+  }
+      
+  return result;
+}
+
 void Mesh::read2Dvar(GridDataSource *s, const string &name, 
                      int xs, int ys,
                      int xd, int yd,

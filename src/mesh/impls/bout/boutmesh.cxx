@@ -2769,6 +2769,109 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
   return false;
 }
 
+const Field2D BoutMesh::averageX(const Field2D &f) {
+  static BoutReal *input = NULL, *result;
+ 
+#ifdef CHECK
+  msg_stack.push("averageX(Field2D)");
+#endif
+ 
+  if(input == NULL) {
+    input = new BoutReal[ngy];
+    result = new BoutReal[ngy];
+  }
+ 
+  BoutReal **fd = f.getData();
+  
+  // Average on this processor
+  for(int y=0;y<ngy;y++) {
+    input[y] = 0.;
+    // Sum values, not including boundaries
+    for(int x=xstart;x<=xend;x++) {
+      input[y] += fd[x][y];
+    }
+    input[y] /= (xend - xstart + 1);
+  }
+
+  Field2D r;
+  r.allocate();
+  BoutReal **rd = r.getData();
+
+  int np;
+  MPI_Comm_size(comm_x, &np);
+  
+  if(np == 1) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = input[y];
+  }else {
+    MPI_Allreduce(input, result, ngy, MPI_DOUBLE, MPI_SUM, comm_x);
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = result[y] / (BoutReal) np;
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return r;
+}
+
+const Field3D BoutMesh::averageX(const Field3D &f) {
+  static BoutReal **input = NULL, **result;
+
+#ifdef CHECK
+  msg_stack.push("averageX(Field3D)");
+#endif
+
+  if(input == NULL) {
+    input = rmatrix(ngy, ngz);
+    result = rmatrix(ngy, ngz);
+  }
+  
+  BoutReal ***fd = f.getData();
+  
+  // Average on this processor
+  for(int y=0;y<ngy;y++)
+    for(int z=0;z<ngz;z++) {
+      input[y][z] = 0.;
+      // Sum values, not including boundaries
+      for(int x=xstart;x<=xend;x++) {
+        input[y][z] += fd[x][y][z];
+      }
+      input[y][z] /= (xend - xstart + 1);
+    }
+  
+  Field3D r;
+  r.allocate();
+  BoutReal ***rd = r.getData();
+
+  int np;
+  MPI_Comm_size(comm_x, &np);
+  if(np > 1) {
+    MPI_Allreduce(*input, *result, ngy*ngz, MPI_DOUBLE, MPI_SUM, comm_x);
+    
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = result[y][z] / (BoutReal) np;
+        }
+  }else {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = input[y][z];
+        }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return r;
+}
+
 const Field2D BoutMesh::averageY(const Field2D &f) {
   static BoutReal *input = NULL, *result;
  
@@ -2790,7 +2893,7 @@ const Field2D BoutMesh::averageY(const Field2D &f) {
     for(int y=ystart;y<=yend;y++) {
       input[x] += fd[x][y];
     }
-    input[x] /= yend - ystart + 1;
+    input[x] /= (yend - ystart + 1);
   }
 
   Field2D r;
@@ -2840,7 +2943,7 @@ const Field3D BoutMesh::averageY(const Field3D &f) {
       for(int y=ystart;y<=yend;y++) {
         input[x][z] += fd[x][y][z];
       }
-      input[x][z] /= yend - ystart + 1;
+      input[x][z] /= (yend - ystart + 1);
     }
   
   Field3D r;

@@ -138,6 +138,8 @@ class Mesh {
   
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
+  virtual const Field2D averageX(const Field2D &f) = 0;
+  virtual const Field3D averageX(const Field3D &f);
   
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;

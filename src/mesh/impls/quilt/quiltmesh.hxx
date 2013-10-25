@@ -72,6 +72,11 @@ class QuiltMesh : public Mesh {
   const Field2D averageY(const Field2D &f);
   const Field3D averageY(const Field3D &f);
   
+  /////////////////////////////////////////////
+  // X surface gather/scatter operations
+  const Field2D averageX(const Field2D &f);
+  const Field3D averageX(const Field3D &f);
+  
   bool periodicY(int jx, BoutReal &ts) const;
   
   // Boundary region iteration
