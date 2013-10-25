@@ -96,6 +96,14 @@ const Field3D smooth_y(const Field3D &f) {
   return result;
 }
 
+const Field2D averageX(const Field2D &f) {
+  return mesh->averageX(f);
+}
+
+const Field3D averageX(const Field3D &f) {
+  return mesh->averageX(f);
+}
+
 const Field2D averageY(const Field2D &f) {
   return mesh->averageY(f);
 }

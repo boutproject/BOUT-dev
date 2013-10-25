@@ -84,6 +84,8 @@ class BoutMesh : public Mesh {
 
   const Field2D averageY(const Field2D&);
   const Field3D averageY(const Field3D &f);
+  const Field2D averageX(const Field2D &f);
+  const Field3D averageX(const Field3D &f);
 
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
