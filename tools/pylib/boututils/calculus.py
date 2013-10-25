@@ -6,12 +6,13 @@ B.Dudson, University of York, Nov 2009
 """
 
 try:
-    from numpy import zeros, arange, pi
+
+    from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
     from numpy.fft import rfft, irfft
+    from scipy.signal import convolve
 except ImportError:
     print "ERROR: NumPy module not available"
     raise
-
 
 def deriv(*args, **kwargs):
     """Take derivative of 1D array
@@ -71,6 +72,65 @@ def deriv(*args, **kwargs):
             result[0] = 0.0
         return result
 
+def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
+  """ Takes 1D or 2D Derivative of 2D array using convolution
+	
+	result = deriv2D(data)
+	result = deriv2D(data, dx)
+	
+	output is 2D (if only one axis specified)
+	output is 3D if no axis specified [nx,ny,2] with the third dimension being [dfdx, dfdy]
+	
+	keywords:
+	axis = 0/1  If no axis specified 2D derivative will be returned
+	dx = 1.0    axis spacing, must be 2D if 2D deriv is taken - default is [1.0,1.0]
+	noise_suppression = True   noise suppressing coefficients used to take derivative - default = True
+  """
+  s = data.shape
+  if axis > len(s)-1:
+    raise RuntimeError("ERROR: axis out of bounds for derivative")
+ 
+  if noise_suppression:  
+    if s[axis] < 11:
+      raise RuntimeError("Data too small to use 11th order method")
+    tmp = array([-1.0/512.0,-8.0/512.0,-27.0/512.0,-48.0/512.0,-42.0/512.0,0.0,42.0/512.0,48.0/512.0,27.0/512.0,8.0/512.0,1.0/512.0])
+  else:
+    if s[axis] < 9:
+      raise RuntimeError("Data too small to use 9th order method")
+    tmp = array([1.0/280.0,-4.0/105.0,1.0/5.0,-4.0/5.0,0.0,4.0/5.0,-1.0/5.0,4.0/105.0,-1.0/280.0])       
+  
+  N = (tmp.size-1)/2
+  if axis==1:
+    W = transpose(tmp[:,None])
+    data_deriv = convolve(data,W,mode='same')/dx*-1.0
+    for i in range(s[0]):
+      data_deriv[i,0:N-1] = deriv(data[i,0:N-1])/dx
+      data_deriv[i,s[1]-N:] = deriv(data[i,s[1]-N:])/dx
+    
+  elif axis==0:
+    W = tmp[:,None]
+    data_deriv = convolve(data,W,mode='same')/dx*-1.0
+    for i in range(s[1]):
+      data_deriv[0:N-1,i] = deriv(data[0:N-1,i])/dx
+      data_deriv[s[0]-N:,i] = deriv(data[s[0]-N:,i])/dx
+  else:
+    data_deriv = zeros((s[0],s[1],2))
+    if len(dx)==1:
+      dx = array([dx,dx])
+    
+    W = tmp[:,None]#transpose(multiply(tmp,ones((s[1],tmp.size))))
+    data_deriv[:,:,0] = convolve(data,W,mode='same')/dx[0]*-1.0
+    for i in range(s[1]):
+      data_deriv[0:N-1,i,0]  =  deriv(data[0:N-1,i])/dx[0]
+      data_deriv[s[0]-N:s[0]+1,i,0] = deriv(data[s[0]-N:s[0]+1,i])/dx[0]
+    
+    W = transpose(tmp[:,None])#multiply(tmp,ones((s[0],tmp.size)))
+    data_deriv[:,:,1] = convolve(data,W,mode='same')/dx[1]*-1.0
+    for i in range(s[0]):
+      data_deriv[i,0:N-1,1] = deriv(data[i,0:N-1])/dx[1]
+      data_deriv[i,s[1]-N:s[1]+1,1] = deriv(data[i,s[1]-N:s[1]+1])/dx[1]
+
+  return data_deriv
 
 def integrate(var, periodic=False):
     """Integrate a 1D array
@@ -132,3 +192,54 @@ def integrate(var, periodic=False):
             result[i] = result[-1] - int_total(var[i:])
         return result
 
+def simpson_integrate(data,dx,dy,kernel=0.0,weight=1.0):
+  """ Integrates 2D data to one value using the simpson method and matrix convolution
+
+      result = simpson_integrate(data,dx,dy)
+      
+      keywords:
+      
+      kernel - can be supplied if the simpson matrix is calculated ahead of time
+	    - if not supplied, is calculated within this function
+	    - if you need to integrate the same shape data over and over, calculated
+		it ahead of time using:
+		  kernel = simpson_matrix(Nx,Ny,dx,dy)
+
+      weight - can be used to scale data if single number
+	    - can be used to mask data if weight is array (same size as data)
+  """
+  s = data.shape
+  Nx = s[0]
+  Ny = s[1]
+
+  if len(kernel)==1:
+    kernel = simpson_matrix(Nx,Ny,dx,dy)
+
+  return sum(multiply(multiply(weight,kernel),data))/sum(multiply(weight,kernel))
+
+
+def simpson_matrix(Nx,Ny,dx,dy):
+  """
+      Creates a 2D matrix of coefficients for the simpson_integrate function
+      
+      Call ahead of time if you need to perform integration of the same size data with the
+	same dx and dy
+      
+      Otherwise, simpson_integrate will automatically call this
+
+  """
+  Wx = arange(Nx) + 2
+  Wx[where(arange(Nx) % 2 == 1)] = 4
+  Wx[0] = 1
+  Wx[Nx-1] = 1
+
+  Wy = arange(Ny) + 2
+  Wy[where(arange(Ny) % 2 == 1)] = 4
+  Wy[0] = 1
+  Wy[Ny-1] = 1
+
+  W = Wy[None,:] * Wx[:,None]
+
+  A = dx*dy/9.0
+
+  return W*A
