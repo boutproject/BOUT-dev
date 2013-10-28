@@ -803,7 +803,8 @@ from the first run, add ``append''
 \begin{verbatim}
  $ mpirun -np 2 ./conduction restart append
 \end{verbatim}
-which will then append any new outputs to the end of the old data files.
+which will then append any new outputs to the end of the old data files. For more
+information on restarting, see section~\ref{sec:restarting}.
 
 To analyse the output of the simulation, cd into the \file{data} subdirectory and start IDL.
 If you don't have IDL, don't panic as all this is also possible in Python and discussed
@@ -1188,6 +1189,40 @@ which may be needed to do the inversion.
 
 The output sent to the terminal (not the log files) also includes a run time, and estimated
 remaining time.
+
+\subsection{Restarting runs}
+\label{sec:restarting}
+
+Every output timestep, BOUT++ writes a set of files named ``BOUT.restart.\#.nc''
+where '\#' is the processor number (for parallel output, a single file ``BOUT.restart.nc'' is used).
+To restart from where the previous run finished, just add the keyword {\bf restart} to the end of the command, for example:
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart
+\end{verbatim}
+Equivalently, put ``restart=true'' near the top of the BOUT.inp input file.
+
+If you need to restart from a different point in your simulation, or the BOUT.restart files
+become corrupted, you can either use archived restart files, or create new restart files.
+Archived restart files have names like ``BOUT.restart\_0020.\#.nc'', and are written
+every 20 outputs by default. To change this, set ``archive'' in the BOUT.inp file.
+To use these files, they must be renamed to ``BOUT.restart.\#.nc''. A useful tool 
+to do this is ``rename'':
+\begin{verbatim}
+$ rename 's/_0020//' *.nc
+\end{verbatim}
+will strip out ``\_0020'' from any file names ending in ``.nc''.
+
+If you don't have archived restarts, or want to start from a different time-point, 
+there are Python routines for creating new restart files. If your PYTHONPATH
+environment variable is set up (see section~\ref{sec:configanalysis}) then you can use
+the \lstinline!boutdata.restart.create! function in \file{tools/pylib/boutdata/restart.py}:
+
+\begin{lstlisting}[language=python,numbers=none]
+>>> from boutdata.restart import create
+>>> create(final=10, path='data', output='.')
+\end{lstlisting}
+The above will take time point 10 from the BOUT.dmp.* files in the ``data'' directory.
+For each one, it will output a BOUT.restart file in the output directory ``.''.
 
 \section{Output and post-processing}
 \label{sec:output}
