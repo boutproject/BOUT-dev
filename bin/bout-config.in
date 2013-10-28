@@ -1,0 +1,238 @@
+#!/bin/sh
+
+# This script returns information on BOUT++ configuration
+#
+# Borrowed idea and some code from NetCDF nc-config
+#
+#
+
+cc="@MPICXX@"
+cxx="@MPICXX@"
+fc="none"
+checks="@CHECK_LEVEL@"
+cflags="@CONFIG_CFLAGS@"
+libs="@CONFIG_LDFLAGS@"
+
+version="@BOUT_VERSION@"
+git="@GIT_REVISION@"
+checks="@CHECK_LEVEL@"
+prefix="@PREFIX@"
+idlpath="@IDLCONFIGPATH@"
+pythonpath="@PYTHONCONFIGPATH@"
+
+has_pdb="@HAS_PDB@"
+has_netcdf="@HAS_NETCDF@"
+has_pnetcdf="@HAS_PNETCDF@"
+has_pvode="@HAS_PVODE@"
+has_cvode="@HAS_CVODE@"
+has_ida="@HAS_IDA@"
+has_lapack="@HAS_LAPACK@"
+has_petsc="@HAS_PETSC@"
+has_hypre="@HAS_HYPRE@"
+has_mumps="@HAS_MUMPS@"
+
+petsc_version="@PETSC_VERSION@"
+petsc_release="@PETSC_RELEASE@"
+petsc_has_sundials="@PETSC_HAS_SUNDIALS@"
+
+usage()
+{
+    cat <<EOF
+Usage: bout-config [OPTION]
+
+Available values for OPTION include:
+
+  --help      display this help message and exit
+  --all       Print all cofiguration
+
+  --cc        C compiler
+  --cxx       C++ compiler
+  --fc        Fortran compiler
+  --cflags    pre-processor and compiler flags
+  --libs      library linking flags
+  
+  --version   BOUT++ version
+  --git       Git commit
+  --checks    Run-time checking level
+  --prefix    Install prefix
+  --idl       IDL path
+  --python    Python path
+  
+  --has-pdb     PDB file support
+  --has-netcdf  NetCDF file support
+  --has-pnetcdf Parallel NetCDF file support
+  --has-pvode   PVODE solver support
+  --has-cvode   SUNDIALS CVODE solver support
+  --has-ida     SUNDIALS IDA solver support
+  --has-lapack  LAPACK support
+  --has-petsc   PETSc support
+  --has-hypre   Hypre support
+  --has-mumps   MUMPS support
+
+  --petsc-version
+  --petsc-release
+  --petsc-has-sundials 
+EOF
+
+    exit $1
+}
+
+all()
+{
+        echo
+        echo "This version of BOUT++ has been built with the following features: "
+        echo
+        echo "  --cc          -> $cc"
+        echo "  --cxx         -> $cxx"
+        echo "  --cflags      -> $cflags"
+        echo "  --libs        -> $libs"
+        echo
+        echo "  --version     -> $version"
+        echo "  --git         -> $git"
+        echo "  --checks      -> $checks"
+        echo "  --prefix      -> $prefix"
+        echo "  --idl         -> $idlpath"
+        echo "  --python      -> $pythonpath"
+        echo
+        echo "  --has-pdb     -> $has_pdb"
+        echo "  --has-netcdf  -> $has_netcdf"
+        echo "  --has-pnetcdf -> $has_pnetcdf"
+        echo "  --has-pvode   -> $has_pvode"
+        echo "  --has-cvode   -> $has_cvode"
+        echo "  --has-ida     -> $has_ida"
+        echo "  --has-lapack  -> $has_lapack"
+        echo "  --has-petsc   -> $has_petsc"
+        echo "  --has-hypre   -> $has_hypre"
+        echo "  --has-mumps   -> $has_mumps"
+        echo
+        echo "  --petsc-version      -> $petsc_version"
+        echo "  --petsc-release      -> $petsc_release"
+        echo "  --petsc-has-sundials -> $petsc_has_sundials"
+        echo
+}
+
+if test $# -eq 0; then
+    usage 1
+fi
+
+while test $# -gt 0; do
+    case "$1" in
+    # this deals with options in the style
+    # --option=value and extracts the value part
+    # [not currently used]
+    -*=*) value=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+    *) value= ;;
+    esac
+
+    case "$1" in
+
+    --help)
+        usage 0
+        ;;
+
+    --all)
+       all
+       ;;
+
+    --cc)
+        echo $cc
+        ;;
+
+    --cxx)
+        echo $cxx
+        ;;
+
+    --cflags)
+        echo $cflags
+        ;;
+
+    --libs)
+        echo $libs
+        ;;
+
+    --version)
+        echo $version
+        ;;
+
+    --git)
+        echo $git
+        ;;
+
+    --checks)
+        echo $checks
+        ;;
+
+    --prefix)
+        echo $prefix
+        ;;
+
+    --idl)
+        echo $idlpath
+        ;;
+
+    --python)
+        echo $pythonpath
+        ;;
+
+    --has-pdb)
+        echo $has_pdb
+        ;;
+
+    --has-netcdf)
+        echo $has_netcdf
+        ;;
+
+    --has-pnetcdf)
+        echo $has_pnetcdf
+        ;;
+
+    --has-pvode)
+        echo $has_pvode
+        ;;
+
+    --has-cvode)
+        echo $has_cvode
+        ;;
+
+    --has-ida)
+        echo $has_ida
+        ;;
+
+    --has-lapack)
+        echo $has_lapack
+        ;;
+
+    --has-petsc)
+        echo $has_petsc
+        ;;
+
+    --has-hypre)
+        echo $has_hypre
+        ;;
+
+    --has-mumps)
+        echo $has_mumps
+        ;;
+
+    --petsc-version)
+        echo $petsc_version
+        ;;
+
+    --petsc-release)
+        echo $petsc_release
+        ;;
+
+    --petsc-has-sundials)
+        echo $petsc_has_sundials
+        ;;
+
+    *)
+        echo "unknown option: $1"
+        usage
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+exit 0
