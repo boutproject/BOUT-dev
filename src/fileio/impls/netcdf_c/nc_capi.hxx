@@ -1,7 +1,7 @@
 /*!
- * \file nc4.hxx
+ * \file nc_capi.hxx
  *
- * \brief netCDF-4 data format interface, using C API
+ * \brief netCDF data format interface, using C API
  *
  * \author B.Dudson
  * \date   October 2013
