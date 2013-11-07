@@ -50,6 +50,7 @@ for nproc in [1,2,4]:
     if np.shape(bmk[v]) != np.shape(result):
       print "Fail, wrong shape"
       success = False
+      continue
     diff =  np.max(np.abs(bmk[v] - result))
     if diff > tol:
       print "Fail, maximum difference = "+str(diff)
