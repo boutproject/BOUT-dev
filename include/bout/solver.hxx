@@ -78,6 +78,7 @@ using std::string;
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
 #define SOLVEREULER       "euler"
+#define SOLVERPOWER       "power"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 

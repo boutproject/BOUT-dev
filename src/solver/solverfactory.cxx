@@ -10,6 +10,7 @@
 #include "impls/karniadakis/karniadakis.hxx"
 #include "impls/rk4/rk4.hxx"
 #include "impls/euler/euler.hxx"
+#include "impls/power/power.hxx"
 
 #include <boutexception.hxx>
 
@@ -71,6 +72,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new RK4Solver;
   } else if(!strcasecmp(type, SOLVEREULER)) {
     return new EulerSolver;
+  } else if(!strcasecmp(type, SOLVERPOWER)) {
+    return new PowerSolver;
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found
