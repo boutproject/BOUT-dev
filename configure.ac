@@ -35,6 +35,7 @@ AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
 AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
 AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
+AC_ARG_WITH(netcdfapi, [  --with-netcdfapi         Select the interface (c or cxx)])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
@@ -584,14 +585,152 @@ fi
 # netCDF support
 #############################################################
 
-NCCONF="" # Configuration script
+if test "x$with_netcdf" != "xno"
+then
+   # Check which API is to be used
+   if test "x$with_netcdfapi" == "x"
+   then
+     with_netcdfapi="c"  # Default is the C interface
+   fi
+   
+   if ( ( test "x$with_netcdfapi" != "xcxx" ) && ( test "x$with_netcdfapi" != "xc" ) )
+   then
+     echo "NetCDF API '$with_netcdfapi' not recognised. Setting to 'c'"
+     with_netcdfapi="c"
+   fi
+fi
 
-if test "$with_netcdf" != "no"
+if ( ( test "x$with_netcdf" != "xno" ) && ( test "x$with_netcdfapi" == "xc" ) )
 then
   ##########################################
   # Try to find a valid NetCDF configuration 
 
-  echo "Searching for NetCDF configuration"
+  echo "Searching for NetCDF configuration C API"
+
+  if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+  then
+    # No path specified. Try using nc-config
+    if  type nc-config > /dev/null 2>&1; then
+      echo " -> nc-config script found:" `which nc-config`
+      NCCONF=`which nc-config`
+    else
+        echo " -> No configure script found. Specify using --with-netcdf option"
+    fi
+  else
+    # see if configure scripts are in path
+    
+    if type $with_netcdf/nc-config > /dev/null 2>&1; then
+      NCCONF="$with_netcdf/nc-config"
+    elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+      NCCONF="$with_netcdf/bin/nc-config"
+    fi    
+  fi
+  
+  ##########################################
+  # Get configuration
+  if test "$NCCONF" != ""; then
+    echo " -> NetCDF config script found: $NCCONF"
+    
+    NCINC=`$NCCONF --cflags`
+    EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+    NCLIB=`$NCCONF --libs`
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
+
+    CXXFLAGS="$CXXFLAGS -DNCDFCAPI"
+    echo " -> NetCDF support enabled"
+    
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+    file_formats="$file_formats netCDF(C)"
+    NCPATH="found"
+  else
+    # No configuration script. Check the NetCDF path manually
+    
+    NCPATH=$with_netcdf
+    
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      AC_CHECK_FILES( $NCPATH/include/netcdf.h $NCPATH/lib/libnetcdf.a ,, [
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+      ] )
+    else
+      echo " -> Path not given. Searching for library..."
+    fi
+
+    # Try some known paths
+    if test "$NCPATH" = ""
+    then
+      AC_CHECK_FILE(/usr/include/netcdf.h, NCPATH=/usr/,
+      AC_CHECK_FILE(/usr/local/include/netcdf.h, NCPATH=/usr/local/,
+      AC_CHECK_FILE($HOME/local/include/netcdf.h, NCPATH=$HOME/local,
+      )))
+
+      if test "$NCPATH" != ""
+      then
+        # Check for the rest of the files
+        AC_CHECK_FILES( $NCPATH/lib/libnetcdf.a, , NCPATH="")
+      fi
+    fi
+
+    # Try to find using locate
+    if test "$NCPATH" = ""
+    then
+      NCFILE=`locate netcdf.h | head -n 1`
+      if test "$NCFILE" != ""
+      then
+        NCFILE=`dirname $NCFILE`
+        NCFILE=$NCFILE/..
+        AC_CHECK_FILES( $NCFILE/include/netcdf.h $NCFILE/lib/libnetcdf.a , NCPATH=$NCFILE, with_netcdf="no")
+      else
+        echo "checking locate... no"
+        with_netcdf="no"
+      fi
+    fi
+
+    # Finally, if found, add to BOUT++
+
+    if test "$with_netcdf" != "no"
+    then
+      # Set a compile-time flag
+       CXXFLAGS="$CXXFLAGS -DNCDFCAPI"
+
+      if test "$NCPATH" != ""; then
+        echo " -> path $NCPATH"
+        EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
+        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
+      fi
+
+      EXTRA_LIBS="$EXTRA_LIBS -lnetcdf"
+
+      file_formats="$file_formats netCDF(C)"
+
+      echo " -> NetCDF support enabled"
+    else
+      echo "NetCDF support disabled"
+    fi
+  fi
+
+fi
+
+echo ""
+
+
+#############################################################
+# netCDF C++ support
+#############################################################
+
+NCCONF="" # Configuration script
+
+if ( ( test "$with_netcdf" != "no" ) && ( test "x$with_netcdfapi" == "xcxx" ) )
+then
+  ##########################################
+  # Try to find a valid NetCDF configuration 
+
+  echo "Searching for NetCDF configuration C++ API"
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
@@ -716,7 +855,7 @@ then
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
 
-      file_formats="$file_formats netCDF"
+      file_formats="$file_formats netCDF(C++)"
 
       echo " -> NetCDF support enabled"
     else

@@ -65,7 +65,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
-        ndims = len(dimens)
+        if dimens != None:
+            ndims = len(dimens)
+        else:
+            ndims = 0
     except KeyError:
         print "ERROR: Variable '"+varname+"' not found"
         return None
@@ -85,7 +88,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     mz    = f.read("MZ")
     myg   = f.read("MYG")
     t_array = f.read("t_array")
-    nt = len(t_array)
+    if t_array != None:
+      nt = len(t_array)
+    else:
+      nt = 0
     
     if info:
         print "mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz)

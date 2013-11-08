@@ -692,6 +692,7 @@ with_signal
 with_track
 with_pdb
 with_netcdf
+with_netcdfapi
 with_pnetcdf
 with_debug
 with_ida
@@ -1339,6 +1340,7 @@ Optional Packages:
   --with-track            	   Enable variable tracking
   --with-pdb              	   Enable support for PDB files
   --with-netcdf           	   Enable support for netCDF files
+  --with-netcdfapi         Select the interface (c or cxx)
   --with-pnetcdf              Set path to Parallel NetCDF library
   --with-debug            	   Enable all debugging flags
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
@@ -2177,6 +2179,12 @@ fi
 # Check whether --with-netcdf was given.
 if test "${with_netcdf+set}" = set; then :
   withval=$with_netcdf;
+fi
+
+
+# Check whether --with-netcdfapi was given.
+if test "${with_netcdfapi+set}" = set; then :
+  withval=$with_netcdfapi;
 fi
 
 
@@ -4359,14 +4367,342 @@ fi
 # netCDF support
 #############################################################
 
-NCCONF="" # Configuration script
+if test "x$with_netcdf" != "xno"
+then
+   # Check which API is to be used
+   if test "x$with_netcdfapi" == "x"
+   then
+     with_netcdfapi="c"  # Default is the C interface
+   fi
 
-if test "$with_netcdf" != "no"
+   if ( ( test "x$with_netcdfapi" != "xcxx" ) && ( test "x$with_netcdfapi" != "xc" ) )
+   then
+     echo "NetCDF API '$with_netcdfapi' not recognised. Setting to 'c'"
+     with_netcdfapi="c"
+   fi
+fi
+
+if ( ( test "x$with_netcdf" != "xno" ) && ( test "x$with_netcdfapi" == "xc" ) )
 then
   ##########################################
   # Try to find a valid NetCDF configuration
 
-  echo "Searching for NetCDF configuration"
+  echo "Searching for NetCDF configuration C API"
+
+  if (test "$with_netcdf" = "yes") || (test "$with_netcdf" = "")
+  then
+    # No path specified. Try using nc-config
+    if  type nc-config > /dev/null 2>&1; then
+      echo " -> nc-config script found:" `which nc-config`
+      NCCONF=`which nc-config`
+    else
+        echo " -> No configure script found. Specify using --with-netcdf option"
+    fi
+  else
+    # see if configure scripts are in path
+
+    if type $with_netcdf/nc-config > /dev/null 2>&1; then
+      NCCONF="$with_netcdf/nc-config"
+    elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
+      NCCONF="$with_netcdf/bin/nc-config"
+    fi
+  fi
+
+  ##########################################
+  # Get configuration
+  if test "$NCCONF" != ""; then
+    echo " -> NetCDF config script found: $NCCONF"
+
+    NCINC=`$NCCONF --cflags`
+    EXTRA_INCS="$EXTRA_INCS $NCINC"
+
+    NCLIB=`$NCCONF --libs`
+    LDFLAGS="$LDFLAGS -Wl,-rpath,`nc-config --prefix`/lib"
+
+    CXXFLAGS="$CXXFLAGS -DNCDFCAPI"
+    echo " -> NetCDF support enabled"
+
+    EXTRA_LIBS="$EXTRA_LIBS $NCLIB"
+
+    file_formats="$file_formats netCDF(C)"
+    NCPATH="found"
+  else
+    # No configuration script. Check the NetCDF path manually
+
+    NCPATH=$with_netcdf
+
+    if test "$NCPATH" != ""
+    then
+      # Path set, so check if libraries present
+      as_ac_File=`$as_echo "ac_cv_file_$NCPATH/include/netcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/include/netcdf.h" >&5
+$as_echo_n "checking for $NCPATH/include/netcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$NCPATH/include/netcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$NCPATH/include/netcdf.h" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+
+fi
+as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf.a" >&5
+$as_echo_n "checking for $NCPATH/lib/libnetcdf.a... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$NCPATH/lib/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+
+        echo " -> Given path not correct. Finding..."
+        NCPATH=""
+
+fi
+
+    else
+      echo " -> Path not given. Searching for library..."
+    fi
+
+    # Try some known paths
+    if test "$NCPATH" = ""
+    then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/include/netcdf.h" >&5
+$as_echo_n "checking for /usr/include/netcdf.h... " >&6; }
+if ${ac_cv_file__usr_include_netcdf_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/include/netcdf.h"; then
+  ac_cv_file__usr_include_netcdf_h=yes
+else
+  ac_cv_file__usr_include_netcdf_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_include_netcdf_h" >&5
+$as_echo "$ac_cv_file__usr_include_netcdf_h" >&6; }
+if test "x$ac_cv_file__usr_include_netcdf_h" = xyes; then :
+  NCPATH=/usr/
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/local/include/netcdf.h" >&5
+$as_echo_n "checking for /usr/local/include/netcdf.h... " >&6; }
+if ${ac_cv_file__usr_local_include_netcdf_h+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "/usr/local/include/netcdf.h"; then
+  ac_cv_file__usr_local_include_netcdf_h=yes
+else
+  ac_cv_file__usr_local_include_netcdf_h=no
+fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_file__usr_local_include_netcdf_h" >&5
+$as_echo "$ac_cv_file__usr_local_include_netcdf_h" >&6; }
+if test "x$ac_cv_file__usr_local_include_netcdf_h" = xyes; then :
+  NCPATH=/usr/local/
+else
+  as_ac_File=`$as_echo "ac_cv_file_$HOME/local/include/netcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HOME/local/include/netcdf.h" >&5
+$as_echo_n "checking for $HOME/local/include/netcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$HOME/local/include/netcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+  NCPATH=$HOME/local
+fi
+
+fi
+
+fi
+
+
+      if test "$NCPATH" != ""
+      then
+        # Check for the rest of the files
+        as_ac_File=`$as_echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCPATH/lib/libnetcdf.a" >&5
+$as_echo_n "checking for $NCPATH/lib/libnetcdf.a... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$NCPATH/lib/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$NCPATH/lib/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  NCPATH=""
+fi
+
+      fi
+    fi
+
+    # Try to find using locate
+    if test "$NCPATH" = ""
+    then
+      NCFILE=`locate netcdf.h | head -n 1`
+      if test "$NCFILE" != ""
+      then
+        NCFILE=`dirname $NCFILE`
+        NCFILE=$NCFILE/..
+        as_ac_File=`$as_echo "ac_cv_file_$NCFILE/include/netcdf.h" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/include/netcdf.h" >&5
+$as_echo_n "checking for $NCFILE/include/netcdf.h... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$NCFILE/include/netcdf.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$NCFILE/include/netcdf.h" | $as_tr_cpp` 1
+_ACEOF
+NCPATH=$NCFILE
+else
+  with_netcdf="no"
+fi
+as_ac_File=`$as_echo "ac_cv_file_$NCFILE/lib/libnetcdf.a" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $NCFILE/lib/libnetcdf.a" >&5
+$as_echo_n "checking for $NCFILE/lib/libnetcdf.a... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$NCFILE/lib/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$NCFILE/lib/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+NCPATH=$NCFILE
+else
+  with_netcdf="no"
+fi
+
+      else
+        echo "checking locate... no"
+        with_netcdf="no"
+      fi
+    fi
+
+    # Finally, if found, add to BOUT++
+
+    if test "$with_netcdf" != "no"
+    then
+      # Set a compile-time flag
+       CXXFLAGS="$CXXFLAGS -DNCDFCAPI"
+
+      if test "$NCPATH" != ""; then
+        echo " -> path $NCPATH"
+        EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
+        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
+      fi
+
+      EXTRA_LIBS="$EXTRA_LIBS -lnetcdf"
+
+      file_formats="$file_formats netCDF(C)"
+
+      echo " -> NetCDF support enabled"
+    else
+      echo "NetCDF support disabled"
+    fi
+  fi
+
+fi
+
+echo ""
+
+
+#############################################################
+# netCDF C++ support
+#############################################################
+
+NCCONF="" # Configuration script
+
+if ( ( test "$with_netcdf" != "no" ) && ( test "x$with_netcdfapi" == "xcxx" ) )
+then
+  ##########################################
+  # Try to find a valid NetCDF configuration
+
+  echo "Searching for NetCDF configuration C++ API"
 
   OLDNCDF="0" # Indicates whether nc-config or ncxx4-config
 
@@ -4762,7 +5098,7 @@ fi
 
       EXTRA_LIBS="$EXTRA_LIBS -lnetcdf_c++ -lnetcdf"
 
-      file_formats="$file_formats netCDF"
+      file_formats="$file_formats netCDF(C++)"
 
       echo " -> NetCDF support enabled"
     else

@@ -289,10 +289,7 @@ and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
 
 After getting an MPI compiler, the next step is to make sure the
 libraries BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3
-library, and to run any of the examples you'll also need NetCDF-4 (prior to 4.2) installed. 
-
-\note{There are currently issues with support for NetCDF's new C++ API, which appeared in 4.2. 
-For now use NetCDF 4.1.x}
+library, and to run any of the examples you'll also need NetCDF installed. 
 
 Most large machines (e.g. NERSC Hopper, HECToR, HPC-FF etc.)
 will have these libraries and many more already installed, but you may 
@@ -350,7 +347,14 @@ see a message \texttt{NetCDF support disabled} then configure couldn't find
 the NetCDF library. Unless you have PACT or pnetcdf installed, this will be
 followed by a message \texttt{ERROR: At least one file format must be supported}. 
 
-Download the 4.1.3 {\bf bundled}\footnote{Support for the more recent unbundled versions is coming soon} release of NetCDF from \url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the \texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. Untar the file and 'cd' into the resulting directory:
+NetCDF has several different interfaces: The C interface is quite consistent between versions,
+and is now the default, and the C++ interface which was introduced in version 4 and then changed in
+version 4.2. The C++ interface is the most tested in BOUT++, but only works with the 4.1.x versions. To use the C++
+interface, Download the 4.1.3 {\bf bundled} release of NetCDF from \url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-4_1_3/} and put the \texttt{netcdf-4.1.3.tar.gz} file into your ``install'' directory. 
+To use the C interface, download a recent version of NetCDF-C from \url{http://www.unidata.ucar.edu/downloads/netcdf}, 
+and follow the instructions below (but with a differen netcdf file name). 
+
+First untar the netcdf .tar.gz file and 'cd' into the resulting directory:
 \begin{verbatim}
 $ tar -xzvf netcdf-4.1.3.tar.gz
 $ cd netcdf-4.1.3
@@ -369,20 +373,18 @@ $ make
 $ make install
 \end{verbatim}
 
-%Download the latest stable release of NetCDF-4 C++ from
-%\url{http://www.unidata.ucar.edu/downloads/netcdf/netcdf-cxx/}.
-%At the time of writing, this was called \texttt{netcdf-cxx4-4.2.tar.gz}.
-%Put this file into your ``install'' directory, untar it, and 'cd' into 
-%the resulting directory.
-
 Go back to the BOUT directory and run the configure script again, 
 this time specifying both the location of FFTW (if you installed it 
 from source above), and the NetCDF library:
 \begin{verbatim}
 $ ./configure --with-fftw=$HOME/local --with-netcdf=$HOME/local
 \end{verbatim}
+By default this will use the C interface. To use the C++ interface, specify the API using
+\begin{verbatim}
+--with-netcdfapi=cxx
+\end{verbatim}
 
-which should now finish successfully, printing a summary of the configuration:
+The configure script should now finish successfully, printing a summary of the configuration:
 \begin{verbatim}
 Configuration summary
   FACETS support: no

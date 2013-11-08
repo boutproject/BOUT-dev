@@ -49,14 +49,13 @@ class DataFormat {
   virtual bool openr(const string &base, int mype);
   virtual bool openw(const string &name, bool append=false) = 0;
   virtual bool openw(const string &base, int mype, bool append=false);
-  
+
   virtual bool is_valid() = 0;
   
   virtual void close() = 0;
 
   virtual void flush() = 0;
 
-  virtual const vector<int> getSize(const char *var) = 0;
   virtual const vector<int> getSize(const string &var) = 0;
 
   // Set the origin for all subsequent calls
@@ -66,26 +65,18 @@ class DataFormat {
   
   // Read / Write simple variables up to 3D
 
-  virtual bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
 
-  virtual bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-  virtual bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
 
   // Read / Write record-based variables
 
-  virtual bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
   virtual bool read_rec(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
 
-  virtual bool write_rec(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
-  virtual bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) = 0;
   virtual bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) = 0;
 
   // Optional functions
