@@ -1,5 +1,5 @@
 /*
- *
+ * Provides global gather/scatter operations for fields
  *
  */
 
@@ -14,10 +14,8 @@ class GlobalField2D;
 
 class GlobalField {
 public:
-  GlobalField(Mesh *m, int xsize, int ysize, int zsize) : mesh(m), nx(xsize), ny(ysize), nz(zsize);
-  
   virtual bool valid() const = 0;  ///< Is the data valid on any processor?
-  virtual bool dataIsLocal() const = 0; ///< Data is on this processor
+  bool dataIsLocal() const {return valid() && (data_on_proc == mype);} ///< Data is on this processor
 
   // Data access by index
   BoutReal& operator()(int jx, int jy, int jz) {return data[jz + nz*jy + nz*ny*jx];}
@@ -26,21 +24,30 @@ public:
   // Direct data access
   BoutReal* getData() {return data;}
 protected:
+  GlobalField(Mesh *m, int xsize, int ysize, int zsize);
+  
   Mesh *mesh;
   
   int nx, ny, nz;
   BoutReal *data;
-  
+  int data_on_proc; // Which processor is this data on?
+
   MPI_Comm comm;
   int npes, mype;
+  
+  void proc_origin(int proc, int *x, int *y, int *z = NULL);  ///< Return the global origin of processor proc
+  void proc_size(int proc, int *lx, int *ly, int *lz = NULL); ///< Return the array size of processor proc
+private:
+  GlobalField();
+  
 };
 
 class GlobalField2D : public GlobalField {
 public:
-  GlobalField2D(Mesh *m) : GlobalField(m) {}
+  GlobalField2D(Mesh *m);
+  virtual ~GlobalField2D();
   
-  bool valid() const;
-  bool dataIsLocal() const;
+  bool valid() const {return false;}
   
   void gather(const Field2D &f, int proc=0); ///< Gather all data onto one processor
   const Field2D scatter() const; ///< Scatter data back from one to many processors
@@ -53,14 +60,18 @@ public:
   }
   
   // Data access by index
-  BoutReal& operator()(int jx, int jy) {return (*this)(jx, jy, 0);}
-  const BoutReal& operator()(int jx, int jy) const {return (*this)(jx, jy, 0);}
+  BoutReal& operator()(int jx, int jy) {return GlobalField::operator()(jx, jy, 0);}
+  const BoutReal& operator()(int jx, int jy) const {return GlobalField::operator()(jx, jy, 0);}
   
 protected:
   
 
 private:
+  GlobalField2D();
   
+  BoutReal** buffer;
+  
+  int msg_len(int proc) const;
   
 };
 
