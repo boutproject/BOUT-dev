@@ -60,8 +60,7 @@ PetscSolver::PetscSolver() {
   interpolate = PETSC_TRUE;
   initialised = false;
   bout_snes_time = .0;
-
-  prefunc = NULL;
+  
   jacfunc = NULL;
 
   output_flag = PETSC_FALSE;
@@ -265,7 +264,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   ierr = SNESGetKSP(snes,&ksp);CHKERRQ(ierr);
   ierr = KSPGetPC(ksp,&pc);CHKERRQ(ierr);
 
-  if(use_precon && (prefunc != NULL)) {
+  if(use_precon && have_user_precon()) {
 
     ierr = SNESGetPC(snes,&psnes);CHKERRQ(ierr);
     ierr = SNESGetKSP(psnes,&nksp);CHKERRQ(ierr);
@@ -653,7 +652,7 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
   VecRestoreArray(x, &data);
 
   // Call the preconditioner
-  (*prefunc)(ts_time, 1./shift, 0.0);
+  run_precon(ts_time, 1./shift, 0.0);
 
   // Save the solution from time derivatives
   VecGetArray(y, &data);

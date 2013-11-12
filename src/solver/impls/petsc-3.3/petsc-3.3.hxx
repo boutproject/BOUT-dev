@@ -70,7 +70,6 @@ class PetscSolver : public Solver {
   ~PetscSolver();
 
   // Can be called from physics initialisation to supply callbacks
-  void setPrecon(PhysicsPrecon f) {prefunc = f;}
   void setJacobian(Jacobian j) {jacfunc = j; }
 
   int init(bool restarting, int NOUT, BoutReal TIMESTEP);
@@ -90,8 +89,7 @@ class PetscSolver : public Solver {
   PetscLogEvent solver_event, loop_event, init_event;
  private:
   PetscLib lib; // Handles initialize / finalize
-
-  PhysicsPrecon prefunc; // Preconditioner
+  
   Jacobian jacfunc; // Jacobian - vector function
 
   BoutReal shift;   // Shift (alpha) parameter from TS
