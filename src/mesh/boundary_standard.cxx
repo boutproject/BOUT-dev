@@ -49,6 +49,94 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 
 ///////////////////////////////////////////////////////////////
 
+BoundaryOp* BoundaryDirichlet_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryDirichlet_2ndOrder(region, val);
+  }
+  return new BoundaryDirichlet_2ndOrder(region);
+}
+
+void BoundaryDirichlet_2ndOrder::apply(Field2D &f) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    f(bndry->x,bndry->y) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by);
+    #ifdef CHECK
+      f(bndry->x+bndry->bx,bndry->y+bndry->by) = NAN;
+    #endif
+  }
+}
+
+void BoundaryDirichlet_2ndOrder::apply(Field3D &f) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  for(bndry->first(); !bndry->isDone(); bndry->next1d())
+    for(int z=0;z<mesh->ngz;z++) {
+      f(bndry->x,bndry->y,z) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by,z);
+      #ifdef CHECK
+	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = NAN;
+      #endif
+    }
+}
+
+void BoundaryDirichlet_2ndOrder::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryDirichlet_2ndOrder::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryDirichlet_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryDirichlet_4thOrder(region, val);
+  }
+  return new BoundaryDirichlet_4thOrder(region);
+}
+
+void BoundaryDirichlet_4thOrder::apply(Field2D &f) {
+  // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    f(bndry->x,bndry->y) = 128./35.*val - 4.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 2.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by) - 4./3.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by) + 1./7.*f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by);
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = -128./5.*val + 9.*f(bndry->x,bndry->y) + 18.*f(bndry->x-bndry->bx,bndry->y-bndry->by) -4.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by) + 3./5.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by);
+  }
+}
+
+void BoundaryDirichlet_4thOrder::apply(Field3D &f) {
+  // Set (at 4th order) the value at the mid-point between the guard cell and the grid cell to be val
+  for(bndry->first(); !bndry->isDone(); bndry->next1d())
+    for(int z=0;z<mesh->ngz;z++) {
+      f(bndry->x,bndry->y,z) = 128./35.*val - 4.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 2.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by,z) - 4./3.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by,z) + 1./7.*f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by,z);
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -128./5.*val + 9.*f(bndry->x,bndry->y,z) + 18.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) -4.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by,z) + 3./5.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by,z);
+    }
+}
+
+void BoundaryDirichlet_4thOrder::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryDirichlet_4thOrder::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
+///////////////////////////////////////////////////////////////
+
 BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
     //output << "WARNING: Ignoring arguments to BoundaryNeumann\n";
@@ -63,13 +151,15 @@ BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &a
 void BoundaryNeumann::apply(Field2D &f) {
   // Loop over all elements and set equal to the next point in
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by] - val*mesh->dx[bndry->x][bndry->y];
+    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by] + val*(bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y]);
 }
 
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
-    for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z]- val*mesh->dx[bndry->x][bndry->y];
+    for(int z=0;z<mesh->ngz;z++) {
+      BoutReal delta = bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y];
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z] + val*delta;
+    }
 }
 
 ///////////////////////////////////////////////////////////////
@@ -92,6 +182,102 @@ void BoundaryNeumann2::apply(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++)
       f(bndry->x, bndry->y, z) = (4.*f(bndry->x - bndry->bx, bndry->y - bndry->by, z) - f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, z))/3.;
 }
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryNeumann_2ndOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryNeumann_2ndOrder(region, val);
+  }
+  return new BoundaryNeumann_2ndOrder(region);
+}
+
+void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
+  // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
+  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y-bndry->by) + val*(bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y]);
+    #ifdef CHECK
+      f(bndry->x+bndry->bx,bndry->y+bndry->by) = NAN;
+    #endif
+  }
+}
+
+void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
+  // Set (at 2nd order) the gradient at the mid-point between the guard cell and the grid cell to be val
+  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  for(bndry->first(); !bndry->isDone(); bndry->next1d())
+    for(int z=0;z<mesh->ngz;z++) {
+      BoutReal delta = bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y];
+      f(bndry->x,bndry->y,z) = f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + val*delta;
+      #ifdef CHECK
+	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = NAN;
+      #endif
+    }
+}
+
+void BoundaryNeumann_2ndOrder::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
+///////////////////////////////////////////////////////////////
+
+BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryNeumann_4thOrder(region, val);
+  }
+  return new BoundaryNeumann_4thOrder(region);
+}
+
+void BoundaryNeumann_4thOrder::apply(Field2D &f) {
+  // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
+  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    BoutReal delta = -(bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y]);
+    f(bndry->x,bndry->y) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 9./22.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by) - 5./22.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by) + 1./22.*f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by);
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = -24.*delta*val + 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by) - 27.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by) + f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by); // The f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
+  }
+}
+
+void BoundaryNeumann_4thOrder::apply(Field3D &f) {
+  // Set (at 4th order) the gradient at the mid-point between the guard cell and the grid cell to be val
+  // This sets the value of the co-ordinate derivative, i.e. DDX/DDY not Grad_par/Grad_perp.x
+  for(bndry->first(); !bndry->isDone(); bndry->next1d())
+    for(int z=0;z<mesh->ngz;z++) {
+      BoutReal delta = -(bndry->bx*mesh->dx[bndry->x][bndry->y]+bndry->by*mesh->dy[bndry->x][bndry->y]);
+      f(bndry->x,bndry->y,z) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 9./22.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by,z) - 5./22.*f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by,z) + 1./22.*f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by,z);
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) - 27.*f(bndry->x-2.*bndry->bx,bndry->y-2.*bndry->by,z) + f(bndry->x-3.*bndry->bx,bndry->y-3.*bndry->by,z); // The f(bndry->x-4.*bndry->bx,bndry->y-4.*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
+    }
+}
+
+void BoundaryNeumann_4thOrder::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryNeumann_4thOrder::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
 ///////////////////////////////////////////////////////////////
 
 BoundaryOp* BoundaryNeumannPar::clone(BoundaryRegion *region, const list<string> &args) {

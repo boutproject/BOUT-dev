@@ -15,9 +15,13 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
+  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
+  add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann2(), "neumann2");
   add(new BoundaryNeumannPar(), "neumannpar");
+  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder");
+  add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
