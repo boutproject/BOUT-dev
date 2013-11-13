@@ -140,7 +140,7 @@ void BoundaryRegionYDown::next()
 void BoundaryRegionYDown::next1d()
 {
   // Loop over the innermost points
-  x--;
+  x++;
 }
 
 void BoundaryRegionYDown::nextX()
