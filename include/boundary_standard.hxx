@@ -184,6 +184,22 @@ class BoundaryDivCurl : public BoundaryOp {
   void apply(Vector3D &f);
 };
 
+/// Free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
+class BoundaryFree : public BoundaryOp {
+ public:
+  BoundaryFree() : val(0.) {}
+  BoundaryFree(const BoutReal setval): val(setval) {}
+  BoundaryFree(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
+};
+
 /////////////////////////////////////////////////////////
 
 /// Convert a boundary condition to a relaxing one

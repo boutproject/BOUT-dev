@@ -27,6 +27,7 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryZeroLaplace(), "zerolaplace");
   add(new BoundaryZeroLaplace2(), "zerolaplace2");
   add(new BoundaryConstLaplace(), "constlaplace");
+  add(new BoundaryFree(), "free");
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryShifted(), "shifted");
   addMod(new BoundaryWidth(), "width");

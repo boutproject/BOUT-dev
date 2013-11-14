@@ -734,6 +734,39 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 
 ///////////////////////////////////////////////////////////////
 
+BoundaryOp* BoundaryFree::clone(BoundaryRegion *region, const list<string> &args) {
+  if (region->location & BNDRY_XIN) mesh->freeboundary_xin = true;
+  if (region->location & BNDRY_XOUT) mesh->freeboundary_xout = true;
+  if (region->location & BNDRY_YDOWN) mesh->freeboundary_ydown = true;
+  if (region->location & BNDRY_YUP) mesh->freeboundary_yup = true;
+  
+  if(!args.empty()) {
+    // First argument should be a value
+    val = stringToReal(args.front());
+    return new BoundaryFree(region, val);
+  }
+  return new BoundaryFree(region);
+}
+
+void BoundaryFree::apply(Field2D &f) {
+  // Do nothing for free boundary
+}
+
+void BoundaryFree::apply(Field3D &f) {
+  // Do nothing for free boundary
+}
+
+void BoundaryFree::apply_ddt(Field2D &f) {
+  // Do nothing for free boundary
+}
+
+void BoundaryFree::apply_ddt(Field3D &f) {
+  // Do nothing for free boundary
+}
+
+
+///////////////////////////////////////////////////////////////
+
 BoundaryOp* BoundaryRelax::cloneMod(BoundaryOp *operation, const list<string> &args) {
   BoundaryRelax* result = new BoundaryRelax(operation, r);
   

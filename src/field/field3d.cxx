@@ -1439,6 +1439,106 @@ void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
+void Field3D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const
+{
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+  
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Setting X stencil for empty data\n");
+#endif
+
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    throw BoutException("Field3D: Don't know how to z-shift forward_stencil");
+  }
+  else if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+    // Non-centred stencil
+
+    if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+      // Producing a stencil centred around a lower X value
+      fval.m = block->data[bx.jxm][bx.jy][bx.jz];
+      fval.c = block->data[bx.jx][bx.jy][bx.jz];
+      fval.p = block->data[bx.jxp][bx.jy][bx.jz];
+      fval.p2 = block->data[bx.jx2p][bx.jy][bx.jz];
+      fval.p3 = block->data[bx.jx+3][bx.jy][bx.jz];
+      fval.p4 = block->data[bx.jx+4][bx.jy][bx.jz];
+      
+    }else if(location == CELL_XLOW) {
+      // Stencil centred around a cell centre
+      fval.m = block->data[bx.jx][bx.jy][bx.jz];
+      fval.c = block->data[bx.jxp][bx.jy][bx.jz];
+      fval.p = block->data[bx.jx2p][bx.jy][bx.jz];
+      fval.p2 = block->data[bx.jx+3][bx.jy][bx.jz];
+      fval.p3 = block->data[bx.jx+4][bx.jy][bx.jz];
+      fval.p4 = block->data[bx.jx+5][bx.jy][bx.jz];
+    }
+    // Shifted in one direction -> shift in another
+    // Could produce warning
+  }
+  else {
+    // No shift in the z direction
+    fval.m = block->data[bx.jxm][bx.jy][bx.jz];
+    fval.c = block->data[bx.jx][bx.jy][bx.jz];
+    fval.p = block->data[bx.jxp][bx.jy][bx.jz];
+    fval.p2 = block->data[bx.jx2p][bx.jy][bx.jz];
+    fval.p3 = block->data[bx.jx+3][bx.jy][bx.jz];
+    fval.p4 = block->data[bx.jx+4][bx.jy][bx.jz];
+  }
+}
+
+void Field3D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const
+{
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+  
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Setting X stencil for empty data\n");
+#endif
+
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
+    throw BoutException("Field3D: Don't know how to z-shift backward_stencil");
+  }
+  else if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+    // Non-centred stencil
+
+    if((location == CELL_CENTRE) && (loc == CELL_XLOW)) {
+      // Producing a stencil centred around a lower X value
+      fval.p = block->data[bx.jx][bx.jy][bx.jz];
+      fval.c = block->data[bx.jxm][bx.jy][bx.jz];
+      fval.m = block->data[bx.jx2m][bx.jy][bx.jz];
+      fval.m2 = block->data[bx.jx-3][bx.jy][bx.jz];
+      fval.m3 = block->data[bx.jx-4][bx.jy][bx.jz];
+      fval.m4 = block->data[bx.jx-5][bx.jy][bx.jz];
+      
+    }else if(location == CELL_XLOW) {
+      // Stencil centred around a cell centre
+      fval.p = block->data[bx.jxp][bx.jy][bx.jz];
+      fval.c = block->data[bx.jx][bx.jy][bx.jz];
+      fval.m = block->data[bx.jxm][bx.jy][bx.jz];
+      fval.m2 = block->data[bx.jx2m][bx.jy][bx.jz];
+      fval.m3 = block->data[bx.jx-3][bx.jy][bx.jz];
+      fval.m4 = block->data[bx.jx-4][bx.jy][bx.jz];
+    }
+    // Shifted in one direction -> shift in another
+    // Could produce warning
+  }
+  else {
+    // No shift in the z direction
+    fval.p = block->data[bx.jxp][bx.jy][bx.jz];
+    fval.c = block->data[bx.jx][bx.jy][bx.jz];
+    fval.m = block->data[bx.jxm][bx.jy][bx.jz];
+    fval.m2 = block->data[bx.jx2m][bx.jy][bx.jz];
+    fval.m3 = block->data[bx.jx-3][bx.jy][bx.jz];
+    fval.m4 = block->data[bx.jx-4][bx.jy][bx.jz];
+  }
+}
+
 void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {
   fval.jx = bx.jx;
@@ -1501,6 +1601,96 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
     }
     // Shifted in one direction -> shift in another
     // Could produce warning
+  }
+}
+
+void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const
+{
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+  
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Setting Y stencil for empty data\n");
+#endif
+
+  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+    // Non-centred stencil
+
+    if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+      // Producing a stencil centred around a lower Y value
+      fval.m = block->data[bx.jx][bx.jym][bx.jz];
+      fval.c = block->data[bx.jx][bx.jy][bx.jz];
+      fval.p = block->data[bx.jx][bx.jyp][bx.jz];
+      fval.p2 = block->data[bx.jx][bx.jy2p][bx.jz];
+      fval.p3 = block->data[bx.jx][bx.jy+3][bx.jz];
+      fval.p4 = block->data[bx.jx][bx.jy+4][bx.jz];
+    }else if(location == CELL_YLOW) {
+      // Stencil centred around a cell centre
+      fval.m = block->data[bx.jx][bx.jy][bx.jz];
+      fval.c = block->data[bx.jx][bx.jyp][bx.jz];
+      fval.p = block->data[bx.jx][bx.jy2p][bx.jz];
+      fval.p2 = block->data[bx.jx][bx.jy+3][bx.jz];
+      fval.p3 = block->data[bx.jx][bx.jy+4][bx.jz];
+      fval.p4 = block->data[bx.jx][bx.jy+5][bx.jz];
+    }
+    // Shifted in one direction -> shift in another
+    // Could produce warning
+  }
+  else {
+    fval.m = block->data[bx.jx][bx.jym][bx.jz];
+    fval.c = block->data[bx.jx][bx.jy][bx.jz];
+    fval.p = block->data[bx.jx][bx.jyp][bx.jz];
+    fval.p2 = block->data[bx.jx][bx.jy2p][bx.jz];
+    fval.p3 = block->data[bx.jx][bx.jy+3][bx.jz];
+    fval.p4 = block->data[bx.jx][bx.jy+4][bx.jz];
+  }
+}
+
+void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const
+{
+  fval.jx = bx.jx;
+  fval.jy = bx.jy;
+  fval.jz = bx.jz;
+  
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Setting Y stencil for empty data\n");
+#endif
+
+  if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
+    // Non-centred stencil
+
+    if((location == CELL_CENTRE) && (loc == CELL_YLOW)) {
+      // Producing a stencil centred around a lower Y value
+      fval.p = block->data[bx.jx][bx.jy][bx.jz];
+      fval.c = block->data[bx.jx][bx.jym][bx.jz];
+      fval.m = block->data[bx.jx][bx.jy2m][bx.jz];
+      fval.m2 = block->data[bx.jx][bx.jy+3][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy+4][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy+5][bx.jz];
+    }else if(location == CELL_YLOW) {
+      // Stencil centred around a cell centre
+      fval.p = block->data[bx.jx][bx.jyp][bx.jz];
+      fval.c = block->data[bx.jx][bx.jy][bx.jz];
+      fval.m = block->data[bx.jx][bx.jym][bx.jz];
+      fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
+      fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
+      fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
+    }
+    // Shifted in one direction -> shift in another
+    // Could produce warning
+  }
+  else {
+    fval.p = block->data[bx.jx][bx.jyp][bx.jz];
+    fval.c = block->data[bx.jx][bx.jy][bx.jz];
+    fval.m = block->data[bx.jx][bx.jym][bx.jz];
+    fval.m2 = block->data[bx.jx][bx.jy2m][bx.jz];
+    fval.m3 = block->data[bx.jx][bx.jy+3][bx.jz];
+    fval.m4 = block->data[bx.jx][bx.jy+4][bx.jz];
   }
 }
 
