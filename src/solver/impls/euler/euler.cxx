@@ -127,7 +127,7 @@ int EulerSolver::run() {
     iteration++; // Advance iteration number
     
     /// Write the restart file
-    restart.write("%s/BOUT.restart.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
+    restart.write();
     
     if((archive_restart > 0) && (iteration % archive_restart == 0)) {
       restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
