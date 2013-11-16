@@ -2893,6 +2893,53 @@ is equivalent to
   dump.add(Ni0, "Ni0", 0); 
 \end{lstlisting}
 
+In some situations you might also want to write some data to a different file. To do this,
+create a Datafile object: 
+
+\begin{lstlisting}
+Datafile mydata;
+\end{lstlisting}
+
+in physics\_init, you then:
+
+\begin{enumerate}
+\item (optional) Initialise the file, passing it the options to use. If you skip this step, default (sane) options will be used. This just allows you to enable/disable, use parallel I/O, set whether files are opened and closed every time etc.
+\begin{lstlisting}
+mydata = Datafile(Options::getRoot()->getSection("mydata"));
+\end{lstlisting}
+which would use options in a section [mydata] in BOUT.inp
+
+\item Open the file for writing
+\begin{lstlisting}
+mydata.openw("mydata.nc")
+\end{lstlisting}
+By default this only specifies the file name; actual opening of the file happens later when the data is written. If you are not using parallel I/O, the processor number is also inserted into the file name before the last ".", so "mydata.nc" becomes "mydata.0.nc", "mydata.1.nc" etc. The file format used depends on the extension, so ".nc" will open NetCDF, ".pdb" a PDB file etc.
+
+(see e.g. src/fileio/datafile.cxx line 139, which calls src/fileio/dataformat.cxx line 23, which then calls the file format interface e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
+
+\item Add variables to the file
+\begin{lstlisting}
+mydata.add(variable, "name") ;  // Not evolving. Every time the file is written, this will be overwritten
+mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
+\end{lstlisting}
+\end{enumerate}
+
+Whenever you want to write values to the file, for example in physics\_run or a monitor, just call
+\begin{lstlisting}
+mydata.write();
+\end{lstlisting}
+
+To collect the data afterwards, you can specify the prefix to collect. In Python:
+\begin{verbatim}
+>>> var = collect("name", prefix="mydata")
+\end{verbatim}
+or in IDL:
+\begin{verbatim}
+IDL> var = collect(var="name", prefix="mydata")
+\end{verbatim}
+
+By default the prefix is "BOUT.dmp".
+
 
 \section{Fluid equations 2: reduced MHD}
 
