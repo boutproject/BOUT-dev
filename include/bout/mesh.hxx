@@ -228,6 +228,8 @@ class Mesh {
   
   bool non_uniform; // Use corrections for non-uniform meshes
   
+  bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
+  
  protected:
   
   GridDataSource *source; ///< Source for grid data

@@ -22,6 +22,38 @@ class BoundaryDirichlet : public BoundaryOp {
   BoutReal val;
 };
 
+/// Dirichlet boundary condition set half way between guard cell and grid cell at 2nd order accuracy
+class BoundaryDirichlet_2ndOrder : public BoundaryOp {
+ public:
+  BoundaryDirichlet_2ndOrder() : val(0.) {}
+  BoundaryDirichlet_2ndOrder(const BoutReal setval): val(setval) {}
+  BoundaryDirichlet_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
+};
+
+/// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
+class BoundaryDirichlet_4thOrder : public BoundaryOp {
+ public:
+  BoundaryDirichlet_4thOrder() : val(0.) {}
+  BoundaryDirichlet_4thOrder(const BoutReal setval): val(setval) {}
+  BoundaryDirichlet_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
+};
+
 /// Neumann (zero-gradient) boundary condition
 class BoundaryNeumann : public BoundaryOp {
  public:
@@ -43,6 +75,38 @@ class BoundaryNeumann2 : public BoundaryOp {
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field3D &f);
+};
+
+/// Neumann boundary condition set half way between guard cell and grid cell at 2nd order accuracy
+class BoundaryNeumann_2ndOrder : public BoundaryOp {
+ public:
+  BoundaryNeumann_2ndOrder() : val(0.) {}
+  BoundaryNeumann_2ndOrder(const BoutReal setval): val(setval) {}
+  BoundaryNeumann_2ndOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
+};
+
+/// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
+class BoundaryNeumann_4thOrder : public BoundaryOp {
+ public:
+  BoundaryNeumann_4thOrder() : val(0.) {}
+  BoundaryNeumann_4thOrder(const BoutReal setval): val(setval) {}
+  BoundaryNeumann_4thOrder(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
 };
 
 /// NeumannPar (zero-gradient) boundary condition on
@@ -118,6 +182,22 @@ class BoundaryDivCurl : public BoundaryOp {
   void apply(Field3D &f) { bout_error("ERROR: DivCurl boundary only for vectors"); }
   void apply(Vector2D &f);
   void apply(Vector3D &f);
+};
+
+/// Free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
+class BoundaryFree : public BoundaryOp {
+ public:
+  BoundaryFree() : val(0.) {}
+  BoundaryFree(const BoutReal setval): val(setval) {}
+  BoundaryFree(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoutReal val;
 };
 
 /////////////////////////////////////////////////////////

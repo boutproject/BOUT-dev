@@ -29,6 +29,12 @@ void BoundaryRegionXIn::next()
   }
 }
 
+void BoundaryRegionXIn::next1d()
+{
+  // Loop over the innermost points
+  y++;
+}
+
 void BoundaryRegionXIn::nextX()
 {
   x--;
@@ -75,6 +81,12 @@ void BoundaryRegionXOut::next()
     y = ys;
     x++; // Going from inside out
   }
+}
+
+void BoundaryRegionXOut::next1d()
+{
+  // Loop over the innermost points
+  y++;
 }
 
 void BoundaryRegionXOut::nextX()
@@ -125,6 +137,12 @@ void BoundaryRegionYDown::next()
   }
 }
 
+void BoundaryRegionYDown::next1d()
+{
+  // Loop over the innermost points
+  x++;
+}
+
 void BoundaryRegionYDown::nextX()
 {
   x++;
@@ -172,6 +190,12 @@ void BoundaryRegionYUp::next()
     y = mesh->ngy - width;
     x++;
   }
+}
+
+void BoundaryRegionYUp::next1d()
+{
+  // Loop over the innermost points
+  x++;
 }
 
 void BoundaryRegionYUp::nextX()

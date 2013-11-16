@@ -62,6 +62,17 @@
 typedef BoutReal (*deriv_func)(stencil &); // f
 typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
 
+typedef struct {
+  BoutReal inner;
+  BoutReal outer;
+} boundary_derivs_pair;
+// More types for forward/backward differences to calculate derivatives in boundary guard cells for free boundary conditions
+typedef boundary_derivs_pair (*inner_boundary_deriv_func)(forward_stencil &); // f
+typedef boundary_derivs_pair (*outer_boundary_deriv_func)(backward_stencil &); // f
+typedef boundary_derivs_pair (*inner_boundary_upwind_func)(forward_stencil &); // v,f
+typedef boundary_derivs_pair (*outer_boundary_upwind_func)(backward_stencil &); // v,f
+
+
 /*******************************************************************************
  * Limiters
  *******************************************************************************/
@@ -91,9 +102,41 @@ BoutReal DDX_C2(stencil &f) {
   return 0.5*(f.p - f.m);
 }
 
+/// forward, 2nd order
+boundary_derivs_pair DDX_F2(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = -1.5*f.c+2.*f.p-0.5*f.p2;
+  result.outer = -1.5*f.m+2.*f.c-0.5*f.p;
+  return result;
+}
+
+/// backward 2nd order
+boundary_derivs_pair DDX_B2(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 0.5*f.m2-2.*f.m+1.5*f.c;
+  result.outer = 0.5*f.m-2.*f.c+1.5*f.p;
+  return result;
+}
+
 /// central, 4th order
 BoutReal DDX_C4(stencil &f) {
   return (8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
+}
+
+/// forward, 4th order
+boundary_derivs_pair DDX_F4(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = -1./4.*f.m-5./6.*f.c+3./2.*f.p-1./2.*f.p2+1./12.*f.p3; // uncentred (forward-biased) derivative
+  result.outer = -25./12.*f.m+4.*f.c-3.*f.p+4./3.*f.p2-1./4.*f.p3; // forward derivative
+  return result;
+}
+
+/// backward, 4th order
+boundary_derivs_pair DDX_B4(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 1./4.*f.p+5./6.*f.c-3./2.*f.m+1./2.*f.m2-1./12.*f.m3; // uncentred (forward-biased) derivative
+  result.outer = 25./12.*f.p-4.*f.c+3.*f.m-4./3.*f.m2+1./4.*f.m3; // forward derivative
+  return result;
 }
 
 /// Central WENO method, 2nd order (reverts to 1st order near shocks)
@@ -136,9 +179,41 @@ BoutReal D2DX2_C2(stencil &f) {
   return f.p + f.m - 2.*f.c;
 }
 
+/// Second derivative: Forward, 2nd order
+boundary_derivs_pair D2DX2_F2(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 2.*f.c-5.*f.p+4.*f.p2-3.*f.p3;
+  result.outer = 2.*f.m-5.*f.c+4.*f.p-3.*f.p2;
+  return result;
+}
+
+/// Second derivative: Backward, 2nd order
+boundary_derivs_pair D2DX2_B2(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = -2.*f.c+5.*f.m-4.*f.m2+3.*f.m3;
+  result.outer = -2.*f.p+5.*f.c-4.*f.m+3.*f.m2;
+  return result;
+}
+
 /// Second derivative: Central, 4th order
 BoutReal D2DX2_C4(stencil &f) {
   return (-f.pp + 16.*f.p - 30.*f.c + 16.*f.m - f.mm)/12.;
+}
+
+/// Second derivatives: Forward, 4th order
+boundary_derivs_pair D2DX2_F4(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 5./6.*f.m-5./4.*f.c-1./3.*f.p+7./6.*f.p2-1./2.*f.p3+1./12.*f.p4; // uncentred (forward-biased) derivative
+  result.outer = 15./4.*f.m-77./6.*f.c+107./6.*f.p-13.*f.p2+61./12.*f.p3-5./6.*f.p4; // forward derivative
+  return result;
+}
+
+/// Second derivatives: Backward, 4th order
+boundary_derivs_pair D2DX2_B4(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 5./6.*f.p-5./4.*f.c-1./3.*f.m+7./6.*f.m2-1./2.*f.m3+1./12.*f.m4; // uncentred (backward-biased) derivative
+  result.outer = 15./4.*f.p-77./6.*f.c+107./6.*f.m-13.*f.m2+61./12.*f.m3-5./6.*f.m4; // backward derivative
+  return result;
 }
 
 //////////////////////// UPWIND METHODS ///////////////////////
@@ -359,15 +434,69 @@ BoutReal DDX_C2_stag(stencil &f) {
   return f.p - f.m;
 }
 
+boundary_derivs_pair DDX_F2_stag(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = -2.*f.c+3*f.p-f.p2;
+  result.outer = -2.*f.m+3*f.c-f.p;
+}
+
+boundary_derivs_pair DDX_B2_stag(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 2.*f.c-3*f.m+f.m2;
+  result.outer = 2.*f.p-3*f.c+f.m;
+}
+
 BoutReal DDX_C4_stag(stencil &f) {
   return ( 27.*(f.p - f.m) - (f.pp - f.mm) ) / 24.;
+}
+
+boundary_derivs_pair DDX_F4_stag(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = -11./12.*f.m+17./24.*f.c+3./8.*f.p-5./24.*f.p2+1./24.*f.p3; // uncentred (forward-biased) derivative
+  result.outer = -31./8*f.m+229./24.*f.c-75./8.*f.p+37./8.*f.p2-11./12.*f.p3; // forward derivative
+  return result;
+}
+
+boundary_derivs_pair DDX_B4_stag(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 11./12.*f.p-17./24.*f.c-3./8.*f.m+5./24.*f.m2-1./24.*f.m3; // uncentred (backward-biased) derivative
+  result.outer = 31./8*f.p-229./24.*f.c+75./8.*f.m-37./8.*f.m2+11./12.*f.m3; // backward derivative
+  return result;
 }
 
 /////////////////////// SECOND DERIVATIVES //////////////////////
 // Map Centre -> Low or Low -> Centre
 
+boundary_derivs_pair D2DX2_F2_stag(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 5./2.*f.c-13./2.*f.p+11./2.*f.p2-3./2.*f.p3;
+  result.outer = 5./2.*f.m-13./2.*f.c+11./2.*f.p-3./2.*f.p2;
+  return result;
+}
+
+boundary_derivs_pair D2DX2_B2_stag(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 5./2.*f.c-13./2.*f.m+11./2.*f.m2-3./2.*f.m3;
+  result.outer = 5./2.*f.p-13./2.*f.c+11./2.*f.m-3./2.*f.m2;
+  return result;
+}
+
 BoutReal D2DX2_C4_stag(stencil &f) {
   return ( f.pp + f.mm - f.p - f.m ) / 2.;
+}
+
+boundary_derivs_pair D2DX2_F4_stag(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 95./48.*f.m-269./48.*f.c+49./8.*f.p-85./24.*f.p2+59./48.*f.p3-3./16.*f.p4;
+  result.outer = 301./48.*f.m-377./16.*f.c+865./24.*f.p-683./24.*f.p2+187./16.*f.p3-95./48.*f.p4;
+  return result;
+}
+
+boundary_derivs_pair D2DX2_B4_stag(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 95./48.*f.p-269./48.*f.c+49./8.*f.m-85./24.*f.m2+59./48.*f.m3-3./16.*f.m4;
+  result.outer = 301./48.*f.p-377./16.*f.c+865./24.*f.m-683./24.*f.m2+187./16.*f.m3-95./48.*f.m4;
+  return result;
 }
 
 /////////////////////////// UPWINDING ///////////////////////////
@@ -415,7 +544,11 @@ BoutReal FDDX_U1_stag(stencil &v, stencil &f) {
 struct DiffLookup {
   DIFF_METHOD method;
   deriv_func func;     // Single-argument differencing function
+  inner_boundary_deriv_func inner_boundary_func; // Differencing function using forward derivatives
+  outer_boundary_deriv_func outer_boundary_func; // Differencing function using backward derivatives
   upwind_func up_func; // Upwinding function
+  inner_boundary_upwind_func inner_boundary_up_func; // Upwinding function using forward derivatives
+  outer_boundary_upwind_func outer_boundary_up_func; // Upwinding function using backward derivatives
 };
 
 /// Translate between short names, long names and DIFF_METHOD codes
@@ -439,52 +572,52 @@ static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding
 					  {DIFF_DEFAULT}}; // Use to terminate the list
 
 /// First derivative lookup table
-static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     NULL},
-					{DIFF_W2, DDX_CWENO2, NULL},
-					{DIFF_W3, DDX_CWENO3, NULL},
-					{DIFF_C4, DDX_C4,     NULL},
-                                        {DIFF_S2, DDX_S2,     NULL},
-					{DIFF_FFT, NULL,      NULL},
+static DiffLookup FirstDerivTable[] = { {DIFF_C2, DDX_C2,     DDX_F2, DDX_B2, NULL, NULL, NULL},
+					{DIFF_W2, DDX_CWENO2, DDX_F2, DDX_B2, NULL, NULL, NULL},
+					{DIFF_W3, DDX_CWENO3, DDX_F4, DDX_B4, NULL, NULL, NULL},
+					{DIFF_C4, DDX_C4,     DDX_F4, DDX_B4, NULL, NULL, NULL},
+                                        {DIFF_S2, DDX_S2,     NULL,   NULL,   NULL, NULL, NULL},
+					{DIFF_FFT, NULL,      NULL,   NULL,   NULL, NULL, NULL},
 					{DIFF_DEFAULT}};
 
 /// Second derivative lookup table
-static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, NULL},
-					{DIFF_C4, D2DX2_C4, NULL},
-					{DIFF_FFT, NULL,    NULL},
-					{DIFF_DEFAULT}};
+static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, D2DX2_F2, D2DX2_B2, NULL, NULL, NULL},
+					 {DIFF_C4, D2DX2_C4, D2DX2_F4, D2DX2_B4, NULL, NULL, NULL},
+					 {DIFF_FFT, NULL,    NULL,     NULL,     NULL, NULL, NULL},
+					 {DIFF_DEFAULT}};
 
 /// Upwinding functions lookup table
-static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, VDDX_U1},
-				    {DIFF_C2, NULL, VDDX_C2},
-				    {DIFF_U4, NULL, VDDX_U4},
-				    {DIFF_W3, NULL, VDDX_WENO3},
-				    {DIFF_C4, NULL, VDDX_C4},
+static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, NULL},
+				    {DIFF_C2, NULL, NULL, NULL, VDDX_C2, NULL, NULL},
+				    {DIFF_U4, NULL, NULL, NULL, VDDX_U4, NULL, NULL},
+				    {DIFF_W3, NULL, NULL, NULL, VDDX_WENO3, NULL, NULL},
+				    {DIFF_C4, NULL, NULL, NULL, VDDX_C4, NULL, NULL},
 				    {DIFF_DEFAULT}};
 
 /// Flux functions lookup table
-static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL},
-                                  {DIFF_U1, NULL, FDDX_U1},
-                                  {DIFF_C2, NULL, FDDX_C2},
-                                  {DIFF_C4, NULL, FDDX_C4},
-                                  {DIFF_NND, NULL, FDDX_NND},
+static DiffLookup FluxTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL},
+                                  {DIFF_U1, NULL, NULL, NULL, FDDX_U1, NULL, NULL},
+                                  {DIFF_C2, NULL, NULL, NULL, FDDX_C2, NULL, NULL},
+                                  {DIFF_C4, NULL, NULL, NULL, FDDX_C4, NULL, NULL},
+                                  {DIFF_NND, NULL, NULL, NULL, FDDX_NND, NULL, NULL},
                                   {DIFF_DEFAULT}};
 
 /// First staggered derivative lookup
-static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, NULL}, 
-					    {DIFF_C4, DDX_C4_stag, NULL},
+static DiffLookup FirstStagDerivTable[] = { {DIFF_C2, DDX_C2_stag, DDX_F2_stag, DDX_B2_stag, NULL, NULL, NULL}, 
+					    {DIFF_C4, DDX_C4_stag, DDX_F4_stag, DDX_B4_stag, NULL, NULL, NULL},
 					    {DIFF_DEFAULT}};
 
 /// Second staggered derivative lookup
-static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, NULL},
+static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_stag, D2DX2_B4_stag, NULL, NULL, NULL},
 					     {DIFF_DEFAULT}};
 
 /// Upwinding staggered lookup
-static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, VDDX_U1_stag},
+static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
 					{DIFF_DEFAULT} };
 
 /// Flux staggered lookup
-static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL},
-                                      {DIFF_U1, NULL, FDDX_U1_stag},
+static DiffLookup FluxStagTable[] = { {DIFF_SPLIT, NULL, NULL, NULL, NULL, NULL, NULL},
+                                      {DIFF_U1, NULL, NULL, NULL, FDDX_U1_stag, NULL, NULL},
                                       {DIFF_DEFAULT}};
 
 /*******************************************************************************
@@ -504,6 +637,30 @@ deriv_func lookupFunc(DiffLookup* table, DIFF_METHOD method) {
   return table[0].func;
 }
 
+inner_boundary_deriv_func lookupInnerBoundaryFunc(DiffLookup* table, DIFF_METHOD method) {
+  int i = 0;
+  do {
+    if(table[i].method == method)
+      return table[i].inner_boundary_func;
+    i++;
+  }while(table[i].method != DIFF_DEFAULT);
+  // Not found in list. Return the first 
+  
+  return table[0].inner_boundary_func;
+}
+
+outer_boundary_deriv_func lookupOuterBoundaryFunc(DiffLookup* table, DIFF_METHOD method) {
+  int i = 0;
+  do {
+    if(table[i].method == method)
+      return table[i].outer_boundary_func;
+    i++;
+  }while(table[i].method != DIFF_DEFAULT);
+  // Not found in list. Return the first 
+  
+  return table[0].outer_boundary_func;
+}
+
 upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
   int i = 0;
   do {
@@ -514,6 +671,30 @@ upwind_func lookupUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
   // Not found in list. Return the first 
   
   return table[0].up_func;
+}
+
+inner_boundary_upwind_func lookupInnerBoundaryUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
+  int i = 0;
+  do {
+    if(table[i].method == method)
+      return table[i].inner_boundary_up_func;
+    i++;
+  }while(table[i].method != DIFF_DEFAULT);
+  // Not found in list. Return the first 
+  
+  return table[0].inner_boundary_up_func;
+}
+
+outer_boundary_upwind_func lookupOuterBoundaryUpwindFunc(DiffLookup* table, DIFF_METHOD method) {
+  int i = 0;
+  do {
+    if(table[i].method == method)
+      return table[i].outer_boundary_up_func;
+    i++;
+  }while(table[i].method != DIFF_DEFAULT);
+  // Not found in list. Return the first 
+  
+  return table[0].outer_boundary_up_func;
 }
 
 /// Test if a given DIFF_METHOD exists in a table
@@ -592,12 +773,28 @@ deriv_func fDDX, fDDY, fDDZ;        ///< Differencing methods for each dimension
 deriv_func fD2DX2, fD2DY2, fD2DZ2;  ///< second differential operators
 upwind_func fVDDX, fVDDY, fVDDZ;    ///< Upwind functions in the three directions
 upwind_func fFDDX, fFDDY, fFDDZ;    ///< Default flux functions
+inner_boundary_deriv_func fDDX_in, fDDY_in; ///< Differencing methods in the inner boundaries
+outer_boundary_deriv_func fDDX_out, fDDY_out; ///< Differencing methods in the outer boundaries
+inner_boundary_deriv_func fD2DX2_in, fD2DY2_in; ///< Second derivative methods in the inner boundaries
+outer_boundary_deriv_func fD2DX2_out, fD2DY2_out; ///< Second derivative methods in the outer boundaries
+inner_boundary_upwind_func fVDDX_in, fVDDY_in;    ///< Upwind functions in the inner boundaries
+outer_boundary_upwind_func fVDDX_out, fVDDY_out;    ///< Upwind functions in the outer boundaries
+inner_boundary_upwind_func fFDDX_in, fFDDY_in;    ///< Default flux functions in the inner boundaries
+outer_boundary_upwind_func fFDDX_out, fFDDY_out;    ///< Default flux functions in the outer boundaries
 
 // Central -> Left (or Left -> Central) functions
 deriv_func sfDDX, sfDDY, sfDDZ;
 deriv_func sfD2DX2, sfD2DY2, sfD2DZ2;
 upwind_func sfVDDX, sfVDDY, sfVDDZ;
 upwind_func sfFDDX, sfFDDY, sfFDDZ;
+inner_boundary_deriv_func sfDDX_in, sfDDY_in;
+outer_boundary_deriv_func sfDDX_out, sfDDY_out;
+inner_boundary_deriv_func sfD2DX2_in, sfD2DY2_in;
+outer_boundary_deriv_func sfD2DX2_out, sfD2DY2_out;
+inner_boundary_upwind_func sfVDDX_in, sfVDDY_in;
+outer_boundary_upwind_func sfVDDX_out, sfVDDY_out;
+inner_boundary_upwind_func sfFDDX_in, sfFDDY_in;
+outer_boundary_upwind_func sfFDDX_out, sfFDDY_out;
 
 /*******************************************************************************
  * Initialisation
@@ -620,6 +817,29 @@ void derivs_set(Options *options, DiffLookup *table, const char* name, upwind_fu
   DIFF_METHOD method = lookupFunc(table, label); // Find the function
   printFuncName(method); // Print differential function name
   f = lookupUpwindFunc(table, method);
+}
+
+/// Set the derivative methods including for boundaries, given a table and option name
+void derivs_set(Options *options, DiffLookup *table, const char* name, deriv_func &f, inner_boundary_deriv_func &f_in, outer_boundary_deriv_func &f_out) {
+  string label;
+  options->get(name, label, "", false);
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method); // Print differential function name
+  f = lookupFunc(table, method); // Find the function pointers
+  f_in = lookupInnerBoundaryFunc(table, method);
+  f_out = lookupOuterBoundaryFunc(table, method);
+}
+
+void derivs_set(Options *options, DiffLookup *table, const char* name, upwind_func &f, inner_boundary_upwind_func &f_in, outer_boundary_upwind_func &f_out) {
+  string label;
+  options->get(name, label, "", false);
+
+  DIFF_METHOD method = lookupFunc(table, label); // Find the function
+  printFuncName(method); // Print differential function name
+  f = lookupUpwindFunc(table, method);
+  f_in = lookupInnerBoundaryUpwindFunc(table, method);
+  f_out = lookupOuterBoundaryUpwindFunc(table, method);
 }
 
 /// Initialise derivatives from options
@@ -654,6 +874,46 @@ void derivs_init(Options *options, bool StaggerGrids,
   }
 }
 
+void derivs_init(Options *options, bool StaggerGrids,
+                 deriv_func &fdd, deriv_func &sfdd, 
+                 deriv_func &fd2d, deriv_func &sfd2d, 
+                 upwind_func &fu, upwind_func &sfu,
+                 upwind_func &ff, upwind_func &sff,
+		 inner_boundary_deriv_func &inner_fdd, inner_boundary_deriv_func &inner_sfdd,
+		 outer_boundary_deriv_func &outer_fdd, outer_boundary_deriv_func &outer_sfdd,
+		 inner_boundary_deriv_func &inner_fd2d, inner_boundary_deriv_func &inner_sfd2d,
+		 outer_boundary_deriv_func &outer_fd2d, outer_boundary_deriv_func &outer_sfd2d, 
+                 inner_boundary_upwind_func &inner_fu, inner_boundary_upwind_func &inner_sfu,
+                 outer_boundary_upwind_func &outer_fu, outer_boundary_upwind_func &outer_sfu,
+                 inner_boundary_upwind_func &inner_ff, inner_boundary_upwind_func &inner_sff,
+                 outer_boundary_upwind_func &outer_ff, outer_boundary_upwind_func &outer_sff
+		) {
+  output.write("\tFirst       : ");
+  derivs_set(options, FirstDerivTable, "first",  fdd, inner_fdd, outer_fdd);
+  if(StaggerGrids) {
+    output.write("\tStag. First : ");
+    derivs_set(options, FirstStagDerivTable, "first",  sfdd, inner_sfdd, outer_sfdd);
+  }
+  output.write("\tSecond      : ");
+  derivs_set(options, SecondDerivTable, "second", fd2d, inner_fd2d, outer_fd2d);
+  if(StaggerGrids) {
+    output.write("\tStag. Second: ");
+    derivs_set(options, SecondStagDerivTable, "second", sfd2d, inner_sfd2d, outer_sfd2d);
+  }
+  output.write("\tUpwind      : ");
+  derivs_set(options, UpwindTable,     "upwind", fu, inner_fu, outer_fu);
+  if(StaggerGrids) {
+    output.write("\tStag. Upwind: ");
+    derivs_set(options, UpwindStagTable,     "upwind", sfu, inner_sfu, outer_sfu);
+  }
+  output.write("\tFlux        : ");
+  derivs_set(options, FluxTable,     "flux", ff, inner_ff, outer_ff);
+  if(StaggerGrids) {
+    output.write("\tStag. Flux  : ");
+    derivs_set(options, FluxStagTable,     "flux", sff, inner_sff, outer_sff);
+  }
+}
+
 /// Initialise the derivative methods. Must be called before any derivatives are used
 int derivs_init() {
 #ifdef CHECK
@@ -673,7 +933,16 @@ int derivs_init() {
               fDDX, sfDDX, 
               fD2DX2, sfD2DX2,
               fVDDX, sfVDDX,
-              fFDDX, sfFDDX);
+              fFDDX, sfFDDX,
+	      fDDX_in, sfDDX_in,
+	      fDDX_out, sfDDX_out,
+	      fD2DX2_in, sfD2DX2_in,
+	      fD2DX2_out, sfD2DX2_out,
+              fVDDX_in, sfVDDX_in,
+              fVDDX_out, sfVDDX_out,
+              fFDDX_in, sfFDDX_in,
+              fFDDX_out, sfFDDX_out
+ 	    );
   
   if((fDDX == NULL) || (fD2DX2 == NULL)) {
     output.write("\t***Error: FFT cannot be used in X\n");
@@ -686,7 +955,15 @@ int derivs_init() {
               fDDY, sfDDY, 
               fD2DY2, sfD2DY2,
               fVDDY, sfVDDY,
-              fFDDY, sfFDDY);
+              fFDDY, sfFDDY,
+	      fDDY_in, sfDDY_in,
+	      fDDY_out, sfDDY_out,
+	      fD2DY2_in, sfD2DY2_in,
+	      fD2DY2_out, sfD2DY2_out,
+              fVDDX_in, sfVDDX_in,
+              fVDDX_out, sfVDDX_out,
+              fFDDX_in, sfFDDX_in,
+              fFDDX_out, sfFDDX_out);
   
   if((fDDY == NULL) || (fD2DY2 == NULL)) {
     output.write("\t***Error: FFT cannot be used in Y\n");
@@ -718,7 +995,7 @@ int derivs_init() {
 
 // X derivative
 
-const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
+const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field2D result;
   result.allocate(); // Make sure data allocated
 
@@ -773,11 +1050,66 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+  
+  if (mesh->freeboundary_ydown) {
+    for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
+      for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--) {
+	bx.jx=it.ind;
+	calc_index(&bx);
+	var.setXStencil(s, bx, loc);
+	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_ydown = true;
+    #endif
+  }
+  if (mesh->freeboundary_yup) {
+    for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->ngy; bx.jy++) {
+	bx.jx=it.ind;
+	calc_index(&bx);
+	var.setXStencil(s, bx, loc);
+	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_yup = true;
+    #endif
+  }
+  if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
+    forward_stencil fs;
+    boundary_derivs_pair funcs_pair;
+    bx.jx=mesh->xstart-1;
+    for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++) {
+      calc_index(&bx);
+      var.setXStencil(fs, bx, loc);
+      funcs_pair = func_in(fs);
+      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
+      r[bx.jxm][bx.jy] = funcs_pair.outer / dd(bx.jxm, bx.jy);
+    }
+    #ifdef CHECK
+      result.bndry_xin = true;
+    #endif
+  }
+  if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
+    backward_stencil bs;
+    boundary_derivs_pair funcs_pair;
+    bx.jx=mesh->xend+1;
+    for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++) {
+      calc_index(&bx);
+      var.setXStencil(bs, bx, loc);
+      funcs_pair = func_out(bs);
+      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
+      r[bx.jxp][bx.jy] = funcs_pair.outer / dd(bx.jxp, bx.jy);
+    }
+    #ifdef CHECK
+      result.bndry_xout = true;
+    #endif
+  }
 
   return result;
 }
 
-const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
+const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   result.allocate(); // Make sure data allocated
 
@@ -835,20 +1167,79 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   }while(next_index2(&bx));
 #endif  
 
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.shiftZ(false); // Shift back
-
 #ifdef CHECK
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+  
+  if (mesh->freeboundary_ydown) {
+    for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
+      for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  bx.jx=it.ind;
+	  calc_index(&bx);
+	  vs.setXStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	}
+    #ifdef CHECK
+      result.bndry_ydown = true;
+    #endif
+  }
+  if (mesh->freeboundary_yup) {
+    for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
+      for (bx.jy=mesh->yend+1; bx.jy<mesh->ngy; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  bx.jx=it.ind;
+	  calc_index(&bx);
+	  vs.setXStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	}
+    #ifdef CHECK
+      result.bndry_yup = true;
+    #endif
+  }
+  if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
+    forward_stencil fs;
+    boundary_derivs_pair funcs_pair;
+    bx.jx=mesh->xstart-1;
+    for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
+      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	calc_index(&bx);
+	vs.setXStencil(fs, bx, loc);
+	funcs_pair = func_in(fs);
+	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
+	r[bx.jxm][bx.jy][bx.jz] = funcs_pair.outer / dd(bx.jxm, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_xin = true;
+    #endif
+  }
+  if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
+    backward_stencil bs;
+    boundary_derivs_pair funcs_pair;
+    bx.jx=mesh->xend+1;
+    for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
+      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	calc_index(&bx);
+	vs.setXStencil(bs, bx, loc);
+	funcs_pair = func_out(bs);
+	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
+	r[bx.jxp][bx.jy][bx.jz] = funcs_pair.outer / dd(bx.jxp, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_xout = true;
+    #endif
+  }
+
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
+    result = result.shiftZ(false); // Shift back
 
   return result;
 }
 
 // Y derivative
 
-const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
+const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field2D result;
   result.allocate(); // Make sure data allocated
   BoutReal **r = result.getData();
@@ -900,10 +1291,65 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, const Field2D &dd,
   result.bndry_yup = result.bndry_ydown = false;
 #endif
 
+  if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
+	calc_index(&bx);
+	var.setYStencil(s, bx, loc);
+	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_xin = true;
+    #endif
+  }
+  if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
+	calc_index(&bx);
+	var.setYStencil(s, bx, loc);
+	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+      }
+    #ifdef CHECK
+      result.bndry_xout = true;
+    #endif
+  }
+  if (mesh->freeboundary_ydown) {
+    forward_stencil fs;
+    boundary_derivs_pair funcs_pair;
+    bx.jy=mesh->ystart-1;
+    for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
+      bx.jx = it.ind;
+      calc_index(&bx);
+      var.setYStencil(fs, bx, loc);
+      funcs_pair = func_in(fs);
+      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
+      r[bx.jx][bx.jym] = funcs_pair.outer / dd(bx.jx, bx.jym);
+    }
+    #ifdef CHECK
+      result.bndry_ydown = true;
+    #endif
+  }
+  if (mesh->freeboundary_yup) {
+    backward_stencil bs;
+    boundary_derivs_pair funcs_pair;
+    bx.jy=mesh->yend+1;
+    for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
+      bx.jx = it.ind;
+      calc_index(&bx);
+      var.setYStencil(bs, bx, loc);
+      funcs_pair = func_out(bs);
+      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
+      r[bx.jx][bx.jyp] = funcs_pair.outer / dd(bx.jx, bx.jyp);
+    }
+    #ifdef CHECK
+      result.bndry_yup = true;
+    #endif
+  }
+
   return result;
 }
 
-const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
+const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, const Field2D &dd, CELL_LOC loc = CELL_DEFAULT) {
   Field3D result;
   result.allocate(); // Make sure data allocated
   BoutReal ***r = result.getData();
@@ -964,6 +1410,65 @@ const Field3D applyYdiff(const Field3D &var, deriv_func func, const Field2D &dd,
   // Mark boundaries as invalid
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
+  
+  if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  calc_index(&bx);
+	  var.setYStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	}
+    #ifdef CHECK
+      result.bndry_xin = true;
+    #endif
+  }
+  if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  calc_index(&bx);
+	  var.setYStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	}
+    #ifdef CHECK
+      result.bndry_xout = true;
+    #endif
+  }
+  if (mesh->freeboundary_ydown) {
+    forward_stencil fs;
+    boundary_derivs_pair funcs_pair;
+    bx.jy=mesh->ystart-1;
+    for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
+      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	bx.jx = it.ind;
+	calc_index(&bx);
+	var.setYStencil(fs, bx, loc);
+	funcs_pair = func_in(fs);
+	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
+	r[bx.jx][bx.jym][bx.jz] = funcs_pair.outer / dd(bx.jx, bx.jym);
+      }
+    #ifdef CHECK
+      result.bndry_ydown = true;
+    #endif
+  }
+  if (mesh->freeboundary_yup) {
+    backward_stencil bs;
+    boundary_derivs_pair funcs_pair;
+    bx.jy=mesh->yend+1;
+    for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
+      for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	bx.jx = it.ind;
+	calc_index(&bx);
+	var.setYStencil(bs, bx, loc);
+	funcs_pair = func_out(bs);
+	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
+	r[bx.jx][bx.jyp][bx.jz] = funcs_pair.outer / dd(bx.jx, bx.jyp);
+      }
+    #ifdef CHECK
+      result.bndry_yup = true;
+    #endif
+  }
 
   return result;
 }
@@ -1008,6 +1513,60 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
   }while(next_index3(&bx));
 #endif
 
+  if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xstart-1; bx.jx>=0; bx.jx--)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  calc_index(&bx);
+	  var.setZStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
+	}
+    #ifdef CHECK
+      result.bndry_xin = true;
+    #endif
+  }
+
+  if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX) {
+    for (bx.jx=mesh->xend+1; bx.jx<mesh->ngx; bx.jx++)
+      for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  calc_index(&bx);
+	  var.setZStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
+	}
+    #ifdef CHECK
+      result.bndry_xout = true;
+    #endif
+  }
+
+  if (mesh->freeboundary_ydown) {
+    for (RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++)
+      for (bx.jy=mesh->ystart-1; bx.jy>=0; bx.jy--)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  bx.jx = it.ind;
+	  calc_index(&bx);
+	  var.setZStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
+	}
+    #ifdef CHECK
+      result.bndry_ydown = true;
+    #endif
+  }
+
+  if (mesh->freeboundary_yup) {
+    for (RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++)
+      for (bx.jy=mesh->yend; bx.jy<mesh->ngy; bx.jy++)
+	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
+	  bx.jx = it.ind;
+	  calc_index(&bx);
+	  var.setZStencil(s, bx, loc);
+	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd;
+	}
+    #ifdef CHECK
+      result.bndry_yup = true;
+    #endif
+  }
+  
   return result;
 }
 
@@ -1019,6 +1578,8 @@ const Field3D applyZdiff(const Field3D &var, deriv_func func, BoutReal dd, CELL_
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fDDX; // Set to default function
+  inner_boundary_deriv_func func_in = fDDX_in;
+  outer_boundary_deriv_func func_out = fDDX_out;
   DiffLookup *table = FirstDerivTable;
   
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1039,6 +1600,8 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       // Shifting in X. Centre -> Xlow, or Xlow -> Centre
       
       func = sfDDX; // Set default
+      func_in = sfDDX_in;
+      func_out = sfDDX_out;
       table = FirstStagDerivTable; // Set table for others
       diffloc = (inloc == CELL_CENTRE) ? CELL_XLOW : CELL_CENTRE;
       
@@ -1048,6 +1611,8 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 	// Shifting
 	
 	func = sfDDX; // Set default
+	func_in = sfDDX_in;
+	func_out = sfDDX_out;
 	table = FirstStagDerivTable; // Set table for others
 	diffloc = CELL_CENTRE;
 
@@ -1061,11 +1626,13 @@ const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
+    func_in = lookupInnerBoundaryFunc(table, method);
+    func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
       bout_error("Cannot use FFT for X derivatives");
   }
   
-  result = applyXdiff(f, func, mesh->dx, diffloc);
+  result = applyXdiff(f, func, func_in, func_out, mesh->dx, diffloc);
   result.setLocation(diffloc); // Set the result location
 
   result = interp_to(result, outloc); // Interpolate if necessary
@@ -1087,13 +1654,15 @@ const Field3D DDX(const Field3D &f, DIFF_METHOD method) {
 }
 
 const Field2D DDX(const Field2D &f) {
-  return applyXdiff(f, fDDX, mesh->dx);
+  return applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
 }
 
 ////////////// Y DERIVATIVE /////////////////
 
 const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fDDY; // Set to default function
+  inner_boundary_deriv_func func_in = fDDY_in;
+  outer_boundary_deriv_func func_out = fDDY_out;
   DiffLookup *table = FirstDerivTable;
   
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1112,12 +1681,14 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     //output.write("\nSHIFTING %s -> %s\n", strLocation(inloc), strLocation(outloc));
 
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
-       ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
+      ((inloc == CELL_YLOW) && (outloc == CELL_CENTRE))) {
       // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
       
       //output.write("SHIFT");
 
       func = sfDDY; // Set default
+      func_in = sfDDY_in;
+      func_out = sfDDY_out;
       table = FirstStagDerivTable; // Set table for others
       diffloc = (inloc == CELL_CENTRE) ? CELL_YLOW : CELL_CENTRE;
       
@@ -1127,6 +1698,8 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 	// Shifting
 	
 	func = sfDDY; // Set default
+	func_in = sfDDY_in;
+	func_out = sfDDY_out;
 	table = FirstStagDerivTable; // Set table for others
 	diffloc = CELL_CENTRE;
 
@@ -1140,11 +1713,13 @@ const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
+    func_in = lookupInnerBoundaryFunc(table, method);
+    func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
       bout_error("Cannot use FFT for Y derivatives");
   }
   
-  result = applyYdiff(f, func, mesh->dy, diffloc);
+  result = applyYdiff(f, func, func_in, func_out, mesh->dy, diffloc);
   //output.write("SETTING LOC %s -> %s\n", strLocation(diffloc), strLocation(outloc));
   result.setLocation(diffloc); // Set the result location
   
@@ -1160,7 +1735,7 @@ const Field3D DDY(const Field3D &f, DIFF_METHOD method) {
 }
 
 const Field2D DDY(const Field2D &f) {
-  return applyYdiff(f, fDDY, mesh->dy);
+  return applyYdiff(f, fDDY, fDDY_in, fDDY_out, mesh->dy);
 }
 
 const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax) {
@@ -1253,6 +1828,10 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
       xge = 0;
       xlt = mesh->ngx;
     }
+    if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+      xge = 0;
+    if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+      xlt = mesh->ngx;
     
     int ncz = mesh->ngz-1;
     
@@ -1311,7 +1890,14 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
     
 #ifdef CHECK
     // Mark boundaries as invalid
-    result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+    if (mesh->freeboundary_xin) result.bndry_xin = true;
+    else result.bndry_xin = false;
+    if (mesh->freeboundary_xout) result.bndry_xout = true;
+    else result.bndry_xout = false;
+    if (mesh->freeboundary_yup) result.bndry_yup = true;
+    else result.bndry_yup = false;
+    if (mesh->freeboundary_ydown) result.bndry_ydown = true;
+    else result.bndry_ydown = false;
 #endif
     
   }else {
@@ -1378,6 +1964,8 @@ const Vector2D DDZ(const Vector2D &v) {
 
 const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DX2; // Set to default function
+  inner_boundary_deriv_func func_in = fD2DX2_in;
+  outer_boundary_deriv_func func_out = fD2DX2_out;
   DiffLookup *table = SecondDerivTable;
   
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1398,6 +1986,8 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       // Shifting in X. Centre -> Xlow, or Xlow -> Centre
       
       func = sfD2DX2; // Set default
+      func_in = sfD2DX2_in;
+      func_out = sfD2DX2_out;
       table = SecondStagDerivTable; // Set table for others
       diffloc = (inloc == CELL_CENTRE) ? CELL_XLOW : CELL_CENTRE;
       
@@ -1407,6 +1997,8 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 	// Shifting
 	
 	func = sfD2DX2; // Set default
+	func_in = sfD2DX2_in;
+	func_out = sfD2DX2_out;
 	table = SecondStagDerivTable; // Set table for others
 	diffloc = CELL_CENTRE;
 
@@ -1420,18 +2012,21 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
+    func_in = lookupInnerBoundaryFunc(table, method);
+    func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
       bout_error("Cannot use FFT for X derivatives");
   }
-
-  result = applyXdiff(f, func, (mesh->dx*mesh->dx));
+  
+  Field2D dd = mesh->dx*mesh->dx;
+  result = applyXdiff(f, func, func_in, func_out, dd);
   result.setLocation(diffloc);
-
+  
   if(mesh->non_uniform) {
     // Correction for non-uniform mesh
-    result += mesh->d1_dx*applyXdiff(f, fDDX, mesh->dx);
+    result += mesh->d1_dx*applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
   }
-
+  
   result = interp_to(result, outloc);
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
@@ -1455,11 +2050,12 @@ const Field3D D2DX2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
 const Field2D D2DX2(const Field2D &f) {
   Field2D result;
 
-  result = applyXdiff(f, fD2DX2, (mesh->dx*mesh->dx));
-
+  Field2D dd = mesh->dx*mesh->dx;
+  result = applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out, dd);
+  
   if(mesh->non_uniform) {
     // Correction for non-uniform mesh
-    result += mesh->d1_dx * applyXdiff(f, fDDX, mesh->dx);
+    result += mesh->d1_dx * applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
   }
   
   return(result);
@@ -1469,6 +2065,8 @@ const Field2D D2DX2(const Field2D &f) {
 
 const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DY2; // Set to default function
+  inner_boundary_deriv_func func_in = fD2DY2_in;
+  outer_boundary_deriv_func func_out = fD2DY2_out;
   DiffLookup *table = SecondDerivTable;
   
   CELL_LOC inloc = f.getLocation(); // Input location
@@ -1489,6 +2087,8 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       // Shifting in Y. Centre -> Ylow, or Ylow -> Centre
       
       func = sfD2DY2; // Set default
+      func_in = sfD2DY2_in;
+      func_out = sfD2DY2_out;
       table = SecondStagDerivTable; // Set table for others
       diffloc = (inloc == CELL_CENTRE) ? CELL_YLOW : CELL_CENTRE;
       
@@ -1498,6 +2098,8 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 	// Shifting
 	
 	func = sfD2DY2; // Set default
+	func_in = sfD2DY2_in;
+	func_out = sfD2DY2_out;
 	table = SecondStagDerivTable; // Set table for others
 	diffloc = CELL_CENTRE;
 
@@ -1511,16 +2113,19 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupFunc(table, method);
+    func_in = lookupInnerBoundaryFunc(table, method);
+    func_out = lookupOuterBoundaryFunc(table, method);
     if(func == NULL)
       bout_error("Cannot use FFT for Y derivatives");
   }
-
-  result = applyYdiff(f, func, (mesh->dy*mesh->dy));
+  
+  Field2D dd = mesh->dy*mesh->dy;
+  result = applyYdiff(f, func, func_in, func_out, dd);
   result.setLocation(diffloc);
 
   if(mesh->non_uniform) {
     // Correction for non-uniform mesh
-    result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
+    result += mesh->d1_dy * applyYdiff(f, fDDY, fDDY_in, fDDY_out, mesh->dy);
   }
 
   return interp_to(result, outloc);
@@ -1531,16 +2136,7 @@ const Field3D D2DY2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
 }
 
 const Field2D D2DY2(const Field2D &f) {
-  Field2D result;
-
-  result = applyYdiff(f, fD2DY2, (mesh->dy*mesh->dy));
-
-  if(mesh->non_uniform) {
-    // Correction for non-uniform mesh
-    result += mesh->d1_dy * applyYdiff(f, fDDY, mesh->dy);
-  }
-
-  return(result);
+  return applyYdiff(f, fD2DY2, fD2DY2_in, fD2DY2_out, mesh->dy*mesh->dy);
 }
 
 ////////////// Z DERIVATIVE /////////////////
@@ -1641,9 +2237,21 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       
       dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
 #endif
+      int xs = mesh->xstart;
+      int xe = mesh->xend;
+      int ys = mesh->ystart;
+      int ye = mesh->yend;
+      if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+	xs = 0;
+      if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+	xe = mesh->ngx-1;
+      if (mesh->freeboundary_ydown)
+	ys = 0;
+      if (mesh->freeboundary_ydown)
+	ye = mesh->ngy-1;
       #pragma omp for
-      for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
-        for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+      for(int jx=xs;jx<=xe;jx++) {
+        for(int jy=ys;jy<=ye;jy++) {
           
           rfft(f[jx][jy], ncz, cv); // Forward FFT
 	
@@ -1667,12 +2275,19 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 
 #ifdef CHECK
     // Mark boundaries as invalid
-    result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
+    if (mesh->freeboundary_xin) result.bndry_xin = true;
+    else result.bndry_xin = false;
+    if (mesh->freeboundary_xout) result.bndry_xout = true;
+    else result.bndry_xout = false;
+    if (mesh->freeboundary_yup) result.bndry_yup = true;
+    else result.bndry_yup = false;
+    if (mesh->freeboundary_ydown) result.bndry_ydown = true;
+    else result.bndry_ydown = false;
 #endif
 
-  }else {
+  }
+  else {
     // All other (non-FFT) functions
-    
     result = applyZdiff(f, func, SQ(mesh->dz));
   }
 
@@ -1700,20 +2315,32 @@ BoutReal D4DX4_C2(stencil &f) {
   return (f.pp - 4.*f.p + 6.*f.c - 4.*f.m + f.mm);
 }
 
+boundary_derivs_pair D4D4_F2(forward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 2.*f.m-9.*f.c+16.*f.p-14.*f.p2+6.*f.p3-f.p4;
+  result.outer = 3.*f.m-14.*f.c+26.*f.p-24.*f.p2+11.*f.p3-2.*f.p4;
+}
+
+boundary_derivs_pair D4D4_B2(backward_stencil &f) {
+  boundary_derivs_pair result;
+  result.inner = 2.*f.p-9.*f.c+16.*f.m-14.*f.m2+6.*f.m3-f.m4;
+  result.outer = 3.*f.p-14.*f.c+26.*f.m-24.*f.m2+11.*f.m3-2.*f.m4;
+}
+
 const Field3D D4DX4(const Field3D &f) {
-  return applyXdiff(f, D4DX4_C2, SQ(SQ(mesh->dx)));
+  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
 }
 
 const Field2D D4DX4(const Field2D &f) {
-  return applyXdiff(f, D4DX4_C2, SQ(SQ(mesh->dx)));
+  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
 }
 
 const Field3D D4DY4(const Field3D &f) {
-  return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
+  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
 }
 
 const Field2D D4DY4(const Field2D &f) {
-  return applyYdiff(f, D4DX4_C2, SQ(SQ(mesh->dy)));
+  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
 }
 
 const Field3D D4DZ4(const Field3D &f) {
