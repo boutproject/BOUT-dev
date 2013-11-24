@@ -61,7 +61,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 		     realtype t, N_Vector y, N_Vector fy,
 		     void *user_data, N_Vector tmp);
 
-CvodeSolver::CvodeSolver() : Solver() {
+CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
 
   prefunc = NULL;
@@ -133,8 +133,6 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   bool adams_moulton, func_iter; // Time-integration method
   int MXSUB = mesh->xend - mesh->xstart + 1;
 
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   options->get("mudq", mudq, n3Dvars()*(MXSUB+2));
   options->get("mldq", mldq, n3Dvars()*(MXSUB+2));
   options->get("mukeep", mukeep, n3Dvars()+n2Dvars());
@@ -142,6 +140,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
   options->get("use_vector_abstol",use_vector_abstol,false);
+  options->get("single_step", single_step, false);
   if (use_vector_abstol) {
     Options *abstol_options = Options::getRoot();
     BoutReal tempabstol;
@@ -162,7 +161,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     }
     set_abstol_values(abstolvec_data, f2dtols, f3dtols);
   }
-  
+
   options->get("maxl", maxl, 5);
   OPTION(options, use_precon,   false);
   OPTION(options, use_jacobian, false);
@@ -396,7 +395,31 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   pre_Wtime = 0.0;
   pre_ncalls = 0.0;
 
-  int flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
+  int flag;
+  if(!single_step) {
+    // Run in normal mode
+    flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
+  }else {
+    // Run in single step mode, to call timestep monitors
+    BoutReal internal_time;
+    CvodeGetCurrentTime(cvode_mem, &internal_time);
+    while(internal_time < tout) {
+      // Run another step
+      BoutReal last_time = internal_time;
+      flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
+      
+      if(flag < 0) {
+        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        return -1.0;
+      }
+      
+      // Call timestep monitor
+      call_timestep_monitors(internal_time, internal_time - last_time);
+    }
+    // Get output at the desired time
+    flag = CVodeGetDky(cvode_mem, tout, 0, uvec);
+    simtime = tout;
+  }
 
   // Copy variables
   load_vars(NV_DATA_P(uvec));

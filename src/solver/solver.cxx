@@ -616,6 +616,8 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
+/////////////////////////////////////////////////////
+
 void Solver::addMonitor(MonitorFunc f) {
   monitors.push_front(f);
 }
@@ -628,6 +630,26 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
     // Call each monitor one by one
     int ret = (*it)(this, simtime,iter, NOUT);
+    if(ret)
+      return ret; // Return first time an error is encountered
+  }
+  return 0;
+}
+
+/////////////////////////////////////////////////////
+
+void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
+  timestep_monitors.push_front(f);
+}
+
+void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
+  timestep_monitors.remove(f);
+}
+
+int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
+  for(std::list<TimestepMonitorFunc>::iterator it = timestep_monitors.begin(); it != timestep_monitors.end(); it++) {
+    // Call each monitor one by one
+    int ret = (*it)(this, simtime, lastdt);
     if(ret)
       return ret; // Return first time an error is encountered
   }
