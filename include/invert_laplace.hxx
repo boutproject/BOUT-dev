@@ -72,6 +72,8 @@ const int INVERT_BNDRY_OUT_ONE = 524288;
 const int INVERT_DC_IN_GRADPAR = 1048576;
 const int INVERT_DC_IN_GRADPARINV = 2097152;
 
+const int INVERT_IN_CYLINDER = 4194304; // For use in cylindrical coordiate system.  
+
 /// Base class for Laplacian inversion
 class Laplacian {
 public:
@@ -136,7 +138,7 @@ protected:
                     const Field2D *d = NULL);
   
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
-                    dcomplex *bk, int jy, bool dc, BoutReal kwave, 
+                    dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, 
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,
