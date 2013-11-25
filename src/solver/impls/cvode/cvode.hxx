@@ -56,7 +56,7 @@ using std::vector;
 
 class CvodeSolver : public Solver {
   public:
-    CvodeSolver();
+    CvodeSolver(Options *opts = NULL);
     ~CvodeSolver();
 
     void setPrecon(PhysicsPrecon f) {prefunc = f;}
