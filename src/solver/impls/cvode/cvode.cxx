@@ -401,7 +401,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   }else {
     // Run in single step mode, to call timestep monitors
     BoutReal internal_time;
-    CvodeGetCurrentTime(cvode_mem, &internal_time);
+    CVodeGetCurrentTime(cvode_mem, &internal_time);
     while(internal_time < tout) {
       // Run another step
       BoutReal last_time = internal_time;
