@@ -368,17 +368,13 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 	  // Condition for inner radial boundary for cylindrical coordinates
 	  for (int ix=0;ix<inbndry;ix++){
             avec[ix] = 0.;
-	    bvec[ix] = 1.;
-	    cvec[ix] = 0.;
+	    bvec[ix] = 1. ; 
+	    cvec[ix] = -1. ; 
           }
 	  // Use phi(-r) = phi(r)*e^(i*kz*pi).
 	  // phi(-r) = phi(r) for even modes
 	  // phi(-r) = -phi(r) for odd modes
-	  // DC case is always the even case
-	  
-	  bvec[inbndry] = bvec[inbndry] + avec[inbndry] ; 
-	  avec[inbndry] = 0. ; 
-	  
+	  // DC case is always the even case 
 	}else {
           // Zero value at inner boundary or INVERT_IN_SET
           for (int ix=0;ix<inbndry;ix++){
@@ -410,20 +406,17 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
 	  for (int ix=0;ix<inbndry;ix++){
             avec[ix] = 0.;
             bvec[ix] = 1.;
-            cvec[ix] = 0.;
+            
+	    if ((kz % 2) == 0){
+	      cvec[ix] = -1.;
+	    }
+	    else {
+	      cvec[ix] = 1.; 
+	    }
           }
 	  // Use phi(-r) = phi(r)*e^(i*kz*pi).
 	  // phi(-r) = phi(r) for even modes
-	  // phi(-r) = -phi(r) for odd modes
-	  if ((kz % 2) == 0){
-	    bvec[inbndry] = bvec[inbndry] + avec[inbndry] ; 
-	    avec[inbndry] = 0. ; 
-	  }
-	  else{
-	    bvec[inbndry] = bvec[inbndry] - avec[inbndry] ; 
-	    avec[inbndry] = 0. ; 
-	  }
-	  
+	  // phi(-r) = -phi(r) for odd modes  
 	  
 	}else {
           // Zero value at inner boundary or INVERT_IN_SET
