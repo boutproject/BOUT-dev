@@ -121,7 +121,6 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int pvode_mxstep;
   int MXSUB = mesh->xend - mesh->xstart + 1;
   
-  options->get("single_step", single_step, false);
   options->get("mudq", mudq, n3d*(MXSUB+2));
   options->get("mldq", mldq, n3d*(MXSUB+2));
   options->get("mukeep", mukeep, 0);
@@ -265,7 +264,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Run CVODE
   int flag;
-  if(!single_step) {
+  if(!monitor_timestep) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
   }else {

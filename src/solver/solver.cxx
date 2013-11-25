@@ -70,6 +70,9 @@ Solver::Solver(Options *opts) : options(opts), model(0) {
   // Split operator
   split_operator = false;
   max_dt = -1.0;
+
+  // Output monitor
+  options->get("monitor_timestep", monitor_timestep, false);
 }
 
 /**************************************************************************
@@ -627,11 +630,17 @@ void Solver::removeMonitor(MonitorFunc f) {
 }
 
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  // Call C function monitors
   for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
     // Call each monitor one by one
     int ret = (*it)(this, simtime,iter, NOUT);
     if(ret)
       return ret; // Return first time an error is encountered
+  }
+
+  // Call physics model monitor
+  if(model) {
+    int ret = model->runOutputMonitor(simtime, iter, NOUT);
   }
   return 0;
 }
@@ -647,11 +656,19 @@ void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
 }
 
 int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
+  if(!monitor_timestep)
+    return 0;
+  
   for(std::list<TimestepMonitorFunc>::iterator it = timestep_monitors.begin(); it != timestep_monitors.end(); it++) {
     // Call each monitor one by one
     int ret = (*it)(this, simtime, lastdt);
     if(ret)
       return ret; // Return first time an error is encountered
+  }
+  
+  // Call physics model monitor
+  if(model) {
+    int ret = model->runTimestepMonitor(simtime, lastdt);
   }
   return 0;
 }

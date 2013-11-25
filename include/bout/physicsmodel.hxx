@@ -64,11 +64,18 @@ public:
   
   bool hasJacobian();
   int runJacobian(BoutReal t);
+
+  int runOutputMonitor(BoutReal simtime, int iter, int NOUT) {return outputMonitor(simtime, iter, NOUT);}
+  int runTimestepMonitor(BoutReal simtime, BoutReal dt) {return timestepMonitor(simtime, dt);}
 protected:
 
-  // These two functions implemented by user code
+  // These two functions implemented by user code to specify problem
   virtual int init(bool restarting) = 0;
   virtual int rhs(BoutReal t) {return 1;} 
+
+  // Implemented by user code to monitor solution
+  virtual int outputMonitor(BoutReal simtime, int iter, int NOUT) {return 0;}
+  virtual int timestepMonitor(BoutReal simtime, BoutReal dt) {return 0;}
 
   // Functions called by the user to set callback functions
   void setRHS(rhsfunc fset);

@@ -140,7 +140,6 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
   options->get("use_vector_abstol",use_vector_abstol,false);
-  options->get("single_step", single_step, false);
   if (use_vector_abstol) {
     Options *abstol_options = Options::getRoot();
     BoutReal tempabstol;
@@ -396,7 +395,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
   pre_ncalls = 0.0;
 
   int flag;
-  if(!single_step) {
+  if(!monitor_timestep) {
     // Run in normal mode
     flag = CVode(cvode_mem, tout, uvec, &simtime, CV_NORMAL);
   }else {

@@ -62,8 +62,6 @@ class PvodeSolver : public Solver {
   BoutReal TIMESTEP; // Time between outputs
   BoutReal hcur; // Current internal timestep
 
-  bool single_step;
-
   pvode::N_Vector u;
   pvode::machEnvType machEnv;
   void *cvode_mem;
