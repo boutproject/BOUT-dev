@@ -38,24 +38,24 @@ int physics_init(bool restarting) {
   Field2D set_to = f.create2D("cos(2*y)*(x - 0.5)");
   SAVE_ONCE(set_to);
   class Laplacian *lap = Laplacian::create();
-  lap->setFlags(INVERT_IN_SET);  Field3D flagis = lap->solve(input, set_to);
-  lap->setFlags(INVERT_OUT_SET); Field3D flagos = lap->solve(input, set_to);
+  lap->setFlags(4096);  Field3D flagis = lap->solve(input, set_to);
+  lap->setFlags(8192); Field3D flagos = lap->solve(input, set_to);
   SAVE_ONCE2(flagis, flagos);
   
   lap->setCoefA(a);
-  lap->setFlags(INVERT_IN_SET);  Field3D flagisa = lap->solve(input, set_to);
-  lap->setFlags(INVERT_OUT_SET); Field3D flagosa = lap->solve(input, set_to);
+  lap->setFlags(4096);  Field3D flagisa = lap->solve(input, set_to);
+  lap->setFlags(8192); Field3D flagosa = lap->solve(input, set_to);
   SAVE_ONCE2(flagisa, flagosa);
   
   lap->setCoefC(c);
-  lap->setFlags(INVERT_IN_SET);  Field3D flagisac = lap->solve(input, set_to);
-  lap->setFlags(INVERT_OUT_SET); Field3D flagosac = lap->solve(input, set_to);
+  lap->setFlags(4096);  Field3D flagisac = lap->solve(input, set_to);
+  lap->setFlags(8192); Field3D flagosac = lap->solve(input, set_to);
   SAVE_ONCE2(flagisac, flagosac);
   
   lap->setCoefC(1.0);
   lap->setCoefD(d);
-  lap->setFlags(INVERT_IN_SET);  Field3D flagisad = lap->solve(input, set_to);
-  lap->setFlags(INVERT_OUT_SET); Field3D flagosad = lap->solve(input, set_to);
+  lap->setFlags(4096);  Field3D flagisad = lap->solve(input, set_to);
+  lap->setFlags(8192); Field3D flagosad = lap->solve(input, set_to);
   SAVE_ONCE2(flagisad, flagosad);
   
   // Write and close the output file
