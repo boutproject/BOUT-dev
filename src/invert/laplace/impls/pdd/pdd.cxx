@@ -166,7 +166,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, flags, &A, &C, &D);
+               data.bk, data.jy, flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
 
   for(kz = 0; kz <= maxmode; kz++) {
     // Start PDD algorithm

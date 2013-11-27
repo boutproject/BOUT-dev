@@ -79,15 +79,15 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int ncx = mesh->ngx-1;
 
   int xbndry = 2; // Width of the x boundary
-  if(flags & INVERT_BNDRY_ONE)
+  if(flags & INVERT_BOTH_BNDRY_ONE)
     xbndry = 1;
 
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
-    if(((ix < xbndry) && (flags & INVERT_IN_SET)) ||
-       ((ncx-ix < xbndry) && (flags & INVERT_OUT_SET))) {
+    if(((ix < xbndry) && (inner_boundary_flags & INVERT_SET)) ||
+       ((ncx-ix < xbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
     }else
@@ -219,9 +219,9 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     for(int ix=0;ix<xbndry;ix++) {
       // Set zero-value. Change to zero-gradient if needed
 
-      if(!(flags & INVERT_IN_RHS))
+      if(!(inner_boundary_flags & INVERT_RHS))
         bk1d[ix] = 0.0;
-      if(!(flags & INVERT_OUT_RHS))
+      if(!(outer_boundary_flags & INVERT_RHS))
         bk1d[ncx-ix] = 0.0;
 
       A[ix][0] = A[ix][1] = A[ix][3] = A[ix][4] = 0.0;
@@ -235,7 +235,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       // DC
 	
       // Inner boundary
-      if(flags & INVERT_DC_IN_GRAD) {
+      if(inner_boundary_flags & INVERT_DC_GRAD) {
         // Zero gradient at inner boundary. 2nd-order accurate
         // One-sided differences
         for (int ix=0;ix<xbndry;ix++) {
@@ -246,7 +246,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
           A[ix][4] =  -1.;
         }
         
-      }else if(flags & INVERT_DC_IN_GRADPAR) {
+      }else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] =  0.;
           A[ix][1] =  0.;
@@ -254,7 +254,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
           A[ix][3] =  4./sqrt(mesh->g_22(ix+1,jy));
           A[ix][4] =  -1./sqrt(mesh->g_22(ix+2,jy));
         }
-      }else if(flags & INVERT_DC_IN_GRADPARINV) {
+      }else if(inner_boundary_flags & INVERT_DC_GRADPARINV) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] =  0.;
           A[ix][1] =  0.;
@@ -262,7 +262,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
           A[ix][3] =  4.*sqrt(mesh->g_22(ix+1,jy));
           A[ix][4] =  -sqrt(mesh->g_22(ix+2,jy));
         }
-      }else if (flags & INVERT_DC_IN_LAP) {
+      }else if (inner_boundary_flags & INVERT_DC_LAP) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] = 0.;
           A[ix][1] = 0.;
@@ -273,7 +273,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       }
       
       // Outer boundary
-      if(flags & INVERT_DC_OUT_GRAD) {
+      if(outer_boundary_flags & INVERT_DC_GRAD) {
         // Zero gradient at outer boundary
         for (int ix=0;ix<xbndry;ix++)
           A[ncx-ix][1] = -1.0;
@@ -283,11 +283,11 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       // AC
 	
       // Inner boundarySQ(kwave)*coef2
-      if(flags & INVERT_AC_IN_GRAD) {
+      if(inner_boundary_flags & INVERT_AC_GRAD) {
         // Zero gradient at inner boundary
         for (int ix=0;ix<xbndry;ix++)
           A[ix][3] = -1.0;
-      }else if(flags & INVERT_AC_IN_LAP) {
+      }else if(inner_boundary_flags & INVERT_AC_LAP) {
         // Enforce zero laplacian for 2nd and 4th-order
 	  
         int ix = 1;
@@ -321,11 +321,11 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       }
 	
       // Outer boundary
-      if(flags & INVERT_AC_OUT_GRAD) {
+      if(outer_boundary_flags & INVERT_AC_GRAD) {
         // Zero gradient at outer boundary
         for (int ix=0;ix<xbndry;ix++)
           A[ncx-ix][1] = -1.0;
-      }else if(flags & INVERT_AC_OUT_LAP) {
+      }else if(outer_boundary_flags & INVERT_AC_LAP) {
         // Enforce zero laplacian for 2nd and 4th-order
         // NOTE: Currently ignoring XZ term and coef4 assumed zero on boundary
         // FIX THIS IF IT WORKS

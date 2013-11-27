@@ -93,20 +93,20 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   // Get the width of the boundary
   
   int inbndry = 2, outbndry=2;
-  if(flags & INVERT_BNDRY_ONE) {
+  if(flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(flags & INVERT_BNDRY_IN_ONE)
+  if(inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(flags & INVERT_BNDRY_OUT_ONE)
+  if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
   // Loop over X indices, including boundaries but not guard cells
   for(int ix=xs; ix <= xe; ix++) {
     // Take FFT in Z direction, apply shift, and put result in k1d
     
-    if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
       // Use the values in x0 in the boundary
       ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
     }else {
@@ -128,7 +128,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
                  jy, 
                  kz == 0, // True for the component constant (DC) in Z
                  kwave,   // Z wave number
-                 flags, 
+                 flags, inner_boundary_flags, outer_boundary_flags,
                  &A, &C, &D,
                  false);  // Don't include guard cells in arrays
   }

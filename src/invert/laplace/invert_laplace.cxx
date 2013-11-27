@@ -75,6 +75,8 @@ Laplacian::Laplacian(Options *options) {
   OPTION3(options, low_mem, all_terms, nonuniform, false);
   
   OPTION(options, flags, 0);
+  OPTION(options, inner_boundary_flags, 0);
+  OPTION(options, outer_boundary_flags, 0);
   
   OPTION(options, include_yguards, true);
   
@@ -265,7 +267,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
  * Uses the laplace_tridag_coefs routine above to fill a matrix [kz][ix] of coefficients
  */
 void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
-                             dcomplex **bk, int jy, int flags, 
+                             dcomplex **bk, int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d) {
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -276,14 +278,14 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                  bk[kz], 
                  jy, 
                  kz == 0, kwave, 
-                 flags, 
+                 flags, inner_boundary_flags, outer_boundary_flags,
                  a, ccoef, d);
   }
 }
 
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, bool dc, BoutReal kwave, 
-                             int flags, 
+                             int flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d,
                              bool includeguards) {
@@ -299,12 +301,12 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   
   int inbndry = 2, outbndry=2;
   
-  if(flags & INVERT_BNDRY_ONE) {
+  if(flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(flags & INVERT_BNDRY_IN_ONE)
+  if(inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(flags & INVERT_BNDRY_OUT_ONE)
+  if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
     
   // Entire domain. Change to boundaries later
@@ -323,7 +325,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
     if(mesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
       
-      if(!(flags & (INVERT_IN_RHS | INVERT_IN_SET))) {
+      if(!(inner_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for(int ix=0;ix<inbndry;ix++)
           bk[ix] = 0.;
       }
@@ -331,26 +333,26 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       if(dc) {
         // DC i.e. kz = 0
 	  
-        if(flags & INVERT_DC_IN_GRAD) {
+        if(inner_boundary_flags & INVERT_DC_GRAD) {
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] =  0.;
             bvec[ix] =  1.;
             cvec[ix] = -1.;
           }
-        }else if(flags & INVERT_DC_IN_GRADPAR) {
+        }else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
           for (int ix=0;ix<inbndry;ix++) {
             avec[ix] =  0.0;
             bvec[ix] =  1.0/sqrt(mesh->g_22(ix,jy));
             cvec[ix] = -1.0/sqrt(mesh->g_22(ix+1,jy));
           }
-        }else if(flags & INVERT_DC_IN_GRADPARINV) {
+        }else if(inner_boundary_flags & INVERT_DC_GRADPARINV) {
           for (int ix=0;ix<inbndry;ix++) {
             avec[ix] =  0.0;
             bvec[ix] =  sqrt(mesh->g_22(ix,jy));
             cvec[ix] = -sqrt(mesh->g_22(ix+1,jy));
           }
-        }else if (flags & INVERT_DC_IN_LAP) {
+        }else if (inner_boundary_flags & INVERT_DC_LAP) {
           // Decaying boundary conditions
           BoutReal k = 0.0;
           if(a != (Field2D*) NULL) {
@@ -377,14 +379,14 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }else {
         // AC
 	
-        if(flags & INVERT_AC_IN_GRAD) {
+        if(inner_boundary_flags & INVERT_AC_GRAD) {
           // Zero gradient at inner boundary
           for (int ix=0;ix<inbndry;ix++){
             avec[ix]=dcomplex(0.,0.);
             bvec[ix]=dcomplex(1.,0.);
             cvec[ix]=dcomplex(-1.,0.);
           }
-        }else if(flags & INVERT_AC_IN_LAP) {
+        }else if(inner_boundary_flags & INVERT_AC_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
           for (int ix=0;ix<inbndry;ix++) {
             avec[ix] = 0.0;
@@ -404,7 +406,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
     if(mesh->lastX()) {
       // OUTER BOUNDARY
       
-      if(!(flags & (INVERT_OUT_RHS | INVERT_OUT_SET))) {
+      if(!(outer_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for (int ix=0;ix<outbndry;ix++) {
           bk[ncx-ix] = 0.;
         }
@@ -413,7 +415,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       if(dc) {
         // DC
 	
-        if(flags & INVERT_DC_OUT_GRAD) {
+        if(outer_boundary_flags & INVERT_DC_GRAD) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
             cvec[ncx-ix]=dcomplex(0.,0.);
@@ -431,14 +433,14 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }else {
         // AC
 	
-        if(flags & INVERT_AC_OUT_GRAD) {
+        if(outer_boundary_flags & INVERT_AC_GRAD) {
           // Zero gradient at outer boundary
           for (int ix=0;ix<outbndry;ix++){
             cvec[ncx-ix]=dcomplex(0.,0.);
             bvec[ncx-ix]=dcomplex(1.,0.);
             avec[ncx-ix]=dcomplex(-1.,0.);
           }
-        }else if(flags & INVERT_AC_OUT_LAP) {
+        }else if(outer_boundary_flags & INVERT_AC_LAP) {
           // Use decaying zero-Laplacian solution in the boundary
           for (int ix=0;ix<outbndry;ix++) {
             avec[ncx-ix] = -exp(-1.0*sqrt(mesh->g33[xe-ix][jy]/mesh->g11[xe-ix][jy])*kwave*mesh->dx[xe-ix][jy]);;
@@ -470,7 +472,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
 }
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Laplacian *lap = Laplacian::defaultInstance();
   
@@ -490,6 +492,8 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   x = lap->solve(b);
   
@@ -498,7 +502,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
   return 0;
 }
 
-int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+int invert_laplace(const Field3D &b, Field3D &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Timer timer("invert"); ///< Start timer
   
@@ -520,6 +524,8 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   x.allocate(); // Make sure x is allocated
 
@@ -528,7 +534,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, co
   x.setLocation(b.getLocation());
 
 }
-const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+const Field3D invert_laplace(const Field3D &b, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Timer timer("invert"); ///< Start timer 
   
@@ -550,6 +556,8 @@ const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, cons
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
+  lap->setInnerBoundaryFlags(inner_boundary_flags);
+  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   Field3D x = lap->solve(b);
   

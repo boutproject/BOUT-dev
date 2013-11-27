@@ -142,6 +142,7 @@ private:
   
   #ifdef CHECK
     int implemented_flags;
+    int implemented_boundary_flags;
   #endif
 };
 

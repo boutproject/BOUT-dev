@@ -136,6 +136,7 @@ private:
 
   #ifdef CHECK
     int implemented_flags;
+    int implemented_boundary_flags;
   #endif
   
   DMUMPS_STRUC_C mumps_struc;
