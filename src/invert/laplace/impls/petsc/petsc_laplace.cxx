@@ -72,8 +72,8 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 				 + INVERT_SET
 				 + INVERT_RHS
 				 ;
-    if ( flags & ~implemented_flags ) {
-      if (flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    if ( global_flags & ~implemented_flags ) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
     }
     if ( inner_boundary_flags & ~implemented_boundary_flags ) {
@@ -389,8 +389,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
 
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   #ifdef CHECK
-    if ( flags & !implemented_flags) {
-      if (flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    if ( global_flags & !implemented_flags) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
     }
     if ( inner_boundary_flags & ~implemented_boundary_flags ) {
@@ -737,7 +737,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
     
-    if( !( flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    if( !( global_flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
     
     KSPGetPC(ksp,&pc);
     

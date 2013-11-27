@@ -49,8 +49,8 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     implemented_boundary_flags = INVERT_AC_GRAD
 			       + INVERT_RHS
 			       ;
-    if ( flags & ~implemented_flags) {
-      if (flags&INVERT_4TH_ORDER) output<<"For MUMPS based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    if ( global_flags & ~implemented_flags) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For MUMPS based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in mumps_laplace.cxx");
     }
     if (inner_boundary_flags & ~implemented_boundary_flags) {

@@ -79,7 +79,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   int ncx = mesh->ngx-1;
 
   int xbndry = 2; // Width of the x boundary
-  if(flags & INVERT_BOTH_BNDRY_ONE)
+  if(global_flags & INVERT_BOTH_BNDRY_ONE)
     xbndry = 1;
 
   #pragma omp parallel for
@@ -363,7 +363,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     // Perform inversion
     cband_solve(A, mesh->ngx, 2, 2, bk1d);
 
-    if((flags & INVERT_KX_ZERO) && (iz == 0)) {
+    if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
       // Set the Kx = 0, n = 0 component to zero. For now just subtract
       // Should do in the inversion e.g. Sherman-Morrison formula
         
@@ -383,7 +383,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
   // Done inversion, transform back
 
   for(int ix=0; ix<=ncx; ix++){
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
 
     ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);

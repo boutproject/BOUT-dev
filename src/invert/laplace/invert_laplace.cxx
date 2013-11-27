@@ -74,9 +74,19 @@ Laplacian::Laplacian(Options *options) {
   
   OPTION3(options, low_mem, all_terms, nonuniform, false);
   
-  OPTION(options, flags, 0);
-  OPTION(options, inner_boundary_flags, 0);
-  OPTION(options, outer_boundary_flags, 0);
+  if (options->isSet("flags")) {
+    if ( options->isSet("global_flags") || options->isSet("inner_boundary_flags") || options->isSet("outer_boundary_flags") ) {
+      throw BoutException("Should not use old flags as well as new global_flags/inner_boundary_flags/outer_boundary_flags");
+    }
+    int flags;
+    OPTION(options, flags, 0);
+    setFlags(flags);
+  }
+  else {
+    OPTION(options, global_flags, 0);
+    OPTION(options, inner_boundary_flags, 0);
+    OPTION(options, outer_boundary_flags, 0);
+  }
   
   OPTION(options, include_yguards, true);
   
@@ -267,7 +277,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
  * Uses the laplace_tridag_coefs routine above to fill a matrix [kz][ix] of coefficients
  */
 void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
-                             dcomplex **bk, int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
+                             dcomplex **bk, int jy, int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d) {
   for(int kz = 0; kz <= maxmode; kz++) {
@@ -278,14 +288,14 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                  bk[kz], 
                  jy, 
                  kz == 0, kwave, 
-                 flags, inner_boundary_flags, outer_boundary_flags,
+                 global_flags, inner_boundary_flags, outer_boundary_flags,
                  a, ccoef, d);
   }
 }
 
 void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              dcomplex *bk, int jy, bool dc, BoutReal kwave, 
-                             int flags, int inner_boundary_flags, int outer_boundary_flags,
+                             int global_flags, int inner_boundary_flags, int outer_boundary_flags,
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d,
                              bool includeguards) {
@@ -301,7 +311,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   
   int inbndry = 2, outbndry=2;
   
-  if(flags & INVERT_BOTH_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -472,7 +482,7 @@ void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcom
   Laplacian::defaultInstance()->tridagCoefs(jx,jy, jz, a, b, c, ccoef, d);
 }
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Laplacian *lap = Laplacian::defaultInstance();
   
@@ -492,8 +502,6 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, int inner_bounda
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
-  lap->setInnerBoundaryFlags(inner_boundary_flags);
-  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   x = lap->solve(b);
   
@@ -502,7 +510,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, int inner_bounda
   return 0;
 }
 
-int invert_laplace(const Field3D &b, Field3D &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Timer timer("invert"); ///< Start timer
   
@@ -524,8 +532,6 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, int inner_boundary_f
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
-  lap->setInnerBoundaryFlags(inner_boundary_flags);
-  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   x.allocate(); // Make sure x is allocated
 
@@ -534,7 +540,7 @@ int invert_laplace(const Field3D &b, Field3D &x, int flags, int inner_boundary_f
   x.setLocation(b.getLocation());
 
 }
-const Field3D invert_laplace(const Field3D &b, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c, const Field2D *d) {
+const Field3D invert_laplace(const Field3D &b, int flags, const Field2D *a, const Field2D *c, const Field2D *d) {
   
   Timer timer("invert"); ///< Start timer 
   
@@ -556,8 +562,6 @@ const Field3D invert_laplace(const Field3D &b, int flags, int inner_boundary_fla
     lap->setCoefD(1.0);
   
   lap->setFlags(flags);
-  lap->setInnerBoundaryFlags(inner_boundary_flags);
-  lap->setOuterBoundaryFlags(outer_boundary_flags);
   
   Field3D x = lap->solve(b);
   
@@ -566,3 +570,53 @@ const Field3D invert_laplace(const Field3D &b, int flags, int inner_boundary_fla
   return x;
 }
 
+// setFlags routine for backwards compatibility with old monolithic flags
+void Laplacian::setFlags(int flags) {
+  global_flags = 0;
+  inner_boundary_flags = 0;
+  outer_boundary_flags = 0;
+  if (flags & 1)
+    inner_boundary_flags += INVERT_DC_GRAD;
+  if (flags & 2)
+    inner_boundary_flags += INVERT_AC_GRAD;
+  if (flags & 4)
+    outer_boundary_flags += INVERT_DC_GRAD;
+  if (flags & 8)
+    outer_boundary_flags += INVERT_AC_GRAD;
+  if (flags & 16)
+    global_flags += INVERT_ZERO_DC;
+  if (flags & 32)
+    global_flags += INVERT_START_NEW;
+  if (flags & 64)
+    global_flags += INVERT_BOTH_BNDRY_ONE; // Sets the width of the boundary to 1
+  if (flags & 128)
+    global_flags += INVERT_4TH_ORDER; // Use band solver for 4th order in x
+  if (flags & 256)
+    inner_boundary_flags += INVERT_AC_LAP;
+  if (flags & 512)
+    outer_boundary_flags += INVERT_AC_LAP;
+  if (flags & 1024)
+    inner_boundary_flags += INVERT_SYM; // Use symmetry to enforce either zero-value or zero-gradient
+  if (flags & 2048)
+    outer_boundary_flags += INVERT_SYM; // Use symmetry to enforce either zero-value or zero-gradient
+  if (flags & 4096)
+    inner_boundary_flags += INVERT_SET; // Set inner boundary
+  if (flags & 8192)
+    outer_boundary_flags += INVERT_SET; // Set outer boundary
+  if (flags & 16384)
+    inner_boundary_flags += INVERT_RHS; // Use input value in RHS at inner boundary
+  if (flags & 32768)
+    outer_boundary_flags += INVERT_RHS; // Use input value in RHS at outer boundary
+  if (flags & 65536)
+    global_flags += INVERT_KX_ZERO; // Zero the kx=0, n = 0 component
+  if (flags & 131072)
+    inner_boundary_flags += INVERT_DC_LAP;
+  if (flags & 262144)
+    inner_boundary_flags += INVERT_BNDRY_ONE;
+  if (flags & 524288)
+    outer_boundary_flags += INVERT_BNDRY_ONE;
+  if (flags & 1048576)
+    inner_boundary_flags += INVERT_DC_GRADPAR;
+  if (flags & 2097152)
+    inner_boundary_flags += INVERT_DC_GRADPARINV;
+}

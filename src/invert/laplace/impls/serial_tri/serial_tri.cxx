@@ -84,7 +84,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   
   int inbndry = 2, outbndry=2;
   
-  if(flags & INVERT_BOTH_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -447,7 +447,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       }
     }
       
-    if((flags & INVERT_KX_ZERO) && (iz == 0)) {
+    if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
         offset += bk1d[ix];
@@ -467,7 +467,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   
   for(int ix=0; ix<=ncx; ix++){
     
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
     
     ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);

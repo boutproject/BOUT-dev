@@ -55,7 +55,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
     FieldPerp bs = copy(b);
     
     int xbndry = 2;
-    if(flags & INVERT_BOTH_BNDRY_ONE)
+    if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
@@ -143,7 +143,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
     Field3D bs = copy(b);
     
     int xbndry = 2;
-    if(flags & INVERT_BOTH_BNDRY_ONE)
+    if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
     
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
@@ -244,7 +244,7 @@ void LaplaceSPT::tridagBack(dcomplex *u, int n,
  * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
  *
  * @param[in]    b      RHS values (Ax = b)
- * @param[in]    flags  Inversion settings (see boundary.h for values)
+ * @param[in]    global_flags  Inversion settings (see boundary.h for values)
  * @param[in]    inner_boundary_flags  Inversion settings for inner boundary (see invert_laplace.hxx for values)
  * @param[in]    outer_boundary_flags  Inversion settings for outer boundary (see invert_laplace.hxx for values)
  * @param[in]    a      This is a 2D matrix which allows solution of A = Delp2 + a
@@ -291,7 +291,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
+               data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
   
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
@@ -453,7 +453,7 @@ int LaplaceSPT::next(SPT_data &data) {
 /// Finishes the parallelised Thomas algorithm
 /*!
   @param[inout] data   Structure keeping track of calculation
-  @param[in]    flags  Inversion flags (same as passed to invert_spt_start)
+  @param[in]    global_flags  Inversion flags (same as passed to invert_spt_start)
   @param[in]    inner_boundary_flags  Inversion flags for inner boundary (same as passed to invert_spt_start)
   @param[in]    outer_boundary_flags  Inversion flags for outer boundary (same as passed to invert_spt_start)
   @param[out]   x      The result
@@ -485,7 +485,7 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
       xk1d[kz] = data.xk[kz][ix];
     }
 
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
     ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], xdata[ix]);

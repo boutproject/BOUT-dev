@@ -47,20 +47,20 @@ class Laplacian;
 
 const int INVERT_DC_GRAD  = 1;
 const int INVERT_AC_GRAD  = 2;
-const int INVERT_ZERO_DC  = 4;
-const int INVERT_AC_LAP   = 8;
-const int INVERT_SYM      = 16; // Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_SET      = 32; // Set boundary to value
-const int INVERT_RHS      = 64; // Use input value in RHS boundary
-const int INVERT_DC_LAP   = 128;
-const int INVERT_BNDRY_ONE = 256;
-const int INVERT_DC_GRADPAR = 512;
-const int INVERT_DC_GRADPARINV = 1024;
+const int INVERT_AC_LAP   = 4;
+const int INVERT_SYM      = 8; // Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_SET      = 16; // Set boundary to value
+const int INVERT_RHS      = 32; // Use input value in RHS boundary
+const int INVERT_DC_LAP   = 64;
+const int INVERT_BNDRY_ONE = 128;
+const int INVERT_DC_GRADPAR = 256;
+const int INVERT_DC_GRADPARINV = 512;
 
-const int INVERT_START_NEW   = 1;
-const int INVERT_BOTH_BNDRY_ONE = 2; // Sets the width of the boundary to 1
-const int INVERT_4TH_ORDER   = 4; // Use band solver for 4th order in x
-const int INVERT_KX_ZERO     = 8; // Zero the kx=0, n = 0 component
+const int INVERT_ZERO_DC     = 1;
+const int INVERT_START_NEW   = 2;
+const int INVERT_BOTH_BNDRY_ONE = 4; // Sets the width of the boundary to 1
+const int INVERT_4TH_ORDER   = 8; // Use band solver for 4th order in x
+const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -88,7 +88,8 @@ public:
   virtual void setCoefEz(const Field3D &val) { setCoefEz(val.DC()); }
   virtual void setCoefEz(const BoutReal &r) { Field2D f(r); setCoefD(f); }
   
-  virtual void setFlags(int f) { flags = f; }
+  virtual void setFlags(int f);
+  virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
   
@@ -118,7 +119,7 @@ protected:
   int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
   int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
-  int flags;       ///< Default flags
+  int global_flags;       ///< Default flags
   int inner_boundary_flags; ///< Flags to set inner boundary condition
   int outer_boundary_flags; ///< Flags to set outer boundary condition
 
@@ -146,11 +147,11 @@ private:
 
 void laplace_tridag_coefs(int jx, int jy, int jz, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
 
-int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
-int invert_laplace(const Field3D &b, Field3D &x, int flags, int inner_boundary_flags, int outer_boundary_flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
+int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
+int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, int inner_boundary_flags, int outer_boundary_flags,
+const Field3D invert_laplace(const Field3D &b, int flags,
                              const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
 
 

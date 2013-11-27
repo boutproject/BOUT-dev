@@ -93,7 +93,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   // Get the width of the boundary
   
   int inbndry = 2, outbndry=2;
-  if(flags & INVERT_BOTH_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
   if(inner_boundary_flags & INVERT_BNDRY_ONE)
@@ -128,7 +128,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
                  jy, 
                  kz == 0, // True for the component constant (DC) in Z
                  kwave,   // Z wave number
-                 flags, inner_boundary_flags, outer_boundary_flags,
+                 global_flags, inner_boundary_flags, outer_boundary_flags,
                  &A, &C, &D,
                  false);  // Don't include guard cells in arrays
   }
