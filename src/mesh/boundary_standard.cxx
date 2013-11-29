@@ -250,7 +250,7 @@ void BoundaryNeumann_4thOrder::apply(Field2D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
     BoutReal delta = -(bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y));
     f(bndry->x,bndry->y) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by);
-    f(bndry->x+bndry->bx,bndry->y+bndry->by) = -24.*delta*val + 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by) - 27.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by) + f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = -24.*delta*val + 27.*f(bndry->x,bndry->y) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
   }
 }
 
@@ -261,7 +261,7 @@ void BoundaryNeumann_4thOrder::apply(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++) {
       BoutReal delta = -(bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y));
       f(bndry->x,bndry->y,z) = 12.*delta/11.*val + 17./22.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 9./22.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) - 5./22.*f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z) + 1./22.*f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z);
-      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) - 27.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z) + f(bndry->x-3*bndry->bx,bndry->y-3*bndry->by,z); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = -24.*delta*val + 27.*f(bndry->x,bndry->y,z) - 27.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z); // The f(bndry->x-4*bndry->bx,bndry->y-4*bndry->by,z) term vanishes, so that this sets to zero the 4th order central difference first derivative at the point half way between the guard cell and the grid cell
     }
 }
 
