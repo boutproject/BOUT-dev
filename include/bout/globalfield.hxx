@@ -35,6 +35,7 @@ protected:
   MPI_Comm comm;
   int npes, mype;
   
+  void proc_local_origin(int proc, int *x, int *y, int *z = NULL);
   void proc_origin(int proc, int *x, int *y, int *z = NULL);  ///< Return the global origin of processor proc
   void proc_size(int proc, int *lx, int *ly, int *lz = NULL); ///< Return the array size of processor proc
 private:
@@ -44,12 +45,12 @@ private:
 
 class GlobalField2D : public GlobalField {
 public:
-  GlobalField2D(Mesh *m);
+  GlobalField2D(Mesh *m, int proc = 0);
   virtual ~GlobalField2D();
   
   bool valid() const {return false;}
   
-  void gather(const Field2D &f, int proc=0); ///< Gather all data onto one processor
+  void gather(const Field2D &f); ///< Gather all data onto one processor
   const Field2D scatter() const; ///< Scatter data back from one to many processors
   
   /// Assignment from a 2D field. Shorthand for a gather, and must be called on all processors

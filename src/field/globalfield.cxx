@@ -45,18 +45,18 @@ void GlobalField::proc_size(int proc, int *lx, int *ly, int *lz) {
     *lz = mesh->ngz-1;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////
+
 GlobalField2D::GlobalField2D(Mesh *m) : GlobalField(m, mesh->GlobalNx, mesh->GlobalNy, 1){
   
   buffer = new BoutReal*[npes];
   for(int p=0;p<npes;p++)
-    if(p != mype)
-      buffer[p] = new BoutReal[msg_len(p)];
+    buffer[p] = new BoutReal[msg_len(p)];
 }
 
 GlobalField2D::~GlobalField2D() {
   for(int p=0;p<npes;p++)
-    if(p != mype)
-      delete[] buffer[p];
+    delete[] buffer[p];
   delete[] buffer;
 }
 
@@ -81,7 +81,18 @@ void GlobalField2D::gather(const Field2D &f, int proc) {
     }
     
     // Copy data from this processor
-
+    int local_xorig, local_yorig;
+    proc_local_origin(mype, &local_xorig, &local_yorig);
+    int xorig, yorig;
+    proc_origin(mype, &xorig, &yorig);
+    int xsize, ysize;
+    proc_size(mype, &xsize, &ysize);
+    
+    for(int x=0;x<xsize;x++)
+      for(int y=0;y<ysize;y++) {
+        (*this)(x+xorig,y+yorig) =  f(local_xorig+x, local_yorig+y);
+      }
+    
     if(npes > 1) {
       // Wait for receives, process as they arrive
       int pe;
@@ -117,15 +128,55 @@ void GlobalField2D::gather(const Field2D &f, int proc) {
 const Field2D GlobalField2D::scatter() const {
   Field2D result;
   result.allocate();
-  BoutReal *data = result.getData()[0];
   
   MPI_Status status;
   if(mype == data_on_proc) {
     // Data is on this processor. Send to other processors
     
+    for(int p = 0; p < npes; p++) {
+      if(p == mype) continue;
+      
+      int xorig, yorig;
+      proc_origin(pe, &xorig, &yorig);
+      int xsize, ysize;
+      proc_size(pe, &xsize, &ysize);
+      
+      // Send to processor p
+      for(int x=0;x<xsize;x++)
+        for(int y=0;y<ysize;y++) {
+          buffer[p][x*ysize + y] = (*this)(x+xorig,y+yorig);
+        }
+      
+      MPI_Send(buffer[p], xsize*ysize, MPI_DOUBLE, p, 1413, comm);
+    }
+
+    int local_xorig, local_yorig;
+    proc_local_origin(mype, &local_xorig, &local_yorig);
+    int xorig, yorig;
+    proc_origin(mype, &xorig, &yorig);
+    int xsize, ysize;
+    proc_size(mype, &xsize, &ysize);
+    
+    // Copy to result
+    for(int x=0;x<xsize;x++)
+      for(int y=0;y<ysize;y++) {
+        result(local_xorig+x,local_yorig+y) = (*this)(x+xorig,y+yorig);
+      }
   }else {
     // Receive data
     MPI_Recv(data, msg_len(mype), MPI_DOUBLE, data_on_proc, 1413, comm, &status);
+    
+    int local_xorig, local_yorig;
+    proc_local_origin(mype, &local_xorig, &local_yorig);
+    int xorig, yorig;
+    proc_origin(mype, &xorig, &yorig);
+    int xsize, ysize;
+    proc_size(mype, &xsize, &ysize);
+    
+    for(int x=0;x<xsize;x++)
+      for(int y=0;y<ysize;y++) {
+        result(local_xorig+x,local_yorig+y) = data[x*ysize + y];
+      }
   }
   return result;
 }
