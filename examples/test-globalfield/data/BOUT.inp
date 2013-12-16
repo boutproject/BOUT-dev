@@ -7,6 +7,6 @@ NOUT = 0  # No timesteps
 MZ = 5    # Z size
 
 [mesh]
-nx = 5
-ny = 32
+nx = 8
+ny = 8
 
