@@ -3,8 +3,6 @@
 #include <boutexception.hxx>
 #include <boutcomm.hxx>
 
-#include <output.hxx>
-
 GlobalField::GlobalField(Mesh *m, int proc, int xsize, int ysize, int zsize) 
   : mesh(m), data_on_proc(proc), nx(xsize), ny(ysize), nz(zsize) {
   
@@ -417,5 +415,6 @@ const Field3D GlobalField3D::scatter() const {
 int GlobalField3D::msg_len(int proc) const {
   int xsize, ysize;
   proc_size(proc, &xsize, &ysize);
-  return xsize * ysize;
+  int zsize = mesh->ngz-1;
+  return xsize * ysize * zsize;
 }
