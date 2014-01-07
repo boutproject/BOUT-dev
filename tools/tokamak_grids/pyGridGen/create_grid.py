@@ -682,8 +682,7 @@ def create_grid( F, R, Z, in_settings, critical,
     sind = numpy.int(nrad / 2)
     start_f = fvals[sind]
     
-    print start_f
-    
+
   #  contour_lines( F, numpy.arange(nx).astype(float), numpy.arange(ny).astype(float), levels=[start_f])
     cs=contour( Rr, Zz, F,  levels=[start_f])
 
@@ -692,32 +691,30 @@ def create_grid( F, R, Z, in_settings, critical,
  #  You might get more than one contours for the same start_f. We need to keep the closed one  
     vn=numpy.zeros(numpy.size(p))
     
-    xx=[]
-    yy=[]
-    for i in xrange(numpy.size(p)):
-        v = p[i].vertices
-        vn[i]=numpy.shape(v)[0]
-        xx = [xx,v[:,0]]
-        yy = [yy,v[:,1]]
+      
+    v = p[0].vertices
+    vn[0]=numpy.shape(v)[0]
+    xx=v[:,0]
+    yy=v[:,1]
+    
+    if numpy.shape(vn)[0] > 1:
+        for i in xrange(1,numpy.shape(vn)[0]):
+            v = p[i].vertices
+            vn[i]=numpy.shape(v)[0]
+            xx = [xx,v[:,0]]
+            yy = [yy,v[:,1]]
 
-    if numpy.size(xx) > 2:
-        xx[0]=xx[0][1] #get rid of the initial blank
-        yy[0]=yy[0][1]
-    else:
-        xx[0]=xx[1]
-        yy[0]=yy[1]
-        xx=numpy.delete(xx,1)
-        yy=numpy.delete(yy,1)
-
-    if numpy.size(xx) > 1 :
+    if numpy.shape(vn)[0] > 1 :
        # Find the surface closest to the o-point
         ind = closest_line(numpy.size(xx), xx, yy, opt_ri[primary_opt], opt_zi[primary_opt])
+        x=xx[ind]
+        y=yy[ind]
     else:
         ind = 0
-
-    x=xx[ind]
-    y=yy[ind]
+        x=xx
+        y=yy
           
+
 # plot the start_f line     
     zc = cs.collections[0]
     setp(zc, linewidth=4)
