@@ -59,9 +59,9 @@ rz_grid = Bunch(nr=g.nx, nz=g.ny,   # Number of grid points
 critical = analyse_equil(g.psi,g.r[:,0],g.z[0,:])
 
 
-settings = Bunch(psi_inner=0.7, 
-            psi_outer=1.1, 
-            nrad=68, 
+settings = Bunch(psi_inner=0.5, 
+            psi_outer=0.8, 
+            nrad=64, 
             npol=64, 
             rad_peaking=[0.0], 
             pol_peaking=[0.0], 

@@ -682,6 +682,8 @@ def create_grid( F, R, Z, in_settings, critical,
     sind = numpy.int(nrad / 2)
     start_f = fvals[sind]
     
+    print start_f
+    
   #  contour_lines( F, numpy.arange(nx).astype(float), numpy.arange(ny).astype(float), levels=[start_f])
     cs=contour( Rr, Zz, F,  levels=[start_f])
 
@@ -698,9 +700,14 @@ def create_grid( F, R, Z, in_settings, critical,
         xx = [xx,v[:,0]]
         yy = [yy,v[:,1]]
 
-    xx[0]=xx[0][1] #get rid of the initial blank
-    yy[0]=yy[0][1]
-    
+    if numpy.size(xx) > 2:
+        xx[0]=xx[0][1] #get rid of the initial blank
+        yy[0]=yy[0][1]
+    else:
+        xx[0]=xx[1]
+        yy[0]=yy[1]
+        xx=numpy.delete(xx,1)
+        yy=numpy.delete(yy,1)
 
     if numpy.size(xx) > 1 :
        # Find the surface closest to the o-point
