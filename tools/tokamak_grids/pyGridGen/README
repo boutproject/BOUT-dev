@@ -34,6 +34,11 @@ Constrains:
 Works well but for high normalized radius the domain functionality is not there to create dense grid around the X-point.
 Some functionality, especially control arguments and smoothing, is not operational/tested yet. 
 
+=============
+Execution :
+=============
+
+python workflow.py
 
 =============
 To Do:
