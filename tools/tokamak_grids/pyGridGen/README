@@ -1,0 +1,54 @@
+-------------------------------------------------------------------------------------------------------------
+                                  Python modules for pre-processing in BOUT++
+-------------------------------------------------------------------------------------------------------------
+
+The modules included in this folder form a workflow for the creation of the input grid file for BOUT++. 
+They were derived by a "translation" into python of the corresponding IDL routines in ../gridgen.
+The functionality is equivalent to ../gridgen/test.pro.
+
+=============
+Dependencies:
+=============
+
+../../../tools/pylib (include in PYTHONPATH)
+matplotlib/pylab
+numpy
+scipy
+sys
+bunch   https://pypi.python.org/pypi/bunch
+mayavi2/mlab
+itertools
+cPickle
+netCDF4
+time
+copy
+ode.lsode  http://web.engr.illinois.edu/~mrgates2/ode/
+
+*Initial development on a MacOS X using Enthought Canopy 1.1 python installation. 
+Most packages should be there by default except maybe mayavi2, ode.lsode and bunch.
+
+=============
+Constrains:
+=============
+
+Works well but for high normalized radius the domain functionality is not there to create dense grid around the X-point.
+Some functionality, especially control arguments and smoothing, is not operational/tested yet. 
+
+
+=============
+To Do:
+=============
+
+Extend to include domains around X-points. Include all functionality (control). Involve more "pythonic" formalism.
+Explore alternatives within python. More debugging.
+
+Notes:
+
+analyse_equil.py has 3 versions. Analyse_equil.py follows the IDL algorithm step by step. Analyse_equil_2.py is an alternative that *usually* works well. Analyse_equil_3.py is most likely the more efficient (default for now). More testing is needed.
+
+LSODE has two options. The one uses fortran routines with a python wrapper (default since it seems faster). The alternative is using scipy's odeint. See comments in follow_gradient.py on how to change between them. 
+=============
+Authors:
+=============
+
+George Breyiannis, JAEA  Dec. 2013 - breyiannis.george@jaea.go.jp
