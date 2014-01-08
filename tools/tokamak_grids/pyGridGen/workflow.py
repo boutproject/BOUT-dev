@@ -31,7 +31,7 @@ ax.set_aspect('equal')
    
 show(block=False)
 
-plot(g.rbdry,g.zbdry,'g-')
+plot(g.xlim,g.ylim,'g-')
 
 draw()
 
@@ -75,12 +75,12 @@ mesh=create_grid.create_grid( g.psi, g.r[:,0], g.z[0,:], settings,
                     iter=0, fpsi = None, fast='fast')
 
 
-#save mesh object for faster re-iterations of process_grid (optional)
-saveobject(mesh, 'mesh')
+##save mesh object for faster re-iterations of process_grid (optional)
+#saveobject(mesh, 'mesh')
 #
-#read mesh object for faster re-iterations of process_grid (optional)
-with open('mesh', 'rb') as input:
-    mesh = pickle.load(input)
+##read mesh object for faster re-iterations of process_grid (optional)
+#with open('mesh', 'rb') as input:
+#    mesh = pickle.load(input)
 
 
 process_grid( rz_grid, mesh )

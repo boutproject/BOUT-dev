@@ -111,6 +111,8 @@ def analyse_equil ( F, R, Z):
     func = RectBivariateSpline(Rx, Zx, F)
     for i in xrange(numpy.size(opt_ri)): opt_f[i]=func(opt_ri[i], opt_zi[i])
 
+    n_opoint=numpy.size(opt_ri)
+    
  # x-points
                        
     x_ri=numpy.delete(rex1, numpy.array(list(repeated)))
@@ -121,6 +123,7 @@ def analyse_equil ( F, R, Z):
     func = RectBivariateSpline(Rx, Zx, F)
     for i in xrange(numpy.size(xpt_ri)): xpt_f[i]=func(xpt_ri[i], xpt_zi[i])
     
+    n_xpoint=numpy.size(xpt_ri)
     
  #  plot o-points 
 
@@ -147,7 +150,7 @@ def analyse_equil ( F, R, Z):
     if n_opoint == 0 :
         print "No O-points! Giving up on this equilibrium"
         return Bunch(n_opoint=0, n_xpoint=0, primary_opt=-1)
-  
+
 
   #;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
   # Find the O-point closest to the middle of the grid
@@ -161,7 +164,7 @@ def analyse_equil ( F, R, Z):
             mind = d
     
     primary_opt = ind
-    print "Primary O-point is at "+ numpy.str(opt_ri[ind]) + ", " + numpy.str(opt_zi[ind])
+    print "Primary O-point is at "+ numpy.str(numpy.interp(opt_ri[ind],numpy.arange(numpy.size(R)),R)) + ", " + numpy.str(numpy.interp(opt_zi[ind],numpy.arange(numpy.size(Z)),Z))
     print ""
   
     if n_xpoint > 0 :
