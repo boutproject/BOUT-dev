@@ -520,6 +520,16 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
   return result;
 }
 
+BoutReal VDDX_C2_stag(stencil &v, stencil &f) {
+  // Result is needed at location of f: interpolate v to f's location and take an unstaggered derivative of f
+  return 0.5*(v.p+v.m) * 0.5*(f.p - f.m);
+}
+
+BoutReal VDDX_C4_stag(stencil &v, stencil &f) {
+  // Result is needed at location of f: interpolate v to f's location and take an unstaggered derivative of f
+  return (9.*(v.m + v.p) - v.mm - v.pp)/16. * (8.*f.p - 8.*f.m + f.mm - f.pp)/12.;
+}
+
 /////////////////////////// FLUX ///////////////////////////
 // Map (Low, Centre) -> Centre  or (Centre, Low) -> Low
 // Hence v contains only (mm, m, p, pp) fields whilst f has 'c' too
@@ -613,6 +623,8 @@ static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_s
 
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
+					{DIFF_C2, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
+					{DIFF_C4, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
 					{DIFF_DEFAULT} };
 
 /// Flux staggered lookup
