@@ -1492,9 +1492,52 @@ Ni = collect("Ni")  # Collect the variable "Ni"
 \end{lstlisting}
 
 \subsection{Matlab routines}
-
-There are Matlab routines for collecting data, showing animations, and performing some basic analysis.
-See the \file{tools/matlablib/} directory and \file{README.txt} file.
+\label{sec:matlabroutines}
+These are Matlab routines for collecting data, showing animation and performing some basic analysis.
+To use these routines, either you may copy these routines (from {\bf tools/matlablib}) directly to your present working directory
+or a path to {\bf tools/matlablib} should be added before analysis.
+%
+\begin{verbatim}
+>> addpath <full_path_BOUT_directory>/tools/matlablib/ 
+\end{verbatim}
+%
+Now, the first routine to collect data and import it to Matlab for further analysis is
+%
+\begin{verbatim}
+>> var = import_dmp(path,var_name); 
+\end{verbatim}
+%
+Here, {\it path} is the path where the output data in netcdf format has been dumped. {\it var\_name} is the name of variable
+which user want to load for further analysis. For example, to load ``P'' variable from present working directory:
+%
+\begin{verbatim}
+>> P = import_dmp('.','P'); 
+\end{verbatim}
+%
+Variable ``P'' can be any of [X,Y,Z,T]/[X,Y,Z]/[X,Y]/Constant formats.
+%
+If we are going to Import a large data set with [X,Y,Z,T] format. Normally such data files are of very big size and 
+Matlab goes out of memory/ or may take too much time to load data for all time steps. To resolve this limitation of 
+above routine {\it import\_dmp}, another routine {\it import\_data\_netcdf} is being provided. It serves all purposes
+the routine {\it import\_dmp} does but also gives user freedom to import data at only few/specific time steps. 
+%
+\begin{verbatim}
+>> var = import_data_netcdf(path,var_name,nt,ntsp); 
+\end{verbatim}
+%
+Here, {\it path} and {\it var\_name} are same variables as described before. {\it nt} is the number of time steps user wish to load data.
+{\it ntsp} is the steps at which one wish to write data of of total simulation times the data written.
+%
+\begin{verbatim}
+>> P = import_data_netcdf('.','P',5,100); 
+\end{verbatim}
+%
+Variable ``P'' has been imported from present working directory for 5 time steps. As the original netcdf data contains time information 
+of 500 steps (assume NT=500 in BOUT++ simulations), user will pick only 5 time steps at steps of {\it ntsp} i.e. 100 here. 
+%
+Details of other matlab routines provided with BOUT++ package can be looked in to README.txt of {\bf tools/matlablib} directory.
+The Matlab users can develop their own routines using {\bf \it ncread, ncinfo, ncwrite, ncdisp, netcdf etc.} functions provided in 
+Matlab package.
 
 \subsection{Mathematica routines}
 
