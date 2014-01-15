@@ -478,17 +478,6 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
     # Show animation
     if (movie == 0):
-        plt.show()   # Save movie with given name
-    if ((isinstance(movie,basestring)==1)):
-        anim.save(movie+'.mp4')
-
-    # Save movie with default name
-    if ((isinstance(movie,basestring)==0)):
-        if (movie != 0):
-            anim.save('animation.mp4')
-
-    # Show animation
-    if (movie == 0):
         plt.show()
 
 
