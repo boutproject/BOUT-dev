@@ -114,8 +114,8 @@ class Geqdsk:
 	self.data['rlim'] = numpy.zeros( (limitr,), numpy.float64 ), "R of surrounding limiter contour in meter"
 	self.data['zlim'] = numpy.zeros( (limitr,), numpy.float64 ), "Z of surrounding limiter contour in meter"
 	for i in range(limitr):
-		self.data['rbbbs'][0][i] = data[2*nbbbs + 2*i]
-		self.data['zbbbs'][0][i] = data[2*nbbbs + 2*i + 1]
+		self.data['rlim'][0][i] = data[2*nbbbs + 2*i]
+		self.data['zlim'][0][i] = data[2*nbbbs + 2*i + 1]
 	
 
       def getAll(self):
