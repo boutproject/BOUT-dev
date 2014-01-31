@@ -51,7 +51,7 @@ static PVBBDData pdata;
 long int iopt[OPT_SIZE];
 BoutReal ropt[OPT_SIZE];
 
-PvodeSolver::PvodeSolver(Options *options) : Solver() {
+PvodeSolver::PvodeSolver(Options *options) : Solver(options) {
   has_constraints = false; ///< This solver doesn't have constraints
 }
 
@@ -121,8 +121,6 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int pvode_mxstep;
   int MXSUB = mesh->xend - mesh->xstart + 1;
   
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   options->get("mudq", mudq, n3d*(MXSUB+2));
   options->get("mldq", mldq, n3d*(MXSUB+2));
   options->get("mukeep", mukeep, 0);
@@ -254,7 +252,6 @@ int PvodeSolver::run() {
 
 BoutReal PvodeSolver::run(BoutReal tout) {
   BoutReal *udata;
-  int flag;
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
@@ -266,7 +263,31 @@ BoutReal PvodeSolver::run(BoutReal tout) {
   udata = N_VDATA(u);
 
   // Run CVODE
-  flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
+  int flag;
+  if(!monitor_timestep) {
+    // Run in normal mode
+    flag = CVode(cvode_mem, tout, u, &simtime, NORMAL);
+  }else {
+    // Run in single step mode, to call timestep monitors
+    BoutReal internal_time = ((CVodeMem) cvode_mem)->cv_tn;
+    //CvodeGetCurrentTime(cvode_mem, &internal_time);
+    
+    while(internal_time < tout) {
+      // Run another step
+      BoutReal last_time = internal_time;
+      flag = CVode(cvode_mem, tout, u, &internal_time, ONE_STEP);
+      if(flag < 0) {
+        output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
+        return -1.0;
+      }
+      
+      // Call timestep monitor
+      call_timestep_monitors(internal_time, internal_time - last_time);
+    }
+    // Get output at the desired time
+    flag = CVodeDky(cvode_mem, tout, 0, u);
+    simtime = tout;
+  }
 
   // Copy variables
   load_vars(udata);

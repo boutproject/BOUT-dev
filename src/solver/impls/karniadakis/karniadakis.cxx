@@ -134,6 +134,8 @@ int KarniadakisSolver::run() {
       S0 = tmp;
       
       simtime += timestep;
+      
+      call_timestep_monitors(simtime, timestep);
     }
     iteration++;
     
