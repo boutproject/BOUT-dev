@@ -187,7 +187,7 @@ class BoundaryDivCurl : public BoundaryOp {
 /// Free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
 class BoundaryFree : public BoundaryOp {
  public:
-  BoundaryFree() : val(0.) {}
+  BoundaryFree() : val(0.) {apply_to_ddt = true;}
   BoundaryFree(const BoutReal setval): val(setval) {}
   BoundaryFree(BoundaryRegion *region, BoutReal setval=0.):BoundaryOp(region),val(setval) { }
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
@@ -205,8 +205,8 @@ class BoundaryFree : public BoundaryOp {
 /// Convert a boundary condition to a relaxing one
 class BoundaryRelax : public BoundaryModifier {
  public:
-  BoundaryRelax() : r(10.) {}  // Set default rate
-  BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate);}
+  BoundaryRelax() : r(10.) {apply_to_ddt = true;}  // Set default rate
+  BoundaryRelax(BoundaryOp *operation, BoutReal rate) : BoundaryModifier(operation) {r = fabs(rate); apply_to_ddt = true;}
   BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
   
   void apply(Field2D &f);

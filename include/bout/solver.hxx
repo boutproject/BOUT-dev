@@ -215,6 +215,7 @@ protected:
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
 
+  void pre_rhs(); // Should be run before user RHS is called
   void post_rhs(); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver

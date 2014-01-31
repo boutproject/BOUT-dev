@@ -991,14 +991,17 @@ bool Field2D::checkData(bool vital) const {
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Field2D::applyBoundary() {
+void Field2D::applyBoundary(bool init) {
 #ifdef CHECK
-  msg_stack.push("Field2D::applyBoundary()");
-  if(!boundaryIsSet)
-    output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+  if (init) {
+    msg_stack.push("Field2D::applyBoundary()");
+    if(!boundaryIsSet)
+      output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+  }
 #endif
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply(*this);
+    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      (*it)->apply(*this);
   msg_stack.pop();
 }
 

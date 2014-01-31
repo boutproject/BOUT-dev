@@ -249,7 +249,7 @@ class Field3D : public Field, public FieldData {
   static void cleanup(); // Frees all memory
 
   void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyBoundary(const string &condition);
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();

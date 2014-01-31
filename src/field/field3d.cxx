@@ -2221,15 +2221,17 @@ void Field3D::setBackground(const Field2D &f2d) {
   background = &f2d;
 }
 
-void Field3D::applyBoundary() {
+void Field3D::applyBoundary(bool init) {
 #ifdef CHECK
-  msg_stack.push("Field3D::applyBoundary()");
-  
-  if(block == NULL)
-    output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
-  
-  if(!boundaryIsSet)
-    output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
+  if (init) {
+    msg_stack.push("Field3D::applyBoundary()");
+    
+    if(block == NULL)
+      output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
+    
+    if(!boundaryIsSet)
+      output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
+  }
 #endif
   
   if(block == NULL)
@@ -2239,33 +2241,36 @@ void Field3D::applyBoundary() {
     // Apply boundary to the total of this and background
     
     Field3D tot = *this + (*background);
-    tot.applyBoundary();
+    tot.applyBoundary(init);
     *this = tot - (*background);
   }else {
     // Apply boundary to this field
     for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-      (*it)->apply(*this);
+      if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+	(*it)->apply(*this);
   }
   
-  // Set the corners to zero
-  for(int jx=0;jx<mesh->xstart;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = 0.;
+  if (init) {
+    // Set the corners to zero. ddt vanishes for the corners, so only need to be set once
+    for(int jx=0;jx<mesh->xstart;jx++) {
+      for(int jy=0;jy<mesh->ystart;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++)
+	  block->data[jx][jy][jz] = 0.;
+      }
+      for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++)
+	  block->data[jx][jy][jz] = 0.;
+      }
     }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = 0.;
-    }
-  }
-  for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
-    for(int jy=0;jy<mesh->ystart;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = 0.;
-    }
-    for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = 0.;
+    for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
+      for(int jy=0;jy<mesh->ystart;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++)
+	  block->data[jx][jy][jz] = 0.;
+      }
+      for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
+	for(int jz=0;jz<mesh->ngz;jz++)
+	  block->data[jx][jy][jz] = 0.;
+      }
     }
   }
 

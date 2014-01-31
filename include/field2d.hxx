@@ -185,7 +185,7 @@ class Field2D : public Field, public FieldData {
   
   friend class Vector2D;
   
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyBoundary(const string &condition);
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
