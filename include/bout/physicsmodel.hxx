@@ -80,8 +80,8 @@ protected:
   // Functions called by the user to set callback functions
   void setRHS(rhsfunc fset);
   void setSplitOperator(rhsfunc conv, rhsfunc diff);
-  void setPrecon(preconfunc pset);
-  void setJacobian(jacobianfunc pset);
+  void setPrecon(preconfunc pset) {userprecon = pset;}
+  void setJacobian(jacobianfunc jset) {userjacobian = jset;}
 
   Solver *solver;
   void bout_solve(Field2D &var, const char *name);
