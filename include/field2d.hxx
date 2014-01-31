@@ -180,13 +180,14 @@ class Field2D : public Field, public FieldData {
 
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
-  void doneComms() {bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+  void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
   
   friend class Vector2D;
   
   void applyBoundary(bool init=false);
   void applyBoundary(const string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region
