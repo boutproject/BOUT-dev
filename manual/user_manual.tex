@@ -1492,9 +1492,52 @@ Ni = collect("Ni")  # Collect the variable "Ni"
 \end{lstlisting}
 
 \subsection{Matlab routines}
-
-There are Matlab routines for collecting data, showing animations, and performing some basic analysis.
-See the \file{tools/matlablib/} directory and \file{README.txt} file.
+\label{sec:matlabroutines}
+These are Matlab routines for collecting data, showing animation and performing some basic analysis.
+To use these routines, either you may copy these routines (from {\bf tools/matlablib}) directly to your present working directory
+or a path to {\bf tools/matlablib} should be added before analysis.
+%
+\begin{verbatim}
+>> addpath <full_path_BOUT_directory>/tools/matlablib/ 
+\end{verbatim}
+%
+Now, the first routine to collect data and import it to Matlab for further analysis is
+%
+\begin{verbatim}
+>> var = import_dmp(path,var_name); 
+\end{verbatim}
+%
+Here, {\it path} is the path where the output data in netcdf format has been dumped. {\it var\_name} is the name of variable
+which user want to load for further analysis. For example, to load ``P'' variable from present working directory:
+%
+\begin{verbatim}
+>> P = import_dmp('.','P'); 
+\end{verbatim}
+%
+Variable ``P'' can be any of [X,Y,Z,T]/[X,Y,Z]/[X,Y]/Constant formats.
+%
+If we are going to Import a large data set with [X,Y,Z,T] format. Normally such data files are of very big size and 
+Matlab goes out of memory/ or may take too much time to load data for all time steps. To resolve this limitation of 
+above routine {\it import\_dmp}, another routine {\it import\_data\_netcdf} is being provided. It serves all purposes
+the routine {\it import\_dmp} does but also gives user freedom to import data at only few/specific time steps. 
+%
+\begin{verbatim}
+>> var = import_data_netcdf(path,var_name,nt,ntsp); 
+\end{verbatim}
+%
+Here, {\it path} and {\it var\_name} are same variables as described before. {\it nt} is the number of time steps user wish to load data.
+{\it ntsp} is the steps at which one wish to write data of of total simulation times the data written.
+%
+\begin{verbatim}
+>> P = import_data_netcdf('.','P',5,100); 
+\end{verbatim}
+%
+Variable ``P'' has been imported from present working directory for 5 time steps. As the original netcdf data contains time information 
+of 500 steps (assume NT=500 in BOUT++ simulations), user will pick only 5 time steps at steps of {\it ntsp} i.e. 100 here. 
+%
+Details of other matlab routines provided with BOUT++ package can be looked in to README.txt of {\bf tools/matlablib} directory.
+The Matlab users can develop their own routines using {\bf \it ncread, ncinfo, ncwrite, ncdisp, netcdf etc.} functions provided in 
+Matlab package.
 
 \subsection{Mathematica routines}
 
@@ -2893,6 +2936,53 @@ is equivalent to
   dump.add(Ni0, "Ni0", 0); 
 \end{lstlisting}
 
+In some situations you might also want to write some data to a different file. To do this,
+create a Datafile object: 
+
+\begin{lstlisting}
+Datafile mydata;
+\end{lstlisting}
+
+in physics\_init, you then:
+
+\begin{enumerate}
+\item (optional) Initialise the file, passing it the options to use. If you skip this step, default (sane) options will be used. This just allows you to enable/disable, use parallel I/O, set whether files are opened and closed every time etc.
+\begin{lstlisting}
+mydata = Datafile(Options::getRoot()->getSection("mydata"));
+\end{lstlisting}
+which would use options in a section [mydata] in BOUT.inp
+
+\item Open the file for writing
+\begin{lstlisting}
+mydata.openw("mydata.nc")
+\end{lstlisting}
+By default this only specifies the file name; actual opening of the file happens later when the data is written. If you are not using parallel I/O, the processor number is also inserted into the file name before the last ".", so "mydata.nc" becomes "mydata.0.nc", "mydata.1.nc" etc. The file format used depends on the extension, so ".nc" will open NetCDF, ".pdb" a PDB file etc.
+
+(see e.g. src/fileio/datafile.cxx line 139, which calls src/fileio/dataformat.cxx line 23, which then calls the file format interface e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
+
+\item Add variables to the file
+\begin{lstlisting}
+mydata.add(variable, "name") ;  // Not evolving. Every time the file is written, this will be overwritten
+mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
+\end{lstlisting}
+\end{enumerate}
+
+Whenever you want to write values to the file, for example in physics\_run or a monitor, just call
+\begin{lstlisting}
+mydata.write();
+\end{lstlisting}
+
+To collect the data afterwards, you can specify the prefix to collect. In Python:
+\begin{verbatim}
+>>> var = collect("name", prefix="mydata")
+\end{verbatim}
+or in IDL:
+\begin{verbatim}
+IDL> var = collect(var="name", prefix="mydata")
+\end{verbatim}
+
+By default the prefix is "BOUT.dmp".
+
 
 \section{Fluid equations 2: reduced MHD}
 
@@ -3658,27 +3748,32 @@ algebraic constraints are used for some variables.
 
 \subsection{Monitoring the simulation output}
 
-At every output timestep the solver calls a monitor function, which writes the output dump file,  calculates and prints timing information and estimated time remaining. If you want to run additional code or write data to a different file, you can add monitor function(s).
+Monitoring of the solution can be done at two levels: output monitoring, and timestep monitoring. Output monitoring
+occurs only when data is written to file, whereas timestep monitoring is every timestep and so (usually) much more
+frequent. Examples of both are in \file{examples/monitor} and \file{examples/monitor-newapi}.
 
-You can call your monitor function whatever you like, but it must have 4 inputs and return an int:
+{\bf Output monitoring}: At every output timestep the solver calls a monitor function, which writes the output dump file,  
+calculates and prints timing information and estimated time remaining. If you want to run additional code or write data to a different file, you can add monitor function(s).
+
+You can call your output monitor function whatever you like, but it must have 4 inputs and return an int:
 \begin{lstlisting}
-int my_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
   ...
 }
 \end{lstlisting}
 
-The first input is the solver object, the second is the current simulation time, the third is the output number, and the last is the total number of outputs requested. To get the solver to call this function every output time, put in your \lstinline!physics\_init! code:
+The first input is the solver object, the second is the current simulation time, the third is the output number, and the last is the total number of outputs requested. To get the solver to call this function every output time, put in your \lstinline!physics_init! code:
 \begin{lstlisting}
-  solver->addMonitor(my_monitor);
+  solver->addMonitor(my_output_monitor);
 \end{lstlisting}
 If you want to later remove a monitor, you can do so with
 \begin{lstlisting}
-  solver->removeMonitor(my_monitor);
+  solver->removeMonitor(my_output_monitor);
 \end{lstlisting}
 
 A simple example using this monitor is:
 \begin{lstlisting}
-int my_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
   output.write("My monitor, time = %e, dt = %e\n", 
       simtime, solver->getCurrentTimestep());
 }
@@ -3689,6 +3784,95 @@ int physics_init(bool restarting) {
 \end{lstlisting}
 
 See the monitor example (\file{examples/monitor}) for full code.
+
+
+{\bf Timestep monitoring}: This works in the same way as output monitoring. First define a monitor function:
+\begin{lstlisting}
+int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
+  ...
+}
+\end{lstlisting}
+where \lstinline!simtime! will again contain the current simulation time, and \lstinline!lastdt! the last
+timestep taken. Add this function to the solver:
+\begin{lstlisting}
+  solver->addTimestepMonitor(my_timestep_monitor);
+\end{lstlisting}
+Timestep monitoring is disabled by default, unlike output monitoring. To enable timestep monitoring, set in
+the options file (BOUT.inp):
+\begin{lstlisting}
+[solver]
+monitor_timestep = true
+\end{lstlisting}
+or put on the command line \lstinline!solver:monitor_timestep=true!. When this is enabled, it will
+change how solvers like CVODE and PVODE (the default solvers) are used. Rather than being run in NORMAL
+mode, they will instead be run in SINGLE\_STEP mode (see the SUNDIALS notes here:\url{http://computation.llnl.gov/casc/sundials/support/notes.html}). This may in some cases be less efficient.
+
+\subsection{Global field gather / scatter}
+
+In BOUT++ each processor performs calculations on a sub-set of the mesh, and communicates with other
+processors primarily through exchange of guard cells (the \lstinline!mesh->commmunicate! function). 
+If you need to gather data from the entire mesh onto a single processor, then this can be done
+using either 2D or 3D \lstinline!GlobalFields!.  
+
+First include the header file
+\begin{lstlisting}
+#include <bout/globalfield.hxx>
+\end{lstlisting}
+
+which defines both \lstinline!GlobalField2D! and \lstinline!GlobalField3D!. To create a 3D global field,
+pass it the mesh pointer:
+\begin{lstlisting}
+  GlobalField3D g3d(mesh);
+\end{lstlisting}
+By default all data will be gathered onto processor 0. To change this, specify which processor
+the data should go to as the second input
+\begin{lstlisting}
+  GlobalField3D g3d(mesh, processor);
+\end{lstlisting}
+Gather and scatter methods are defined:
+\begin{lstlisting}
+  Field3D localData;
+  // Set local data to some value
+
+  g3d.gather(localData);  // Gathers all data onto one processor
+  
+  localData = g3d.scatter(); // Scatter data back
+\end{lstlisting}
+{\bf Note:} Boundary guard cells are {\bf not} handled by the scatter step, as this would mean handling
+branch-cuts etc. To obtain valid data in the guard and Y boundary cells, you will need to communicate and
+set Y boundaries.
+
+{\bf Note:} Gather and Scatter are global operations, so all processors must call these functions.
+
+Once data has been gathered, it can be used on one processor. To check if the data is available, call
+the method \lstinline!dataIsLocal()!, which will return \lstinline!true! only on one processor
+\begin{lstlisting}
+  if(g3d.dataIsLocal()) {
+    // Data is available on this processor
+    
+  }
+\end{lstlisting}
+The sizes of the global array are available through \lstinline!xSize()!, \lstinline!ySize()! and \lstinline!zSize()!
+methods. The data itself can be accessed indirectly using \lstinline!(x,y,z)! operators:
+\begin{lstlisting}
+  for(int x=0; x<g3d.xSize(); x++)
+    for(int y=0; y<g3d.ySize(); y++)
+      for(int z=0; z<g3d.zSize(); z++)
+        output.write("Value at (%d,%d,%d) is %e\n", 
+        x,y,z, 
+        g3d(x,y,z) );
+\end{lstlisting}
+or by getting a pointer to the underlying data, which is stored as a 1D array:
+\begin{lstlisting}
+  BoutReal *data = g3d.getData();
+  nx = g3d.xSize();
+  ny = g3d.ySize();
+  nz = g3d.zSize();
+ 
+  data[x*ny*nz + y*nz + z]; // Value at g3d(x,y,z)
+\end{lstlisting}
+
+See the example \file{examples/test-globalfield} for more examples.
 
 \section{Examples}
 \label{sec:examples}

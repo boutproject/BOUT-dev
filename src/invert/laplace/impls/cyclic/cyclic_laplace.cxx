@@ -4,7 +4,13 @@
  * \brief FFT + Tridiagonal solver in serial or parallel
  * 
  * Not particularly optimised: Each y slice is solved sequentially
- *
+ *  
+ * CHANGELOG
+ * =========
+ * 
+ * Jan 2014: Brendan Shanahan <bws502@york.ac.uk>
+ *         * Added DST option
+ * 
  **************************************************************************
  * Copyright 2013 B.D.Dudson
  *
@@ -33,16 +39,22 @@
 #include <fft.hxx>
 #include <bout/sys/timer.hxx>
 #include <bout/constants.hxx>
+#include <output.hxx>
 
 #include "cyclic_laplace.hxx"
 
 LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   // Get options
   
-  nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
+  OPTION(opt, dst, false);
+
+  if(dst) {
+    nmode = mesh->ngz-3;
+  }else
+    nmode = maxmode+1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
 
   // Allocate arrays
-
+  
   int nsys = nmode;     // Number of tridiagonal systems to solve simulaneously
   
   xs = mesh->xstart; // Starting X index
@@ -51,7 +63,7 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   xe = mesh->xend;  // Last X index
   if(mesh->lastX())
     xe = mesh->ngx-1;
-  
+
   int n = xe - xs + 1;  // Number of X points on this processor, 
                         // including boundaries but not guard cells
   
@@ -61,7 +73,10 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   xcmplx = matrix<dcomplex>(nsys, n);
   bcmplx = matrix<dcomplex>(nsys, n);
   
-  k1d = new dcomplex[(mesh->ngz-1)/2 + 1]; // ZFFT routine expects input of this length
+  if(dst)
+    k1d = new dcomplex[mesh->ngz-1];         // DST has different k space
+  else
+    k1d = new dcomplex[(mesh->ngz-1)/2 + 1]; // ZFFT routine expects input of this length
   
   // Create a cyclic reduction object, operating on dcomplex values
   cr = new CyclicReduce<dcomplex>(mesh->getXcomm(), n);
@@ -86,7 +101,7 @@ LaplaceCyclic::~LaplaceCyclic() {
 const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) {
   FieldPerp x;  // Result
   x.allocate();
-  
+
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
   
@@ -101,55 +116,112 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   if(flags & INVERT_BNDRY_OUT_ONE)
     outbndry = 1;
 
-  // Loop over X indices, including boundaries but not guard cells
-  for(int ix=xs; ix <= xe; ix++) {
-    // Take FFT in Z direction, apply shift, and put result in k1d
+  if(dst) {
+    // Loop over X indices, including boundaries but not guard cells
+    for(int ix=xs; ix <= xe; ix++) {
+      // Take DST in Z direction and put result in k1d  
+
+      if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
+         ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+        // Use the values in x0 in the boundary
+        DST(x0[ix]+1, mesh->ngz-3 , k1d);
+      }else {
+        //	  int length = sizeof(*rhs[ix])/sizeof(FieldPerp);
+        DST(rhs[ix]+1, mesh->ngz-3 , k1d);
+      }
     
-    if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
-      // Use the values in x0 in the boundary
-      ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
-    }else {
-      ZFFT(rhs[ix], mesh->zShift(ix, jy), k1d);
+      // Copy into array, transposing so kz is first index
+      for(int kz = 0; kz < nmode; kz++)
+        bcmplx[kz][ix-xs] = k1d[kz];
     }
+  
+    // Get elements of the tridiagonal matrix
+    // including boundary conditions
+    for(int kz = 0; kz < nmode; kz++) {
+	
+      BoutReal zlen = mesh->dz*(mesh->ngz-4);
+	
+      BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
     
-    // Copy into array, transposing so kz is first index
-    for(int kz = 0; kz < nmode; kz++)
-      bcmplx[kz][ix-xs] = k1d[kz];
-  }
-  
-  // Get elements of the tridiagonal matrix
-  // including boundary conditions
-  for(int kz = 0; kz < nmode; kz++) {
-    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-    
-    tridagMatrix(a[kz], b[kz], c[kz],
-                 bcmplx[kz], 
-                 jy, 
-                 kz == 0, // True for the component constant (DC) in Z
-                 kwave,   // Z wave number
-                 flags, 
-                 &A, &C, &D,
-                 false);  // Don't include guard cells in arrays
-  }
-  
-  // Solve tridiagonal systems
-  
-  cr->setCoefs(nmode, a, b, c);
-  cr->solve(nmode, bcmplx, xcmplx);
+      tridagMatrix(a[kz], b[kz], c[kz],
+                   bcmplx[kz], 
+                   jy, 
+                   kz == 0, // True for the component constant (DC) in Z
+                   kwave,   // Z wave number
+                   flags, 
+                   &A, &C, &D,
+                   false);  // Don't include guard cells in arrays
+    }
+ 
+    // Solve tridiagonal systems
 
-  // FFT back to real space
-  for(int ix=xs; ix <= xe; ix++) {
-    for(int kz = 0; kz < nmode; kz++)
-      k1d[kz] = xcmplx[kz][ix-xs];
-    
-    for(int kz=nmode;kz<(mesh->ngz-1)/2 + 1;kz++)
-      k1d[kz] = 0.0; // Filtering out all higher harmonics
-
-    ZFFT_rev(k1d, mesh->zShift(ix, jy), x[ix]);
-    
-    x[ix][mesh->ngz-1] = x[ix][0]; // probably unnecessary
-  }
+    cr->setCoefs(nmode, a, b, c);
+    cr->solve(nmode, bcmplx, xcmplx);
   
+    // FFT back to real space
+    for(int ix=xs; ix <= xe; ix++) {
+      for(int kz = 0; kz < nmode; kz++)
+        k1d[kz] = xcmplx[kz][ix-xs];
+	
+      for(int kz=nmode;kz<(mesh->ngz-1);kz++)  
+        k1d[kz] = 0.0; // Filtering out all higher harmonics
+
+      DST_rev(k1d, mesh->ngz-3, x[ix]+1);
+	
+      x[ix][0] = -x[ix][2];
+      x[ix][mesh->ngz-2] = -x[ix][mesh->ngz-4];
+      x[ix][mesh->ngz-1] = 0.0; // probably unnecessary
+    }
+  }else {
+    // Loop over X indices, including boundaries but not guard cells
+    for(int ix=xs; ix <= xe; ix++) {
+      // Take FFT in Z direction, apply shift, and put result in k1d
+    
+      if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
+         ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+        // Use the values in x0 in the boundary
+        ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
+      }else {
+        ZFFT(rhs[ix], mesh->zShift(ix, jy), k1d);
+      }
+    
+      // Copy into array, transposing so kz is first index
+      for(int kz = 0; kz < nmode; kz++)
+        bcmplx[kz][ix-xs] = k1d[kz];
+    }
+  
+    // Get elements of the tridiagonal matrix
+    // including boundary conditions
+    for(int kz = 0; kz < nmode; kz++) {
+      BoutReal kwave=kz*2.0*PI/(mesh->zlength); // wave number is 1/[rad]
+    
+      tridagMatrix(a[kz], b[kz], c[kz],
+                   bcmplx[kz], 
+                   jy, 
+                   kz == 0, // True for the component constant (DC) in Z
+                   kwave,   // Z wave number
+                   flags, 
+                   &A, &C, &D,
+                   false);  // Don't include guard cells in arrays
+    }
+  
+    // Solve tridiagonal systems
+  
+    cr->setCoefs(nmode, a, b, c);
+    cr->solve(nmode, bcmplx, xcmplx);
+  
+    // FFT back to real space
+    for(int ix=xs; ix <= xe; ix++) {
+      for(int kz = 0; kz < nmode; kz++)
+        k1d[kz] = xcmplx[kz][ix-xs];
+	
+      for(int kz=nmode;kz<(mesh->ngz-1)/2 + 1;kz++)
+        k1d[kz] = 0.0; // Filtering out all higher harmonics
+
+      ZFFT_rev(k1d, mesh->zShift(ix, jy), x[ix]);
+    
+      x[ix][mesh->ngz-1] = x[ix][0]; // probably unnecessary
+    }
+  }
   return x;
 }

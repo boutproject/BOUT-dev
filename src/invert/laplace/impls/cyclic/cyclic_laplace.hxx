@@ -61,6 +61,8 @@ private:
   dcomplex **a, **b, **c, **bcmplx, **xcmplx;
   dcomplex *k1d;
   
+  bool dst;
+  
   CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
 };
 
