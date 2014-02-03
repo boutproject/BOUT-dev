@@ -1,5 +1,10 @@
 ; Collects a set of BOUT++ outputs. Converts into BOUT's XYZT format
 ;
+; Jan 2014: Updated variable name handling.
+;         o Tries to match abbreviations as well as case variation
+;         o Allows variable name to be passed as a parameter
+;           or a keyword
+; 
 ; August 2008: Updated to read BOUT++ v0.3 output, which is split in X
 ;              and Y
 
@@ -11,7 +16,7 @@ FUNCTION in_arr, arr, val
   RETURN, 0
 END
 
-FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
+FUNCTION collect, arg, xind=xind, yind=yind, zind=zind, tind=tind, $
              path=path, var=var, t_array=t_array, use=use, old=old,  $
                   quiet=quiet, debug=debug, prefix=prefix
 
@@ -39,6 +44,8 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
 
   IF KEYWORD_SET(quiet) THEN quiet = 2 ELSE quiet = 1
   IF KEYWORD_SET(debug) THEN quiet = 0
+
+  IF N_PARAMS() GT 0 THEN var = arg
 
   IF NOT KEYWORD_SET(var) THEN BEGIN
     var = "Ni"
@@ -100,8 +107,31 @@ FUNCTION collect, xind=xind, yind=yind, zind=zind, tind=tind, $
       var = var_list[w[0]]
       PRINT, "-> Variables are case-sensitive: Using '"+var+"'"
     ENDIF ELSE BEGIN
-      file_close, handle
-      RETURN, 0
+      
+      ; Check if it's an abbreviation
+      success = 0
+      Nmax = STRLEN(var)
+      FOR N=Nmax, 1,-1 DO BEGIN
+        res = STRCMP(var_list, var, N, /FOLD_CASE)
+        w = WHERE(res EQ 1, count)
+       
+        IF count GE 2 THEN BEGIN
+          PRINT, "Variable name is ambiguous. Could match :", var_list[w]
+          file_close, handle
+          RETURN, 0
+        ENDIF ELSE IF count EQ 1 THEN BEGIN
+          ; Matched
+          var = var_list[w[0]]
+          PRINT, "-> Using '"+var+"'"
+          success = 1
+          BREAK
+        ENDIF
+      ENDFOR
+      
+      IF success EQ 0 THEN BEGIN
+        file_close, handle
+        RETURN, 0
+      ENDIF
     ENDELSE
   ENDIF
 
