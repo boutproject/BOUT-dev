@@ -8,9 +8,29 @@
 import sys
 import numpy
 from bunch import Bunch
-from ode.lsode import lsode
+
+
+try:
+    from ode.lsode import lsode
+except ImportError:
+    print "No ode.lsode available. Trying scipy.integrate.odeint"
+    from scipy.integrate import odeint 
+    
+    # Define a class to emulate lsode behavior
+    class lsode:
+        def __init__(self, func, f0, rz0):
+            # Function for odeint needs to have reversed inputs
+            self._func = lambda pos, fcur : func(fcur, pos)
+            self._f0 = f0
+            self._rz0 = rz0
+        
+        def integrate(self, ftarget):
+            solode = odeint(self._func, self._rz0, [self._f0,ftarget], full_output=True)
+            self._f0 = ftarget
+            self.steps = solode[1]['nst'][0]
+            return solode[0][1,:]
+
 from local_gradient import local_gradient
-from scipy.integrate import odeint 
 from itertools import chain
 from support import deriv
 from saveobject import saveobject
