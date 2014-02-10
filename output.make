@@ -1,4 +1,6 @@
 
+BOUT_TOP=$(PWD)
+
 include make.config
 
 .PHONY: cflags

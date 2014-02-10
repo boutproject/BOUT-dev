@@ -8,6 +8,7 @@
 
 cc="@MPICXX@"
 cxx="@MPICXX@"
+ld="@MPICXX@"
 fc="none"
 checks="@CHECK_LEVEL@"
 cflags="@CONFIG_CFLAGS@"
@@ -48,6 +49,7 @@ Available values for OPTION include:
   --cc        C compiler
   --cxx       C++ compiler
   --fc        Fortran compiler
+  --ld        Linker
   --cflags    pre-processor and compiler flags
   --libs      library linking flags
   
@@ -84,6 +86,7 @@ all()
         echo
         echo "  --cc          -> $cc"
         echo "  --cxx         -> $cxx"
+	echo "  --ld          -> $ld"
         echo "  --cflags      -> $cflags"
         echo "  --libs        -> $libs"
         echo
@@ -141,6 +144,10 @@ while test $# -gt 0; do
     --cxx)
         echo $cxx
         ;;
+
+    --ld)
+	echo $ld
+	;;
 
     --cflags)
         echo $cflags
