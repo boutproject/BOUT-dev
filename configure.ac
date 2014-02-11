@@ -27,8 +27,10 @@
 #    * Changing to always require FFTW (removing NR routines)
 # 
 
+BOUT_VERSION="2.0"
+
 AC_PREREQ(2.59)
-AC_INIT(BOUT++, 1.0, bd512@york.ac.uk)
+AC_INIT(BOUT++, BOUT_VERSION, bd512@york.ac.uk)
 
 AC_ARG_WITH(checks, [  --with-checks=no/1/2/3  	   Set run-time checking level])
 AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
@@ -88,6 +90,7 @@ else
   CXXFLAGS="$CXXFLAGS -O"
 fi
 
+CHECK_LEVEL="0"
 if test "$with_checks" != "no"
 then
   echo "Run-time checking enabled"
@@ -95,13 +98,16 @@ then
   then
     echo " -> Level 1 (Basic checking)"
     CXXFLAGS="$CXXFLAGS -DCHECK=1"
+    CHECK_LEVEL="1"
   elif test "$with_checks" = "3"
   then
     CXXFLAGS="$CXXFLAGS -DCHECK=3"
     echo " -> Level 3 (Full checking + stack tracing)"
+    CHECK_LEVEL="3"
   else
     echo " -> Level 2 (Basic checking + stack tracing)"
     CXXFLAGS="$CXXFLAGS -DCHECK=2"
+    CHECK_LEVEL="2"
   fi
 else
   echo "Run-time checking disabled"
@@ -133,6 +139,8 @@ then
   CXXFLAGS="$CXXFLAGS -DREVISION=$rev"
   echo "Revision ID: $rev"
 fi
+
+GIT_REVISION=$rev
 
 #############################################################
 # FACETS
@@ -573,11 +581,13 @@ echo ""
 # LAPACK routines (Used for tri- and band-diagonal solvers)
 #############################################################
 
+HAS_LAPACK="no"
 if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
   CXXFLAGS="$CXXFLAGS -DLAPACK"	
+  HAS_LAPACK="yes"
 fi
 
 #############################################################
@@ -1184,6 +1194,7 @@ CREATE_DIR(externalpackages)
 CREATE_DIR(lib)
 CREATE_DIR(include)
 
+HAS_PVODE="no"
 if ( test "$with_pvode" != "no" )
 then
 
@@ -1264,6 +1275,7 @@ then
   cp externalpackages/PVODE/lib/*.a lib/
   EXTRA_LIBS="$EXTRA_LIBS -L\$(BOUT_TOP)/lib -lpvode -lpvpre"
   CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PVODE"
+  HAS_PVODE="yes"
 fi
 
 #############################################################
@@ -1283,6 +1295,74 @@ then
 fi
 
 #############################################################
+# Gather configuration info for bout-config
+#############################################################
+
+PREFIX=$PWD
+IDLCONFIGPATH=$PWD/tools/idllib
+PYTHONCONFIGPATH=$PWD/tools/pylib
+
+HAS_FACETS="yes"
+if test "$FACETS_SOURCE" = ""
+then
+  HAS_FACETS="no"
+fi
+
+HAS_IDA="yes"
+if test "$IDALIBS" = ""
+then
+  HAS_IDA="no"
+fi
+
+HAS_CVODE="yes"
+if test "$CVODELIBS" = ""
+then
+  HAS_CVODE="no"
+fi
+
+HAS_NETCDF="yes"
+if test "$NCPATH" = ""
+then
+  HAS_NETCDF="no"
+fi
+
+HAS_PNETCDF="yes"
+if test "$PNCPATH" = ""
+then
+  HAS_PNETCDF="no"
+fi
+
+HAS_PDB="yes"
+if test "$PACT" = ""
+then
+  HAS_PDB="no"
+fi
+
+HAS_HYPRE="yes"
+if test "$HYPREPATH" = ""
+then
+  HAS_HYPRE="no"
+fi
+
+HAS_MUMPS="yes"
+if test "$MUMPS" = ""
+then
+  HAS_MUMPS="no"
+fi
+
+if test "$PETSC" = ""
+then
+  HAS_PETSC="no"
+  PETSC_VERSION=""
+  PETSC_RELEASE=""
+  PETSC_HAS_SUNDIALS="no"
+else
+  HAS_PETSC="yes"
+  PETSC_VERSION="$PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR"
+  PETSC_RELEASE="$PETSC_VERSION_RELEASE"
+fi
+
+#############################################################
 # Print configuration info
 #############################################################
 
@@ -1290,12 +1370,7 @@ echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
 
-if test "$FACETS_SOURCE" = ""
-then
-  echo "  FACETS support: no"   | tee -a config-build.log
-else
-  echo "  FACETS support: yes"  | tee -a config-build.log
-fi
+echo "  FACETS support: $HAS_FACETS"   | tee -a config-build.log
 
 if test "$PETSC" = ""
 then
@@ -1305,54 +1380,20 @@ else
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
-if test "$IDALIBS" = ""
-then
-  echo "  IDA support: no" | tee -a config-build.log
-else
-  echo "  IDA support: yes" | tee -a config-build.log
-fi
 
-if test "$CVODELIBS" = ""
-then
-  echo "  CVODE support: no" | tee -a config-build.log
-else
-  echo "  CVODE support: yes" | tee -a config-build.log
-fi
+echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
-if test "$NCPATH" = ""
-then
-  echo "  NetCDF support: no" | tee -a config-build.log
-else
-  echo "  NetCDF support: yes" | tee -a config-build.log
-fi
+echo "  CVODE support: $HAS_CVODE" | tee -a config-build.log
 
-if test "$PNCPATH" = ""
-then
-  echo "  Parallel-NetCDF support: no" | tee -a config-build.log
-else
-  echo "  Parallel-NetCDF support: yes" | tee -a config-build.log
-fi
+echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 
-if test "$PACT" = ""
-then
-  echo "  PDB support: no" | tee -a config-build.log
-else
-  echo "  PDB support: yes" | tee -a config-build.log
-fi
+echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
-if test "$HYPREPATH" = ""
-then
-  echo "  Hypre support: no" | tee -a config-build.log
-else
-  echo "  Hypre support: yes" | tee -a config-build.log
-fi
+echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 
-if test "$MUMPS" = ""
-then
-  echo "  MUMPS support: no" | tee -a config-build.log
-else
-  echo "  MUMPS support: yes" | tee -a config-build.log
-fi
+echo "  Hypre support: $HAS_HYPRE" | tee -a config-build.log
+
+echo "  MUMPS support: $HAS_MUMPS" | tee -a config-build.log
 
 echo ""
 echo
@@ -1380,3 +1421,45 @@ echo
 
 # Only make.config is altered by configure
 AC_OUTPUT(make.config)
+
+#############################################################
+# Use a dummy Makefile to get the cflags and ldflags
+#
+# This is to capture flags from external libraries such
+# as PETSc
+#############################################################
+
+CONFIG_CFLAGS=`make cflags -f output.make`
+CONFIG_LDFLAGS=`make ldflags -f output.make`
+
+#############################################################
+# Write configuration to bout-config
+#############################################################
+
+AC_SUBST(CONFIG_CFLAGS)
+AC_SUBST(CONFIG_LDFLAGS)
+
+AC_SUBST(PREFIX)
+AC_SUBST(IDLCONFIGPATH)
+AC_SUBST(PYTHONCONFIGPATH)
+
+AC_SUBST(BOUT_VERSION)
+AC_SUBST(GIT_REVISION)
+AC_SUBST(CHECK_LEVEL)
+
+AC_SUBST(HAS_PVODE)
+AC_SUBST(HAS_IDA)
+AC_SUBST(HAS_CVODE)
+AC_SUBST(HAS_NETCDF)
+AC_SUBST(HAS_PNETCDF)
+AC_SUBST(HAS_PDB)
+AC_SUBST(HAS_HYPRE)
+AC_SUBST(HAS_MUMPS)
+AC_SUBST(HAS_LAPACK)
+AC_SUBST(HAS_PETSC)
+AC_SUBST(PETSC_VERSION)
+AC_SUBST(PETSC_RELEASE)
+AC_SUBST(PETSC_HAS_SUNDIALS)
+
+AC_OUTPUT(bin/bout-config)
+chmod a+x bin/bout-config
