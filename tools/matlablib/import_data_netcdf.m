@@ -49,6 +49,7 @@ filename = [path '/BOUT.dmp.0.nc'];
 
 % Size of data from each processor
 pp = ncinfo(filename); [nnx nny nnz nnt] = pp.Dimensions.Length;
+format = pp.Format;
 
 if (nnt < nt*ntsp)
     fprintf('\t Total timesteps of saved data crossed \n');
