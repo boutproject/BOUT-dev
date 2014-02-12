@@ -1,30 +1,5 @@
 """
-A Function to animate time dependent data from BOUT++
-Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
-
-To animate multiple variables on different axes:
-showdata([var1, var2, var3])
-
-To animate more than one line on a single axes:
-showdata([[var1, var2, var3]])
-
-The default graph types are:
-2D (time + 1 spatial dimension) arrays = animated line plot
-3D (time + 2 spatial dimensions) arrays = animated contour plot.
-
-To use surface or polar plots:
-showdata(var, surf = 1)
-showdata(var, polar = 1)
-
-Can plot different graph types on different axes.  Default graph types will be used depending on the dimensions of the input arrays.  To specify polar/surface plots on different axes:
-showdata([var1,var2], surf = [1,0], polar = [0,1])
-
-Movies require FFmpeg to be installed.
-
-The tslice variable is used to control the time value that is printed on each
-frame of the animation.  If the input data matches the time values found within
-BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
-integer counter is used.  
+Visualisation and animation routines
 
 Written by Luke Easy
 le590@york.ac.uk
@@ -37,9 +12,36 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata import collect
-import sys
 
 def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = []):
+    """
+    A Function to animate time dependent data from BOUT++
+    Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
+    
+    To animate multiple variables on different axes:
+    showdata([var1, var2, var3])
+    
+    To animate more than one line on a single axes:
+    showdata([[var1, var2, var3]])
+    
+    The default graph types are:
+    2D (time + 1 spatial dimension) arrays = animated line plot
+    3D (time + 2 spatial dimensions) arrays = animated contour plot.
+    
+    To use surface or polar plots:
+    showdata(var, surf = 1)
+    showdata(var, polar = 1)
+    
+    Can plot different graph types on different axes.  Default graph types will be used depending on the dimensions of the input arrays.  To specify polar/surface plots on different axes:
+    showdata([var1,var2], surf = [1,0], polar = [0,1])
+    
+    Movies require FFmpeg to be installed.
+
+    The tslice variable is used to control the time value that is printed on each
+    frame of the animation.  If the input data matches the time values found within
+    BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
+    integer counter is used.
+    """
     plt.ioff()
     
     # Check to see whether vars is a list or not.
@@ -48,6 +50,9 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     else:
         vars = [vars]
         Nvar = len(vars)
+
+    if Nvar < 1:
+        raise ValueError("No data supplied")
 
     # Check to see whether each variable is a list - used for line plots only
     Nlines = []
@@ -63,8 +68,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for i in range(0,Nvar):
             titles.append(('Var' + str(i+1))) 
     elif len(titles) != Nvar:
-        print 'The length of the titles input list must match the length of the vars list.  Exiting'
-        sys.exit()
+        raise ValueError('The length of the titles input list must match the length of the vars list.')
 
     # Sort out legend labels
     if len(legendlabels) == 0:
@@ -197,15 +201,13 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         Ndims.append([])
         for j in range(0, Nlines[i]):   
             dims[i].append(array((vars[i][j].shape)))
-            Ndims[i].append(dims[i][j].shape[0])     
+            Ndims[i].append(dims[i][j].shape[0])
             # Perform check to make sure that data is either 2D or 3D
             if (Ndims[i][j] < 2):
-                print 'Error, data must be either 2 or 3 dimensional.  Exiting'
-                sys.exit()
+                raise ValueError('data must be either 2 or 3 dimensional.  Exiting')
 
             if (Ndims[i][j] > 3):
-                print 'Error, data must be either 2 or 3 dimensional.  Exiting'
-                sys.exit()
+                raise ValueError('data must be either 2 or 3 dimensional.  Exiting')
 
             if ((Ndims[i][j] == 2) & (polar[i] != 0)):
                 print 'Warning, data must be  3 dimensional (time, r, theta) for polar plots.  Will plot lineplot instead'
@@ -214,12 +216,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 print 'Warning, data must be  3 dimensional (time, x, y) for surface plots.  Will plot lineplot instead'
 
             if ((Ndims[i][j] == 3) & (Nlines[i] != 1)):
-                print 'Error, cannot have multiple sets of 3D (time + 2 spatial dimensions) on each subplot'
-                sys.exit()
+                raise ValueError('cannot have multiple sets of 3D (time + 2 spatial dimensions) on each subplot')
+                
 
             if ((Ndims[i][j] != Ndims[i][0])):
-                print 'Error, Number of dimensions must be the same for all variables on each plot.  Exiting'
-                sys.exit()
+                raise ValueError('Error, Number of dimensions must be the same for all variables on each plot.')
                 
         if (Ndims[i][0] == 2): # Set polar and surf list entries to 0
             polar[i] = 0
@@ -252,22 +253,21 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             Nt[i].append(vars[i][j].shape[0])
             Nx[i].append(vars[i][j].shape[1])
             if (Nt[i][j] != Nt[0][0]):
-                print 'Error, time dimensions must be the same for all variables.  Exiting'
-                sys.exit()
+                raise ValueError('time dimensions must be the same for all variables.')
                 
             #if (Nx[i][j] != Nx[i][0]):
-            #    print 'Error, Dimensions must be the same for all variables on each plot.  Exiting'
-            #    sys.exit()   
+            #    raise ValueError('Dimensions must be the same for all variables on each plot.')  
                 
             if (Ndims[i][j] == 3):
                 Ny[i].append(vars[i][j].shape[2])
                 #if (Ny[i][j] != Ny[i][0]):
-                #    print 'Error, Dimensions must be the same for all variables.  Exiting'
-                #    sys.exit()  
+                #    raise ValueError('Dimensions must be the same for all variables.')
                  
     # Collect time data from file
     if (tslice == 0):           # Only wish to collect time data if it matches 
         t = collect('t_array')
+        if t == None:
+            t = linspace(0,Nt[0][0], Nt[0][0])
     
     # Obtain number of frames
     Nframes = Nt[0][0]/intv
@@ -338,8 +338,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         h = 12.0
         w = 14.0
     else:
-        print 'too many variables...'
-        sys.exit()
+        raise ValueError('too many variables...')
+        
 
     fig = plt.figure(figsize=(w,h))
     title = fig.suptitle(r' ', fontsize=14  )
