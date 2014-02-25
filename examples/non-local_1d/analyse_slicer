@@ -16,12 +16,14 @@ try:
   data_path = str(argv[2])
 except:
   data_path = "data"
-
+  
 # Collect the data
-T = collect("local_non-local_ratio", path=data_path, xind=2, info=True, yguards=True)
+R = collect("friction", path=data_path, xind=2, info=True, yguards=True)
 
-# T has dimensions [Time, X, Y, Z]
-for index, item in enumerate(T[slice_index,0,:,0]):
+# R has dimensions [Time, X, Y, Z]
+length=len(R[0,0,:,0])
+for index, item in enumerate(R[slice_index,0,:,0]):
 	print index, item
-# Make contour plot
-plotdata.plotdata(T[slice_index,0,2:-2,0],title="Braginskii Heat Flux Over Non-Local Heat Flux")
+
+# Make plot
+plotdata.plotdata(R[slice_index,0,:,0],title="Electron Friction Profile at t="+str(argv[1]))
