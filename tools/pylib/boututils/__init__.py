@@ -58,3 +58,17 @@ try:
 except:
     print "No getmpirun command"
  
+try:
+    from fft_integrate import fft_integrate
+except:
+    print "No fft_integrate command"
+
+try:
+    from mode_structure import mode_structure
+except:
+    print "No mode_structure command"
+
+try:
+    from plotpolslice import plotpolslice
+except:
+    print "No plotpolslice command"

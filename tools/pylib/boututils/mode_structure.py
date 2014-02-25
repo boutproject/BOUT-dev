@@ -1,0 +1,391 @@
+import numpy as numpy
+import sys
+from pylab import plot,xlabel,ylim,savefig,gca, xlim
+from boututils.fft_integrate import fft_integrate
+
+#; Calculates mode structure from BOUT++ output
+#; for comparison to ELITE
+#;
+#; April 2009 - Added ERGOS flag. This is intended
+#;              for producing plots similar to the ERGOS
+#;              vacuum RMP code
+
+# interpolates a 1D periodic function
+def zinterp( v, zind):
+  #v = REFORM(v)
+  nz = numpy.size(v)
+  z0 = numpy.round(zind)
+
+  p = zind - float(z0)          # between -0.5 and 0.5
+
+  if p < 0.0 :
+      z0 = z0 - 1
+      p = p + 1.0
+  
+
+  z0 = ((z0 % (nz-1)) + (nz-1)) % (nz-1)
+
+  # for now 3-point interpolation
+
+  zp = (z0 + 1) % (nz - 1)
+  zm = (z0 - 1 + (nz-1)) % (nz - 1)
+
+  result = 0.5*p*(p-1.0)*v[zm] \
+    + (1.0 - p*p)*v[z0] \
+    + 0.5*p*(p+1.0)*v[zp]
+
+  return result
+  
+  
+def mode_structure( var_in, grid_in, period=1, 
+                    zangle=0.0, n=None, addq=None, output=None, 
+                    xq=None, xpsi=None, slow=None, subset=None, 
+                    filter=None, famp=None, quiet=None, 
+                    ergos=None, title=None, 
+                    xrange=None, yrange=None, rational=None, pmodes=None, 
+                    _extra=None):
+
+
+  #ON_ERROR, 2
+  #
+  # period = 1 ; default = full torus
+
+    if n==None :
+        if filter != None :
+            n = filter*period
+        else: n = period
+  
+
+  #  if (grid_in.JYSEPS1_1 GE 0) OR (grid_in.JYSEPS1_2 NE grid_in.JYSEPS2_1) OR (grid_in.JYSEPS2_2 NE grid_in.ny-1) THEN BEGIN
+  #  PRINT, "Mesh contains branch-cuts. Keeping only core"
+  #  
+  #  grid = core_mesh(grid_in)
+  #  var = core_mesh(var_in, grid_in)
+  #ENDIF ELSE BEGIN
+    grid = grid_in
+    vr = var_in
+  #ENDELSE
+  
+
+  #IF KEYWORD_SET(filter) THEN BEGIN
+  #  var = zfilter(var, filter)
+  #ENDIF
+
+    nx = grid.get('nx')
+    ny = grid.get('ny')
+
+    s = numpy.shape(vr)
+    if numpy.size(s) != 3 :
+        print "Error: Variable must be 3 dimensional"
+        return
+  
+    if (s[0] != nx) or (s[1] != ny) :
+      print "Error: Size of variable doesn't match grid"
+      
+      return
+  
+    nz = s[2]
+
+    dz = 2.0*numpy.pi / numpy.float(period*(nz-1))
+  
+  # GET THE TOROIDAL SHIFT
+    tn = grid.keys()
+    tn = numpy.char.upper(tn)
+    count = numpy.where(tn == "QINTY")
+    if numpy.size(count) > 0 :
+        print "Using qinty as toroidal shift angle"
+        zShift = grid.get('qinty')
+    else:
+        count = numpy.where(tn == "ZSHIFT")
+        if numpy.size(count) > 0 :
+           print "Using zShift as toroidal shift angle"
+           zShift = grid.get('zShift')
+        else:
+           print "ERROR: Can't find qinty or zShift variable"
+           return
+
+    zshift=grid.get('zShift')
+
+    rxy=grid.get('Rxy')
+    zxy=grid.get('Zxy')
+    Btxy=grid.get('Btxy')
+    Bpxy=grid.get('Bpxy')
+    shiftangle=grid.get('ShiftAngle')
+    psixy=grid.get('psixy')
+    psi_axis=grid.get('psi_axis')
+    psi_bndry=grid.get('psi_bndry')
+
+    np = 4*ny
+
+    nf = (np - 2) / 2
+    famp = numpy.zeros((nx, nf))
+
+    for x in range (nx):
+      #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      # transform data into fixed poloidal angle
+      
+      # get number of poloidal points
+        nskip = numpy.zeros(ny-1)
+        for y in range (ny-1):
+            yp = y + 1
+            nskip[y] = numpy.abs(zshift[x,yp] - zshift[x,y]) / dz - 1
+      
+            
+        nskip =numpy.int_(numpy.round(nskip))
+        numpy.where(nskip > 0, nskip, 0) 
+       
+        ny2 = numpy.int_(ny + numpy.sum(nskip)) # number of poloidal points
+
+       # IF NOT KEYWORD_SET(quiet) THEN PRINT, x, ny2
+
+        f = numpy.zeros(ny2)      # array for values
+        R = numpy.zeros(ny2)      # Rxy
+        Z = numpy.zeros(ny2)      # Zxy
+        BtBp = numpy.zeros(ny2)   # Bt / Bp
+      
+      # interpolate values onto points
+        ypos = 0l
+        for y in range(ny-1):
+          # original points
+            zind = (zangle - zshift[x,y])/dz
+            if numpy.size(zind) != 1 : sys.exit()
+            f[ypos] = zinterp(vr[x,y,:], zind)
+            R[ypos] = rxy[x,y]
+            Z[ypos] = zxy[x,y]
+            BtBp[ypos] = Btxy[x,y] / Bpxy[x,y]
+
+            ypos = ypos + 1
+
+          # add the extra points
+          
+            zi0 = (zangle - zshift[x,y])/dz
+            zip1 = (zangle - zshift[x,y+1])/dz
+
+            dzi = (zip1 - zi0) / (nskip[y] + 1)
+
+            for i in range (nskip[y]):
+                zi = zi0 + numpy.float(i+1)*dzi # zindex 
+                w = numpy.float(i+1)/numpy.float(nskip[y]+1) # weighting
+              
+                f[ypos+i] = w*zinterp(vr[x,y+1,:], zi) + (1.0-w)*zinterp(vr[x,y,:], zi)
+              
+                R[ypos+i] = w*rxy[x,y+1] + (1.0-w)*rxy[x,y]
+                Z[ypos+i] = w*zxy[x,y+1] + (1.0-w)*zxy[x,y]
+                BtBp[ypos+i] = (w*Btxy[x,y+1] + (1.0-w)*Btxy[x,y]) / (w*Bpxy[x,y+1] + (1.0-w)*Bpxy[x,y])
+             
+            ypos = ypos + nskip[y]
+          
+            # final point
+
+            zind = (zangle - zShift[x,ny-1])/dz
+          
+            f[ypos] = zinterp(vr[x,ny-1,:], zind)
+            R[ypos] = rxy[x,ny-1]
+            Z[ypos] = zxy[x,ny-1]
+            BtBp[ypos] = Btxy[x,ny-1] / Bpxy[x,ny-1]
+         
+
+      #STOP
+
+      #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      #; calculate poloidal angle
+      
+        drxy = numpy.gradient(R)
+        dzxy = numpy.gradient(Z)
+        dl = numpy.sqrt(drxy*drxy + dzxy*dzxy)
+      
+        nu = dl * BtBp / R # field-line pitch
+        theta = numpy.real(fft_integrate(nu)) / shiftangle[x]
+      
+        if numpy.max(theta) > 1.0 :
+          # mis-match between q and nu (integration error?)
+        #    IF NOT KEYWORD_SET(quiet) THEN PRINT, "Mismatch  ", x, MAX(theta)
+            theta = theta / (numpy.max(theta) + numpy.abs(theta[1] - theta[0]))
+       
+      
+        theta = 2.0*numpy.pi * theta
+
+      #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      #; take Fourier transform in theta angle
+
+        tarr = 2.0*numpy.pi*numpy.arange(np) / numpy.float(np) # regular array in theta
+
+        farr = numpy.interp(tarr, theta, f)
+
+      #STOP
+
+        ff = numpy.fft.fft(farr)/numpy.size(farr)
+
+        for i in range (nf):
+            famp[x, i] = 2.0*numpy.abs(ff[i+1])
+         
+      
+   
+  
+  # sort modes by maximum size
+
+    fmax = numpy.zeros(nf)
+    for i in range(nf):
+        fmax[i] = numpy.max(famp[:,i])
+     
+
+    inds = numpy.sort(fmax)[::-1]
+
+    if pmodes == None : pmodes = 10
+
+    qprof = numpy.abs(shiftangle) / (2.0*numpy.pi)
+
+    xarr = numpy.arange(nx)
+    xtitle="Radial index"
+    if xq != None :
+        # show as a function of q*n
+        xarr = qprof*numpy.float(n)
+
+        xtitle="q * n"
+    elif xpsi != None :
+        # show as a function of psi. Should be normalised psi
+        xarr = psixy[:,0]
+
+        # Check if the grid includes psi axis and boundary
+        count1 = numpy.where(tn == "PSI_AXIS")
+        count2 = numpy.where(tn == "PSI_BNDRY")
+      
+        if (count1 > 0) and (count2 > 0) :
+            xarr = (xarr - psi_axis) / (psi_bndry - psi_axis)
+        else:
+            # Use hard-wired values
+            print "WARNING: Using hard-wired psi normalisation"
+            # for circular case
+            #xarr = (xarr + 0.1937) / (0.25044 + 0.1937)
+            # for ellipse case
+            #xarr = xarr / 0.74156
+        
+            # cbm18_dens8
+            xarr = (xarr + 0.854856) / (0.854856 + 0.0760856)
+         
+      
+        xtitle="Psi normalised"
+     
+
+  
+    if slow != None :
+        # plot modes slowly for examination
+        #safe_colors, /first
+    
+        # go through and plot each mode
+        for i in range(nf):
+            if numpy.max(famp[:,i]) > 0.05*numpy.max(famp):
+                print "Mode m = ", i+1, " of ", nf
+                plot(xarr, famp[:,i], 'r')
+                ylim[0,np.max(famp)]
+               # xaxis=xrange
+                xlabel(xtitle)
+                q = numpy.float(i+1) / numpy.float(n)
+        
+                pos = np.interp(q, qprof, xarr)
+        
+                plot( [pos, pos], 'b')#, [0, 2.*MAX(fmax)], lines=2, color=1
+               # cursor, a, b, /down
+             
+         
+    
+    elif ergos != None :
+        # ERGOS - style output
+    
+        if output != None and slow == None :
+            savefig(output)
+            
+        
+#
+#        contour2, famp, xarr, indgen(nf)+1, $
+#              xlabel=xtitle, xrange=xrange, yrange=yrange, _extra=_extra
+#
+#        ; overplot the q profile
+#
+#        oplot, xarr, qprof * n, color=1, thick=2
+#  
+#        IF KEYWORD_SET(rational) THEN BEGIN
+#            maxm = FIX(MAX(qprof)) * n
+#
+#            qreson = (FINDGEN(maxm)+1) / FLOAT(n)
+#    
+#            ; get x location for each of these resonances
+#            qloc = INTERPOL(xarr, qprof, qreson)
+#
+#            oplot, qloc, findgen(maxm)+1., psym=4, color=1
+#        ENDIF
+#    
+#        IF KEYWORD_SET(output) THEN BEGIN
+#            ; output data to save file
+#            SAVE, xarr, qprof, famp, file=output+".idl"
+#      
+#            DEVICE, /close
+#            SET_PLOT, 'X'
+#        ENDIF
+
+    else:
+        if output != None and slow == None :
+            savefig(output)
+         #   DEVICE, file=output+".ps", /color
+        
+  #  
+  #      safe_colors, /first
+  #  
+  #      IF KEYWORD_SET(subset) THEN BEGIN
+  #    
+  #          ; get number of modes larger than 5% of the maximum
+  #          w = WHERE(fmax GT 0.10*MAX(fmax), count)
+  #    
+  #          minind = MIN(inds[0:(count-1)])
+  #          maxind = MAX(inds[0:(count-1)])
+  #    
+  #          PRINT, "Mode number range: ", minind, maxind
+  #    
+  #          plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xlabel=xtitle, chars=1.5, xrange=xrange, /nodata,title=title, _extra=_extra
+  #          color = 2
+  #          FOR i=minind, maxind, subset DO BEGIN
+  #              oplot, xarr, famp[*,i], color=color
+  #      
+  #              q = FLOAT(i+1) / FLOAT(n)
+  #              pos = INTERPOL(xarr, qprof, q)
+  #      
+  #              oplot, [pos, pos], [0, 2.*MAX(fmax)], lines=2, color=color
+  #      
+  #              color = (color MOD 2) + 1
+  #          ENDFOR
+  #    
+        else:
+            # default - just plot everything
+             gca().set_color_cycle(['black', 'red'])
+            
+             plot(xarr, famp[:,0])
+             ylim(0,numpy.max(famp)) #, color=1, 
+             xlabel(xtitle) #, chars=1.5, xrange=xrange,title=title, _extra=_extra
+             xlim(xrange)   
+             for i in range (nf):
+                plot( xarr, famp[:,i])
+  
+              
+  #        
+  #          IF KEYWORD_SET(addq) THEN BEGIN
+  #      
+  #              FOR i=0, pmodes-1 DO BEGIN
+  #                  PRINT, "m = "+STRTRIM(STRING(inds[i]+1), 2)+" amp = "+STRTRIM(STRING(fmax[inds[i]]),2)
+  #                  q = FLOAT(inds[i]+1) / FLOAT(n)
+  #          
+  #                  pos = INTERPOL(xarr, qprof, q)
+  #          
+  #                  oplot, [pos, pos], [0, 2.*MAX(fmax)], lines=2, color=1
+  #              ENDFOR
+  #          ENDIF
+  #    
+  #      ENDELSE
+  #          IF KEYWORD_SET(output) THEN BEGIN
+  #              ; output data to save file
+  #              SAVE, xarr, qprof, famp, file=output+".idl"
+  #    
+  #              DEVICE, /close
+  #              SET_PLOT, 'X'
+  #          ENDIF
+  #      ENDELSE
+  #
