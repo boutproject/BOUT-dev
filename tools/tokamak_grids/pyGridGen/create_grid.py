@@ -491,15 +491,6 @@ def create_grid( F, R, Z, in_settings, critical,
    # if size(nrad_flexible) == 0 :
     #    nrad_flexible = 0
 
-  # Create error handler
-#    err=0;CATCH, err
-#  IF err NE 0 THEN BEGIN
-#    PRINT, "CREATE_GRID failed"
-#    PRINT, "   Error message: "+!ERROR_STATE.MSG
-#    CATCH, /cancel
-#    RETURN, {error:1}
-#  ENDIF
-
     if iter==None:
         iter = 0
     if iter > 3:
@@ -693,25 +684,34 @@ def create_grid( F, R, Z, in_settings, critical,
       
     v = p[0].vertices
     vn[0]=numpy.shape(v)[0]
-    xx=v[:,0]
-    yy=v[:,1]
+    xx=[v[:,0]]
+    yy=[v[:,1]]
     
     if numpy.shape(vn)[0] > 1:
         for i in xrange(1,numpy.shape(vn)[0]):
             v = p[i].vertices
             vn[i]=numpy.shape(v)[0]
-            xx = [xx,v[:,0]]
-            yy = [yy,v[:,1]]
+            xx.append(v[:,0])
+            yy.append(v[:,1])
+            #xx = [xx,v[:,0]]
+            #yy = [yy,v[:,1]]
+
+    print "PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt]
 
     if numpy.shape(vn)[0] > 1 :
-       # Find the surface closest to the o-point
-        ind = closest_line(numpy.size(xx), xx, yy, opt_ri[primary_opt], opt_zi[primary_opt])
+        # Find the surface closest to the o-point
+        opt_r = numpy.interp(opt_ri[primary_opt], numpy.arange(len(R)), R)
+        opt_z = numpy.interp(opt_zi[primary_opt], numpy.arange(len(Z)), Z)
+        
+        ind = closest_line(xx, yy, opt_r, opt_z)
+        
         x=xx[ind]
         y=yy[ind]
+        print "Contour: ", ind
     else:
         ind = 0
-        x=xx
-        y=yy
+        x=xx[0]
+        y=yy[0]
           
 
 # plot the start_f line     
@@ -734,7 +734,6 @@ def create_grid( F, R, Z, in_settings, critical,
     if ans != 1 : sys.exit()
       
     start_ri, start_zi=transform_xy(x,y,R,Z)
-    
     
     ## Make sure that the line goes clockwise
     #
@@ -960,11 +959,13 @@ def int_func(**kwargs):
 
 
 # Find the closest contour line to a given point
-def closest_line(n, x, y, ri, zi, mind=None):
+def closest_line(x, y, ri, zi, mind=None):
+    n = len(x)
+    if len(y) != n:
+        raise ValueError("Length of x and y lists must be equal")
     
     mind = numpy.min( (x[0] - ri)**2 + (y[0] - zi)**2 )
     ind = 0
-    
     for i in range (1, n) :
         d = numpy.min( (x[i] - ri)**2 + (y[i] - zi)**2 )
         if d < mind :
