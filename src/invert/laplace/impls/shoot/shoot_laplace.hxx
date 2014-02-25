@@ -1,11 +1,10 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion in serial or parallel
  * 
- * Simplified version of serial_tri and spt algorithms. Uses FFTs and
- * the cyclic reduction class to solve tridiagonal systems.
+ * Uses shooting method from outer boundary
  *
  **************************************************************************
- * Copyright 2013 B.D.Dudson
+ * Copyright 2014 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
  * 
@@ -26,44 +25,36 @@
  *
  **************************************************************************/
 
-class LaplaceCyclic;
+class LaplaceShoot;
 
-#ifndef __LAP_CYCLIC_H__
-#define __LAP_CYCLIC_H__
+#ifndef __LAP_SHOOT_H__
+#define __LAP_SHOOT_H__
 
 #include <invert_laplace.hxx>
-#include <cyclic_reduction.hxx>
-#include <dcomplex.hxx>
 #include <options.hxx>
+#include <boutexception.hxx>
 
-/// 
-/*!
- * 
- */
-class LaplaceCyclic : public Laplacian {
+class LaplaceShoot : public Laplacian {
 public:
-  LaplaceCyclic(Options *opt = NULL);
-  ~LaplaceCyclic();
+  LaplaceShoot(Options *opt = NULL);
+  ~LaplaceShoot();
   
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C = val; }
   void setCoefD(const Field2D &val) { D = val; }
-  void setCoefEx(const Field2D &val) { bout_error("LaplaceCyclic does not have Ex coefficient"); }
-  void setCoefEz(const Field2D &val) { bout_error("LaplaceCyclic does not have Ez coefficient"); }
+  void setCoefEx(const Field2D &val) { throw BoutException("LaplaceCyclic does not have Ex coefficient"); }
+  void setCoefEz(const Field2D &val) { throw BoutException("LaplaceCyclic does not have Ez coefficient"); }
   
-  const FieldPerp solve(const FieldPerp &b) {return solve(b,b);}
-  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
+  const FieldPerp solve(const FieldPerp &b);
+  const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0) {return solve(b);}
 private:
   Field2D A, C, D;
   
   int nmode;  // Number of modes being solved
-  int xs, xe; // Start and end X indices
-  dcomplex **a, **b, **c, **bcmplx, **xcmplx;
-  dcomplex *k1d;
   
-  bool dst;
+  dcomplex *km, *kc, *kp, *rhsk;
   
-  CyclicReduce<dcomplex> *cr; ///< Tridiagonal solver
+  BoutReal *buffer; // For communications
 };
 
-#endif // __SPT_H__
+#endif

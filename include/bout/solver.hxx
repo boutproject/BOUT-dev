@@ -52,6 +52,7 @@ typedef int (*Jacobian)(BoutReal t);
 
 /// Solution monitor, called each timestep
 typedef int (*MonitorFunc)(Solver *solver, BoutReal simtime, int iter, int NOUT);
+typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal lastdt);
 
 ///////////////////////////////////////////////////////////////////
 
@@ -100,6 +101,12 @@ class Solver {
   virtual void setPrecon(PhysicsPrecon f) {} ///< Specify a preconditioner (optional)
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
+  
+  void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
+  void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
+
+  void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep
+  void removeTimestepMonitor(TimestepMonitorFunc f); ///< Remove a previously added timestep monitor
 
   /////////////////////////////////////////////
   // Routines to add variables. Solvers can just call these
@@ -128,9 +135,6 @@ class Solver {
   /// NOTE: nout and tstep should be passed to run, not init.
   ///       Needed because of how the PETSc TS code works
   virtual int init(bool restarting, int nout, BoutReal tstep);
-  
-  void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
-  void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
 
   /// Run the solver, calling monitors nout times, at intervals of tstep
   virtual int run() = 0;
@@ -198,6 +202,9 @@ protected:
   int run_diffusive(BoutReal t); ///< Calculate only the diffusive parts
   
   int call_monitors(BoutReal simtime, int iter, int NOUT); ///< Calls all monitor functions
+  
+  bool monitor_timestep; ///< Should timesteps be monitored?
+  int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal *udata);
@@ -214,6 +221,7 @@ protected:
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
+  std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
   void post_rhs(); // Should be run after user RHS is called
   

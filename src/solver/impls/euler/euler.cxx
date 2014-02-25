@@ -121,6 +121,9 @@ int EulerSolver::run() {
       if(internal_steps > mxstep)
         throw BoutException("ERROR: MXSTEP exceeded. simtime=%e, timestep = %e\n", simtime, timestep);
       
+      // Call timestep monitors
+      call_timestep_monitors(simtime, timestep);
+      
       timestep = dt_limit; // Change back to limiting timestep
     }while(running);
     

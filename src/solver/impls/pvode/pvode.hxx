@@ -61,7 +61,7 @@ class PvodeSolver : public Solver {
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
   BoutReal hcur; // Current internal timestep
-  
+
   pvode::N_Vector u;
   pvode::machEnvType machEnv;
   void *cvode_mem;

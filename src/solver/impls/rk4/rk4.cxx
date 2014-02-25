@@ -160,6 +160,8 @@ int RK4Solver::run() {
       // Taken a step, swap buffers
       swap(f2, f0);
       simtime += dt;
+      
+      call_timestep_monitors(simtime, dt);
     }while(running);
     
     iteration++; // Advance iteration number

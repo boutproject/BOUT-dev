@@ -297,7 +297,6 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
   {
     // Sort out memory. Also, FFTW planning routines not thread safe
     int n_th = omp_get_num_threads(); // Number of threads
-    //output << "Num threads = " << n_th << " id = " << th_id << endl;
     
     if((size != length) || (nthreads < n_th)) {
       if(size > 0) {
@@ -435,4 +434,104 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
   }
 
   irfft(cv, ncz, out);
+}
+
+
+//  Discrete sine transforms (B Shanahan)
+
+void DST(BoutReal *in, int length, dcomplex *out) {
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan p;
+  static int n = 0;
+  
+  if(length != n) {
+    if(n > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+      }
+
+    //  fft_init();
+   
+    // Could be optimized better
+    fin = (double*) fftw_malloc(sizeof(double) * 2 * length);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 2 * length);
+
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    p = fftw_plan_dft_r2c_1d(2*(length-1), fin, fout, flags);
+
+    n = length;
+  }
+  for(int i=0;i<n;i++)
+    fin[i] = in[i];
+  
+  fin[0] = 0.;
+  fin[length-1]=0.;
+
+  for (int j = 1; j < length-1; j++){
+      fin[j] = in[j];
+      fin[2*(length-1)-j] = - in[j];
+  }
+ 
+  fftw_execute(p);
+
+  out[0]=0.0;
+  out[length-1]=0.0;
+
+  for(int i=1;i<length-1;i++)
+    out[i] = -fout[i][1]/ ((double) length-1); // Normalise 
+}
+
+void DST_rev(dcomplex *in, int length, BoutReal *out) {
+  static fftw_complex *fin;
+  static double *fout;
+  static fftw_plan p;
+  static int n = 0;
+  
+  if(length != n) {
+    if(n > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+
+    //fft_init();
+
+    // Could be optimized better
+    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * 2 * (length-1));
+    fout = (double*) fftw_malloc(sizeof(double)  * 2 * (length-1));
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    p = fftw_plan_dft_c2r_1d(2*(length-1), fin, fout, flags);
+
+    n = length;
+  }
+
+  for(int i=0;i<n;i++){
+    fin[i][0] = in[i].Real();
+    fin[i][1] = in[i].Imag();
+  }
+
+  fin[0][0] = 0.; fin[0][1] = 0.;
+  fin[length-1][0] = 0.; fin[length-1][1] = 0.;
+
+  for (int j = 1; j < length-1; j++){
+    fin[j][0] = 0.; fin[j][1] = -in[j].Real()/2.;
+    fin[2*(length-1)-j][0] = 0.; fin[2*(length-1)-j][1] =  in[j].Real()/2.;
+  }
+
+  fftw_execute(p);
+
+  out[0]=0.0;
+  out[length-1]=0.0;
+  for(int i=1;i<length-1;i++)
+    out[i] = fout[i];
 }
