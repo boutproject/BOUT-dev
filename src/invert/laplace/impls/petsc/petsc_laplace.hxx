@@ -67,6 +67,8 @@ public:
     VecDestroy( &xs );  
     VecDestroy( &bs ); 
     MatDestroy( &MatA );
+    delete [] ksptype;
+    delete [] pctype;
   }
   
   void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
