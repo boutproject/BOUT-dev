@@ -22,6 +22,36 @@ except ImportError:
     print "ERROR: NumPy module not available"
     raise
 
+def findVar(varname, varlist):
+    """
+    Find variable name in a list
+    
+    First does case insensitive comparison, then
+    checks for abbreviations.
+    
+    Returns the matched string, or raises a ValueError
+    
+    """
+    # Try a variation on the case
+    v = [name for name in varlist if name.lower() == varname.lower()]
+    if len(v) == 1:
+        # Found case match
+        print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
+        return varname
+    elif len(v) > 1:
+        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        raise ValueError("Variable '"+varname+"' not found")
+    
+    # None found. Check if it's an abbreviation
+    v = [name for name in varlist if name[:len(varname)].lower() == varname.lower()]
+    if len(v) == 1:
+        print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
+        return v[0]
+    
+    if len(v) > 1:
+        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+    raise ValueError("Variable '"+varname+"' not found") 
+
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, info=True,prefix="BOUT.dmp"):
     """Collect a variable from a set of BOUT++ outputs.
     
@@ -45,7 +75,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     # Search for BOUT++ dump files in NetCDF format
     file_list = glob.glob(os.path.join(path, prefix+".nc"))
     if file_list != []:
-        print "Single (parallel) data file"
+        print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
         
         data = f.read(varname)
@@ -54,22 +84,25 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
     file_list.sort()
     if file_list == []:
-        print "ERROR: No data files found"
-        return None
+        raise ValueError("ERROR: No data files found")
+    
     nfiles = len(file_list)
     #print "Number of files: " + str(nfiles)
     
     # Read data from the first file
     f = DataFile(file_list[0])
-    
+   
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
         ndims = len(dimens)
-    except KeyError:
-        print "ERROR: Variable '"+varname+"' not found"
-        return None
-
+    except:
+        # Find the variable
+        varname = findVar(varname, f.list())
+        
+        dimens = f.dimensions(varname)
+        ndims = len(dimens)
+    
     if ndims < 2:
         # Just read from file
         data = f.read(varname)
@@ -77,7 +110,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         return data
 
     if ndims > 4:
-        print "ERROR: Too many dimensions"
+        print("ERROR: Too many dimensions")
         raise CollectError
 
     mxsub = f.read("MXSUB")
