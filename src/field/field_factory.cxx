@@ -31,6 +31,22 @@
 
 #include "fieldgenerators.hxx"
 
+FieldGenerator* generator(BoutReal value) {
+  return new FieldValue(value);
+}
+
+FieldGenerator* generator(BoutReal *ptr) {
+  return new FieldValuePtr(ptr);
+}
+
+FieldGenerator* generator(const Field2D &f) {
+  return new Field2DGenerator(f);
+}
+
+FieldGenerator* generator(const Field3D &f) {
+  return new Field3DGenerator(f);
+}
+
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 

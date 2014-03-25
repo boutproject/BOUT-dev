@@ -62,6 +62,13 @@ public:
   virtual BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) = 0;
 };
 
+// Utility routines to create generators from values
+
+FieldGenerator* generator(BoutReal value);
+FieldGenerator* generator(BoutReal *ptr);
+FieldGenerator* generator(const Field2D &f);
+FieldGenerator* generator(const Field3D &f);
+
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
 

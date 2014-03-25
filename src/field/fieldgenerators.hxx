@@ -12,15 +12,6 @@
 //////////////////////////////////////////////////////////
 // Basic generators: Numerical value, 'x', 'y' and 'z'
 
-class FieldValue : public FieldGenerator {
-public:
-  FieldValue(BoutReal val) : value(val) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValue(value); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value; }
-private:
-  BoutReal value;
-};
-
 class FieldX : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
@@ -37,6 +28,47 @@ class FieldZ : public FieldGenerator {
 public:
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+};
+
+//////////////////////////////////////////////////////////
+// Generators from values
+
+class FieldValue : public FieldGenerator {
+public:
+  FieldValue(BoutReal val) : value(val) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValue(value); }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value; }
+private:
+  BoutReal value;
+};
+
+// Creates a Field Generator using a pointer to value
+// WARNING: The value pointed to must remain in scope until this generator is finished
+class FieldValuePtr : public FieldGenerator {
+public:
+  FieldValuePtr(BoutReal *val) : ptr(val) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValuePtr(ptr); }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return *ptr; }
+private:
+  BoutReal *ptr;
+};
+
+class Field2DGenerator : public FieldGenerator {
+public:
+  Field2DGenerator(const Field2D &f) : value(f) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new Field2DGenerator(value); }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value(x,y); }
+private:
+  Field2D value;
+};
+
+class Field3DGenerator : public FieldGenerator {
+public:
+  Field3DGenerator(const Field3D &f) : value(f) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args) { return new Field3DGenerator(value); }
+  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value(x,y,z); }
+private:
+  Field3D value;
 };
 
 //////////////////////////////////////////////////////////
