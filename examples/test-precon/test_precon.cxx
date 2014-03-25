@@ -3,7 +3,7 @@
  * 
  *
  * PETSc flags for testing:
- * solver_type=petsc -ts_type theta -ts_theta_theta 0.5 -{ksp,snes,ts}_monitor
+ * solver:type=petsc -ts_type theta -ts_theta_theta 0.5 -{ksp,snes,ts}_monitor
  */
 
 #include <bout.hxx>
