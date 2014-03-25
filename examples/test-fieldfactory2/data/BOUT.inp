@@ -1,0 +1,10 @@
+
+# Variable 'a' uses a variable 'k' 
+a = sin(k*x) + cos(2*k*x)
+k = 2*pi
+
+[mesh]
+
+nx = 34
+ny = 16
+

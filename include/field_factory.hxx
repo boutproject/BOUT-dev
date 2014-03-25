@@ -34,6 +34,7 @@ class FieldFactory;
 
 #include "field2d.hxx"
 #include "field3d.hxx"
+#include "options.hxx"
 
 #include "bout/constants.hxx"
 
@@ -77,32 +78,52 @@ public:
   FieldFactory(Mesh *m);
   ~FieldFactory();
   
-  const Field2D create2D(const string &value);
-  const Field3D create3D(const string &value);
+  const Field2D create2D(const string &value, Options *opt = NULL);
+  const Field3D create3D(const string &value, Options *opt = NULL);
   
   void addGenerator(string name, FieldGenerator* g);
   void addBinaryOp(char sym, FieldGenerator* b, int precedence);
 private:
   Mesh *fieldmesh;
-
+  
+  Options *options;
+  list<string> lookup; // Names currently being parsed
+  
   map<string, FieldGenerator*> gen;
   map<char, pair<FieldGenerator*, int> > bin_op; // Binary operations
 
-  // Lexing info
-  char curtok;  // Current token. -1 for number, -2 for string, 0 for "end of input"
-  BoutReal curval; // Value if a number
-  string curident; // Identifier
-  char LastChar;
-  stringstream ss;
-  char nextToken();
+  // Cache parsed strings
+  map<string, FieldGenerator* > cache;
   
-  FieldGenerator* parseIdentifierExpr();
-  FieldGenerator* parseParenExpr();
-  FieldGenerator* parsePrimary();
-  FieldGenerator* parseBinOpRHS(int prec, FieldGenerator* lhs);
-  FieldGenerator* parseExpression();
+  // List of allocated generators
+  list<FieldGenerator*> genheap;
+
+  struct LexInfo {
+    // Lexing info
+    
+    LexInfo(string input);
+    
+    char curtok;  // Current token. -1 for number, -2 for string, 0 for "end of input"
+    BoutReal curval; // Value if a number
+    string curident; // Identifier
+    char LastChar;
+    stringstream ss;
+    char nextToken();
+  };
   
-  FieldGenerator* parse(const string &input);
+  FieldGenerator* parseIdentifierExpr(LexInfo &lex);
+  FieldGenerator* parseParenExpr(LexInfo &lex);
+  FieldGenerator* parsePrimary(LexInfo &lex);
+  FieldGenerator* parseBinOpRHS(LexInfo &lex, int prec, FieldGenerator* lhs);
+  FieldGenerator* parseExpression(LexInfo &lex);
+  
+  FieldGenerator* parse(const string &input, Options *opt=NULL);
+  
+  /// Record generator in list, and return it
+  FieldGenerator* record( FieldGenerator* g) {
+    genheap.push_back(g);
+    return g;
+  }
 };
 
 #endif // __FIELD_FACTORY_H__

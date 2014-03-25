@@ -18,13 +18,6 @@ BoutReal FieldZ::generate(const Mesh *fieldmesh, int x, int y, int z) {
 
 //////////////////////////////////////////////////////////
 
-FieldBinary::~FieldBinary() {
-  if(lhs)
-    delete lhs;
-  if(rhs)
-    delete rhs;
-}
-
 FieldGenerator* FieldBinary::clone(const list<FieldGenerator*> args) {
   if(args.size() != 2)
     return NULL;

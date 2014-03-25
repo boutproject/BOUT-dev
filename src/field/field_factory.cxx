@@ -28,6 +28,7 @@
 
 #include <output.hxx>
 #include <bout/constants.hxx>
+#include <utils.hxx>
 
 #include "fieldgenerators.hxx"
 
@@ -98,12 +99,16 @@ FieldFactory::~FieldFactory() {
   
   for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
     delete it->second.first;
+  
+  // Delete allocated generators
+  for(list<FieldGenerator*>::iterator it = genheap.begin(); it != genheap.end(); it++)
+    delete *it;
 }
 
-const Field2D FieldFactory::create2D(const string &value) {
+const Field2D FieldFactory::create2D(const string &value, Options *opt) {
   Field2D result = 0.;
 
-  FieldGenerator* gen = parse(value);
+  FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 2D field from '"
            << value
@@ -115,15 +120,15 @@ const Field2D FieldFactory::create2D(const string &value) {
     for(int y=0;y<fieldmesh->ngy;y++)
       result[x][y] = gen->generate(fieldmesh, x,y,0);
   
-  delete gen;
+  // Don't delete the generator, as will be cached
 
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value) {
+const Field3D FieldFactory::create3D(const string &value, Options *opt) {
   Field3D result = 0.;
 
-  FieldGenerator* gen = parse(value);
+  FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 3D field from '"
            << value
@@ -136,7 +141,7 @@ const Field3D FieldFactory::create3D(const string &value) {
       for(int z=0;z<fieldmesh->ngz;z++)
         result[x][y][z] = gen->generate(fieldmesh, x,y,z);
   
-  delete gen;
+  // Don't delete generator
 
   return result;
 }
@@ -152,7 +157,242 @@ void FieldFactory::addBinaryOp(char sym, FieldGenerator* b, int precedence) {
 //////////////////////////////////////////////////////////
 // FieldFactory private functions
 
-char FieldFactory::nextToken() {
+FieldGenerator* FieldFactory::parseIdentifierExpr(LexInfo &lex) {
+  string name = lowercase(lex.curident);
+  lex.nextToken();
+  
+  if(lex.curtok == '(') {
+    // Argument list. Find if a generator or function
+    
+    map<string, FieldGenerator*>::iterator it = gen.find(name);
+    if(it == gen.end()) {
+      output << "FieldFactory error: Couldn't find generator '"
+             << name << "'" << endl;
+      return NULL;
+    }
+    
+    // Parse arguments (if any)
+    list<FieldGenerator*> args;
+    
+    lex.nextToken();
+    if(lex.curtok == ')') {
+      // Empty list
+      lex.nextToken();
+      return record( it->second->clone(args) );
+    }
+    do{
+      // Should be an expression
+      FieldGenerator *a = parseExpression(lex);
+      if(!a) {
+	output << "FieldFactory error: Couldn't parse argument " << args.size()+1 
+	       << " to " << name << " function" << endl;
+        return NULL;
+      }
+      args.push_back(a);
+      
+      // Now either a comma or ')'
+      
+      if(lex.curtok == ')') {
+        // Finished list
+        lex.nextToken();
+        return record( it->second->clone(args) );
+      }
+      if(lex.curtok != ',') {
+        output << "FieldFactory error: Expecting ',' or ')' in function argument list (" << name << ")" << endl;
+        return NULL;
+      }
+      lex.nextToken();
+    }while(true);
+    
+  }else {
+    // No arguments. Search in generator list
+    map<string, FieldGenerator*>::iterator it = gen.find(name);
+    if(it == gen.end()) {
+      // Not in internal map
+      if(options) {
+	// Look up in options
+	
+	// Check if already looking up this symbol
+	for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++)
+	  if( name.compare(*it) == 0 ) {
+	    // Name matches, so already looking up
+	    output << "FieldFactory lookup stack:\n";
+	    for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++) {
+	      output << *it << " -> ";
+	    }
+	    output << name << endl;
+	    throw BoutException("FieldFactory: Infinite recursion in parsing '%s'", name.c_str());
+	  }
+	
+	// Syntax for sections?
+	if(options->isSet(name)) {
+	  // Add to lookup list
+	  lookup.push_back(name);
+	  
+	  // Get the string from options
+	  string val;
+	  options->get(name, val, "");
+	  
+	  // Parse
+	  FieldGenerator *g = parse(val, options);
+	  
+	  // Remove from lookup list
+	  lookup.pop_back();
+	  
+	  return g;
+	}
+      }
+      output << "FieldFactory error: Can't find generator '" << name << "'" << endl;
+      return NULL;
+    }
+    list<FieldGenerator*> args;
+    return record( it->second->clone(args) );
+  }
+}
+
+FieldGenerator* FieldFactory::parseParenExpr(LexInfo &lex) {
+  lex.nextToken(); // eat '('
+  
+  FieldGenerator* g = parseExpression(lex);
+  if(!g)
+    return NULL;
+  
+  if((lex.curtok != ')') && (lex.curtok != ']'))
+    return NULL;
+  lex.nextToken(); // eat ')'
+  return g;
+}
+
+FieldGenerator* FieldFactory::parsePrimary(LexInfo &lex) {
+  switch(lex.curtok) {
+  case -1: { // a number
+    lex.nextToken(); // Eat number
+    return record( new FieldValue(lex.curval) );
+  }
+  case -2: {
+    return parseIdentifierExpr(lex);
+  }
+  case '-': {
+    // Unary minus
+    lex.nextToken(); // Eat '-'
+    return record( new FieldUnary(parsePrimary(lex)) );
+  }
+  case '(':
+  case '[':
+    return parseParenExpr(lex);
+  }
+  return NULL;
+}
+
+FieldGenerator* FieldFactory::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGenerator* lhs) {
+  // Check for end of input
+  if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ','))
+    return lhs;
+
+  // Next token should be a binary operator
+  map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(lex.curtok);
+  
+  if(it == bin_op.end()) {
+    output << "FieldFactory error: Unexpected binary operator '" << lex.curtok << "'" << endl;
+    return NULL;
+  }
+  
+  FieldGenerator* op = it->second.first;
+  int TokPrec = it->second.second;
+  
+  if (TokPrec < ExprPrec)
+    return lhs;
+  
+  lex.nextToken(); // Eat binop
+  
+  FieldGenerator* rhs = parsePrimary(lex);
+  if(!rhs)
+    return NULL;
+
+  if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
+    // Done
+    
+    list<FieldGenerator*> args;
+    args.push_front(lhs);
+    args.push_back(rhs);
+    return record( op->clone(args) );
+  }
+    
+  // Find next binop
+  it = bin_op.find(lex.curtok);
+  
+  if(it == bin_op.end()) {
+    output << "FieldFactory error: Unexpected character '" << lex.curtok << "'" << endl;
+    return NULL;
+  }
+  
+  int NextPrec = it->second.second;
+  if (TokPrec < NextPrec) {
+    rhs = parseBinOpRHS(lex, TokPrec+1, rhs);
+    if(!rhs)
+      return 0;
+  }
+  
+  // Merge lhs and rhs into new lhs
+  list<FieldGenerator*> args;
+  args.push_front(lhs);
+  args.push_back(rhs);
+  lhs = record( op->clone(args) );
+  
+  return parseBinOpRHS(lex, 0, lhs);
+}
+
+FieldGenerator* FieldFactory::parseExpression(LexInfo &lex) {
+  FieldGenerator* lhs = parsePrimary(lex);
+  if(!lhs)
+    return NULL;
+  return parseBinOpRHS(lex, 0, lhs);
+}
+
+FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
+
+  // Check if in the cache
+  
+  string key = input;
+  if(opt)
+    key += opt->str(); // Include options in key
+  
+  map<string, FieldGenerator*>::iterator it = cache.find(key);
+  if(it != cache.end()) {
+    // Found in cache
+    output << "Found '" << key << "' in cache\n";
+    return it->second;
+  }
+  
+  // Store the options tree for token lookups
+  options = opt;
+  
+  // Allocate a new lexer
+  LexInfo lex(input);
+  
+  // Parse
+  FieldGenerator *expr = parseExpression(lex);
+  
+  output << "Adding '" << key << "' to cache\n";
+  // Add to cache
+  cache[key] = expr;
+
+  return expr;
+}
+
+//////////////////////////////////////////////////////////
+// LexInfo
+
+FieldFactory::LexInfo::LexInfo(string input) {
+  ss.clear();
+  ss.str(input); // Set the input stream
+  ss.seekg(0, ios_base::beg);
+  
+  LastChar = ss.get(); // First char from stream
+  nextToken(); // Get first token
+}
+
+char FieldFactory::LexInfo::nextToken() {
   while(isspace(LastChar))
     LastChar = ss.get();
   
@@ -215,176 +455,4 @@ char FieldFactory::nextToken() {
   curtok = LastChar;
   LastChar = ss.get();
   return curtok;
-}
-
-//////////////////////////////////////////////////////////
-
-FieldGenerator* FieldFactory::parseIdentifierExpr() {
-  string name = lowercase(curident);
-  nextToken();
-  
-  if(curtok == '(') {
-    // Argument list. Find if a generator or function
-    
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
-    if(it == gen.end()) {
-      output << "FieldFactory error: Couldn't find generator '"
-             << name << "'" << endl;
-      return NULL;
-    }
-    
-    // Parse arguments (if any)
-    list<FieldGenerator*> args;
-    
-    nextToken();
-    if(curtok == ')') {
-      // Empty list
-      nextToken();
-      return it->second->clone(args);
-    }
-    do{
-      // Should be an expression
-      FieldGenerator *a = parseExpression();
-      if(!a) {
-	output << "FieldFactory error: Couldn't parse argument " << args.size()+1 
-	       << " to " << name << " function" << endl;
-        return NULL;
-      }
-      args.push_back(a);
-      
-      // Now either a comma or ')'
-      
-      if(curtok == ')') {
-        // Finished list
-        nextToken();
-        return it->second->clone(args);
-      }
-      if(curtok != ',') {
-        output << "FieldFactory error: Expecting ',' or ')' in function argument list (" << name << ")" << endl;
-        return NULL;
-      }
-      nextToken();
-    }while(true);
-    
-  }else {
-    // No arguments. Search in generator list
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
-    if(it == gen.end()) {
-      output << "FieldFactory error: Can't find generator '" << name << "'" << endl;
-      return NULL;
-    }
-    list<FieldGenerator*> args;
-    return it->second->clone(args);
-  }
-}
-
-FieldGenerator* FieldFactory::parseParenExpr() {
-  nextToken(); // eat '('
-  
-  FieldGenerator* g = parseExpression();
-  if(!g)
-    return NULL;
-  
-  if((curtok != ')') && (curtok != ']'))
-    return NULL;
-  nextToken(); // eat ')'
-  return g;
-}
-
-FieldGenerator* FieldFactory::parsePrimary() {
-  switch(curtok) {
-  case -1: { // a number
-    nextToken(); // Eat number
-    return new FieldValue(curval);
-  }
-  case -2: {
-    return parseIdentifierExpr();
-  }
-  case '-': {
-    // Unary minus
-    nextToken(); // Eat '-'
-    return new FieldUnary(parsePrimary());
-  }
-  case '(':
-  case '[':
-    return parseParenExpr();
-  }
-  return NULL;
-}
-
-FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
-  // Check for end of input
-  if((curtok == 0) || (curtok == ')') || (curtok == ','))
-    return lhs;
-
-  // Next token should be a binary operator
-  map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(curtok);
-  
-  if(it == bin_op.end()) {
-    output << "FieldFactory error: Unexpected binary operator '" << curtok << "'" << endl;
-    return NULL;
-  }
-  
-  FieldGenerator* op = it->second.first;
-  int TokPrec = it->second.second;
-  
-  if (TokPrec < ExprPrec)
-    return lhs;
-  
-  nextToken(); // Eat binop
-  
-  FieldGenerator* rhs = parsePrimary();
-  if(!rhs)
-    return NULL;
-
-  if((curtok == 0) || (curtok == ')') || (curtok == ',')) {
-    // Done
-    
-    list<FieldGenerator*> args;
-    args.push_front(lhs);
-    args.push_back(rhs);
-    return op->clone(args);
-  }
-    
-  // Find next binop
-  it = bin_op.find(curtok);
-  
-  if(it == bin_op.end()) {
-    output << "FieldFactory error: Unexpected character '" << curtok << "'" << endl;
-    return NULL;
-  }
-  
-  int NextPrec = it->second.second;
-  if (TokPrec < NextPrec) {
-    rhs = parseBinOpRHS(TokPrec+1, rhs);
-    if(!rhs)
-      return 0;
-  }
-  
-  // Merge lhs and rhs into new lhs
-  list<FieldGenerator*> args;
-  args.push_front(lhs);
-  args.push_back(rhs);
-  lhs = op->clone(args);
-  
-  return parseBinOpRHS(0, lhs);
-}
-
-FieldGenerator* FieldFactory::parseExpression() {
-  FieldGenerator* lhs = parsePrimary();
-  if(!lhs)
-    return NULL;
-  return parseBinOpRHS(0, lhs);
-}
-
-FieldGenerator* FieldFactory::parse(const string &input) {
-  
-  ss.clear();
-  ss.str(input); // Set the input stream
-  ss.seekg(0, ios_base::beg);
-  
-  LastChar = ss.get(); // First char from stream
-  nextToken(); // Get first token
-  
-  return parseExpression();
 }

@@ -77,7 +77,6 @@ private:
 class FieldSin : public FieldGenerator {
 public:
   FieldSin(FieldGenerator* g) : gen(g) {}
-  ~FieldSin() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -88,7 +87,6 @@ private:
 class FieldCos : public FieldGenerator {
 public:
   FieldCos(FieldGenerator* g) : gen(g) {}
-  ~FieldCos() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -159,7 +157,6 @@ private:
 class FieldSinh : public FieldGenerator {
 public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
-  ~FieldSinh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -170,7 +167,6 @@ private:
 class FieldCosh : public FieldGenerator {
 public:
   FieldCosh(FieldGenerator* g) : gen(g) {}
-  ~FieldCosh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -181,7 +177,6 @@ private:
 class FieldTanh : public FieldGenerator {
 public:
   FieldTanh(FieldGenerator* g=NULL) : gen(g) {}
-  ~FieldTanh() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -192,7 +187,6 @@ private:
 class FieldGaussian : public FieldGenerator {
 public:
   FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
-  ~FieldGaussian() {if(X) delete X; if(s) delete s;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -203,7 +197,6 @@ private:
 class FieldAbs : public FieldGenerator {
 public:
   FieldAbs(FieldGenerator* g) : gen(g) {}
-  ~FieldAbs() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -214,7 +207,6 @@ private:
 class FieldSqrt : public FieldGenerator {
 public:
   FieldSqrt(FieldGenerator* g) : gen(g) {}
-  ~FieldSqrt() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -225,7 +217,6 @@ private:
 class FieldHeaviside : public FieldGenerator {
 public:
   FieldHeaviside(FieldGenerator* g) : gen(g) {}
-  ~FieldHeaviside() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
@@ -237,7 +228,6 @@ private:
 class FieldUnary : public FieldGenerator {
 public:
   FieldUnary(FieldGenerator* g) : gen(g) {}
-  ~FieldUnary() {if(gen) delete gen;}
   
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() != 1) {
@@ -257,7 +247,6 @@ private:
 class FieldBinary : public FieldGenerator {
 public:
   FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
-  ~FieldBinary();
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
@@ -270,10 +259,6 @@ class FieldMin : public FieldGenerator {
 public:
   FieldMin() {}
   FieldMin(const list<FieldGenerator*> args) : input(args) {}
-  ~FieldMin() {
-    for(list<FieldGenerator*>::iterator it=input.begin(); it != input.end(); it++)
-      delete (*it);
-  }
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() == 0) {
       output << "FieldFactory error: min function must have some inputs\n";
@@ -300,10 +285,6 @@ class FieldMax : public FieldGenerator {
 public:
   FieldMax() {}
   FieldMax(const list<FieldGenerator*> args) : input(args) {}
-  ~FieldMax() {
-    for(list<FieldGenerator*>::iterator it=input.begin(); it != input.end(); it++)
-      delete (*it);
-  }
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() == 0) {
       output << "FieldFactory error: max function must have some inputs\n";
