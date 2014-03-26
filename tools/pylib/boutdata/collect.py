@@ -5,7 +5,7 @@
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: boututils.DataFile couldn't be loaded"
+    print("ERROR: boututils.DataFile couldn't be loaded")
     raise
 
 try:
@@ -13,13 +13,13 @@ try:
     import sys
     import glob
 except ImportError:
-    print "ERROR: os, sys or glob modules not available"
+    print("ERROR: os, sys or glob modules not available")
     raise
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
 
 def findVar(varname, varlist):
@@ -121,7 +121,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     nt = len(t_array)
     
     if info:
-        print "mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz)
+        print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
@@ -134,15 +134,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         npe = nxpe * nype
         
         if info:
-            print "nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe)
+            print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
             if npe < nfiles:
-                print "WARNING: More files than expected (" + str(npe) + ")"
+                print("WARNING: More files than expected (" + str(npe) + ")")
             elif npe > nfiles:
-                print "WARNING: Some files missing. Expected " + str(npe)
+                print("WARNING: Some files missing. Expected " + str(npe))
         
         nx = nxpe * mxsub + 2*mxg
     except KeyError:
-        print "BOUT++ version : Pre-0.2"
+        print("BOUT++ version : Pre-0.2")
         # Assume number of files is correct
         # No decomposition in X
         nx = mxsub
@@ -168,7 +168,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 # No len attribute, so probably a single number
                 r2 = [r2,r2]
             if (len(r2) < 1) or (len(r2) > 2):
-                print "WARNING: "+name+" must be [min, max]"
+                print("WARNING: "+name+" must be [min, max]")
                 r2 = None
             else:
                 if len(r2) == 1:
