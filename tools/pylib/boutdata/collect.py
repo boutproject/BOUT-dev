@@ -37,7 +37,7 @@ def findVar(varname, varlist):
     if len(v) == 1:
         # Found case match
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
-        return varname
+        return v[0]
     elif len(v) > 1:
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
         raise ValueError("Variable '"+varname+"' not found")
