@@ -181,7 +181,7 @@ class Vector3D : public FieldData {
     }
   }
   
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyTDerivBoundary();
  private:
   Vector3D *deriv; ///< Time-derivative, can be NULL

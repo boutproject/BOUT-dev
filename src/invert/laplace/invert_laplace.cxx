@@ -449,7 +449,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           // Zero value at outer boundary or LAPLACE_OUT_SET
           for (int ix=0;ix<outbndry;ix++){
             cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.,0.);
+            bvec[ncx-ix]=dcomplex(1.0,0.);
             avec[ncx-ix]=dcomplex(0.,0.);
           }
         }

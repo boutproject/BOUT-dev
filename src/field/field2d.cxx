@@ -724,12 +724,48 @@ void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.pp = data[bx.jx2p][bx.jy];
 }
 
+void Field2D::setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+  fval.m  = data[bx.jxm][bx.jy];
+  fval.c  = data[bx.jx][bx.jy];
+  fval.p  = data[bx.jxp][bx.jy];
+  fval.p2 = data[bx.jx2p][bx.jy];
+  fval.p3 = data[bx.jx+3][bx.jy];
+  fval.p4 = data[bx.jx+4][bx.jy];
+}
+
+void Field2D::setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+  fval.m4 = data[bx.jx-4][bx.jy];
+  fval.m3 = data[bx.jx-3][bx.jy];
+  fval.m2 = data[bx.jx2m][bx.jy];
+  fval.m  = data[bx.jxm][bx.jy];
+  fval.c  = data[bx.jx][bx.jy];
+  fval.p  = data[bx.jxp][bx.jy];
+}
+
 void Field2D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.mm = data[bx.jx][bx.jy2m];
   fval.m  = data[bx.jx][bx.jym];
   fval.c  = data[bx.jx][bx.jy];
   fval.p  = data[bx.jx][bx.jyp];
   fval.pp = data[bx.jx][bx.jy2p];
+}
+
+void Field2D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+  fval.m  = data[bx.jx][bx.jym];
+  fval.c  = data[bx.jx][bx.jy];
+  fval.p  = data[bx.jx][bx.jyp];
+  fval.p2 = data[bx.jx][bx.jy2p];
+  fval.p3 = data[bx.jx][bx.jy+3];
+  fval.p4 = data[bx.jx][bx.jy+4];
+}
+
+void Field2D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
+  fval.m4 = data[bx.jx][bx.jy-4];
+  fval.m3 = data[bx.jx][bx.jy-3];
+  fval.m2 = data[bx.jx][bx.jy2m];
+  fval.m  = data[bx.jx][bx.jym];
+  fval.c  = data[bx.jx][bx.jy];
+  fval.p  = data[bx.jx][bx.jyp];
 }
 
 void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
@@ -955,14 +991,17 @@ bool Field2D::checkData(bool vital) const {
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Field2D::applyBoundary() {
+void Field2D::applyBoundary(bool init) {
 #ifdef CHECK
-  msg_stack.push("Field2D::applyBoundary()");
-  if(!boundaryIsSet)
-    output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+  if (init) {
+    msg_stack.push("Field2D::applyBoundary()");
+    if(!boundaryIsSet)
+      output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
+  }
 #endif
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply(*this);
+    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      (*it)->apply(*this);
   msg_stack.pop();
 }
 

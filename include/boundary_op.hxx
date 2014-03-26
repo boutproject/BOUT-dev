@@ -20,8 +20,8 @@ using std::list;
 /// An operation on a boundary
 class BoundaryOp {
  public:
-  BoundaryOp() {bndry = NULL;}
-  BoundaryOp(BoundaryRegion *region) {bndry = region;}
+  BoundaryOp() {bndry = NULL; apply_to_ddt=false;}
+  BoundaryOp(BoundaryRegion *region) {bndry = region; apply_to_ddt=false;}
   virtual ~BoundaryOp() {}
   
   // Note: All methods must implement clone, except for modifiers (see below)
@@ -58,6 +58,7 @@ class BoundaryOp {
   }
   
   BoundaryRegion *bndry;
+  bool apply_to_ddt; // True if this boundary condition should be applied on the time derivatives, false if it should be applied to the field values
 };
 
 class BoundaryModifier : public BoundaryOp {

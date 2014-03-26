@@ -929,14 +929,14 @@ int BoutMesh::load() {
   }
   
   if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-    boundary.push_back(new BoundaryRegionYUp("target", xstart, UDATA_XSPLIT-1));
+    boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT-1));
   if((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-    boundary.push_back(new BoundaryRegionYUp("target", UDATA_XSPLIT, xend));
+    boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend));
   
   if((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
-    boundary.push_back(new BoundaryRegionYDown("target", xstart, DDATA_XSPLIT-1));
+    boundary.push_back(new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT-1));
   if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-    boundary.push_back(new BoundaryRegionYDown("target", DDATA_XSPLIT, xend));
+    boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend));
     
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";

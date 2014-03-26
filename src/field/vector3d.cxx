@@ -619,10 +619,11 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 
 ///////////////////// BOUNDARY CONDITIONS //////////////////
 
-void Vector3D::applyBoundary()
+void Vector3D::applyBoundary(bool init)
 {
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply(*this);
+    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      (*it)->apply(*this);
 }
 
 void Vector3D::applyTDerivBoundary()

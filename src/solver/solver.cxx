@@ -131,7 +131,7 @@ void Solver::add(Field2D &v, const char* name) {
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
   initial_profile(name, v);
-  v.applyBoundary();
+  v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
 }
@@ -172,7 +172,7 @@ void Solver::add(Field3D &v, const char* name) {
 #endif
 
   initial_profile(name, v);
-  v.applyBoundary(); // Make sure initial profile obeys boundary conditions
+  v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
                 
 #ifdef CHECK
@@ -219,7 +219,7 @@ void Solver::add(Vector2D &v, const char* name) {
   }
   
   /// Make sure initial profile obeys boundary conditions
-  v.applyBoundary();
+  v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
 }
@@ -259,7 +259,7 @@ void Solver::add(Vector3D &v, const char* name) {
     add(v.z, (d.name+"z").c_str());
   }
 
-  v.applyBoundary();
+  v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
 }
@@ -543,7 +543,8 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     /// NOTE: Initial perturbations have already been set in add()
     
     /// Make sure boundary condition is satisfied
-    it->var->applyBoundary();
+    //it->var->applyBoundary();
+    /// NOTE: boundary conditions on the initial profiles have also been set in add()
   }  
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
     // Add to restart file (not appending)
@@ -553,7 +554,8 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     dump.add(*(it->var), it->name.c_str(), 1);
     
     /// Make sure boundary condition is satisfied
-    it->var->applyBoundary();
+    //it->var->applyBoundary();
+    /// NOTE: boundary conditions on the initial profiles have also been set in add()
   }
 
   if(restarting) {
@@ -986,6 +988,7 @@ int Solver::run_rhs(BoutReal t) {
       tmp2 = new BoutReal[nv];
     }
     save_vars(tmp); // Copy variables into tmp
+    pre_rhs();
     if(model) {
       status = model->runConvective(t);
     }else 
@@ -994,6 +997,7 @@ int Solver::run_rhs(BoutReal t) {
     
     load_vars(tmp); // Reset variables
     save_derivs(tmp); // Save time derivatives
+    pre_rhs();
     if(model) {
       status = model->runDiffusive(t);
     }else
@@ -1004,6 +1008,7 @@ int Solver::run_rhs(BoutReal t) {
       tmp[i] += tmp2[i];
     load_derivs(tmp); // Put back time-derivatives
   }else {
+    pre_rhs();
     if(model) {
       status = model->runRHS(t);
     }else
@@ -1060,6 +1065,21 @@ int Solver::run_diffusive(BoutReal t) {
   }
   
   return status;
+}
+
+void Solver::pre_rhs() {
+
+  // Apply boundary conditions to the values
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    if(!it->constraint) // If it's not a constraint
+      it->var->applyBoundary();
+  }
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(!it->constraint)
+      it->var->applyBoundary();
+  }
+  
 }
 
 void Solver::post_rhs() {

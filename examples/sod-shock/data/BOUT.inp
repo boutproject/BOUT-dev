@@ -94,5 +94,6 @@ zs_mode = 1 # toroidal mode number
 # neumann = zero gradient
 
 bndry_all = neumann # Set all boundaries to Neumann
+bndry_target = neumann_2ndorder
 
 [density]

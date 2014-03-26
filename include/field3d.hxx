@@ -172,7 +172,11 @@ class Field3D : public Field, public FieldData {
   void setStencil(bstencil *fval, bindex *bx, bool need_x) const;
 
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   /// Shifts specified points by angle
@@ -245,8 +249,9 @@ class Field3D : public Field, public FieldData {
   static void cleanup(); // Frees all memory
 
   void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyBoundary(const string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
