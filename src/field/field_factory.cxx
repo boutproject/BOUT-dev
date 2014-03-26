@@ -90,6 +90,8 @@ FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
 
   addGenerator("min", new FieldMin());
   addGenerator("max", new FieldMax());
+  
+  addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
 }
 
 FieldFactory::~FieldFactory() {
