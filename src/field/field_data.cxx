@@ -53,3 +53,18 @@ void FieldData::copyBoundary(const FieldData &f) {
   boundaryIsCopy = true;
   boundaryIsSet = true;
 }
+
+//JMAD
+void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
+  if(location == BNDRY_ALL){
+    vector<BoundaryRegion*> reg = mesh->getBoundaries();
+    for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      bndry_funcs[(*it)->location] = userfunc;
+    }
+  }
+  else{
+    bndry_funcs[location] = userfunc;
+  }
+}
+
+

@@ -48,6 +48,188 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
       (*dt)[bndry->x][bndry->y][z] = 0.; // Set time derivative to zero
 }
 
+////////////JMAD Constructors
+BndDirichlet_O2::BndDirichlet_O2(){
+  bndfunc = NULL;
+}
+
+BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region):BoundaryOp(region){
+  BndDirichlet_O2();
+}
+
+BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &args){
+  return new BndDirichlet_O2(region);
+}
+
+void BndDirichlet_O2::apply(Field2D &f){
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  BndDirichlet_O2::apply(f,0.);
+
+}
+
+void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+
+
+  /*
+  BoutReal x,xb,y,yb;
+  bndry->first();
+  if (bndry->by == 0){//x-boundary
+    if(bndry->bx == -1){ // inner boundary
+      xb = 0.;
+    }
+    else{//outer boundary
+      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
+      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      //y position
+      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
+      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+      f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xb,y,0.)
+        - f(bndry->x-bndry->bx,bndry->y);
+      // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
+
+    }
+  }
+  else{// y-boundary
+    if(bndry->by == -1){ // inner boundary
+      yb = 0.;
+    }
+    else{//outer boundary
+      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
+
+      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+      f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,x,yb,0.)
+        - f(bndry->x,bndry->y-bndry->by);
+
+    }
+  }
+  //printf("odne apply bnd \n\n");
+  */
+  
+  // Replacement code (BD):
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+    
+    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+    f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.)
+      - f(bndry->x-bndry->bx, bndry->y-bndry->by);
+  }
+}
+
+
+void BndDirichlet_O2::apply(Field3D &f) {
+  //BndDirichlet_O2::apply(f,0.);
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  BndDirichlet_O2::apply(f,0.);
+}
+
+
+void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+
+  /*
+  BoutReal x,xb,y,yb;
+  bndry->first();
+  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
+  if (bndry->by == 0){//x-boundary
+    if(bndry->bx == -1){ // inner boundary
+      xb = 0.;
+    }
+    else{//outer boundary
+      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
+      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      //y position
+      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
+      for(int zk=0;zk<mesh->ngz;zk++) {
+        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+        f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xb,y,zk*mesh->dz)
+          - f(bndry->x-bndry->bx,bndry->y,zk);
+        // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
+      }
+    }
+  }
+  else{// y-boundary
+    if(bndry->by == -1){ // inner boundary
+      yb = 0.;
+    }
+    else{//outer boundary
+      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
+      for(int zk=0;zk<mesh->ngz;zk++) {
+        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+        f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,x,yb,(BoutReal)zk*mesh->dz)
+          - f(bndry->x,bndry->y-bndry->by,zk);
+      }
+    }
+  }
+  //printf("odne apply bnd \n\n");
+  */
+  
+  // Replacement code (BD):
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+    
+    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+    for(int zk=0;zk<mesh->ngz-1;zk++) {
+      f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz)
+        - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+    }
+  }
+}
+
+
+void BndDirichlet_O2::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BndDirichlet_O2::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+
+
+/*default function*/
+BoutReal default_func(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z){
+  output << "defaul boundary function assigned \n";
+  return 99999999.;
+}
+
+
+/////end JMAD
+
+
+
 
 ///////////////////////////////////////////////////////////////
 
@@ -64,13 +246,13 @@ void BoundaryDirichlet_2ndOrder::apply(Field2D &f) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-// /* this would only give 1st order (first) derivatives? */    f(bndry->x,bndry->y) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by);
+    // /* this would only give 1st order (first) derivatives? */    f(bndry->x,bndry->y) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by);
     f(bndry->x,bndry->y) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-    #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-      f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-    #elif defined(CHECK)
-      f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
-    #endif
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
+#elif defined(CHECK)
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
+#endif
   }
 }
 
@@ -79,13 +261,13 @@ void BoundaryDirichlet_2ndOrder::apply(Field3D &f) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d())
     for(int z=0;z<mesh->ngz;z++) {
-// /* this would only give 1st order (first) derivatives? */      f(bndry->x,bndry->y,z) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by,z);
+      // /* this would only give 1st order (first) derivatives? */      f(bndry->x,bndry->y,z) = 2.*val - f(bndry->x-bndry->bx,bndry->y-bndry->by,z);
       f(bndry->x,bndry->y,z) = 8./3.*val - 2.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + 1./3.*f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-      #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-      #elif defined(CHECK)
-	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
-      #endif
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
+#elif defined(CHECK)
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
+#endif
     }
 }
 
@@ -208,11 +390,11 @@ void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
     f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y-bndry->by) + val*(bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y));
-    #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-      f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
-    #elif defined(CHECK)
-      f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
-    #endif
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
+#elif defined(CHECK)
+    f(bndry->x+bndry->bx,bndry->y+bndry->by) = 1.e60;
+#endif
   }
 }
 
@@ -224,11 +406,11 @@ void BoundaryNeumann_2ndOrder::apply(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++) {
       BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
       f(bndry->x,bndry->y,z) = f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + val*delta;
-      #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
-	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
-      #elif defined(CHECK)
-	f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
-      #endif
+#ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 3.*f(bndry->x,bndry->y,z) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by,z) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by,z);
+#elif defined(CHECK)
+      f(bndry->x+bndry->bx,bndry->y+bndry->by,z) = 1.e60;
+#endif
     }
 }
 
@@ -246,6 +428,171 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 }
 
 ///////////////////////////////////////////////////////////////
+
+/////JMAD///
+BndNeumann_O2::BndNeumann_O2(){
+  bndfunc = NULL;
+}
+
+BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &args){
+  //return new BndNeumann_O2(region,(FuncPtr)default_func);
+  return new BndNeumann_O2(region);
+}
+
+void BndNeumann_O2::apply(Field2D &f) {
+  //BndDirichlet_O2::apply(f,0.);
+  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  BndNeumann_O2::apply(f,0.);
+}
+
+
+void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  
+  /*
+  BoutReal x,xb,y,yb,delta;
+  bndry->first();
+  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
+  if (bndry->by == 0){//x-boundary
+    if(bndry->bx == -1){ // inner boundary
+      xb = 0.;
+    }
+    else{//outer boundary
+      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
+      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      //y position
+      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
+      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+      delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+      f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y) + (*((f.bndry_funcs)[bndry->location]))(t,xb,y,0.)*delta;
+      // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
+
+    }
+  }
+  else{// y-boundary
+    if(bndry->by == -1){ // inner boundary
+      yb = 0.;
+    }
+    else{//outer boundary
+      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
+    }
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
+      delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+      f(bndry->x,bndry->y) = f(bndry->x,bndry->y-bndry->by) + (*((f.bndry_funcs)[bndry->location]))(t,x,yb,0.)*delta;
+
+    }
+  }
+  */
+  
+  // Replacement code (BD):
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+    
+    BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+
+    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*(*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+  }
+}
+
+
+void BndNeumann_O2::apply(Field3D &f) {
+  //BndDirichlet_O2::apply(f,0.);
+  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  BndNeumann_O2::apply(f,0.);
+}
+
+
+void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
+  /*
+  BoutReal x,xb,y,yb,delta,val;
+  bndry->first();
+  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
+  if (bndry->by == 0){//x-boundary
+    if(bndry->bx == -1){ // inner boundary
+      xb = 0.;
+    }
+    else{//outer boundary
+      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
+      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
+    }
+
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      //y position
+      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
+      for(int zk=0;zk<mesh->ngz;zk++) {
+        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+        //dx
+        delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+        //bnd value
+        val = (*((f.bndry_funcs)[bndry->location]))(t,xb,y,(BoutReal)zk*mesh->dz);
+        f(bndry->x,bndry->y,zk) = f(bndry->x-bndry->bx,bndry->y-bndry->by,zk) + val*delta;
+        //printf("val %f delta %f bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",val,delta,bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
+      }
+    }
+  }
+  else{// y-boundary
+    if(bndry->by == -1){ // inner boundary
+      yb = 0.;
+    }
+    else{//outer boundary
+      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
+    }
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
+      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
+      for(int zk=0;zk<mesh->ngz;zk++) {
+        delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+        val = (*((f.bndry_funcs)[bndry->location]))(t,x,yb,(BoutReal)zk*mesh->dz);
+        f(bndry->x,bndry->y,zk) = f(bndry->x-bndry->bx,bndry->y-bndry->by,zk) + val*delta;
+      }
+    }
+  }
+  */
+
+  // Replacement code (BD):
+  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+    
+    BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+
+    for(int zk=0;zk<mesh->ngz-1;zk++) {
+      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+      f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*(*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+    }
+  }
+}
+
+void BndNeumann_O2::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BndNeumann_O2::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
+////END JMAD////
+
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {
@@ -549,11 +896,11 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
         }
         c0[jz] = -(lb*c1[jz] + lc*c2[jz]) / la;
         /*
-        if((y == 2) && (x == 1)) {
+          if((y == 2) && (x == 1)) {
           output.write("Bndry %d: (%d,%d)\n", bx, x, jz);
           output << "\t[" << la << ", " << lb << ", " << lc << "]\n";
           output << "\t[" << c0[jz] << ", " << c1[jz] << ", " << c2[jz] << "]\n";
-        }
+          }
         */
       }
       // Reverse FFT
@@ -817,12 +1164,12 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
   // Set time-derivatives
   for(bndry->first(); !bndry->isDone(); bndry->next()) {
     /*
-    BoutReal lim = r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
-    BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by] + lim;
-    if((val*lim > 0.) && (fabs(val) > fabs(lim)))
-        val = lim;
+      BoutReal lim = r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
+      BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by] + lim;
+      if((val*lim > 0.) && (fabs(val) > fabs(lim)))
+      val = lim;
     
-    ddt(f)[bndry->x][bndry->y] = val;
+      ddt(f)[bndry->x][bndry->y] = val;
     */
     ddt(f)[bndry->x][bndry->y] = r * (g[bndry->x][bndry->y] - f[bndry->x][bndry->y]);
   }
@@ -845,12 +1192,12 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++) {
       /*
-      BoutReal lim = r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
-      BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by][z] + lim;
-      if((val*lim > 0.) && (fabs(val) > fabs(lim)))
+        BoutReal lim = r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
+        BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by][z] + lim;
+        if((val*lim > 0.) && (fabs(val) > fabs(lim)))
         val = lim;
          
-      ddt(f)[bndry->x][bndry->y][z] = val;
+        ddt(f)[bndry->x][bndry->y][z] = val;
       */
       ddt(f)[bndry->x][bndry->y][z] = r * (g[bndry->x][bndry->y][z] - f[bndry->x][bndry->y][z]);
     }

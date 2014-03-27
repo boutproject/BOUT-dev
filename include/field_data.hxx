@@ -41,6 +41,10 @@ class BoundaryOp;
 #include <vector>
 using std::vector;
 
+#include <map>
+using std::map;
+
+#include <boundary_region.hxx>
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
@@ -87,6 +91,10 @@ class FieldData {
 
   virtual void applyBoundary() {}
   virtual void applyTDerivBoundary() {};
+//JMAD
+  void addBndryFunction(FuncPtr userfunc, BndryLoc location);
+  std::map <BndryLoc,FuncPtr> bndry_funcs;
+
  protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
   bool boundaryIsCopy; // True if bndry_op is a copy

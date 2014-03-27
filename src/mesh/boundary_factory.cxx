@@ -16,11 +16,13 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
   add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
+  add(new BndDirichlet_O2(), "dirichlet_o2");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann2(), "neumann2");
   add(new BoundaryNeumannPar(), "neumannpar");
   add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder");
+  add(new BndNeumann_O2(), "neumann_O2");
   add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
@@ -61,7 +63,6 @@ void BoundaryFactory::cleanup() {
 }
 
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) {
-  //output <<  name;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');

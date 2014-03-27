@@ -37,6 +37,26 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
  private:
   BoutReal val;
 };
+//JMAD
+
+class BndDirichlet_O2 : public BoundaryOp {
+ public:
+  BndDirichlet_O2();
+  BndDirichlet_O2(BoundaryRegion *region);
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field2D &f,BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f,BoutReal t);
+
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  FuncPtr bndfunc;
+};
+
+BoutReal default_func(BoutReal t, int x, int y, int z);
+// END JMAD
 
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryDirichlet_4thOrder : public BoundaryOp {
@@ -91,6 +111,23 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
   void apply_ddt(Field3D &f);
  private:
   BoutReal val;
+};
+
+//JMAD
+class BndNeumann_O2 : public BoundaryOp {
+ public:
+  BndNeumann_O2();
+  BndNeumann_O2(BoundaryRegion *region):BoundaryOp(region){BndNeumann_O2();}
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field2D &f, BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f,BoutReal t);
+
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  FuncPtr bndfunc;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy
