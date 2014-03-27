@@ -16,10 +16,7 @@ protected:
     
     Options *opt = Options::getRoot();
 
-    string astr;
-    opt->get("a", astr, "0.0");
-    
-    Field3D a = f.create3D(astr, opt);
+    Field3D a = f.create3D("a", opt);
     
     return 1; // Quit
   }

@@ -24,7 +24,7 @@
  *
  **************************************************************************/
 
-class FieldGenerator;
+
 class FieldFactory;
 
 #ifndef __FIELD_FACTORY_H__
@@ -32,36 +32,15 @@ class FieldFactory;
 
 #include "bout/mesh.hxx"
 
+#include "bout/sys/expressionparser.hxx"
+
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "options.hxx"
 
-#include "bout/constants.hxx"
-
 #include <string>
 #include <map>
-#include <sstream>
 #include <list>
-#include <utility>
-
-#include "output.hxx"
-
-using std::string;
-using std::map;
-using std::stringstream;
-using std::list;
-using std::pair;
-
-//////////////////////////////////////////////////////////
-// Generates a value at a given (x,y,z) location,
-// perhaps using other generators passed to clone()
-
-class FieldGenerator {
-public:
-  virtual ~FieldGenerator() { }
-  virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
-  virtual BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) = 0;
-};
 
 // Utility routines to create generators from values
 
@@ -73,57 +52,28 @@ FieldGenerator* generator(const Field3D &f);
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
 
-class FieldFactory {
+class FieldFactory : public ExpressionParser {
 public:
   FieldFactory(Mesh *m);
   ~FieldFactory();
   
-  const Field2D create2D(const string &value, Options *opt = NULL);
-  const Field3D create3D(const string &value, Options *opt = NULL);
+  const Field2D create2D(const std::string &value, Options *opt = NULL);
+  const Field3D create3D(const std::string &value, Options *opt = NULL);
   
-  void addGenerator(string name, FieldGenerator* g);
-  void addBinaryOp(char sym, FieldGenerator* b, int precedence);
+protected:
+  // These functions called by the parser
+  FieldGenerator* resolve(std::string &name);
+  
 private:
   Mesh *fieldmesh;
   
   Options *options;
-  list<string> lookup; // Names currently being parsed
+  std::list<std::string> lookup; // Names currently being parsed
   
-  map<string, FieldGenerator*> gen;
-  map<char, pair<FieldGenerator*, int> > bin_op; // Binary operations
-
   // Cache parsed strings
-  map<string, FieldGenerator* > cache;
+  std::map<std::string, FieldGenerator* > cache;
   
-  // List of allocated generators
-  list<FieldGenerator*> genheap;
-
-  struct LexInfo {
-    // Lexing info
-    
-    LexInfo(string input);
-    
-    char curtok;  // Current token. -1 for number, -2 for string, 0 for "end of input"
-    BoutReal curval; // Value if a number
-    string curident; // Identifier
-    char LastChar;
-    stringstream ss;
-    char nextToken();
-  };
-  
-  FieldGenerator* parseIdentifierExpr(LexInfo &lex);
-  FieldGenerator* parseParenExpr(LexInfo &lex);
-  FieldGenerator* parsePrimary(LexInfo &lex);
-  FieldGenerator* parseBinOpRHS(LexInfo &lex, int prec, FieldGenerator* lhs);
-  FieldGenerator* parseExpression(LexInfo &lex);
-  
-  FieldGenerator* parse(const string &input, Options *opt=NULL);
-  
-  /// Record generator in list, and return it
-  FieldGenerator* record( FieldGenerator* g) {
-    genheap.push_back(g);
-    return g;
-  }
+  FieldGenerator* parse(const std::string &input, Options *opt=NULL);
 };
 
 #endif // __FIELD_FACTORY_H__

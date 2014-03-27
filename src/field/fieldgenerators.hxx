@@ -7,7 +7,11 @@
 
 #include <field_factory.hxx>
 
+#include <output.hxx>
+
 #include <cmath>
+
+using std::list;
 
 //////////////////////////////////////////////////////////
 // Basic generators: Numerical value, 'x', 'y' and 'z'
@@ -32,15 +36,6 @@ public:
 
 //////////////////////////////////////////////////////////
 // Generators from values
-
-class FieldValue : public FieldGenerator {
-public:
-  FieldValue(BoutReal val) : value(val) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValue(value); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value; }
-private:
-  BoutReal value;
-};
 
 // Creates a Field Generator using a pointer to value
 // WARNING: The value pointed to must remain in scope until this generator is finished
@@ -222,36 +217,6 @@ public:
   BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
 private:
   FieldGenerator *gen;
-};
-
-/// Unary minus
-class FieldUnary : public FieldGenerator {
-public:
-  FieldUnary(FieldGenerator* g) : gen(g) {}
-  
-  FieldGenerator* clone(const list<FieldGenerator*> args) {
-    if(args.size() != 1) {
-      output << "FieldFactory error: Incorrect number of arguments to unary minus. Expecting 1, got " << args.size() << endl;
-      return NULL;
-    }
-    return new FieldUnary(args.front());
-  }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
-    return -gen->generate(fieldmesh, x,y,z);
-  }
-private:
-  FieldGenerator *gen;
-};
-
-/// Binary operators
-class FieldBinary : public FieldGenerator {
-public:
-  FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
-private:
-  FieldGenerator *lhs, *rhs;
-  char op;
 };
 
 /// Minimum
