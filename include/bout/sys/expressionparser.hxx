@@ -35,8 +35,6 @@ class ParseException;
 #include <utility>
 #include <sstream>
 
-#include <bout/mesh.hxx>
-
 #include <exception>
 
 //////////////////////////////////////////////////////////
@@ -47,7 +45,7 @@ class FieldGenerator {
 public:
   virtual ~FieldGenerator() { }
   virtual FieldGenerator* clone(const std::list<FieldGenerator*> args) {return NULL;}
-  virtual BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) = 0;
+  virtual double generate(double x, double y, double z, double t) = 0;
 };
 
 class ExpressionParser {
@@ -79,7 +77,7 @@ private:
     LexInfo(std::string input);
     
     char curtok;  // Current token. -1 for number, -2 for string, 0 for "end of input"
-    BoutReal curval; // Value if a number
+    double curval; // Value if a number
     std::string curident; // Identifier
     char LastChar;
     std::stringstream ss;
@@ -108,7 +106,7 @@ class FieldBinary : public FieldGenerator {
 public:
   FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
   FieldGenerator* clone(const std::list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  double generate(double x, double y, double z, double t);
 private:
   FieldGenerator *lhs, *rhs;
   char op;
@@ -117,11 +115,11 @@ private:
 /// Represent fixed values
 class FieldValue : public FieldGenerator {
 public:
-  FieldValue(BoutReal val) : value(val) {}
+  FieldValue(double val) : value(val) {}
   FieldGenerator* clone(const std::list<FieldGenerator*> args) { return new FieldValue(value); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value; }
+  double generate(double x, double y, double z, double t) { return value; }
 private:
-  BoutReal value;
+  double value;
 };
 
 //////////////////////////////////////////////////////
@@ -134,7 +132,7 @@ public:
   const char* what() const throw();
   
 protected:
-  string message;
+  std::string message;
 };
 
 

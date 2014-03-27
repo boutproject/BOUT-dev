@@ -40,22 +40,10 @@ FieldGenerator* generator(BoutReal *ptr) {
   return new FieldValuePtr(ptr);
 }
 
-FieldGenerator* generator(const Field2D &f) {
-  return new Field2DGenerator(f);
-}
-
-FieldGenerator* generator(const Field3D &f) {
-  return new Field3DGenerator(f);
-}
-
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
 FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
-  // Add standard generators
-  addGenerator("x", new FieldX());
-  addGenerator("y", new FieldY());
-  addGenerator("z", new FieldZ());
   
   // Useful values
   addGenerator("pi", new FieldValue(PI));
@@ -103,7 +91,10 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt) {
   
   for(int x=0;x<fieldmesh->ngx;x++)
     for(int y=0;y<fieldmesh->ngy;y++)
-      result[x][y] = gen->generate(fieldmesh, x,y,0);
+      result[x][y] = gen->generate(fieldmesh->GlobalX(x),
+                                   TWOPI*fieldmesh->GlobalY(y),
+                                   0.0,  // Z
+                                   0.0); // T
   
   // Don't delete the generator, as will be cached
 
@@ -124,8 +115,10 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt) {
   for(int x=0;x<fieldmesh->ngx;x++)
     for(int y=0;y<fieldmesh->ngy;y++)
       for(int z=0;z<fieldmesh->ngz;z++)
-        result[x][y][z] = gen->generate(fieldmesh, x,y,z);
-  
+        result[x][y][z] = gen->generate(fieldmesh->GlobalX(x),
+                                        TWOPI*fieldmesh->GlobalY(y),
+                                        TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                        0.0); // T
   // Don't delete generator
 
   return result;

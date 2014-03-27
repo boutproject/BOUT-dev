@@ -26,6 +26,8 @@
 
 #include <utils.hxx> // for lowercase
 
+#include <stdarg.h>
+
 using std::map;
 using std::string;
 using std::pair;
@@ -35,24 +37,81 @@ using std::stringstream;
 #include <stdlib.h>
 
 /////////////////////////////////////////////
-
-/// Unary minus
-class FieldUnary : public FieldGenerator {
-public:
-  FieldUnary(FieldGenerator* g) : gen(g) {}
+namespace { // These classes only visible in this file
   
-  FieldGenerator* clone(const list<FieldGenerator*> args) {
-    if(args.size() != 1) {
-      throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
+  // Basic generators: Numerical value, 'x', 'y' and 'z'
+  
+  class FieldX : public FieldGenerator {
+  public:
+    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
+    double generate(double x, double y, double z, double t) {
+      return x;
     }
-    return new FieldUnary(args.front());
+  };
+  
+  class FieldY : public FieldGenerator {
+  public:
+    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
+    double generate(double x, double y, double z, double t) {
+      return y;
+    }
+  };
+
+  class FieldZ : public FieldGenerator {
+  public:
+    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
+    double generate(double x, double y, double z, double t) {
+      return z;
+    }
+  };
+  
+  class FieldT : public FieldGenerator {
+  public:
+    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
+    double generate(double x, double y, double z, double t) {
+      return t;
+    }
+  };
+
+  /// Unary minus
+  class FieldUnary : public FieldGenerator {
+  public:
+    FieldUnary(FieldGenerator* g) : gen(g) {}
+  
+    FieldGenerator* clone(const list<FieldGenerator*> args) {
+      if(args.size() != 1) {
+        throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
+      }
+      return new FieldUnary(args.front());
+    }
+    double generate(double x, double y, double z, double t) {
+      return -gen->generate(x,y,z,t);
+    }
+  private:
+    FieldGenerator *gen;
+  };
+}
+
+FieldGenerator* FieldBinary::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 2)
+    throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
+  
+  return new FieldBinary(args.front(), args.back(), op);
+}
+
+BoutReal FieldBinary::generate(double x, double y, double z, double t) {
+  BoutReal lval = lhs->generate(x,y,z,t);
+  BoutReal rval = rhs->generate(x,y,z,t);
+  switch(op) {
+  case '+': return lval + rval;
+  case '-': return lval - rval;
+  case '*': return lval * rval;
+  case '/': return lval / rval;
+  case '^': return pow(lval, rval);
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
-    return -gen->generate(fieldmesh, x,y,z);
-  }
-private:
-  FieldGenerator *gen;
-};
+  // Unknown operator. Throw an error?
+  return 0.;
+}
 
 /////////////////////////////////////////////
 
@@ -63,6 +122,12 @@ ExpressionParser::ExpressionParser() {
   addBinaryOp('*', new FieldBinary(NULL, NULL, '*'), 20);
   addBinaryOp('/', new FieldBinary(NULL, NULL, '/'), 20);
   addBinaryOp('^', new FieldBinary(NULL, NULL, '^'), 30);
+  
+  // Add standard generators
+  addGenerator("x", new FieldX());
+  addGenerator("y", new FieldY());
+  addGenerator("z", new FieldZ());
+  addGenerator("t", new FieldT());
 }
 
 ExpressionParser::~ExpressionParser() {

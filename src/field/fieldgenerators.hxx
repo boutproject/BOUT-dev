@@ -7,32 +7,9 @@
 
 #include <field_factory.hxx>
 
-#include <output.hxx>
-
 #include <cmath>
 
 using std::list;
-
-//////////////////////////////////////////////////////////
-// Basic generators: Numerical value, 'x', 'y' and 'z'
-
-class FieldX : public FieldGenerator {
-public:
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
-};
-
-class FieldY : public FieldGenerator {
-public:
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
-};
-
-class FieldZ : public FieldGenerator {
-public:
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
-};
 
 //////////////////////////////////////////////////////////
 // Generators from values
@@ -43,27 +20,9 @@ class FieldValuePtr : public FieldGenerator {
 public:
   FieldValuePtr(BoutReal *val) : ptr(val) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldValuePtr(ptr); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return *ptr; }
+  BoutReal generate(double x, double y, double z, double t) { return *ptr; }
 private:
   BoutReal *ptr;
-};
-
-class Field2DGenerator : public FieldGenerator {
-public:
-  Field2DGenerator(const Field2D &f) : value(f) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new Field2DGenerator(value); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value(x,y); }
-private:
-  Field2D value;
-};
-
-class Field3DGenerator : public FieldGenerator {
-public:
-  Field3DGenerator(const Field3D &f) : value(f) {}
-  FieldGenerator* clone(const list<FieldGenerator*> args) { return new Field3DGenerator(value); }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) { return value(x,y,z); }
-private:
-  Field3D value;
 };
 
 //////////////////////////////////////////////////////////
@@ -74,7 +33,7 @@ public:
   FieldSin(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -84,7 +43,7 @@ public:
   FieldCos(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -97,13 +56,12 @@ public:
   FieldGenOneArg(FieldGenerator* g) : gen(g) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() != 1) {
-      output << "FieldFactory error: Incorrect number of arguments to function. Expecting 1, got " << args.size() << endl;
-      return NULL;
+      throw ParseException("Incorrect number of arguments to function. Expecting 1, got %d", args.size());
     }
     return new FieldGenOneArg<Op>(args.front());
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
-    return Op(gen->generate(fieldmesh, x,y,z));
+  BoutReal generate(double x, double y, double z, double t) {
+    return Op(gen->generate(x,y,z,t));
   }
 private:
   FieldGenerator *gen;
@@ -116,13 +74,12 @@ public:
   FieldGenTwoArg(FieldGenerator* a, FieldGenerator* b) : A(a), B(b) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() != 2) {
-      output << "FieldFactory error: Incorrect number of arguments to function. Expecting 2, got " << args.size() << endl;
-      return NULL;
+      throw ParseException("Incorrect number of arguments to function. Expecting 2, got %d", args.size());
     }
     return new FieldGenTwoArg<Op>(args.front(), args.back());
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
-    return Op(A->generate(fieldmesh, x,y,z), B->generate(fieldmesh, x,y,z));
+  BoutReal generate(double x, double y, double z, double t) {
+    return Op(A->generate(x,y,z,t), B->generate(x,y,z,t));
   }
 private:
   FieldGenerator *A, *B;
@@ -137,13 +94,12 @@ public:
     }else if(args.size() == 2) {
       return new FieldATan(args.front(), args.back());
     }
-    output << "FieldFactory error: Incorrect number of arguments to atan function. Expecting 1 or 2, got " << args.size() << endl;
-    return NULL;
+    throw ParseException("Incorrect number of arguments to atan function. Expecting 1 or 2, got %d", args.size());
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+  BoutReal generate(double x, double y, double z, double t) {
     if(B == NULL)
-      return atan(A->generate(fieldmesh, x,y,z));
-    return atan2(A->generate(fieldmesh, x,y,z), B->generate(fieldmesh, x,y,z));
+      return atan(A->generate(x,y,z,t));
+    return atan2(A->generate(x,y,z,t), B->generate(x,y,z,t));
   }
 private:
   FieldGenerator *A, *B;
@@ -154,7 +110,7 @@ public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -164,7 +120,7 @@ public:
   FieldCosh(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -174,7 +130,7 @@ public:
   FieldTanh(FieldGenerator* g=NULL) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -184,7 +140,7 @@ public:
   FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *X, *s;
 };
@@ -194,7 +150,7 @@ public:
   FieldAbs(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -204,7 +160,7 @@ public:
   FieldSqrt(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -214,7 +170,7 @@ public:
   FieldHeaviside(FieldGenerator* g) : gen(g) {}
   
   FieldGenerator* clone(const list<FieldGenerator*> args);
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z);
+  BoutReal generate(double x, double y, double z, double t);
 private:
   FieldGenerator *gen;
 };
@@ -226,16 +182,15 @@ public:
   FieldMin(const list<FieldGenerator*> args) : input(args) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() == 0) {
-      output << "FieldFactory error: min function must have some inputs\n";
-      return NULL;
+      throw ParseException("min function must have some inputs");
     }
     return new FieldMin(args);
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+  BoutReal generate(double x, double y, double z, double t) {
     list<FieldGenerator*>::iterator it=input.begin();
-    BoutReal result = (*it)->generate(fieldmesh, x,y,z);
+    BoutReal result = (*it)->generate(x,y,z,t);
     for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(fieldmesh, x,y,z);
+      BoutReal val = (*it)->generate(x,y,z,t);
       if(val < result)
         result = val;
     }
@@ -252,16 +207,15 @@ public:
   FieldMax(const list<FieldGenerator*> args) : input(args) {}
   FieldGenerator* clone(const list<FieldGenerator*> args) {
     if(args.size() == 0) {
-      output << "FieldFactory error: max function must have some inputs\n";
-      return NULL;
+      throw ParseException("max function must have some inputs");
     }
     return new FieldMax(args);
   }
-  BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) {
+  BoutReal generate(double x, double y, double z, double t) {
     list<FieldGenerator*>::iterator it=input.begin();
-    BoutReal result = (*it)->generate(fieldmesh, x,y,z);
+    BoutReal result = (*it)->generate(x,y,z,t);
     for(;it != input.end(); it++) {
-      BoutReal val = (*it)->generate(fieldmesh, x,y,z);
+      BoutReal val = (*it)->generate(x,y,z,t);
       if(val > result)
         result = val;
     }
