@@ -4,7 +4,7 @@
 #include <derivs.hxx>
 #include <math.h>
 #include "mathematica.h"
-
+#include <bout/constants.hxx>
 
 void solution(Field3D &f, BoutReal t, BoutReal D);
 int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT);
@@ -12,9 +12,6 @@ BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z);
 Field3D MMS_Source(BoutReal t);
 
-
-
-const BoutReal PI = 3.141592653589793;
 
 Field3D N;
 Field3D E_N, S,source; //N error vector, solution,source
@@ -30,8 +27,9 @@ int physics_init(bool restarting) {
   meshoptions->get("Ly",Ly,1.0);
 
   /*this assumes equidistant grid*/
-  mesh->dx = Lx/(mesh->getMX());
-  mesh->dy = Ly/(mesh->getMY());
+  int nguard = mesh->xstart;
+  mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
+  mesh->dy = Ly/(mesh->GlobalNy - 2*nguard);
 
   SAVE_ONCE2(Lx,Ly);
 
@@ -64,8 +62,7 @@ int physics_init(bool restarting) {
   //N.addBndryFunction(MS,BNDRY_ALL);
 
   // Tell BOUT++ to solve N
-  bout_solve(N, "N");
-
+  SOLVE_FOR(N);
 
   //Set initial condition to MS at t = 0.
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
@@ -106,11 +103,16 @@ int physics_run(BoutReal t) {
 
 //Manufactured solution
 BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+  // Input is in normalised x,y,z location
+  x *= Lx;         // X input [0,1]
+  y *= Ly / TWOPI; // Y input [0, 2pi]
   return (BoutReal)0.9 + 0.9*x + 0.2*Cos(10*t)*Sin(5.*Power(x,2));
 }
 
 //x-derivative of MS. For Neumann bnd cond
 BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+  x *= Lx;         // X input [0,1]
+  y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.9 + 2.*x*Cos(10*t)*Cos(5.*Power(x,2));
 }
 
@@ -123,8 +125,8 @@ void solution(Field3D &f, BoutReal t, BoutReal D) {
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
-      x = mesh->GlobalX(xi)*Lx;
-      y = mesh->GlobalY(yj)*Ly;//GlobalY not fixed yet
+      x = mesh->GlobalX(xi);
+      y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->ngz ; zk++) {
         z = mesh->dz*zk;
         f[xi][yj][zk] = MS(t,x,y,z);
