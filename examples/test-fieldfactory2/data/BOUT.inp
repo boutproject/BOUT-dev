@@ -1,10 +1,12 @@
 
 # Variable 'a' uses a variable 'k' 
 a = sin(k*x) + cos(2*k*x)
-k = 2*pi
+k = 2*pi / mesh:nx
 
 [mesh]
 
-nx = 34
+scale = 2 
+
+nx = 34* scale
 ny = 16
 

@@ -188,7 +188,10 @@ string Options::str() {
   if(parent == NULL) {
     return sectionName;
   }
-  return parent->str() + ':' + sectionName;
+  string name = parent->str();
+  if(name.length() > 0)
+    name += string(":");
+  return  name + sectionName;
 }
 
 void Options::printUnused() {

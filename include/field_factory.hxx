@@ -52,7 +52,7 @@ FieldGenerator* generator(BoutReal *ptr);
 
 class FieldFactory : public ExpressionParser {
 public:
-  FieldFactory(Mesh *m);
+  FieldFactory(Mesh *m, Options *opt = NULL);
   ~FieldFactory();
   
   const Field2D create2D(const std::string &value, Options *opt = NULL);
@@ -63,15 +63,17 @@ protected:
   FieldGenerator* resolve(std::string &name);
   
 private:
-  Mesh *fieldmesh;
-  
+  Mesh *fieldmesh;  
   Options *options;
+
   std::list<std::string> lookup; // Names currently being parsed
   
   // Cache parsed strings
   std::map<std::string, FieldGenerator* > cache;
   
   FieldGenerator* parse(const std::string &input, Options *opt=NULL);
+  
+  Options* findOption(Options *opt, const std::string &name, std::string &val);
 };
 
 #endif // __FIELD_FACTORY_H__

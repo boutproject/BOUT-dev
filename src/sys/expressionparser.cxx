@@ -338,12 +338,12 @@ char ExpressionParser::LexInfo::nextToken() {
     return 0;
   }
   
-  if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9_]*
+  if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9_:]*
     curident.clear();
     do {
       curident += LastChar;
       LastChar = ss.get();
-    }while(isalnum(LastChar) || (LastChar == '_'));
+    }while(isalnum(LastChar) || (LastChar == '_') || (LastChar == ':'));
     curtok = -2;
     return curtok;
   }

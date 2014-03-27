@@ -43,8 +43,11 @@ FieldGenerator* generator(BoutReal *ptr) {
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
+FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   
+  if(options == NULL)
+    options = Options::getRoot();
+
   // Useful values
   addGenerator("pi", new FieldValue(PI));
 
@@ -103,7 +106,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt) {
 
 const Field3D FieldFactory::create3D(const string &value, Options *opt) {
   Field3D result = 0.;
-
+  
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 3D field from '"
@@ -124,13 +127,76 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt) {
   return result;
 }
 
+Options* FieldFactory::findOption(Options *opt, const string &name, string &val) {
+  // Find an Options object which contains the given name
+
+  Options *result = opt;
+  
+  // Check if name contains a section separator ':'
+  size_t pos = name.find(':');
+  if(pos == string::npos) {
+    // No separator. Try this section, and then go through parents
+    
+    while(!result->isSet(name)) {
+      result = result->getParent();
+      if(result == NULL)
+        throw ParseException("Cannot find variable '%s'", name.c_str());
+    }
+    result->get(name, val, "");
+    
+  }else {
+    // Go to the root, and go up through sections
+    result = Options::getRoot();
+    
+    size_t lastpos = 0;
+    while(pos != string::npos) {
+      string sectionname = name.substr(lastpos,pos);
+      if( sectionname.length() > 0 ) {
+        result = result->getSection(sectionname);
+      }
+      lastpos = pos+1;
+      pos = name.find(':', lastpos);
+    }
+    // Now look for the name in this section
+    
+    string varname = name.substr(lastpos);
+
+    if(!result->isSet(varname)) {
+      // Not in this section
+      throw ParseException("Cannot find variable '%s'", name.c_str());
+    }
+    
+    result->get(varname, val, "");
+  }
+  
+  return result;
+}
+
 FieldGenerator* FieldFactory::resolve(string &name) {
   if(options) {
+    // Check if in cache
+    string key;
+    if(name.find(':') != string::npos) {
+      // Already has section
+      key = name;
+    }else {
+      key = options->str();
+      if(key.length() > 0)
+        key += string(":");
+      key += name;
+    }
+    
+    map<string, FieldGenerator*>::iterator it = cache.find(key);
+    if(it != cache.end()) {
+      // Found in cache
+      return it->second;
+    }
+    
     // Look up in options
     
     // Check if already looking up this symbol
     for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++)
-      if( name.compare(*it) == 0 ) {
+      if( key.compare(*it) == 0 ) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
         for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++) {
@@ -140,23 +206,24 @@ FieldGenerator* FieldFactory::resolve(string &name) {
         throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
       }
     
-    // Syntax for sections?
-    if(options->isSet(name)) {
-      // Add to lookup list
-      lookup.push_back(name);
+    // Find the option, including traversing sections.
+    // Throws exception if not found
+    string value;
+    Options *section = findOption(options, name, value);
+
+    // Add to lookup list
+    lookup.push_back(key);
       
-      // Get the string from options
-      string val;
-      options->get(name, val, "");
+    // Parse
+    FieldGenerator *g = parse(value, section);
+    
+    // Cache
+    cache[key] = g;
+
+    // Remove from lookup list
+    lookup.pop_back();
       
-      // Parse
-      FieldGenerator *g = parse(val, options);
-      
-      // Remove from lookup list
-      lookup.pop_back();
-      
-      return g;
-    }
+    return g;
   }
   output << "ExpressionParser error: Can't find generator '" << name << "'" << endl;
   return NULL;
@@ -166,14 +233,13 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
 
   // Check if in the cache
   
-  string key = input;
+  string key = string("#") + input;
   if(opt)
-    key += opt->str(); // Include options in key
+    key = opt->str()+key; // Include options context in key
   
   map<string, FieldGenerator*>::iterator it = cache.find(key);
   if(it != cache.end()) {
     // Found in cache
-    output << "Found '" << key << "' in cache\n";
     return it->second;
   }
 
@@ -181,12 +247,12 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
   Options *oldoptions = options;
 
   // Store the options tree for token lookups
-  options = opt;
+  if(opt)
+    options = opt;
   
   // Parse
   FieldGenerator *expr = parseString(input);
   
-  output << "Adding '" << key << "' to cache\n";
   // Add to cache
   cache[key] = expr;
 
