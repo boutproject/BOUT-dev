@@ -1,0 +1,101 @@
+#
+# Input file for conduction case
+#
+nout = 20      # Number of output timesteps
+timestep = 0.01#Time between outputs
+
+# Number of points in z
+MZ = 5
+zmin = 0.0
+zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi:  2*pi*1.59 = 1
+
+#number of guard cells
+MYG = 1  #noy comm for now
+MXG = 1
+
+#number of x processors
+NXPE = 1
+NYPE = 1
+
+[output]
+floats = false #false -> output in doubles
+
+[mesh]  
+ixseps1 = -1     
+ixseps2 = -1             # Set x location of separatrix 2
+
+#nx = internals gridpoints + guardcells
+nx = 121
+
+#ny = internal gridpoints
+ny = 5
+
+Lx = 1. 
+Ly = 1.
+
+dump_format="nc"     # Write NetCDF format files
+
+#grid points are distributed symmetrically
+symmetricGlobalX = true 
+
+##################################################
+[ddx]   # Methods used for perp (x) derivative terms
+
+first = C2
+second = C2
+upwind = W3
+flux = SPLIT
+
+[ddy]   # Methods used for parallel (y) derivative terms
+
+first = C2
+second = C2
+upwind = W3
+flux = SPLIT
+
+[ddz]   # Methods used for perp (z) derivative terms
+
+first = C2
+second = C2
+upwind = W3
+flux = SPLIT
+
+
+[solver] 
+
+type = cvode
+
+atol = 1.0e-15 # absolute tolerance
+rtol = 1.0e-7  # relative tolerance
+mxstep = 10000000000000000
+
+[cyto]
+dis = 1
+
+[all]
+
+scale = 1.0 
+xs_opt = 0
+ys_opt = 0
+zs_opt = 0
+
+
+[N] 
+scale = 1.0
+
+xl = x * mesh:Lx  # Define x length and y length
+yl = y * mesh:Ly
+
+# Manufactured function (at t = 0)
+function = 0.9 + 0.9*xl + 0.2*Sin(5*Power(xl,2))
+
+# The MMS source
+source = -2.*Sin(10*t)*Sin(5.*Power(xl,2)) + Cos(10*t)*(-2.*Cos(5.*Power(xl,2)) + 20.*Power(xl,2)*Sin(5.*Power(xl,2)))
+
+# A solution to compare against
+solution = 0.9 + 0.9*xl + 0.2*Cos(10*t)*Sin(5*Power(xl,2))
+
+bndry_all = dirichlet_o2
+bndry_xin = neumann_o2
+################################
+
