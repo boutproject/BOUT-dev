@@ -67,8 +67,9 @@ int physics_init(bool restarting) {
   //Set initial condition to MS at t = 0.
   for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
     for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-      for (int zk = 0; zk < mesh->ngz+1; zk++) {
-        N[xi][yj][zk] = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,mesh->dz*zk);
+      for (int zk = 0; zk < mesh->ngz-1; zk++) {
+        output.write("Initial condition at %d,%d,%d\n", xi, yj, zk);
+        N(xi, yj, zk) = MS(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,mesh->dz*zk);
       }
     }
   }
@@ -90,6 +91,7 @@ int physics_run(BoutReal t) {
   mesh->communicate(N); // Communicate guard cells
 
   //update time-dependent boundary conditions
+  output.write("APPLYING BOUNDARY\n");
   N.applyBoundary(t);
 
   ddt(N) = mu_N* D2DX2(N);
@@ -97,12 +99,14 @@ int physics_run(BoutReal t) {
 
   //add MMS source term
   ddt(N) += MMS_Source(t);
+  output.write("FINISHED RHS\n");
   return 0;
 }
 
 
 //Manufactured solution
 BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+  output.write("-> MS at %e, %e, %e, %e\n", t, x, y, z);
   // Input is in normalised x,y,z location
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
@@ -111,6 +115,7 @@ BoutReal MS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
 
 //x-derivative of MS. For Neumann bnd cond
 BoutReal dxMS(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z) {
+  output.write("-> dxMS at %e, %e, %e, %e\n", t, x, y, z);
   x *= Lx;         // X input [0,1]
   y *= Ly / TWOPI; // Y input [0, 2pi]
   return 0.9 + 2.*x*Cos(10*t)*Cos(5.*Power(x,2));
@@ -127,9 +132,10 @@ void solution(Field3D &f, BoutReal t, BoutReal D) {
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       x = mesh->GlobalX(xi);
       y = mesh->GlobalY(yj);//GlobalY not fixed yet
-      for (int zk = 0; zk < mesh->ngz ; zk++) {
+      for (int zk = 0; zk < mesh->ngz-1; zk++) {
         z = mesh->dz*zk;
-        f[xi][yj][zk] = MS(t,x,y,z);
+        output.write("Solution at %d,%d,%d\n", xi, yj, zk);
+        f(xi, yj, zk) = MS(t,x,y,z);
       }
     }
 
@@ -149,7 +155,7 @@ Field3D MMS_Source(BoutReal t)
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
-      for(zk=0;zk<mesh->ngz;zk++){
+      for(zk=0;zk<mesh->ngz-1;zk++){
         x = mesh->GlobalX(xi)*Lx;
         y = mesh->GlobalY(yj)*Ly;
         z = zk*mesh->dz;
@@ -169,6 +175,10 @@ int error_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
     for (int yj = mesh->ystart ; yj < mesh->yend + 1; yj++){
       for (int zk = 0; zk < mesh->ngz-1 ; zk++) {
         E_N[xi][yj][zk] = N[xi][yj][zk] - S[xi][yj][zk];
+
+        output.write("Error(%d,%d,%d): %e, %e -> %e\n",
+                     xi, yj, zk, 
+                     N[xi][yj][zk], S[xi][yj][zk], E_N[xi][yj][zk]);
       }
     }
   }
