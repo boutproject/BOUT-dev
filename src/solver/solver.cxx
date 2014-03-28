@@ -623,8 +623,11 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 
 /////////////////////////////////////////////////////
 
-void Solver::addMonitor(MonitorFunc f) {
-  monitors.push_front(f);
+void Solver::addMonitor(MonitorFunc f, MonitorPosition pos) {
+  if(pos == Solver::FRONT) {
+    monitors.push_front(f);
+  }else
+    monitors.push_back(f);
 }
 
 void Solver::removeMonitor(MonitorFunc f) {

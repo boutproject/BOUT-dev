@@ -102,7 +102,9 @@ class Solver {
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
   
-  void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
+  
+  enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
+  void addMonitor(MonitorFunc f, MonitorPosition pos=FRONT);     ///< Add a monitor function to be called every output
   void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
 
   void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep

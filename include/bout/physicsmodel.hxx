@@ -99,18 +99,18 @@ private:
 
 // Macro to define a simple main() which creates
 // the given model and runs it.
-#define BOUTMAIN(ModelClass)               \
-  int main(int argc, char **argv) {        \
-    BoutInitialise(argc, argv);            \
-    ModelClass *model = new ModelClass();  \
-    Solver *solver = Solver::create();     \
-    solver->setModel(model);               \
-    solver->addMonitor(bout_monitor);      \
-    solver->solve();                       \
-    delete model;                          \
-    delete solver;                         \
-    BoutFinalise();                        \
-    return 0;                              \
+#define BOUTMAIN(ModelClass)                        \
+  int main(int argc, char **argv) {                 \
+    BoutInitialise(argc, argv);                     \
+    ModelClass *model = new ModelClass();           \
+    Solver *solver = Solver::create();              \
+    solver->setModel(model);                        \
+    solver->addMonitor(bout_monitor, Solver::BACK); \
+    solver->solve();                                \
+    delete model;                                   \
+    delete solver;                                  \
+    BoutFinalise();                                 \
+    return 0;                                       \
   }
 
 

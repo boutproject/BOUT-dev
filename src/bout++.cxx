@@ -288,7 +288,7 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
   solver->setRHS(physics_run);
   
   /// Add the monitor function
-  solver->addMonitor(bout_monitor);
+  solver->addMonitor(bout_monitor, Solver::BACK);
 
   /// Run the simulation
   return solver->solve();
