@@ -635,6 +635,11 @@ void Solver::removeMonitor(MonitorFunc f) {
 }
 
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  // Call physics model monitor
+  if(model) {
+    int ret = model->runOutputMonitor(simtime, iter, NOUT);
+  }
+
   // Call C function monitors
   for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
     // Call each monitor one by one
@@ -642,11 +647,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     if(ret)
       return ret; // Return first time an error is encountered
   }
-
-  // Call physics model monitor
-  if(model) {
-    int ret = model->runOutputMonitor(simtime, iter, NOUT);
-  }
+  
   return 0;
 }
 
