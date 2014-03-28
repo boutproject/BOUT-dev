@@ -3110,7 +3110,9 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+    //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
+    return ((BoutReal) (0.5 + XGLOBAL(jx) - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
   }
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
 }
