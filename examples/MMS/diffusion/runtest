@@ -62,8 +62,6 @@ for nx in nxlist:
 # Calculate grid spacing
 dx = 1. / (array(nxlist) - 2.)
 
-print "LENGTH:", len(dx)
-
 # plot errors
 
 import matplotlib.pyplot as plt
@@ -77,13 +75,15 @@ print("Convergence order = %f" % (order))
 
 plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.legend()
+plt.legend(loc="upper left")
 plt.grid()
 
 plt.yscale('log')
 plt.xscale('log')
 
-plt.xlabel(r'\delta x')
-plt.ylabel("Norm")
+plt.xlabel(r'Mesh spacing $\delta x$')
+plt.ylabel("Error norm")
+
+plt.savefig("norm.pdf")
 
 plt.show()
