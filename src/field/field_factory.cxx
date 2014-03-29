@@ -261,3 +261,9 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
   
   return expr;
 }
+
+FieldFactory* FieldFactory::get() {
+  static FieldFactory instance(NULL, Options::getRoot());
+  
+  return &instance;
+}

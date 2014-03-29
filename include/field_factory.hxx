@@ -57,7 +57,9 @@ public:
   
   const Field2D create2D(const std::string &value, Options *opt = NULL);
   const Field3D create3D(const std::string &value, Options *opt = NULL);
-  
+
+  // Singleton object
+  static FieldFactory *get();
 protected:
   // These functions called by the parser
   FieldGenerator* resolve(std::string &name);
