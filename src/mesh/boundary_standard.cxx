@@ -529,19 +529,19 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	  
 	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
 	  
-	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + d)/3.;
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + 2.*d)/3.;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x - bndry->bx)
+				   + mesh->GlobalX(bndry->x - 2*bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
-	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x - bndry->bx, bndry->y);
 	  
-	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) - d)/3.;
+	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - 2*bndry->bx, bndry->y) - f(bndry->x - 3*bndry->bx, bndry->y) - 2.*d)/3.;
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
 	}
       }
@@ -560,19 +560,19 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y);
 	  
-	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + d)/3.;
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + 2.*d)/3.;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y - bndry->by)
+				 + mesh->GlobalY(bndry->y - 2*bndry->by) );
 	  
-	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	  
-	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + d)/3.;
+	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - 2*bndry->by) - f(bndry->x, bndry->y - 3*bndry->by) - 2.*d)/3.;
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
 	}
       }
@@ -631,7 +631,7 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
 	  
-	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + d)/3.;
+	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*d)/3.;
 	  }
 	}
       }else {
@@ -643,9 +643,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x - bndry->bx, bndry->y);
 	  
-	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) - d)/3.;
+	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*d)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
 	  }
 	}
@@ -666,7 +666,7 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y);
 	    
-	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + d)/3.;
+	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*d)/3.;
 	  }
 	}
       }else {
@@ -677,9 +677,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y - bndry->by)
 				 + mesh->GlobalY(bndry->y - 2*bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	    
-	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + d)/3.;
+	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*d)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
 	  }
 	}
