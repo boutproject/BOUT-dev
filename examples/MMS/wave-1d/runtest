@@ -51,7 +51,7 @@ for nx in nxlist:
     E_g = E_g[0,:,0,0]
 
     # Average error over domain, not including guard cells
-    E = concatenate([E_f[1:-1], E_g[1:-1]])
+    E = concatenate([E_f[1:-1], E_g[2:-1]])
 
     l2 = sqrt(mean(E**2))
     linf = max(abs(E))

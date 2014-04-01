@@ -78,10 +78,10 @@ protected:
     
     //Dirichlet everywhere except inner x-boundary Neumann
     f.addBndryFunction(MS_f,BNDRY_ALL);
-    //f.addBndryFunction(dxMS_f,BNDRY_XIN);
+    f.addBndryFunction(dxMS_f,BNDRY_XIN);
 
     g.addBndryFunction(MS_g,BNDRY_ALL);
-    //g.addBndryFunction(dxMS_g,BNDRY_XIN);
+    g.addBndryFunction(dxMS_g,BNDRY_XIN);
     
     // Tell BOUT++ to solve f and g
     bout_solve(f, "f");
