@@ -76,13 +76,13 @@ zs_opt = 0
 
 [f] 
 
-bndry_all = dirichlet_o2
+bndry_all = neumann # Should be ignored
 bndry_xin = neumann_o2
 
 [g] 
 
 bndry_all = dirichlet_o2
-bndry_xin = neumann_o2
+bndry_xin = neumann  # Should have no effect
 
 ################################
 
