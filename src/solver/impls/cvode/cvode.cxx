@@ -63,8 +63,7 @@ static int cvode_jac(N_Vector v, N_Vector Jv,
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
-
-  prefunc = NULL;
+  
   jacfunc = NULL;
 }
 
@@ -258,7 +257,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
       if( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
         bout_error("ERROR: CVSpgmr failed\n");
 
-      if(prefunc == NULL) {
+      if(!have_user_precon()) {
         output.write("\tUsing BBD preconditioner\n");
 
         if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
@@ -478,7 +477,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 
   int N = NV_LOCLENGTH_P(uvec);
   
-  if(prefunc == NULL) {
+  if(!have_user_precon()) {
     // Identity (but should never happen)
     for(int i=0;i<N;i++)
       zvec[i] = rvec[i];
@@ -491,7 +490,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
   
-  (*prefunc)(t, gamma, delta);
+  run_precon(t, gamma, delta);
 
   // Save the solution from F_vars
   save_derivs(zvec);

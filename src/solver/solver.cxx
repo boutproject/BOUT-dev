@@ -44,7 +44,7 @@ char*** Solver::pargv = 0;
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts), model(0) {
+Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
 
@@ -1127,4 +1127,21 @@ bool Solver::varAdded(const string &name) {
   }
   
   return false;
+}
+
+bool Solver::have_user_precon() {
+  if(model)
+    return model->hasPrecon();
+  
+  return prefunc != 0;
+}
+
+int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if(!have_user_precon())
+    return 1;
+
+  if(model)
+    return model->runPrecon(t, gamma, delta);
+  
+  return (*prefunc)(t, gamma, delta);
 }

@@ -11,6 +11,7 @@
 
 #include <bout.hxx>
 #include <boutmain.hxx>
+#include <bout/constants.hxx>
 
 #include <gyro_average.hxx>
 #include <invert_laplace.hxx>
