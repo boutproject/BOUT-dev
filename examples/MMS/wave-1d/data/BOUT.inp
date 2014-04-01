@@ -14,6 +14,8 @@ zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi: 
 MYG = 0  #noy comm for now
 MXG = 1
 
+StaggerGrids = true
+
 [output]
 floats = false #false -> output in doubles
 
@@ -59,7 +61,7 @@ flux = SPLIT
 
 [solver] 
 
-type = cvode
+type = pvode
 
 atol = 1.0e-15 # absolute tolerance
 rtol = 1.0e-7  # relative tolerance
@@ -75,12 +77,12 @@ zs_opt = 0
 [f] 
 
 bndry_all = dirichlet_o2
-//bndry_xin = neumann_o2
+#bndry_xin = neumann_o2
 
 [g] 
 
 bndry_all = dirichlet_o2
-//bndry_xin = neumann_o2
+#bndry_xin = neumann_o2
 
 ################################
 

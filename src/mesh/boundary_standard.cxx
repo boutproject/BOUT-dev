@@ -71,52 +71,72 @@ void BndDirichlet_O2::apply(Field2D &f){
 void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
-
-
-  /*
-  BoutReal x,xb,y,yb;
-  bndry->first();
-  if (bndry->by == 0){//x-boundary
-    if(bndry->bx == -1){ // inner boundary
-      xb = 0.;
-    }
-    else{//outer boundary
-      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
-      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      //y position
-      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
-      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-      f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xb,y,0.)
-        - f(bndry->x-bndry->bx,bndry->y);
-      // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
-
-    }
-  }
-  else{// y-boundary
-    if(bndry->by == -1){ // inner boundary
-      yb = 0.;
-    }
-    else{//outer boundary
-      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
-
-      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-      f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,x,yb,0.)
-        - f(bndry->x,bndry->y-bndry->by);
-
-    }
-  }
-  //printf("odne apply bnd \n\n");
-  */
   
-  // Replacement code (BD):
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+  bndry->first();
+  
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
+      // X boundary, and field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				 + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  f(bndry->x,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  f(bndry->x - bndry->bx,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+	}
+      }
+      return;
+    }
+    
+    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+      // Y boundary, and field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  f(bndry->x,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  f(bndry->x,bndry->y - bndry->by) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+	}
+      }
+      return;
+    }
+  }
+  
+  // Non-staggered, standard case
+  
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
                            + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
@@ -143,52 +163,84 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
-  /*
-  BoutReal x,xb,y,yb;
   bndry->first();
-  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
-  if (bndry->by == 0){//x-boundary
-    if(bndry->bx == -1){ // inner boundary
-      xb = 0.;
-    }
-    else{//outer boundary
-      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
-      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      //y position
-      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
-      for(int zk=0;zk<mesh->ngz;zk++) {
-        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-        f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xb,y,zk*mesh->dz)
-          - f(bndry->x-bndry->bx,bndry->y,zk);
-        // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
-      }
-    }
-  }
-  else{// y-boundary
-    if(bndry->by == -1){ // inner boundary
-      yb = 0.;
-    }
-    else{//outer boundary
-      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
-      for(int zk=0;zk<mesh->ngz;zk++) {
-        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-        f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,x,yb,(BoutReal)zk*mesh->dz)
-          - f(bndry->x,bndry->y-bndry->by,zk);
-      }
-    }
-  }
-  //printf("odne apply bnd \n\n");
-  */
   
-  // Replacement code (BD):
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
+      // X boundary, and field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    f(bndry->x,bndry->y, zk) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	    
+	    output.write("Outer boundary (Stag): %d,%d : %e, %e -> %e\n", bndry->x,bndry->y,
+			 xnorm, ynorm, f(bndry->x,bndry->y, zk));
+	  }
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    f(bndry->x - bndry->bx,bndry->y, zk) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
+	    
+	    output.write("Inner boundary (Stag): %d,%d : %e, %e -> %e\n", bndry->x,bndry->y,
+			 xnorm, ynorm, f(bndry->x,bndry->y, zk));
+	  }
+	}
+      }
+      return;
+    }
+    
+    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+      // Y boundary, and field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    f(bndry->x,bndry->y,zk) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	  }
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    f(bndry->x,bndry->y - bndry->by, zk) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+	  }
+	}
+      }
+      return;
+    }
+  }
+  
+  // Standard (non-staggered) case
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
                            + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
@@ -200,6 +252,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
     for(int zk=0;zk<mesh->ngz-1;zk++) {
       f(bndry->x,bndry->y,zk) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz)
         - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+      
+      output.write("boundary (%d,%d): %d,%d : %e, %e -> %e\n", bndry->bx, bndry->by, bndry->x,bndry->y,
+		   xnorm, ynorm, f(bndry->x,bndry->y, zk));
     }
   }
 }
@@ -451,46 +506,82 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
-  /*
-  BoutReal x,xb,y,yb,delta;
   bndry->first();
-  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
-  if (bndry->by == 0){//x-boundary
-    if(bndry->bx == -1){ // inner boundary
-      xb = 0.;
-    }
-    else{//outer boundary
-      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
-      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      //y position
-      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
-      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-      delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-      f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y) + (*((f.bndry_funcs)[bndry->location]))(t,xb,y,0.)*delta;
-      // printf("bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
-
-    }
-  }
-  else{// y-boundary
-    if(bndry->by == -1){ // inner boundary
-      yb = 0.;
-    }
-    else{//outer boundary
-      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
-    }
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
-      delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-      f(bndry->x,bndry->y) = f(bndry->x,bndry->y-bndry->by) + (*((f.bndry_funcs)[bndry->location]))(t,x,yb,0.)*delta;
-
-    }
-  }
-  */
   
-  // Replacement code (BD):
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    // Use one-sided differencing. Cell is now on
+    // the boundary, so use one-sided differencing
+    
+    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
+      // X boundary, and field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
+	  
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + d)/3.;
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
+	  
+	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) - d)/3.;
+	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+	}
+      }
+      return;
+    }
+    
+    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+      // Y boundary, and field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y);
+	  
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + d)/3.;
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x, bndry->y);
+	  
+	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + d)/3.;
+	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+	}
+      }
+      return;
+    }
+  }
+  
+  // Non-staggered, standard case
+  
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
@@ -516,53 +607,88 @@ void BndNeumann_O2::apply(Field3D &f) {
 
 
 void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
-  /*
-  BoutReal x,xb,y,yb,delta,val;
   bndry->first();
-  //printf("MX %i My %i bx %i by %i x %i y %i \n",mesh->getMX(),mesh->getMY(),bndry->bx,bndry->by,bndry->x,bndry->y);
-  if (bndry->by == 0){//x-boundary
-    if(bndry->bx == -1){ // inner boundary
-      xb = 0.;
-    }
-    else{//outer boundary
-      xb = (BoutReal)mesh->getMX()*mesh->dx[bndry->x][bndry->y]; // =Lx
-      //printf("bndryx %i bndryy %i xb %f yb %f bndry->x-bndry->bx %i\n ",bndry->x,bndry->y,xb, yb,bndry->x-bndry->bx );
-    }
-
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      //y position
-      y = (BoutReal)(bndry->y - bndry->width + 0.5)*mesh->dy[bndry->x][bndry->y];
-      for(int zk=0;zk<mesh->ngz;zk++) {
-        //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-        //dx
-        delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-        //bnd value
-        val = (*((f.bndry_funcs)[bndry->location]))(t,xb,y,(BoutReal)zk*mesh->dz);
-        f(bndry->x,bndry->y,zk) = f(bndry->x-bndry->bx,bndry->y-bndry->by,zk) + val*delta;
-        //printf("val %f delta %f bndryx %i bndryy %i xb %f y %f bndry->x-bndry->bx %i bndry->y-bndry->by %i fghost %f zk %i\n ",val,delta,bndry->x,bndry->y,xb, y,bndry->x-bndry->bx,bndry->y-bndry->by, f(bndry->x-bndry->bx,bndry->y-bndry->by,zk),zk );
+  
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    // Use one-sided differencing. Cell is now on
+    // the boundary, so use one-sided differencing
+    
+    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
+      // X boundary, and field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	  
+	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + d)/3.;
+	  }
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x - bndry->bx)
+				   + mesh->GlobalX(bndry->x - 2*bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	  
+	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) - d)/3.;
+	    f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
+	  }
+	}
       }
+      return;
+    }
+    
+    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+      // Y boundary, and field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y);
+	    
+	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + d)/3.;
+	  }
+	}
+      }else {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y - bndry->by)
+				 + mesh->GlobalY(bndry->y - 2*bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	    
+	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + d)/3.;
+	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+	  }
+	}
+      }
+      return;
     }
   }
-  else{// y-boundary
-    if(bndry->by == -1){ // inner boundary
-      yb = 0.;
-    }
-    else{//outer boundary
-      yb = (BoutReal)mesh->getMY()*mesh->dy[bndry->x][bndry->y]; // =Ly
-    }
-    for(bndry->first(); !bndry->isDone(); bndry->next1d()){
-      x = (BoutReal)(bndry->x - bndry->width + 0.5)*mesh->dx[bndry->x][bndry->y];
-      for(int zk=0;zk<mesh->ngz;zk++) {
-        delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-        val = (*((f.bndry_funcs)[bndry->location]))(t,x,yb,(BoutReal)zk*mesh->dz);
-        f(bndry->x,bndry->y,zk) = f(bndry->x-bndry->bx,bndry->y-bndry->by,zk) + val*delta;
-      }
-    }
-  }
-  */
-
-  // Replacement code (BD):
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+  
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
                            + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell

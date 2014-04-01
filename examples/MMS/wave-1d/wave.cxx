@@ -73,6 +73,8 @@ protected:
     mesh->g_13 = 0.0;
     mesh->g_23 = 0.0;
     mesh->geometry();
+
+    g.setLocation(CELL_XLOW); // g staggered to the left of f
     
     //Dirichlet everywhere except inner x-boundary Neumann
     f.addBndryFunction(MS_f,BNDRY_ALL);
@@ -81,18 +83,28 @@ protected:
     g.addBndryFunction(MS_g,BNDRY_ALL);
     //g.addBndryFunction(dxMS_g,BNDRY_XIN);
     
-
     // Tell BOUT++ to solve f and g
     bout_solve(f, "f");
     bout_solve(g, "g");
 
     //Set initial condition to MS at t = 0.
-    for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
-      for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
-        for (int zk = 0; zk < mesh->ngz-1; zk++) {
-          f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
-          g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
-        }
+    if(mesh->StaggerGrids) {
+      for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
+	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
+	  for (int zk = 0; zk < mesh->ngz-1; zk++) {
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,0.5*(mesh->GlobalX(xi)+mesh->GlobalX(xi-1)),mesh->GlobalY(yj),mesh->dz*zk);
+	  }
+	}
+      }
+    }else {
+      for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
+	for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
+	  for (int zk = 0; zk < mesh->ngz-1; zk++) {
+	    f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
+	    g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
+	  }
+	}
       }
     }
     E_f.allocate();
@@ -110,12 +122,12 @@ protected:
     g.applyBoundary(t);
     
     // HLL. Related to Lax-Friedrichs
-    ddt(f) = HLL(-g, f, -1.0, 1.0);
-    ddt(g) = HLL(-f, g, -1.0, 1.0);
+    //ddt(f) = HLL(-g, f, -1.0, 1.0);
+    //ddt(g) = HLL(-f, g, -1.0, 1.0);
 
     // Central differencing
-    //ddt(f) = DDX(g) + 20*SQ(mesh->dx)*D2DX2(f);
-    //ddt(g) = DDX(f) + 20*SQ(mesh->dx)*D2DX2(g);
+    ddt(f) = DDX(g, CELL_CENTRE);// + 20*SQ(mesh->dx)*D2DX2(f);
+    ddt(g) = DDX(f, CELL_XLOW);// + 20*SQ(mesh->dx)*D2DX2(g);
     
     //add MMS source term
     ddt(f) += source_f(t);
@@ -228,12 +240,17 @@ const Field3D solution_g(BoutReal t) {
   Field3D S;
   S.allocate();
   
+  S.setLocation(CELL_XLOW);
+  
   int bx = (mesh->ngx - (mesh->xend - mesh->xstart + 1)) / 2;
   int by = (mesh->ngy - (mesh->yend - mesh->ystart + 1)) / 2;
 
   for (int xi = mesh->xstart - bx; xi < mesh->xend + bx + 1; xi++){
     for (int yj = mesh->ystart - by; yj < mesh->yend + by + 1; yj++){
       BoutReal x = mesh->GlobalX(xi);
+      if(mesh->StaggerGrids) {
+	x = 0.5*(mesh->GlobalX(xi-1) + mesh->GlobalX(xi));
+      }
       BoutReal y = mesh->GlobalY(yj);//GlobalY not fixed yet
       for (int zk = 0; zk < mesh->ngz-1; zk++) {
         BoutReal z = mesh->dz*zk;
@@ -249,12 +266,18 @@ const Field3D source_g(BoutReal t) {
   Field3D result;
   result.allocate();
 
+  result.setLocation(CELL_XLOW);
+
   int xi,yj,zk;
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)
     for(yj=mesh->ystart;yj < mesh->yend+1;yj++){
       for(zk=0;zk<mesh->ngz-1;zk++){
-        x = mesh->GlobalX(xi)*Lx;
+	if(mesh->StaggerGrids) {
+	  x = 0.5*(mesh->GlobalX(xi-1)+mesh->GlobalX(xi))*Lx;
+	}else {
+	  x = mesh->GlobalX(xi)*Lx;
+	}
         y = mesh->GlobalY(yj)*Ly;
         z = zk*mesh->dz;
         result[xi][yj][zk] = -2.0*x*Cos(10*t)*Cos(5.0*Power(x,2)) - 1.4*Sin(7*t)*Sin(2.0*Power(x,2)) - 0.9;
