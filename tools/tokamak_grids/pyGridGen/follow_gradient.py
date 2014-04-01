@@ -8,9 +8,29 @@
 import sys
 import numpy
 from bunch import Bunch
-from ode.lsode import lsode
+
+
+try:
+    from ode.lsode import lsode
+except ImportError:
+    print "No ode.lsode available. Trying scipy.integrate.odeint"
+    from scipy.integrate import odeint 
+    
+    # Define a class to emulate lsode behavior
+    class lsode:
+        def __init__(self, func, f0, rz0):
+            # Function for odeint needs to have reversed inputs
+            self._func = lambda pos, fcur : func(fcur, pos)
+            self._f0 = f0
+            self._rz0 = rz0
+        
+        def integrate(self, ftarget):
+            solode = odeint(self._func, self._rz0, [self._f0,ftarget], full_output=True)
+            self._f0 = ftarget
+            self.steps = solode[1]['nst'][0]
+            return solode[0][1,:]
+
 from local_gradient import local_gradient
-from scipy.integrate import odeint 
 from itertools import chain
 from support import deriv
 from saveobject import saveobject
@@ -18,9 +38,7 @@ from saveobject import saveobject
 global rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, tol, Ri, Zi, dR, dZ
 
 
-
-#def radial_differential( pos, fcur): # for odeint
-def radial_differential( fcur, pos): # for lsode
+def radial_differential( fcur, pos): 
   
 
     global rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, tol, Ri, Zi, dR, dZ
@@ -125,35 +143,13 @@ def follow_gradient( interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=0,
 
     fmax = ftarget # Target (with maybe boundary in the way)
 
-
-#   CATCH, theError
-#    try :
     # Call LSODE to follow gradient
     rzold = [ri0, zi0]
     rcount = 0
-  #      while True:
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# toggle this for lsode            
-
-    solver = lsode(radial_differential, f0, rzold) 
+    
+    solver = lsode(radial_differential, f0, rzold)
     rznew=solver.integrate(ftarget)
     nsteps = solver.steps
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# toggle this for odeint            
-                                    
- # get the value out of a list
-#    x0 = chain.from_iterable(f0)
-#    x0 = list(x0)[0]
-#                       
-#   # print x0, ftarget                  
-#    solode=odeint(radial_differential,rzold,[x0,ftarget],full_output=True)
-#
-#    rznew=solode[0][1,:]
-#    nsteps=solode[1]['nst'][0]
-
-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   
     lstat=0
 #    print 'nsteps=',nsteps    
