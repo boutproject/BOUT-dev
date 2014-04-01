@@ -2,8 +2,8 @@
 # Input file for 1D wave MMS test
 #
 
-nout = 1      # Number of output timesteps
-timestep = 1  #Time between outputs
+nout = 20      # Number of output timesteps
+timestep = 0.1  #Time between outputs
 
 # Number of points in z
 MZ = 1

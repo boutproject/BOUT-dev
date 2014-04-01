@@ -17,6 +17,27 @@ const Field3D source_g(BoutReal t);
 
 BoutReal Lx, Ly, Lz; // Size of the domain
 
+
+const Field3D HLL(const Field3D &f, const Field3D &u, BoutReal SL, BoutReal SR) {
+  // A two-wave approximate solver, given left and right wave speeds such that
+  // SL <= 0 <= SR
+  // If SR = -SL  is the CFL limiting fastest wave speed, then this is
+  // equivalent to the local Lax-Friedrichs or Rusanov method
+  // First-order accurate
+  Field3D result;
+  result.allocate();
+  for(int i=mesh->xstart;i<=mesh->xend;i++)
+    for(int j=mesh->ystart; j<=mesh->yend; j++)
+      for(int k=0;k<mesh->ngz-1;k++) {
+          
+        BoutReal fp = (SR*f(i,j,k) - SL*f(i+1,j,k) + SL*SR*(u(i+1,j,k) - u(i,j,k)) ) / (SR - SL);
+          BoutReal fm = (SR*f(i-1,j,k) - SL*f(i,j,k) + SL*SR*(u(i,j,k) - u(i-1,j,k)) ) / (SR - SL);
+          
+          result(i,j,k) = (fm - fp) / mesh->dx(i,j);
+        }
+  return result;
+}
+
 class Wave1D : public PhysicsModel {
 private:
   Field3D f, g; // Evolving variables
@@ -61,7 +82,7 @@ protected:
     //g.addBndryFunction(dxMS_g,BNDRY_XIN);
     
 
-    // Tell BOUT++ to solve N
+    // Tell BOUT++ to solve f and g
     bout_solve(f, "f");
     bout_solve(g, "g");
 
@@ -69,8 +90,8 @@ protected:
     for (int xi = mesh->xstart; xi < mesh->xend +1; xi++){
       for (int yj = mesh->ystart; yj < mesh->yend + 1; yj++){
         for (int zk = 0; zk < mesh->ngz-1; zk++) {
-          f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,mesh->dz*zk);
-          g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi)*Lx,mesh->GlobalY(yj)*Ly,mesh->dz*zk);
+          f(xi, yj, zk) = MS_f(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
+          g(xi, yj, zk) = MS_g(0.,mesh->GlobalX(xi),mesh->GlobalY(yj),mesh->dz*zk);
         }
       }
     }
@@ -88,8 +109,13 @@ protected:
     f.applyBoundary(t);
     g.applyBoundary(t);
     
-    ddt(f) = DDX(g);
-    ddt(g) = DDX(f);
+    // HLL. Related to Lax-Friedrichs
+    ddt(f) = HLL(-g, f, -1.0, 1.0);
+    ddt(g) = HLL(-f, g, -1.0, 1.0);
+
+    // Central differencing
+    //ddt(f) = DDX(g) + 20*SQ(mesh->dx)*D2DX2(f);
+    //ddt(g) = DDX(f) + 20*SQ(mesh->dx)*D2DX2(g);
     
     //add MMS source term
     ddt(f) += source_f(t);
