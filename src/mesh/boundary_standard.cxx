@@ -1,4 +1,3 @@
-
 #include <globals.hxx>
 #include <boundary_standard.hxx>
 #include <invert_laplace.hxx>
@@ -535,8 +534,8 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x - bndry->bx)
-				   + mesh->GlobalX(bndry->x - 2*bndry->bx) );
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
 	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x - bndry->bx, bndry->y);
@@ -567,8 +566,8 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y - bndry->by)
-				 + mesh->GlobalY(bndry->y - 2*bndry->by) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  
 	  BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	  
@@ -638,8 +637,8 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x - bndry->bx)
-				   + mesh->GlobalX(bndry->x - 2*bndry->bx) );
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
@@ -674,8 +673,8 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y - bndry->by)
-				 + mesh->GlobalY(bndry->y - 2*bndry->by) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	    
