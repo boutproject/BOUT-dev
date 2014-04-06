@@ -73,6 +73,9 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Output monitor
   options->get("monitor_timestep", monitor_timestep, false);
+  
+  // Method of Manufactured Solutions (MMS)
+  options->get("mms", mms, false);
 }
 
 /**************************************************************************
@@ -130,7 +133,12 @@ void Solver::add(Field2D &v, const char* name) {
   ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
-  initial_profile(name, v);
+  if(mms) {
+    // Load solution at t = 0
+    
+  }else {
+    initial_profile(name, v);
+  }
   v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
@@ -171,7 +179,12 @@ void Solver::add(Field3D &v, const char* name) {
   var.name = name;
 #endif
 
-  initial_profile(name, v);
+  if(mms) {
+    // Load solution at t = 0
+    
+  }else {
+    initial_profile(name, v);
+  }
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
                 
@@ -1168,4 +1181,10 @@ int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     return model->runPrecon(t, gamma, delta);
   
   return (*prefunc)(t, gamma, delta);
+}
+
+void Solver::add_mms_sources() {
+  if(!mms)
+    return;
+  
 }

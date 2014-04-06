@@ -225,6 +225,10 @@ protected:
   PhysicsPrecon prefunc;  // Preconditioner
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
+
+  bool mms; // Enable sources and solutions for Method of Manufactured Solutions
+
+  void add_mms_sources();
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
