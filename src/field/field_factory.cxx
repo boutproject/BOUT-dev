@@ -81,8 +81,9 @@ FieldFactory::~FieldFactory() {
   
 }
 
-const Field2D FieldFactory::create2D(const string &value, Options *opt) {
+const Field2D FieldFactory::create2D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
+  result.setLocation(loc);
 
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
@@ -92,21 +93,47 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt) {
     return result;
   }
   
-  for(int x=0;x<fieldmesh->ngx;x++)
-    for(int y=0;y<fieldmesh->ngy;y++)
-      result[x][y] = gen->generate(fieldmesh->GlobalX(x),
-                                   TWOPI*fieldmesh->GlobalY(y),
-                                   0.0,  // Z
-                                   0.0); // T
+  switch(loc)  {
+  CELL_XLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++) {
+        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
+        for(int y=0;y<fieldmesh->ngy;y++)
+          result(x,y) = gen->generate(xpos,
+                                          TWOPI*fieldmesh->GlobalY(y),
+                                          0.0,  // Z
+                                          t); // T
+      }
+    }
+  CELL_YLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x,y) = gen->generate(fieldmesh->GlobalX(x),
+                                            ypos,
+                                            0.0,  // Z
+                                            t); // T
+        }
+    }
+  default: {// CELL_CENTRE or CELL_ZLOW
+    for(int x=0;x<fieldmesh->ngx;x++)
+      for(int y=0;y<fieldmesh->ngy;y++)
+        result(x,y) = gen->generate(fieldmesh->GlobalX(x),
+                                    TWOPI*fieldmesh->GlobalY(y),
+                                    0.0,  // Z
+                                    t); // T
+  }
+  };
   
   // Don't delete the generator, as will be cached
 
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value, Options *opt) {
+const Field3D FieldFactory::create3D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
-  
+  result.setLocation(loc);
+
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 3D field from '"
@@ -115,13 +142,49 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt) {
     return result;
   }
   
-  for(int x=0;x<fieldmesh->ngx;x++)
-    for(int y=0;y<fieldmesh->ngy;y++)
-      for(int z=0;z<fieldmesh->ngz;z++)
-        result[x][y][z] = gen->generate(fieldmesh->GlobalX(x),
-                                        TWOPI*fieldmesh->GlobalY(y),
-                                        TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
-                                        0.0); // T
+  switch(loc)  {
+  CELL_XLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++) {
+        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
+        for(int y=0;y<fieldmesh->ngy;y++)
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(xpos,
+                                            TWOPI*fieldmesh->GlobalY(y),
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+      }
+    }
+  CELL_YLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                            ypos,
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+        }
+    }
+  CELL_ZLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++)
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                            TWOPI*fieldmesh->GlobalY(y),
+                                            TWOPI*(((BoutReal) z) - 0.5) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+    }
+  default: {// CELL_CENTRE
+    for(int x=0;x<fieldmesh->ngx;x++)
+      for(int y=0;y<fieldmesh->ngy;y++)
+        for(int z=0;z<fieldmesh->ngz;z++)
+          result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                          TWOPI*fieldmesh->GlobalY(y),
+                                          TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                          t); // T
+    }
+  };
+  
   // Don't delete generator
 
   return result;
