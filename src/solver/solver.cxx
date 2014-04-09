@@ -29,6 +29,8 @@
 #include <interpolation.hxx>
 #include <boutexception.hxx>
 
+#include <field_factory.hxx>
+
 #include "solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
@@ -136,6 +138,9 @@ void Solver::add(Field2D &v, const char* name) {
   if(mms) {
     // Load solution at t = 0
     
+    FieldFactory *fact = FieldFactory::get();
+    
+    v = fact->create2D("solution", Options::getRoot()->getSection(name));
   }else {
     initial_profile(name, v);
   }
@@ -181,7 +186,9 @@ void Solver::add(Field3D &v, const char* name) {
 
   if(mms) {
     // Load solution at t = 0
+    FieldFactory *fact = FieldFactory::get();
     
+    v = fact->create3D("solution", Options::getRoot()->getSection(name), v.getLocation());
   }else {
     initial_profile(name, v);
   }
@@ -1183,8 +1190,18 @@ int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   return (*prefunc)(t, gamma, delta);
 }
 
-void Solver::add_mms_sources() {
+void Solver::add_mms_sources(BoutReal t) {
   if(!mms)
     return;
   
+  FieldFactory *fact = FieldFactory::get();
+    
+  // Iterate over 2D variables
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    *it->var += fact->create2D("source", Options::getRoot()->getSection(it->name), (it->var)->getLocation(), t);
+  }
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    *it->var += fact->create3D("source", Options::getRoot()->getSection(it->name), (it->var)->getLocation(), t);
+  }
 }

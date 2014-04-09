@@ -228,7 +228,7 @@ protected:
 
   bool mms; // Enable sources and solutions for Method of Manufactured Solutions
 
-  void add_mms_sources();
+  void add_mms_sources(BoutReal t);
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions

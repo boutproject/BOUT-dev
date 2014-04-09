@@ -178,10 +178,20 @@ Options* Options::getSection(const string &name) {
   // Doesn't exist yet, so add
   string secname = name;
   if(!sectionName.empty()) // prepend the section name
-    secname = sectionName + "/" + secname;
+    secname = sectionName + ":" + secname;
   Options *o = new Options(this, secname);
   sections[lowercase(name)] = o;
   return o;
+}
+
+string Options::str() {
+  if(parent == NULL) {
+    return sectionName;
+  }
+  string name = parent->str();
+  if(name.length() > 0)
+    name += string(":");
+  return  name + sectionName;
 }
 
 void Options::printUnused() {

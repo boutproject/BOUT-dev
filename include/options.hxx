@@ -86,6 +86,9 @@ public:
   Options* getSection(const string &name);
   Options* getParent() {return parent;}
 
+  // Print string representation
+  string str();
+
   /// Print the options which haven't been used
   void printUnused();
  private:

@@ -21,33 +21,33 @@
  **************************************************************************/
 
 #include <field_factory.hxx>
-#include <utils.hxx>
 
-#include <stdlib.h>
 #include <cmath>
 
 #include <output.hxx>
 #include <bout/constants.hxx>
+#include <utils.hxx>
+
+#include "bout/constants.hxx"
 
 #include "fieldgenerators.hxx"
+
+FieldGenerator* generator(BoutReal value) {
+  return new FieldValue(value);
+}
+
+FieldGenerator* generator(BoutReal *ptr) {
+  return new FieldValuePtr(ptr);
+}
 
 //////////////////////////////////////////////////////////
 // FieldFactory public functions
 
-FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
+FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   
-  // Add standard binary operations
-  addBinaryOp('+', new FieldBinary(NULL, NULL, '+'), 10);
-  addBinaryOp('-', new FieldBinary(NULL, NULL, '-'), 10);
-  addBinaryOp('*', new FieldBinary(NULL, NULL, '*'), 20);
-  addBinaryOp('/', new FieldBinary(NULL, NULL, '/'), 20);
-  addBinaryOp('^', new FieldBinary(NULL, NULL, '^'), 30);
-  
-  // Add standard generators
-  addGenerator("x", new FieldX());
-  addGenerator("y", new FieldY());
-  addGenerator("z", new FieldZ());
-  
+  if(options == NULL)
+    options = Options::getRoot();
+
   // Useful values
   addGenerator("pi", new FieldValue(PI));
 
@@ -73,21 +73,19 @@ FieldFactory::FieldFactory(Mesh *m) : fieldmesh(m) {
 
   addGenerator("min", new FieldMin());
   addGenerator("max", new FieldMax());
+  
+  addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
 }
 
 FieldFactory::~FieldFactory() {
-  // Free memory
-  for(map<string, FieldGenerator*>::iterator it = gen.begin(); it != gen.end(); it++)
-    delete it->second;
   
-  for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
-    delete it->second.first;
 }
 
-const Field2D FieldFactory::create2D(const string &value) {
+const Field2D FieldFactory::create2D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
+  result.setLocation(loc);
 
-  FieldGenerator* gen = parse(value);
+  FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 2D field from '"
            << value
@@ -95,19 +93,48 @@ const Field2D FieldFactory::create2D(const string &value) {
     return result;
   }
   
-  for(int x=0;x<fieldmesh->ngx;x++)
-    for(int y=0;y<fieldmesh->ngy;y++)
-      result[x][y] = gen->generate(fieldmesh, x,y,0);
+  switch(loc)  {
+  CELL_XLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++) {
+        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
+        for(int y=0;y<fieldmesh->ngy;y++)
+          result(x,y) = gen->generate(xpos,
+                                          TWOPI*fieldmesh->GlobalY(y),
+                                          0.0,  // Z
+                                          t); // T
+      }
+    }
+  CELL_YLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x,y) = gen->generate(fieldmesh->GlobalX(x),
+                                            ypos,
+                                            0.0,  // Z
+                                            t); // T
+        }
+    }
+  default: {// CELL_CENTRE or CELL_ZLOW
+    for(int x=0;x<fieldmesh->ngx;x++)
+      for(int y=0;y<fieldmesh->ngy;y++)
+        result(x,y) = gen->generate(fieldmesh->GlobalX(x),
+                                    TWOPI*fieldmesh->GlobalY(y),
+                                    0.0,  // Z
+                                    t); // T
+  }
+  };
   
-  delete gen;
+  // Don't delete the generator, as will be cached
 
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value) {
+const Field3D FieldFactory::create3D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
+  result.setLocation(loc);
 
-  FieldGenerator* gen = parse(value);
+  FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     output << "FieldFactory error: Couldn't create 3D field from '"
            << value
@@ -115,260 +142,191 @@ const Field3D FieldFactory::create3D(const string &value) {
     return result;
   }
   
-  for(int x=0;x<fieldmesh->ngx;x++)
-    for(int y=0;y<fieldmesh->ngy;y++)
-      for(int z=0;z<fieldmesh->ngz;z++)
-        result[x][y][z] = gen->generate(fieldmesh, x,y,z);
+  switch(loc)  {
+  CELL_XLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++) {
+        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
+        for(int y=0;y<fieldmesh->ngy;y++)
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(xpos,
+                                            TWOPI*fieldmesh->GlobalY(y),
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+      }
+    }
+  CELL_YLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                            ypos,
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+        }
+    }
+  CELL_ZLOW: {
+      for(int x=0;x<fieldmesh->ngx;x++)
+        for(int y=0;y<fieldmesh->ngy;y++)
+          for(int z=0;z<fieldmesh->ngz;z++)
+            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                            TWOPI*fieldmesh->GlobalY(y),
+                                            TWOPI*(((BoutReal) z) - 0.5) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            t); // T
+    }
+  default: {// CELL_CENTRE
+    for(int x=0;x<fieldmesh->ngx;x++)
+      for(int y=0;y<fieldmesh->ngy;y++)
+        for(int z=0;z<fieldmesh->ngz;z++)
+          result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+                                          TWOPI*fieldmesh->GlobalY(y),
+                                          TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                          t); // T
+    }
+  };
   
-  delete gen;
+  // Don't delete generator
 
   return result;
 }
 
-void FieldFactory::addGenerator(string name, FieldGenerator* g) {
-  gen[name] = g;
-}
+Options* FieldFactory::findOption(Options *opt, const string &name, string &val) {
+  // Find an Options object which contains the given name
 
-void FieldFactory::addBinaryOp(char sym, FieldGenerator* b, int precedence) {
-  bin_op[sym] = pair<FieldGenerator*, int>(b, precedence);
-}
-
-//////////////////////////////////////////////////////////
-// FieldFactory private functions
-
-char FieldFactory::nextToken() {
-  while(isspace(LastChar))
-    LastChar = ss.get();
+  Options *result = opt;
   
-  if(!ss.good()) {
-    curtok = 0;
-    return 0;
-  }
-  
-  if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9_]*
-    curident.clear();
-    do {
-      curident += LastChar;
-      LastChar = ss.get();
-    }while(isalnum(LastChar) || (LastChar == '_'));
-    curtok = -2;
-    return curtok;
-  }
-  
-  // Handle numbers
-
-  if (isdigit(LastChar) || (LastChar == '.')) {   // Number: [0-9.]+
-    bool gotdecimal = false, gotexponent = false;
-    std::string NumStr;
+  // Check if name contains a section separator ':'
+  size_t pos = name.find(':');
+  if(pos == string::npos) {
+    // No separator. Try this section, and then go through parents
     
-    while(true) {
-      if(LastChar == '.') {
-        if(gotdecimal || gotexponent) {
-          output << "FieldFactory error: Unexpected '.' in number expression" << endl;
-	  curtok = 0;
-          return 0;
-        }
-        gotdecimal = true;
-      }else if((LastChar == 'E') || (LastChar == 'e')) {
-        if(gotexponent) {
-          output << "FieldFactory error: Unexpected extra 'e' in number expression" << endl;
-	  curtok = 0;
-          return 0;
-        }
-        gotexponent = true;
-        // Next character should be a '+' or '-' or digit
-        NumStr += 'e';
-        LastChar = ss.get();
-        if((LastChar != '+') && (LastChar != '-') && !isdigit(LastChar)) {
-          output << "FieldFactory error: Expecting '+', '-' or number after 'e'"  << endl;
-	  curtok = 0;
-          return 0;
-        }
-      }else if(!isdigit(LastChar))
-        break;
-      
-      NumStr += LastChar;
-      LastChar = ss.get();
+    while(!result->isSet(name)) {
+      result = result->getParent();
+      if(result == NULL)
+        throw ParseException("Cannot find variable '%s'", name.c_str());
     }
-    
-    curval = strtod(NumStr.c_str(), 0);
-    curtok = -1;
-    return curtok;
-  }
-  
-  curtok = LastChar;
-  LastChar = ss.get();
-  return curtok;
-}
-
-//////////////////////////////////////////////////////////
-
-FieldGenerator* FieldFactory::parseIdentifierExpr() {
-  string name = lowercase(curident);
-  nextToken();
-  
-  if(curtok == '(') {
-    // Argument list. Find if a generator or function
-    
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
-    if(it == gen.end()) {
-      output << "FieldFactory error: Couldn't find generator '"
-             << name << "'" << endl;
-      return NULL;
-    }
-    
-    // Parse arguments (if any)
-    list<FieldGenerator*> args;
-    
-    nextToken();
-    if(curtok == ')') {
-      // Empty list
-      nextToken();
-      return it->second->clone(args);
-    }
-    do{
-      // Should be an expression
-      FieldGenerator *a = parseExpression();
-      if(!a) {
-	output << "FieldFactory error: Couldn't parse argument " << args.size()+1 
-	       << " to " << name << " function" << endl;
-        return NULL;
-      }
-      args.push_back(a);
-      
-      // Now either a comma or ')'
-      
-      if(curtok == ')') {
-        // Finished list
-        nextToken();
-        return it->second->clone(args);
-      }
-      if(curtok != ',') {
-        output << "FieldFactory error: Expecting ',' or ')' in function argument list (" << name << ")" << endl;
-        return NULL;
-      }
-      nextToken();
-    }while(true);
+    result->get(name, val, "");
     
   }else {
-    // No arguments. Search in generator list
-    map<string, FieldGenerator*>::iterator it = gen.find(name);
-    if(it == gen.end()) {
-      output << "FieldFactory error: Can't find generator '" << name << "'" << endl;
-      return NULL;
+    // Go to the root, and go up through sections
+    result = Options::getRoot();
+    
+    size_t lastpos = 0;
+    while(pos != string::npos) {
+      string sectionname = name.substr(lastpos,pos);
+      if( sectionname.length() > 0 ) {
+        result = result->getSection(sectionname);
+      }
+      lastpos = pos+1;
+      pos = name.find(':', lastpos);
     }
-    list<FieldGenerator*> args;
-    return it->second->clone(args);
+    // Now look for the name in this section
+    
+    string varname = name.substr(lastpos);
+
+    if(!result->isSet(varname)) {
+      // Not in this section
+      throw ParseException("Cannot find variable '%s'", name.c_str());
+    }
+    
+    result->get(varname, val, "");
   }
+  
+  return result;
 }
 
-FieldGenerator* FieldFactory::parseParenExpr() {
-  nextToken(); // eat '('
-  
-  FieldGenerator* g = parseExpression();
-  if(!g)
-    return NULL;
-  
-  if((curtok != ')') && (curtok != ']'))
-    return NULL;
-  nextToken(); // eat ')'
-  return g;
-}
+FieldGenerator* FieldFactory::resolve(string &name) {
+  if(options) {
+    // Check if in cache
+    string key;
+    if(name.find(':') != string::npos) {
+      // Already has section
+      key = name;
+    }else {
+      key = options->str();
+      if(key.length() > 0)
+        key += string(":");
+      key += name;
+    }
+    
+    map<string, FieldGenerator*>::iterator it = cache.find(key);
+    if(it != cache.end()) {
+      // Found in cache
+      return it->second;
+    }
+    
+    // Look up in options
+    
+    // Check if already looking up this symbol
+    for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++)
+      if( key.compare(*it) == 0 ) {
+        // Name matches, so already looking up
+        output << "ExpressionParser lookup stack:\n";
+        for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++) {
+          output << *it << " -> ";
+        }
+        output << name << endl;
+        throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
+      }
+    
+    // Find the option, including traversing sections.
+    // Throws exception if not found
+    string value;
+    Options *section = findOption(options, name, value);
 
-FieldGenerator* FieldFactory::parsePrimary() {
-  switch(curtok) {
-  case -1: { // a number
-    nextToken(); // Eat number
-    return new FieldValue(curval);
+    // Add to lookup list
+    lookup.push_back(key);
+      
+    // Parse
+    FieldGenerator *g = parse(value, section);
+    
+    // Cache
+    cache[key] = g;
+
+    // Remove from lookup list
+    lookup.pop_back();
+      
+    return g;
   }
-  case -2: {
-    return parseIdentifierExpr();
-  }
-  case '-': {
-    // Unary minus
-    nextToken(); // Eat '-'
-    return new FieldUnary(parsePrimary());
-  }
-  case '(':
-  case '[':
-    return parseParenExpr();
-  }
+  output << "ExpressionParser error: Can't find generator '" << name << "'" << endl;
   return NULL;
 }
 
-FieldGenerator* FieldFactory::parseBinOpRHS(int ExprPrec, FieldGenerator* lhs) {
-  // Check for end of input
-  if((curtok == 0) || (curtok == ')') || (curtok == ','))
-    return lhs;
+FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
 
-  // Next token should be a binary operator
-  map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(curtok);
+  // Check if in the cache
   
-  if(it == bin_op.end()) {
-    output << "FieldFactory error: Unexpected binary operator '" << curtok << "'" << endl;
-    return NULL;
+  string key = string("#") + input;
+  if(opt)
+    key = opt->str()+key; // Include options context in key
+  
+  map<string, FieldGenerator*>::iterator it = cache.find(key);
+  if(it != cache.end()) {
+    // Found in cache
+    return it->second;
   }
-  
-  FieldGenerator* op = it->second.first;
-  int TokPrec = it->second.second;
-  
-  if (TokPrec < ExprPrec)
-    return lhs;
-  
-  nextToken(); // Eat binop
-  
-  FieldGenerator* rhs = parsePrimary();
-  if(!rhs)
-    return NULL;
 
-  if((curtok == 0) || (curtok == ')') || (curtok == ',')) {
-    // Done
-    
-    list<FieldGenerator*> args;
-    args.push_front(lhs);
-    args.push_back(rhs);
-    return op->clone(args);
-  }
-    
-  // Find next binop
-  it = bin_op.find(curtok);
+  // Save the current options
+  Options *oldoptions = options;
+
+  // Store the options tree for token lookups
+  if(opt)
+    options = opt;
   
-  if(it == bin_op.end()) {
-    output << "FieldFactory error: Unexpected character '" << curtok << "'" << endl;
-    return NULL;
-  }
+  // Parse
+  FieldGenerator *expr = parseString(input);
   
-  int NextPrec = it->second.second;
-  if (TokPrec < NextPrec) {
-    rhs = parseBinOpRHS(TokPrec+1, rhs);
-    if(!rhs)
-      return 0;
-  }
+  // Add to cache
+  cache[key] = expr;
+
+  // Restore the old options
+  options = oldoptions;
   
-  // Merge lhs and rhs into new lhs
-  list<FieldGenerator*> args;
-  args.push_front(lhs);
-  args.push_back(rhs);
-  lhs = op->clone(args);
-  
-  return parseBinOpRHS(0, lhs);
+  return expr;
 }
 
-FieldGenerator* FieldFactory::parseExpression() {
-  FieldGenerator* lhs = parsePrimary();
-  if(!lhs)
-    return NULL;
-  return parseBinOpRHS(0, lhs);
-}
-
-FieldGenerator* FieldFactory::parse(const string &input) {
+FieldFactory* FieldFactory::get() {
+  static FieldFactory instance(NULL, Options::getRoot());
   
-  ss.clear();
-  ss.str(input); // Set the input stream
-  ss.seekg(0, ios_base::beg);
-  
-  LastChar = ss.get(); // First char from stream
-  nextToken(); // Get first token
-  
-  return parseExpression();
+  return &instance;
 }
