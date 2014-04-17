@@ -2530,15 +2530,19 @@ void BoutMesh::clear_handles()
 {
   while(!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
-    delete[] ch->umsg_sendbuff;
-    delete[] ch->dmsg_sendbuff;
-    delete[] ch->imsg_sendbuff;
-    delete[] ch->omsg_sendbuff;
+    if(ch->ybufflen > 0) {
+      delete[] ch->umsg_sendbuff;
+      delete[] ch->dmsg_sendbuff;
+      delete[] ch->umsg_recvbuff;
+      delete[] ch->dmsg_recvbuff;
+    }
     
-    delete[] ch->umsg_recvbuff;
-    delete[] ch->dmsg_recvbuff;
-    delete[] ch->imsg_recvbuff;
-    delete[] ch->omsg_recvbuff;
+    if(ch->xbufflen > 0) {
+      delete[] ch->imsg_sendbuff;
+      delete[] ch->omsg_sendbuff;
+      delete[] ch->imsg_recvbuff;
+      delete[] ch->omsg_recvbuff;
+    }
     
     delete ch;
     
