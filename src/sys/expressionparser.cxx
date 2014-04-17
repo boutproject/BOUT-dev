@@ -67,7 +67,7 @@ namespace { // These classes only visible in this file
   
   class FieldT : public FieldGenerator {
   public:
-    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldZ(); }
+    FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldT(); }
     double generate(double x, double y, double z, double t) {
       return t;
     }

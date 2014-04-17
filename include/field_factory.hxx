@@ -55,8 +55,8 @@ public:
   FieldFactory(Mesh *m, Options *opt = NULL);
   ~FieldFactory();
   
-  const Field2D create2D(const std::string &value, Options *opt = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
-  const Field3D create3D(const std::string &value, Options *opt = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
+  const Field2D create2D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
+  const Field3D create3D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
 
   // Singleton object
   static FieldFactory *get();

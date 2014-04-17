@@ -81,9 +81,14 @@ FieldFactory::~FieldFactory() {
   
 }
 
-const Field2D FieldFactory::create2D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
+const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
   result.setLocation(loc);
+
+  if(m == NULL)
+    m = fieldmesh;
+  if(m == NULL)
+    throw BoutException("Not a valid mesh");
 
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
@@ -95,31 +100,33 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, CELL_LOC
   
   switch(loc)  {
   CELL_XLOW: {
-      for(int x=0;x<fieldmesh->ngx;x++) {
-        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
-        for(int y=0;y<fieldmesh->ngy;y++)
+      for(int x=0;x<m->ngx;x++) {
+        BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
+        for(int y=0;y<m->ngy;y++)
           result(x,y) = gen->generate(xpos,
-                                          TWOPI*fieldmesh->GlobalY(y),
+                                          TWOPI*m->GlobalY(y),
                                           0.0,  // Z
                                           t); // T
       }
+      break;
     }
   CELL_YLOW: {
-      for(int x=0;x<fieldmesh->ngx;x++)
-        for(int y=0;y<fieldmesh->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
-          for(int z=0;z<fieldmesh->ngz;z++)
-            result(x,y) = gen->generate(fieldmesh->GlobalX(x),
+      for(int x=0;x<m->ngx;x++)
+        for(int y=0;y<m->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
+          for(int z=0;z<m->ngz;z++)
+            result(x,y) = gen->generate(m->GlobalX(x),
                                             ypos,
                                             0.0,  // Z
                                             t); // T
         }
+      break;
     }
   default: {// CELL_CENTRE or CELL_ZLOW
-    for(int x=0;x<fieldmesh->ngx;x++)
-      for(int y=0;y<fieldmesh->ngy;y++)
-        result(x,y) = gen->generate(fieldmesh->GlobalX(x),
-                                    TWOPI*fieldmesh->GlobalY(y),
+    for(int x=0;x<m->ngx;x++)
+      for(int y=0;y<m->ngy;y++)
+        result(x,y) = gen->generate(m->GlobalX(x),
+                                    TWOPI*m->GlobalY(y),
                                     0.0,  // Z
                                     t); // T
   }
@@ -130,57 +137,62 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, CELL_LOC
   return result;
 }
 
-const Field3D FieldFactory::create3D(const string &value, Options *opt, CELL_LOC loc, BoutReal t) {
+const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
   result.setLocation(loc);
 
+  if(m == NULL)
+    m = fieldmesh;
+  if(m == NULL)
+    throw BoutException("Not a valid mesh");
+
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
-    output << "FieldFactory error: Couldn't create 3D field from '"
-           << value
-           << "'" << endl;
-    return result;
+    throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
   
   switch(loc)  {
   CELL_XLOW: {
-      for(int x=0;x<fieldmesh->ngx;x++) {
-        BoutReal xpos = 0.5*(fieldmesh->GlobalX(x-1) + fieldmesh->GlobalX(x));
-        for(int y=0;y<fieldmesh->ngy;y++)
-          for(int z=0;z<fieldmesh->ngz;z++)
+      for(int x=0;x<m->ngx;x++) {
+        BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
+        for(int y=0;y<m->ngy;y++)
+          for(int z=0;z<m->ngz;z++)
             result(x, y, z) = gen->generate(xpos,
-                                            TWOPI*fieldmesh->GlobalY(y),
-                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            TWOPI*m->GlobalY(y),
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
                                             t); // T
       }
+      break;
     }
   CELL_YLOW: {
-      for(int x=0;x<fieldmesh->ngx;x++)
-        for(int y=0;y<fieldmesh->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(fieldmesh->GlobalY(x-1) + fieldmesh->GlobalY(x));
-          for(int z=0;z<fieldmesh->ngz;z++)
-            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
+      for(int x=0;x<m->ngx;x++)
+        for(int y=0;y<m->ngy;y++) {
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
+          for(int z=0;z<m->ngz;z++)
+            result(x, y, z) = gen->generate(m->GlobalX(x),
                                             ypos,
-                                            TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+                                            TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
                                             t); // T
         }
+      break;
     }
   CELL_ZLOW: {
-      for(int x=0;x<fieldmesh->ngx;x++)
-        for(int y=0;y<fieldmesh->ngy;y++)
-          for(int z=0;z<fieldmesh->ngz;z++)
-            result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
-                                            TWOPI*fieldmesh->GlobalY(y),
-                                            TWOPI*(((BoutReal) z) - 0.5) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+      for(int x=0;x<m->ngx;x++)
+        for(int y=0;y<m->ngy;y++)
+          for(int z=0;z<m->ngz;z++)
+            result(x, y, z) = gen->generate(m->GlobalX(x),
+                                            TWOPI*m->GlobalY(y),
+                                            TWOPI*(((BoutReal) z) - 0.5) / ((BoutReal) (m->ngz-1)),  // Z
                                             t); // T
+      break;
     }
   default: {// CELL_CENTRE
-    for(int x=0;x<fieldmesh->ngx;x++)
-      for(int y=0;y<fieldmesh->ngy;y++)
-        for(int z=0;z<fieldmesh->ngz;z++)
-          result(x, y, z) = gen->generate(fieldmesh->GlobalX(x),
-                                          TWOPI*fieldmesh->GlobalY(y),
-                                          TWOPI*((BoutReal) z) / ((BoutReal) (fieldmesh->ngz-1)),  // Z
+    for(int x=0;x<m->ngx;x++)
+      for(int y=0;y<m->ngy;y++)
+        for(int z=0;z<m->ngz;z++)
+          result(x, y, z) = gen->generate(m->GlobalX(x),
+                                          TWOPI*m->GlobalY(y),
+                                          TWOPI*((BoutReal) z) / ((BoutReal) (m->ngz-1)),  // Z
                                           t); // T
     }
   };
