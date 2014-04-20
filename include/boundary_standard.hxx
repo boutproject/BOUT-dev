@@ -5,6 +5,7 @@
 
 #include "boundary_op.hxx"
 #include "bout_types.hxx"
+#include <field_factory.hxx>
 
 /// Dirichlet (set to zero) boundary condition
 class BoundaryDirichlet : public BoundaryOp {
@@ -42,7 +43,7 @@ class BoundaryDirichlet_2ndOrder : public BoundaryOp {
 class BndDirichlet_O2 : public BoundaryOp {
  public:
   BndDirichlet_O2();
-  BndDirichlet_O2(BoundaryRegion *region);
+  BndDirichlet_O2(BoundaryRegion *region, FieldGenerator *g);
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f,BoutReal t);
@@ -53,6 +54,7 @@ class BndDirichlet_O2 : public BoundaryOp {
   void apply_ddt(Field3D &f);
  private:
   FuncPtr bndfunc;
+  FieldGenerator* gen; // Generator
 };
 
 BoutReal default_func(BoutReal t, int x, int y, int z);
@@ -116,8 +118,8 @@ class BoundaryNeumann_2ndOrder : public BoundaryOp {
 //JMAD
 class BndNeumann_O2 : public BoundaryOp {
  public:
-  BndNeumann_O2();
-  BndNeumann_O2(BoundaryRegion *region):BoundaryOp(region){BndNeumann_O2();}
+  BndNeumann_O2() : bndfunc(NULL), gen(NULL) {}
+  BndNeumann_O2(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g) {}
   BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
   void apply(Field2D &f);
   void apply(Field2D &f, BoutReal t);
@@ -128,6 +130,7 @@ class BndNeumann_O2 : public BoundaryOp {
   void apply_ddt(Field3D &f);
  private:
   FuncPtr bndfunc;
+  FieldGenerator *gen;
 };
 
 /// Neumann boundary condition set half way between guard cell and grid cell at 4th order accuracy

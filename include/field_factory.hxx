@@ -58,6 +58,9 @@ public:
   const Field2D create2D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
   const Field3D create3D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
 
+  // Parse a string into a tree of generators
+  FieldGenerator* parse(const std::string &input, Options *opt=NULL);
+
   // Singleton object
   static FieldFactory *get();
 protected:
@@ -72,8 +75,6 @@ private:
   
   // Cache parsed strings
   std::map<std::string, FieldGenerator* > cache;
-  
-  FieldGenerator* parse(const std::string &input, Options *opt=NULL);
   
   Options* findOption(Options *opt, const std::string &name, std::string &val);
 };

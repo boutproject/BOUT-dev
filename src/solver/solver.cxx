@@ -124,8 +124,6 @@ void Solver::add(Field2D &v, const char* name) {
   d.F_var = &ddt(v);
   d.name = string(name);
 
-  f2d.push_back(d);
-
 #ifdef TRACK
   var.name = name;
 #endif
@@ -140,11 +138,16 @@ void Solver::add(Field2D &v, const char* name) {
     
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create2D("solution", Options::getRoot()->getSection(name));
+    v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
+    
+    // Allocate storage for error variable
+    d.MMS_err = new Field2D(0.0);
   }else {
     initial_profile(name, v);
   }
   v.applyBoundary(true);
+
+  f2d.push_back(d);
 
   msg_stack.pop(msg_point);
 }
@@ -178,8 +181,6 @@ void Solver::add(Field3D &v, const char* name) {
   d.location = v.getLocation();
   d.name = string(name);
   
-  f3d.push_back(d);
-
 #ifdef TRACK
   var.name = name;
 #endif
@@ -188,13 +189,18 @@ void Solver::add(Field3D &v, const char* name) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
-    v = fact->create3D("solution", Options::getRoot()->getSection(name), v.getLocation());
+    v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
+    
+    d.MMS_err = new Field3D();
+    (*d.MMS_err) = 0.0;
   }else {
     initial_profile(name, v);
   }
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
-                
+  
+  f3d.push_back(d);
+              
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -572,6 +578,11 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     
     // Add to dump file (appending)
     dump.add(*(it->var), it->name.c_str(), 1);
+
+    if(mms) {
+      // Add an error variable
+      dump.add(*(it->MMS_err), (string("E_")+it->name).c_str(), 1);
+    }
     
     /// Make sure boundary condition is satisfied
     //it->var->applyBoundary();
@@ -655,6 +666,11 @@ void Solver::removeMonitor(MonitorFunc f) {
 }
 
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  if(mms) {
+    // Calculate MMS errors
+    calculate_mms_error(simtime);
+  }
+
   // Call physics model monitor
   if(model) {
     int ret = model->runOutputMonitor(simtime, iter, NOUT);
@@ -1040,6 +1056,9 @@ int Solver::run_rhs(BoutReal t) {
     post_rhs();
   }
 
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
+
   rhs_ncalls++;
 
   return status;
@@ -1190,18 +1209,30 @@ int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
   return (*prefunc)(t, gamma, delta);
 }
 
+// Add source terms to time derivatives
 void Solver::add_mms_sources(BoutReal t) {
   if(!mms)
     return;
-  
+
   FieldFactory *fact = FieldFactory::get();
     
   // Iterate over 2D variables
   for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    *it->var += fact->create2D("source", Options::getRoot()->getSection(it->name), (it->var)->getLocation(), t);
+    *it->F_var += fact->create2D("source", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
   }
   
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    *it->var += fact->create3D("source", Options::getRoot()->getSection(it->name), (it->var)->getLocation(), t);
+    *it->F_var += fact->create3D("source", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
+  }
+}
+
+// Calculate 
+void Solver::calculate_mms_error(BoutReal t) {
+  FieldFactory *fact = FieldFactory::get();
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
+    
+    *(it->MMS_err) = *(it->var) - solution;
   }
 }
