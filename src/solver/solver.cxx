@@ -145,6 +145,13 @@ void Solver::add(Field2D &v, const char* name) {
   }else {
     initial_profile(name, v);
   }
+  
+  // Check if the boundary regions should be evolved
+  // First get option from section "All"
+  // then use that as default for specific section
+  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
+  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+
   v.applyBoundary(true);
 
   f2d.push_back(d);
@@ -196,6 +203,13 @@ void Solver::add(Field3D &v, const char* name) {
   }else {
     initial_profile(name, v);
   }
+  
+  // Check if the boundary regions should be evolved
+  // First get option from section "All"
+  // then use that as default for specific section
+  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
+  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+
   v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
   
@@ -448,7 +462,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 }
 
 /**************************************************************************
- * Initialisation
+ * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
 int Solver::solve() {
@@ -733,27 +747,41 @@ int Solver::getLocalN() {
   int local_N = (mesh->xend - mesh->xstart + 1) *
     (mesh->yend - mesh->ystart + 1)*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
 
+  //////////// How many variables have evolving boundaries?
+  
+  int n2dbndry = 0;
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    if(it->evolve_bndry)
+      n2dbndry++;
+  }
+  
+  int n3dbndry = 0;
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(it->evolve_bndry)
+      n3dbndry++;
+  }
+
   //////////// Find boundary regions ////////////
   
   // Y up
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
+    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
   }
   
   // Y down
   for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    local_N +=  mesh->ystart * (n2d + ncz * n3d);
+    local_N +=  mesh->ystart * (n2dbndry + ncz * n3dbndry);
   }
   
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
-    local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
+    local_N += mesh->xstart * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
-    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
+    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region outer X\n");
   }
   
@@ -770,10 +798,13 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /**************************************************************************
  * Looping over variables
+ *
+ * NOTE: This part is very inefficient, and should be replaced ASAP
+ * Is the interleaving of variables needed or helpful to the solver?
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op) {
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
   int i;
   int jz;
  
@@ -786,6 +817,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       (*f2d[i].var)(jx, jy) = udata[p];
       p++;
     }
@@ -794,6 +827,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	(*f3d[i].var)(jx, jy, jz) = udata[p];
 	p++;
       }  
@@ -806,6 +841,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       (*f2d[i].F_var)(jx, jy) = udata[p];
       p++;
     }
@@ -814,6 +851,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	(*f3d[i].F_var)(jx, jy, jz) = udata[p];
 	p++;
       }  
@@ -826,6 +865,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       udata[p] = (*f2d[i].var)(jx, jy);
       p++;
     }
@@ -834,6 +875,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	udata[p] = (*f3d[i].var)(jx, jy, jz);
 	p++;
       }  
@@ -845,6 +888,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       udata[p] = (*f2d[i].F_var)(jx, jy);
       p++;
     }
@@ -853,9 +898,11 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	udata[p] = (*f3d[i].F_var)(jx, jy, jz);
 	p++;
-      }  
+      }
     }
     break;
   }
@@ -873,31 +920,31 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   if(mesh->firstX() && !mesh->periodicX) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
+	loop_vars_op(jx, jy+mesh->ystart, udata, p, op, true);
   }
 
   // Lower Y boundary region
   for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(*xi, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
     for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
+      loop_vars_op(jx, jy, udata, p, op, false);
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(*xi, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_vars_op(jx, jy, udata, p, op);
+	loop_vars_op(jx, jy, udata, p, op, true);
   }
 }
 
@@ -1028,32 +1075,32 @@ int Solver::run_rhs(BoutReal t) {
       tmp2 = new BoutReal[nv];
     }
     save_vars(tmp); // Copy variables into tmp
-    pre_rhs();
+    pre_rhs(t);
     if(model) {
       status = model->runConvective(t);
     }else 
       status = (*phys_conv)(t);
-    post_rhs(); // Check variables, apply boundary conditions
+    post_rhs(t); // Check variables, apply boundary conditions
     
     load_vars(tmp); // Reset variables
     save_derivs(tmp); // Save time derivatives
-    pre_rhs();
+    pre_rhs(t);
     if(model) {
       status = model->runDiffusive(t);
     }else
       status = (*phys_diff)(t);
-    post_rhs();
+    post_rhs(t);
     save_derivs(tmp2); // Save time derivatives
     for(int i=0;i<nv;i++)
       tmp[i] += tmp2[i];
     load_derivs(tmp); // Put back time-derivatives
   }else {
-    pre_rhs();
+    pre_rhs(t);
     if(model) {
       status = model->runRHS(t);
     }else
       status = (*phys_run)(t);
-    post_rhs();
+    post_rhs(t);
   }
 
   // If using Method of Manufactured Solutions
@@ -1081,7 +1128,7 @@ int Solver::run_convective(BoutReal t) {
     }else
       status = (*phys_run)(t);
   }
-  post_rhs();
+  post_rhs(t);
   
   rhs_ncalls++;
   
@@ -1098,7 +1145,7 @@ int Solver::run_diffusive(BoutReal t) {
       status = model->runDiffusive(t);
     }else 
       status = (*phys_diff)(t);
-    post_rhs();
+    post_rhs(t);
   }else {
     // Zero if not split
     for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
@@ -1110,22 +1157,22 @@ int Solver::run_diffusive(BoutReal t) {
   return status;
 }
 
-void Solver::pre_rhs() {
+void Solver::pre_rhs(BoutReal t) {
 
   // Apply boundary conditions to the values
   for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
     if(!it->constraint) // If it's not a constraint
-      it->var->applyBoundary();
+      it->var->applyBoundary(t);
   }
   
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
     if(!it->constraint)
-      it->var->applyBoundary();
+      it->var->applyBoundary(t);
   }
   
 }
 
-void Solver::post_rhs() {
+void Solver::post_rhs(BoutReal t) {
 
   // Make sure vectors in correct basis
   for(int i=0;i<v2d.size();i++) {
@@ -1151,12 +1198,12 @@ void Solver::post_rhs() {
 
   // Apply boundary conditions to the time-derivatives
   for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    if(!it->constraint) // If it's not a constraint
+    if(!it->constraint && it->evolve_bndry) // If it's not a constraint and if the boundary is evolving
       it->var->applyTDerivBoundary();
   }
   
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if(!it->constraint)
+    if(!it->constraint && it->evolve_bndry)
       it->var->applyTDerivBoundary();
   }
 

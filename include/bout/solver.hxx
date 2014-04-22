@@ -178,7 +178,8 @@ protected:
       T *MMS_err;        // Error for MMS
       CELL_LOC location; // For fields and vector components
       bool covariant; // For vectors
-      
+      bool evolve_bndry; // Are the boundary regions being evolved?
+
       string name;    // Name of the variable
     };
   
@@ -235,11 +236,11 @@ protected:
   std::list<MonitorFunc> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
-  void pre_rhs(); // Should be run before user RHS is called
-  void post_rhs(); // Should be run after user RHS is called
+  void pre_rhs(BoutReal t); // Should be run before user RHS is called
+  void post_rhs(BoutReal t); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
