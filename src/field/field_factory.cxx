@@ -306,7 +306,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
 
 FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
 
-  output.write("FieldFactory::parse('%s')", input.c_str());
+  //output.write("FieldFactory::parse('%s')", input.c_str());
 
   // Check if in the cache
   

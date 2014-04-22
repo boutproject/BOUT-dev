@@ -54,13 +54,8 @@ int physics_init(bool restarting) {
 int physics_run(BoutReal t) {
   mesh->communicate(N); // Communicate guard cells
 
-  //update time-dependent boundary conditions
-  output.write("APPLYING BOUNDARY\n");
-  N.applyBoundary(t);
-
   ddt(N) = mu_N* D2DX2(N);
   
-  output.write("FINISHED RHS\n");
   return 0;
 }
 
