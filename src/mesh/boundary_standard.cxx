@@ -186,9 +186,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz, t);
+	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
 	    f(bndry->x,bndry->y, zk) = val;
 	    
@@ -205,9 +205,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz, t);
+	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
@@ -232,9 +232,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz, t);
+	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
 	    f(bndry->x,bndry->y,zk) = val;
 	  }
@@ -250,9 +250,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz, t);
+	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
@@ -276,9 +276,9 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
     for(int zk=0;zk<mesh->ngz-1;zk++) {
       BoutReal val;
       if(gen) {
-	val = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz, t);
+	val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
       }else {
-	val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
       }
       
       f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
@@ -684,9 +684,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d;
 	    if(gen) {
-	      d = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz,t) * mesh->dx(bndry->x, bndry->y);
+	      d = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x, bndry->y);
 	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x, bndry->y);
+	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dx(bndry->x, bndry->y);
 	  
 	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*d)/3.;
 	  }
@@ -703,9 +703,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	    BoutReal d;
 	    
 	    if(gen) {
-	      d = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz,t) * mesh->dx(bndry->x - bndry->bx, bndry->y);
+	      d = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x - bndry->bx, bndry->y);
 	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dx(bndry->x - bndry->bx, bndry->y);
+	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dx(bndry->x - bndry->bx, bndry->y);
 	  
 	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*d)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
@@ -728,9 +728,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d;
 	    if(gen) {
-	      d = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz,t) * mesh->dy(bndry->x, bndry->y);
+	      d = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y);
 	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y);
+	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dy(bndry->x, bndry->y);
 	    
 	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*d)/3.;
 	  }
@@ -745,9 +745,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal d;
 	    if(gen) {
-	      d = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz,t) * mesh->dy(bndry->x, bndry->y - bndry->by);
+	      d = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz) * mesh->dy(bndry->x, bndry->y - bndry->by);
+	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dy(bndry->x, bndry->y - bndry->by);
 	    
 	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*d)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
@@ -772,9 +772,9 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
       //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
       BoutReal d;
       if(gen) {
-	d = gen->generate(xnorm,ynorm,(BoutReal)zk*mesh->dz,t);
+	d = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1),t);
       }else
-	d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,(BoutReal)zk*mesh->dz);
+	d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
       
       f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*d;
     }
