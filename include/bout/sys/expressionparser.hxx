@@ -46,6 +46,7 @@ public:
   virtual ~FieldGenerator() { }
   virtual FieldGenerator* clone(const std::list<FieldGenerator*> args) {return NULL;}
   virtual double generate(double x, double y, double z, double t) = 0;
+  virtual const std::string str() {return std::string("?");}
 };
 
 class ExpressionParser {
@@ -107,6 +108,8 @@ public:
   FieldBinary(FieldGenerator* l, FieldGenerator* r, char o) : lhs(l), rhs(r), op(o) {}
   FieldGenerator* clone(const std::list<FieldGenerator*> args);
   double generate(double x, double y, double z, double t);
+
+  const std::string str() {return std::string("(")+lhs->str()+std::string(1,op)+rhs->str()+std::string(")");}
 private:
   FieldGenerator *lhs, *rhs;
   char op;
@@ -118,6 +121,11 @@ public:
   FieldValue(double val) : value(val) {}
   FieldGenerator* clone(const std::list<FieldGenerator*> args) { return new FieldValue(value); }
   double generate(double x, double y, double z, double t) { return value; }
+  const std::string str() {
+    std::stringstream ss;
+    ss << value;
+    return ss.str();
+  }
 private:
   double value;
 };

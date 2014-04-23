@@ -47,6 +47,7 @@ namespace { // These classes only visible in this file
     double generate(double x, double y, double z, double t) {
       return x;
     }
+    const std::string str() {return std::string("x");}
   };
   
   class FieldY : public FieldGenerator {
@@ -55,6 +56,7 @@ namespace { // These classes only visible in this file
     double generate(double x, double y, double z, double t) {
       return y;
     }
+    const std::string str() {return std::string("y");}
   };
 
   class FieldZ : public FieldGenerator {
@@ -63,6 +65,7 @@ namespace { // These classes only visible in this file
     double generate(double x, double y, double z, double t) {
       return z;
     }
+    const std::string str() {return std::string("z");}
   };
   
   class FieldT : public FieldGenerator {
@@ -71,6 +74,7 @@ namespace { // These classes only visible in this file
     double generate(double x, double y, double z, double t) {
       return t;
     }
+    const std::string str() {return std::string("t");}
   };
 
   /// Unary minus
@@ -87,6 +91,7 @@ namespace { // These classes only visible in this file
     double generate(double x, double y, double z, double t) {
       return -gen->generate(x,y,z,t);
     }
+    const std::string str() {return std::string("(-")+gen->str()+std::string(")");}
   private:
     FieldGenerator *gen;
   };
@@ -257,57 +262,58 @@ FieldGenerator* ExpressionParser::parsePrimary(LexInfo &lex) {
 }
 
 FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGenerator* lhs) {
-  // Check for end of input
-  if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ','))
-    return lhs;
-
-  // Next token should be a binary operator
-  map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(lex.curtok);
   
-  if(it == bin_op.end())
-    throw ParseException("Unexpected binary operator '%c'", lex.curtok);
-  
-  FieldGenerator* op = it->second.first;
-  int TokPrec = it->second.second;
-  
-  if (TokPrec < ExprPrec)
-    return lhs;
-  
-  lex.nextToken(); // Eat binop
-  
-  FieldGenerator* rhs = parsePrimary(lex);
-  if(!rhs)
-    return NULL;
-
-  if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
-    // Done
+  while(true) {
+    // Check for end of input
+    if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ','))
+      return lhs;
     
+    // Next token should be a binary operator
+    map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(lex.curtok);
+    
+    if(it == bin_op.end())
+      throw ParseException("Unexpected binary operator '%c'", lex.curtok);
+    
+    FieldGenerator* op = it->second.first;
+    int TokPrec = it->second.second;
+  
+    if (TokPrec < ExprPrec)
+      return lhs;
+    
+    lex.nextToken(); // Eat binop
+    
+    FieldGenerator* rhs = parsePrimary(lex);
+    if(!rhs)
+      return NULL;
+    
+    if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
+      // Done
+    
+      list<FieldGenerator*> args;
+      args.push_front(lhs);
+      args.push_back(rhs);
+      return record( op->clone(args) );
+    }
+    
+    // Find next binop
+    it = bin_op.find(lex.curtok);
+    
+    if(it == bin_op.end())
+      throw ParseException("Unexpected character '%c'", lex.curtok);
+    
+    int NextPrec = it->second.second;
+    if (TokPrec < NextPrec) {
+      rhs = parseBinOpRHS(lex, TokPrec+1, rhs);
+      if(!rhs)
+	return 0;
+    }
+    
+    // Merge lhs and rhs into new lhs
     list<FieldGenerator*> args;
     args.push_front(lhs);
     args.push_back(rhs);
-    return record( op->clone(args) );
+    lhs = record( op->clone(args) );
   }
-    
-  // Find next binop
-  it = bin_op.find(lex.curtok);
-  
-  if(it == bin_op.end())
-    throw ParseException("Unexpected character '%c'", lex.curtok);
-  
-  int NextPrec = it->second.second;
-  if (TokPrec < NextPrec) {
-    rhs = parseBinOpRHS(lex, TokPrec+1, rhs);
-    if(!rhs)
-      return 0;
-  }
-  
-  // Merge lhs and rhs into new lhs
-  list<FieldGenerator*> args;
-  args.push_front(lhs);
-  args.push_back(rhs);
-  lhs = record( op->clone(args) );
-  
-  return parseBinOpRHS(lex, 0, lhs);
 }
 
 FieldGenerator* ExpressionParser::parseExpression(LexInfo &lex) {
