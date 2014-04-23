@@ -18,17 +18,6 @@ class Laplacian* phiSolver; // Laplacian solver for vort -> phi
 // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE
 BRACKET_METHOD bm; // Bracket method for advection terms
 
-// Simple implementation of 4th order perpendicular Laplacian
-Field3D Delp4(const Field3D &var) {
-  Field3D tmp;
-  tmp = Delp2(var, 0.0);
-  mesh->communicate(tmp);
-  tmp.applyBoundary("neumann");
-  return Delp2(tmp, 0.0);
-  
-  //return Delp2(var);
-}
-
 int physics_init(bool restart) {
   
   Options *options = Options::getRoot()->getSection("hw");
@@ -48,7 +37,7 @@ int physics_init(bool restart) {
   /*this assumes equidistant grid*/
   int nguard = mesh->xstart;
   mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->dz = TWOPI*Lx/(mesh->GlobalNx - 2*nguard);
+  mesh->dz = TWOPI*Lx/(mesh->ngz-1);
   /////
 
   SOLVE_FOR2(n, vort);
@@ -91,6 +80,16 @@ int physics_init(bool restart) {
   return 0;
 }
 
+const Field3D bracketTest(const Field3D &f, const Field3D &g) {
+  return DDZ(f)*DDX(g) - DDZ(g)*DDX(f);
+  //return bracket(f, g, bm) 
+}
+
+const Field3D Delp2mod(const Field3D &f) {
+  return D2DX2(f) + D2DZ2(f);
+  //return Delp2(f,0.0);
+}
+
 int physics_run(BoutReal time) {
   
   // Solve for potential
@@ -110,16 +109,16 @@ int physics_run(BoutReal time) {
   }
   
   ddt(n) = 
-    - bracket(phi, n, bm) 
+    - bracketTest(phi, n)//bracket(phi, n, bm) 
     + alpha*(nonzonal_phi - nonzonal_n)
     - kappa*DDZ(phi)
-    //- Dn*Delp4(n)
+    + Dn*Delp2mod(n)
     ;
   
   ddt(vort) = 
-    - bracket(phi, vort, bm)
+    - bracketTest(phi, vort)//bracket(phi, vort, bm)
     + alpha*(nonzonal_phi - nonzonal_n)
-    //- Dvort*Delp4(vort)
+    + Dvort*Delp2mod(vort)
     ;
   
   return 0;

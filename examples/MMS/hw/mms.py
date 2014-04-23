@@ -47,8 +47,8 @@ def Delp4(f):
 # Parameters
 alpha = 1.0
 kappa = 0.5
-Dn = 0.0
-Dvort = 0.0
+Dn = 1.0
+Dvort = 1.0
 
 # Define symbols
 
@@ -74,13 +74,13 @@ dndt = (
       - bracket(phi, n)
       + alpha*(phi - n)
       - kappa*DDZ(phi)
-   #   - Dn*Delp4(n)
+      + Dn*Delp2(n)
       )
 
 dvortdt = (
       - bracket(phi, vort)
       + alpha*(phi - n)
-   #   - Dvort*Delp4(vort)
+      + Dvort*Delp2(vort)
       )
 
 # Calculate sources
