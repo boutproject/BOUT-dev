@@ -1,0 +1,76 @@
+timestep = 0.1
+nout = 10
+
+MZ = 33
+zmin = 0
+zmax = 8 # Overwritten in hw.cxx
+
+mxg = 1
+myg = 0  # No need for Y communications
+
+xl = x * mesh:Lx # A "global" setting, so can be used anywhere
+zl = z * mesh:Lx
+
+[output]
+floats = false # -> Output in double precision
+
+[mesh]
+
+symmetricGlobalX = true
+
+Lx = 1
+
+nx = 36
+ny = 1
+
+[laplace]
+
+flags = 0   # Flags for Laplacian inversion
+
+[solver]
+type = pvode
+
+mms = true
+
+atol = 1e-15
+rtol = 1e-7
+
+[hw]
+
+alpha = 1.0
+kappa = 0.5
+Dvort = 0.0
+Dn    = 0.0
+
+modified = false
+
+bracket = 1  # 0 = std, 1 = simple, 2 = arakawa
+
+[All]
+scale = 1.0
+
+[n]
+
+solution = 0.9*xl + 0.2*sin(5.0*xl^2 - 2*zl)*cos(10*t) + 0.9
+
+source = 0.4*xl + 0.4*(0.5 - 6.0*xl*cos(7*t)*cos(3.0*xl^2 - 3*zl))*cos(10*t)*cos(5.0*xl^2 - 2*zl) + 3*(2.0*xl*cos(10*t)*cos(5.0*xl^2 - 2*zl) + 0.9)*cos(7*t)*cos(3.0*xl^2 - 3*zl) - 2.0*sin(10*t)*sin(5.0*xl^2 - 2*zl) + sin(3.0*xl^2 - 3*zl)*cos(7*t) + 0.2*sin(5.0*xl^2 - 2*zl)*cos(10*t) + 1.5*cos(7*t)*cos(3.0*xl^2 - 3*zl) + 0.9
+
+# Alpha term + DDZ
+#source = 0.4*xl - 2.0*sin(10*t)*sin(5.0*xl^2 - 2*zl) + sin(3.0*xl^2 - 3*zl)*cos(7*t) + 0.2*sin(5.0*xl^2 - 2*zl)*cos(10*t) + 1.5*cos(7*t)*cos(3.0*xl^2 - 3*zl) + 0.9
+
+bndry_all = dirichlet_o2(n:solution)
+
+[vort]
+
+solution = 0.7*xl + 0.2*sin(2.0*xl^2 - 3*zl)*cos(7*t) + 0.9
+
+source = 0.4*xl + 3*(0.8*xl*cos(7*t)*cos(2.0*xl^2 - 3*zl) + 0.7)*cos(7*t)*cos(3.0*xl^2 - 3*zl) + 0.6*(-6.0*xl*cos(7*t)*cos(3.0*xl^2 - 3*zl) + 0.5)*cos(7*t)*cos(2.0*xl^2 - 3*zl) - 1.4*sin(7*t)*sin(2.0*xl^2 - 3*zl) + sin(3.0*xl^2 - 3*zl)*cos(7*t) + 0.2*sin(5.0*x^2 - 2*zl)*cos(10*t) + 0.9
+
+# Alpha & kappa terms
+#source   = 0.4*xl - 1.4*sin(7*t)*sin(2.0*xl^2 - 3*zl) + 1.0*sin(3.0*xl^2 - 3*zl)*cos(7*t) + 0.2*sin(5.0*xl^2 - 2*zl)*cos(10*t) + 0.9
+
+bndry_all = dirichlet_o2(vort:solution)
+
+[phi]
+
+solution = 0.5*xl - sin(3.0*xl^2 - 3*zl)*cos(7*t)
