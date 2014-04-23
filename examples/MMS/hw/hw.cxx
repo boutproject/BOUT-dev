@@ -38,6 +38,7 @@ int physics_init(bool restart) {
   int nguard = mesh->xstart;
   mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
   mesh->dz = TWOPI*Lx/(mesh->ngz-1);
+  mesh->zlength = TWOPI*Lx;
   /////
 
   SOLVE_FOR2(n, vort);
@@ -80,16 +81,6 @@ int physics_init(bool restart) {
   return 0;
 }
 
-const Field3D bracketTest(const Field3D &f, const Field3D &g) {
-  return DDZ(f)*DDX(g) - DDZ(g)*DDX(f);
-  //return bracket(f, g, bm) 
-}
-
-const Field3D Delp2mod(const Field3D &f) {
-  return D2DX2(f) + D2DZ2(f);
-  //return Delp2(f,0.0);
-}
-
 int physics_run(BoutReal time) {
   
   // Solve for potential
@@ -109,16 +100,16 @@ int physics_run(BoutReal time) {
   }
   
   ddt(n) = 
-    - bracketTest(phi, n)//bracket(phi, n, bm) 
+    - bracket(phi, n, bm) 
     + alpha*(nonzonal_phi - nonzonal_n)
     - kappa*DDZ(phi)
-    + Dn*Delp2mod(n)
+    + Dn*Delp2(n)
     ;
   
   ddt(vort) = 
-    - bracketTest(phi, vort)//bracket(phi, vort, bm)
+    - bracket(phi, vort, bm)
     + alpha*(nonzonal_phi - nonzonal_n)
-    + Dvort*Delp2mod(vort)
+    + Dvort*Delp2(vort)
     ;
   
   return 0;
