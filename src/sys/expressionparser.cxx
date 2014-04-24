@@ -251,8 +251,10 @@ FieldGenerator* ExpressionParser::parsePrimary(LexInfo &lex) {
   }
   case '-': {
     // Unary minus
-    lex.nextToken(); // Eat '-'
-    return record( new FieldUnary(parsePrimary(lex)) );
+    //lex.nextToken(); // Eat '-'
+    //return record( new FieldUnary(parsePrimary(lex)) );
+    // Don't eat the minus, and return an implicit zero
+    return record( new FieldValue(0.0) );
   }
   case '(':
   case '[':
