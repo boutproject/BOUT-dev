@@ -42,6 +42,12 @@ def Delp4(f):
 
     return d4fdx4 + d4fdz4
 
+def exprToStr(expr):
+    """ Convert a sympy expression to a string for BOUT++ input
+    """
+    return str(expr).replace("**", "^") # Replace exponent operator
+
+
 ####
 
 # Parameters
@@ -55,12 +61,13 @@ Dvort = 1.0
 x = symbols('x')
 z = symbols('z')
 t = symbols('t')
+pi = symbols('pi')
 
 # Define the manufactured solution
 
 n = 0.9 + 0.9*x + 0.2*cos(10*t)*sin(5.*x**2 - 2*z)
 vort = 0.9 + 0.7*x + 0.2*cos(7*t)*sin(2.*x**2 - 3*z)
-phi = 0.5*x - cos(7*t)*sin(3.*x**2 - 3*z)
+phi = sin(pi*x) *(0.5*x - cos(7*t)*sin(3.*x**2 - 3*z)) # Must satisfy Dirichlet BCs for now
 
 # Calculate gradients in x for boundaries
 
@@ -92,17 +99,17 @@ Sphi = Delp2(phi) - vort
 
 #######################
 
-print("N:")
-print("solution = " + str(n))
-print("d/dx     = " + str(dndx))
-print("source   = " + str(Sn))
+print("[n]")
+print("solution = " + exprToStr(n))
+print("\nddx     = " + exprToStr(dndx))
+print("\nsource   = " + exprToStr(Sn))
 
-print("\nVort:")
-print("solution = " + str(vort))
-print("d/dx     = " + str(dvortdx))
-print("source   = " + str(Svort))
+print("\n[vort]")
+print("solution = " + exprToStr(vort))
+print("\nddx     = " + exprToStr(dvortdx))
+print("\nsource   = " + exprToStr(Svort))
 
-print("\nPhi:")
-print("solution = " + str(phi))
-print("d/dx     = " + str(dphidx))
-print("source   = " + str(Sphi))
+print("\n[phi]")
+print("solution = " + exprToStr(phi))
+print("\nddx     = " + exprToStr(dphidx))
+print("\nsource   = " + exprToStr(Sphi))

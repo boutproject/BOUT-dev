@@ -83,9 +83,9 @@ int physics_init(bool restart) {
 
 int physics_run(BoutReal time) {
   
-  // Solve for potential
-  //phi = phiSolver->solve(vort, phi);
-  phi = FieldFactory::get()->create3D("phi:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
+  // Solve for potential, adding a source term
+  Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, time);
+  phi = phiSolver->solve(vort + phiS, phi);
   
   // Communicate variables
   mesh->communicate(n, vort, phi);
