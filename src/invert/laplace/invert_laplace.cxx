@@ -299,7 +299,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   
   int inbndry = 2, outbndry=2;
   
-  if(flags & INVERT_BNDRY_ONE) {
+  if((flags & INVERT_BNDRY_ONE) || (mesh->xstart < 2)) {
     inbndry = outbndry = 1;
   }
   if(flags & INVERT_BNDRY_IN_ONE)
@@ -365,12 +365,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
             cvec[ix] = -exp(-k*mesh->dx(ix,jy)/sqrt(mesh->g11(ix,jy)));
           }
             
-        }else {
-          // Zero value at inner boundary or INVERT_IN_SET
+        }else if (flags & (INVERT_IN_RHS | INVERT_IN_SET)) {
           for (int ix=0;ix<inbndry;ix++){
             avec[ix] = 0.;
             bvec[ix] = 1.;
             cvec[ix] = 0.;
+          }
+	}else {
+          // Zero value at inner boundary
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix] = 0.;
+            bvec[ix] = 1.;
+            cvec[ix] = 1.;
           }
         }
 	  
@@ -391,12 +397,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
             bvec[ix] = 1.0;
             cvec[ix] = -exp(-1.0*sqrt(mesh->g33[ix][jy]/mesh->g11[ix][jy])*kwave*mesh->dx[ix][jy]);
           }
-        }else {
-          // Zero value at inner boundary or INVERT_IN_SET
+        }else if (flags & (INVERT_IN_RHS | INVERT_IN_SET)) {
           for (int ix=0;ix<inbndry;ix++){
-            avec[ix]=dcomplex(0.,0.);
-            bvec[ix]=dcomplex(1.,0.);
-            cvec[ix]=dcomplex(0.,0.);
+            avec[ix] = 0.;
+            bvec[ix] = 1.;
+            cvec[ix] = 0.;
+          }
+	}else {
+          // Zero value at inner boundary
+          for (int ix=0;ix<inbndry;ix++){
+            avec[ix] = 0.;
+            bvec[ix] = 1.;
+            cvec[ix] = 1.;
           }
         }
       }
@@ -420,12 +432,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
             bvec[ncx-ix]=dcomplex(1.,0.);
             avec[ncx-ix]=dcomplex(-1.,0.);
           }
-        }else {
-          // Zero value at outer boundary or INVERT_OUT_SET
+        }else if (flags & (INVERT_OUT_RHS | INVERT_OUT_SET)) {
+          for (int ix=0;ix<inbndry;ix++){
+            cvec[ncx-ix] = 0.;
+            bvec[ncx-ix] = 1.;
+	    avec[ncx-ix] = 0.;
+          }
+	}else {
+          // Zero value at outer boundary
           for (int ix=0;ix<outbndry;ix++){
-            cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.,0.);
-            avec[ncx-ix]=dcomplex(0.,0.);
+            cvec[ncx-ix] = 0.; 
+            bvec[ncx-ix] = 1.;
+            avec[ncx-ix] = 1.;
           }
         }
       }else {
@@ -445,12 +463,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
             bvec[ncx-ix] = 1.0;
             cvec[ncx-ix] = 0.0;
           }
-        }else {
-          // Zero value at outer boundary or LAPLACE_OUT_SET
+        }else if (flags & (INVERT_OUT_RHS | INVERT_OUT_SET)) {
+          for (int ix=0;ix<inbndry;ix++){
+            cvec[ncx-ix] = 0.;
+            bvec[ncx-ix] = 1.;
+	    avec[ncx-ix] = 0.;
+          }
+	}else {
+          // Zero value at outer boundary
           for (int ix=0;ix<outbndry;ix++){
-            cvec[ncx-ix]=dcomplex(0.,0.);
-            bvec[ncx-ix]=dcomplex(1.0,0.);
-            avec[ncx-ix]=dcomplex(0.,0.);
+            cvec[ncx-ix] = 0.; 
+            bvec[ncx-ix] = 1.; 
+            avec[ncx-ix] = 1.; 
           }
         }
       }
