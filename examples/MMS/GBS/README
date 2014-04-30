@@ -1,0 +1,51 @@
+Cold ion flux-driven turbulence model
+
+
+Simulations
+===========
+
+blob2d  - Single blob in square domain.
+          No parallel dynamics
+          All inputs in BOUT.inp
+
+   $ ./gbs -d blob2d
+
+
+slab2d  - Constant source flux-driven
+          simulation in 2D (no parallel dynamics)
+          All inputs in BOUT.inp
+
+   $ ./gbs -d slab2d
+
+circle2d - Axisymmetric simulation of large
+           aspect-ratio circular cross-section
+           tokamak. No parallel dynamics.
+
+   $ python
+   >>> import circle
+   >>> circle.generate(68,1)
+
+   $ ./gbs -d circle2d
+
+   This generates a file circle.nc with one y point
+   which for this geometry means only one point in toroidal angle.
+   
+   Y is parallel 
+   Z is in the poloidal direction, rather than toroidal.
+   
+circle  - 3D turbulence simulation in large
+          aspect-ratio circular cross-section
+          tokamak.
+
+   $ python
+   >>> import circle
+   >>> circle.generate(68,16)
+
+   $ mpirun -np 4 ./gbs -d circle
+
+   Output "circle.nc" has 16 points in toroidal angle
+   (parallel direction).
+
+MMS Tests
+=========
+
