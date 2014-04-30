@@ -29,9 +29,9 @@ class BoundaryOp {
   
   /// Apply a boundary condition on field f
   virtual void apply(Field2D &f) = 0;
-  virtual void apply(Field2D &f,BoutReal t){};//JMAD
+  virtual void apply(Field2D &f,BoutReal t){return apply(f);}//JMAD
   virtual void apply(Field3D &f) = 0;
-  virtual void apply(Field3D &f,BoutReal t){};//JMAD
+  virtual void apply(Field3D &f,BoutReal t){return apply(f);}//JMAD
   
   virtual void apply(Vector2D &f) {
     apply(f.x);
