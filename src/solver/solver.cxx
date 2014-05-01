@@ -1173,7 +1173,12 @@ void Solver::pre_rhs(BoutReal t) {
 }
 
 void Solver::post_rhs(BoutReal t) {
-
+#ifdef CHECK
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(!it->F_var->isAllocated())
+      throw BoutException("Time derivative for '%s' not set", it->name.c_str());
+  }
+#endif
   // Make sure vectors in correct basis
   for(int i=0;i<v2d.size();i++) {
     if(v2d[i].covariant) {
@@ -1206,11 +1211,13 @@ void Solver::post_rhs(BoutReal t) {
     if(!it->constraint && it->evolve_bndry)
       it->var->applyTDerivBoundary();
   }
-
-#ifdef CHECK
+#if CHECK > 2
   msg_stack.push("Solver checking time derivatives");
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    msg_stack.push("Variable: %s", it->name.c_str());
     it->F_var->checkData();
+    msg_stack.pop();
+  }
   msg_stack.pop();
 #endif
 }
