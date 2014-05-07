@@ -150,7 +150,7 @@ class DataFile:
                                    ranges[2]:ranges[3],
                                    ranges[4]:ranges[5]]
                     elif ndims == 4:
-                        print "Ranges = ", ranges
+                        #print "Ranges = ", ranges
                         data = var[(ranges[0]):(ranges[1]),
                                    (ranges[2]):(ranges[3]),
                                    (ranges[4]):(ranges[5]),

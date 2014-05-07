@@ -7,7 +7,7 @@
 
 Field3D N;
 
-BoutReal mu_N; // Parallel collisional diffusion coefficient
+BoutReal Dx, Dy, Dz;
 BoutReal Lx, Ly, Lz;
 
 int physics_init(bool restarting) {
@@ -18,16 +18,20 @@ int physics_init(bool restarting) {
   meshoptions->get("Ly",Ly,1.0);
 
   /*this assumes equidistant grid*/
-  int nguard = mesh->xstart;
-  mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
-  mesh->dy = Ly/(mesh->GlobalNy - 2*nguard);
+  mesh->dx = Lx/(mesh->GlobalNx - 2*mesh->xstart);
+  
+  mesh->dy = Ly/(mesh->GlobalNy - 2*mesh->ystart);
+  
+  output.write("SIZES: %d, %d, %e\n", mesh->GlobalNy, (mesh->GlobalNy - 2*mesh->ystart), mesh->dy(0,0));
 
   SAVE_ONCE2(Lx,Ly);
 
   Options *cytooptions = Options::getRoot()->getSection("cyto");
-  cytooptions->get("dis", mu_N, 1);
+  OPTION(cytooptions, Dx, 1.0);
+  OPTION(cytooptions, Dy, -1.0);
+  OPTION(cytooptions, Dz, -1.0);
 
-  SAVE_ONCE(mu_N);
+  SAVE_ONCE3(Dx, Dy, Dz);
 
   //set mesh
   mesh->g11 = 1.0;
@@ -54,7 +58,16 @@ int physics_init(bool restarting) {
 int physics_run(BoutReal t) {
   mesh->communicate(N); // Communicate guard cells
 
-  ddt(N) = mu_N* D2DX2(N);
+  ddt(N) = 0.0;
+  
+  if(Dx > 0.0)
+    ddt(N) += Dx * D2DX2(N);
+  
+  if(Dy > 0.0)
+    ddt(N) += Dy * D2DY2(N);
+  
+  if(Dz > 0.0)
+    ddt(N) += Dz * D2DZ2(N);
   
   return 0;
 }

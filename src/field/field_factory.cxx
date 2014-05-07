@@ -146,6 +146,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   if(m == NULL)
     throw BoutException("Not a valid mesh");
 
+  // Parse expression to create a tree of generators
   FieldGenerator* gen = parse(value, opt);
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
