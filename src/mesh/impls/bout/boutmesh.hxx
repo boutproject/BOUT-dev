@@ -159,6 +159,7 @@ class BoutMesh : public Mesh {
   //int  TwistOrder;   // Order of twist-shift interpolation
   
   bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
+  bool symmetricGlobalY;
 
   int  zperiod; 
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)

@@ -53,6 +53,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
     options = Options::getRoot()->getSection("mesh");
   
   OPTION(options, symmetricGlobalX,  false);
+  OPTION(options, symmetricGlobalY,  false);
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -120,15 +121,16 @@ int BoutMesh::load() {
   }
 
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
-
-  // Set global grid sizes
-  GlobalNx = nx;
-  GlobalNy = ny + 4;
-  GlobalNz = MZ;
-
+  
+  // Get guard cell sizes
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   
+  // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 2*MYG;
+  GlobalNz = MZ;
+
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;
@@ -3129,6 +3131,19 @@ BoutReal BoutMesh::GlobalX(int jx) const {
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
+  if(symmetricGlobalY) {
+    BoutReal yi = YGLOBAL(jy);
+    int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+    
+    if(yi < ny_inner) {
+      yi -= jyseps1_1 + 0.5;
+    }else {
+      // Result in core between 0.5 and 1.0
+      yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+    }
+    return yi / nycore;
+  }
+
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 
