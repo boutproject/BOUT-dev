@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 # Python script to run and analyse MMS test
+#
+# Outputs PDF figures in each subdirectory
+# Checks that the convergence is 2nd order
+# Exits with status 1 if any test failed
+ 
 
 from __future__ import division
 
@@ -8,6 +13,10 @@ from boututils import shell,launch,getmpirun
 from boutdata import collect
 
 from numpy import sqrt, max, abs, mean, array, log
+
+from os.path import join
+
+import matplotlib.pyplot as plt
 
 MPIRUN = getmpirun()
 
@@ -17,16 +26,19 @@ shell("make > make.log")
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
-    ("Y",["mesh:ny"])
+    ("Y",["mesh:ny"]),
+    ("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
     ]
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64, 128]
+nxlist = [4, 8, 16, 32, 64] #, 128]
 
 nout = 1
 timestep = 0.1
 
-nproc = 1
+nproc = 2
+
+success = True
 
 for dir,sizes in inputs:
     print("Running test in '%s'" % (dir))
@@ -68,17 +80,22 @@ for dir,sizes in inputs:
         
     # Calculate grid spacing
     dx = 1. / (array(nxlist) - 2.)
-        
-    # plot errors
 
-    import matplotlib.pyplot as plt
-
-    plt.plot(dx, error_2, '-o', label=r'$l^2$')
-    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-
+    # Calculate convergence order
     
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
+
+    if order < 1.5:
+        print("=> FAILED\n")
+        success = False
+    
+    # plot errors
+
+    plt.figure()
+    
+    plt.plot(dx, error_2, '-o', label=r'$l^2$')
+    plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
     
     plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
     
@@ -91,7 +108,14 @@ for dir,sizes in inputs:
     plt.xlabel(r'Mesh spacing $\delta x$')
     plt.ylabel("Error norm")
     
-    plt.savefig("norm.pdf")
-    
-    plt.show()
+    plt.savefig(join(dir,"norm.pdf"))
 
+    #plt.show()
+    plt.close()
+
+if success:
+  print " => All tests passed"
+  exit(0)
+else:
+  print " => Some failed tests"
+  exit(1)
