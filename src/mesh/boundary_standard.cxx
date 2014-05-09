@@ -92,7 +92,13 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				 + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
-	  f(bndry->x,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+          BoutReal val;
+          if(gen) {
+            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }else
+            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+          
+	  f(bndry->x,bndry->y) = val;
 	}
       }else {
 	// Inner boundary. Set one point inwards
@@ -101,7 +107,13 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
-	  f(bndry->x - bndry->bx,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+          BoutReal val;
+          if(gen) {
+            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }else
+            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+          
+	  f(bndry->x - bndry->bx,bndry->y) = val;
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
 	}
       }
@@ -118,7 +130,12 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				 + mesh->GlobalY(bndry->y - bndry->by) );
-	  f(bndry->x,bndry->y) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+          BoutReal val;
+          if(gen) {
+            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }else
+            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+	  f(bndry->x,bndry->y) = val;
 	}
       }else {
 	// Inner boundary. Set one point inwards
@@ -128,7 +145,13 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  
-	  f(bndry->x,bndry->y - bndry->by) = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
+          BoutReal val;
+          if(gen) {
+            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }else
+            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+          
+	  f(bndry->x,bndry->y - bndry->by) = val;
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
 	}
       }
@@ -146,9 +169,15 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
     BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
                            + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
     
-    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-    f(bndry->x,bndry->y) = 2* (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.)
-      - f(bndry->x-bndry->bx, bndry->y-bndry->by);
+    BoutReal val;
+    if(gen) {
+      val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
+    }else {
+      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
+      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+    }
+
+    f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
   }
 }
 
@@ -186,7 +215,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
 	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
@@ -205,7 +234,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    BoutReal val;
 	    if(gen) {
-	      val = gen->generate(xnorm,ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    }else
 	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
 	    
