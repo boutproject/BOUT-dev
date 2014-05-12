@@ -79,6 +79,7 @@ using std::string;
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
 #define SOLVEREULER       "euler"
+#define SOLVERRK3SSP      "rk3ssp"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -98,7 +99,7 @@ class Solver {
   // Old API
   
   void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
-  virtual void setPrecon(PhysicsPrecon f) {} ///< Specify a preconditioner (optional)
+  void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
   
@@ -206,6 +207,9 @@ protected:
   bool monitor_timestep; ///< Should timesteps be monitored?
   int call_timestep_monitors(BoutReal simtime, BoutReal lastdt);
 
+  bool have_user_precon(); // Do we have a user preconditioner?
+  int run_precon(BoutReal t, BoutReal gamma, BoutReal delta);
+  
   // Loading data from BOUT++ to/from solver
   void load_vars(BoutReal *udata);
   void load_derivs(BoutReal *udata);
@@ -217,6 +221,7 @@ protected:
   PhysicsModel *model;    ///< physics model being evolved
   
   rhsfunc phys_run;       ///< The user's RHS function
+  PhysicsPrecon prefunc;  // Preconditioner
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
   
