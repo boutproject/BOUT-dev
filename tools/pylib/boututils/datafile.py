@@ -224,7 +224,7 @@ class DataFile:
             data = np.array(data)
             t = data.dtype.str
 
-        if (t == 'int') or (t == '<i8'):
+        if (t == 'int') or (t == '<i8') or (t == 'int64') :
             # NetCDF 3 does not support type int64
             data = np.int32(data)
             t = data.dtype.str
