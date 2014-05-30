@@ -13,6 +13,23 @@ from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata import collect
 
+
+####################################################################
+# Specify ffmpeg path
+plt.rcParams['animation.ffmpeg_path'] = '/opt/local/bin/ffmpeg'
+
+FFwriter = animation.FFMpegWriter()
+####################################################################
+
+
+###################
+#http://stackoverflow.com/questions/16732379/stop-start-pause-in-python-matplotlib-animation
+#
+j=-2
+pause = False
+###################
+
+
 def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = []):
     """
     A Function to animate time dependent data from BOUT++
@@ -437,25 +454,44 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             xstride.append(0)
             ystride.append(0)
 
+   
+
+    def onClick(event):
+        global pause
+        pause ^= True
+
+
+    def control():
+        global j, pause
+        if j == Nframes-1 : j = -1
+        if not pause:
+            j=j+1
+        
+        return j
+
+
     # Animation function
     def animate(i):
-        index = i*intv
-        for j in range(0,Nvar):
-            if (lineplot[j] == 1):
-                for k in range(0,Nlines[j]):
-                    lines[j][k].set_data(x[j][k], vars[j][k][index,:])
-            elif (contour[j] == 1):
-                plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
-            elif (surf[j] == 1):
-                ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
-                plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][i,:,:].T, rstride=ystride[j], cstride=xstride[j])
-                ax[j].set_zlim(fmin[j],fmax[j])
-                ax[j].set_xlabel(r'x')
-                ax[j].set_ylabel(r'y')
-                ax[j].set_title(titles[j])
-            elif (polar[j] == 1):
-                plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][i,:,:].T, levels=clevels[j])
-                ax[j].set_rmax(Nx[j][0]-1)
+        j=control()
+        
+        index = j*intv
+
+        for j in range(0,Nvar):            
+                if (lineplot[j] == 1):
+                    for k in range(0,Nlines[j]):
+                        lines[j][k].set_data(x[j][k], vars[j][k][index,:])
+                elif (contour[j] == 1):
+                    plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
+                elif (surf[j] == 1):
+                    ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
+                    plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][i,:,:].T, rstride=ystride[j], cstride=xstride[j])
+                    ax[j].set_zlim(fmin[j],fmax[j])
+                    ax[j].set_xlabel(r'x')
+                    ax[j].set_ylabel(r'y')
+                    ax[j].set_title(titles[j])
+                elif (polar[j] == 1):
+                    plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][i,:,:].T, levels=clevels[j])
+                    ax[j].set_rmax(Nx[j][0]-1)
 
         if (tslice == 0):
             title.set_text('t = %1.2e' % t[index])
@@ -463,18 +499,36 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             title.set_text('t = %i' % index)
         return plots
 
+    def init():
+        global j, pause
+        j=-2
+        pause = False
+        return animate(0)
+
+
+   
+   
+   
    
     # Call Animation function
-    anim = animation.FuncAnimation(fig, animate, frames=Nframes)
+    
+    fig.canvas.mpl_connect('button_press_event', onClick)
+    anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
     # Save movie with given name
     if ((isinstance(movie,basestring)==1)):
-        anim.save(movie+'.mp4')
+        try:
+            anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
+        except Exception:
+            print "Save failed: Check ffmpeg path" 
 
     # Save movie with default name
     if ((isinstance(movie,basestring)==0)):
         if (movie != 0):
-            anim.save('animation.mp4')
+            try:
+                anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])
+            except Exception:
+                print "Save failed: Check ffmpeg path" 
 
     # Show animation
     if (movie == 0):
