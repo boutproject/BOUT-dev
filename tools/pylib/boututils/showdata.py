@@ -484,13 +484,13 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                     plots[j] = ax[j].contourf(x[j][0],y[j],vars[j][0][index,:,:].T, Ncolors, lw=0, levels=clevels[j])
                 elif (surf[j] == 1):
                     ax[j] = fig.add_subplot(row,col,j+1, projection='3d')
-                    plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][i,:,:].T, rstride=ystride[j], cstride=xstride[j])
+                    plots[j] = ax[j].plot_wireframe(x[j][0], y[j], vars[j][0][index,:,:].T, rstride=ystride[j], cstride=xstride[j])
                     ax[j].set_zlim(fmin[j],fmax[j])
                     ax[j].set_xlabel(r'x')
                     ax[j].set_ylabel(r'y')
                     ax[j].set_title(titles[j])
                 elif (polar[j] == 1):
-                    plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][i,:,:].T, levels=clevels[j])
+                    plots[j] = ax[j].contourf(theta[j], r[j], vars[j][0][index,:,:].T, levels=clevels[j])
                     ax[j].set_rmax(Nx[j][0]-1)
 
         if (tslice == 0):
