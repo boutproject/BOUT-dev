@@ -58,6 +58,9 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     frame of the animation.  If the input data matches the time values found within
     BOUT++'s dmp data files, then these time values will be used.  Otherwise, an
     integer counter is used.
+
+    During animation click once to stop in the current frame. Click again to continue.
+
     """
     plt.ioff()
     
