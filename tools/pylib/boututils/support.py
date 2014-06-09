@@ -1,5 +1,4 @@
 import numpy
-from gen_surface import gen_surface
 from scipy.integrate import simps
 import copy
 
@@ -61,40 +60,6 @@ def deriv(y, x=None):
 
     return dy
 
-# calculates x (psi) derivative for 2D variable
-def DDX( psi, var):
-  s = numpy.shape(var)
-  nx = s[0]
-  ny = s[1] 
-  
-  
-  dv = numpy.zeros((nx, ny))
- 
-  for i in range (ny) :
-      
-      dv[:,i] = deriv( var[:,i], psi[:,i] )
-
-   
-  return dv
- 
-# Take derivative in y, taking into account branch-cuts
-def DDY( var, mesh):
-  f = copy.deepcopy(var)
-      
-  dtheta = 2.*numpy.pi / numpy.float(numpy.sum(mesh.npol))
-      
-  status = gen_surface(mesh=mesh) # Start generator
-  while True:
-    period, yi, xi, last = gen_surface(last=None, xi=None, period=None)
-    if period :
-        f[xi,yi] = numpy.real(fft_deriv(var[xi,yi]))
-    else:
-        f[xi,yi] = numpy.gradient(var[xi,yi])
-    if last : break
-  return f / dtheta
- 
- 
- 
 # integrate a function, always using the maximum
 # number of grid-points possible for highest accuracy
 #
@@ -142,44 +107,6 @@ def int_func( xin, fin=None, simple=None):
  
  
  
- 
- 
- 
- # Integrate a function over y
-def int_y( var, mesh, loop=None, nosmooth=None, simple=None):
-    
-    nr=0
-    if loop!=None : nr=1
-
-    f = copy.deepcopy(var)
-      
-    s = numpy.shape(var)
-    nx = s[0]
-    loop = numpy.zeros(nx)
-      
-    status = gen_surface(mesh=mesh) # Start generator
-    
-    while True:
-        
-        period, yi, xi, last = gen_surface(period=None, last=None, xi=None )
-
-        f[xi,yi] = int_func(var[xi,yi], simple=simple)
-                
-        if nosmooth==None :
-            print 'no smooth yet'
-            #f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
-          
-        loop[xi] = f[xi,yi[numpy.size(yi)-1]] - f[xi,yi[0]]
-        
-        if last == 1 : break
-                   
-    if nr == 1 :   
-            return f, loop  
-    else:
-        return f
-    
-
-
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # FFT_DERIV: Calculates the derivative of a variable on a         ;
 # periodic domain.                                                ;

@@ -1,5 +1,9 @@
 import numpy as np
 from boututils import file_import
+from enthought.mayavi import mlab
+from tvtk.tools import visual
+
+
 
 def zinterp( v, zind):
   #v = REFORM(v)
@@ -27,8 +31,8 @@ def zinterp( v, zind):
   return result
 
 
-def plotpolslice(var3d,gridfile,period=1,zangle=0.0,opt=1):
-    """ data2d = plotpolslice(data3d, 'gridfile' , period=1, zangle=0.0, return grid also=1) """
+def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
+    """ data2d = plotpolslice(data3d, 'gridfile' , period=1, zangle=0.0, rz:return (r,z) grid also=1, fig: to do the graph, set to 1 ) """
     
     g=file_import(gridfile)
     
@@ -105,10 +109,24 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0,opt=1):
      # IF KEYWORD_SET(profile) THEN var2d[x,ypos] = var2d[x,ypos] + profile[x,ny-1]
         r[x,ypos] = rxy[x,ny-1]
         z[x,ypos] = zxy[x,ny-1]
-   
+           
+ 
+    if(fig==1):  
+    
+        f = mlab.figure(size=(600,600))
+        # Tell visual to use this as the viewer.
+        visual.set_viewer(f)
 
-  # return according to opt 
-    if opt==1 :
-        return r,z,var2d
-    else:
-        return var2d
+
+        s = mlab.mesh(r,z,var2d, colormap='PuOr')#, wrap_scale='true')#, representation='wireframe')
+        s.enable_contours=True
+        s.contour.filled_contours=True
+        mlab.view(0,0)
+        
+    else:   
+        # return according to opt 
+        if rz==1 :
+            return r,z,var2d
+        else:
+            return var2d
+        

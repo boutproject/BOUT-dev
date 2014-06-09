@@ -1,7 +1,8 @@
 import numpy as numpy
 import sys
-from pylab import plot,xlabel,ylim,savefig,gca, xlim
+from pylab import plot,xlabel,ylim,savefig,gca, xlim, show, clf, draw, title
 from boututils.fft_integrate import fft_integrate
+from ask import query_yes_no
 
 #; Calculates mode structure from BOUT++ output
 #; for comparison to ELITE
@@ -12,6 +13,7 @@ from boututils.fft_integrate import fft_integrate
 
 # interpolates a 1D periodic function
 def zinterp( v, zind):
+    
   #v = REFORM(v)
   nz = numpy.size(v)
   z0 = numpy.round(zind)
@@ -29,19 +31,20 @@ def zinterp( v, zind):
 
   zp = (z0 + 1) % (nz - 1)
   zm = (z0 - 1 + (nz-1)) % (nz - 1)
+  
 
   result = 0.5*p*(p-1.0)*v[zm] \
     + (1.0 - p*p)*v[z0] \
     + 0.5*p*(p+1.0)*v[zp]
 
   return result
-  
-  
+ 
+    
 def mode_structure( var_in, grid_in, period=1, 
                     zangle=0.0, n=None, addq=None, output=None, 
                     xq=None, xpsi=None, slow=None, subset=None, 
                     filter=None, famp=None, quiet=None, 
-                    ergos=None, title=None, 
+                    ergos=None, ftitle=None, 
                     xrange=None, yrange=None, rational=None, pmodes=None, 
                     _extra=None):
 
@@ -73,7 +76,7 @@ def mode_structure( var_in, grid_in, period=1,
 
     nx = grid.get('nx')
     ny = grid.get('ny')
-
+    
     s = numpy.shape(vr)
     if numpy.size(s) != 3 :
         print "Error: Variable must be 3 dimensional"
@@ -105,7 +108,7 @@ def mode_structure( var_in, grid_in, period=1,
            return
 
     zshift=grid.get('zShift')
-
+    
     rxy=grid.get('Rxy')
     zxy=grid.get('Zxy')
     Btxy=grid.get('Btxy')
@@ -130,9 +133,10 @@ def mode_structure( var_in, grid_in, period=1,
             yp = y + 1
             nskip[y] = numpy.abs(zshift[x,yp] - zshift[x,y]) / dz - 1
       
-            
+    
         nskip =numpy.int_(numpy.round(nskip))
-        numpy.where(nskip > 0, nskip, 0) 
+        nskip=numpy.where(nskip > 0, nskip, 0) 
+     
        
         ny2 = numpy.int_(ny + numpy.sum(nskip)) # number of poloidal points
 
@@ -144,10 +148,13 @@ def mode_structure( var_in, grid_in, period=1,
         BtBp = numpy.zeros(ny2)   # Bt / Bp
       
       # interpolate values onto points
+        
         ypos = 0l
         for y in range(ny-1):
           # original points
             zind = (zangle - zshift[x,y])/dz
+         
+          
             if numpy.size(zind) != 1 : sys.exit()
             f[ypos] = zinterp(vr[x,y,:], zind)
             R[ypos] = rxy[x,y]
@@ -174,7 +181,7 @@ def mode_structure( var_in, grid_in, period=1,
                 BtBp[ypos+i] = (w*Btxy[x,y+1] + (1.0-w)*Btxy[x,y]) / (w*Bpxy[x,y+1] + (1.0-w)*Bpxy[x,y])
              
             ypos = ypos + nskip[y]
-          
+            
             # final point
 
             zind = (zangle - zShift[x,ny-1])/dz
@@ -189,6 +196,7 @@ def mode_structure( var_in, grid_in, period=1,
 
       #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       #; calculate poloidal angle
+
       
         drxy = numpy.gradient(R)
         dzxy = numpy.gradient(Z)
@@ -199,7 +207,7 @@ def mode_structure( var_in, grid_in, period=1,
       
         if numpy.max(theta) > 1.0 :
           # mis-match between q and nu (integration error?)
-        #    IF NOT KEYWORD_SET(quiet) THEN PRINT, "Mismatch  ", x, MAX(theta)
+            if quiet==None : print "Mismatch  ", x, numpy.max(theta)
             theta = theta / (numpy.max(theta) + numpy.abs(theta[1] - theta[0]))
        
       
@@ -229,7 +237,8 @@ def mode_structure( var_in, grid_in, period=1,
         fmax[i] = numpy.max(famp[:,i])
      
 
-    inds = numpy.sort(fmax)[::-1]
+    inds = numpy.argsort(fmax)[::-1]
+ 
 
     if pmodes == None : pmodes = 10
 
@@ -250,8 +259,9 @@ def mode_structure( var_in, grid_in, period=1,
         count1 = numpy.where(tn == "PSI_AXIS")
         count2 = numpy.where(tn == "PSI_BNDRY")
       
-        if (count1 > 0) and (count2 > 0) :
+        if (numpy.size(count1) > 0) and (numpy.size(count2) > 0) :
             xarr = (xarr - psi_axis) / (psi_bndry - psi_axis)
+        
         else:
             # Use hard-wired values
             print "WARNING: Using hard-wired psi normalisation"
@@ -271,29 +281,35 @@ def mode_structure( var_in, grid_in, period=1,
     if slow != None :
         # plot modes slowly for examination
         #safe_colors, /first
-    
+#        ax = fig.add_subplot(111)
         # go through and plot each mode
         for i in range(nf):
             if numpy.max(famp[:,i]) > 0.05*numpy.max(famp):
                 print "Mode m = ", i+1, " of ", nf
-                plot(xarr, famp[:,i], 'r')
-                ylim[0,np.max(famp)]
-               # xaxis=xrange
+                plot(xarr, famp[:,i], 'k')
+                ylim(0,numpy.max(famp))
+                xlim(xrange)
                 xlabel(xtitle)
+                show(block=False)
+                
                 q = numpy.float(i+1) / numpy.float(n)
         
-                pos = np.interp(q, qprof, xarr)
-        
-                plot( [pos, pos], 'b')#, [0, 2.*MAX(fmax)], lines=2, color=1
-               # cursor, a, b, /down
-             
+                pos = numpy.interp(q, qprof, xarr)
+                
+                plot( [pos, pos],[0, 2.*numpy.max(fmax)], 'k--')
+                draw()
+                
+                ans=query_yes_no('next mode')
+                if ans:
+                    clf()
+            
          
     
     elif ergos != None :
         # ERGOS - style output
     
         if output != None and slow == None :
-            savefig(output)
+            savefig('output.png')
             
         
 #
@@ -325,34 +341,38 @@ def mode_structure( var_in, grid_in, period=1,
 
     else:
         if output != None and slow == None :
-            savefig(output)
-         #   DEVICE, file=output+".ps", /color
+            savefig('output.png')
+         #  savefig('output.ps')
         
   #  
-  #      safe_colors, /first
   #  
-  #      IF KEYWORD_SET(subset) THEN BEGIN
-  #    
-  #          ; get number of modes larger than 5% of the maximum
-  #          w = WHERE(fmax GT 0.10*MAX(fmax), count)
-  #    
-  #          minind = MIN(inds[0:(count-1)])
-  #          maxind = MAX(inds[0:(count-1)])
-  #    
-  #          PRINT, "Mode number range: ", minind, maxind
-  #    
-  #          plot, xarr, famp[*,0], yr=[0,MAX(famp)], color=1, xlabel=xtitle, chars=1.5, xrange=xrange, /nodata,title=title, _extra=_extra
-  #          color = 2
-  #          FOR i=minind, maxind, subset DO BEGIN
-  #              oplot, xarr, famp[*,i], color=color
-  #      
-  #              q = FLOAT(i+1) / FLOAT(n)
-  #              pos = INTERPOL(xarr, qprof, q)
-  #      
-  #              oplot, [pos, pos], [0, 2.*MAX(fmax)], lines=2, color=color
-  #      
-  #              color = (color MOD 2) + 1
-  #          ENDFOR
+        if subset != None :
+      
+            # get number of modes larger than 5% of the maximum
+            count = numpy.size(numpy.where(fmax > 0.10*numpy.max(fmax)))
+            
+            minind = numpy.min(inds[0:count])
+            maxind = numpy.max(inds[0:count])
+      
+            print "Mode number range: ", minind, maxind
+      
+            plot( xarr, famp[:,0], 'k', visible=False)
+            ylim(0,numpy.max(famp))
+            xlabel(xtitle)
+            xlim(xrange)
+            title(ftitle)
+            
+            gca().set_color_cycle(['red', 'red', 'black', 'black'])
+                          
+            for i in range(minind, maxind+1, subset):
+                plot( xarr, famp[:,i])
+        
+                q = numpy.float(i+1) / numpy.float(n)
+                pos = numpy.interp(q, qprof, xarr)
+        
+                plot( [pos, pos], [0, 2.*numpy.max(fmax)], '--')
+        
+
   #    
         else:
             # default - just plot everything
