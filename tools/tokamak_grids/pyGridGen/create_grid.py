@@ -654,11 +654,10 @@ def create_grid( F, R, Z, in_settings, critical,
     
   
   # Check the number of x-points
-    #if critical.n_xpoint == 0 :
+    if critical.n_xpoint == 0 :
     #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     # Grid entirely in the core
-
-    print "Generating grid entirely in the core"
+    	print "Generating grid entirely in the core"
 
     nrad = numpy.sum(settings.nrad) # Add up all points
     npol = numpy.sum(settings.npol)
