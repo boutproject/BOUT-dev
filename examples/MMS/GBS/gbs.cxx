@@ -26,8 +26,11 @@ int GBS::init(bool restarting) {
   OPTION(optgbs, ionvis, false);
   if(ionvis)
     OPTION(optgbs, Ti, 10); // Ion temperature [eV]
-  OPTION(optgbs, elecvis, false);
-  OPTION(optgbs, resistivity, true);
+  OPTION(optgbs, elecvis, false);    // Include electron viscosity?
+  OPTION(optgbs, resistivity, true); // Include resistivity?
+  OPTION(optgbs, estatic, true);     // Electrostatic?
+  
+  OPTION(opt->getSection("solver"), mms, false);
 
   if(ionvis)
     SAVE_REPEAT(Gi);
@@ -85,7 +88,7 @@ int GBS::init(bool restarting) {
   optvort->get("evolve", evolve_Vort, true);
   optvort->get("D", Dvort, 0.0);
 
-  Options *optve = opt->getSection("Ve");
+  Options *optve = opt->getSection("VePsi");
   optve->get("evolve", evolve_Ve, true);
   optve->get("D", Dve, 0.0);
 
@@ -105,14 +108,17 @@ int GBS::init(bool restarting) {
        else { initial_profile("Ne", Ne); SAVE_ONCE(Ne); }
   if(evolve_Vort)  { solver->add(Vort, "Vort"); evars.add(Vort); }
        else { initial_profile("Vort", Vort); SAVE_ONCE(Vort); }
-  if(evolve_Ve) { solver->add(Ve, "Ve"); evars.add(Ve); }
-       else { initial_profile("Ve", Ve); SAVE_ONCE(Ve); }
+  if(evolve_Ve) { solver->add(VePsi, "VePsi"); evars.add(VePsi); }
+       else { initial_profile("VePsi", VePsi); SAVE_ONCE(VePsi); }
   if(evolve_Vi)    { solver->add(Vi, "Vi"); evars.add(Vi); }
        else { initial_profile("Vi", Vi); SAVE_ONCE(Vi);}
   if(evolve_Te)    { solver->add(Te, "Te"); evars.add(Te); }
        else { initial_profile("Te", Te); SAVE_ONCE(Te);}
   
-
+  if(evolve_Ve && (!estatic)) {
+    SAVE_REPEAT2(psi, Ve);
+  }
+    
   // Load metric tensor from the mesh, passing length and B field normalisations
   LoadMetric(rho_s0, Bnorm);
   
@@ -201,10 +207,15 @@ int GBS::init(bool restarting) {
   
   // Phi solver
   phiSolver  = Laplacian::create(opt->getSection("phiSolver"));
-  
+  aparSolver = Laplacian::create(opt->getSection("aparSolver"));
+
   dx4 = SQ(SQ(mesh->dx));
   dy4 = SQ(SQ(mesh->dy));
   dz4 = SQ(SQ(mesh->dz));
+
+  SAVE_REPEAT(ddt(Ne));
+
+  SAVE_ONCE(mesh->dx);
 
   return 0;
 }
@@ -276,19 +287,32 @@ int GBS::rhs(BoutReal t) {
 
   output.write("TIME = %e\r", t);
   
-  //output.write("logB = %e, %e, %e, %e, %e\n", logB(2,0,0), logB(2,1,0), logB(2,2,0), logB(2,3,0),logB(2,4,0));
-
   // Communicate evolving variables
   mesh->communicate(evars);
-
-  //output.write("Ne = %e -> %e : %e -> %e\n", min(Ne), max(Ne), min(Te), max(Te));
   
   // Floor small values
   Te = floor(Te, 1e-3);
   Ne = floor(Ne, 1e-3);
 
   // Solve phi from Vorticity
-  phi = phiSolver->solve(Vort);
+  if(mms) {
+    // Solve for potential, adding a source term
+    Field3D phiS = FieldFactory::get()->create3D("phi:source", Options::getRoot(), mesh, CELL_CENTRE, t);
+    phi = phiSolver->solve(Vort + phiS);
+  }else {
+    phi = phiSolver->solve(Vort);
+  }
+  
+  if(estatic) {
+    // Electrostatic
+    Ve = VePsi;
+  }else {
+    aparSolver->setCoefA(-Ne*0.5*mi_me*beta_e);
+    psi = aparSolver->solve(Ne*(Vi - VePsi));
+
+    Ve = VePsi - 0.5*mi_me*beta_e*psi;
+    mesh->communicate(psi, Ve);
+  }
 
   // Communicate auxilliary variables
   mesh->communicate(phi);
@@ -325,7 +349,7 @@ int GBS::rhs(BoutReal t) {
       ;
     
     if(parallel) {
-      //ddt(Ne) -= Ne*Grad_par(Ve) + Vpar_Grad_par(Ve, Ne); // Parallel compression, advection
+      ddt(Ne) -= Ne*Grad_par(Ve) + Vpar_Grad_par(Ve, Ne); // Parallel compression, advection
     }
     
     // Source term
@@ -371,7 +395,7 @@ int GBS::rhs(BoutReal t) {
     
     //output.write("Ne = %e, %e, %e, %e, %e\n", Ne(2,0,0), Ne(2,1,0), Ne(2,2,0),Ne(2,3,0),Ne(2,4,0));
     
-    ddt(Ve) = 
+    ddt(VePsi) = 
       - vE_Grad(Ve, phi)
       - Vpar_Grad_par(Ve, Ve)
       - mi_me*(2./3.)*Grad_par(Ge)
@@ -380,8 +404,6 @@ int GBS::rhs(BoutReal t) {
       - mi_me*(  Te*Grad_par(log(Ne)) + 1.71*Grad_par(Te) )
       + D(Ve, Dve)
       ;
-    
-    //output.write("-> %e, %e\n", ddt(Ve)(2,2,0), ddt(Ve)(2,3,0));
   }
   
   if(evolve_Vi) {

@@ -16,12 +16,13 @@ protected:
 private:
   // Evolving variables
   Field3D Ne, Te;     // Electron density and temperature
-  Field3D Ve;         // Parallel electron velocity
+  Field3D VePsi;      // Parallel electron velocity
   Field3D Vi;         // Parallel ion velocity
   Field3D Vort;       // Vorticity
 
   // Auxilliary variables
   Field3D phi;        // Electrostatic potential
+  Field3D psi, Ve;
 
   // Sources of density and energy
   Field2D Sn, Sp;
@@ -41,7 +42,10 @@ private:
   bool evolve_Ne, evolve_Vort, evolve_Ve, evolve_Vi, evolve_Te;
   bool ionvis, elecvis, resistivity;
   bool parallel; // Include parallel dynamics?
-
+  bool estatic; // Electrostatic
+  
+  bool mms;
+  
   // Stress tensor components
   BoutReal tau_e0, tau_i0;
   BoutReal Ti; // Ion temperature [eV] for stress tensor
@@ -69,6 +73,7 @@ private:
   
   // Laplacian solver
   Laplacian *phiSolver;
+  Laplacian *aparSolver;
 };
 
 #endif // __GBS_H__
