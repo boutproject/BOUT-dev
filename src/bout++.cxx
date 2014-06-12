@@ -55,6 +55,8 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <boundary_factory.hxx>
 
+#include <invert_laplace.hxx>
+
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -300,6 +302,9 @@ int BoutFinalise() {
 
   // Close the output file
   dump.close();
+
+  // Laplacian inversion
+  Laplacian::cleanup();
 
   // Delete field memory
   Field2D::cleanup();

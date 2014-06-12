@@ -93,6 +93,13 @@ Laplacian* Laplacian::defaultInstance() {
   return instance;
 }
 
+void Laplacian::cleanup() {
+  if(instance == NULL)
+    return;
+  delete instance;
+  instance = NULL;
+}
+
 /**********************************************************************************
  *                                 Solve routines
  **********************************************************************************/
