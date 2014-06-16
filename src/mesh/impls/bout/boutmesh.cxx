@@ -317,6 +317,8 @@ int BoutMesh::load() {
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, periodicX, false); // Periodic in X
   
+  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  
   OPTION(options, async_send, false); // Whether to use asyncronous sends
   
   // Set global offsets

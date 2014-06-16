@@ -50,6 +50,16 @@ Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL) {
   location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
+
+  if(mesh->FCI) {
+    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
+    
+    yup_field = ydown_field = 0;
+  }else {
+    // Not FCI. Just set yup and ydown to point to this field
+    
+    yup_field = ydown_field = this;
+  }
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
@@ -72,6 +82,16 @@ Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL) {
  
   boundaryIsSet = false;
  
+  if(mesh->FCI) {
+    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
+    
+    yup_field = ydown_field = 0;
+  }else {
+    // Not FCI. Just set yup and ydown to point to this field
+    
+    yup_field = ydown_field = this;
+  }
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -85,6 +105,16 @@ Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL) 
   location = CELL_CENTRE; // Cell centred variable by default
   
   boundaryIsSet = false;
+
+  if(mesh->FCI) {
+    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
+    
+    yup_field = ydown_field = 0;
+  }else {
+    // Not FCI. Just set yup and ydown to point to this field
+    
+    yup_field = ydown_field = this;
+  }
 
   *this = f;
   
@@ -102,6 +132,16 @@ Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL
   
   boundaryIsSet = false;
   
+  if(mesh->FCI) {
+    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
+    
+    yup_field = ydown_field = 0;
+  }else {
+    // Not FCI. Just set yup and ydown to point to this field
+    
+    yup_field = ydown_field = this;
+  }
+
   *this = val;
   
 #ifdef CHECK
@@ -116,6 +156,12 @@ Field3D::~Field3D() {
   /// Delete the time derivative variable if allocated
   if(deriv != NULL)
     delete deriv;
+  
+  if((yup_field != NULL) && (yup_field != this))
+    delete yup_field;
+  
+  if((ydown_field != NULL) && (ydown_field != this))
+    delete ydown_field;
 }
 
 Field3D* Field3D::clone() const {
@@ -146,6 +192,35 @@ Field3D* Field3D::timeDeriv() {
     deriv = new Field3D();
   
   return deriv;
+}
+
+// FCI method routines
+Field3D& Field3D::yup() {
+  if( yup_field == 0 )
+    yup_field = new Field3D();
+  
+  return *yup_field;
+}
+
+const Field3D& Field3D::yup() const {
+  if( yup_field == 0 )
+    throw BoutException("No yup field allocated for const field");
+  
+  return *yup_field;
+}
+  
+Field3D& Field3D::ydown() {
+  if( ydown_field == 0 )
+    ydown_field = new Field3D();
+  
+  return *ydown_field;
+}
+
+const Field3D& Field3D::ydown() const {
+  if( ydown_field == 0 )
+    throw BoutException("No ydown field allocated for const field");
+  
+  return *ydown_field;
 }
 
 const Field2D Field3D::DC() const {
