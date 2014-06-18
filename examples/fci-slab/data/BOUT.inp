@@ -1,0 +1,18 @@
+
+nout = 5
+timestep = 0.1
+
+MXG = 2
+MYG = 2
+
+MZ = 4
+
+[mesh]
+FCI = true
+
+nx = 5   # Includes 2*MXG boundary cells
+ny = 4
+
+[f]
+scale = 1.0
+function = sin(y) * x^2
