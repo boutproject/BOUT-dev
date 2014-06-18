@@ -190,37 +190,37 @@ BoutReal*** Field3D::getData() const {
 Field3D* Field3D::timeDeriv() {
   if(deriv == NULL)
     deriv = new Field3D();
-  
+
   return deriv;
 }
 
 // FCI method routines
-Field3D& Field3D::yup() {
+Field3D* Field3D::yup() {
   if( yup_field == 0 )
     yup_field = new Field3D();
-  
-  return *yup_field;
+
+  return yup_field;
 }
 
-const Field3D& Field3D::yup() const {
+const Field3D* Field3D::yup() const {
   if( yup_field == 0 )
     throw BoutException("No yup field allocated for const field");
-  
-  return *yup_field;
-}
-  
-Field3D& Field3D::ydown() {
-  if( ydown_field == 0 )
-    ydown_field = new Field3D();
-  
-  return *ydown_field;
+
+  return yup_field;
 }
 
-const Field3D& Field3D::ydown() const {
+Field3D* Field3D::ydown() {
+  if( ydown_field == 0 )
+    ydown_field = new Field3D();
+
+  return ydown_field;
+}
+
+const Field3D* Field3D::ydown() const {
   if( ydown_field == 0 )
     throw BoutException("No ydown field allocated for const field");
-  
-  return *ydown_field;
+
+  return ydown_field;
 }
 
 const Field2D Field3D::DC() const {
