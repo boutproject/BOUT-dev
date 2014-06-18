@@ -61,17 +61,17 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
   if(!strcasecmp(type, SOLVERPVODE)) {
     return new PvodeSolver(options);
   } else if(!strcasecmp(type, SOLVERCVODE)) {
-    return new CvodeSolver;
+    return new CvodeSolver(options);
   } else if(!strcasecmp(type, SOLVERIDA)) {
-    return new IdaSolver;
+    return new IdaSolver(options);
   } else if(!strcasecmp(type, SOLVERPETSC)) {
-    return new PetscSolver;
+    return new PetscSolver(options);
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
-    return new KarniadakisSolver;
+    return new KarniadakisSolver(options);
   } else if(!strcasecmp(type, SOLVERRK4)) {
-    return new RK4Solver;
+    return new RK4Solver(options);
   } else if(!strcasecmp(type, SOLVEREULER)) {
-    return new EulerSolver;
+    return new EulerSolver(options);
   } else if(!strcasecmp(type, SOLVERRK3SSP)) {
     return new RK3SSP(options);
   }

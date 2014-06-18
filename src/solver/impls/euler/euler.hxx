@@ -37,7 +37,7 @@ class EulerSolver;
 
 class EulerSolver : public Solver {
  public:
-  EulerSolver();
+  EulerSolver(Options *options);
   ~EulerSolver();
   
   void setMaxTimestep(BoutReal dt);

@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
   }
   msg_stack.pop(msg_point);
 
+  solver->outputVars(dump); // Add evolving variables to the output file
+
   bout_run(solver, physics_run);
   
   delete solver; // Delete the solver
