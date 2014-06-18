@@ -39,7 +39,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL) {
+Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: constructor\n", (unsigned int) this);
 #endif
@@ -50,20 +50,10 @@ Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL) {
   location = CELL_CENTRE; // Cell centred variable by default
 
   boundaryIsSet = false;
-
-  if(mesh->FCI) {
-    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
-    
-    yup_field = ydown_field = 0;
-  }else {
-    // Not FCI. Just set yup and ydown to point to this field
-    
-    yup_field = ydown_field = this;
-  }
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL) {
+Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
@@ -82,22 +72,12 @@ Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL) {
  
   boundaryIsSet = false;
  
-  if(mesh->FCI) {
-    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
-    
-    yup_field = ydown_field = 0;
-  }else {
-    // Not FCI. Just set yup and ydown to point to this field
-    
-    yup_field = ydown_field = this;
-  }
-
 #ifdef CHECK
   msg_stack.pop();
 #endif
 }
 
-Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL) {
+Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from Field2D");
 #endif
@@ -105,17 +85,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL) 
   location = CELL_CENTRE; // Cell centred variable by default
   
   boundaryIsSet = false;
-
-  if(mesh->FCI) {
-    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
-    
-    yup_field = ydown_field = 0;
-  }else {
-    // Not FCI. Just set yup and ydown to point to this field
-    
-    yup_field = ydown_field = this;
-  }
-
+  
   *this = f;
   
 #ifdef CHECK
@@ -123,7 +93,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL) 
 #endif
 }
 
-Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL) {
+Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from value");
 #endif
@@ -132,16 +102,6 @@ Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL
   
   boundaryIsSet = false;
   
-  if(mesh->FCI) {
-    // Using FCI method. Set yup and ydown fields to NULL, so they'll be allocated
-    
-    yup_field = ydown_field = 0;
-  }else {
-    // Not FCI. Just set yup and ydown to point to this field
-    
-    yup_field = ydown_field = this;
-  }
-
   *this = val;
   
 #ifdef CHECK
@@ -196,8 +156,12 @@ Field3D* Field3D::timeDeriv() {
 
 // FCI method routines
 Field3D& Field3D::yup() {
-  if( yup_field == 0 )
-    yup_field = new Field3D();
+  if( yup_field == 0 ) {
+    if(mesh->FCI) {
+      yup_field = new Field3D();
+    }else
+      yup_field = this;
+  }
   
   return *yup_field;
 }
@@ -210,8 +174,12 @@ const Field3D& Field3D::yup() const {
 }
   
 Field3D& Field3D::ydown() {
-  if( ydown_field == 0 )
-    ydown_field = new Field3D();
+  if( ydown_field == 0 ) {
+    if(mesh->FCI) {
+      ydown_field = new Field3D();
+    }else
+      ydown_field = this;
+  }
   
   return *ydown_field;
 }

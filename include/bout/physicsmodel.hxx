@@ -106,6 +106,7 @@ private:
     Solver *solver = Solver::create();     \
     solver->setModel(model);               \
     solver->addMonitor(bout_monitor);      \
+    solver->outputVars(dump);              \
     solver->solve();                       \
     delete model;                          \
     delete solver;                         \
