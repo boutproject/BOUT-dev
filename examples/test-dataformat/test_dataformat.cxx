@@ -8,7 +8,7 @@ int main() {
   // Create a file format handler
   DataFormat *izfile = data_format(izfilename.c_str());
 
-  izfile->openr(izfilename, 0);
+  izfile->openr(izfilename);
 
   if(!izfile->is_valid()) {
     output << "\tERROR: Could not open file " << izfilename << endl;
