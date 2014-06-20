@@ -48,24 +48,26 @@ void BoundaryDirichlet::apply_ddt(Field3D &f) {
 }
 
 ////////////JMAD Constructors
-BndDirichlet_O2::BndDirichlet_O2() : bndfunc(NULL), gen(NULL) {
+BndDirichlet_O2::BndDirichlet_O2() : gen(NULL) {
   
 }
 
-BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), bndfunc(NULL), gen(g){
+BndDirichlet_O2::BndDirichlet_O2(BoundaryRegion *region, FieldGenerator*g):BoundaryOp(region), gen(g){
 }
 
 BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &args){
+  FieldGenerator* newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
-    gen = FieldFactory::get()->parse(args.front());
+    newgen = FieldFactory::get()->parse(args.front());
   }
-  return new BndDirichlet_O2(region, gen);
+  return new BndDirichlet_O2(region, newgen);
 }
 
 void BndDirichlet_O2::apply(Field2D &f){
   output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
   output << "applying boundary condition for t = 0.!!!!!\n";
+  
   BndDirichlet_O2::apply(f,0.);
 
 }
@@ -75,7 +77,15 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
   
+
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
@@ -89,29 +99,24 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	// Outer boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+	  if(fg) {
+            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				 + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
-          BoutReal val;
-          if(gen) {
-            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }else
-            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+            BoutReal ynorm = mesh->GlobalY(bndry->y);
+            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }
           
 	  f(bndry->x,bndry->y) = val;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+	  if(fg) {
+            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
-          BoutReal val;
-          if(gen) {
-            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }else
-            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+            BoutReal ynorm = mesh->GlobalY(bndry->y);
+            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }
           
 	  f(bndry->x - bndry->bx,bndry->y) = val;
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
@@ -127,29 +132,25 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	// Outer boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
-          BoutReal val;
-          if(gen) {
-            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }else
-            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
-	  f(bndry->x,bndry->y) = val;
+	  if(fg) {
+            BoutReal xnorm = mesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
+                                   + mesh->GlobalY(bndry->y - bndry->by) );
+            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }
+          
+          f(bndry->x,bndry->y) = val;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
-	 
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
-	  
-          BoutReal val;
-          if(gen) {
-            val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }else
-            val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+          if(fg) {
+            BoutReal xnorm = mesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+                                     + mesh->GlobalY(bndry->y - bndry->by) );
+            
+            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+          }
           
 	  f(bndry->x,bndry->y - bndry->by) = val;
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
@@ -162,21 +163,18 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
   // Non-staggered, standard case
   
   for(; !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
-
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
     
-    BoutReal val;
-    if(gen) {
-      val = gen->generate(xnorm,TWOPI*ynorm,0.0, t);
-    }else {
-      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0);
+    if(fg) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
     }
-
+    
     f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
   }
 }
@@ -186,6 +184,7 @@ void BndDirichlet_O2::apply(Field3D &f) {
   //BndDirichlet_O2::apply(f,0.);
   output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
   output << "applying boundary condition for t = 0.!!!!!\n";
+  
   BndDirichlet_O2::apply(f,0.);
 }
 
@@ -195,7 +194,14 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
 
   bndry->first();
-  
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
   // Check for staggered grids
   
   CELL_LOC loc = f.getLocation();
@@ -212,12 +218,10 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal val;
-	    if(gen) {
-	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    
 	    f(bndry->x,bndry->y, zk) = val;
 	    
@@ -231,12 +235,10 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal val;
-	    if(gen) {
-	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
@@ -259,11 +261,8 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal val;
-	    if(gen) {
-	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    
 	    f(bndry->x,bndry->y,zk) = val;
 	  }
@@ -277,11 +276,8 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal val;
-	    if(gen) {
-	      val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    }else
-	      val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
 	    
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
@@ -301,19 +297,11 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
     BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
                            + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
     
-    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-    //output.write("DIRICHLET: %d, %d, %d, %d : %e, %e\n", bndry->x, bndry->bx, bndry->y, bndry->by, xnorm, ynorm);
     for(int zk=0;zk<mesh->ngz-1;zk++) {
-      BoutReal val;
-      if(gen) {
-	val = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-      }else {
-	val = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
-      }
+      if(fg)
+	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
       
       f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
-      
-      //output.write("boundary (%d,%d): %d,%d : %e, %e -> %e\n", bndry->bx, bndry->by, bndry->x,bndry->y, xnorm, ynorm, f(bndry->x,bndry->y, zk));
     }
   }
 }
@@ -331,18 +319,6 @@ void BndDirichlet_O2::apply_ddt(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
-
-
-/*default function*/
-BoutReal default_func(BoutReal t, BoutReal  x, BoutReal  y, BoutReal  z){
-  output << "defaul boundary function assigned \n";
-  return 99999999.;
-}
-
-
-/////end JMAD
-
-
 
 
 ///////////////////////////////////////////////////////////////
@@ -546,12 +522,12 @@ void BoundaryNeumann_2ndOrder::apply_ddt(Field3D &f) {
 /////JMAD///
 
 BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &args){
-  //return new BndNeumann_O2(region,(FuncPtr)default_func);
+  FieldGenerator *newgen = 0;
   if(!args.empty()) {
     // First argument should be an expression
-    gen = FieldFactory::get()->parse(args.front());
+    newgen = FieldFactory::get()->parse(args.front());
   }
-  return new BndNeumann_O2(region, gen);
+  return new BndNeumann_O2(region, newgen);
 }
 
 void BndNeumann_O2::apply(Field2D &f) {
@@ -567,6 +543,13 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
   
   // Check for staggered grids
   
@@ -583,33 +566,31 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	// Outer boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+	  
+	  if(fg) {
+            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+            BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
-	  BoutReal d;
-	  if(gen) {
-	    d = gen->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
-	  }else
-	    d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.0) * mesh->dx(bndry->x, bndry->y);
-	  
-	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + 2.*d)/3.;
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
+	  }
+          
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + 2.*val)/3.;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
-	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+	  if(fg) {
+            
+            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
-	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+            BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
-	  BoutReal d;
-	  if(gen) {
-	    d = gen->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
-	  }else 
-	    d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dx(bndry->x - bndry->bx, bndry->y);
-	  
-	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - 2*bndry->bx, bndry->y) - f(bndry->x - 3*bndry->bx, bndry->y) - 2.*d)/3.;
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
+	  }
+          
+	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - 2*bndry->bx, bndry->y) - f(bndry->x - 3*bndry->bx, bndry->y) - 2.*val)/3.;
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
 	}
       }
@@ -623,32 +604,28 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	// Outer boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
-	  BoutReal d;
-	  if(gen) {
-	    d = gen->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
-	  }else
-	    d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y);
-	  
-	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + 2.*d)/3.;
+	  if(fg) {
+            BoutReal xnorm = mesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+                                     + mesh->GlobalY(bndry->y - bndry->by) );
+            
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y);
+	  }
+	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + 2.*val)/3.;
 	}
       }else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
-	  
-	  BoutReal d;
-	  if(gen) {
-	    d = gen->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y - bndry->by);
-	  }else
-	    d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.) * mesh->dy(bndry->x, bndry->y - bndry->by);
-	  
-	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - 2*bndry->by) - f(bndry->x, bndry->y - 3*bndry->by) - 2.*d)/3.;
+          if(fg) {
+            
+            BoutReal xnorm = mesh->GlobalX(bndry->x);
+            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+                                     + mesh->GlobalY(bndry->y - bndry->by) );
+            
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * mesh->dx(bndry->x, bndry->y - bndry->by);
+	  }
+	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - 2*bndry->by) - f(bndry->x, bndry->y - 3*bndry->by) - 2.*val)/3.;
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
 	}
       }
@@ -659,24 +636,20 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
   // Non-staggered, standard case
   
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
-
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
-    
     BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-
-    BoutReal d;
-
-    if(gen) {
-      d = gen->generate(xnorm, TWOPI*ynorm, 0.0, t);
-    }else
-      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,0.);
-
-    //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*d;
+    
+    if(fg) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+    }
+    
+    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
   }
 }
 
@@ -691,6 +664,13 @@ void BndNeumann_O2::apply(Field3D &f) {
 
 void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
   bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
   
   // Check for staggered grids
   
@@ -712,13 +692,10 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d;
-	    if(gen) {
-	      d = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x, bndry->y);
-	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dx(bndry->x, bndry->y);
-	  
-	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*d)/3.;
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x, bndry->y);
+	    
+	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
 	  }
 	}
       }else {
@@ -730,14 +707,11 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d;
 	    
-	    if(gen) {
-	      d = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x - bndry->bx, bndry->y);
-	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dx(bndry->x - bndry->bx, bndry->y);
-	  
-	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*d)/3.;
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dx(bndry->x - bndry->bx, bndry->y);
+            
+	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
 	  }
 	}
@@ -756,13 +730,11 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d;
-	    if(gen) {
-	      d = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y);
-	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dy(bndry->x, bndry->y);
-	    
-	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*d)/3.;
+            
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y);
+            
+	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
 	  }
 	}
       }else {
@@ -773,13 +745,10 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
 				 + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    BoutReal d;
-	    if(gen) {
-	      d = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y - bndry->by);
-	    }else
-	      d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1)) * mesh->dy(bndry->x, bndry->y - bndry->by);
-	    
-	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*d)/3.;
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * mesh->dy(bndry->x, bndry->y - bndry->by);
+            
+	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
 	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
 	  }
 	}
@@ -799,14 +768,10 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
     BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
 
     for(int zk=0;zk<mesh->ngz-1;zk++) {
-      //RHS bndry_funcs is a map in f. Key is bdnry location, Value of the map is a function pointer which is here dereferencing the function pointer, and hence evaluate the function
-      BoutReal d;
-      if(gen) {
-	d = gen->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
-      }else
-	d = (*((f.bndry_funcs)[bndry->location]))(t,xnorm,ynorm,TWOPI*zk/(mesh->ngz-1));
+      if(fg)
+	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
       
-      f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*d;
+      f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
     }
   }
 }
@@ -823,8 +788,6 @@ void BndNeumann_O2::apply_ddt(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++)
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
-////END JMAD////
-
 
 BoundaryOp* BoundaryNeumann_4thOrder::clone(BoundaryRegion *region, const list<string> &args) {
   if(!args.empty()) {

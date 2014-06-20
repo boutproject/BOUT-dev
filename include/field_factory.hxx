@@ -79,4 +79,41 @@ private:
   Options* findOption(Options *opt, const std::string &name, std::string &val);
 };
 
+//////////////////////////////////////////////////////////
+// Generator from function
+
+class FieldFunction : public FieldGenerator {
+public:
+  FieldFunction(FuncPtr userfunc) : func(userfunc) {}
+  double generate(double x, double y, double z, double t) {
+    return func(t, x, y, z);
+  }
+private:
+  FieldFunction();
+  
+  FuncPtr func;
+};
+
+//////////////////////////////////////////////////////////
+// Null generator 
+
+class FieldNull : public FieldGenerator {
+public:
+  double generate(double x, double y, double z, double t) {
+    return 0.0;
+  }
+  FieldGenerator* clone(const std::list<FieldGenerator*> args) {
+    return this;
+  }
+  /// Singeton
+  static FieldGenerator* get() {
+    static FieldNull *instance = 0;
+    
+    if(!instance)
+      instance = new FieldNull();
+    return instance;
+  }
+private:
+};
+
 #endif // __FIELD_FACTORY_H__

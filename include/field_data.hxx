@@ -45,6 +45,9 @@ using std::vector;
 using std::map;
 
 #include <boundary_region.hxx>
+
+class FieldGenerator; // Forward declaration
+
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
@@ -52,7 +55,7 @@ using std::map;
 */
 class FieldData {
  public:
-  FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {}
+  FieldData();
   virtual ~FieldData();
 
   // Defines interface which must be implemented
@@ -93,13 +96,17 @@ class FieldData {
   virtual void applyTDerivBoundary() {};
 //JMAD
   void addBndryFunction(FuncPtr userfunc, BndryLoc location);
-  std::map <BndryLoc,FuncPtr> bndry_funcs;
+  void addBndryGenerator(FieldGenerator* gen, BndryLoc location);
+  
+  FieldGenerator* getBndryGenerator(BndryLoc location);
 
  protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
   bool boundaryIsCopy; // True if bndry_op is a copy
   
   bool boundaryIsSet; // Set to true when setBoundary called
+ 
+ std::map <BndryLoc,FieldGenerator*> bndry_generator;
 };
 
 #endif

@@ -53,7 +53,6 @@ class BndDirichlet_O2 : public BoundaryOp {
   void apply_ddt(Field2D &f);
   void apply_ddt(Field3D &f);
  private:
-  FuncPtr bndfunc;
   FieldGenerator* gen; // Generator
 };
 
