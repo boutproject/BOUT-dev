@@ -53,7 +53,9 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
     options = Options::getRoot()->getSection("mesh");
   
   OPTION(options, symmetricGlobalX,  false);
-
+  
+  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -316,8 +318,6 @@ int BoutMesh::load() {
   OPTION(options, BoundaryOnCell, false); // Determine location of boundary
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, periodicX, false); // Periodic in X
-  
-  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
   

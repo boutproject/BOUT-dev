@@ -2,6 +2,7 @@
 #include <derivs.hxx>
 #include <utils.hxx>
 #include <interpolation.hxx>
+#include <bout/assert.hxx>
 
 Field3D fx;
 Field3D fz;
@@ -41,41 +42,63 @@ void FCIMap::genCoeffs(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int n
   // for(int x=0;x<nx;x++) {
   // 	for(int y=0; y<ny;y++) {
   // 	  for(int z=0;z<nz;z++) {
+
+  int ncz = mesh->ngz-1;
+
   for(int x=mesh->xstart;x<=mesh->xend;x++) {
 	for(int y=mesh->ystart; y<=mesh->yend;y++) {
-	  for(int z=0;z<mesh->ngz-1;z++) {
+	  for(int z=0;z<ncz;z++) {
 		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+
+                
+                zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
+                if(zt_prime[x][y][z] < 0.0)
+                  zt_prime[x][y][z] += ncz;
+                  
 		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
 
 		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
 		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
-
+                
+                // Check that t_x and t_z are in range
+                if( (t_x < 0.0) || (t_x > 1.0) )
+                  throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
+                
+                if( (t_z < 0.0) || (t_z > 1.0) )
+                  throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
+                
 		// std::cout << k_corner[x][y][z] << " " << < " " << t_z << " " << 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1. << std::endl;
 
+                // This is h00 in Wikipedia page
 		temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
-        a_x.setData(x, y, z, &temp);
-		temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
-        a_z.setData(x, y, z, &temp);
-
+                a_x.setData(x, y, z, &temp);
+                temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
+                a_z.setData(x, y, z, &temp);
+                
+                // h01 in Wikipedia page
 		temp = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
-        a_1mx.setData(x, y, z, &temp);
+                a_1mx.setData(x, y, z, &temp);
 		temp = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
-        a_1mz.setData(x, y, z, &temp);
+                a_1mz.setData(x, y, z, &temp);
 
+                // h10
 		temp = t_x*(1.-t_x)*(1.-t_x);
-        b_x.setData(x, y, z, &temp);
+                b_x.setData(x, y, z, &temp);
 		temp = t_z*(1.-t_z)*(1.-t_z);
 		b_z.setData(x, y, z, &temp);
 
+                // h11
 		temp = t_x*t_x*t_x - t_x*t_x;
 		b_1mx.setData(x, y, z, &temp);
 		temp = t_z*t_z*t_z - t_z*t_z;
 		b_1mz.setData(x, y, z, &temp);
 
+                /*
 		if((x == 7) && (y == mesh->yend)) {
 		  std::cout << "x: " << x << " y: " << y << " z: " << z << " i: " << i_corner[x][y][z] << " x: " << xt_prime[x][y][z] <<  " t_x: " << t_x << " k: " << k_corner[x][y][z] << " z: " << zt_prime[x][y][z] << " t_z: " << t_z << 
 			" a_z: " << a_z[x][y][z] << " b_z: " << b_z[x][y][z] << "\n";
 		}
+                */
 
 	  }
 	}
@@ -241,6 +264,8 @@ public:
 
 	solver->add(f, "f");
 
+        f.applyBoundary("dirichlet");
+
 	output << "########### dz ###############\n";
 	output << mesh->dz << "\n";
 
@@ -267,7 +292,7 @@ public:
 	return 0;
   }
 
-  void interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir);
+  void interpolate_FCI(const Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir);
   const Field3D& Grad_par_FCI(const Field3D &f);
 private:
   Field3D f;
@@ -275,7 +300,12 @@ private:
 
 BOUTMAIN(FCISlab);
 
-void FCISlab::interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir) {
+void FCISlab::interpolate_FCI(const Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir) {
+
+  if(!mesh->FCI)
+    return; // Not using FCI method. Print error / warning?
+
+  output << "START\n";
 
     fx = DDX(f) * mesh->dx;
     mesh->communicate(fx);
@@ -284,8 +314,8 @@ void FCISlab::interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int d
     fxz = D2DXDZ(f) * mesh->dx * mesh->dz;
     mesh->communicate(fxz);
 
-	// f_next.allocate();
-	f_next = 0;
+    // f_next.allocate();
+    f_next = 0;
 
     for(int x=mesh->xstart;x<=mesh->xend;x++) {
 	  for(int y=mesh->ystart; y<=mesh->yend;y++) {
@@ -294,25 +324,72 @@ void FCISlab::interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int d
 		  int ncz = mesh->ngz-1;
 		  int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
 		  int z_mod_p1 = (z_mod + 1) % ncz;
-		  // std::cout << x << " " << y << " " << z << " " << fcimap.i_corner[x][y][z] << " " <<  y + dir << " " << fcimap.k_corner[x][y][z] << " " << z_mod << "\n";
+                  //std::cout << x << " " << y << " " << z << " " << fcimap.i_corner[x][y][z] << " " <<  y + dir << " " << fcimap.k_corner[x][y][z] << " " << z_mod << "\n";
 
-		  f_next(x,y + dir,z) = (f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
-								 + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
-								 + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
-								 - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.a_z[x][y][z]
-			+ (f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
-			   + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
-			   + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
-			   - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.a_1mz[x][y][z]
-			+ (fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
-			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
-			   + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
-			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.b_z[x][y][z]
-			- (fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
-			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
-			   + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
-			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.b_1mz[x][y][z];
+                  
+                   // Interpolate f in X at Z
+                   BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+                     + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+                     + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+                     - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z];
+                   
+                   // Interpolate f in X at Z+1
+                   BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+                     + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+                     + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+                     - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z];
+                   
+                   // Interpolate fz in X at Z
+                   BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+                     + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+                     + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+                     - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z];
+                   
+                   // Interpolate fz in X at Z+1
+                   BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+                     + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+                     + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+                     - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z];
+                  
+                   /*
+                   output.write("(%d,%d,%d)->(%d) : %e->%e, %e->%e, %e->%e, %e->%e\n", x,y,z, 
+                                fcimap.i_corner[x][y][z], 
+                                f(x,y,z), f_z,
+                                f(x,y,(z+1)%ncz), f_zp1,
+                                fz(x,y,z), fz_z,
+                                fz(x,y,(z+1)%ncz), fz_zp1
+                                );
+                   */
+                   // Interpolate in Z
+                   
+                   f_next(x,y + dir,z) = 
+                     + f_z    * fcimap.a_z[x][y][z]
+                     + f_zp1  * fcimap.a_1mz[x][y][z]
+                     + fz_z   * fcimap.b_z[x][y][z]
+                     + fz_zp1 * fcimap.b_1mz[x][y][z];
+                   
+                   //output.write("    %e, %e, %e, %e -> %e\n", 
+                   //             f_z, f_zp1, fz_z, fz_zp1, f_next(x,y + dir,z));
 
+                   /*
+                   f_next(x,y + dir,z) = (f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+                                          + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+                                          + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+                                          - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.a_z[x][y][z]
+                     + (f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+                        + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+                        + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+                        - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.a_1mz[x][y][z]
+                     + (fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+                        + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+                        + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+                        - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.b_z[x][y][z]
+                     - (fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+                        + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+                        + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+                        - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.b_1mz[x][y][z];
+                   
+                   */
 		}
 	  }
     }
