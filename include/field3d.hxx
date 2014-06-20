@@ -83,11 +83,11 @@ class Field3D : public Field, public FieldData {
   Field3D* timeDeriv();
 
   /// Flux Coordinate Independent (FCI) method
-  Field3D& yup();
-  const Field3D& yup() const;
+  Field3D* yup();
+  const Field3D* yup() const;
   
-  Field3D& ydown();
-  const Field3D& ydown() const;
+  Field3D* ydown();
+  const Field3D* ydown() const;
   
   /// Returns DC component
   const Field2D DC() const;

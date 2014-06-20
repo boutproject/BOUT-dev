@@ -1,18 +1,29 @@
+grid = fci.grid.nc
 
 nout = 5
 timestep = 0.1
 
 MXG = 2
-MYG = 2
+MYG = 1
 
-MZ = 4
+MZ = 9
+
+[ddz]
+first=fft
 
 [mesh]
 FCI = true
 
-nx = 5   # Includes 2*MXG boundary cells
-ny = 4
+nx = 20   # Includes 2*MXG boundary cells
+ny = 10
+
+dx = 0.05
+dy = 0.6283185307179586
+
+# symmetricglobalx = true
 
 [f]
 scale = 1.0
-function = sin(y) * x^2
+#function = sin(y) * cos(z) #* (x-0.5)^2
+# function = (x - 0.5)^2
+function = cos(z)

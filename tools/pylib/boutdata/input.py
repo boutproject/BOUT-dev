@@ -38,6 +38,8 @@ def transform3D(arr):
 
     nmodes = fa.shape[-1]
 
+    # scipy fft normalises to N, but fftw doesn't
+    fa /= arr.shape[-1]
     # Unpack complex array into a real array
 
     shape = list(arr.shape)

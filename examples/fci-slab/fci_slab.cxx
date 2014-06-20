@@ -1,15 +1,26 @@
 #include <bout/physicsmodel.hxx>
 #include <derivs.hxx>
 #include <utils.hxx>
+#include <interpolation.hxx>
+
+Field3D fx;
+Field3D fz;
+Field3D fxz;
 
 class FCIMap {
 public:
-  FCIMap(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz);
-  FCIMap(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz);
+  FCIMap() {};
+
+  void genCoeffs(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz);
+  void genCoeffs(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz);
+  // FCIMap(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz);
+  // FCIMap(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz);
   // ~FCIMap();
 
   int*** i_corner;
   int*** k_corner;
+  Field3D t_x;
+  Field3D t_z;
   Field3D a_x;
   Field3D a_z;
   Field3D a_1mx;
@@ -20,23 +31,26 @@ public:
   Field3D b_1mz;
 };
 
-FCIMap::FCIMap(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz) {
+void FCIMap::genCoeffs(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz) {
 
   BoutReal t_x, t_z, temp;
 
   i_corner = i3tensor(nx, ny, nz);
   k_corner = i3tensor(nx, ny, nz);
 
-  for(int x=0;x<nx;x++) {
-	for(int y=0; y<ny;y++) {
-	  for(int z=0;z<nz;z++) {
-		i_corner[x][y][z] = (int)xt_prime[x][y][z];
-		k_corner[x][y][z] = (int)zt_prime[x][y][z];
+  // for(int x=0;x<nx;x++) {
+  // 	for(int y=0; y<ny;y++) {
+  // 	  for(int z=0;z<nz;z++) {
+  for(int x=mesh->xstart;x<=mesh->xend;x++) {
+	for(int y=mesh->ystart; y<=mesh->yend;y++) {
+	  for(int z=0;z<mesh->ngz-1;z++) {
+		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
 
 		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
 		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
 
-		std::cout << k_corner[x][y][z] << " " << zt_prime[x][y][z] << " " << t_z << " " << 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1. << std::endl;
+		// std::cout << k_corner[x][y][z] << " " << < " " << t_z << " " << 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1. << std::endl;
 
 		temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
         a_x.setData(x, y, z, &temp);
@@ -58,13 +72,18 @@ FCIMap::FCIMap(Field3D xt_prime, Field3D zt_prime, int nx, int ny, int nz) {
 		temp = t_z*t_z*t_z - t_z*t_z;
 		b_1mz.setData(x, y, z, &temp);
 
+		if((x == 7) && (y == mesh->yend)) {
+		  std::cout << "x: " << x << " y: " << y << " z: " << z << " i: " << i_corner[x][y][z] << " x: " << xt_prime[x][y][z] <<  " t_x: " << t_x << " k: " << k_corner[x][y][z] << " z: " << zt_prime[x][y][z] << " t_z: " << t_z << 
+			" a_z: " << a_z[x][y][z] << " b_z: " << b_z[x][y][z] << "\n";
+		}
+
 	  }
 	}
   }
 
 }
 
-FCIMap::FCIMap(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz) {
+void FCIMap::genCoeffs(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz) {
 
   BoutReal t_x, t_z, temp;
 
@@ -108,137 +127,192 @@ FCIMap::FCIMap(BoutReal* xt_prime, BoutReal* zt_prime, int nx, int ny, int nz) {
 
 class FCISlab : public PhysicsModel {
 public:
-	int init(bool restarting) {
-		const string fwdfilename = "forward_coefs.nc";
 
-		// Create a file format handler
-		DataFormat *fwdfile = data_format(fwdfilename.c_str());
+  FCIMap forward_map;
+  FCIMap backward_map;
 
-		fwdfile->openr(fwdfilename);
+  int init(bool restarting) {
+	// const string fwdfilename = "forward_coefs.nc";
 
-		if(!fwdfile->is_valid()) {
-			output << "\tERROR: Could not open file " << fwdfilename << endl;
-		}
+	// // Create a file format handler
+	// DataFormat *fwdfile = data_format(fwdfilename.c_str());
 
-		BoutReal forward_xt[5][5][5];
-		BoutReal forward_zt[5][5][5];
-		Field3D forward_xt_f;
-		Field3D forward_zt_f;
+	// fwdfile->openr(fwdfilename);
 
-		const string xt_prime = "xt_prime";
-		const string zt_prime = "zt_prime";
+	// if(!fwdfile->is_valid()) {
+	//   output << "\tERROR: Could not open file " << fwdfilename << endl;
+	// }
 
-		fwdfile->read(**forward_xt, xt_prime, 5, 5, 5);
-		fwdfile->read(**forward_zt, zt_prime, 5, 5, 5);
+	// BoutReal forward_xt[10][10][10];
+	// BoutReal forward_zt[10][10][10];
+	// Field3D forward_xt_f;
+	// Field3D forward_zt_f;
 
-		fwdfile->close();
+	// const string xt_prime = "xt_prime";
+	// const string zt_prime = "zt_prime";
 
-		const string bkdfilename = "backward_coefs.nc";
+	// fwdfile->read(**forward_xt, xt_prime, 10, 10, 10);
+	// fwdfile->read(**forward_zt, zt_prime, 10, 10, 10);
 
-		// Create a file format handler
-		DataFormat *bkdfile = data_format(bkdfilename.c_str());
+	// fwdfile->close();
 
-		bkdfile->openr(bkdfilename);
+	// const string bkdfilename = "backward_coefs.nc";
 
-		if(!bkdfile->is_valid()) {
-			output << "\tERROR: Could not open file " << bkdfilename << endl;
-		}
+	// // Create a file format handler
+	// DataFormat *bkdfile = data_format(bkdfilename.c_str());
 
-		BoutReal backward_xt[5][5][5];
-		BoutReal backward_zt[5][5][5];
-		Field3D backward_xt_f;
-		Field3D backward_zt_f;
+	// bkdfile->openr(bkdfilename);
 
-		bkdfile->read(**backward_xt, xt_prime, 5, 5, 5);
-		bkdfile->read(**backward_zt, zt_prime, 5, 5, 5);
+	// if(!bkdfile->is_valid()) {
+	//   output << "\tERROR: Could not open file " << bkdfilename << endl;
+	// }
 
-		bkdfile->close();
+	// BoutReal backward_xt[10][10][10];
+	// BoutReal backward_zt[10][10][10];
+	// Field3D backward_xt_f;
+	// Field3D backward_zt_f;
 
-		// Turn array of BoutReals into Field3D
-		// for (int x=0;x<5;++x) {
-		// 	for (int y=0;y<5;++y) {
-		// 		for (int z =0;z<5;++z) {
-		// 		  forward_xt_f.setData(x, y, z, &forward_xt[x][y][z]);
-		// 		  forward_zt_f.setData(x, y, z, &forward_zt[x][y][z]);
-		// 		  backward_xt_f.setData(x, y, z, &backward_xt[x][y][z]);
-		// 		  backward_zt_f.setData(x, y, z, &backward_zt[x][y][z]);
-		// 		}
-		// 	}
-		// }
+	// bkdfile->read(**backward_xt, xt_prime, 10, 10, 10);
+	// bkdfile->read(**backward_zt, zt_prime, 10, 10, 10);
 
-		// FCIMap forward_map(forward_xt_f, forward_zt_f, 5, 5, 5);
-		// FCIMap backward_map(backward_xt_f, backward_zt_f, 5, 5, 5);
+	// bkdfile->close();
 
-		FCIMap forward_map(**forward_xt, **forward_zt, 5, 5, 5);
-		FCIMap backward_map(**backward_xt, **backward_zt, 5, 5, 5);
+	// // Turn array of BoutReals into Field3D
+	// for (int x=0;x<10;++x) {
+	//   for (int y=0;y<10;++y) {
+	// 	for (int z =0;z<9;++z) {
+	// 	  forward_xt_f.setData(x, y, z, &forward_xt[x][y][z]);
+	// 	  forward_zt_f.setData(x, y, z, &forward_zt[x][y][z]);
+	// 	  backward_xt_f.setData(x, y, z, &backward_xt[x][y][z]);
+	// 	  backward_zt_f.setData(x, y, z, &backward_zt[x][y][z]);
+	// 	}
+	//   }
+	// }
+	Field3D forward_xt_prime; 
+	Field3D forward_zt_prime; 
+	Field3D backward_xt_prime;
+	Field3D backward_zt_prime;
 
-		// for (int i=0;i<5;++i) {
-		// 	for (int j=0;j<5;++j) {
-		// 		for (int k =0;k<5;++k) {
-		// 			std::cout << forward_zt[i][j][k] << "\t";
-		// 		}
-		// 	}
-		// 	std::cout << "\n";
-		// }
+	mesh->dx = 0.1;
+	mesh->dy = 0.6283185307179586;
 
-		// std::cout << "\n\n";
+	SAVE_ONCE(mesh->dx);
+	SAVE_ONCE(mesh->dy);
 
-		// for (int i=0;i<5;++i) {
-		// 	for (int j=0;j<5;++j) {
-		// 		for (int k =0;k<5;++k) {
-		// 			std::cout << forward_map.k_corner[i][j][k] << "\t";
-		// 		}
-		// 	}
-		// 	std::cout << "\n";
-		// }
+	// output << "========== LOADING ==============";
+	GRID_LOAD(forward_xt_prime); 
+	// output << "=================================";
+	GRID_LOAD(forward_zt_prime); 
+	GRID_LOAD(backward_xt_prime);
+	GRID_LOAD(backward_zt_prime);
+
+	// Field3D	forward_delta_x;
+	// Field3D	forward_delta_z;
+
+	// GRID_LOAD(forward_delta_x);
+	// GRID_LOAD(forward_delta_z);
+
+	// Field3D	backward_delta_x;
+	// Field3D	backward_delta_z;
+
+	// GRID_LOAD(backward_delta_x);
+	// GRID_LOAD(backward_delta_z);
+
+	// forward_xt_prime /= 9.0; 
+	// forward_zt_prime /= 9.0; 
+	// backward_xt_prime /= 9.0;
+	// backward_zt_prime /= 9.0;
+
+	// std::cout << "\n\n\n\n!!!!!!!!!!\n";
+	// std::cout << forward_xt_prime(4,4,4) << "\n";
+	// std::cout << forward_zt_prime(4,4,4) << "\n";
+	// std::cout << "!!!!!!!!!!\n\n\n\n\n";
+
+	output << "########### FORWARD ###############\n";
+	forward_map.genCoeffs(forward_xt_prime, forward_zt_prime, mesh->ngx, mesh->ngy, mesh->ngz-1);
+	output << "########### BACKWARD ###############\n";
+	backward_map.genCoeffs(backward_xt_prime, backward_zt_prime, mesh->ngx, mesh->ngy, mesh->ngz-1);
 
 
+	SAVE_ONCE4(forward_map.t_x,forward_map.t_z,forward_map.a_x,forward_map.a_z);
 
-		solver->add(f, "f");
-		return 0;
-	}
-	int rhs(BoutReal time) {
-		ddt(f) = f;
-		return 0;
-	}
+	// forward_map.genCoeffs(**forward_xt, **forward_zt, 10, 10, 10);
+	// backward_map.genCoeffs(**backward_xt, **backward_zt, 10, 10, 10);
 
-	void interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir);
-	const Field3D& Grad_par_FCI(const Field3D &f);
+	solver->add(f, "f");
+
+	output << "########### dz ###############\n";
+	output << mesh->dz << "\n";
+
+	// Field3D f2 = f;
+
+	interpolate_FCI(f, *(f.yup()), forward_map, +1);
+	interpolate_FCI(f, *(f.ydown()), backward_map, -1);
+
+	SAVE_ONCE3(fx, fz, fxz);
+
+	// *(f.yup()) = interpolate(f, forward_delta_x, forward_delta_z);
+	// *(f.ydown()) = interpolate(f, backward_delta_x, backward_delta_z);
+
+	dump.add(*(f.yup()), "yup", 0);
+	dump.add(*(f.ydown()), "ydown", 0);
+	//SAVE_ONCE(*(f.yup()));
+	// SAVE_ONCE(f2.ydown());
+
+	return 0;
+  }
+  int rhs(BoutReal time) {
+
+	ddt(f) = f;
+	return 0;
+  }
+
+  void interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir);
+  const Field3D& Grad_par_FCI(const Field3D &f);
 private:
-	Field3D f;
+  Field3D f;
 };
 
 BOUTMAIN(FCISlab);
 
 void FCISlab::interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir) {
-    // Field3D *fup = f.yup();
 
-    Field3D fx = DDX(f);
+    fx = DDX(f) * mesh->dx;
     mesh->communicate(fx);
-    Field3D fz = DDZ(f);
+    fz = DDZ(f) * mesh->dz;
     mesh->communicate(fz);
-    Field3D fxz = D2DXDZ(f);
+    fxz = D2DXDZ(f) * mesh->dx * mesh->dz;
     mesh->communicate(fxz);
+
+	// f_next.allocate();
+	f_next = 0;
 
     for(int x=mesh->xstart;x<=mesh->xend;x++) {
 	  for(int y=mesh->ystart; y<=mesh->yend;y++) {
 		for(int z=0;z<mesh->ngz-1;z++) {
-		  f_next(x,y,z) = (f(fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z])*fcimap.a_x[x][y][z]
-						   + f(fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z])*fcimap.a_1mx[x][y][z]
-						   + fx( fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z])*fcimap.b_x[x][y][z]
-						   - fx( fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z])*fcimap.b_1mx[x][y][z])*fcimap.a_z[x][y][z]
-			+ (f( fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.a_x[x][y][z]
-			   + f( fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.a_1mx[x][y][z]
-			   + fx( fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.b_x[x][y][z]
-			   - fx( fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.b_1mx[x][y][z])*fcimap.a_1mz[x][y][z]
-			+ (fz(fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z])*fcimap.a_x[x][y][z]
-			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z])*fcimap.a_1mx[x][y][z]
-			   + fxz(fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z])*fcimap.b_x[x][y][z]
-			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z])*fcimap.b_1mx[x][y][z])*fcimap.b_z[x][y][z]
-			- (fz(fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.a_x[x][y][z]
-			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.a_1mx[x][y][z]
-			   + fxz(fcimap.i_corner[x][y][z], y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.b_x[x][y][z]
-			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, fcimap.k_corner[x][y][z]+1)*fcimap.b_1mx[x][y][z])*fcimap.b_1mz[x][y][z];
+
+		  int ncz = mesh->ngz-1;
+		  int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
+		  int z_mod_p1 = (z_mod + 1) % ncz;
+		  // std::cout << x << " " << y << " " << z << " " << fcimap.i_corner[x][y][z] << " " <<  y + dir << " " << fcimap.k_corner[x][y][z] << " " << z_mod << "\n";
+
+		  f_next(x,y + dir,z) = (f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+								 + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+								 + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+								 - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.a_z[x][y][z]
+			+ (f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+			   + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+			   + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+			   - fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.a_1mz[x][y][z]
+			+ (fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.a_x[x][y][z]
+			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.a_1mx[x][y][z]
+			   + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.b_x[x][y][z]
+			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.b_1mx[x][y][z])*fcimap.b_z[x][y][z]
+			- (fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.a_x[x][y][z]
+			   + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.a_1mx[x][y][z]
+			   + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.b_x[x][y][z]
+			   - fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.b_1mx[x][y][z])*fcimap.b_1mz[x][y][z];
+
 		}
 	  }
     }
@@ -246,4 +320,10 @@ void FCISlab::interpolate_FCI(Field3D &f, Field3D &f_next, FCIMap &fcimap, int d
 
 const Field3D& FCISlab::Grad_par_FCI(const Field3D &f) {
 
+  Field3D result;
+
+  // interpolate_FCI(f, f.yup(), forward_map, +1);
+  // interpolate_FCI(f, f.ydown(), backward_map, -1);
+
+  // result = (f.yup() - f.ydown())
 }
