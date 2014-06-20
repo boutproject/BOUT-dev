@@ -52,7 +52,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
-  OPTION(options, symmetricGlobalX,  false);
+  OPTION(options, symmetricGlobalX,  true);
 
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
