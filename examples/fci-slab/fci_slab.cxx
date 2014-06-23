@@ -293,7 +293,7 @@ public:
   }
 
   void interpolate_FCI(const Field3D &f, Field3D &f_next, FCIMap &fcimap, int dir);
-  const Field3D& Grad_par_FCI(const Field3D &f);
+  const Field3D Grad_par_FCI(Field3D &f);
 private:
   Field3D f;
 };
@@ -360,12 +360,25 @@ void FCISlab::interpolate_FCI(const Field3D &f, Field3D &f_next, FCIMap &fcimap,
   }
 }
 
-const Field3D& FCISlab::Grad_par_FCI(const Field3D &f) {
+const Field3D FCISlab::Grad_par_FCI(Field3D &f) {
 
   Field3D result;
+  Field3D *yup, *ydown;
 
-  // interpolate_FCI(f, f.yup(), forward_map, +1);
-  // interpolate_FCI(f, f.ydown(), backward_map, -1);
+  result.allocate();
 
-  // result = (f.yup() - f.ydown())
+  yup = f.yup();
+  ydown = f.ydown();
+
+  interpolate_FCI(f, *yup, forward_map, +1);
+  interpolate_FCI(f, *ydown, backward_map, -1);
+
+  for (int x=mesh->xstart;x<=mesh->xend;++x) {
+	for (int y=mesh->ystart;y<=mesh->yend;++y) {
+	  for (int z=0;z<mesh->ngz-1;++z) {
+		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh->dy(x,y));
+	  }
+	}
+  }
+  return result;
 }
