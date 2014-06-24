@@ -104,5 +104,5 @@ with DataFile("slab.grd.nc", create=True) as d:
     
     d.write("sinty", sinty)
     d.write("zShift", zShift)
-    d.write("TwistShift", TwistShift)
+    d.write("ShiftAngle", TwistShift)
     
