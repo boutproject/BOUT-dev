@@ -191,6 +191,16 @@ const Field3D* Field3D::ydown() const {
   return ydown_field;
 }
 
+// Nullify yup and ydown
+void Field3D::resetFCI() {
+
+  if (mesh->FCI) {
+	yup_field->freeData();
+	ydown_field->freeData();
+  }
+
+}
+
 const Field2D Field3D::DC() const {
   Field2D result;
   BoutReal **d;

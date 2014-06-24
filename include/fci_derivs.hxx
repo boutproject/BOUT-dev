@@ -80,6 +80,8 @@ public:
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
 
   // Parallel derivatives
+  const Field3D Grad_par(Field3D &f, bool keep);
+  const Field3D Grad2_par2(Field3D &f, bool keep);
   const Field3D Grad_par(Field3D &f);
   const Field3D Grad2_par2(Field3D &f);
 };

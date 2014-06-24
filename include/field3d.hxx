@@ -88,6 +88,9 @@ class Field3D : public Field, public FieldData {
   
   Field3D* ydown();
   const Field3D* ydown() const;
+
+  // Nullify yup and ydown
+  void resetFCI();
   
   /// Returns DC component
   const Field2D DC() const;
