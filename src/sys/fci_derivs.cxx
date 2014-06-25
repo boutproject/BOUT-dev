@@ -196,8 +196,12 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
   }
 }
 
-// Computes parallel derivative using centred finite differences
-// If keep is true, then don't throw away the interpolated field
+/*******************************************************************************
+ * Grad_par
+ * The parallel derivative along unperturbed B-field
+ *
+ * If keep is true, then don't throw away the interpolated field
+ *******************************************************************************/
 const Field3D FCI::Grad_par(Field3D &f, bool keep) {
 
 #ifdef CHECK
@@ -238,8 +242,15 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   return result;
 }
 
-// Computes parallel derivative squared using centred finite differences
-// If keep is true, then don't throw away the interpolated field
+
+/*******************************************************************************
+ * Grad2_par2
+ * second parallel derivative
+ *
+ * (b dot Grad)(b dot Grad)
+ *
+ * If keep is true, then don't throw away the interpolated field
+ *******************************************************************************/
 const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
 
 #ifdef CHECK
@@ -277,5 +288,27 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
   msg_stack.pop(msg_pos);
 #endif
 
+  return result;
+}
+
+/*******************************************************************************
+ * Div_par
+ * parallel divergence operator B \partial_{||} (F/B)
+ *
+ * If keep is true, then don't throw away the interpolated field
+ *******************************************************************************/
+const Field3D FCI::Div_par(Field3D &f, bool keep) {
+#ifdef CHECK
+  int msg_pos = msg_stack.push("FCI::Div_par( Field3D )");
+#endif
+
+  Field3D result = mesh.Bxy*Grad_par(f/mesh.Bxy, keep);
+
+#ifdef TRACK
+  result.name = "FCI::Div_par("+f.name+")";
+#endif
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
   return result;
 }

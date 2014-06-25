@@ -82,6 +82,7 @@ public:
   // Parallel derivatives
   const Field3D Grad_par(Field3D &f, bool keep = false);
   const Field3D Grad2_par2(Field3D &f, bool keep = false);
+  const Field3D Div_par(Field3D &f, bool keep = false);
 };
 
 #endif // __FCI_DERIVS_H__
