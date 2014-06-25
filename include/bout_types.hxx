@@ -35,7 +35,7 @@ typedef double BoutReal;
 //typedef vector<BoutReal> rvec;  // Vector of BoutReals
 
 /// 4 possible variable locations. Default is for passing to functions
-enum CELL_LOC {CELL_DEFAULT, CELL_CENTRE, CELL_XLOW, CELL_YLOW, CELL_ZLOW, CELL_VSHIFT};
+enum CELL_LOC {CELL_DEFAULT=0, CELL_CENTRE=1, CELL_CENTER=1, CELL_XLOW=2, CELL_YLOW=3, CELL_ZLOW=4, CELL_VSHIFT=5};
 
 /// Differential methods. Both central and upwind
 enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIFF_U4, DIFF_FFT, DIFF_SPLIT, DIFF_NND, DIFF_S2};
