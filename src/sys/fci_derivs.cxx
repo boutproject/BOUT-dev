@@ -39,6 +39,7 @@
 
 #include <fci_derivs.hxx>
 #include <derivs.hxx>
+#include <msg_stack.hxx>
 #include <bout/mesh.hxx>
 #include <bout/assert.hxx>
 
@@ -199,6 +200,10 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 // If keep is true, then don't throw away the interpolated field
 const Field3D FCI::Grad_par(Field3D &f, bool keep) {
 
+#ifdef CHECK
+  int msg_pos = msg_stack.push("FCI::Grad_par( Field3D )");
+#endif
+
   Field3D result;
   Field3D *yup, *ydown;
 
@@ -214,7 +219,7 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
 	for (int y=mesh.ystart;y<=mesh.yend;++y) {
 	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y));
+		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
 	  }
 	}
   }
@@ -223,18 +228,24 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
 	f.resetFCI();
   }
 
-  return result;
-}
+#ifdef TRACK
+  result.name = "FCI::Grad_par("+f.name+")";
+#endif
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
 
-// Throws away the interpolated field
-const Field3D FCI::Grad_par(Field3D &f) {
-  return Grad_par(f, false);
+  return result;
 }
 
 // Computes parallel derivative squared using centred finite differences
 // If keep is true, then don't throw away the interpolated field
 const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
 
+#ifdef CHECK
+  int msg_pos = msg_stack.push("FCI::Grad2_par2( Field3D )");
+#endif
+
   Field3D result;
   Field3D *yup, *ydown;
 
@@ -250,7 +261,7 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
 	for (int y=mesh.ystart;y<=mesh.yend;++y) {
 	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y));
+		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
 	  }
 	}
   }
@@ -259,10 +270,12 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
 	f.resetFCI();
   }
 
-  return result;
-}
+#ifdef TRACK
+  result.name = "FCI::Grad2_par2("+f.name+")";
+#endif
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
 
-// Throws away the interpolated field
-const Field3D FCI::Grad2_par2(Field3D &f) {
-  return Grad2_par2(f, false);
+  return result;
 }
