@@ -1,22 +1,47 @@
 import numpy as np
+from math import pi
 from scipy.integrate import odeint
 import boututils.datafile as bdata
 from boutdata.input import transform3D
 
 # Parameters
-nx = 10
-ny = 10
-nz = 8
-Lx = 1.
-Ly = 2*np.pi
-Lz = 2*np.pi
-delta_x = Lx/(nx-1)
-delta_y = Ly/(ny)
-delta_z = Lz/(nz)
+nx = 34
+########## y is toroidal!
+ny = 64
+########## z is poloidal!
+nz = 64
+
+Lx = 0.1     # Radial domain size [m]
+Ltor = 10.   # "Toroidal" length [m]
+Lpol = 1.    # "Poloidal" length [m]
+
+delta_x = Lx/(nx)
+delta_pol = Lpol/(nz)
+delta_tor = Ltor/(ny)
+
+Bt  = 1.0   # Magnetic field [T]
+Bp  = 0.1   # Poloidal field at the middle of the domain [T]
+Bpprime = 1.0  # Bp gradient [T/m] Bp(x) = Bp + Bpprime * x 
 
 # Coord arrays
 x = np.linspace(0,Lx,nx)
-z = np.linspace(0,Lz,nz,endpoint=False)
+y = np.linspace(0,Ltor,ny)
+z = np.linspace(0,Lpol,nz,endpoint=False)
+
+############################################################
+
+# Effective major radius
+R = Ltor / (2.*pi)
+
+# Set poloidal magnetic field
+
+Bpx = Bp + (x-Lx/2) * Bpprime
+
+Bpxy = np.transpose(np.resize(Bpx, (nz, ny, nx)), (2,1,0))
+
+Bxy = np.sqrt(Bpxy**2 + Bt**2)
+
+############################################################
 
 class Mappoint():
     def __init__(self, xt, zt):
@@ -24,44 +49,17 @@ class Mappoint():
         self.zt = zt
 
         self.xt_prime = xt/delta_x
-        self.zt_prime = zt/delta_z
-
-        self.i_corner = int(xt/delta_x)
-        self.k_corner = int(zt/delta_z)
-
-        # if self.k_corner >= nz:
-        #     self.k_corner = 0
-        #     zt
-
-        # print "xt: ", xt, " i: ", self.i_corner, " zt: ", zt, " k: ", self.k_corner
-
-        t_x = (xt - x[self.i_corner])/delta_x
-        t_z = (zt - z[self.k_corner])/delta_z
-
-        self.t_x = t_x
-        self.t_z = t_z
-
-        self.a_x = (1.-t_x)*(1.+t_x-2.*(t_x**2))
-        self.a_z = (1.-t_z)*(1.+t_z-2.*(t_z**2))
-
-        self.a_1mx = (1.-(1.-t_x))*(1.+(1.-t_x)-2.*(1.-t_x)**2)
-        self.a_1mz = (1.-(1.-t_z))*(1.+(1.-t_z)-2.*(1.-t_z)**2)
-
-        self.b_x = t_x*(1.-t_x)**2
-        self.b_z = t_z*(1.-t_z)**2
-
-        self.b_1mx = (1.-t_x)*(1.-(1.-t_x))**2
-        self.b_1mz = (1.-t_z)*(1.-(1.-t_z))**2
+        self.zt_prime = zt/delta_pol
 
 def unroll_map_coeff(map_list, coeff):
     coeff_array = np.transpose(np.resize(np.array([getattr(f, coeff) for f in map_list]).reshape( (nx,nz) ), (ny, nx, nz) ), (1, 0, 2) )
     return coeff_array
 
 def b_field(vector, y):
-    x0 = 0.5                    # Centre of box, where bz = 0.
+    x0 = 0.05                    # Centre of box, where bz = 0.
     x, z = vector;
     bx = 0.
-    bz = (x-x0)*(-1)
+    bz = Bp + (x-x0) * Bpprime
 
     return [bx, bz]
 
@@ -71,95 +69,39 @@ def field_line_tracer(direction, map_list):
 
     for i in np.arange(0,nx):
         for k in np.arange(0,nz):
-            result[i,k,:] = odeint(b_field, [x[i], z[k]], [0, delta_y*direction])[1,:]
-            result[i,k,1] = np.mod(result[i,k,1], Lz)
-            if result[i,k,1] == 2.*np.pi:
-                print "wat"
+            result[i,k,:] = odeint(b_field, [x[i], z[k]], [0, delta_tor*direction])[1,:]
+            result[i,k,1] = np.mod(result[i,k,1], Lpol)
 
             map_list.append(Mappoint(result[i,k,0],result[i,k,1]))
 
     return result
 
-def output_coefs(direction, map_list):
-
-    if direction > 0:
-        direction_name = 'forward'
-    else:
-        direction_name = 'backward'
-
-    with bdata.DataFile('fci.grid.nc', write=True, create=True, append=True) as f:
-        f.write('nx',nx)
-        f.write('ny',ny)
-
-        xt_prime = unroll_map_coeff(map_list, 'xt_prime')
-        f.write(direction_name + '_xt_prime', transform3D(xt_prime))
-        zt_prime = unroll_map_coeff(map_list, 'zt_prime')
-        f.write(direction_name + '_zt_prime', transform3D(zt_prime))
-
-        delta_x = unroll_map_coeff(map_list, 't_x')
-        f.write(direction_name + '_delta_x', transform3D(delta_x))
-        delta_z = unroll_map_coeff(map_list, 't_z')
-        f.write(direction_name + '_delta_z', transform3D(delta_z))
-
-        # i_corner = unroll_map_coeff(map_list, 'i_corner')
-        # f.write('i_corner', transform3D(i_corner))
-        # k_corner = unroll_map_coeff(map_list, 'k_corner')
-        # f.write('k_corner', transform3D(k_corner))
-
-        # a_x = unroll_map_coeff(map_list, 'a_x')
-        # f.write('a_x', transform3D(a_x))
-        # b_x = unroll_map_coeff(map_list, 'b_x')
-        # f.write('b_x', transform3D(b_x))
-
-        # a_z = unroll_map_coeff(map_list, 'a_z')
-        # f.write('a_z', transform3D(a_z))
-        # b_z = unroll_map_coeff(map_list, 'b_z')
-        # f.write('b_z', transform3D(b_z))
-
-        # a_1mx = unroll_map_coeff(map_list, 'a_1mx')
-        # f.write('a_1mx', transform3D(a_1mx))
-        # b_1mx = unroll_map_coeff(map_list, 'b_1mx')
-        # f.write('b_1mx', transform3D(b_1mx))
-
-        # a_1mz = unroll_map_coeff(map_list, 'a_1mz')
-        # f.write('a_1mz', transform3D(a_1mz))
-        # b_1mz = unroll_map_coeff(map_list, 'b_1mz')
-        # f.write('b_1mz', transform3D(b_1mz))
-
 if __name__ == "__main__":
 
     forward_map = []
     forward_coords = field_line_tracer(+1, forward_map)
-
-    direction_name = 'forward'
-
-    with bdata.DataFile('fci.grid.nc', write=True, create=True) as f:
-        f.write('nx',nx)
-        f.write('ny',ny)
-
-        xt_prime = unroll_map_coeff(forward_map, 'xt_prime')
-        f.write(direction_name + '_xt_prime', transform3D(xt_prime))
-        zt_prime = unroll_map_coeff(forward_map, 'zt_prime')
-        f.write(direction_name + '_zt_prime', transform3D(zt_prime))
-
-
-
-    # output_coefs(+1, forward_map)
-
     backward_map = []
     backward_coords = field_line_tracer(-1, backward_map)
 
-    direction_name = 'backward'
+    X,Y = np.meshgrid(x,y,indexing='ij')
+    x0 = 0.5
+    g_22 = np.sqrt(((Bp + (X-x0) * Lx * Bpprime)**2 + 1))
 
-    with bdata.DataFile('fci.grid.nc', write=True, create=False) as f:
-        f.write('nx',nx)
-        f.write('ny',ny)
+    with bdata.DataFile('fci.grid.nc', write=True, create=True) as f:
+        f.write('nx', nx)
+        f.write('ny', ny)
+        f.write('nz', nz)
+        f.write("dx", delta_x)
+        f.write("dy", delta_tor)
+        f.write("g_22", g_22)
+        f.write("Bxy", transform3D(Bxy))
+    
+        xt_prime = unroll_map_coeff(forward_map, 'xt_prime')
+        f.write('forward_xt_prime', transform3D(xt_prime))
+        zt_prime = unroll_map_coeff(forward_map, 'zt_prime')
+        f.write('forward_zt_prime', transform3D(zt_prime))
 
         xt_prime = unroll_map_coeff(backward_map, 'xt_prime')
-        f.write(direction_name + '_xt_prime', transform3D(xt_prime))
+        f.write('backward_xt_prime', transform3D(xt_prime))
         zt_prime = unroll_map_coeff(backward_map, 'zt_prime')
-        f.write(direction_name + '_zt_prime', transform3D(zt_prime))
-
-
-
-    # output_coefs(-1, backward_map)
+        f.write('backward_zt_prime', transform3D(zt_prime))
