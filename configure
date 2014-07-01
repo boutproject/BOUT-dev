@@ -2578,7 +2578,11 @@ MFILE
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
     echo "Using PETSc 3.4 interface"
-  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "0"
+  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
+    echo "Using PETSc 3.5 interface"
+  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
