@@ -4,6 +4,7 @@
 #include "impls/petsc-3.1/petsc-3.1.hxx"
 #include "impls/petsc-3.2/petsc-3.2.hxx"
 #include "impls/petsc-3.3/petsc-3.3.hxx"
+#include "impls/petsc-3.4/petsc-3.4.hxx"
 #include "impls/petsc/petsc.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/pvode/pvode.hxx"
