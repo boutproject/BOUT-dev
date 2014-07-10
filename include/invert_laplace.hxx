@@ -92,6 +92,7 @@ public:
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
+  virtual void setIncludeYGuards(bool b) { include_yguards = b; }
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
   virtual const Field3D solve(const Field3D &b);

@@ -90,9 +90,9 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
 
   int ys = mesh->ystart, ye = mesh->yend;
   
-  if(mesh->hasBndryLowerY())
+  if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
+  if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->ngy-1; // Contains upper boundary
 
   static SPT_data *data = NULL;

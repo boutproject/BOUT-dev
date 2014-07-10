@@ -52,6 +52,7 @@ class FieldPerp : public Field {
   void setIndex(int y);
 
   void allocate();
+  bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
 
   // operators
 
