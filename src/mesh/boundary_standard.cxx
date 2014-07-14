@@ -289,7 +289,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   }
   
   // Standard (non-staggered) case
-  for(; !bndry->isDone(); bndry->next1d()) {
+  for(; !bndry->isDone(); bndry->next()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
                            + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
