@@ -184,11 +184,12 @@ void KarniadakisSolver::take_step(BoutReal dt) {
       fm1[i] = fm2[i] = f0[i];
       Sm1[i] = Sm2[i] = S0[i];
     }
+    first_time = false;
   }
 
   #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
-    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i]) + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]);
+    f1[i] = (6./11.) * (3.*f0[i] - 1.5*fm1[i] + (1./3.)*fm2[i] + dt*(3.*S0[i] - 3.*Sm1[i] + Sm2[i]));
   
   // D0 = S(f0)
   load_vars(f0);
