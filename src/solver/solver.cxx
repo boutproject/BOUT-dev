@@ -1111,6 +1111,7 @@ int Solver::run_rhs(BoutReal t) {
   return status;
 }
 
+/// NOTE: This calls add_mms_sources
 int Solver::run_convective(BoutReal t) {
   int status;
   
@@ -1129,6 +1130,9 @@ int Solver::run_convective(BoutReal t) {
       status = (*phys_run)(t);
   }
   post_rhs(t);
+  
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
   
   rhs_ncalls++;
   

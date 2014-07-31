@@ -3,7 +3,7 @@
 
 """
 
-from sympy import symbols, cos, sin, diff, sqrt, pi
+from sympy import symbols, cos, sin, diff, sqrt, pi, simplify
 
 # Constants
 qe = 1.602e-19
@@ -90,9 +90,24 @@ def Vpar_Grad_par(v, f, metric = identity):
 
 # Convert expression to string
 
+def trySimplify(expr):
+    """
+    Tries to simplify an expression
+    """
+    try:
+        return simplify(expr)
+    except ValueError:
+        return expr
+
 def exprToStr(expr):
     """ Convert a sympy expression to a string for BOUT++ input
     """
-    return str(expr).replace("**", "^") # Replace exponent operator
+    
+    s = str(expr).replace("**", "^") # Replace exponent operator
+    
+    # Try to remove lots of 1.0*...
+    s = s.replace("(1.0*", "(")
+    s = s.replace(" 1.0*", " ")
 
+    return s
 

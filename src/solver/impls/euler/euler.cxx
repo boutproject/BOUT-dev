@@ -41,7 +41,7 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
   // Get options
   Options *options = Options::getRoot();
   options = options->getSection("solver");
-  OPTION(options, start_timestep, tstep);
+  OPTION(options, timestep, tstep);
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   OPTION(options, cfl_factor, 2.);
 
@@ -71,8 +71,6 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
 
 int EulerSolver::run() {
   int msg_point = msg_stack.push("EulerSolver::run()");
-  
-  timestep = start_timestep;
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
