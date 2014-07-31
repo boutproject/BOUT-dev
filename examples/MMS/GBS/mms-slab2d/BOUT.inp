@@ -159,3 +159,5 @@ D = 10
 solution = sin(2.0*pi*x)*sin(z - x + t)
 
 source   = -sin(2*t)*cos(x - z) - 0.14338303298093*pi^2*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.414651520883205*sin(2.0*pi*x)*sin(t - 1.0*x + 1.0*z) - 0.14338303298093*pi*cos(2.0*pi*x)*cos(t - x + z)
+
+bndry_all = none

@@ -171,6 +171,8 @@ int GBS::init(bool restarting) {
   }
   
   SAVE_REPEAT(phi);
+  
+  phi.setBoundary("phi"); // For Y boundaries (if any)
 
   // Curvature
   OPTION(optgbs, curv_method, 1); // Get the method to use
@@ -213,10 +215,19 @@ int GBS::init(bool restarting) {
   dy4 = SQ(SQ(mesh->dy));
   dz4 = SQ(SQ(mesh->dz));
 
-  SAVE_REPEAT(ddt(Ne));
+  SAVE_REPEAT(Ve);
 
-  SAVE_ONCE(mesh->dx);
 
+  output.write("dx = %e, dy = %e, dz = %e\n", mesh->dx(2,2), mesh->dy(2,2), mesh->dz);
+  output.write("g11 = %e, g22 = %e, g33 = %e\n", mesh->g11(2,2), mesh->g22(2,2), mesh->g33(2,2));
+  output.write("g12 = %e, g23 = %e\n", mesh->g12(2,2), mesh->g23(2,2));
+  output.write("g_11 = %e, g_22 = %e, g_33 = %e\n", mesh->g_11(2,2), mesh->g_22(2,2), mesh->g_33(2,2));
+  output.write("g_12 = %e, g_23 = %e\n", mesh->g_12(2,2), mesh->g_23(2,2));
+
+
+  FieldGenerator *gen = FieldFactory::get()->parse("source", Options::getRoot()->getSection("ne"));
+  output << "Ne::source = " << gen->str() << endl;
+  
   return 0;
 }
 
@@ -302,7 +313,7 @@ int GBS::rhs(BoutReal t) {
   }else {
     phi = phiSolver->solve(Vort);
   }
-  
+
   if(estatic) {
     // Electrostatic
     Ve = VePsi;
@@ -314,8 +325,18 @@ int GBS::rhs(BoutReal t) {
     mesh->communicate(psi, Ve);
   }
 
+  /// CHANGE
+  //Ve = FieldFactory::get()->create3D("VePsi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //Vi = FieldFactory::get()->create3D("Vi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //Te = FieldFactory::get()->create3D("Te:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //Vort = FieldFactory::get()->create3D("Vort:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //phi = FieldFactory::get()->create3D("phi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+
   // Communicate auxilliary variables
   mesh->communicate(phi);
+
+  // Y boundary condition on phi
+  phi.applyBoundary();
 
   // Stress tensor
   
@@ -345,7 +366,7 @@ int GBS::rhs(BoutReal t) {
     ddt(Ne) = 
       - vE_Grad(Ne, phi)    // ExB term
       + (2./mesh->Bxy) * (C(Pe) - Ne*C(phi)) // Perpendicular compression
-      + D(Ne, Dn)
+      //+ D(Ne, Dn)
       ;
     
     if(parallel) {
@@ -393,8 +414,6 @@ int GBS::rhs(BoutReal t) {
   if(evolve_Ve) {
     // Electron velocity
     
-    //output.write("Ne = %e, %e, %e, %e, %e\n", Ne(2,0,0), Ne(2,1,0), Ne(2,2,0),Ne(2,3,0),Ne(2,4,0));
-    
     ddt(VePsi) = 
       - vE_Grad(Ve, phi)
       - Vpar_Grad_par(Ve, Ve)
@@ -435,7 +454,7 @@ const Field3D GBS::C(const Field3D &f) { // Curvature operator
 const Field3D GBS::D(const Field3D &f, BoutReal d) { // Diffusion operator
   if(d < 0.0)
     return 0.0;
-  return -d*(dx4*D4DX4(f) + dy4*D4DY4(f) + dz4*D4DZ4(f));
+  return -d*(dx4*D4DX4(f) + dz4*D4DZ4(f));// + dy4*D4DY4(f)
 }
 
 // Standard main() function
