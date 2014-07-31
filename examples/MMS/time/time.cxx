@@ -16,7 +16,8 @@ public:
     return 0;
   }
   int rhs(BoutReal time) {
-    ddt(f) = 0.0; // No RHS here, only the MMS source
+    ddt(f) = f;
+    //ddt(f) = 0.0; // No RHS here, only the MMS source
     return 0;
   }
 private:

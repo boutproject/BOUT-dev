@@ -99,7 +99,7 @@ int RK3SSP::run() {
         dt = target - simtime; // Make sure the last timestep is on the output 
         running = false;
       }
-        
+      output.write("t = %e, dt = %e\n", simtime, dt);
       // No adaptive timestepping for now
       take_step(simtime, dt, f, f);
       
@@ -108,6 +108,8 @@ int RK3SSP::run() {
       call_timestep_monitors(simtime, dt);
     }while(running);
     
+    load_vars(f); // Put result into variables
+ 
     iteration++; // Advance iteration number
     
     /// Write the restart file

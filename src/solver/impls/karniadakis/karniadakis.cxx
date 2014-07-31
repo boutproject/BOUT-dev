@@ -181,7 +181,9 @@ void KarniadakisSolver::take_step(BoutReal dt) {
     // Initialise values
     #pragma omp parallel for
     for(int i=0;i<nlocal;i++) {
-      fm1[i] = fm2[i] = f0[i];
+    //fm1[i] = fm2[i] = f0[i];
+      fm1[i] = f0[i] - dt*S0[i];
+      fm2[i] = fm1[i] - dt*S0[i];
       Sm1[i] = Sm2[i] = S0[i];
     }
     first_time = false;

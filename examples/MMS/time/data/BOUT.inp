@@ -8,6 +8,9 @@ MYG = 0
 
 MZ = 1
 
+[output]
+floats = false
+
 [mesh]
 
 # Only one point in X and Y
@@ -19,7 +22,10 @@ ny = 1
 mms = true
 
 [f]
-solution = sin(t)
-source = cos(t)
+#solution = sin(t)
+#source = cos(t)
+
+solution = exp(t)
+source = 0
 
 
