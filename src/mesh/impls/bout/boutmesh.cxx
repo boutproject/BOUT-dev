@@ -52,7 +52,7 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
-  OPTION(options, symmetricGlobalX,  false);
+  OPTION(options, symmetricGlobalX,  true);
   OPTION(options, symmetricGlobalY,  false);
 
   comm_x = MPI_COMM_NULL;
@@ -2529,27 +2529,24 @@ BoutMesh::CommHandle* BoutMesh::get_handle(int xlen, int ylen) {
   return ch;
 }
 
-void BoutMesh::free_handle(CommHandle *h)
-{
+void BoutMesh::free_handle(CommHandle *h) {
   h->var_list.clear();
   comm_list.push_front(h);
 }
 
-void BoutMesh::clear_handles()
-{
+void BoutMesh::clear_handles() {
   while(!comm_list.empty()) {
     CommHandle *ch = comm_list.front();
     if(ch->ybufflen > 0) {
       delete[] ch->umsg_sendbuff;
-      delete[] ch->dmsg_sendbuff;
       delete[] ch->umsg_recvbuff;
+      delete[] ch->dmsg_sendbuff;
       delete[] ch->dmsg_recvbuff;
     }
-    
     if(ch->xbufflen > 0) {
       delete[] ch->imsg_sendbuff;
-      delete[] ch->omsg_sendbuff;
       delete[] ch->imsg_recvbuff;
+      delete[] ch->omsg_sendbuff;
       delete[] ch->omsg_recvbuff;
     }
     

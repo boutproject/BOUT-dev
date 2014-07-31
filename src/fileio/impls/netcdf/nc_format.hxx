@@ -128,6 +128,9 @@ class NcFormat : public DataFormat {
 
   map<string, int> rec_nr; // Record number for each variable (bit nasty)
   int default_rec;  // Starting record. Useful when appending to existing file
+
+  void checkName(const char* name); ///< Check if a name contains invalid characters
+  
 };
 
 #endif // __NCFORMAT_H__

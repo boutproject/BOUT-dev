@@ -42,10 +42,14 @@ if ( ~exist(path, 'dir') )
     return
 end
 
+% Check variable name in BOUT dump files
+filename = [path '/BOUT.dmp.0.nc'];
+
 % Check proper relation between nt and ntsp
 
 % Size of data from each processor
-pp = ncinfo('BOUT.dmp.0.nc'); [nnx nny nnz nnt] = pp.Dimensions.Length;
+pp = ncinfo(filename); [nnx nny nnz nnt] = pp.Dimensions.Length;
+format = pp.Format;
 
 if (nnt < nt*ntsp)
     fprintf('\t Total timesteps of saved data crossed \n');
@@ -53,8 +57,6 @@ if (nnt < nt*ntsp)
     return
 end
 
-% Check variable name in BOUT dump files
-filename = [path '/BOUT.dmp.0.nc'];
 
 try
     ncinfo(filename,var_name);
@@ -67,13 +69,19 @@ catch exception
     end    
 end  % End of try
 
-% Import basic parameter for collect certain variable in netcdf dump
-% The # of processors in X/Y directions
-NXPE  = ncread(filename,'NXPE');   NYPE  = ncread(filename,'NYPE');
-% The # of X/Y grid points in each processor
-MXSUB = ncread(filename,'MXSUB');  MYSUB = ncread(filename,'MYSUB');
-% Sizes of the X/Y guard cells
-MXG   = ncread(filename,'MXG');    MYG   = ncread(filename,'MYG');
+%% This "if loop" is put there as it found that different netcdf versions of library 
+
+if (format=='classic')
+    % Import basic parameter for collect certain variable in netcdf dump
+    % The # of processors in X/Y directions
+    NXPE  = ncread(filename,'NXPE');   NYPE  = ncread(filename,'NYPE');
+    % The # of X/Y grid points in each processor
+    MXSUB = ncread(filename,'MXSUB');  MYSUB = ncread(filename,'MYSUB');
+    % Sizes of the X/Y guard cells
+    MXG   = ncread(filename,'MXG');    MYG   = ncread(filename,'MYG');
+elseif (format=='netcdf4')
+    [iteration MXSUB MYSUB MXG MYG MZ NXPE NYPE] = pp.Attributes(1:end).Value;
+end
 
 % Investigate dimension of variable to import
 var_tmp = ncinfo(filename,var_name);

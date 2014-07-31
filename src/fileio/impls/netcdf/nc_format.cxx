@@ -34,8 +34,7 @@
 // Define this to see loads of info messages
 //#define NCDF_VERBOSE
 
-NcFormat::NcFormat()
-{
+NcFormat::NcFormat() {
   dataFile = NULL;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -48,8 +47,7 @@ NcFormat::NcFormat()
   fname = NULL;
 }
 
-NcFormat::NcFormat(const char *name)
-{
+NcFormat::NcFormat(const char *name) {
   dataFile = NULL;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -62,8 +60,7 @@ NcFormat::NcFormat(const char *name)
   openr(name);
 }
 
-NcFormat::NcFormat(const string &name)
-{
+NcFormat::NcFormat(const string &name) {
   dataFile = NULL;
   x0 = y0 = z0 = t0 = 0;
   recDimList = new const NcDim*[4];
@@ -76,20 +73,17 @@ NcFormat::NcFormat(const string &name)
   openr(name);
 }
 
-NcFormat::~NcFormat()
-{
+NcFormat::~NcFormat() {
   delete[] recDimList;
   close();
   rec_nr.clear();
 }
 
-bool NcFormat::openr(const string &name)
-{
+bool NcFormat::openr(const string &name) {
   return openr(name.c_str());
 }
 
-bool NcFormat::openr(const char *name)
-{
+bool NcFormat::openr(const char *name) {
 #ifdef CHECK
   msg_stack.push("NcFormat::openr");
 #endif
@@ -164,13 +158,11 @@ bool NcFormat::openr(const char *name)
   return true;
 }
 
-bool NcFormat::openw(const string &name, bool append)
-{
+bool NcFormat::openw(const string &name, bool append) {
   return openw(name.c_str(), append);
 }
 
-bool NcFormat::openw(const char *name, bool append)
-{
+bool NcFormat::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("NcFormat::openw");
 #endif
@@ -288,15 +280,13 @@ bool NcFormat::openw(const char *name, bool append)
   return true;
 }
 
-bool NcFormat::is_valid()
-{
+bool NcFormat::is_valid() {
   if(dataFile == NULL)
     return false;
   return dataFile->is_valid();
 }
 
-void NcFormat::close()
-{
+void NcFormat::close() {
   if(dataFile == NULL)
     return;
 
@@ -329,8 +319,7 @@ void NcFormat::flush() {
   dataFile->sync();
 }
 
-const vector<int> NcFormat::getSize(const char *name)
-{
+const vector<int> NcFormat::getSize(const char *name) {
   vector<int> size;
 
 #ifdef NCDF_VERBOSE
@@ -374,13 +363,11 @@ const vector<int> NcFormat::getSize(const char *name)
   return size;
 }
 
-const vector<int> NcFormat::getSize(const string &var)
-{
+const vector<int> NcFormat::getSize(const string &var) {
   return getSize(var.c_str());
 }
 
-bool NcFormat::setGlobalOrigin(int x, int y, int z)
-{
+bool NcFormat::setGlobalOrigin(int x, int y, int z) {
   x0 = x;
   y0 = y;
   z0 = z;
@@ -388,21 +375,22 @@ bool NcFormat::setGlobalOrigin(int x, int y, int z)
   return true;
 }
 
-bool NcFormat::setRecord(int t)
-{
+bool NcFormat::setRecord(int t) {
   t0 = t;
 
   return true;
 }
 
-bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
+  // Check for valid name
+  checkName(name);
+
 #ifdef CHECK
   msg_stack.push("NcFormat::read(int)");
 #endif
@@ -458,13 +446,11 @@ bool NcFormat::read(int *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::read(int *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::read(int *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -516,19 +502,20 @@ bool NcFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
+  // Check for valid name
+  checkName(name);
+
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -576,18 +563,19 @@ bool NcFormat::write(int *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::write(int *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::write(int *var, const string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
+
+  // Check for valid name
+  checkName(name);
   
 #ifdef CHECK
   msg_stack.push("NcFormat::write(BoutReal)");
@@ -653,8 +641,7 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write(var, name.c_str(), lx, ly, lz);
 }
 
@@ -662,13 +649,15 @@ bool NcFormat::write(BoutReal *var, const string &name, int lx, int ly, int lz)
  * Record-based (time-dependent) data
  ***************************************************************************/
 
-bool NcFormat::read_rec(int *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
+
+  // Check for valid name
+  checkName(name);
 
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
@@ -697,19 +686,20 @@ bool NcFormat::read_rec(int *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::read_rec(int *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::read_rec(int *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
   
+  // Check for valid name
+  checkName(name);
+
   // Create an error object so netCDF doesn't exit
 #ifdef NCDF_VERBOSE
   NcError err(NcError::verbose_nonfatal);
@@ -737,18 +727,19 @@ bool NcFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz
   return true;
 }
 
-bool NcFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
+
+  // Check for valid name
+  checkName(name);
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -796,18 +787,19 @@ bool NcFormat::write_rec(int *data, const char *name, int lx, int ly, int lz)
   return true;
 }
 
-bool NcFormat::write_rec(int *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::write_rec(int *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz)
-{
+bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
+
+  // Check the name
+  checkName(name);
 
 #ifdef CHECK
   msg_stack.push("NcFormat::write_rec(BoutReal)");
@@ -895,14 +887,24 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   return true;
 }
 
-bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz)
-{
+bool NcFormat::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
 }
 
 /***************************************************************************
  * Private functions
  ***************************************************************************/
+
+void NcFormat::checkName(const char* name) {
+  // Check if this name contains an invalid character
+  
+  const char* c = name;
+  while(*c != 0) {
+    if(*c == '*')
+      throw BoutException("Invalid character (*) in NetCDF variable name '%s'", name);
+    c++;
+  }
+}
 
 #endif // NCDF
 

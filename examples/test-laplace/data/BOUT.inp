@@ -10,3 +10,11 @@ MZ = 32    # Z size
 grid = "test_laplace.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+
+[mesh]
+symmetricGlobalX = false
+
+[laplace]
+all_terms = false
+filter = 0.2
+

@@ -37,6 +37,10 @@ class Field;
 
 #include "bout/deprecated.hxx"
 
+#ifdef TRACK
+#include <string>
+#endif
+
 /*!
  * \brief Base class for fields
  *
@@ -100,10 +104,10 @@ class Field {
   }
     
 #ifdef TRACK
-  string getName() const { return name; }
-  void setName(string s) { name = s; }
+  std::string getName() const { return name; }
+  void setName(std::string s) { name = s; }
 
-  string name;
+  std::string name;
 #endif
 
 #ifdef CHECK

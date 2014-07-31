@@ -193,6 +193,15 @@ This section goes through the process of getting, installing, and
 starting to run BOUT++. Only the basic functionality needed to use BOUT++
 is described here; the next section (\ref{sec:advancedinstall}) goes through
 more advanced options, and how to fix some common problems. 
+
+On large facilities (e.g NERSC or Archer), the compilers and libraries
+needed should already be installed. It is common to organise libraries
+using the \texttt{modules} system, so try typing ``\texttt{module avail}'' to
+get a list of available modules. Some instructions for specific machines
+can be found in appendix~\ref{apx:machineinstructions}.
+If you are installing on your own machine, you may need to install an MPI compiler
+and the libraries yourself.
+
 This section will go through the following steps:
 \begin{enumerate}
 \item Obtaining a copy of BOUT++
@@ -4008,6 +4017,18 @@ efficient implementation of the Fields classes}.
 \bibliographystyle{unsrt}
 
 \appendix
+
+\section{Machine-specific installation}
+\label{apx:machineinstructions}
+\subsection{Archer}
+
+As of 30th April 2014, the following configuration
+should work
+\begin{verbatim}
+> module swap PrgEnv-cray PrgEnv-gnu/5.1.29
+> module load fftw
+> module load netcdf/4.1.3
+\end{verbatim}
 
 \section{Installing PACT}
 \label{apx:pact}

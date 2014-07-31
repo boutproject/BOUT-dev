@@ -125,7 +125,7 @@ void Solver::add(Field2D &v, const char* name) {
   d.name = string(name);
 
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   /// Generate initial perturbations.
@@ -189,7 +189,7 @@ void Solver::add(Field3D &v, const char* name) {
   d.name = string(name);
   
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   if(mms) {
