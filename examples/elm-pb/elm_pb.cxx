@@ -191,6 +191,7 @@ BoutReal rmp_factor;  // Multiply amplitude by this factor
 BoutReal rmp_ramp;    // Ramp-up time for RMP [s]. negative -> instant
 BoutReal rmp_freq;    // Amplitude oscillation frequency [Hz] (negative -> no oscillation)
 BoutReal rmp_rotate;  // Rotation rate [Hz]
+bool rmp_vac_mask; // Should a vacuum mask be applied?
 Field3D rmp_Psi0; // Parallel vector potential from Resonant Magnetic Perturbation (RMP) coils
 Field3D rmp_Psi;  // Value used in calculations 
 Field3D rmp_dApdt; // Time variation
@@ -585,6 +586,7 @@ int physics_init(bool restarting)
 	OPTION(options, rmp_m,  9);
 	OPTION(options, rmp_polwid, -1.0);
 	OPTION(options, rmp_polpeak, 0.5);
+    OPTION(options, rmp_vac_mask, true);
 	// Divide n by the size of the domain
         int zperiod;
         globalOptions->get("zperiod", zperiod, 1);
@@ -596,19 +598,21 @@ int physics_init(bool restarting)
 	
 	rmp_Psi0 = 0.0;
 	BoutReal ***d = rmp_Psi0.getData();
-	// Set the outer boundary
-	for(int jx=mesh->ngx-4;jx<mesh->ngx;jx++)
-	  for(int jy=0;jy<mesh->ngy;jy++)
-	    for(int jz=0;jz<mesh->ngz;jz++) {
+	if(mesh->lastX()) {
+	  // Set the outer boundary
+	  for(int jx=mesh->ngx-4;jx<mesh->ngx;jx++)
+	    for(int jy=0;jy<mesh->ngy;jy++)
+	      for(int jz=0;jz<mesh->ngz;jz++) {
 	      
-	      BoutReal angle = rmp_m * pol_angle[jx][jy] + rmp_n * ((BoutReal) jz) * mesh->dz;
-	      d[jx][jy][jz] = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->ngx - 5))) * rmp_factor * cos(angle);
-              if(rmp_polwid > 0.0) {
-                // Multiply by a Gaussian in poloidal angle
-                BoutReal gx = ((pol_angle[jx][jy] / (2.*PI)) - rmp_polpeak) / rmp_polwid;
-                d[jx][jy][jz] *= exp(-gx*gx);
-              }
-	    }
+	        BoutReal angle = rmp_m * pol_angle[jx][jy] + rmp_n * ((BoutReal) jz) * mesh->dz;
+	        d[jx][jy][jz] = (((BoutReal)(jx - 4)) / ((BoutReal)(mesh->ngx - 5))) * rmp_factor * cos(angle);
+                if(rmp_polwid > 0.0) {
+                  // Multiply by a Gaussian in poloidal angle
+                  BoutReal gx = ((pol_angle[jx][jy] / (2.*PI)) - rmp_polpeak) / rmp_polwid;
+                  d[jx][jy][jz] *= exp(-gx*gx);
+                }
+	      }
+        }
 	
 	rmp_Psi0 = rmp_Psi0.shiftZ(false); // Shift into field-aligned coords
 
@@ -616,7 +620,11 @@ int physics_init(bool restarting)
 	// Need to calculate Psi inside the domain, enforcing j = 0
 	
 	Jpar = 0.0;
-	rmp_Psi0 = invert_laplace(Jpar, INVERT_4TH_ORDER | INVERT_OUT_SET, NULL);
+	Laplacian *psiLap = Laplacian::create();
+	psiLap->setFlags(INVERT_OUT_SET | INVERT_AC_IN_GRAD);
+	rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
+	mesh->communicate(rmp_Psi0);
+	//rmp_Psi0 = invert_laplace(Jpar, INVERT_4TH_ORDER | INVERT_OUT_SET, NULL);
 	// Currently only implemented for 4th-order serial inversion (NXPE = 1)
       }
     }else {
@@ -1220,10 +1228,12 @@ int physics_run(BoutReal t)
       }
       
       // Set to zero in the core
-      rmp_Psi *= vac_mask;
+      if(rmp_vac_mask)
+        rmp_Psi *= vac_mask;
     }else {
       // Set to zero in the core region
-      rmp_Psi = rmp_Psi0 * vac_mask;  // Only in vacuum -> skin current -> diffuses inwards
+      if(rmp_vac_mask)
+        rmp_Psi = rmp_Psi0 * vac_mask;  // Only in vacuum -> skin current -> diffuses inwards
     }
   }
   
