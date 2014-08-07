@@ -1365,8 +1365,15 @@ const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
 
 int BoutMesh::communicate(FieldGroup &g) {
+  msg_stack.push("BoutMesh::communicate");
+  
+  // Send data
   comm_handle c = send(g);
-  return wait(c);
+  // Wait for data from other processors
+  int status =  wait(c);
+  
+  msg_stack.pop();
+  return status;
 }
 
 void BoutMesh::post_receive(CommHandle &ch) {
