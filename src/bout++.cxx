@@ -57,6 +57,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <invert_laplace.hxx>
 
+#include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -141,6 +142,7 @@ void BoutInitialise(int &argc, char **&argv) {
   Options::getRoot()->set("optionfile", string(opt_file));
 
   // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
@@ -322,6 +324,9 @@ int BoutFinalise() {
 
   // Debugging message stack
   msg_stack.clear();
+
+  // Call SlepcFinalize if not already called
+  SlepcLib::cleanup();
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();

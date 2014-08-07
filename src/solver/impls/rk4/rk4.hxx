@@ -39,7 +39,8 @@ class RK4Solver : public Solver {
  public:
   RK4Solver();
   ~RK4Solver();
-  
+
+  void resetInternalFields();
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
   

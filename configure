@@ -639,6 +639,7 @@ SET_MAKE
 LN_S
 PACT
 PETSC
+SLEPC
 FACETS_SOURCE
 PRECON_SOURCE
 MKDIR
@@ -701,6 +702,7 @@ with_facets
 with_fftw
 with_lapack
 with_petsc
+with_slepc
 with_pvode
 with_hypre
 with_mumps
@@ -1348,6 +1350,7 @@ Optional Packages:
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library
   --with-petsc            	   Enable PETSc interface
+  --with-slepc            	   Enable SLEPc interface (requires PETSc)
   --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)
   --with-hypre                Link to the Hypre library
   --with-mumps                Link with MUMPS library for direct matrix inversions
@@ -2233,6 +2236,11 @@ if test "${with_petsc+set}" = set; then :
   withval=$with_petsc;
 fi
 
+# Check whether --with-slepc was given.
+if test "${with_slepc+set}" = set; then :
+  withval=$with_slepc;
+fi
+
 
 # Check whether --with-pvode was given.
 if test "${with_pvode+set}" = set; then :
@@ -2589,7 +2597,8 @@ MFILE
     echo "***********************************"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
   fi
-  PETSC="include \$(PETSC_DIR)/conf/variables"
+  PETSC="include \$(PETSC_DIR)/conf/variables
+      include \$(SLEPC_DIR)/conf/slepc_variables"
 else
    PETSC=
 fi
@@ -2608,7 +2617,24 @@ then
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
+
+###
+#HACKING
+###
+  if test "$with_slepc" != "" && test "$with_slepc" != "no"
+  then
+      CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
+      SLEPC="include \$(SLEPC_DIR)/conf/slepc_variables"
+      include ${SLEPC_DIR}/conf/slepc_rules
+      include ${SLEPC_DIR}/conf/slepc_variables
+      EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+      EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+
+      echo "Using SLEPC_DIR = $SLEPC_DIR"
+      SLEPC="include \$(SLEPC_DIR)/conf/slepc_variables"
+  fi
 fi
+SLEPC=$SLEPC
 
 echo
 
@@ -7759,6 +7785,13 @@ then
 else
   echo "  PETSc support: yes (version $PETSC_VERSION_MAJOR.$PETSC_VERSION_MINOR, release = $PETSC_VERSION_RELEASE)" | tee -a config-build.log
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
+fi
+
+if test "$SLEPC" = ""
+then
+  echo "  SLEPc support: no" | tee -a config-build.log
+else
+  echo "  SLEPc support: yes (version 3.4 -- HACK Config)" | tee -a config-build.log
 fi
 
 if test "$IDALIBS" = ""

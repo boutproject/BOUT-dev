@@ -76,6 +76,7 @@ using std::string;
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
+#define SOLVERSLEPC       "slepc"
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
 #define SOLVEREULER       "euler"
@@ -88,6 +89,9 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 class Solver {
  public:
+#ifdef BOUT_HAS_SLEPC
+  friend class SlepcSolver;
+#endif
   Solver(Options *opts = NULL);
   virtual ~Solver() { }
 
@@ -142,13 +146,17 @@ class Solver {
 
   /// Run the solver, calling monitors nout times, at intervals of tstep
   virtual int run() = 0;
-  
+
+  //Should wipe out internal field vector and reset from current field object data
+  virtual void resetInternalFields(){};
+
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
   
   int rhs_ncalls; ///< Number of calls to the RHS function
 
+  bool canReset;
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   

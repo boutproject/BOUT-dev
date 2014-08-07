@@ -53,6 +53,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   // Set flags to defaults
   has_constraints = false;
   initialised = false;
+  canReset = false;
 
   // Zero timing
   rhs_ncalls = 0;

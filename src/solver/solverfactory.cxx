@@ -5,6 +5,7 @@
 #include "impls/petsc-3.2/petsc-3.2.hxx"
 #include "impls/petsc-3.3/petsc-3.3.hxx"
 #include "impls/petsc/petsc.hxx"
+#include "impls/slepc-3.4/slepc-3.4.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/pvode/pvode.hxx"
 #include "impls/karniadakis/karniadakis.hxx"
@@ -67,6 +68,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new IdaSolver;
   } else if(!strcasecmp(type, SOLVERPETSC)) {
     return new PetscSolver;
+  } else if(!strcasecmp(type, SOLVERSLEPC)) {
+    return new SlepcSolver;
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
     return new KarniadakisSolver;
   } else if(!strcasecmp(type, SOLVERRK4)) {

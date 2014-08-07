@@ -12,6 +12,7 @@
 
 RK4Solver::RK4Solver() : Solver() {
   f0 = 0; // Mark as uninitialised
+  canReset = true;
 }
 
 RK4Solver::~RK4Solver() {
@@ -194,6 +195,16 @@ int RK4Solver::run() {
   msg_stack.pop(msg_point);
   
   return 0;
+}
+
+void RK4Solver::resetInternalFields(){
+  //Zero out history
+  for(int i=0;i<nlocal;i++){
+    f1[i]=0; f2[i]=0;
+  }
+  
+  //Copy fields into current step
+  save_vars(f0);
 }
 
 void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
