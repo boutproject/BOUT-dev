@@ -107,6 +107,7 @@ class dcomplex {
 };
 
 const dcomplex exp(const dcomplex &c);
+const dcomplex log(const dcomplex &c);
 
 /// imaginary i
 const dcomplex Im = dcomplex(0.0, 1.0);

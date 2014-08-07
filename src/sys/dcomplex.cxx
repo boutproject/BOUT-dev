@@ -301,6 +301,11 @@ const dcomplex exp(const dcomplex &c)
   return exp(c.Real()) * dcomplex(cos(c.Imag()), sin(c.Imag()));
 }
 
+const dcomplex log(const dcomplex &c)
+{
+  return log(abs(c))+Im*atan2(c.Imag(),c.Real());
+}
+
 std::ostream &operator<<(std::ostream &stream, dcomplex c)
 {
   stream << "(" << c.r << ", " << c.i << ")";
