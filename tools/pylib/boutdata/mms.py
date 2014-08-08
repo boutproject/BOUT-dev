@@ -39,11 +39,15 @@ identity = Metric()
 
 # Basic differencing
 
+def DDX(f, metric = identity):
+    return diff(f, metric.x)
+
+def DDY(f, metric = identity):
+    return diff(f, metric.y)
+
 def DDZ(f, metric = identity):
     return diff(f, metric.z)
 
-def DDX(f, metric = identity):
-    return diff(f, metric.x)
 
 def D2DX2(f, metric = identity):
     return diff(f, metric.x, 2)
@@ -69,14 +73,26 @@ def bracket(f, g, metric = identity):
     
     return dfdz * dgdx - dfdx * dgdz
 
-def Delp2(f, metric = identity):
+def Delp2(f, metric = identity, all_terms=True):
     """ Laplacian in X-Z
+    
+    If all_terms is false then first derivative terms are neglected.
+    By default all_terms is true, but can be disabled
+    in the BOUT.inp file (laplace section)
+    
     """
     d2fdx2 = diff(f, metric.x, 2)
     d2fdz2 = diff(f, metric.z, 2)
     d2fdxdz = diff(f, metric.x, metric.z)
 
-    return metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
+    result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
+    
+    if all_terms:
+        G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric))/metric.J
+        G3 = (DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric))/metric.J
+        result += G1 * diff(f, metric.x) + G3 * diff(f, metric.z)
+        
+    return result
 
 def Delp4(f, metric = identity):
     d4fdx4 = diff(f, metric.x, 4)
@@ -89,6 +105,12 @@ def Grad_par(f, metric = identity):
 
 def Vpar_Grad_par(v, f, metric = identity):
     return v * Grad_par(f, metric=metric)
+
+def Laplace_par(f, metric=identity):
+    """
+    Div( b (b.Grad(f) ) ) = (1/J) d/dy ( J/g_22 * df/dy )
+    """
+    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y) / metric.J
 
 
 # Convert expression to string
@@ -162,7 +184,7 @@ class SimpleTokamak(object):
         
         """
         # X has a range [0,1], and y [0,2pi]
-        x, y = symbols("x y")
+        #x, y = symbols("x y")
         
         self.x = x
         self.y = y
@@ -180,9 +202,6 @@ class SimpleTokamak(object):
         # Toroidal angle of a field-line as function
         # of poloidal angle y
         self.zShift = self.q*(y + eps * sin(y))
-        
-        # Integrated shear
-        self.sinty = diff(self.zShift, x)
         
         # Field-line pitch
         self.nu = self.q*(1 + eps*cos(y)) #diff(self.zShift, y)
@@ -211,6 +230,11 @@ class SimpleTokamak(object):
         self.psiwidth = Bp0 * R * dr
         print("psi width = %e" % self.psiwidth)
         
+        # Integrated shear
+        self.sinty = diff(self.zShift, x) / self.psiwidth
+        
+        print("SINTY = " + str(self.sinty))
+
     def write(self, nx, ny, output):
         """
         Outputs a tokamak shape to a grid file
