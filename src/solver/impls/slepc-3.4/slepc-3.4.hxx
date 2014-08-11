@@ -58,6 +58,8 @@ class SlepcSolver : public Solver {
   ~SlepcSolver();
 
   int advanceStep(Mat &matOperator, Vec &inData, Vec &outData);
+  int compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi);
+  void monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest);
 
   //These contain slepc specific code and call the advanceSolver code
   int init(bool restarting, int NOUT, BoutReal TIMESTEP);
@@ -123,6 +125,7 @@ class SlepcSolver : public Solver {
   void setMaxTimestep(BoutReal dt){advanceSolver->setMaxTimestep(dt);}
   BoutReal getCurrentTimestep(){return advanceSolver->getCurrentTimestep();}
 
+  int compareState;
 private:
   MPI_Comm comm;
   EPS eps; //Slepc solver handle
@@ -141,6 +144,8 @@ private:
   void analyseResults();
   void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
 		   BoutReal &reEigOut, BoutReal &imEigOut);
+  void boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
+		   PetscScalar &reEigOut, PetscScalar &imEigOut);
 
   SlepcLib slib;// Handles initialize / finalize
 
@@ -156,6 +161,9 @@ private:
   //Used for SLEPc options
   int nEig,maxIt;
   PetscReal tol,target;
+  BoutReal targRe, targIm;
+  bool userWhich;
+
   //Generic options
   bool useInitial; //If true then set the first vector in subspace to be initial conditions
   bool debugMonitor;

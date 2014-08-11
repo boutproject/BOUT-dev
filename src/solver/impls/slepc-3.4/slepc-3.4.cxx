@@ -49,6 +49,35 @@ PetscErrorCode advanceStepWrapper(Mat matOperator, Vec inData, Vec outData){
   PetscFunctionReturn(ctx->advanceStep(matOperator,inData,outData)); //Actually advance
 }
 
+//The callback function for the eigenvalue comparison
+//A simple wrapper around the SlepcSolver compareEigs routine
+PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi,
+				  PetscInt *res, void *ctx){
+  PetscFunctionBegin;
+  //Cast context as SlepcSolver and call the actual compare routine
+  //  tmpCompare=(static_cast<SlepcSolver *>(ctx))->compareEigs(ar,ai,br,bi);
+  SlepcSolver* myCtx;
+  myCtx=(SlepcSolver*)ctx;
+  myCtx->compareState=myCtx->compareEigs(ar,ai,br,bi);
+ 
+  res = &myCtx->compareState;
+  PetscFunctionReturn(0);
+}
+
+
+//The callback function for the monitor
+//A simple wrapper around the SlepcSolver compareEigs routine
+PetscErrorCode monitorWrapper(EPS eps, PetscInt its, PetscInt nconv,
+				  PetscScalar *eigr, PetscScalar *eigi,
+				  PetscReal* errest, PetscInt nest, void *mctx){
+  PetscFunctionBegin;
+  //Cast context as SlepcSolver and call the actual compare routine
+  SlepcSolver* myCtx;
+  myCtx=(SlepcSolver*)mctx;
+  myCtx->monitor(its,nconv,eigr,eigi,errest,nest);
+  PetscFunctionReturn(0);
+}
+
 SlepcSolver::SlepcSolver(){
   has_constraints = false;
   initialised = false;
@@ -83,7 +112,9 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   //Report initialisation
   output.write("Initialising SLEPc-3.4 solver\n");  
-  Solver::init(restarting,NOUT,TIMESTEP);
+  if(selfSolve){
+    Solver::init(restarting,NOUT,TIMESTEP);
+  }
 
   //If no advanceSolver then can only advance one step at a time
   if(selfSolve){
@@ -145,7 +176,21 @@ void SlepcSolver::readOptions(){
   options->get("nEig",nEig,0);//0 means keep the current value, i.e. autoset
   options->get("tol",tol,1.0e-6);//Tolerance --> Note this is on SLEPc eig not BOUT
   options->get("maxIt",maxIt,PETSC_DECIDE);
-  options->get("target",target,999.0); //If 999 we don't set the target. This is SLEPc eig target
+  options->get("targRe",targRe,0.0); //Target frequency when using user eig comparison
+  options->get("targIm",targIm,0.0); //Target growth rate when using user eig comparison
+  
+  //Convert bout targs to slepc
+  if(targRe==0.0 && targIm==0.0){
+    target=999.0;
+  }else{
+    PetscScalar slepcRe,slepcIm;
+    boutToSlepc(targRe,targIm,slepcRe,slepcIm);
+    dcomplex tmp(slepcRe,slepcIm);
+    target=abs(tmp);
+  }
+  options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
+  
+  options->get("userWhich",userWhich,false);
 
   //Generic settings
   options->get("useInitial",useInitial,true);
@@ -181,6 +226,9 @@ int SlepcSolver::run() {
 
   //Find the eigenvalues
   EPSSolve(eps);
+
+  //The following prints the used solver settings
+  EPSView(eps,PETSC_VIEWER_STDOUT_SELF);
 
   //Analyse and dump to file
   analyseResults();
@@ -323,9 +371,18 @@ void SlepcSolver::createEPS(){
   if(! (target==999)){
     EPSSetTarget(eps,target);
   }
+  
+  //Set the user comparison function
+  if(userWhich){
+    EPSSetEigenvalueComparison(eps,&compareEigsWrapper,this);
+    EPSSetWhichEigenpairs(eps,EPS_WHICH_USER);
+  }
 
   //Update options from command line
   EPSSetFromOptions(eps);
+
+  //Register a monitor
+  EPSMonitorSet(eps,&monitorWrapper,this,NULL);
 
   //Should probably call a routine here which interrogates eps
   //to determine the important settings that have been used and dump
@@ -374,6 +431,95 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
   return retVal;
 }
 
+int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi){
+  BoutReal arBout, aiBout, brBout, biBout;
+  
+  //First convert to BOUT values
+  slepcToBout(ar,ai,arBout,aiBout);
+  slepcToBout(br,bi,brBout,biBout);
+
+  //Now we calculate the distance between eigenvalues and target.
+  BoutReal da, db;
+  da=sqrt(pow(arBout-targRe,2)+pow(aiBout-targIm,2));
+  db=sqrt(pow(brBout-targRe,2)+pow(biBout-targIm,2));
+
+  // output<<"Picking between "<<ar<<"+i"<<ai<<" and "<<br<<"+i"<<bi<<endl;
+  // output<<"(targRe="<<targRe<<", targIm="<<targIm<<")"<<endl;
+  // output<<"   da : "<<da<<endl;
+  // output<<"   db : "<<db<<endl;
+  //Now we decide which eigenvalue is preferred.
+  int retVal;
+
+  //Largest growth rate
+  // if(aiBout>biBout){
+  //   retVal=-1;
+  // }else if(biBout>aiBout){
+  //   retVal=1;
+  // }else{
+  //   retVal=0;
+  // }
+  // return retVal;
+
+
+  //Smallest distance from complex target
+  //If prefer B we return +ve
+  if(da>db){
+    retVal=1;
+  //If prefer A we return -ve
+  }else if(db>da){
+    retVal=-1;
+  //If we don't prefer either we return 0
+  }else{
+    retVal=0;
+  };
+  //output<<"--> Return "<<retVal<<endl;
+  return retVal;
+}
+
+void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest){
+  static int nConvPrev=0;
+
+  //No output until after first iteration
+  if(its<1){return;}
+
+  BoutReal reEigBout, imEigBout;
+  string joinNum, joinNumSlepc;
+  slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
+  if(imEigBout<0){
+    joinNum="";
+  }else{
+    joinNum="+";
+  }
+
+  //This line more or less replicates the normal slepc output (when using -eps_monitor)
+  //but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed error estimate.
+  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) "<<reEigBout<<joinNum<<imEigBout<<"i\t ("<<errest[nconv]<<")"<<endl;
+
+  //The following can be quite noisy so may want to add a flag to disable/enable.
+  int newConv=nconv-nConvPrev;
+  if(newConv>0){
+    output<<"Found "<<newConv<<" new converged eigenvalues:"<<endl;
+
+    for (PetscInt i=nConvPrev;i<nconv;i++){
+      slepcToBout(eigr[i],eigi[i],reEigBout,imEigBout);
+      if(imEigBout<0){
+	joinNum="";
+      }else{
+	joinNum="+";
+      }
+      if(eigi[i]<0){
+	joinNumSlepc="";
+      }else{
+	joinNumSlepc="+";
+      }
+      output<<"\t"<<i<<"\t: "<<eigr[i]<<joinNumSlepc<<eigi[i]<<"i --> "<<reEigBout<<joinNum<<imEigBout<<"i"<<endl;
+    }
+  }
+
+  //Update the number of converged modes already investigated.
+  nConvPrev=nconv;
+};
+
 //Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
 			      BoutReal &reEigOut, BoutReal &imEigOut){
@@ -390,6 +536,21 @@ void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
   reEigOut=boutEig.Real();
   imEigOut=boutEig.Imag();
 }
+
+//Convert a BOUT++ eigenvalue to a Slepc one
+void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
+			      PetscScalar &reEigOut, PetscScalar &imEigOut){
+
+  dcomplex boutEig(reEigIn,imEigIn), ci(0.0,1.0);
+  dcomplex slepcEig;
+
+  slepcEig=exp(-ci*boutEig*tstep*nout);
+
+  //Set return values
+  reEigOut=slepcEig.Real();
+  imEigOut=slepcEig.Imag();
+}
+
 
 //Interrogate eps to find out how many eigenvalues we've found etc.
 void SlepcSolver::analyseResults(){
@@ -417,9 +578,11 @@ void SlepcSolver::analyseResults(){
       PetscScalar reEig, imEig;
       BoutReal reEigBout, imEigBout;
       EPSGetEigenvalue(eps,iEig,&reEig,&imEig);
-      output<<"\t"<<iEig<<"\t"<<reEig<<"   "<<imEig<<"i";
+      dcomplex slepcEig(reEig,imEig);
+      output<<"\t"<<iEig<<"\t"<<reEig<<" "<<imEig<<"i\t("<<abs(slepcEig)<<")";
       slepcToBout(reEig,imEig,reEigBout,imEigBout);
-      output<<"\t"<<reEigBout<<"   "<<imEigBout<<"i"<<endl;
+      dcomplex boutEig(reEigBout,imEigBout);
+      output<<"\t"<<reEigBout<<" "<<imEigBout<<"i\t("<<abs(boutEig)<<")"<<endl;
 
       //Get eigenvector
       EPSGetEigenvector(eps,iEig,vecReal,vecImag);
