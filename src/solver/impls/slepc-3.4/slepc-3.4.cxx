@@ -228,7 +228,7 @@ int SlepcSolver::run() {
   EPSSolve(eps);
 
   //The following prints the used solver settings
-  EPSView(eps,PETSC_VIEWER_STDOUT_SELF);
+  EPSView(eps,PETSC_VIEWER_STDOUT_WORLD);
 
   //Analyse and dump to file
   analyseResults();
@@ -562,7 +562,7 @@ void SlepcSolver::analyseResults(){
   //Now loop over each converged eigenpair and output eigenvalue
   if(nEigFound>0){
     output<<"Converged eigenvalues :"<<endl;
-    output<<"\tIndex\tSlepc eig\t\tBOUT eig"<<endl;
+    output<<"\tIndex\tSlepc eig (mag.)\t\t\tBOUT eig (mag.)"<<endl;
 
     iteration=0;
 
