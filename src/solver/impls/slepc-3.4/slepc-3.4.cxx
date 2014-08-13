@@ -78,6 +78,31 @@ PetscErrorCode monitorWrapper(EPS eps, PetscInt its, PetscInt nconv,
   PetscFunctionReturn(0);
 }
 
+//Helper function
+string formatEig(BoutReal reEig, BoutReal imEig){
+  string rePad, imPad;
+
+  if(reEig<0){
+    rePad="-";
+  }else{
+    rePad=" ";
+  }
+
+  if(imEig<0){
+    imPad="-";
+  }else{
+    imPad="+";
+  }
+
+  stringstream tmp;
+  tmp.precision(5); tmp<<std::scientific;
+  //Note we use abs here and put the -/+ into pads to cope with
+  //the case where the Eig is -0.000/0.000 which require different
+  //padding but evaluate as the same number when doing comparisons
+  tmp<<rePad<<abs(reEig)<<imPad<<abs(imEig)<<"i";
+  return tmp.str();
+}
+
 SlepcSolver::SlepcSolver(){
   has_constraints = false;
   initialised = false;
@@ -493,7 +518,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
 
   //This line more or less replicates the normal slepc output (when using -eps_monitor)
   //but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed error estimate.
-  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) "<<reEigBout<<joinNum<<imEigBout<<"i\t ("<<errest[nconv]<<")"<<endl;
+  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) "<<formatEig(reEigBout,imEigBout)<<"\t ("<<errest[nconv]<<")"<<endl;
 
   //The following can be quite noisy so may want to add a flag to disable/enable.
   int newConv=nconv-nConvPrev;
@@ -502,17 +527,7 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
 
     for (PetscInt i=nConvPrev;i<nconv;i++){
       slepcToBout(eigr[i],eigi[i],reEigBout,imEigBout);
-      if(imEigBout<0){
-	joinNum="";
-      }else{
-	joinNum="+";
-      }
-      if(eigi[i]<0){
-	joinNumSlepc="";
-      }else{
-	joinNumSlepc="+";
-      }
-      output<<"\t"<<i<<"\t: "<<eigr[i]<<joinNumSlepc<<eigi[i]<<"i --> "<<reEigBout<<joinNum<<imEigBout<<"i"<<endl;
+      output<<"\t"<<i<<"\t: "<<formatEig(eigr[i],eigi[i])<<" --> "<<formatEig(reEigBout,imEigBout)<<endl;
     }
   }
 
@@ -579,10 +594,10 @@ void SlepcSolver::analyseResults(){
       BoutReal reEigBout, imEigBout;
       EPSGetEigenvalue(eps,iEig,&reEig,&imEig);
       dcomplex slepcEig(reEig,imEig);
-      output<<"\t"<<iEig<<"\t"<<reEig<<" "<<imEig<<"i\t("<<abs(slepcEig)<<")";
+      output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<abs(slepcEig)<<")";
       slepcToBout(reEig,imEig,reEigBout,imEigBout);
       dcomplex boutEig(reEigBout,imEigBout);
-      output<<"\t"<<reEigBout<<" "<<imEigBout<<"i\t("<<abs(boutEig)<<")"<<endl;
+      output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<abs(boutEig)<<")"<<endl;
 
       //Get eigenvector
       EPSGetEigenvector(eps,iEig,vecReal,vecImag);
