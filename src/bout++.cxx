@@ -302,6 +302,9 @@ int BoutFinalise() {
 
   // Close the output file
   dump.close();
+  
+  // Make sure all processes have finished writing before exit
+  MPI_Barrier(BoutComm::get());
 
   // Laplacian inversion
   Laplacian::cleanup();
