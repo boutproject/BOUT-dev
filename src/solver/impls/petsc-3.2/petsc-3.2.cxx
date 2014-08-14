@@ -162,11 +162,12 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   OPTION(options, precon_dimens, 50);
   OPTION(options, precon_tol, 1.0e-4);
 
-#ifdef PETSC_HAS_SUNDIALS
-  // Set Sundials tolerances
   BoutReal abstol, reltol;
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
+
+#ifdef PETSC_HAS_SUNDIALS
+  // Set Sundials tolerances
   //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
   
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);

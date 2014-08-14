@@ -19,6 +19,8 @@ class FieldGroup {
   FieldGroup(const FieldGroup &other) {fvec = other.fvec;}
   
   FieldGroup& operator=(const FieldGroup &other) {fvec = other.fvec; return *this;}
+  FieldGroup& operator+(const FieldGroup &other);
+  FieldGroup& operator+=(const FieldGroup &other);
   
   void add(FieldData &f) {fvec.push_back(&f);}
   void add(FieldData &f1, FieldData &f2) {

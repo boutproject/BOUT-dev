@@ -122,7 +122,7 @@ void Solver::add(Field2D &v, const char* name) {
   f2d.push_back(d);
 
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   /// Generate initial perturbations.
@@ -168,7 +168,7 @@ void Solver::add(Field3D &v, const char* name) {
   f3d.push_back(d);
 
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   initial_profile(name, v);

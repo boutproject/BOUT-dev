@@ -8,11 +8,6 @@ print("Loading data utilities")
 
 # Load routines from separate files
 #try:
-#    from showdata import showdata
-#except:
-#    print "No showdata"
-
-#try:
 #    from plotdata import plotdata
 #except:
 #    print "No plotdata"
@@ -57,3 +52,37 @@ try:
 except:
     print("No getmpirun command")
  
+try:
+    from fft_integrate import fft_integrate
+except:
+    print "No fft_integrate command"
+
+try:
+    from mode_structure import mode_structure
+except:
+    print "No mode_structure command"
+
+try:
+    from plotpolslice import plotpolslice
+except:
+    print "No plotpolslice command"
+
+try:
+    from moment_xyzt import moment_xyzt
+except:
+    print "No moment_xyzt command"
+
+try:
+    from volume_integral import volume_integral
+except:
+    print "No volume_integral command"
+
+try:
+    from surface_average import surface_average
+except:
+    print "No surface_average command"
+
+try:
+    from showdata import showdata
+except:
+    print "No showdata"

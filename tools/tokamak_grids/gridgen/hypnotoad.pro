@@ -172,6 +172,13 @@ PRO event_handler, event
         ; Analyse the equilibrium
         critical = analyse_equil(g.psi, REFORM(g.r[*,0]), REFORM(g.z[0,*]))
 
+        IF critical.n_xpoint EQ 0 THEN BEGIN
+          ; Analyse_equil will make a guess for where the separatrix
+          ; is. Reset to the value in the G file
+          critical.xpt_f[0] = g.sibdry
+          PRINT, "WARNING: No X-points. Resetting outer psi to "+STR(g.sibdry)
+        ENDIF
+
         ; Extract needed data from g-file struct
         
         rz_grid = {nr:g.nx, nz:g.ny, $  ; Number of grid points

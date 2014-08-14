@@ -4,6 +4,8 @@
 \usepackage[nofoot]{geometry}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
+\usepackage[makeroom]{cancel}
+\usepackage{amssymb}
 
 %% Modify margins
 \addtolength{\oddsidemargin}{-.25in}
@@ -194,8 +196,12 @@ Unit magnetic field vector
 \]
 Perpendicular Del operator
 \[
+\nabla f = \nabla_\parallel f  + \nabla_\perp f \Rightarrow  \nabla_\perp f = \nabla f - \nabla_\parallel f \Rightarrow 
+\]
+\[
 \nabla_\perp f = \nabla f - \Vec{b}\left(\Vec{b}\cdot\nabla f\right)
 \]
+Note: The dot product of the unit vector $\Vec{b}$ and $\nabla f$, namely, $\Vec{b} \cdot \nabla f$ gives the (scalar) parallel value of $\nabla f $. Multiplied by $\Vec{b}$ gives the vector $\nabla_\parallel f$.
 
 \subsection{Curvature vector}
 
@@ -207,12 +213,23 @@ This can be re-written as
 \[
 \Vec{\kappa} = \left[\frac{1}{B}\Curl{\Bvec} - \Bvec\times\nabla\left(\frac{1}{B}\right)\right]\times\Vec{b}
 \]
+
+using the identity $\nabla \times ( \varphi \mathbf{F}) = \nabla \varphi \times \mathbf{F} + \varphi \nabla \times \mathbf{F} $  namely,
+\[
+\nabla\times\Vec{b}=\nabla\times\frac{\Vec{B}}{B}=\frac{1}{B}\left(\nabla\times\Vec{B}\right)-\Vec{B}\times\left(\nabla\frac{1}{B}\right)
+\]
+
 Using $\nabla\left(\frac{1}{B}\right) = -\nabla\left(B\right) / B^2$, this becomes
 \begin{eqnarray}
-\Vec{\kappa} &=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\left(\Vec{b}\times\nabla B\right)\times\Vec{b} \nonumber \\
+\Vec{\kappa} &=& \left[\frac{1}{B}\Curl{\Bvec} - \Bvec\times\nabla\left(\frac{1}{B}\right)\right]\times\Vec{b}\nonumber\\
+&=& \left[\frac{1}{B}\Curl{\Bvec} + \frac{1}{B^2}\left(\Bvec\times\nabla{B}\right)\right]\times\Vec{b}\nonumber\\
+&=& \frac{1}{B}\mu_0{\Jvec}\times\Vec{b} + \frac{1}{B^2}\left(\Vec{B}\times\nabla{B}\times\Vec{b}\right)\nonumber\\
+&=& \frac{\mu_0}{B}{\Jvec}\times\frac{\Vec{B}}{B} + \frac{1}{B}\left(\frac{\Bvec}{B}\times\nabla{B}\times\Vec{b}\right)\nonumber\\
+&=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\left(\Vec{b}\times\nabla B\right)\times\Vec{b} \nonumber \\
+&=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\left[\nabla B\left(\Vec{b}\cdot\Vec{b}\right)-\Vec{b}\left(\Vec{b}\cdot\nabla B\right)\right]\label{eq:kstep}\\
 &=& \frac{\mu_0}{B^2}\Jvec\times\Bvec + \frac{1}{B}\nabla_\perp B \label{eq:kappajxb}
 \end{eqnarray}
-
+where in $\ref{eq:kstep}$ we used the identity $\mathbf{a} \times (\mathbf{b} \times \mathbf{c}) = \mathbf{b}(\mathbf{a} \cdot \mathbf{c}) - \mathbf{c}(\mathbf{a} \cdot \mathbf{b})$. Note that the second term is the perpendicular Del operator since the dot product of the unit vectors is $\Vec{b}\cdot\Vec{b}=1$.
 
 \subsection{Shear-Alfv\'en Law}
 
@@ -226,27 +243,60 @@ where the usual convective derivative is used:
 \frac{d}{dt} = \deriv{}{t} + \Vec{V}\cdot\nabla
 \]
 Taking the parallel component of the curl of this equation (i.e. apply $\Bvec\cdot\nabla\times$ to each side)
-\[
+\begin{eqnarray}
 \Bvec\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right] = \underbrace{-\Bvec\cdot\nabla\times\nabla P}_{\Rightarrow 0} + \Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right)
-\]
+\label{eq:mhd}
+\end{eqnarray}
+Note the identity $\nabla \times ( \nabla \phi )  = \vec{0}$ for any scalar $\phi$.
 
 The $\Jvec\times\Bvec$ term can be written as:
 \begin{eqnarray}
-\Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right) &=& \nabla\cdot\left[\left(\Jvec\times\Bvec\right)\times\Bvec\right] \nonumber \\
-&=& B^2\Bvec\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{B^2}\Bvec\times\left(\Jvec\times\Bvec\right)\cdot\nabla_\perp B^2
+\Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right) &=& \nabla\cdot\left[\left(\Jvec\times\Bvec\right)\times\Bvec\right]+\left(\Jvec\times\Bvec\right)\cdot\left(\nabla\times\Bvec\right) \nonumber \\
 \end{eqnarray}
+
+based on the identity $\nabla\cdot(\mathbf{F}\times\mathbf{G})= \mathbf{G}\cdot(\nabla\times\mathbf{F}) - \mathbf{F}\cdot(\nabla\times\mathbf{G})$. 
+
+Note that $\nabla\times\Bvec\ = \mu_0\Jvec$ and thus 
+
+\[
+\left(\Jvec\times\Bvec\right)\cdot\left(\nabla\times\Bvec\right)=\frac{1}{\mu_0}\left(\Jvec\times\Bvec\right)\cdot\Jvec = 0
+\]
+due to the identity 
+$
+\mathbf{a} \cdot (\mathbf{a} \times \mathbf{b}) = \mathbf{a} \cdot (\mathbf{b} \times \mathbf{a}) = \mathbf{a} \cdot (\mathbf{b} \times \mathbf{b}) = \mathbf{a} \cdot (\mathbf{a} \times \mathbf{a}) = 0
+$.  
+
+Thus,
+\begin{eqnarray}
+\Bvec\cdot\nabla\times\left(\Jvec\times\Bvec\right) &=& \nabla\cdot\left[\left(\Jvec\times\Bvec\right)\times\Bvec\right]\\
+&=& \nabla\cdot\left[-\Bvec\times\left(\Jvec\times\Bvec\right)\right] = \nabla\cdot\left[ - \Jvec\left(\Bvec\cdot\Bvec\right)+\Bvec\left(\Jvec\cdot\Bvec\right)\right]\\
+&=& \nabla\cdot\left[-{B^2}\Jvec\left(\Vec{b}\cdot\Vec{b}\right)+{B^2}\Vec{b}\Jvec_{||}\Vec{b}\right]\\
+&=& \nabla\cdot\left[-{B^2}\Jvec\left(\Vec{b}\Vec{b}\right)+{B^2}\Vec{b}\Jvec_{||}\Vec{b}\right]\\
+&=& -\nabla\cdot\left[{B^2}\Jvec_\perp\right]\\
+\end{eqnarray}
+
+using $(\mathbf{a}\times \mathbf{b})\times \mathbf{c} = -\mathbf{c}\times(\mathbf{a}\times \mathbf{b}) = -(\mathbf{c}\cdot\mathbf{b})\mathbf{a} + (\mathbf{c}\cdot\mathbf{a})\mathbf{b}$.
+
+
+From Hazeltine\& Meiss (eq. 3.74) we have $\Bvec\cdot\nabla\left(\frac{\Jpar}{B}\right)=-\nabla\cdot\Jvec_{\perp}$, thus
+\begin{eqnarray}
+ -\nabla\cdot\left[{B^2}\Jvec_\perp\right] &=& -B^2\nabla\cdot\Jvec_{\perp}-\Jvec_{\perp}\cdot\nabla B^2\\
+&=&B^2\Bvec\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{B^2}\Bvec\times\left(\Jvec\times\Bvec\right)\cdot\nabla_\perp B^2
+\end{eqnarray}
+
+where we have used the above result $\left(\Jvec\times\Bvec\right)\times\Bvec=-{B^2}\Jvec_\perp$ and $\nabla B^2$ becomes $\nabla_\perp B^2$ on account that it multiplies $\Jvec_\perp$. Now from \ref{eq:kappajxb} we get 
 
 \begin{eqnarray}
-\Jvec\times\Bvec &=& \frac{1}{\mu_0}\left(\nabla\times\Bvec\right)\times\Bvec \nonumber \\
-&=& \frac{1}{\mu_0}\left[B^2\left(\nabla\times\Vec{b}\right)\times\Vec{b} + B\left(\nabla B\times\Vec{b}\right)\times\Vec{b}\right] \nonumber \\
-&=& \frac{1}{\mu_0}\left[B^2\Vec{\kappa} - B\nabla_\perp B\right]
+\Jvec\times\Bvec = \frac{1}{\mu_0}\left[B^2\Vec{\kappa} - B\nabla_\perp B\right]
 \end{eqnarray}
 
-When crossed with $\Bvec$, and dotted with $\nabla_\perp B^2$, the $\nabla_\perp B$ term vanishes, and so
-\begin{equation}
-\Vec{b}\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right] = B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{\mu_0}\Vec{b}\times\Vec{\kappa}\cdot\nabla_\perp B^2
+So \ref{eq:mhd} becomes
+\begin{eqnarray}
+\Bvec\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right]& = &B^2\Bvec\cdot\nabla\left(\frac{J_{||}}{B}\right) -\frac{1}{B^2} \Bvec\times\left(\frac{1}{\mu_0}{B^2}\Vec{\kappa}-{B}\nabla_\perp B\right)\cdot\nabla_\perp B^2 \nonumber \\
+&=&B^2\Bvec\cdot\nabla\left(\frac{J_{||}}{B}\right)-\frac{1}{\mu_0}\Bvec\times\Vec{\kappa}\cdot\nabla_\perp B^2+\cancelto{0}{\frac{\Bvec}{B^2}\times \frac{1}{2}\nabla_\perp B^2\cdot\nabla_\perp B^2} \nonumber \\\
+\Rightarrow \Vec{b}\cdot\nabla\times\left[\rho\frac{d\Vec{V}}{dt} + \Div{\Pi}\right] &=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{\mu_0}\Vec{b}\times\Vec{\kappa}\cdot\nabla_\perp B^2
 \label{eq:sa1}
-\end{equation}
+\end{eqnarray}
 
 Denoting the LHS of equation \ref{eq:genfluid} as $\Vec{f}$, and using the expression
 for the curvature in equation \ref{eq:kappajxb} gives:
@@ -257,7 +307,7 @@ for the curvature in equation \ref{eq:kappajxb} gives:
 Substituting this into equation~\ref{eq:sa1} gives:
 \begin{eqnarray*}
 \Vec{b}\cdot\Curl{\Vec{f}} &=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) - \frac{1}{\mu_0}\Vec{b}\times\Vec{\kappa}\cdot\left[-2\mu_0\left(\Vec{f} + \nabla P\right) + 2B^2\kappa\right] \\
-&=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) + 2\Vec{b}\times\Vec{\kappa}\cdot\Vec{f} + 2\Vec{b}\times\Vec{\kappa}\cdot\nabla P
+&=& B^2\Vec{b}\cdot\nabla\left(\frac{J_{||}}{B}\right) + 2\Vec{b}\times\Vec{\kappa}\cdot\Vec{f} + 2\Vec{b}\times\Vec{\kappa}\cdot\nabla P+\mathcal{O} (\kappa^2) \Rightarrow
 \end{eqnarray*}
 
 \begin{equation}
@@ -284,7 +334,7 @@ divergence can be written:
 \begin{equation}
 \nabla_{||} \equiv \Vec{b}\cdot\nabla = \Vec{b}_0\cdot\nabla - \Vec{b}_0\cdot\nabla\psi\times\nabla
 \end{equation}
-where the $B_{||}$ term is dropped because this is a higher order of $\epsilon$.
+where the $B_{||}$ term is dropped because it is of higher order in terms of $\epsilon$.
 
 \subsection{High-$\beta$ MHD closure}
 
@@ -489,7 +539,7 @@ with the full parallel derivative
 \note{This is the normalisation used in the elm\_pb code}
 
 Define typical length scale $\Lbar$, timescale $\Tbar$ and magnetic field $\Bbar$, related
-by $\overline{V_A}^2 = \Bbar^2 / \mu_0\rho = \Lbar / \Tbar$.
+by $\overline{V_A}^2 = \Bbar^2 / {\mu_0\rho m} = \Lbar^2 / \Tbar^2$.
 
 \[
 \hat{t} = \frac{t}{\Tbar} \qquad \hat{B} = \frac{B}{\Bbar} \qquad \hat{\nabla} = \Lbar\nabla \qquad \hat{\kappa} = \Lbar\kappa
@@ -512,10 +562,41 @@ The normalised high-$\beta$ reduced MHD equations are
 \hat{U} = \hat{\delp}\hat{\phi}  &\qquad& \hat{\Jpar} = \hat{\delp}\hat{\psi}
 \end{eqnarray*}
 
+\subsection{Normalisation example}
+
+Using cbm18dens8 grid we have $\Bbar=1.94129908 [T]$ ($Bmag$ from grid file), $\Lbar=3.49717236 [m] $ ($Rmag$ from grid file), $\mu_0=4\pi1e^{-7} [ N \cdot A^{-2}]$ and number density $n=1e^{19} [m^{-3}]$. Using as mass that of deuteron $m=2.*1.6726e^{-27} [kg]$ we get
+
+\[
+\overline{V_A}^2 = \Bbar^2 / \mu_0 n m=1.94129908^2/(4\pi1e^{-7}1e^{19}2.0*1.6726e^{-27})=8.96505469e^{13}
+\Rightarrow \overline{V_A}=9468397. [m/s]
+\]
+
+Since $V_A=\Lbar/\Tbar$ we get $\Tbar=3.69352108e^{-7} [s] $ or .369 $\mu$s. Note that the Alfv\'en frequency is $1/\Tbar$. Also there is a dependency of frequency and the ratio of magnetic field and major radius. From above we have,
+\[
+V_A=\Lbar/\Tbar \Rightarrow \Bbar \sim Rmag /\Tbar \Rightarrow \Bbar / R \sim 1/ \Tbar 
+\]
+
+where we $\Lbar=Rmag$ (major radius). So to compare frequencies between two configurations with different $Bmag$ and $Rmag$ we need to scale the results appropriately. i.e between ELITE results with $Bmag=2 [T]$ and $Rmag=3 [m]$ and BOUT++ results with $Bmag=1.94129908 [T]$ and $Rmag=3.49717236 [m]$ we have
+
+\[
+\omega_{BOUT}/\omega_{ELITE}=B_{bout}/R_{bout} \div B_{ELITE} / R_{ELITE}=\frac{3.49717236}{1.94129908} \div \frac{3}{2} =
+1.80146 \div 1.5 = 1.201.
+\]
+
+So in order to compare, we multiply BOUT's results with $1/1.201=.8326$.
+
+\subsection{Dimensionless quantities}
+
+\[
+\beta_t=\frac{p [Pa]}{B_0[T]/{2 \mu_0[N\cdot A^{-2}]}} \sim \frac{Pa \cdot N \cdot A^{-2}}{T^2} \sim \frac{(Kg \cdot m^{-1} \cdot s^{-2}) \cdot (kg \cdot m \cdot s^{-2} \cdot A^{-2})}{kg^2 \cdot s^{-4} \cdot A^{-2}} \checkmark
+\]
+
+ 
+
 \subsection{Parallel velocity}
 \label{sec:parvel}
 
-In SI units
+In SI units (eq. 7.51-52 from Hazeltine \& Meiss) we have
 \[
 \rho\frac{dV_{||}}{dt} = -\nabla_{||} P_1 + \mathbf{b}_0\times\nabla\psi\cdot\nabla P_0
 \]
@@ -525,11 +606,55 @@ In SI units
 \]
 
 
-MHD units:
+Transforming the above eqs into MHD units the first equation gives
 
 \[
-2\frac{d\hat{V}_{||}}{d\hat{t}} = - \hat{\nabla}_{||} \hat{P}_1 + \mathbf{b}_0\times\hat{\nabla}\hat{\psi}\cdot\hat{\nabla}\hat{P}_0
+\rho\frac{dV_{||}}{dt \frac{\Tbar}{\Tbar}} = -\nabla_{||}\frac{\Lbar}{\Lbar} P_1 \frac{2 \mu_0 \Bbar^2}{2 \mu_0 \Bbar^2}+ \mathbf{b}_0\times\nabla \frac{\Lbar}{\Lbar}  \psi \frac{\Lbar}{\Lbar} \cdot\nabla \frac{\Lbar}{\Lbar} P_0  \frac{2 \mu_0 \Bbar^2}{2 \mu_0 \Bbar^2} \Rightarrow
 \]
+
+\[
+\rho\frac{dV_{||}}{d\hat{t} \Tbar} = -\hat{\nabla_{||}}\frac{1}{\Lbar} \hat{P_1} \frac{\Bbar^2}{2 \mu_0}+ \mathbf{b}_0\times\hat{\nabla} \frac{1}{\cancel{\Lbar}}  \hat{\psi} \cancel{\Lbar} \cdot \hat{\nabla} \frac{1}{\Lbar} \hat{P_0}  \frac{\Bbar^2}{2 \mu_0} \Rightarrow
+\]
+
+\[
+\rho\frac{dV_{||}}{d\hat{t}} =  \frac{\Bbar^2\Tbar}{2 \mu_0 \Lbar}  \left[ -\hat{\nabla_{||}}\hat{P_1} + \mathbf{b}_0\times\hat{\nabla}  \hat{\psi} \cdot \hat{\nabla} \hat{P_0} \right ] \Rightarrow
+\]
+
+\[
+\rho\frac{dV_{||}}{d\hat{t}} =  \frac{\rho\overline{V_A}^2}{2\overline{V_A}}  \left[ -\hat{\nabla_{||}}\hat{P_1} + \mathbf{b}_0\times\hat{\nabla}  \hat{\psi} \cdot \hat{\nabla} \hat{P_0} \right ]   \Rightarrow
+\]
+Note that $\overline{V_A}=\Lbar/\Tbar$. Then using $\hat{V_{||}}=V_{||}/\overline{V_A}$ we get
+
+\[
+2\frac{d\hat{V}_{||}}{d\hat{t}} = - \hat{\nabla}_{||} \hat{P}_1 + \mathbf{b}_0\times\hat{\nabla}\hat{\psi}\cdot\hat{\nabla}\hat{P}_0.
+\]
+
+The second...
+
+\begin{eqnarray*}
+\frac{dP_1}{dt \frac{\Tbar}{\Tbar}} \frac{2 \mu_0 \Bbar^2}{2 \mu_0 \Bbar^2} + \frac{1}{B_0}\mathbf{b}_0\times\nabla \frac{\Lbar}{\Lbar} \phi\frac{\overline{V_A}\Lbar B_0}{\overline{V_A}\Lbar B_0}\cdot\nabla \frac{\Lbar}{\Lbar} P_0  \frac{2 \mu_0 \Bbar^2}{2 \mu_0 \Bbar^2}= \\\\\frac{B_0^2}{\mu_0}\frac{v_s^2}{v_A^2 + v_s^2}\left[-\frac{2}{B_0}\mathbf{b}_0\times\mathbf{\kappa}_0 \frac{\Lbar}{\Lbar}\cdot\nabla \frac{\Lbar}{\Lbar}\phi \frac{\overline{V_A}\Lbar B_0}{\overline{V_A}\Lbar B_0} - \nabla_{||} \frac{\Lbar}{\Lbar} V_{||} \frac{\overline{V_A}}{\overline{V_A}} + \frac{V_{||}\frac{\overline{V_A}}{\overline{V_A}}}{B_0 \frac{\Bbar}{\Bbar}}\mathbf{b}_0\cdot\nabla \frac{\Lbar}{\Lbar}B_0 \frac{\Bbar}{\Bbar} \right] \Rightarrow
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\frac{d\hat{P_1}}{d\hat{t}} \frac{\Bbar^2}{2 \mu_0 \Tbar} + \frac{1}{\cancel{B_0}}\mathbf{b}_0\times\hat{\nabla} \frac{1}{\cancel{\Lbar}} \hat{\phi}\overline{V_A}\cancel{\Lbar} \cancel{B_0}\cdot\hat{\nabla} \frac{1}{\Lbar} \hat{P_0}  \frac{\Bbar^2}{2 \mu_0}= \\\\
+\frac{B_0^2}{\mu_0}\frac{v_s^2}{v_A^2 + v_s^2}\left[-\frac{2}{\cancel{B_0}}\mathbf{b}_0\times\mathbf{\hat{\kappa}}_0 \frac{1}{\Lbar}\cdot\hat{\nabla} \frac{1}{\cancel{\Lbar}}\hat{\phi} \overline{V_A}\cancel{\Lbar} \cancel{B_0} - \hat{\nabla}_{||} \frac{1}{\Lbar} \hat{V}_{||} \overline{V_A} + \frac{\hat{V}_{||}\overline{V_A}}{\hat{B}_0 \cancel{\Bbar}}\mathbf{b}_0\cdot\hat{\nabla} \frac{1}{\Lbar}\hat{B}_0 \cancel{\Bbar} \right]  \Rightarrow
+\end{eqnarray*}
+
+using $\overline{V_A}=\Lbar/\Tbar$ we get 
+
+\begin{eqnarray*}
+\left[ \frac{d\hat{P}_1}{dt} + \mathbf{b}_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P}_0 \right] \frac{\Bbar^2}{2 \cancel{\mu_0\Tbar}}= \\\\
+\frac{B_0^2}{\cancel{\mu_0\Tbar}} \frac{v_s^2}{v_A^2 + v_s^2}\left[-2\mathbf{b}_0\times\mathbf{\hat{\kappa}}_0\cdot\hat{\nabla}\hat{\phi} - \hat{\nabla}_{||} \hat{V}_{||} + \frac{\hat{V}_{||}}{\hat{B}_0}\mathbf{b}_0\cdot\hat{\nabla} \hat{B}_0\right]\Rightarrow
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\left[ \frac{d\hat{P}_1}{dt} + \mathbf{b}_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P}_0 \right] = \\\\
+\frac{2 B_0^2}{\Bbar^2} \frac{v_s^2}{v_A^2 + v_s^2}\left[-2\mathbf{b}_0\times\mathbf{\hat{\kappa}}_0\cdot\hat{\nabla}\hat{\phi} - \hat{\nabla}_{||} \hat{V}_{||} + \frac{\hat{V}_{||}}{\hat{B}_0}\mathbf{b}_0\cdot\hat{\nabla} \hat{B}_0\right]\Rightarrow
+\end{eqnarray*}
+
+
+
+and thus 
 
 \[
 \frac{d\hat{P}_1}{dt} + \mathbf{b}_0\times\hat{\nabla}\hat{\phi}\cdot\hat{\nabla}\hat{P}_0 = 2\hat{B}_0^2 \frac{v_s^2}{v_A^2 + v_s^2}\left[-2\mathbf{b}_0\times\mathbf{\hat{\kappa}}_0\cdot\hat{\nabla}\hat{\phi} - \hat{\nabla}_{||} \hat{V}_{||} + \frac{\hat{V}_{||}}{\hat{B}_0}\mathbf{b}_0\cdot\hat{\nabla} \hat{B}_0\right] 
@@ -537,8 +662,14 @@ MHD units:
 
 In \file{elm\_pb.cxx}, the factor in front of the square brackets is \code{beta}:
 \[
-\beta \equiv 2\hat{B}_0^2 \frac{v_s^2}{v_A^2 + v_s^2} = \hat{B}_0^2 / \left(\frac{\hat{B}_0^2}{\gamma \hat{P}_0} + \frac{1}{2}\right)
+\beta \equiv 2\hat{B}_0^2 \frac{v_s^2}{v_A^2 + v_s^2} =\frac{ 2\hat{B}_0^2 }{ v_A^2/v_s^2+1}= \hat{B}_0^2 / \left(\frac{\hat{B}_0^2}{\gamma \hat{P}_0} + \frac{1}{2}\right)
 \]
+with 
+\[
+\frac{v_A^2}{2 v_s^2}=\frac{B_0^2 \cancel{\rho}}{2 \cancel{\rho} \mu_0 \gamma P_0}=\frac{1}{\gamma}\frac{\Bbar^2 B_0^2}{2 \mu_0 P \Bbar^2}=\frac{\hat{B}_0^2}{\gamma \hat{P_0}} ....... {\bf CHECK}
+\]
+
+and $v_A^2=B_0^2/\rho\mu_0$ and $v_s^2=\gamma P_0/\rho$.
 
 \subsection{Diamagnetic effects}
 
@@ -547,7 +678,7 @@ drift:
 \[
 \mathbf{V}\simeq \mathbf{V}_E + \mathbf{V}_D = \frac{1}{B^2}\mathbf{B}\times\nabla\phi + \frac{1}{enB^2}\mathbf{B}\times\nabla P
 \]
-NOTE: Using the ion drift direction. For {\bf constant density} $n$, this gives
+NOTE: Using the ion drift direction. For {\bf constant density} $n$, this gives (see 3.4.1 above)
 \begin{equation}
 U = \frac{1}{B}\delp\left(\phi + \frac{P}{en}\right)
 \label{eq:vorticity_dia}
@@ -558,12 +689,50 @@ Another term is the modification to the parallel electric field {\bf CHECK}:
 \deriv{\apar}{t} = -\nabla_{||}\phi + 1.71\nabla_{||} T_e + \frac{Te}{n}\nabla_{||} n
 \]
 
-For highbeta\_reduced (MHD units), $n$ is constant (so $\nabla_{||} n = 0$), and the modified expression
-for vorticity (eq. \ref{eq:vorticity_dia}) becomes:
+For highbeta\_reduced (MHD units), $n$ is constant (so $\nabla_{||} n = 0$). The modified expression
+for vorticity (eq. \ref{eq:vorticity_dia}) can be normalized using the expressions from 3.5.3 as:
+
+\[
+U \frac{\Tbar}{\Tbar} = \delp \frac{\Lbar^2}{\Lbar^2} \frac{1}{B_0} \left[\phi\frac{\overline{V_A }\Lbar}{\overline{V_A} \Lbar} + \left(\frac{P}{e n}\right) \right] \Rightarrow
+\]
+
+\[
+\frac{\hat{U}}{\Tbar} =  \frac{\hat{\delp}}{\Lbar^2} \left[\hat{\phi} \overline{V_A} \Lbar + \left(\frac{P}{B_0 e n}\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} \cancelto{1}{\frac{\overline{V_A} \Lbar\Tbar}{\Lbar^2} }+ \left(\frac{P\Tbar}{\Lbar^2 B_0 e n}\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} + \left(\frac{P\Tbar\Tbar}{\Tbar\Lbar^2 B_0 e n}\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} + \left(\frac{P}{\Tbar\overline{V_A}^2 B_0 e n}\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} + \left(\frac{P}{\Tbar \frac{ \Bbar^2} { \mu_0 n m_i} B_0 e n}\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} + \left(\frac{2  \mu_0 P}{\Bbar^2} \frac{m_i}{2 \Tbar B_0 e }\right) \right] \Rightarrow
+\]
+
+\[
+\hat{U}=  \hat{\delp} \left[\hat{\phi} + \left(\hat{P} \frac{m_i}{2 \Tbar \frac{B_0}{\Bbar} \Bbar e }\right) \right] \Rightarrow
+\]
+
 \[
 \hat{U} = \hat{\delp}\left[\hat{\phi} + \left(\frac{m_i}{2e\Tbar \Bbar}\right) \hat{P} / \hat{B_0}\right]
 \]
-where the term in round brackets is called \code{dnorm}. Since $P = 2enT$ for $Te = Ti$, 
+where the term in round brackets is called \code{dnorm}. Note also that \code{dnorm} is also the drift scale $\delta$ over 2 , since it is the ratio of the transit frequency (in our problem) $1 / \Tbar $ over the gyrofrequency $\Omega= e \Bbar / m_i $.
+
+
+
+
+Since $P = 2enT$ for $Te = Ti$, 
 \[
 \deriv{\hat{\psi}}{\hat{t}} = -\frac{1}{\hat{B}_0}\hat{\nabla}_{||}\left(\hat{B}_0\hat{\phi}\right) + 1.71\left(\frac{m_i}{2e\Tbar \Bbar}\right)\frac{1}{\hat{B}_0}\nabla_{||}\hat{P}/2
 \]

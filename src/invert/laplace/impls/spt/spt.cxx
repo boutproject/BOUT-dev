@@ -3,6 +3,11 @@
  *
  * \brief Simple Parallel Tridiagonal solver
  *
+ * Changelog
+ * ---------
+ * 
+ * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
+ *     * Removed static variables in functions, changing to class members.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -34,6 +39,33 @@
 
 #include "spt.hxx"
 
+LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+  // Get start and end indices
+  ys = mesh->ystart;
+  ye = mesh->yend;
+  if(mesh->hasBndryLowerY())
+    ys = 0; // Mesh contains a lower boundary
+  if(mesh->hasBndryUpperY())
+    ye = mesh->ngy-1; // Contains upper boundary
+  
+  alldata = new SPT_data[ye - ys + 1];
+  alldata -= ys; // Re-number indices to start at ys
+  for(int jy=ys;jy<=ye;jy++) {
+    alldata[jy].comm_tag = SPT_DATA + jy; // Give each one a different tag
+  }
+
+  // Temporary array for taking FFTs
+  int ncz = mesh->ngz-1;
+  dc1d = new dcomplex[ncz/2 + 1];
+}
+
+LaplaceSPT::~LaplaceSPT() {
+  alldata += ys; // Return to index from 0
+  delete[] alldata;
+  
+  delete[] dc1d;
+}
+
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
   return solve(b,b);
 }
@@ -41,15 +73,6 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
-  
-  static SPT_data data;
-  static bool allocated = false;
-  
-  if(!allocated) {
-    data.bk = NULL;
-    data.comm_tag = SPT_DATA;
-    allocated = true;
-  }
   
   if(flags & (INVERT_IN_SET | INVERT_OUT_SET)) {
     FieldPerp bs = copy(b);
@@ -69,10 +92,10 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
         for(int iz=0;iz<mesh->ngz-1;iz++)
           bs[ix][iz] = x0[ix][iz];
     }
-    start(bs, data);
+    start(bs, slicedata);
   }else
-    start(b, data);
-  finish(data, x);
+    start(b, slicedata);
+  finish(slicedata, x);
   
   return x;
 }
@@ -87,38 +110,21 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   Timer timer("invert");
   Field3D x;
   x.allocate();
-
-  int ys = mesh->ystart, ye = mesh->yend;
   
-  if(mesh->hasBndryLowerY())
-    ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
-    ye = mesh->ngy-1; // Contains upper boundary
-
-  static SPT_data *data = NULL;
-  if(data == NULL) {
-    data = new SPT_data[ye - ys + 1];
-    data -= ys; // Re-number indices to start at ys
-    for(int jy=ys;jy<=ye;jy++) {
-      data[jy].bk = NULL; // Mark as unallocated for PDD routine
-      data[jy].comm_tag = SPT_DATA + jy; // Give each one a different tag
-    }
-  }
-  
-  for(int jy=ys; jy <= ye; jy++) {	
+  for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
-    start(b.slice(jy), data[jy]);
+    start(b.slice(jy), alldata[jy]);
     
     // Move each calculation along one processor
     for(int jy2=ys; jy2 < jy; jy2++) 
-      next(data[jy2]);
+      next(alldata[jy2]);
   }
   
   bool running = true;
   do {
     // Move each calculation along until the last one is finished
     for(int jy=ys; jy <= ye; jy++)
-      running = next(data[jy]) == 0;
+      running = next(alldata[jy]) == 0;
   }while(running);
 
   FieldPerp xperp;
@@ -126,7 +132,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   
   // All calculations finished. Get result
   for(int jy=ys; jy <= ye; jy++) {
-    finish(data[jy], xperp);
+    finish(alldata[jy], xperp);
     x = xperp;
   }
   
@@ -193,7 +199,6 @@ void LaplaceSPT::tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
     bet = b[0];
     u[0] = r[0] / bet;
   }else {
-    //output.write("um = %e,%e\n", um.Real(), um.Imag());
     gam[0] = c[-1] / bet; // NOTE: ASSUMES C NOT CHANGING
     bet = b[0] - a[0]*gam[0];
     u[0] = (r[0]-a[0]*um)/bet;
@@ -256,35 +261,17 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   data.jy = b.getIndex();
 
-  if(data.bk == NULL) {
-    /// Allocate memory
-    int mm = (mesh->ngz - 1)/2 + 1;
-    // RHS vector
-    data.bk = cmatrix(mm, mesh->ngx);
-    data.xk = cmatrix(mm, mesh->ngx);
-    
-    data.gam = cmatrix(mm, mesh->ngx);
-
-    // Matrix to be solved
-    data.avec = cmatrix(mm, mesh->ngx);
-    data.bvec = cmatrix(mm, mesh->ngx);
-    data.cvec = cmatrix(mm, mesh->ngx);
-    
-    data.buffer  = new BoutReal[4*mm];
-  }
-
+  int mm = (mesh->ngz - 1)/2 + 1;
+  data.allocate(mm, mesh->ngx); // Make sure data is allocated. Already allocated -> does nothing
+  
   /// Take FFTs of data
-  static dcomplex *bk1d = NULL; ///< 1D in Z for taking FFTs
 
   int ncz = mesh->ngz-1;
-
-  if(bk1d == NULL)
-    bk1d = new dcomplex[ncz/2 + 1];
   
   for(int ix=0; ix < mesh->ngx; ix++) {
-    ZFFT(b[ix], mesh->zShift[ix][data.jy], bk1d);
+    ZFFT(b[ix], mesh->zShift[ix][data.jy], dc1d);
     for(int kz = 0; kz <= maxmode; kz++)
-      data.bk[kz][ix] = bk1d[kz];
+      data.bk[kz][ix] = dc1d[kz];
   }
   
   /// Set matrix elements
@@ -466,25 +453,19 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   while(next(data) == 0) {}
 
   // Have result in Fourier space. Convert back to real space
-
-  static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
-
-  if(xk1d == NULL) {
-    xk1d = new dcomplex[ncz/2 + 1];
-    for(int kz=0;kz<=ncz/2;kz++)
-      xk1d[kz] = 0.0;
-  }
   
   for(int ix=0; ix<=ncx; ix++){
     
     for(int kz = 0; kz<= maxmode; kz++) {
-      xk1d[kz] = data.xk[kz][ix];
+      dc1d[kz] = data.xk[kz][ix];
     }
+    for(int kz = maxmode + 1; kz <= ncz/2; kz++)
+      dc1d[kz] = 0.0;
 
     if(flags & INVERT_ZERO_DC)
-      xk1d[0] = 0.0;
+      dc1d[0] = 0.0;
 
-    ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], xdata[ix]);
+    ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], xdata[ix]);
     
     xdata[ix][ncz] = xdata[ix][0]; // enforce periodicity
   }
@@ -504,3 +485,40 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     }
   }
 }
+
+//////////////////////////////////////////////////////////////////////
+// SPT_data helper class
+
+void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
+  if(bk != NULL)
+    return; // Already allocated
+  
+  bk = cmatrix(mm, nx);
+  xk = cmatrix(mm, nx);
+  
+  gam = cmatrix(mm, nx);
+  
+  // Matrix to be solved
+  avec = cmatrix(mm, nx);
+  bvec = cmatrix(mm, nx);
+  cvec = cmatrix(mm, nx);
+  
+  buffer  = new BoutReal[4*mm];
+}
+
+LaplaceSPT::SPT_data::~SPT_data() {
+  if( bk == NULL )
+    return;
+    
+  free_cmatrix(bk);
+  free_cmatrix(xk);
+  
+  free_cmatrix(gam);
+  
+  free_cmatrix(avec);
+  free_cmatrix(bvec);
+  free_cmatrix(cvec);
+  
+  delete[] buffer;
+}
+

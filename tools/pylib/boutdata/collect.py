@@ -329,6 +329,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         f.close()
     
+    # Force the precision of arrays of dimension>1
+    if ndims>1:
+          data = data.astype(t_array.dtype)
+  
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")

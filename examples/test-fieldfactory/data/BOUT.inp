@@ -10,3 +10,7 @@ MZ = 32    # Z size
 grid = "test_fieldfactory.grd.nc"
 
 dump_format = "nc"  # NetCDF format. Alternative is "pdb"
+
+[mesh]
+symmetricGlobalX = false
+
