@@ -58,6 +58,9 @@ int physics_init(bool restarting) {
   lap->setFlags(8192); Field3D flagosad = lap->solve(input, set_to);
   SAVE_ONCE2(flagisad, flagosad);
   
+  // Delete Laplacian when done
+  delete lap;
+
   // Write and close the output file
   
   dump.write();

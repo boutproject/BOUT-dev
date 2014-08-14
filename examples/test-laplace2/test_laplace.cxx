@@ -39,7 +39,14 @@ int physics_init(bool restarting) {
   Field3D result2 = solver2->solve(input, result1);
 
   SAVE_ONCE2(result1, result2);
-  
+ 
+  Field3D check1 = a*result1 + Delp2(result1);
+  check1.applyBoundary("dirichlet");
+  Field3D check2 = a*result2 + Delp2(result2);
+  check2.applyBoundary("dirichlet");
+
+  SAVE_ONCE2(check1, check2);
+ 
   dump.write();
   dump.close();
   

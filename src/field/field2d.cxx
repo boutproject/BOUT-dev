@@ -775,12 +775,12 @@ const Field2D Field2D::abs() const
     throw BoutException("Field2D: Taking abs of empty data\n");
 #endif
 
+  Field2D result;
+  result.allocate();
+
 #ifdef TRACK
   result.name = "abs("+name+")";
 #endif
-
-  Field2D result;
-  result.allocate();
 
   #pragma omp parallel for
   for(int j=0;j<mesh->ngx*mesh->ngy;j++)

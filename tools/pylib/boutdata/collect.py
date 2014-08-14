@@ -5,7 +5,7 @@
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: boututils.DataFile couldn't be loaded"
+    print("ERROR: boututils.DataFile couldn't be loaded")
     raise
 
 try:
@@ -13,14 +13,44 @@ try:
     import sys
     import glob
 except ImportError:
-    print "ERROR: os, sys or glob modules not available"
+    print("ERROR: os, sys or glob modules not available")
     raise
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
+
+def findVar(varname, varlist):
+    """
+    Find variable name in a list
+    
+    First does case insensitive comparison, then
+    checks for abbreviations.
+    
+    Returns the matched string, or raises a ValueError
+    
+    """
+    # Try a variation on the case
+    v = [name for name in varlist if name.lower() == varname.lower()]
+    if len(v) == 1:
+        # Found case match
+        print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
+        return v[0]
+    elif len(v) > 1:
+        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+        raise ValueError("Variable '"+varname+"' not found")
+    
+    # None found. Check if it's an abbreviation
+    v = [name for name in varlist if name[:len(varname)].lower() == varname.lower()]
+    if len(v) == 1:
+        print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
+        return v[0]
+    
+    if len(v) > 1:
+        print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
+    raise ValueError("Variable '"+varname+"' not found") 
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, info=True,prefix="BOUT.dmp"):
     """Collect a variable from a set of BOUT++ outputs.
@@ -45,7 +75,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     # Search for BOUT++ dump files in NetCDF format
     file_list = glob.glob(os.path.join(path, prefix+".nc"))
     if file_list != []:
-        print "Single (parallel) data file"
+        print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
         
         data = f.read(varname)
@@ -54,22 +84,25 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
     file_list.sort()
     if file_list == []:
-        print "ERROR: No data files found"
-        return None
+        raise ValueError("ERROR: No data files found")
+    
     nfiles = len(file_list)
     #print "Number of files: " + str(nfiles)
     
     # Read data from the first file
     f = DataFile(file_list[0])
-    
+   
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
         ndims = len(dimens)
-    except KeyError:
-        print "ERROR: Variable '"+varname+"' not found"
-        return None
-
+    except:
+        # Find the variable
+        varname = findVar(varname, f.list())
+        
+        dimens = f.dimensions(varname)
+        ndims = len(dimens)
+    
     if ndims < 2:
         # Just read from file
         data = f.read(varname)
@@ -77,7 +110,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         return data
 
     if ndims > 4:
-        print "ERROR: Too many dimensions"
+        print("ERROR: Too many dimensions")
         raise CollectError
 
     mxsub = f.read("MXSUB")
@@ -88,7 +121,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     nt = len(t_array)
     
     if info:
-        print "mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz)
+        print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
 
     # Get the version of BOUT++ (should be > 0.6 for NetCDF anyway)
     try:
@@ -101,15 +134,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         npe = nxpe * nype
         
         if info:
-            print "nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe)
+            print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
             if npe < nfiles:
-                print "WARNING: More files than expected (" + str(npe) + ")"
+                print("WARNING: More files than expected (" + str(npe) + ")")
             elif npe > nfiles:
-                print "WARNING: Some files missing. Expected " + str(npe)
+                print("WARNING: Some files missing. Expected " + str(npe))
         
         nx = nxpe * mxsub + 2*mxg
     except KeyError:
-        print "BOUT++ version : Pre-0.2"
+        print("BOUT++ version : Pre-0.2")
         # Assume number of files is correct
         # No decomposition in X
         nx = mxsub
@@ -135,7 +168,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 # No len attribute, so probably a single number
                 r2 = [r2,r2]
             if (len(r2) < 1) or (len(r2) > 2):
-                print "WARNING: "+name+" must be [min, max]"
+                print("WARNING: "+name+" must be [min, max]")
                 r2 = None
             else:
                 if len(r2) == 1:
@@ -296,6 +329,10 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         f.close()
     
+    # Force the precision of arrays of dimension>1
+    if ndims>1:
+          data = data.astype(t_array.dtype)
+  
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")

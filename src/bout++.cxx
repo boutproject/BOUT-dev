@@ -55,6 +55,8 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <boundary_factory.hxx>
 
+#include <invert_laplace.hxx>
+
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -224,9 +226,9 @@ void BoutInitialise(int &argc, char **&argv) {
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
-  }catch(BoutException *e) {
+  }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
+    output << e.what() << endl;
     return;
   }
 
@@ -303,6 +305,12 @@ int BoutFinalise() {
 
   // Close the output file
   dump.close();
+  
+  // Make sure all processes have finished writing before exit
+  MPI_Barrier(BoutComm::get());
+
+  // Laplacian inversion
+  Laplacian::cleanup();
 
   MPI_Barrier(BoutComm::get());
 

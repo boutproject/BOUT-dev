@@ -63,7 +63,7 @@ Laplacian::Laplacian(Options *options) {
   options->get("async", async_send, true);
   
   BoutReal filter; ///< Fraction of Z modes to filter out. Between 0 and 1
-  OPTION(options, filter, 0.2);
+  OPTION(options, filter, 0.0);
   int ncz = mesh->ngz-1;
   // convert filtering into an integer number of modes
   maxmode = ROUND((1.0 - filter) * ((double) (ncz / 2)));
@@ -72,7 +72,9 @@ Laplacian::Laplacian(Options *options) {
   if(maxmode < 0) maxmode = 0;
   if(maxmode > ncz/2) maxmode = ncz/2;
   
-  OPTION3(options, low_mem, all_terms, nonuniform, false);
+  OPTION2(options, low_mem, nonuniform, false);
+  
+  OPTION(options, all_terms, true); // Include first derivative terms
   
   if (options->isSet("flags")) {
     if ( options->isSet("global_flags") || options->isSet("inner_boundary_flags") || options->isSet("outer_boundary_flags") ) {
@@ -103,6 +105,13 @@ Laplacian* Laplacian::defaultInstance() {
   if(instance == NULL)
     instance = create();
   return instance;
+}
+
+void Laplacian::cleanup() {
+  if(instance == NULL)
+    return;
+  delete instance;
+  instance = NULL;
 }
 
 /**********************************************************************************

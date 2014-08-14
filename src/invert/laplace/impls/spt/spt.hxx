@@ -8,6 +8,12 @@
  * Overlap calculation / communication of poloidal slices to achieve some
  * parallelism.
  *
+ * Changelog
+ * ---------
+ * 
+ * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
+ *     * Removed static variables in functions, changing to class members.
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -59,8 +65,8 @@ class LaplaceSPT;
  */
 class LaplaceSPT : public Laplacian {
 public:
-  LaplaceSPT(Options *opt = NULL) : Laplacian(opt), A(0.0), C(1.0), D(1.0), SPT_DATA(1123) {}
-  ~LaplaceSPT() {}
+  LaplaceSPT(Options *opt = NULL);
+  ~LaplaceSPT();
   
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C = val; }
@@ -74,10 +80,16 @@ public:
   const Field3D solve(const Field3D &b);
   const Field3D solve(const Field3D &b, const Field3D &x0);
 private:
-  Field2D A, C, D;
+  enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
   
+  Field2D A, C, D;
+
   /// Data structure for SPT algorithm
-  typedef struct {
+  struct SPT_data {
+    SPT_data() : bk(NULL), comm_tag(SPT_DATA) {}
+    void allocate(int mm, int nx); // Allocates memory
+    ~SPT_data(); // Free memory
+    
     int jy; ///< Y index
     
     dcomplex **bk;  ///< b vector in Fourier space
@@ -95,16 +107,20 @@ private:
     int comm_tag; // Tag for communication
   
     BoutReal *buffer;
-  }SPT_data;
+  };
   
+  int ys, ye;         // Range of Y indices
+  SPT_data slicedata; // Used to solve for a single FieldPerp
+  SPT_data* alldata;  // Used to solve a Field3D
+
+  dcomplex *dc1d; ///< 1D in Z for taking FFTs
+
   void tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
                       dcomplex *r, dcomplex *u, int n,
                       dcomplex *gam,
                       dcomplex &bet, dcomplex &um, bool start=false);
   void tridagBack(dcomplex *u, int n,
                    dcomplex *gam, dcomplex &gp, dcomplex &up);
-  
-  const int SPT_DATA; ///< 'magic' number for SPT MPI messages
   
   int start(const FieldPerp &b, SPT_data &data);
   

@@ -44,7 +44,7 @@ char*** Solver::pargv = 0;
  * Constructor
  **************************************************************************/
 
-Solver::Solver(Options *opts) : options(opts), model(0) {
+Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
 
@@ -70,6 +70,9 @@ Solver::Solver(Options *opts) : options(opts), model(0) {
   // Split operator
   split_operator = false;
   max_dt = -1.0;
+
+  // Output monitor
+  options->get("monitor_timestep", monitor_timestep, false);
 }
 
 /**************************************************************************
@@ -119,7 +122,7 @@ void Solver::add(Field2D &v, const char* name) {
   f2d.push_back(d);
 
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   /// Generate initial perturbations.
@@ -165,7 +168,7 @@ void Solver::add(Field3D &v, const char* name) {
   f3d.push_back(d);
 
 #ifdef TRACK
-  var.name = name;
+  v.name = name;
 #endif
 
   initial_profile(name, v);
@@ -474,9 +477,9 @@ int Solver::solve() {
       dt -= i*60;
     }
     output.write("%d s\n", dt);
-  }catch(BoutException *e) {
+  }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
+    output << e.what() << endl;
     return 1;
   }
 
@@ -616,6 +619,8 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
+/////////////////////////////////////////////////////
+
 void Solver::addMonitor(MonitorFunc f) {
   monitors.push_front(f);
 }
@@ -625,11 +630,45 @@ void Solver::removeMonitor(MonitorFunc f) {
 }
 
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
+  // Call C function monitors
   for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
     // Call each monitor one by one
     int ret = (*it)(this, simtime,iter, NOUT);
     if(ret)
       return ret; // Return first time an error is encountered
+  }
+
+  // Call physics model monitor
+  if(model) {
+    int ret = model->runOutputMonitor(simtime, iter, NOUT);
+  }
+  return 0;
+}
+
+/////////////////////////////////////////////////////
+
+void Solver::addTimestepMonitor(TimestepMonitorFunc f) {
+  timestep_monitors.push_front(f);
+}
+
+void Solver::removeTimestepMonitor(TimestepMonitorFunc f) {
+  timestep_monitors.remove(f);
+}
+
+int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
+  if(!monitor_timestep)
+    return 0;
+  
+  for(std::list<TimestepMonitorFunc>::iterator it = timestep_monitors.begin(); it != timestep_monitors.end(); it++) {
+    // Call each monitor one by one
+    int ret = (*it)(this, simtime, lastdt);
+    if(ret)
+      return ret; // Return first time an error is encountered
+  }
+  
+  // Call physics model monitor
+  if(model) {
+    int ret = model->runTimestepMonitor(simtime, lastdt);
   }
   return 0;
 }
@@ -1088,4 +1127,21 @@ bool Solver::varAdded(const string &name) {
   }
   
   return false;
+}
+
+bool Solver::have_user_precon() {
+  if(model)
+    return model->hasPrecon();
+  
+  return prefunc != 0;
+}
+
+int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  if(!have_user_precon())
+    return 1;
+
+  if(model)
+    return model->runPrecon(t, gamma, delta);
+  
+  return (*prefunc)(t, gamma, delta);
 }

@@ -67,6 +67,7 @@ const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
 class Laplacian {
 public:
   Laplacian(Options *options = NULL);
+  virtual ~Laplacian() {}
   
   /// Set coefficients for inversion. Re-builds matrices if necessary
   virtual void setCoefA(const Field2D &val) = 0;
@@ -108,6 +109,7 @@ public:
   static Laplacian* create(Options *opt = NULL);  ///< Create a new Laplacian solver
   static Laplacian* defaultInstance(); ///< Return pointer to global singleton
   
+  static void cleanup(); // Frees all memory
 protected:
   bool async_send; ///< If true, use asyncronous send in parallel algorithms
   

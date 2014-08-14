@@ -56,10 +56,8 @@ using std::vector;
 
 class CvodeSolver : public Solver {
   public:
-    CvodeSolver();
+    CvodeSolver(Options *opts = NULL);
     ~CvodeSolver();
-
-    void setPrecon(PhysicsPrecon f) {prefunc = f;}
 
     void setJacobian(Jacobian j) {jacfunc = j; }
     
@@ -79,7 +77,6 @@ class CvodeSolver : public Solver {
     BoutReal TIMESTEP; // Time between outputs
     BoutReal hcur; // Current internal timestep
   
-    PhysicsPrecon prefunc; // Preconditioner
     Jacobian jacfunc; // Jacobian - vector function
     bool diagnose; // Output additional diagnostics
   

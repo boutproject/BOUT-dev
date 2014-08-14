@@ -255,43 +255,45 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   string type;
   opts->get("ksptype", type, KSP_GMRES);
   
-  if(strcasecmp(type.c_str(), KSP_RICHARDSON) == 0) ksptype = KSPRICHARDSON;
-#ifdef KSPCHEBYSHEV
-  else if(strcasecmp(type.c_str(), KSP_CHEBYSHEV) == 0) ksptype = KSPCHEBYSHEV;
-#endif
-  else if(strcasecmp(type.c_str(), KSP_CG) == 0)        ksptype = KSPCG;
-  else if(type == "cgne")			ksptype = KSPCGNE;
-  else if(type == "nash")			ksptype = KSPNASH;
-  else if(type == "stcg")			ksptype = KSPSTCG;
-  else if(type == "gltr")			ksptype = KSPGLTR;
-  else if(strcasecmp(type.c_str(), KSP_GMRES) == 0)     ksptype = KSPGMRES;
-  else if(type == "fgmres")			ksptype = KSPFGMRES;
-  else if(type == "lgmres")			ksptype = KSPLGMRES;
-  else if(type == "dgmres")			ksptype = KSPDGMRES;
-#ifdef KSPPGMRES
-  else if(type == "pgmres")			ksptype = KSPPGMRES;
-#endif
-  else if(strcasecmp(type.c_str(), KSP_TCQMR) == 0)     ksptype = KSPTCQMR;
-  else if(strcasecmp(type.c_str(), KSP_BCGS) == 0)      ksptype = KSPBCGS;
-  else if(type == "ibcgs")			ksptype = KSPIBCGS;
-#ifdef KSPFBCGS
-  else if(type == "fbcgs")			ksptype = KSPFBCGS;
-#endif
-  else if(type == "bcgsl")			ksptype = KSPBCGSL;
-  else if(strcasecmp(type.c_str(), KSP_CGS) == 0)       ksptype = KSPCGS;
-  else if(strcasecmp(type.c_str(), KSP_TFQMR) == 0)     ksptype = KSPTFQMR;
-  else if(strcasecmp(type.c_str(), KSP_CR) == 0)        ksptype = KSPCR;
-  else if(strcasecmp(type.c_str(), KSP_LSQR) == 0)      ksptype = KSPLSQR;
-  else if(strcasecmp(type.c_str(), KSP_BICG) == 0)      ksptype = KSPBICG;
-  else if(strcasecmp(type.c_str(), KSP_PREONLY) == 0)   ksptype = KSPPREONLY;
-  else if(type == "qcg")			ksptype = KSPQCG;
-  else if(type == "bicg")			ksptype = KSPBICG;
-  else if(type == "minres")			ksptype = KSPMINRES;
-  else if(type == "symmlq")			ksptype = KSPSYMMLQ;
-  else if(type == "lcd")			ksptype = KSPLCD;
-  else if(type == "python")			ksptype = KSPPYTHON;
-  else if(type == "gcr")			ksptype = KSPGCR;
-  else if(type == "specest")			ksptype = KSPSPECEST;
+  ksptype = new char[40];
+  
+  if(type == string("richardson")) strcpy(ksptype, KSPRICHARDSON);
+  #ifdef KSPCHEBYSHEV
+    else if(type == "chebyshev") strcpy(ksptype, KSPCHEBYSHEV);
+  #endif
+  else if(type == "cg")		strcpy(ksptype, KSPCG);
+  else if(type == "cgne")	strcpy(ksptype, KSPCGNE);
+  else if(type == "nash")	strcpy(ksptype, KSPNASH);
+  else if(type == "stcg")	strcpy(ksptype, KSPSTCG);
+  else if(type == "gltr")	strcpy(ksptype, KSPGLTR);
+  else if(type == "gmres")	strcpy(ksptype, KSPGMRES);
+  else if(type == "fgmres")	strcpy(ksptype, KSPFGMRES);
+  else if(type == "lgmres")	strcpy(ksptype, KSPLGMRES);
+  else if(type == "dgmres")	strcpy(ksptype, KSPDGMRES);
+  #ifdef KSPPGMRES
+    else if(type == "pgmres")	strcpy(ksptype, KSPPGMRES);
+  #endif
+  else if(type == "tcqmr")	strcpy(ksptype, KSPTCQMR);
+  else if(type == "bcgs")	strcpy(ksptype, KSPBCGS);
+  else if(type == "ibcgs")	strcpy(ksptype, KSPIBCGS);
+  #ifdef KSPFBCGS
+    else if(type == "fbcgs")	strcpy(ksptype, KSPFBCGS);
+  #endif
+  else if(type == "bcgsl")	strcpy(ksptype, KSPBCGSL);
+  else if(type == "cgs")	strcpy(ksptype, KSPCGS);
+  else if(type == "tfqmr")	strcpy(ksptype, KSPTFQMR);
+  else if(type == "cr")		strcpy(ksptype, KSPCR);
+  else if(type == "lsqr")	strcpy(ksptype, KSPLSQR);
+  else if(type == "bicg")	strcpy(ksptype, KSPBICG);
+  else if(type == "preonly")	strcpy(ksptype, KSPPREONLY);
+  else if(type == "qcg")	strcpy(ksptype, KSPQCG);
+  else if(type == "bicg")	strcpy(ksptype, KSPBICG);
+  else if(type == "minres")	strcpy(ksptype, KSPMINRES);
+  else if(type == "symmlq")	strcpy(ksptype, KSPSYMMLQ);
+  else if(type == "lcd")	strcpy(ksptype, KSPLCD);
+  else if(type == "python")	strcpy(ksptype, KSPPYTHON);
+  else if(type == "gcr")	strcpy(ksptype, KSPGCR);
+  else if(type == "specest")	strcpy(ksptype, KSPSPECEST);
   else 
     throw BoutException("Unknown Krylov solver type '%s'", type.c_str());
   
@@ -299,53 +301,55 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   // WARNING: only a few of these options actually make sense: see the PETSc documentation to work out which they are (possibly pbjacobi, sor might be useful choices?)
   string pctypeoption;
   opts->get("pctype", pctypeoption, "none", true);
-  if (pctypeoption == "none") pctype = PCNONE;
-  else if (pctypeoption == "user") pctype = PCSHELL;
-  else if (pctypeoption == "jacobi") pctype = PCJACOBI;
-  else if (pctypeoption == "sor") pctype = PCSOR;
-  else if (pctypeoption == "lu") pctype = PCLU;
-  else if (pctypeoption == "shell") pctype = PCSHELL;
-  else if (pctypeoption == "bjacobi") pctype = PCBJACOBI;
-  else if (pctypeoption == "mg") pctype = PCMG;
-  else if (pctypeoption == "eisenstat") pctype = PCEISENSTAT;
-  else if (pctypeoption == "ilu") pctype = PCILU;
-  else if (pctypeoption == "icc") pctype = PCICC;
-  else if (pctypeoption == "asm") pctype = PCASM;
-  else if (pctypeoption == "gasm") pctype = PCGASM;
-  else if (pctypeoption == "ksp") pctype = PCKSP;
-  else if (pctypeoption == "composite") pctype = PCCOMPOSITE;
-  else if (pctypeoption == "redundant") pctype = PCREDUNDANT;
-  else if (pctypeoption == "spai") pctype = PCSPAI;
-  else if (pctypeoption == "nn") pctype = PCNN;
-  else if (pctypeoption == "cholesky") pctype = PCCHOLESKY;
-  else if (pctypeoption == "pbjacobi") pctype = PCPBJACOBI;
-  else if (pctypeoption == "mat") pctype = PCMAT;
-  else if (pctypeoption == "hypre") pctype = PCHYPRE;
-  else if (pctypeoption == "parms") pctype = PCPARMS;
-  else if (pctypeoption == "fieldsplit") pctype = PCFIELDSPLIT;
-  else if (pctypeoption == "tfs") pctype = PCTFS;
-  else if (pctypeoption == "ml") pctype = PCML;
-  else if (pctypeoption == "galerkin") pctype = PCGALERKIN;
-  else if (pctypeoption == "exotic") pctype = PCEXOTIC;
-  else if (pctypeoption == "hmpi") pctype = PCHMPI;
-  else if (pctypeoption == "supportgraph") pctype = PCSUPPORTGRAPH;
-  else if (pctypeoption == "asa") pctype = PCASA;
-  else if (pctypeoption == "cp") pctype = PCCP;
-  else if (pctypeoption == "bfbt") pctype = PCBFBT;
-  else if (pctypeoption == "lsc") pctype = PCLSC;
-  else if (pctypeoption == "python") pctype = PCPYTHON;
-  else if (pctypeoption == "pfmg") pctype = PCPFMG;
-  else if (pctypeoption == "syspfmg") pctype = PCSYSPFMG;
-  else if (pctypeoption == "redistribute") pctype = PCREDISTRIBUTE;
-  else if (pctypeoption == "svd") pctype = PCSVD;
-  else if (pctypeoption == "gamg") pctype = PCGAMG;
-  else if (pctypeoption == "sacusp") pctype = PCSACUSP;            /* these four run on NVIDIA GPUs using CUSP */
-  else if (pctypeoption == "sacusppoly") pctype = PCSACUSPPOLY;
-  else if (pctypeoption == "bicgstabcusp") pctype = PCBICGSTABCUSP;
-  else if (pctypeoption == "ainvcusp") pctype = PCAINVCUSP;
-#ifdef PCBDDC
-  else if (pctypeoption == "bddc") pctype = PCBDDC;
-#endif
+  pctype = new char[40];
+  
+  if (pctypeoption == "none") strcpy(pctype, PCNONE);
+  else if (pctypeoption == "user") strcpy(pctype, PCSHELL);
+  else if (pctypeoption == "jacobi") strcpy(pctype, PCJACOBI);
+  else if (pctypeoption == "sor") strcpy(pctype, PCSOR);
+  else if (pctypeoption == "lu") strcpy(pctype, PCLU);
+  else if (pctypeoption == "shell") strcpy(pctype, PCSHELL);
+  else if (pctypeoption == "bjacobi") strcpy(pctype, PCBJACOBI);
+  else if (pctypeoption == "mg") strcpy(pctype, PCMG);
+  else if (pctypeoption == "eisenstat") strcpy(pctype, PCEISENSTAT);
+  else if (pctypeoption == "ilu") strcpy(pctype, PCILU);
+  else if (pctypeoption == "icc") strcpy(pctype, PCICC);
+  else if (pctypeoption == "asm") strcpy(pctype, PCASM);
+  else if (pctypeoption == "gasm") strcpy(pctype, PCGASM);
+  else if (pctypeoption == "ksp") strcpy(pctype, PCKSP);
+  else if (pctypeoption == "composite") strcpy(pctype, PCCOMPOSITE);
+  else if (pctypeoption == "redundant") strcpy(pctype, PCREDUNDANT);
+  else if (pctypeoption == "spai") strcpy(pctype, PCSPAI);
+  else if (pctypeoption == "nn") strcpy(pctype, PCNN);
+  else if (pctypeoption == "cholesky") strcpy(pctype, PCCHOLESKY);
+  else if (pctypeoption == "pbjacobi") strcpy(pctype, PCPBJACOBI);
+  else if (pctypeoption == "mat") strcpy(pctype, PCMAT);
+  else if (pctypeoption == "hypre") strcpy(pctype, PCHYPRE);
+  else if (pctypeoption == "parms") strcpy(pctype, PCPARMS);
+  else if (pctypeoption == "fieldsplit") strcpy(pctype, PCFIELDSPLIT);
+  else if (pctypeoption == "tfs") strcpy(pctype, PCTFS);
+  else if (pctypeoption == "ml") strcpy(pctype, PCML);
+  else if (pctypeoption == "galerkin") strcpy(pctype, PCGALERKIN);
+  else if (pctypeoption == "exotic") strcpy(pctype, PCEXOTIC);
+  else if (pctypeoption == "hmpi") strcpy(pctype, PCHMPI);
+  else if (pctypeoption == "supportgraph") strcpy(pctype, PCSUPPORTGRAPH);
+  else if (pctypeoption == "asa") strcpy(pctype, PCASA);
+  else if (pctypeoption == "cp") strcpy(pctype, PCCP);
+  else if (pctypeoption == "bfbt") strcpy(pctype, PCBFBT);
+  else if (pctypeoption == "lsc") strcpy(pctype, PCLSC);
+  else if (pctypeoption == "python") strcpy(pctype, PCPYTHON);
+  else if (pctypeoption == "pfmg") strcpy(pctype, PCPFMG);
+  else if (pctypeoption == "syspfmg") strcpy(pctype, PCSYSPFMG);
+  else if (pctypeoption == "redistribute") strcpy(pctype, PCREDISTRIBUTE);
+  else if (pctypeoption == "svd") strcpy(pctype, PCSVD);
+  else if (pctypeoption == "gamg") strcpy(pctype, PCGAMG);
+  else if (pctypeoption == "sacusp") strcpy(pctype, PCSACUSP);            /* these four run on NVIDIA GPUs using CUSP */
+  else if (pctypeoption == "sacusppoly") strcpy(pctype, PCSACUSPPOLY);
+  else if (pctypeoption == "bicgstabcusp") strcpy(pctype, PCBICGSTABCUSP);
+  else if (pctypeoption == "ainvcusp") strcpy(pctype, PCAINVCUSP);
+  #ifdef PCBDDC
+    else if (pctypeoption == "bddc") strcpy(pctype, PCBDDC);
+  #endif
   else 
     throw BoutException("Unknown KSP preconditioner type '%s'", pctypeoption.c_str());
 
