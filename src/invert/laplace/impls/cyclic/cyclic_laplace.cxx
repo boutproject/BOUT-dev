@@ -126,7 +126,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     tridagMatrix(a[kz], b[kz], c[kz],
                  bcmplx[kz], 
                  jy, 
-                 kz == 0, // True for the component constant (DC) in Z
+                 kz, // True for the component constant (DC) in Z
                  kwave,   // Z wave number
                  global_flags, inner_boundary_flags, outer_boundary_flags,
                  &A, &C, &D,

@@ -55,6 +55,7 @@ const int INVERT_DC_LAP   = 64;
 const int INVERT_BNDRY_ONE = 128;
 const int INVERT_DC_GRADPAR = 256;
 const int INVERT_DC_GRADPARINV = 512;
+const int INVERT_IN_CYLINDER = 1024; // For use in cylindrical coordiate system.  
 
 const int INVERT_ZERO_DC     = 1;
 const int INVERT_START_NEW   = 2;
@@ -92,7 +93,6 @@ public:
   virtual void setGlobalFlags(int f) { global_flags = f; }
   virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
   virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
-  virtual void setIncludeYGuards(bool b) { include_yguards = b; }
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
   virtual const Field3D solve(const Field3D &b);
@@ -132,7 +132,7 @@ protected:
                     const Field2D *d = NULL);
   
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
-                    dcomplex *bk, int jy, bool dc, BoutReal kwave, 
+                    dcomplex *bk, int jy, int kz, BoutReal kwave, 
                     int flags, int inner_boundary_flags, int outer_boundary_flags,
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,

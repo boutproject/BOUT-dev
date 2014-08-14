@@ -295,11 +295,16 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 }
 
 int BoutFinalise() {
+  
+  MPI_Barrier(BoutComm::get());
+  
   // Delete the mesh
   delete mesh;
 
   // Close the output file
   dump.close();
+
+  MPI_Barrier(BoutComm::get());
 
   // Delete field memory
   Field2D::cleanup();
