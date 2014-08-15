@@ -298,8 +298,6 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 
 int BoutFinalise() {
   
-  MPI_Barrier(BoutComm::get());
-  
   // Delete the mesh
   delete mesh;
 
