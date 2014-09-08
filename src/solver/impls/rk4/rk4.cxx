@@ -114,7 +114,6 @@ int RK4Solver::run() {
         }
         if(adaptive) {
           // Take two half-steps
-          output << simtime << ", " << timestep << ", " << dt << endl;
           take_step(simtime,          0.5*dt, f0, f1);
           take_step(simtime + 0.5*dt, 0.5*dt, f1, f2);
           
@@ -198,8 +197,6 @@ int RK4Solver::run() {
 
 void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
   
-  output.write("RK4: t=%e, dt=%e, start = %e\n", curtime, dt, start[0]);
-
   load_vars(start);
   run_rhs(curtime);
   save_derivs(k1);
@@ -208,8 +205,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k1[i];
   
-  output.write("ddt(%e)=k1= %e  ->  k5=%e\n", curtime, k1[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + 0.5*dt);
   save_derivs(k2);
@@ -218,8 +213,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k2[i];
   
-  output.write("ddt(%e)=k2= %e  ->  k5=%e\n", curtime + 0.5*dt, k2[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + 0.5*dt);
   save_derivs(k3);
@@ -228,8 +221,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + dt*k3[i];
   
-  output.write("ddt(%e)=k3= %e  ->  k5=%e\n", curtime + 0.5*dt, k3[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + dt);
   save_derivs(k4);
@@ -237,6 +228,4 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
-  
-  output.write("ddt(%e)=k4= %e  ->  result=%e\n", curtime + dt, k4[0], result[0]);
 }
