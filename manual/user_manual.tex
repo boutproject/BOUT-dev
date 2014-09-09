@@ -3884,31 +3884,6 @@ or by getting a pointer to the underlying data, which is stored as a 1D array:
 
 See the example \file{examples/test-globalfield} for more examples.
 
-\section{Testing using the Method of Manufactured Solutions}
-
-The Method of Manufactured solutions (MMS) is a rigorous way to check
-that a numerical algorithm is implemented correctly. A known
-solution is specified (manufactured), and it is possible to check that
-the code output converges to this solution at the expected rate.
-
-To enable testing by MMS, switch an input option ``mms'' to true:
-\begin{lstlisting}
-[solver]
-mms = true
-\end{lstlisting}
-This will have the following effect:
-\begin{enumerate}
-\item For each evolving variable, the solution will be used to initialise
-  and to calculate the error
-\end{enumerate}
-
-\subsection{Choosing manufactured solutions}
-
-Manufactured solutions must be continuous and have continuous derivatives.
-Common mistakes:
-\begin{itemize}
-\item Don't use terms multiplying coordinates together e.g. \texttt{x * z} or \texttt{y * z}. These are not periodic in $y$ and/or $z$, so will give strange answers and usually no convergence. Instead use \texttt{x * sin(z)} or similar, which are periodic.
-\end{itemize}
 
 \subsection{ODE integration}
 
@@ -3983,6 +3958,33 @@ delete solver;
 
 {\bf Note: } If an ODE needs to be solved multiple times, at the moment
 it is recommended to delete the solver, and create a new one each time. 
+
+\section{Testing using the Method of Manufactured Solutions}
+
+The Method of Manufactured solutions (MMS) is a rigorous way to check
+that a numerical algorithm is implemented correctly. A known
+solution is specified (manufactured), and it is possible to check that
+the code output converges to this solution at the expected rate.
+
+To enable testing by MMS, switch an input option ``mms'' to true:
+\begin{lstlisting}
+[solver]
+mms = true
+\end{lstlisting}
+This will have the following effect:
+\begin{enumerate}
+\item For each evolving variable, the solution will be used to initialise
+  and to calculate the error
+\end{enumerate}
+
+\subsection{Choosing manufactured solutions}
+
+Manufactured solutions must be continuous and have continuous derivatives.
+Common mistakes:
+\begin{itemize}
+\item Don't use terms multiplying coordinates together e.g. \texttt{x * z} or \texttt{y * z}. These are not periodic in $y$ and/or $z$, so will give strange answers and usually no convergence. Instead use \texttt{x * sin(z)} or similar, which are periodic.
+\end{itemize}
+
 
 \section{Examples}
 \label{sec:examples}
