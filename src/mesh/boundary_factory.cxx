@@ -15,14 +15,21 @@ BoundaryFactory* BoundaryFactory::instance = NULL;
 
 BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
+  add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
+  add(new BndDirichlet_O2(), "dirichlet_o2");
+  add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann2(), "neumann2");
   add(new BoundaryNeumannPar(), "neumannpar");
+  add(new BoundaryNeumann_2ndOrder(), "neumann_2ndorder");
+  add(new BndNeumann_O2(), "neumann_O2");
+  add(new BoundaryNeumann_4thOrder(), "neumann_4thorder");
   add(new BoundaryRobin(), "robin");
   add(new BoundaryConstGradient(), "constgradient");
   add(new BoundaryZeroLaplace(), "zerolaplace");
   add(new BoundaryZeroLaplace2(), "zerolaplace2");
   add(new BoundaryConstLaplace(), "constlaplace");
+  add(new BoundaryFree(), "free");
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryShifted(), "shifted");
   addMod(new BoundaryWidth(), "width");
@@ -56,7 +63,6 @@ void BoundaryFactory::cleanup() {
 }
 
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) {
-  //output <<  name;
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');
@@ -86,12 +92,44 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
   // And the argument inside the bracket
   string arg = trim(name.substr(pos+1, pos2-pos-1));
   // Split the argument on commas
+  // NOTE: Commas could be part of sub-expressions, so
+  //       need to take account of brackets
+  list<string> arglist;
+  int level = 0;
+  int start = 0;
+  for(int i = 0;i<arg.length();i++) {
+    switch(arg[i]) {
+    case '(':
+    case '[':
+    case '<':
+      level++;
+      break;
+    case ')':
+    case ']':
+    case '>':
+      level--;
+      break;
+    case ',': {
+      if(level == 0) {
+	string s = arg.substr(start, i);
+	arglist.push_back(trim(s));
+	start = i+1;
+      }
+      break;
+    }
+    };
+  }
+  string s = arg.substr(start, arg.length());
+  arglist.push_back(trim(s));
+  
+  /*
   list<string> arglist = strsplit(arg, ',');
   for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
     // Trim each argument
     (*it) = trim(*it);
   }
-  
+  */
+
   // Test if func is a modifier
   BoundaryModifier *mod = findBoundaryMod(func);
   if(mod != NULL) {

@@ -82,6 +82,16 @@ class Field3D : public Field, public FieldData {
   /// Return a pointer to the time-derivative field
   Field3D* timeDeriv();
 
+  /// Flux Coordinate Independent (FCI) method
+  Field3D* yup();
+  const Field3D* yup() const;
+  
+  Field3D* ydown();
+  const Field3D* ydown() const;
+
+  // Nullify yup and ydown
+  void resetFCI();
+  
   /// Returns DC component
   const Field2D DC() const;
 
@@ -172,7 +182,11 @@ class Field3D : public Field, public FieldData {
   void setStencil(bstencil *fval, bindex *bx, bool need_x) const;
 
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   /// Shifts specified points by angle
@@ -245,8 +259,10 @@ class Field3D : public Field, public FieldData {
   static void cleanup(); // Frees all memory
 
   void setBackground(const Field2D &f2d); // Boundary is applied to the total of this and f2d
-  void applyBoundary();
+  void applyBoundary(bool init=false);
+  void applyBoundary(BoutReal t);
   void applyBoundary(const string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
@@ -280,6 +296,9 @@ class Field3D : public Field, public FieldData {
   CELL_LOC location; // Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
+
+  /// FCI method
+  Field3D *yup_field, *ydown_field;
 };
 
 // Non-member overloaded operators

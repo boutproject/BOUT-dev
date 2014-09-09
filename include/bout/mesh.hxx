@@ -195,6 +195,8 @@ class Mesh {
   int  ShiftOrder;   // Order of shifted X derivative interpolation
   Field2D zShift; // Z shift for each point (radians)
   
+  bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
+
   int  TwistOrder;   // Order of twist-shift interpolation
   bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
@@ -227,6 +229,8 @@ class Mesh {
   int jacobian(); // Calculate J and Bxy
   
   bool non_uniform; // Use corrections for non-uniform meshes
+  
+  bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
   
  protected:
   

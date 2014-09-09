@@ -42,7 +42,7 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-KarniadakisSolver::KarniadakisSolver() : Solver() {
+KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
   
 }
 
@@ -94,8 +94,6 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
   save_vars(f0);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   OPTION(options, timestep, tstep);
   
   // Make sure timestep divides into tstep
@@ -142,23 +140,11 @@ int KarniadakisSolver::run() {
     // Call RHS to communicate and get auxilliary variables
     load_vars(f0);
     run_rhs(simtime);
-
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, i, nsteps)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
     // Reset iteration and wall-time count
@@ -181,7 +167,9 @@ void KarniadakisSolver::take_step(BoutReal dt) {
     // Initialise values
     #pragma omp parallel for
     for(int i=0;i<nlocal;i++) {
-      fm1[i] = fm2[i] = f0[i];
+    //fm1[i] = fm2[i] = f0[i];
+      fm1[i] = f0[i] - dt*S0[i];
+      fm2[i] = fm1[i] - dt*S0[i];
       Sm1[i] = Sm2[i] = S0[i];
     }
     first_time = false;

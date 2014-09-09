@@ -106,6 +106,30 @@ class stencil {
   const stencil abs() const;
 };
 
+class forward_stencil {
+/// to be used only in lower/inner boundary guard cells
+ public:
+  int jx, jy, jz; // central location
+  
+  BoutReal m, c, p, p2, p3, p4; // stencil 4 forward of the centre
+  
+  /// constructor
+  forward_stencil();
+
+};
+
+class backward_stencil {
+/// to be used only in upper/outer boundary guard cells
+ public:
+  int jx, jy, jz; // central location
+  
+  BoutReal p, c , m, m2, m3, m4; // stencil 4 backward of the centre
+  
+  /// constructor
+  backward_stencil();
+
+};
+
 BoutReal min(const stencil &s);
 BoutReal max(const stencil &s);
 const stencil abs(const stencil &s);

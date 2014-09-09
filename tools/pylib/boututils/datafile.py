@@ -23,7 +23,7 @@
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
 
 library = None # Record which library to use
@@ -45,19 +45,19 @@ except ImportError:
             library = "scipy"
             # print "Using scipy.io.netcdf library"
         except:
-            print "DataFile: No supported NetCDF modules available"
+            print("DataFile: No supported NetCDF modules available")
             raise
 import time
 
 def getUserName():
     try:
-	import os, pwd, string
+        import os, pwd, string
     except ImportError:
-	return 'unknown user'
+        return 'unknown user'
     pwd_entry = pwd.getpwuid(os.getuid())
     name = string.strip(string.splitfields(pwd_entry[4], ',')[0])
     if name == '':
-	name = pwd_entry[0]
+        name = pwd_entry[0]
     return name
 
 class DataFile:
@@ -83,24 +83,30 @@ class DataFile:
                 self.handle = Dataset(filename, "a")
         # Record if writing
         self.writeable = write or create
-    
+
     def close(self):
         if self.handle != None:
             self.handle.close()
         self.handle = None
-    
+
     def __init__(self, filename=None, write=False, create=False,
                  format='NETCDF3_CLASSIC'):
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
-    
+
     def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
         self.close()
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
         if self.handle == None: return None
-        
+
         try:
             var = self.handle.variables[name]
         except KeyError:
@@ -108,7 +114,7 @@ class DataFile:
             var = None
             for n in self.handle.variables.keys():
                 if n.lower() == name.lower():
-                    print "WARNING: Reading '"+n+"' instead of '"+name+"'"
+                    print("WARNING: Reading '"+n+"' instead of '"+name+"'")
                     var = self.handle.variables[n]
             if var == None:
                 return None
@@ -119,7 +125,7 @@ class DataFile:
         else:
             if ranges != None:
                 if len(ranges) != 2*ndims:
-                    print "Incorrect number of elements in ranges argument"
+                    print("Incorrect number of elements in ranges argument")
                     return None
                 
                 if library == "Scientific":
@@ -150,7 +156,7 @@ class DataFile:
                                    ranges[2]:ranges[3],
                                    ranges[4]:ranges[5]]
                     elif ndims == 4:
-                        print "Ranges = ", ranges
+                        #print "Ranges = ", ranges
                         data = var[(ranges[0]):(ranges[1]),
                                    (ranges[2]):(ranges[3]),
                                    (ranges[4]):(ranges[5]),
@@ -212,7 +218,7 @@ class DataFile:
         t = type(data).__name__
         
         if t == 'NoneType':
-            print "DataFile: None passed as data to write. Ignoring"
+            print("DataFile: None passed as data to write. Ignoring")
             return
             
         if t == 'ndarray':
@@ -235,7 +241,7 @@ class DataFile:
 
             # Check the shape of the variable
             if var.shape != s:
-                print "Datafile: Variable already exists with different size: "+ name
+                print("Datafile: Variable already exists with different size: "+ name)
                 raise
         except:
             # Not found, so add.
@@ -282,7 +288,7 @@ class DataFile:
                             # Already exists, so keep going
                         except KeyError:
                             # Not found. Create
-                            print "Defining dimension "+ dn + " of size %d" % size
+                            print("Defining dimension "+ dn + " of size %d" % size)
                             try:
                                 self.handle.createDimension(dn, size)
                             except AttributeError:
@@ -293,7 +299,7 @@ class DataFile:
                     
                 except KeyError:
                     # Doesn't exist, so add
-                    print "Defining dimension "+ name + " of size %d" % size
+                    print("Defining dimension "+ name + " of size %d" % size)
                     try:
                         self.handle.createDimension(name, size)
                     except AttributeError:

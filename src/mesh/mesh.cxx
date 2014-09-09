@@ -24,6 +24,12 @@ Mesh::Mesh(GridDataSource *s) : source(s) {
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
   ilen = 0; // For gaussj routine
+  
+  // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
+  freeboundary_xin = false;
+  freeboundary_xout = false;
+  freeboundary_ydown = false;
+  freeboundary_yup = false;
 }
 
 Mesh::~Mesh() {

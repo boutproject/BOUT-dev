@@ -3,6 +3,11 @@
 #include <field_data.hxx>
 #include <boundary_factory.hxx>
 #include <output.hxx>
+#include <field_factory.hxx>
+
+FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
+  
+}
 
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
@@ -52,4 +57,31 @@ void FieldData::copyBoundary(const FieldData &f) {
   bndry_op = f.bndry_op;
   boundaryIsCopy = true;
   boundaryIsSet = true;
+}
+
+//JMAD
+void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
+  /// NOTE: This will allocate memory, which may never be free'd
+  addBndryGenerator( new FieldFunction(userfunc), location );
+}
+
+
+void FieldData::addBndryGenerator(FieldGenerator* gen, BndryLoc location){
+  if(location == BNDRY_ALL){
+    vector<BoundaryRegion*> reg = mesh->getBoundaries();
+    for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      bndry_generator[(*it)->location] = gen;
+    }
+  }
+  else{
+    bndry_generator[location] = gen;
+  }
+}
+
+FieldGenerator* FieldData::getBndryGenerator(BndryLoc location) {
+  std::map<BndryLoc,FieldGenerator*>::iterator it = bndry_generator.find(location);
+  if(it == bndry_generator.end())
+    return 0;
+  
+  return it->second;
 }

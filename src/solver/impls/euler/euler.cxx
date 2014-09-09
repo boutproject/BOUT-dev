@@ -10,7 +10,7 @@
 
 #include <output.hxx>
 
-EulerSolver::EulerSolver() : Solver() {
+EulerSolver::EulerSolver(Options *options) : Solver(options) {
   
 }
 
@@ -39,9 +39,7 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
   out_timestep = tstep;
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
-  OPTION(options, start_timestep, tstep);
+  OPTION(options, timestep, tstep);
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   OPTION(options, cfl_factor, 2.);
 
@@ -71,8 +69,6 @@ int EulerSolver::init(bool restarting, int nout, BoutReal tstep) {
 
 int EulerSolver::run() {
   int msg_point = msg_stack.push("EulerSolver::run()");
-  
-  timestep = start_timestep;
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -129,22 +125,10 @@ int EulerSolver::run() {
     
     iteration++; // Advance iteration number
     
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%d.%s", restartdir.c_str(), iteration, MYPE, restartext.c_str());
-    }
-    
     /// Call the monitor function
     
     if(call_monitors(simtime, s, nsteps)) {
-      // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%d.%s", restartdir.c_str(), MYPE, restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
+      // Stop simulation
       break;
     }
     

@@ -40,6 +40,8 @@
 #include <initialprofiles.hxx>
 #include <boutexception.hxx>
 #include <field_factory.hxx>
+#include <output.hxx>
+#include <bout/constants.hxx>
 
 #include <math.h>
 #include <string.h>

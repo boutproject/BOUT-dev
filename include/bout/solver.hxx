@@ -59,7 +59,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
-#include "globals.hxx"
+//#include "globals.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
@@ -104,7 +104,9 @@ class Solver {
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
   
-  void addMonitor(MonitorFunc f);     ///< Add a monitor function to be called every output
+  
+  enum MonitorPosition {BACK, FRONT}; ///< A type to set where in the list monitors are added
+  void addMonitor(MonitorFunc f, MonitorPosition pos=FRONT);     ///< Add a monitor function to be called every output
   void removeMonitor(MonitorFunc f);  ///< Remove a monitor function previously added
 
   void addTimestepMonitor(TimestepMonitorFunc f);    ///< Add a monitor function to be called every timestep
@@ -131,7 +133,7 @@ class Solver {
   /// Return the current internal timestep 
   virtual BoutReal getCurrentTimestep() {return 0.0;}
   
-  int solve();
+  int solve(int nout=-1, BoutReal dt=0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
@@ -150,6 +152,9 @@ class Solver {
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
+  /// Add evolving variables to output (dump) file
+  void outputVars(Datafile &outputfile);
+
   static Solver* create(Options *opts = NULL);
   static Solver* create(SolverType &type, Options *opts = NULL);
   
@@ -175,9 +180,11 @@ protected:
       bool constraint;
       T *var;
       T *F_var;
+      T *MMS_err;        // Error for MMS
       CELL_LOC location; // For fields and vector components
       bool covariant; // For vectors
-      
+      bool evolve_bndry; // Are the boundary regions being evolved?
+
       string name;    // Name of the variable
     };
   
@@ -188,7 +195,7 @@ protected:
   vector< VarStr<Vector3D> > v3d;
   
   Datafile restart; ///< Restart file object
-
+  
   string restartdir;  ///< Directory for restart files
   string restartext;  ///< Restart file extension
   int archive_restart;
@@ -225,17 +232,25 @@ protected:
   PhysicsPrecon prefunc;  // Preconditioner
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
+
+  bool mms; // Enable sources and solutions for Method of Manufactured Solutions
+
+  void add_mms_sources(BoutReal t);
+  void calculate_mms_error(BoutReal t);
   
   std::list<MonitorFunc> monitors; ///< List of monitor functions
   std::list<TimestepMonitorFunc> timestep_monitors; ///< List of timestep monitor functions
 
-  void post_rhs(); // Should be run after user RHS is called
+  void pre_rhs(BoutReal t); // Should be run before user RHS is called
+  void post_rhs(BoutReal t); // Should be run after user RHS is called
   
   // Loading data from BOUT++ to/from solver
-  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op);
+  void loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry);
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
+  
+  bool enablerestart; ///< Is restarting enabled?
 };
 
 #endif // __SOLVER_H__

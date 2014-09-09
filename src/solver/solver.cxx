@@ -29,6 +29,8 @@
 #include <interpolation.hxx>
 #include <boutexception.hxx>
 
+#include <field_factory.hxx>
+
 #include "solverfactory.hxx"
 
 #include <bout/sys/timer.hxx>
@@ -65,7 +67,11 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   }
   
   // Restart option
-  Options::getRoot()->get("restart", restarting, false);
+  options->get("enablerestart", enablerestart, true);
+  if(enablerestart) {
+    Options::getRoot()->get("restart", restarting, false);
+  }else
+    restarting = false;
 
   // Split operator
   split_operator = false;
@@ -73,6 +79,9 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Output monitor
   options->get("monitor_timestep", monitor_timestep, false);
+  
+  // Method of Manufactured Solutions (MMS)
+  options->get("mms", mms, false);
 }
 
 /**************************************************************************
@@ -119,8 +128,6 @@ void Solver::add(Field2D &v, const char* name) {
   d.F_var = &ddt(v);
   d.name = string(name);
 
-  f2d.push_back(d);
-
 #ifdef TRACK
   v.name = name;
 #endif
@@ -130,8 +137,28 @@ void Solver::add(Field2D &v, const char* name) {
   ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
-  initial_profile(name, v);
-  v.applyBoundary();
+  if(mms) {
+    // Load solution at t = 0
+    
+    FieldFactory *fact = FieldFactory::get();
+    
+    v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
+    
+    // Allocate storage for error variable
+    d.MMS_err = new Field2D(0.0);
+  }else {
+    initial_profile(name, v);
+  }
+  
+  // Check if the boundary regions should be evolved
+  // First get option from section "All"
+  // then use that as default for specific section
+  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
+  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+
+  v.applyBoundary(true);
+
+  f2d.push_back(d);
 
   msg_stack.pop(msg_point);
 }
@@ -165,16 +192,33 @@ void Solver::add(Field3D &v, const char* name) {
   d.location = v.getLocation();
   d.name = string(name);
   
-  f3d.push_back(d);
-
 #ifdef TRACK
   v.name = name;
 #endif
 
-  initial_profile(name, v);
-  v.applyBoundary(); // Make sure initial profile obeys boundary conditions
+  if(mms) {
+    // Load solution at t = 0
+    FieldFactory *fact = FieldFactory::get();
+    
+    v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
+    
+    d.MMS_err = new Field3D();
+    (*d.MMS_err) = 0.0;
+  }else {
+    initial_profile(name, v);
+  }
+  
+  // Check if the boundary regions should be evolved
+  // First get option from section "All"
+  // then use that as default for specific section
+  Options::getRoot()->getSection("all")->get("evolve_bndry", d.evolve_bndry, false);
+  Options::getRoot()->getSection(name)->get("evolve_bndry", d.evolve_bndry, d.evolve_bndry);
+
+  v.applyBoundary(true); // Make sure initial profile obeys boundary conditions
   v.setLocation(d.location); // Restore location if changed
-                
+  
+  f3d.push_back(d);
+              
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -219,7 +263,7 @@ void Solver::add(Vector2D &v, const char* name) {
   }
   
   /// Make sure initial profile obeys boundary conditions
-  v.applyBoundary();
+  v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
 }
@@ -259,7 +303,7 @@ void Solver::add(Vector3D &v, const char* name) {
     add(v.z, (d.name+"z").c_str());
   }
 
-  v.applyBoundary();
+  v.applyBoundary(true);
 
   msg_stack.pop(msg_point);
 }
@@ -422,22 +466,37 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 }
 
 /**************************************************************************
- * Initialisation
+ * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve() {
-  /// Get options
-  Options *options = Options::getRoot();
-  int NOUT;
-  OPTION(options, NOUT, 1);
-  BoutReal TIMESTEP;
-  OPTION(options, TIMESTEP, 1.0);
-
+int Solver::solve(int NOUT, BoutReal TIMESTEP) {
+  if(NOUT < 0) {
+    /// Get options
+    
+    Options *globaloptions = Options::getRoot(); // Default from global options
+    OPTION(globaloptions, NOUT, 1);
+    OPTION(globaloptions, TIMESTEP, 1.0);
+    
+    // Check specific solver options, which override global options
+    OPTION(options, NOUT, NOUT);
+    OPTION(options, TIMESTEP, TIMESTEP);
+  }
+  
+  output.write("Solver running for %d outputs with timestep of %e\n", NOUT, TIMESTEP);
+  
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
     output.write("Failed to initialise solver-> Aborting\n");
     return 1;
   }
+  
+  /// Run the solver
+  output.write("Running simulation\n\n");
+  
+  time_t start_time = time((time_t*) NULL);
+  output.write("\nRun started at  : %s\n", ctime(&start_time));
+  
+  Timer timer("run"); // Start timer
   
   if (!restarting) {
     /// Write initial state as time-point 0
@@ -448,17 +507,12 @@ int Solver::solve() {
       return 1;
     }
     
-    dump.write();
+    // Call monitors so initial values are written to output dump files
+    call_monitors(simtime, 0, NOUT); 
   }
   
-  /// Run the solver
-  output.write("Running simulation\n\n");
   int status;
   try {
-    time_t start_time = time((time_t*) NULL);
-    output.write("\nRun started at  : %s\n", ctime(&start_time));
-   
-    Timer timer("run"); // Start timer
     status = run();
 
     time_t end_time = time((time_t*) NULL);
@@ -478,8 +532,14 @@ int Solver::solve() {
     }
     output.write("%d s\n", dt);
   }catch(BoutException *e) {
-    output << "Error encountered during initialisation\n";
+    output << "Error encountered in solver run\n";
     output << e->what() << endl;
+    
+    if(enablerestart) {
+      // Write restart to a different file
+      restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
+    }
+    
     return 1;
   }
 
@@ -502,60 +562,59 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 
   output.write("Initialising solver\n");
 
-  options->get("archive", archive_restart, -1);
-
-  if(archive_restart > 0) {
-    output.write("Archiving restart files every %d iterations\n",
-        archive_restart);
-  }
-
-  /// Get restart file extension
-  string dump_ext, restart_ext;
-
-  options->get("dump_format", dump_ext, "nc");
-  
-  options->get("restart_format", restart_ext, dump_ext);
-  restartext = string(restart_ext);
-  
-  // Set up restart options
-  restart = Datafile(Options::getRoot()->getSection("restart"));
-  
-  /// Add basic variables to the restart file
-  restart.add(simtime,  "tt",    0);
-  restart.add(iteration, "hist_hi", 0);
-  
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
   
-  restart.add(NPES, "NPES", 0);
-  restart.add(mesh->NXPE, "NXPE", 0);
+  if(enablerestart) {
+    // Set up restart file
+    
+    options->get("archive", archive_restart, -1);
 
-  /// Add variables to the restart and dump files.
-  /// NOTE: Since vector components are already in the field arrays,
-  ///       only loop over scalars, not vectors
-  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    // Add to restart file (not appending)
-    restart.add(*(it->var), it->name.c_str(), 0);
+    if(archive_restart > 0) {
+      output.write("Archiving restart files every %d iterations\n",
+                   archive_restart);
+    }
     
-    // Add to dump file (appending)
-    dump.add(*(it->var), it->name.c_str(), 1);
+    /// Get restart file extension
+    string dump_ext, restart_ext;
     
-    /// NOTE: Initial perturbations have already been set in add()
+    options->get("dump_format", dump_ext, "nc");
+    options->get("restart_format", restart_ext, dump_ext);
+    restartext = string(restart_ext);
     
-    /// Make sure boundary condition is satisfied
-    it->var->applyBoundary();
-  }  
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    // Add to restart file (not appending)
-    restart.add(*(it->var), it->name.c_str(), 0);
+    // Set up restart options
+    restart = Datafile(Options::getRoot()->getSection("restart"));
+  
+    /// Add basic variables to the restart file
+    restart.add(simtime,  "tt",    0);
+    restart.add(iteration, "hist_hi", 0);
     
-    // Add to dump file (appending)
-    dump.add(*(it->var), it->name.c_str(), 1);
-    
-    /// Make sure boundary condition is satisfied
-    it->var->applyBoundary();
+    restart.add(NPES, "NPES", 0);
+    restart.add(mesh->NXPE, "NXPE", 0);
+
+    /// Add variables to the restart and dump files.
+    /// NOTE: Since vector components are already in the field arrays,
+    ///       only loop over scalars, not vectors
+    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+      // Add to restart file (not appending)
+      restart.add(*(it->var), it->name.c_str(), 0);
+      
+      /// NOTE: Initial perturbations have already been set in add()
+      
+      /// Make sure boundary condition is satisfied
+      //it->var->applyBoundary();
+      /// NOTE: boundary conditions on the initial profiles have also been set in add()
+    }  
+    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+      // Add to restart file (not appending)
+      restart.add(*(it->var), it->name.c_str(), 0);
+      
+      /// Make sure boundary condition is satisfied
+      //it->var->applyBoundary();
+      /// NOTE: boundary conditions on the initial profiles have also been set in add()
+    }
   }
-
+  
   if(restarting) {
     /// Load state from the restart file
     
@@ -605,9 +664,11 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     simtime = 0.0; iteration = 0;
   }
   
-  /// Open the restart file for writing
-  if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-    throw BoutException("Error: Could not open restart file for writing\n");
+  if(enablerestart) {
+    /// Open the restart file for writing
+    if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+      throw BoutException("Error: Could not open restart file for writing\n");
+  }
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
@@ -619,10 +680,30 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
+void Solver::outputVars(Datafile &outputfile) {
+  // Add 2D and 3D evolving fields to output file
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    // Add to dump file (appending)
+    outputfile.add(*(it->var), it->name.c_str(), 1);
+  }  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    // Add to dump file (appending)
+    outputfile.add(*(it->var), it->name.c_str(), 1);
+    
+    if(mms) {
+      // Add an error variable
+      dump.add(*(it->MMS_err), (string("E_")+it->name).c_str(), 1);
+    }
+  }
+}
+
 /////////////////////////////////////////////////////
 
-void Solver::addMonitor(MonitorFunc f) {
-  monitors.push_front(f);
+void Solver::addMonitor(MonitorFunc f, MonitorPosition pos) {
+  if(pos == Solver::FRONT) {
+    monitors.push_front(f);
+  }else
+    monitors.push_back(f);
 }
 
 void Solver::removeMonitor(MonitorFunc f) {
@@ -630,18 +711,45 @@ void Solver::removeMonitor(MonitorFunc f) {
 }
 
 int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
-  // Call C function monitors
-  for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
-    // Call each monitor one by one
-    int ret = (*it)(this, simtime,iter, NOUT);
-    if(ret)
-      return ret; // Return first time an error is encountered
+  if(mms) {
+    // Calculate MMS errors
+    calculate_mms_error(simtime);
   }
-
-  // Call physics model monitor
-  if(model) {
-    int ret = model->runOutputMonitor(simtime, iter, NOUT);
+  
+  if( enablerestart ) {
+    /// Write the restart file
+    restart.write();
+    
+    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
+      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
+    }
   }
+  
+  try {
+    // Call C function monitors
+    for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
+      // Call each monitor one by one
+      int ret = (*it)(this, simtime,iter, NOUT);
+      if(ret)
+        throw BoutException("Monitor signalled to quit");
+    }
+  
+    // Call physics model monitor
+    if(model) {
+      if(model->runOutputMonitor(simtime, iter, NOUT))
+        throw BoutException("Monitor signalled to quit");
+    }
+  } catch (BoutException &e) {
+    // User signalled to quit
+    if( enablerestart ) {
+      // Write restart to a different file
+      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
+    }
+    
+    output.write("Monitor signalled to quit. Returning\n");
+    return 1;
+  }
+  
   return 0;
 }
 
@@ -691,27 +799,41 @@ int Solver::getLocalN() {
   int local_N = (mesh->xend - mesh->xstart + 1) *
     (mesh->yend - mesh->ystart + 1)*(n2d + ncz*n3d); // NOTE: Not including extra toroidal point
 
+  //////////// How many variables have evolving boundaries?
+  
+  int n2dbndry = 0;
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    if(it->evolve_bndry)
+      n2dbndry++;
+  }
+  
+  int n3dbndry = 0;
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(it->evolve_bndry)
+      n3dbndry++;
+  }
+
   //////////// Find boundary regions ////////////
   
   // Y up
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
-    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2d + ncz * n3d);
+    local_N +=  (mesh->ngy - mesh->yend - 1) * (n2dbndry + ncz * n3dbndry);
   }
   
   // Y down
   for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
-    local_N +=  mesh->ystart * (n2d + ncz * n3d);
+    local_N +=  mesh->ystart * (n2dbndry + ncz * n3dbndry);
   }
   
   // X inner
   if(mesh->firstX() && !mesh->periodicX) {
-    local_N += mesh->xstart * MYSUB * (n2d + ncz * n3d);
+    local_N += mesh->xstart * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region inner X\n");
   }
 
   // X outer
   if(mesh->lastX() && !mesh->periodicX) {
-    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2d + ncz * n3d);
+    local_N += (mesh->ngx - mesh->xend - 1) * MYSUB * (n2dbndry + ncz * n3dbndry);
     output.write("\tBoundary region outer X\n");
   }
   
@@ -728,10 +850,13 @@ Solver* Solver::create(SolverType &type, Options *opts) {
 
 /**************************************************************************
  * Looping over variables
+ *
+ * NOTE: This part is very inefficient, and should be replaced ASAP
+ * Is the interleaving of variables needed or helpful to the solver?
  **************************************************************************/
 
 /// Perform an operation at a given (jx,jy) location, moving data between BOUT++ and CVODE
-void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op) {
+void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP op, bool bndry) {
   int i;
   int jz;
  
@@ -744,6 +869,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       (*f2d[i].var)(jx, jy) = udata[p];
       p++;
     }
@@ -752,6 +879,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	(*f3d[i].var)(jx, jy, jz) = udata[p];
 	p++;
       }  
@@ -764,6 +893,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       (*f2d[i].F_var)(jx, jy) = udata[p];
       p++;
     }
@@ -772,6 +903,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	(*f3d[i].F_var)(jx, jy, jz) = udata[p];
 	p++;
       }  
@@ -784,6 +917,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       udata[p] = (*f2d[i].var)(jx, jy);
       p++;
     }
@@ -792,6 +927,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	udata[p] = (*f3d[i].var)(jx, jy, jz);
 	p++;
       }  
@@ -803,6 +940,8 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
+      if(bndry && !f2d[i].evolve_bndry)
+	continue;
       udata[p] = (*f2d[i].F_var)(jx, jy);
       p++;
     }
@@ -811,9 +950,11 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
       
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
+	if(bndry && !f3d[i].evolve_bndry)
+	  continue;
 	udata[p] = (*f3d[i].F_var)(jx, jy, jz);
 	p++;
-      }  
+      }
     }
     break;
   }
@@ -831,31 +972,31 @@ void Solver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op) {
   if(mesh->firstX() && !mesh->periodicX) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
+	loop_vars_op(jx, jy+mesh->ystart, udata, p, op, true);
   }
 
   // Lower Y boundary region
   for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_vars_op(*xi, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
     for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_vars_op(jx, jy, udata, p, op);
+      loop_vars_op(jx, jy, udata, p, op, false);
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_vars_op(*xi, jy, udata, p, op);
+      loop_vars_op(*xi, jy, udata, p, op, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_vars_op(jx, jy, udata, p, op);
+	loop_vars_op(jx, jy, udata, p, op, true);
   }
 }
 
@@ -986,36 +1127,43 @@ int Solver::run_rhs(BoutReal t) {
       tmp2 = new BoutReal[nv];
     }
     save_vars(tmp); // Copy variables into tmp
+    pre_rhs(t);
     if(model) {
       status = model->runConvective(t);
     }else 
       status = (*phys_conv)(t);
-    post_rhs(); // Check variables, apply boundary conditions
+    post_rhs(t); // Check variables, apply boundary conditions
     
     load_vars(tmp); // Reset variables
     save_derivs(tmp); // Save time derivatives
+    pre_rhs(t);
     if(model) {
       status = model->runDiffusive(t);
     }else
       status = (*phys_diff)(t);
-    post_rhs();
+    post_rhs(t);
     save_derivs(tmp2); // Save time derivatives
     for(int i=0;i<nv;i++)
       tmp[i] += tmp2[i];
     load_derivs(tmp); // Put back time-derivatives
   }else {
+    pre_rhs(t);
     if(model) {
       status = model->runRHS(t);
     }else
       status = (*phys_run)(t);
-    post_rhs();
+    post_rhs(t);
   }
+
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
 
   rhs_ncalls++;
 
   return status;
 }
 
+/// NOTE: This calls add_mms_sources
 int Solver::run_convective(BoutReal t) {
   int status;
   
@@ -1033,7 +1181,10 @@ int Solver::run_convective(BoutReal t) {
     }else
       status = (*phys_run)(t);
   }
-  post_rhs();
+  post_rhs(t);
+  
+  // If using Method of Manufactured Solutions
+  add_mms_sources(t);
   
   rhs_ncalls++;
   
@@ -1050,7 +1201,7 @@ int Solver::run_diffusive(BoutReal t) {
       status = model->runDiffusive(t);
     }else 
       status = (*phys_diff)(t);
-    post_rhs();
+    post_rhs(t);
   }else {
     // Zero if not split
     for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
@@ -1062,8 +1213,28 @@ int Solver::run_diffusive(BoutReal t) {
   return status;
 }
 
-void Solver::post_rhs() {
+void Solver::pre_rhs(BoutReal t) {
 
+  // Apply boundary conditions to the values
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    if(!it->constraint) // If it's not a constraint
+      it->var->applyBoundary(t);
+  }
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(!it->constraint)
+      it->var->applyBoundary(t);
+  }
+  
+}
+
+void Solver::post_rhs(BoutReal t) {
+#ifdef CHECK
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    if(!it->F_var->isAllocated())
+      throw BoutException("Time derivative for '%s' not set", it->name.c_str());
+  }
+#endif
   // Make sure vectors in correct basis
   for(int i=0;i<v2d.size();i++) {
     if(v2d[i].covariant) {
@@ -1088,19 +1259,21 @@ void Solver::post_rhs() {
 
   // Apply boundary conditions to the time-derivatives
   for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    if(!it->constraint) // If it's not a constraint
+    if(!it->constraint && it->evolve_bndry) // If it's not a constraint and if the boundary is evolving
       it->var->applyTDerivBoundary();
   }
   
   for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if(!it->constraint)
+    if(!it->constraint && it->evolve_bndry)
       it->var->applyTDerivBoundary();
   }
-
-#ifdef CHECK
+#if CHECK > 2
   msg_stack.push("Solver checking time derivatives");
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++)
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    msg_stack.push("Variable: %s", it->name.c_str());
     it->F_var->checkData();
+    msg_stack.pop();
+  }
   msg_stack.pop();
 #endif
 }
@@ -1144,4 +1317,32 @@ int Solver::run_precon(BoutReal t, BoutReal gamma, BoutReal delta) {
     return model->runPrecon(t, gamma, delta);
   
   return (*prefunc)(t, gamma, delta);
+}
+
+// Add source terms to time derivatives
+void Solver::add_mms_sources(BoutReal t) {
+  if(!mms)
+    return;
+
+  FieldFactory *fact = FieldFactory::get();
+    
+  // Iterate over 2D variables
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    *it->F_var += fact->create2D("source", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
+  }
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    *it->F_var += fact->create3D("source", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
+  }
+}
+
+// Calculate 
+void Solver::calculate_mms_error(BoutReal t) {
+  FieldFactory *fact = FieldFactory::get();
+  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(it->name), mesh, (it->var)->getLocation(), t);
+    
+    *(it->MMS_err) = *(it->var) - solution;
+  }
 }

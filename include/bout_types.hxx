@@ -43,4 +43,8 @@ enum DIFF_METHOD {DIFF_DEFAULT, DIFF_U1, DIFF_C2, DIFF_W2, DIFF_W3, DIFF_C4, DIF
 /// Specify grid region for looping
 enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 
+//jmad Boundary condition function
+typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
+
+
 #endif // __BOUT_TYPES_H__

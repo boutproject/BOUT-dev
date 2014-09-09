@@ -169,7 +169,7 @@ class Vector2D : public FieldData {
     }
   }
   
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyTDerivBoundary();
  private:
   

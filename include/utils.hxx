@@ -61,6 +61,9 @@ void free_matrix(T **m);
 BoutReal ***r3tensor(int nrow, int ncol, int ndep);
 void free_r3tensor(BoutReal ***m);
 
+int ***i3tensor(int nrow, int ncol, int ndep);
+void free_i3tensor(int ***m);
+
 dcomplex **cmatrix(int nrow, int ncol);
 void free_cmatrix(dcomplex** cm);
 

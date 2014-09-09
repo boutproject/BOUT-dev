@@ -10,12 +10,12 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver() : Solver() {
+RK4Solver::RK4Solver(Options *options) : Solver(options) {
   f0 = 0; // Mark as uninitialised
 }
 
 RK4Solver::~RK4Solver() {
-  if(f0 == 0) {
+  if(f0 != 0) {
     delete[] f0;
     delete[] f1;
     delete[] f2;
@@ -79,8 +79,6 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   save_vars(f0);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   OPTION(options, atol, 1.e-5); // Absolute tolerance
   OPTION(options, rtol, 1.e-3); // Relative tolerance
   OPTION(options, max_timestep, tstep); // Maximum timestep
@@ -114,7 +112,6 @@ int RK4Solver::run() {
         }
         if(adaptive) {
           // Take two half-steps
-          output << simtime << ", " << timestep << ", " << dt << endl;
           take_step(simtime,          0.5*dt, f0, f1);
           take_step(simtime + 0.5*dt, 0.5*dt, f1, f2);
           
@@ -164,25 +161,14 @@ int RK4Solver::run() {
       call_timestep_monitors(simtime, dt);
     }while(running);
     
+    load_vars(f0); // Put result into variables
+
     iteration++; // Advance iteration number
-    
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, s, nsteps)) {
-      // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
-      break;
+      break; // Stop simulation
     }
     
     // Reset iteration and wall-time count

@@ -53,7 +53,10 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
     options = Options::getRoot()->getSection("mesh");
   
   OPTION(options, symmetricGlobalX,  true);
+  OPTION(options, symmetricGlobalY,  false);
 
+  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -120,15 +123,16 @@ int BoutMesh::load() {
   }
 
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
-
-  // Set global grid sizes
-  GlobalNx = nx;
-  GlobalNy = ny + 4;
-  GlobalNz = MZ;
-
+  
+  // Get guard cell sizes
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
   
+  // Set global grid sizes
+  GlobalNx = nx;
+  GlobalNy = ny + 2*MYG;
+  GlobalNz = MZ;
+
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;
@@ -906,8 +910,8 @@ int BoutMesh::load() {
 
   //////////////////////////////////////////////////////
   // Boundary regions
-  if(!periodicX) {
-    // Need boundaries in X if not periodic
+  if(!periodicX && (MXG > 0) ) {
+    // Need boundaries in X if not periodic and have X guard cells
     if(PE_XIND == 0) {
       // Inner either core or PF
       
@@ -928,16 +932,20 @@ int BoutMesh::load() {
     }
   }
   
-  if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
-    boundary.push_back(new BoundaryRegionYUp("target", xstart, UDATA_XSPLIT-1));
-  if((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
-    boundary.push_back(new BoundaryRegionYUp("target", UDATA_XSPLIT, xend));
-  
-  if((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
-    boundary.push_back(new BoundaryRegionYDown("target", xstart, DDATA_XSPLIT-1));
-  if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
-    boundary.push_back(new BoundaryRegionYDown("target", DDATA_XSPLIT, xend));
+  if(MYG > 0) {
+    // Need boundaries in Y
     
+    if((UDATA_INDEST < 0) && (UDATA_XSPLIT > xstart))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", xstart, UDATA_XSPLIT-1));
+    if((UDATA_OUTDEST < 0) && (UDATA_XSPLIT <= xend))
+      boundary.push_back(new BoundaryRegionYUp("upper_target", UDATA_XSPLIT, xend));
+    
+    if((DDATA_INDEST < 0) && (DDATA_XSPLIT > xstart))
+      boundary.push_back(new BoundaryRegionYDown("lower_target", xstart, DDATA_XSPLIT-1));
+    if((DDATA_OUTDEST < 0) && (DDATA_XSPLIT <= xend))
+      boundary.push_back(new BoundaryRegionYDown("lower_target", DDATA_XSPLIT, xend));
+  }
+
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";
     for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
@@ -973,7 +981,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     msg_stack.pop(msg_pos);
     return 2;
   }
-  
+
   BoutReal **data;
   int jy;
   
@@ -1047,7 +1055,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
 		    MYSUB,        // Length of data is MYSUB
 		    0, ngx,       // All x indices (local indices)
 		    data)) {
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+    output.write("\tWARNING: Could not read bulk of '%s' from grid. Setting to %le\n", name, def);
     var = def;
 #ifdef CHECK
     msg_stack.pop(msg_pos);
@@ -1055,95 +1063,96 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
     return 1;
   }
 
-  // Read in data for upper boundary
-  // lowest (smallest y) part of UDATA_*DEST processor domain
-
-  if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
-    // Inner data exists and has a destination 
+  if(MYG > 0) {
+    // Read in data for upper boundary
+    // lowest (smallest y) part of UDATA_*DEST processor domain
     
-    if(readgrid_2dvar(source, name,
-		      (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
-		      MYSUB+MYG,            // the same as the upper guard cell
-		      MYG,                  // Only one y point
-		      0, UDATA_XSPLIT,    // Just the inner cells
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-      var = def;
+    if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
+      // Inner data exists and has a destination 
+      
+      if(readgrid_2dvar(source, name,
+                        (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
+                        MYSUB+MYG,            // the same as the upper guard cell
+                        MYG,                  // Only one y point
+                        0, UDATA_XSPLIT,    // Just the inner cells
+                        data)) {
+        output.write("\tWARNING: Could not read '%s' upper boundary from grid. Setting to %le\n", name, def);
+        var = def;
 #ifdef CHECK
-      msg_stack.pop(msg_pos);
+        msg_stack.pop(msg_pos);
 #endif
-      return 2;
-    }
+        return 2;
+      }
 
-  }else if(UDATA_XSPLIT > 0) {
-    // Inner part exists but has no destination => boundary
-    for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
-  }
-  
-  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
-    
-    if(readgrid_2dvar(source, name,
-		      (UDATA_OUTDEST / NXPE)*MYSUB,
-		      MYSUB+MYG,
-		      MYG,
-		      UDATA_XSPLIT, ngx, // the outer cells
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-      var = def;
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 2;
-    }
-  }else if(UDATA_XSPLIT < MX) {
-    // Inner data exists, but has no destination
-    for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
-  }
-  
-  // Read in data for lower boundary
-  if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
-    //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
-
-    if(readgrid_2dvar(source, name,
-		      ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
-		      0,  // belongs in the lower guard cell
-		      MYG,  // just one y point
-		      0, DDATA_XSPLIT, // just the inner data
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-      var = def;
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 2;
+    }else if(UDATA_XSPLIT > 0) {
+      // Inner part exists but has no destination => boundary
+      for(jy=0;jy<MYG;jy++)
+        cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
     }
     
-  }else if(DDATA_XSPLIT > 0) {
-    for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
-  }
-  if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
-
-    if(readgrid_2dvar(source, name,
-		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
-		      0,
-		      MYG,
-		      DDATA_XSPLIT, ngx,
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-      var = def;
+    if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
+      
+      if(readgrid_2dvar(source, name,
+                        (UDATA_OUTDEST / NXPE)*MYSUB,
+                        MYSUB+MYG,
+                        MYG,
+                        UDATA_XSPLIT, ngx, // the outer cells
+                        data)) {
+        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+        var = def;
 #ifdef CHECK
-      msg_stack.pop(msg_pos);
+        msg_stack.pop(msg_pos);
 #endif
-      return 2;
+        return 2;
+      }
+    }else if(UDATA_XSPLIT < MX) {
+      // Inner data exists, but has no destination
+      for(jy=0;jy<MYG;jy++)
+        cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
     }
-  }else if(DDATA_XSPLIT < ngx) {
-    for(jy=0;jy<MYG;jy++)
-      cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
+    
+    // Read in data for lower boundary
+    if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
+      //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
+      
+      if(readgrid_2dvar(source, name,
+                        ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
+                        0,  // belongs in the lower guard cell
+                        MYG,  // just one y point
+                        0, DDATA_XSPLIT, // just the inner data
+                        data)) {
+        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+        var = def;
+#ifdef CHECK
+        msg_stack.pop(msg_pos);
+#endif
+        return 2;
+      }
+      
+    }else if(DDATA_XSPLIT > 0) {
+      for(jy=0;jy<MYG;jy++)
+        cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
+    }
+    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
+      
+      if(readgrid_2dvar(source, name,
+                        ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
+                        0,
+                        MYG,
+                        DDATA_XSPLIT, ngx,
+                        data)) {
+        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
+        var = def;
+#ifdef CHECK
+        msg_stack.pop(msg_pos);
+#endif
+        return 2;
+      }
+    }else if(DDATA_XSPLIT < ngx) {
+      for(jy=0;jy<MYG;jy++)
+        cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
+    }
   }
-  
   /*
   if(IDATA_DEST >= 0) {
     int xfrom = (IDATA_DEST % NXPE)*MXSUB + MXSUB;
@@ -1240,93 +1249,95 @@ int BoutMesh::get(Field3D &var, const char *name) {
     return 1;
   }
 
-  // Read in data for upper boundary
-  // lowest (smallest y) part of UDATA_*DEST processor domain
-
-  if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
-    // Inner data exists and has a destination 
+  if(MYG > 0) {
+    // Read in data for upper boundary
+    // lowest (smallest y) part of UDATA_*DEST processor domain
     
-    if(readgrid_3dvar(source, name,
-		      (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
-		      MYSUB+MYG,            // the same as the upper guard cell
-		      MYG,                  // Only one y point
-		      0, UDATA_XSPLIT,    // Just the inner cells
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-      var = 0.0;
+    if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
+      // Inner data exists and has a destination 
+      
+      if(readgrid_3dvar(source, name,
+                        (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
+                        MYSUB+MYG,            // the same as the upper guard cell
+                        MYG,                  // Only one y point
+                        0, UDATA_XSPLIT,    // Just the inner cells
+                        data)) {
+        output.write("\tWARNING: Could not read upper inner '%s' from grid. Setting to zero\n", name);
+        var = 0.0;
 #ifdef CHECK
-      msg_stack.pop();
+        msg_stack.pop();
 #endif
-      return 2;
+        return 2;
+      }
+      
+    }else if(UDATA_XSPLIT > 0) {
+      // Inner part exists but has no destination => boundary
+      for(jy=0;jy<MYG;jy++)
+        cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
     }
-
-  }else if(UDATA_XSPLIT > 0) {
-    // Inner part exists but has no destination => boundary
-    for(jy=0;jy<MYG;jy++)
-      cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
-  }
-  
-  if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
     
-    if(readgrid_3dvar(source, name,
-		      (UDATA_OUTDEST / NXPE)*MYSUB,
-		      MYSUB+MYG,
-		      MYG,
-		      UDATA_XSPLIT, ngx, // the outer cells
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-      var = 0.0;
+    if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
+      
+      if(readgrid_3dvar(source, name,
+                        (UDATA_OUTDEST / NXPE)*MYSUB,
+                        MYSUB+MYG,
+                        MYG,
+                        UDATA_XSPLIT, ngx, // the outer cells
+                        data)) {
+        output.write("\tWARNING: Could not read upper outer '%s' from grid. Setting to zero\n", name);
+        var = 0.0;
 #ifdef CHECK
-      msg_stack.pop();
+        msg_stack.pop();
 #endif
-      return 2;
+        return 2;
+      }
+    }else if(UDATA_XSPLIT < MX) {
+      // Inner data exists, but has no destination
+      for(jy=0;jy<MYG;jy++)
+        cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
     }
-  }else if(UDATA_XSPLIT < MX) {
-    // Inner data exists, but has no destination
-    for(jy=0;jy<MYG;jy++)
-      cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
-  }
-  
-  // Read in data for lower boundary
-  if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
-    //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
-
-    if(readgrid_3dvar(source, name,
-		      ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
-		      0,  // belongs in the lower guard cell
-		      MYG,  // just one y point
-		      0, DDATA_XSPLIT, // just the inner data
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-      var = 0.0;
+    
+    // Read in data for lower boundary
+    if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
+      //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
+      
+      if(readgrid_3dvar(source, name,
+                        ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
+                        0,  // belongs in the lower guard cell
+                        MYG,  // just one y point
+                        0, DDATA_XSPLIT, // just the inner data
+                        data)) {
+        output.write("\tWARNING: Could not read lower inner '%s' from grid. Setting to zero\n", name);
+        var = 0.0;
 #ifdef CHECK
-      msg_stack.pop();
+        msg_stack.pop();
 #endif
-      return 2;
+        return 2;
+      }
+      
+    }else if(DDATA_XSPLIT > 0) {
+      for(jy=0;jy<MYG;jy++)
+        cpy_3d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
     }
-		     
-   }else if(DDATA_XSPLIT > 0) {
-     for(jy=0;jy<MYG;jy++)
-       cpy_3d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
-   }
-  if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
-
-    if(readgrid_3dvar(source, name,
-		      ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
-		      0,
-		      MYG,
-		      DDATA_XSPLIT, ngx,
-		      data)) {
-      output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-      var = 0.0;
+    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
+      
+      if(readgrid_3dvar(source, name,
+                        ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
+                        0,
+                        MYG,
+                        DDATA_XSPLIT, ngx,
+                        data)) {
+        output.write("\tWARNING: Could not read lower outer '%s' from grid. Setting to zero\n", name);
+        var = 0.0;
 #ifdef CHECK
-      msg_stack.pop();
+        msg_stack.pop();
 #endif
-      return 2;
+        return 2;
+      }
+    }else if(DDATA_XSPLIT < ngx) {
+      for(jy=0;jy<MYG;jy++)
+        cpy_3d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
     }
-  }else if(DDATA_XSPLIT < ngx) {
-    for(jy=0;jy<MYG;jy++)
-      cpy_3d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
   }
   
 #ifdef CHECK
@@ -1356,8 +1367,15 @@ const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
 
 int BoutMesh::communicate(FieldGroup &g) {
+  msg_stack.push("BoutMesh::communicate");
+  
+  // Send data
   comm_handle c = send(g);
-  return wait(c);
+  // Wait for data from other processors
+  int status =  wait(c);
+  
+  msg_stack.pop();
+  return status;
 }
 
 void BoutMesh::post_receive(CommHandle &ch) {
@@ -3111,12 +3129,27 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
 BoutReal BoutMesh::GlobalX(int jx) const {
   if(symmetricGlobalX) {
     // Symmetric X index, mainly for reconnection studies
-    return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+    //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
+    return ((BoutReal) (0.5 + XGLOBAL(jx) - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
   }
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
 }
 
 BoutReal BoutMesh::GlobalY(int jy) const {
+  if(symmetricGlobalY) {
+    BoutReal yi = YGLOBAL(jy);
+    int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+    
+    if(yi < ny_inner) {
+      yi -= jyseps1_1 + 0.5;
+    }else {
+      // Result in core between 0.5 and 1.0
+      yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+    }
+    return yi / nycore;
+  }
+
   int ly = YGLOBAL(jy); // global poloidal index across subdomains
   int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
 

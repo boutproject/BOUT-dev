@@ -99,7 +99,7 @@ int RK3SSP::run() {
         dt = target - simtime; // Make sure the last timestep is on the output 
         running = false;
       }
-        
+      output.write("t = %e, dt = %e\n", simtime, dt);
       // No adaptive timestepping for now
       take_step(simtime, dt, f, f);
       
@@ -108,24 +108,14 @@ int RK3SSP::run() {
       call_timestep_monitors(simtime, dt);
     }while(running);
     
+    load_vars(f); // Put result into variables
+ 
     iteration++; // Advance iteration number
-    
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, s, nsteps)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
     

@@ -2041,6 +2041,7 @@ gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2
 log(x) & Natural logarithm \\
 min(x,y,...) & Minimum (variable arguments) \\
 max(x,y,...) & Maximum (variable arguments) \\
+power(x,y) & Exponent $x^y$ \\
 sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
@@ -3882,6 +3883,106 @@ or by getting a pointer to the underlying data, which is stored as a 1D array:
 \end{lstlisting}
 
 See the example \file{examples/test-globalfield} for more examples.
+
+\section{Testing using the Method of Manufactured Solutions}
+
+The Method of Manufactured solutions (MMS) is a rigorous way to check
+that a numerical algorithm is implemented correctly. A known
+solution is specified (manufactured), and it is possible to check that
+the code output converges to this solution at the expected rate.
+
+To enable testing by MMS, switch an input option ``mms'' to true:
+\begin{lstlisting}
+[solver]
+mms = true
+\end{lstlisting}
+This will have the following effect:
+\begin{enumerate}
+\item For each evolving variable, the solution will be used to initialise
+  and to calculate the error
+\end{enumerate}
+
+\subsection{Choosing manufactured solutions}
+
+Manufactured solutions must be continuous and have continuous derivatives.
+Common mistakes:
+\begin{itemize}
+\item Don't use terms multiplying coordinates together e.g. \texttt{x * z} or \texttt{y * z}. These are not periodic in $y$ and/or $z$, so will give strange answers and usually no convergence. Instead use \texttt{x * sin(z)} or similar, which are periodic.
+\end{itemize}
+
+\subsection{ODE integration}
+
+The Solver class can be used to solve systems of ODEs inside a physics model: Multiple Solver objects
+can exist besides the main one used for time integration.
+Example code is in \file{examples/test-integrate}.
+
+To use this feature, systems of ODEs must be represented by a class derived
+from \code{PhysicsModel} (see section~\ref{sec:newapi}).
+
+\begin{lstlisting}
+class MyFunction : public PhysicsModel {
+ public:
+  int init(bool restarting) {
+    // Initialise ODE
+    // Add variables to solver as usual
+    solver->add(result, "result");
+    ...
+  }
+  
+  int rhs(BoutReal time) {
+    // Specify derivatives of fields as usual
+    ddt(result) = ...
+  }
+ private:
+  Field3D result;
+};
+\end{lstlisting}
+
+To solve this ODE, create a new Solver object:
+\begin{lstlisting}[numbers=none]
+Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
+\end{lstlisting}
+This will look in the section \texttt{[ode]} in the options file.
+{\bf Important:} To prevent this solver overwriting the main restart files
+with its own restart files, either disable restart files:
+\begin{lstlisting}[numbers=none]
+[ode]
+enablerestart = false
+\end{lstlisting}
+or specify a different directory to put the restart files:
+\begin{lstlisting}[numbers=none]
+[ode]
+restartdir = ode  # Restart files ode/BOUT.restart.0.nc, ...
+\end{lstlisting}
+
+Create a model object, and pass it to the solver:
+\begin{lstlisting}[numbers=none]
+MyFunction* model = new MyFunction();
+ode->setModel(model);
+\end{lstlisting}
+
+Finally tell the solver to perform the integration:
+\begin{lstlisting}[numbers=none]
+ode->solve(5, 0.1);
+\end{lstlisting}
+The first argument is the number of steps to take, and the second is the size of each step. These can also be specified in the options, so calling
+\begin{lstlisting}[numbers=none]
+ode->solve();
+\end{lstlisting}
+will cause ode to look in the input for \texttt{nout} and \texttt{timestep} options:
+\begin{lstlisting}[numbers=none]
+[ode]
+nout = 5
+timestep = 0.1
+\end{lstlisting}
+Finally, delete the model and solver when finished:
+\begin{lstlisting}[numbers=none]
+delete model;
+delete solver;
+\end{lstlisting}
+
+{\bf Note: } If an ODE needs to be solved multiple times, at the moment
+it is recommended to delete the solver, and create a new one each time. 
 
 \section{Examples}
 \label{sec:examples}

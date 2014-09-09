@@ -27,6 +27,7 @@ class BoundaryRegion {
 
   virtual void first() = 0;
   virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
+  virtual void next1d() = 0; // Loop over the innermost elements
   virtual void nextX() = 0; // Just loop over X
   virtual void nextY() = 0; // Just loop over Y
   virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
@@ -38,6 +39,7 @@ class BoundaryRegionXIn : public BoundaryRegion {
   
   void first();
   void next();
+  void next1d();
   void nextX();
   void nextY();
   bool isDone();
@@ -51,6 +53,7 @@ class BoundaryRegionXOut : public BoundaryRegion {
   
   void first();
   void next();
+  void next1d();
   void nextX();
   void nextY();
   bool isDone();
@@ -64,6 +67,7 @@ class BoundaryRegionYDown : public BoundaryRegion {
   
   void first();
   void next();
+  void next1d();
   void nextX();
   void nextY();
   bool isDone();
@@ -77,6 +81,7 @@ class BoundaryRegionYUp : public BoundaryRegion {
   
   void first();
   void next();
+  void next1d();
   void nextX();
   void nextY();
   bool isDone();

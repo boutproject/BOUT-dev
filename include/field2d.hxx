@@ -129,7 +129,11 @@ class Field2D : public Field, public FieldData {
 
   void setStencil(bstencil *fval, bindex *bx) const;
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
+  void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   // Functions
@@ -176,13 +180,14 @@ class Field2D : public Field, public FieldData {
 
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
-  void doneComms() {bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+  void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
 #endif
   
   friend class Vector2D;
   
-  void applyBoundary();
+  void applyBoundary(bool init=false);
   void applyBoundary(const string &condition);
+  void applyBoundary(const char* condition) { applyBoundary(string(condition)); }
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field2D &f2d); ///< Copy the boundary region

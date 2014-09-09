@@ -52,7 +52,7 @@ extern PetscErrorCode PhysicsPCApply(PC,Vec x,Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
-PetscSolver::PetscSolver() {
+PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   has_constraints = false; // No constraints
   J = 0;
   Jmf = 0;
@@ -882,9 +882,7 @@ PetscErrorCode PetscMonitor(TS ts,PetscInt step,PetscReal t,Vec X,void *ctx) {
     ierr = VecRestoreArrayRead(interpolatedX,&x);CHKERRQ(ierr);
 
     if (s->call_monitors(simtime,i++,s->nout)) {
-      s->restart.write("%s/BOUT.final.%s", s->restartdir.c_str(), s->restartext.c_str());
-
-      output.write("Monitor signalled to quit. Returning\n");
+      PetscFunctionReturn(1);
     }
 
     // Reset counters

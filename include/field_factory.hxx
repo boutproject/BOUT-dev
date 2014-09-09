@@ -24,7 +24,7 @@
  *
  **************************************************************************/
 
-class FieldGenerator;
+
 class FieldFactory;
 
 #ifndef __FIELD_FACTORY_H__
@@ -32,70 +32,88 @@ class FieldFactory;
 
 #include "bout/mesh.hxx"
 
+#include "bout/sys/expressionparser.hxx"
+
 #include "field2d.hxx"
 #include "field3d.hxx"
-
-#include "bout/constants.hxx"
+#include "options.hxx"
 
 #include <string>
 #include <map>
-#include <sstream>
 #include <list>
-#include <utility>
 
-#include "output.hxx"
+// Utility routines to create generators from values
 
-using std::string;
-using std::map;
-using std::stringstream;
-using std::list;
-using std::pair;
-
-//////////////////////////////////////////////////////////
-// Generates a value at a given (x,y,z) location,
-// perhaps using other generators passed to clone()
-
-class FieldGenerator {
-public:
-  virtual ~FieldGenerator() { }
-  virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
-  virtual BoutReal generate(const Mesh *fieldmesh, int x, int y, int z) = 0;
-};
+FieldGenerator* generator(BoutReal value);
+FieldGenerator* generator(BoutReal *ptr);
 
 //////////////////////////////////////////////////////////
 // Create a tree of generators from an input string
 
-class FieldFactory {
+class FieldFactory : public ExpressionParser {
 public:
-  FieldFactory(Mesh *m);
+  FieldFactory(Mesh *m, Options *opt = NULL);
   ~FieldFactory();
   
-  const Field2D create2D(const string &value);
-  const Field3D create3D(const string &value);
+  const Field2D create2D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
+  const Field3D create3D(const std::string &value, Options *opt = NULL, Mesh *m = NULL, CELL_LOC loc=CELL_CENTRE, BoutReal t=0.0);
+
+  // Parse a string into a tree of generators
+  FieldGenerator* parse(const std::string &input, Options *opt=NULL);
+
+  // Singleton object
+  static FieldFactory *get();
+protected:
+  // These functions called by the parser
+  FieldGenerator* resolve(std::string &name);
   
-  void addGenerator(string name, FieldGenerator* g);
-  void addBinaryOp(char sym, FieldGenerator* b, int precedence);
 private:
-  Mesh *fieldmesh;
+  Mesh *fieldmesh;  
+  Options *options;
 
-  map<string, FieldGenerator*> gen;
-  map<char, pair<FieldGenerator*, int> > bin_op; // Binary operations
+  std::list<std::string> lookup; // Names currently being parsed
+  
+  // Cache parsed strings
+  std::map<std::string, FieldGenerator* > cache;
+  
+  Options* findOption(Options *opt, const std::string &name, std::string &val);
+};
 
-  // Lexing info
-  char curtok;  // Current token. -1 for number, -2 for string, 0 for "end of input"
-  BoutReal curval; // Value if a number
-  string curident; // Identifier
-  char LastChar;
-  stringstream ss;
-  char nextToken();
+//////////////////////////////////////////////////////////
+// Generator from function
+
+class FieldFunction : public FieldGenerator {
+public:
+  FieldFunction(FuncPtr userfunc) : func(userfunc) {}
+  double generate(double x, double y, double z, double t) {
+    return func(t, x, y, z);
+  }
+private:
+  FieldFunction();
   
-  FieldGenerator* parseIdentifierExpr();
-  FieldGenerator* parseParenExpr();
-  FieldGenerator* parsePrimary();
-  FieldGenerator* parseBinOpRHS(int prec, FieldGenerator* lhs);
-  FieldGenerator* parseExpression();
-  
-  FieldGenerator* parse(const string &input);
+  FuncPtr func;
+};
+
+//////////////////////////////////////////////////////////
+// Null generator 
+
+class FieldNull : public FieldGenerator {
+public:
+  double generate(double x, double y, double z, double t) {
+    return 0.0;
+  }
+  FieldGenerator* clone(const std::list<FieldGenerator*> args) {
+    return this;
+  }
+  /// Singeton
+  static FieldGenerator* get() {
+    static FieldNull *instance = 0;
+    
+    if(!instance)
+      instance = new FieldNull();
+    return instance;
+  }
+private:
 };
 
 #endif // __FIELD_FACTORY_H__
