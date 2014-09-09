@@ -37,7 +37,7 @@ class RK4Solver;
 
 class RK4Solver : public Solver {
  public:
-  RK4Solver();
+  RK4Solver(Options *options);
   ~RK4Solver();
   
   void setMaxTimestep(BoutReal dt);

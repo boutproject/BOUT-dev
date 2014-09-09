@@ -67,7 +67,11 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   }
   
   // Restart option
-  Options::getRoot()->get("restart", restarting, false);
+  options->get("enablerestart", enablerestart, true);
+  if(enablerestart) {
+    Options::getRoot()->get("restart", restarting, false);
+  }else
+    restarting = false;
 
   // Split operator
   split_operator = false;
@@ -465,19 +469,34 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
  * Solver main loop: Initialise, run, and finish
  **************************************************************************/
 
-int Solver::solve() {
-  /// Get options
-  Options *options = Options::getRoot();
-  int NOUT;
-  OPTION(options, NOUT, 1);
-  BoutReal TIMESTEP;
-  OPTION(options, TIMESTEP, 1.0);
-
+int Solver::solve(int NOUT, BoutReal TIMESTEP) {
+  if(NOUT < 0) {
+    /// Get options
+    
+    Options *globaloptions = Options::getRoot(); // Default from global options
+    OPTION(globaloptions, NOUT, 1);
+    OPTION(globaloptions, TIMESTEP, 1.0);
+    
+    // Check specific solver options, which override global options
+    OPTION(options, NOUT, NOUT);
+    OPTION(options, TIMESTEP, TIMESTEP);
+  }
+  
+  output.write("Solver running for %d outputs with timestep of %e\n", NOUT, TIMESTEP);
+  
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
     output.write("Failed to initialise solver-> Aborting\n");
     return 1;
   }
+  
+  /// Run the solver
+  output.write("Running simulation\n\n");
+  
+  time_t start_time = time((time_t*) NULL);
+  output.write("\nRun started at  : %s\n", ctime(&start_time));
+  
+  Timer timer("run"); // Start timer
   
   if (!restarting) {
     /// Write initial state as time-point 0
@@ -488,17 +507,12 @@ int Solver::solve() {
       return 1;
     }
     
-    dump.write();
+    // Call monitors so initial values are written to output dump files
+    call_monitors(simtime, 0, NOUT); 
   }
   
-  /// Run the solver
-  output.write("Running simulation\n\n");
   int status;
   try {
-    time_t start_time = time((time_t*) NULL);
-    output.write("\nRun started at  : %s\n", ctime(&start_time));
-   
-    Timer timer("run"); // Start timer
     status = run();
 
     time_t end_time = time((time_t*) NULL);
@@ -518,8 +532,14 @@ int Solver::solve() {
     }
     output.write("%d s\n", dt);
   }catch(BoutException *e) {
-    output << "Error encountered during initialisation\n";
+    output << "Error encountered in solver run\n";
     output << e->what() << endl;
+    
+    if(enablerestart) {
+      // Write restart to a different file
+      restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
+    }
+    
     return 1;
   }
 
@@ -542,67 +562,59 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 
   output.write("Initialising solver\n");
 
-  options->get("archive", archive_restart, -1);
-
-  if(archive_restart > 0) {
-    output.write("Archiving restart files every %d iterations\n",
-        archive_restart);
-  }
-
-  /// Get restart file extension
-  string dump_ext, restart_ext;
-
-  options->get("dump_format", dump_ext, "nc");
-  
-  options->get("restart_format", restart_ext, dump_ext);
-  restartext = string(restart_ext);
-  
-  // Set up restart options
-  restart = Datafile(Options::getRoot()->getSection("restart"));
-  
-  /// Add basic variables to the restart file
-  restart.add(simtime,  "tt",    0);
-  restart.add(iteration, "hist_hi", 0);
-  
   MPI_Comm_size(BoutComm::get(), &NPES);
   MPI_Comm_rank(BoutComm::get(), &MYPE);
   
-  restart.add(NPES, "NPES", 0);
-  restart.add(mesh->NXPE, "NXPE", 0);
+  if(enablerestart) {
+    // Set up restart file
+    
+    options->get("archive", archive_restart, -1);
 
-  /// Add variables to the restart and dump files.
-  /// NOTE: Since vector components are already in the field arrays,
-  ///       only loop over scalars, not vectors
-  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
-    // Add to restart file (not appending)
-    restart.add(*(it->var), it->name.c_str(), 0);
-    
-    // Add to dump file (appending)
-    dump.add(*(it->var), it->name.c_str(), 1);
-    
-    /// NOTE: Initial perturbations have already been set in add()
-    
-    /// Make sure boundary condition is satisfied
-    //it->var->applyBoundary();
-    /// NOTE: boundary conditions on the initial profiles have also been set in add()
-  }  
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    // Add to restart file (not appending)
-    restart.add(*(it->var), it->name.c_str(), 0);
-    
-    // Add to dump file (appending)
-    dump.add(*(it->var), it->name.c_str(), 1);
-
-    if(mms) {
-      // Add an error variable
-      dump.add(*(it->MMS_err), (string("E_")+it->name).c_str(), 1);
+    if(archive_restart > 0) {
+      output.write("Archiving restart files every %d iterations\n",
+                   archive_restart);
     }
     
-    /// Make sure boundary condition is satisfied
-    //it->var->applyBoundary();
-    /// NOTE: boundary conditions on the initial profiles have also been set in add()
-  }
+    /// Get restart file extension
+    string dump_ext, restart_ext;
+    
+    options->get("dump_format", dump_ext, "nc");
+    options->get("restart_format", restart_ext, dump_ext);
+    restartext = string(restart_ext);
+    
+    // Set up restart options
+    restart = Datafile(Options::getRoot()->getSection("restart"));
+  
+    /// Add basic variables to the restart file
+    restart.add(simtime,  "tt",    0);
+    restart.add(iteration, "hist_hi", 0);
+    
+    restart.add(NPES, "NPES", 0);
+    restart.add(mesh->NXPE, "NXPE", 0);
 
+    /// Add variables to the restart and dump files.
+    /// NOTE: Since vector components are already in the field arrays,
+    ///       only loop over scalars, not vectors
+    for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+      // Add to restart file (not appending)
+      restart.add(*(it->var), it->name.c_str(), 0);
+      
+      /// NOTE: Initial perturbations have already been set in add()
+      
+      /// Make sure boundary condition is satisfied
+      //it->var->applyBoundary();
+      /// NOTE: boundary conditions on the initial profiles have also been set in add()
+    }  
+    for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+      // Add to restart file (not appending)
+      restart.add(*(it->var), it->name.c_str(), 0);
+      
+      /// Make sure boundary condition is satisfied
+      //it->var->applyBoundary();
+      /// NOTE: boundary conditions on the initial profiles have also been set in add()
+    }
+  }
+  
   if(restarting) {
     /// Load state from the restart file
     
@@ -652,9 +664,11 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     simtime = 0.0; iteration = 0;
   }
   
-  /// Open the restart file for writing
-  if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
-    throw BoutException("Error: Could not open restart file for writing\n");
+  if(enablerestart) {
+    /// Open the restart file for writing
+    if(!restart.openw("%s/BOUT.restart.%s", restartdir.c_str(), restartext.c_str()))
+      throw BoutException("Error: Could not open restart file for writing\n");
+  }
   
   /// Mark as initialised. No more variables can be added
   initialised = true;
@@ -664,6 +678,23 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 #endif
 
   return 0;
+}
+
+void Solver::outputVars(Datafile &outputfile) {
+  // Add 2D and 3D evolving fields to output file
+  for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++) {
+    // Add to dump file (appending)
+    outputfile.add(*(it->var), it->name.c_str(), 1);
+  }  
+  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
+    // Add to dump file (appending)
+    outputfile.add(*(it->var), it->name.c_str(), 1);
+    
+    if(mms) {
+      // Add an error variable
+      dump.add(*(it->MMS_err), (string("E_")+it->name).c_str(), 1);
+    }
+  }
 }
 
 /////////////////////////////////////////////////////
@@ -684,18 +715,39 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     // Calculate MMS errors
     calculate_mms_error(simtime);
   }
-
-  // Call physics model monitor
-  if(model) {
-    int ret = model->runOutputMonitor(simtime, iter, NOUT);
+  
+  if( enablerestart ) {
+    /// Write the restart file
+    restart.write();
+    
+    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
+      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
+    }
   }
-
-  // Call C function monitors
-  for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
-    // Call each monitor one by one
-    int ret = (*it)(this, simtime,iter, NOUT);
-    if(ret)
-      return ret; // Return first time an error is encountered
+  
+  try {
+    // Call C function monitors
+    for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
+      // Call each monitor one by one
+      int ret = (*it)(this, simtime,iter, NOUT);
+      if(ret)
+        throw BoutException("Monitor signalled to quit");
+    }
+  
+    // Call physics model monitor
+    if(model) {
+      if(model->runOutputMonitor(simtime, iter, NOUT))
+        throw BoutException("Monitor signalled to quit");
+    }
+  } catch (BoutException &e) {
+    // User signalled to quit
+    if( enablerestart ) {
+      // Write restart to a different file
+      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
+    }
+    
+    output.write("Monitor signalled to quit. Returning\n");
+    return 1;
   }
   
   return 0;

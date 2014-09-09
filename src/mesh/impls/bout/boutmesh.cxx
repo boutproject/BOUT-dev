@@ -55,6 +55,8 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   OPTION(options, symmetricGlobalX,  true);
   OPTION(options, symmetricGlobalY,  false);
 
+  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;

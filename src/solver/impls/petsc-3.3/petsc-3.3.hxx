@@ -66,7 +66,7 @@ typedef struct snes_info {
 
 class PetscSolver : public Solver {
  public:
-  PetscSolver();
+  PetscSolver(Options *opts = NULL);
   ~PetscSolver();
 
   // Can be called from physics initialisation to supply callbacks

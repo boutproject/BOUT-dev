@@ -326,20 +326,10 @@ int CvodeSolver::run() {
     if(simtime < 0.0) {
       // Step failed
       output.write("Timestep failed. Aborting\n");
-
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-
+      
       throw BoutException("SUNDIALS timestep failed\n");
     }
-
-    /// Write the restart file
-    restart.write();
-
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
-
+    
     if(diagnose) {
       // Print additional diagnostics
       long int nsteps, nfevals, nniters, npevals, nliters;
@@ -365,11 +355,6 @@ int CvodeSolver::run() {
 
     if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
-
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
   }
