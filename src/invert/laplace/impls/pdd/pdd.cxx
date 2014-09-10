@@ -166,7 +166,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, flags, &A, &C, &D);
+               data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
 
   for(kz = 0; kz <= maxmode; kz++) {
     // Start PDD algorithm
@@ -353,7 +353,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
       xk1d[kz] = data.xk[kz][ix];
     }
 
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
     ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], x[ix]);

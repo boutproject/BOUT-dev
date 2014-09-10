@@ -36,7 +36,7 @@ except ImportError:
     
     try:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
-        from Scientific.N import Int, Float
+        from Scientific.N import Int, Float, Float32
         library = "Scientific"
         #print "  => Using Scientific.IO.NetCDF instead"
     except ImportError:
@@ -316,6 +316,8 @@ class DataFile:
             if library == "Scientific":
                 if t == 'int':
                     tc = Int
+                elif t=='<f4':
+                    tc = Float32
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)

@@ -74,19 +74,19 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
   
-  if(flags & (INVERT_IN_SET | INVERT_OUT_SET)) {
+  if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
     
     int xbndry = 2;
-    if(flags & INVERT_BNDRY_ONE)
+    if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
-    if((flags & INVERT_IN_SET) && mesh->firstX()) {
+    if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
         for(int iz=0;iz<mesh->ngz-1;iz++)
           bs[ix][iz] = x0[ix][iz];
     }
-    if((flags & INVERT_OUT_SET) && mesh->lastX()) {
+    if((outer_boundary_flags & INVERT_SET) && mesh->lastX()) {
       // Copy x0 outer boundary into bs
       for(int ix=mesh->ngx-1;ix>=mesh->ngx-xbndry;ix--)
         for(int iz=0;iz<mesh->ngz-1;iz++)
@@ -144,22 +144,22 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
 }
 
 const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
-  if(  ((flags & INVERT_IN_SET) && mesh->firstX()) ||
-       ((flags & INVERT_OUT_SET) && mesh->lastX()) ) {
+  if(  ((inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+       ((outer_boundary_flags & INVERT_SET) && mesh->lastX()) ) {
     Field3D bs = copy(b);
     
     int xbndry = 2;
-    if(flags & INVERT_BNDRY_ONE)
+    if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
     
-    if((flags & INVERT_IN_SET) && mesh->firstX()) {
+    if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
         for(int iy=0;iy<mesh->ngy;iy++)
           for(int iz=0;iz<mesh->ngz-1;iz++)
             bs(ix,iy,iz) = x0(ix,iy,iz);
     }
-    if((flags & INVERT_OUT_SET) && mesh->lastX()) {
+    if((outer_boundary_flags & INVERT_SET) && mesh->lastX()) {
       // Copy x0 outer boundary into bs
       for(int ix=mesh->ngx-1;ix>=mesh->ngx-xbndry;ix--)
         for(int iy=0;iy<mesh->ngy;iy++)
@@ -249,7 +249,9 @@ void LaplaceSPT::tridagBack(dcomplex *u, int n,
  * If MYSUB < mesh->NXPE then not all processors can be busy at once, and so efficiency will fall sharply.
  *
  * @param[in]    b      RHS values (Ax = b)
- * @param[in]    flags  Inversion settings (see boundary.h for values)
+ * @param[in]    global_flags  Inversion settings (see boundary.h for values)
+ * @param[in]    inner_boundary_flags  Inversion settings for inner boundary (see invert_laplace.hxx for values)
+ * @param[in]    outer_boundary_flags  Inversion settings for outer boundary (see invert_laplace.hxx for values)
  * @param[in]    a      This is a 2D matrix which allows solution of A = Delp2 + a
  * @param[out]   data   Structure containing data needed for second half of inversion
  * @param[in]    ccoef  Optional coefficient for first-order derivative
@@ -276,7 +278,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
-               data.bk, data.jy, flags, &A, &C, &D);
+               data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
   
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
@@ -438,7 +440,9 @@ int LaplaceSPT::next(SPT_data &data) {
 /// Finishes the parallelised Thomas algorithm
 /*!
   @param[inout] data   Structure keeping track of calculation
-  @param[in]    flags  Inversion flags (same as passed to invert_spt_start)
+  @param[in]    global_flags  Inversion flags (same as passed to invert_spt_start)
+  @param[in]    inner_boundary_flags  Inversion flags for inner boundary (same as passed to invert_spt_start)
+  @param[in]    outer_boundary_flags  Inversion flags for outer boundary (same as passed to invert_spt_start)
   @param[out]   x      The result
 */
 void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
@@ -462,7 +466,7 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     for(int kz = maxmode + 1; kz <= ncz/2; kz++)
       dc1d[kz] = 0.0;
 
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       dc1d[0] = 0.0;
 
     ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], xdata[ix]);

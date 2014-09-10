@@ -76,12 +76,12 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   // Get the width of the boundary
   
   int inbndry = 2, outbndry=2;
-  if(flags & INVERT_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(flags & INVERT_BNDRY_IN_ONE)
+  if(inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(flags & INVERT_BNDRY_OUT_ONE)
+  if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
   
   int xs, xe;

@@ -114,7 +114,33 @@ void Inverter::A(BoutReal *b, BoutReal *x)
  * Protected functions
  **************************************************************************/
 
-#include <invert_laplace.hxx>
+// #include <invert_laplace.hxx>
+const int INVERT_DC_IN_GRAD = 1;
+const int INVERT_AC_IN_GRAD = 2;
+const int INVERT_DC_OUT_GRAD = 4;
+const int INVERT_AC_OUT_GRAD = 8;
+const int INVERT_ZERO_DC = 16;
+const int INVERT_START_NEW = 32;
+const int INVERT_BNDRY_ONE = 64; // Sets the width of the boundary to 1
+const int INVERT_4TH_ORDER = 128; // Use band solver for 4th order in x
+
+const int INVERT_AC_IN_LAP = 256;
+const int INVERT_AC_OUT_LAP = 512;
+
+const int INVERT_IN_SYM = 1024; // Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_OUT_SYM = 2048; // Same for outer boundary
+const int INVERT_IN_SET = 4096; // Set inner boundary
+const int INVERT_OUT_SET = 8192; // Set outer boundary
+const int INVERT_IN_RHS = 16384; // Use input value in RHS at inner boundary
+const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
+const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
+
+const int INVERT_DC_IN_LAP = 131072;
+
+const int INVERT_BNDRY_IN_ONE = 262144;
+const int INVERT_BNDRY_OUT_ONE = 524288;
+const int INVERT_DC_IN_GRADPAR = 1048576;
+const int INVERT_DC_IN_GRADPARINV = 2097152;
 
 /// NOTE: This should be changed/merged with Field2D/3D boundary system
 void Inverter::applyBoundary(FieldPerp &f, int flags)

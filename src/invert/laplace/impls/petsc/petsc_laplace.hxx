@@ -67,6 +67,8 @@ public:
     VecDestroy( &xs );  
     VecDestroy( &bs ); 
     MatDestroy( &MatA );
+    delete [] ksptype;
+    delete [] pctype;
   }
   
   void setCoefA(const Field2D &val) { A = val; /*Acoefchanged = true;*/ if(pcsolve) pcsolve->setCoefA(val); }
@@ -142,6 +144,7 @@ private:
   
   #ifdef CHECK
     int implemented_flags;
+    int implemented_boundary_flags;
   #endif
 };
 

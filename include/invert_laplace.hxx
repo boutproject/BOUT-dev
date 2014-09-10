@@ -43,34 +43,57 @@ class Laplacian;
 #include "dcomplex.hxx"
 #include "options.hxx"
 
-// Inversion flags
+// Inversion flags for each boundary
+const int INVERT_DC_GRAD  = 1;
+const int INVERT_AC_GRAD  = 2;
+const int INVERT_AC_LAP   = 4;
+const int INVERT_SYM      = 8; // Use symmetry to enforce either zero-value or zero-gradient
+const int INVERT_SET      = 16; // Set boundary to value
+const int INVERT_RHS      = 32; // Use input value in RHS boundary
+const int INVERT_DC_LAP   = 64;
+const int INVERT_BNDRY_ONE = 128;
+const int INVERT_DC_GRADPAR = 256;
+const int INVERT_DC_GRADPARINV = 512;
+const int INVERT_IN_CYLINDER = 1024; // For use in cylindrical coordiate system.  
 
-const int INVERT_DC_IN_GRAD  = 1;
-const int INVERT_AC_IN_GRAD  = 2;
-const int INVERT_DC_OUT_GRAD = 4;
-const int INVERT_AC_OUT_GRAD = 8;
-const int INVERT_ZERO_DC     = 16;
-const int INVERT_START_NEW   = 32;
-const int INVERT_BNDRY_ONE   = 64; // Sets the width of the boundary to 1
-const int INVERT_4TH_ORDER   = 128; // Use band solver for 4th order in x
+// Global flags
+const int INVERT_ZERO_DC     = 1;
+const int INVERT_START_NEW   = 2;
+const int INVERT_BOTH_BNDRY_ONE = 4; // Sets the width of the boundary to 1
+const int INVERT_4TH_ORDER   = 8; // Use band solver for 4th order in x
+const int INVERT_KX_ZERO     = 16; // Zero the kx=0, n = 0 component
 
-const int INVERT_AC_IN_LAP   = 256;
-const int INVERT_AC_OUT_LAP  = 512;
+/*
+// Legacy flags, can be used in calls to setFlags()
+// or in input option "flags"
 
-const int INVERT_IN_SYM  =  1024; // Use symmetry to enforce either zero-value or zero-gradient
-const int INVERT_OUT_SYM =  2048; // Same for outer boundary
-const int INVERT_IN_SET  =  4096; // Set inner boundary
-const int INVERT_OUT_SET =  8192; // Set outer boundary
-const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
-const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
-const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
+  const int INVERT_DC_IN_GRAD  = 1;
+  const int INVERT_AC_IN_GRAD  = 2;
+  const int INVERT_DC_OUT_GRAD = 4;
+  const int INVERT_AC_OUT_GRAD = 8;
+  const int INVERT_ZERO_DC     = 16;
+  const int INVERT_START_NEW   = 32;
+  const int INVERT_BNDRY_ONE   = 64; // Sets the width of the boundary to 1
+  const int INVERT_4TH_ORDER   = 128; // Use band solver for 4th order in x
 
-const int INVERT_DC_IN_LAP = 131072;
+  const int INVERT_AC_IN_LAP   = 256;
+  const int INVERT_AC_OUT_LAP  = 512;
 
-const int INVERT_BNDRY_IN_ONE = 262144;
-const int INVERT_BNDRY_OUT_ONE = 524288;
-const int INVERT_DC_IN_GRADPAR = 1048576;
-const int INVERT_DC_IN_GRADPARINV = 2097152;
+  const int INVERT_IN_SYM  =  1024; // Use symmetry to enforce either zero-value or zero-gradient
+  const int INVERT_OUT_SYM =  2048; // Same for outer boundary
+  const int INVERT_IN_SET  =  4096; // Set inner boundary
+  const int INVERT_OUT_SET =  8192; // Set outer boundary
+  const int INVERT_IN_RHS  = 16384; // Use input value in RHS at inner boundary
+  const int INVERT_OUT_RHS = 32768; // Use input value in RHS at outer boundary
+  const int INVERT_KX_ZERO = 65536; // Zero the kx=0, n = 0 component
+
+  const int INVERT_DC_IN_LAP = 131072;
+
+  const int INVERT_BNDRY_IN_ONE = 262144;
+  const int INVERT_BNDRY_OUT_ONE = 524288;
+  const int INVERT_DC_IN_GRADPAR = 1048576;
+  const int INVERT_DC_IN_GRADPARINV = 2097152;
+ */
 
 /// Base class for Laplacian inversion
 class Laplacian {
@@ -99,7 +122,10 @@ public:
   virtual void setCoefEz(const Field3D &val) { setCoefEz(val.DC()); }
   virtual void setCoefEz(const BoutReal &r) { Field2D f(r); setCoefD(f); }
   
-  virtual void setFlags(int f) {flags = f;}
+  virtual void setFlags(int f);
+  virtual void setGlobalFlags(int f) { global_flags = f; }
+  virtual void setInnerBoundaryFlags(int f) { inner_boundary_flags = f; }
+  virtual void setOuterBoundaryFlags(int f) { outer_boundary_flags = f; }
   
   virtual const FieldPerp solve(const FieldPerp &b) = 0;
   virtual const Field3D solve(const Field3D &b);
@@ -128,18 +154,20 @@ protected:
   int extra_yguards_lower; // exclude some number of points at the lower boundary, useful for staggered grids or when boundary conditions make inversion redundant
   int extra_yguards_upper; // exclude some number of points at the upper boundary, useful for staggered grids or when boundary conditions make inversion redundant
   
-  int flags;       ///< Default flags
+  int global_flags;       ///< Default flags
+  int inner_boundary_flags; ///< Flags to set inner boundary condition
+  int outer_boundary_flags; ///< Flags to set outer boundary condition
 
   void tridagCoefs(int jx, int jy, BoutReal kwave, dcomplex &a, dcomplex &b, dcomplex &c, const Field2D *ccoef = NULL, const Field2D *d=NULL);
 
   void tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
-                    dcomplex **bk, int jy, int flags, 
+                    dcomplex **bk, int jy, int flags, int inner_boundary_flags, int outer_boundary_flags,
                     const Field2D *a = NULL, const Field2D *ccoef=NULL, 
                     const Field2D *d = NULL);
   
   void tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
-                    dcomplex *bk, int jy, bool dc, BoutReal kwave, 
-                    int flags, 
+                    dcomplex *bk, int jy, int kz, BoutReal kwave, 
+                    int flags, int inner_boundary_flags, int outer_boundary_flags,
                     const Field2D *a, const Field2D *ccoef, 
                     const Field2D *d,
                     bool includeguards=true);
@@ -158,7 +186,7 @@ int invert_laplace(const FieldPerp &b, FieldPerp &x, int flags, const Field2D *a
 int invert_laplace(const Field3D &b, Field3D &x, int flags, const Field2D *a, const Field2D *c=NULL, const Field2D *d=NULL);
 
 /// More readable API for calling Laplacian inversion. Returns x
-const Field3D invert_laplace(const Field3D &b, int flags, 
+const Field3D invert_laplace(const Field3D &b, int flags,
                              const Field2D *a = NULL, const Field2D *c=NULL, const Field2D *d=NULL);
 
 

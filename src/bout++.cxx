@@ -226,9 +226,9 @@ void BoutInitialise(int &argc, char **&argv) {
 
     // Get options override from command-line
     reader->parseCommandLine(options, argc, argv);
-  }catch(BoutException *e) {
+  }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
-    output << e->what() << endl;
+    output << e.what() << endl;
     return;
   }
 
@@ -297,6 +297,7 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 }
 
 int BoutFinalise() {
+  
   // Delete the mesh
   delete mesh;
 

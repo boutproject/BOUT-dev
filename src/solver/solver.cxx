@@ -531,9 +531,9 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       dt -= i*60;
     }
     output.write("%d s\n", dt);
-  }catch(BoutException *e) {
+  }catch(BoutException &e) {
     output << "Error encountered in solver run\n";
-    output << e->what() << endl;
+    output << e.what() << endl;
     
     if(enablerestart) {
       // Write restart to a different file

@@ -3179,6 +3179,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
+  file.add(zperiod, "zperiod", 0);
   file.add(MXSUB, "MXSUB", 0);
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);

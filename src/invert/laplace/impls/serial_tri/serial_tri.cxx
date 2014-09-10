@@ -84,20 +84,20 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   
   int inbndry = 2, outbndry=2;
   
-  if(flags & INVERT_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(flags & INVERT_BNDRY_IN_ONE)
+  if(inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(flags & INVERT_BNDRY_OUT_ONE)
+  if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
   
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
     
-    if(((ix < inbndry) && (flags & INVERT_IN_SET)) ||
-       ((ncx-ix < outbndry) && (flags & INVERT_OUT_SET))) {
+    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
+       ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
       
@@ -120,11 +120,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     tridagMatrix(avec, bvec, cvec, bk1d, jy, 
 		 iz == 0, // DC?
 		 iz*2.0*PI/mesh->zlength, // kwave
-		 flags,
+		 global_flags, inner_boundary_flags, outer_boundary_flags,
 		 &A, &C, &D);
     
     if(!mesh->periodicX) {
-    
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
       
@@ -138,8 +137,8 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
       }
     }
-    
-    if((flags & INVERT_KX_ZERO) && (iz == 0)) {
+      
+    if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
         offset += bk1d[ix];
@@ -159,7 +158,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   
   for(int ix=0; ix<=ncx; ix++){
     
-    if(flags & INVERT_ZERO_DC)
+    if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
     
     ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);
