@@ -282,7 +282,6 @@ void SlepcSolver::setAdvanceSolver(Options *options){
     //Could we set advanceSolver=this in order to avoid branches on selfSolve later on?
   }else{
     selfSolve=false;
-    //throw BoutException("Don't currently support use of solvers other than 'self' with SlepcSolver.");
     //Guard to protect against using anything that can't reset. Note to query the solver we have
     //to create an instance which means we must destroy it if we want to make a new instance.
     advanceSolver=SolverFactory::getInstance()->createSolver(type,NULL);
@@ -292,7 +291,6 @@ void SlepcSolver::setAdvanceSolver(Options *options){
       type=defType;
       advanceSolver=SolverFactory::getInstance()->createSolver(type,NULL);
     }
-    //advanceSolver=SolverFactory::getInstance()->createSolver(type,NULL);
   }
 }
 
@@ -329,7 +327,9 @@ void SlepcSolver::vecToFields(Vec &inVec){
     load_vars(point);
   }else{
     advanceSolver->load_vars(point);
-    advanceSolver->resetInternalFields();
+    //Solver class used must support this procedure which resets any internal state
+    //data such that it now holds the same data as the fields
+    advanceSolver->resetInternalFields(); 
   }
 
   //Restore array
@@ -355,18 +355,21 @@ void SlepcSolver::fieldsToVec(Vec &outVec){
 
 //Create a shell matrix operator
 void SlepcSolver::createShellMat(){
-  output<<"Creating shellMat with local size : "<<localSize<<endl;//<<" ("<<localSize2D<<"+"<<localSize3D<<")"<<endl;
+  output<<"Creating shellMat with local size : "<<localSize<<endl;
 
   //Create the shell matrix
   MatCreateShell(comm,localSize,localSize,PETSC_DETERMINE,
-  		 PETSC_DETERMINE,this,&shellMat); //Note we pass the this reference as the matrix context
+  		 PETSC_DETERMINE,this,&shellMat); //Note we pass the this reference as the matrix context.
+                                                  //This allows us to access the SlepcSolver internals from within
+                                                  //routines called directly by Petsc/Slepc (i.e. our wrapper functions)
 
-  //Define the mat_mult operation --> Define what routine return M.x, where M
-  //is the time advance operator and x are the initial conditions
+  //Define the mat_mult operation --> Define what routine returns M.x, where M
+  //is the time advance operator and x are the initial field conditions
   MatShellSetOperation(shellMat,MATOP_MULT,(void(*)())&advanceStepWrapper);
 
   //The above function callback can cause issues as member functions have a hidden "this" 
-  //argument which means when Slepc calls advanceStep(Mat,Vec,Vec) this is redefined to Mat,
+  //argument which means if Slepc calls this->advanceStep(Mat,Vec,Vec) this is actually
+  //this->advanceStep(this,Mat,Vec,Vec) meaing "this" gets redefined to Mat,
   //and the two Vecs are mangled, this messes up memory and the code crashes.
   //Alternatives include:
   //  1. Making advanceStep a static function
@@ -376,7 +379,7 @@ void SlepcSolver::createShellMat(){
   //We've therefore gone with a third option where we define the callback to be a
   //non-member function which then gets the context pointer attached to shellMat
   //which points to the SlepcSolver instance. This can then be used to call the
-  //advanceStep member function as if it were called within this.
+  //advanceStep member function as if it were called within "this".
 }
 
 //Create an EPS Solver
@@ -429,13 +432,19 @@ void SlepcSolver::createEPS(){
 //This routine takes initial conditions provided by SLEPc, uses this to set the fields,
 //advances them with the attached solver and then returns the evolved fields in a slepc
 //structure.
+//Note: Hidden "this" argument prevents Slepc calling this routine directly
 int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
   //First unpack input into fields
   vecToFields(inData);
 
   //Now advance
   int retVal;
+
+  //Here we actually advance one (big) step
   if(selfSolve){
+    //If we don't have an external solver then we have to advance the solution
+    //ourself. This is currently done using Euler and only advances by a small step
+    //Not recommended!
     retVal=run_rhs(0.0);
     //Here we add dt*ddt(Fields) to fields to advance solution (cf. Euler)
     save_vars(f0);
@@ -445,7 +454,8 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
     }
     load_vars(f0);
   }else{
-    // advanceSolver->copyFieldsToInternal(); //This resets the solver and sets initial fields -- Not implemented anywhere yet!
+    //Here we exploit one of the built in solver implementations to advance the
+    //prescribed fields by a big (tstep*nstep) step.
     retVal=advanceSolver->run();
   }
 
@@ -456,6 +466,10 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
   return retVal;
 }
 
+//This routine can be used by Slepc to decide which of two eigenvalues is "preferred"
+//Allows us to look at real and imaginary components seperately which is not possible
+//with Slepc built in comparisons when Slepc is compiled without native complex support (required)
+//Note must be wrapped by non-member function to be called by Slepc
 int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi){
   BoutReal arBout, aiBout, brBout, biBout;
   
@@ -501,6 +515,11 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
   return retVal;
 }
 
+//This is an example of a custom monitor which Slepc can call (not directly) to report the current
+//status of the run.
+//Note we could see how many new eigenpairs have been found since last called and then write their
+//data to file so that we get progressive output rather than waiting until the end to write everything
+//Note must be wrapped by non-member function to be called by Slepc
 void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest){
   static int nConvPrev=0;
 
@@ -607,7 +626,7 @@ void SlepcSolver::analyseResults(){
       vecToFields(vecReal);
       //Set the simtime to omega
       simtime=reEigBout;
-      //call_monitors(simtime,iteration,nEigFound*2);
+
       //Write to file
       dump.write();
       iteration++;
@@ -617,7 +636,7 @@ void SlepcSolver::analyseResults(){
       vecToFields(vecImag);
       //Set the simtime to gamma
       simtime=imEigBout;
-      //call_monitors(simtime,iteration,nEigFound*2);
+
       //Write to file
       dump.write();
       iteration++;
