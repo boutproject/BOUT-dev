@@ -44,11 +44,9 @@ for nx in nxlist:
     f.close()
 
     # Collect data
-    E_N = collect("E_N", tind=[nout,nout], path="data")
+    E_N = collect("E_N", tind=[nout,nout], path="data", info=False)
 
     E_N = E_N[0,:,0,0]
-
-    print E_N
 
     # Average error over domain, not including guard cells
     l2 = sqrt(mean(E_N[1:-1]**2))
@@ -86,4 +84,13 @@ plt.ylabel("Error norm")
 
 plt.savefig("norm.pdf")
 
-plt.show()
+#plt.show()
+plt.close()
+
+if order > 1.8:
+  print " => Test passed"
+  exit(0)
+else:
+  print " => Test failed"
+  exit(1)
+
