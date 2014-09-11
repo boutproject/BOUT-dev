@@ -50,7 +50,7 @@ extern PetscErrorCode PhysicsPCApply(PC,Vec x,Vec y);
 extern PetscErrorCode PhysicsJacobianApply(Mat J, Vec x, Vec y);
 extern PetscErrorCode PhysicsSNESApply(SNES,Vec);
 
-PetscSolver::PetscSolver() {
+PetscSolver::PetscSolver(Options *opts) {
   has_constraints = false; // No constraints
   J = 0;
   Jmf = 0;
