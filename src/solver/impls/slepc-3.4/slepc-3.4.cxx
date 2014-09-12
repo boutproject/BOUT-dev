@@ -226,8 +226,13 @@ void SlepcSolver::copySettingsToAdvanceSolver(){
   //Exit if don't have an advance solver
   if(selfSolve){return;}
 
-  advanceSolver->setRHS(phys_run);
-  advanceSolver->setPrecon(prefunc);
+  //If using new api then copy model, else copy function pointers
+  if(model){
+    advanceSolver->setModel(model);
+  }else{
+    advanceSolver->setRHS(phys_run);
+    advanceSolver->setPrecon(prefunc);
+  }
 
   //Could attach a monitor here, if so should we remove it from
   //the SlepcSolver?
@@ -323,10 +328,12 @@ void SlepcSolver::vecToFields(Vec &inVec){
   VecGetArray(inVec,&point);
 
   //Copy data from point into fields
-  if(selfSolve){
-    load_vars(point);
-  }else{
-    advanceSolver->load_vars(point);
+  load_vars(point);
+  //Note as the solver instances only have pointers to the
+  //fields we can use the SlepcSolver load_vars even if we're
+  //not using selfSolve=True
+
+  if(!selfSolve){
     //Solver class used must support this procedure which resets any internal state
     //data such that it now holds the same data as the fields
     advanceSolver->resetInternalFields(); 
@@ -343,11 +350,10 @@ void SlepcSolver::fieldsToVec(Vec &outVec){
   VecGetArray(outVec,&point);
 
   //Copy fields into point
-  if(selfSolve){
-    save_vars(point);
-  }else{
-    advanceSolver->save_vars(point);
-  }
+  save_vars(point);
+  //Note as the solver instances only have pointers to the
+  //fields we can use the SlepcSolver save_vars even if we're
+  //not using selfSolve=True
 
   //Restore array
   VecRestoreArray(outVec,&point);
@@ -449,7 +455,7 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
     //Here we add dt*ddt(Fields) to fields to advance solution (cf. Euler)
     save_vars(f0);
     save_derivs(f1);
-    for(int iVec=0;iVec<localSize;iVec++){ //THIS WILL IGNORE THE X-BOUNDARIES -- IS THAT OK?
+    for(int iVec=0;iVec<localSize;iVec++){
       f0[iVec]+=f1[iVec]*tstep;
     }
     load_vars(f0);
