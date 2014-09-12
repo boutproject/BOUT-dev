@@ -10,13 +10,13 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver() : Solver() {
+RK4Solver::RK4Solver(Options *options) : Solver(options) {
   f0 = 0; // Mark as uninitialised
   canReset = true;
 }
 
 RK4Solver::~RK4Solver() {
-  if(f0 == 0) {
+  if(f0 != 0) {
     delete[] f0;
     delete[] f1;
     delete[] f2;
@@ -80,8 +80,6 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   save_vars(f0);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   OPTION(options, atol, 1.e-5); // Absolute tolerance
   OPTION(options, rtol, 1.e-3); // Relative tolerance
   OPTION(options, max_timestep, tstep); // Maximum timestep
@@ -115,7 +113,6 @@ int RK4Solver::run() {
         }
         if(adaptive) {
           // Take two half-steps
-          output << simtime << ", " << timestep << ", " << dt << endl;
           take_step(simtime,          0.5*dt, f0, f1);
           take_step(simtime + 0.5*dt, 0.5*dt, f1, f2);
           
@@ -169,23 +166,10 @@ int RK4Solver::run() {
 
     iteration++; // Advance iteration number
     
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
-    
     /// Call the monitor function
     
     if(call_monitors(simtime, s, nsteps)) {
-      // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
-      break;
+      break; // Stop simulation
     }
     
     // Reset iteration and wall-time count
@@ -209,8 +193,6 @@ void RK4Solver::resetInternalFields(){
 
 void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
   
-  output.write("RK4: t=%e, dt=%e, start = %e\n", curtime, dt, start[0]);
-
   load_vars(start);
   run_rhs(curtime);
   save_derivs(k1);
@@ -219,8 +201,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k1[i];
   
-  output.write("ddt(%e)=k1= %e  ->  k5=%e\n", curtime, k1[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + 0.5*dt);
   save_derivs(k2);
@@ -229,8 +209,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + 0.5*dt*k2[i];
   
-  output.write("ddt(%e)=k2= %e  ->  k5=%e\n", curtime + 0.5*dt, k2[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + 0.5*dt);
   save_derivs(k3);
@@ -239,8 +217,6 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   for(int i=0;i<nlocal;i++)
     k5[i] = start[i] + dt*k3[i];
   
-  output.write("ddt(%e)=k3= %e  ->  k5=%e\n", curtime + 0.5*dt, k3[0], k5[0]);
-
   load_vars(k5);
   run_rhs(curtime + dt);
   save_derivs(k4);
@@ -248,6 +224,4 @@ void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutRe
   #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
     result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
-  
-  output.write("ddt(%e)=k4= %e  ->  result=%e\n", curtime + dt, k4[0], result[0]);
 }

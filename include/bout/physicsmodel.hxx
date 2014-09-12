@@ -106,13 +106,13 @@ private:
     Solver *solver = Solver::create();              \
     solver->setModel(model);                        \
     solver->addMonitor(bout_monitor, Solver::BACK); \
+    solver->outputVars(dump);                       \
     solver->solve();                                \
     delete model;                                   \
     delete solver;                                  \
     BoutFinalise();                                 \
     return 0;                                       \
   }
-
 
 
 #endif // __PHYSICS_MODEL_H__

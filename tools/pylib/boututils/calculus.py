@@ -6,12 +6,15 @@ B.Dudson, University of York, Nov 2009
 """
 
 try:
-
     from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
     from numpy.fft import rfft, irfft
+except ImportError:
+    print("ERROR: NumPy module not available")
+    raise
+try:
     from scipy.signal import convolve
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: scipy.signal module not available")
     raise
 
 def deriv(*args, **kwargs):

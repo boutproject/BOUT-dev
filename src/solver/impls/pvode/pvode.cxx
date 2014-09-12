@@ -45,9 +45,6 @@ void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data);
 
 const BoutReal ZERO = 0.0;
 
-static BoutReal abstol, reltol; // addresses passed in init must be preserved
-static PVBBDData pdata;
-
 long int iopt[OPT_SIZE];
 BoutReal ropt[OPT_SIZE];
 
@@ -55,8 +52,7 @@ PvodeSolver::PvodeSolver(Options *options) : Solver(options) {
   has_constraints = false; ///< This solver doesn't have constraints
 }
 
-PvodeSolver::~PvodeSolver()
-{
+PvodeSolver::~PvodeSolver() {
   if(initialised) {
     // Free CVODE memory
     
@@ -204,7 +200,7 @@ int PvodeSolver::run() {
 #endif
   
   if(!initialised)
-    bout_error("PvodeSolver not initialised\n");
+    throw BoutException("PvodeSolver not initialised\n");
   
   for(int i=0;i<NOUT;i++) {
     
@@ -216,29 +212,14 @@ int PvodeSolver::run() {
     if(simtime < 0.0) {
       // Step failed
       output.write("Timestep failed. Aborting\n");
-
-      // Write restart to a different file
-      restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
-
-      bout_error("PVODE timestep failed\n");
-    }
-
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
+      
+      throw BoutException("PVODE timestep failed\n");
     }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
   }

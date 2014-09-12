@@ -27,10 +27,10 @@ class Metric:
         self.z = symbols('z\'')
 
         self.g11 = self.g22 = self.g33 = 1.0
-        self.g12 = self.g23 = 0.0
+        self.g12 = self.g23 = self.g13 = 0.0
 
         self.g_11 = self.g_22 = self.g_33 = 1.0
-        self.g_12 = self.g_23 = 0.0
+        self.g_12 = self.g_23 = self.g_13 = 0.0
 
         self.J = 1.0
         self.B = 1.0
@@ -39,11 +39,15 @@ identity = Metric()
 
 # Basic differencing
 
+def DDX(f, metric = identity):
+    return diff(f, metric.x)
+
+def DDY(f, metric = identity):
+    return diff(f, metric.y)
+
 def DDZ(f, metric = identity):
     return diff(f, metric.z)
 
-def DDX(f, metric = identity):
-    return diff(f, metric.x)
 
 def D2DX2(f, metric = identity):
     return diff(f, metric.x, 2)
@@ -68,15 +72,49 @@ def bracket(f, g, metric = identity):
     dgdz = diff(g, metric.z)
     
     return dfdz * dgdx - dfdx * dgdz
+    
+def b0xGrad_dot_Grad(phi, A, metric = identity):
+    """
+    Perpendicular advection operator, including
+    derivatives in y
+    
+    Note: If y derivatives are neglected, then this reduces
+    to bracket(f, g, metric) * metric.B
+    (in a Clebsch coordinate system)
+    
+    """
+    dpdx = DDX(phi, metric)
+    dpdy = DDY(phi, metric)
+    dpdz = DDZ(phi, metric)
+    
+    vx = metric.g_22*dpdz - metric.g_23*dpdy;
+    vy = metric.g_23*dpdx - metric.g_12*dpdz;
+    vz = metric.g_12*dpdy - metric.g_22*dpdx;
+    
+    return (+ vx*DDX(A, metric)
+            + vy*DDY(A, metric)
+            + vz*DDZ(A, metric) ) / (metric.J*sqrt(metric.g_22))
 
-def Delp2(f, metric = identity):
+def Delp2(f, metric = identity, all_terms=True):
     """ Laplacian in X-Z
+    
+    If all_terms is false then first derivative terms are neglected.
+    By default all_terms is true, but can be disabled
+    in the BOUT.inp file (laplace section)
+    
     """
     d2fdx2 = diff(f, metric.x, 2)
     d2fdz2 = diff(f, metric.z, 2)
     d2fdxdz = diff(f, metric.x, metric.z)
 
-    return metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
+    result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
+    
+    if all_terms:
+        G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric))/metric.J
+        G3 = (DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric))/metric.J
+        result += G1 * diff(f, metric.x) + G3 * diff(f, metric.z)
+        
+    return result
 
 def Delp4(f, metric = identity):
     d4fdx4 = diff(f, metric.x, 4)
@@ -89,6 +127,12 @@ def Grad_par(f, metric = identity):
 
 def Vpar_Grad_par(v, f, metric = identity):
     return v * Grad_par(f, metric=metric)
+
+def Laplace_par(f, metric=identity):
+    """
+    Div( b (b.Grad(f) ) ) = (1/J) d/dy ( J/g_22 * df/dy )
+    """
+    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y) / metric.J
 
 
 # Convert expression to string
@@ -162,7 +206,7 @@ class SimpleTokamak(object):
         
         """
         # X has a range [0,1], and y [0,2pi]
-        x, y = symbols("x y")
+        #x, y = symbols("x y")
         
         self.x = x
         self.y = y
@@ -180,9 +224,6 @@ class SimpleTokamak(object):
         # Toroidal angle of a field-line as function
         # of poloidal angle y
         self.zShift = self.q*(y + eps * sin(y))
-        
-        # Integrated shear
-        self.sinty = diff(self.zShift, x)
         
         # Field-line pitch
         self.nu = self.q*(1 + eps*cos(y)) #diff(self.zShift, y)
@@ -211,6 +252,20 @@ class SimpleTokamak(object):
         self.psiwidth = Bp0 * R * dr
         print("psi width = %e" % self.psiwidth)
         
+        # Integrated shear
+        self.sinty = diff(self.zShift, x) / self.psiwidth
+        
+        # Extra expressions to add to grid file
+        self._extra = {}
+
+    def add(self, expr, name):
+        """
+        Add an additional expression to be written to the grid files
+        
+        """
+        self._extra[name] = expr
+        
+
     def write(self, nx, ny, output):
         """
         Outputs a tokamak shape to a grid file
@@ -254,6 +309,14 @@ class SimpleTokamak(object):
             
             output.write(name, values)
         
+        for name, var in self._extra.iteritems():
+            values = zeros([ngx, ngy])
+            for i, x in enumerate(xarr):
+                for j, y in enumerate(yarr):
+                    values[i,j] = var.evalf(subs={self.x:x, self.y:y})
+            
+            output.write(name, values)
+
         shiftAngle = zeros(ngx)
         for i, x in enumerate(xarr):
             shiftAngle[i] = 2.*pi*self.q.evalf(subs={self.x:x})

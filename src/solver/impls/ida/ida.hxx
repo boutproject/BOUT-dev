@@ -56,7 +56,7 @@ using std::vector;
 
 class IdaSolver : public Solver {
  public:
-  IdaSolver();
+  IdaSolver(Options *opts = NULL);
   ~IdaSolver();
 
   void setPrecon(PhysicsPrecon f) {prefunc = f;}

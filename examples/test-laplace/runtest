@@ -19,6 +19,7 @@ from sys import stdout, exit
 MPIRUN = getmpirun()
 
 print "Making Laplacian inversion test"
+shell("rm test_laplace")
 shell("make > make.log")
 
 # Read benchmark values

@@ -34,6 +34,7 @@
 #include <boutcomm.hxx>
 #include <interpolation.hxx> // Cell interpolation
 #include <msg_stack.hxx>
+#include <boutexception.hxx>
 
 #include <ida/ida.h>
 #include <ida/ida_spgmr.h>
@@ -61,7 +62,7 @@ static int ida_pre(BoutReal t, N_Vector yy,
 		   BoutReal cj, BoutReal delta, 
 		   void *user_data, N_Vector tmp);
 
-IdaSolver::IdaSolver() : Solver()
+IdaSolver::IdaSolver(Options *opts) : Solver(opts)
 {
   has_constraints = true; ///< This solver has constraints
   
@@ -114,15 +115,15 @@ IdaSolver::~IdaSolver()
   // Allocate memory
   
   if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   if((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   if((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
-    bout_error("ERROR: SUNDIALS memory allocation failed\n");
+    throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   
   // Put the variables into uvec
   if(save_vars(NV_DATA_P(uvec)))
-    bout_error("\tERROR: Initial variable value not set\n");
+    throw BoutException("\tERROR: Initial variable value not set\n");
   
   // Get the starting time derivative
   run_rhs(simtime);
@@ -159,43 +160,43 @@ IdaSolver::~IdaSolver()
   // Call IDACreate and IDAMalloc to initialise
 
   if((idamem = IDACreate()) == NULL)
-    bout_error("ERROR: IDACreate failed\n");
+    throw BoutException("ERROR: IDACreate failed\n");
   
   if( IDASetUserData(idamem, this) < 0 ) // For callbacks, need pointer to solver object
-    bout_error("ERROR: IDASetUserData failed\n");
+    throw BoutException("ERROR: IDASetUserData failed\n");
 
   if( IDASetId(idamem, id) < 0)
-    bout_error("ERROR: IDASetID failed\n");
+    throw BoutException("ERROR: IDASetID failed\n");
 
   if( IDAInit(idamem, idares, simtime, uvec, duvec) < 0 )
-    bout_error("ERROR: IDAInit failed\n");
+    throw BoutException("ERROR: IDAInit failed\n");
   
   if( IDASStolerances(idamem, reltol, abstol) < 0 )
-    bout_error("ERROR: IDASStolerances failed\n");
+    throw BoutException("ERROR: IDASStolerances failed\n");
 
   IDASetMaxNumSteps(idamem, mxsteps);
 
   // Call IDASpgmr to specify the IDA linear solver IDASPGMR
   if( IDASpgmr(idamem, maxl) )
-    bout_error("ERROR: IDASpgmr failed\n");
+    throw BoutException("ERROR: IDASpgmr failed\n");
 
   if(use_precon) {
     if(prefunc == NULL) {
       output.write("\tUsing BBD preconditioner\n");
       if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
 			 ZERO, ida_bbd_res, NULL) )
-	bout_error("ERROR: IDABBDPrecInit failed\n");
+	throw BoutException("ERROR: IDABBDPrecInit failed\n");
     }else {
       output.write("\tUsing user-supplied preconditioner\n");
       if( IDASpilsSetPreconditioner(idamem, NULL, ida_pre) )
-	bout_error("ERROR: IDASpilsSetPreconditioner failed\n");
+	throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
     }
   }
 
   // Call IDACalcIC (with default options) to correct the initial values
   if(correct_start) {
     if( IDACalcIC(idamem, IDA_YA_YDP_INIT, 1e-6) )
-      bout_error("ERROR: IDACalcIC failed\n");
+      throw BoutException("ERROR: IDACalcIC failed\n");
   }
 
 #ifdef CHECK
@@ -215,7 +216,7 @@ int IdaSolver::run() {
 #endif
   
   if(!initialised)
-    bout_error("IdaSolver not initialised\n");
+    throw BoutException("IdaSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
     
@@ -226,30 +227,13 @@ int IdaSolver::run() {
     /// Check if the run succeeded
     if(simtime < 0.0) {
       // Step failed
-      output.write("Timestep failed. Aborting\n");
-
-      // Write restart to a different file
-      restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
-
-      bout_error("SUNDIALS IDA timestep failed\n");
-    }
-    
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
+      throw BoutException("SUNDIALS IDA timestep failed\n");
     }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
   }
@@ -263,7 +247,7 @@ int IdaSolver::run() {
 
 BoutReal IdaSolver::run(BoutReal tout) {
   if(!initialised)
-    bout_error("ERROR: Running IDA solver without initialisation\n");
+    throw BoutException("ERROR: Running IDA solver without initialisation\n");
 
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);

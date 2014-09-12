@@ -36,7 +36,7 @@ except ImportError:
     
     try:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
-        from Scientific.N import Int, Float
+        from Scientific.N import Int, Float, Float32
         library = "Scientific"
         #print "  => Using Scientific.IO.NetCDF instead"
     except ImportError:
@@ -83,24 +83,30 @@ class DataFile:
                 self.handle = Dataset(filename, "a")
         # Record if writing
         self.writeable = write or create
-    
+
     def close(self):
         if self.handle != None:
             self.handle.close()
         self.handle = None
-    
+
     def __init__(self, filename=None, write=False, create=False,
                  format='NETCDF3_CLASSIC'):
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
-    
+
     def __del__(self):
+        self.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
         self.close()
 
     def read(self, name, ranges=None):
         """Read a variable from the file."""
         if self.handle == None: return None
-        
+
         try:
             var = self.handle.variables[name]
         except KeyError:
@@ -310,6 +316,8 @@ class DataFile:
             if library == "Scientific":
                 if t == 'int':
                     tc = Int
+                elif t=='<f4':
+                    tc = Float32
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)

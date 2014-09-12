@@ -45,18 +45,19 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
   else opts=opt;
   
   #ifdef CHECK
-    implemented_flags = INVERT_AC_IN_GRAD
-		      + INVERT_AC_OUT_GRAD
-		      + INVERT_START_NEW
-// 		      + INVERT_4TH_ORDER
-// 		      + INVERT_IN_SET
-// 		      + INVERT_OUT_SET
-		      + INVERT_IN_RHS
-		      + INVERT_OUT_RHS
-		      ;
-    if ( flags & ~implemented_flags) {
-      if (flags&INVERT_4TH_ORDER) output<<"For MUMPS based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
-      throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
+    implemented_flags = INVERT_START_NEW;
+    implemented_boundary_flags = INVERT_AC_GRAD
+			       + INVERT_RHS
+			       ;
+    if ( global_flags & ~implemented_flags) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For MUMPS based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+      throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in mumps_laplace.cxx");
+    }
+    if (inner_boundary_flags & ~implemented_boundary_flags) {
+      throw BoutException("Attempted to set Laplacian inversion boundary condition flag that is not implemented in mumps_laplace.cxx");
+    }
+    if (outer_boundary_flags & ~implemented_boundary_flags) {
+      throw BoutException("Attempted to set Laplacian inversion boundary condition flag that is not implemented in mumps_laplace.cxx");
     }
   #endif
 
@@ -108,7 +109,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     mumps_struc.nz = 9*(meshx-nxguards)*meshz;
     mumps_struc.nz_loc = 9*(mesh->xend-mesh->xstart+1)*(mesh->ngz-1);
   }
-  if (flags & INVERT_AC_IN_GRAD) {
+  if (inner_boundary_flags & INVERT_AC_GRAD) {
     if (fourth_order) {
       mumps_struc.nz += 5*meshz*mesh->xstart;
       if (mesh->firstX()) mumps_struc.nz_loc += 5*mesh->xstart*(mesh->ngz-1);
@@ -122,7 +123,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     mumps_struc.nz += mesh->xstart*meshz;
     if (mesh->firstX()) mumps_struc.nz_loc += mesh->xstart*(mesh->ngz-1);
   }
-  if (flags & INVERT_AC_OUT_GRAD) {
+  if (outer_boundary_flags & INVERT_AC_GRAD) {
     if (fourth_order) {
       mumps_struc.nz += 5*(mesh->ngx-mesh->xend-1)*meshz;
       if (mesh->lastX()) mumps_struc.nz_loc += 5*(mesh->ngx-mesh->xend-1)*(mesh->ngz-1);
@@ -226,7 +227,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 	int xp = x+1;
 	int xpp = x+2;
 	int z0 = z;
-	if(flags & INVERT_AC_IN_GRAD) {
+	if(inner_boundary_flags & INVERT_AC_GRAD) {
 	  mumps_struc.irn_loc[i] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
 	  mumps_struc.jcn_loc[i] = x0*meshz + z0 + 1;
 	  i++;
@@ -381,7 +382,7 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
 	int xm = mesh->XGLOBAL(mesh->xend)+x-mesh->xend-1;
 	int x0 = mesh->XGLOBAL(mesh->xend)+x-mesh->xend;
 	int z0 = z;
-	if(flags & INVERT_AC_IN_GRAD) {
+	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  mumps_struc.irn_loc[i] = x0*meshz + z0 + 1; // Indices for fortran arrays that start at 1
 	  mumps_struc.jcn_loc[i] = x0*meshz + z0 + 1;
 	  i++;
@@ -556,14 +557,14 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
   sol.setIndex(y);
   
   // Set Dirichlet boundary conditions through rhs if needed
-  if (!(flags && INVERT_AC_IN_GRAD+INVERT_IN_RHS)) {
+  if (!(inner_boundary_flags && INVERT_AC_GRAD+INVERT_RHS)) {
     if (mesh->firstX())
       for (int z=0; z<mesh->ngz-1; z++)
 	for (int x=mesh->xstart-1; x>=0; x--) {
 	  b[x][z]=0.;
 	}
   }
-  if (!(flags && INVERT_AC_OUT_GRAD+INVERT_OUT_RHS)) {
+  if (!(outer_boundary_flags && INVERT_AC_GRAD+INVERT_RHS)) {
     if (mesh->lastX())
       for (int z=0; z<mesh->ngz-1; z++)
 	for (int x=mesh->xend+1; x<mesh->ngx; x++) {
@@ -608,7 +609,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
     for(int x=0; x<mesh->xstart; x++)
       for(int z=0; z<mesh->ngz-1; z++) {
 	// Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
-	if(flags & INVERT_AC_IN_GRAD)
+	if(inner_boundary_flags & INVERT_AC_GRAD)
 	  if( fourth_order ) {
 	    // Fourth Order Accuracy on Boundary
 	    mumps_struc.a_loc[i] = -25.0 / (12.0*mesh->dx[x][y]);
@@ -798,7 +799,7 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
       for(int z=0; z<mesh->ngz-1; z++) {
 	
 	// Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
-	if(flags & INVERT_AC_OUT_GRAD) {
+	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  if( fourth_order ) {
 	    // Fourth Order Accuracy on Boundary
 	    mumps_struc.a_loc[i] = 25.0 / (12.0*mesh->dx[x][y]); 

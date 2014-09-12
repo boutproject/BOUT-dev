@@ -42,8 +42,8 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
-KarniadakisSolver::KarniadakisSolver() : Solver() {
-  canReset = true;
+KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
+  canReset = true;  
 }
 
 KarniadakisSolver::~KarniadakisSolver() {
@@ -94,8 +94,6 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
   save_vars(f0);
   
   // Get options
-  Options *options = Options::getRoot();
-  options = options->getSection("solver");
   OPTION(options, timestep, tstep);
   
   // Make sure timestep divides into tstep
@@ -142,23 +140,11 @@ int KarniadakisSolver::run() {
     // Call RHS to communicate and get auxilliary variables
     load_vars(f0);
     run_rhs(simtime);
-
-    /// Write the restart file
-    restart.write();
-    
-    if((archive_restart > 0) && (iteration % archive_restart == 0)) {
-      restart.write("%s/BOUT.restart_%04d.%s", restartdir.c_str(), iteration, restartext.c_str());
-    }
     
     /// Call the monitor function
     
     if(call_monitors(simtime, i, nsteps)) {
       // User signalled to quit
-      
-      // Write restart to a different file
-      restart.write("%s/BOUT.final.%s", restartdir.c_str(), restartext.c_str());
-      
-      output.write("Monitor signalled to quit. Returning\n");
       break;
     }
     // Reset iteration and wall-time count

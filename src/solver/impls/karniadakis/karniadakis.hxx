@@ -42,7 +42,7 @@ class KarniadakisSolver;
 
 class KarniadakisSolver : public Solver {
  public:
-  KarniadakisSolver();
+  KarniadakisSolver(Options *options);
   ~KarniadakisSolver();
 
   BoutReal getCurrentTimestep() {return timestep; }

@@ -67,18 +67,20 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else opts=opt;
   
   #ifdef CHECK
-    implemented_flags = INVERT_AC_IN_GRAD
-		      + INVERT_AC_OUT_GRAD
-		      + INVERT_START_NEW
-// 		      + INVERT_4TH_ORDER
-		      + INVERT_IN_SET
-		      + INVERT_OUT_SET
-		      + INVERT_IN_RHS
-		      + INVERT_OUT_RHS
-		      ;
-    if ( flags & ~implemented_flags) {
-      if (flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    implemented_flags = INVERT_START_NEW;
+    implemented_boundary_flags = INVERT_AC_GRAD
+				 + INVERT_SET
+				 + INVERT_RHS
+				 ;
+    if ( global_flags & ~implemented_flags ) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
   #endif
 
@@ -378,7 +380,7 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 
   // Ensure that the matrix is constructed first time
   //   coefchanged = true;
-  lastflag = -1;
+  //  lastflag = -1;
 }
 
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
@@ -387,9 +389,15 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
 
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   #ifdef CHECK
-    if ( flags & !implemented_flags) {
-      if (flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    if ( global_flags & !implemented_flags) {
+      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
       throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
+    }
+    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
   #endif
   
@@ -420,7 +428,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	    {
 	      PetscScalar val;
 	      // Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
-	      if(flags & INVERT_AC_IN_GRAD) 
+	      if(inner_boundary_flags & INVERT_AC_GRAD) 
 		{
 		  if( fourth_order )
 		    {
@@ -456,8 +464,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	      
 	      // Set Components of RHS and trial solution
 	      val=0;
-	      if( flags & INVERT_IN_RHS )         val = b[x][z];
-	      else if( flags & INVERT_IN_SET )    val = x0[x][z];
+	      if( inner_boundary_flags & INVERT_RHS )         val = b[x][z];
+	      else if( inner_boundary_flags & INVERT_SET )    val = x0[x][z];
 	      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
 
 	      val = x0[x][z];
@@ -646,7 +654,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	      Element(i,x,z, 0, 0, val, MatA ); 
 	      
 	      // Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
-	      if(flags & INVERT_AC_OUT_GRAD) 
+	      if(outer_boundary_flags & INVERT_AC_GRAD) 
 		{
 		  if( fourth_order )
 		    {
@@ -678,8 +686,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	      
 	      // Set Components of RHS
 	      val=0;
-	      if( flags & INVERT_OUT_RHS )        val = b[x][z];
-	      else if( flags & INVERT_OUT_SET )   val = x0[x][z];
+	      if( outer_boundary_flags & INVERT_RHS )        val = b[x][z];
+	      else if( outer_boundary_flags & INVERT_SET )   val = x0[x][z];
 	      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
 
 	      val = x0[x][z];
@@ -698,8 +706,8 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
 
-  // Record which flags were used for this matrix
-  lastflag = flags;
+//   // Record which flags were used for this matrix
+//   lastflag = flags;
   
   // Assemble RHS Vector
   VecAssemblyBegin(bs);
@@ -729,7 +737,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
     
-    if( !( flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    if( !( global_flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
     
     KSPGetPC(ksp,&pc);
     

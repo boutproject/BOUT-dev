@@ -55,6 +55,8 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
   OPTION(options, symmetricGlobalX,  true);
   OPTION(options, symmetricGlobalY,  false);
 
+  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
+  
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
   comm_middle = MPI_COMM_NULL;
@@ -1365,8 +1367,15 @@ const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
 
 int BoutMesh::communicate(FieldGroup &g) {
+  msg_stack.push("BoutMesh::communicate");
+  
+  // Send data
   comm_handle c = send(g);
-  return wait(c);
+  // Wait for data from other processors
+  int status =  wait(c);
+  
+  msg_stack.pop();
+  return status;
 }
 
 void BoutMesh::post_receive(CommHandle &ch) {
@@ -3170,6 +3179,7 @@ BoutReal BoutMesh::GlobalY(int jy) const {
 }
 
 void BoutMesh::outputVars(Datafile &file) {
+  file.add(zperiod, "zperiod", 0);
   file.add(MXSUB, "MXSUB", 0);
   file.add(MYSUB, "MYSUB", 0);
   file.add(MXG,   "MXG",   0);

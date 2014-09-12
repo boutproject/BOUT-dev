@@ -82,6 +82,16 @@ class Field3D : public Field, public FieldData {
   /// Return a pointer to the time-derivative field
   Field3D* timeDeriv();
 
+  /// Flux Coordinate Independent (FCI) method
+  Field3D* yup();
+  const Field3D* yup() const;
+  
+  Field3D* ydown();
+  const Field3D* ydown() const;
+
+  // Nullify yup and ydown
+  void resetFCI();
+  
   /// Returns DC component
   const Field2D DC() const;
 
@@ -286,6 +296,9 @@ class Field3D : public Field, public FieldData {
   CELL_LOC location; // Location of the variable in the cell
   
   Field3D *deriv; ///< Time derivative (may be NULL)
+
+  /// FCI method
+  Field3D *yup_field, *ydown_field;
 };
 
 // Non-member overloaded operators

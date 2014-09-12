@@ -59,7 +59,7 @@ typedef int (*TimestepMonitorFunc)(Solver *solver, BoutReal simtime, BoutReal la
 #ifndef __SOLVER_H__
 #define __SOLVER_H__
 
-#include "globals.hxx"
+//#include "globals.hxx"
 #include "field2d.hxx"
 #include "field3d.hxx"
 #include "vector2d.hxx"
@@ -137,7 +137,7 @@ class Solver {
   /// Return the current internal timestep 
   virtual BoutReal getCurrentTimestep() {return 0.0;}
   
-  int solve();
+  int solve(int nout=-1, BoutReal dt=0.0);
 
   /// Initialise the solver
   /// NOTE: nout and tstep should be passed to run, not init.
@@ -160,6 +160,9 @@ class Solver {
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
+  /// Add evolving variables to output (dump) file
+  void outputVars(Datafile &outputfile);
+
   static Solver* create(Options *opts = NULL);
   static Solver* create(SolverType &type, Options *opts = NULL);
   
@@ -200,7 +203,7 @@ protected:
   vector< VarStr<Vector3D> > v3d;
   
   Datafile restart; ///< Restart file object
-
+  
   string restartdir;  ///< Directory for restart files
   string restartext;  ///< Restart file extension
   int archive_restart;
@@ -254,6 +257,8 @@ protected:
   void loop_vars(BoutReal *udata, SOLVER_VAR_OP op);
 
   bool varAdded(const string &name); // Check if a variable has already been added
+  
+  bool enablerestart; ///< Is restarting enabled?
 };
 
 #endif // __SOLVER_H__

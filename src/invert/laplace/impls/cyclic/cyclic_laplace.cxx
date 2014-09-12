@@ -108,12 +108,12 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   // Get the width of the boundary
   
   int inbndry = 2, outbndry=2;
-  if(flags & INVERT_BNDRY_ONE) {
+  if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
-  if(flags & INVERT_BNDRY_IN_ONE)
+  if(inner_boundary_flags & INVERT_BNDRY_ONE)
     inbndry = 1;
-  if(flags & INVERT_BNDRY_OUT_ONE)
+  if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
   if(dst) {
@@ -121,8 +121,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     for(int ix=xs; ix <= xe; ix++) {
       // Take DST in Z direction and put result in k1d  
 
-      if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
-         ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+      if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+         ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
         DST(x0[ix]+1, mesh->ngz-3 , k1d);
       }else {
@@ -148,7 +148,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
                    jy, 
                    kz == 0, // True for the component constant (DC) in Z
                    kwave,   // Z wave number
-                   flags, 
+                   global_flags, inner_boundary_flags, outer_boundary_flags,
                    &A, &C, &D,
                    false);  // Don't include guard cells in arrays
     }
@@ -177,8 +177,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     for(int ix=xs; ix <= xe; ix++) {
       // Take FFT in Z direction, apply shift, and put result in k1d
     
-      if(((ix < inbndry) && (flags & INVERT_IN_SET) && mesh->firstX()) ||
-         ((xe-ix < outbndry) && (flags & INVERT_OUT_SET) && mesh->lastX())) {
+    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
         ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
       }else {
@@ -198,9 +198,9 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       tridagMatrix(a[kz], b[kz], c[kz],
                    bcmplx[kz], 
                    jy, 
-                   kz == 0, // True for the component constant (DC) in Z
+                   kz, // True for the component constant (DC) in Z
                    kwave,   // Z wave number
-                   flags, 
+                   global_flags, inner_boundary_flags, outer_boundary_flags,
                    &A, &C, &D,
                    false);  // Don't include guard cells in arrays
     }

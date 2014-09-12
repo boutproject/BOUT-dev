@@ -1,38 +1,41 @@
 /*
  * MMS test in tokamak geometry
  *
+ * Independently tests the bracket operator, perpendicular diffusion,
+ * and parallel diffusion operators.
+ * 
  */
 
 #include <bout/physicsmodel.hxx>
 #include <field_factory.hxx>
 #include <derivs.hxx>
 
-Field3D a;
-
 class TokamakMMS : public PhysicsModel {
 public:
   int init(bool restarting) {
-    solver->add(f, "f");
+    solver->add(laplacepar, "laplacepar");
+    solver->add(delp2, "delp2");
+    solver->add(advect, "advect");
     
     // Load the metric tensor
     LoadMetric(1.0, 1.0);
 
-    SAVE_REPEAT(a);
-
     return 0;
   }
   int rhs(BoutReal time) {
-    mesh->communicate(f);
+    mesh->communicate(advect, delp2, laplacepar);
     
-    g = FieldFactory::get()->create3D("g:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
+    drive = FieldFactory::get()->create3D("drive:solution", Options::getRoot(), mesh, CELL_CENTRE, time);
     
-    /*ddt(f) = -1e-3*bracket(g, f, BRACKET_ARAKAWA)
-      - 10.*(SQ(SQ(mesh->dx))*D4DX4(f) + SQ(SQ(mesh->dz))*D4DZ4(f))
-      ;
-    */
-    ddt(f) = 1e-5*Delp2(f);
+    // Test bracket advection operator
+    ddt(advect) = -1e-3*bracket(drive, advect, BRACKET_ARAKAWA)
+      - 10.*(SQ(SQ(mesh->dx))*D4DX4(advect) + SQ(SQ(mesh->dz))*D4DZ4(advect));
     
-    a = copy(ddt(f));
+    // Test perpendicular diffusion operator
+    ddt(delp2) = 1e-5*Delp2(delp2);
+    
+    // Test parallel diffusion operator
+    ddt(laplacepar) = Laplace_par(laplacepar);
     
     return 0;
   }
@@ -76,7 +79,7 @@ public:
     BoutReal sbp = 1.0; // Sign of Bp
     if(min(Bpxy, true) < 0.0)
       sbp = -1.0;
-  
+
     mesh->g11 = (Rxy*Bpxy)^2;
     mesh->g22 = 1.0 / (hthe^2);
     mesh->g33 = (sinty^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
@@ -97,7 +100,8 @@ public:
   }
 
 private:
-  Field3D f,g;
+  Field3D drive;
+  Field3D laplacepar, delp2, advect;
 };
 
 BOUTMAIN(TokamakMMS);

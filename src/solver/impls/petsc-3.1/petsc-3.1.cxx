@@ -495,13 +495,6 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata)
     if(call_monitors(simtime, iteration, nout)) {
       // User signalled to quit
       
-      // Write restart to a different file
-      char restartname[512];
-      sprintf(restartname, "data/BOUT.final.%d.pdb", MYPE);
-      restart.write(restartname);
-      
-      output.write("Monitor signalled to quit. Returning\n");
-      
       PetscFunctionReturn(1);
     }
     */
