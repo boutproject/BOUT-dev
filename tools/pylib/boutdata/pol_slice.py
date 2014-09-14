@@ -33,7 +33,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
 
     try:
         # Open the grid file
-        gf = Datafile(gridfile)
+        gf = DataFile(gridfile)
 
         # Check the grid size is correct
         if gf.read("nx") != nx:
@@ -67,8 +67,9 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
     # Perform 2D slice
         
     zind = (zangle - zShift) / dz
-    z0 = int(np.floor(zind))
-    p = zind - float(z0)
+    z0f = np.floor(zind)
+    z0 = z0f.astype(int)
+    p = zind - z0f
     
     # Make z0 between 0 and (nz-2)
     z0 = ((z0 % (nz-1)) + (nz-1)) % (nz-1)
