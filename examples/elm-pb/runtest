@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+from boututils import shell,launch,getmpirun
+from boutdata import collect
+
+import numpy as np
+
+print "Making 3-field ELM simulation"
+shell("make > make.log")
+
+# Run simulation
+nproc = 2
+MPIRUN = getmpirun()
+s, out = launch("./elm_pb ", runcmd=MPIRUN, nproc=nproc)
+
+# Get time base
+tarr = collect("t_array", path="data")
+nt = len(tarr)
+
+# Read pressure
+p = collect("P", path="data")
+
+# Calculate RMS in toroidal direction
+prms = np.sqrt(np.mean(p**2, axis=3))
+
+growth = np.gradient(np.log(prms[:,42,32]))
+
+# Final growth-rate
+gamma = growth[-2]
+
+import matplotlib.pyplot as plt
+
+plt.plot(tarr, prms[:,42,32], label='Outboard midplane')
+plt.plot( [tarr[0], tarr[-1]],
+	  [prms[-1,42,32]*np.exp(gamma*(tarr[0] - tarr[-1])), prms[-1,42,32]], '--', label=r'$\gamma =$'+str(gamma))
+
+plt.yscale('log')
+plt.grid()
+
+plt.xlabel(r"Time [$1/\tau_A$]")
+plt.ylabel("Pressure RMS")
+
+plt.legend(loc="upper left")
+
+plt.savefig("growth.pdf")
+
+plt.show()
