@@ -66,7 +66,10 @@ class DataFile:
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
         if (not write) and (not create):
-            self.handle = Dataset(filename, "r")
+            if library == "scipy":
+                self.handle = Dataset(filename, "r", mmap=False)
+            else:
+                self.handle = Dataset(filename, "r")
         elif create:
             if library == "Scientific":
                 self.handle = Dataset(filename, "w", 
