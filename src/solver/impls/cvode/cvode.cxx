@@ -597,45 +597,48 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   if(mesh->firstX() && !mesh->periodicX) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols);
+	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 
   // Lower Y boundary region
   for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); xi++) {
     for(jy=0;jy<mesh->ystart;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols);
+      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 
   // Bulk of points
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
     for (jy=mesh->ystart; jy <= mesh->yend; jy++)
-      loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols);
+      loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, false);
   
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
-      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols);
+      loop_abstol_values_op(*xi, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 
   // Outer X boundary
   if(mesh->lastX() && !mesh->periodicX) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols);
+	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 }
 
-void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols) {
+void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
   for(int i=0;i<f2dtols.size();i++) {
+    if(bndry && !f2d[i].evolve_bndry)
+      continue;
     abstolvec_data[p] = f2dtols[i];
     p++;
   }
   
   for (int jz=0; jz < mesh->ngz-1; jz++) {
-    
     // Loop over 3D variables
     for(int i=0;i<f3dtols.size();i++) {
+      if(bndry && !f3d[i].evolve_bndry)
+	continue;
       abstolvec_data[p] = f3dtols[i];
       p++;
     }  
