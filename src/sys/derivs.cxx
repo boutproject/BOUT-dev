@@ -520,6 +520,25 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
   return result;
 }
 
+BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
+  BoutReal result;
+  
+  if (v.p>0 && v.m>0) {
+    // Extrapolate v to centre from below, use 2nd order backward difference on f
+    result = (v.m + .25*(v.p-v.mm)) * (.5*f.mm - 2.*f.m + 1.5*f.c);
+  }
+  else if (v.p<0 && v.m<0) {
+    // Extrapolate v to centre from above, use 2nd order forward difference on f
+    result = (v.p + .25*(v.m-v.pp)) * (-1.5*f.c + 2.*f.p - .5*f.pp);
+  }
+  else {
+    // Velocity changes sign, hence is almost zero: use centred interpolation/differencing
+    result = .25 * (v.p + v.m) * (f.p - f.m);
+  }
+  
+  return result;
+}
+
 BoutReal VDDX_C2_stag(stencil &v, stencil &f) {
   // Result is needed at location of f: interpolate v to f's location and take an unstaggered derivative of f
   return 0.5*(v.p+v.m) * 0.5*(f.p - f.m);
@@ -570,6 +589,7 @@ struct DiffNameLookup {
 
 /// Differential function name/code lookup
 static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding"},
+					  {DIFF_U2, "U2", "Second order upwinding"},
 					  {DIFF_C2, "C2", "Second order central"},
 					  {DIFF_W2, "W2", "Second order WENO"},
 					  {DIFF_W3, "W3", "Third order WENO"},
@@ -623,6 +643,7 @@ static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_s
 
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
+					{DIFF_U2, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
 					{DIFF_C2, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
 					{DIFF_C4, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
 					{DIFF_DEFAULT} };
