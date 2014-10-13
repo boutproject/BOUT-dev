@@ -441,25 +441,39 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 		    }
 		  else
 		    {
-		      // Second Order Accuracy on Boundary
-		      Element(i,x,z, 0, 0, -3.0 / (2.0*mesh->dx[x][y]), MatA ); 
-		      Element(i,x,z, 1, 0,  2.0 / mesh->dx[x][y], MatA ); 
-		      Element(i,x,z, 2, 0, -1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      // Second Order Accuracy on Boundary
+// 		      Element(i,x,z, 0, 0, -3.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      Element(i,x,z, 1, 0,  2.0 / mesh->dx[x][y], MatA ); 
+// 		      Element(i,x,z, 2, 0, -1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// // 			Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+// // 			Element(i,x,z, 4, 0, 0.0, MatA );
+		      // Second Order Accuracy on Boundary, set half-way between grid points
+		      Element(i,x,z, 0, 0, -1.0 / mesh->dx[x][y], MatA ); 
+		      Element(i,x,z, 1, 0,  1.0 / mesh->dx[x][y], MatA ); 
+		      Element(i,x,z, 2, 0, 0.0, MatA ); 
 // 			Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // 			Element(i,x,z, 4, 0, 0.0, MatA );
 		    }
 		}
 	      else
 		{
-		  // Set Diagonal Values to 1
-		  val = 1;
-		  Element(i,x,z, 0, 0, val, MatA );
-		  
-		  // Set off diagonal elements to zero
-		  Element(i,x,z, 1, 0, 0.0, MatA );
-		  Element(i,x,z, 2, 0, 0.0, MatA );
-		  Element(i,x,z, 3, 0, 0.0, MatA );
-		  Element(i,x,z, 4, 0, 0.0, MatA );
+		  if (fourth_order)
+		    {
+		      // Set Diagonal Values to 1
+		      Element(i,x,z, 0, 0, 1., MatA );
+		      
+		      // Set off diagonal elements to zero
+		      Element(i,x,z, 1, 0, 0.0, MatA );
+		      Element(i,x,z, 2, 0, 0.0, MatA );
+		      Element(i,x,z, 3, 0, 0.0, MatA );
+		      Element(i,x,z, 4, 0, 0.0, MatA );
+		    }
+		  else
+		    {
+		      Element(i,x,z, 0, 0, 0.5, MatA );
+		      Element(i,x,z, 1, 0, 0.5, MatA );
+		      Element(i,x,z, 2, 0, 0., MatA );
+		    }
 		}
 	      
 	      // Set Components of RHS and trial solution
@@ -667,22 +681,36 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 		    }
 		  else
 		    {
-		      // Second Order Accuracy on Boundary
-		      Element(i,x,z,  0, 0,  3.0 / (2.0*mesh->dx[x][y]), MatA ); 
-		      Element(i,x,z, -1, 0, -2.0 / mesh->dx[x][y], MatA ); 
-		      Element(i,x,z, -2, 0,  1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      // Second Order Accuracy on Boundary
+// 		      Element(i,x,z,  0, 0,  3.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      Element(i,x,z, -1, 0, -2.0 / mesh->dx[x][y], MatA ); 
+// 		      Element(i,x,z, -2, 0,  1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// // 			Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
+// // 			Element(i,x,z, -4, 0,  0.0, MatA );
+		      // Second Order Accuracy on Boundary, set half-way between grid points
+		      Element(i,x,z,  0, 0,  1.0 / mesh->dx[x][y], MatA ); 
+		      Element(i,x,z, -1, 0, -1.0 / mesh->dx[x][y], MatA ); 
+		      Element(i,x,z, -2, 0,  0.0, MatA ); 
 // 			Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // 			Element(i,x,z, -4, 0,  0.0, MatA );
 		    }
 		}
-	      else
-		{
-		  // Set off diagonal elements to zero
-		  Element(i,x,z, -1, 0, 0.0, MatA );
-		  Element(i,x,z, -2, 0, 0.0, MatA );
-		  Element(i,x,z, -3, 0, 0.0, MatA );
-		  Element(i,x,z, -4, 0, 0.0, MatA );
-		}            
+	      else {
+		if (fourth_order)
+		  {
+		    // Set off diagonal elements to zero
+		    Element(i,x,z, -1, 0, 0.0, MatA );
+		    Element(i,x,z, -2, 0, 0.0, MatA );
+		    Element(i,x,z, -3, 0, 0.0, MatA );
+		    Element(i,x,z, -4, 0, 0.0, MatA );
+		  }
+		else
+		  {
+		    Element(i,x,z,  0, 0, 0.5 , MatA ); 
+		    Element(i,x,z, -1, 0, 0.5 , MatA ); 
+		    Element(i,x,z, -2, 0, 0., MatA ); 
+		  }
+	      }
 	      
 	      // Set Components of RHS
 	      val=0;

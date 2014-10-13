@@ -233,6 +233,11 @@ BoutReal VDDX_U1(stencil &v, stencil &f) {
   return v.c>=0.0 ? v.c*(f.c - f.m): v.c*(f.p - f.c);
 }
 
+/// upwind, 2nd order
+BoutReal VDDX_U2(stencil &v, stencil &f) {
+  return v.c>=0.0 ? v.c*(1.5*f.c - 2.0*f.m + 0.5*f.mm): v.c*(-0.5*f.pp + 2.0*f.p - 1.5*f.c);
+}
+
 /// upwind, 4th order
 BoutReal VDDX_U4(stencil &v, stencil &f) {
   return v.c >= 0.0 ? v.c*(4.*f.p - 12.*f.m + 2.*f.mm + 6.*f.c)/12.
@@ -520,6 +525,25 @@ BoutReal VDDX_U1_stag(stencil &v, stencil &f) {
   return result;
 }
 
+BoutReal VDDX_U2_stag(stencil &v, stencil &f) {
+  BoutReal result;
+  
+  if (v.p>0 && v.m>0) {
+    // Extrapolate v to centre from below, use 2nd order backward difference on f
+    result = (1.5*v.m - .5*v.mm) * (.5*f.mm - 2.*f.m + 1.5*f.c);
+  }
+  else if (v.p<0 && v.m<0) {
+    // Extrapolate v to centre from above, use 2nd order forward difference on f
+    result = (1.5*v.p - .5*v.pp) * (-1.5*f.c + 2.*f.p - .5*f.pp);
+  }
+  else {
+    // Velocity changes sign, hence is almost zero: use centred interpolation/differencing
+    result = .25 * (v.p + v.m) * (f.p - f.m);
+  }
+  
+  return result;
+}
+
 BoutReal VDDX_C2_stag(stencil &v, stencil &f) {
   // Result is needed at location of f: interpolate v to f's location and take an unstaggered derivative of f
   return 0.5*(v.p+v.m) * 0.5*(f.p - f.m);
@@ -570,15 +594,16 @@ struct DiffNameLookup {
 
 /// Differential function name/code lookup
 static DiffNameLookup DiffNameTable[] = { {DIFF_U1, "U1", "First order upwinding"},
+					  {DIFF_U2, "U2", "Second order upwinding"},
 					  {DIFF_C2, "C2", "Second order central"},
 					  {DIFF_W2, "W2", "Second order WENO"},
 					  {DIFF_W3, "W3", "Third order WENO"},
 					  {DIFF_C4, "C4", "Fourth order central"},
 					  {DIFF_U4, "U4", "Fourth order upwinding"},
-                                          {DIFF_S2, "S2", "Smoothing 2nd order"},
+                      {DIFF_S2, "S2", "Smoothing 2nd order"},
 					  {DIFF_FFT, "FFT", "FFT"},
-                                          {DIFF_NND, "NND", "NND"},
-                                          {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
+                      {DIFF_NND, "NND", "NND"},
+                      {DIFF_SPLIT, "SPLIT", "Split into upwind and central"},
 					  {DIFF_DEFAULT}}; // Use to terminate the list
 
 /// First derivative lookup table
@@ -598,6 +623,7 @@ static DiffLookup SecondDerivTable[] = { {DIFF_C2, D2DX2_C2, D2DX2_F2, D2DX2_B2,
 
 /// Upwinding functions lookup table
 static DiffLookup UpwindTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1, NULL, NULL},
+					{DIFF_U2, NULL, NULL, NULL, VDDX_U2, NULL, NULL}, 
 				    {DIFF_C2, NULL, NULL, NULL, VDDX_C2, NULL, NULL},
 				    {DIFF_U4, NULL, NULL, NULL, VDDX_U4, NULL, NULL},
 				    {DIFF_W3, NULL, NULL, NULL, VDDX_WENO3, NULL, NULL},
@@ -623,6 +649,7 @@ static DiffLookup SecondStagDerivTable[] = { {DIFF_C4, D2DX2_C4_stag, D2DX2_F4_s
 
 /// Upwinding staggered lookup
 static DiffLookup UpwindStagTable[] = { {DIFF_U1, NULL, NULL, NULL, VDDX_U1_stag, NULL, NULL},
+					{DIFF_U2, NULL, NULL, NULL, VDDX_U2_stag, NULL, NULL},
 					{DIFF_C2, NULL, NULL, NULL, VDDX_C2_stag, NULL, NULL},
 					{DIFF_C4, NULL, NULL, NULL, VDDX_C4_stag, NULL, NULL},
 					{DIFF_DEFAULT} };
