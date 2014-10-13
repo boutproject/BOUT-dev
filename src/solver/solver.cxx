@@ -727,17 +727,17 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
   }
   
   try {
+    // Call physics model monitor
+    if(model) {
+      if(model->runOutputMonitor(simtime, iter, NOUT))
+        throw BoutException("Monitor signalled to quit");
+    }
+    
     // Call C function monitors
     for(std::list<MonitorFunc>::iterator it = monitors.begin(); it != monitors.end(); it++) {
       // Call each monitor one by one
       int ret = (*it)(this, simtime,iter, NOUT);
       if(ret)
-        throw BoutException("Monitor signalled to quit");
-    }
-  
-    // Call physics model monitor
-    if(model) {
-      if(model->runOutputMonitor(simtime, iter, NOUT))
         throw BoutException("Monitor signalled to quit");
     }
   } catch (BoutException &e) {

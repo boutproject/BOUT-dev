@@ -59,7 +59,7 @@ flux = SPLIT
 
 [solver] 
 
-type = cvode
+#type = cvode
 
 atol = 1.0e-15 # absolute tolerance
 rtol = 1.0e-7  # relative tolerance

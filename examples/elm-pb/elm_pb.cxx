@@ -621,11 +621,11 @@ int physics_init(bool restarting)
 	
 	Jpar = 0.0;
 	Laplacian *psiLap = Laplacian::create();
-	psiLap->setFlags(INVERT_OUT_SET | INVERT_AC_IN_GRAD);
+        psiLap->setInnerBoundaryFlags(INVERT_AC_GRAD); // Zero gradient inner BC
+        psiLap->setOuterBoundaryFlags(INVERT_SET);  // Set to rmp_Psi0 on outer boundary
 	rmp_Psi0 = psiLap->solve(Jpar, rmp_Psi0);
 	mesh->communicate(rmp_Psi0);
-	//rmp_Psi0 = invert_laplace(Jpar, INVERT_4TH_ORDER | INVERT_OUT_SET, NULL);
-	// Currently only implemented for 4th-order serial inversion (NXPE = 1)
+	
       }
     }else {
       // Load perturbation from grid file.

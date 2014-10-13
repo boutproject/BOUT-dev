@@ -25,11 +25,13 @@
 #include <invert_laplace.hxx>
 #include <math.h>
 
+#include <bout/constants.hxx>
+
 // Constants
 const BoutReal MU0 = 4.0e-7*PI;
-const BoutReal Charge = 1.60217646e-19; // electron charge e (C)
-const BoutReal Mi = 2.0*1.67262158e-27; // Ion mass
-const BoutReal Me = 9.1093816e-31;  // Electron mass
+const BoutReal Charge = SI::qe; // electron charge e (C)
+const BoutReal Mi = 2.0*SI::Mp; // Ion mass
+const BoutReal Me = SI::Me;  // Electron mass
 const BoutReal Me_Mi = Me / Mi; // Electron mass / Ion mass
 
 // Normalisation factors

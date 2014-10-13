@@ -7,6 +7,7 @@
 #include <boutmain.hxx>
 
 #include <invert_laplace.hxx>
+#include <bout/constants.hxx>
 #include <math.h>
 
 // Evolving quantities
