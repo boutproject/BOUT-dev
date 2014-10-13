@@ -65,6 +65,8 @@ CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
   
   jacfunc = NULL;
+  
+  canReset = true;
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -127,7 +129,8 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int maxl;
   int mudq, mldq;
   int mukeep, mlkeep;
-  bool use_precon, use_jacobian, use_vector_abstol;
+  int max_order;
+  bool use_precon, use_jacobian, use_vector_abstol, stablimdet;
   BoutReal start_timestep, max_timestep;
   bool adams_moulton, func_iter; // Time-integration method
   int MXSUB = mesh->xend - mesh->xstart + 1;
@@ -138,6 +141,8 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("mlkeep", mlkeep, n3Dvars()+n2Dvars());
   options->get("ATOL", abstol, 1.0e-12);
   options->get("RTOL", reltol, 1.0e-5);
+  options->get("cvode_max_order", max_order, -1);
+  options->get("cvode_stability_limit_detection", stablimdet, false);
   options->get("use_vector_abstol",use_vector_abstol,false);
   if (use_vector_abstol) {
     Options *abstol_options = Options::getRoot();
@@ -208,6 +213,18 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     throw BoutException("CVodeInit failed\n");
   msg_stack.pop();
 
+  msg_stack.push("Calling CVodeSetMaxOrder");
+  if (max_order>0) {
+    if ( CVodeSetMaxOrd(cvode_mem, max_order) < 0)
+      throw BoutException("CVodeSetMaxOrder failed\n");
+  }
+  
+  msg_stack.push("Calling CVodeSetstabLimDet");
+  if (stablimdet) {
+    if ( CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
+      throw BoutException("CVodeSetstabLimDet failed\n");
+  }
+  
   if (use_vector_abstol) {
     msg_stack.push("Calling CVodeSStolerances");
     if( CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0 )
@@ -643,6 +660,16 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
       p++;
     }  
   }
+}
+
+void CvodeSolver::resetInternalFields() {
+  
+  if (save_vars(NV_DATA_P(uvec)))
+    throw BoutException("\tERROR: resetting variable values failed\n");
+  
+  if ( CVodeReInit(cvode_mem, simtime, uvec) < 0 )
+    throw BoutException("CVodeReInit failed\n");
+  
 }
 
 #endif

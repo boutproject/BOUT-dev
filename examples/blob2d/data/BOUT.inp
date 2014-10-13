@@ -10,12 +10,12 @@ TIMESTEP = 1e2  # time between outputs
 MXG = 2
 MYG = 0      # No y derivatives, so no guard cells needed in y
 
-MZ = 128     # number of points in z direction (2^n)
-ZMAX = 160   # Chosen so dx*nx = ZMAX * 2*pi
+MZ = 64     # number of points in z direction (2^n)
+ZMAX = 80   # Chosen so dx*nx = ZMAX * 2*pi
 
 [mesh]
 
-nx = 132
+nx = 68
 ny = 1
 
 dx = 8.0

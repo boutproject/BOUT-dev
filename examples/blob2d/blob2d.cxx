@@ -89,7 +89,7 @@ int physics_init(bool restarting) {
 #define vE_Grad(f, p) ( bracket(p, f, BRACKET_SIMPLE) )
 
 int physics_run(BoutReal t) {
-  
+output<<t<<endl;  
   // Run communications 
   ////////////////////////////////////////////////////////////////////////////
   mesh->communicate(n,omega);
