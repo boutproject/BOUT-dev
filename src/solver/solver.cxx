@@ -470,16 +470,20 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
  **************************************************************************/
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
+  
+  bool dump_on_restart = false;
   if(NOUT < 0) {
     /// Get options
     
     Options *globaloptions = Options::getRoot(); // Default from global options
     OPTION(globaloptions, NOUT, 1);
     OPTION(globaloptions, TIMESTEP, 1.0);
+    OPTION(globaloptions, dump_on_restart, false);
     
     // Check specific solver options, which override global options
     OPTION(options, NOUT, NOUT);
     OPTION(options, TIMESTEP, TIMESTEP);
+    OPTION(options, dump_on_restart, dump_on_restart);
   }
   
   output.write("Solver running for %d outputs with timestep of %e\n", NOUT, TIMESTEP);
@@ -498,7 +502,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   Timer timer("run"); // Start timer
   
-  if (!restarting) {
+  if (!restarting || dump_on_restart) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
