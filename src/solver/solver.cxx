@@ -540,7 +540,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
     }
     
-    return 1;
+    throw e;
   }
 
   return 0;
