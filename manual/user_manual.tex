@@ -1208,7 +1208,19 @@ To restart from where the previous run finished, just add the keyword {\bf resta
 \begin{verbatim}
  $ mpirun -np 2 ./conduction restart
 \end{verbatim}
-Equivalently, put ``restart=true'' near the top of the BOUT.inp input file.
+Equivalently, put ``restart=true'' near the top of the BOUT.inp input file. Note that this will
+overwrite the existing data in the ``BOUT.dmp.*.nc'' files. If you want to append to them instead
+then add the keyword append to the command, for example:
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart append
+\end{verbatim}
+or also put ``append=true'' near the top of the BOUT.inp input file.
+
+When restarting simulations BOUT++ will by default output the initial state, unless appending to
+existing data files when it will not output until the first timestep is completed. To override this
+behaviour, you can specify the option dump\_on\_restart manully. If dump\_on\_restart is true then
+the initial state will always be written out, if false then it never will be (regardless of the
+values of restart and append).
 
 If you need to restart from a different point in your simulation, or the BOUT.restart files
 become corrupted, you can either use archived restart files, or create new restart files.
