@@ -479,10 +479,10 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     
     // Check specific solver options, which override global options
     OPTION(options, NOUT, NOUT);
-    OPTION(options, TIMESTEP, TIMESTEP);
+    options->get("output_step", TIMESTEP, TIMESTEP);
   }
   
-  output.write("Solver running for %d outputs with timestep of %e\n", NOUT, TIMESTEP);
+  output.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
   
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {

@@ -289,7 +289,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   }
   
   // Standard (non-staggered) case
-  for(; !bndry->isDone(); bndry->next()) {
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
     BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
                            + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
@@ -302,6 +302,19 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
       
       f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+    }
+    for(int i=1;i<bndry->width;i++) {
+      // Set any other guard cells using the values on the cells
+      int xi = bndry->x + i*bndry->bx;
+      int yi = bndry->y + i*bndry->by;
+      xnorm = mesh->GlobalX(xi);
+      ynorm = mesh->GlobalY(yi);
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+        if(fg) {
+          val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+        }
+        f(xi, yi, zk) = val;
+      }
     }
   }
 }

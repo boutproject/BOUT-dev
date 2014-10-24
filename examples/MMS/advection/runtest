@@ -16,9 +16,11 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 
+import pickle
+
 MPIRUN = getmpirun()
 
-print("Making MMS diffusion test")
+print("Making MMS advection test")
 shell("make > make.log")
 
 # List of options to be passed for each test
@@ -30,11 +32,13 @@ options = [
     ]
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64, 128, 256]
+nxlist = [16, 32, 64, 128, 256, 512, 1024]
 
-nproc = 1
+nproc = 8
 
 success = True
+
+dt0 = 0.15
 
 err_2_all = []
 err_inf_all = []
@@ -47,7 +51,7 @@ for opts,label,sym in options:
 
         dx = 2.*pi / (nx)
 
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(0.1/nx)
+        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) +" solver:timestep="+str(dt0/nx)
         
         print("  Running with " + args)
 
@@ -58,7 +62,7 @@ for opts,label,sym in options:
         cmd = "./advection "+args
         # Launch using MPI
         s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-        
+
         # Save output to log file
         f = open("run.log."+str(nx), "w")
         f.write(out)
@@ -66,7 +70,7 @@ for opts,label,sym in options:
         
         # Collect data
         E_f = collect("E_f", tind=[1,1], info=False, path="data")
-        #E_f = E_f[0,1:-1,0,:]
+        #E_f = E_f[0,2:-2,0,:]
         
         # Average error over domain
         l2 = sqrt(mean(E_f**2))
@@ -112,6 +116,11 @@ for opts,label,sym in options:
 
         plt.show()
         plt.close()
+
+# Save the data
+with open("advection.pkl", "wb") as output:
+    pickle.dump(err_2_all, output)
+    pickle.dump(err_inf_all, output)
 
 # Plot all results for comparison
 plt.figure()
