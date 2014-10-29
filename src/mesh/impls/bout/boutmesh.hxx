@@ -147,7 +147,6 @@ class BoutMesh : public Mesh {
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
-  //int  TwistOrder;   // Order of twist-shift interpolation
   
   bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
   bool symmetricGlobalY;

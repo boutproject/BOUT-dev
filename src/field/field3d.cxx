@@ -1416,27 +1416,11 @@ void Field3D::setStencil(bstencil *fval, bindex *bx, bool need_x) const
       fval->x2m = block->data[bx->jx2m][bx->jy][bx->jz];
     }
   }
-
-  // TWIST-SHIFT CONDITION
-  if(bx->yp_shift) {
-    fval->yp = interpZ(bx->jx, bx->jyp, bx->jz, bx->yp_offset, mesh->TwistOrder);
-  }else
-    fval->yp = block->data[bx->jx][bx->jyp][bx->jz];
   
-  if(bx->ym_shift) {
-    fval->ym = interpZ(bx->jx, bx->jym, bx->jz, bx->ym_offset, mesh->TwistOrder);
-  }else
-    fval->ym = block->data[bx->jx][bx->jym][bx->jz];
-
-  if(bx->y2p_shift) {
-    fval->y2p = interpZ(bx->jx, bx->jy2p, bx->jz, bx->yp_offset, mesh->TwistOrder);
-  }else
-    fval->y2p = block->data[bx->jx][bx->jy2p][bx->jz];
-
-  if(bx->y2m_shift) {
-    fval->y2m = interpZ(bx->jx, bx->jy2m, bx->jz, bx->ym_offset, mesh->TwistOrder);
-  }else
-    fval->y2m = block->data[bx->jx][bx->jy2m][bx->jz];
+  fval->yp = block->data[bx->jx][bx->jyp][bx->jz];
+  fval->ym = block->data[bx->jx][bx->jym][bx->jz];
+  fval->y2p = block->data[bx->jx][bx->jy2p][bx->jz];
+  fval->y2m = block->data[bx->jx][bx->jy2m][bx->jz];
 
   // Z neighbours
   
@@ -1605,39 +1589,11 @@ void Field3D::setYStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 #endif
 
   fval.c = block->data[bx.jx][bx.jy][bx.jz];
-
-  
-  //if((!TwistShift) || (mesh->TwistOrder == 0)) {
-  // Either no twist-shift, or already done in communicator
     
   fval.p = block->data[bx.jx][bx.jyp][bx.jz];
   fval.m = block->data[bx.jx][bx.jym][bx.jz];
   fval.pp = block->data[bx.jx][bx.jy2p][bx.jz];
   fval.mm = block->data[bx.jx][bx.jy2m][bx.jz];
-  /*
-    }else {
-    // TWIST-SHIFT CONDITION
-    if(bx.yp_shift) {
-    fval.p = interpZ(bx.jx, bx.jyp, bx.jz, bx.yp_offset, mesh->TwistOrder);
-    }else
-    fval.p = block->data[bx.jx][bx.jyp][bx.jz];
-    
-    if(bx.ym_shift) {
-    fval.m = interpZ(bx.jx, bx.jym, bx.jz, bx.ym_offset, mesh->TwistOrder);
-    }else
-    fval.m = block->data[bx.jx][bx.jym][bx.jz];
-    
-    if(bx.y2p_shift) {
-    fval.pp = interpZ(bx.jx, bx.jy2p, bx.jz, bx.yp_offset, mesh->TwistOrder);
-    }else
-    fval.pp = block->data[bx.jx][bx.jy2p][bx.jz];
-    
-    if(bx.y2m_shift) {
-    fval.mm = interpZ(bx.jx, bx.jy2m, bx.jz, bx.ym_offset, mesh->TwistOrder);
-    }else
-    fval.mm = block->data[bx.jx][bx.jy2m][bx.jz];
-    }
-  */
 
   if(mesh->StaggerGrids && (loc != CELL_DEFAULT) && (loc != location)) {
     // Non-centred stencil

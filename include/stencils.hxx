@@ -198,10 +198,6 @@ typedef struct {
     jx2m, jx2p,  /* (+/-) 2*dx */
     jy2m, jy2p,  /* (+/-) 2*dy */
     jz2m, jz2p;  /* (+/-) 2*dz */
-  
-  // Switches for twist-shift condition
-  bool yp_shift, y2p_shift;
-  bool ym_shift, y2m_shift;
 
   BoutReal yp_offset, ym_offset; // Toroidal offset (In index space)
   

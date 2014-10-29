@@ -312,7 +312,6 @@ int BoutMesh::load() {
   
   /// Get mesh options
   OPTION(options, TwistShift,   false);
-  OPTION(options, TwistOrder,   0);
   OPTION(options, ShiftOrder,   0);
   OPTION(options, ShiftXderivs, false);
   OPTION(options, IncIntShear,  false);
@@ -348,11 +347,7 @@ int BoutMesh::load() {
   }
 
   if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(TwistOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", TwistOrder);
+    output.write("Applying Twist-Shift condition. Interpolation: FFT");
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
@@ -1692,7 +1687,7 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if(TwistShift && (TwistOrder == 0)) {
+  if(TwistShift) {
     int jx, jy;
     
     // Perform Twist-shift using shifting method (rather than in setStencil)

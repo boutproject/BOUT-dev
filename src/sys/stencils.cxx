@@ -759,36 +759,6 @@ void calc_index(bindex *bx)
   bx->jz2p = (bx->jzp+1)%ncz;
   bx->jz2m = (bx->jzm+ncz-1)%ncz;
 
-  bx->yp_shift = bx->y2p_shift = false;
-  bx->ym_shift = bx->y2m_shift = false;
-
-  /* Twist-Shift boundary condition */
-  /*
-  if(TwistShift && (mesh->TwistOrder != 0)) {
-    if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
-	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
-      
-      bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==mesh->ystart) {
-	bx->ym_shift = bx->y2m_shift = true;
-	
-      }else if (bx->jy==mesh->ystart+1) {
-	bx->y2m_shift = true;
-      }
-    }
-    if( (TS_up_in  && (UDATA_INDEST  != -1) && (bx->jx <  UDATA_XSPLIT)) ||
-	(TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
-      
-      bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==mesh->yend) {
-	bx->yp_shift = bx->y2p_shift = true;
-      } else if (bx->jy==mesh->yend-1) {
-	bx->y2m_shift = true;
-      }
-    }
-  }
-  */
-
   /* shifted z-indices for x differencing */
   if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
     bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;

@@ -325,19 +325,6 @@ int QuiltMesh::wait(comm_handle handle) {
     if(ch->request[ind]->guard != NULL) {
       unpackData(ch->request[ind]->buffer, ch->request[ind]->guard, ch->var_list);
       
-      /*
-      // Twist-shift condition
-      if(TwistShift && (mesh->TwistOrder == 0) && ch->range[ind]->zshift) {
-        GuardRange *r = ch->range[ind];
-        for(vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-          if((*it)->is3D()) {
-            // Only need to shift 3D variables
-            for(int jx=r->xmin;jx<=r->xmax;jx++)
-              for(int jy=r->ymin;jy <= r->ymax; jy++)
-                (*it)->shiftZ(jx, jy, r->shiftAngle[jx-r->xmin]);
-          }
-          }
-      */
     }
     // Mark the request as NULL
     ch->mpi_rq[ind] = MPI_REQUEST_NULL;

@@ -189,7 +189,6 @@ class Mesh {
   
   bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
 
-  int  TwistOrder;   // Order of twist-shift interpolation
   bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
