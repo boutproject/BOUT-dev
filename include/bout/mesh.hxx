@@ -135,12 +135,6 @@ class Mesh {
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
   
-  
-  virtual const Field2D averageY(const Field2D &f) = 0;
-  virtual const Field3D averageY(const Field3D &f);
-  virtual const Field2D averageX(const Field2D &f) = 0;
-  virtual const Field3D averageX(const Field3D &f);
-  
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;
   virtual const RangeIterator iterateBndryUpperY() const = 0;
@@ -174,9 +168,7 @@ class Mesh {
   virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;
 
   /// volume integral
-  virtual BoutReal Average_XY(const Field2D &var)=0;
   virtual const Field3D Switch_YZ(const Field3D &var)=0;
-  virtual BoutReal Vol_Integral(const Field2D &var)=0;
 
   /// Size of the mesh on this processor including guard/boundary cells
   int ngx, ngy, ngz;

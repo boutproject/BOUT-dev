@@ -79,14 +79,6 @@ class BoutMesh : public Mesh {
   comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag);
   comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag);
   
-  /////////////////////////////////////////////
-  // Y-Z communications
-
-  const Field2D averageY(const Field2D&);
-  const Field3D averageY(const Field3D &f);
-  const Field2D averageX(const Field2D &f);
-  const Field3D averageX(const Field3D &f);
-
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
   const RangeIterator iterateBndryUpperY() const;
@@ -112,8 +104,6 @@ class BoutMesh : public Mesh {
 
   //added for volume average and integral
   const Field3D Switch_YZ(const Field3D &var);
-  BoutReal Average_XY(const Field2D &var);
-  BoutReal Vol_Integral(const Field2D &var);
 
  private:
   string gridname;

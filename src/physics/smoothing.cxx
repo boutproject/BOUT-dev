@@ -2,6 +2,9 @@
  * Smoothing operators
  *
  *
+ * 2014-10-29 Ben Dudson <bd512@york.ac.uk>
+ *    * Moving averaging routines here from Mesh
+ * 
  * 2010-05-17 Ben Dudson <bd512@york.ac.uk>
  *    * Added nonlinear filter
  * 
@@ -33,6 +36,9 @@
 #include <smoothing.hxx>
 #include <bout_types.hxx>
 #include <msg_stack.hxx>
+
+#include <utils.hxx>
+#include <bout/constants.hxx>
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
@@ -96,20 +102,317 @@ const Field3D smooth_y(const Field3D &f) {
   return result;
 }
 
+/*!
+
+  Issues
+  ======
+
+  Creates static arrays
+  
+  Not thread safe
+  
+  Assumes every processor has the same domain shape
+ */
 const Field2D averageX(const Field2D &f) {
-  return mesh->averageX(f);
+  static BoutReal *input = NULL, *result;
+ 
+  msg_stack.push("averageX(Field2D)");
+ 
+  int ngx = mesh->ngx;
+  int ngy = mesh->ngy;
+
+  if(input == NULL) {
+    input = new BoutReal[ngy];
+    result = new BoutReal[ngy];
+  }
+ 
+  BoutReal **fd = f.getData();
+  
+  // Average on this processor
+  for(int y=0;y<ngy;y++) {
+    input[y] = 0.;
+    // Sum values, not including boundaries
+    for(int x=mesh->xstart;x<=mesh->xend;x++) {
+      input[y] += fd[x][y];
+    }
+    input[y] /= (mesh->xend - mesh->xstart + 1);
+  }
+
+  Field2D r;
+  r.allocate();
+  BoutReal **rd = r.getData();
+
+  MPI_Comm comm_x = mesh->getXcomm();
+
+  int np;
+  MPI_Comm_size(comm_x, &np);
+  
+  if(np == 1) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = input[y];
+  }else {
+    MPI_Allreduce(input, result, ngy, MPI_DOUBLE, MPI_SUM, comm_x);
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = result[y] / (BoutReal) np;
+  }
+
+  msg_stack.pop();
+  
+  return r;
 }
 
+/*!
+
+  Issues
+  ======
+
+  Creates static arrays
+  
+  Not thread safe
+  
+  Assumes every processor has the same domain shape
+ */
 const Field3D averageX(const Field3D &f) {
-  return mesh->averageX(f);
+  static BoutReal **input = NULL, **result;
+
+  msg_stack.push("averageX(Field3D)");
+
+  int ngx = mesh->ngx;
+  int ngy = mesh->ngy;
+  int ngz = mesh->ngz;
+
+  if(input == NULL) {
+    input = rmatrix(ngy, ngz);
+    result = rmatrix(ngy, ngz);
+  }
+  
+  BoutReal ***fd = f.getData();
+  
+  // Average on this processor
+  for(int y=0;y<ngy;y++)
+    for(int z=0;z<ngz;z++) {
+      input[y][z] = 0.;
+      // Sum values, not including boundaries
+      for(int x=mesh->xstart;x<=mesh->xend;x++) {
+        input[y][z] += fd[x][y][z];
+      }
+      input[y][z] /= (mesh->xend - mesh->xstart + 1);
+    }
+  
+  Field3D r;
+  r.allocate();
+  BoutReal ***rd = r.getData();
+  
+  MPI_Comm comm_x = mesh->getXcomm();
+ 
+  int np;
+  MPI_Comm_size(comm_x, &np);
+  if(np > 1) {
+    MPI_Allreduce(*input, *result, ngy*ngz, MPI_DOUBLE, MPI_SUM, comm_x);
+    
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = result[y][z] / (BoutReal) np;
+        }
+  }else {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = input[y][z];
+        }
+  }
+
+  msg_stack.pop();
+  
+  return r;
 }
 
+/*!
+
+  Issues
+  ======
+  
+  Important: Only works if there are no branch cuts
+
+  Creates static arrays
+  
+  Not thread safe
+  
+  Assumes every processor has the same domain shape
+  
+ */
 const Field2D averageY(const Field2D &f) {
-  return mesh->averageY(f);
+  static BoutReal *input = NULL, *result;
+ 
+#ifdef CHECK
+  msg_stack.push("averageY(Field2D)");
+#endif
+ 
+  int ngx = mesh->ngx;
+  int ngy = mesh->ngy;
+
+  if(input == NULL) {
+    input = new BoutReal[ngx];
+    result = new BoutReal[ngx];
+  }
+ 
+  BoutReal **fd = f.getData();
+  
+  // Average on this processor
+  for(int x=0;x<ngx;x++) {
+    input[x] = 0.;
+    // Sum values, not including boundaries
+    for(int y=mesh->ystart;y<=mesh->yend;y++) {
+      input[x] += fd[x][y];
+    }
+    input[x] /= (mesh->yend - mesh->ystart + 1);
+  }
+
+  Field2D r;
+  r.allocate();
+  BoutReal **rd = r.getData();
+
+  /// NOTE: This only works if there are no branch-cuts
+  MPI_Comm comm_inner = mesh->getYcomm(0);
+  
+  int np;
+  MPI_Comm_size(comm_inner, &np);
+  
+  if(np == 1) {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = input[x];
+  }else {
+    MPI_Allreduce(input, result, ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        rd[x][y] = result[x] / (BoutReal) np;
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return r;
 }
 
+/*!
+
+  Issues
+  ======
+  
+  Important: Only works if there are no branch cuts
+
+  Creates static arrays
+  
+  Not thread safe
+  
+  Assumes every processor has the same domain shape
+  
+ */
 const Field3D averageY(const Field3D &f) {
-  return mesh->averageY(f);
+  static BoutReal **input = NULL, **result;
+    
+  msg_stack.push("averageY(Field3D)");
+
+  int ngx = mesh->ngx;
+  int ngy = mesh->ngy;
+  int ngz = mesh->ngz;
+  
+  if(input == NULL) {
+    input = rmatrix(ngx, ngz);
+    result = rmatrix(ngx, ngz);
+  }
+  
+  BoutReal ***fd = f.getData();
+  
+  // Average on this processor
+  for(int x=0;x<ngx;x++)
+    for(int z=0;z<ngz;z++) {
+      input[x][z] = 0.;
+      // Sum values, not including boundaries
+      for(int y=mesh->ystart;y<=mesh->yend;y++) {
+        input[x][z] += fd[x][y][z];
+      }
+      input[x][z] /= (mesh->yend - mesh->ystart + 1);
+    }
+  
+  Field3D r;
+  r.allocate();
+  BoutReal ***rd = r.getData();
+
+  /// NOTE: This only works if there are no branch-cuts
+  MPI_Comm comm_inner = mesh->getYcomm(0);
+  
+  int np;
+  MPI_Comm_size(comm_inner, &np);
+  if(np > 1) {
+    MPI_Allreduce(*input, *result, ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
+    
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = result[x][z] / (BoutReal) np;
+        }
+  }else {
+    for(int x=0;x<ngx;x++)
+      for(int y=0;y<ngy;y++)
+        for(int z=0;z<ngz;z++) {
+          rd[x][y][z] = input[x][z];
+        }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  
+  return r;
+}
+
+/*!
+  Volume integral of Field2D variable
+  Developed by T. Rhee and S. S. Kim
+  
+  Issues
+  ======
+  
+  Assumes every processor has the same domain shape
+ */
+BoutReal Average_XY(const Field2D &var) {
+  Field2D result;
+  BoutReal Vol_Loc, Vol_Glb;
+  int i;
+  result.allocate();  //initialize
+  result=averageY(var);
+
+  Vol_Loc = 0.;
+  Vol_Glb = 0.;
+
+  for (i=mesh->xstart;i<=mesh->xend;i++)
+      Vol_Loc +=  result[i][0];
+
+  MPI_Comm comm_x = mesh->getXcomm();
+
+  MPI_Allreduce(&Vol_Loc,&Vol_Glb,1,MPI_DOUBLE,MPI_SUM,comm_x);
+  Vol_Glb /= (BoutReal)(mesh->GlobalNx-2*mesh->xstart);
+
+  return Vol_Glb;
+}
+
+BoutReal Vol_Integral(const Field2D &var) {
+  Field2D result;
+  BoutReal Int_Glb;
+  result.allocate();  //initialize
+  result = mesh->J * var * mesh->dx * mesh->dy;
+
+  Int_Glb = 0.;
+  Int_Glb = Average_XY(result);
+  Int_Glb *= (BoutReal) ( (mesh->GlobalNx-2*mesh->xstart)*mesh->GlobalNy )*PI * 2.;
+
+  return Int_Glb;
 }
 
 const Field3D smoothXY(const Field3D &f) {
