@@ -220,8 +220,6 @@ class Mesh {
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
   
-  bool non_uniform; // Use corrections for non-uniform meshes
-  
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
   
  protected:

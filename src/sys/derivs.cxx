@@ -836,6 +836,12 @@ inner_boundary_upwind_func sfFDDX_in, sfFDDY_in;
 outer_boundary_upwind_func sfFDDX_out, sfFDDY_out;
 
 /*******************************************************************************
+ * Options / settings
+ *******************************************************************************/
+
+static bool non_uniform; // Use corrections for non-uniform meshes
+
+/*******************************************************************************
  * Initialisation
  *******************************************************************************/
 
@@ -964,6 +970,7 @@ int derivs_init() {
   
   // Get the options
   Options *options = Options::getRoot();
+  OPTION(options, non_uniform,  false);
   OPTION(options, StaggerGrids,   false);
 
   output.write("Setting X differencing methods\n");
@@ -2061,7 +2068,7 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   result = applyXdiff(f, func, func_in, func_out, dd);
   result.setLocation(diffloc);
   
-  if(mesh->non_uniform) {
+  if(non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dx*applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
   }
@@ -2092,7 +2099,7 @@ const Field2D D2DX2(const Field2D &f) {
   Field2D dd = mesh->dx*mesh->dx;
   result = applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out, dd);
   
-  if(mesh->non_uniform) {
+  if(non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dx * applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
   }
@@ -2162,7 +2169,7 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   result = applyYdiff(f, func, func_in, func_out, dd);
   result.setLocation(diffloc);
 
-  if(mesh->non_uniform) {
+  if(non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dy * applyYdiff(f, fDDY, fDDY_in, fDDY_out, mesh->dy);
   }
