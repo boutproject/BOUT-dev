@@ -116,10 +116,24 @@ void BoutInitialise(int &argc, char **&argv) {
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
   for (int i=1;i<argc;i++) {
+    if (strncasecmp(argv[i], "-h", 2) == 0 ||
+    	strncasecmp(argv[i], "--help", 6) == 0) {
+      // Print help message
+      fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
+      fprintf(stdout, "\n"
+	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
+	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+	      "  -h, --help\t\tThis message\n"
+	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
+	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
+
+      return;
+    }
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
-        fprintf(stderr, "Useage is %s -d <data directory>\n", argv[0]);
+        fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
         return;
       }
       i++;
@@ -128,14 +142,14 @@ void BoutInitialise(int &argc, char **&argv) {
     if (strncasecmp(argv[i], "-f", 2) == 0) {
       // Set options file
       if (i+1 >= argc) {
-        fprintf(stderr, "Useage is %s -f <options filename>\n", argv[0]);
+        fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
         return;
       }
       i++;
       opt_file = argv[i];
     }
   }
-  
+
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));
