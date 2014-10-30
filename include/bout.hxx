@@ -60,9 +60,9 @@
 const BoutReal BOUT_VERSION = 1.1;  ///< Version number
 
 // BOUT++ main functions
-void BoutInitialise(int &argc, char **&argv);
+int BoutInitialise(int &argc, char **&argv);
 int bout_run(Solver *solver, rhsfunc physics_run);
-int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); 
+int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT);
 int BoutFinalise();
 
 #endif // __BOUT_H__
