@@ -88,22 +88,29 @@ char get_spin();                    // Produces a spinning bar
 
 /*!
   Initialise BOUT++
-  
+
   Inputs
   ------
-  
+
   The command-line arguments argc and argv are passed by
   reference, and pointers to these will be stored in various
   places in BOUT++.
-  
+
+  Outputs
+  -------
+
+  Any non-zero return value should halt the simulation. If the return value is
+  less than zero, the exit status from BOUT++ is 0, otherwise it is the return
+  value of BoutInitialise.
+
  */
-void BoutInitialise(int &argc, char **&argv) {
+int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
-  
+
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
@@ -128,13 +135,13 @@ void BoutInitialise(int &argc, char **&argv) {
 	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
 	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
 
-      return;
+      return -1;
     }
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
-        return;
+        return 1;
       }
       i++;
       data_dir = argv[i];
@@ -143,7 +150,7 @@ void BoutInitialise(int &argc, char **&argv) {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
-        return;
+        return 1;
       }
       i++;
       opt_file = argv[i];
@@ -243,7 +250,7 @@ void BoutInitialise(int &argc, char **&argv) {
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
-    return;
+    return 1;
   }
 
   try {
@@ -260,7 +267,7 @@ void BoutInitialise(int &argc, char **&argv) {
     /// Setup derivative methods
     if (derivs_init()) {
       output.write("Failed to initialise derivative methods. Aborting\n");
-      return;
+      return 1;
     }
 
     ////////////////////////////////////////////

@@ -97,16 +97,23 @@ int physics_run(BoutReal t);
 
 int main(int argc, char **argv) {
   /// Start BOUT++
-  BoutInitialise(argc, argv);
-  
+  int init_err = BoutInitialise(argc, argv);
+  if (init_err < 0) {
+    // User printed help message
+    return 0;
+  } else if (init_err > 0) {
+    // Other errors
+    return init_err;
+  }
+
   try {
     /// Create the solver
     solver = Solver::create();
-    
+
     /// Get the restart option
     bool restart;
     OPTION(Options::getRoot(), restart, false);
-    
+
     /// Call the physics initialisation code
     output.write("Initialising physics module\n");
     int msg_point = msg_stack.push("Initialising physics module");
