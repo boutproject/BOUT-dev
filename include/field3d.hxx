@@ -107,9 +107,35 @@ class Field3D : public Field, public FieldData {
   BoutReal& operator[](bindex &bx);
   const BoutReal& operator[](bindex &bx) const;
   
-  BoutReal& operator()(int jx, int jy, int jz);
-  const BoutReal& operator()(int jx, int jy, int jz) const;
-
+  inline BoutReal& operator()(int jx, int jy, int jz) {
+#if CHECK > 2
+    // Perform bounds checking
+    if(block == NULL)
+      throw BoutException("Field3D: () operator on empty data");
+    
+    if((jx < 0) || (jx >= mesh->ngx) || 
+       (jy < 0) || (jy >= mesh->ngy) || 
+       (jz < 0) || (jz >= mesh->ngz))
+      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
+			  jx, jy, jz, mesh->ngx, mesh->ngy, mesh->ngz);
+#endif
+    return block->data[jx][jy][jz];
+  }
+  
+  inline const BoutReal& operator()(int jx, int jy, int jz) const {
+#if CHECK > 2
+    if(block == NULL)
+      throw BoutException("Field3D: () operator on empty data");
+    
+    if((jx < 0) || (jx >= mesh->ngx) || 
+       (jy < 0) || (jy >= mesh->ngy) || 
+       (jz < 0) || (jz >= mesh->ngz))
+      throw BoutException("Field3D: (%d, %d, %d) operator out of bounds (%d, %d, %d)", 
+			  jx, jy, jz, mesh->ngx, mesh->ngy, mesh->ngz);
+#endif
+    return block->data[jx][jy][jz];
+  }
+  
   /// Assignment operators
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);
