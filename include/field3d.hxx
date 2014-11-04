@@ -174,12 +174,12 @@ class Field3D : public Field, public FieldData {
   /// Multiplication
   Field3D & operator*=(const Field3D &rhs);
   Field3D & operator*=(const Field2D &rhs);
-  Field3D & operator*=(const BoutReal rhs);
+  Field3D & operator*=(const BoutReal &rhs);
   
   /// Division
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
-  Field3D & operator/=(const BoutReal rhs);
+  Field3D & operator/=(const BoutReal &rhs);
 
   /// Exponentiation (use pow() function)
   Field3D & operator^=(const Field3D &rhs);
@@ -256,13 +256,6 @@ class Field3D : public Field, public FieldData {
 
   /// Take a slice through the data at constant y
   const FieldPerp slice(int y) const;
-
-  // Functions
-  
-  const Field3D sqrt() const;
-  const Field3D abs() const;
-  BoutReal min(bool allpe=false) const;
-  BoutReal max(bool allpe=false) const;
 
   // Friend functions
 
