@@ -188,11 +188,11 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 	o_nnz[localN-1-i]=0;
     }
     
-    if (mesh->getNXPE()>1) {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
-    }
-    else {
+    if (mesh->firstX() && mesh->lastX()) {
+      // Only one processor in X
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    }else {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
     }
   }
   else {
@@ -237,11 +237,10 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 	o_nnz[localN-1-i]=0;
     }
     
-    if (mesh->getNXPE()>1) {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
-    }
-    else {
+    if (mesh->firstX() && mesh->lastX()) {
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    } else {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
     }
   }
   PetscFree( d_nnz );
