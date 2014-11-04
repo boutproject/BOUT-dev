@@ -112,6 +112,9 @@ const Field3D smooth_y(const Field3D &f) {
   Not thread safe
   
   Assumes every processor has the same domain shape
+
+  Will only work if X communicator is constant in Y
+  so no processor/branch cuts in X
  */
 const Field2D averageX(const Field2D &f) {
   static BoutReal *input = NULL, *result;
@@ -170,6 +173,10 @@ const Field2D averageX(const Field2D &f) {
   Not thread safe
   
   Assumes every processor has the same domain shape
+  
+  Will only work if X communicator is constant in Y
+  so no processor/branch cuts in X
+  
  */
 const Field3D averageX(const Field3D &f) {
   static BoutReal **input = NULL, **result;
@@ -368,6 +375,9 @@ const Field3D averageY(const Field3D &f) {
   ======
   
   Assumes every processor has the same domain shape
+  
+  Will only work if X communicator is constant in Y
+  so no processor/branch cuts in X
  */
 BoutReal Average_XY(const Field2D &var) {
   Field2D result;

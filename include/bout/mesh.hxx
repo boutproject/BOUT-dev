@@ -51,6 +51,8 @@ class Mesh;
 #include "boundary_region.hxx"
 #include "sys/range.hxx" // RangeIterator
 
+#include "bout/deprecated.hxx"
+
 #include <bout/griddata.hxx>
 
 #include <list>
@@ -112,7 +114,8 @@ class Mesh {
   virtual comm_handle irecvXOut(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvXIn(BoutReal *buffer, int size, int tag) = 0;
 
-  virtual MPI_Comm getXcomm() const = 0; // Return X communicator
+  DEPRECATED(MPI_Comm getXcomm()) {return getXcomm(0);}
+  virtual MPI_Comm getXcomm(int jy) const = 0; // Return X communicator
   virtual MPI_Comm getYcomm(int jx) const = 0; // Return Y communicator
 
   //virtual bool periodicX() const = 0;                     ///< Test if a surface is periodic in X

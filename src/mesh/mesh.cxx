@@ -320,7 +320,7 @@ bool Mesh::hasBndryLowerY() {
   
   int mybndry = (int) !(iterateBndryLowerY().isDone());
   int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(yend));
   answer = (bool) allbndry;
   calc = true;
   return answer;
@@ -332,7 +332,7 @@ bool Mesh::hasBndryUpperY() {
   
   int mybndry = (int) !(iterateBndryUpperY().isDone());
   int allbndry;
-  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm());
+  MPI_Allreduce(&mybndry, &allbndry, 1, MPI_INT, MPI_BOR, getXcomm(ystart));
   answer = (bool) allbndry;
   calc = true;
   return answer;
