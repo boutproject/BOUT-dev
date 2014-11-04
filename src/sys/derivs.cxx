@@ -1088,7 +1088,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
   stencil s;
   do {
     var.setXStencil(s, bx, loc);
-    r[bx.jx][bx.jy] = func(s) / dd[bx.jx][bx.jy];
+    result(bx.jx,bx.jy) = func(s) / dd(bx.jx,bx.jy);
   }while(next_index2(&bx));
 #endif // _OPENMP
 
@@ -1103,7 +1103,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
 	bx.jx=it.ind;
 	calc_index(&bx);
 	var.setXStencil(s, bx, loc);
-	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+	result(bx.jx,bx.jy) = func(s) / dd(bx.jx, bx.jy);
       }
     #ifdef CHECK
       result.bndry_ydown = true;
@@ -1115,7 +1115,7 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
 	bx.jx=it.ind;
 	calc_index(&bx);
 	var.setXStencil(s, bx, loc);
-	r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+	result(bx.jx,bx.jy) = func(s) / dd(bx.jx, bx.jy);
       }
     #ifdef CHECK
       result.bndry_yup = true;
@@ -1129,8 +1129,8 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
       calc_index(&bx);
       var.setXStencil(fs, bx, loc);
       funcs_pair = func_in(fs);
-      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
-      r[bx.jxm][bx.jy] = funcs_pair.outer / dd(bx.jxm, bx.jy);
+      result(bx.jx,bx.jy) = funcs_pair.inner / dd(bx.jx, bx.jy);
+      result(bx.jxm,bx.jy) = funcs_pair.outer / dd(bx.jxm, bx.jy);
     }
     #ifdef CHECK
       result.bndry_xin = true;
@@ -1144,8 +1144,8 @@ const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_der
       calc_index(&bx);
       var.setXStencil(bs, bx, loc);
       funcs_pair = func_out(bs);
-      r[bx.jx][bx.jy] = funcs_pair.inner / dd(bx.jx, bx.jy);
-      r[bx.jxp][bx.jy] = funcs_pair.outer / dd(bx.jxp, bx.jy);
+      result(bx.jx,bx.jy) = funcs_pair.inner / dd(bx.jx, bx.jy);
+      result(bx.jxp,bx.jy) = funcs_pair.outer / dd(bx.jxp, bx.jy);
     }
     #ifdef CHECK
       result.bndry_xout = true;
@@ -1208,7 +1208,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
   do {
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       vs.setXStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+      result(bx.jx,bx.jy,bx.jz) = func(s) / dd(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
 #endif  
@@ -1225,7 +1225,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  vs.setXStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	  result(bx.jx,bx.jy,bx.jz) = func(s) / dd(bx.jx, bx.jy);
 	}
     #ifdef CHECK
       result.bndry_ydown = true;
@@ -1238,7 +1238,7 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
 	  bx.jx=it.ind;
 	  calc_index(&bx);
 	  vs.setXStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s) / dd(bx.jx, bx.jy);
+	  result(bx.jx,bx.jy,bx.jz) = func(s) / dd(bx.jx, bx.jy);
 	}
     #ifdef CHECK
       result.bndry_yup = true;
@@ -1253,8 +1253,8 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
 	calc_index(&bx);
 	vs.setXStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
-	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
-	r[bx.jxm][bx.jy][bx.jz] = funcs_pair.outer / dd(bx.jxm, bx.jy);
+	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner / dd(bx.jx, bx.jy);
+	result(bx.jxm,bx.jy,bx.jz) = funcs_pair.outer / dd(bx.jxm, bx.jy);
       }
     #ifdef CHECK
       result.bndry_xin = true;
@@ -1269,8 +1269,8 @@ const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_der
 	calc_index(&bx);
 	vs.setXStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);
-	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner / dd(bx.jx, bx.jy);
-	r[bx.jxp][bx.jy][bx.jz] = funcs_pair.outer / dd(bx.jxp, bx.jy);
+	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner / dd(bx.jx, bx.jy);
+	result(bx.jxp,bx.jy,bx.jz) = funcs_pair.outer / dd(bx.jxp, bx.jy);
       }
     #ifdef CHECK
       result.bndry_xout = true;
@@ -1328,7 +1328,7 @@ const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_der
   stencil s;
   do{
     var.setYStencil(s, bx, loc);
-    r[bx.jx][bx.jy] = func(s) / dd(bx.jx, bx.jy);
+    result(bx.jx,bx.jy) = func(s) / dd(bx.jx, bx.jy);
   }while(next_index2(&bx));
   //#endif  
 
@@ -1787,7 +1787,6 @@ const Field2D DDY(const Field2D &f) {
 const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax) {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  BoutReal ***r = result.getData();
   
   bindex bx;
   start_index(&bx, RGN_NOBNDRY);
@@ -1798,7 +1797,7 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
       F.setYStencil(fs, bx);
       u.setYStencil(us, bx);
       
-      r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy(bx.jx, bx.jy);
+      result(bx.jx,bx.jy,bx.jz) = DDX_KT(fs, us, Vmax(bx.jx,bx.jy)) / mesh->dy(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
   
@@ -1930,7 +1929,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
           
         irfft(cv, ncz, result[xge][jy]); // Reverse FFT
          
-        result[xge][jy][ncz] = result[xge][jy][0];
+        result(xge,jy,ncz) = result(xge,jy,0);
       }
     }
     
@@ -2314,7 +2313,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 
           irfft(cv, ncz, result[jx][jy]); // Reverse FFT
 	
-          result[jx][jy][ncz] = result[jx][jy][0];
+          result(jx,jy,ncz) = result(jx,jy,0);
         }
       }
     } // End of parallel section
@@ -3086,7 +3085,7 @@ const Field3D FDDX(const Field3D &v, const Field3D &f, DIFF_METHOD method, CELL_
     vp->setXStencil(vval, bx, diffloc);
     fp->setXStencil(fval, bx); // Location is always the same as input
     
-    d[bx.jx][bx.jy][bx.jz] = func(vval, fval) / mesh->dx[bx.jx][bx.jy];
+    result(bx.jx,bx.jy,bx.jz) = func(vval, fval) / mesh->dx(bx.jx,bx.jy);
   }while(next_index3(&bx));
   
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))

@@ -32,6 +32,8 @@ class Field3D;
 #include "stencils.hxx"
 #include "bout_types.hxx"
 
+#include "bout/dataiterator.hxx"
+
 #include "bout/deprecated.hxx"
 
 /// Structure to store blocks of memory for Field3D class
@@ -99,10 +101,21 @@ class Field3D : public Field, public FieldData {
   void setLocation(CELL_LOC loc); // Set variable location
   CELL_LOC getLocation() const; // Variable location
 
-  // Operators
+  
+  /////////////////////////////////////////////////////////
+  // Data access
+  
+  const DataIterator iterator() const;
+  
+  BoutReal& operator[](DataIterator &d) {
+    return operator()(d.x, d.y, d.z);
+  }
+  const BoutReal& operator[](DataIterator &d) const {
+    return operator()(d.x, d.y, d.z);
+  }
   
   /// Allows access to internal data using square-brackets
-  BoutReal** operator[](int jx) const;
+  DEPRECATED(BoutReal** operator[](int jx) const);
   
   BoutReal& operator[](bindex &bx);
   const BoutReal& operator[](bindex &bx) const;
@@ -136,6 +149,9 @@ class Field3D : public Field, public FieldData {
     return block->data[jx][jy][jz];
   }
   
+  /////////////////////////////////////////////////////////
+  // Operators
+
   /// Assignment operators
   Field3D & operator=(const Field3D &rhs);
   Field3D & operator=(const Field2D &rhs);

@@ -188,8 +188,7 @@ class Mesh {
   Field2D zShift; // Z shift for each point (radians)
   
   bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
-
-  bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
+  
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)

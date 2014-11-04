@@ -141,6 +141,12 @@ Field2D & Field2D::operator=(const BoutReal rhs) {
 
 ////////////// Indexing ///////////////////
 
+const DataIterator Field2D::iterator() const {
+  return DataIterator(0, mesh->ngx-1, 
+                      0, mesh->ngy-1,
+                      0, 0);
+}
+
 BoutReal* Field2D::operator[](int jx) const {
 #ifdef CHECK
 

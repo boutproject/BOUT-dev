@@ -252,6 +252,12 @@ CELL_LOC Field3D::getLocation() const {
  *                         OPERATORS 
  ***************************************************************/
 
+const DataIterator Field3D::iterator() const {
+  return DataIterator(0, mesh->ngx-1, 
+                      0, mesh->ngy-1,
+                      0, mesh->ngz-1);
+}
+
 BoutReal** Field3D::operator[](int jx) const {
   ASSERT1(block != NULL);
   ASSERT1(jx >= 0);

@@ -315,7 +315,6 @@ int BoutMesh::load() {
   OPTION(options, ShiftOrder,   0);
   OPTION(options, ShiftXderivs, false);
   OPTION(options, IncIntShear,  false);
-  OPTION(options, BoundaryOnCell, false); // Determine location of boundary
   OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, periodicX, false); // Periodic in X
   

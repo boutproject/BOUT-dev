@@ -158,9 +158,9 @@ int initial_profile(const char *name, Field3D &var)
           cy=Prof1D(ycoord, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
           cz=Prof1D((BoutReal) jz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
 	
-          var[jx][jy][jz] = scale*cx*cy*cz;
-          if(!finite(var[jx][jy][jz])) {
-            output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var[jx][jy][jz]);
+          var(jx,jy,jz) = scale*cx*cy*cz;
+          if(!finite(var(jx,jy,jz))) {
+            output.write("%d, %d, %d -> %e, %e, %e, %e\n", jx, jy, jz, cx, cy, cz, var(jx,jy,jz));
             output.write("%e, %e, %e, %e, %e, %e\n",
                          ycoord, ys_s0, ys_wd, ys_mode, ys_phase, ys_opt);
             throw BoutException("Invalid initial profiles for '%s' at (%d,%d,%d)\n", name, jx, jy, jz);
@@ -175,16 +175,16 @@ int initial_profile(const char *name, Field3D &var)
               // y - i * nycore
               cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
               cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
-              var[jx][jy][jz] += scale*cx*cy*cz;
+              var(jx,jy,jz) += scale*cx*cy*cz;
               
               // y + i * nycore
               cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
               cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
-              var[jx][jy][jz] += scale*cx*cy*cz;
+              var(jx,jy,jz) += scale*cx*cy*cz;
             }
           }else if(Ballooning) {
             // Open surfaces. Not sure what to do, so set to zero
-            var[jx][jy][jz] = 0.;
+            var(jx,jy,jz) = 0.;
           }
           
         }
@@ -201,8 +201,7 @@ int initial_profile(const char *name, Field3D &var)
 }
 
 // For 2D variables almost identical, just no z dependence
-int initial_profile(const char *name, Field2D &var)
-{
+int initial_profile(const char *name, Field2D &var) {
   BoutReal scale;
   int xs_opt, ys_opt;
   int xs_mode, ys_mode;
@@ -269,7 +268,7 @@ int initial_profile(const char *name, Field2D &var)
         cx=Prof1D(xcoord, xs_s0, 0., 1., xs_wd, xs_mode, xs_phase, xs_opt);
         cy=Prof1D(ycoord, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
       
-        var[jx][jy] = scale*cx*cy;
+        var(jx,jy) = scale*cx*cy;
       }
     }
   }
@@ -277,8 +276,7 @@ int initial_profile(const char *name, Field2D &var)
   return(0);
 }
 
-int initial_profile(const char *name, Vector2D &var)
-{
+int initial_profile(const char *name, Vector2D &var) {
   char *s;
 
   s = (char*) malloc(strlen(name)+3);
@@ -462,18 +460,16 @@ BoutReal Prof1D(BoutReal s, BoutReal s0, BoutReal sMin, BoutReal sMax, BoutReal 
   @param[in] n      Mode number. Note that this is mode-number in the domain
   @param[in] phase  Phase shift in units of pi
 */
-const Field3D genZMode(int n, BoutReal phase)
-{
+const Field3D genZMode(int n, BoutReal phase) {
   Field3D result;
 
   result.allocate();
-  BoutReal ***d = result.getData();
   
   for(int jz=0;jz<mesh->ngz;jz++) {
     BoutReal val = sin(phase*PI +  TWOPI * ((BoutReal) jz)/ ((BoutReal) mesh->ngz-1) );
     for(int jx=0;jx<mesh->ngx;jx++)
       for(int jy=0;jy<mesh->ngy;jy++)
-	d[jx][jy][jz] = val;
+	result(jx,jy,jz) = val;
   }
   return result;
 }

@@ -62,7 +62,6 @@ int main(int argc, char **argv) {
   BoutReal ***bd = b.getData();
   BoutReal ***rd = result.getData();
   
-  
   // Nested loops
   clock_t time1 = clock();
   for(int x=0;x<10;x++) {
@@ -97,6 +96,25 @@ int main(int argc, char **argv) {
   output << "Nested: " << time1 << endl;
   output << "C loop: " << time2 << endl;
   output << "Iterator: " << time3 << endl;
+
+  //////////////
+
+  clock_t time4 = clock();
+  for(int x=0;x<10;x++)
+    for(int i=0;i<mesh->ngx;i++)
+      for(int j=0;j<mesh->ngy;j++) 
+        for(int k=0;k<mesh->ngz;k++)
+          result(i,j,k) = a(i,j,k) + b(i,j,k);
+  time4 = clock() - time4;
+
+  clock_t time5 = clock();
+  for(int x=0;x<10;x++)
+    for(DataIterator d = result.iterator(); !d.done(); d++)
+      result[d] = a[d] + b[d];
+  time5 = clock() - time5;
+
+  output << "Field loops   : " << time4 << endl;
+  output << "Field iterator: " << time5 << endl;
   
   BoutFinalise();
   return 0;

@@ -36,6 +36,8 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
+#include "bout/dataiterator.hxx"
+
 #include "bout/deprecated.hxx"
 
 #include <stack>
@@ -72,8 +74,18 @@ class Field2D : public Field, public FieldData {
   Field2D & operator=(const Field2D &rhs);
   Field2D & operator=(const BoutReal rhs);
 
-  // Data indexing
-  BoutReal* operator[](int jx) const;
+  /////////////////////////////////////////////////////////
+  // Data access
+
+  const DataIterator iterator() const;
+  BoutReal& operator[](DataIterator &d) {
+    return operator()(d.x, d.y);
+  }
+  const BoutReal& operator[](DataIterator &d) const {
+    return operator()(d.x, d.y);
+  }
+  
+  DEPRECATED(BoutReal* operator[](int jx) const);
   BoutReal& operator()(int jx, int jy);
   const BoutReal& operator()(int jx, int jy) const;
 
