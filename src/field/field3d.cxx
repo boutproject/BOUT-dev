@@ -258,6 +258,18 @@ const DataIterator Field3D::iterator() const {
                       0, mesh->ngz-1);
 }
 
+const DataIterator Field3D::begin() const {
+  return DataIterator(0, 0, mesh->ngx-1, 
+                      0, 0, mesh->ngy-1,
+                      0, 0, mesh->ngz-1);
+}
+
+const DataIterator Field3D::end() const {
+  return DataIterator(mesh->ngx-1, 0, mesh->ngx-1, 
+                      mesh->ngy-1, 0, mesh->ngy-1,
+                      mesh->ngz-1, 0, mesh->ngz-1);
+}
+
 BoutReal** Field3D::operator[](int jx) const {
   ASSERT1(block != NULL);
   ASSERT1(jx >= 0);

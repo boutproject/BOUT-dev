@@ -78,11 +78,18 @@ class Field2D : public Field, public FieldData {
   // Data access
 
   const DataIterator iterator() const;
+
   BoutReal& operator[](DataIterator &d) {
     return operator()(d.x, d.y);
   }
   const BoutReal& operator[](DataIterator &d) const {
     return operator()(d.x, d.y);
+  }
+  BoutReal& operator[](Indices &i) {
+    return operator()(i.x, i.y);
+  }
+  const BoutReal& operator[](Indices &i) const {
+    return operator()(i.x, i.y);
   }
   
   DEPRECATED(BoutReal* operator[](int jx) const);

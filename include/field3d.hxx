@@ -106,12 +106,21 @@ class Field3D : public Field, public FieldData {
   // Data access
   
   const DataIterator iterator() const;
+
+  const DataIterator begin() const;
+  const DataIterator end() const;
   
   BoutReal& operator[](DataIterator &d) {
     return operator()(d.x, d.y, d.z);
   }
   const BoutReal& operator[](DataIterator &d) const {
     return operator()(d.x, d.y, d.z);
+  }
+  BoutReal& operator[](const Indices &i) {
+    return operator()(i.x, i.y, i.z);
+  }
+  const BoutReal& operator[](const Indices &i) const {
+    return operator()(i.x, i.y, i.z);
   }
   
   /// Allows access to internal data using square-brackets

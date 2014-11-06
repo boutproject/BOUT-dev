@@ -6,15 +6,33 @@
 #ifndef __DATAITERATOR_H__
 #define __DATAITERATOR_H__
 
-class DataIterator {
+#include <iterator>
+#include <iostream>
+
+// Set of indices - DataIterator is dereferenced into these
+struct Indices {
+  int x;
+  int y;
+  int z;
+};
+
+class DataIterator
+  : public std::iterator<std::forward_iterator_tag, Indices> {
 public:
   /// Constructor. This would set ranges. Could depend on thread number
   DataIterator(int xs, int xe,
-               int ys, int ye,
-               int zs, int ze) : x(xs), y(ys), z(zs), 
-                                 xstart(xs), xend(xe), 
-                                 ystart(ys), yend(ye),
-                                 zstart(xs), zend(ze) {
+	       int ys, int ye,
+	       int zs, int ze) : x(xs), y(ys), z(zs),
+				 xstart(xs), xend(xe),
+				 ystart(ys), yend(ye),
+				 zstart(zs), zend(ze) {
+  }
+  DataIterator(int x, int xs, int xe,
+	       int y, int ys, int ye,
+	       int z, int zs, int ze) : x(x), y(y), z(z),
+					xstart(xs), xend(xe),
+					ystart(ys), yend(ye),
+					zstart(zs), zend(ze) {
   }
   
   /// The index variables, updated during loop
@@ -22,7 +40,20 @@ public:
 
   /// Increment operators
   DataIterator& operator++() { next(); return *this; }
-  DataIterator& operator++(int) { next(); return *this; }
+  DataIterator operator++(int) { DataIterator tmp(*this); next(); return tmp; }
+
+  // Comparison operator
+  inline bool operator!=(const DataIterator& rhs) const {
+    return (x != rhs.x) || (y != rhs.y) || (z != rhs.z);
+  }
+
+  // Dereference operators
+  Indices operator*() {
+    return {x, y, z};
+  }
+  const Indices operator*() const {
+    return {x, y, z};
+  }
 
   void start() {
     x = xstart; y = ystart; z = zstart;
@@ -43,13 +74,13 @@ private:
   
   /// Advance to the next index
   void next() {
-    z++;
+    ++z;
     if(z > zend) {
       z = zstart;
-      y++;
+      ++y;
       if(y > yend) {
-        y = ystart;
-        x++;
+	y = ystart;
+	++x;
       }
     }
   }

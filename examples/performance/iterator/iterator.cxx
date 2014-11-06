@@ -335,17 +335,17 @@ int main(int argc, char **argv) {
   time11 = clock() - time11;
 
   // Range-based for (FieldIterator)
-  clock_t time12 = clock();
-  std::chrono::time_point<std::chrono::steady_clock> start12, end12;
-  start12 = std::chrono::steady_clock::now();
-  for(int x=0;x<10;x++) {
-    for (auto r_it : result) {
-      r_it = 3;
-    }
-  }
-  end12 = std::chrono::steady_clock::now();
-  std::chrono::duration<double> elapsed12 = end12 - start12;
-  time12 = clock() - time12;
+  // clock_t time12 = clock();
+  // std::chrono::time_point<std::chrono::steady_clock> start12, end12;
+  // start12 = std::chrono::steady_clock::now();
+  // for(int x=0;x<10;x++) {
+  //   for (FieldIterator r_it : result) {
+  //     r_it = 3;
+  //   }
+  // }
+  // end12 = std::chrono::steady_clock::now();
+  // std::chrono::duration<double> elapsed12 = end12 - start12;
+  // time12 = clock() - time12;
 
   // Range-based for (MeshIterator)
   clock_t time13 = clock();
@@ -363,8 +363,8 @@ int main(int argc, char **argv) {
   output << "TIMING (single fields) \n======================\n";
   output << "Nested (single)			: " << time9 << "\t:" << elapsed9.count() << std::endl;
   output << "C loop (single)			: " << time10 << "\t:" << elapsed10.count() << std::endl;
-  output << "Iterator (single)			: " << time11 << "\t:" << elapsed11.count() << std::endl;
-  output << "Range-based (field) (single)	: " << time12 << "\t:" << elapsed12.count() << std::endl;
+  output << "Iterator (single)		: " << time11 << "\t:" << elapsed11.count() << std::endl;
+  // output << "Range-based (field) (single)	: " << time12 << "\t:" << elapsed12.count() << std::endl;
   output << "Range-based (mesh) (single)	: " << time13 << "\t:" << elapsed13.count() << std::endl;
 
 
