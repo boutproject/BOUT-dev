@@ -1179,12 +1179,12 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
           int zp = (z + 1) % ncz;
           
           // Vx = DDZ(f)
-          vx[x][z] = (fs[x][y][zp] - fs[x][y][zm])/(2.*mesh->dz);
+          vx[x][z] = (fs[x][y][zp] - fs(x,y,zm))/(2.*mesh->dz);
           // Vz = -DDX(f)
-          vz[x][z] = (fs[x-1][y][z] - fs[x+1][y][z])/(0.5*mesh->dx[x-1][y] + mesh->dx[x][y] + 0.5*mesh->dx[x+1][y]);
+          vz[x][z] = (fs(x-1,y,z) - fs(x+1,y,z))/(0.5*mesh->dx[x-1][y] + mesh->dx(x,y) + 0.5*mesh->dx[x+1][y]);
           
           // Set stability condition
-          solver->setMaxTimestep(fabs(mesh->dx[x][y]) / (fabs(vx[x][z]) + 1e-16));
+          solver->setMaxTimestep(fabs(mesh->dx(x,y)) / (fabs(vx[x][z]) + 1e-16));
           solver->setMaxTimestep(mesh->dz / (fabs(vz[x][z]) + 1e-16));
         }
       }
@@ -1200,43 +1200,43 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 
           // X differencing
           if(vx[x][z] > 0.0) {
-            gp = gs[x][y][z]
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x][y][zm] - gs[x][y][z]) : vz[x][z]*(gs[x][y][z] - gs[x][y][zp]) );
+            gp = gs(x,y,z)
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs(x,y,zm) - gs(x,y,z)) : vz[x][z]*(gs(x,y,z) - gs[x][y][zp]) );
             
             
-            gm = gs[x-1][y][z]
-              //+ (0.5*dt/mesh->dz) * ( (vz[x-1][z] > 0) ? vz[x-1][z]*(g[x-1][y][zm] - g[x-1][y][z]) : vz[x-1][z]*(g[x-1][y][z] - g[x-1][y][zp]) );
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x-1][y][zm] - gs[x-1][y][z]) : vz[x][z]*(gs[x-1][y][z] - gs[x-1][y][zp]) );
+            gm = gs(x-1,y,z)
+              //+ (0.5*dt/mesh->dz) * ( (vz[x-1][z] > 0) ? vz[x-1][z]*(g[x-1][y][zm] - g(x-1,y,z)) : vz[x-1][z]*(g(x-1,y,z) - g[x-1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x-1][y][zm] - gs(x-1,y,z)) : vz[x][z]*(gs(x-1,y,z) - gs[x-1][y][zp]) );
             
           }else {
-            gp = gs[x+1][y][z]
-              //+ (0.5*dt/mesh->dz) * ( (vz[x+1][z] > 0) ? vz[x+1][z]*(gs[x+1][y][zm] - gs[x+1][y][z]) : vz[x+1][z]*(gs[x+1][y][z] - gs[x+1][y][zp]) );
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x+1][y][zm] - gs[x+1][y][z]) : vz[x][z]*(gs[x+1][y][z] - gs[x+1][y][zp]) );
+            gp = gs(x+1,y,z)
+              //+ (0.5*dt/mesh->dz) * ( (vz[x+1][z] > 0) ? vz[x+1][z]*(gs[x+1][y][zm] - gs(x+1,y,z)) : vz[x+1][z]*(gs(x+1,y,z) - gs[x+1][y][zp]) );
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x+1][y][zm] - gs(x+1,y,z)) : vz[x][z]*(gs(x+1,y,z) - gs[x+1][y][zp]) );
             
-            gm = gs[x][y][z] 
-              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs[x][y][zm] - gs[x][y][z]) : vz[x][z]*(gs[x][y][z] - gs[x][y][zp]) );
+            gm = gs(x,y,z) 
+              + (0.5*dt/mesh->dz) * ( (vz[x][z] > 0) ? vz[x][z]*(gs(x,y,zm) - gs(x,y,z)) : vz[x][z]*(gs(x,y,z) - gs[x][y][zp]) );
           }
           
-          result[x][y][z] = vx[x][z] * (gp - gm) / mesh->dx[x][y];
+          result(x,y,z) = vx[x][z] * (gp - gm) / mesh->dx(x,y);
           
           // Z differencing
           if(vz[x][z] > 0.0) {
-            gp = gs[x][y][z]
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][z] - gs[x][y][z]) : vx[x][z]*(gs[x][y][z] - gs[x+1][y][z]) );
+            gp = gs(x,y,z)
+              + (0.5*dt/mesh->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs(x-1,y,z) - gs(x,y,z)) : vx[x][z]*(gs(x,y,z) - gs(x+1,y,z)) );
             
-            gm = gs[x][y][zm]
-              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zm] > 0) ? vx[x][zm]*(gs[x-1][y][zm] - gs[x][y][zm]) : vx[x][zm]*(gs[x][y][zm] - gs[x+1][y][zm]) );
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zm] - gs[x][y][zm]) : vx[x][z]*(gs[x][y][zm] - gs[x+1][y][zm]) );
+            gm = gs(x,y,zm)
+              //+ (0.5*dt/mesh->dx(x,y)) * ( (vx[x][zm] > 0) ? vx[x][zm]*(gs[x-1][y][zm] - gs(x,y,zm)) : vx[x][zm]*(gs(x,y,zm) - gs[x+1][y][zm]) );
+              + (0.5*dt/mesh->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zm] - gs(x,y,zm)) : vx[x][z]*(gs(x,y,zm) - gs[x+1][y][zm]) );
           }else {
             gp = gs[x][y][zp]
-              //+ (0.5*dt/mesh->dx[x][y]) * ( (vx[x][zp] > 0) ? vx[x][zp]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][zp]*(gs[x][y][zp] - gs[x+1][y][zp]) );
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][z]*(gs[x][y][zp] - gs[x+1][y][zp]) );
+              //+ (0.5*dt/mesh->dx(x,y)) * ( (vx[x][zp] > 0) ? vx[x][zp]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][zp]*(gs[x][y][zp] - gs[x+1][y][zp]) );
+              + (0.5*dt/mesh->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][z]*(gs[x][y][zp] - gs[x+1][y][zp]) );
             
-            gm = gs[x][y][z]
-              + (0.5*dt/mesh->dx[x][y]) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][z] - gs[x][y][z]) : vx[x][z]*(gs[x][y][z] - gs[x+1][y][z]) );
+            gm = gs(x,y,z)
+              + (0.5*dt/mesh->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs(x-1,y,z) - gs(x,y,z)) : vx[x][z]*(gs(x,y,z) - gs(x+1,y,z)) );
           }
           
-          result[x][y][z] += vz[x][z] * (gp - gm) / mesh->dz;
+          result(x,y,z) += vz[x][z] * (gp - gm) / mesh->dz;
         }
     }
     if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
