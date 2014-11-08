@@ -133,6 +133,9 @@ int BoutMesh::load() {
   GlobalNy = ny + 2*MYG;
   GlobalNz = MZ;
 
+  if(2*MXG >= nx)
+    throw BoutException("nx must be greater than 2*MXG");
+  
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;

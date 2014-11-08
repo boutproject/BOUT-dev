@@ -498,13 +498,13 @@ F3D_UPDATE_F3D(/=,/);    // operator/= Field3D
       /* This is the only reference to this data */          \
       for(int j=0;j<mesh->ngx*mesh->ngy;j++)                 \
         for(int jz=0;jz<mesh->ngz;jz++)                      \
-          block->data[0][j][jz] += d[0][j];                  \
+          block->data[0][j][jz] op d[0][j];                  \
     }else {                                                  \
       /* Need to put result in a new block */                \
       memblock3d *nb = newBlock();                           \
       for(int j=0;j<mesh->ngx*mesh->ngy;j++)                 \
         for(int jz=0;jz<mesh->ngz;jz++)                      \
-          nb->data[0][j][jz] = block->data[0][j][jz] + d[0][j]; \
+          nb->data[0][j][jz] = block->data[0][j][jz] bop d[0][j]; \
       block->refs--;                                         \
       block = nb;                                            \
     }                                                        \
