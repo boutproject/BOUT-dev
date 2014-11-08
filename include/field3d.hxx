@@ -257,12 +257,6 @@ class Field3D : public Field, public FieldData {
   /// Take a slice through the data at constant y
   const FieldPerp slice(int y) const;
 
-  // Friend functions
-
-  friend const Field3D filter(const Field3D &var, int N0);
-  friend const Field3D lowPass(const Field3D &var, int zmax);
-  friend const Field3D lowPass(const Field3D &var, int zmax, int zmin);
-
   // FieldData virtual functions
   
   bool isReal() const   { return true; }         // Consists of BoutReal values
@@ -367,5 +361,9 @@ bool finite(const Field3D &var);
 const Field3D copy(const Field3D &f);
 
 const Field3D floor(const Field3D &var, BoutReal f);
+
+const Field3D filter(const Field3D &var, int N0);
+const Field3D lowPass(const Field3D &var, int zmax);
+const Field3D lowPass(const Field3D &var, int zmax, int zmin);
 
 #endif /* __FIELD3D_H__ */

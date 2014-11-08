@@ -2485,10 +2485,13 @@ const Field3D filter(const Field3D &var, int N0) {
   Field3D result;
   result.allocate();
   
+  BoutReal ***data = var.getData();
+  BoutReal ***r = result.getData();
+
   for(int jx=0;jx<mesh->ngx;jx++) {
     for(int jy=0;jy<mesh->ngy;jy++) {
 
-      rfft(var.block->data[jx][jy], ncz, f); // Forward FFT
+      rfft(data[jx][jy], ncz, f); // Forward FFT
 
       for(int jz=0;jz<=ncz/2;jz++) {
 	
@@ -2498,9 +2501,9 @@ const Field3D filter(const Field3D &var, int N0) {
 	}
       }
 
-      irfft(f, ncz, result.block->data[jx][jy]); // Reverse FFT
+      irfft(f, ncz, r[jx][jy]); // Reverse FFT
 
-      result.block->data[jx][jy][ncz] = result.block->data[jx][jy][0];
+      r[jx][jy][ncz] = r[jx][jy][0];
     }
   }
   
@@ -2508,7 +2511,7 @@ const Field3D filter(const Field3D &var, int N0) {
   result.name = "filter("+var.name+")";
 #endif
   
-  result.location = var.location;
+  result.setLocation(var.getLocation());
 
   return result;
 }
@@ -2600,8 +2603,7 @@ const Field3D filter(const Field3D &var, int N0) {
 */
 
 // Fourier filter in z
-const Field3D lowPass(const Field3D &var, int zmax)
-{
+const Field3D lowPass(const Field3D &var, int zmax) {
   Field3D result;
   static dcomplex *f = NULL;
   int jx, jy, jz;
@@ -2625,21 +2627,24 @@ const Field3D lowPass(const Field3D &var, int zmax)
   
   result.allocate();
 
+  BoutReal ***data = var.getData();
+  BoutReal ***r = result.getData();
+  
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
       // Take FFT in the Z direction
-      rfft(var.block->data[jx][jy], ncz, f);
+      rfft(data[jx][jy], ncz, f);
       
       // Filter in z
       for(jz=zmax+1;jz<=ncz/2;jz++)
 	f[jz] = 0.0;
 
-      irfft(f, ncz, result.block->data[jx][jy]); // Reverse FFT
-      result.block->data[jx][jy][ncz] = result.block->data[jx][jy][0];
+      irfft(f, ncz, r[jx][jy]); // Reverse FFT
+      r[jx][jy][ncz] = r[jx][jy][0];
     }
   }
   
-  result.location = var.location;
+  result.setLocation(var.getLocation());
 
 #ifdef CHECK
   msg_stack.pop();
@@ -2647,9 +2652,9 @@ const Field3D lowPass(const Field3D &var, int zmax)
   
   return result;
 }
+
 // Fourier filter in z with zmin
-const Field3D lowPass(const Field3D &var, int zmax, int zmin)
-{
+const Field3D lowPass(const Field3D &var, int zmax, int zmin) {
   Field3D result;
   static dcomplex *f = NULL;
   int jx, jy, jz;
@@ -2673,10 +2678,13 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin)
   
   result.allocate();
 
+  BoutReal ***data = var.getData();
+  BoutReal ***r = result.getData();
+  
   for(jx=0;jx<mesh->ngx;jx++) {
     for(jy=0;jy<mesh->ngy;jy++) {
       // Take FFT in the Z direction
-      rfft(var.block->data[jx][jy], ncz, f);
+      rfft(data[jx][jy], ncz, f);
       
       // Filter in z
       for(jz=zmax+1;jz<=ncz/2;jz++)
@@ -2686,13 +2694,13 @@ const Field3D lowPass(const Field3D &var, int zmax, int zmin)
       if(zmin==0) {
 	f[0] = 0.0;
       }
-      irfft(f, ncz, result.block->data[jx][jy]); // Reverse FFT
-      result.block->data[jx][jy][ncz] = result.block->data[jx][jy][0];
+      irfft(f, ncz, r[jx][jy]); // Reverse FFT
+      r[jx][jy][ncz] = r[jx][jy][0];
     }
   }
   
-  result.location = var.location;
-
+  result.setLocation(var.getLocation());
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
