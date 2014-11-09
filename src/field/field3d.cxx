@@ -1426,7 +1426,7 @@ const Field3D Field3D::shiftZ(const Field2D zangle) const {
 #pragma omp parallel for
   for(int jx=0;jx<mesh->ngx;jx++) {
     for(int jy=0;jy<mesh->ngy;jy++) {
-      result.shiftZ(jx, jy, zangle[jx][jy]);
+      result.shiftZ(jx, jy, zangle(jx,jy));
     }
   }
 
