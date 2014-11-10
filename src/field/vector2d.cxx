@@ -392,15 +392,14 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
   }
 #endif
   BoutReal *ptr = (BoutReal*) vptr;
-  *ptr = x[jx][jy]; ptr++;
-  *ptr = y[jx][jy]; ptr++;
-  *ptr = z[jx][jy];
+  *ptr = x(jx,jy); ptr++;
+  *ptr = y(jx,jy); ptr++;
+  *ptr = z(jx,jy);
   
   return 3*sizeof(BoutReal);
 }
 
-int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const
-{
+int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const {
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
@@ -409,15 +408,14 @@ int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const
   }
 #endif
 
-  *rptr = x[jx][jy]; rptr++;
-  *rptr = y[jx][jy]; rptr++;
-  *rptr = z[jx][jy];
+  *rptr = x(jx,jy); rptr++;
+  *rptr = y(jx,jy); rptr++;
+  *rptr = z(jx,jy);
   
   return 3;
 }
 
-int Vector2D::setData(int jx, int jy, int jz, void *vptr)
-{
+int Vector2D::setData(int jx, int jy, int jz, void *vptr) {
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
@@ -426,15 +424,14 @@ int Vector2D::setData(int jx, int jy, int jz, void *vptr)
   }
 #endif
   BoutReal *rptr = (BoutReal*) vptr;
-  x[jx][jy] = *rptr; rptr++;
-  y[jx][jy] = *rptr; rptr++;
-  z[jx][jy] = *rptr;
+  x(jx,jy) = *rptr; rptr++;
+  y(jx,jy) = *rptr; rptr++;
+  z(jx,jy) = *rptr;
 
   return 3*sizeof(BoutReal);
 }
 
-int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr)
-{
+int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr) {
 #ifdef CHECK
   // check ranges
   if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) || (jz < 0) || (jz >= mesh->ngz)) {
@@ -443,9 +440,9 @@ int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr)
   }
 #endif
 
-  x[jx][jy] = *rptr; rptr++;
-  y[jx][jy] = *rptr; rptr++;
-  z[jx][jy] = *rptr;
+  x(jx,jy) = *rptr; rptr++;
+  y(jx,jy) = *rptr; rptr++;
+  z(jx,jy) = *rptr;
   
   return 3;
 }

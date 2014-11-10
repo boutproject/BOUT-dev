@@ -194,13 +194,7 @@ class Mesh {
   bool IncIntShear; // Include integrated shear (if shifting X)
   
   /// Coordinate system
-  Coordinates* coordinates() {
-    if(!coordinates()) {
-      // No coordinate system set. Create default
-      coords = new Coordinates(this);
-    }
-    return coords;
-  }
+  Coordinates* coordinates();
   
   /*
 

@@ -1,6 +1,7 @@
 
 #include <globals.hxx>
 #include <bout/mesh.hxx>
+#include <bout/coordinates.hxx>
 #include <utils.hxx>
 #include <derivs.hxx>
 #include <msg_stack.hxx>
@@ -22,8 +23,6 @@ Mesh* Mesh::create(Options *opt) {
 Mesh::Mesh(GridDataSource *s) : source(s), coords(0) {
   if(s == NULL)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
-  
-  ilen = 0; // For gaussj routine
   
   // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
   freeboundary_xin = false;
@@ -326,6 +325,14 @@ bool Mesh::hasBndryLowerY() {
   answer = (bool) allbndry;
   calc = true;
   return answer;
+}
+
+Coordinates* Mesh::coordinates() {
+  if(!coordinates()) {
+    // No coordinate system set. Create default
+    coords = new Coordinates(this);
+  }
+  return coords;
 }
 
 bool Mesh::hasBndryUpperY() {

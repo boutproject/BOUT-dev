@@ -1253,8 +1253,7 @@ void Field3D::setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc)
   }
 }
 
-void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
+void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
   fval.jz = bx.jz;
@@ -1298,8 +1297,7 @@ void Field3D::setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc
   }
 }
 
-void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
-{
+void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.jx = bx.jx;
   fval.jy = bx.jy;
   fval.jz = bx.jz;
@@ -1336,8 +1334,7 @@ void Field3D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
   }
 }
 
-BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const
-{
+BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const {
   int zi;
   BoutReal result;
   int jzp, jzm, jz2p;
@@ -1389,8 +1386,7 @@ BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) 
   return result;
 }
 
-void Field3D::shiftZ(int jx, int jy, double zangle)
-{
+void Field3D::shiftZ(int jx, int jy, double zangle) {
   static dcomplex *v = (dcomplex*) NULL;
   int jz;
   BoutReal kwave;
@@ -1417,7 +1413,7 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
 
   // Apply phase shift
   for(jz=1;jz<=ncz/2;jz++) {
-    kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    kwave=jz*2.0*PI/mesh->coordinates()->zlength; // wave number is 1/[rad]
     v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
   }
 

@@ -7,8 +7,18 @@
 #include <bout/coordinates.hxx>
 #include <utils.hxx>
 #include <msg_stack.hxx>
+#include <output.hxx>
+#include <bout/constants.hxx>
+#include <bout/assert.hxx>
 
-Coordinates::Coordinates(Mesh *mesh) {
+#include <derivs.hxx>
+#include <interpolation.hxx>
+#include <fft.hxx>
+
+#include <globals.hxx>
+
+Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
+  
   dx = 1.0; dy = 1.0; dz = 1.0;
   
   J = 1.0;
@@ -27,7 +37,7 @@ Coordinates::Coordinates(Mesh *mesh) {
     dx = 1.0;
   }
 
-  if(mesh->periodicX())
+  if(mesh->periodicX)
     mesh->communicate(dx);
 
   if(mesh->get(dy, "dy")) {
@@ -50,7 +60,7 @@ Coordinates::Coordinates(Mesh *mesh) {
   }
 
   zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/(ngz-1);
+  dz = zlength/(mesh->ngz-1);
   
   // Diagonal components of metric tensor g^{ij} (default to 1)
   mesh->get(g11, "g11", 1.0);
@@ -282,7 +292,7 @@ int Coordinates::geometry() {
   com.add(G2);
   com.add(G3);
 
-  communicate(com);
+  mesh->communicate(com);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -309,8 +319,8 @@ int Coordinates::calcCovariant() {
 
   BoutReal** a = rmatrix(3, 3);
   
-  for(int jx=0;jx<ngx;jx++) {
-    for(int jy=0;jy<ngy;jy++) {
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy;jy++) {
       // set elements of g
       a[0][0] = g11(jx, jy);
       a[1][1] = g22(jx, jy);
@@ -392,8 +402,8 @@ int Coordinates::calcContravariant() {
   
   BoutReal** a = rmatrix(3, 3);
   
-  for(int jx=0;jx<ngx;jx++) {
-    for(int jy=0;jy<ngy;jy++) {
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=0;jy<mesh->ngy;jy++) {
       // set elements of g
       a[0][0] = g_11(jx, jy);
       a[1][1] = g_22(jx, jy);
@@ -465,21 +475,294 @@ int Coordinates::jacobian() {
                 g33*g12*g12);
   
   // Check jacobian
-  if(!finite(mesh->J)) {
+  if(!finite(J)) {
     output.write("\tERROR: Jacobian not finite everywhere!\n");
     return 1;
   }
-  if(min(abs(mesh->J)) < 1.0e-10) {
+  if(min(abs(J)) < 1.0e-10) {
     output.write("\tERROR: Jacobian becomes very small\n");
     return 1;
   }
   
-  Bxy = sqrt(mesh->g_22)/mesh->J;
+  Bxy = sqrt(g_22)/J;
   
   return 0;
 }
 
+/*******************************************************************************
+ * Operators
+ * 
+ *******************************************************************************/
 
+#include "derivs.hxx"
+
+/////////////////////////////////////////////////////////
+// Parallel gradient
+
+const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_METHOD method) {
+  msg_stack.push("Coordinates::Grad_par( Field2D )");
+  
+  Field2D result = DDY(var)/sqrt(g_22);
+  
+  msg_stack.pop();
+  return result;
+}
+
+const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method) {
+  msg_stack.push("Coordinates::Grad_par( Field3D )");
+  
+  Field3D result = DDY(var, outloc, method)/sqrt(g_22);
+  
+  msg_stack.pop();
+  
+  return result;
+}
+
+/////////////////////////////////////////////////////////
+// Vpar_Grad_par
+// vparallel times the parallel derivative along unperturbed B-field
+
+const Field2D Coordinates::Vpar_Grad_par(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return VDDY(v, f)/sqrt(g_22);
+}
+
+const Field3D Coordinates::Vpar_Grad_par(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+  return VDDY(v, f, outloc, method)/sqrt(g_22);
+}
+
+/////////////////////////////////////////////////////////
+// Parallel divergence
+
+const Field2D Coordinates::Div_par(const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  msg_stack.push("Coordinates::Div_par( Field2D )");
+  
+  Field2D result = Bxy*Grad_par(f/Bxy);
+  
+  msg_stack.pop();
+  
+  return result;
+}
+
+const Field3D Coordinates::Div_par(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  msg_stack.push("Coordinates::Div_par( Field3D )");
+  
+  Field3D result = Bxy*Grad_par(f/Bxy, outloc, method);
+  
+  msg_stack.pop();
+  return result;
+}
+
+/////////////////////////////////////////////////////////
+// second parallel derivative (b dot Grad)(b dot Grad)
+// Note: For parallel Laplacian use Laplace_par
+
+const Field2D Coordinates::Grad2_par2(const Field2D &f) {
+  msg_stack.push("Coordinates::Grad2_par2( Field2D )");
+
+  Field2D sg = sqrt(g_22);
+  Field2D result = DDY(1./sg)*DDY(f)/sg + D2DY2(f)/g_22;
+  //Field2D result = D2DY2(f)/mesh->g_22;
+
+  msg_stack.pop();
+  return result;
+}
+
+const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
+  msg_stack.push("Coordinates::Grad2_par2( Field3D )");
+
+  Field2D sg;
+  Field3D result, r2;
+  
+  sg = sqrt(g_22);
+  sg = DDY(1./sg) / sg;
+  if (sg.getLocation() != outloc) {
+    mesh->communicate(sg);
+    sg = interp_to(sg, outloc);
+  }
+  
+  result = DDY(f,outloc);
+    
+  r2 = D2DY2(f,outloc)/interp_to(g_22,outloc);
+  
+  result = sg*result + r2;
+  
+  msg_stack.pop();
+  return result;
+}
+
+/////////////////////////////////////////////////////////
+// perpendicular Laplacian operator
+
+#include <invert_laplace.hxx> // Delp2 uses same coefficients as inversion code
+
+const Field2D Coordinates::Delp2(const Field2D &f) {
+  msg_stack.push("Coordinates::Delp2( Field2D )");
+ 
+  Field2D result =  G1*DDX(f) + g11*D2DX2(f);
+
+  msg_stack.pop();
+
+  return result;
+}
+
+const Field3D Coordinates::Delp2(const Field3D &f) {
+  int msg_pos = msg_stack.push("Coordinates::Delp2( Field3D )");
+
+  //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
+
+  ASSERT2(mesh->xstart > 0); // Need at least one guard cell
+  
+  Field3D result;
+  result.allocate();
+
+  BoutReal ***fd, ***rd;
+  fd = f.getData();
+  rd = result.getData();
+
+  int ncz = mesh->ngz-1;
+  
+  static dcomplex **ft = (dcomplex**) NULL, **delft;
+  if(ft == (dcomplex**) NULL) {
+    // Allocate memory
+    ft = cmatrix(mesh->ngx, ncz/2 + 1);
+    delft = cmatrix(mesh->ngx, ncz/2 + 1);
+  }
+  
+  // Loop over all y indices
+  for(int jy=0;jy<mesh->ngy;jy++) {
+
+    // Take forward FFT
+    
+    for(int jx=0;jx<mesh->ngx;jx++)
+      ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
+
+    // Loop over kz
+    for(int jz=0;jz<=ncz/2;jz++) {
+      dcomplex a, b, c;
+
+      // No smoothing in the x direction
+      for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
+	// Perform x derivative
+	
+	laplace_tridag_coefs(jx, jy, jz, a, b, c);
+
+	delft[jx][jz] = a*ft[jx-1][jz] + b*ft[jx][jz] + c*ft[jx+1][jz];
+      }
+    }
+  
+    // Reverse FFT
+    for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
+
+      ZFFT_rev(delft[jx], mesh->zShift(jx,jy), rd[jx][jy]);
+      rd[jx][jy][ncz] = rd[jx][jy][0];
+    }
+
+    // Boundaries
+    for(int jz=0;jz<ncz;jz++) {
+      rd[0][jy][jz] = 0.0;
+      rd[mesh->ngx-1][jy][jz] = 0.0;
+    }
+  }
+  
+  msg_stack.pop(msg_pos);
+
+  // Set the output location
+  result.setLocation(f.getLocation());
+
+  return result;
+}
+
+const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
+  FieldPerp result;
+  result.allocate();
+  
+  int msg_pos = msg_stack.push("Coordinates::Delp2( FieldPerp )");
+
+  static dcomplex **ft = (dcomplex**) NULL, **delft;
+  
+  BoutReal **fd = f.getData();
+  BoutReal **rd = result.getData();
+
+  int jy = f.getIndex();
+  result.setIndex(jy);
+  
+  int ncz = mesh->ngz-1;
+  
+  if(ft == (dcomplex**) NULL) {
+    // Allocate memory
+    ft = cmatrix(mesh->ngx, ncz/2 + 1);
+    delft = cmatrix(mesh->ngx, ncz/2 + 1);
+  }
+  
+  // Take forward FFT
+  for(int jx=0;jx<mesh->ngx;jx++)
+    ZFFT(fd[jx], mesh->zShift(jx, jy), ft[jx]);
+
+  // Loop over kz
+  for(int jz=0;jz<=ncz/2;jz++) {
+    
+    // No smoothing in the x direction
+    for(int jx=2;jx<(mesh->ngx-2);jx++) {
+      // Perform x derivative
+      
+      dcomplex a, b, c;
+      laplace_tridag_coefs(jx, jy, jz, a, b, c);
+      
+      delft[jx][jz] = a*ft[jx-1][jz] + b*ft[jx][jz] + c*ft[jx+1][jz];
+    }
+  }
+  
+  // Reverse FFT
+  for(int jx=1;jx<(mesh->ngx-1);jx++) {
+    ZFFT_rev(delft[jx], mesh->zShift(jx,jy), rd[jx]);
+    rd[jx][ncz] = rd[jx][0];
+  }
+
+  // Boundaries
+  for(int jz=0;jz<ncz;jz++) {
+    rd[0][jz] = 0.0;
+    rd[mesh->ngx-1][jz] = 0.0;
+  }
+
+#ifdef CHECK
+  msg_stack.pop(msg_pos);
+#endif
+
+  return result;
+}
+
+const Field2D Coordinates::Laplace_par(const Field2D &f) {
+  return D2DY2(f)/g_22 + DDY(J/g_22)*DDY(f)/J;
+}
+
+const Field3D Coordinates::Laplace_par(const Field3D &f) {
+  return D2DY2(f)/g_22 + DDY(J/g_22)*DDY(f)/J;
+}
+
+// Full Laplacian operator on scalar field
+
+const Field2D Coordinates::Laplace(const Field2D &f) {
+  msg_stack.push("Coordinates::Laplace( Field2D )");
+
+  Field2D result =  G1*DDX(f) +G2*DDY(f)
+    + g11*D2DX2(f) + g22*D2DY2(f)
+    + 2.0*g12*D2DXDY(f);
+
+  msg_stack.pop();
+
+  return result;
+}
+
+const Field3D Coordinates::Laplace(const Field3D &f) {
+  msg_stack.push("Coordinates::Laplace( Field3D )");
+
+  Field3D result  = G1*DDX(f) + G2*DDY(f) + G3*DDZ(f)
+    + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
+    + 2.0*(g12*D2DXDY(f) + g13*D2DXDZ(f) + g23*D2DYDZ(f));
+
+  msg_stack.pop();
+  return result;
+}
 
 /*******************************************************************************
  * Gauss-Jordan matrix inversion

@@ -79,8 +79,7 @@ void get_profile_opts(Options *opt)
     }else                                       \
       opt2->get(name, var, def);}
 
-int initial_profile(const char *name, Field3D &var)
-{
+int initial_profile(const char *name, Field3D &var) {
   BoutReal scale;
   int xs_opt, ys_opt, zs_opt;
   int xs_mode, ys_mode, zs_mode;
@@ -91,6 +90,8 @@ int initial_profile(const char *name, Field3D &var)
   BoutReal cx, cy, cz;
 
   var = 0.0;
+
+  Coordinates *metric = mesh->coordinates();
 
   /////////// get options //////////
   
@@ -174,12 +175,12 @@ int initial_profile(const char *name, Field3D &var)
             for(int i=1; i<= ball_n; i++) {
               // y - i * nycore
               cy=Prof1D(ycoord - i, ys_s0, 0., 1.0, ys_wd, ys_mode, ys_phase, ys_opt);
-              cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+              cz=Prof1D((BoutReal) jz + ((BoutReal) i)*ts/metric->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
               var(jx,jy,jz) += scale*cx*cy*cz;
               
               // y + i * nycore
               cy=Prof1D(ycoord + i, ys_s0, 0., 1., ys_wd, ys_mode, ys_phase, ys_opt);
-              cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/mesh->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
+              cz=Prof1D((BoutReal) jz - ((BoutReal) i)*ts/metric->dz, zs_s0, 0., (BoutReal) (mesh->ngz-1), zs_wd, zs_mode, zs_phase, zs_opt);
               var(jx,jy,jz) += scale*cx*cy*cz;
             }
           }else if(Ballooning) {
