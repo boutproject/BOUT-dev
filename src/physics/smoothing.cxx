@@ -404,7 +404,9 @@ BoutReal Vol_Integral(const Field2D &var) {
   Field2D result;
   BoutReal Int_Glb;
   result.allocate();  //initialize
-  result = mesh->J * var * mesh->dx * mesh->dy;
+  Coordinates *metric = mesh->coordinates();
+  
+  result = metric->J * var * metric->dx * metric->dy;
 
   Int_Glb = 0.;
   Int_Glb = Average_XY(result);

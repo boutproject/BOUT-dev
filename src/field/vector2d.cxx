@@ -55,10 +55,12 @@ void Vector2D::toCovariant() {
   if(!covariant) {
     Field2D gx, gy, gz;
 
+    Coordinates *metric = mesh->coordinates();
+
     // multiply by g_{ij}
-    gx = mesh->g_11*x + mesh->g_12*y + mesh->g_13*z;
-    gy = mesh->g_12*x + mesh->g_22*y + mesh->g_23*z;
-    gz = mesh->g_13*x + mesh->g_23*y + mesh->g_33*z;
+    gx = metric->g_11*x + metric->g_12*y + metric->g_13*z;
+    gy = metric->g_12*x + metric->g_22*y + metric->g_23*z;
+    gz = metric->g_13*x + metric->g_23*y + metric->g_33*z;
 
     x = gx;
     y = gy;
@@ -74,9 +76,11 @@ void Vector2D::toContravariant() {
     
     Field2D gx, gy, gz;
 
-    gx = mesh->g11*x + mesh->g12*y + mesh->g13*z;
-    gy = mesh->g12*x + mesh->g22*y + mesh->g23*z;
-    gz = mesh->g13*x + mesh->g23*y + mesh->g33*z;
+    Coordinates *metric = mesh->coordinates();
+    
+    gx = metric->g11*x + metric->g12*y + metric->g13*z;
+    gy = metric->g12*x + metric->g22*y + metric->g23*z;
+    gz = metric->g13*x + metric->g23*y + metric->g33*z;
 
     x = gx;
     y = gy;
@@ -225,10 +229,12 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
   rco.toCovariant();
   toCovariant();
 
+  Coordinates *metric = mesh->coordinates();
+
   // calculate contravariant components of cross-product
-  result.x = (y*rco.z - z*rco.y)/mesh->J;
-  result.y = (z*rco.x - x*rco.z)/mesh->J;
-  result.z = (x*rco.y - y*rco.x)/mesh->J;
+  result.x = (y*rco.z - z*rco.y)/metric->J;
+  result.y = (z*rco.x - x*rco.z)/metric->J;
+  result.z = (x*rco.y - y*rco.x)/metric->J;
   
   result.covariant = false;
 
@@ -320,18 +326,20 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const {
     result = x*rhs.x + y*rhs.y + z*rhs.z;
   }else {
     // Both are covariant or contravariant
+    Coordinates *metric = mesh->coordinates();
+    
     if(covariant) {
       // Both covariant
-      result = x*rhs.x*mesh->g11 + y*rhs.y*mesh->g22 + z*rhs.z*mesh->g33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g12
-	+ (x*rhs.z + z*rhs.x)*mesh->g13
-	+ (y*rhs.z + z*rhs.y)*mesh->g23;
+      result = x*rhs.x*metric->g11 + y*rhs.y*metric->g22 + z*rhs.z*metric->g33;
+      result += (x*rhs.y + y*rhs.x)*metric->g12
+	+ (x*rhs.z + z*rhs.x)*metric->g13
+	+ (y*rhs.z + z*rhs.y)*metric->g23;
     }else {
       // Both contravariant
-      result = x*rhs.x*mesh->g_11 + y*rhs.y*mesh->g_22 + z*rhs.z*mesh->g_33;
-      result += (x*rhs.y + y*rhs.x)*mesh->g_12
-	+ (x*rhs.z + z*rhs.x)*mesh->g_13
-	+ (y*rhs.z + z*rhs.y)*mesh->g_23;
+      result = x*rhs.x*metric->g_11 + y*rhs.y*metric->g_22 + z*rhs.z*metric->g_33;
+      result += (x*rhs.y + y*rhs.x)*metric->g_12
+	+ (x*rhs.z + z*rhs.x)*metric->g_13
+	+ (y*rhs.z + z*rhs.y)*metric->g_23;
     }
   }
 
