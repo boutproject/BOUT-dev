@@ -55,6 +55,8 @@ class Mesh;
 
 #include <bout/griddata.hxx>
 
+#include "coordinates.hxx"
+
 #include <list>
 
 typedef void* comm_handle;
@@ -178,13 +180,6 @@ class Mesh {
   
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
-
-  // These used for differential operators 
-  Field2D dx, dy;      // Read in grid.cpp
-  Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
-  
-  
-  BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)
   
   bool ShiftXderivs; // Use shifted X derivatives
   int  ShiftOrder;   // Order of shifted X derivative interpolation
@@ -198,6 +193,23 @@ class Mesh {
   Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
   bool IncIntShear; // Include integrated shear (if shifting X)
   
+  /// Coordinate system
+  Coordinates* coordinates() {
+    if(!coordinates()) {
+      // No coordinate system set. Create default
+      coords = new Coordinates(this);
+    }
+    return coords;
+  }
+  
+  /*
+
+  // These used for differential operators 
+  Field2D dx, dy;      // Read in grid.cpp
+  Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
+  
+  BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)  
+
   Field2D J; // Jacobian
 
   Field2D Bxy; // Magnitude of B = nabla z times nabla x
@@ -220,12 +232,15 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
+  */
   
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
   
  protected:
   
   GridDataSource *source; ///< Source for grid data
+  
+  Coordinates *coords;  ///< Coordinate system. Initialised to Null
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
@@ -241,8 +256,10 @@ class Mesh {
                  BoutReal **data);
   
  private:
+  /*
   int gaussj(BoutReal **a, int n);
   int *indxc, *indxr, *ipiv, ilen;
+  */
 };
 
 #endif // __MESH_H__

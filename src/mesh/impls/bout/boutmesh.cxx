@@ -347,7 +347,8 @@ int BoutMesh::load() {
     
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
-
+  zlength = (ZMAX-ZMIN)*TWOPI;
+ 
   if(TwistShift) {
     output.write("Applying Twist-Shift condition. Interpolation: FFT");
   }
@@ -368,43 +369,6 @@ int BoutMesh::load() {
   ///////////////////// TOPOLOGY //////////////////////////
   /// Call topology to set layout of grid
   topology();
-  
-  ///////////////// DIFFERENCING QUANTITIES ///////////////
-  
-  if(get(dx, "dx")) {
-    output.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
-    dx = 1.0;
-  }
-  if(get(dy, "dy")) {
-    output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
-    dy = 1.0;
-  }
-  
-  zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/(ngz-1);
-
-  ///////////////// DIFFERENTIAL GEOMETRY /////////////////
-  
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  get(g11, "g11", 1.0);
-  get(g22, "g22", 1.0);
-  get(g33, "g33", 1.0);
-  
-  // Off-diagonal elements. Default to 0
-  get(g12, "g12", 0.0);
-  get(g13, "g13", 0.0);
-  get(g23, "g23", 0.0);
-  
-  // Check input metrics
-  if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
-  }
-  if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
-  }
-  if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
-  }
 
   /// Set shift for radial derivatives
   if(get(zShift, "zShift")) {
@@ -441,11 +405,11 @@ int BoutMesh::load() {
 
     if(YPROC(jyseps2_2) == PE_YIND) {
       for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
    
     }else if(YPROC(jyseps1_1+1) == PE_YIND) {
       for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
     }
     
     msg_stack.push("Creating core_comm for ShiftAngle");
@@ -489,51 +453,18 @@ int BoutMesh::load() {
     // Lower PF. Note by default no Twist-Shift used here, so need to switch on
     if(YPROC(jyseps1_1) == PE_YIND) {
       for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
       }
       TS_up_in = true; // Switch on twist-shift
       
     }else if(YPROC(jyseps2_2+1) == PE_YIND) {
       for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
       }
       TS_down_in = true;
     }
   }
-
-  /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
-
-  /// Calculate Jacobian and Bxy
-  if(jacobian())
-    throw BoutException("Error in jacobian call");
   
-  // Attempt to read J from the grid file
-  Field2D Jcalc = J;
-  if(get(J, "J")) {
-    output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
-  }else {
-    // Compare calculated and loaded values  
-    output.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
-    
-    // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22)/J;
-  }
-
-  // Attempt to read Bxy from the grid file
-  Field2D Bcalc = Bxy;
-  if(get(Bxy, "Bxy")) {
-    output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
-    Bxy = Bcalc;
-  }else {
-    output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-    // Check Bxy
-    if(!finite(Bxy))
-      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
-  }
-
   //////////////////////////////////////////////////////
   /// Communicator
   
@@ -874,34 +805,13 @@ int BoutMesh::load() {
 #endif
 
   //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if(geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
+  
   if(periodicX) {
     FieldGroup g;
-    g.add(zShift, dx);
+    g.add(zShift);
     communicate(g);
   }
-
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
   
-  Field2D d2x, d2y; // d^2 x / d i^2
-  // Read correction for non-uniform meshes
-  if(get(d2x, "d2x")) {
-    output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
-  }else
-    d1_dx = -d2x / (dx*dx);
-  
-  if(get(d2y, "d2y")) {
-    output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
-  }else
-    d1_dy = -d2y / (dy*dy);
-
   //////////////////////////////////////////////////////
   // Boundary regions
   if(!periodicX && (MXG > 0) ) {
@@ -2710,7 +2620,7 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
 	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
       
 	// Multiply by EXP(ik*zoffset)
-	fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
+	fdata[jz] *= dcomplex(cos(kwave*zShift(jx,jy)) , sin(kwave*zShift(jx,jy)));
       }
       
       irfft(fdata, ncz, var[jx][ydest+jy]);
@@ -2881,7 +2791,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_inner);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-	  result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]);
+	  result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
           //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
@@ -2889,7 +2799,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_inner-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-	  result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]);
+	  result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
           //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
@@ -2900,14 +2810,14 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_outer);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
     if(XPROC(ixseps_outer-1) == PE_XIND) {
       int x = XLOCAL(ixseps_outer-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
   }
@@ -2978,25 +2888,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
   
-  file.add(dx,    "dx",    0);
-  file.add(dy,    "dy",    0);
-  file.add(dz,    "dz",    0);
-  
-  file.add(g11,   "g11",   0);
-  file.add(g22,   "g22",   0);
-  file.add(g33,   "g33",   0);
-  file.add(g12,   "g12",   0);
-  file.add(g13,   "g13",   0);
-  file.add(g23,   "g23",   0);
-  
-  file.add(g_11,  "g_11",  0);
-  file.add(g_22,  "g_22",  0);
-  file.add(g_33,  "g_33",  0);
-  file.add(g_12,  "g_12",  0);
-  file.add(g_13,  "g_13",  0);
-  file.add(g_23,  "g_23",  0);
-  
-  file.add(J,     "J",     0);
+  coordinates()->outputVars(file);
 }
 
 
@@ -3141,7 +3033,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     //Field 3D to rmatrix of local
     for (i=0;i<ncy;i++)
       for(j = 0;j<ncz;j++)
-        ayz[i][j]=var[ix][i+ystart][j];
+        ayz[i][j]=var(ix,i+ystart,j);
 
     //Collect to rmatrix of global from local
     MPI_Allgather(ayz[0],ncy*ncz,MPI_DOUBLE,ayz_all[0],ncy*ncz,
@@ -3150,11 +3042,11 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     //Y 2 Z switch
     for(i=ystart;i<=yend;i++)
       for(j=0;j<ncz;j++)
-        result[ix][i][j]=ayz_all[j][YGLOBAL(i)];
+        result(ix,i,j)=ayz_all[j][YGLOBAL(i)];
 
     //boundary at ngz
     for(i=0;i<ncy;i++)
-        result[ix][i+ystart][ncz]=result[ix][i+ystart][0];
+      result(ix,i+ystart,ncz)=result(ix,i+ystart,0);
   }
 
   return result;

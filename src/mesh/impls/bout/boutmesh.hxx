@@ -152,6 +152,7 @@ class BoutMesh : public Mesh {
   bool symmetricGlobalY;
 
   int  zperiod; 
+  BoutReal zlength; // Needed for reading 3D variables
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   
   int  MXG, MYG;     // Boundary sizes

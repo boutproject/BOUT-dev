@@ -4,25 +4,18 @@
 #define __COORDINATES_H__
 
 #include "mesh.hxx"
+#include "datafile.hxx"
 
 class Coordinates {
 public:
   /// Constructor
-  Coordinates(Mesh *mesh) {
-    dx = 1.0; dy = 1.0; dz = 1.0;
-    
-    J = 1.0;
-    Bxy = 1.0;
-    
-    // Identity metric tensor
-    
-    g11 = 1.0; g22 = 1.0; g33 = 1.0;
-    g12 = 0.0; g13 = 0.0; g23 = 0.0;
-    
-    g_11 = 1.0; g_22 = 1.0; g_33 = 1.0;
-    g_12 = 0.0; g_13 = 0.0; g_23 = 0.0;
-  }
+  Coordinates(Mesh *mesh);
   
+  ~Coordinates();
+  
+  /// Must be a better way so that Coordinates doesn't depend on Datafile
+  void outputVars(Datafile &file);
+
   // Mesh spacing
   
   Field2D dx, dy; 
@@ -46,10 +39,18 @@ public:
   Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
   
   Field2D G1, G2, G3;
+
+  /// Calculate differential geometry quantities from the metric tensor
+  int geometry();
+  int calcCovariant(); ///< Inverts contravatiant metric to get covariant
+  int calcContravariant(); ///< Invert covariant metric to get contravariant
+  int jacobian(); // Calculate J and Bxy
 private:
-  
+  int gaussj(BoutReal **a, int n);
+  int *indxc, *indxr, *ipiv, ilen;
 };
 
+/*
 /// Standard coordinate system for tokamak simulations
 class TokamakCoordinates : public Coordinates {
 public:
@@ -59,5 +60,6 @@ public:
 private:
   
 };
+*/
 
 #endif // __COORDINATES_H__
