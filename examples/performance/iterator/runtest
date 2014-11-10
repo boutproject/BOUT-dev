@@ -6,7 +6,11 @@ if [[ -z $1 ]]; then
 fi
 
 avg() {
-    awk 'BEGIN {FS=":"}; {sum+=$3; sum2+=$4} END {print sum2/NR}'
+    awk 'BEGIN {FS=":"}; {sum+=$3} END {print sum/NR}'
+}
+
+get_value() {
+    grep "$1" ./data/run_* | avg
 }
 
 for i in $(seq 1 500)
@@ -15,45 +19,45 @@ do mpirun -n 4 ./iterator >/dev/null
 done
 echo -e "\a"
 
-nested=$(grep "Nested:" ./data/run_* | avg)
-c_loop=$(grep "C loop:" ./data/run_* | avg)
-iter=$(grep -E "^Iterator:" ./data/run_* | avg)
-field=$(grep "Field Iterator:" ./data/run_* | avg)
-range=$(grep "Range-based:" ./data/run_* | avg)
-foreach=$(grep "For_each:" ./data/run_* | avg)
+nested=$(get_value "Nested (data)")
+c_loop=$(get_value "C loop (data)")
+miter=$(get_value "MeshIterator (data)")
+diter_data=$(get_value "DataIterator (data)")
+diter_data_done=$(get_value "DataIterator (data/done())")
+range_data=$(get_value "Range-based (data)")
+freach_data=$(get_value "For_each (data)")
+nested_field=$(get_value "Nested (field)")
+range_field=$(get_value "Range-based (field)")
+diter_field=$(get_value "DataIterator (field)")
+freach_field=$(get_value "For_each (field)")
 
-nested_single=$(grep "Nested (single):" ./data/run_* | avg)
-c_loop_single=$(grep "C loop (single):" ./data/run_* | avg)
-iter_single=$(grep -E "^Iterator \(single\):" ./data/run_* | avg)
-field_single=$(grep "Range-based (field)" ./data/run_* | avg)
-mesh_single=$(grep "Range-based (mesh)" ./data/run_* | avg)
+norm() {
+    echo "scale=2;$1 / $nested_field" | bc -l
+}
 
-nested_norm=$(echo "scale=2;$nested / $c_loop" | bc -l)
-c_loop_norm=$(echo "scale=2;$c_loop / $c_loop" | bc -l)
-iter_norm=$(echo "scale=2;$iter / $c_loop" | bc -l)
-field_norm=$(echo "scale=2;$field / $c_loop" | bc -l)
-range_norm=$(echo "scale=2;$range / $c_loop" | bc -l)
-foreach_norm=$(echo "scale=2;$foreach / $c_loop" | bc -l)
+nested_norm=$(norm $nested)
+c_loop_norm=$(norm $c_loop)
+miter_norm=$(norm $miter)
+diter_data_norm=$(norm $diter_data)
+diter_data_done_norm=$(norm $diter_data_done)
+range_data_norm=$(norm $range_data)
+freach_data_norm=$(norm $freach_data)
+nested_field_norm=$(norm $nested_field)
+range_field_norm=$(norm $range_field)
+diter_field_norm=$(norm $diter_field)
+freach_field_norm=$(norm $freach_field)
 
-nested_single_norm=$(echo "scale=2;$nested_single / $c_loop_single" | bc -l)
-c_loop_single_norm=$(echo "scale=2;$c_loop_single / $c_loop_single" | bc -l)
-iter_single_norm=$(echo "scale=2;$iter_single / $c_loop_single" | bc -l)
-field_single_norm=$(echo "scale=6;${field_single/e/*10^} / $c_loop_single" | bc -l)
-mesh_single_norm=$(echo "scale=2;$mesh_single / $c_loop_single" | bc -l)
+echo -e "Timings
+=======" > $1
+echo -e "Nested (data)			: $nested : $nested_norm
+C loop (data)			: $c_loop : $c_loop_norm
+MeshIterator (data)		: $miter : $miter_norm
+DataIterator (data)		: $diter_data : $diter_data_norm
+DataIterator (data/done())	: $diter_data_done : $diter_data_done_norm
+Range-based (data)		: $range_data : $range_data_norm
+For_each (data)			: $freach_data : $freach_data_norm
+Nested (field)			: $nested_field : $nested_field_norm
+Range-based (field)		: $range_field : $range_field_norm
+DataIterator (field)		: $diter_field : $diter_field_norm
+For_each (field)		: $freach_field : $freach_field_norm" | sort -rt ":" -k2 >> $1
 
-echo -e "Three Field operation
-=====================
-Nested		 $nested  $nested_norm
-C_loop		 $c_loop  $c_loop_norm
-Iterator	 $iter  $iter_norm
-Field_iterator	 $field  $field_norm
-Range-based	 $range  $range_norm
-For_each	 $foreach  $foreach_norm
-
-Single Field operation
-======================
-Nested  	    $nested_single  $nested_single_norm
-C_loop  	    $c_loop_single  $c_loop_single_norm
-Iterator 	    $iter_single  $iter_single_norm
-Range-based_(field) $field_single  $field_single_norm
-Range-based_(mesh)  $mesh_single  $mesh_single_norm" > $1
