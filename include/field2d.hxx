@@ -79,6 +79,9 @@ class Field2D : public Field, public FieldData {
 
   const DataIterator iterator() const;
 
+  const DataIterator begin() const;
+  const DataIterator end() const;
+
   BoutReal& operator[](DataIterator &d) {
     return operator()(d.x, d.y);
   }
