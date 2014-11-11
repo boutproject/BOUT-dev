@@ -1,5 +1,5 @@
 NOUT = 1
-TIMESTEP = 1
+TIMESTEP = 0.1
 
 MZ = 16
 
@@ -27,8 +27,8 @@ upwind=c2
 
 #type = rk4
 
-ATOL = 1.0e-12  # absolute tolerance
-RTOL = 1.0e-8   # relative tolerance
+ATOL = 1.0e-15  # absolute tolerance
+RTOL = 1.0e-15   # relative tolerance
 mxstep = 10000  # Maximum internal steps per output
 
 mms = true  # -> Enable MMS testing
