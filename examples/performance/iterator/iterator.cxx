@@ -99,9 +99,9 @@ int main(int argc, char **argv) {
   // Nested loops over block data
   SteadyClock start1 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(int i=0;i<mesh->ngx;i++) {
-      for(int j=0;j<mesh->ngy;j++) {
-        for(int k=0;k<mesh->ngz;k++) {
+    for(int i=0;i<mesh->ngx;++i) {
+      for(int j=0;j<mesh->ngy;++j) {
+        for(int k=0;k<mesh->ngz;++k) {
           rd[i][j][k] = ad[i][j][k] + bd[i][j][k];
         }
       }
@@ -111,8 +111,8 @@ int main(int argc, char **argv) {
 
   // A single loop over block data
   SteadyClock start2 = steady_clock::now();
-  for(int i=0;i<10;i++) {
-    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++) {
+  for(int i=0;i<10;++i) {
+    for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;++j) {
       rd[0][0][j] = ad[0][0][j] + bd[0][0][j];
     }
   }
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
   // Has default ctor
   SteadyClock start3 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(MeshIterator i; !i.isDone(); i++){
+    for(MeshIterator i; !i.isDone(); ++i){
       rd[i.x][i.y][i.z] = ad[i.x][i.y][i.z] + bd[i.x][i.y][i.z];
     }
   }
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
   // No default ctor
   SteadyClock start4 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(DataIterator i = begin(result); i != end(result) ; i++){
+    for(DataIterator i = begin(result); i != end(result) ; ++i){
       rd[i.x][i.y][i.z] = ad[i.x][i.y][i.z] + bd[i.x][i.y][i.z];
     }
   }
@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
   // No default ctor
   SteadyClock start5 = steady_clock::now();
   for(int x=0;x<10;x++) {
-    for(DataIterator i = begin(result); !i.done() ; i++){
+    for(DataIterator i = begin(result); !i.done() ; ++i){
       rd[i.x][i.y][i.z] = ad[i.x][i.y][i.z] + bd[i.x][i.y][i.z];
     }
   }
@@ -169,9 +169,9 @@ int main(int argc, char **argv) {
   // Nested loop over fields
   SteadyClock start8 = steady_clock::now();
   for(int x=0;x<10;x++)
-    for(int i=0;i<mesh->ngx;i++)
-      for(int j=0;j<mesh->ngy;j++) 
-        for(int k=0;k<mesh->ngz;k++)
+    for(int i=0;i<mesh->ngx;++i)
+      for(int j=0;j<mesh->ngy;++j)
+        for(int k=0;k<mesh->ngz;++k)
           result(i,j,k) = a(i,j,k) + b(i,j,k);
   Duration elapsed8 = steady_clock::now() - start8;
 
@@ -200,7 +200,6 @@ int main(int argc, char **argv) {
   }
   Duration elapsed11 = steady_clock::now() - start11;
 
-
   output << "TIMING\n======\n";
   output << "Nested (data)              : " << elapsed1.count() << std::endl;
   output << "C loop (data)              : " << elapsed2.count() << std::endl;
@@ -220,9 +219,9 @@ int main(int argc, char **argv) {
   // // Nested loops
   // SteadyClock start9 = steady_clock::now();
   // for(int x=0;x<10;++x) {
-  //   for(int i=0;i<mesh->ngx;i++) {
-  //     for(int j=0;j<mesh->ngy;j++) {
-  //       for(int k=0;k<mesh->ngz;k++) {
+  //   for(int i=0;i<mesh->ngx;++i) {
+  //     for(int j=0;j<mesh->ngy;++j) {
+  //       for(int k=0;k<mesh->ngz;++k) {
   //         rd[i][j][k] = 3;
   //       }
   //     }
@@ -233,7 +232,7 @@ int main(int argc, char **argv) {
   // // Single loop
   // SteadyClock start10 = steady_clock::now();
   // for(int x=0;x<10;x++) {
-  //   for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;j++) {
+  //   for(int j=0;j<mesh->ngx*mesh->ngy*mesh->ngz;++j) {
   //     rd[0][0][j] = 3;
   //   }
   // }
@@ -241,8 +240,8 @@ int main(int argc, char **argv) {
 
   // // MeshIterator
   // SteadyClock start11 = steady_clock::now();
-  // for(int i=0;i<10;i++) {
-  //   for(MeshIterator i; !i.isDone(); i++){
+  // for(int i=0;i<10;++i) {
+  //   for(MeshIterator i; !i.isDone(); ++i){
   //     rd[i.x][i.y][i.z] = 3;
   //   }
   // }

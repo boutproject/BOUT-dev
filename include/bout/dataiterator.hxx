@@ -42,8 +42,8 @@ public:
   /// Increment operators
   DataIterator& operator++() { next(); return *this; }
   DataIterator operator++(int) { DataIterator tmp(*this); next(); return tmp; }
-  DataIterator& operator--() { previous(); return *this; }
-  DataIterator operator--(int) { DataIterator tmp(*this); previous(); return tmp; }
+  DataIterator& operator--() { prev(); return *this; }
+  DataIterator operator--(int) { DataIterator tmp(*this); prev(); return tmp; }
 
   // Comparison operator
   inline bool operator!=(const DataIterator& rhs) const {
@@ -89,7 +89,7 @@ private:
   }
 
   /// Rewind to the previous index
-  void previous() {
+  void prev() {
     --z;
     if(z < zstart) {
       z = zend;
