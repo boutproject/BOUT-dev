@@ -108,7 +108,8 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
           
 	  f(bndry->x,bndry->y) = val;
 	}
-      }else {
+      }
+      else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
@@ -122,10 +123,8 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
 	}
       }
-      return;
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
@@ -156,26 +155,26 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
 	}
       }
-      return;
     }
   }
-  
-  // Non-staggered, standard case
-  
-  for(; !bndry->isDone(); bndry->next1d()) {
+  else {
+    // Non-staggered, standard case
     
-    if(fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+    for(; !bndry->isDone(); bndry->next1d()) {
       
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				+ mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				+ mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      }
       
-      val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
     }
-    
-    f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
   }
 }
 
@@ -247,10 +246,8 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
-      return;
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
@@ -284,24 +281,23 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
-      return;
     }
   }
-  
-  // Standard (non-staggered) case
+  else {
+    // Standard (non-staggered) case
   for(; !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			    + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
-    
-    for(int zk=0;zk<mesh->ngz-1;zk++) {
-      if(fg)
-	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			    + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	if(fg)
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
     }
     for(int i=1;i<bndry->width;i++) {
       // Set any other guard cells using the values on the cells
@@ -314,6 +310,7 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
           val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
         }
         f(xi, yi, zk) = val;
+      }
       }
     }
   }
@@ -607,10 +604,8 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
 	}
       }
-      return;
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
@@ -642,27 +637,27 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
 	}
       }
-      return;
     }
   }
-  
-  // Non-staggered, standard case
-  
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+  else {
+    // Non-staggered, standard case
     
-    if(fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
       
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				+ mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				+ mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+      }
       
-      val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+      f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
     }
-    
-    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
   }
 }
 
@@ -711,7 +706,8 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
 	  }
 	}
-      }else {
+      }
+      else {
 	// Inner boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
@@ -729,10 +725,8 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
-      return;
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
@@ -766,25 +760,25 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	  }
 	}
       }
-      return;
     }
   }
-  
-  for(; !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+  else {
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			    + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
-    
-    BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
-
-    for(int zk=0;zk<mesh->ngz-1;zk++) {
-      if(fg)
-	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			    + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+      BoutReal delta = bndry->bx*mesh->dx(bndry->x,bndry->y)+bndry->by*mesh->dy(bndry->x,bndry->y);
+
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	if(fg)
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	
+	f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+      }
     }
   }
 }
