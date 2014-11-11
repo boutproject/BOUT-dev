@@ -265,9 +265,10 @@ const DataIterator Field3D::begin() const {
 }
 
 const DataIterator Field3D::end() const {
-  return DataIterator(mesh->ngx-1, 0, mesh->ngx-1, 
-                      mesh->ngy-1, 0, mesh->ngy-1,
-                      mesh->ngz-1, 0, mesh->ngz-1);
+  // end() iterator should be one past the last element
+  return ++DataIterator(mesh->ngx-1, 0, mesh->ngx-1,
+						mesh->ngy-1, 0, mesh->ngy-1,
+						mesh->ngz-1, 0, mesh->ngz-1);
 }
 
 BoutReal** Field3D::operator[](int jx) const {
