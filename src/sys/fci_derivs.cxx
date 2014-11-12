@@ -50,6 +50,13 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
   k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+  // Ugly ugly code
+  x_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
+					(mesh.ngy, std::vector<bool>
+					 (mesh.ngz-1)));
+  z_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
+					(mesh.ngy, std::vector<bool>
+					 (mesh.ngz-1)));
 
   Field3D xt_prime, zt_prime;
 
@@ -70,17 +77,18 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
   BoutReal t_x, t_z, temp;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
-	for(int y=mesh.ystart; y<=mesh.yend;y++) {
-	  for(int z=0;z<ncz;z++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<ncz;z++) {
 		// The integer part of xt_prime, zt_prime are the indices of the cell
 		// containing the field line end-point
 		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
 
-		// z is periodic, so make sure the z-index wraps around
-		zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
+		// Needed here if periodic BCs taken care of elsewhere?
+		// // z is periodic, so make sure the z-index wraps around
+		// zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
 
-		if(zt_prime[x][y][z] < 0.0)
-		  zt_prime[x][y][z] += ncz;
+		// if(zt_prime[x][y][z] < 0.0)
+		//   zt_prime[x][y][z] += ncz;
 
 		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
 
@@ -88,6 +96,43 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 		// calculated by taking the remainder of the floating point index
 		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
 		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
+
+		//----------------------------------------
+		// Boundary stuff
+		if (i_corner[x][y][z] < 0 ||
+			i_corner[x][y][z] > mesh.GlobalNx) {
+		  x_boundary[x][y][z] = true;
+
+		  // distance to intersection with boundary
+		  BoutReal x1 = mesh.dx(x,y)/2.;
+		  BoutReal dy = mesh.dy(x,y);
+		  BoutReal temp =  x1 * (dy / (x1 + t_x));
+		  y_prime_x.setData(x, y, z, &temp);
+		} else {
+		  x_boundary[x][y][z] = false;
+		}
+
+		if (zt_prime[x][y][z] < 0 ||
+			zt_prime[x][y][z] > ncz-1) {
+		  z_boundary[x][y][z] = true;
+
+		  // distance to intersection with boundary
+		  BoutReal z1 = mesh.dz/2.;
+		  BoutReal dy = mesh.dy(x,y);
+		  BoutReal temp =  z1 * (dy / (z1 + t_z));
+		  y_prime_z.setData(x, y, z, &temp);
+		} else {
+		  z_boundary[x][y][z] = false;
+		}
+
+		// // Nicer?
+		// boundary[x][y][z] = (i_corner[x][y][z] < mesh.xstart ||
+		// 		     i_corner[x][y][z] > mesh.xend ||
+		// 		     k_corner[x][y][z] < mesh.zstart ||
+		// 		     k_corner[x][y][z] > mesh.zend)
+		//   ? true : false;
+
+		//----------------------------------------
 
 		// Check that t_x and t_z are in range
 		if( (t_x < 0.0) || (t_x > 1.0) )
@@ -121,8 +166,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 		h11_x.setData(x, y, z, &temp);
 		temp = t_z*t_z*t_z - t_z*t_z;
 		h11_z.setData(x, y, z, &temp);
-	  }
-	}
+      }
+    }
   }
 }
 
@@ -132,13 +177,13 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
 
   if(!mesh.FCI)
-	return; // Not using FCI method. Print error / warning?
+    return; // Not using FCI method. Print error / warning?
 
   Field3D fx, fz, fxz;
 
   // If f_next has already been computed, don't bother doing it again
   if (f_next.isAllocated())
-	return;
+    return;
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
@@ -152,8 +197,12 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
   f_next = 0;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
-	for(int y=mesh.ystart; y<=mesh.yend;y++) {
-	  for(int z=0;z<mesh.ngz-1;z++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<mesh.ngz-1;z++) {
+
+		// If this field line leaves the domain through the x-boundary, skip it
+		// Assume z is periodic for now
+		if (fcimap.x_boundary[x][y][z]) continue;
 
 		// Due to lack of guard cells in z-direction, we need to ensure z-index
 		// wraps around
@@ -191,8 +240,8 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 		  + f_zp1  * fcimap.h01_z[x][y][z]
 		  + fz_z   * fcimap.h10_z[x][y][z]
 		  + fz_zp1 * fcimap.h11_z[x][y][z];
-	  }
-	}
+      }
+    }
   }
 }
 
@@ -202,7 +251,7 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad_par(Field3D &f, bool keep) {
+const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad_par( Field3D )");
@@ -219,17 +268,29 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   // Should check if yup, ydown have already been calculated before calling interpolate
   interpolate(f, *yup, forward_map, +1);
   interpolate(f, *ydown, backward_map, -1);
+  
+  // Apply BC here?
+  switch (boundary) {
+  case DIRICHLET :
+	dirichletBC(f, *yup, forward_map, +1, bndry_value);
+	dirichletBC(f, *ydown, backward_map, -1, bndry_value);
+	break;
+  case NEUMANN :
+	neumannBC(f, *yup, forward_map, +1);
+	neumannBC(f, *ydown, backward_map, -1);
+	break;
+  }
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
 		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
-	  }
-	}
+      }
+    }
   }
 
   if (!keep) {
-	f.resetFCI();
+    f.resetFCI();
   }
 
 #ifdef TRACK
@@ -251,7 +312,7 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
+const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad2_par2( Field3D )");
@@ -269,16 +330,28 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
   interpolate(f, *yup, forward_map, +1);
   interpolate(f, *ydown, backward_map, -1);
 
+  // Apply BC here?
+  switch (boundary) {
+  case DIRICHLET :
+	dirichletBC(f, *yup, forward_map, +1, bndry_value);
+	dirichletBC(f, *ydown, backward_map, -1, bndry_value);
+	break;
+  case NEUMANN :
+	neumannBC(f, *yup, forward_map, +1);
+	neumannBC(f, *ydown, backward_map, -1);
+	break;
+  }
+
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
 		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
-	  }
-	}
+      }
+    }
   }
 
   if (!keep) {
-	f.resetFCI();
+    f.resetFCI();
   }
 
 #ifdef TRACK
@@ -297,13 +370,13 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Div_par(Field3D &f, bool keep) {
+const Field3D FCI::Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Div_par( Field3D )");
 #endif
 
   Field3D tmp = f/mesh.Bxy;
-  Field3D result = mesh.Bxy*Grad_par(tmp, keep);
+  Field3D result = mesh.Bxy*Grad_par(tmp, boundary, bndry_value, keep);
 
 #ifdef TRACK
   result.name = "FCI::Div_par("+f.name+")";
@@ -312,4 +385,95 @@ const Field3D FCI::Div_par(Field3D &f, bool keep) {
   msg_stack.pop(msg_pos);
 #endif
   return result;
+}
+
+// void periodicBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
+
+//   // Loop over grid points
+//   // If point is in boundary, then fill in f_next with value from other side of domain
+//   // Doesn't apply to directions that have guard cells...
+//   for(int x=mesh.xstart;x<=mesh.xend;x++) {
+//     for(int y=mesh.ystart; y<=mesh.yend;y++) {
+//       for(int z=0;z<mesh.ngz-1;z++) {
+
+// 		int ncz = mesh.ngz-1;
+// 		int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
+// 		int z_mod_p1 = (z_mod + 1) % ncz;
+
+// 		// If this field line doesn't leave the domain, skip it
+// 		if (!(fcimap.x_boundary[x][y][z] ||
+// 			  fcimap.z_boundary[x][y][z])) continue;
+
+// 		// Indices loop around, but interpolate as normal
+
+// 	  }
+// 	}
+//   }
+
+// }
+
+void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir, Field3D& value) {
+
+  // Assume field line is straight.
+
+  // Loop over grid points If point is in boundary, then fill in
+  // f_next such that the field would be VALUE on the boundary
+  for(int x=mesh.xstart;x<=mesh.xend;x++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<mesh.ngz-1;z++) {
+		// If this field line doesn't leave the domain, skip it
+		if (!(fcimap.x_boundary[x][y][z] ||
+			  fcimap.z_boundary[x][y][z])) continue;
+
+		// If the field line leaves through the z-boundary, but domain
+		// is periodic in z, skip it, as we've already done this in
+		// interpolate
+		if (fcimap.z_boundary[x][y][z] && zperiodic) continue;
+
+		// If the field line ends up in the corner, pick the closest
+		// boundary
+		BoutReal y_prime;
+		if (fcimap.x_boundary[x][y][z] && fcimap.z_boundary[x][y][z]) {
+		  y_prime = (fcimap.y_prime_x[x][y][z] < fcimap.y_prime_z[x][y][z])
+			? fcimap.y_prime_x[x][y][z] : fcimap.y_prime_z[x][y][z];
+		} else {
+		  // If it doesn't leave through the x-boundary, it must leave
+		  // through the z-boundary...
+		  y_prime = fcimap.x_boundary[x][y][z]
+			? fcimap.y_prime_x[x][y][z] : fcimap.y_prime_z[x][y][z];
+		}
+
+		// Scale the field and normalise to the desired value
+		BoutReal f2 = f[x][y][z] * (mesh.dy(x, y) - y_prime) / y_prime;
+
+		f_next[x][y+dir][z] = value[x][y][z] - f2;
+  
+	  }
+	}
+  }
+
+}
+
+void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
+  // Assume field line is straight.
+
+  // Loop over grid points If point is in boundary, then fill in
+  // f_next such that the field would be VALUE on the boundary
+  for(int x=mesh.xstart;x<=mesh.xend;x++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<mesh.ngz-1;z++) {
+		// If this field line doesn't leave the domain, skip it
+		if (!(fcimap.x_boundary[x][y][z] ||
+			  fcimap.z_boundary[x][y][z])) continue;
+
+		// If the field line leaves through the z-boundary, but domain
+		// is periodic in z, skip it, as we've already done this in
+		// interpolate
+		if (fcimap.z_boundary[x][y][z] && zperiodic) continue;
+
+		f_next[x][y+dir][z] = f[x][y][z];
+
+	  }
+	}
+  }
 }

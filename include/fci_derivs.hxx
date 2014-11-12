@@ -31,17 +31,24 @@
 #include <globals.hxx>
 #include <utils.hxx>
 #include <bout_types.hxx> // See this for codes
+#include <vector>
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Private constructor - must be initialised with mesh
   FCIMap();
 public:
+  typedef std::vector<std::vector<std::vector<bool> > > B3vec;
+
   // dir MUST be either +1 or -1
   FCIMap(Mesh& mesh, int dir);
 
-  int*** i_corner;				// x-index of bottom-left grid point
-  int*** k_corner;				// z-index of bottom-left grid point
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+  B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
+  B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
+  Field3D y_prime_x;    // distance to intersection with x-boundary
+  Field3D y_prime_z;    // distance to intersection with z-boundary
 
   // Basis functions for cubic Hermite spline interpolation
   //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -71,18 +78,29 @@ private:
   // not change
   Mesh& mesh;
 
+  // Is the z-direction periodic?
+  bool zperiodic;
+
   // Private constructor - must be initialised with mesh
   FCI();
 public:
-  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1) {}
+  enum BndryType { DIRICHLET, NEUMANN };
+
+  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1), zperiodic(true) {}
+  FCI(Mesh& m, bool zperiodic) : 
+	mesh(m), forward_map(m, +1), backward_map(m, -1), zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
 
   // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, bool keep = false);
-  const Field3D Div_par(Field3D &f, bool keep = false);
+  const Field3D Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
+  const Field3D Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
+  const Field3D Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
+
+  // Boundary conditions
+  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir, Field3D& value);
+  void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
 };
 
 #endif // __FCI_DERIVS_H__
