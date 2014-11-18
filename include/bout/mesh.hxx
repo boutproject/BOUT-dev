@@ -229,7 +229,16 @@ class Mesh {
   */
   
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
+
+  const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexDDX(const Field2D &f);
   
+  const Field3D indexDDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexDDY(const Field2D &f);
+
+  const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
+  const Field2D indexDDZ(const Field2D &f);
+
  protected:
   
   GridDataSource *source; ///< Source for grid data
@@ -248,7 +257,16 @@ class Mesh {
                  int xd, int yd,  // Destination origin
                  int nx, int ny,  // Size of the domain to copy
                  BoutReal **data);
+
+  // Loop over mesh, applying a stencil in the X direction
+  const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
   
+  const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+
+  const Field2D applyZdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
+  const Field3D applyZdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
  private:
   /*
   int gaussj(BoutReal **a, int n);
