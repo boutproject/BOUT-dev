@@ -45,7 +45,7 @@
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh& mesh, int dir) {
+FCIMap::FCIMap(Mesh& mesh, int dir) : dir(dir) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
@@ -174,7 +174,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 // Use cubic Hermite splines to interpolate field f on the adjacent toroidal
 // slice in direction dir. Spline coefficients are stored in fcimap and the
 // interpolated field is stored in f_next
-void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
+void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
 
   if(!mesh.FCI)
     return; // Not using FCI method. Print error / warning?
@@ -211,31 +211,31 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 		int z_mod_p1 = (z_mod + 1) % ncz;
 
 		// Interpolate f in X at Z
-		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x[x][y][z]
+		  + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x[x][y][z]
+		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x[x][y][z]
+		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x[x][y][z];
 
 		// Interpolate f in X at Z+1
-		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x[x][y][z]
+		  + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x[x][y][z]
+		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x[x][y][z]
+		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x[x][y][z];
 
 		// Interpolate fz in X at Z
-		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x[x][y][z]
+		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x[x][y][z]
+		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x[x][y][z]
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x[x][y][z];
 
 		// Interpolate fz in X at Z+1
-		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x[x][y][z]
+		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x[x][y][z]
+		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x[x][y][z]
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x[x][y][z];
 
 		// Interpolate in Z
-		f_next(x,y + dir,z) =
+		f_next(x,y + fcimap.dir,z) =
 		  + f_z    * fcimap.h00_z[x][y][z]
 		  + f_zp1  * fcimap.h01_z[x][y][z]
 		  + fz_z   * fcimap.h10_z[x][y][z]
@@ -266,18 +266,18 @@ const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value,
   ydown = f.ydown();
 
   // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map, +1);
-  interpolate(f, *ydown, backward_map, -1);
+  interpolate(f, *yup, forward_map);
+  interpolate(f, *ydown, backward_map);
   
   // Apply BC here?
   switch (boundary) {
   case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, +1, bndry_value);
-	dirichletBC(f, *ydown, backward_map, -1, bndry_value);
+	dirichletBC(f, *yup, forward_map, bndry_value);
+	dirichletBC(f, *ydown, backward_map, bndry_value);
 	break;
   case NEUMANN :
-	neumannBC(f, *yup, forward_map, +1);
-	neumannBC(f, *ydown, backward_map, -1);
+	neumannBC(f, *yup, forward_map);
+	neumannBC(f, *ydown, backward_map);
 	break;
   }
 
@@ -327,18 +327,18 @@ const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_valu
   ydown = f.ydown();
 
   // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map, +1);
-  interpolate(f, *ydown, backward_map, -1);
+  interpolate(f, *yup, forward_map);
+  interpolate(f, *ydown, backward_map);
 
   // Apply BC here?
   switch (boundary) {
   case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, +1, bndry_value);
-	dirichletBC(f, *ydown, backward_map, -1, bndry_value);
+	dirichletBC(f, *yup, forward_map, bndry_value);
+	dirichletBC(f, *ydown, backward_map, bndry_value);
 	break;
   case NEUMANN :
-	neumannBC(f, *yup, forward_map, +1);
-	neumannBC(f, *ydown, backward_map, -1);
+	neumannBC(f, *yup, forward_map);
+	neumannBC(f, *ydown, backward_map);
 	break;
   }
 
@@ -412,7 +412,7 @@ const Field3D FCI::Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, 
 
 // }
 
-void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir, Field3D& value) {
+void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, Field3D& value) {
 
   // Assume field line is straight.
 
@@ -446,7 +446,7 @@ void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 		// Scale the field and normalise to the desired value
 		BoutReal f2 = f[x][y][z] * (mesh.dy(x, y) - y_prime) / y_prime;
 
-		f_next[x][y+dir][z] = value[x][y][z] - f2;
+		f_next[x][y+fcimap.dir][z] = value[x][y][z] - f2;
   
 	  }
 	}
@@ -454,7 +454,7 @@ void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 
 }
 
-void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
+void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
   // Assume field line is straight.
 
   // Loop over grid points If point is in boundary, then fill in
@@ -471,7 +471,7 @@ void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) 
 		// interpolate
 		if (fcimap.z_boundary[x][y][z] && zperiodic) continue;
 
-		f_next[x][y+dir][z] = f[x][y][z];
+		f_next[x][y+fcimap.dir][z] = f[x][y][z];
 
 	  }
 	}

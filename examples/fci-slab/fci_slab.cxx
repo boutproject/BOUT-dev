@@ -41,12 +41,12 @@ BOUTMAIN(FCISlab);
 
 int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
-  ddt(f) = fci.Grad_par(g, FCI::DIRICHLET, zero) + D*SQ(mesh->dy)*fci.Grad2_par2(f, FCI::DIRICHLET, zero);
+  ddt(f) = fci.Grad_par(g, FCI::DIRICHLET, 0) + D*SQ(mesh->dy)*fci.Grad2_par2(f, FCI::DIRICHLET, 0);
 
   //for(int i=0;i<mesh->ngx;i++)
   //  output.write("%i: %e\n", i, ddt(f)(i,16,0));
 
-  ddt(g) = fci.Grad_par(f, FCI::DIRICHLET, zero) + D*SQ(mesh->dy)*fci.Grad2_par2(g, FCI::DIRICHLET, zero);
+  ddt(g) = fci.Grad_par(f, FCI::DIRICHLET, 0) + D*SQ(mesh->dy)*fci.Grad2_par2(g, FCI::DIRICHLET, 0);
 
   return 0;
 }

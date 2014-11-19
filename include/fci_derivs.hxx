@@ -43,6 +43,9 @@ public:
   // dir MUST be either +1 or -1
   FCIMap(Mesh& mesh, int dir);
 
+  // Direction of map
+  int dir;
+
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
   B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
@@ -91,7 +94,7 @@ public:
 	mesh(m), forward_map(m, +1), backward_map(m, -1), zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
-  void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
+  void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 
   // Parallel derivatives
   const Field3D Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
@@ -99,8 +102,8 @@ public:
   const Field3D Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
 
   // Boundary conditions
-  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir, Field3D& value);
-  void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
+  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, Field3D& value);
+  void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 };
 
 #endif // __FCI_DERIVS_H__
