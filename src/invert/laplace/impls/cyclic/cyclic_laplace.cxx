@@ -58,12 +58,15 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
   int nsys = nmode;     // Number of tridiagonal systems to solve simulaneously
   
   xs = mesh->xstart; // Starting X index
-  if(mesh->firstX())
-    xs = 0;
+   if(mesh->firstX() && !mesh->periodicX){ // Only want to include guard cells at boundaries if we're not periodic
+	  xs = 0;
+  }
+    
   xe = mesh->xend;  // Last X index
-  if(mesh->lastX())
-    xe = mesh->ngx-1;
-
+  if(mesh->lastX() && !mesh->periodicX){ // Only want to include guard cells at boundaries if we're not periodic
+	  xe = mesh->ngx-1;
+  }
+  
   int n = xe - xs + 1;  // Number of X points on this processor, 
                         // including boundaries but not guard cells
   
@@ -117,7 +120,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     outbndry = 1;
 
   if(dst) {
-    // Loop over X indices, including boundaries but not guard cells
+    // Loop over X indices, including boundaries but not guard cells (if not periodic). 
     for(int ix=xs; ix <= xe; ix++) {
       // Take DST in Z direction and put result in k1d  
 
@@ -173,7 +176,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       x[ix][mesh->ngz-1] = 0.0; // probably unnecessary
     }
   }else {
-    // Loop over X indices, including boundaries but not guard cells
+    // Loop over X indices, including boundaries but not guard cells (if not periodic)
     for(int ix=xs; ix <= xe; ix++) {
       // Take FFT in Z direction, apply shift, and put result in k1d
     

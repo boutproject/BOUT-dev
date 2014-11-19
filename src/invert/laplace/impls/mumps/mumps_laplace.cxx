@@ -39,11 +39,10 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
   A(0.0), C1(1.0), C2(1.0), D(1.0), Ex(0.0), Ez(0.0),
   issetD(false), issetC(false), issetE(false)
 {
-  
   // Get Options in Laplace Section
   if (!opt) opts = Options::getRoot()->getSection("laplace");
   else opts=opt;
-  
+ 
   #ifdef CHECK
     implemented_flags = INVERT_START_NEW;
     implemented_boundary_flags = INVERT_AC_GRAD
@@ -59,6 +58,9 @@ LaplaceMumps::LaplaceMumps(Options *opt) :
     if (outer_boundary_flags & ~implemented_boundary_flags) {
       throw BoutException("Attempted to set Laplacian inversion boundary condition flag that is not implemented in mumps_laplace.cxx");
     }
+    if(mesh->periodicX) {
+        throw BoutException("LaplaceMumps does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+      }
   #endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.
