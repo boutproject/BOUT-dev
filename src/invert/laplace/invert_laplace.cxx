@@ -308,14 +308,20 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef, 
                              const Field2D *d,
                              bool includeguards) {
+    
   int xs = 0;
   int xe = mesh->ngx-1;
+  
   if(!includeguards) {
-    if(!mesh->firstX()) 
+    if(!mesh->firstX() || mesh->periodicX)                
       xs = mesh->xstart; // Inner edge is a guard cell
-    if(!mesh->lastX())
+    if(!mesh->lastX() || mesh->periodicX)             
       xe = mesh->xend; // Outer edge is a guard cell
   }
+  // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which 
+  // works with periodicX is serial_tri, which uses includeguards==true, so the above isn't called.   
+  
+  
   int ncx = xe - xs;
   
   int inbndry = 2, outbndry=2;
