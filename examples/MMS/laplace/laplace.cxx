@@ -5,8 +5,13 @@
 #include <bout/constants.hxx>
 
 int main(int argc, char **argv) {
-  BoutInitialise(argc, argv);
-  
+  int init_err = BoutInitialise(argc, argv);
+  if (init_err < 0) {
+    return 0;
+  } else if (init_err > 0) {
+    return init_err;
+  }
+
   ////// Set mesh spacing
   Options *meshoptions = Options::getRoot()->getSection("mesh");
 
