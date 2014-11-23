@@ -196,40 +196,10 @@ class Mesh {
   /// Coordinate system
   Coordinates* coordinates();
   
-  /*
-
-  // These used for differential operators 
-  Field2D dx, dy;      // Read in grid.cpp
-  Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
-  
-  BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)  
-
-  Field2D J; // Jacobian
-
-  Field2D Bxy; // Magnitude of B = nabla z times nabla x
-  
-  // Contravariant metric tensor (g^{ij})
-  Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
-  
-  // Covariant metric tensor
-  Field2D g_11, g_22, g_33, g_12, g_13, g_23;
-  
-  // Christoffel symbol of the second kind (connection coefficients)
-  Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-  Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-  Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-  
-  Field2D G1, G2, G3;
-
-  /// Calculate differential geometry quantities from the metric tensor
-  int geometry();
-  int calcCovariant(); ///< Inverts contravatiant metric to get covariant
-  int calcContravariant(); ///< Invert covariant metric to get contravariant
-  int jacobian(); // Calculate J and Bxy
-  */
-  
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
 
+  // First derivatives in index space
+  // Implemented in src/mesh/index_derivs.hxx
   const Field3D indexDDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
   const Field2D indexDDX(const Field2D &f);
   
@@ -239,6 +209,20 @@ class Mesh {
   const Field3D indexDDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool inc_xbndry);
   const Field2D indexDDZ(const Field2D &f);
 
+  // Second derivatives in index space
+  // Implemented in src/mesh/index_derivs.hxx
+  const Field3D indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexD2DX2(const Field2D &f);
+  const Field3D indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexD2DY2(const Field2D &f);
+  const Field3D indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  
+  // Fourth derivatives in index space
+  const Field3D indexD4DX4(const Field3D &f);
+  const Field2D indexD4DX4(const Field2D &f);
+  const Field3D indexD4DY4(const Field3D &f);
+  const Field2D indexD4DY4(const Field2D &f);
+  const Field3D indexD4DZ4(const Field3D &f);
  protected:
   
   GridDataSource *source; ///< Source for grid data

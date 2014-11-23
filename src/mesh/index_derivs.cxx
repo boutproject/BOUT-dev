@@ -16,6 +16,9 @@
  * 4. Flux methods FDD* (e.g. flux conserving, limiting)
  *    Div(v*f)
  *
+ * 2014-11-22   Ben Dudson  <benjamin.dudson@york.ac.uk>
+ *    o Moved here from sys/derivs, made part of Mesh
+ * 
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
@@ -1759,12 +1762,26 @@ const Field2D Mesh::indexDDZ(const Field2D &f) {
 }
 
 /*******************************************************************************
- * 2nd derivative
+ * 2nd derivatives
  *******************************************************************************/
 
 ////////////// X DERIVATIVE /////////////////
 
-const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+/*!
+ * @brief Calculates second derivative on Mesh in index space
+ * 
+ * @param[in] f        3D scalar field to be differentiated. 
+ *                     Must be allocated and finite
+ * 
+ * @param[in] outloc   The cell location of the result
+ * 
+ * @param[in] method   The numerical method to use
+ * 
+ * @return  A 3D scalar field with invalid data in the 
+ *          guard cells
+ *
+ */
+const Field3D Mesh::indexD2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DX2; // Set to default function
   inner_boundary_deriv_func func_in = fD2DX2_in;
   outer_boundary_deriv_func func_out = fD2DX2_out;
@@ -1775,12 +1792,12 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   
   Field3D result;
   
-  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(mesh->StaggerGrids && (outloc != inloc)) {
+  if(StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_XLOW)) ||
@@ -1820,17 +1837,19 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       bout_error("Cannot use FFT for X derivatives");
   }
   
-  Field2D dd = mesh->dx*mesh->dx;
-  result = applyXdiff(f, func, func_in, func_out, dd);
+  result = applyXdiff(f, func, func_in, func_out);
   result.setLocation(diffloc);
   
+  /*
   if(non_uniform) {
     // Correction for non-uniform mesh
     result += mesh->d1_dx*applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
   }
+  */
   
   result = interp_to(result, outloc);
 
+  /*
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     mesh->IncIntShear = false; // So DDX doesn't try to include I again
     // Add I^2 d^2/dz^2 term
@@ -1841,31 +1860,31 @@ const Field3D D2DX2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     result += DDX(mesh->IntShiftTorsion) * DDZ(f, outloc);
     mesh->IncIntShear = true;
   }
+  */
+  return result;
+}
+
+/*!
+ * @brief Calculates second derivative on Mesh in index space
+ * 
+ * @param[in] f        2D scalar field to be differentiated. 
+ *                     Must be allocated and finite
+ * 
+ * @return  A 2D scalar field with invalid data in the 
+ *          guard cells
+ *
+ */
+const Field2D Mesh::indexD2DX2(const Field2D &f) {
+  Field2D result;
+  
+  result = applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out);
   
   return result;
 }
 
-const Field3D D2DX2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
-  return D2DX2(f, outloc, method);
-}
-
-const Field2D D2DX2(const Field2D &f) {
-  Field2D result;
-
-  Field2D dd = mesh->dx*mesh->dx;
-  result = applyXdiff(f, fD2DX2, fD2DX2_in, fD2DX2_out, dd);
-  
-  if(non_uniform) {
-    // Correction for non-uniform mesh
-    result += mesh->d1_dx * applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
-  }
-  
-  return(result);
-}
-
 ////////////// Y DERIVATIVE /////////////////
 
-const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DY2; // Set to default function
   inner_boundary_deriv_func func_in = fD2DY2_in;
   outer_boundary_deriv_func func_out = fD2DY2_out;
@@ -1876,12 +1895,12 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   
   Field3D result;
   
-  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(mesh->StaggerGrids && (outloc != inloc)) {
+  if(StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_YLOW)) ||
@@ -1921,29 +1940,19 @@ const Field3D D2DY2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
       bout_error("Cannot use FFT for Y derivatives");
   }
   
-  Field2D dd = mesh->dy*mesh->dy;
-  result = applyYdiff(f, func, func_in, func_out, dd);
+  result = applyYdiff(f, func, func_in, func_out);
   result.setLocation(diffloc);
-
-  if(non_uniform) {
-    // Correction for non-uniform mesh
-    result += mesh->d1_dy * applyYdiff(f, fDDY, fDDY_in, fDDY_out, mesh->dy);
-  }
 
   return interp_to(result, outloc);
 }
 
-const Field3D D2DY2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
-  return D2DY2(f, outloc, method);
-}
-
-const Field2D D2DY2(const Field2D &f) {
-  return applyYdiff(f, fD2DY2, fD2DY2_in, fD2DY2_out, mesh->dy*mesh->dy);
+const Field2D Mesh::indexD2DY2(const Field2D &f) {
+  return applyYdiff(f, fD2DY2, fD2DY2_in, fD2DY2_out);
 }
 
 ////////////// Z DERIVATIVE /////////////////
 
-const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+const Field3D Mesh::indexD2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   deriv_func func = fD2DZ2; // Set to default function
   DiffLookup *table = SecondDerivTable;
   
@@ -1952,12 +1961,12 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   
   Field3D result;
 
-  if(mesh->StaggerGrids && (outloc == CELL_DEFAULT)) {
+  if(StaggerGrids && (outloc == CELL_DEFAULT)) {
     // Take care of CELL_DEFAULT case
     outloc = diffloc; // No shift (i.e. same as no stagger case)
   }
 
-  if(mesh->StaggerGrids && (outloc != inloc)) {
+  if(StaggerGrids && (outloc != inloc)) {
     // Shifting to a new location
     
     if(((inloc == CELL_CENTRE) && (outloc == CELL_ZLOW)) ||
@@ -1993,7 +2002,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
     // Use FFT
 
     BoutReal shift = 0.; // Shifting result in Z?
-    if(mesh->StaggerGrids) {
+    if(StaggerGrids) {
       if((inloc == CELL_CENTRE) && (diffloc == CELL_ZLOW)) {
 	// Shifting down - multiply by exp(-0.5*i*k*dz)
 	shift = -1.;
@@ -2007,73 +2016,43 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
 
     int ncz = mesh->ngz-1;
     
-#ifndef _OPENMP
     static dcomplex *cv = (dcomplex*) NULL;
-#else
-    static dcomplex *globalcv;
-    static int nthreads = 0;
-#endif
     
-    #pragma omp parallel
-    {
-#ifndef _OPENMP
-      // Serial, so can have a single static array
-      if(cv == (dcomplex*) NULL)
-        cv = new dcomplex[ncz/2 + 1];
-#else
-      // Parallel, so allocate a separate array for each thread
+    // Serial, so can have a single static array
+    if(cv == (dcomplex*) NULL)
+      cv = new dcomplex[ncz/2 + 1];
+
+    int xs = mesh->xstart;
+    int xe = mesh->xend;
+    int ys = mesh->ystart;
+    int ye = mesh->yend;
+    if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
+      xs = 0;
+    if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
+      xe = mesh->ngx-1;
+    if (mesh->freeboundary_ydown)
+      ys = 0;
+    if (mesh->freeboundary_ydown)
+      ye = mesh->ngy-1;
       
-      int th_id = omp_get_thread_num(); // thread ID
-      int n_th = omp_get_num_threads();
-      if(th_id == 0) {
-        if(nthreads < n_th) {
-          // Allocate memory in thread zero
-          if(nthreads > 0)
-            delete[] globalcv;
-          globalcv = new dcomplex[n_th*(ncz/2 + 1)];
-          nthreads = n_th;
-        }
-      }
-      // Wait for memory to be allocated
-      #pragma omp barrier
-      
-      dcomplex *cv = globalcv + th_id*(ncz/2 + 1); // Separate array for each thread
-#endif
-      int xs = mesh->xstart;
-      int xe = mesh->xend;
-      int ys = mesh->ystart;
-      int ye = mesh->yend;
-      if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX)
-	xs = 0;
-      if (mesh->freeboundary_xout && mesh->lastX() && !mesh->periodicX)
-	xe = mesh->ngx-1;
-      if (mesh->freeboundary_ydown)
-	ys = 0;
-      if (mesh->freeboundary_ydown)
-	ye = mesh->ngy-1;
-      #pragma omp for
-      for(int jx=xs;jx<=xe;jx++) {
-        for(int jy=ys;jy<=ye;jy++) {
+    for(int jx=xs;jx<=xe;jx++) {
+      for(int jy=ys;jy<=ye;jy++) {
           
-          rfft(f[jx][jy], ncz, cv); // Forward FFT
+	rfft(f[jx][jy], ncz, cv); // Forward FFT
 	
-          for(int jz=0;jz<=ncz/2;jz++) {
-            BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-            
-            BoutReal flt;
-            if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
+	for(int jz=0;jz<=ncz/2;jz++) {
+	  BoutReal kwave=jz*2.0*PI/ncz; // wave number is 1/[rad]
 
-            cv[jz] *= -SQ(kwave) * flt;
-            if(mesh->StaggerGrids)
-              cv[jz] *= exp(Im * (shift * kwave * mesh->dz));
-          }
+	  cv[jz] *= -SQ(kwave) * flt;
+	  if(StaggerGrids)
+	    cv[jz] *= exp(0.5*Im * (shift * kwave));
+	}
 
-          irfft(cv, ncz, result[jx][jy]); // Reverse FFT
+	irfft(cv, ncz, result[jx][jy]); // Reverse FFT
 	
-          result(jx,jy,ncz) = result(jx,jy,0);
-        }
+	result(jx,jy,ncz) = result(jx,jy,0);
       }
-    } // End of parallel section
+    }
 
 #ifdef CHECK
     // Mark boundaries as invalid
@@ -2090,23 +2069,12 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   }
   else {
     // All other (non-FFT) functions
-    result = applyZdiff(f, func, SQ(mesh->dz));
+    result = applyZdiff(f, func));
   }
 
   result.setLocation(diffloc);
 
   return interp_to(result, outloc);
-}
-
-const Field3D D2DZ2(const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
-  return D2DZ2(f, outloc, method);
-}
-
-
-const Field2D D2DZ2(const Field2D &f) {
-  Field2D result;
-  result = 0.0;
-  return result;
 }
 
 /*******************************************************************************
@@ -2129,67 +2097,30 @@ boundary_derivs_pair D4D4_B2(backward_stencil &f) {
   result.outer = 3.*f.p-14.*f.c+26.*f.m-24.*f.m2+11.*f.m3-2.*f.m4;
 }
 
-const Field3D D4DX4(const Field3D &f) {
-  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+const Field3D Mesh::indexD4DX4(const Field3D &f) {
+  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2);
 }
 
-const Field2D D4DX4(const Field2D &f) {
-  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+const Field2D Mesh::indexD4DX4(const Field2D &f) {
+  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2);
 }
 
-const Field3D D4DY4(const Field3D &f) {
-  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+const Field3D Mesh::indexD4DY4(const Field3D &f) {
+  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2);
 }
 
-const Field2D D4DY4(const Field2D &f) {
-  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+const Field2D Mesh::indexD4DY4(const Field2D &f) {
+  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2);
 }
 
-const Field3D D4DZ4(const Field3D &f) {
-  return applyZdiff(f, D4DX4_C2, SQ(SQ(mesh->dz)));
-}
-
-const Field2D D4DZ4(const Field2D &f) {
-  return Field2D(0.0);
+const Field3D Mesh::indexD4DZ4(const Field3D &f) {
+  return applyZdiff(f, D4DX4_C2);
 }
 
 /*******************************************************************************
  * Mixed derivatives
  *******************************************************************************/
 
-const Field2D D2DXDY(const Field2D &f) {
-  return Field2D(0.0);
-  /*
-    Note: Missing corners, so following will break
-  Field2D result;
-  result.allocate();
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) {
-      result(i,j) = 0.25*( +(f(i+1,j+1) - f(i-1,j+1))/(mesh->dx(i,j+1))
-                           -(f(i+1,j-1) - f(i-1,j-1))/(mesh->dx(i,j-1)) )
-        / mesh->dy(i,j);
-    }
-  return result;
-  */
-}
-
-const Field3D D2DXDY(const Field3D &f) {
-  return Field3D(0.0);
-  /*
-    Note: Missing corners, so following will break
-    
-  Field3D result;
-  result.allocate();
-  for(int i=mesh->xstart;i<=mesh->xend;i++)
-    for(int j=mesh->ystart;j<=mesh->yend;j++) 
-      for(int k=0;k<mesh->ngz;k++) {
-        result(i,j,k) = 0.25*( +(f(i+1,j+1,k) - f(i-1,j+1,k))/(mesh->dx(i,j+1))
-                               -(f(i+1,j-1,k) - f(i-1,j-1,k))/(mesh->dx(i,j-1)) )
-          / mesh->dy(i,j);
-      }
-  return result;
-  */
-}
 
 const Field2D D2DXDZ(const Field2D &f) {
   return Field2D(0.0);
