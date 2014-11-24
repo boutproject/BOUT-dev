@@ -79,28 +79,10 @@ FCIMap::FCIMap(Mesh& mesh, int dir) : dir(dir) {
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
     for(int y=mesh.ystart; y<=mesh.yend;y++) {
       for(int z=0;z<ncz;z++) {
-		// The integer part of xt_prime, zt_prime are the indices of the cell
-		// containing the field line end-point
-		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
-
-		// Needed here if periodic BCs taken care of elsewhere?
-		// // z is periodic, so make sure the z-index wraps around
-		// zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
-
-		// if(zt_prime[x][y][z] < 0.0)
-		//   zt_prime[x][y][z] += ncz;
-
-		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
-
-		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
-		// calculated by taking the remainder of the floating point index
-		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
-		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
-
 		//----------------------------------------
 		// Boundary stuff
-		if (i_corner[x][y][z] < 0 ||
-			i_corner[x][y][z] > mesh.GlobalNx) {
+		if (xt_prime[x][y][z] < 0 ||
+			xt_prime[x][y][z] > mesh.GlobalNx) {
 		  x_boundary[x][y][z] = true;
 
 		  // distance to intersection with boundary
@@ -133,6 +115,25 @@ FCIMap::FCIMap(Mesh& mesh, int dir) : dir(dir) {
 		//   ? true : false;
 
 		//----------------------------------------
+
+		// The integer part of xt_prime, zt_prime are the indices of the cell
+		// containing the field line end-point
+		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+
+		// Needed here if periodic BCs taken care of elsewhere?
+		// // z is periodic, so make sure the z-index wraps around
+		zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
+
+		if(zt_prime[x][y][z] < 0.0)
+		  zt_prime[x][y][z] += ncz;
+
+		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
+
+		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
+		// calculated by taking the remainder of the floating point index
+		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
+		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
+
 
 		// Check that t_x and t_z are in range
 		if( (t_x < 0.0) || (t_x > 1.0) )
@@ -251,7 +252,7 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
+const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad_par( Field3D )");
@@ -272,8 +273,8 @@ const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value,
   // Apply BC here?
   switch (boundary) {
   case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, bndry_value);
-	dirichletBC(f, *ydown, backward_map, bndry_value);
+	dirichletBC(f, *yup, forward_map, gen, t);
+	dirichletBC(f, *ydown, backward_map, gen, t);
 	break;
   case NEUMANN :
 	neumannBC(f, *yup, forward_map);
@@ -312,7 +313,7 @@ const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value,
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
+const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad2_par2( Field3D )");
@@ -333,8 +334,8 @@ const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_valu
   // Apply BC here?
   switch (boundary) {
   case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, bndry_value);
-	dirichletBC(f, *ydown, backward_map, bndry_value);
+	dirichletBC(f, *yup, forward_map, gen, t);
+	dirichletBC(f, *ydown, backward_map, gen, t);
 	break;
   case NEUMANN :
 	neumannBC(f, *yup, forward_map);
@@ -370,13 +371,13 @@ const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_valu
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep) {
+const Field3D FCI::Div_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Div_par( Field3D )");
 #endif
 
   Field3D tmp = f/mesh.Bxy;
-  Field3D result = mesh.Bxy*Grad_par(tmp, boundary, bndry_value, keep);
+  Field3D result = mesh.Bxy*Grad_par(tmp, boundary, gen, t, keep);
 
 #ifdef TRACK
   result.name = "FCI::Div_par("+f.name+")";
@@ -412,7 +413,7 @@ const Field3D FCI::Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, 
 
 // }
 
-void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, Field3D& value) {
+void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t) {
 
   // Assume field line is straight.
 
@@ -443,10 +444,15 @@ void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, Field3D
 			? fcimap.y_prime_x[x][y][z] : fcimap.y_prime_z[x][y][z];
 		}
 
-		// Scale the field and normalise to the desired value
-		BoutReal f2 = f[x][y][z] * (mesh.dy(x, y) - y_prime) / y_prime;
+		// Generate the boundary value
+		BoutReal xnorm = mesh.GlobalX(x);
+		BoutReal ynorm = mesh.GlobalY(y);
+		BoutReal value = gen->generate(xnorm, TWOPI*ynorm, TWOPI*z/(mesh.ngz-1), t);
 
-		f_next[x][y+fcimap.dir][z] = value[x][y][z] - f2;
+		// Scale the field and normalise to the desired value
+		BoutReal f2 = (f[x][y][z] - value) * (mesh.dy(x, y) - y_prime) / y_prime;
+
+		f_next[x][y+fcimap.dir][z] = value - f2;
   
 	  }
 	}

@@ -32,6 +32,8 @@
 #include <utils.hxx>
 #include <bout_types.hxx> // See this for codes
 #include <vector>
+#include <bout/constants.hxx>
+#include <field_factory.hxx>
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
@@ -97,12 +99,12 @@ public:
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 
   // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
-  const Field3D Div_par(Field3D &f, BndryType boundary, Field3D bndry_value, bool keep = false);
+  const Field3D Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
+  const Field3D Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
+  const Field3D Div_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
 
   // Boundary conditions
-  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, Field3D& value);
+  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t);
   void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 };
 
