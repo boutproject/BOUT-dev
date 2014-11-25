@@ -35,6 +35,49 @@
 #include <bout/constants.hxx>
 #include <field_factory.hxx>
 
+/**
+ * Boundary region for FCI. This contains a vector of points that are
+ * inside the boundary.
+ *
+ */
+class FCIBoundary {
+public:
+  /**
+   * Constructor for FCIBoundary.
+   *
+   */
+  FCIBoundary() {}
+
+  /// Add a point to the boundary
+  void add_point(const int x, const int y, const int z);
+  /// Move to the start of the boundary
+  void first();
+  /// Move to the next point in the boundary
+  void next();
+  // Have we reached the end of the boundary?
+  bool isDone() const;
+
+  /// Indices of current position in the boundary
+  int x, y, z;
+
+private:
+
+  struct Indices {
+	int x;
+	int y;
+	int z;
+  };
+
+  typedef std::vector<Indices> IndicesVec;
+  typedef IndicesVec::iterator IndicesIter;
+
+  /// Vector of points in the boundary
+  IndicesVec bndry_points;
+  /// Current position in the boundary points
+  IndicesIter bndry_position;
+
+};
+
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Private constructor - must be initialised with mesh
@@ -43,7 +86,7 @@ public:
   typedef std::vector<std::vector<std::vector<bool> > > B3vec;
 
   // dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir);
+  FCIMap(Mesh& mesh, int dir, bool zperiodic);
 
   // Direction of map
   int dir;
@@ -54,6 +97,8 @@ public:
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
   Field3D y_prime_x;    // distance to intersection with x-boundary
   Field3D y_prime_z;    // distance to intersection with z-boundary
+
+  FCIBoundary* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
   //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -91,9 +136,14 @@ private:
 public:
   enum BndryType { DIRICHLET, NEUMANN };
 
-  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1), zperiodic(true) {}
-  FCI(Mesh& m, bool zperiodic) : 
-	mesh(m), forward_map(m, +1), backward_map(m, -1), zperiodic(zperiodic) {}
+  FCI(Mesh& m) : mesh(m),
+				 forward_map(m, +1, true),
+				 backward_map(m, -1, true),
+				 zperiodic(true) {}
+  FCI(Mesh& m, bool zperiodic) : mesh(m),
+								 forward_map(m, +1, zperiodic),
+								 backward_map(m, -1, zperiodic),
+								 zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
