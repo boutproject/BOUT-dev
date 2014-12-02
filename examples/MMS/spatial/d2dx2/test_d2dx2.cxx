@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
   
   input.setBoundary("bndry");
   input.applyBoundary(0.0);
+  
   // Boundaries of input now set using extrapolation around mid-point boundary
 
   Field3D result = D2DX2(input);
