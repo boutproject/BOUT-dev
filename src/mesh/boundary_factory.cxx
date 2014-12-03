@@ -17,7 +17,8 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
   add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
   add(new BndDirichlet_O2(), "dirichlet_o2");
-  add(new BndDirichlet_newO2(), "dirichlet_newo2");
+  add(new BndDirichlet_O3(), "dirichlet_o3");
+  add(new BndDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann2(), "neumann2");

@@ -20,5 +20,5 @@ ny = 1
 
 [bndry]
 # This sets the boundary conditions applied to "input"
-bndry_xin = dirichlet_newo2(input)
-bndry_xout = dirichlet_newo2(input)
+bndry_xin = dirichlet_o4(input)
+bndry_xout = dirichlet_o4(input)
