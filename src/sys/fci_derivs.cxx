@@ -210,9 +210,11 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
     for(int y=mesh.ystart; y<=mesh.yend;y++) {
       for(int z=0;z<mesh.ngz-1;z++) {
 
-		// If this field line leaves the domain through the x-boundary, skip it
-		// Assume z is periodic for now
-		if (fcimap.x_boundary[x][y][z]) continue;
+		// If this field line leaves the domain through the
+		// x-boundary, or through the z-boundary and the domain is not
+		// periodic, skip it
+		if (fcimap.x_boundary[x][y][z] ||
+            (fcimap.z_boundary[x][y][z] && !zperiodic)) continue;
 
 		// Due to lack of guard cells in z-direction, we need to ensure z-index
 		// wraps around
