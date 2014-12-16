@@ -102,15 +102,16 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool zperiodic) : dir(dir) {
 
 		//----------------------------------------
 		// Boundary stuff
+		BoutReal y_prime_x;
+		BoutReal y_prime_z;
+
 		if (xt_prime[x][y][z] < 0 ||
 			xt_prime[x][y][z] > mesh.GlobalNx) {
 		  x_boundary[x][y][z] = true;
 
-		  // distance to intersection with boundary
-		  BoutReal x1 = mesh.dx(x,y)/2.;
+		  BoutReal dx2 = mesh.dx(x,y)/2.;
 		  BoutReal dy = mesh.dy(x,y);
-		  BoutReal temp =  x1 * (dy / (x1 + (t_x * mesh.dx(x, y))));
-		  y_prime_x.setData(x, y, z, &temp);
+		  y_prime_x =  dx2 * (dy / (t_x * mesh.dx(x, y)));
 		} else {
 		  x_boundary[x][y][z] = false;
 		}
@@ -123,8 +124,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool zperiodic) : dir(dir) {
 		  // distance to intersection with boundary
 		  BoutReal z1 = mesh.dz/2.;
 		  BoutReal dy = mesh.dy(x,y);
-		  BoutReal temp =  z1 * (dy / (t_z * mesh.dz));
-		  y_prime_z.setData(x, y, z, &temp);
+		  y_prime_z =  z1 * (dy / (t_z * mesh.dz));
 		} else {
 		  z_boundary[x][y][z] = false;
 		}
@@ -134,6 +134,20 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool zperiodic) : dir(dir) {
 		if (x_boundary[x][y][z] || z_boundary[x][y][z]) {
 		  boundary->add_point(x, y, z);
 		}
+
+		// If the field line ends up in the corner, pick the closest
+		// boundary
+		BoutReal temp;
+		if (x_boundary[x][y][z] && z_boundary[x][y][z]) {
+		  temp = (y_prime_x < y_prime_z) ?
+			y_prime_x : y_prime_z;
+		} else {
+		  // If it doesn't leave through the x-boundary, it must leave
+		  // through the z-boundary...
+		  temp = x_boundary[x][y][z] ?
+			y_prime_x : y_prime_z;
+		}
+		y_prime.setData(x, y, z, &temp);
 
 		// // Nicer?
 		// boundary[x][y][z] = (i_corner[x][y][z] < mesh.xstart ||
@@ -411,18 +425,6 @@ void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGe
 	x = fcimap.boundary->x;
 	y = fcimap.boundary->y;
 	z = fcimap.boundary->z;
-	// If the field line ends up in the corner, pick the closest
-	// boundary
-	BoutReal y_prime;
-	if (fcimap.x_boundary[x][y][z] && fcimap.z_boundary[x][y][z]) {
-	  y_prime = (fcimap.y_prime_x[x][y][z] < fcimap.y_prime_z[x][y][z]) ?
-		fcimap.y_prime_x[x][y][z] : fcimap.y_prime_z[x][y][z];
-	} else {
-	  // If it doesn't leave through the x-boundary, it must leave
-	  // through the z-boundary...
-	  y_prime = fcimap.x_boundary[x][y][z] ?
-		fcimap.y_prime_x[x][y][z] : fcimap.y_prime_z[x][y][z];
-	}
 
 	// Generate the boundary value
 
@@ -435,6 +437,7 @@ void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGe
 	BoutReal value = gen->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
 
 	// Scale the field and normalise to the desired value
+	BoutReal y_prime = fcimap.y_prime[x][y][z];
 	BoutReal f2 = (f[x][y][z] - value) * (mesh.dy(x, y) - y_prime) / y_prime;
 
 	f_next[x][y+fcimap.dir][z] = value - f2;

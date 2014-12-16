@@ -95,8 +95,7 @@ public:
   int*** k_corner;      // z-index of bottom-left grid point
   B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
-  Field3D y_prime_x;    // distance to intersection with x-boundary
-  Field3D y_prime_z;    // distance to intersection with z-boundary
+  Field3D y_prime;		// distance to intersection with boundary
 
   FCIBoundary* boundary;			/**< boundary region */
 
