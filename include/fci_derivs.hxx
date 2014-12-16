@@ -86,7 +86,7 @@ public:
   typedef std::vector<std::vector<std::vector<bool> > > B3vec;
 
   // dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir, bool zperiodic);
+  FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
 
   // Direction of map
   int dir;
@@ -94,6 +94,7 @@ public:
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
   B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
+  B3vec y_boundary;     // boundary mask - has the field line left the domain through the y-sides
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
   Field3D y_prime;		// distance to intersection with boundary
 
@@ -127,6 +128,9 @@ private:
   // not change
   Mesh& mesh;
 
+  // Is the y-direction periodic?
+  bool yperiodic;
+
   // Is the z-direction periodic?
   bool zperiodic;
 
@@ -136,13 +140,16 @@ public:
   enum BndryType { DIRICHLET, NEUMANN };
 
   FCI(Mesh& m) : mesh(m),
-				 forward_map(m, +1, true),
-				 backward_map(m, -1, true),
+				 forward_map(m, +1, true, true),
+				 backward_map(m, -1, true, true),
+				 yperiodic(true),
 				 zperiodic(true) {}
-  FCI(Mesh& m, bool zperiodic) : mesh(m),
-								 forward_map(m, +1, zperiodic),
-								 backward_map(m, -1, zperiodic),
-								 zperiodic(zperiodic) {}
+  FCI(Mesh& m, bool yperiodic, bool zperiodic) : 
+	mesh(m),
+	forward_map(m, +1, yperiodic, zperiodic),
+	backward_map(m, -1, yperiodic, zperiodic),
+	yperiodic(yperiodic),
+	zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);

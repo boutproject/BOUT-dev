@@ -9,7 +9,7 @@ class FCISlab : public PhysicsModel {
 public:
 
   // We need to initialise the FCI object with the mesh
-  FCISlab() : fci(*mesh, false) {}
+  FCISlab() : fci(*mesh, false, false) {}
 
   int init(bool restarting) {
 
