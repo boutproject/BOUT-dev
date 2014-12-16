@@ -5,6 +5,8 @@ timestep = 0.2
 
 MZ = 64
 
+NXPE = 1
+
 [mesh]
 FCI = true
 
