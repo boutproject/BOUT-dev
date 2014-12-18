@@ -3,6 +3,7 @@
 #
 # Generic routines, useful for all data
 ##################################################
+import traceback
 
 print("Loading data utilities")
 
@@ -11,7 +12,6 @@ print("Loading data utilities")
 #    from plotdata import plotdata
 #except:
 #    print "No plotdata"
-
 try:
     from datafile import DataFile
 except:
@@ -23,7 +23,7 @@ except:
     print("No file_import")
 
 try:
-    from calculus import deriv, integrate
+    from calculus import integrate, deriv 
 except:
     print("No calculus")
 
@@ -75,14 +75,46 @@ except:
 try:
     from volume_integral import volume_integral
 except:
-    print "No volume_integral command"
+    print "No volume_integral "
 
+try:
+    from closest_line import closest_line
+except:
+    print "No closest_line"
+
+try:
+    from fft_deriv import fft_deriv
+except:
+    print "No fft_deriv"
+ 
+try:
+    from int_func  import int_func  
+except:
+    print "No int_func"
+ 
 try:
     from surface_average import surface_average
 except:
-    print "No surface_average command"
+    print "No surface_average "
 
 try:
-    from showdata import showdata
+    from efit_analyzer import View2D
 except:
-    print "No showdata"
+    print "No View2D "
+
+try:
+    from mayavi import mlab
+except:
+    print("No mlab")
+
+try:
+    from anim import anim
+except:
+    print traceback.format_exc()
+
+
+try:
+    from View3D import View3D
+except:
+    print traceback.format_exc()
+

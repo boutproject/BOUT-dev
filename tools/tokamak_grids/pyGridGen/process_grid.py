@@ -32,7 +32,12 @@ from scipy.optimize import curve_fit
 from gen_surface import gen_surface
 from scipy import interpolate
 from pylab import plot, figure, show, title, subplots_adjust, subplot, ylim, get_current_fig_manager
-from support import DDX, DDY, int_func, int_y, deriv
+
+from ddx import DDX
+from ddy import DDY
+from int_y import int_y
+from boututils import deriv, int_func
+
 from ask import query_yes_no
 from surface import SURFACE
 from scipy.optimize import root
@@ -110,7 +115,7 @@ def force_balance ( psixy, Rxy, Bpxy, Btxy, hthe, pxy):
 def Bt_func ( Bt , psi, a, b):
     #global  psi, a, b
     
-    return deriv( Bt, psi ) + a*Bt + b / Bt
+    return deriv( psi, Bt ) + a*Bt + b / Bt
  
 
 def newton_Bt ( psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh):
@@ -279,7 +284,7 @@ def new_hfunc ( h, psi, a, b, h0, fixpos ):
     else:
         h2 = numpy.append(numpy.append(h[0:(fixpos)], h0), h[fixpos::])
     
-    f = a*h2 + b*deriv( h2, psi)
+    f = a*h2 + b*deriv( psi, h2)
   
     if fixpos == 0 :
         f = f[1::]
@@ -606,7 +611,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   # Get toroidal field from poloidal current function fpol
     Btxy = numpy.zeros((nx, ny))
     fprime = numpy.zeros((nx, ny))
-    fp = deriv(rz_grid.fpol, rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx))
+    fp = deriv(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
     
     
     status = gen_surface(mesh=mesh) # Start generator
@@ -1275,7 +1280,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         if eval(opt) >= 1 and eval(opt) <= 3 : break
 
   
-    if opt == 1 :
+    if eval(opt) == 1 :
         # flat temperature profile
     
         print "Setting flat temperature profile"
@@ -1295,7 +1300,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         Ti = Te
         Ni_x = numpy.max(Ni)
         Ti_x = Te_x
-    elif opt == 2 :
+    elif eval(opt) == 2 :
         print "Setting flat density profile"
     
         while True:

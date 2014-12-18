@@ -5,14 +5,21 @@
 import numpy as np
 from boutdata import collect
 from boututils import plotpolslice
-from enthought.mayavi import mlab
-from tvtk.tools import visual
 
+from tvtk.tools import visual
+try:
+    from enthought.mayavi import mlab
+except ImportError:
+    try: from mayavi import mlab
+    except ImportError:
+        print "No mlab available"
+     
+from boututils import anim
 ###########################
 # Specify parameters
 
 
-path='../data/'
+path='./data/'
 
 variable="P"
 
@@ -29,15 +36,19 @@ r,z,fun=plotpolslice(p[0,:,:,:],grid,period=period,rz=1)
 
 nx=r.shape[0] # number of points in r
 ny=r.shape[1] # number of points in z
-nt=10#fun.shape[0] # time intervals
+nt=p.shape[0] # time intervals
 
 
 fm=np.zeros((nt,nx,ny)) # array to store the time sequence of the poloidal cross section
 
 #Compute all time frames
 
-for k in xrange(1,nt):
+for k in xrange(nt):
     fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
+    
+np.save('pslice',fm)
+
+#fm=np.load('pslice.npy')
 
 ########################################################
 # Set up the window
@@ -51,7 +62,7 @@ visual.set_viewer(f)
 
 #s = mlab.contour_surf(r,z,fun, contours=30, line_width=.5, transparent=True)
 #s=mlab.surf(r,z,fun, colormap='Spectral')
-s = mlab.mesh(r,z,fun, colormap='PuOr')#, wrap_scale='true')#, representation='wireframe')
+s = mlab.mesh(r,z,fm[90,:,:], colormap='PuOr')#, wrap_scale='true')#, representation='wireframe')
 s.enable_contours=True
 s.contour.filled_contours=True
 
@@ -72,17 +83,4 @@ mlab.colorbar(orientation="vertical")
 ########################################################
 # mlab animation 
 
-
-@mlab.show
-@mlab.animate(delay=250)
-def anim():
-
-    for i in range(1,nt):#nt+1):
-        s.mlab_source.scalars = fm[i,:,:]
-        title="t="+np.string0(i)
-        mlab.title(title,height=1.1, size=0.26)
-    #    mlab.savefig('../Movie/anim%d.png'%i)  # uncomment to save images for movie creation
-        yield
-
- #Run the animation.
-anim()
+#anim.anim(s,fm)

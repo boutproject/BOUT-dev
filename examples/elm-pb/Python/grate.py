@@ -2,8 +2,12 @@ import numpy as np
 from boutdata import collect
 from boututils import moment_xyzt
 
-path='../data/'
+path='./data/'
+
 
 p=collect('P',path=path)
-rmsp_f=moment_xyzt(p[:,34:35,32:33,:], 'RMS')
+rmsp_f=moment_xyzt(p[:,34:35,32:33,:], 'RMS').rms
+
+
 print np.gradient(np.log(rmsp_f[:,0,0]))[-1]
+

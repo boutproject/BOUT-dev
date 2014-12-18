@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from boututils import file_import
 from matplotlib.ticker import FixedFormatter, FormatStrFormatter, AutoLocator, AutoMinorLocator
 
-g = file_import("../cbm18_dens8.grid_nx68ny64.nc")
+g = file_import("./cbm18_dens8.grid_nx68ny64.nc")
 
 majorLocator   = AutoLocator()
 majorFormatter = FormatStrFormatter('%3.0e')

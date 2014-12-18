@@ -5,20 +5,27 @@ import numpy as np
 from boutdata import collect
 from boututils import moment_xyzt
 
-path='../data/'
+path='./data/'
 
 p=collect('P',path=path)
 
-rmsp_f=moment_xyzt(p, 'RMS')
 
-ni=np.shape(rmsp_f)[1]
-nj=np.shape(rmsp_f)[2]
+def gr(p):
+	rmsp_f=moment_xyzt(p, 'RMS').rms
 
-growth=np.zeros((ni,nj))
+	ni=np.shape(rmsp_f)[1]
+	nj=np.shape(rmsp_f)[2]
 
-for i in range(ni):
-    for j in range(nj):
-        growth[i,j]=np.gradient(np.log(rmsp_f[50::,i,j]))[-1]
+	growth=np.zeros((ni,nj))
+
+	for i in range(ni):
+    		for j in range(nj):
+       			 growth[i,j]=np.gradient(np.log(rmsp_f[50::,i,j]))[-1]
+
+	return growth
+
+
+growth=gr(p)
 
 d=np.ma.masked_array(growth,np.isnan(growth))
 

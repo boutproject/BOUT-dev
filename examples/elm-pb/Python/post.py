@@ -9,16 +9,16 @@ from pylab import plot, show, figure, xlabel, ylabel, annotate, xlim, ylim
 from boututils import moment_xyzt
 from boututils import mode_structure
 from boututils import plotpolslice
-from support import deriv
+from boututils import deriv
 from enthought.mayavi import mlab
 
                         
-path0="../data0/"
-path1="../data/"
+path0="./data0/"
+path1="./data/"
 
 period=15 
 
-gfile='../cbm18_dens8.grid_nx68ny64.nc'
+gfile='./cbm18_dens8.grid_nx68ny64.nc'
 
 
 g = file_import(gfile)
@@ -50,8 +50,8 @@ show(block=False)
 p_f0 = collect("P", path=path0)
 p_f = collect("P", path=path1)
 #
-rmsp_f0=moment_xyzt(p_f0, 'RMS')
-rmsp_f=moment_xyzt(p_f, 'RMS')
+rmsp_f0=moment_xyzt(p_f0, 'RMS').rms
+rmsp_f=moment_xyzt(p_f, 'RMS').rms
 #
 
 fig=figure(figsize=(10, 8))

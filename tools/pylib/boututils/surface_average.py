@@ -1,5 +1,5 @@
 import numpy as np
-from support import deriv, int_func
+from boututils import deriv, int_func
 from idl_tabulate import idl_tabulate
 from bunch import bunchify
 

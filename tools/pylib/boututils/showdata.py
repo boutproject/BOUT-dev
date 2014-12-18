@@ -4,6 +4,7 @@ Visualisation and animation routines
 Written by Luke Easy
 le590@york.ac.uk
 Last Updated 6/1/2014
+Additional functionality by George Breyiannis 26/12/2014
 """
 
 #import numpy as np
@@ -15,8 +16,8 @@ from boutdata import collect
 
 
 ####################################################################
-# Specify ffmpeg path
-plt.rcParams['animation.ffmpeg_path'] = '/opt/local/bin/ffmpeg'
+# Specify manually ffmpeg path
+plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
 
 FFwriter = animation.FFMpegWriter()
 ####################################################################
