@@ -3,11 +3,11 @@ from boutdata import collect
 # Integrate over a volume
  
 
-path='../data/'
+path='./data/'
  
-gfile='../cbm18_dens8.grid_nx68ny64.nc'
+gfile='./cbm18_dens8.grid_nx68ny64.nc'
  
-g = file_import(path+gfile)
+g = file_import(gfile)
    
 var=collect("P", path=path)   
    

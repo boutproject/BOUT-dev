@@ -65,6 +65,6 @@ fig.set_tight_layout(True)
 
 
 show()
-#showdata(q.T, tslice=1)
-#showdata(q.T, tslice=1, movie=1)
+#showdata.showdata(q.T, tslice=1)
+#showdata.showdata(q.T, tslice=1, movie=1)
 

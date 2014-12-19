@@ -3,6 +3,7 @@
 ####################################
 
 import numpy as np
+import os.path
 from boutdata import collect
 from boututils import plotpolslice
 
@@ -41,14 +42,18 @@ nt=p.shape[0] # time intervals
 
 fm=np.zeros((nt,nx,ny)) # array to store the time sequence of the poloidal cross section
 
-#Compute all time frames
 
-for k in xrange(nt):
-    fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
+if os.path.isfile('pslice.npy') :
+        print 'Reading from file'
+	fm=np.load('pslice.npy')
+else:
+	print 'Compute all time frames'
+
+	for k in xrange(nt):
+    		fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
     
-np.save('pslice',fm)
+	np.save('pslice',fm)
 
-#fm=np.load('pslice.npy')
 
 ########################################################
 # Set up the window

@@ -10,7 +10,7 @@ from boututils import moment_xyzt
 from boututils import mode_structure
 from boututils import plotpolslice
 from boututils import deriv
-from enthought.mayavi import mlab
+from mayavi import mlab
 
                         
 path0="./data0/"

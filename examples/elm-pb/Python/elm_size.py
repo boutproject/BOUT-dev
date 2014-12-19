@@ -25,7 +25,7 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
     s=np.shape(mydcp)
 
     if np.ndim(mydcp) != 3 :
-        print "dcp should be 3D(x,y,t)"
+        print "dcp should be 3D(t,x,y)"
  
 
     nt=s[0]
