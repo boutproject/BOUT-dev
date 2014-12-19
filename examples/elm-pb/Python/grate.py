@@ -1,6 +1,12 @@
+######
+# Computes the rms of a variable and prints the growth rate value at the last timestep
+###### 
+
 import numpy as np
 from boutdata import collect
 from boututils import moment_xyzt
+
+
 
 path='./data/'
 
