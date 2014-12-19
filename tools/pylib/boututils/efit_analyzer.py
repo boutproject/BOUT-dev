@@ -410,7 +410,8 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
 
 
 if __name__ == '__main__':
-    path='../../tokamak_grids/pyGridgen/'
+
+    path='../../tokamak_grids/pyGridGen/'
 
     g=read_geqdsk(path+"g118898.03400")
 

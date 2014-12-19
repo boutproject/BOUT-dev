@@ -389,7 +389,7 @@ def psi_field(g,X,Y,Z,rmin,rmax,zmin,zmax):
   
   
 if __name__ == '__main__':
-     path='../../tokamak_grids/pyGridgen/'
+     path='../../tokamak_grids/pyGridGen/'
      g=read_geqdsk(path+"g118898.03400")
      View3D(g)
      mlab.show()  
