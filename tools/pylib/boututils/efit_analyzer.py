@@ -410,12 +410,9 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
 
 
 if __name__ == '__main__':
-    path='/Users/brey/Dropbox-JAEA/Dropbox/LtoH/cdbm3f/efit/'
-    path='/Users/brey/BOUT/BOUT-dev/tools/tokamak_grids/pyGridgen/'
+    path='../../tokamak_grids/pyGridgen/'
 
-#    g=read_geqdsk("/Users/brey/Dropbox-JAEA/Dropbox/LtoH/geqdsk-circular-LH1.efit")
-#    g=read_geqdsk(path+"geqdsk-circular-LH1.efit")
     g=read_geqdsk(path+"g118898.03400")
-    #g=read_geqdsk("../JT-60U/geqdsk.efit_EWM1")
+
     View2D(g, option=0)
     show()
