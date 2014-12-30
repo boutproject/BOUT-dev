@@ -149,7 +149,7 @@ class Field2D : public Field, public FieldData {
   void setXArray(int y, int z, const rvec &xv);
   void setYArray(int x, int z, const rvec &yv);
 
-  void setStencil(bstencil *fval, bindex *bx) const;
+  //void setStencil(bstencil *fval, bindex *bx) const;
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;

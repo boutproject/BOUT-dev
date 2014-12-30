@@ -921,7 +921,7 @@ void BoundaryRobin::apply(Field2D &f) {
     if( (bndry->bx < 0) || (bndry->by < 0))
       sign = -1.;
     for(bndry->first(); !bndry->isDone(); bndry->next())
-      f(bndry->x, bndry->y) = f[bndry->x - bndry->bx][bndry->y - bndry->by] + sign*(gval - aval*f[bndry->x - bndry->bx][bndry->y - bndry->by] ) / bval;
+      f(bndry->x, bndry->y) = f(bndry->x - bndry->bx,bndry->y - bndry->by) + sign*(gval - aval*f(bndry->x - bndry->bx,bndry->y - bndry->by) ) / bval;
   }
 }
 
@@ -985,7 +985,7 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->nextY()) {
     int x = bndry->x;
     int y = bndry->y;
-    BoutReal g = (f[x-bx][y] - f[x-2*bx][y]) / metric->dx(x-bx,y);
+    BoutReal g = (f(x-bx,y) - f(x-2*bx,y)) / metric->dx(x-bx,y);
     // Loop in X towards edge of domain
     do {
       f(x,y) = f(x-bx,y) + g*metric->dx(x,y);
@@ -1108,8 +1108,8 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 2 points in domain
-    ZFFT(f[x-bx][y], mesh->zShift[x-bx][y], c1);
-    ZFFT(f[x-2*bx][y], mesh->zShift[x-2*bx][y], c2);
+    ZFFT(f[x-bx][y], mesh->zShift(x-bx,y), c1);
+    ZFFT(f[x-2*bx][y], mesh->zShift(x-2*bx,y), c2);
     
     // Loop in X towards edge of domain
     do {
@@ -1130,7 +1130,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
         */
       }
       // Reverse FFT
-      ZFFT_rev(c0, mesh->zShift[x][y], f[x][y]);
+      ZFFT_rev(c0, mesh->zShift(x,y), f[x][y]);
       // cycle c0 -> c1 -> c2 -> c0
       dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
       
@@ -1164,14 +1164,14 @@ void BoundaryConstLaplace::apply(Field2D &f) {
     // Calculate the Laplacian on the last point
     dcomplex la,lb,lc;
     laplace_tridag_coefs(x-2*bx, y, 0, la, lb, lc);
-    dcomplex val = la*f[x-bx-1][y] + lb*f[x-2*bx][y] + lc*f[x-2*bx+1][y];
+    dcomplex val = la*f(x-bx-1,y) + lb*f(x-2*bx,y) + lc*f(x-2*bx+1,y);
     // Loop in X towards edge of domain
     do {
       laplace_tridag_coefs(x-bx, y, 0, la, lb, lc);
       if(bx < 0) { // Lower X
-	f[x][y] = ((val - lb*f[x-bx][y] + lc*f[x-2*bx][y]) / la).Real();
+	f(x,y) = ((val - lb*f(x-bx,y) + lc*f(x-2*bx,y)) / la).Real();
       }else  // Upper X
-	f[x][y] = ((val - lb*f[x-bx][y] + la*f[x-2*bx][y]) / lc).Real();
+	f(x,y) = ((val - lb*f(x-bx,y) + la*f(x-2*bx,y)) / lc).Real();
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
@@ -1203,10 +1203,10 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 3 points in domain
-    ZFFT(f[x-bx][y], mesh->zShift[x-bx][y], c0);
-    ZFFT(f[x-2*bx][y], mesh->zShift[x-2*bx][y], c1);
-    ZFFT(f[x-3*bx][y], mesh->zShift[x-3*bx][y], c2);
-    dcomplex k0lin = (c1[0] - c0[0])/metric->dx[x-bx][y]; // for kz=0 solution
+    ZFFT(f[x-bx][y], mesh->zShift(x-bx,y), c0);
+    ZFFT(f[x-2*bx][y], mesh->zShift(x-2*bx,y), c1);
+    ZFFT(f[x-3*bx][y], mesh->zShift(x-3*bx,y), c2);
+    dcomplex k0lin = (c1[0] - c0[0])/metric->dx(x-bx,y); // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
     for(int jz=0;jz<=ncz/2;jz++) {
@@ -1224,18 +1224,18 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     // Loop in X towards edge of domain
     do {
       // kz = 0 solution
-      xpos -= metric->dx[x][y];
-      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/metric->g11[x-bx][y];
+      xpos -= metric->dx(x,y);
+      c2[0] = c0[0] + k0lin*xpos + 0.5*c1[0]*xpos*xpos/metric->g11(x-bx,y);
       // kz != 0 solution
-      BoutReal coef = -1.0*sqrt(metric->g33[x-bx][y] / metric->g11[x-bx][y])*metric->dx[x-bx][y];
+      BoutReal coef = -1.0*sqrt(metric->g33(x-bx,y) / metric->g11(x-bx,y))*metric->dx(x-bx,y);
       for(int jz=1;jz<=ncz/2;jz++) {
 	BoutReal kwave=jz*2.0*PI/metric->zlength; // wavenumber in [rad^-1]
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
 	// Add the particular solution
-	c2[jz] = c0[jz] - c1[jz]/(metric->g33[x-bx][y]*kwave*kwave); 
+	c2[jz] = c0[jz] - c1[jz]/(metric->g33(x-bx,y)*kwave*kwave); 
       }
       // Reverse FFT
-      ZFFT_rev(c2, mesh->zShift[x][y], f[x][y]);
+      ZFFT_rev(c2, mesh->zShift(x,y), f[x][y]);
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
@@ -1283,40 +1283,40 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       // dB_y / dx = dB_x / dy
       
       // dB_x / dy
-      tmp = (var.x[jx-1][jy+1][jz] - var.x[jx-1][jy-1][jz]) / (metric->dy[jx-1][jy-1] + metric->dy(jx-1,jy));
+      tmp = (var.x(jx-1,jy+1,jz) - var.x(jx-1,jy-1,jz)) / (metric->dy(jx-1,jy-1) + metric->dy(jx-1,jy));
       
-      var.y[jx][jy][jz] = var.y[jx-2][jy][jz] + (metric->dx[jx-2][jy] + metric->dx(jx-1,jy)) * tmp;
+      var.y(jx,jy,jz) = var.y(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
       if(mesh->xstart == 2)
 	// 4th order to get last point
-	var.y[jx+1][jy][jz] = var.y[jx-3][jy][jz] + 4.*metric->dx(jx,jy)*tmp;
+	var.y(jx+1,jy,jz) = var.y(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
 
       // dB_z / dx = dB_x / dz
 
-      tmp = (var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) / (2.*metric->dz);
+      tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz);
       
-      var.z[jx][jy][jz] = var.z[jx-2][jy][jz] + (metric->dx[jx-2][jy] + metric->dx(jx-1,jy)) * tmp;
+      var.z(jx,jy,jz) = var.z(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
       if(mesh->xstart == 2)
-	var.z[jx+1][jy][jz] = var.z[jx-3][jy][jz] + 4.*metric->dx(jx,jy)*tmp;
+	var.z(jx+1,jy,jz) = var.z(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
 
       // d/dx( Jmetric->g11 B_x ) = - d/dx( Jmetric->g12 B_y + Jmetric->g13 B_z) 
       //                    - d/dy( JB^y ) - d/dz( JB^z )
 	
-      tmp = -( metric->J(jx,jy)*metric->g12(jx,jy)*var.y[jx][jy][jz] + metric->J(jx,jy)*metric->g13(jx,jy)*var.z[jx][jy][jz]
-	       - metric->J[jx-2][jy]*metric->g12[jx-2][jy]*var.y[jx-2][jy][jz] + metric->J[jx-2][jy]*metric->g13[jx-2][jy]*var.z[jx-2][jy][jz] )
-	/ (metric->dx[jx-2][jy] + metric->dx(jx-1,jy)); // First term (d/dx) using vals calculated above
-      tmp -= (metric->J[jx-1][jy+1]*metric->g12[jx-1][jy+1]*var.x[jx-1][jy+1][jz] - metric->J[jx-1][jy-1]*metric->g12[jx-1][jy-1]*var.x[jx-1][jy-1][jz]
-	      + metric->J[jx-1][jy+1]*metric->g22[jx-1][jy+1]*var.y[jx-1][jy+1][jz] - metric->J[jx-1][jy-1]*metric->g22[jx-1][jy-1]*var.y[jx-1][jy-1][jz]
-	      + metric->J[jx-1][jy+1]*metric->g23[jx-1][jy+1]*var.z[jx-1][jy+1][jz] - metric->J[jx-1][jy-1]*metric->g23[jx-1][jy-1]*var.z[jx-1][jy-1][jz])
-	/ (metric->dy[jx-1][jy-1] + metric->dy(jx-1,jy)); // second (d/dy)
-      tmp -= (metric->J(jx-1,jy)*metric->g13(jx-1,jy)*(var.x[jx-1][jy][jzp] - var.x[jx-1][jy][jzm]) +
-	      metric->J(jx-1,jy)*metric->g23(jx-1,jy)*(var.y[jx-1][jy][jzp] - var.y[jx-1][jy][jzm]) +
-	      metric->J(jx-1,jy)*metric->g33(jx-1,jy)*(var.z[jx-1][jy][jzp] - var.z[jx-1][jy][jzm])) / (2.*metric->dz);
+      tmp = -( metric->J(jx,jy)*metric->g12(jx,jy)*var.y(jx,jy,jz) + metric->J(jx,jy)*metric->g13(jx,jy)*var.z(jx,jy,jz)
+	       - metric->J(jx-2,jy)*metric->g12(jx-2,jy)*var.y(jx-2,jy,jz) + metric->J(jx-2,jy)*metric->g13(jx-2,jy)*var.z(jx-2,jy,jz) )
+	/ (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)); // First term (d/dx) using vals calculated above
+      tmp -= (metric->J(jx-1,jy+1)*metric->g12(jx-1,jy+1)*var.x(jx-1,jy+1,jz) - metric->J(jx-1,jy-1)*metric->g12(jx-1,jy-1)*var.x(jx-1,jy-1,jz)
+	      + metric->J(jx-1,jy+1)*metric->g22(jx-1,jy+1)*var.y(jx-1,jy+1,jz) - metric->J(jx-1,jy-1)*metric->g22(jx-1,jy-1)*var.y(jx-1,jy-1,jz)
+	      + metric->J(jx-1,jy+1)*metric->g23(jx-1,jy+1)*var.z(jx-1,jy+1,jz) - metric->J(jx-1,jy-1)*metric->g23(jx-1,jy-1)*var.z(jx-1,jy-1,jz))
+	/ (metric->dy(jx-1,jy-1) + metric->dy(jx-1,jy)); // second (d/dy)
+      tmp -= (metric->J(jx-1,jy)*metric->g13(jx-1,jy)*(var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) +
+	      metric->J(jx-1,jy)*metric->g23(jx-1,jy)*(var.y(jx-1,jy,jzp) - var.y(jx-1,jy,jzm)) +
+	      metric->J(jx-1,jy)*metric->g33(jx-1,jy)*(var.z(jx-1,jy,jzp) - var.z(jx-1,jy,jzm))) / (2.*metric->dz);
       
-      var.x[jx][jy][jz] = ( metric->J[jx-2][jy]*metric->g11[jx-2][jy]*var.x[jx-2][jy][jz] + 
-			    (metric->dx[jx-2][jy] + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
+      var.x(jx,jy,jz) = ( metric->J(jx-2,jy)*metric->g11(jx-2,jy)*var.x(jx-2,jy,jz) + 
+			    (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
       if(mesh->xstart == 2)
-	var.x[jx+1][jy][jz] = ( metric->J[jx-3][jy]*metric->g11[jx-3][jy]*var.x[jx-3][jy][jz] + 
-				4.*metric->dx(jx,jy)*tmp ) / metric->J[jx+1][jy]*metric->g11[jx+1][jy];
+	var.x(jx+1,jy,jz) = ( metric->J(jx-3,jy)*metric->g11(jx-3,jy)*var.x(jx-3,jy,jz) + 
+				4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
     }
   }
 }

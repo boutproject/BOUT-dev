@@ -48,7 +48,7 @@
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
+BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
@@ -318,7 +318,6 @@ int BoutMesh::load() {
   OPTION(options, ShiftOrder,   0);
   OPTION(options, ShiftXderivs, false);
   OPTION(options, IncIntShear,  false);
-  OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, periodicX, false); // Periodic in X
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
@@ -379,12 +378,6 @@ int BoutMesh::load() {
     ShiftTorsion = 0.0;
   }
   
-  if(IncIntShear) {
-    if(get(IntShiftTorsion, "IntShiftTorsion")) {
-      output.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
-    }
-  }
   // Allocate some memory for twist-shift
 
   ShiftAngle  = new BoutReal[ngx];
@@ -1097,7 +1090,7 @@ int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
 }
 
 int BoutMesh::get(Field2D &var, const string &name, BoutReal def) {
-  return get(var, name.c_str());
+  return get(var, name.c_str(), def);
 }
 
 /// Load a 3D variable from the grid file

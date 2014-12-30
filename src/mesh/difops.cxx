@@ -61,6 +61,7 @@ const Field3D Grad_par(const Field3D &var, DIFF_METHOD method, CELL_LOC outloc) 
   return mesh->coordinates()->Grad_par(var, outloc, method);
 }
 
+/*
 // Model dvar/dt = Grad_par(f) with a maximum velocity of Vmax
 const Field3D Grad_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
   int msg_pos = msg_stack.push("Grad_par( Field3D, Field3D, Field2D )");
@@ -77,6 +78,7 @@ const Field3D Grad_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
   Field2D V = Vmax;
   return Grad_par(f, var, V);
 }
+*/
 
 /*******************************************************************************
  * Grad_parP
@@ -160,7 +162,7 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
           - 0.5*dl * by * gys(x, y, zp);
         
         fm = fs(x, y, zm)
-          + (0.25*dl/metric->dx(x, y)) * bx(x, y, z) * (fs[x-1][y][zm] - fs(x+1, y, zm))
+          + (0.25*dl/metric->dx(x, y)) * bx(x, y, z) * (fs(x-1,y,zm) - fs(x+1, y, zm))
           - 0.5*dl * by * gys(x, y, zm);
 
         result(x, y, z) += bz(x, y, z) * (fp - fm) / (2.*metric->dz);
@@ -195,15 +197,15 @@ const Field3D Grad_parP(const Field3D &apar, const Field3D &f) {
         
         BoutReal fp, fm;
 
-        fp = f[x][y+1][z]
-          - 0.5*dl * bx[x][y][z] * gx[x][y+1][z]
-          + (0.25*dl/metric->dz)   * bz[x][y][z] * (fs[x][y+1][zm] - fs[x][y+1][zp]);
+        fp = f(x,y+1,z)
+          - 0.5*dl * bx(x,y,z) * gx(x,y+1,z)
+          + (0.25*dl/metric->dz)   * bz(x,y,z) * (fs(x,y+1,zm) - fs(x,y+1,zp));
         
-        fm = f[x][y-1][z]
-          - 0.5*dl * bx[x][y][z] * gx[x][y-1][z]
-          + (0.25*dl/metric->dz)   * bz[x][y][z] * (fs[x][y-1][zm] - fs[x][y-1][zp]);
+        fm = f(x,y-1,z)
+          - 0.5*dl * bx(x,y,z) * gx(x,y-1,z)
+          + (0.25*dl/metric->dz)   * bz(x,y,z) * (fs(x,y-1,zm) - fs(x,y-1,zp));
 
-        result[x][y][z] += by * (fp - fm) / (0.5*metric->dy[x][y-1] + metric->dy[x][y] + 0.5*metric->dy[x][y+1]);
+        result(x,y,z) += by * (fp - fm) / (0.5*metric->dy(x,y-1) + metric->dy(x,y) + 0.5*metric->dy(x,y+1));
       }
     }
   }
@@ -257,7 +259,7 @@ const Field3D Div_par_flux(const Field3D &v, const Field3D &f, DIFF_METHOD metho
 }
 
 //////// MUSCL schemes
-
+/*
 const Field3D Div_par(const Field3D &f, const Field3D &var, const Field2D &Vmax) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("Div_par( Field3D, Field3D, Field2D )");
@@ -277,6 +279,7 @@ const Field3D Div_par(const Field3D &f, const Field3D &var, BoutReal Vmax) {
   Field2D V = Vmax;
   return Div_par(f, var, V);
 }
+*/
 
 /*******************************************************************************
  * Parallel derivatives converting between left and cell centred
@@ -304,20 +307,20 @@ const Field3D Grad_par_CtoL(const Field3D &var) {
 
 const Field3D Vpar_Grad_par_LCtoC(const Field &v, const Field &f) {
   bindex bx;
-  bstencil fval, vval;
+  stencil fval, vval;
   Field3D result;
   
   result.allocate();
 
   start_index(&bx);
   do {
-    f.setStencil(&fval, &bx);
-    v.setStencil(&vval, &bx);
+    f.setYStencil(fval, bx);
+    v.setYStencil(vval, bx);
     
     // Left side
-    result(bx.jx, bx.jy, bx.jz) = (vval.cc >= 0.0) ? vval.cc * fval.ym : vval.cc * fval.cc;
+    result(bx.jx, bx.jy, bx.jz) = (vval.c >= 0.0) ? vval.c * fval.m : vval.c * fval.c;
     // Right side
-    result(bx.jx, bx.jy, bx.jz) -= (vval.yp >= 0.0) ? vval.yp * fval.cc : vval.yp * fval.yp;
+    result(bx.jx, bx.jy, bx.jz) -= (vval.p >= 0.0) ? vval.p * fval.c : vval.p * fval.p;
     
   }while(next_index3(&bx));
 
@@ -553,7 +556,7 @@ const Field3D b0xGrad_dot_Grad(const Field2D &phi, const Field3D &A) {
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += mesh->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
@@ -678,7 +681,7 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // BOUT-06 style differencing
-    vz += mesh->IntShiftTorsion * vx;
+    vz += metric->IntShiftTorsion * vx;
   }
 
   // Upwind A using these velocities
@@ -791,26 +794,26 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
           int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (fs[jx][jy][jzp] - fs[jx][jy][jzm])*
-                                (g[jx+1][jy] - g[jx-1][jy]) -
-                                (fs[jx+1][jy][jz] - fs[jx-1][jy][jz])*
-                                (g[jx][jy] - g[jx][jy]) )
-            / (metric->dx[jx][jy] * metric->dz);
+          BoutReal Jpp = 0.25*( (fs(jx,jy,jzp) - fs(jx,jy,jzm))*
+                                (g(jx+1,jy) - g(jx-1,jy)) -
+                                (fs(jx+1,jy,jz) - fs(jx-1,jy,jz))*
+                                (g(jx,jy) - g(jx,jy)) )
+            / (metric->dx(jx,jy) * metric->dz);
 
           // J+x
-          BoutReal Jpx = 0.25*( g[jx+1][jy]*(fs[jx+1][jy][jzp]-fs[jx+1][jy][jzm]) -
-                                g[jx-1][jy]*(fs[jx-1][jy][jzp]-fs[jx-1][jy][jzm]) -
-                                g[jx][jy]*(fs[jx+1][jy][jzp]-fs[jx-1][jy][jzp]) +
-                                g[jx][jy]*(fs[jx+1][jy][jzm]-fs[jx-1][jy][jzm]))
-            / (metric->dx[jx][jy] * metric->dz);
+          BoutReal Jpx = 0.25*( g(jx+1,jy)*(fs(jx+1,jy,jzp)-fs(jx+1,jy,jzm)) -
+                                g(jx-1,jy)*(fs(jx-1,jy,jzp)-fs(jx-1,jy,jzm)) -
+                                g(jx,jy)*(fs(jx+1,jy,jzp)-fs(jx-1,jy,jzp)) +
+                                g(jx,jy)*(fs(jx+1,jy,jzm)-fs(jx-1,jy,jzm)))
+            / (metric->dx(jx,jy) * metric->dz);
           // Jx+
-          BoutReal Jxp = 0.25*( g[jx+1][jy]*(fs[jx][jy][jzp]-fs[jx+1][jy][jz]) -
-                                g[jx-1][jy]*(fs[jx-1][jy][jz]-fs[jx][jy][jzm]) -
-                                g[jx-1][jy]*(fs[jx][jy][jzp]-fs[jx-1][jy][jz]) +
-                                g[jx+1][jy]*(fs[jx+1][jy][jz]-fs[jx][jy][jzm]))
-            / (metric->dx[jx][jy] * metric->dz);
+          BoutReal Jxp = 0.25*( g(jx+1,jy)*(fs(jx,jy,jzp)-fs(jx+1,jy,jz)) -
+                                g(jx-1,jy)*(fs(jx-1,jy,jz)-fs(jx,jy,jzm)) -
+                                g(jx-1,jy)*(fs(jx,jy,jzp)-fs(jx-1,jy,jz)) +
+                                g(jx+1,jy)*(fs(jx+1,jy,jz)-fs(jx,jy,jzm)))
+            / (metric->dx(jx,jy) * metric->dz);
           
-          result[jx][jy][jz] = (Jpp + Jpx + Jxp) / 3.;
+          result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;
         }
     
     if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
@@ -934,11 +937,11 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
             
             gm = gs(x,y,zm)
               //+ (0.5*dt/metric->dx(x,y)) * ( (vx[x][zm] > 0) ? vx[x][zm]*(gs[x-1][y][zm] - gs(x,y,zm)) : vx[x][zm]*(gs(x,y,zm) - gs[x+1][y][zm]) );
-              + (0.5*dt/metric->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zm] - gs(x,y,zm)) : vx[x][z]*(gs(x,y,zm) - gs(x+1,y,zm)) );
+              + (0.5*dt/metric->dx(x,y)) * ( (vx(x,z) > 0) ? vx(x,z)*(gs(x-1,y,zm) - gs(x,y,zm)) : vx(x,z)*(gs(x,y,zm) - gs(x+1,y,zm)) );
           }else {
             gp = gs(x,y,zp)
               //+ (0.5*dt/metric->dx(x,y)) * ( (vx[x][zp] > 0) ? vx[x][zp]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][zp]*(gs[x][y][zp] - gs[x+1][y][zp]) );
-              + (0.5*dt/metric->dx(x,y)) * ( (vx[x][z] > 0) ? vx[x][z]*(gs[x-1][y][zp] - gs[x][y][zp]) : vx[x][z]*(gs(x,y,zp) - gs(x+1,y,zp)) );
+              + (0.5*dt/metric->dx(x,y)) * ( (vx(x,z) > 0) ? vx(x,z)*(gs(x-1,y,zp) - gs(x,y,zp)) : vx(x,z)*(gs(x,y,zp) - gs(x+1,y,zp)) );
             
             gm = gs(x,y,z)
               + (0.5*dt/metric->dx(x,y)) * ( (vx(x,z) > 0) ? vx(x,z)*(gs(x-1,y,z) - gs(x,y,z)) : vx(x,z)*(gs(x,y,z) - gs(x+1,y,z)) );
@@ -971,23 +974,23 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
           int jzm = (jz - 1 + ncz) % ncz;
           
           // J++ = DDZ(f)*DDX(g) - DDX(f)*DDZ(g)
-          BoutReal Jpp = 0.25*( (fs[jx][jy][jzp] - fs[jx][jy][jzm])*
-                                (gs[jx+1][jy][jz] - gs[jx-1][jy][jz]) -
-                                (fs[jx+1][jy][jz] - fs[jx-1][jy][jz])*
-                                (gs[jx][jy][jzp] - gs[jx][jy][jzm]) )
-            / (metric->dx[jx][jy] * metric->dz);
+          BoutReal Jpp = 0.25*( (fs(jx,jy,jzp) - fs(jx,jy,jzm))*
+                                (gs(jx+1,jy,jz) - gs(jx-1,jy,jz)) -
+                                (fs(jx+1,jy,jz) - fs(jx-1,jy,jz))*
+                                (gs(jx,jy,jzp) - gs(jx,jy,jzm)) )
+            / (metric->dx(jx,jy) * metric->dz);
 
           // J+x
-          BoutReal Jpx = 0.25*( gs[jx+1][jy][jz]*(fs[jx+1][jy][jzp]-fs[jx+1][jy][jzm]) -
-                                gs[jx-1][jy][jz]*(fs[jx-1][jy][jzp]-fs[jx-1][jy][jzm]) -
-                                gs[jx][jy][jzp]*(fs[jx+1][jy][jzp]-fs[jx-1][jy][jzp]) +
-                                gs[jx][jy][jzm]*(fs[jx+1][jy][jzm]-fs[jx-1][jy][jzm]))
-            / (metric->dx[jx][jy] * metric->dz);
+          BoutReal Jpx = 0.25*( gs(jx+1,jy,jz)*(fs(jx+1,jy,jzp)-fs(jx+1,jy,jzm)) -
+                                gs(jx-1,jy,jz)*(fs(jx-1,jy,jzp)-fs(jx-1,jy,jzm)) -
+                                gs(jx,jy,jzp)*(fs(jx+1,jy,jzp)-fs(jx-1,jy,jzp)) +
+                                gs(jx,jy,jzm)*(fs(jx+1,jy,jzm)-fs(jx-1,jy,jzm)))
+            / (metric->dx(jx,jy) * metric->dz);
           // Jx+
-          BoutReal Jxp = 0.25*( gs[jx+1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx+1][jy][jz]) -
-                                gs[jx-1][jy][jzm]*(fs[jx-1][jy][jz]-fs[jx][jy][jzm]) -
-                                gs[jx-1][jy][jzp]*(fs[jx][jy][jzp]-fs[jx-1][jy][jz]) +
-                                gs[jx+1][jy][jzm]*(fs[jx+1][jy][jz]-fs[jx][jy][jzm]))
+          BoutReal Jxp = 0.25*( gs(jx+1,jy,jzp)*(fs(jx,jy,jzp)-fs(jx+1,jy,jz)) -
+                                gs(jx-1,jy,jzm)*(fs(jx-1,jy,jz)-fs(jx,jy,jzm)) -
+                                gs(jx-1,jy,jzp)*(fs(jx,jy,jzp)-fs(jx-1,jy,jz)) +
+                                gs(jx+1,jy,jzm)*(fs(jx+1,jy,jz)-fs(jx,jy,jzm)))
             / (metric->dx(jx,jy) * metric->dz);
           
           result(jx,jy,jz) = (Jpp + Jpx + Jxp) / 3.;

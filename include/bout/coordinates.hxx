@@ -54,6 +54,7 @@ public:
   Field2D dx, dy; 
   BoutReal zlength, dz;
   
+  bool non_uniform;
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
   Field2D J; // Jacobian
@@ -73,6 +74,8 @@ public:
   
   Field2D G1, G2, G3;
 
+  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+
   /// Calculate differential geometry quantities from the metric tensor
   int geometry();
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
@@ -80,6 +83,10 @@ public:
   int jacobian(); // Calculate J and Bxy
 
   // Operators
+
+  const Field2D DDX(const Field2D &f);
+  const Field2D DDY(const Field2D &f);
+  const Field2D DDZ(const Field2D &f);
   
   /// Gradient along magnetic field  b.Grad(f)
   const Field2D Grad_par(const Field2D &var, CELL_LOC outloc=CELL_DEFAULT, DIFF_METHOD method=DIFF_DEFAULT);

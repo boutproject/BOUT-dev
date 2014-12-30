@@ -708,6 +708,7 @@ void Field2D::setYArray(int x, int z, const rvec &yv) {
     data[x][y] = yv[y];
 }
 
+/*
 void Field2D::setStencil(bstencil *fval, bindex *bx) const {
 
   // Check data set
@@ -733,6 +734,7 @@ void Field2D::setStencil(bstencil *fval, bindex *bx) const {
   fval->z2p = data[bx->jx][bx->jy];
   fval->z2m = data[bx->jx][bx->jy];
 }
+*/
 
 void Field2D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
   fval.mm = data[bx.jx2m][bx.jy];

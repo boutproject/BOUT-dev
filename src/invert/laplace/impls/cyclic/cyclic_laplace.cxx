@@ -102,6 +102,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
   FieldPerp x;  // Result
   x.allocate();
 
+  Coordinates *coord = mesh->coordinates();
+
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
   
@@ -139,7 +141,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     // including boundary conditions
     for(int kz = 0; kz < nmode; kz++) {
 	
-      BoutReal zlen = mesh->dz*(mesh->ngz-4);
+      BoutReal zlen = coord->dz*(mesh->ngz-4);
 	
       BoutReal kwave=kz*2.0*PI/(2.*zlen); // wave number is 1/[rad]; DST has extra 2.
     
@@ -193,7 +195,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(mesh->zlength); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/(coord->zlength); // wave number is 1/[rad]
     
       tridagMatrix(a[kz], b[kz], c[kz],
                    bcmplx[kz], 

@@ -125,19 +125,30 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
   //////////////////////////////////////////////////////
   /// Non-uniform meshes. Need to use DDX, DDY
   
+  OPTION(Options::getRoot(), non_uniform,  false);
+  
   Field2D d2x, d2y; // d^2 x / d i^2
   // Read correction for non-uniform meshes
   if(mesh->get(d2x, "d2x")) {
     output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-    d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
+    d1_dx = mesh->indexDDX(1./dx); // d/di(1/dx)
   }else
     d1_dx = -d2x / (dx*dx);
   
   if(mesh->get(d2y, "d2y")) {
     output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-    d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
+    d1_dy = mesh->indexDDY(1./dy); // d/di(1/dy)
   }else
     d1_dy = -d2y / (dy*dy);
+  
+  //////////////////////////////////////////////////////
+  
+  if(mesh->IncIntShear) {
+    if(mesh->get(IntShiftTorsion, "IntShiftTorsion")) {
+      output.write("\tWARNING: No Integrated torsion specified\n");
+      IntShiftTorsion = 0.0;
+    }
+  }
 }
 
 Coordinates::~Coordinates() {
@@ -494,7 +505,19 @@ int Coordinates::jacobian() {
  * 
  *******************************************************************************/
 
-#include "derivs.hxx"
+const Field2D Coordinates::DDX(const Field2D &f) {
+  return mesh->indexDDX(f) / dx;
+}
+
+const Field2D Coordinates::DDY(const Field2D &f) {
+  return mesh->indexDDY(f) / dy;
+}
+
+const Field2D Coordinates::DDZ(const Field2D &f) {
+  return Field2D(0.0);
+}
+
+#include <derivs.hxx>
 
 /////////////////////////////////////////////////////////
 // Parallel gradient
@@ -511,7 +534,7 @@ const Field2D Coordinates::Grad_par(const Field2D &var, CELL_LOC outloc, DIFF_ME
 const Field3D Coordinates::Grad_par(const Field3D &var, CELL_LOC outloc, DIFF_METHOD method) {
   msg_stack.push("Coordinates::Grad_par( Field3D )");
   
-  Field3D result = DDY(var, outloc, method)/sqrt(g_22);
+  Field3D result = ::DDY(var, outloc, method)/sqrt(g_22);
   
   msg_stack.pop();
   
@@ -580,7 +603,7 @@ const Field3D Coordinates::Grad2_par2(const Field3D &f, CELL_LOC outloc) {
     sg = interp_to(sg, outloc);
   }
   
-  result = DDY(f,outloc);
+  result = ::DDY(f,outloc);
     
   r2 = D2DY2(f,outloc)/interp_to(g_22,outloc);
   
@@ -736,7 +759,7 @@ const Field2D Coordinates::Laplace_par(const Field2D &f) {
 }
 
 const Field3D Coordinates::Laplace_par(const Field3D &f) {
-  return D2DY2(f)/g_22 + DDY(J/g_22)*DDY(f)/J;
+  return D2DY2(f)/g_22 + DDY(J/g_22)*::DDY(f)/J;
 }
 
 // Full Laplacian operator on scalar field
@@ -756,7 +779,7 @@ const Field2D Coordinates::Laplace(const Field2D &f) {
 const Field3D Coordinates::Laplace(const Field3D &f) {
   msg_stack.push("Coordinates::Laplace( Field3D )");
 
-  Field3D result  = G1*DDX(f) + G2*DDY(f) + G3*DDZ(f)
+  Field3D result  = G1*::DDX(f) + G2*::DDY(f) + G3*::DDZ(f)
     + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
     + 2.0*(g12*D2DXDY(f) + g13*D2DXDZ(f) + g23*D2DYDZ(f));
 

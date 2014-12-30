@@ -14,12 +14,12 @@ zmax = 0.15915494309189533577# dz = 2*pi(zmax-zmin)/(mz-1)in fraction of 2 \pi: 
 MYG = 0  #noy comm for now
 MXG = 1
 
-StaggerGrids = true
-
 [output]
 floats = false #false -> output in doubles
 
 [mesh]  
+StaggerGrids = true
+
 ixseps1 = -1     
 ixseps2 = -1             # Set x location of separatrix 2
 

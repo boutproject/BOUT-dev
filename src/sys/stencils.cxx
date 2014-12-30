@@ -1,6 +1,5 @@
 /**************************************************************************
  * Stencil class for differencing, and handles indexing
- * NOTE: bstencil now depreciated
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -486,256 +485,11 @@ backward_stencil::backward_stencil()
 }
 
 /*******************************************************************************
- * bstencil class
- *******************************************************************************/
-
-////////////////// Operators ///////////////////////
-
-bstencil & bstencil::operator=(const bstencil &rhs)
-{
-  jx = rhs.jx;
-  jy = rhs.jy;
-  jz = rhs.jz;
-
-  cc = rhs.cc;
-
-  xp = rhs.xp; xm = rhs.xm;
-  yp = rhs.yp; ym = rhs.ym;
-  zp = rhs.zp; zm = rhs.zm;
-
-  x2p = rhs.x2p; x2m = rhs.x2m;
-  y2p = rhs.y2p; y2m = rhs.y2m;
-  z2p = rhs.z2p; z2m = rhs.z2m;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator+=(const bstencil &rhs)
-{
-  // Should check that jx,jy and jz are the same
-
-  cc += rhs.cc;
-  
-  xp += rhs.xp; xm += rhs.xm;
-  yp += rhs.yp; ym += rhs.ym;
-  zp += rhs.zp; zm += rhs.zm;
-
-  x2p += rhs.x2p; x2m += rhs.x2m;
-  y2p += rhs.y2p; y2m += rhs.y2m;
-  z2p += rhs.z2p; z2m += rhs.z2m;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator-=(const bstencil &rhs)
-{
-  cc -= rhs.cc;
-  
-  xp -= rhs.xp; xm -= rhs.xm;
-  yp -= rhs.yp; ym -= rhs.ym;
-  zp -= rhs.zp; zm -= rhs.zm;
-
-  x2p -= rhs.x2p; x2m -= rhs.x2m;
-  y2p -= rhs.y2p; y2m -= rhs.y2m;
-  z2p -= rhs.z2p; z2m -= rhs.z2m;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator*=(const bstencil &rhs)
-{
-  cc *= rhs.cc;
-  
-  xp *= rhs.xp; xm *= rhs.xm;
-  yp *= rhs.yp; ym *= rhs.ym;
-  zp *= rhs.zp; zm *= rhs.zm;
-
-  x2p *= rhs.x2p; x2m *= rhs.x2m;
-  y2p *= rhs.y2p; y2m *= rhs.y2m;
-  z2p *= rhs.z2p; z2m *= rhs.z2m;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator*=(const BoutReal rhs)
-{
-  cc *= rhs;
-  
-  xp *= rhs; xm *= rhs;
-  yp *= rhs; ym *= rhs;
-  zp *= rhs; zm *= rhs;
-
-  x2p *= rhs; x2m *= rhs;
-  y2p *= rhs; y2m *= rhs;
-  z2p *= rhs; z2m *= rhs;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator/=(const bstencil &rhs)
-{
-  cc /= rhs.cc;
-  
-  xp /= rhs.xp; xm *= rhs.xm;
-  yp /= rhs.yp; ym *= rhs.ym;
-  zp /= rhs.zp; zm *= rhs.zm;
-
-  x2p /= rhs.x2p; x2m *= rhs.x2m;
-  y2p /= rhs.y2p; y2m *= rhs.y2m;
-  z2p /= rhs.z2p; z2m *= rhs.z2m;
-
-  return(*this);
-}
-
-bstencil & bstencil::operator/=(const BoutReal rhs)
-{
-  cc /= rhs;
-  
-  xp /= rhs; xm /= rhs;
-  yp /= rhs; ym /= rhs;
-  zp /= rhs; zm /= rhs;
-
-  x2p /= rhs; x2m /= rhs;
-  y2p /= rhs; y2m /= rhs;
-  z2p /= rhs; z2m /= rhs;
-  
-  return(*this);
-}
-
-bstencil & bstencil::operator^=(const bstencil &rhs)
-{
-  cc = pow(cc, rhs.cc);
-  
-  xp = pow(xp, rhs.xp); xm = pow(xm, rhs.xm);
-  yp = pow(yp, rhs.yp); ym = pow(ym, rhs.ym);
-  zp = pow(zp, rhs.zp); zm = pow(zm, rhs.zm);
-
-  x2p = pow(x2p, rhs.x2p); x2m = pow(x2m, rhs.x2m);
-  y2p = pow(y2p, rhs.y2p); y2m = pow(y2m, rhs.y2m);
-  z2p = pow(z2p, rhs.z2p); z2m = pow(z2m, rhs.z2m);
-
-  return(*this);
-}
-
-bstencil & bstencil::operator^=(const BoutReal rhs)
-{
-  cc = pow(cc, rhs);
-  
-  xp = pow(xp, rhs); xm = pow(xm, rhs);
-  yp = pow(yp, rhs); ym = pow(ym, rhs);
-  zp = pow(zp, rhs); zm = pow(zm, rhs);
-
-  x2p = pow(x2p, rhs); x2m = pow(x2m, rhs);
-  y2p = pow(y2p, rhs); y2m = pow(y2m, rhs);
-  z2p = pow(z2p, rhs); z2m = pow(z2m, rhs);
-  
-  return(*this);
-}
-
-//////////////// Binary operators ///////////////////////
-
-const bstencil bstencil::operator+(const bstencil &other) const
-{
-  bstencil result = *this;
-  result += other;
-  return(result);
-}
-
-const bstencil bstencil::operator-(const bstencil &other) const
-{
-  bstencil result = *this;
-  result -= other;
-  return(result);
-}
-
-const bstencil bstencil::operator*(const bstencil &other) const
-{
-  bstencil result = *this;
-  result *= other;
-  return(result);
-}
-
-const bstencil bstencil::operator*(const BoutReal rhs) const
-{
-  bstencil result = *this;
-  result *= rhs;
-  return(result);
-}
-const bstencil bstencil::operator/(const bstencil &other) const
-{
-  bstencil result = *this;
-  result /= other;
-  return(result);
-}
-
-const bstencil bstencil::operator/(const BoutReal rhs) const
-{
-  bstencil result = *this;
-  result /= rhs;
-  return(result);
-}
-
-const bstencil bstencil::operator^(const bstencil &other) const
-{
-  bstencil result = *this;
-  result ^= other;
-  return(result);
-}
-
-const bstencil bstencil::operator^(const BoutReal rhs) const
-{
-  bstencil result = *this;
-  result ^= rhs;
-  return(result);
-}
-
-/////////////// NON-MEMBER OPERATORS /////////////////////
-
-const bstencil operator*(const BoutReal lhs, const bstencil &rhs)
-{
-  return(rhs * lhs);
-}
-
-const bstencil operator/(const BoutReal lhs, const bstencil &rhs)
-{
-  bstencil result = rhs;
-  result.cc = lhs / rhs.cc;
-  
-  result.xp = lhs / rhs.xp; result.xm = lhs / rhs.xm;
-  result.yp = lhs / rhs.yp; result.ym = lhs / rhs.ym;
-  result.zp = lhs / rhs.zp; result.zm = lhs / rhs.zm;
-  
-  result.x2p = lhs / rhs.x2p; result.x2m = lhs / rhs.x2m;
-  result.y2p = lhs / rhs.y2p; result.y2m = lhs / rhs.y2m;
-  result.z2p = lhs / rhs.z2p; result.z2m = lhs / rhs.z2m;
-
-  return(result);
-}
-
-const bstencil operator^(const BoutReal lhs, const bstencil &rhs)
-{
-  bstencil result = rhs;
-
-  result.cc = pow(lhs, rhs.cc);
-
-  result.xp = pow(lhs, rhs.xp); result.xm = pow(lhs, rhs.xm);
-  result.yp = pow(lhs, rhs.yp); result.ym = pow(lhs, rhs.ym);
-  result.zp = pow(lhs, rhs.zp); result.zm = pow(lhs, rhs.zm);
-
-  result.x2p = pow(lhs, rhs.x2p); result.x2m = pow(lhs, rhs.x2m);
-  result.y2p = pow(lhs, rhs.y2p); result.y2m = pow(lhs, rhs.y2m);
-  result.z2p = pow(lhs, rhs.z2p); result.z2m = pow(lhs, rhs.z2m);
-
-  return(result);
-}
-
-/*******************************************************************************
  * Functions to handle indexing
  *******************************************************************************/
 
 /* Given index centre, calculates shifted indices */
-void calc_index(bindex *bx)
-{
+void calc_index(bindex *bx) {
   bx->jxp = bx->jx+1;
   if(bx->jxp >= mesh->ngx)
     bx->jxp = mesh->ngx-1;
@@ -761,10 +515,12 @@ void calc_index(bindex *bx)
 
   /* shifted z-indices for x differencing */
   if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    bx->xp_offset = (-mesh->zShift[bx->jxp][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-    bx->x2p_offset = (-mesh->zShift[bx->jx2p][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-    bx->xm_offset =  (-mesh->zShift[bx->jxm][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
-    bx->x2m_offset = (-mesh->zShift[bx->jx2m][bx->jy] + mesh->zShift[bx->jx][bx->jy]) / mesh->dz;
+    Coordinates *coord = mesh->coordinates();
+    
+    bx->xp_offset = (-mesh->zShift(bx->jxp,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
+    bx->x2p_offset = (-mesh->zShift(bx->jx2p,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
+    bx->xm_offset =  (-mesh->zShift(bx->jxm,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
+    bx->x2m_offset = (-mesh->zShift(bx->jx2m,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
   }else {
     bx->xp_offset = 0.0;
     bx->x2p_offset = 0.0;

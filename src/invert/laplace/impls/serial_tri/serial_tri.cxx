@@ -76,6 +76,8 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   FieldPerp x;
   x.allocate();
 
+  Coordinates *coord = mesh->coordinates();
+
   int jy = b.getIndex();
   x.setIndex(jy);
   
@@ -99,10 +101,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
        ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
-      ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
+      ZFFT(x0[ix], mesh->zShift(ix,jy), bk[ix]);
       
     }else
-      ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
+      ZFFT(b[ix], mesh->zShift(ix,jy), bk[ix]);
   }
 
   for(int iz=0;iz<=ncz/2;iz++) {
@@ -119,7 +121,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     
     tridagMatrix(avec, bvec, cvec, bk1d, jy, 
 		 iz == 0, // DC?
-		 iz*2.0*PI/mesh->zlength, // kwave
+		 iz*2.0*PI/coord->zlength, // kwave
 		 global_flags, inner_boundary_flags, outer_boundary_flags,
 		 &A, &C, &D);
     
@@ -161,12 +163,12 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
     
-    ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);
+    ZFFT_rev(xk[ix], mesh->zShift(ix,jy), x[ix]);
     
-    x[ix][mesh->ngz-1] = x[ix][0]; // enforce periodicity
+    x(ix,mesh->ngz-1) = x(ix,0); // enforce periodicity
     
     for(int kz=0;kz<mesh->ngz;kz++)
-      if(!finite(x[ix][kz]))
+      if(!finite(x(ix,kz)))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
   }
 

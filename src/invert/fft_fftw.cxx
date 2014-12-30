@@ -1,5 +1,5 @@
 /*!************************************************************************
- * \file fft.cpp
+ * \file fft_fftw.cxx
  *
  * \brief FFT routines using external libraries
  *
@@ -173,17 +173,18 @@ void cfft(dcomplex *cv, int length, int isign)
 #endif
 
 
-void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
-{
+void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift) {
   int jz, ikz;
   BoutReal kwave;
   
+  Coordinates *coord = mesh->coordinates();
+
   int ncz = mesh->ngz-1;
   if((isign > 0) && (mesh->ShiftXderivs) && shift) {
     // Reverse FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/coord->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
@@ -196,7 +197,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
     // Forward FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/coord->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -407,9 +408,12 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
   rfft(in, ncz, cv);
 
   if((mesh->ShiftXderivs) && shift) {
+    
+    Coordinates *coord = mesh->coordinates();
+    
     // Forward FFT
     for(jz=0;jz<=ncz/2;jz++) {
-      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/coord->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -425,8 +429,11 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
   int ncz = mesh->ngz-1;
   
   if((mesh->ShiftXderivs) && shift) {
+    
+    Coordinates *coord = mesh->coordinates();
+    
     for(jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
-      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=jz*2.0*PI/coord->zlength; // wave number is 1/[rad]
       
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));

@@ -48,7 +48,6 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 #include <bout/solver.hxx>
 #include <boutexception.hxx>
 #include <optionsreader.hxx>
-#include <derivs.hxx>
 #include <msg_stack.hxx>
 
 #include <bout/sys/timer.hxx>
@@ -242,12 +241,6 @@ void BoutInitialise(int &argc, char **&argv) {
 
     /// Get file extensions
     options->get("dump_format", dump_ext, "nc");
-
-    /// Setup derivative methods
-    if (derivs_init()) {
-      output.write("Failed to initialise derivative methods. Aborting\n");
-      return;
-    }
 
     ////////////////////////////////////////////
 

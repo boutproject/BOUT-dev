@@ -227,10 +227,12 @@ class Field3D : public Field, public FieldData {
   // Stencils for differencing
 
   /// Takes a location and fills values in the stencil
+  /*
   void setStencil(bstencil *fval, bindex *bx) const {
     setStencil(fval, bx, true);
   }
   void setStencil(bstencil *fval, bindex *bx, bool need_x) const;
+  */
 
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;

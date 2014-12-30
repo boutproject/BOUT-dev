@@ -731,6 +731,7 @@ const FieldPerp FieldPerp::operator^(const BoutReal other) const
 
 ////////////////////// STENCILS //////////////////////////
 
+/*
 void FieldPerp::setStencil(bstencil *fval, bindex *bx) const
 {
   fval->cc = data[bx->jx][bx->jz];
@@ -757,6 +758,7 @@ void FieldPerp::setStencil(bstencil *fval, bindex *bx) const
   fval->z2p = data[bx->jx][bx->jz2p];
   fval->z2m = data[bx->jx][bx->jz2m];
 }
+*/
 
 void FieldPerp::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {

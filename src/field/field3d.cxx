@@ -983,6 +983,7 @@ const Field3D Field3D::operator^(const BoutReal rhs) const {
   18 Aug 2008: Added need_x argument to disable Z interpolation when not needed
   since interpZ is taking ~25% of run time (on single processor)
 */
+/*
 void Field3D::setStencil(bstencil *fval, bindex *bx, bool need_x) const
 {
   fval->jx = bx->jx;
@@ -1024,6 +1025,7 @@ void Field3D::setStencil(bstencil *fval, bindex *bx, bool need_x) const
   fval->z2p = block->data[bx->jx][bx->jy][bx->jz2p];
   fval->z2m = block->data[bx->jx][bx->jy][bx->jz2m];
 }
+*/
 
 void Field3D::setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const
 {

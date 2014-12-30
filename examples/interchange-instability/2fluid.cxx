@@ -57,6 +57,8 @@ FieldGroup comms;
 int solve_phi_tridag(Field3D &r, Field3D &p, int flags);
 int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
+Coordinates *coord; // Coordinate system
+
 int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
@@ -80,12 +82,15 @@ int physics_init(bool restarting) {
 
   b0xcv *= -1.0;  // NOTE: THIS IS FOR 'OLD' GRID FILES ONLY
 
+  // Coordinate system
+  coord = mesh->coordinates();
+
   // Load metrics
   GRID_LOAD(Rxy);
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(mesh->dx,   "dpsi");
+  mesh->get(coord->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -193,12 +198,12 @@ int physics_init(bool restarting) {
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  mesh->dx /= rho_s*rho_s*(bmag/1e4);
+  coord->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  mesh->Bxy  /= (bmag/1.e4);
+  coord->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -206,23 +211,23 @@ int physics_init(bool restarting) {
 
   /**************** CALCULATE METRICS ******************/
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -I*mesh->g11;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+  coord->g11 = (Rxy*Bpxy)^2;
+  coord->g22 = 1.0 / (hthe^2);
+  coord->g33 = (I^2)*coord->g11 + (coord->Bxy^2)/coord->g11;
+  coord->g12 = 0.0;
+  coord->g13 = -I*coord->g11;
+  coord->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
+  coord->J = hthe / Bpxy;
   
-  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  mesh->g_13 = I*Rxy*Rxy;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  coord->g_11 = 1.0/coord->g11 + ((I*Rxy)^2);
+  coord->g_22 = (coord->Bxy*hthe/Bpxy)^2;
+  coord->g_33 = Rxy*Rxy;
+  coord->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  coord->g_13 = I*Rxy*Rxy;
+  coord->g_23 = Btxy*hthe*Rxy/Bpxy;
 
-  mesh->geometry();
+  coord->geometry();
   
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -302,7 +307,7 @@ int physics_init(bool restarting) {
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
+#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
 int physics_run(BoutReal t)
 {
@@ -412,7 +417,7 @@ int physics_run(BoutReal t)
     */
     
     //ddt(rho) += 2.0*Bxy*V_dot_Grad(b0xcv, pei);
-    ddt(rho) += 2.0*mesh->Bxy*b0xcv*Grad(pei);
+    ddt(rho) += 2.0*coord->Bxy*b0xcv*Grad(pei);
 
     //ddt(rho) += Bxy*Bxy*Div_par(jpar, CELL_CENTRE);
   }

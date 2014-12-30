@@ -20,15 +20,21 @@ Mesh* Mesh::create(Options *opt) {
   return create(NULL, opt);
 }
 
-Mesh::Mesh(GridDataSource *s) : source(s), coords(0) {
+Mesh::Mesh(GridDataSource *s, Options* options) : source(s), coords(0) {
   if(s == NULL)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
+  /// Get mesh options
+  OPTION(options, StaggerGrids,   false); // Stagger grids
+
   // Will be set to true if any variable has a free boundary condition applied to the corresponding boundary
   freeboundary_xin = false;
   freeboundary_xout = false;
   freeboundary_ydown = false;
   freeboundary_yup = false;
+  
+  // Initialise derivatives
+  derivs_init(options);  // in index_derivs.cxx for now
 }
 
 Mesh::~Mesh() {
@@ -88,6 +94,8 @@ int Mesh::get(BoutReal &rval, const string &name) {
 int Mesh::get(Field2D &var, const string &name, BoutReal def) {
   int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name.c_str());
   
+  output << "GET: " << name << " = " << def << endl;
+
   if(!source->hasVar(name)) {
     output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name.c_str(), def);
     var = def;
@@ -328,7 +336,7 @@ bool Mesh::hasBndryLowerY() {
 }
 
 Coordinates* Mesh::coordinates() {
-  if(!coordinates()) {
+  if(!coords) {
     // No coordinate system set. Create default
     coords = new Coordinates(this);
   }

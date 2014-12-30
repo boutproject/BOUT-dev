@@ -5,6 +5,11 @@
  * Changelog
  * =========
  *
+ * 2014-12 Ben Dudson <bd512@york.ac.uk>
+ *     * Removing coordinate system into separate
+ *       Coordinates class
+ *     * Adding index derivative functions from derivs.cxx
+ * 
  * 2010-06 Ben Dudson, Sean Farley
  *     * Initial version, adapted from GridData class
  *     * Incorporates code from topology.cpp and Communicator
@@ -64,7 +69,7 @@ typedef void* comm_handle;
 class Mesh {
  public:
   
-  Mesh(GridDataSource *s);
+  Mesh(GridDataSource *s, Options *options);
   virtual ~Mesh();
   
   static Mesh* create(GridDataSource *source, Options *opt = NULL); ///< Create a Mesh object
@@ -190,7 +195,7 @@ class Mesh {
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-  Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
+  
   bool IncIntShear; // Include integrated shear (if shifting X)
   
   /// Coordinate system
@@ -223,6 +228,33 @@ class Mesh {
   const Field3D indexD4DY4(const Field3D &f);
   const Field2D indexD4DY4(const Field2D &f);
   const Field3D indexD4DZ4(const Field3D &f);
+  
+  // Advection schemes
+  const Field2D indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method);
+
+  const Field2D indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field2D indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  const Field3D indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method);
+  
+  typedef BoutReal (*deriv_func)(stencil &); // f
+  typedef BoutReal (*upwind_func)(stencil &, stencil &); // v, f
+
+  typedef struct {
+    BoutReal inner;
+    BoutReal outer;
+  } boundary_derivs_pair;
+  // More types for forward/backward differences to calculate derivatives in boundary guard cells for free boundary conditions
+  typedef boundary_derivs_pair (*inner_boundary_deriv_func)(forward_stencil &); // f
+  typedef boundary_derivs_pair (*outer_boundary_deriv_func)(backward_stencil &); // f
+  typedef boundary_derivs_pair (*inner_boundary_upwind_func)(forward_stencil &); // v,f
+  typedef boundary_derivs_pair (*outer_boundary_upwind_func)(backward_stencil &); // v,f
+
  protected:
   
   GridDataSource *source; ///< Source for grid data
@@ -242,6 +274,9 @@ class Mesh {
                  int nx, int ny,  // Size of the domain to copy
                  BoutReal **data);
 
+  // Initialise derivatives
+  void derivs_init(Options* options);
+  
   // Loop over mesh, applying a stencil in the X direction
   const Field2D applyXdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
   const Field3D applyXdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
@@ -249,13 +284,9 @@ class Mesh {
   const Field2D applyYdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
   const Field3D applyYdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
 
-  const Field2D applyZdiff(const Field2D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
-  const Field3D applyZdiff(const Field3D &var, deriv_func func, inner_boundary_deriv_func func_in, outer_boundary_deriv_func func_out, CELL_LOC loc = CELL_DEFAULT);
- private:
-  /*
-  int gaussj(BoutReal **a, int n);
-  int *indxc, *indxr, *ipiv, ilen;
-  */
+  const Field3D applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc = CELL_DEFAULT);
+  
+private:
 };
 
 #endif // __MESH_H__

@@ -74,20 +74,20 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 	  for(int z=0;z<ncz;z++) {
 		// The integer part of xt_prime, zt_prime are the indices of the cell
 		// containing the field line end-point
-		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+	        i_corner[x][y][z] = (int)(xt_prime(x,y,z));
 
 		// z is periodic, so make sure the z-index wraps around
-		zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
+		zt_prime(x,y,z) = zt_prime(x,y,z) - ncz * ( (int) (zt_prime(x,y,z) / ((BoutReal) ncz)) );
 
-		if(zt_prime[x][y][z] < 0.0)
-		  zt_prime[x][y][z] += ncz;
+		if(zt_prime(x,y,z) < 0.0)
+		  zt_prime(x,y,z) += ncz;
 
-		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
+		k_corner[x][y][z] = (int)(zt_prime(x,y,z));
 
 		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
 		// calculated by taking the remainder of the floating point index
-		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
-		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
+		t_x = xt_prime(x,y,z) - (BoutReal)i_corner[x][y][z];
+		t_z = zt_prime(x,y,z) - (BoutReal)k_corner[x][y][z];
 
 		// Check that t_x and t_z are in range
 		if( (t_x < 0.0) || (t_x > 1.0) )
@@ -142,11 +142,11 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
-  fx = DDX(f) * mesh.dx;
+  fx = mesh.indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
   mesh.communicate(fx);
-  fz = DDZ(f) * mesh.dz;
+  fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
   mesh.communicate(fz);
-  fxz = D2DXDZ(f) * mesh.dx * mesh.dz;
+  fxz = mesh.indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
   mesh.communicate(fxz);
 
   f_next = 0;
@@ -162,35 +162,35 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
 		int z_mod_p1 = (z_mod + 1) % ncz;
 
 		// Interpolate f in X at Z
-		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x(x,y,z)
+		  + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x(x,y,z);
 
 		// Interpolate f in X at Z+1
-		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+		  + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
 		// Interpolate fz in X at Z
-		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x(x,y,z)
+		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x(x,y,z);
 
 		// Interpolate fz in X at Z+1
-		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
 		// Interpolate in Z
 		f_next(x,y + dir,z) =
-		  + f_z    * fcimap.h00_z[x][y][z]
-		  + f_zp1  * fcimap.h01_z[x][y][z]
-		  + fz_z   * fcimap.h10_z[x][y][z]
-		  + fz_zp1 * fcimap.h11_z[x][y][z];
+		  + f_z    * fcimap.h00_z(x,y,z)
+		  + f_zp1  * fcimap.h01_z(x,y,z)
+		  + fz_z   * fcimap.h10_z(x,y,z)
+		  + fz_zp1 * fcimap.h11_z(x,y,z);
 	  }
 	}
   }
@@ -216,6 +216,8 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   yup = f.yup();
   ydown = f.ydown();
 
+  Coordinates *coord = mesh.coordinates();
+
   // Should check if yup, ydown have already been calculated before calling interpolate
   interpolate(f, *yup, forward_map, +1);
   interpolate(f, *ydown, backward_map, -1);
@@ -223,7 +225,7 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
 	for (int y=mesh.ystart;y<=mesh.yend;++y) {
 	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
+		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*coord->dy(x,y)*sqrt(coord->g_22(x,y)));
 	  }
 	}
   }
@@ -262,6 +264,8 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
 
   result.allocate();
 
+  Coordinates *coord = mesh.coordinates();
+
   yup = f.yup();
   ydown = f.ydown();
 
@@ -272,7 +276,7 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
 	for (int y=mesh.ystart;y<=mesh.yend;++y) {
 	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
+		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(coord->dy(x,y) * coord->dy(x,y) * coord->g_22(x,y));
 	  }
 	}
   }
@@ -302,8 +306,10 @@ const Field3D FCI::Div_par(Field3D &f, bool keep) {
   int msg_pos = msg_stack.push("FCI::Div_par( Field3D )");
 #endif
 
-  Field3D tmp = f/mesh.Bxy;
-  Field3D result = mesh.Bxy*Grad_par(tmp, keep);
+  Coordinates *coord = mesh.coordinates();
+
+  Field3D tmp = f/coord->Bxy;
+  Field3D result = coord->Bxy*Grad_par(tmp, keep);
 
 #ifdef TRACK
   result.name = "FCI::Div_par("+f.name+")";
