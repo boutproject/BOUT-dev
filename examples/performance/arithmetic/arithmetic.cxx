@@ -17,7 +17,7 @@ protected:
     Field3D b = 2.0;
     Field3D c = 3.0;
 
-    Field3D result1, result2, result3;
+    Field3D result1, result2, result3, result4;
 
     // Using Field methods (classic operator overloading)
     
@@ -47,11 +47,19 @@ protected:
     result3 = eval3D(add(mul(2,a), mul(b,c)));
 
     clock_t c4 = clock();
+
+    // Range iterator
+    result4.allocate();
+    for(auto i : result4)
+      result4[i] = 2.*a[i] + b[i] * c[i];
     
+    clock_t c5 = clock();
+
     output << "TIMING\n======\n";
     output << "Fields: " << c2 - c1 << endl;
     output << "C loop: " << c3 - c2 << endl;
     output << "Templates: " << c4 - c3 << endl;
+    output << "Range For: " << c5 - c4 << endl;
     output << "\nUnits: " << 1./((double)CLOCKS_PER_SEC) << " seconds" << endl << endl;
     
     return 1;
