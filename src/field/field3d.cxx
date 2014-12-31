@@ -2176,75 +2176,6 @@ const Field3D operator^(const BoutReal lhs, const Field3D &rhs) {
 
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
-const Field3D SQ(const Field3D &f) {
-  return f * f;
-}
-
-const Field3D sqrt(const Field3D &f) {
-  Field3D result;
-
-#ifdef CHECK
-  msg_stack.push("sqrt(Field3D)");
-
-  // Check data set
-  if(!f.isAllocated())
-    throw BoutException("Field3D: Taking sqrt of empty data\n");
-    
-  // Test values
-  for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
-    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) 
-      for(int jz=0;jz<mesh->ngz-1;jz++) {
-	if(f(jx,jy,jz) < 0.0) {
-	  throw BoutException("Sqrt(Field3D) operates on negative value at [%d,%d,%d]\n", jx, jy, jz);
-	}
-      }
-#endif
-
-#ifdef TRACK
-  result.name = "Sqrt("+name+")";
-#endif
-
-  result.allocate();
-
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-        result(jx, jy, jz) = ::sqrt(f(jx, jy, jz));
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
-  result.setLocation(f.getLocation());
-  
-  return result;
-}
-
-const Field3D abs(const Field3D &f) {
-  Field3D result;
-
-#ifdef CHECK
-  // Check data set
-  if(!f.isAllocated())
-    throw BoutException("Field3D: Taking abs of empty data\n");
-#endif
-
-#ifdef TRACK
-  result.name = "Abs("+name+")";
-#endif
-
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-        result(jx, jy, jz) = fabs(f(jx, jy, jz));
-
-  result.setLocation(f.getLocation());
-
-  return result;
-}
-
 BoutReal min(const Field3D &f, bool allpe) {
 #ifdef CHECK
   if(!f.isAllocated())
@@ -2311,175 +2242,42 @@ BoutReal max(const Field3D &f, bool allpe) {
 /////////////////////////////////////////////////////////////////////
 // Friend functions
 
-const Field3D exp(const Field3D &f) {
-  msg_stack.push("exp(Field3D)");
-  ASSERT1(f.isAllocated());
+#define F3D_FUNC(name, func)                               \
+  const Field3D name(const Field3D &f) {                   \
+    msg_stack.push(#name "(Field3D)");                     \
+    /* Check if the input is allocated */                  \
+    ASSERT1(f.isAllocated());                              \
+    /* Define and allocate the output result */            \
+    Field3D result;                                        \
+    result.allocate();                                     \
+    /* Loop over domain */                                 \
+    for(DataIterator d = begin(result); !d.done(); ++d) {  \
+      result[d] = func(f[d]);                              \
+      /* If checking is set to 3 or higher, test result */ \
+      ASSERT3(finite(result[d]));                          \
+    }                                                      \
+    result.setLocation(f.getLocation());                   \
+    msg_stack.pop();                                       \
+    return result;                                         \
+  }
 
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-        result(jx, jy, jz) = exp(f(jx, jy, jz));
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
+const Field3D SQ(const Field3D &f) {
+  return f * f;
 }
 
-const Field3D log(const Field3D &f) {
-  msg_stack.push("log(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++) {
-        //ASSERT2(f(jx, jy, jz) > 0.);
-        result(jx, jy, jz) = log(f(jx, jy, jz));
-      }
+F3D_FUNC(sqrt, ::sqrt);
+F3D_FUNC(abs, ::fabs);
 
-  result.setLocation( f.getLocation() );  
+F3D_FUNC(exp, ::exp);
+F3D_FUNC(log, ::log);
 
-  msg_stack.pop();
-  return result;
-}
+F3D_FUNC(sin, ::sin);
+F3D_FUNC(cos, ::cos);
+F3D_FUNC(tan, ::tan);
 
-const Field3D sin(const Field3D &f) {
-  msg_stack.push("sin(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = sin(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "sin("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
-
-const Field3D cos(const Field3D &f) {
-  msg_stack.push("sin(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = cos(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "cos("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
-
-const Field3D tan(const Field3D &f) {
-  msg_stack.push("tan(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = tan(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "tan("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
-
-const Field3D sinh(const Field3D &f) {
-  msg_stack.push("sinh(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = sinh(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "sinh("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
-
-const Field3D cosh(const Field3D &f) {
-  msg_stack.push("cosh(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = cosh(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "cosh("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
-
-const Field3D tanh(const Field3D &f) {
-  msg_stack.push("tanh(Field3D)");
-  ASSERT1(f.isAllocated());
-  
-  Field3D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	result(jx, jy, jz) = tanh(f(jx, jy, jz));
-  
-#ifdef TRACK
-  result.name = "tanh("+f.name+")";
-#endif
-
-  result.setLocation( f.getLocation() );
-  
-  msg_stack.pop();
-  return result;
-}
+F3D_FUNC(sinh, ::sinh);
+F3D_FUNC(cosh, ::cosh);
+F3D_FUNC(tanh, ::tanh);
 
 const Field3D filter(const Field3D &var, int N0) {
   ASSERT1(var.isAllocated());
@@ -2526,92 +2324,6 @@ const Field3D filter(const Field3D &var, int N0) {
 
   return result;
 }
-
-// Smooths a field in Fourier space
-// DOESN'T WORK VERY WELL
-/*
-  const Field3D smooth(const Field3D &var, BoutReal zmax, BoutReal xmax)
-  {
-  Field3D result;
-  static dcomplex **f = NULL, *fx;
-  int jx, jy, jz, zmi, xmi;
-
-  if(f == NULL) {
-  f = cmatrix(mesh->ngx, ncz/2 + 1); 
-  fx = new dcomplex[2*mesh->ngx];
-  }
-  
-  if((zmax > 1.0) || (xmax > 1.0)) {
-  // Removed everyting
-  result = 0.0;
-  return result;
-  }
-  
-  result.allocate();
-
-  zmi = ncz/2;
-  xmi = mesh->ngx;
-
-  if(zmax > 0.0)
-  zmi = (int) ((1.0 - zmax)*((BoutReal) (ncz/2)));
-
-  if(xmax > 0.0)
-  xmi = (int) ((1.0 - xmax)*((BoutReal) mesh->ngx));
-
-  //output.write("filter: %d, %d\n", xmi, zmi);
-
-  for(jy=0;jy<mesh->ngy;jy++) {
-
-  for(jx=0;jx<mesh->ngx;jx++) {
-  // Take FFT in the Z direction, shifting into BoutReal space
-  ZFFT(var.block->data[jx][jy], mesh->zShift[jx][jy], f[jx]);
-  }
-
-  if(zmax > 0.0) {
-  // filter in z
-  for(jx=0;jx<mesh->ngx;jx++) {
-  for(jz=zmi+1;jz<=ncz/2;jz++) {
-  f[jx][jz] = 0.0;
-  }
-  }
-  }
-
-  if(is_pow2(mesh->ngx) && (xmax > 0.0)) {
-  // mesh->ngx is a power of 2 - filter in x too
-  for(jz=0;jz<=zmi;jz++) { // Go through non-zero toroidal modes
-  for(jx=0;jx<mesh->ngx;jx++) {
-  fx[jx] = f[jx][jz];
-  fx[2*mesh->ngx - 1 - jx] = f[jx][jz]; // NOTE:SYMMETRIC
-  }
-	
-  // FFT in X direction
-	
-  cfft(fx, 2*mesh->ngx, -1); // FFT
-	
-  for(jx=xmi+1; jx<=mesh->ngx; jx++) {
-  fx[jx] = 0.0;
-  fx[2*mesh->ngx-jx] = 0.0;
-  }
-	
-  // Reverse X FFT
-  cfft(fx, 2*mesh->ngx, 1);
-
-  for(jx=0;jx<mesh->ngx;jx++)
-  f[jx][jz] = fx[jx];
-	
-  }
-  }
-
-  // Reverse Z FFT
-  for(jx=0;jx<mesh->ngx;jx++) {
-  ZFFT_rev(f[jx], mesh->zShift[jx][jy], result.block->data[jx][jy]);
-  result.block->data[jx][jy][ncz] = result.block->data[jx][jy][0];
-  }
-  }
-  
-  return result;
-  }
-*/
 
 // Fourier filter in z
 const Field3D lowPass(const Field3D &var, int zmax) {
@@ -2757,12 +2469,10 @@ const Field3D copy(const Field3D &f) {
 const Field3D floor(const Field3D &var, BoutReal f) {
   Field3D result = copy(var);
   
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++) {
-        if(result(jx, jy, jz) < f)
-          result(jx, jy, jz) = f;
-      }
+  for(DataIterator d = begin(result); !d.done(); ++d)
+    if(result[d] < f)
+      result[d] = f;
+  
   return result;
 }
 

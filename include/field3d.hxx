@@ -350,11 +350,12 @@ const Field3D operator/(const BoutReal lhs, const Field3D &rhs);
 const Field3D operator^(const BoutReal lhs, const Field3D &rhs);
 
 // Non-member functions
+BoutReal min(const Field3D &f, bool allpe=false);
+BoutReal max(const Field3D &f, bool allpe=false);
+
 const Field3D SQ(const Field3D &f);
 const Field3D sqrt(const Field3D &f);
 const Field3D abs(const Field3D &f);
-BoutReal min(const Field3D &f, bool allpe=false);
-BoutReal max(const Field3D &f, bool allpe=false);
 
 const Field3D exp(const Field3D &f);
 const Field3D log(const Field3D &f);

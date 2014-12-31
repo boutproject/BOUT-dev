@@ -41,8 +41,9 @@
 #include <cmath>
 #include <output.hxx>
 
+#include <bout/assert.hxx>
+
 Field2D::Field2D() : data(NULL), deriv(NULL) { 
-  is_const = false;
 
   boundaryIsSet = false;
 
@@ -52,7 +53,6 @@ Field2D::Field2D() : data(NULL), deriv(NULL) {
 }
 
 Field2D::Field2D(const Field2D& f) : data(NULL), deriv(NULL) {
-  is_const = false;
   boundaryIsSet = false;
   *this = f;
 }
@@ -73,20 +73,17 @@ Field2D* Field2D::clone() const {
   return new Field2D(*this);
 }
 
-void Field2D::allocate()
-{
+void Field2D::allocate() {
   allocData();
 }
 
-Field2D* Field2D::timeDeriv()
-{
+Field2D* Field2D::timeDeriv() {
   if(deriv == NULL)
     deriv = new Field2D();
   return deriv;
 }
 
-BoutReal **Field2D::getData() const
-{
+BoutReal **Field2D::getData() const {
 #ifdef CHECK
   if(data == NULL)
     throw BoutException("Field2D::getData returning null pointer\n");
@@ -170,30 +167,6 @@ BoutReal* Field2D::operator[](int jx) const {
 #endif
   
   return(data[jx]);
-}
-
-BoutReal& Field2D::operator()(int jx, int jy) {
-#if CHECK > 2
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: [] operator on empty data");
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-    throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                        jx, jy, mesh->ngx, mesh->ngy);
-#endif
-  
-  return data[jx][jy];
-}
-
-const BoutReal& Field2D::operator()(int jx, int jy) const {
-#if CHECK > 2
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: [] operator on empty data");
-  if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
-    throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
-                        jx, jy, mesh->ngx, mesh->ngy);
-#endif
-  
-  return data[jx][jy];
 }
 
 ///////// Operators
@@ -795,56 +768,6 @@ void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
 ///////////////////// MATH FUNCTIONS ////////////////////
 
 
-const Field2D Field2D::sqrt() const {
-  // Check data set
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: Taking sqrt of empty data\n");
-
-#ifdef CHECK
-  // Test values
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      if(data[jx][jy] < 0.0) {
-	throw BoutException("Field2D: Sqrt operates on negative value at [%d,%d]\n", jx, jy);
-      }
-#endif
-  
-  Field2D result;
-  result.allocate();
-
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
-    result.data[0][j] = ::sqrt(data[0][j]);
-
-#ifdef TRACK
-  result.name = "sqrt("+name+")";
-#endif
-
-  return result;
-}
-
-const Field2D Field2D::abs() const
-{
-#ifdef CHECK
-  // Check data set
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: Taking abs of empty data\n");
-#endif
-
-  Field2D result;
-  result.allocate();
-
-#ifdef TRACK
-  result.name = "abs("+name+")";
-#endif
-
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
-    result.data[0][j] = fabs(data[0][j]);
-
-  return result;
-}
-
 BoutReal Field2D::min(bool allpe) const {
 #ifdef CHECK
   // Check data set
@@ -1256,14 +1179,6 @@ const Field2D SQ(const Field2D &f) {
   return f*f;
 }
 
-const Field2D sqrt(const Field2D &f) {
-  return f.sqrt();
-}
-
-const Field2D abs(const Field2D &f) {
-  return f.abs();
-}
-
 BoutReal min(const Field2D &f, bool allpe) {
   return f.min(allpe);
 }
@@ -1277,151 +1192,44 @@ bool finite(const Field2D &f) {
 }
 
 /////////////////////////////////////////////////
-// Friend functions
+// functions
 
-const Field2D exp(const Field2D &f) {
-#ifdef CHECK
-  msg_stack.push("exp(Field2D)");
-#endif
+#define F2D_FUNC(name, func)                               \
+  const Field2D name(const Field2D &f) {                   \
+    msg_stack.push(#name "(Field2D)");                     \
+    /* Check if the input is allocated */                  \
+    ASSERT1(f.isAllocated());                              \
+    /* Define and allocate the output result */            \
+    Field2D result;                                        \
+    result.allocate();                                     \
+    /* Loop over domain */                                 \
+    for(DataIterator d = begin(result); !d.done(); ++d) {  \
+      result[d] = func(f[d]);                              \
+      /* If checking is set to 3 or higher, test result */ \
+      ASSERT3(finite(result[d]));                          \
+    }                                                      \
+    msg_stack.pop();                                       \
+    return result;                                         \
+  }
 
-  Field2D result;
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::exp(f.data[jx][jy]);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  return result;
-}
+//for(int jx=0;jx<mesh->ngx;jx++)
+//  for(int jy=0;jy<mesh->ngy;jy++)
+//    result.data[jx][jy] = ::exp(f.data[jx][jy]);
 
-const Field2D log(const Field2D &f) {
-#ifdef CHECK
-  msg_stack.push("log(Field2D)");
-#endif
+F2D_FUNC(abs, ::fabs);
 
-  Field2D result;
-  result.allocate();
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++) {
-#ifdef CHECK
-      if(f.data[jx][jy] < 0.)
-        throw BoutException("log(Field2D) has negative argument at [%d][%d]\n", jx, jy);
-#endif
-      result.data[jx][jy] = ::log(f.data[jx][jy]);
-    }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  return result;
-}
+F2D_FUNC(sqrt, ::sqrt);
 
-const Field2D sin(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "sin("+f.name+")";
-#endif
+F2D_FUNC(exp, ::exp);
+F2D_FUNC(log, ::log);
 
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::sin(f.data[jx][jy]);
+F2D_FUNC(sin, ::sin);
+F2D_FUNC(cos, ::cos);
+F2D_FUNC(tan, ::tan);
 
-  return result;
-}
-
-const Field2D cos(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "cos("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::cos(f.data[jx][jy]);
-
-  return result;
-}
-
-const Field2D tan(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "tan("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::tan(f.data[jx][jy]);
-
-  return result;
-}
-
-const Field2D sinh(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "sinh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::sinh(f.data[jx][jy]);
-
-  return result;
-}
-
-const Field2D cosh(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "cosh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::cosh(f.data[jx][jy]);
-
-  return result;
-}
-
-const Field2D tanh(const Field2D &f) {
-  Field2D result;
-  
-#ifdef TRACK
-  result.name = "tanh("+f.name+")";
-#endif
-
-  result.allocate();
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      result.data[jx][jy] = ::tanh(f.data[jx][jy]);
-
-  return result;
-}
+F2D_FUNC(sinh, ::sinh);
+F2D_FUNC(cosh, ::cosh);
+F2D_FUNC(tanh, ::tanh);
 
 const Field2D copy(const Field2D &f) {
   Field2D result = f;
@@ -1432,10 +1240,9 @@ const Field2D copy(const Field2D &f) {
 const Field2D floor(const Field2D &var, BoutReal f) {
   Field2D result = copy(var);
 
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++) {
-      if(result(jx, jy) < f)
-        result(jx, jy) = f;
-    }
+  for(DataIterator d = begin(result); !d.done(); ++d)
+    if(result[d] < f)
+      result[d] = f;
+  
   return result;
 }
