@@ -104,21 +104,20 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
         BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
         for(int y=0;y<m->ngy;y++)
           result(x,y) = gen->generate(xpos,
-                                          TWOPI*m->GlobalY(y),
-                                          0.0,  // Z
-                                          t); // T
+                                      TWOPI*m->GlobalY(y),
+                                      0.0,  // Z
+                                      t); // T
       }
       break;
     }
   CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
-          for(int z=0;z<m->ngz;z++)
-            result(x,y) = gen->generate(m->GlobalX(x),
-                                            ypos,
-                                            0.0,  // Z
-                                            t); // T
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
+          result(x,y) = gen->generate(m->GlobalX(x),
+                                      ypos,
+                                      0.0,  // Z
+                                      t); // T
         }
       break;
     }
@@ -168,7 +167,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
           for(int z=0;z<m->ngz;z++)
             result(x, y, z) = gen->generate(m->GlobalX(x),
                                             ypos,
