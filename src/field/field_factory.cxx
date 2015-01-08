@@ -99,7 +99,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   }
   
   switch(loc)  {
-  CELL_XLOW: {
+  case CELL_XLOW: {
       for(int x=0;x<m->ngx;x++) {
         BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
         for(int y=0;y<m->ngy;y++)
@@ -110,7 +110,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
       }
       break;
     }
-  CELL_YLOW: {
+  case CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
           BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
@@ -150,9 +150,9 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
-  
+
   switch(loc)  {
-  CELL_XLOW: {
+  case CELL_XLOW: {
       for(int x=0;x<m->ngx;x++) {
         BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
         for(int y=0;y<m->ngy;y++)
@@ -164,7 +164,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
       }
       break;
     }
-  CELL_YLOW: {
+  case CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
           BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
@@ -176,7 +176,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
         }
       break;
     }
-  CELL_ZLOW: {
+  case CELL_ZLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++)
           for(int z=0;z<m->ngz;z++)
