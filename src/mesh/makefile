@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../..
 
-DIRS            = impls
+DIRS            = impls parallel
 SOURCEC		= difops.cxx griddata.cxx interpolation.cxx mesh.cxx boundary_standard.cxx boundary_factory.cxx boundary_region.cxx meshfactory.cxx surfaceiter.cxx coordinates.cxx index_derivs.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 TARGET		= lib
