@@ -82,6 +82,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   
   // Method of Manufactured Solutions (MMS)
   options->get("mms", mms, false);
+  options->get("mms_initialise", mms_initialise, mms);
 }
 
 /**************************************************************************
@@ -137,17 +138,19 @@ void Solver::add(Field2D &v, const char* name) {
   ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
-  if(mms) {
+  if(mms_initialise) {
     // Load solution at t = 0
     
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
-    
-    // Allocate storage for error variable
-    d.MMS_err = new Field2D(0.0);
   }else {
     initial_profile(name, v);
+  }
+  
+  if(mms) {
+    // Allocate storage for error variable
+    d.MMS_err = new Field2D(0.0);
   }
   
   // Check if the boundary regions should be evolved
@@ -196,16 +199,19 @@ void Solver::add(Field3D &v, const char* name) {
   v.name = name;
 #endif
 
-  if(mms) {
+  if(mms_initialise) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
     
-    d.MMS_err = new Field3D();
-    (*d.MMS_err) = 0.0;
   }else {
     initial_profile(name, v);
+  }
+  
+  if(mms) {
+    d.MMS_err = new Field3D();
+    (*d.MMS_err) = 0.0;
   }
   
   // Check if the boundary regions should be evolved
