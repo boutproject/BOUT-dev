@@ -140,6 +140,11 @@ Coordinates::Coordinates(Mesh *mesh) : ilen(0) {
     d1_dy = mesh->indexDDY(1./dy); // d/di(1/dy)
   }else
     d1_dy = -d2y / (dy*dy);
+
+  if(mesh->get(ShiftTorsion, "ShiftTorsion")) {
+    output.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
+    ShiftTorsion = 0.0;
+  }
   
   //////////////////////////////////////////////////////
   

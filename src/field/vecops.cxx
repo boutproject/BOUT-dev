@@ -273,7 +273,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   result.z = (DDX(vco.y) - DDY(vco.x))/metric->J;
   
   if(mesh->ShiftXderivs) {
-    result.z -= mesh->ShiftTorsion*vco.z / metric->J;
+    result.z -= metric->ShiftTorsion*vco.z / metric->J;
   }
 
   result.covariant = false; // result is contravariant
@@ -304,7 +304,7 @@ const Vector3D Curl(const Vector3D &v,
   result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/metric->J;
 
   if(mesh->ShiftXderivs) {
-    result.z -= mesh->ShiftTorsion*vco.z / metric->J;
+    result.z -= metric->ShiftTorsion*vco.z / metric->J;
   }
 
   result.covariant = false; // result is contravariant

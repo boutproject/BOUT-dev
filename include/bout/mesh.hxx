@@ -194,8 +194,6 @@ class Mesh {
   
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
-  Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
-  
   bool IncIntShear; // Include integrated shear (if shifting X)
   
   /// Coordinate system

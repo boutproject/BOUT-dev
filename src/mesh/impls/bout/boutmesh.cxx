@@ -372,10 +372,7 @@ int BoutMesh::load() {
   /// Set shift for radial derivatives
   if(get(zShift, "zShift")) {
     output.write("\tWARNING: Z shift for radial derivatives not found\n");
-    ShiftTorsion = zShift = 0.0;
-  }else if(get(ShiftTorsion, "ShiftTorsion")) {
-    output.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
+    zShift = 0.0;
   }
   
   // Allocate some memory for twist-shift
