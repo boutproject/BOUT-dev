@@ -14,7 +14,8 @@ from ask import query_yes_no
 # interpolates a 1D periodic function
 def zinterp( v, zind):
     
-  #v = REFORM(v)
+  v = numpy.ravel(v)
+
   nz = numpy.size(v)
   z0 = numpy.round(zind)
 
@@ -31,11 +32,11 @@ def zinterp( v, zind):
 
   zp = (z0 + 1) % (nz - 1)
   zm = (z0 - 1 + (nz-1)) % (nz - 1)
-  
 
-  result = 0.5*p*(p-1.0)*v[zm] \
-    + (1.0 - p*p)*v[z0] \
-    + 0.5*p*(p+1.0)*v[zp]
+
+  result = 0.5*p*(p-1.0)*v[zm.astype(int)] \
+    + (1.0 - p*p)*v[z0.astype(int)] \
+    + 0.5*p*(p+1.0)*v[zp.astype(int)]
 
   return result
  
@@ -185,7 +186,7 @@ def mode_structure( var_in, grid_in, period=1,
             # final point
 
             zind = (zangle - zShift[x,ny-1])/dz
-          
+
             f[ypos] = zinterp(vr[x,ny-1,:], zind)
             R[ypos] = rxy[x,ny-1]
             Z[ypos] = zxy[x,ny-1]

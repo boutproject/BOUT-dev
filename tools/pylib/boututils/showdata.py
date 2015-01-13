@@ -17,7 +17,7 @@ from boutdata import collect
 
 ####################################################################
 # Specify manually ffmpeg path
-plt.rcParams['animation.ffmpeg_path'] = '/usr/local/bin/ffmpeg'
+plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
 
 FFwriter = animation.FFMpegWriter()
 ####################################################################
