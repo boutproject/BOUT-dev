@@ -53,7 +53,7 @@ def anim(s, d, *args, **kwargs):
 
 if __name__ == '__main__':
 
-    path='/Users/brey/BOUT/BOUT-dev/examples/elm-pb/data'
+    path='../../../examples/elm-pb/data'
 
     data = collect("P", path=path)
 
