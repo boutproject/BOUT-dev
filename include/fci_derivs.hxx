@@ -35,49 +35,6 @@
 #include <bout/constants.hxx>
 #include <field_factory.hxx>
 
-/**
- * Boundary region for FCI. This contains a vector of points that are
- * inside the boundary.
- *
- */
-class FCIBoundary {
-public:
-  /**
-   * Constructor for FCIBoundary.
-   *
-   */
-  FCIBoundary() {}
-
-  /// Add a point to the boundary
-  void add_point(const int x, const int y, const int z);
-  /// Move to the start of the boundary
-  void first();
-  /// Move to the next point in the boundary
-  void next();
-  // Have we reached the end of the boundary?
-  bool isDone() const;
-
-  /// Indices of current position in the boundary
-  int x, y, z;
-
-private:
-
-  struct Indices {
-	int x;
-	int y;
-	int z;
-  };
-
-  typedef std::vector<Indices> IndicesVec;
-  typedef IndicesVec::iterator IndicesIter;
-
-  /// Vector of points in the boundary
-  IndicesVec bndry_points;
-  /// Current position in the boundary points
-  IndicesIter bndry_position;
-
-};
-
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Private constructor - must be initialised with mesh

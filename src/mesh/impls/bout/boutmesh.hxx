@@ -115,6 +115,8 @@ class BoutMesh : public Mesh {
   BoutReal Average_XY(const Field2D &var);
   BoutReal Vol_Integral(const Field2D &var);
 
+  void addBoundary(BoundaryRegion* bndry) { boundary.push_back(bndry); }
+
  private:
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file

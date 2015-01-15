@@ -37,6 +37,7 @@
  *
  **************************************************************************/
 
+#include <fci_boundary.hxx>
 #include <fci_derivs.hxx>
 #include <derivs.hxx>
 #include <msg_stack.hxx>
@@ -70,9 +71,11 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   if (dir == +1) {
 	mesh.get(xt_prime, "forward_xt_prime");
 	mesh.get(zt_prime, "forward_zt_prime");
+    boundary = new BoundaryRegionFCI("FCI_forward", BNDRY_FCI_FWD);
   } else if (dir == -1) {
 	mesh.get(xt_prime, "backward_xt_prime");
 	mesh.get(zt_prime, "backward_zt_prime");
+    boundary = new BoundaryRegionFCI("FCI_backward", BNDRY_FCI_BKWD);
   } else {
 	// Definitely shouldn't be called
 	throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
@@ -80,8 +83,6 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
-
-  boundary = new FCIBoundary();
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
 	for(int y=mesh.ystart; y<=mesh.yend;y++) {
@@ -226,6 +227,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 	  }
 	}
   }
+
+  mesh.push_back(boundary);
+
 }
 
 // Use cubic Hermite splines to interpolate field f on the adjacent toroidal

@@ -7,7 +7,14 @@ class BoundaryRegion;
 #include <string>
 using std::string;
 
-enum BndryLoc {BNDRY_XIN=1, BNDRY_XOUT=2, BNDRY_YDOWN=4, BNDRY_YUP=8, BNDRY_ALL=15};
+enum BndryLoc {BNDRY_XIN=1,
+               BNDRY_XOUT=2,
+               BNDRY_YDOWN=4,
+               BNDRY_YUP=8,
+               BNDRY_ALL=15,
+               BNDRY_FCI_FWD=16,   // Don't include FCI boundaries
+               BNDRY_FCI_BKWD=32};
+
 
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion {
