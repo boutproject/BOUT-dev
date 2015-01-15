@@ -366,9 +366,10 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
               yy=vy
         
                 
-      
+    x=xx
+    y=yy  
     #v = p[0].vertices
-    vn[0]=np.shape(v)[0]
+    #vn[0]=np.shape(v)[0]
     #xx=v[:,0]
     #yy=v[:,1]
         
@@ -379,16 +380,16 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
     #        xx = [xx,v[:,0]]
     #        yy = [yy,v[:,1]]
 
-    if np.shape(vn)[0] > 1 :
-    # Find the surface closest to the o-point
-        ind = closest_line(np.size(xx), xx, yy, opt_ri, opt_zi)
-        x=xx[ind]
-        y=yy[ind]
-    else:
-        ind = 0
-        x=xx
-        y=yy
-          
+    #if np.shape(vn)[0] > 1 :
+    ## Find the surface closest to the o-point
+    #    ind = closest_line(np.size(xx), xx, yy, opt_ri, opt_zi)
+    #    x=xx[ind]
+    #    y=yy[ind]
+    #else:
+    #    ind = 0
+    #    x=xx
+    #    y=yy
+    #      
     if(iplot == 0):
 
     # plot the start_f line     
