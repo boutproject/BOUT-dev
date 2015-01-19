@@ -1,25 +1,12 @@
 """
-An example mixing numerical caculation and 3D visualization of the
-magnetic field created by an arbitrary number of current loops.
+View a 3D rendering of the magnetic field lines and the streamlines of the rational surfaces.
+The quality of the later can be used as an indicator of the quality of the grid. The magnetic field 
+is computed from efit_analyzed.py. The script can be used as a template to show additional properties of the field
 
-The goal of this example is to show how Mayavi can be used with scipy to
-debug and understand physics and electromagnetics computation.
+based on enthought's example by Gael Varoquaux <gael.varoquaux@normalesup.org>
+http://docs.enthought.com/mayavi/mayavi/auto/example_magnetic_field.html#example-magnetic-field
 
-The field is caculated for an arbitrary number of current loops using the
-corresponding exact formula. The coils are plotted in 3D with a synthetic
-view of the magnetic_field. A VectorCutPlane is used as it enables good
-inspection of the magnetic field.
-
-This example originated from a real-life case of coil design in Python (
-Atomic sources for long-time-of-flight interferometric inertial sensors,
-G. Varoquaux, http://tel.archives-ouvertes.fr/tel-00265714/, page 148).
-
-For another visualization of magnetic field, see the
-:ref:`example_magnetic_field_lines`.
 """
-# Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
-# Copyright (c) 2009, Enthought, Inc.
-# License: BSD Style.
 
 
 from boutdata import collect
@@ -38,11 +25,7 @@ def View3D(g,path=None, gb=None):
   
   n=51
   
-  #read Bxy
-  #path='/Users/brey/BOUT/BOUT-dev/tools/tokamak_grids/pyGridGen/'
-  #g=read_geqdsk("../Aiba/geqdsk-circular-LH1.efit")
-  #g=read_geqdsk(path+"g118898.03400")
-  #g=read_geqdsk("../JT-60U/geqdsk.efit_EWM1")
+  #compute Bxy
   [Br,Bz,x,y,q]=View2D(g,option=1)
   
   
