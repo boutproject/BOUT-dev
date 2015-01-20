@@ -2294,6 +2294,35 @@ output from different codes and converting into input to BOUT++.
 \label{fig:gridgen}
 \end{figure}
 
+\subsection{3D variables}
+
+BOUT++ was originally designed for tokamak simulations where the input equilibrium varies only in X-Y, and Z is used as
+the axisymmetric toroidal angle direction. In those cases, it is often convenient to have input grids which are only 2D,
+and allow the Z dimension to be specified independently, such as in the options file. The problem then is how to store 3D variables
+in the grid file? 
+
+Two representations are now supported for 3D variables:
+\begin{enumerate}
+\item A Fourier representation. If the size of the toroidal domain is not specified in the grid file (\texttt{nz} is not
+defined), then 3D fields are stored as Fourier components. In the Z dimension the coefficients must be stored as
+\[
+\left[n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2 (\textrm{real}), n = 2 (\textrm{imag}), \ldots \right]
+\]
+where $n$ is the toroidal mode number. The size of the array must therefore be odd in the Z dimension, to contain
+a constant ($n=0$) component followed by real/imaginary pairs for the non-axisymmetric components.
+
+If you are using IDL to create a grid file, there is a routine in \texttt{tools/idllib/bout3dvar.pro} for converting
+between BOUT++'s real and Fourier representation.
+
+\item Real space, as values on grid points. If \texttt{nz} is set in the grid file, then 3D variables in the grid file must have
+  size \texttt{nx}$\times$\texttt{ny}$\times$\texttt{nz}. These are then read in directly into \texttt{Field3D} variables
+  as required. 
+\end{enumerate}
+
+
+
+
+
 \subsection{From EFIT files}
 \index{EFIT}\index{Hypnotoad}
 An IDL code called ``Hypnotoad'' has been developed to create BOUT++ input files from
