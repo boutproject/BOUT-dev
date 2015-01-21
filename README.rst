@@ -8,35 +8,30 @@ almost any curvilinear coordinate system.
 In this directory
 -----------------
 
-* ABOUT                 More details and terms of use.
-* CITATION              Contains the paper citation for BOUT++
-* COPYING               GPL license
-* COPYING.LESSER        LGPL license
-* src                   The main code directory
-* manual                Contains documentation, in particular the user manual.
-                        Read this if you're new to BOUT / BOUT++.
-* examples              Example models and test codes
-* tools                 Tools for helping with analysis, mesh generation, and data managment
+* **ABOUT**                 More details and terms of use.
+* **CITATION**              Contains the paper citation for BOUT++
+* **COPYING**               GPL license
+* **COPYING.LESSER**        LGPL license
+* **src**                   The main code directory
+* **manual**                Contains documentation, in particular the user manual. Read this if you're new to BOUT / BOUT++.
+* **examples**              Example models and test codes
+* **tools**                 Tools for helping with analysis, mesh generation, and data managment
 
-  * archiving           Routines for managing input/output files
-                        e.g. compressing data, converting formats, and managing runs
-  * idllib              Analysis codes in IDL. Add this to your IDL_PATH
-                        environment variable.
-  * pdb2idl             Library to read Portable Data Binary (PDB) files into IDL
-  * pylib               Analysis codes in Python
+  * **archiving**           Routines for managing input/output files e.g. compressing data, converting formats, and managing runs
+  * **idllib**              Analysis codes in IDL. Add this to your IDL_PATH environment variable.
+  * **pdb2idl**             Library to read Portable Data Binary (PDB) files into IDL
+  * **pylib**               Analysis codes in Python
   
-    * boutdata        Routines to simplify accessing BOUT++ output
-    * boututils       Some useful routines for accessing and plotting data
+    * **boutdata**        Routines to simplify accessing BOUT++ output
+    * **boututils**       Some useful routines for accessing and plotting data
 
-  * tokamak_grids     Code to generate input grids for tokamak equilibria
+  * **tokamak_grids**     Code to generate input grids for tokamak equilibria
   
-    * gridgen         Grid generator in IDL. Hypnotoad GUI for
-                      converting G-EQDSK files into a flux-aligned
-                      orthogonal grid.
-    * elite           Convert ELITE .eqin files into an intermediate binary file
-    * gato            Convert DSKGATO files into intermediate binary format 
-    * all             Convert the intermediate binary file into BOUT++ input grid
-    * shifted_circle  Produce shifted cirle equilibria input grids
+    * **gridgen**         Grid generator in IDL. Hypnotoad GUI for converting G-EQDSK files into a flux-aligned orthogonal grid.
+    * **elite**           Convert ELITE .eqin files into an intermediate binary file
+    * **gato**            Convert DSKGATO files into intermediate binary format 
+    * **all**             Convert the intermediate binary file into BOUT++ input grid
+    * **shifted_circle**  Produce shifted cirle equilibria input grids
 
 
 License

@@ -6,11 +6,11 @@ Getting started
 
 Some simple examples to get started are
 
-* *conduction*   This is discussed in the user manual, and solves a 1D diffusion equation
-* *blob2d*     A 2D simulation of a plasma blob. This is a more realistic simulation, and can 
-   be used as a starting point for new studies
-* *hasegawa-wakatani* Solves the H-W equations (optionally with modified zonal response) in 2D
-* *test-staggered* shows how to use staggered grids in BOUT++
+* **conduction** This is discussed in the user manual, and solves a 1D diffusion equation
+* **blob2d** A 2D simulation of a plasma blob. This is a more realistic simulation, simple enough
+  to start with, but can be used as a starting point for novel studies
+* **hasegawa-wakatani** Solves the H-W equations (optionally with modified zonal response) in 2D
+* **test-staggered** shows how to use staggered grids in BOUT++
 
 Test suite
 ----------
@@ -27,44 +27,22 @@ pylib directory ::
 
 The test suite currently includes:
 
-* *test-io*  This just reads data from input, and writes it out to a file. If this test
+* **test-io**  This just reads data from input, and writes it out to a file. If this test
   fails, then all following tests will probably also fail. Common causes of failure are
   problems with the NetCDF library, or with Python routines for reading data (see user manual).
-* *test-fieldfactory* This checks that the FieldFactory class can generate values from analytic
+* **test-fieldfactory** This checks that the FieldFactory class can generate values from analytic
   expressions correctly. Since this functionality is used in nearly all other tests, this is crucial.
-* *test-laplace* Tests the Laplacian inversion code
-* *test-cyclic* Tests the tridiagonal solver
-* *test-invpar* Tests the parallel parabolic solver, which depends on test-cyclic.
-* *test-smooth* Tests smoothing operators
-* *test-gyro* Tests gyro-averaging operators, mainly used in gyrofluid models
-* *test-delp2* Tests the second derivative Laplacian operator
-* *MMS/diffusion* is a Method of Manufactured Solutions check of convergence for a diffusion equation in 1D
-* *MMS/wave-1d* is an MMS test of a wave equation in X, including Neumann and Dirichlet boundaries
-* *MMS/wave-1d-y* is an MMS test of a wave equation in Y, including Neumann and Dirichlet boundaries
-* *drift-instability* calculates the frequency and growth-rate of a resistive drift wave in a slab, comparing the result against analytic and reference runs
-* *interchange-instability* calculates the growth-rate for an interchange mode in a curved slab, for two different curvature radii. Also compares the result against analytic and reference values.
-
-
-Others
-------
-
-Advect1D           An advection in 1D of a 2D pulse
-
-D3D_129131         Turbulence case from DIII-D tokamak
-
-DriftInstability   Drift wave benchmark in a cylinder
-
-InterchangeInstability 
-
-OrszagTang         Orszag-Tang vortex problem in 2D ideal MHD
-
-RayleighTaylor     Rayleigh-Taylor instability in a fluid
-
-StaggerDrift       Same as DriftInstability, but can use staggered stencils
-
-Uedge_benchmark    Axisymmetric tokamak benchmark against UEDGE
-
-highbeta_elm       High-beta reduced MHD model for ELM simulations
+* **test-laplace** Tests the Laplacian inversion code
+* **test-cyclic** Tests the tridiagonal solver
+* **test-invpar** Tests the parallel parabolic solver, which depends on test-cyclic.
+* **test-smooth** Tests smoothing operators
+* **test-gyro** Tests gyro-averaging operators, mainly used in gyrofluid models
+* **test-delp2** Tests the second derivative Laplacian operator
+* **MMS/diffusion** is a Method of Manufactured Solutions check of convergence for a diffusion equation in 1D
+* **MMS/wave-1d** is an MMS test of a wave equation in X, including Neumann and Dirichlet boundaries
+* **MMS/wave-1d-y** is an MMS test of a wave equation in Y, including Neumann and Dirichlet boundaries
+* **drift-instability** calculates the frequency and growth-rate of a resistive drift wave in a slab, comparing the result against analytic and reference runs
+* **interchange-instability** calculates the growth-rate for an interchange mode in a curved slab, for two different curvature radii. Also compares the result against analytic and reference values.
 
 
 
