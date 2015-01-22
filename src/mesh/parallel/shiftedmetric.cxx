@@ -7,6 +7,7 @@
  */
 
 #include <bout/paralleltransform.hxx>
+#include <bout/mesh.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
 

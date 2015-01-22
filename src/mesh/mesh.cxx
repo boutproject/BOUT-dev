@@ -20,7 +20,7 @@ Mesh* Mesh::create(Options *opt) {
   return create(NULL, opt);
 }
 
-Mesh::Mesh(GridDataSource *s, Options* options) : source(s), coords(0) {
+Mesh::Mesh(GridDataSource *s, Options* options) : source(s), coords(0), transform(0) {
   if(s == NULL)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   

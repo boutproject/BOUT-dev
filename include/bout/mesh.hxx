@@ -60,7 +60,9 @@ class Mesh;
 
 #include <bout/griddata.hxx>
 
-#include "coordinates.hxx"
+#include "coordinates.hxx"    // Coordinates class
+
+#include "paralleltransform.hxx" // ParallelTransform class
 
 #include <list>
 
@@ -253,11 +255,27 @@ class Mesh {
   typedef boundary_derivs_pair (*inner_boundary_upwind_func)(forward_stencil &); // v,f
   typedef boundary_derivs_pair (*outer_boundary_upwind_func)(backward_stencil &); // v,f
 
+  /// Transform a field into field-aligned coordinates
+  const Field3D toFieldAligned(const Field3D &f) {
+    return getParallelTransform()->toFieldAligned(f);
+  }
+  /// Convert back into standard form
+  const Field3D fromFieldAligned(const Field3D &f) {
+    return getParallelTransform()->fromFieldAligned(f);
+  }
+  
  protected:
   
   GridDataSource *source; ///< Source for grid data
   
-  Coordinates *coords;  ///< Coordinate system. Initialised to Null
+  Coordinates *coords;    ///< Coordinate system. Initialised to Null
+
+  ParallelTransform *getParallelTransform() {
+    if(!transform) 
+      transform = new ParallelTransformIdentity();
+    return transform;
+  }
+  ParallelTransform *transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
