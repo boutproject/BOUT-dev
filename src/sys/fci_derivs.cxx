@@ -37,7 +37,8 @@
  *
  **************************************************************************/
 
-#include <fci_boundary.hxx>
+#include <fci_boundary_region.hxx>
+#include <fci_boundary_op.hxx>
 #include <fci_derivs.hxx>
 #include <derivs.hxx>
 #include <msg_stack.hxx>
@@ -227,8 +228,6 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 	  }
 	}
   }
-
-  mesh.push_back(boundary);
 
 }
 
@@ -502,28 +501,59 @@ void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
 //--------------------------------------------------
 // FCIBoundary stuff
 
-void FCIBoundary::add_point(const int x, const int y, const int z) {
-  bndry_points.push_back({x, y, z});
+// void FCIBoundary::add_point(const int x, const int y, const int z) {
+//   bndry_points.push_back({x, y, z});
+// }
+
+// void FCIBoundary::first() {
+//   bndry_position = bndry_points.begin();
+//   if (!isDone()) {
+// 	x = bndry_position->x;
+// 	y = bndry_position->y;
+// 	z = bndry_position->z;
+//   }
+// }
+
+// void FCIBoundary::next() {
+//   ++bndry_position;
+//   if (!isDone()) {
+// 	x = bndry_position->x;
+// 	y = bndry_position->y;
+// 	z = bndry_position->z;
+//   }
+// }
+
+// bool FCIBoundary::isDone() const {
+//   return (bndry_position == bndry_points.end());
+// }
+
+void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue) {
+
+  Field3D* yup = f.yup();
+  BoundaryRegionFCI* up_region = forward_map.boundary;
+
+  // Add boundary to list of boundaries in mesh
+  mesh.addBoundary(up_region);
+
+  BoundaryOp* up_op = new BoundaryFCI_dirichlet(up_region, forward_map, *yup, upvalue);
+
+  // Add boundary operator to field's vector of operators
+  f.bndry_op.push_back(up_op);
+
+  Field3D* ydown = f.ydown();
+  BoundaryRegionFCI* down_region = backward_map.boundary;
+
+  // Add boundary to list of boundaries in mesh
+  mesh.addBoundary(down_region);
+
+  BoundaryOp* down_op = new BoundaryFCI_dirichlet(down_region, forward_map, *ydown, downvalue);
+
+  // Add boundary operator to field's vector of operators
+  f.bndry_op.push_back(down_op);
 }
 
-void FCIBoundary::first() {
-  bndry_position = bndry_points.begin();
-  if (!isDone()) {
-	x = bndry_position->x;
-	y = bndry_position->y;
-	z = bndry_position->z;
-  }
+void FCI::applyBoundary(Field3D &f, FieldGenerator* value) {
+  applyBoundary(f, value, value);
 }
 
-void FCIBoundary::next() {
-  ++bndry_position;
-  if (!isDone()) {
-	x = bndry_position->x;
-	y = bndry_position->y;
-	z = bndry_position->z;
-  }
-}
 
-bool FCIBoundary::isDone() const {
-  return (bndry_position == bndry_points.end());
-}

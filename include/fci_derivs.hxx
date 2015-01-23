@@ -34,6 +34,7 @@
 #include <vector>
 #include <bout/constants.hxx>
 #include <field_factory.hxx>
+#include <fci_boundary_region.hxx>
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
@@ -55,7 +56,7 @@ public:
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
   Field3D y_prime;		// distance to intersection with boundary
 
-  FCIBoundary* boundary;			/**< boundary region */
+  BoundaryRegionFCI* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
   //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -119,6 +120,9 @@ public:
   // Boundary conditions
   void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t);
   void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
+
+  void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue);
+  void applyBoundary(Field3D &f, FieldGenerator* value);
 };
 
 #endif // __FCI_DERIVS_H__

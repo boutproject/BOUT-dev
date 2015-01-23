@@ -150,6 +150,7 @@ class Mesh {
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
+  virtual void addBoundary(BoundaryRegion* bndry) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}

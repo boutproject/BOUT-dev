@@ -48,12 +48,15 @@ using std::map;
 
 class FieldGenerator; // Forward declaration
 
+class FCI; // Forward declaration
+
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
   to access internal data in a general way
 */
 class FieldData {
+  friend class FCI;
  public:
   FieldData();
   virtual ~FieldData();
