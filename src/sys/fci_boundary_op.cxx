@@ -53,11 +53,29 @@ void BoundaryFCI_dirichlet::apply(Field3D &f) {
 
 void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
+  Field3D* f_next;
+
+  switch(bndry->location) {
+  case BNDRY_FCI_FWD:
+    f_next = f.yup();
+    break;
+  case BNDRY_FCI_BKWD:
+    f_next = f.ydown();
+    break;
+  default:
+    output << "Can't apply FCI boundary to non-FCI region\n";
+    // throw exception
+  }
+
+  // interpolate(f, *f_next, fcimap);
+
+  BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
+
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
-  for (bndry->first(); !bndry->isDone(); bndry->next()) {
+  for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
     // temp variables for convience
-	int x = bndry->x; int y = bndry->y; int	z = bndry->z;
+	int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
 
 	// Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
@@ -66,24 +84,32 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 	BoutReal y_prime = fcimap.y_prime[x][y][z];
 	BoutReal f2 = (f[x][y][z] - value) * (mesh->dy(x, y) - y_prime) / y_prime;
 
-	f_next[x][y+fcimap.dir][z] = value - f2;
+	(*f_next)(x, y+fcimap.dir, z) = value - f2;
   }
 
 }
 
+// void BoundaryFCI_dirichlet::apply_ddt(Field2D &f) {
+//   // error
+//   output << "Can't apply FCI boundary conditions to Field2D!\n";
+// }
+
 void BoundaryFCI_dirichlet::apply_ddt(Field3D &f) {
 
+  Field3D* dt = f.timeDeriv();
+
+  apply(*dt, 0);
 
 }
 
 // void BoundaryFCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
 //   // If point is in boundary, then fill in f_next such that the derivative
 //   // would be VALUE on the boundary
-//   for (bndry->first(); !bndry->isDone(); bndry->next()) {
+//   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
 //     // temp variables for convience
-// 	int x = bndry->x; int y = bndry->y; int	z = bndry->z;
+// 	int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
 
-// 	f_next[x][y+fcimap.dir][z] = f[x][y][z];
+// 	f_next[x][y+fcimap->dir][z] = f[x][y][z];
 //   }
 // }
 
