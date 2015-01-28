@@ -4,9 +4,9 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = Bout++
-PROJECT_NUMBER         = 0.2
-OUTPUT_DIRECTORY       = /hwdisks/home/bd512/BOUT++/manual/doxygen/
+PROJECT_NAME           = BOUT++
+PROJECT_NUMBER         = 2.0
+OUTPUT_DIRECTORY       = bout
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
@@ -25,7 +25,7 @@ ABBREVIATE_BRIEF       = "The $name class " \
 ALWAYS_DETAILED_SEC    = NO
 INLINE_INHERITED_MEMB  = NO
 FULL_PATH_NAMES        = YES
-STRIP_FROM_PATH        = /hwdisks/home/bd512/BOUT++/manual/
+#STRIP_FROM_PATH        = /hwdisks/home/bd512/BOUT++/manual/
 STRIP_FROM_INC_PATH    = 
 SHORT_NAMES            = NO
 JAVADOC_AUTOBRIEF      = NO
@@ -85,7 +85,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /hwdisks/home/bd512/BOUT++/SRC/
+INPUT                  = ../..
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
@@ -128,7 +128,7 @@ FILE_PATTERNS          = *.c \
                          *.M \
                          *.MM \
                          *.PY
-RECURSIVE              = NO
+RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

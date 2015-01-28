@@ -40,6 +40,11 @@
 #include "spt.hxx"
 
 LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
+  
+  if(mesh->periodicX) {
+      throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    }
+	
   // Get start and end indices
   ys = mesh->ystart;
   ye = mesh->yend;

@@ -59,6 +59,40 @@ class BndDirichlet_O2 : public BoundaryOp {
 BoutReal default_func(BoutReal t, int x, int y, int z);
 // END JMAD
 
+/// 3nd-order boundary condition
+class BndDirichlet_O3 : public BoundaryOp {
+ public:
+  BndDirichlet_O3() : gen(NULL) {}
+  BndDirichlet_O3(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field2D &f,BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f,BoutReal t);
+
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  FieldGenerator* gen; // Generator
+};
+
+/// 4th-order boundary condition
+class BndDirichlet_O4 : public BoundaryOp {
+ public:
+  BndDirichlet_O4() : gen(NULL) {}
+  BndDirichlet_O4(BoundaryRegion *region, FieldGenerator *g) : BoundaryOp(region), gen(g) {}
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field2D &f,BoutReal t);
+  void apply(Field3D &f);
+  void apply(Field3D &f,BoutReal t);
+
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  FieldGenerator* gen; // Generator
+};
+
 /// Dirichlet boundary condition set half way between guard cell and grid cell at 4th order accuracy
 class BoundaryDirichlet_4thOrder : public BoundaryOp {
  public:

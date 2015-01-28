@@ -333,4 +333,14 @@ const Field3D copy(const Field3D &f);
 
 const Field3D floor(const Field3D &var, BoutReal f);
 
+/*!
+ * @brief Returns a reference to the time-derivative of a field
+ * 
+ * Wrapper around member function f.timeDeriv()
+ *
+ */
+inline Field3D& ddt(Field3D &f) {
+  return *(f.timeDeriv());
+}
+
 #endif /* __FIELD3D_H__ */

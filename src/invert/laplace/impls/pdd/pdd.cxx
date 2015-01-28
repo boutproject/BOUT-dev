@@ -124,6 +124,10 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   if(mesh->firstX() && mesh->lastX())
     throw BoutException("Error: PDD method only works for NXPE > 1\n");
+  
+  if(mesh->periodicX) {
+      throw BoutException("LaplacePDD does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    }
 
   if(data.bk == NULL) {
     // Need to allocate working memory
