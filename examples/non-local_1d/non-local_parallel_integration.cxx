@@ -78,6 +78,8 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(const BoutR
   msg_stack.push("NonLocalParallelIntegration::calculateIntegralBelow()");
   #endif
 
+  Coordinates *coord = mesh->coordinates();
+
   start_index(position);
   do {
     position->jy=mesh->ystart-1;
@@ -94,7 +96,7 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(const BoutR
       }
     }
     do {
-      *deltal = mesh->dy[position->jx][position->jyp]*sqrt((mesh->g_22[position->jx][position->jy]+mesh->g_22[position->jx][position->jyp])/2.);
+      *deltal = coord->dy(position->jx,position->jyp)*sqrt((coord->g_22(position->jx,position->jy)+coord->g_22(position->jx,position->jyp))/2.);
       
       interp_coeffs_drive_term = cubic_spline_drive_term.coefficients(position);
       interp_coeffs_lambdaC_inverse = cubic_spline_inverse_lambdaC.coefficients(position);
@@ -157,6 +159,8 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_centre(const BoutR
 
 void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, const int &counter) {
 
+  Coordinates *coord = mesh->coordinates();
+
   #ifdef CHECK
   msg_stack.push("NonLocalParallelIntegration::calculateIntegralAbove()");
   #endif
@@ -177,7 +181,7 @@ void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(const BoutR
       }
     }
     do {
-      *deltal = mesh->dy[position->jx][position->jy]*sqrt((mesh->g_22[position->jx][position->jy]+mesh->g_22[position->jx][position->jyp])/2.);
+      *deltal = coord->dy(position->jx,position->jy)*sqrt((coord->g_22(position->jx,position->jy)+coord->g_22(position->jx,position->jyp))/2.);
       
       interp_coeffs_drive_term = cubic_spline_drive_term.coefficients(position);
       interp_coeffs_lambdaC_inverse = cubic_spline_inverse_lambdaC.coefficients(position);
@@ -246,6 +250,8 @@ void NonLocalParallelIntegration::calculateIntegralAbove_cell_centre(const BoutR
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
+
+  Coordinates *coord = mesh->coordinates();
   
   #ifdef CHECK
   msg_stack.push("NonLocalParallelIntegration::calculateIntegralBelow()");
@@ -265,7 +271,7 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(const BoutRea
       }
     }
     do {
-      *deltal = mesh->dy[position->jx][position->jy]*sqrt(mesh->g_22[position->jx][position->jy]);
+      *deltal = coord->dy(position->jx,position->jy)*sqrt(coord->g_22(position->jx,position->jy));
       
       BoutReal deltazbelow = dimensionless_length_deltas_below[*position];
       BoutReal deltazabove = dimensionless_length_deltas_above[*position];
@@ -426,6 +432,8 @@ void NonLocalParallelIntegration::calculateIntegralBelow_cell_ylow(const BoutRea
 
 void NonLocalParallelIntegration::calculateIntegralAbove_cell_ylow(const BoutReal &eigenvalue, const Field3D &dimensionless_length_deltas_below, const Field3D &dimensionless_length_deltas_above, CubicSpline &cubic_spline_inverse_lambdaC, CubicSpline &cubic_spline_drive_term, CubicSpline &cubic_spline_gradT, const int &counter) {
 
+  Coordinates *coord = mesh->coordinates();
+
   #ifdef CHECK
   msg_stack.push("NonLocalParallelIntegration::calculateIntegralAbove()");
   #endif
@@ -449,7 +457,7 @@ void NonLocalParallelIntegration::calculateIntegralAbove_cell_ylow(const BoutRea
       calc_index(position);
     }
     do {
-      *deltal = mesh->dy[position->jx][position->jy]*sqrt(mesh->g_22[position->jx][position->jy]);
+      *deltal = coord->dy(position->jx,position->jy)*sqrt(coord->g_22(position->jx,position->jy));
       
       BoutReal deltazbelow = dimensionless_length_deltas_below[*position];
       BoutReal deltazabove = dimensionless_length_deltas_above[*position];

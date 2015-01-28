@@ -49,8 +49,11 @@ Sources::~Sources() {
 
 void Sources::initialise() {
   // NB This assumes that the metric is CONSTANT!
-  lower_source_yindex = (mesh->GlobalNy+1)/2-3 - int(source_length/2./sqrt(mesh->g_22[2][2])/mesh->dy[2][2]); // GlobalNy+1 in case GlobalNy is odd for some strange reason, then the source is still symmetrical and vanishes if source_length=0
-  upper_source_yindex = mesh->GlobalNy/2-3 + int(source_length/2./sqrt(mesh->g_22[2][2])/mesh->dy[2][2]);
+
+  Coordinates *coord = mesh->coordinates();
+
+  lower_source_yindex = (mesh->GlobalNy+1)/2-3 - int(source_length/2./sqrt(coord->g_22(2,2))/coord->dy(2,2)); // GlobalNy+1 in case GlobalNy is odd for some strange reason, then the source is still symmetrical and vanishes if source_length=0
+  upper_source_yindex = mesh->GlobalNy/2-3 + int(source_length/2./sqrt(coord->g_22(2,2))/coord->dy(2,2));
 }
 
 Field3D Sources::particle_source(BoutReal &t) {
