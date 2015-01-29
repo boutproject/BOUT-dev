@@ -67,14 +67,12 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
     // throw exception
   }
 
-  // interpolate(f, *f_next, fcimap);
-
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
-    // temp variables for convience
+    // temp variables for convenience
 	int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
 
 	// Generate the boundary value

@@ -536,4 +536,12 @@ void FCI::applyBoundary(Field3D &f, FieldGenerator* value) {
   applyBoundary(f, value, value);
 }
 
+void FCI::calcYUpDown(Field3D &f) {
 
+  Field3D* yup = f.yup();
+  interpolate(f, *yup, forward_map);
+
+  Field3D* ydown = f.ydown();
+  interpolate(f, *ydown, backward_map);
+
+}

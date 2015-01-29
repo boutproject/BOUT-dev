@@ -123,6 +123,9 @@ public:
 
   void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue);
   void applyBoundary(Field3D &f, FieldGenerator* value);
+
+  void calcYUpDown(Field3D &f);
+
 };
 
 #endif // __FCI_DERIVS_H__
