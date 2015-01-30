@@ -1011,6 +1011,45 @@ const Field3D b0xGrad_dot_Grad(const Field3D &phi, const Field3D &A, CELL_LOC ou
 * Terms of form b0 x Grad(f) dot Grad(g) / B = [f, g]
 *******************************************************************************/
 
+// const Field2D bracket(const Field2D &f, const Field2D &g, CELL_LOC outloc, BRACKET_METHOD method, Solver *solver){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field2D &f, const Field3D &g, CELL_LOC outloc, BRACKET_METHOD method, Solver *solver){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field2D &g, CELL_LOC outloc, BRACKET_METHOD method, Solver *solver){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field3D &g, CELL_LOC outloc, BRACKET_METHOD method, Solver *solver){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+//
+// const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, Solver *solver, CELL_LOC outloc){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method, Solver *solver, CELL_LOC outloc){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method, Solver *solver, CELL_LOC outloc){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method, Solver *solver, CELL_LOC outloc){
+// 	return bracket(f, g, method, outloc, solver) ;
+// }
+
+// const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method){
+// 	return bracket(f, g, method, CELL_DEFAULT, NULL) ;
+// }
+// const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method){
+// 	return bracket(f, g, method, CELL_DEFAULT, NULL) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method){
+// 	return bracket(f, g, method, CELL_DEFAULT, NULL) ;
+// }
+// const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method){
+// 	return bracket(f, g, method, CELL_DEFAULT, NULL) ;
+// }
+
 const Field2D bracket(const Field2D &f, const Field2D &g, BRACKET_METHOD method, CELL_LOC outloc, Solver *solver) {
 	Field2D result;
 	

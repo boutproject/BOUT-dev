@@ -134,5 +134,4 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method 
 const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
 const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method = BRACKET_STD, CELL_LOC outloc=CELL_DEFAULT, Solver *solver = NULL);
 
-
 #endif /* __DIFOPS_H__ */
