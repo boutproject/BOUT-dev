@@ -114,8 +114,18 @@ Field3D::~Field3D() {
   freeData();
   
   /// Delete the time derivative variable if allocated
-  if(deriv != NULL)
+  if(deriv != NULL) {
+    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
+    // only delete once
+    // Also need to check that separate yup_field exists
+    if (yup_field != this)
+      yup_field->deriv = NULL;
+    if (ydown_field != this)
+      ydown_field->deriv = NULL;
+
+    // Now delete them as part of the deriv vector
     delete deriv;
+  }
   
   if((yup_field != NULL) && (yup_field != this))
     delete yup_field;
