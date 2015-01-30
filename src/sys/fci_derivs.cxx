@@ -498,42 +498,37 @@ void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
   }
 }
 
-void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue) {
+void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
 
-  Field3D* yup = f.yup();
-  interpolate(f, *yup, forward_map);
+  Field3D *yup, *ydown;
+
+  yup = f.yup();
+  ydown = f.ydown();
 
   BoundaryRegionFCI* up_region = forward_map.boundary;
-
-  // Add boundary to list of boundaries in mesh
-  mesh.addBoundary(up_region);
-
   BoundaryFCI_dirichlet* up_op = new BoundaryFCI_dirichlet(up_region, forward_map, upvalue);
 
-  up_op->apply(f);
-
-  // Add boundary operator to field's vector of operators
-  f.bndry_op.push_back(up_op);
-  // Also add to ddt?
-
-  Field3D* ydown = f.ydown();
-  interpolate(f, *ydown, backward_map);
+  up_op->apply(f, t);
+  delete up_op;
 
   BoundaryRegionFCI* down_region = backward_map.boundary;
+  BoundaryFCI_dirichlet* down_op = new BoundaryFCI_dirichlet(down_region, backward_map, downvalue);
 
-  // Add boundary to list of boundaries in mesh
-  mesh.addBoundary(down_region);
+  down_op->apply(f, t);
+  delete down_op;
 
-  BoundaryFCI_dirichlet* down_op = new BoundaryFCI_dirichlet(down_region, forward_map, downvalue);
+}
 
-  down_op->apply(f);
+void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue) {
+  applyBoundary(f, upvalue, downvalue, 0);
+}
 
-  // Add boundary operator to field's vector of operators
-  f.bndry_op.push_back(down_op);
+void FCI::applyBoundary(Field3D &f, FieldGenerator* value, BoutReal t) {
+  applyBoundary(f, value, value, t);
 }
 
 void FCI::applyBoundary(Field3D &f, FieldGenerator* value) {
-  applyBoundary(f, value, value);
+  applyBoundary(f, value, value, 0);
 }
 
 void FCI::calcYUpDown(Field3D &f) {

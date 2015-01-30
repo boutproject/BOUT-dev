@@ -121,7 +121,9 @@ public:
   void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t);
   void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 
+  void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t);
   void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue);
+  void applyBoundary(Field3D &f, FieldGenerator* value, BoutReal t);
   void applyBoundary(Field3D &f, FieldGenerator* value);
 
   void calcYUpDown(Field3D &f);
