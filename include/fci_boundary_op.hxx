@@ -23,18 +23,18 @@ class BoundaryFCI_dirichlet : public BoundaryOp {
   // Private default constructor
   BoundaryFCI_dirichlet();
 public:
-  BoundaryFCI_dirichlet(BoundaryRegionFCI* region, const FCIMap& fcimap, FieldGenerator* value) :
-    BoundaryOp(region),
+  BoundaryFCI_dirichlet(const FCIMap& fcimap, FieldGenerator* value) :
+    BoundaryOp(fcimap.boundary),
     fcimap(fcimap),
     gen_values(value),
     value_type(GEN) {}
-  BoundaryFCI_dirichlet(BoundaryRegionFCI* region, const FCIMap& fcimap, Field3D* value) :
-    BoundaryOp(region),
+  BoundaryFCI_dirichlet(const FCIMap& fcimap, Field3D* value) :
+    BoundaryOp(fcimap.boundary),
     fcimap(fcimap),
     field_values(value),
     value_type(FIELD) {}
-  BoundaryFCI_dirichlet(BoundaryRegionFCI* region, const FCIMap& fcimap, BoutReal value) :
-    BoundaryOp(region),
+  BoundaryFCI_dirichlet(const FCIMap& fcimap, BoutReal value) :
+    BoundaryOp(fcimap.boundary),
     fcimap(fcimap),
     real_value(value),
     value_type(REAL) {}

@@ -456,20 +456,11 @@ void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
 
 void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
 
-  Field3D *yup, *ydown;
-
-  yup = f.yup();
-  ydown = f.ydown();
-
-  BoundaryRegionFCI* up_region = forward_map.boundary;
-  BoundaryFCI_dirichlet* up_op = new BoundaryFCI_dirichlet(up_region, forward_map, upvalue);
-
+  BoundaryFCI_dirichlet* up_op = new BoundaryFCI_dirichlet(forward_map, upvalue);
   up_op->apply(f, t);
   delete up_op;
 
-  BoundaryRegionFCI* down_region = backward_map.boundary;
-  BoundaryFCI_dirichlet* down_op = new BoundaryFCI_dirichlet(down_region, backward_map, downvalue);
-
+  BoundaryFCI_dirichlet* down_op = new BoundaryFCI_dirichlet(backward_map, downvalue);
   down_op->apply(f, t);
   delete down_op;
 
