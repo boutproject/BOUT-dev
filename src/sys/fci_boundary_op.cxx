@@ -63,8 +63,7 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
     f_next = f.ydown();
     break;
   default:
-    output << "Can't apply FCI boundary to non-FCI region\n";
-    // throw exception
+    throw BoutException("Can't apply FCI boundary to non-FCI region");
   }
 
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
