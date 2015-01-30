@@ -19,6 +19,7 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#include <globals.hxx>
 
 #include <field_factory.hxx>
 
@@ -83,8 +84,12 @@ FieldFactory::~FieldFactory() {
 
 const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
+  
+  if(mesh->StaggerGrids == false){
+  	loc = CELL_CENTRE ; 
+  }
   result.setLocation(loc);
-
+  
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
@@ -138,8 +143,12 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
 
 const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
+  
+  if(mesh->StaggerGrids == false){
+  	loc = CELL_CENTRE ; 
+  }
   result.setLocation(loc);
-
+  
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
