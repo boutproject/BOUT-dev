@@ -241,10 +241,6 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
 
   Field3D fx, fz, fxz;
 
-  // If f_next has already been computed, don't bother doing it again
-  if (f_next.isAllocated())
-    return;
-
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
   fx = DDX(f) * mesh.dx;
@@ -313,7 +309,7 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
+const Field3D FCI::Grad_par(Field3D &f) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad_par( Field3D )");
@@ -327,32 +323,12 @@ const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen,
   yup = f.yup();
   ydown = f.ydown();
 
-  // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map);
-  interpolate(f, *ydown, backward_map);
-
-  // Apply BC here?
-  switch (boundary) {
-  case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, gen, t);
-	dirichletBC(f, *ydown, backward_map, gen, t);
-	break;
-  case NEUMANN :
-	neumannBC(f, *yup, forward_map);
-	neumannBC(f, *ydown, backward_map);
-	break;
-  }
-
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
     for (int y=mesh.ystart;y<=mesh.yend;++y) {
       for (int z=0;z<mesh.ngz-1;++z) {
 		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
       }
     }
-  }
-
-  if (!keep) {
-    f.resetFCI();
   }
 
 #ifdef TRACK
@@ -374,7 +350,7 @@ const Field3D FCI::Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen,
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
+const Field3D FCI::Grad2_par2(Field3D &f) {
 
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Grad2_par2( Field3D )");
@@ -388,32 +364,12 @@ const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* ge
   yup = f.yup();
   ydown = f.ydown();
 
-  // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map);
-  interpolate(f, *ydown, backward_map);
-
-  // Apply BC here?
-  switch (boundary) {
-  case DIRICHLET :
-	dirichletBC(f, *yup, forward_map, gen, t);
-	dirichletBC(f, *ydown, backward_map, gen, t);
-	break;
-  case NEUMANN :
-	neumannBC(f, *yup, forward_map);
-	neumannBC(f, *ydown, backward_map);
-	break;
-  }
-
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
     for (int y=mesh.ystart;y<=mesh.yend;++y) {
       for (int z=0;z<mesh.ngz-1;++z) {
 		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
       }
     }
-  }
-
-  if (!keep) {
-    f.resetFCI();
   }
 
 #ifdef TRACK
@@ -432,13 +388,13 @@ const Field3D FCI::Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* ge
  *
  * If keep is true, then don't throw away the interpolated field
  *******************************************************************************/
-const Field3D FCI::Div_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep) {
+const Field3D FCI::Div_par(Field3D &f) {
 #ifdef CHECK
   int msg_pos = msg_stack.push("FCI::Div_par( Field3D )");
 #endif
 
   Field3D tmp = f/mesh.Bxy;
-  Field3D result = mesh.Bxy*Grad_par(tmp, boundary, gen, t, keep);
+  Field3D result = mesh.Bxy*Grad_par(tmp);
 
 #ifdef TRACK
   result.name = "FCI::Div_par("+f.name+")";

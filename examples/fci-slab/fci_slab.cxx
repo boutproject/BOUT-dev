@@ -69,12 +69,14 @@ BOUTMAIN(FCISlab);
 int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
 
-  ddt(f) = fci.Grad_par(g, FCI::DIRICHLET, g_gen, time) + D*SQ(mesh->dy)*fci.Grad2_par2(f, FCI::DIRICHLET, f_gen, time);
+  fci.calcYUpDown(f);
+  fci.applyBoundary(f, f_gen, time);
+  fci.calcYUpDown(g);
+  fci.applyBoundary(g, g_gen, time);
 
-  //for(int i=0;i<mesh->ngx;i++)
-  //  output.write("%i: %e\n", i, ddt(f)(i,16,0));
+  ddt(f) = fci.Grad_par(g) + D*SQ(mesh->dy)*fci.Grad2_par2(f);
 
-  ddt(g) = fci.Grad_par(f, FCI::DIRICHLET, f_gen, time) + D*SQ(mesh->dy)*fci.Grad2_par2(g, FCI::DIRICHLET, g_gen, time);
+  ddt(g) = fci.Grad_par(f) + D*SQ(mesh->dy)*fci.Grad2_par2(g);
 
   return 0;
 }

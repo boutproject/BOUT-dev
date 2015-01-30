@@ -113,9 +113,9 @@ public:
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
 
   // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
-  const Field3D Div_par(Field3D &f, BndryType boundary, FieldGenerator* gen, BoutReal t, bool keep = false);
+  const Field3D Grad_par(Field3D &f);
+  const Field3D Grad2_par2(Field3D &f);
+  const Field3D Div_par(Field3D &f);
 
   // Boundary conditions
   void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t);
