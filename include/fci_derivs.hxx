@@ -56,6 +56,8 @@ public:
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
   Field3D y_prime;		// distance to intersection with boundary
 
+  Field3D& f_next(Field3D &f) const;
+
   BoundaryRegionFCI* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
@@ -110,7 +112,7 @@ public:
 	zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
-  void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
+  void interpolate(Field3D &f, const FCIMap &fcimap);
 
   // Parallel derivatives
   const Field3D Grad_par(Field3D &f);

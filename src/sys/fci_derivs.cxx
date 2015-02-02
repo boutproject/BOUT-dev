@@ -231,10 +231,36 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 }
 
-// Use cubic Hermite splines to interpolate field f on the adjacent toroidal
-// slice in direction dir. Spline coefficients are stored in fcimap and the
-// interpolated field is stored in f_next
-void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
+/**
+ * Return a reference to the appropriate yup/ydown field for this FCIMap
+ *
+ * @param f The field of interest
+ *
+ * @return A reference to either f.yup_field or f.ydown_field
+ */
+Field3D& FCIMap::f_next(Field3D &f) const {
+  switch(dir) {
+  case +1:
+    return *(f.yup());
+  case -1:
+    return *(f.ydown());
+  default:
+	throw BoutException("Trying to determine f_next for FCIMap with strange direction: %d. Only +/-1 currently supported.", dir);
+  }
+}
+
+/**
+ * Use cubic Hermite splines to interpolate field f
+ *
+ * Use cubic Hermite splines to interpolate field f on the adjacent
+ * toroidal slice. Spline coefficients and direction of slice are
+ * stored in fcimap, and the interpolated field is stored in either
+ * f.yup or f.ydown, according to the direction.
+ *
+ * @param f      The field to interpolate
+ * @param fcimap Information on mapping field lines onto next slice
+ */
+void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
 
   if(!mesh.FCI)
     return; // Not using FCI method. Print error / warning?
@@ -250,6 +276,7 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
   fxz = D2DXDZ(f) * mesh.dx * mesh.dz;
   mesh.communicate(fxz);
 
+  Field3D& f_next = fcimap.f_next(f);
   f_next = 0;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
@@ -316,17 +343,16 @@ const Field3D FCI::Grad_par(Field3D &f) {
 #endif
 
   Field3D result;
-  Field3D *yup, *ydown;
 
   result.allocate();
 
-  yup = f.yup();
-  ydown = f.ydown();
+  Field3D& yup = *(f.yup());
+  Field3D& ydown = *(f.ydown());
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
     for (int y=mesh.ystart;y<=mesh.yend;++y) {
       for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
+		result(x,y,z) = (yup(x,y+1,z) - ydown(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
       }
     }
   }
@@ -357,17 +383,15 @@ const Field3D FCI::Grad2_par2(Field3D &f) {
 #endif
 
   Field3D result;
-  Field3D *yup, *ydown;
-
   result.allocate();
 
-  yup = f.yup();
-  ydown = f.ydown();
+  Field3D& yup = *(f.yup());
+  Field3D& ydown = *(f.ydown());
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
     for (int y=mesh.ystart;y<=mesh.yend;++y) {
       for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
+		result(x,y,z) = (yup(x,y+1,z) - 2*f(x,y,z) + ydown(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
       }
     }
   }
@@ -480,10 +504,7 @@ void FCI::applyBoundary(Field3D &f, FieldGenerator* value) {
 
 void FCI::calcYUpDown(Field3D &f) {
 
-  Field3D* yup = f.yup();
-  interpolate(f, *yup, forward_map);
-
-  Field3D* ydown = f.ydown();
-  interpolate(f, *ydown, backward_map);
+  interpolate(f, forward_map);
+  interpolate(f, backward_map);
 
 }

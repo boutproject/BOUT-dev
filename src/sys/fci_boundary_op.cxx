@@ -53,18 +53,7 @@ void BoundaryFCI_dirichlet::apply(Field3D &f) {
 
 void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
-  Field3D* f_next;
-
-  switch(bndry->location) {
-  case BNDRY_FCI_FWD:
-    f_next = f.yup();
-    break;
-  case BNDRY_FCI_BKWD:
-    f_next = f.ydown();
-    break;
-  default:
-    throw BoutException("Can't apply FCI boundary to non-FCI region");
-  }
+  Field3D& f_next = fcimap.f_next(f);
 
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
 
@@ -81,7 +70,7 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 	BoutReal y_prime = fcimap.y_prime[x][y][z];
 	BoutReal f2 = (f[x][y][z] - value) * (mesh->dy(x, y) - y_prime) / y_prime;
 
-	(*f_next)(x, y+fcimap.dir, z) = value - f2;
+	f_next(x, y+fcimap.dir, z) = value - f2;
   }
 
 }
