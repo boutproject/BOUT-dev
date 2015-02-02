@@ -35,13 +35,11 @@ BoutReal BoundaryFCI_dirichlet::getValue(int x, int y, int z, BoutReal t) {
 }
 
 void BoundaryFCI_dirichlet::apply(Field2D &f) {
-  // error
-  output << "Can't apply FCI boundary conditions to Field2D!\n";
+  throw BoutException("Can't apply FCI boundary conditions to Field2D!");
 }
   
 void BoundaryFCI_dirichlet::apply(Field2D &f, BoutReal t) {
-  // error
-  output << "Can't apply FCI boundary conditions to Field2D!\n";
+  throw BoutException("Can't apply FCI boundary conditions to Field2D!");
 }
 
 
@@ -74,11 +72,6 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
   }
 
 }
-
-// void BoundaryFCI_dirichlet::apply_ddt(Field2D &f) {
-//   // error
-//   output << "Can't apply FCI boundary conditions to Field2D!\n";
-// }
 
 void BoundaryFCI_dirichlet::apply_ddt(Field3D &f) {
 

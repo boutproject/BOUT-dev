@@ -287,6 +287,7 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
 		// x-boundary, or through the z-boundary and the domain is not
 		// periodic, skip it
 		if (fcimap.x_boundary[x][y][z] ||
+            (fcimap.y_boundary[x][y][z] && !yperiodic) ||
             (fcimap.z_boundary[x][y][z] && !zperiodic)) continue;
 
 		// Due to lack of guard cells in z-direction, we need to ensure z-index
