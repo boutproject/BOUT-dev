@@ -3403,7 +3403,64 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     for(i=0;i<ncy;i++)
         result[ix][i+ystart][ncz]=result[ix][i+ystart][0];
   }
-
   return result;
+}
+
+const Field3D BoutMesh::Switch_XZ(const Field3D &var)
+{   
+    if(MX != ngz-1){
+        throw new BoutException("X and Z dimension must be the same to use Switch_XZ"); 
+    }
+    static BoutReal ***buffer = (BoutReal ***) NULL;
+        
+    int ncx, ncy, ncz ; 
+    int i, j, k, l ; 
+    
+    Field3D result;
+    
+    ncx = ngx - 2*MXG ; 
+    ncy = ngy - 2*MYG ; 
+    ncz = ngz-1 ;
+    
+    // Allocate Memory
+    result.allocate();
+    if(buffer == (BoutReal***) NULL){
+       buffer = r3tensor(ncz, ncy, ncx) ;     // Note, this is deliberately such that x contiguous in memory
+
+    }
+       
+    // Put input data into buffer.  X needs to be contiguous in memory
+    for (i=0; i<ncx ; i++){
+        for (j=0; j<ncy ; j++){
+            for (k=0; k<ncz ; k++){
+                buffer[k][j][i] = var[MXG+i][MYG+j][k] ;
+                // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
+            }
+        }
+    }
+    
+    int sendcount = ncx*ncy*ncz/NXPE ;
+
+    MPI_Alltoall(MPI_IN_PLACE, sendcount,  MPI_DOUBLE, buffer[0][0], sendcount , MPI_DOUBLE, getXcomm()) ;
+
+    // Need to transpose on each process appropriately.  
+    for (i=0; i < NXPE; i++){
+        for (j=0; j<ncx ; j++){
+            for (k=0; k<ncy ; k++){
+                for (l=0; l<ncx ; l++){
+                    result[MXG+j][MYG+k][l+i*ncx] = buffer[j+i*ncx][k][l] ;
+                }
+            }
+        }
+    }
+    
+    // z boundary at ngz  
+    for (i=0; i<ncx ; i++){
+        for (j=0; j<ncy ; j++){
+            result[MXG+i][MYG+j][ncz] = result[MXG+i][MYG+j][0] ;
+        }
+    }
+
+    return result;
 }
 
