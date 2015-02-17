@@ -6,8 +6,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.62beta'
-__date__    = '27.11.2014'
+__version__ = '0.621beta'
+__date__    = '10.12.2014'
 
 import os
 import re
@@ -277,7 +277,7 @@ class solution_plotter(bout_plotter):
                             yguards = self.collect_y_ghost_points,\
                             path=job, info=False)
             except ValueError:
-                message = "Could not collect 't_arry' in " + job + "."+\
+                message = "Could not collect 't_array' in " + job + "."+\
                           " Check the log-file."
                 self.warnings.append(message)
                 warning_printer(message)
