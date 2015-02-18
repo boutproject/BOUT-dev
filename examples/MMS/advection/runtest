@@ -94,6 +94,19 @@ for opts,label,sym in options:
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
     
+    if (label == "1st order upwind"):
+        if order < 0.75: # Should be first order accurate
+            print("............ FAIL")
+            success = False 
+        else:
+            print("............ PASS")
+    else:
+        if order < 1.75: # Should be second order accurate
+            print("............ FAIL")
+            success = False 
+        else:
+            print("............ PASS")
+    
     # plot errors
     if False:
         plt.figure()

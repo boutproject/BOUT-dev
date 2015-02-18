@@ -26,6 +26,6 @@ def launch(command, runcmd="mpirun -np", nproc=None, output=None, pipe=False, ve
         cmd = cmd + " > "+output
 
     if verbose == True:
-         print cmd    
+         print(cmd)
 
     return shell(cmd, pipe=pipe)

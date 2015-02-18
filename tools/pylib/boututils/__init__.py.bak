@@ -67,8 +67,8 @@ try:
 except:
     print("No plotpolslice command")
     if sys.version_info[0]==3:
-        print("polplotslice uses the VTK library through mayavi, which",
-              "is currently only available in python 2")
+        print("Polplotslice uses the VTK library through mayavi, which" +\
+              " is currently only available in python 2")
 
 try:
     from boututils.moment_xyzt import moment_xyzt

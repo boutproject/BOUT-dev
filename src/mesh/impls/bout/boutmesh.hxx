@@ -112,6 +112,8 @@ class BoutMesh : public Mesh {
 
   //added for volume average and integral
   const Field3D Switch_YZ(const Field3D &var);
+  const Field3D Switch_XZ(const Field3D &var);
+  
   BoutReal Average_XY(const Field2D &var);
   BoutReal Vol_Integral(const Field2D &var);
 
@@ -208,11 +210,24 @@ class BoutMesh : public Mesh {
   
   //////////////////////////////////////////////////
   // Data reading
+
+  bool nz_in_grid_file; ///< True if nz is specified in the grid file
   
-  /// Read in a portion of the X-Y domain
+  /// Read in a portion of the X-Y domain. Calls one of
+  /// readgrid_3dvar_fft or readgrid_3dvar_real.
   int readgrid_3dvar(GridDataSource *s, const char *name, 
 	             int yread, int ydest, int ysize, 
                      int xge, int xlt, BoutReal ***var);
+  
+  /// Read 3D data in FFT format
+  int readgrid_3dvar_fft(GridDataSource *s, const char *name, 
+			 int yread, int ydest, int ysize, 
+			 int xge, int xlt, BoutReal ***var);
+  
+  /// Read 3D data in real space (non-FFT) format
+  int readgrid_3dvar_real(GridDataSource *s, const char *name, 
+			  int yread, int ydest, int ysize, 
+			  int xge, int xlt, BoutReal ***var);
   
   /// Copy a section of a 3D variable
   void cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var);

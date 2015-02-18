@@ -5,6 +5,9 @@
  * Changelog
  * ---------
  *
+ * 2015-01 Ben Dudson <benjamin.dudson@york.ac.uk>
+ *      * 
+ * 
  * 2010-05 Ben Dudson <bd512@york.ac.uk>
  *      * Initial version, adapted from grid.cpp and topology.cpp
  *
@@ -110,16 +113,27 @@ int BoutMesh::load() {
   
   if(Mesh::get(ny, "ny"))
     throw BoutException("Mesh must contain ny");
-  
+
   int MZ;
-  OPTION(options, MZ,           65);
-  if(!is_pow2(MZ-1)) {
-    if(is_pow2(MZ)) {
-      MZ++;
-      output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
-    }else {
-      throw BoutException("Error: Number of toroidal points must be 2^n + 1");
+  nz_in_grid_file = true;
+  if(Mesh::get(MZ, "nz")) {
+    // No "nz" variable in the grid file. Instead read MZ from options
+    nz_in_grid_file = false;
+    
+    OPTION(options, MZ,           65);
+    if(!is_pow2(MZ-1)) {
+      if(is_pow2(MZ)) {
+	MZ++;
+	output.write("WARNING: Number of toroidal points increased to %d\n", MZ);
+      }else {
+	throw BoutException("Error: Number of toroidal points must be 2^n + 1");
+      }
     }
+  }else {
+    output.write("\tRead nz from input grid file\n");
+    // Read "nz" from input file. For now we need to add 1 point to MZ,
+    // since the extra point will be ignored throughout the code (ngz-1 points are used)
+    MZ++;
   }
 
   output << "\tGrid size: " << nx << " x " << ny << " x " << MZ << endl;
@@ -1223,13 +1237,12 @@ int BoutMesh::get(Field3D &var, const char *name) {
 #endif
     return 2;
   }
-
-  BoutReal ***data;
+  
   int jy;
 
   var = 0.0; // Makes sure the memory is allocated
 
-  data = var.getData(); // Get a pointer to the data
+  BoutReal ***data = var.getData(); // Get a pointer to the data
 
   // Send open signal to data source
   source->open(name);
@@ -2632,10 +2645,26 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
  *                   Private data reading routines
  ****************************************************************/
 
-/// Reads in a portion of the X-Y domain
 int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name, 
 	                     int yread, int ydest, int ysize, 
                              int xge, int xlt, BoutReal ***var) {
+  if(nz_in_grid_file) {
+    // nz specified in input file, so 3D data is in real space
+    return readgrid_3dvar_real(s, name, 
+			      yread, ydest, ysize, 
+			      xge, xlt, var);
+  }
+  
+  // nz not given in input file, so 3D data is in FFT format
+  return readgrid_3dvar_fft(s, name, 
+			    yread, ydest, ysize, 
+			    xge, xlt, var);
+}
+
+/// Reads in a portion of the X-Y domain
+int BoutMesh::readgrid_3dvar_fft(GridDataSource *s, const char *name, 
+				 int yread, int ydest, int ysize, 
+				 int xge, int xlt, BoutReal ***var) {
   /// Check the arguments make sense
   if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
     return 1;
@@ -2728,6 +2757,49 @@ int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name,
   // free data
   delete[] zdata;
   delete[] fdata;
+  
+  return 0;
+}
+
+int BoutMesh::readgrid_3dvar_real(GridDataSource *s, const char *name, 
+				  int yread, int ydest, int ysize, 
+				  int xge, int xlt, BoutReal ***var) {
+  /// Check the arguments make sense
+  if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
+    return 1;
+  
+  /// Check the size of the data
+  vector<int> size = s->getSize(name);
+  
+  if(size.size() != 3) {
+    output.write("\tWARNING: Number of dimensions of %s incorrect\n", name);
+    return 1;
+  }
+  
+  if((size[0] != nx) || (size[1] != ny)) {
+    output.write("\tWARNING: X or Y size of %s incorrect\n", name);
+    return 1;
+  }
+
+  if(size[2] != ngz-1) {
+    output.write("\tWARNING: Z size of %s is incorrect\n", name);
+    return 1;
+  }
+  
+  for(int jx=xge;jx<xlt;jx++) {
+    // Set the global X index
+    
+    for(int jy=0; jy < ysize; jy++) {
+      /// Read data
+      
+      int yind = yread + jy; // Global location to read from
+      
+      s->setGlobalOrigin(XGLOBAL(jx), yind);
+      if(!s->fetch(var[jx][ydest+jy], name, 1, 1, size[2]))
+	return 1;
+    }
+  }
+  s->setGlobalOrigin();
   
   return 0;
 }
@@ -3403,7 +3475,64 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     for(i=0;i<ncy;i++)
         result[ix][i+ystart][ncz]=result[ix][i+ystart][0];
   }
-
   return result;
+}
+
+const Field3D BoutMesh::Switch_XZ(const Field3D &var)
+{   
+    if(MX != ngz-1){
+        throw new BoutException("X and Z dimension must be the same to use Switch_XZ"); 
+    }
+    static BoutReal ***buffer = (BoutReal ***) NULL;
+        
+    int ncx, ncy, ncz ; 
+    int i, j, k, l ; 
+    
+    Field3D result;
+    
+    ncx = ngx - 2*MXG ; 
+    ncy = ngy - 2*MYG ; 
+    ncz = ngz-1 ;
+    
+    // Allocate Memory
+    result.allocate();
+    if(buffer == (BoutReal***) NULL){
+       buffer = r3tensor(ncz, ncy, ncx) ;     // Note, this is deliberately such that x contiguous in memory
+
+    }
+       
+    // Put input data into buffer.  X needs to be contiguous in memory
+    for (i=0; i<ncx ; i++){
+        for (j=0; j<ncy ; j++){
+            for (k=0; k<ncz ; k++){
+                buffer[k][j][i] = var[MXG+i][MYG+j][k] ;
+                // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
+            }
+        }
+    }
+    
+    int sendcount = ncx*ncy*ncz/NXPE ;
+
+    MPI_Alltoall(MPI_IN_PLACE, sendcount,  MPI_DOUBLE, buffer[0][0], sendcount , MPI_DOUBLE, getXcomm()) ;
+
+    // Need to transpose on each process appropriately.  
+    for (i=0; i < NXPE; i++){
+        for (j=0; j<ncx ; j++){
+            for (k=0; k<ncy ; k++){
+                for (l=0; l<ncx ; l++){
+                    result[MXG+j][MYG+k][l+i*ncx] = buffer[j+i*ncx][k][l] ;
+                }
+            }
+        }
+    }
+    
+    // z boundary at ngz  
+    for (i=0; i<ncx ; i++){
+        for (j=0; j<ncy ; j++){
+            result[MXG+i][MYG+j][ncz] = result[MXG+i][MYG+j][0] ;
+        }
+    }
+
+    return result;
 }
 

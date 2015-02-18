@@ -273,6 +273,32 @@ class BoundaryFree : public BoundaryOp {
   BoutReal val;
 };
 
+// L. Easy
+/// Alternative free boundary condition (evolve the field in the guard cells, using non-centred derivatives to calculate the ddt)
+class BoundaryFree_O2 : public BoundaryOp {
+public:
+ BoundaryFree_O2()  {}
+ BoundaryFree_O2(BoundaryRegion *region):BoundaryOp(region) { }
+ BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+ void apply(Field2D &f);
+ void apply(Field3D &f);
+ void apply_ddt(Field2D &f);
+ void apply_ddt(Field3D &f);
+};
+
+class BoundaryFree_O3 : public BoundaryOp {
+public:
+ BoundaryFree_O3() {}
+ BoundaryFree_O3(BoundaryRegion *region):BoundaryOp(region) { }
+ BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+ void apply(Field2D &f);
+ void apply(Field3D &f);
+ void apply_ddt(Field2D &f);
+ void apply_ddt(Field3D &f);
+
+};
+// End L.Easy
+
 /////////////////////////////////////////////////////////
 
 /// Convert a boundary condition to a relaxing one

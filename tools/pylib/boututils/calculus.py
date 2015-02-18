@@ -183,7 +183,7 @@ def integrate(var, periodic=False):
                 # 2nd-order Trapezium rule
                 return 0.5*(f[0] + f[1])
             else:
-                print "WARNING: Integrating a single point"
+                print("WARNING: Integrating a single point")
                 return 0.0
         # Integrate using maximum number of grid-points
         n = var.size

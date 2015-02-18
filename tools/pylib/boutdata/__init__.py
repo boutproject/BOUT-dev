@@ -8,18 +8,9 @@
 print("Loading BOUT++ data routines")
 
 # Load routines from separate files
-try:
-    from collect import collect
-except:
-    print("Sorry, no collect")
+from boutdata.collect import collect
 
-try:
-    from pol_slice import pol_slice
-except:
-    print("Sorry, no pol_slice")
+from boutdata.pol_slice import pol_slice
 
-try:
-    from gen_surface import gen_surface
-except:
-    print("Sorry, no gen_surface")
+from boutdata.gen_surface import gen_surface
 

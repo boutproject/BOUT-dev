@@ -8,8 +8,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.767beta'
-__date__    = '04.12.2014'
+__version__ = '0.768beta'
+__date__    = '03.02.2015'
 
 import textwrap
 import os
@@ -1572,10 +1572,13 @@ class basic_runner(object):
 
 #{{{make
     def make(self):
-        """Makes the .cxx program, and saves the make.log"""
+        """Makes the .cxx program, saves the make.log and make.err"""
         print("Making the .cxx program")
         command = "make > make.log 2> make.err"
         shell(command)
+        # Check if any errors occured
+        if os.stat("make.err").st_size != 0:
+            raise RuntimeError("Error encountered during make, see 'make.err'.")
 #}}}
 
 #{{{error_raiser
