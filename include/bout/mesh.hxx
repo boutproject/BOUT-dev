@@ -124,6 +124,8 @@ class Mesh {
   // Y communications
   virtual bool firstY() = 0;
   virtual bool lastY() = 0;
+  virtual bool firstY(int xpos) = 0;
+  virtual bool lastY(int xpos) = 0;
   virtual int UpXSplitIndex() = 0;
   virtual int DownXSplitIndex() = 0;
   virtual int sendYOutIndest(BoutReal *buffer, int size, int tag) = 0;
