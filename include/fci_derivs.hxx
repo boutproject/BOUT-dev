@@ -120,13 +120,10 @@ public:
   const Field3D Div_par(Field3D &f);
 
   // Boundary conditions
-  void dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t);
-  void neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap);
-
-  void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t);
-  void applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue);
-  void applyBoundary(Field3D &f, FieldGenerator* value, BoutReal t);
-  void applyBoundary(Field3D &f, FieldGenerator* value);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value, BoutReal t);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value);
 
   void calcYUpDown(Field3D &f);
 

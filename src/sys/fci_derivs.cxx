@@ -430,77 +430,42 @@ const Field3D FCI::Div_par(Field3D &f) {
   return result;
 }
 
-void FCI::dirichletBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap, FieldGenerator* gen, BoutReal t) {
+void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
 
-  // Assume field line is straight.
-  int x, y, z;
+  BoundaryOpFCI* up_op;
+  BoundaryOpFCI* down_op;
 
-  // Loop over grid points If point is in boundary, then fill in
-  // f_next such that the field would be VALUE on the boundary
-
-  for (fcimap.boundary->first(); !fcimap.boundary->isDone(); fcimap.boundary->next()) {
-	x = fcimap.boundary->x;
-	y = fcimap.boundary->y;
-	z = fcimap.boundary->z;
-
-	// Generate the boundary value
-
-	// This works but doesn't quite do the right thing... should
-	// generate value on the boundary, but that gives wrong
-	// answer. This instead generates the value at the gridpoint
-	BoutReal xnorm = mesh.GlobalX(x);
-	BoutReal ynorm = mesh.GlobalY(y);
-	BoutReal znorm = ((BoutReal)(z))/(mesh.ngz-1);
-	BoutReal value = gen->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
-
-	// Scale the field and normalise to the desired value
-	BoutReal y_prime = fcimap.y_prime[x][y][z];
-	BoutReal f2 = (f[x][y][z] - value) * (mesh.dy(x, y) - y_prime) / y_prime;
-
-	f_next[x][y+fcimap.dir][z] = value - f2;
-
+  switch(bndry_type) {
+  case DIRICHLET:
+    up_op = new BoundaryOpFCI_dirichlet(forward_map, upvalue);
+    down_op = new BoundaryOpFCI_dirichlet(backward_map, downvalue);
+    break;
+  case NEUMANN:
+     up_op = new BoundaryOpFCI_neumann(forward_map, upvalue);
+     down_op = new BoundaryOpFCI_neumann(backward_map, downvalue);
+     break;
+  default:
+    throw BoutException("Not a valid boundary type for FCI!");
   }
 
-}
-
-void FCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
-  // Assume field line is straight.
-
-  int x, y, z;
-
-  // If point is in boundary, then fill in f_next such that the derivative
-  // would be VALUE on the boundary
-  for (fcimap.boundary->first(); !fcimap.boundary->isDone(); fcimap.boundary->next()) {
-	x = fcimap.boundary->x;
-	y = fcimap.boundary->y;
-	z = fcimap.boundary->z;
-
-	f_next[x][y+fcimap.dir][z] = f[x][y][z];
-  }
-}
-
-void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
-
-  BoundaryFCI_dirichlet* up_op = new BoundaryFCI_dirichlet(forward_map, upvalue);
   up_op->apply(f, t);
-  delete up_op;
-
-  BoundaryFCI_dirichlet* down_op = new BoundaryFCI_dirichlet(backward_map, downvalue);
   down_op->apply(f, t);
+
+  delete up_op;
   delete down_op;
 
 }
 
-void FCI::applyBoundary(Field3D &f, FieldGenerator* upvalue, FieldGenerator* downvalue) {
-  applyBoundary(f, upvalue, downvalue, 0);
+void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue) {
+  applyBoundary(f, bndry_type, upvalue, downvalue, 0);
 }
 
-void FCI::applyBoundary(Field3D &f, FieldGenerator* value, BoutReal t) {
-  applyBoundary(f, value, value, t);
+void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value, BoutReal t) {
+  applyBoundary(f, bndry_type, value, value, t);
 }
 
-void FCI::applyBoundary(Field3D &f, FieldGenerator* value) {
-  applyBoundary(f, value, value, 0);
+void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value) {
+  applyBoundary(f, bndry_type, value, value, 0);
 }
 
 void FCI::calcYUpDown(Field3D &f) {

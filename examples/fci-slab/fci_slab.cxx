@@ -70,9 +70,9 @@ int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
 
   fci.calcYUpDown(f);
-  fci.applyBoundary(f, f_gen, time);
+  fci.applyBoundary(f, FCI::DIRICHLET, f_gen, time);
   fci.calcYUpDown(g);
-  fci.applyBoundary(g, g_gen, time);
+  fci.applyBoundary(g, FCI::DIRICHLET, g_gen, time);
 
   ddt(f) = fci.Grad_par(g) + D*SQ(mesh->dy)*fci.Grad2_par2(f);
 

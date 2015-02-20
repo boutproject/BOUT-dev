@@ -8,9 +8,8 @@
 // Base class
 
 class BoundaryOpFCI : public BoundaryOp {
-  // Private default constructor
-  BoundaryOpFCI();
 public:
+  BoundaryOpFCI();
   BoundaryOpFCI(const FCIMap& fcimap, FieldGenerator* value) :
     BoundaryOp(fcimap.boundary),
     fcimap(fcimap),
@@ -35,6 +34,9 @@ public:
   {
       throw BoutException("Can't apply FCI boundary conditions to Field2D!");
   }
+  void apply(Field3D &f) {}
+  void apply(Field3D &f, BoutReal t) {}
+
   // Apply to time derivative
   // Unlikely to be used?
   void apply_ddt(Field3D &f) {};
@@ -59,9 +61,8 @@ protected:
 // Implementations
 
 class BoundaryOpFCI_dirichlet : public BoundaryOpFCI {
-  // Private default constructor
-  BoundaryOpFCI_dirichlet();
 public:
+  BoundaryOpFCI_dirichlet();
   BoundaryOpFCI_dirichlet(const FCIMap& fcimap, FieldGenerator* value) :
     BoundaryOpFCI(fcimap, value) {}
   BoundaryOpFCI_dirichlet(const FCIMap& fcimap, Field3D* value) :
@@ -69,17 +70,14 @@ public:
   BoundaryOpFCI_dirichlet(const FCIMap& fcimap, BoutReal value) :
     BoundaryOpFCI(fcimap, value) {}
 
-  // void apply(Field2D &f) {return apply(f, 0);}
-  // void apply(Field2D &f, BoutReal t) {}
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);
 
 };
 
 class BoundaryOpFCI_neumann : public BoundaryOpFCI {
-  // Private default constructor
-  BoundaryOpFCI_neumann();
 public:
+  BoundaryOpFCI_neumann();
   BoundaryOpFCI_neumann(const FCIMap& fcimap, FieldGenerator* value) :
     BoundaryOpFCI(fcimap, value) {}
   BoundaryOpFCI_neumann(const FCIMap& fcimap, Field3D* value) :
