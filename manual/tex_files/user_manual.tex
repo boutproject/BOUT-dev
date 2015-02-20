@@ -997,8 +997,8 @@ This is a list of the differential methods for each direction. These are set in 
 BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but can be overridden
 for individual operators. For each direction, numerical methods can be specified for
 first and second central difference terms, upwinding terms of the form
-$\deriv{\partial f}{\partial t} = \underline{v}\cdot\nabla f$,
-and flux terms of the form $\deriv{\partial f}{\partial t} = \nabla\cdot\left(\underline{v}f\right)$.
+$\deriv{f}{t} = \underline{v}\cdot\nabla f$,
+and flux terms of the form $\deriv{f}{t} = \nabla\cdot\left(\underline{v}f\right)$.
 By default the flux terms are just split into a central and an upwinding term.
 
 In brackets are the code used to specify the method in BOUT.inp. A list
@@ -1059,8 +1059,11 @@ grid file, and so the metric tensor is set to the default identity matrix.
 	WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
 	WARNING: Z shift for radial derivatives not found
 \end{verbatim}
-To get radial derivatives, the quasi-ballooning coordinate method is used (see
-section~\ref{sec:shiftcoords}). The upshot of this is that to get radial derivatives,
+To get radial derivatives, the quasi-ballooning coordinate method is used
+% 2015.02.17 loeiten: commented this as the section does not exist
+%(see section~\ref{sec:shiftcoords})
+. 
+The upshot of this is that to get radial derivatives,
 interpolation in Z is needed. This should also always be set to FFT.
 
 \begin{verbatim}
@@ -1735,7 +1738,10 @@ grid = "data/cbm18_8_y064_x260.pdb"
 \subsection{Time integration solver}
 \label{sec:timeoptions}
 \index{time integration}
-BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
+BOUT++ can be compiled with several different time-integration solvers
+% 2015.02.17 loeiten: commented this as the section does not exist
+%(see section~\ref{sec:solverlibrary})
+,
 and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
 
 The solver library used is set using the \code{solver:type} option, so either in BOUT.inp:
@@ -2003,8 +2009,8 @@ Expressions can include the usual operators (\code{+},\code{-},\code{*},\code{/}
 Name & Description \\
 \hline
 x & $x$ position between $0$ and $1$ \\
-y & $y$ position between $0$ and $2\pi$\\
-z & $z$ position between $0$ and $2\pi$\\
+y & $y$ position between $0$ and $2\pi$ (excluding the last point)\\
+z & $z$ position between $0$ and $2\pi$ (excluding the last point)\\
 pi & $3.1415\ldots$\\
 \hline
 \end{tabular}
@@ -2603,7 +2609,8 @@ int physics_init(bool restarting) {
 }
 \end{lstlisting}
 The name given to this function will be used in the output and restart data files. These will be
-automatically read and written depending on input options (see section~\ref{subsec:options}).
+automatically read and written depending on input options (see 
+section~\ref{sec:options}).
 Input options based on these names are also used to initialise the variables.
 
 If the name of the variable in the output file is the same as the variable name, you can use 
@@ -3373,7 +3380,7 @@ To use these differencing operators directly, add the following to the top of yo
 \begin{table}[htb!]
 \centering
 \caption{Coordinate derivatives}
-\label{tab:solvers}
+\label{tab:coordinate_derivatives}
 \begin{tabular}{l c}
 \hline
 Function & Formula \\
@@ -3428,7 +3435,7 @@ The correction factor is then calculated from \texttt{d2x} using
 
 \subsection{Operators}
 
-These are differential operators which are independent of the coordinate system used.
+These are differential operators which are for a general coordinate system.
 \[
 \begin{array}{rclrcl}
 \mathbf{v} &=& \nabla f &\qquad \code{Vector} &=& \code{Grad(Field)} \\
@@ -3436,7 +3443,7 @@ f &=& \nabla\cdot\mathbf{a} &\qquad \code{Field} &=& \code{Div(Vector)} \\
 \mathbf{v} &=& \nabla\times\mathbf{a} &\qquad \code{Vector} &=& \code{Curl(Vector)} \\
 f &=& \mathbf{v}\cdot\nabla g &\qquad \code{Field} &=& \code{V\_dot\_Grad(Vector, Field)} \\
 \mathbf{v} &=& \mathbf{a}\cdot\nabla\mathbf{b} &\qquad \code{Vector} &=& \code{V\_dot\_Grad(Vector, Vector)} \\
-f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplacian(Field)}
+f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplace(Field)}
 \end{array}
 \]
 
@@ -3456,7 +3463,7 @@ in Clebsh form as \index{Clebsh}
 \begin{table}[htb!]
 \centering
 \caption{Clebsch operators}
-\label{tab:solvers}
+\label{tab:clebsch_operators}
 \begin{tabular}{l c}
 \hline
 Function & Formula \\
