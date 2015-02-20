@@ -1,14 +1,7 @@
 #include <fci_boundary_op.hxx>
 #include <output.hxx>
 
-BoundaryOp* BoundaryFCI_dirichlet::clone(BoundaryRegion* region, const list<string> &args) {
-
-  return this;
-  // return new BoundaryFCI_dirichlet(region);
-
-}
-
-BoutReal BoundaryFCI_dirichlet::getValue(int x, int y, int z, BoutReal t) {
+BoutReal BoundaryOpFCI::getValue(int x, int y, int z, BoutReal t) {
 
   BoutReal xnorm;
   BoutReal ynorm;
@@ -18,38 +11,28 @@ BoutReal BoundaryFCI_dirichlet::getValue(int x, int y, int z, BoutReal t) {
 
   switch (value_type) {
   case GEN:
-	// This works but doesn't quite do the right thing... should
-	// generate value on the boundary, but that gives wrong
-	// answer. This instead generates the value at the gridpoint
-	xnorm = mesh->GlobalX(x);
-	ynorm = mesh->GlobalY(y);
-	znorm = ((BoutReal)(z))/(mesh->ngz-1);
-	return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+    // This works but doesn't quite do the right thing... should
+    // generate value on the boundary, but that gives wrong
+    // answer. This instead generates the value at the gridpoint
+    xnorm = mesh->GlobalX(x);
+    ynorm = mesh->GlobalY(y);
+    znorm = ((BoutReal)(z))/(mesh->ngz-1);
+    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
     value = (*field_values)[x][y][z];
     return value;
   case REAL:
     return real_value;
-  }   
+  }
 
 }
 
-void BoundaryFCI_dirichlet::apply(Field2D &f) {
-  throw BoutException("Can't apply FCI boundary conditions to Field2D!");
-}
-  
-void BoundaryFCI_dirichlet::apply(Field2D &f, BoutReal t) {
-  throw BoutException("Can't apply FCI boundary conditions to Field2D!");
-}
+// void BoundaryOpFCI::apply_ddt(Field3D &f)
 
+//////////////////////////////////////////
+// Dirichlet boundary
 
-void BoundaryFCI_dirichlet::apply(Field3D &f) {
-
-  apply(f, 0);
-
-}
-
-void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
+void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
   Field3D& f_next = fcimap.f_next(f);
 
@@ -59,36 +42,39 @@ void BoundaryFCI_dirichlet::apply(Field3D &f, BoutReal t) {
   // f_next such that the field would be VALUE on the boundary
   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
     // temp variables for convenience
-	int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
+    int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
 
-	// Generate the boundary value
+    // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
 
-	// Scale the field and normalise to the desired value
-	BoutReal y_prime = fcimap.y_prime[x][y][z];
-	BoutReal f2 = (f[x][y][z] - value) * (mesh->dy(x, y) - y_prime) / y_prime;
+    // Scale the field and normalise to the desired value
+    BoutReal y_prime = fcimap.y_prime[x][y][z];
+    BoutReal f2 = (f[x][y][z] - value) * (mesh->dy(x, y) - y_prime) / y_prime;
 
-	f_next(x, y+fcimap.dir, z) = value - f2;
+    f_next(x, y+fcimap.dir, z) = value - f2;
   }
 
 }
 
-void BoundaryFCI_dirichlet::apply_ddt(Field3D &f) {
+//////////////////////////////////////////
+// Neumann boundary
 
-  Field3D* dt = f.timeDeriv();
+void BoundaryOpFCI_neumann::apply(Field3D &f, BoutReal t) {
 
-  apply(*dt, 0);
+  Field3D& f_next = fcimap.f_next(f);
+
+  BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
+
+  // If point is in boundary, then fill in f_next such that the derivative
+  // would be VALUE on the boundary
+  for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
+    // temp variables for convience
+    int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
+
+    // Generate the boundary value
+    BoutReal value = getValue(x, y, z, t);
+
+    f_next(x, y+fcimap.dir, z) = 2.*value + f(x, y, z);
+  }
 
 }
-
-// void BoundaryFCI::neumannBC(Field3D &f, Field3D &f_next, const FCIMap &fcimap) {
-//   // If point is in boundary, then fill in f_next such that the derivative
-//   // would be VALUE on the boundary
-//   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
-//     // temp variables for convience
-// 	int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
-
-// 	f_next[x][y+fcimap->dir][z] = f[x][y][z];
-//   }
-// }
-
