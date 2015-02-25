@@ -10,6 +10,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{textcomp}
+\usepackage{pdflscape} % For landscape mode to the folder_tree figure
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
@@ -88,13 +89,13 @@
 
 \title{BOUT++ Users Manual}
 \author{B.Dudson, University of York}
-\date{July 14, 2013}
+\date{July 14, 2013\\Updated\\ February 25, 2015}
 \maketitle
 
 \tableofcontents
 
 \section{Introduction}
-
+Foo bar baz
 BOUT++ is a C++ framework for writing plasma fluid simulations with an arbitrary number of equations
 in 3D curvilinear coordinates \cite{Dudson2009,dudson-2008-arxiv}. It has been developed from the original {\bf BOU}ndary {\bf T}urbulence
 3D 2-fluid edge simulation code \cite{bout_manual,umansky-2008-bout,xu-2008} written by X.Xu and M.Umansky at LLNL.
@@ -857,7 +858,7 @@ IDL> showdata, T[*,*,0,*], /cont
 The equivalent commands in Python are as follows. To print a list of variables
 in a file:
 \begin{verbatim}
->>> from boututils import DataFile
+>>> from boutdata.datafile import DataFile
 >>> DataFile("BOUT.dmp.0.nc").list()
 \end{verbatim}
 To collect a variable,
@@ -889,6 +890,9 @@ Assuming these examples work (which they should), looking through the scripts an
 may give you an idea of how BOUT++ works. More information on setting up and running BOUT++ is given
 in section~\ref{sec:running}, and details of analysing the results using IDL are given in
 section~\ref{sec:output}.
+
+Alternatively, one can run BOUT++ with the python package 
+\lstinline!bout_runners!, as explained in section \ref{sec:bout_runners}
 
 \subsection{When things go wrong}
 
@@ -1464,7 +1468,7 @@ provides a simple interface for reading and writing files from any of the follow
 \texttt{netCDF4}; \texttt{Scientific.IO.NetCDF}; and \texttt{scipy.io.netcdf}. 
 To open a file using DataFile:
 \begin{lstlisting}[language=python,numbers=none]
-from boututils import DataFile
+from boutdata.datafile import DataFile
 
 f = DataFile("file.nc")  # Open the file
 var = f.read("variable") # Read a variable from the file
@@ -4641,8 +4645,6 @@ Here the format is
 \subsection{boututils}
 
 \begin{itemize}
-\item \lstinline!class Datafile! provides a convenient way to read and write NetCDF files. There are many different
-  NetCDF libraries available for Python, so this class tries to provide a consistent interface to many of them.
 \item \lstinline!deriv()!
 \item \lstinline!determineNumberOfCPUs()!
 \item \lstinline!file_import()! reads the contents of a NetCDF file into a dictionary
@@ -4654,6 +4656,9 @@ Here the format is
 \subsection{boutdata}
 
 \begin{itemize}
+\item \lstinline!class Datafile! provides a convenient way to read and write 
+  NetCDF files. There are many different NetCDF libraries available for Python, 
+  so this class tries to provide a consistent interface to many of them.
 \item \lstinline!collect()! provides an interface to read BOUT++ data outputs, returning NumPy arrays of data. 
   It deals with the processor layout, working out which file contains each part of the domain.
   \begin{lstlisting}
@@ -4665,6 +4670,70 @@ Here the format is
   through it at fixed toroidal angle.
 \item \lstinline!gen_surface()! is a generator for iterating over flux surfaces
 \end{itemize}
+
+\subsection{bout\_runners}\label{sec:bout_runners}
+The package \lstinline!bout_runners! contains modules which gives an 
+alternative way of running BOUT++ simulations. It is especially useful if one 
+needs to make several runs with only small changes in the options (which is 
+normally written in \file{BOUT.inp} or in the command-line), as is the 
+case when performing MMS.
+
+In addition, the \lstinline!bout_runners! package provides functions to make 
+simple plots after finished simulations, to add a job/run to a submission queue 
+on clusters supporting PBS scripts. It is also intended that the package in the 
+future will provide ways to post-processing after finished simulations. The 
+important parts of the package tree is given in figure~\ref{fig:program_tree}.
+
+
+Instead of making several runs with several different input files with only
+small changes in option, one can with \lstinline!bout_runners! specify the 
+changes as member data of an instance of the appropriate 
+\lstinline!bout_runners! class. One way to do this is to write a \emph{driver} 
+in the same directory as the executable. The \emph{driver} is just a 
+python script which imports
+\lstinline!bout_runners!, creates an instance, specifies the 
+running option as member data of that instance and finally calls the 
+member function \lstinline!self.run()!.
+
+When the function \lstinline!self.run()! is executed, a folder structure like 
+the one presented in figure~\ref{fig:folder_tree} is created. 
+\file{BOUT.inp} is copied to the folder of execution, where the 
+\file{BOUT.*.dmp} files are stored. Secondaly a list of combination of the 
+options specified in the driver is made. Eventually unset options are obtained 
+from \file{BOUT.inp} or given a default value if the option is nowhere to be 
+found.
+
+\lstinline!bout_runners/bout_runners.py! contains the function 
+\lstinline!demo()! which provides example scripts, explains the member data of 
+the classes and the usage when additional keyword arguments are passed to the 
+\lstinline!self.run()! member function.
+
+\begin{landscape}
+\thispagestyle{empty}
+ \vspace*{2cm}
+ \begin{figure}[htbp!]
+ \hspace*{-4cm}
+\centering
+\includegraphics[width=1.35\hsize]{figs/folder_tree.pdf}
+\caption{Longest possible folder tree made by the \lstinline!self.run()! 
+function.}
+\label{fig:folder_tree}
+\end{figure}
+\end{landscape}
+
+
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=0.8\paperwidth]{figs/program_tree.pdf}
+\caption{The package tree of \lstinline!bout_runners!. Files are represented by 
+square black boxes, functions are represented by blue ovals. Black arrows 
+indicates that the file provides the function, blue arrows indicate 
+interherance, red arrows indicate imports and green arrows indicate that the 
+function calls function within that file. Stipulated objects are objects 
+intended to be included in the future.}
+\label{fig:program_tree}
+\end{figure}
 
 \printindex
 
