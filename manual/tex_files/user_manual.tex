@@ -95,7 +95,6 @@
 \tableofcontents
 
 \section{Introduction}
-Foo bar baz
 BOUT++ is a C++ framework for writing plasma fluid simulations with an arbitrary number of equations
 in 3D curvilinear coordinates \cite{Dudson2009,dudson-2008-arxiv}. It has been developed from the original {\bf BOU}ndary {\bf T}urbulence
 3D 2-fluid edge simulation code \cite{bout_manual,umansky-2008-bout,xu-2008} written by X.Xu and M.Umansky at LLNL.
@@ -858,7 +857,7 @@ IDL> showdata, T[*,*,0,*], /cont
 The equivalent commands in Python are as follows. To print a list of variables
 in a file:
 \begin{verbatim}
->>> from boutdata.datafile import DataFile
+>>> from boututils import DataFile
 >>> DataFile("BOUT.dmp.0.nc").list()
 \end{verbatim}
 To collect a variable,
@@ -1468,7 +1467,7 @@ provides a simple interface for reading and writing files from any of the follow
 \texttt{netCDF4}; \texttt{Scientific.IO.NetCDF}; and \texttt{scipy.io.netcdf}. 
 To open a file using DataFile:
 \begin{lstlisting}[language=python,numbers=none]
-from boutdata.datafile import DataFile
+from boututils import DataFile
 
 f = DataFile("file.nc")  # Open the file
 var = f.read("variable") # Read a variable from the file
@@ -4645,6 +4644,8 @@ Here the format is
 \subsection{boututils}
 
 \begin{itemize}
+\item \lstinline!class Datafile! provides a convenient way to read and write NetCDF files. There are many different
+  NetCDF libraries available for Python, so this class tries to provide a consistent interface to many of them.
 \item \lstinline!deriv()!
 \item \lstinline!determineNumberOfCPUs()!
 \item \lstinline!file_import()! reads the contents of a NetCDF file into a dictionary
@@ -4656,9 +4657,6 @@ Here the format is
 \subsection{boutdata}
 
 \begin{itemize}
-\item \lstinline!class Datafile! provides a convenient way to read and write 
-  NetCDF files. There are many different NetCDF libraries available for Python, 
-  so this class tries to provide a consistent interface to many of them.
 \item \lstinline!collect()! provides an interface to read BOUT++ data outputs, returning NumPy arrays of data. 
   It deals with the processor layout, working out which file contains each part of the domain.
   \begin{lstlisting}
