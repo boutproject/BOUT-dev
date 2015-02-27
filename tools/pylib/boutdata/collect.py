@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 # Requires:
 #  - boututils
 #  - NumPy
@@ -209,14 +214,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     sizes = {'x':xsize, 'y':ysize, 'z':zsize, 't':tsize}
 
     # Create a list with size of each dimension
-    ddims = map(lambda d: sizes[d], dimens)
+    ddims = [sizes[d] for d in dimens]
     
     # Create the data array
     data = np.zeros(ddims)
     
     for i in range(npe):
         # Get X and Y processor indices
-        pe_yind = int(i / nxpe)
+        pe_yind = int(old_div(i, nxpe))
         pe_xind = i % nxpe
         
         inrange = True
