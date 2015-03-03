@@ -48,9 +48,9 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   // Get start and end indices
   ys = mesh->ystart;
   ye = mesh->yend;
-  if(mesh->hasBndryLowerY())
+  if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
-  if(mesh->hasBndryUpperY())
+  if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->ngy-1; // Contains upper boundary
   
   alldata = new SPT_data[ye - ys + 1];
