@@ -37,6 +37,8 @@
 #include <msg_stack.hxx>
 #include <output.hxx>
 
+#include <bout/array.hxx>
+
 // Static member variables
 
 int* Solver::pargc = 0;
@@ -1125,14 +1127,12 @@ int Solver::run_rhs(BoutReal t) {
   if(split_operator) {
     // Run both parts
     
-    static int nv;
-    static BoutReal *tmp = NULL, *tmp2;
-    if(tmp == NULL) {
-      nv = getLocalN();
-      tmp = new BoutReal[nv];
-      tmp2 = new BoutReal[nv];
-    }
-    save_vars(tmp); // Copy variables into tmp
+    int nv = getLocalN();
+    // Create two temporary arrays for system state
+    Array<BoutReal> tmp(nv);
+    Array<BoutReal> tmp2(nv);
+    
+    save_vars(tmp.begin()); // Copy variables into tmp
     pre_rhs(t);
     if(model) {
       status = model->runConvective(t);
@@ -1140,18 +1140,18 @@ int Solver::run_rhs(BoutReal t) {
       status = (*phys_conv)(t);
     post_rhs(t); // Check variables, apply boundary conditions
     
-    load_vars(tmp); // Reset variables
-    save_derivs(tmp); // Save time derivatives
+    load_vars(tmp.begin()); // Reset variables
+    save_derivs(tmp.begin()); // Save time derivatives
     pre_rhs(t);
     if(model) {
       status = model->runDiffusive(t);
     }else
       status = (*phys_diff)(t);
     post_rhs(t);
-    save_derivs(tmp2); // Save time derivatives
-    for(int i=0;i<nv;i++)
-      tmp[i] += tmp2[i];
-    load_derivs(tmp); // Put back time-derivatives
+    save_derivs(tmp2.begin()); // Save time derivatives
+    for(BoutReal *t = tmp.begin(), *t2 = tmp2.begin(); t != tmp.end(); ++t, ++t2)
+      *t += *t2;
+    load_derivs(tmp.begin()); // Put back time-derivatives
   }else {
     pre_rhs(t);
     if(model) {
