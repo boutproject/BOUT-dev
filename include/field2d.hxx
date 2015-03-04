@@ -76,7 +76,14 @@ class Field2D : public Field, public FieldData {
   BoutReal* operator[](int jx) const;
   BoutReal& operator()(int jx, int jy);
   const BoutReal& operator()(int jx, int jy) const;
-
+  
+  BoutReal& operator()(int jx, int jy, int jz) {
+    return operator()(jx, jy);
+  }
+  const BoutReal& operator()(int jx, int jy, int jz) const {
+    return operator()(jx, jy);
+  }
+  
   Field2D & operator+=(const Field2D &rhs);
   Field2D & operator+=(const BoutReal rhs);
   Field2D & operator-=(const Field2D &rhs);

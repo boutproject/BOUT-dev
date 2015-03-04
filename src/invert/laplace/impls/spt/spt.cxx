@@ -456,7 +456,6 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 
   x.allocate();
   x.setIndex(data.jy);
-  BoutReal **xdata = x.getData();
 
   // Make sure calculation has finished
   while(next(data) == 0) {}
@@ -474,23 +473,23 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       dc1d[0] = 0.0;
 
-    ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], xdata[ix]);
+    ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], x[ix]);
     
-    xdata[ix][ncz] = xdata[ix][0]; // enforce periodicity
+    x(ix,ncz) = x(ix,0); // enforce periodicity
   }
 
   if(!mesh->firstX()) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(int ix=0; ix<mesh->xstart; ix++){
       for(int kz=0;kz<mesh->ngz;kz++)
-	xdata[ix][kz] = 0.0;
+	x(ix,kz) = 0.0;
     }
   }
   if(!mesh->lastX()) {
     // Same for right boundary
     for(int ix=mesh->xend+1; ix<mesh->ngx; ix++){
       for(int kz=0;kz<mesh->ngz;kz++)
-	xdata[ix][kz] = 0.0;
+	x(ix,kz) = 0.0;
     }
   }
 }
