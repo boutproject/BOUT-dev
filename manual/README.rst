@@ -24,3 +24,12 @@ This manual describes the field-aligned coordinate system usually used
 in BOUT++ simulations of tokamak plasmas. Commonly used quantities
 and identities are derived.
 
+
+BOUT Gradperp op
+----------------
+
+Preconditioning
+---------------
+
+Reference
+---------

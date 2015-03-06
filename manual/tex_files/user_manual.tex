@@ -10,6 +10,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{textcomp}
+\usepackage{pdflscape} % For landscape mode to the folder_tree figure
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
@@ -88,13 +89,12 @@
 
 \title{BOUT++ Users Manual}
 \author{B.Dudson, University of York}
-\date{July 14, 2013}
+\date{July 14, 2013\\Updated\\ February 25, 2015}
 \maketitle
 
 \tableofcontents
 
 \section{Introduction}
-
 BOUT++ is a C++ framework for writing plasma fluid simulations with an arbitrary number of equations
 in 3D curvilinear coordinates \cite{Dudson2009,dudson-2008-arxiv}. It has been developed from the original {\bf BOU}ndary {\bf T}urbulence
 3D 2-fluid edge simulation code \cite{bout_manual,umansky-2008-bout,xu-2008} written by X.Xu and M.Umansky at LLNL.
@@ -116,7 +116,7 @@ This manual is written for the user who wants to run (or modify) existing plasma
 specify a new problem (grid and equations) to be solved. In either case, it's assumed that
 the user isn't all that interested in the details of the code.
 For a more detailed descriptions of the code internals, see the developer
-and reference quides.
+and reference guides.
 After describing how to install BOUT++ (section~\ref{sec:install}), run the test suite
 (section~\ref{sec:runtestsuite}) and a few examples 
 (section~\ref{sec:running}, more detail in section~\ref{sec:examples}), increasingly sophisticated ways to modify the problem being solved are introduced.
@@ -370,7 +370,7 @@ $ ./configure --prefix=$HOME/local
 $ make
 $ make install
 \end{verbatim}
-Sometimes configure can fail, in which case try disabling fortran and the
+Sometimes configure can fail, in which case try disabling Fortran and the
 HDF5 interface:
 \begin{verbatim}
 $ ./configure --prefix=$HOME/local --disable-fortran --disable-netcdf-4
@@ -631,7 +631,7 @@ Poisson and Helmholtz equations.
 \end{verbatim}
 
 The development version of PETSc has the latest and greatest, and is needed for some 
-shiny features like timestepping. To install it, follow the instructions here:
+shiny features like time stepping. To install it, follow the instructions here:
 \url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the time of
 writing, this consisted of fetching the latest version ({\bf NB} needs Mercurial 
 'hg' to be installed):
@@ -685,7 +685,7 @@ and to specify a non-standard path
 
 \subsection{MUMPS}
 
-This is still experimetal, but does work on at least some systems at York. 
+This is still experimental, but does work on at least some systems at York. 
 The PETSc library can be used to call MUMPS for directly solving matrices
 (e.g. for Laplacian inversions), or MUMPS can be used directly. 
 To enable MUMPS, configure with
@@ -890,6 +890,9 @@ may give you an idea of how BOUT++ works. More information on setting up and run
 in section~\ref{sec:running}, and details of analysing the results using IDL are given in
 section~\ref{sec:output}.
 
+Alternatively, one can run BOUT++ with the python package 
+\lstinline!bout_runners!, as explained in section \ref{sec:bout_runners}
+
 \subsection{When things go wrong}
 
 BOUT++ is still under development, and so occasionally you may be lucky
@@ -902,7 +905,8 @@ need a way to debug your code too.
 it should, what is printed to screen is just the output from processor 0.
 If an error occurred on another processor then the error message will be written to it's log file instead.
 \item By default when an error occurs a kind of stack trace is printed which shows which functions
-were being run (most recent first). This should give a good indication of where an error occured.
+were being run (most recent first). This should give a good indication of where 
+an error occurred.
 If this stack isn't printed, make sure checking is set to level 2 or higher (./configure --with-checks=2)
 \item If the error is a segmentation fault, you can try a debugger such as totalview
 \item If the error is due to non-finite numbers, increase the checking level
@@ -948,7 +952,7 @@ Compile-time options:
 	PDB support disabled
 	netCDF support enabled
 \end{verbatim}
-Thisn says that some run-time checking of values is enabled,
+Thins says that some run-time checking of values is enabled,
 that the code will try to catch segmentation faults to print a useful
 error, that PDB files aren't supported, but that NetCDF files are.
 
@@ -997,8 +1001,8 @@ This is a list of the differential methods for each direction. These are set in 
 BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but can be overridden
 for individual operators. For each direction, numerical methods can be specified for
 first and second central difference terms, upwinding terms of the form
-$\deriv{\partial f}{\partial t} = \underline{v}\cdot\nabla f$,
-and flux terms of the form $\deriv{\partial f}{\partial t} = \nabla\cdot\left(\underline{v}f\right)$.
+$\deriv{f}{t} = \underline{v}\cdot\nabla f$,
+and flux terms of the form $\deriv{f}{t} = \nabla\cdot\left(\underline{v}f\right)$.
 By default the flux terms are just split into a central and an upwinding term.
 
 In brackets are the code used to specify the method in BOUT.inp. A list
@@ -1059,8 +1063,11 @@ grid file, and so the metric tensor is set to the default identity matrix.
 	WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
 	WARNING: Z shift for radial derivatives not found
 \end{verbatim}
-To get radial derivatives, the quasi-ballooning coordinate method is used (see
-section~\ref{sec:shiftcoords}). The upshot of this is that to get radial derivatives,
+To get radial derivatives, the quasi-ballooning coordinate method is used
+% 2015.02.17 loeiten: commented this as the section does not exist
+%(see section~\ref{sec:shiftcoords})
+. 
+The upshot of this is that to get radial derivatives,
 interpolation in Z is needed. This should also always be set to FFT.
 
 \begin{verbatim}
@@ -1544,7 +1551,8 @@ Here, {\it path} and {\it var\_name} are same variables as described before. {\i
 Variable ``P'' has been imported from present working directory for 5 time steps. As the original netcdf data contains time information 
 of 500 steps (assume NT=500 in BOUT++ simulations), user will pick only 5 time steps at steps of {\it ntsp} i.e. 100 here. 
 %
-Details of other matlab routines provided with BOUT++ package can be looked in to README.txt of {\bf tools/matlablib} directory.
+Details of other Matlab routines provided with BOUT++ package can be looked in 
+to README.txt of {\bf tools/matlablib} directory.
 The Matlab users can develop their own routines using {\bf \it ncread, ncinfo, ncwrite, ncdisp, netcdf etc.} functions provided in 
 Matlab package.
 
@@ -1735,7 +1743,10 @@ grid = "data/cbm18_8_y064_x260.pdb"
 \subsection{Time integration solver}
 \label{sec:timeoptions}
 \index{time integration}
-BOUT++ can be compiled with several different time-integration solvers (see section~\ref{sec:solverlibrary}),
+BOUT++ can be compiled with several different time-integration solvers
+% 2015.02.17 loeiten: commented this as the section does not exist
+%(see section~\ref{sec:solverlibrary})
+,
 and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
 
 The solver library used is set using the \code{solver:type} option, so either in BOUT.inp:
@@ -1783,7 +1794,7 @@ atol & Absolute tolerance & rk4, pvode, cvode, ida \\
 rtol & Relative tolerance & rk4, pvode, cvode, ida \\
 mxstep & Maximum internal steps  & rk4 \\
        & per output step & \\
-max\_timestep & Maxmimum timestep & rk4, cvode \\
+max\_timestep & Maximum timestep & rk4, cvode \\
 timestep & Starting timestep & rk4, karniadakis, euler \\
 adaptive & Adapt timestep? (Y/N) & rk4 \\
 use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
@@ -1873,7 +1884,8 @@ Option & Description & Default \\
 \subsection{Communications}
 \index{communication}
 The communication system has a section \code{[comms]}, with a true/false option \code{async}. This
-determines whether asyncronous MPI sends are used; which method is faster varies (though not by much)
+determines whether asynchronous MPI sends are used; which method is faster 
+varies (though not by much)
 with machine and problem.
 
 \subsection{Differencing methods}
@@ -1928,7 +1940,7 @@ are set to an integer:
   \code{zs\_s0} as a fraction of the domain (i.e. $0 \rightarrow 1$.
   The width is given by \code{*s\_wd}, also as a fraction of the domain size.
 \item Sinusoidal, with the number of periods given by \code{*s\_mode}. 
-\item Mix of mode numbers, with psuedo-random phases.
+\item Mix of mode numbers, with pseudo-random phases.
 \end{enumerate}
 The magnitude of the initial value is given by the variable \code{scale}.
 
@@ -2004,8 +2016,8 @@ Expressions can include the usual operators (\code{+},\code{-},\code{*},\code{/}
 Name & Description \\
 \hline
 x & $x$ position between $0$ and $1$ \\
-y & $y$ position between $0$ and $2\pi$\\
-z & $z$ position between $0$ and $2\pi$\\
+y & $y$ position between $0$ and $2\pi$ (excluding the last point)\\
+z & $z$ position between $0$ and $2\pi$ (excluding the last point)\\
 pi & $3.1415\ldots$\\
 \hline
 \end{tabular}
@@ -2112,7 +2124,8 @@ Assuming that the solution should decay away from the domain, on the inner
 $x$ boundary $B = 0$, and on the outer boundary $A = 0$. 
 
 \index{Boundary modifiers}
-Boundary modifiers change the behavior of boundary conditions, and more than one modifier
+Boundary modifiers change the behaviour of boundary conditions, and more than 
+one modifier
 can be used. Currently the following are available:
 \begin{itemize}
 \item \code{relax} - Relaxing boundaries. Evolve the variable towards the given boundary condition at
@@ -2129,7 +2142,7 @@ All boundaries can be modified to be ``relaxing'' which are a combination
 of zero-gradient time-derivative, and whatever boundary condition they are
 applied to. The idea is that this prevents sharp discontinuities at boundaries
 during transients, whilst maintaining the desired boundary condition on
-longer timescales. In some cases this can improve the numerical stability
+longer time-scales. In some cases this can improve the numerical stability
 and timestep.
 
 For example, \code{relax(dirichlet)} will make a field $f$ at point $i$ in the
@@ -2137,14 +2150,15 @@ boundary follow a point $i-1$ in the domain:
 \[
 \left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
 \]
-where $\tau$ is a timescale for the boundary (currently set to 0.1, but will
+where $\tau$ is a time-scale for the boundary (currently set to 0.1, but will
 be a global option).
 When the time-derivatives are slow close to the boundary, the boundary
 relaxes to the desired condition (Dirichlet in this case), but when the
 time-derivatives are large then the boundary approaches Neumann to reduce
 discontinuities.
 
-By default, the relaxation rate is set to $10$ (i.e. a timescale of $\tau=0.1$).
+By default, the relaxation rate is set to $10$ (i.e. a time-scale of 
+$\tau=0.1$).
 To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
 
 \subsubsection{Shifted boundaries}
@@ -2236,7 +2250,8 @@ dy = 0.1  # Y mesh spacing
 \end{lstlisting}
 The above options will create a $260\times 256$ mesh in X and Y (MZ option sets Z resolution),
 with mesh spacing of $0.1$ in both directions. By default the coordinate system is 
-cartesian (metric tensor is the identity matrix), but this can be changed by specifying
+Cartesian (metric tensor is the identity matrix), but this can be changed by 
+specifying
 the metric tensor components.
 
 Integer quantities such as \texttt{nx} must be numbers (like ``260''), not expressions (like ``256 + 2*MXG'').
@@ -2305,7 +2320,7 @@ the BOUT++ code. Normalisation can be performed in the initialisation code, prov
 For users of BOUT, the radial derivative is \code{dx = dpsi / (bmag/1e4)}}
 
 The only quantities which are required are the sizes of the grid. If these are the only
-quantities specified, then the coordinates revert to cartesian.
+quantities specified, then the coordinates revert to Cartesian.
 
 
 This section describes how to generate inputs for tokamak equilibria. If you're not interested
@@ -2456,7 +2471,12 @@ Equilibrium correction options:
   3  hthe and RBt using force balance and jpar
 Enter option:
 \end{verbatim}
-Because the input Grad-shafranov solution is probably not perfect to begin with, and has now been interpolated onto a new grid, the force balance in ballooning coordinates is not quite satisfied. These options attempt to correct the equilibrium slightly to ensure force balance, the given $q$ profile, and the given $j_{||}$ profile. Option 1 can sometimes work well, other times it can fail to converge (as in this case). It's safe to just use option 0.
+Because the input Grad-Shafranov solution is probably not perfect to begin with, 
+and has now been interpolated onto a new grid, the force balance in ballooning 
+coordinates is not quite satisfied. These options attempt to correct the 
+equilibrium slightly to ensure force balance, the given $q$ profile, and the 
+given $j_{||}$ profile. Option 1 can sometimes work well, other times it can 
+fail to converge (as in this case). It's safe to just use option 0.
 
 \begin{verbatim}
 Calculating poloidal arc length dthe
@@ -2465,7 +2485,10 @@ Maximum percentage difference:        16.745859
 Use new hthe?
 \end{verbatim}
 A key metric in the BOUT/BOUT++ coordinates is the poloidal arc length $h_\theta$. A plot will shot this quantity calculated geometrically (solid line), and calculated by enforcing force balance (red symbols) at the outboard midplane.
-The difference between these two methods is an indication of the quality of the Grad-shafranov solution. Entering 'y' will use the ``new'' $h_\theta$ calculated from force balance, whilst 'n' will use the $h_\theta$ calculated geometrically. Personally. i prefer to make sure force balance is satisfied so enter 'y'.
+The difference between these two methods is an indication of the quality of the 
+Grad-Shafranov solution. Entering 'y' will use the ``new'' $h_\theta$ calculated 
+from force balance, whilst 'n' will use the $h_\theta$ calculated geometrically. 
+Personally. i prefer to make sure force balance is satisfied so enter 'y'.
 
 \begin{verbatim}
 Checking parallel current
@@ -2478,7 +2501,9 @@ This is fine if you just want an equilibrium, but for detailed comparison to
 experiment where the sign of Bt may/will make a difference this needs to be
 changed.
 
-Jpar calculated from quantities such as Bp, Bt and hthe is now shown as red symbols, with the jpar from the original Grad-shafranov solution as a black line. Like the hthe display, this is a good consistency check.
+Jpar calculated from quantities such as Bp, Bt and hthe is now shown as red 
+symbols, with the jpar from the original Grad-Shafranov solution as a black 
+line. Like the hthe display, this is a good consistency check.
 \begin{verbatim}
 Use new Jpar?
 \end{verbatim}
@@ -2633,7 +2658,8 @@ int physics_init(bool restarting) {
 }
 \end{lstlisting}
 The name given to this function will be used in the output and restart data files. These will be
-automatically read and written depending on input options (see section~\ref{subsec:options}).
+automatically read and written depending on input options (see 
+section~\ref{sec:options}).
 Input options based on these names are also used to initialise the variables.
 
 If the name of the variable in the output file is the same as the variable name, you can use 
@@ -3088,7 +3114,7 @@ int physics_run(BoutReal t) {
 }
 \end{lstlisting}
 
-In order to calculate the time derivatives, we need the auxilliary variables
+In order to calculate the time derivatives, we need the auxiliary variables
 $\phi$ and $j_{||}$. Calculating $j_{||}$ from $A_{||}$ is a straightforward
 differential operation, but getting $\phi$ from $U$ means inverting a Laplacian.
 \begin{lstlisting}
@@ -3212,7 +3238,7 @@ Flag & Meaning \\
 1 & Zero-gradient DC on inner (X) boundary. Default is zero-value \\
 2 & Zero-gradient AC on inner boundary \\
 4 & Zero-gradient DC on outer boundary \\
-8 & Zero-gradietn AC on outer boundary \\
+8 & Zero-gradient AC on outer boundary \\
 16 & Zero DC component everywhere \\
 32 & Not used currently \\
 64 & Set width of boundary to 1 (default is \code{MXG}) \\
@@ -3403,7 +3429,7 @@ To use these differencing operators directly, add the following to the top of yo
 \begin{table}[htb!]
 \centering
 \caption{Coordinate derivatives}
-\label{tab:solvers}
+\label{tab:coordinate_derivatives}
 \begin{tabular}{l c}
 \hline
 Function & Formula \\
@@ -3458,7 +3484,7 @@ The correction factor is then calculated from \texttt{d2x} using
 
 \subsection{Operators}
 
-These are differential operators which are independent of the coordinate system used.
+These are differential operators which are for a general coordinate system.
 \[
 \begin{array}{rclrcl}
 \mathbf{v} &=& \nabla f &\qquad \code{Vector} &=& \code{Grad(Field)} \\
@@ -3466,7 +3492,7 @@ f &=& \nabla\cdot\mathbf{a} &\qquad \code{Field} &=& \code{Div(Vector)} \\
 \mathbf{v} &=& \nabla\times\mathbf{a} &\qquad \code{Vector} &=& \code{Curl(Vector)} \\
 f &=& \mathbf{v}\cdot\nabla g &\qquad \code{Field} &=& \code{V\_dot\_Grad(Vector, Field)} \\
 \mathbf{v} &=& \mathbf{a}\cdot\nabla\mathbf{b} &\qquad \code{Vector} &=& \code{V\_dot\_Grad(Vector, Vector)} \\
-f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplacian(Field)}
+f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplace(Field)}
 \end{array}
 \]
 
@@ -3478,7 +3504,7 @@ f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplacian(Field)}
 \end{eqnarray*}
 
 Another set of operators assume that the equilibrium magnetic field is written
-in Clebsh form as \index{Clebsh}
+in Clebsch form as \index{Clebsch}
 \[
 \mathbf{B}_0 = \nabla z\times\nabla x \qquad \left|B_0\right| = \frac{\sqrt{g_{yy}}}{J}
 \]
@@ -3486,7 +3512,7 @@ in Clebsh form as \index{Clebsh}
 \begin{table}[htb!]
 \centering
 \caption{Clebsch operators}
-\label{tab:solvers}
+\label{tab:clebsch_operators}
 \begin{tabular}{l c}
 \hline
 Function & Formula \\
@@ -3526,7 +3552,7 @@ In a Clebsch coordinate system $\underline{B} = \nabla z \times \nabla x = \frac
 Until now all quantities have been cell-centred i.e. both velocities
 and conserved quantities were defined at the same locations. This
 is because these methods are simple and this was the scheme used in 
-the original BOUT. This class of methods can however be susceptable to
+the original BOUT. This class of methods can however be susceptible to
 grid-grid oscillations, and so most shock-capturing schemes involve
 densities and velocities (for example) which are not defined at the same location: their
 grids are staggered.
@@ -3539,7 +3565,8 @@ StaggerGrids = true
 in the top section of the \texttt{BOUT.inp} file. The {\bf test-staggered} example
 illustrates how to use staggered grids in BOUT++. 
 
-There are four possible locations in a grid cell where a quantitity can be defined in BOUT++:
+There are four possible locations in a grid cell where a quantity can be defined 
+in BOUT++:
 centre, lower X, lower Y, and lower Z. These are illustrated in figure~\ref{fig:stagLocations}.
 \begin{figure}[htbp!]
 \centering
@@ -3576,7 +3603,8 @@ location according to the algorithm in figure~\ref{fig:stagArith}.
 If performing an operation between variables defined at two different locations, the order of the
 variables matter: the result will be defined at the locations of the {\bf left} variable. For example, 
 \lstinline!n*v! would be \lstinline!CELL_CENTRE! because this is the location of \lstinline!n!, whilst
-\lstinline!v*n! would be \lstinline!CELL_YLOW!. Relying on this behavior could lead to trouble, to
+\lstinline!v*n! would be \lstinline!CELL_YLOW!. Relying on this behaviour could 
+lead to trouble, to
 make your code clearer it's probably best to use the interpolation routines. Include the header file
 \begin{lstlisting}
 #include <interpolation.hxx>
@@ -3595,7 +3623,8 @@ Advection operators which take two arguments return a result which is defined at
 being advected. For example \lstinline!Vpar_Grad_par(v, f)! calculates $v \nabla_{||} f$ and returns a 
 result at the same location as \lstinline!f!. If \lstinline!v! and \lstinline!f! are defined at the same
 locations then centred differencing is used, if one is centred and the other staggered then staggered differencing is
-used, and if both are staggered to different locations then the behavior is less well defined (don't do it).
+used, and if both are staggered to different locations then the behaviour is 
+less well defined (don't do it).
 As with other differential operators, the required location of the result can be given as an optional argument.
 
 \note{There are subtleties with boundary conditions when staggering variables. The test-staggered example
@@ -3610,18 +3639,21 @@ or PETSc solvers.
 
 \subsection{Preconditioning}
 
-At every time step, an implicit scheme such as BDF has to solve a nonlinear problem to find the next
+At every time step, an implicit scheme such as BDF has to solve a non-linear 
+problem to find the next
 solution. This is usually done using Newton's method, each step of which involves solving a linear (matrix)
 problem. For $N$ evolving variables is an $N\times N$ matrix and so can be very large. 
 By default matrix-free methods are used, in which the 
 Jacobian $\mathcal{J}$ is approximated by finite differences (see next subsection), and so this matrix
 never needs to be explicitly calculated. Finding a solution to this matrix can still be difficult, particularly
-as $\delta t$ gets large compared with some timescales in the system (i.e. a stiff problem).
+as $\delta t$ gets large compared with some time-scales in the system (i.e. a 
+stiff problem).
 
 A preconditioner is a function which quickly finds an approximate solution to this matrix, speeding up
 convergence to a solution. A preconditioner does not need to include all the terms in the problem being
 solved, as the preconditioner only affects the convergence rate and not the final solution. A good preconditioner
-can therefore concentrate on solving the parts of the problem with the fastest timescales.
+can therefore concentrate on solving the parts of the problem with the fastest 
+time-scales.
 
 A simple example\footnote{Taken from a talk by L.Chacon available here \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a coupled wave equation, solved in the \texttt{test-precon} example code:
 \[
@@ -3648,14 +3680,17 @@ u \\
 v
 \end{array}\right)
 \]
-In general for nonlinear functions $\mathcal{J}$ gives the change in time-derivatives in response to changes
+In general for non-linear functions $\mathcal{J}$ gives the change in 
+time-derivatives in response to changes
 in the state variables $u$ and $v$. 
 
-In implicit timestepping, the preconditioner needs to solve an equation
+In implicit time stepping, the preconditioner needs to solve an equation
 \[
 \mathcal{I} - \gamma \mathcal{J}
 \]
-where $\mathcal{I}$ is the idensity matrix, and $\gamma$ depends on the time step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For the simple wave equation problem, this is
+where $\mathcal{I}$ is the identity matrix, and $\gamma$ depends on the time 
+step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For the 
+simple wave equation problem, this is
 \[
 \mathcal{I} - \gamma \mathcal{J} = \left(\begin{array}{cc}
 1 & -\gamma\partial_{||} \\
@@ -4134,7 +4169,8 @@ Two types of adaptive grids can be used in BOUT++: Moving meshes, and changing r
 
 During either the initialisation, or the simulation itself, the metric tensors can be modified. This could
 be used to make the coordinate system time-dependent. Since currently the metric tensors are 2D
-fields, this would only allow axi-symmetric motion. Changing the tensors to be 3D objects is however
+fields, this would only allow axisymmetric motion. Changing the tensors to be 3D 
+objects is however
 possible with fairly small modification to the code.
 
 Whenever one of the metrics $g^{ij}$ are changed, a call to \code{geometry()} must be made.
@@ -4342,7 +4378,8 @@ $ export OBJECT_MODE=32
 $ ./configure CFLAGS="-maix32"
 $ gmake
 \end{verbatim}
-If you still get undefined symbols, then go back to 64-bit, and edit make.config, raplacing
+If you still get undefined symbols, then go back to 64-bit, and edit 
+make.config, replacing
 \code{-lnetcdf\_c++} with {-lnetcdf64\_c++}, and \code{-lnetcdf} with {-lnetcdf64}. This 
 can be done by running:
 \begin{verbatim}
@@ -4500,7 +4537,7 @@ Here the format is
 \item {\bf expand\_restarts}, newz \\
   Increases the number of Z points in restart files. Together with
   scale\_restarts and split\_restarts, this makes it easier to modify a
-  linear simulation as a start for nonlinear runs.
+  linear simulation as a start for non-linear runs.
   \begin{itemize}
   \item {\bf newz} is the new value of NZ
   \item {\bf path}=path      Input path
@@ -4622,7 +4659,7 @@ Here the format is
   \begin{itemize}
   \item {\bf /addsym}   For 2D data (1D plots), add symbols to mark data points
   \item {\bf az}=angle       Rotate surface plots
-  \item {\bf /bw} Make contour plots greyscale
+  \item {\bf /bw} Make contour plots grey scale
   \item {\bf chars}=size character size
   \item {\bf /contour}  For 3D input, show color contour plot
   \item {\bf delay}=time     Time delay between plots (default 0.2 seconds)
@@ -4688,6 +4725,70 @@ Here the format is
   through it at fixed toroidal angle.
 \item \lstinline!gen_surface()! is a generator for iterating over flux surfaces
 \end{itemize}
+
+\subsection{bout\_runners}\label{sec:bout_runners}
+The package \lstinline!bout_runners! contains modules which gives an 
+alternative way of running BOUT++ simulations. It is especially useful if one 
+needs to make several runs with only small changes in the options (which is 
+normally written in \file{BOUT.inp} or in the command-line), as is the 
+case when performing MMS.
+
+In addition, the \lstinline!bout_runners! package provides functions to make 
+simple plots after finished simulations, to add a job/run to a submission queue 
+on clusters supporting PBS scripts. It is also intended that the package in the 
+future will provide ways to post-processing after finished simulations. The 
+important parts of the package tree is given in figure~\ref{fig:program_tree}.
+
+
+Instead of making several runs with several different input files with only
+small changes in option, one can with \lstinline!bout_runners! specify the 
+changes as member data of an instance of the appropriate 
+\lstinline!bout_runners! class. One way to do this is to write a \emph{driver} 
+in the same directory as the executable. The \emph{driver} is just a 
+python script which imports
+\lstinline!bout_runners!, creates an instance, specifies the 
+running option as member data of that instance and finally calls the 
+member function \lstinline!self.run()!.
+
+When the function \lstinline!self.run()! is executed, a folder structure like 
+the one presented in figure~\ref{fig:folder_tree} is created. 
+\file{BOUT.inp} is copied to the folder of execution, where the 
+\file{BOUT.*.dmp} files are stored. Secondly a list of combination of the 
+options specified in the driver is made. Eventually unset options are obtained 
+from \file{BOUT.inp} or given a default value if the option is nowhere to be 
+found.
+
+\lstinline!bout_runners/bout_runners.py! contains the function 
+\lstinline!demo()! which provides example scripts, explains the member data of 
+the classes and the usage when additional keyword arguments are passed to the 
+\lstinline!self.run()! member function.
+
+\begin{landscape}
+\thispagestyle{empty}
+ \vspace*{2cm}
+ \begin{figure}[htbp!]
+ \hspace*{-4cm}
+\centering
+\includegraphics[width=1.35\hsize]{figs/folder_tree.pdf}
+\caption{Longest possible folder tree made by the \lstinline!self.run()! 
+function.}
+\label{fig:folder_tree}
+\end{figure}
+\end{landscape}
+
+
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=0.8\paperwidth]{figs/program_tree.pdf}
+\caption{The package tree of \lstinline!bout_runners!. Files are represented by 
+square black boxes, functions are represented by blue ovals. Black arrows 
+indicates that the file provides the function, blue arrows indicate 
+interherance, red arrows indicate imports and green arrows indicate that the 
+function calls function within that file. Stipulated objects are objects 
+intended to be included in the future.}
+\label{fig:program_tree}
+\end{figure}
 
 \printindex
 

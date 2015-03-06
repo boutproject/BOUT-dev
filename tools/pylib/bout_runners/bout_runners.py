@@ -8,8 +8,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.767beta'
-__date__    = '04.12.2014'
+__version__ = '0.769beta'
+__date__    = '25.02.2015'
 
 import textwrap
 import os
@@ -23,15 +23,15 @@ from numpy import logspace
 import numpy as np
 from subprocess import Popen, PIPE
 from boututils import shell, launch, getmpirun
-from boututils.bout_plotters import convergence_plotter,\
-                                    solution_plotter,\
-                                    solution_and_error_plotter
-from boututils.common_bout_functions import create_folder,\
-                                            find_variable_in_BOUT_inp,\
-                                            warning_printer,\
-                                            check_for_plotters_errors,\
-                                            wait_for_runs_to_finish,\
-                                            message_chunker
+from bout_runners.bout_plotters import convergence_plotter,\
+                                       solution_plotter,\
+                                       solution_and_error_plotter
+from bout_runners.common_bout_functions import create_folder,\
+                                               find_variable_in_BOUT_inp,\
+                                               warning_printer,\
+                                               check_for_plotters_errors,\
+                                               wait_for_runs_to_finish,\
+                                               message_chunker
 
 # TODO: Make qsub usable on different clusters (and update documentation)
 #       Can be done by checking the current cluster? (Need to set the
@@ -346,7 +346,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
         message += "# and execute the script\n\n"
 
         # Start the bulk of the script
-        message += "from boututils.bout_runners import " + argument + "\n"
+        message += "from bout_runners.bout_runners import " + argument + "\n"
         message += "from numpy import logspace\n\n"
         # Make the folders
         message += "folders = ["
@@ -1572,10 +1572,13 @@ class basic_runner(object):
 
 #{{{make
     def make(self):
-        """Makes the .cxx program, and saves the make.log"""
+        """Makes the .cxx program, saves the make.log and make.err"""
         print("Making the .cxx program")
         command = "make > make.log 2> make.err"
         shell(command)
+        # Check if any errors occured
+        if os.stat("make.err").st_size != 0:
+            raise RuntimeError("Error encountered during make, see 'make.err'.")
 #}}}
 
 #{{{error_raiser
@@ -2406,7 +2409,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
         solution_plotter instance."""
         # Import the bout_plotters class
         self.python_tmp +=\
-            'from boututils.bout_plotters import solution_plotter\n'
+            'from bout_runners.bout_plotters import solution_plotter\n'
 
         # Creates an instance of solution_and_error_plotter
         # Since we set qsub = True, the constructor will call the
@@ -2442,7 +2445,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 
         # Import the bout_plotters class
         self.python_tmp +=\
-            'from boututils.bout_plotters import solution_and_error_plotter\n'
+            'from bout_runners.bout_plotters import solution_and_error_plotter\n'
 
         # Creates an instance of solution_and_error_plotter
         # Since we set qsub = True, the constructor will call the
@@ -2479,7 +2482,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 
         # Import the bout_plotters class
         self.python_tmp +=\
-            'from boututils.bout_plotters import convergence_plotter\n'
+            'from bout_runners.bout_plotters import convergence_plotter\n'
 
         # Creates an instance of solution_and_error_plotter
         # Since we set qsub = True, the constructor will call the
