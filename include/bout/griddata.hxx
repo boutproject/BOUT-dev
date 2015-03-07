@@ -36,6 +36,9 @@ class GridDataSource;
 
 #include "mesh.hxx"
 
+#include <field2d.hxx>
+#include <field3d.hxx>
+
 #include <list>
 
 /// Interface class to serve grid data
@@ -47,34 +50,17 @@ class GridDataSource;
 class GridDataSource {
  public:
   virtual ~GridDataSource() { }
-  
-  virtual bool isValid() {return true;}  ///< Check if the data is valid
 
   virtual bool hasVar(const string &name) = 0; ///< Test if source can supply a variable
-  
-  virtual vector<int> getSize(const string &name) = 0; ///< Get size of the variable
 
-  /// Set the (x,y,z) origin for all subsequent calls
-  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) = 0;
+  virtual bool get(Mesh *m, int &ival,      const string &name) = 0; ///< Get an integer
+  virtual bool get(Mesh *m, BoutReal &rval, const string &name) = 0; ///< Get a BoutReal number
+  virtual bool get(Mesh *m, Field2D &var,   const string &name, BoutReal def=0.0) = 0;
+  virtual bool get(Mesh *m, Field3D &var,   const string &name, BoutReal def=0.0) = 0;
 
-  /// Specify a mesh. Required for GridFromOptions
-  virtual bool setMesh(Mesh *m) {return true;}
-  
-  /// Get data from the source
-  virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  virtual bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) = 0;
-  
-  // Optional functions for efficiency
-
-  /// Called before fetching a variable
-  virtual void open(const char *name = NULL) {  }
-  
-  /// Called after fetching variables
-  virtual void close() { }
-  
-  void open(const string &name) { open(name.c_str()); }
+  enum Direction {X=1, Y=2, Z=3};
+  virtual bool get(Mesh *m, vector<int> &var,      const string &name, int len, int offset=0, Direction dir = GridDataSource::X) = 0;
+  virtual bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset=0, Direction dir = GridDataSource::X) = 0;
 };
 
 /// Interface to grid data in a file
@@ -84,58 +70,53 @@ class GridDataSource {
  */
 class GridFile : public GridDataSource {
  public:
-  GridFile();
+  GridFile(DataFormat *format, const string gridfilename);
   ~GridFile();
-  GridFile(DataFormat *format, const char *gridfilename);
   
-  bool isValid();
+  bool hasVar(const string &name);
 
-  void setFile(DataFormat *format, const char *gridfilename);
+  bool get(Mesh *m, int &ival,      const string &name); ///< Get an integer
+  bool get(Mesh *m, BoutReal &rval, const string &name); ///< Get a BoutReal number
+  bool get(Mesh *m, Field2D &var,   const string &name, BoutReal def=0.0);
+  bool get(Mesh *m, Field3D &var,   const string &name, BoutReal def=0.0);
+
+  bool get(Mesh *m, vector<int> &var,      const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
+  bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
   
-  virtual bool hasVar(const string &name);
-  
-  virtual vector<int> getSize(const string &name);
-
-  virtual bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-
-  // Fetch the data. Returns true on success
-  virtual bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  virtual bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  virtual bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  virtual bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-
-  void open(const char* file);
-  void close();
  private:
+  GridFile();
+  
   DataFormat *file;
   string filename;
+
+  bool readgrid_3dvar_fft(Mesh *m, const string &name, 
+			  int yread, int ydest, int ysize, 
+			  int xge, int xlt, BoutReal ***var);
   
-  bool isOpen;
+  bool readgrid_3dvar_real(Mesh *m, const string &name, 
+			   int yread, int ydest, int ysize, 
+			   int xge, int xlt, BoutReal ***var);
 };
 
 class GridFromOptions : GridDataSource {
 public:
-  GridFromOptions(Options *opt = NULL); 
+  GridFromOptions(Options *opt = NULL) : options(opt) {}
   
   bool hasVar(const string &name);
   
-  vector<int> getSize(const string &name); ///< Get size of the variable
-
-  /// Set the (x,y,z) origin for all subsequent calls
-  bool setGlobalOrigin(int x = 0, int y = 0, int z = 0) {return true;}
-
-  bool setMesh(Mesh *m) {fieldmesh = m; return true;}
+  bool get(Mesh *m, int &ival,      const string &name); ///< Get an integer
+  bool get(Mesh *m, BoutReal &rval, const string &name); ///< Get a BoutReal number
+  bool get(Mesh *m, Field2D &var,   const string &name, BoutReal def=0.0);
+  bool get(Mesh *m, Field3D &var,   const string &name, BoutReal def=0.0);
   
-  /// Get data from the source
-  bool fetch(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool fetch(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
-  bool fetch(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
-  bool fetch(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0);
+  bool get(Mesh *m, vector<int> &var,      const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
+  bool get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset=0, GridDataSource::Direction dir = GridDataSource::X);
+  
 private:
   Options *options;
-  Mesh *fieldmesh;
 };
 
+/*
 class GridDataGroup : GridDataSource {
 public:
   GridDataGroup() {}
@@ -153,5 +134,5 @@ private:
   GridDataSource *findSource(const char *name);
   GridDataSource *findSource(const string &name) {return findSource(name.c_str());}
 };
-
+*/
 #endif // __GRIDDATA_H__

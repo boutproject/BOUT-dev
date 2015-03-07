@@ -263,4 +263,14 @@ const Field2D copy(const Field2D &f);
 
 const Field2D floor(const Field2D &var, BoutReal f);
 
+/*!
+ * @brief Returns a reference to the time-derivative of a field
+ * 
+ * Wrapper around member function f.timeDeriv()
+ *
+ */
+inline Field2D& ddt(Field2D &f) {
+  return *(f.timeDeriv());
+}
+
 #endif /* __FIELD2D_H__ */

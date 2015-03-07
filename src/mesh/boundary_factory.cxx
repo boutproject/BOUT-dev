@@ -17,6 +17,8 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryDirichlet(), "dirichlet");
   add(new BoundaryDirichlet_2ndOrder(), "dirichlet_2ndorder");
   add(new BndDirichlet_O2(), "dirichlet_o2");
+  add(new BndDirichlet_O3(), "dirichlet_o3");
+  add(new BndDirichlet_O4(), "dirichlet_o4");
   add(new BoundaryDirichlet_4thOrder(), "dirichlet_4thorder");
   add(new BoundaryNeumann(), "neumann");
   add(new BoundaryNeumann2(), "neumann2");
@@ -30,6 +32,8 @@ BoundaryFactory::BoundaryFactory() {
   add(new BoundaryZeroLaplace2(), "zerolaplace2");
   add(new BoundaryConstLaplace(), "constlaplace");
   add(new BoundaryFree(), "free");
+  add(new BoundaryFree_O2(), "free_o2");
+  add(new BoundaryFree_O3(), "free_o3");
   addMod(new BoundaryRelax(), "relax");
   addMod(new BoundaryShifted(), "shifted");
   addMod(new BoundaryWidth(), "width");

@@ -19,6 +19,7 @@
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
  *
  **************************************************************************/
+#include <globals.hxx>
 
 #include <field_factory.hxx>
 
@@ -83,8 +84,12 @@ FieldFactory::~FieldFactory() {
 
 const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
+  
+  if(mesh->StaggerGrids == false){
+  	loc = CELL_CENTRE ; 
+  }
   result.setLocation(loc);
-
+  
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
@@ -99,26 +104,25 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
   }
   
   switch(loc)  {
-  CELL_XLOW: {
+  case CELL_XLOW: {
       for(int x=0;x<m->ngx;x++) {
         BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
         for(int y=0;y<m->ngy;y++)
           result(x,y) = gen->generate(xpos,
-                                          TWOPI*m->GlobalY(y),
-                                          0.0,  // Z
-                                          t); // T
+                                      TWOPI*m->GlobalY(y),
+                                      0.0,  // Z
+                                      t); // T
       }
       break;
     }
-  CELL_YLOW: {
+  case CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
-          for(int z=0;z<m->ngz;z++)
-            result(x,y) = gen->generate(m->GlobalX(x),
-                                            ypos,
-                                            0.0,  // Z
-                                            t); // T
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
+          result(x,y) = gen->generate(m->GlobalX(x),
+                                      ypos,
+                                      0.0,  // Z
+                                      t); // T
         }
       break;
     }
@@ -139,8 +143,12 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
 
 const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
+  
+  if(mesh->StaggerGrids == false){
+  	loc = CELL_CENTRE ; 
+  }
   result.setLocation(loc);
-
+  
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
@@ -151,9 +159,9 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
   if(!gen) {
     throw BoutException("FieldFactory error: Couldn't create 3D field from '%s'", value.c_str());
   }
-  
+
   switch(loc)  {
-  CELL_XLOW: {
+  case CELL_XLOW: {
       for(int x=0;x<m->ngx;x++) {
         BoutReal xpos = 0.5*(m->GlobalX(x-1) + m->GlobalX(x));
         for(int y=0;y<m->ngy;y++)
@@ -165,10 +173,10 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
       }
       break;
     }
-  CELL_YLOW: {
+  case CELL_YLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++) {
-          BoutReal ypos = TWOPI*0.5*(m->GlobalY(x-1) + m->GlobalY(x));
+          BoutReal ypos = TWOPI*0.5*(m->GlobalY(y-1) + m->GlobalY(y));
           for(int z=0;z<m->ngz;z++)
             result(x, y, z) = gen->generate(m->GlobalX(x),
                                             ypos,
@@ -177,7 +185,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
         }
       break;
     }
-  CELL_ZLOW: {
+  case CELL_ZLOW: {
       for(int x=0;x<m->ngx;x++)
         for(int y=0;y<m->ngy;y++)
           for(int z=0;z<m->ngz;z++)

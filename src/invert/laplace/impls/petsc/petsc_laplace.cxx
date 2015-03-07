@@ -82,6 +82,10 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
     if ( outer_boundary_flags & ~implemented_boundary_flags ) {
       throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
+    if(mesh->periodicX) {
+      throw BoutException("LaplacePetsc does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+      }
+	
   #endif
 
   // Get communicator for group of processors in X - all points in z-x plane for fixed y.

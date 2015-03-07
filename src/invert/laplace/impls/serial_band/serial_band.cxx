@@ -40,9 +40,9 @@
 LaplaceSerialBand::LaplaceSerialBand(Options *opt) : Laplacian(opt), Acoef(0.0), Ccoef(1.0), Dcoef(1.0) {
   if(!mesh->firstX() || !mesh->lastX())
     throw BoutException("LaplaceSerialBand only works for mesh->NXPE = 1");
-  if(mesh->periodicX)
-    throw BoutException("LaplaceSerialBand doesn't work with periodic X");
-  
+  if(mesh->periodicX) {
+      throw BoutException("LaplaceSerialBand does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    }
   // Allocate memory
 
   int ncz = mesh->ngz-1;

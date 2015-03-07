@@ -52,7 +52,7 @@ def findVar(varname, varlist):
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
     raise ValueError("Variable '"+varname+"' not found") 
 
-def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, info=True,prefix="BOUT.dmp"):
+def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp"):
     """Collect a variable from a set of BOUT++ outputs.
     
     data = collect(name)
@@ -69,6 +69,9 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     path    = "."          Path to data files
     prefix  = "BOUT.dmp"   File prefix
     yguards = False        Collect Y boundary guard cells?
+    xguards = True         Collect X boundary guard cells?
+                           (Set to True to be consistent with the
+                           definition of nx)
     info    = True         Print information about collect?
     """
     
@@ -118,7 +121,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     mz    = f.read("MZ")
     myg   = f.read("MYG")
     t_array = f.read("t_array")
-    nt = len(t_array)
+    if t_array is None:
+        nt = 1
+        t_array = np.zeros(1)
+    else:
+        nt = len(t_array)
     
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
@@ -139,8 +146,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                 print("WARNING: More files than expected (" + str(npe) + ")")
             elif npe > nfiles:
                 print("WARNING: Some files missing. Expected " + str(npe))
-        
-        nx = nxpe * mxsub + 2*mxg
+       
+        if xguards:
+            nx = nxpe * mxsub + 2*mxg
+        else:
+            nx = nxpe * mxsub
     except KeyError:
         print("BOUT++ version : Pre-0.2")
         # Assume number of files is correct
@@ -212,21 +222,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         # Get X and Y processor indices
         pe_yind = int(i / nxpe)
         pe_xind = i % nxpe
-
-        # Get local ranges
-        if yguards:
-            ymin = yind[0] - pe_yind*mysub
-            ymax = yind[1] - pe_yind*mysub
-        else:
-            ymin = yind[0] - pe_yind*mysub + myg
-            ymax = yind[1] - pe_yind*mysub + myg
-        
-        xmin = xind[0] - pe_xind*mxsub
-        xmax = xind[1] - pe_xind*mxsub
         
         inrange = True
 
         if yguards:
+            # Get local ranges
+            ymin = yind[0] - pe_yind*mysub
+            ymax = yind[1] - pe_yind*mysub
+
             # Check lower y boundary
             if pe_yind == 0:
                 # Keeping inner boundary
@@ -244,8 +247,16 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             else:
                 if ymin >= (mysub + myg): inrange = False
                 if ymax >= (mysub + myg): ymax = (mysub+myg-1)
+
+            # Calculate global indices
+            ygmin = ymin + pe_yind * mysub
+            ygmax = ymax + pe_yind * mysub
             
         else:
+            # Get local ranges
+            ymin = yind[0] - pe_yind*mysub + myg
+            ymax = yind[1] - pe_yind*mysub + myg
+
             if (ymin >= (mysub + myg)) or (ymax < myg):
                 inrange = False # Y out of range
 
@@ -254,40 +265,58 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             if ymax >= mysub+myg:
                 ymax = myg + mysub - 1
 
-        # Check lower x boundary
-        if pe_xind == 0:
-            # Keeping inner boundary
-            if xmax < 0: inrange = False
-            if xmin < 0: xmin = 0
-        else:
-            if xmax < mxg: inrange = False
-            if xmin < mxg: xmin = mxg
+            # Calculate global indices
+            ygmin = ymin + pe_yind * mysub - myg
+            ygmax = ymax + pe_yind * mysub - myg
+
+        if xguards:
+            # Get local ranges
+            xmin = xind[0] - pe_xind*mxsub
+            xmax = xind[1] - pe_xind*mxsub
         
-        # Upper x boundary
-        if pe_xind == (nxpe - 1):
-            # Keeping outer boundary
-            if xmin >= (mxsub + 2*mxg): inrange = False
-            if xmax > (mxsub + 2*mxg - 1): xmax = (mxsub + 2*mxg - 1)
+            # Check lower x boundary
+            if pe_xind == 0:
+                # Keeping inner boundary
+                if xmax < 0: inrange = False
+                if xmin < 0: xmin = 0
+            else:
+                if xmax < mxg: inrange = False
+                if xmin < mxg: xmin = mxg
+            
+            # Upper x boundary
+            if pe_xind == (nxpe - 1):
+                # Keeping outer boundary
+                if xmin >= (mxsub + 2*mxg): inrange = False
+                if xmax > (mxsub + 2*mxg - 1): xmax = (mxsub + 2*mxg - 1)
+            else:
+                if xmin >= (mxsub + mxg): inrange = False
+                if xmax >= (mxsub + mxg): xmax = (mxsub+mxg-1)
+
+            # Calculate global indices
+            xgmin = xmin + pe_xind * mxsub
+            xgmax = xmax + pe_xind * mxsub
+
         else:
-            if xmin >= (mxsub + mxg): inrange = False
-            if xmax >= (mxsub + mxg): xmax = (mxsub+mxg-1)
+            # Get local ranges
+            xmin = xind[0] - pe_xind*mxsub + mxg
+            xmax = xind[1] - pe_xind*mxsub + mxg
+
+            if (xmin >= (mxsub + mxg)) or (xmax < mxg):
+                inrange = False # X out of range
+
+            if xmin < mxg:
+                xmin = mxg
+            if xmax >= mxsub+mxg:
+                xmax = mxg + mxsub - 1
+
+            # Calculate global indices
+            xgmin = xmin + pe_xind * mxsub - mxg
+            xgmax = xmax + pe_xind * mxsub - mxg
+
 
         # Number of local values
         nx_loc = xmax - xmin + 1
         ny_loc = ymax - ymin + 1
-
-        # Calculate global indices
-        xgmin = xmin + pe_xind * mxsub
-        xgmax = xmax + pe_xind * mxsub
-
-        if yguards:
-            ygmin = ymin + pe_yind * mysub
-            ygmax = ymax + pe_yind * mysub
-
-        else:
-            ygmin = ymin + pe_yind * mysub - myg
-            ygmax = ymax + pe_yind * mysub - myg
-
 
         if not inrange:
             continue # Don't need this file
@@ -331,8 +360,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     
     # Force the precision of arrays of dimension>1
     if ndims>1:
-          data = data.astype(t_array.dtype)
-  
+        try:
+            data = data.astype(t_array.dtype, copy=False)
+        except TypeError:
+            data = data.astype(t_array.dtype)
+
     # Finished looping over all files
     if info:
         sys.stdout.write("\n")

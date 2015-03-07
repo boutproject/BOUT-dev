@@ -3,7 +3,7 @@
 #
 # Generic routines, useful for all data
 ##################################################
-
+import sys
 print("Loading data utilities")
 
 # Load routines from separate files
@@ -13,76 +13,79 @@ print("Loading data utilities")
 #    print "No plotdata"
 
 try:
-    from datafile import DataFile
+    from boututils.datafile import DataFile
 except:
     print("No datafile")
 
 try:
-    from file_import import file_import
+    from boututils.file_import import file_import
 except:
     print("No file_import")
 
 try:
-    from calculus import deriv, integrate
+    from boututils.calculus import deriv, integrate
 except:
     print("No calculus")
 
 try:
-    from linear_regression import linear_regression
+    from boututils.linear_regression import linear_regression
 except:
     print("No linear regression")
 
 try:
-    from shell import shell
+    from boututils.shell import shell
 except:
     print("No shell commands")
 
 try:
-    from ncpus import determineNumberOfCPUs
+    from boututils.ncpus import determineNumberOfCPUs
 except:
     print("No determineNumberOfCPUs")
 
 try:
-    from launch import launch
+    from boututils.launch import launch
 except:
     print("No launch command")
 
 try:
-    from getmpirun import getmpirun
+    from boututils.getmpirun import getmpirun
 except:
     print("No getmpirun command")
  
 try:
-    from fft_integrate import fft_integrate
+    from boututils.fft_integrate import fft_integrate
 except:
-    print "No fft_integrate command"
+    print("No fft_integrate command")
 
 try:
-    from mode_structure import mode_structure
+    from boututils.mode_structure import mode_structure
 except:
-    print "No mode_structure command"
+    print("No mode_structure command")
 
 try:
-    from plotpolslice import plotpolslice
+    from boututils.plotpolslice import plotpolslice
 except:
-    print "No plotpolslice command"
+    print("No plotpolslice command")
+    if sys.version_info[0]==3:
+        print("polplotslice uses the VTK library through mayavi, which",
+              "is currently only available in python 2")
 
 try:
-    from moment_xyzt import moment_xyzt
+    from boututils.moment_xyzt import moment_xyzt
 except:
-    print "No moment_xyzt command"
+    print("No moment_xyzt command")
 
 try:
-    from volume_integral import volume_integral
+    from boututils.volume_integral import volume_integral
 except:
-    print "No volume_integral command"
+    print("No volume_integral command")
 
 try:
-    from surface_average import surface_average
+    from boututils.surface_average import surface_average
 except:
-    print "No surface_average command"
+    print("No surface_average command")
 
 try:
-    from showdata import showdata
+    from boututils.showdata import showdata
 except:
-    print "No showdata"
+    print("No showdata")

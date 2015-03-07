@@ -39,7 +39,7 @@ def fft_integrate(y, loop=None):
     
         return result
     except:
-        print 'fft_integrate_fail'
+        print('fft_integrate_fail')
 
 
 

@@ -378,4 +378,14 @@ const Field3D filter(const Field3D &var, int N0);
 const Field3D lowPass(const Field3D &var, int zmax);
 const Field3D lowPass(const Field3D &var, int zmax, int zmin);
 
+/*!
+ * @brief Returns a reference to the time-derivative of a field
+ * 
+ * Wrapper around member function f.timeDeriv()
+ *
+ */
+inline Field3D& ddt(Field3D &f) {
+  return *(f.timeDeriv());
+}
+
 #endif /* __FIELD3D_H__ */

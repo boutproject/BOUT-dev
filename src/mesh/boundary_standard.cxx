@@ -92,90 +92,168 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
   if(mesh->StaggerGrids && loc != CELL_CENTRE) {
     // Staggered. Need to apply slightly differently
     
-    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
-      // X boundary, and field is shifted in X
+    if( loc == CELL_XLOW ) {
+      // shifted in X
       
       if(bndry->bx > 0) {
-	// Outer boundary
+	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				 + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = mesh->GlobalY(bndry->y);
-            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				     + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
           
 	  f(bndry->x,bndry->y) = val;
-	}
-      }else {
-	// Inner boundary. Set one point inwards
-	for(; !bndry->isDone(); bndry->next1d()) {
-	  if(fg) {
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = mesh->GlobalY(bndry->y);
-            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }
-          
-	  f(bndry->x - bndry->bx,bndry->y) = val;
-	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y ;
+						
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi) - f(xi - 2*bndry->bx, yi);	
+	  }	
 	}
       }
-      return;
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				     + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x - bndry->bx,bndry->y) = val;
+	  // f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y ;
+						
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi) - f(xi - 2*bndry->bx, yi);	
+	  }	
+	}
+      }
+      if(bndry->by !=0){
+	// y boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    // x norm is shifted by half a grid point because it is staggered.
+	    // y norm is located half way between first grid cell and guard cell. 
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+	  f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x ;
+	    int yi = bndry->y + i*bndry->by;						
+	    f(xi, yi) = 2*f(xi, yi - bndry->by) - f(xi, yi - 2*bndry->by);	
+	  }					
+	}
+      }
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if( loc == CELL_YLOW ) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
-	// Outer boundary
+	// Upper y boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
-                                   + mesh->GlobalY(bndry->y - bndry->by) );
-            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
+				   + mesh->GlobalY(bndry->y - bndry->by) );
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
           
-          f(bndry->x,bndry->y) = val;
-	}
-      }else {
-	// Inner boundary. Set one point inwards
-	for(; !bndry->isDone(); bndry->next1d()) {
-          if(fg) {
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-                                     + mesh->GlobalY(bndry->y - bndry->by) );
-            
-            val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
-          }
-          
-	  f(bndry->x,bndry->y - bndry->by) = val;
-	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+	  f(bndry->x,bndry->y) = val;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x ;
+	    int yi = bndry->y + i*bndry->by;						
+	    f(xi, yi) = 2*f(xi, yi - bndry->by) - f(xi, yi - 2*bndry->by);	
+	  }	
 	}
       }
-      return;
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				     + mesh->GlobalY(bndry->y - bndry->by) );
+            
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x,bndry->y - bndry->by) = val;
+	  // f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x ;
+	    int yi = bndry->y + i*bndry->by;						
+	    f(xi, yi) = 2*f(xi, yi - bndry->by) - f(xi, yi - 2*bndry->by);	
+	  }	
+	}
+      }
+      if (bndry->bx !=0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+      
+	  if(fg) {
+	    // x norm is located half way between first grid cell and guard cell.  
+	    // y norm is shifted by half a grid point because it is staggered. 
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+	  f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y ;						
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi) - f(xi - 2*bndry->bx, yi);	
+	  }	
+	}
+      }
     }
   }
-  
-  // Non-staggered, standard case
-  
-  for(; !bndry->isDone(); bndry->next1d()) {
+  else {
+    // Non-staggered, standard case
     
-    if(fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+    for(; !bndry->isDone(); bndry->next1d()) {
       
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      }
       
-      val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
+			
+      // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+      for(int i=1;i<bndry->width;i++) {
+	int xi = bndry->x + i*bndry->bx;
+	int yi = bndry->y + i*bndry->bx;						
+	f(xi, yi) = 2*f(xi - bndry->bx, yi - bndry->by) - f(xi - 2*bndry->bx, yi - 2*bndry->by);	
+      }	
     }
-    
-    f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
   }
 }
 
@@ -187,7 +265,6 @@ void BndDirichlet_O2::apply(Field3D &f) {
   
   BndDirichlet_O2::apply(f,0.);
 }
-
 
 void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
@@ -208,11 +285,11 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
   if(mesh->StaggerGrids && loc != CELL_CENTRE) {
     // Staggered. Need to apply slightly differently
     
-    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
+    if( loc == CELL_XLOW ) {
       // X boundary, and field is shifted in X
       
       if(bndry->bx > 0) {
-	// Outer boundary
+	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
@@ -220,16 +297,23 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    if(fg)
+	    if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    
+	    }
 	    f(bndry->x,bndry->y, zk) = val;
-	    
-	    //output.write("Outer boundary (Stag): %d,%d : %e, %e -> %e\n", bndry->x,bndry->y, xnorm, ynorm, f(bndry->x,bndry->y, zk));
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y ;
+							
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi , zk) - f(xi- 2*bndry->bx, yi , zk);	
+	    }	
 	  }
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+      if (bndry->bx < 0){
+	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
@@ -237,84 +321,199 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
 	  BoutReal ynorm = mesh->GlobalY(bndry->y);
           
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    if(fg)
+	    if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    
+	    }
 	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
 	    f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
-	    
-	    //output.write("Inner boundary (Stag): %d,%d : %e, %e -> %e\n", bndry->x,bndry->y, xnorm, ynorm, f(bndry->x,bndry->y, zk));
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y ;
+							
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi , zk) - f(xi- 2*bndry->bx, yi , zk);	
+	    }	
 	  }
 	}
       }
-      return;
+      if(bndry->by !=0){
+	// y boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is shifted by half a grid point because it is staggered.
+	  // y norm is located half way between first grid cell and guard cell. 
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    }
+	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x ;
+	      int yi = bndry->y + i*bndry->by;
+						
+	      f(xi, yi, zk) = 2*f(xi, yi - bndry->by, zk) - f(xi, yi - 2*bndry->by, zk);	
+	    }	
+	  }
+					
+	  // for(int i=1;i<bndry->width;i++) {
+	  // Set any other guard cells using the values on the cells
+	  // int xi = bndry->x + i*bndry->bx;
+	  // int yi = bndry->y + i*bndry->by;
+	  // xnorm = mesh->GlobalX(xi);
+	  // ynorm = mesh->GlobalY(yi);
+	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // if(fg) {
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // }
+	  // f(xi, yi, zk) = val;
+	  // }						
+	  // }
+					
+					
+	}			
+      }
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
-      // Y boundary, and field is shifted in Y
+    else if( loc == CELL_YLOW ) {
+      // Shifted in Y
       
       if(bndry->by > 0) {
-	// Outer boundary
+	// Upper y boundary boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    if(fg)
+	    if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    
+	    }
 	    f(bndry->x,bndry->y,zk) = val;
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x ;
+	      int yi = bndry->y + i*bndry->by;
+
+	      f(xi, yi, zk) = 2.0*f(xi, yi - bndry->by, zk) - f(xi, yi - 2*bndry->by, zk);
+	    }
 	  }
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+      if(bndry->by < 0){
+	// Lower y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	 
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
 	  
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-	    if(fg)
+	    if(fg){
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-	    
+	    }
 	    f(bndry->x,bndry->y - bndry->by, zk) = val;
-	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x ;
+	      int yi = bndry->y + i*bndry->by;
+
+	      f(xi, yi, zk) = 2*f(xi, yi - bndry->by, zk) - f(xi, yi - 2*bndry->by, zk);
+	    }
 	  }
 	}
       }
-      return;
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is located half way between first grid cell and guard cell.  
+	  // y norm is shifted by half a grid point because it is staggered. 
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) );
+					      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	    f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y ;
+						
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi , zk) - f(xi - 2*bndry->bx, yi, zk);	
+	    }	
+	  }
+					
+	  // for(int i=1;i<bndry->width;i++) {
+	  // Set any other guard cells using the values on the cells
+	  // int xi = bndry->x + i*bndry->bx;
+	  // int yi = bndry->y + i*bndry->by;
+	  // xnorm = mesh->GlobalX(xi);
+	  // ynorm = mesh->GlobalY(yi);
+	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // if(fg) {
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // }
+	  // f(xi, yi, zk) = val;
+	  // }
+	  // }
+					
+					
+	}			
+      }
     }
   }
-  
-  // Standard (non-staggered) case
-  for(; !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+  else {
+    // Standard (non-staggered) case
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
 
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
-    
-    for(int zk=0;zk<mesh->ngz-1;zk++) {
-      if(fg)
-	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
       
-      f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
-    }
-    for(int i=1;i<bndry->width;i++) {
-      // Set any other guard cells using the values on the cells
-      int xi = bndry->x + i*bndry->bx;
-      int yi = bndry->y + i*bndry->by;
-      xnorm = mesh->GlobalX(xi);
-      ynorm = mesh->GlobalY(yi);
       for(int zk=0;zk<mesh->ngz-1;zk++) {
-        if(fg) {
-          val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
-        }
-        f(xi, yi, zk) = val;
+	if(fg){
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	}
+	f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
+	// f(bndry->x,bndry->y,zk) = (8./3.)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
+				
+				
+	// Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	for(int i=1;i<bndry->width;i++) {
+	  int xi = bndry->x + i*bndry->bx;
+	  int yi = bndry->y + i*bndry->by;
+				
+	  f(xi, yi, zk) = 2*f(xi - bndry->bx, yi - bndry->by, zk) - f(xi - 2*bndry->bx, yi - 2*bndry->by, zk);
+	  // f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+					
+	}
+				
       }
+			
+			
+			
+      // for(int i=1;i<bndry->width;i++) {
+      // 				// Set any other guard cells using the values on the cells
+      // 				int xi = bndry->x + i*bndry->bx;
+      // 				int yi = bndry->y + i*bndry->by;
+      // 				xnorm = mesh->GlobalX(xi);
+      // 				ynorm = mesh->GlobalY(yi);
+      // 				for(int zk=0;zk<mesh->ngz-1;zk++) {
+      // 					if(fg) {
+      // 						val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      // 					}
+      // 					f(xi, yi, zk) = val;
+      // 				}
+      // 			}
     }
   }
 }
@@ -333,6 +532,971 @@ void BndDirichlet_O2::apply_ddt(Field3D &f) {
       (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
 }
 
+
+///////////////////////////////////////////////////////////////
+// New implementation, accurate to higher order
+
+BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &args){
+  FieldGenerator* newgen = 0;
+  if(!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BndDirichlet_O3(region, newgen);
+}
+
+void BndDirichlet_O3::apply(Field2D &f){
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field2D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  
+  BndDirichlet_O3::apply(f,0.);
+
+}
+
+void BndDirichlet_O3::apply(Field2D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+  
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW) {
+      // Field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer x boundary	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x,bndry->y) = val;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+	  f(bndry->x - bndry->bx,bndry->y) = val;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }		
+	}
+      }
+      if(bndry->by != 0){
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    // x norm is shifted by half a grid point because it is staggered.
+	    // y norm is located half way between first grid cell and guard cell. 
+	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+      
+	  f(bndry->x,bndry->y) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)/3.;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+					
+	}			
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x,bndry->y) = val;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+					
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x,bndry->y - bndry->by) = val;
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+      
+	  if(fg) {
+	    // x norm is located half way between first grid cell and guard cell.  
+	    // y norm is shifted by half a grid point because it is staggered. 
+	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) );
+	
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+      
+	  f(bndry->x,bndry->y) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)/3.;
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+	}
+      }
+    }
+  }
+  else {
+    // Non-staggered, standard case
+    
+    for(; !bndry->isDone(); bndry->next1d()) {
+      
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      }
+      
+      f(bndry->x,bndry->y) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by)/3.;
+
+      // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+      for(int i=1;i<bndry->width;i++) {
+	int xi = bndry->x + i*bndry->bx;
+	int yi = bndry->y + i*bndry->by;
+	f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+      }	
+    }
+  }
+}
+
+
+void BndDirichlet_O3::apply(Field3D &f) {
+  //BndDirichlet_O3::apply(f,0.);
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field3D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  
+  BndDirichlet_O3::apply(f,0.);
+}
+
+
+void BndDirichlet_O3::apply(Field3D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
+			
+      if(bndry->bx > 0) {
+	// Outer x boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    }
+	    f(bndry->x,bndry->y, zk) = val;
+						
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    }
+	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->by != 0){
+	//y boundaries
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is shifted by half a grid point because it is staggered.
+	  // y norm is located half way between first grid cell and guard cell. 
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	  // for(int i=1;i<bndry->width;i++) {
+	  // 						// Set any other guard cells using the values on the cells
+	  // 						int xi = bndry->x + i*bndry->bx;
+	  // 						int yi = bndry->y + i*bndry->by;
+	  // 						xnorm = mesh->GlobalX(xi);
+	  // 						ynorm = mesh->GlobalY(yi);
+	  // 						for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // 							if(fg) {
+	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // 							}
+	  // 							f(xi, yi, zk) = val;
+	  // 						}
+	  // 					}
+	}
+				
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    }
+	    f(bndry->x,bndry->y,zk) = val;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(mesh->GlobalY(bndry->y)+ mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      // output.write("\nI'm being called.  val = %1.18f \n", val) ;
+	    }
+	    f(bndry->x,bndry->y - bndry->by, zk) = val;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is located half way between first grid cell and guard cell.
+	  // y norm is shifted by half a grid point because it is staggered.
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	    f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }
+
+	  }
+	  // for(int i=1;i<bndry->width;i++) {
+	  // 						// Set any other guard cells using the values on the cells
+	  // 						int xi = bndry->x + i*bndry->bx;
+	  // 						int yi = bndry->y + i*bndry->by;
+	  // 						xnorm = mesh->GlobalX(xi);
+	  // 						ynorm = mesh->GlobalY(yi);
+	  // 						for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // 							if(fg) {
+	  // 								val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // 							}
+	  // 							f(xi, yi, zk) = val;
+	  // 						}
+	  // 					}
+	}
+      }
+    }
+  }
+  else {
+    // Standard (non-staggered) case
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	if(fg)
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	f(bndry->x,bndry->y,zk) = (8./3)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
+				
+	// Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	for(int i=1;i<bndry->width;i++) {
+	  int xi = bndry->x + i*bndry->bx;
+	  int yi = bndry->y + i*bndry->by;
+	  f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+	    + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	}
+      }
+      // for(int i=1;i<bndry->width;i++) {
+      // 				// Set any other guard cells using the values on the cells
+      // 				int xi = bndry->x + i*bndry->bx;
+      // 				int yi = bndry->y + i*bndry->by;
+      // 				xnorm = mesh->GlobalX(xi);
+      // 				ynorm = mesh->GlobalY(yi);
+      // 				for(int zk=0;zk<mesh->ngz-1;zk++) {
+      // 					if(fg) {
+      // 						val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      // 					}
+      // 					f(xi, yi, zk) = val;
+      // 				}
+      // 			}
+    }
+  }
+}
+
+void BndDirichlet_O3::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+
+
+void BndDirichlet_O3::apply_ddt(Field3D &f) {
+  output.write("\nI'm getting called \n") ; 
+  Field3D *dt = f.timeDeriv();
+  CELL_LOC loc = f.getLocation();
+  bndry->first() ; 
+  // if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+  //
+  // 		if( (loc == CELL_YLOW) && (bndry->by < 0)) {
+  //
+  // 			for(; !bndry->isDone(); bndry->next1d()){
+  // 				for(int z=0;z<mesh->ngz;z++){
+  // 					for(int i=-1;i<bndry->width;i++) {
+  // 						int xi = bndry->x + i*bndry->bx;
+  // 						int yi = bndry->y + i*bndry->by;
+  // 						(*dt)(xi, yi, z) = 0.;
+  // 					}
+  // 				}
+  // 			}
+  // 		}
+  // 	}
+  // 	else{
+  for(bndry->first(); !bndry->isDone(); bndry->next()){
+    for(int z=0;z<mesh->ngz;z++){
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+    }
+  }
+  // }
+}
+
+///////////////////////////////////////////////////////////////
+// Extrapolate to calculate boundary cell to 4th-order
+
+BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &args){
+  FieldGenerator* newgen = 0;
+  if(!args.empty()) {
+    // First argument should be an expression
+    newgen = FieldFactory::get()->parse(args.front());
+  }
+  return new BndDirichlet_O4(region, newgen);
+}
+
+void BndDirichlet_O4::apply(Field2D &f){
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field2D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  
+  BndDirichlet_O4::apply(f,0.);
+
+}
+
+void BndDirichlet_O4::apply(Field2D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+  
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if(loc == CELL_XLOW ) {
+      // Field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer x boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = 0.5*( mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+	  f(bndry->x,bndry->y) = val;
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }					
+	}
+      }
+			
+      if(bndry->bx < 0) {
+	// Inner boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				     + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x - bndry->bx,bndry->y) = val;
+	  // f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }				
+	}
+      }
+      if (bndry->by != 0){
+	// y boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+      
+	  if(fg) {
+	    // x norm is shifted by half a grid point because it is staggered.
+	    // y norm is located half way between first grid cell and guard cell.
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+      
+	  f(bndry->x,bndry->y) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by);
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }					
+	}
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*( mesh->GlobalY(bndry->y)
+				   + mesh->GlobalY(bndry->y - bndry->by) );
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+	  f(bndry->x,bndry->y) = val;
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Inner y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  if(fg) {
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				     + mesh->GlobalY(bndry->y - bndry->by) );
+            
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+          
+	  f(bndry->x,bndry->y - bndry->by) = val;
+	  // f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }		
+	}
+      }
+      if(bndry->bx !=0){
+	// x boundaries.  
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+      
+	  if(fg) {
+	    // x norm is located half way between first grid cell and guard cell.
+	    // y norm is shifted by half a grid point because it is staggered.
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	
+	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+	  }
+      
+	  f(bndry->x,bndry->y) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by);
+					
+	  // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	      + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+	  }
+	}
+      }
+    }
+  }
+  else {
+    // Non-staggered, standard case
+    
+    for(; !bndry->isDone(); bndry->next1d()) {
+      
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
+      }
+      
+      f(bndry->x,bndry->y) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by);
+			
+      // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+      for(int i=1;i<bndry->width;i++) {
+	int xi = bndry->x + i*bndry->bx;
+	int yi = bndry->y + i*bndry->by;
+	f(xi, yi) = 4.0*f(xi - bndry->bx, yi - bndry->by) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) 
+	  + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by) - f(xi - 4*bndry->bx, yi - 4*bndry->by);
+      }
+    }
+  }
+}
+
+
+void BndDirichlet_O4::apply(Field3D &f) {
+  //BndDirichlet_O4::apply(f,0.);
+  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field3D::applyBoundary(BoutReal t); \n ";
+  output << "applying boundary condition for t = 0.!!!!!\n";
+  
+  BndDirichlet_O4::apply(f,0.);
+}
+
+
+void BndDirichlet_O4::apply(Field3D &f,BoutReal t) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+
+  bndry->first();
+
+  // Decide which generator to use
+  FieldGenerator* fg = gen;
+  if(!fg)
+    fg = f.getBndryGenerator(bndry->location);
+
+  BoutReal val = 0.0;
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer x boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    }
+	    f(bndry->x,bndry->y, zk) = val;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				   + mesh->GlobalX(bndry->x - bndry->bx) );
+	  BoutReal ynorm = mesh->GlobalY(bndry->y);
+          
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    
+	    f(bndry->x - bndry->bx,bndry->y, zk) = val;
+	    // f(bndry->x,bndry->y, zk) = f(bndry->x - bndry->bx,bndry->y, zk);
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if (bndry->by != 0){
+	// y boundaries
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is shifted by half a grid point because it is staggered.
+	  // y norm is located half way between first grid cell and guard cell.
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
+	
+	  }
+	  for(int i=1;i<bndry->width;i++) {
+	    // Set any other guard cells using the values on the cells
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    xnorm = mesh->GlobalX(xi);
+	    ynorm = mesh->GlobalY(yi);
+	    for(int zk=0;zk<mesh->ngz-1;zk++) {
+	      if(fg) {
+		val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	      }
+	      f(xi, yi, zk) = val;
+							
+	      // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	      for(int i=1;i<bndry->width;i++) {
+		int xi = bndry->x + i*bndry->bx;
+		int yi = bndry->y + i*bndry->by;
+		f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		  + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	      }
+							
+	    }
+	  }
+	}
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Y boundary, and field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				   + mesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    
+	    f(bndry->x,bndry->y,zk) = val;
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Inner y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	 
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				   + mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	    
+	    f(bndry->x,bndry->y - bndry->by, zk) = val;
+	    // f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if(bndry->bx !=0){
+	// x boundaries
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is located half way between first grid cell and guard cell.
+	  // y norm is shifted by half a grid point because it is staggered.
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+      
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg)
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	    f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
+						
+	    // Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	    }
+	
+	  }
+	  // for(int i=1;i<bndry->width;i++) {
+	  // Set any other guard cells using the values on the cells
+	  // int xi = bndry->x + i*bndry->bx;
+	  // int yi = bndry->y + i*bndry->by;
+	  // xnorm = mesh->GlobalX(xi);
+	  // ynorm = mesh->GlobalY(yi);
+	  // for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  // if(fg) {
+	  // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	  // }
+	  // f(xi, yi, zk) = val;
+	  // }
+	  // }
+	}
+      }
+    }
+  }
+  else {
+    // Standard (non-staggered) case
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	if(fg)
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+	
+	f(bndry->x,bndry->y,zk) = (16./5)*val - 3.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk) - (1./5)*f(bndry->x-3*bndry->bx, bndry->y-3*bndry->by,zk);
+				
+	// Need to set remaining guard cells, as may be used for interpolation or upwinding derivatives
+	for(int i=1;i<bndry->width;i++) {
+	  int xi = bndry->x + i*bndry->bx;
+	  int yi = bndry->y + i*bndry->by;
+	  f(xi, yi, zk) = 4.0*f(xi - bndry->bx, yi - bndry->by, zk) - 6.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+	    + 4.0*f(xi - 3*bndry->bx, yi - 3*bndry->by, zk) - f(xi - 4*bndry->bx, yi - 4*bndry->by, zk);
+	}
+      }
+      // for(int i=1;i<bndry->width;i++) {
+      //// Set any other guard cells using the values on the cells
+      // int xi = bndry->x + i*bndry->bx;
+      // int yi = bndry->y + i*bndry->by;
+      // xnorm = mesh->GlobalX(xi);
+      // ynorm = mesh->GlobalY(yi);
+      // for(int zk=0;zk<mesh->ngz-1;zk++) {
+      // if(fg) {
+      // val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1), t);
+      // }
+      // f(xi, yi, zk) = val;
+      // }
+      // }
+    }
+  }
+}
+
+void BndDirichlet_O4::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BndDirichlet_O4::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+}
 
 ///////////////////////////////////////////////////////////////
 
@@ -497,6 +1661,7 @@ void BoundaryNeumann_2ndOrder::apply(Field2D &f) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
     f(bndry->x,bndry->y) = f(bndry->x-bndry->bx,bndry->y-bndry->by) + val*(bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y));
+    
 #ifdef BOUNDARY_CONDITIONS_UPGRADE_EXTRAPOLATE_FOR_2ND_ORDER
     f(bndry->x+bndry->bx,bndry->y+bndry->by) = 3.*f(bndry->x,bndry->y) - 3.*f(bndry->x-bndry->bx,bndry->y-bndry->by) + f(bndry->x-2*bndry->bx,bndry->y-2*bndry->by);
 #elif defined(CHECK)
@@ -561,14 +1726,14 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
   // N.B. Only first guard cells (closest to the grid) should ever be used
   
   Coordinates *metric = mesh->coordinates();
- 
+  
   bndry->first();
-
+  
   // Decide which generator to use
   FieldGenerator* fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
-
+  
   BoutReal val = 0.0;
   
   // Check for staggered grids
@@ -579,97 +1744,176 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
     
-    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
-      // X boundary, and field is shifted in X
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
       
       if(bndry->bx > 0) {
-	// Outer boundary
+	// Outer x boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
 	  if(fg) {
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = mesh->GlobalY(bndry->y);
-	  
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				     + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
           
 	  f(bndry->x,bndry->y) = (4.*f(bndry->x - bndry->bx, bndry->y) - f(bndry->x - 2*bndry->bx, bndry->y) + 2.*val)/3.;
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    // Use third order extrapolation because boundary point is set to third order, and these points 
+	    // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);	
+	  }	
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
 	  if(fg) {
-            
-            BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
-				   + mesh->GlobalX(bndry->x - bndry->bx) );
-            BoutReal ynorm = mesh->GlobalY(bndry->y);
-	  
+	    
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
+				     + mesh->GlobalX(bndry->x - bndry->bx) );
+	    BoutReal ynorm = mesh->GlobalY(bndry->y);
+	    
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
           
 	  f(bndry->x - bndry->bx,bndry->y) = (4.*f(bndry->x - 2*bndry->bx, bndry->y) - f(bndry->x - 3*bndry->bx, bndry->y) - 2.*val)/3.;
-	  f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+	  // f(bndry->x,bndry->y) = f(bndry->x - bndry->bx,bndry->y);
+	  
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    // Use third order extrapolation because boundary point is set to third order, and these points 
+	    // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);	
+	  }	
 	}
       }
-      return;
+      if(bndry->by !=0 ){
+	// y boundaries
+	
+	for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+	  
+	  if(fg) {
+	    // x norm is shifted by half a grid point because it is staggered.
+	    // y norm is located half way between first grid cell and guard cell.
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	    
+	    val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+	  }
+	  
+	  f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
+	  if (bndry->width == 2){
+	    f(bndry->x + bndry->bx, bndry->y + bndry->by) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by) + 3.0*delta*val;	
+	  }
+	}
+      }
     }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
+    else if(loc == CELL_YLOW) {
       // Y boundary, and field is shifted in Y
       
       if(bndry->by > 0) {
-	// Outer boundary
+	// Outer y boundary
 	
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  if(fg) {
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-                                     + mesh->GlobalY(bndry->y - bndry->by) );
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				     + mesh->GlobalY(bndry->y - bndry->by) );
             
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y);
 	  }
 	  f(bndry->x,bndry->y) = (4.*f(bndry->x, bndry->y - bndry->by) - f(bndry->x, bndry->y - 2*bndry->by) + 2.*val)/3.;
+	  
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    // Use third order extrapolation because boundary point is set to third order, and these points 
+	    // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);	
+	  }	
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+      if(bndry->by < 0) {
+	// Inner y boundary. Set one point inwards
 	for(; !bndry->isDone(); bndry->next1d()) {
-	 
-          if(fg) {
-            
-            BoutReal xnorm = mesh->GlobalX(bndry->x);
-            BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-                                     + mesh->GlobalY(bndry->y - bndry->by) );
+	  
+	  if(fg) {
+	    
+	    BoutReal xnorm = mesh->GlobalX(bndry->x);
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				     + mesh->GlobalY(bndry->y - bndry->by) );
             
 	    val = fg->generate(xnorm,TWOPI*ynorm,0.0, t) * metric->dx(bndry->x, bndry->y - bndry->by);
 	  }
 	  f(bndry->x,bndry->y - bndry->by) = (4.*f(bndry->x, bndry->y - 2*bndry->by) - f(bndry->x, bndry->y - 3*bndry->by) - 2.*val)/3.;
-	  f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+	  // f(bndry->x,bndry->y) = f(bndry->x,bndry->y - bndry->by);
+					
+	  // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    // Use third order extrapolation because boundary point is set to third order, and these points 
+	    // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
 	}
       }
-      return;
+      if(bndry->bx != 0){
+	// x boundaries
+	for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+	  
+	  if(fg) {
+	    // x norm is located half way between first grid cell and guard cell.
+	    // y norm is shifted by half a grid point because it is staggered.
+	    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	    
+	    val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+	  }
+	  
+	  f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
+	  if (bndry->width == 2){
+	    f(bndry->x + bndry->bx, bndry->y + bndry->by) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by) + 3.0*delta*val;
+	  }
+	}
+      }	
     }
   }
-  
-  // Non-staggered, standard case
-  
-  for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
-    BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+  else {
+    // Non-staggered, standard case
     
-    if(fg) {
-      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                               + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+    for(bndry->first(); !bndry->isDone(); bndry->next1d()) {
+      BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
       
-      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                               + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      if(fg) {
+	// Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+	BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+				 + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
+	
+	BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+				 + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+	
+	val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+      }
       
-      val = fg->generate(xnorm, TWOPI*ynorm, 0.0, t);
+      f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
+      if (bndry->width == 2){
+	f(bndry->x + bndry->bx, bndry->y + bndry->by) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by) + 3.0*delta*val;
+      }
     }
-    
-    f(bndry->x,bndry->y) = f(bndry->x-bndry->bx, bndry->y-bndry->by) + delta*val;
   }
 }
 
@@ -686,12 +1930,12 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
   Coordinates *metric = mesh->coordinates();
   
   bndry->first();
-
+  
   // Decide which generator to use
   FieldGenerator* fg = gen;
   if(!fg)
     fg = f.getBndryGenerator(bndry->location);
-
+  
   BoutReal val = 0.0;
   
   // Check for staggered grids
@@ -702,12 +1946,11 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
     // Use one-sided differencing. Cell is now on
     // the boundary, so use one-sided differencing
     
-    if( (loc == CELL_XLOW) && (bndry->bx != 0) ) {
-      // X boundary, and field is shifted in X
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
       
       if(bndry->bx > 0) {
-	// Outer boundary
-	
+	// Outer x boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
 				   + mesh->GlobalX(bndry->x - bndry->bx) );
@@ -718,10 +1961,21 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dx(bndry->x, bndry->y);
 	    
 	    f(bndry->x,bndry->y, zk) = (4.*f(bndry->x - bndry->bx, bndry->y,zk) - f(bndry->x - 2*bndry->bx, bndry->y,zk) + 2.*val)/3.;
+	    
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      // Use third order extrapolation because boundary point is set to third order, and these points 
+	      // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);	
+	    }	
 	  }
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary
 	for(; !bndry->isDone(); bndry->next1d()) {
 	  
 	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)
@@ -734,66 +1988,141 @@ void BndNeumann_O2::apply(Field3D &f,BoutReal t) {
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dx(bndry->x - bndry->bx, bndry->y);
             
 	    f(bndry->x - bndry->bx,bndry->y, zk) = (4.*f(bndry->x - 2*bndry->bx, bndry->y,zk) - f(bndry->x - 3*bndry->bx, bndry->y,zk) - 2.*val)/3.;
-	    f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
+	    // f(bndry->x,bndry->y,zk) = f(bndry->x - bndry->bx,bndry->y,zk);
+	    
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      // Use third order extrapolation because boundary point is set to third order, and these points 
+	      // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);	
+	    }	
 	  }
 	}
       }
-      return;
-    }
-    
-    if( (loc == CELL_YLOW) && (bndry->by != 0) ) {
-      // Y boundary, and field is shifted in Y
-      
-      if(bndry->by > 0) {
-	// Outer boundary
-	
+      if(bndry->by != 0) {
 	for(; !bndry->isDone(); bndry->next1d()) {
-	  BoutReal xnorm = mesh->GlobalX(bndry->x);
-	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
+	  // x norm is shifted by half a grid point because it is staggered.
+	  // y norm is located half way between first grid cell and guard cell.
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - 1) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - bndry->by) ); 
+	  
+	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
-            
-	    if(fg)
-	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dy(bndry->x, bndry->y);
-            
-	    f(bndry->x,bndry->y,zk) = (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	    }
+	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+	    if (bndry->width == 2){
+	      f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, zk) + 3.0*delta*val;
+	    }
 	  }
 	}
-      }else {
-	// Inner boundary. Set one point inwards
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Outer y boundary	
 	for(; !bndry->isDone(); bndry->next1d()) {
-	 
+	  
 	  BoutReal xnorm = mesh->GlobalX(bndry->x);
 	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
-				 + mesh->GlobalY(bndry->y - bndry->by) );
+				   + mesh->GlobalY(bndry->y - bndry->by) );
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	  
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dy(bndry->x, bndry->y);
+	    }
+	    f(bndry->x,bndry->y,zk) =   (4.*f(bndry->x, bndry->y - bndry->by,zk) - f(bndry->x, bndry->y - 2*bndry->by,zk) + 2.*val)/3.;
+	    
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      // Use third order extrapolation because boundary point is set to third order, and these points 
+	      // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);	
+	    }	
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Inner y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  BoutReal xnorm = mesh->GlobalX(bndry->x);
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)
+				   + mesh->GlobalY(bndry->y - bndry->by) );
 	  for(int zk=0;zk<mesh->ngz-1;zk++) {
 	    if(fg)
 	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t) * metric->dy(bndry->x, bndry->y - bndry->by);
             
 	    f(bndry->x,bndry->y - bndry->by,zk) = (4.*f(bndry->x, bndry->y - 2*bndry->by,zk) - f(bndry->x, bndry->y - 3*bndry->by,zk) - 2.*val)/3.;
-	    f(bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+	    
+	    
+	    // bndry->x,bndry->y,zk) = f(bndry->x,bndry->y - bndry->by,zk);
+	    
+	    // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      // Use third order extrapolation because boundary point is set to third order, and these points 
+	      // may be used be used by 2nd order upwinding type schemes, which require 3rd order 
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);	
+	    }
 	  }
 	}
       }
-      return;
+      if(bndry->bx !=0 ){
+	// x boundaries.  
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  // x norm is located half way between first grid cell and guard cell.
+	  // y norm is shifted by half a grid point because it is staggered.
+	  BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x) + mesh->GlobalX(bndry->x - bndry->bx) ); 
+	  BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y) + mesh->GlobalY(bndry->y - 1) ); 
+	  
+	  BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    if(fg){
+	      val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	    }
+	    f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+	    if (bndry->width == 2){
+	      f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, zk) + 3.0*delta*val;
+	    }
+	  }
+	}
+      }
     }
   }
-  
-  for(; !bndry->isDone(); bndry->next1d()) {
-    // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
-    BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
-                           + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
-
-    BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
-                           + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
-    
-    BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
-
-    for(int zk=0;zk<mesh->ngz-1;zk++) {
-      if(fg)
-	val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+  else {
+    for(; !bndry->isDone(); bndry->next1d()) {
+      // Calculate the X and Y normalised values half-way between the guard cell and grid cell 
+      BoutReal xnorm = 0.5*(   mesh->GlobalX(bndry->x)  // In the guard cell
+			       + mesh->GlobalX(bndry->x - bndry->bx) ); // the grid cell
       
-      f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+      BoutReal ynorm = 0.5*(   mesh->GlobalY(bndry->y)  // In the guard cell
+			       + mesh->GlobalY(bndry->y - bndry->by) ); // the grid cell
+      
+      BoutReal delta = bndry->bx*metric->dx(bndry->x,bndry->y)+bndry->by*metric->dy(bndry->x,bndry->y);
+      
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	if(fg){
+	  val = fg->generate(xnorm,TWOPI*ynorm,TWOPI*zk/(mesh->ngz-1),t);
+	}
+	f(bndry->x,bndry->y, zk) = f(bndry->x-bndry->bx, bndry->y-bndry->by, zk) + delta*val;
+	if (bndry->width == 2){
+	  f(bndry->x + bndry->bx, bndry->y + bndry->by, zk) = f(bndry->x - 2*bndry->bx, bndry->y - 2*bndry->by, zk) + 3.0*delta*val;
+	}
+      }
     }
   }
 }
@@ -978,7 +2307,7 @@ void BoundaryZeroLaplace::apply(Field2D &f) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-
+  
   // Constant X derivative
   int bx = bndry->bx;
   // Loop over the Y dimension
@@ -1000,7 +2329,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
   int ncz = mesh->ngz-1;
   
   Coordinates *metric = mesh->coordinates();
-
+  
   if(c0 == (dcomplex*) NULL) {
     // allocate memory
     c0 = new dcomplex[ncz/2 + 1];
@@ -1041,7 +2370,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
-      ZFFT_rev(c0, mesh->zShift[x][y], f[x][y]);
+      ZFFT_rev(c0, mesh->zShift(x,y), f[x][y]);
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
@@ -1063,9 +2392,9 @@ void BoundaryZeroLaplace2::apply(Field2D &f) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-
+  
   Coordinates *metric = mesh->coordinates();
-
+  
   // Constant X derivative
   int bx = bndry->bx;
   // Loop over the Y dimension
@@ -1114,20 +2443,20 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
     // Loop in X towards edge of domain
     do {
       for(int jz=0;jz<=ncz/2;jz++) {
-        dcomplex la,lb,lc;
-        laplace_tridag_coefs(x-bx, y, jz, la, lb, lc);
-        if(bx > 0) {
-          // Outer boundary
-          swap(la, lc);
-        }
-        c0[jz] = -(lb*c1[jz] + lc*c2[jz]) / la;
-        /*
-          if((y == 2) && (x == 1)) {
-          output.write("Bndry %d: (%d,%d)\n", bx, x, jz);
-          output << "\t[" << la << ", " << lb << ", " << lc << "]\n";
-          output << "\t[" << c0[jz] << ", " << c1[jz] << ", " << c2[jz] << "]\n";
-          }
-        */
+	dcomplex la,lb,lc;
+	laplace_tridag_coefs(x-bx, y, jz, la, lb, lc);
+	if(bx > 0) {
+	  // Outer boundary
+	  swap(la, lc);
+	}
+	c0[jz] = -(lb*c1[jz] + lc*c2[jz]) / la;
+	/*
+	  if((y == 2) && (x == 1)) {
+	  output.write("Bndry %d: (%d,%d)\n", bx, x, jz);
+	  output << "\t[" << la << ", " << lb << ", " << lc << "]\n";
+	  output << "\t[" << c0[jz] << ", " << c1[jz] << ", " << c2[jz] << "]\n";
+	  }
+	*/
       }
       // Reverse FFT
       ZFFT_rev(c0, mesh->zShift(x,y), f[x][y]);
@@ -1154,7 +2483,7 @@ void BoundaryConstLaplace::apply(Field2D &f) {
     // Can't apply this boundary condition to non-X boundaries
     throw BoutException("ERROR: Can't apply Zero Laplace condition to non-X boundaries\n");
   }
-
+  
   // Constant X second derivative
   int bx = bndry->bx;
   // Loop over the Y dimension
@@ -1186,7 +2515,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
   }
   
   Coordinates *metric = mesh->coordinates();
-
+  
   static dcomplex *c0 = (dcomplex*) NULL, *c1, *c2;
   int ncz = mesh->ngz-1;
   if(c0 == (dcomplex*) NULL) {
@@ -1259,7 +2588,7 @@ void BoundaryDivCurl::apply(Vector2D &f) {
 void BoundaryDivCurl::apply(Vector3D &var) {
   int jx, jy, jz, jzp, jzm;
   BoutReal tmp;
-
+  
   Coordinates *metric = mesh->coordinates();
   
   int ncz = mesh->ngz-1;
@@ -1289,9 +2618,9 @@ void BoundaryDivCurl::apply(Vector3D &var) {
       if(mesh->xstart == 2)
 	// 4th order to get last point
 	var.y(jx+1,jy,jz) = var.y(jx-3,jy,jz) + 4.*metric->dx(jx,jy)*tmp;
-
+      
       // dB_z / dx = dB_x / dz
-
+      
       tmp = (var.x(jx-1,jy,jzp) - var.x(jx-1,jy,jzm)) / (2.*metric->dz);
       
       var.z(jx,jy,jz) = var.z(jx-2,jy,jz) + (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp;
@@ -1313,10 +2642,10 @@ void BoundaryDivCurl::apply(Vector3D &var) {
 	      metric->J(jx-1,jy)*metric->g33(jx-1,jy)*(var.z(jx-1,jy,jzp) - var.z(jx-1,jy,jzm))) / (2.*metric->dz);
       
       var.x(jx,jy,jz) = ( metric->J(jx-2,jy)*metric->g11(jx-2,jy)*var.x(jx-2,jy,jz) + 
-			    (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
+			  (metric->dx(jx-2,jy) + metric->dx(jx-1,jy)) * tmp ) / metric->J(jx,jy)*metric->g11(jx,jy);
       if(mesh->xstart == 2)
 	var.x(jx+1,jy,jz) = ( metric->J(jx-3,jy)*metric->g11(jx-3,jy)*var.x(jx-3,jy,jz) + 
-				4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
+			      4.*metric->dx(jx,jy)*tmp ) / metric->J(jx+1,jy)*metric->g11(jx+1,jy);
     }
   }
 }
@@ -1352,7 +2681,492 @@ void BoundaryFree::apply_ddt(Field2D &f) {
 void BoundaryFree::apply_ddt(Field3D &f) {
   // Do nothing for free boundary
 }
+///////////////////////////////////////////////////////////////
+// New free boundary implementation.  Uses last grid points to extrapolate into the guard cells.
+// Written by L. Easy. 
+///////////////////////////////////////////////////////////////
 
+// 2nd order extrapolation:
+
+BoundaryOp* BoundaryFree_O2::clone(BoundaryRegion *region, const list<string> &args){
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
+  }
+  return new BoundaryFree_O2(region) ; 
+}
+
+
+
+void BoundaryFree_O2::apply(Field2D &f) {
+  // Set (at 2nd order) the value at the mid-point between the guard cell and the grid cell to be val
+  // N.B. Only first guard cells (closest to the grid) should ever be used
+  
+  bndry->first();
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW) {
+      // Field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer x boundary	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }	
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=-1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }		
+	}
+      }
+      if(bndry->by != 0){
+	// y boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }	
+					
+	}			
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }				
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=-1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }	
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+	  }	
+	}
+      }
+    }
+  }
+  else {
+    // Non-staggered, standard case
+    
+    for(; !bndry->isDone(); bndry->next1d()) {
+      
+      for(int i=0;i<bndry->width;i++) {
+	int xi = bndry->x + i*bndry->bx;
+	int yi = bndry->y + i*bndry->by;
+	f(xi, yi) = 2*f(xi - bndry->bx, yi -bndry->by) - f(xi- 2*bndry->bx, yi - 2*bndry->by);	
+      }	
+    }
+  }
+}
+
+void BoundaryFree_O2::apply(Field3D &f) {
+  // Extrapolate from the last evolved simulation cells into the guard cells at 3rd order.  
+
+  bndry->first();
+
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
+			
+      if(bndry->bx > 0) {
+	// Outer x boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	    }	
+	  }
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=-1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	    }	
+	  }
+	}
+      }
+      if(bndry->by != 0){
+	//y boundaries
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	    }	
+	  }
+	}
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	    }	
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=-1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	    }
+	  }
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);			
+	    }
+	  }
+	}
+      }
+    }
+  }
+  else {
+    // Standard (non-staggered) case
+    for(; !bndry->isDone(); bndry->next1d()) {
+			
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	for(int i=0;i<bndry->width;i++) {
+	  int xi = bndry->x + i*bndry->bx;
+	  int yi = bndry->y + i*bndry->by;
+	  f(xi, yi, zk) = 2*f(xi - bndry->bx, yi -bndry->by, zk) - f(xi- 2*bndry->bx, yi - 2*bndry->by, zk);	
+	}
+      }
+    }
+  }
+}
+
+void BoundaryFree_O2::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryFree_O2::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+
+}
+
+//////////////////////////////////
+// Third order extrapolation:
+//////////////////////////////////
+BoundaryOp* BoundaryFree_O3::clone(BoundaryRegion *region, const list<string> &args){
+  if(!args.empty()) {
+    output << "WARNING: Ignoring arguments to BoundaryConstLaplace\n";
+  }
+  return new BoundaryFree_O3(region) ; 
+}
+
+void BoundaryFree_O3::apply(Field2D &f) {
+
+  bndry->first();
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW) {
+      // Field is shifted in X
+      
+      if(bndry->bx > 0) {
+	// Outer x boundary	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=-1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }		
+	}
+      }
+      if(bndry->by != 0){
+	// y boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+					
+	}			
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }				
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int i=-1;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int i=0;i<bndry->width;i++) {
+	    int xi = bndry->x + i*bndry->bx;
+	    int yi = bndry->y + i*bndry->by;
+	    f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+	  }	
+	}
+      }
+    }
+  }
+  else {
+    // Non-staggered, standard case
+    
+    for(; !bndry->isDone(); bndry->next1d()) {
+      
+      for(int i=0;i<bndry->width;i++) {
+	int xi = bndry->x + i*bndry->bx;
+	int yi = bndry->y + i*bndry->by;
+	f(xi, yi) = 3.0*f(xi - bndry->bx, yi - bndry->by) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by) + f(xi - 3*bndry->bx, yi - 3*bndry->by);
+      }	
+    }
+  }
+}
+
+void BoundaryFree_O3::apply(Field3D &f) {
+  // Extrapolate from the last evolved simulation cells into the guard cells at 3rd order.  
+
+  bndry->first();
+
+
+  // Check for staggered grids
+  
+  CELL_LOC loc = f.getLocation();
+  if(mesh->StaggerGrids && loc != CELL_CENTRE) {
+    // Staggered. Need to apply slightly differently
+    
+    if( loc == CELL_XLOW ) {
+      // Field is shifted in X
+			
+      if(bndry->bx > 0) {
+	// Outer x boundary
+	
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->bx < 0) {
+	// Inner x boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=-1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->by != 0){
+	//y boundaries
+				
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+    }
+    else if( loc == CELL_YLOW ) {
+      // Field is shifted in Y
+      
+      if(bndry->by > 0) {
+	// Upper y boundary
+	for(; !bndry->isDone(); bndry->next1d()) {
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }	
+	  }
+	}
+      }
+      if(bndry->by < 0) {
+	// Lower y boundary. Set one point inwards
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=-1;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }
+	  }
+	}
+      }
+      if(bndry->bx != 0){
+	// x boundaries
+	for(; !bndry->isDone(); bndry->next1d()) {
+					
+	  for(int zk=0;zk<mesh->ngz-1;zk++) {
+	    for(int i=0;i<bndry->width;i++) {
+	      int xi = bndry->x + i*bndry->bx;
+	      int yi = bndry->y + i*bndry->by;
+	      f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+		+ f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	    }
+
+	  }
+	}
+      }
+    }
+  }
+  else {
+    // Standard (non-staggered) case
+    for(; !bndry->isDone(); bndry->next1d()) {
+			
+      for(int zk=0;zk<mesh->ngz-1;zk++) {
+	for(int i=0;i<bndry->width;i++) {
+	  int xi = bndry->x + i*bndry->bx;
+	  int yi = bndry->y + i*bndry->by;
+	  f(xi, yi, zk) = 3.0*f(xi - bndry->bx, yi - bndry->by, zk) - 3.0*f(xi - 2*bndry->bx, yi - 2*bndry->by, zk) 
+	    + f(xi - 3*bndry->bx, yi - 3*bndry->by, zk);
+	}
+      }
+    }
+  }
+}
+
+void BoundaryFree_O3::apply_ddt(Field2D &f) {
+  Field2D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    (*dt)(bndry->x,bndry->y) = 0.; // Set time derivative to zero
+}
+
+void BoundaryFree_O3::apply_ddt(Field3D &f) {
+  Field3D *dt = f.timeDeriv();
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      (*dt)(bndry->x,bndry->y,z) = 0.; // Set time derivative to zero
+
+}
 
 ///////////////////////////////////////////////////////////////
 
@@ -1380,9 +3194,7 @@ void BoundaryRelax::apply(Field3D &f) {
 }
 
 void BoundaryRelax::apply_ddt(Field2D &f) {
-#ifdef CHECK
-  msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
-#endif
+  MsgStackItem("BoundaryRelax::apply_ddt(Field2D)");
 
   // Make a copy of f
   Field2D g = f;
@@ -1398,21 +3210,15 @@ void BoundaryRelax::apply_ddt(Field2D &f) {
       BoutReal val = ddt(f)[bndry->x - bndry->bx][bndry->y - bndry->by] + lim;
       if((val*lim > 0.) && (fabs(val) > fabs(lim)))
       val = lim;
-    
+      
       ddt(f)(bndry->x, bndry->y) = val;
     */
     ddt(f)(bndry->x, bndry->y) = r * (g(bndry->x, bndry->y) - f(bndry->x, bndry->y));
   }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 void BoundaryRelax::apply_ddt(Field3D &f) {
-#ifdef CHECK
-  msg_stack.push("BoundaryRelax::apply_ddt(Field2D)");
-#endif
+  MsgStackItem("BoundaryRelax::apply_ddt(Field3D)");
   
   // Make a copy of f
   Field3D g = f; // NOTE: This is not very efficient... copying entire field
@@ -1426,15 +3232,11 @@ void BoundaryRelax::apply_ddt(Field3D &f) {
         BoutReal val = ddt(f)(bndry->x - bndry->bx, bndry->y - bndry->by, z) + lim;
         if((val*lim > 0.) && (fabs(val) > fabs(lim)))
         val = lim;
-         
+        
         ddt(f)(bndry->x, bndry->y, z) = val;
       */
       ddt(f)(bndry->x, bndry->y, z) = r * (g(bndry->x, bndry->y, z) - f(bndry->x, bndry->y, z));
     }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
 }
 
 ///////////////////////////////////////////////////////////////

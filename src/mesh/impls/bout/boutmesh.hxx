@@ -22,14 +22,6 @@ class BoutMesh : public Mesh {
   int load();
   
   /////////////////////////////////////////////
-  // Get data
-  
-  int get(Field2D &var, const char *name, BoutReal def=0.0);
-  int get(Field2D &var, const string &name, BoutReal def=0.0);
-  int get(Field3D &var, const char *name);
-  int get(Field3D &var, const string &name);
-  
-  /////////////////////////////////////////////
   // Communicate variables
   
   int communicate(FieldGroup &g);
@@ -104,7 +96,8 @@ class BoutMesh : public Mesh {
 
   //added for volume average and integral
   const Field3D Switch_YZ(const Field3D &var);
-
+  const Field3D Switch_XZ(const Field3D &var);
+  
  private:
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
@@ -125,7 +118,7 @@ class BoutMesh : public Mesh {
   int ixseps_inner, ixseps_outer, ixseps_upper, ixseps_lower;
   int ny_inner;
   
-  BoutReal *ShiftAngle;  ///< Angle for twist-shift location
+  vector<BoutReal> ShiftAngle;  ///< Angle for twist-shift location
   
   // Processor number, local <-> global translation
   int PROC_NUM(int xind, int yind); // (PE_XIND, PE_YIND) -> MYPE
@@ -195,22 +188,6 @@ class BoutMesh : public Mesh {
   // Surface communications
   
   MPI_Comm comm_inner, comm_middle, comm_outer;
-  
-  //////////////////////////////////////////////////
-  // Data reading
-  
-  /// Read in a portion of the X-Y domain
-  int readgrid_3dvar(GridDataSource *s, const char *name, 
-	             int yread, int ydest, int ysize, 
-                     int xge, int xlt, BoutReal ***var);
-  
-  /// Copy a section of a 3D variable
-  void cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var);
-
-  int readgrid_2dvar(GridDataSource *s, const char *varname, 
-                     int yread, int ydest, int ysize, 
-                     int xge, int xlt, BoutReal **var);
-  void cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var);
 
   //////////////////////////////////////////////////
   // Communication routines
