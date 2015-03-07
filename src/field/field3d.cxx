@@ -1838,6 +1838,63 @@ BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) 
   return result;
 }
 
+//All at once hack
+// void Field3D::shiftZ(const Field2D zangle, const bool junk){
+//   static dcomplex **v = (dcomplex**) NULL;
+//   int jz;
+//   BoutReal kwave;
+  
+// #ifdef CHECK
+//   // Check data set
+//   if(block == NULL)
+//     throw BoutException("Field3D: Shifting in Z an empty data set\n");
+// #endif
+
+//   //Get number of unique z points, exit if only 1
+//   int ncz = mesh->ngz-1;
+//   int nkz = 1+ncz/2;
+//   if(ncz == 1)
+//     return;
+  
+//   //Make v matrix if required, used to hold FFT data
+//   //Maybe this could become a field3D member, can then
+//   //reuse (possibly save ffts if no operation on data)
+//   if(v == (dcomplex**) NULL) {
+//     v = cmatrix(mesh->ngx,nkz);
+//   };
+
+//   //Ensure this field has an allocated data block
+//   allocate(); //Why is this needed --> CHECK
+
+//   //Now loop over planes
+//   for(int jy=0;jy<mesh->ngy;jy++){
+//     //Get current plane
+//     FieldPerp fperp=this->slice(jy);
+    
+//     //Now do the FFT of field3d into v
+//     rfft(fperp.block->data,ncz,v);
+
+//     //Do phase shift
+//     for(int jz=0;jz<nkz;jz++){
+//       kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+//       dcomplex phase(cos(kwave*zangle) , -sin(kwave*zangle));
+//       for(int jx=0;jx<mesh->ngx;jx++){
+// 	v[jx][jz] *= phase;
+//       };
+//     };
+
+//     irfft(v, ncz, fperp.block->data); // Reverse FFT
+
+//     for(int jx=0;jx<mesh->ngx;jx++){
+//       for(int jz=0;jz<ncz;jz++){
+// 	block->data[jx][jy][jz]=fperp.block->data[jx][jz];
+//       };
+//       block->data[jx][jy][ncz] = block->data[jx][jy][0];
+//     };
+
+//   };
+// };
+
 void Field3D::shiftZ(int jx, int jy, double zangle)
 {
   static dcomplex *v = (dcomplex*) NULL;

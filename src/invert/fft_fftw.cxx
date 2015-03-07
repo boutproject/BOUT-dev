@@ -245,6 +245,70 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
 }
 
+//Hacked 2D version
+void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out) {
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan p;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  
+  if(length1 != n1 || length2 != n2) {
+    if(n2 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    n1 = length1;
+    n2 = length2;
+    nk = (n2/2)+1;
+    
+    fin = (double*) fftw_malloc(sizeof(double) * n1 * n2);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n1 * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    /*
+      Arguments are
+        rank : Dimensionality of transform (1d-->1)
+	size : number of data elements (length2)
+	howmany : number to do (length1)
+	input : fin
+	inembed : Can choose to FFT a sub-array, pass NULL to ignore
+	istride : Stride to use in input array (1 -- or length1)
+	idist : kth transorm at input+k*idist (this is length2 -- or 1)
+	output : fout
+	onembed : Can choose to FFT a sub-array, pass NULL to ignore
+	ostride : Stride to use in output array (1 -- or length1)
+	odist : kth transorm at output+k*odist (this is nk -- or 1)
+	flags : controls transform a bit
+    */
+    int const * l2 = &length2;
+    p = fftw_plan_many_dft_r2c(1,l2,length1,fin,
+			       NULL,length1,1,fout,
+			       NULL,length1,1,flags);
+  }
+
+  //Copy data
+  for(int i=0;i<length1;i++)
+      for(int j=0;j<n2;j++)
+	fin[i+j*length1] = in[i][j];
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data back
+  for(int i=0;i<length1;i++)
+    for(int j=0;j<nk;j++)
+      out[i][j] = dcomplex(fout[i+j*length1][0], fout[i+j*length1][1]) / ((double) n2); // Normalise
+}
+
 void irfft(dcomplex *in, int length, BoutReal *out)
 {
   static fftw_complex *fin;
@@ -282,6 +346,76 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 
   for(int i=0;i<n;i++)
     out[i] = fout[i];
+}
+
+
+//Hacked 2D version
+void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out) {
+  static double *fout;
+  static fftw_complex *fin;
+  static fftw_plan p;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  
+  if(length1 != n1 || length2 != n2) {
+    if(n2 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    n1 = length1;
+    n2 = length2;
+    nk = (n2/2)+1;
+    
+    fout = (double*) fftw_malloc(sizeof(double) * n1 * n2);
+    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n1 * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    /*
+      Arguments are
+        rank : Dimensionality of transform (1d-->1)
+	size : number of data elements (nk)
+	howmany : number to do (length1)
+	input : fin
+	inembed : Can choose to FFT a sub-array, pass NULL to ignore
+	istride : Stride to use in input array (1 -- or length1)
+	idist : kth transorm at input+k*idist (this is nk -- or 1)
+	output : fout
+	onembed : Can choose to FFT a sub-array, pass NULL to ignore
+	ostride : Stride to use in output array (1 -- or length1)
+	odist : kth transorm at output+k*odist (this is length2 -- or 1)
+	flags : controls transform a bit
+    */
+    int const * l2 = &n2;
+    p = fftw_plan_many_dft_c2r(1,l2,length1,fin,
+			       NULL,length1,1,fout,
+			       NULL,length1,1,flags);
+  }
+
+  //Copy data
+  for(int i=0;i<length1;i++){
+    for(int j=0;j<nk;j++){
+      fin[i+j*length1][0] = in[i][j].Real();
+      fin[i+j*length1][1] = in[i][j].Imag();
+    };
+  };
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data back
+  for(int i=0;i<length1;i++){
+    for(int j=0;j<n2;j++){
+      out[i][j] = fout[i+j*length1];
+    };
+  };
 }
 
 #else
