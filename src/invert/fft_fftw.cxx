@@ -246,15 +246,15 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
 }
 
 //Hacked 2D version
-void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out) {
+void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, bool transpose) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;
   static int n2 = 0;
   static int n1 = 0;
   static int nk = 0;
-  
-  if(length1 != n1 || length2 != n2) {
+  static bool tpose=false;
+  if(length1 != n1 || length2 != n2 || transpose != tpose) {
     if(n2 > 0) {
       fftw_destroy_plan(p);
       fftw_free(fin);
@@ -266,6 +266,7 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out) {
     n1 = length1;
     n2 = length2;
     nk = (n2/2)+1;
+    tpose = transpose;
     
     fin = (double*) fftw_malloc(sizeof(double) * n1 * n2);
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n1 * nk);
@@ -290,23 +291,40 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out) {
 	flags : controls transform a bit
     */
     int const * l2 = &length2;
+    int istride=length1, idist=1;
+    int ostride=length1, odist=1;
+    if(tpose){
+      istride=1 ; idist=n2;
+      ostride=1 ; odist=nk;
+    }
     p = fftw_plan_many_dft_r2c(1,l2,length1,fin,
-			       NULL,length1,1,fout,
-			       NULL,length1,1,flags);
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
   }
 
   //Copy data
-  for(int i=0;i<length1;i++)
+  if(tpose){
+    for(int i=0;i<n1;i++)
       for(int j=0;j<n2;j++)
-	fin[i+j*length1] = in[i][j];
-
+	fin[j+i*n2] = in[i][j];
+  }else{
+    for(int i=0;i<n1;i++)
+      for(int j=0;j<n2;j++)
+	fin[i+j*n1] = in[i][j];
+  }
   //Do the transform
   fftw_execute(p);
 
   //Copy data back
-  for(int i=0;i<length1;i++)
-    for(int j=0;j<nk;j++)
-      out[i][j] = dcomplex(fout[i+j*length1][0], fout[i+j*length1][1]) / ((double) n2); // Normalise
+  if(tpose){
+    for(int i=0;i<n1;i++)
+      for(int j=0;j<nk;j++)
+	out[i][j] = dcomplex(fout[j+i*nk][0], fout[j+i*nk][1]) / ((double) n2); // Normalise
+  }else{
+    for(int i=0;i<n1;i++)
+      for(int j=0;j<nk;j++)
+	out[i][j] = dcomplex(fout[i+j*n1][0], fout[i+j*n1][1]) / ((double) n2); // Normalise
+  };
 }
 
 void irfft(dcomplex *in, int length, BoutReal *out)
@@ -350,15 +368,16 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 
 
 //Hacked 2D version
-void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out) {
+void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, bool transpose) {
   static double *fout;
   static fftw_complex *fin;
   static fftw_plan p;
   static int n2 = 0;
   static int n1 = 0;
   static int nk = 0;
+  static bool tpose=false;
   
-  if(length1 != n1 || length2 != n2) {
+  if(length1 != n1 || length2 != n2 || transpose != tpose) {
     if(n2 > 0) {
       fftw_destroy_plan(p);
       fftw_free(fin);
@@ -370,6 +389,7 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out) 
     n1 = length1;
     n2 = length2;
     nk = (n2/2)+1;
+    tpose=transpose;
     
     fout = (double*) fftw_malloc(sizeof(double) * n1 * n2);
     fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * n1 * nk);
@@ -394,26 +414,49 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out) 
 	flags : controls transform a bit
     */
     int const * l2 = &n2;
+    int istride=length1, idist=1;
+    int ostride=length1, odist=1;
+    if(tpose){
+      istride=1; idist=nk;
+      ostride=1; odist=n2;
+    }
     p = fftw_plan_many_dft_c2r(1,l2,length1,fin,
-			       NULL,length1,1,fout,
-			       NULL,length1,1,flags);
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
   }
 
   //Copy data
-  for(int i=0;i<length1;i++){
-    for(int j=0;j<nk;j++){
-      fin[i+j*length1][0] = in[i][j].Real();
-      fin[i+j*length1][1] = in[i][j].Imag();
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<nk;j++){
+	fin[j+i*nk][0] = in[i][j].Real();
+	fin[j+i*nk][1] = in[i][j].Imag();
+      };
+    };
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<nk;j++){
+	fin[i+j*length1][0] = in[i][j].Real();
+	fin[i+j*length1][1] = in[i][j].Imag();
+      };
     };
   };
-
+  
   //Do the transform
   fftw_execute(p);
 
   //Copy data back
-  for(int i=0;i<length1;i++){
-    for(int j=0;j<n2;j++){
-      out[i][j] = fout[i+j*length1];
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	out[i][j] = fout[j+i*n2];
+      };
+    };
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	out[i][j] = fout[i+j*n1];
+      };
     };
   };
 }

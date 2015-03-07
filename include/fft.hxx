@@ -35,8 +35,8 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
 void rfft(BoutReal *in, int length, dcomplex *out);
 void irfft(dcomplex *in, int length, BoutReal *out);
-void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out);
-void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out);
+void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, bool transpose=false);
+void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, bool transpose=false);
 
 void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
