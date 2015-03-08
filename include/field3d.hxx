@@ -190,10 +190,15 @@ class Field3D : public Field, public FieldData {
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   /// Shifts specified points by angle
-  void shiftZ(int jx, int jy, double zangle); 
+  void shiftZ(int jx, int jy, double zangle);
   /// Shift all points in z by specified angle
   const Field3D shiftZ(const Field2D zangle) const; 
   const Field3D shiftZ(const BoutReal zangle) const;
+
+  void shiftZ2D(const Field2D zangle,const bool do2D);
+  const Field3D shiftZ2D(const Field2D zangle) const; 
+  const Field3D shiftZ2D(const BoutReal zangle) const;
+
   /// Shifts to/from BoutReal-space (using zShift global variable)
   const Field3D shiftZ(bool toBoutReal) const; 
   /// virtual function to shift between BoutReal and shifted space

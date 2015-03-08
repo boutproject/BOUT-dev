@@ -1838,63 +1838,109 @@ BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) 
   return result;
 }
 
-//All at once hack
-// void Field3D::shiftZ(const Field2D zangle, const bool junk){
-//   static dcomplex **v = (dcomplex**) NULL;
-//   int jz;
-//   BoutReal kwave;
+const Field3D Field3D::shiftZ2D(const Field2D zangle) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ2D(zangle,true);
   
-// #ifdef CHECK
-//   // Check data set
-//   if(block == NULL)
-//     throw BoutException("Field3D: Shifting in Z an empty data set\n");
-// #endif
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 
-//   //Get number of unique z points, exit if only 1
-//   int ncz = mesh->ngz-1;
-//   int nkz = 1+ncz/2;
-//   if(ncz == 1)
-//     return;
+  return result;
+
+};
+
+const Field3D Field3D::shiftZ2D(const BoutReal zangle) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ2D(zangle,true);
   
-//   //Make v matrix if required, used to hold FFT data
-//   //Maybe this could become a field3D member, can then
-//   //reuse (possibly save ffts if no operation on data)
-//   if(v == (dcomplex**) NULL) {
-//     v = cmatrix(mesh->ngx,nkz);
-//   };
+#ifdef CHECK
+  msg_stack.pop();
+#endif
 
-//   //Ensure this field has an allocated data block
-//   allocate(); //Why is this needed --> CHECK
+  return result;
 
-//   //Now loop over planes
-//   for(int jy=0;jy<mesh->ngy;jy++){
-//     //Get current plane
-//     FieldPerp fperp=this->slice(jy);
+};
+
+//2d fft based shift
+void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
+  static dcomplex **v = (dcomplex**) NULL;
+  static BoutReal **r = (BoutReal**) NULL;
+  int jz;
+  BoutReal kwave;
+
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Shifting in Z an empty data set\n");
+#endif
+
+  //Get number of unique z points, exit if only 1
+  int ncz = mesh->ngz-1;
+  int nkz = 1+ncz/2;
+  if(ncz == 1)
+    return;
+  
+  //Make v matrix if required, used to hold FFT data
+  //Maybe this could become a field3D member, can then
+  //reuse (possibly save ffts if no operation on data)
+  if(v == (dcomplex**) NULL) {
+    v = cmatrix(mesh->ngx,nkz);
+  };
+  if(r == (BoutReal**) NULL) {
+    r = rmatrix(mesh->ngx,ncz);
+  };
+
+  //Ensure this field has an allocated data block
+  allocate(); //Why is this needed --> CHECK
+
+  //Now loop over planes
+  for(int jy=0;jy<mesh->ngy;jy++){
+    //Populate 2d array (slice), this is likely to be inefficient
+    r=this->slice(jy).getData();
     
-//     //Now do the FFT of field3d into v
-//     rfft(fperp.block->data,ncz,v);
+    //Now do the FFT of field3d into v
+    rfft(r,mesh->ngx,ncz,v,true);
 
-//     //Do phase shift
-//     for(int jz=0;jz<nkz;jz++){
-//       kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-//       dcomplex phase(cos(kwave*zangle) , -sin(kwave*zangle));
-//       for(int jx=0;jx<mesh->ngx;jx++){
-// 	v[jx][jz] *= phase;
-//       };
-//     };
+    //Do phase shift
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jz=0;jz<nkz;jz++){
+	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+	dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
+	v[jx][jz] *= phase;
+      };
+    };
 
-//     irfft(v, ncz, fperp.block->data); // Reverse FFT
+    irfft(v, mesh->ngx, ncz, r, true); // Reverse FFT
 
-//     for(int jx=0;jx<mesh->ngx;jx++){
-//       for(int jz=0;jz<ncz;jz++){
-// 	block->data[jx][jy][jz]=fperp.block->data[jx][jz];
-//       };
-//       block->data[jx][jy][ncz] = block->data[jx][jy][0];
-//     };
+    //This copying is likely to be inefficient
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jz=0;jz<ncz;jz++){
+	block->data[jx][jy][jz]=r[jx][jz];
+      };
+      block->data[jx][jy][ncz] = block->data[jx][jy][0];
+    };
 
-//   };
-// };
+  };
+};
 
+//1d based shiftZ
 void Field3D::shiftZ(int jx, int jy, double zangle)
 {
   static dcomplex *v = (dcomplex*) NULL;
@@ -1982,9 +2028,9 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
   if(toBoutReal) {
-    return shiftZ(mesh->zShift);
+    return shiftZ2D(mesh->zShift);
   }
-  return shiftZ(-mesh->zShift);
+  return shiftZ2D(-mesh->zShift);
 }
 
 
