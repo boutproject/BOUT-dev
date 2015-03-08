@@ -39,7 +39,7 @@
 #include <bout/assert.hxx>
 
 /// Constructor
-Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(this), ydown_field(this) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: constructor\n", (unsigned int) this);
 #endif
@@ -53,7 +53,7 @@ Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), y
 }
 
 /// Doesn't copy any data, just create a new reference to the same data (copy on change later)
-Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(this), ydown_field(this) {
 #ifdef MEMDEBUG
   output.write("Field3D %u: Copy constructor from %u\n", (unsigned int) this, (unsigned int) &f);
 #endif
@@ -77,7 +77,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL), deriv(NULL), yup_field(0)
 #endif
 }
 
-Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL), yup_field(this), ydown_field(this) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from Field2D");
 #endif
@@ -93,7 +93,7 @@ Field3D::Field3D(const Field2D& f) : background(NULL), block(NULL), deriv(NULL),
 #endif
 }
 
-Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
+Field3D::Field3D(const BoutReal val) : background(NULL), block(NULL), deriv(NULL), yup_field(this), ydown_field(this) {
 #ifdef CHECK
   msg_stack.push("Field3D: Copy constructor from value");
 #endif
@@ -117,10 +117,10 @@ Field3D::~Field3D() {
   if(deriv != NULL)
     delete deriv;
   
-  if((yup_field != NULL) && (yup_field != this))
+  if(yup_field != this)
     delete yup_field;
   
-  if((ydown_field != NULL) && (ydown_field != this))
+  if(ydown_field != this)
     delete ydown_field;
 }
 
@@ -154,51 +154,24 @@ Field3D* Field3D::timeDeriv() {
   return deriv;
 }
 
-// FCI method routines
-Field3D* Field3D::yup() {
-  if( yup_field == 0 ) {
-    if(mesh->FCI) {
-      yup_field = new Field3D();
-    }else
-      yup_field = this;
-  }
-  
-  return yup_field;
+void Field3D::splitYupYdown() {
+  if(yup_field != this)
+    return;
+
+  // yup_field and ydown_field null
+  yup_field = new Field3D();
+  ydown_field = new Field3D();
 }
 
-const Field3D* Field3D::yup() const {
-  if( yup_field == 0 )
-    throw BoutException("No yup field allocated for const field");
+void Field3D::mergeYupYdown() {
+  if(yup_field == this)
+    return;
 
-  return yup_field;
-}
-  
-Field3D* Field3D::ydown() {
-  if( ydown_field == 0 ) {
-    if(mesh->FCI) {
-      ydown_field = new Field3D();
-    }else
-      ydown_field = this;
-  }
-  
-  return ydown_field;
-}
+  delete yup_field;
+  delete ydown_field;
 
-const Field3D* Field3D::ydown() const {
-  if( ydown_field == 0 )
-    throw BoutException("No ydown field allocated for const field");
-
-  return ydown_field;
-}
-
-// Nullify yup and ydown
-void Field3D::resetFCI() {
-
-  if (mesh->FCI) {
-	yup_field->freeData();
-	ydown_field->freeData();
-  }
-
+  yup_field = this;
+  ydown_field = this;
 }
 
 const Field2D Field3D::DC() const {

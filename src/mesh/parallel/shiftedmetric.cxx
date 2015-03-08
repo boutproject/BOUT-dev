@@ -13,8 +13,11 @@
 
 #include <cmath>
 
+#include <output.hxx>
+
 ShiftedMetric::ShiftedMetric(Mesh *m) : mesh(m) {
   // Read the zShift angle from the mesh
+  
   mesh->get(zShift, "zShift");
 }
 
@@ -22,7 +25,25 @@ ShiftedMetric::ShiftedMetric(Mesh *m) : mesh(m) {
  * Calculate the Y up and down fields
  */
 void ShiftedMetric::calcYUpDown(Field3D &f) {
+  f.splitYupYdown();
   
+  Field3D& yup = f.yup();
+  yup.allocate();
+
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+      shiftZ(&(f(jx,jy+1,0)), mesh->ngz-1, zShift(jx,jy) - zShift(jx,jy+1), &(yup(jx,jy+1,0)));
+    }
+  }
+
+  Field3D& ydown = f.ydown();
+  ydown.allocate();
+
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jy=mesh->ystart;jy<=mesh->yend;jy++) {
+      shiftZ(&(f(jx,jy-1,0)), mesh->ngz-1, zShift(jx,jy) - zShift(jx,jy-1), &(ydown(jx,jy-1,0)));
+    }
+  }
 }
   
 /*!

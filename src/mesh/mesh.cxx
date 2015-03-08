@@ -20,7 +20,7 @@ Mesh* Mesh::create(Options *opt) {
   return create(NULL, opt);
 }
 
-Mesh::Mesh(GridDataSource *s, Options* options) : source(s), coords(0), transform(0) {
+Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt) {
   if(s == NULL)
     throw BoutException("GridDataSource passed to Mesh::Mesh() is NULL");
   
@@ -161,45 +161,23 @@ int Mesh::get(Vector3D &var, const string &name) {
  * Communications
  **************************************************************************/
 
-int Mesh::communicate(FieldData &f) {
-  FieldGroup group;
-  group.add(f);
-  return communicate(group);
-}
+void Mesh::communicate(FieldGroup &g) {
+  MsgStackItem("Mesh::communicate(FieldGroup&)");
 
-int Mesh::communicate(FieldData &f1, FieldData &f2) {
-  FieldGroup group;
-  group.add(f1);
-  group.add(f2);
-  return communicate(group);
-}
+  // Send data
+  comm_handle h = send(g);
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3) {
-  FieldGroup group;
-  group.add(f1);
-  group.add(f2);
-  group.add(f3);
-  return communicate(group);
-}
+  // Wait for data from other processors
+  wait(h);
 
-int Mesh::communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4) {
-  FieldGroup group;
-  group.add(f1);
-  group.add(f2);
-  group.add(f3);
-  group.add(f4);
-  return communicate(group);
-}
-
-comm_handle Mesh::send(FieldData &f) {
-  FieldGroup group;
-  group.add(f);
-  return send(group);
+  // Calculate yup and ydown fields for 3D fields
+  for(auto fptr : g.field3d())
+    getParallelTransform().calcYUpDown(*fptr);
 }
 
 /// This is a bit of a hack for now to get FieldPerp communications
 /// The FieldData class needs to be changed to accomodate FieldPerp objects
-int Mesh::communicate(FieldPerp &f) {
+void Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
   BoutReal **fd = f.getData();
@@ -218,8 +196,6 @@ int Mesh::communicate(FieldPerp &f) {
   // Wait for receive
   wait(recv[0]);
   wait(recv[1]);
-
-  return 0;
 }
 
 int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt) {
@@ -296,4 +272,37 @@ const vector<int> Mesh::readInts(const string &name, int n) {
   }
   
   return result;
+}
+
+
+ParallelTransform& Mesh::getParallelTransform() {
+  if(!transform) {
+    // No ParallelTransform object yet. Set from options
+    
+    string ptstr;
+    options->get("paralleltransform", ptstr, "identity");
+
+    // Convert to lower case for comparison
+    ptstr = lowercase(ptstr);
+    
+    if(ptstr == "identity") {
+      // Identity method i.e. no transform needed
+      transform = std::unique_ptr<ParallelTransform>(new ParallelTransformIdentity());
+      
+    }else if(ptstr == "shifted") {
+      // Shifted metric method
+      transform = std::unique_ptr<ParallelTransform>(new ShiftedMetric(this));
+      
+    }else if(ptstr == "fci") {
+      // Flux Coordinate Independent method
+      transform = std::unique_ptr<ParallelTransform>(new FCITransform(this));
+      
+    }else {
+      throw BoutException("Unrecognised paralleltransform option.\n"
+			  "Valid choices are 'identity', 'shifted', 'fci'");
+    }
+  }
+  
+  // Return a reference to the ParallelTransform object
+  return *transform;
 }

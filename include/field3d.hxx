@@ -80,19 +80,27 @@ class Field3D : public Field, public FieldData {
   /// Returns a pointer to internal data (REMOVE THIS)
   BoutReal*** getData() const;
   bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
-
+  
   /// Return a pointer to the time-derivative field
   Field3D* timeDeriv();
 
-  /// Flux Coordinate Independent (FCI) method
-  Field3D* yup();
-  const Field3D* yup() const;
-  
-  Field3D* ydown();
-  const Field3D* ydown() const;
+  /*!
+   * Ensure that this field has separate fields
+   * for yup and ydown.
+   */
+  void splitYupYdown();
 
-  // Nullify yup and ydown
-  void resetFCI();
+  /*!
+   * Ensure that yup and ydown refer to this field
+   */
+  void mergeYupYdown();
+  
+  /// Flux Coordinate Independent (FCI) method
+  Field3D& yup() { return *yup_field; }
+  const Field3D& yup() const { return *yup_field; }
+  
+  Field3D& ydown() { return *ydown_field; }
+  const Field3D& ydown() const { return *ydown_field; }
   
   /// Returns DC component
   const Field2D DC() const;
@@ -100,7 +108,6 @@ class Field3D : public Field, public FieldData {
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location
   CELL_LOC getLocation() const; // Variable location
-
   
   /////////////////////////////////////////////////////////
   // Data access

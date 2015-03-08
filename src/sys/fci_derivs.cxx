@@ -209,29 +209,24 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
 #endif
 
   Field3D result;
-  Field3D *yup, *ydown;
 
   result.allocate();
 
-  yup = f.yup();
-  ydown = f.ydown();
+  Field3D &yup = f.yup();
+  Field3D &ydown = f.ydown();
 
   Coordinates *coord = mesh.coordinates();
 
   // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map, +1);
-  interpolate(f, *ydown, backward_map, -1);
+  interpolate(f, yup, forward_map, +1);
+  interpolate(f, ydown, backward_map, -1);
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*coord->dy(x,y)*sqrt(coord->g_22(x,y)));
-	  }
-	}
-  }
-
-  if (!keep) {
-	f.resetFCI();
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
+	result(x,y,z) = (yup(x,y+1,z) - ydown(x,y-1,z))/(2*coord->dy(x,y)*sqrt(coord->g_22(x,y)));
+      }
+    }
   }
 
 #ifdef TRACK
@@ -260,31 +255,26 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
 #endif
 
   Field3D result;
-  Field3D *yup, *ydown;
 
   result.allocate();
 
   Coordinates *coord = mesh.coordinates();
 
-  yup = f.yup();
-  ydown = f.ydown();
+  Field3D &yup = f.yup();
+  Field3D &ydown = f.ydown();
 
   // Should check if yup, ydown have already been calculated before calling interpolate
-  interpolate(f, *yup, forward_map, +1);
-  interpolate(f, *ydown, backward_map, -1);
+  interpolate(f, yup, forward_map, +1);
+  interpolate(f, ydown, backward_map, -1);
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
 	for (int y=mesh.ystart;y<=mesh.yend;++y) {
 	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(coord->dy(x,y) * coord->dy(x,y) * coord->g_22(x,y));
+		result(x,y,z) = (yup(x,y+1,z) - 2*f(x,y,z) + ydown(x,y-1,z))/(coord->dy(x,y) * coord->dy(x,y) * coord->g_22(x,y));
 	  }
 	}
   }
-
-  if (!keep) {
-	f.resetFCI();
-  }
-
+  
 #ifdef TRACK
   result.name = "FCI::Grad2_par2("+f.name+")";
 #endif

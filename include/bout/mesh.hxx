@@ -65,6 +65,7 @@ class Mesh;
 #include "paralleltransform.hxx" // ParallelTransform class
 
 #include <list>
+#include <memory>
 
 typedef void* comm_handle;
 
@@ -93,16 +94,39 @@ class Mesh {
   int get(Vector3D &var, const string &name);
   
   // Communications
-  
-  int communicate(FieldData &f);  // Returns error code
-  int communicate(FieldData &f1, FieldData &f2);
-  int communicate(FieldData &f1, FieldData &f2, FieldData &f3);
-  int communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4);
-  virtual int communicate(FieldGroup &g) = 0; // Returns error code
-  int communicate(FieldPerp &f); // Communicate an X-Z field
+  /*!
+   * Communicate a list of FieldData objects
+   * Uses a variadic template (C++11) to pack all
+   * arguments into a FieldGroup
+   */
+  template <typename... Ts>
+  void communicate(Ts&... ts) {
+    FieldGroup g(ts...);
+    communicate(g);
+  }
+
+  /*!
+   * Communicate a group of fields
+   */
+  void communicate(FieldGroup &g);
+
+  /*!
+   * Communicate an X-Z field
+   */
+  void communicate(FieldPerp &f); 
+
+  /*!
+   * Send a list of FieldData objects
+   * Packs arguments into a FieldGroup and passes
+   * to send(FieldGroup&).
+   */
+  template <typename... Ts>
+  comm_handle send(Ts&... ts) {
+    FieldGroup g(ts...);
+    return send(g);
+  }
   
   virtual comm_handle send(FieldGroup &g) = 0;  // Return handle
-  comm_handle send(FieldData &f);   // Send a single field
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
 
   // non-local communications
@@ -259,12 +283,26 @@ class Mesh {
 
   /// Transform a field into field-aligned coordinates
   const Field3D toFieldAligned(const Field3D &f) {
-    return getParallelTransform()->toFieldAligned(f);
+    return getParallelTransform().toFieldAligned(f);
   }
   /// Convert back into standard form
   const Field3D fromFieldAligned(const Field3D &f) {
-    return getParallelTransform()->fromFieldAligned(f);
+    return getParallelTransform().fromFieldAligned(f);
   }
+
+  /*!
+   * Unique pointer to ParallelTransform object
+   */
+  typedef std::unique_ptr<ParallelTransform> PTptr;
+  
+  /*!
+   * Set the parallel (y) transform for this mesh.
+   * Unique pointer used so that ParallelTransform will be deleted
+   */
+  void setParallelTransform(PTptr pt) {
+    transform = std::move(pt);
+  }
+  
   
  protected:
   
@@ -272,12 +310,14 @@ class Mesh {
   
   Coordinates *coords;    ///< Coordinate system. Initialised to Null
 
-  ParallelTransform *getParallelTransform() {
-    if(!transform) 
-      transform = new ParallelTransformIdentity();
-    return transform;
-  }
-  ParallelTransform *transform; ///< Handles calculation of yup and ydown
+  Options *options; ///< Mesh options section
+  
+  /*!
+   * 
+   */
+  ParallelTransform& getParallelTransform();
+  
+  PTptr transform; ///< Handles calculation of yup and ydown
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);

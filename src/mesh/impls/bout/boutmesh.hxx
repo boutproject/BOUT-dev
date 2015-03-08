@@ -24,7 +24,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Communicate variables
   
-  int communicate(FieldGroup &g);
   comm_handle send(FieldGroup &g);
   int wait(comm_handle handle);
   
