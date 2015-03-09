@@ -1,0 +1,82 @@
+# settings file for BOUT++
+
+##################################################
+# settings used by the core code
+
+NOUT = 0 # number of time-steps
+TIMESTEP = 1.0 # time between outputs
+
+archive = 200000
+
+ShiftXderivs = true # use shifted radial derivatives?
+TwistShift = true  # use twist-shift condition?
+
+MZ = 9  # number of points in z direction (2^n + 1)
+ZPERIOD = 5  # Number of periods
+dump_format = "nc" # Output format (PDB = "pdb", NetCDF="nc")
+
+#How many times do we do shiftZ for each method?
+nrep = 100
+
+[mesh]
+nx= 68
+ny = 32
+
+##################################################
+# derivative methods
+
+[ddx]
+
+first =  C4#C2    # C4 = 4th order central, C2 = 2nd order central
+second = C4#C2
+upwind = W3#U1    # U1 = 1st order upwind, W3 = 3rd order WENO
+
+[ddy]
+
+first =  C4#C2
+second = C4#C2
+upwind = W3#U1
+
+[ddz]
+
+first =  FFT#C4#C2
+second = FFT#C4#C2
+upwind = W3#U1
+
+##################################################
+# Solver settings
+
+[solver]
+enablerestart = false
+type=rk4
+
+##################################################
+# settings for individual variables
+# The section "All" defines default settings for all variables
+# These can be overridden for individual variables in
+# a section of that name.
+
+[All]
+scale = 0.0 # default size of initial perturbations
+
+# form of initial profile:
+# 0 - constant
+# 1 - Gaussian
+# 2 - Sinusoidal
+# 3 - Mix of mode numbers (like original BOUT)
+
+xs_opt = 0#1
+xs_mode=1
+xs_wd = 0.2
+
+ys_opt = 1#1
+ys_wd = 0.5 #0.5
+ys_mode =2# 0 #added
+
+zs_opt = 2
+zs_mode = 1 # asimuthal mode number
+
+bndry_all = neumann#dirichlet#none
+
+[fld1]
+scale=1.0
