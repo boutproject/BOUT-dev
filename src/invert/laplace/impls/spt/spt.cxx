@@ -298,10 +298,10 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
                     data.gam[kz],
                     bet, u0, true);
       // Load intermediate values into buffers
-      data.buffer[4*kz]     = bet.Real();
-      data.buffer[4*kz + 1] = bet.Imag();
-      data.buffer[4*kz + 2] = u0.Real();
-      data.buffer[4*kz + 3] = u0.Imag();
+      data.buffer[4*kz]     = bet.real();
+      data.buffer[4*kz + 1] = bet.imag();
+      data.buffer[4*kz + 2] = u0.real();
+      data.buffer[4*kz + 3] = u0.imag();
     }
     
     // Send data
@@ -357,10 +357,10 @@ int LaplaceSPT::next(SPT_data &data) {
 	up = 0.0;
 	tridagBack(data.xk[kz]+mesh->xstart, mesh->ngx-mesh->xstart, 
                    data.gam[kz]+mesh->xstart, gp, up);
-	data.buffer[4*kz]     = gp.Real();
-	data.buffer[4*kz + 1] = gp.Imag();
-	data.buffer[4*kz + 2] = up.Real();
-	data.buffer[4*kz + 3] = up.Imag();
+	data.buffer[4*kz]     = gp.real();
+	data.buffer[4*kz + 1] = gp.imag();
+	data.buffer[4*kz + 2] = up.real();
+	data.buffer[4*kz + 3] = up.imag();
       }
 
     }else if(data.dir > 0) {
@@ -380,10 +380,10 @@ int LaplaceSPT::next(SPT_data &data) {
                       data.gam[kz]+mesh->xstart,
                       bet, u0);
 	// Load intermediate values into buffers
-	data.buffer[4*kz]     = bet.Real();
-	data.buffer[4*kz + 1] = bet.Imag();
-	data.buffer[4*kz + 2] = u0.Real();
-	data.buffer[4*kz + 3] = u0.Imag();
+	data.buffer[4*kz]     = bet.real();
+	data.buffer[4*kz + 1] = bet.imag();
+	data.buffer[4*kz + 2] = u0.real();
+	data.buffer[4*kz + 3] = u0.imag();
       }
       
     }else if(mesh->firstX()) {
@@ -409,10 +409,10 @@ int LaplaceSPT::next(SPT_data &data) {
                    mesh->xend-mesh->xstart+1, 
                    data.gam[kz]+mesh->xstart, gp, up);
 	
-	data.buffer[4*kz]     = gp.Real();
-	data.buffer[4*kz + 1] = gp.Imag();
-	data.buffer[4*kz + 2] = up.Real();
-	data.buffer[4*kz + 3] = up.Imag();
+	data.buffer[4*kz]     = gp.real();
+	data.buffer[4*kz + 1] = gp.imag();
+	data.buffer[4*kz + 2] = up.real();
+	data.buffer[4*kz + 3] = up.imag();
       }
     }
 
