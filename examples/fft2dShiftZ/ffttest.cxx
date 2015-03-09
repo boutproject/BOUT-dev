@@ -33,6 +33,11 @@ int physics_init(bool restarting){
   
   //Now do  shiftZ different ways
   for (int irep=0;irep<nrep;irep++){
+    Timer timer("1d");
+    fft_1=shift1d(fld1,zangle);
+  }
+
+  for (int irep=0;irep<nrep;irep++){
     Timer timer("2d");
     fft_2=shift2d(fld1,zangle,false);
   }
@@ -40,11 +45,6 @@ int physics_init(bool restarting){
   for (int irep=0;irep<nrep;irep++){
     Timer timer("2dT");
     fft_2T=shift2d(fld1,zangle,true);
-  }
-
-  for (int irep=0;irep<nrep;irep++){
-    Timer timer("1d");
-    fft_1=shift1d(fld1,zangle);
   }
 
   for (int irep=0;irep<nrep;irep++){
@@ -73,7 +73,7 @@ int physics_init(bool restarting){
     fldShift=fld1.shiftZ(zangle);
   }
 
-
+  //Get times
   BoutReal time1d=Timer::resetTime("1d");
   BoutReal time2d=Timer::resetTime("2d");
   BoutReal time2dT=Timer::resetTime("2dT");
@@ -82,6 +82,8 @@ int physics_init(bool restarting){
   BoutReal timesz2d=Timer::resetTime("sz2d");
   BoutReal timesz2b=Timer::resetTime("sz2b");
   BoutReal timesz=Timer::resetTime("sz");
+
+  //Report
   output<<"######################################"<<endl;
   output<<"Average times:"<<endl;
   output<<"\tsz     : "<<timesz/nrep<<endl;
@@ -146,7 +148,7 @@ Field3D shift3d(const Field3D fin, const BoutReal zangle, bool trans){
   BoutReal fac=2.0*PI/mesh->zlength;
   for (int jx=0;jx<nx;jx++){
     for (int jy=0;jy<ny;jy++){
-      for (int jz=0;jz<ncz;jz++){
+      for (int jz=0;jz<nkz;jz++){
   	BoutReal kwave=jz*fac;
   	dcomplex phase(cos(kwave*zangle),-sin(kwave*zangle));
   	v2d[jx+nx*jy][jz] *= phase;
