@@ -57,24 +57,16 @@ void ivfree(int *v) {
   free(v);
 }
 
-BoutReal **rmatrix(int xsize, int ysize) {
-  long i;
+BoutReal **rmatrix(int nrow, int ncol) {
   BoutReal **m;
+  int i;
 
-  if((m = (BoutReal**) malloc(xsize*sizeof(BoutReal*))) == (BoutReal**) NULL) {
-    printf("Error: could not allocate memory:%d\n", xsize);
-    exit(1);
-  }
+  m = new BoutReal*[nrow];
+  m[0] = new BoutReal[nrow*ncol];
+  for(i=1;i<nrow;i++)
+    m[i] = m[i-1] + ncol;
 
-  if((m[0] = (BoutReal*) malloc(xsize*ysize*sizeof(BoutReal))) == (BoutReal*) NULL) {
-    printf("Error: could not allocate memory\n");
-    exit(1);
-  }
-  for(i=1;i<xsize;i++) {
-    m[i] = m[i-1] + ysize;
-  }
-
-  return(m);
+  return m;
 }
 
 int **imatrix(int xsize, int ysize) {
@@ -123,9 +115,9 @@ T **matrix(int xsize, int ysize) {
 template BoutReal **matrix<BoutReal>(int,int);
 template dcomplex **matrix<dcomplex>(int,int);
 
-void free_rmatrix(BoutReal **m) {
-  free(m[0]);
-  free(m);
+void free_rmatrix(BoutReal** m) {
+  delete[] m[0];
+  delete[] m;
 }
 
 void free_imatrix(int **m) {
