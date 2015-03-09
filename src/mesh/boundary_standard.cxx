@@ -2498,9 +2498,9 @@ void BoundaryConstLaplace::apply(Field2D &f) {
     do {
       laplace_tridag_coefs(x-bx, y, 0, la, lb, lc);
       if(bx < 0) { // Lower X
-	f(x,y) = ((val - lb*f(x-bx,y) + lc*f(x-2*bx,y)) / la).Real();
+	f(x,y) = ((val - lb*f(x-bx,y) + lc*f(x-2*bx,y)) / la).real();
       }else  // Upper X
-	f(x,y) = ((val - lb*f(x-bx,y) + la*f(x-2*bx,y)) / lc).Real();
+	f(x,y) = ((val - lb*f(x-bx,y) + la*f(x-2*bx,y)) / lc).real();
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;

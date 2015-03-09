@@ -160,10 +160,10 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   if(!mesh->firstX()) {
     // Should be able to send dcomplex buffers. For now copy into BoutReal buffer
     for(int i=0;i<maxmode;i++) {
-      buffer[4*i]     = kc[i].Real();
-      buffer[4*i + 1] = kc[i].Imag();
-      buffer[4*i + 2] = kp[i].Real();
-      buffer[4*i + 3] = kp[i].Imag();
+      buffer[4*i]     = kc[i].real();
+      buffer[4*i + 1] = kc[i].imag();
+      buffer[4*i + 2] = kp[i].real();
+      buffer[4*i + 3] = kp[i].imag();
     }
     mesh->sendXIn(buffer, 4*maxmode, jy);
   }else {

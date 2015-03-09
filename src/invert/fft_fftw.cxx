@@ -85,8 +85,8 @@ void cfft(dcomplex *cv, int length, int isign)
 
   // Load input data
   for(int i=0;i<n;i++) {
-    in[i][0] = cv[i].Real();
-    in[i][1] = cv[i].Imag();
+    in[i][0] = cv[i].real();
+    in[i][1] = cv[i].imag();
   }
   
   if(isign < 0) {
@@ -154,8 +154,8 @@ void cfft(dcomplex *cv, int length, int isign)
   
   // Load input data
   for(int i=0;i<length;i++) {
-    in[i][0] = cv[i].Real();
-    in[i][1] = cv[i].Imag();
+    in[i][0] = cv[i].real();
+    in[i][1] = cv[i].imag();
   }
   
   if(isign < 0) {
@@ -275,8 +275,8 @@ void irfft(dcomplex *in, int length, BoutReal *out)
   }
   
   for(int i=0;i<(n/2)+1;i++) {
-    fin[i][0] = in[i].Real();
-    fin[i][1] = in[i].Imag();
+    fin[i][0] = in[i].real();
+    fin[i][1] = in[i].imag();
   }
   
   fftw_execute(p);
@@ -387,8 +387,8 @@ void irfft(dcomplex *in, int length, BoutReal *out)
   double *fout = foutall + th_id * length;
   
   for(int i=0;i<(length/2)+1;i++) {
-    fin[i][0] = in[i].Real();
-    fin[i][1] = in[i].Imag();
+    fin[i][0] = in[i].real();
+    fin[i][1] = in[i].imag();
   }
   
   fftw_execute(p[th_id]);
@@ -523,16 +523,16 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
   }
 
   for(int i=0;i<n;i++){
-    fin[i][0] = in[i].Real();
-    fin[i][1] = in[i].Imag();
+    fin[i][0] = in[i].real();
+    fin[i][1] = in[i].imag();
   }
 
   fin[0][0] = 0.; fin[0][1] = 0.;
   fin[length-1][0] = 0.; fin[length-1][1] = 0.;
 
   for (int j = 1; j < length-1; j++){
-    fin[j][0] = 0.; fin[j][1] = -in[j].Real()/2.;
-    fin[2*(length-1)-j][0] = 0.; fin[2*(length-1)-j][1] =  in[j].Real()/2.;
+    fin[j][0] = 0.; fin[j][1] = -in[j].real()/2.;
+    fin[2*(length-1)-j][0] = 0.; fin[2*(length-1)-j][1] =  in[j].real()/2.;
   }
 
   fftw_execute(p);

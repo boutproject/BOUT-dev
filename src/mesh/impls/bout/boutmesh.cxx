@@ -2360,8 +2360,8 @@ void BoutMesh::slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy)
 void BoutMesh::get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag)
 {
   for(int i=0;i<ncy;i++){
-    ayn_Real[i]=ayn[i].Real();
-    ayn_Imag[i]=ayn[i].Imag();
+    ayn_Real[i]=ayn[i].real();
+    ayn_Imag[i]=ayn[i].imag();
   }
 }
 
@@ -2447,7 +2447,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
      set_ri(ayn,ncy,aynReal,aynImag);
 
      for(jy=0;jy<ncy;jy++)
-      f1d[jy]=ayn[jy].Real();
+      f1d[jy]=ayn[jy].real();
 
     for(jy=0;jy<ncy;jy++)
       t1=result.setData(jx,jy+ystart,1,f1d+jy); 
