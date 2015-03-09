@@ -63,9 +63,11 @@ int physics_init(bool restarting){
   }
 
   for (int irep=0;irep<nrep;irep++){
-    Timer timer("sz2b");
     fldShift2d=fld1;
-    fldShift2d.shiftZ2D(zangle,true);
+    {
+      Timer timer("sz2b");
+      fldShift2d.shiftZ2D(zangle,true);
+    }
   }
 
   for (int irep=0;irep<nrep;irep++){
@@ -136,7 +138,7 @@ Field3D shift3d(const Field3D fin, const BoutReal zangle, bool trans){
   for (int jx=0;jx<nx;jx++){
     for (int jy=0;jy<ny;jy++){
       for (int jz=0;jz<ncz;jz++){
-	result.getData(jx,jy,jz,&b2d[jx+jy*nx][jz]);
+  	result.getData(jx,jy,jz,&b2d[jx+jy*nx][jz]);
       };
     };
   };

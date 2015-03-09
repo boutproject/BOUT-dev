@@ -316,14 +316,15 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, b
   fftw_execute(p);
 
   //Copy data back
+  BoutReal fac=1.0/(double)n2;
   if(tpose){
     for(int i=0;i<n1;i++)
       for(int j=0;j<nk;j++)
-	out[i][j] = dcomplex(fout[j+i*nk][0], fout[j+i*nk][1]) / ((double) n2); // Normalise
+	out[i][j] = dcomplex(fout[j+i*nk][0], fout[j+i*nk][1])*fac;// / ((double) n2); // Normalise
   }else{
     for(int i=0;i<n1;i++)
       for(int j=0;j<nk;j++)
-	out[i][j] = dcomplex(fout[i+j*n1][0], fout[i+j*n1][1]) / ((double) n2); // Normalise
+	out[i][j] = dcomplex(fout[i+j*n1][0], fout[i+j*n1][1])*fac;// / ((double) n2); // Normalise
   };
 }
 

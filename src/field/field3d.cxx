@@ -1882,6 +1882,7 @@ const Field3D Field3D::shiftZ2D(const BoutReal zangle) const{
 void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
   static dcomplex **v = (dcomplex**) NULL;
   static BoutReal **r = (BoutReal**) NULL;
+  static dcomplex **phs = (dcomplex**) NULL;
   int jz;
   BoutReal kwave;
 
@@ -1903,6 +1904,20 @@ void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
   if(v == (dcomplex**) NULL) {
     v = cmatrix(mesh->ngx,nkz);
   };
+  //Precalculate the possible phases as dcomplex is slow
+  if(phs == (dcomplex**) NULL) {
+    phs = cmatrix(mesh->ngy,mesh->ngx*nkz);
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jy=0;jy<mesh->ngy;jy++){
+      for(int jz=0;jz<nkz;jz++){
+	kwave=jz*fac; // wave number is 1/[rad]
+	for(int jx=0;jx<mesh->ngx;jx++){
+	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
+	  phs[jy][jx+jz*mesh->ngx]=phase;
+	}
+      }
+    }
+  };
   if(r == (BoutReal**) NULL) {
     r = rmatrix(mesh->ngx,ncz);
   };
@@ -1914,16 +1929,23 @@ void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
   for(int jy=0;jy<mesh->ngy;jy++){
     //Populate 2d array (slice), this is likely to be inefficient
     r=this->slice(jy).getData();
-    
+    // for(int jx=0;jx<mesh->ngx;jx++){
+    //   for(int jz=0;jz<ncz;jz++){
+    // 	r[jx][jz]=block->data[jx][jy][jz];
+    //   };
+    // };
+ 
     //Now do the FFT of field3d into v
-    rfft(r,mesh->ngx,ncz,v,true);
+    rfft(r, mesh->ngx, ncz, v, true);
 
     //Do phase shift
-    for(int jx=0;jx<mesh->ngx;jx++){
-      for(int jz=0;jz<nkz;jz++){
-	kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
-	dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
-	v[jx][jz] *= phase;
+    //BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jz=0;jz<nkz;jz++){
+      //kwave=jz*fac; // wave number is 1/[rad]
+      for(int jx=0;jx<mesh->ngx;jx++){
+	//dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
+	//v[jx][jz] *= phase;
+	v[jx][jz] *= phs[jy][jx+jz*mesh->ngx];
       };
     };
 
