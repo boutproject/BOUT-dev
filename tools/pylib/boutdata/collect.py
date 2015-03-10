@@ -76,7 +76,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     """
     
     # Search for BOUT++ dump files in NetCDF format
-    file_list = glob.glob(os.path.join(path, prefix+".nc"))
+    file_list_nc = glob.glob(os.path.join(path, prefix+".nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        print "Error: Both NetCDF and HDF5 files are present: do not know which to read."
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
     if file_list != []:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
@@ -84,7 +94,17 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         data = f.read(varname)
         return data
     
-    file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
+    file_list_nc = glob.glob(os.path.join(path, prefix+".*nc"))
+    file_list_h5 = glob.glob(os.path.join(path, prefix+".*hdf5"))
+    if file_list_nc != [] and file_list_h5 != []:
+        print "Error: Both NetCDF and HDF5 files are present: do not know which to read."
+        raise IOError("Error: Both NetCDF and HDF5 files are present: do not know which to read.")
+    elif file_list_h5 != []:
+        suffix = ".hdf5"
+        file_list = file_list_h5
+    else:
+        suffix = ".nc"
+        file_list = file_list_nc
     file_list.sort()
     if file_list == []:
         raise ValueError("ERROR: No data files found")
@@ -98,13 +118,15 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
-        ndims = len(dimens)
+        #ndims = len(dimens)
+        ndims = f.ndims(varname)
     except:
         # Find the variable
         varname = findVar(varname, f.list())
         
         dimens = f.dimensions(varname)
-        ndims = len(dimens)
+        #ndims = len(dimens)
+        ndims = f.ndims(varname)
     
     if ndims < 2:
         # Just read from file
@@ -317,7 +339,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         if not inrange:
             continue # Don't need this file
         
-        filename = os.path.join(path, prefix+"." + str(i) + ".nc")
+        filename = os.path.join(path, prefix+"." + str(i) + suffix)
         if info:
             sys.stdout.write("\rReading from " + filename + ": [" + \
                                  str(xmin) + "-" + str(xmax) + "][" + \

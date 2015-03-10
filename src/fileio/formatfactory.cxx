@@ -8,6 +8,7 @@
 #include "impls/pdb/pdb_format.hxx"
 #include "impls/netcdf4/ncxx4.hxx"
 #include "impls/netcdf/nc_format.hxx"
+#include "impls/hdf5/h5_format.hxx"
 #include "impls/pnetcdf/pnetcdf.hxx"
 
 #include <boutexception.hxx>
@@ -44,15 +45,19 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
     return new NcFormat;
 #else
 
+#ifdef HDF5
+    return new H5Format;
+#else
+
 #ifdef PDBF
     //output.write("\tUsing default format (PDB)\n");
     return new PdbFormat;
-
 #else
 
 #error No file format available; aborting.
 
 #endif // PDBF
+#endif // HDF5
 #endif // NCDF
 #endif // NCDF4
 #endif // PNCDF
@@ -103,6 +108,14 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
   if(matchString(s, 3, ncdf_match) != -1) {
     output.write("\tUsing NetCDF format for file '%s'\n", filename);
     return new NcFormat;
+  }
+#endif
+
+#ifdef HDF5
+  const char *hdf5_match[] = {"h5","hdf","hdf5"};
+  if(matchString(s, 3, hdf5_match) != -1) {
+    output.write("\tUsing HDF5 format for file '%s'\n", filename);
+    return new H5Format;
   }
 #endif
 
