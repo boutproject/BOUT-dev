@@ -37,6 +37,7 @@ H5Format::H5Format() {
   fname = NULL;
   dataFile = NULL;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
+  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
 }
 
 H5Format::H5Format(const char *name) {
@@ -44,6 +45,7 @@ H5Format::H5Format(const char *name) {
   lowPrecision = false;
   dataFile = NULL;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
+  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
   openr(name);
 }
 
@@ -52,6 +54,7 @@ H5Format::H5Format(const string &name) {
   lowPrecision = false;
   dataFile = NULL;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
+  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
   openr(name);
 }
 
