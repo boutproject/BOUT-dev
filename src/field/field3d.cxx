@@ -1838,7 +1838,7 @@ BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) 
   return result;
 }
 
-const Field3D Field3D::shiftZ2D(const Field2D zangle) const{
+const Field3D Field3D::shiftZ2D(const Field2D zangle, const int dir) const{
   Field3D result;
 
 #ifdef CHECK
@@ -1848,7 +1848,7 @@ const Field3D Field3D::shiftZ2D(const Field2D zangle) const{
 
   result = *this;
 
-  result.shiftZ2D(zangle,true);
+  result.shiftZ2D(zangle,dir,true);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -1858,7 +1858,7 @@ const Field3D Field3D::shiftZ2D(const Field2D zangle) const{
 
 };
 
-const Field3D Field3D::shiftZ2D(const BoutReal zangle) const{
+const Field3D Field3D::shiftZ2D(const BoutReal zangle, const int dir) const{
   Field3D result;
 
 #ifdef CHECK
@@ -1868,7 +1868,7 @@ const Field3D Field3D::shiftZ2D(const BoutReal zangle) const{
 
   result = *this;
 
-  result.shiftZ2D(zangle,true);
+  result.shiftZ2D(zangle,dir,true);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -1879,7 +1879,7 @@ const Field3D Field3D::shiftZ2D(const BoutReal zangle) const{
 };
 
 //2d fft based shift
-void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
+void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
   static dcomplex **v = (dcomplex**) NULL;
   static BoutReal **r = (BoutReal**) NULL;
   static dcomplex **phs = (dcomplex**) NULL;
@@ -1893,8 +1893,9 @@ void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
 #endif
 
   //Get number of unique z points, exit if only 1
-  int ncz = mesh->ngz-1;
-  int nkz = 1+ncz/2;
+  const int ncz = mesh->ngz-1;
+  const int nx = mesh->ngx;
+  const int nkz = 1+ncz/2;
   if(ncz == 1)
     return;
   
@@ -1902,63 +1903,62 @@ void Field3D::shiftZ2D(const Field2D zangle, const bool do2D){
   //Maybe this could become a field3D member, can then
   //reuse (possibly save ffts if no operation on data)
   if(v == (dcomplex**) NULL) {
-    v = cmatrix(mesh->ngx,nkz);
+    v = cmatrix(nx,nkz);
   };
+  
   //Precalculate the possible phases as dcomplex is slow
   if(phs == (dcomplex**) NULL) {
-    phs = cmatrix(mesh->ngy,mesh->ngx*nkz);
+    phs = cmatrix(mesh->ngy,nx*nkz);
     BoutReal fac=2.0*PI/mesh->zlength;
     for(int jy=0;jy<mesh->ngy;jy++){
       for(int jz=0;jz<nkz;jz++){
-	kwave=jz*fac; // wave number is 1/[rad]
-	for(int jx=0;jx<mesh->ngx;jx++){
+	for(int jx=0;jx<nx;jx++){
+	  kwave=jz*fac; // wave number is 1/[rad]
 	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
-	  phs[jy][jx+jz*mesh->ngx]=phase;
+	  phs[jy][jx+jz*nx]=phase;
 	}
       }
     }
   };
   if(r == (BoutReal**) NULL) {
-    r = rmatrix(mesh->ngx,ncz);
+    r = rmatrix(nx,ncz);
   };
-
+  
   //Ensure this field has an allocated data block
   allocate(); //Why is this needed --> CHECK
 
   //Now loop over planes
   for(int jy=0;jy<mesh->ngy;jy++){
-    //Populate 2d array (slice), this is likely to be inefficient
-    r=this->slice(jy).getData();
-    // for(int jx=0;jx<mesh->ngx;jx++){
-    //   for(int jz=0;jz<ncz;jz++){
-    // 	r[jx][jz]=block->data[jx][jy][jz];
-    //   };
-    // };
+    //Populate 2d array (slice), this is likely to be inefficient.
+    //Currently have to copy data out of block->data, operate on it
+    //and then copy the result back. If this could be done inplace
+    //then we may well save some time.
+    r=slice(jy).getData();
  
     //Now do the FFT of field3d into v
-    rfft(r, mesh->ngx, ncz, v, true);
+    rfft(r, nx, ncz, v, true);
 
     //Do phase shift
-    //BoutReal fac=2.0*PI/mesh->zlength;
     for(int jz=0;jz<nkz;jz++){
-      //kwave=jz*fac; // wave number is 1/[rad]
-      for(int jx=0;jx<mesh->ngx;jx++){
-	//dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
-	//v[jx][jz] *= phase;
-	v[jx][jz] *= phs[jy][jx+jz*mesh->ngx];
+      for(int jx=0;jx<nx;jx++){
+	//Not great to have a branch inside nested loop
+	if(dir==1){
+	  v[jx][jz] *= phs[jy][jx+jz*nx];
+	}else{
+	  v[jx][jz] *= conj(phs[jy][jx+jz*nx]);
+	};
       };
     };
 
-    irfft(v, mesh->ngx, ncz, r, true); // Reverse FFT
+    irfft(v, nx, ncz, r, true); // Reverse FFT
 
-    //This copying is likely to be inefficient
-    for(int jx=0;jx<mesh->ngx;jx++){
+    //This copying is likely to be inefficient, see above
+    for(int jx=0;jx<nx;jx++){
       for(int jz=0;jz<ncz;jz++){
-	block->data[jx][jy][jz]=r[jx][jz];
+      	block->data[jx][jy][jz]=r[jx][jz];
       };
       block->data[jx][jy][ncz] = block->data[jx][jy][0];
     };
-
   };
 };
 
@@ -2050,9 +2050,13 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
   if(toBoutReal) {
-    return shiftZ2D(mesh->zShift);
+    return shiftZ2D(mesh->zShift,1);
   }
-  return shiftZ2D(-mesh->zShift);
+  return shiftZ2D(mesh->zShift,-1);
+  // if(toBoutReal) {
+  //   return shiftZ2D(mesh->zShift);
+  // }
+  // return shiftZ2D(-mesh->zShift);
 }
 
 
