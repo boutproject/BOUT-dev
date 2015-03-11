@@ -34,7 +34,7 @@ class ParseException;
 #include <list>
 #include <utility>
 #include <sstream>
-
+#include <fstream>
 #include <exception>
 
 //////////////////////////////////////////////////////////

@@ -430,15 +430,15 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, 
   if(tpose){
     for(int i=0;i<n1;i++){
       for(int j=0;j<nk;j++){
-	fin[j+i*nk][0] = in[i][j].Real();
-	fin[j+i*nk][1] = in[i][j].Imag();
+	fin[j+i*nk][0] = in[i][j].real();
+	fin[j+i*nk][1] = in[i][j].imag();
       };
     };
   }else{
     for(int i=0;i<n1;i++){
       for(int j=0;j<nk;j++){
-	fin[i+j*length1][0] = in[i][j].Real();
-	fin[i+j*length1][1] = in[i][j].Imag();
+	fin[i+j*length1][0] = in[i][j].real();
+	fin[i+j*length1][1] = in[i][j].imag();
       };
     };
   };
