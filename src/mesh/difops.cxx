@@ -1227,7 +1227,10 @@ const Field3D bracket(const Field2D &f, const Field3D &g, BRACKET_METHOD method,
 	
 	switch(method) {
 		case BRACKET_CTU:
-		case BRACKET_ARAKAWA: 
+          	case BRACKET_ARAKAWA: {
+		  result = -bracket(g,f,method,outloc);
+		  break;
+		}
 		case BRACKET_SIMPLE: {
 			// Use a subset of terms for comparison to BOUT-06
 			result = VDDZ(-DDX(f), g);
