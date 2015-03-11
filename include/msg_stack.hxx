@@ -84,5 +84,29 @@ GLOBAL MsgStack msg_stack;
 
 #undef GLOBAL
 
+#include <exception>
+
+/*!
+ * MsgStackItem
+ * 
+ * Simple class to manage pushing and popping messages
+ * from the message stack. Pushes a message in the 
+ * constructor, and pops the message on destruction.
+ */
+class MsgStackItem {
+public:
+  MsgStackItem(const char* msg) {
+    point = msg_stack.push(msg);
+  }
+  ~MsgStackItem() {
+    // If an exception has occurred, don't pop the message
+    if(!std::uncaught_exception())
+      msg_stack.pop(point);
+  }
+private:
+  int point;
+};
+
+
 #endif // __MSG_STACK_H__
 
