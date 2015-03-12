@@ -80,7 +80,6 @@ class H5Format : public DataFormat {
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setGlobalOrigin(int x, int y, int z, int offset_x, int offset_y = 0, int offset_z = 0);
   bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
   bool setRecord(int t); // negative -> latest
   
