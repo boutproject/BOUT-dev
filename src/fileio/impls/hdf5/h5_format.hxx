@@ -57,9 +57,9 @@ using std::map;
 
 class H5Format : public DataFormat {
  public:
-  H5Format();
-  H5Format(const char *name);
-  H5Format(const string &name);
+  H5Format(bool parallel = false);
+  H5Format(const char *name, bool parallel = false);
+  H5Format(const string &name, bool parallel = false);
   ~H5Format();
   
   bool openr(const string &name);
@@ -80,7 +80,7 @@ class H5Format : public DataFormat {
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0);
   bool setRecord(int t); // negative -> latest
   
   // Read / Write simple variables up to 3D
@@ -125,8 +125,10 @@ class H5Format : public DataFormat {
 
   bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
+  bool parallel;
 
-  int x0, y0, z0, t0; ///< Data origins
+  int x0, y0, z0, t0; ///< Data origins for file access
+  int x0_local, y0_local, z0_local, t0_local; ///< Data origins for memory access
   
   hsize_t chunk_length;
   bool is_open;

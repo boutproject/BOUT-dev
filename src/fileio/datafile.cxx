@@ -56,10 +56,22 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, floats, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
+  
+  // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
+  if (parallel) {
+    Lx = mesh->ngx-2*mesh->mxg;
+    Ly = mesh->ngy-2*mesh->myg;
+    Lz = mesh->ngz;
+  }
+  else {
+    Lx = mesh->ngx;
+    Ly = mesh->ngyg;
+    Lz = mesh->ngz;
+  }
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
-                                            floats(other.floats), openclose(other.openclose), 
+                                            floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
                                             enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
                                             BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
@@ -103,6 +115,14 @@ bool Datafile::openr(const char *format, ...) {
   if(!file)
     return false;
   
+  // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
+  if (parallel) {
+    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+  }
+  else {
+    file->setGlobalOrigin(0,0,0);
+  }
+  
   if(!openclose) {
     // Open the file now. Otherwise defer until later
     int MYPE;
@@ -130,6 +150,14 @@ bool Datafile::openw(const char *format, ...) {
   
   if(!file)
     return false;
+  
+  // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
+  if (parallel) {
+    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+  }
+  else {
+    file->setGlobalOrigin(0,0,0);
+  }
   
   appending = false;
   if(!openclose) {
@@ -160,6 +188,14 @@ bool Datafile::opena(const char *format, ...) {
   if(!file)
     return false;
 
+  // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
+  if (parallel) {
+    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+  }
+  else {
+    file->setGlobalOrigin(0,0,0);
+  }
+  
   appending = true;
   if(!openclose) {
     // Open the file
@@ -410,11 +446,7 @@ bool Datafile::write() {
 
   // Write integers
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
-    if(it->grow) {
-      file->write_rec(it->ptr, it->name);
-    }else {
-      file->write(it->ptr, it->name);
-    }
+    write_int(it->name, it->ptr, it->grow);
   }
   
   // Write BoutReals
@@ -565,14 +597,30 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   return true;
 }
 
+bool Datafile::write_int(const string &name, int *f, bool grow) {
+  if(grow) {
+    file->write_rec(f, name);
+  }else {
+    file->write(f, name);
+  }
+}
+
+bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
+  if(grow) {
+    file->write_rec(f, name);
+  }else {
+    file->write(f, name);
+  }
+}
+
 bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
   if(!f->isAllocated())
     return false; // No data allocated
   
   if(grow) {
-    return file->write_rec(*(f->getData()), name, mesh->ngx, mesh->ngy);
+    return file->write_rec(*(f->getData()), name, Lx, Ly);
   }else {
-    return file->write(*(f->getData()), name, mesh->ngx, mesh->ngy);
+    return file->write(*(f->getData()), name, Lx, Ly);
   }
 }
 
@@ -581,11 +629,11 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
     //output << "Datafile: unallocated: " << name << endl;
     return false; // No data allocated
   }
-
+  
   if(grow) {
-    return file->write_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write_rec(**(f->getData()), name, Lx, Ly, Lz);
   }else {
-    return file->write(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write(**(f->getData()), name, Lx, Ly, Lz);
   }
 }
 

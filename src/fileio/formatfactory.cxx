@@ -115,7 +115,7 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
   const char *hdf5_match[] = {"h5","hdf","hdf5"};
   if(matchString(s, 3, hdf5_match) != -1) {
     output.write("\tUsing HDF5 format for file '%s'\n", filename);
-    return new H5Format;
+    return new H5Format(parallel);
   }
 #endif
 

@@ -95,6 +95,11 @@ bool H5Format::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("H5Format::openw");
 #endif
+  
+  if (parallel) {
+    // Need to do stuff here???
+    throw BoutException("HDF5 does not support parallel file access in the C++ interface. Boo!");
+  }
 
   if(dataFile != NULL) // Already open. Close then re-open
     close(); 
@@ -203,6 +208,13 @@ bool H5Format::setGlobalOrigin(int x, int y, int z) {
   return true;
 }
 
+bool H5Format::setLocalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
+  x0_local = offset_x;
+  y0_local = offset_y;
+  z0_local = offset_z;
+  return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
+}
+
 bool H5Format::setRecord(int t) {
   t0 = t;
 
@@ -308,26 +320,36 @@ bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3],init_size[3];
+  hsize_t counts[3],offset[3], offset_local[3],init_size[3],init_size_local[3];
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
+  if (parallel) {
+    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
+  }
+  else {
+    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  }
+  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
     nd = 1;
     counts[0] = 1;
+    offset[0] = 0;
     init_size[0] = 1;
+    init_size_local[0] = 1;
   }
   
-  H5::DataSpace mem_space(nd, counts);
-  H5::DataSpace init_space(nd, init_size);
+  H5::DataSpace mem_space(nd, init_size_local);
+  mem_space.selectHyperslab(H5S_SELECT_SET, counts, offset_local);
   
   H5::DataSet dataSet;
   try {
     dataSet = dataFile->openDataSet(name);
   }
   catch (H5::FileIException exception) {
+    H5::DataSpace init_space(nd, init_size);
     dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_INT, init_space);
     
     // Add attribute to say what kind of field this is
@@ -406,26 +428,30 @@ bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3],init_size[3];
+  hsize_t counts[3],offset[3],init_size[3],init_size_local[3];
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
   init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   
   if (nd==0) {
     // Need to write a scalar, not a 0-d array
     nd = 1;
     counts[0] = 1;
+    offset[0] = 0;
     init_size[0] = 1;
+    init_size_local[0] = 1;
   }
   
   H5::DataSpace mem_space(nd, counts);
-  H5::DataSpace init_space(nd, init_size);
+  
   
   H5::DataSet dataSet;
   try {
     dataSet = dataFile->openDataSet(name);
   }
   catch (H5::FileIException exception) {
+    H5::DataSpace init_space(nd, init_size);
     if (lowPrecision) {
       dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_FLOAT, init_space);
       
@@ -566,9 +592,27 @@ bool H5Format::read_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4];
+  hsize_t counts[4],offset[4], offset_local[4];
+  hsize_t init_size[3],init_size_local[3];
   counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
   offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
+  offset_local[0]=t0;offset_local[1]=x0_local;offset_local[2]=y0_local;offset_local[3]=z0_local;
+  if (parallel) {
+    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
+  }
+  else {
+    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  }
+  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  
+  if (nd==1) {
+    // Need to write a time-series of scalars
+    nd = 1;
+    counts[1] = 1;
+    offset[1] = 0;
+    init_size[0] = 1;
+    init_size_local[0] = 1;
+  }
   
   H5::DataSpace mem_space(nd, counts);
   
@@ -634,8 +678,27 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4];
+  hsize_t counts[4],offset[4], offset_local[4];
+  hsize_t init_size[3],init_size_local[3];
   counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
+  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
+  offset_local[0]=t0;offset_local[1]=x0_local;offset_local[2]=y0_local;offset_local[3]=z0_local;
+  if (parallel) {
+    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
+  }
+  else {
+    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  }
+  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  
+  if (nd==1) {
+    // Need to write a time-series of scalars
+    nd = 1;
+    counts[1] = 1;
+    offset[1] = 0;
+    init_size[0] = 1;
+    init_size_local[0] = 1;
+  }
   
   H5::DataSpace mem_space(nd, counts);
   
