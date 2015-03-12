@@ -24,6 +24,7 @@
 #include "h5_format.hxx"
 
 #ifdef HDF5
+#include <H5Cpp.h>
 
 #include <utils.hxx>
 #include <cmath>
@@ -31,30 +32,48 @@
 #include <output.hxx>
 #include <msg_stack.hxx>
 
-H5Format::H5Format() {
+H5Format::H5Format(bool parallel) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   fname = NULL;
-  dataFile = NULL;
+  dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
+//   hid_t error_stack;
+//   if (H5Eget_auto(error_stack, NULL, NULL) < 0)
+//     throw BoutException("Failed to get error stack");
+//   if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+//     throw BoutException("Failed to set error stack to not print errors");
+//   if (H5Eclose_stack(error_stack) < 0)
+//     throw BoutException("Failed to close error stack handle");
 }
 
-H5Format::H5Format(const char *name) {
+H5Format::H5Format(const char *name, bool parallel) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
-  dataFile = NULL;
+  dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
+  hid_t error_stack;
+  if (H5Eget_auto(error_stack, NULL, NULL) < 0)
+    throw BoutException("Failed to get error stack");
+  if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
+  if (H5Eclose_stack(error_stack) < 0)
+    throw BoutException("Failed to close error stack handle");
   openr(name);
 }
 
-H5Format::H5Format(const string &name) {
+H5Format::H5Format(const string &name, bool parallel) {
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
-  dataFile = NULL;
+  dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  H5::Exception::dontPrint(); // Disable automatic printing of error messages so that we can catch exceptions without printing error messages to stdout
+  hid_t error_stack;
+  if (H5Eget_auto(error_stack, NULL, NULL) < 0)
+    throw BoutException("Failed to get error stack");
+  if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
+  if (H5Eclose_stack(error_stack) < 0)
+    throw BoutException("Failed to close error stack handle");
   openr(name);
 }
 
@@ -71,14 +90,17 @@ bool H5Format::openr(const char *name) {
   msg_stack.push("H5Format::openr");
 #endif
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if(dataFile > 0) // Already open. Close then re-open
     close();
 
   if(!is_valid()) {
     return false;
   }
-
-  dataFile->openFile(name,H5F_ACC_RDONLY);
+  
+  dataFile = H5Fopen(name, H5F_ACC_RDONLY, H5P_DEFAULT);
+  if( dataFile < 0 ) {
+    throw BoutException("Failed to open dataFile");
+  }
   
 #ifdef CHECK
   msg_stack.pop();
@@ -101,15 +123,17 @@ bool H5Format::openw(const char *name, bool append) {
     throw BoutException("HDF5 does not support parallel file access in the C++ interface. Boo!");
   }
 
-  if(dataFile != NULL) // Already open. Close then re-open
+  if(dataFile > 0) // Already open. Close then re-open
     close(); 
 
   if(append) {
-    dataFile = new H5::H5File();
-    dataFile->openFile(name, H5F_ACC_RDWR);
+    dataFile = H5Fopen(name, H5F_ACC_RDWR, H5P_DEFAULT);
   }
   else {
-    dataFile = new H5::H5File(name, H5F_ACC_TRUNC);
+    dataFile = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  }
+  if( dataFile < 0 ) {
+    throw BoutException("Failed to open dataFile");
   }
 
   fname = copy_string(name);
@@ -122,9 +146,8 @@ bool H5Format::openw(const char *name, bool append) {
 }
 
 bool H5Format::is_valid() {
-  if(dataFile == NULL)
+  if(dataFile<0)
     return false;
-// Should do some check on whether dataFile is a valid H5::H5File here, maybe using getID()???
   return true;
 }
 
@@ -134,9 +157,8 @@ void H5Format::close() {
 #endif
   
   if (is_valid()) {
-    dataFile->close();
-    delete dataFile;
-    dataFile = NULL;
+    H5Fclose(dataFile);
+    dataFile = -1;
   }
   
 #ifdef CHECK
@@ -148,7 +170,9 @@ void H5Format::flush() {
   if(!is_valid())
     return;
   
-  dataFile->flush(H5F_SCOPE_LOCAL);
+  if (H5Fflush(dataFile,H5F_SCOPE_LOCAL) < 0) {
+    throw BoutException("Failed to flush dataFile");
+  }
 }
 
 const vector<int> H5Format::getSize(const char *name) {
@@ -201,18 +225,22 @@ const vector<int> H5Format::getSize(const string &var) {
 }
 
 bool H5Format::setGlobalOrigin(int x, int y, int z) {
+  return setGlobalOrigin(x,y,z,0,0,0);
+}
+
+bool H5Format::setGlobalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
   x0 = x;
   y0 = y;
   z0 = z;
+  x0_local = offset_x;
+  y0_local = offset_y;
+  z0_local = offset_z;
   
   return true;
 }
 
 bool H5Format::setLocalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
-  x0_local = offset_x;
-  y0_local = offset_y;
-  z0_local = offset_z;
-  return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ);
+  return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ, offset_x, offset_y, offset_z);
 }
 
 bool H5Format::setRecord(int t) {
@@ -222,41 +250,7 @@ bool H5Format::setRecord(int t) {
 }
 
 bool H5Format::read(int *data, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
-  
-//   // Check for valid name
-//   checkName(name);
-
-#ifdef CHECK
-  msg_stack.push("H5Format::read(int)");
-#endif
-  
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3];
-  counts[0]=lx; counts[1]=ly; counts[2]=lz;
-  offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  
-  H5::DataSpace mem_space(nd, counts);
-  
-  H5::DataSet dataSet = dataFile->openDataSet(name);
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
-  
-  dataSet.read(data, H5::PredType::NATIVE_INT, mem_space, dataSpace);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
-  return true;
+  return read(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::read(int *var, const string &name, int lx, int ly, int lz) {
@@ -264,146 +258,69 @@ bool H5Format::read(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
-
-#ifdef CHECK
-  msg_stack.push("H5Format::read(BoutReal)");
-#endif
-  
-  int nd = 0; // Number of dimensions
-  if(lx != 0) nd = 1;
-  if(ly != 0) nd = 2;
-  if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3];
-  counts[0]=lx; counts[1]=ly; counts[2]=lz;
-  offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  
-  H5::DataSpace mem_space(nd, counts);
-  
-  H5::DataSet dataSet = dataFile->openDataSet(name);
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
-  
-  dataSet.read(data, H5::PredType::NATIVE_DOUBLE, mem_space, dataSpace);
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
-  return true;
+  return read(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
 }
 
 bool H5Format::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read(var, name.c_str(), lx, ly, lz);
 }
 
-bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
+bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
-//   // Check for valid name
-//   checkName(name);
-  
+
 #ifdef CHECK
-  msg_stack.push("H5Format::write(int)");
+  msg_stack.push("H5Format::read(void)");
 #endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3], offset_local[3],init_size[3],init_size_local[3];
+  hsize_t counts[3],offset[3],offset_local[3],init_size_local[3];
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
   offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
-  }
-  else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
-  }
   init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   
-  if (nd==0) {
-    // Need to write a scalar, not a 0-d array
-    nd = 1;
-    counts[0] = 1;
-    offset[0] = 0;
-    init_size[0] = 1;
-    init_size_local[0] = 1;
-  }
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
   
-  H5::DataSpace mem_space(nd, init_size_local);
-  mem_space.selectHyperslab(H5S_SELECT_SET, counts, offset_local);
+  hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet < 0)
+    throw BoutException("Failed to open dataSet");
   
-  H5::DataSet dataSet;
-  try {
-    dataSet = dataFile->openDataSet(name);
-  }
-  catch (H5::FileIException exception) {
-    H5::DataSpace init_space(nd, init_size);
-    dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_INT, init_space);
-    
-    // Add attribute to say what kind of field this is
-    // Determine type of data
-//     char* datatype; // type of the data
-//     datatype = copy_string("scalar");
-//     if(lx != 0) datatype = copy_string("FieldX");
-//     if(ly != 0) copy_string("Field2D");
-//     if(lz != 0) copy_string("Field3D");
-    
-    // Create attribute
-//     /*H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //     hsize_t attribute_size[1];
-// //     attribute_size[0] = 9;
-// //     H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //     H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//     hsize_t attribute_size[1];
-//     attribute_size[0] = 1;
-//     H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//     H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//     
-//     // Write attribute
-// //     attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//     attribute.write(char9, datatype);*/
-//     delete [] datatype;
-    
-    H5std_string datatype; // type of the data
-    datatype = "scalar";
-    if(lx != 0) datatype = "FieldX";
-    if(ly != 0) datatype = "Field2D";
-    if(lz != 0) datatype = "Field3D";
-    
-    // Create new dataspace for attribute
-    H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-    
-    // Create new string datatype for attribute
-    H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-    
-    // Create attribute and write to it
-    H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-    myatt_in.write(stringdatatype, datatype);
-    
-  }
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
   
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
+  if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to read data");
   
-  dataSet.write(data, H5::PredType::NATIVE_INT, mem_space, dataSpace);
-
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
 
   return true;
+}
+
+bool H5Format::write(int *data, const char *name, int lx, int ly, int lz) {
+  return write(data, H5T_NATIVE_INT, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::write(int *var, const string &name, int lx, int ly, int lz) {
@@ -411,6 +328,36 @@ bool H5Format::write(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
+  
+  if(lowPrecision) {
+    // An out of range value can make the conversion
+    // corrupt the whole dataset. Make sure everything
+    // is in the range of a float
+    int i_max=1;
+    if (lx>0) i_max*=lx;
+    if (ly>0) i_max*=ly;
+    if (lz>0) i_max*=lz;
+    
+    for(int i=0;i<i_max;i++) {
+      if(data[i] > 1e20)
+        data[i] = 1e20;
+      if(data[i] < -1e20)
+        data[i] = -1e20;
+    }
+    
+    return write(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, name, lx, ly, lz);
+  }
+  else {
+    return write(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
+  }
+  
+}
+
+bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
+  return write(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -421,17 +368,23 @@ bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
 //   checkName(name);
   
 #ifdef CHECK
-  msg_stack.push("H5Format::write(BoutReal)");
+  msg_stack.push("H5Format::write(void)");
 #endif
   
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  hsize_t counts[3],offset[3],init_size[3],init_size_local[3];
+  hsize_t counts[3],offset[3],offset_local[3],init_size[3],init_size_local[3];
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
-  init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
+  if (parallel) {
+    init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
+  }
+  else {
+    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
+  }
   init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
   
   if (nd==0) {
@@ -439,191 +392,89 @@ bool H5Format::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     nd = 1;
     counts[0] = 1;
     offset[0] = 0;
+    offset_local[0] = 0;
     init_size[0] = 1;
     init_size_local[0] = 1;
   }
   
-  H5::DataSpace mem_space(nd, counts);
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
   
-  
-  H5::DataSet dataSet;
-  try {
-    dataSet = dataFile->openDataSet(name);
-  }
-  catch (H5::FileIException exception) {
-    H5::DataSpace init_space(nd, init_size);
-    if (lowPrecision) {
-      dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_FLOAT, init_space);
-      
-      // Add attribute to say what kind of field this is
-      // Determine type of data
-//       char* datatype; // type of the data
-//       datatype = copy_string("scalar");
-//       if(lx != 0) datatype = copy_string("FieldX");
-//       if(ly != 0) datatype = copy_string("Field2D");
-//       if(lz != 0) datatype = copy_string("Field3D");
-//       
-//       // Create attribute
-//       H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //       hsize_t attribute_size[1];
-// //       attribute_size[0] = 9;
-// //       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //       H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//       hsize_t attribute_size[1];
-//       attribute_size[0] = 1;
-//       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//       H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//       
-//       // Write attribute
-// //       attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//       attribute.write(char9, datatype);
-//       
-//       delete [] datatype;
-      
-      H5std_string datatype; // type of the data
-      datatype = "scalar";
-      if(lx != 0) datatype = "FieldX";
-      if(ly != 0) datatype = "Field2D";
-      if(lz != 0) datatype = "Field3D";
-      
-      // Create new dataspace for attribute
-      H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-      
-      // Create new string datatype for attribute
-      H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-      
-      // Create attribute and write to it
-      H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-      myatt_in.write(stringdatatype, datatype);
-    }
-    else {
-      dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_DOUBLE, init_space);
-      
-      // Add attribute to say what kind of field this is
-      // Determine type of data
-//       char* datatype; // type of the data
-//       datatype = copy_string("scalar");
-//       if(lx != 0) datatype = copy_string("FieldX");
-//       if(ly != 0) copy_string("Field2D");
-//       if(lz != 0) copy_string("Field3D");
-//       
-      // Create attribute
-//       H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //       hsize_t attribute_size[1];
-// //       attribute_size[0] = 9;
-// //       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //       H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//       hsize_t attribute_size[1];
-//       attribute_size[0] = 1;
-//       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//       H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//       
-//       // Write attribute
-// //       attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//       attribute.write(char9, datatype);
-//       
-//       delete [] datatype;
-      H5std_string datatype; // type of the data
-      datatype = "scalar";
-      if(lx != 0) datatype = "FieldX";
-      if(ly != 0) datatype = "Field2D";
-      if(lz != 0) datatype = "Field3D";
-      
-      // Create new dataspace for attribute
-      H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-      
-      // Create new string datatype for attribute
-      H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-      
-      // Create attribute and write to it
-      H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-      myatt_in.write(stringdatatype, datatype);
-    }
-  }
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
-  
-  if(lowPrecision) {
-    // An out of range value can make the conversion
-    // corrupt the whole dataset. Make sure everything
-    // is in the range of a float
-    int i_max=1;
-    if (lx>0) i_max*=lx;
-    if (ly>0) i_max*=ly;
-    if (lz>0) i_max*=lz;
+  hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet < 0) {
+    // Negative value indicates error, i.e. file does not exist, so create:
+    hid_t init_space = H5Screate_simple(nd, init_size, init_size);
+    if (init_space < 0)
+      throw BoutException("Failed to create init_space");
+    dataSet = H5Dcreate(dataFile, name, write_hdf5_type, init_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    if (dataSet < 0)
+      throw BoutException("Failed to create dataSet");
     
-    for(int i=0;i<i_max;i++) {
-      if(data[i] > 1e20)
-        data[i] = 1e20;
-      if(data[i] < -1e20)
-        data[i] = -1e20;
-    }
+    // Add attribute to say what kind of field this is
+    H5std_string datatype; // type of the data
+    datatype = "scalar";
+    if(lx != 0) datatype = "FieldX";
+    if(ly != 0) datatype = "Field2D";
+    if(lz != 0) datatype = "Field3D";
+    
+    // Create new dataspace for attribute
+    hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+    if (attribute_dataspace < 0)
+      throw BoutException("Failed to create attribute_dataspace");
+    
+    // Create new string datatype for attribute
+    hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
+    if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
+      throw BoutException("Failed to create string type");
+    
+    // Create attribute and write to it
+    hid_t myatt_in = H5Acreate(dataSet, "type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    if (myatt_in < 0)
+      throw BoutException("Failed to create attribute");
+    if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)
+      throw BoutException("Failed to write attribute");
+    
+    if (H5Sclose(init_space) < 0)
+      throw BoutException("Failed to close init_space");
+    if (H5Sclose(attribute_dataspace) < 0)
+      throw BoutException("Failed to close attribute_dataspace");
+    if (H5Tclose(variable_length_string_type) < 0)
+      throw BoutException("Failed to close variable_length_string_type");
+    if (H5Aclose(myatt_in) < 0)
+      throw BoutException("Failed to close myatt_in");
+    
   }
   
-  dataSet.write(data, H5::PredType::NATIVE_DOUBLE, mem_space, dataSpace);
-
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
+  
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to write data");
+  
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+  
 #ifdef CHECK
   msg_stack.pop();
 #endif
 
   return true;
-}
-
-bool H5Format::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
-  return write(var, name.c_str(), lx, ly, lz);
-}
-
-/***************************************************************************
+}/***************************************************************************
  * Record-based (time-dependent) data
  ***************************************************************************/
 
 bool H5Format::read_rec(int *data, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
-
-//   // Check for valid name
-//   checkName(name);
-  
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4], offset_local[4];
-  hsize_t init_size[3],init_size_local[3];
-  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
-  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  offset_local[0]=t0;offset_local[1]=x0_local;offset_local[2]=y0_local;offset_local[3]=z0_local;
-  if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
-  }
-  else {
-    init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
-  }
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
-  
-  if (nd==1) {
-    // Need to write a time-series of scalars
-    nd = 1;
-    counts[1] = 1;
-    offset[1] = 0;
-    init_size[0] = 1;
-    init_size_local[0] = 1;
-  }
-  
-  H5::DataSpace mem_space(nd, counts);
-  
-  H5::DataSet dataSet = dataFile->openDataSet(name);
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
-  
-  dataSet.read(data, H5::PredType::NATIVE_INT, mem_space, dataSpace);
-  
-  return true;
+  return read_rec(data, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::read_rec(int *var, const string &name, int lx, int ly, int lz) {
@@ -631,40 +482,16 @@ bool H5Format::read_rec(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
   
-//   // Check for valid name
-//   checkName(name);
+  return read_rec(data, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
   
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4];
-  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
-  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  
-  H5::DataSpace mem_space(nd, counts);
-  
-  H5::DataSet dataSet = dataFile->openDataSet(name);
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
-  
-  dataSet.write(data, H5::PredType::NATIVE_DOUBLE, mem_space, dataSpace);
-  
-  return true;
 }
 
 bool H5Format::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return read_rec(var, name.c_str(), lx, ly, lz);
 }
 
-bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
+bool H5Format::read_rec(void *data, hid_t hdf5_type, const char *name, int lx, int ly, int lz) {
   if(!is_valid())
     return false;
 
@@ -678,13 +505,13 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4], offset_local[4];
-  hsize_t init_size[3],init_size_local[3];
+  hsize_t counts[4],offset[4],init_size[3];
+  hsize_t offset_local[3],init_size_local[3];
   counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
   offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  offset_local[0]=t0;offset_local[1]=x0_local;offset_local[2]=y0_local;offset_local[3]=z0_local;
+  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
   if (parallel) {
-    init_size[0]=mesh->GlobalNx-2*mesh->mxg; init_size[1]=mesh->GlobalNy-2*mesh->myg; init_size[2]=mesh->GlobalNz;
+    init_size[0]=mesh->GlobalNx-2*mesh->xstart; init_size[1]=mesh->GlobalNy-2*mesh->ystart; init_size[2]=mesh->GlobalNz;
   }
   else {
     init_size[0]=mesh->ngx; init_size[1]=mesh->ngy; init_size[2]=mesh->ngz;
@@ -700,111 +527,37 @@ bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
     init_size_local[0] = 1;
   }
   
-  H5::DataSpace mem_space(nd, counts);
+  hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
   
-  H5::DataSet dataSet;
-  try {
-    
-    dataSet = dataFile->openDataSet(name);
-    
-    hsize_t dims[4] = {};
-    H5::DataSpace currentSpace = dataSet.getSpace();
-    currentSpace.getSimpleExtentDims(dims);
-    dims[0]+=1;
-    if (t0 == -1) {
-      // Want t0 to be last record
-      t0 = dims[0]-1;
-    }
-    
-    dataSet.extend(dims);
-    
-  }
-  catch (H5::FileIException exception) {
-    
-    hsize_t init_size[4];
-    init_size[0]=1; init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
-    
-    // Modify dataset creation properties, i.e. enable chunking.
-    H5::DSetCreatPropList propertyList;
-    hsize_t chunk_dims[4],max_dims[4];
-    max_dims[0] = H5S_UNLIMITED; max_dims[1]=mesh->ngx; max_dims[2]=mesh->ngy; max_dims[3]=mesh->ngz;
-    chunk_dims[0] = chunk_length; chunk_dims[1]=mesh->ngx; chunk_dims[2]=mesh->ngy; chunk_dims[3]=mesh->ngz;
-    propertyList.setChunk(nd, chunk_dims);
-    
-    H5::DataSpace init_space(nd, init_size, max_dims);
-    dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_INT, init_space, propertyList);
-    
-    // Add attribute to say what kind of field this is
-    // Determine type of data
-//     char* datatype; // type of the data
-//     datatype = copy_string("scalar_t");
-//     if(lx != 0) datatype = copy_string("FieldX_t");
-//     if(ly != 0) datatype = copy_string("Field2D_t");
-//     if(lz != 0) datatype = copy_string("Field3D_t");
-//     
-//     // Create attribute
-//     H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //       hsize_t attribute_size[1];
-// //       attribute_size[0] = 9;
-// //       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //       H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//     hsize_t attribute_size[1];
-//     attribute_size[0] = 1;
-//     H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//     H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//     
-//     // Write attribute
-// //       attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//     attribute.write(char9, datatype);
-//     
-//     delete [] datatype;
-    H5std_string datatype; // type of the data
-    datatype = "scalar_t";
-    if(lx != 0) datatype = "FieldX_t";
-    if(ly != 0) datatype = "Field2D_t";
-    if(lz != 0) datatype = "Field3D_t";
-    
-    // Create new dataspace for attribute
-    H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-    
-    // Create new string datatype for attribute
-    H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-    
-    // Create attribute and write to it
-    H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-    myatt_in.write(stringdatatype, datatype);
-    
-    if (t0 == -1) {
-      // Want t0 to be last record, we are creating the first record, so must have t0=0
-      t0 = 0;
-    }
-    
-  }
-//   catch (H5::GroupIException exception) {
-//     
-//     hsize_t init_size[4];
-//     init_size[0]=1; init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
-//     
-//     // Modify dataset creation properties, i.e. enable chunking.
-//     H5::DSetCreatPropList propertyList;
-//     hsize_t chunk_dims[4],max_dims[4];
-//     chunk_dims[0] = H5S_UNLIMITED; max_dims[1]=mesh->ngx; max_dims[2]=mesh->ngy; max_dims[3]=mesh->ngz;
-//     chunk_dims[0] = chunk_length; chunk_dims[1]=mesh->ngx; chunk_dims[2]=mesh->ngy; chunk_dims[3]=mesh->ngz;
-//     propertyList.setChunk(nd, chunk_dims);
-//     
-//     H5::DataSpace init_space(nd, init_size, max_dims);
-//     dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_INT, init_space, propertyList);
-//     
-//   }
+  hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet < 0)
+    throw BoutException("Failed to open dataSet");
   
-  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
   
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
+  if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to read data");
   
-  dataSet.write(data, H5::PredType::NATIVE_INT, mem_space, dataSpace);
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
   
   return true;
+}
+
+bool H5Format::write_rec(int *data, const char *name, int lx, int ly, int lz) {
+  return write_rec(data, H5T_NATIVE_INT, H5T_NATIVE_INT, name, lx, ly, lz);
 }
 
 bool H5Format::write_rec(int *var, const string &name, int lx, int ly, int lz) {
@@ -812,171 +565,6 @@ bool H5Format::write_rec(int *var, const string &name, int lx, int ly, int lz) {
 }
 
 bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
-  if(!is_valid())
-    return false;
-
-  if((lx < 0) || (ly < 0) || (lz < 0))
-    return false;
-
-//   // Check for valid name
-//   checkName(name);
-  
-  int nd = 1; // Number of dimensions
-  if(lx != 0) nd = 2;
-  if(ly != 0) nd = 3;
-  if(lz != 0) nd = 4;
-  hsize_t counts[4],offset[4];
-  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
-  
-  H5::DataSpace mem_space(nd, counts);
-  
-  H5::DataSet dataSet;
-  try {
-    
-    dataSet = dataFile->openDataSet(name);
-    
-    hsize_t dims[4] = {};
-    H5::DataSpace currentSpace = dataSet.getSpace();
-    currentSpace.getSimpleExtentDims(dims);
-    dims[0]+=1;
-    if (t0 == -1) {
-      // Want t0 to be last record
-      t0 = dims[0]-1;
-    }
-    
-    dataSet.extend(dims);
-    
-  }
-  catch (H5::FileIException exception) {
-    
-    hsize_t init_size[4];
-    init_size[0]=1; init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
-    
-    // Modify dataset creation properties, i.e. enable chunking.
-    H5::DSetCreatPropList propertyList;
-    hsize_t chunk_dims[4],max_dims[4];
-    max_dims[0] = H5S_UNLIMITED; max_dims[1]=mesh->ngx; max_dims[2]=mesh->ngy; max_dims[3]=mesh->ngz;
-    chunk_dims[0] = chunk_length; chunk_dims[1]=mesh->ngx; chunk_dims[2]=mesh->ngy; chunk_dims[3]=mesh->ngz;
-    propertyList.setChunk(nd, chunk_dims);
-    
-    H5::DataSpace init_space(nd, init_size, max_dims);
-    if (lowPrecision) {
-      dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_FLOAT, init_space, propertyList);
-      
-      // Add attribute to say what kind of field this is
-      // Determine type of data
-//       char* datatype; // type of the data
-//       datatype = copy_string("scalar_t");
-//       if(lx != 0) datatype = copy_string("FieldX_t");
-//       if(ly != 0) datatype = copy_string("Field2D_t");
-//       if(lz != 0) datatype = copy_string("Field3D_t");
-//       
-//       // Create attribute
-//       H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //       hsize_t attribute_size[1];
-// //       attribute_size[0] = 9;
-// //       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //       H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//       hsize_t attribute_size[1];
-//       attribute_size[0] = 1;
-//       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//       H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//       
-//       // Write attribute
-// //       attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//       attribute.write(char9, datatype);
-// 
-//       
-//       delete [] datatype;
-      H5std_string datatype; // type of the data
-      datatype = "scalar_t";
-      if(lx != 0) datatype = "FieldX_t";
-      if(ly != 0) datatype = "Field2D_t";
-      if(lz != 0) datatype = "Field3D_t";
-      
-      // Create new dataspace for attribute
-      H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-      
-      // Create new string datatype for attribute
-      H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-      
-      // Create attribute and write to it
-      H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-      myatt_in.write(stringdatatype, datatype);
-      
-    }
-    else {
-      dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_DOUBLE, init_space, propertyList);
-      
-      // Add attribute to say what kind of field this is
-      // Determine type of data
-//       char* datatype; // type of the data
-//       datatype = copy_string("scalar_t");
-//       if(lx != 0) datatype = copy_string("FieldX_t");
-//       if(ly != 0) datatype = copy_string("Field2D_t");
-//       if(lz != 0) datatype = copy_string("Field3D_t");
-//       
-//       // Create attribute
-//       H5::StrType char9(H5::PredType::NATIVE_CHAR, 9);
-// //       hsize_t attribute_size[1];
-// //       attribute_size[0] = 9;
-// //       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-// //       H5::Attribute attribute = dataSet.createAttribute("type", H5::PredType::NATIVE_CHAR, attribute_space);
-//       hsize_t attribute_size[1];
-//       attribute_size[0] = 1;
-//       H5::DataSpace attribute_space = H5::DataSpace(1, attribute_size);
-//       H5::Attribute attribute = dataSet.createAttribute("type", char9, attribute_space);
-//       
-//       // Write attribute
-// //       attribute.write(H5::PredType::NATIVE_CHAR, datatype);
-//       attribute.write(char9, datatype);
-//       
-//       delete [] datatype;
-      H5std_string datatype; // type of the data
-      datatype = "scalar_t";
-      if(lx != 0) datatype = "FieldX_t";
-      if(ly != 0) datatype = "Field2D_t";
-      if(lz != 0) datatype = "Field3D_t";
-      
-      // Create new dataspace for attribute
-      H5::DataSpace attribute_dataspace = H5::DataSpace(H5S_SCALAR);
-      
-      // Create new string datatype for attribute
-      H5::StrType stringdatatype(H5::PredType::C_S1, 9); // of length 9 characters
-      
-      // Create attribute and write to it
-      H5::Attribute myatt_in = dataSet.createAttribute("type", stringdatatype, attribute_dataspace);
-      myatt_in.write(stringdatatype, datatype);
-      
-    }
-    
-    if (t0 == -1) {
-      // Want t0 to be last record, we are creating the first record, so must have t0=0
-      t0 = 0;
-    }
-    
-  }
-//   catch (H5::GroupIException exception) {
-//     
-//     hsize_t init_size[4];
-//     init_size[0]=1; init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
-//     
-//     // Modify dataset creation properties, i.e. enable chunking.
-//     H5::DSetCreatPropList propertyList;
-//     hsize_t chunk_dims[4],max_dims[4];
-//     chunk_dims[0] = H5S_UNLIMITED; max_dims[1]=mesh->ngx; max_dims[2]=mesh->ngy; max_dims[3]=mesh->ngz;
-//     chunk_dims[0] = chunk_length; chunk_dims[1]=mesh->ngx; chunk_dims[2]=mesh->ngy; chunk_dims[3]=mesh->ngz;
-//     propertyList.setChunk(nd, chunk_dims);
-//     
-//     H5::DataSpace init_space(nd, init_size, max_dims);
-//     dataSet = dataFile->createDataSet(name, H5::PredType::NATIVE_INT, init_space, propertyList);
-//     
-//   }
-  
-  offset[0]=t0; offset[1]=x0; offset[2]=y0; offset[3]=z0;
-  
-  H5::DataSpace dataSpace = dataSet.getSpace();
-  dataSpace.selectHyperslab(H5S_SELECT_SET, counts, offset);
   
   if(lowPrecision) {
     // An out of range value can make the conversion
@@ -993,15 +581,168 @@ bool H5Format::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
       if(data[i] < -1e20)
         data[i] = -1e20;
     }
+    return write_rec(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_FLOAT, name, lx, ly, lz);
   }
   
-  dataSet.write(data, H5::PredType::NATIVE_DOUBLE, mem_space, dataSpace);
-  
-  return true;
+  return write_rec(data, H5T_NATIVE_DOUBLE, H5T_NATIVE_DOUBLE, name, lx, ly, lz);
 }
 
 bool H5Format::write_rec(BoutReal *var, const string &name, int lx, int ly, int lz) {
   return write_rec(var, name.c_str(), lx, ly, lz);
+}
+
+bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx, int ly, int lz) {
+  if(!is_valid())
+    return false;
+
+  if((lx < 0) || (ly < 0) || (lz < 0))
+    return false;
+
+//   // Check for valid name
+//   checkName(name);
+  
+  int nd = 1; // Number of dimensions
+  if(lx != 0) nd = 2;
+  if(ly != 0) nd = 3;
+  if(lz != 0) nd = 4;
+  int nd_local = nd-1;
+  hsize_t counts[4],offset[4],init_size[4];
+  hsize_t counts_local[3],offset_local[3],init_size_local[3];
+  counts[0]=1; counts[1]=lx; counts[2]=ly; counts[3]=lz;
+  counts_local[0]=lx; counts_local[1]=ly; counts_local[2]=lz;
+// Do this later, after setting t0//  offset[0]=t0;
+  offset[1]=x0; offset[2]=y0; offset[3]=z0;
+  offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
+  if (parallel) {
+    init_size[0]=1;init_size[1]=mesh->GlobalNx-2*mesh->xstart; init_size[2]=mesh->GlobalNy-2*mesh->ystart; init_size[3]=mesh->GlobalNz;
+  }
+  else {
+    init_size[0]=1;init_size[1]=mesh->ngx; init_size[2]=mesh->ngy; init_size[3]=mesh->ngz;
+  }
+  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  
+  if (nd_local==0) {
+    nd_local = 1;
+    // Need to write a time-series of scalars
+//     nd = 1;
+//     counts[1] = 1;
+    counts_local[0] = 1;
+//     offset[1] = 0;
+    offset_local[0] = 0;
+//     init_size[1] = 1;
+    init_size_local[0] = 1;
+  }
+  
+  hid_t mem_space = H5Screate_simple(nd_local, init_size_local, init_size_local);
+  if (mem_space < 0)
+    throw BoutException("Failed to create mem_space");
+  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts_local, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
+  
+  hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet >= 0) { // >=0 means file exists, so open. Else create it.
+    
+    hsize_t dims[4] = {};
+    hid_t dataSpace = H5Dget_space(dataSet);
+    if (dataSpace < 0)
+      throw BoutException("Failed to create dataSpace");
+    if (H5Sget_simple_extent_dims(dataSpace, dims, /*maxdims=*/NULL) < 0)
+      throw BoutException("Failed to get dims");
+    dims[0]+=1;
+    if (t0 == -1) {
+      // Want t0 to be last record
+      t0 = dims[0]-1;
+    }
+    
+    if (H5Dset_extent(dataSet, dims) < 0)
+      throw BoutException("Failed to extend dataSet");
+    
+    if (H5Sclose(dataSpace) < 0)
+      throw BoutException("Failed to close dataSpace");
+    
+  }
+  else {
+    
+    // Modify dataset creation properties, i.e. enable chunking.
+    hid_t propertyList = H5Pcreate(H5P_DATASET_CREATE);
+    if (propertyList < 0)
+      throw BoutException("Failed to create propertyList");
+    hsize_t chunk_dims[4],max_dims[4];
+    max_dims[0] = H5S_UNLIMITED; max_dims[1]=init_size[1]; max_dims[2]=init_size[2]; max_dims[3]=init_size[3];
+    chunk_dims[0] = chunk_length; chunk_dims[1]=init_size[1]; chunk_dims[2]=init_size[2]; chunk_dims[3]=init_size[3];
+    if (H5Pset_chunk(propertyList, nd, chunk_dims) < 0)
+      throw BoutException("Failed to set chunk property");
+    
+    hid_t init_space = H5Screate_simple(nd, init_size, max_dims);
+    if (init_space < 0)
+      throw BoutException("Failed to create init_space");
+    dataSet = H5Dcreate(dataFile, name, write_hdf5_type, init_space, H5P_DEFAULT, propertyList, H5P_DEFAULT);
+    if (dataSet < 0)
+      throw BoutException("Failed to create dataSet");
+    
+    // Add attribute to say what kind of field this is
+    H5std_string datatype; // type of the data
+    datatype = "scalar_t";
+    if(lx != 0) datatype = "FieldX_t";
+    if(ly != 0) datatype = "Field2D_t";
+    if(lz != 0) datatype = "Field3D_t";
+    
+    // Create new dataspace for attribute
+    hid_t attribute_dataspace = H5Screate(H5S_SCALAR);
+    if (attribute_dataspace < 0)
+      throw BoutException("Failed to create attribute_dataspace");
+    
+    // Create new string datatype for attribute
+    hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
+    if (variable_length_string_type < 0)
+      throw BoutException("Failed to create variable_length_string_type");
+    if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
+      throw BoutException("Failed to create string type");
+    
+    // Create attribute and write to it
+    hid_t myatt_in = H5Acreate(dataSet, "type", variable_length_string_type, attribute_dataspace, H5P_DEFAULT, H5P_DEFAULT);
+    if (myatt_in < 0)
+      throw BoutException("Failed to create attribute");
+    if (H5Awrite(myatt_in, variable_length_string_type, &datatype) < 0)
+      throw BoutException("Failed to write attribute");
+    
+    if (H5Pclose(propertyList) < 0)
+      throw BoutException("Failed to close propertyList");
+    if (H5Sclose(init_space) < 0)
+      throw BoutException("Failed to close init_space");
+    if (H5Sclose(attribute_dataspace) < 0)
+      throw BoutException("Failed to close attribute_dataspace");
+    if (H5Tclose(variable_length_string_type) < 0)
+      throw BoutException("Failed to close variable_length_string_type");
+    if (H5Aclose(myatt_in) < 0)
+      throw BoutException("Failed to close myatt_in");
+    
+    if (t0 == -1) {
+      // Want t0 to be last record, we are creating the first record, so must have t0=0
+      t0 = 0;
+    }
+    
+  }
+
+  offset[0]=t0;
+  
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+    throw BoutException("Failed to select hyperslab");
+  
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+    throw BoutException("Failed to write data");
+  
+  if (H5Sclose(mem_space) < 0)
+    throw BoutException("Failed to close mem_space");
+  if (H5Sclose(dataSpace) < 0)
+    throw BoutException("Failed to close dataSpace");
+  if (H5Dclose(dataSet) < 0)
+    throw BoutException("Failed to close dataSet");
+  
+  return true;
 }
 
 /***************************************************************************

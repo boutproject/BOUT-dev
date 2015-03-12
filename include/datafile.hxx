@@ -78,7 +78,7 @@ class Datafile {
   DataFormat *file;
   char filename[512];
   bool appending;
-  BoutReal Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
+  int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>

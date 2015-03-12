@@ -57,17 +57,6 @@ Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), f
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
   
-  // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
-  if (parallel) {
-    Lx = mesh->ngx-2*mesh->mxg;
-    Ly = mesh->ngy-2*mesh->myg;
-    Lz = mesh->ngz;
-  }
-  else {
-    Lx = mesh->ngx;
-    Ly = mesh->ngyg;
-    Lz = mesh->ngz;
-  }
 }
 
 Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
@@ -117,7 +106,7 @@ bool Datafile::openr(const char *format, ...) {
   
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
-    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+    file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
   }
   else {
     file->setGlobalOrigin(0,0,0);
@@ -153,10 +142,16 @@ bool Datafile::openw(const char *format, ...) {
   
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
-    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+    file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
+    Lx = mesh->ngx-2*mesh->xstart;
+    Ly = mesh->ngy-2*mesh->ystart;
+    Lz = mesh->ngz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
+    Lx = mesh->ngx;
+    Ly = mesh->ngy;
+    Lz = mesh->ngz;
   }
   
   appending = false;
@@ -190,10 +185,16 @@ bool Datafile::opena(const char *format, ...) {
 
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
-    file->setLocalOrigin(0, 0, 0, mesh->mxg, mesh->myg, 0);
+    file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
+    Lx = mesh->ngx-2*mesh->xstart;
+    Ly = mesh->ngy-2*mesh->ystart;
+    Lz = mesh->ngz;
   }
   else {
     file->setGlobalOrigin(0,0,0);
+    Lx = mesh->ngx;
+    Ly = mesh->ngy;
+    Lz = mesh->ngz;
   }
   
   appending = true;

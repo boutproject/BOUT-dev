@@ -47,7 +47,7 @@ class H5Format;
 
 #include "dataformat.hxx"
 
-#include <H5Cpp.h>
+#include <hdf5.h>
 
 #include <map>
 #include <string>
@@ -80,7 +80,8 @@ class H5Format : public DataFormat {
   
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
-  bool setLocalOrigin(int x = 0, int y = 0, int z = 0);
+  bool setGlobalOrigin(int x, int y, int z, int offset_x, int offset_y = 0, int offset_z = 0);
+  bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
   bool setRecord(int t); // negative -> latest
   
   // Read / Write simple variables up to 3D
@@ -113,7 +114,7 @@ class H5Format : public DataFormat {
 
   char *fname; ///< Current file name
   
-  H5::H5File* dataFile;
+  hid_t dataFile;
 
 //   /// Pointer to netCDF file
 //   NcFile *dataFile;
@@ -132,6 +133,11 @@ class H5Format : public DataFormat {
   
   hsize_t chunk_length;
   bool is_open;
+  
+  bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
+  bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
+  bool write_rec(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
 
 //   map<string, int> rec_nr; // Record number for each variable (bit nasty)
 //   int default_rec;  // Starting record. Useful when appending to existing file

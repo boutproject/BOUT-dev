@@ -32,7 +32,7 @@ for nproc in [1,2,4]:
 
   # On some machines need to delete dmp files first
   # or data isn't written correctly
-  shell("rm data/BOUT.dmp.*.hdf5") 
+  shell("rm data/BOUT.dmp.*") 
   
   # Run test case
   

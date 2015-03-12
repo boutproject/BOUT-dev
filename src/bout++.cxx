@@ -249,6 +249,11 @@ void BoutInitialise(int &argc, char **&argv) {
       return;
     }
 
+    ///////////////////////////////////////////////
+    
+    mesh = Mesh::create();  ///< Create the mesh
+    mesh->load();           ///< Load from sources. Required for Field initialisation
+    
     ////////////////////////////////////////////
 
     // Set up the "dump" data output file
@@ -271,10 +276,8 @@ void BoutInitialise(int &argc, char **&argv) {
     dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
     dump.add(iteration, "iteration", 0);
 
-    ///////////////////////////////////////////////
-    
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
+    ////////////////////////////////////////////
+
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
