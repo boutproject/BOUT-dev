@@ -101,9 +101,6 @@ class Field3D : public Field, public FieldData {
   
   Field3D& ydown() { return *ydown_field; }
   const Field3D& ydown() const { return *ydown_field; }
-  
-  /// Returns DC component
-  const Field2D DC() const;
 
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location
@@ -196,17 +193,10 @@ class Field3D : public Field, public FieldData {
   Field3D & operator/=(const Field3D &rhs);
   Field3D & operator/=(const Field2D &rhs);
   Field3D & operator/=(const BoutReal &rhs);
-
-  /// Exponentiation (use pow() function)
-  Field3D & operator^=(const Field3D &rhs);
-  Field3D & operator^=(const Field2D &rhs);
-  Field3D & operator^=(const BoutReal rhs);
   
   // Binary operators
 
-  const Field3D operator+() const;
-  const Field3D operator+(const Field3D &other) const;
-  const Field3D operator+(const Field2D &other) const;
+  const Field3D operator+() const {return *this;}
   const FieldPerp operator+(const FieldPerp &other) const;
   const Field3D operator+(const BoutReal &rhs) const;
 
@@ -225,11 +215,6 @@ class Field3D : public Field, public FieldData {
   const Field3D operator/(const Field2D &other) const;
   const FieldPerp operator/(const FieldPerp &other) const;
   const Field3D operator/(const BoutReal rhs) const;
-
-  const Field3D operator^(const Field3D &other) const;
-  const Field3D operator^(const Field2D &other) const;
-  const FieldPerp operator^(const FieldPerp &other) const;
-  const Field3D operator^(const BoutReal rhs) const;
 
   // Stencils for differencing
 
@@ -351,14 +336,24 @@ class Field3D : public Field, public FieldData {
 // Non-member overloaded operators
 
 const Field3D operator-(const BoutReal &lhs, const Field3D &rhs);
-const Field3D operator+(const BoutReal &lhs, const Field3D &rhs);
+
+
+Field3D operator+(Field3D lhs, const Field3D &other);
+Field3D operator+(Field3D lhs, const Field2D &other);
+Field3D operator+(Field3D lhs, BoutReal rhs);
+Field3D operator+(BoutReal lhs, Field3D rhs);
 const Field3D operator*(const BoutReal lhs, const Field3D &rhs);
 const Field3D operator/(const BoutReal lhs, const Field3D &rhs);
-const Field3D operator^(const BoutReal lhs, const Field3D &rhs);
 
 // Non-member functions
 BoutReal min(const Field3D &f, bool allpe=false);
 BoutReal max(const Field3D &f, bool allpe=false);
+
+Field3D pow(const Field3D &lhs, const Field3D &rhs);
+Field3D pow(const Field3D &lhs, const Field2D &rhs);
+Field3D pow(const Field3D &lhs, const FieldPerp &rhs);
+Field3D pow(const Field3D &f, BoutReal rhs);
+Field3D pow(BoutReal lhs, const Field3D &rhs);
 
 const Field3D SQ(const Field3D &f);
 const Field3D sqrt(const Field3D &f);
@@ -384,6 +379,8 @@ const Field3D floor(const Field3D &var, BoutReal f);
 const Field3D filter(const Field3D &var, int N0);
 const Field3D lowPass(const Field3D &var, int zmax);
 const Field3D lowPass(const Field3D &var, int zmax, int zmin);
+
+Field2D DC(const Field3D &f);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

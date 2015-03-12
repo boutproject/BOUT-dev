@@ -210,7 +210,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift) {
 
 #ifndef _OPENMP
 // Serial code
-void rfft(BoutReal *in, int length, dcomplex *out) {
+void rfft(const BoutReal *in, int length, dcomplex *out) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;

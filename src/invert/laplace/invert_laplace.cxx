@@ -165,7 +165,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
 const Field2D Laplacian::solve(const Field2D &b) {
   Field3D f = b;
   f = solve(f);
-  return f.DC();
+  return DC(f);
 }
 
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
@@ -206,7 +206,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
   Field3D f = b, g = x0;
   f = solve(f, g);
-  return f.DC();
+  return DC(f);
 }
 
 /**********************************************************************************

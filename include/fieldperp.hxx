@@ -32,6 +32,8 @@ class FieldPerp;
 
 #include "bout/deprecated.hxx"
 
+#include "bout/dataiterator.hxx"
+
 class Field2D; // #include "field2d.hxx"
 class Field3D; // #include "field3d.hxx"
 
@@ -64,6 +66,13 @@ class FieldPerp : public Field {
     return data[jx][jz];
   }
 
+  BoutReal& operator[](const Indices &i) {
+    return operator()(i.x, i.z);
+  }
+  const BoutReal& operator[](const Indices &i) const {
+    return operator()(i.x, i.z);
+  }
+  
   FieldPerp & operator=(const FieldPerp &rhs);
   FieldPerp & operator=(const BoutReal rhs);
 
