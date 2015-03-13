@@ -127,7 +127,11 @@ private:
 // the given model and runs it.
 #define BOUTMAIN(ModelClass)                          \
   int main(int argc, char **argv) {                   \
-    BoutInitialise(argc, argv);                       \
+    int init_err = BoutInitialise(argc, argv);        \
+    if (init_err < 0)				      \
+      return 0;                                       \
+    else if (init_err > 0) 			      \
+      return init_err;				      \
     try {                                             \
       ModelClass *model = new ModelClass();           \
       Solver *solver = Solver::create();              \

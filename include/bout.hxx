@@ -76,7 +76,7 @@ const BoutReal BOUT_VERSION = 2;  ///< Version number
  * PETSc then these will be initialised as well.
  * 
  */
-void BoutInitialise(int &argc, char **&argv);
+int BoutInitialise(int &argc, char **&argv);
 
 int bout_run(Solver *solver, rhsfunc physics_run);
 
