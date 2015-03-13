@@ -38,6 +38,10 @@
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
 
+/// Initialise static memebers
+dcomplex *** Field3D::phs = (dcomplex ***) NULL;
+dcomplex *** Field3D::cphs = (dcomplex ***) NULL;
+
 /// Constructor
 Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef MEMDEBUG
@@ -122,6 +126,10 @@ Field3D::~Field3D() {
   
   if((ydown_field != NULL) && (ydown_field != this))
     delete ydown_field;
+  
+  if(fft_coef != (dcomplex ***) NULL){
+    free_c3tensor(fft_coef);
+  }
 }
 
 Field3D* Field3D::clone() const {
@@ -1838,7 +1846,7 @@ BoutReal Field3D::interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) 
   return result;
 }
 
-const Field3D Field3D::shiftZ2D(const Field2D zangle, const int dir) const{
+const Field3D Field3D::shiftZ2D(const Field2D zangle, const bool fwd) const{
   Field3D result;
 
 #ifdef CHECK
@@ -1848,7 +1856,7 @@ const Field3D Field3D::shiftZ2D(const Field2D zangle, const int dir) const{
 
   result = *this;
 
-  result.shiftZ2D(zangle,dir,true);
+  result.shiftZ2D(zangle,fwd,true);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -1858,7 +1866,7 @@ const Field3D Field3D::shiftZ2D(const Field2D zangle, const int dir) const{
 
 };
 
-const Field3D Field3D::shiftZ2D(const BoutReal zangle, const int dir) const{
+const Field3D Field3D::shiftZ2D(const BoutReal zangle, const bool fwd) const{
   Field3D result;
 
 #ifdef CHECK
@@ -1868,7 +1876,7 @@ const Field3D Field3D::shiftZ2D(const BoutReal zangle, const int dir) const{
 
   result = *this;
 
-  result.shiftZ2D(zangle,dir,true);
+  result.shiftZ2D(zangle,fwd,true);
   
 #ifdef CHECK
   msg_stack.pop();
@@ -1879,10 +1887,10 @@ const Field3D Field3D::shiftZ2D(const BoutReal zangle, const int dir) const{
 };
 
 //2d fft based shift
-void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
+void Field3D::shiftZ2D(const Field2D zangle, const bool fwd, const bool do2D){
   static dcomplex **v = (dcomplex**) NULL;
   static BoutReal **r = (BoutReal**) NULL;
-  static dcomplex **phs = (dcomplex**) NULL;
+  //static dcomplex ***phs = (dcomplex***) NULL;
   int jz;
   BoutReal kwave;
 
@@ -1907,15 +1915,17 @@ void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
   };
   
   //Precalculate the possible phases as dcomplex is slow
-  if(phs == (dcomplex**) NULL) {
-    phs = cmatrix(mesh->ngy,nx*nkz);
+  if(phs == (dcomplex***) NULL) {
+    phs = c3tensor(nx,mesh->ngy,nkz);
+    cphs = c3tensor(nx,mesh->ngy,nkz);
     BoutReal fac=2.0*PI/mesh->zlength;
     for(int jy=0;jy<mesh->ngy;jy++){
       for(int jz=0;jz<nkz;jz++){
 	for(int jx=0;jx<nx;jx++){
 	  kwave=jz*fac; // wave number is 1/[rad]
 	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
-	  phs[jy][jx+jz*nx]=phase;
+	  phs[jx][jy][jz]=phase;
+	  cphs[jx][jy][jz]=conj(phase);
 	}
       }
     }
@@ -1939,13 +1949,16 @@ void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
     rfft(r, nx, ncz, v, true);
 
     //Do phase shift
-    for(int jz=0;jz<nkz;jz++){
-      for(int jx=0;jx<nx;jx++){
-	//Not great to have a branch inside nested loop
-	if(dir==1){
-	  v[jx][jz] *= phs[jy][jx+jz*nx];
-	}else{
-	  v[jx][jz] *= conj(phs[jy][jx+jz*nx]);
+    if(fwd){
+      for(int jz=1;jz<nkz;jz++){
+	for(int jx=0;jx<nx;jx++){
+	  v[jx][jz] *= phs[jx][jy][jz];
+	}
+      }
+    }else{
+      for(int jz=1;jz<nkz;jz++){
+	for(int jx=0;jx<nx;jx++){
+	  v[jx][jz] *= cphs[jx][jy][jz];
 	};
       };
     };
@@ -1962,13 +1975,126 @@ void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
   };
 };
 
-//1d based shiftZ
-void Field3D::shiftZ(int jx, int jy, double zangle)
+const Field3D Field3D::shiftZ3D(const Field2D zangle, const bool fwd) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ3D(zangle,fwd,true);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+
+  return result;
+
+};
+
+const Field3D Field3D::shiftZ3D(const BoutReal zangle, const bool fwd) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ3D(zangle,fwd,true);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+
+  return result;
+
+};
+
+//2d fft based shift
+void Field3D::shiftZ3D(const Field2D zangle, const bool fwd, const bool do2D){
+
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Shifting in Z an empty data set\n");
+#endif
+
+  //Get number of unique z points, exit if only 1
+  const int ncz = mesh->ngz-1;
+  if(ncz == 1)
+    return;
+  const int nx = mesh->ngx;
+  const int ny = mesh->ngy;
+  const int ntot = nx*ny;
+  const int nkz = 1+ncz/2;
+
+  //Precalculate the possible phases as dcomplex is slow
+  if(phs == (dcomplex***) NULL) {
+    phs = c3tensor(nx,ny,nkz);
+    cphs = c3tensor(nx,ny,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	  cphs[jx][jy][jz]=conj(phase);
+	}
+      }
+    }
+  };
+  
+  //Ensure this field has an allocated data block
+  allocate(); //Why is this needed --> CHECK
+
+  if(fft_coef == (dcomplex***) NULL) {
+    fft_coef = c3tensor(nx,ny,nkz);
+  };
+    
+  // //Now do the FFT of field3d into v
+  rfft(*this, true);
+ 
+  //Do phase shift
+  if(fwd){
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+  	for(int jz=1;jz<nkz;jz++){
+  	  fft_coef[jx][jy][jz] *= phs[jx][jy][jz];
+  	}
+      }
+    }
+  }else{
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+  	for(int jz=1;jz<nkz;jz++){
+  	  fft_coef[jx][jy][jz] *= cphs[jx][jy][jz];
+  	}
+      }
+    }
+  }
+  
+  // Reverse FFT
+  irfft(*this, true); 
+};
+
+//1d based shiftZ with cached phase
+void Field3D::shiftZ(int jx, int jy, bool fwd)
 {
   static dcomplex *v = (dcomplex*) NULL;
-  int jz;
   BoutReal kwave;
-  
+
+  //We need a different static phase here as this routine is used for
+  //matching/shifting across the y boundaries, which involves a different phase.
+  static dcomplex ** phs = (dcomplex **) NULL;
+  static   dcomplex ** cphs = (dcomplex **) NULL;
+
 #ifdef CHECK
   // Check data set
   if(block == NULL)
@@ -1976,7 +2102,64 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
 #endif
 
   int ncz = mesh->ngz-1;
+  const int nx = mesh->ngx;
+  const int nkz = 1+(ncz/2);
+  if(ncz == 1)
+    return;
 
+  allocate();
+  if(v == (dcomplex*) NULL) {
+    //allocate memory
+    v = new dcomplex[ncz/2 + 1];
+  }
+  if(phs == (dcomplex**) NULL) {
+    phs = cmatrix(nx,nkz);
+    cphs = cmatrix(nx,nkz);
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int ix=0;ix<nx;ix++){
+      BoutReal ts;
+      mesh->periodicY(ix,ts);
+      for(int jz=0;jz<nkz;jz++){
+	kwave=jz*fac; // wave number is 1/[rad]
+	dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
+	phs[ix][jz]=phase;
+	cphs[ix][jz]=conj(phase);
+      }
+    }
+  };
+
+  rfft(block->data[jx][jy], ncz, v); // Forward FFT
+
+  // Apply phase shift
+  if(fwd){
+    for(int jz=1;jz<=ncz/2;jz++) {
+      v[jz] *= phs[jx][jz];
+    }
+  }else{
+    for(int jz=1;jz<=ncz/2;jz++) {
+      v[jz] *= cphs[jx][jz];
+    }
+  }
+
+  irfft(v, ncz, block->data[jx][jy]); // Reverse FFT
+
+  block->data[jx][jy][ncz] = block->data[jx][jy][0];
+}
+
+//1d based shiftZ
+void Field3D::shiftZ(int jx, int jy, double zangle)
+{
+  static dcomplex *v = (dcomplex*) NULL;
+  int jz;
+  BoutReal kwave;
+
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Shifting in Z an empty data set\n");
+#endif
+
+  int ncz = mesh->ngz-1;
   if(ncz == 1)
     return;
 
@@ -1986,11 +2169,11 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
     //allocate memory
     v = new dcomplex[ncz/2 + 1];
   }
-  
+
   rfft(block->data[jx][jy], ncz, v); // Forward FFT
 
   // Apply phase shift
-  for(jz=1;jz<=ncz/2;jz++) {
+  for(int jz=1;jz<=ncz/2;jz++) {
     kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
     v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
   }
@@ -2049,14 +2232,21 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 }
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
-  if(toBoutReal) {
-    return shiftZ2D(mesh->zShift,1);
-  }
-  return shiftZ2D(mesh->zShift,-1);
+
   // if(toBoutReal) {
-  //   return shiftZ2D(mesh->zShift);
+  //   return shiftZ2D(mesh->zShift,true);
   // }
-  // return shiftZ2D(-mesh->zShift);
+  // return shiftZ2D(mesh->zShift,false);
+
+  if(toBoutReal) {
+    return shiftZ3D(mesh->zShift,true);
+  }
+  return shiftZ3D(mesh->zShift,false);
+  
+  // if(toBoutReal) {
+  //    return shiftZ(mesh->zShift);
+  // }
+  // return shiftZ(-mesh->zShift);
 }
 
 
@@ -2391,7 +2581,7 @@ void Field3D::cleanup()
     blocklist = nb;
     nblocks--;
   }
-  
+
   // Reset to starting
   nblocks = 0;
   free_block = NULL;
@@ -2817,6 +3007,7 @@ void Field3D::freeData() {
     }
 
     block = NULL;
+
   } // End of OMP critical section
 }
 

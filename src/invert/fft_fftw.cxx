@@ -328,6 +328,113 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, b
   };
 }
 
+
+//Hacked Field3D version
+void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan p;
+  static bool first=true;
+  static int n3 = 0;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  static int nmany = 0;
+  static bool tpose=false;
+  if(first || transpose != tpose) {
+
+    if(n3 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    //Set static vars
+    n1 = mesh->ngx;
+    n2 = mesh->ngy;
+    n3 = mesh->ngz-1;
+    nmany = n1*n2;
+    nk = (n3/2)+1;
+    tpose = transpose;
+    first=false;
+
+    fin = (double*) fftw_malloc(sizeof(double) * nmany * n3);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    int const * sz = &n3;
+    int istride=nmany, idist=1;
+    int ostride=nmany, odist=1;
+    if(tpose){
+      istride=1 ; idist=n3;
+      ostride=1 ; odist=nk;
+    }
+    p = fftw_plan_many_dft_r2c(1,sz,nmany,fin,
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
+  }
+
+  BoutReal ***r=fld.getData();
+
+  //Copy data into fftw input array, really just a flattening of
+  //fld.block->data, except we skip the repeat z point.
+  int itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<n3;k++){
+	  fin[k+itot*n3] = r[i][j][k];
+	}
+	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<n3;k++){
+	  fin[itot+k*nmany] = r[i][j][k];
+	}
+	itot++;
+      }
+    }
+  }
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data out of fftw output array into output
+  BoutReal fac=1.0/(double)n3;
+  itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<nk;k++){
+	  out[i][j][k] = dcomplex(fout[k+itot*nk][0], fout[k+itot*nk][1])*fac; // Normalise
+	}
+	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<nk;k++){
+	  out[i][j][k] = dcomplex(fout[itot+k*nmany][0], fout[itot+k*nmany][1])*fac; // Normalise
+	}
+	itot++;
+      }
+    }
+  };
+}
+
+void rfft(Field3D &fld, bool transpose) {
+  rfft(fld,fld.fft_coef,transpose);
+}
+
 void irfft(dcomplex *in, int length, BoutReal *out)
 {
   static fftw_complex *fin;
@@ -460,6 +567,115 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, 
       };
     };
   };
+}
+
+//Hacked Field3D version
+void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
+  static double *fout;
+  static fftw_complex *fin;
+  static fftw_plan p;
+  static bool first=true;
+  static int n3 = 0;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  static int nmany = 0;
+  static bool tpose=false;
+  if(first || transpose != tpose) {
+
+    if(n3 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    //Set static vars
+    n1 = mesh->ngx;
+    n2 = mesh->ngy;
+    n3 = mesh->ngz-1;
+    nmany = n1*n2;
+    nk = (n3/2)+1;
+    tpose = transpose;
+    first=false;
+
+    fout = (double*) fftw_malloc(sizeof(double) * nmany * n3);
+    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    int const * sz = &n3;
+    int istride=nmany, idist=1;
+    int ostride=nmany, odist=1;
+    if(tpose){
+      istride=1 ; idist=nk;
+      ostride=1 ; odist=n3;
+    }
+    p = fftw_plan_many_dft_c2r(1,sz,nmany,fin,
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
+  }
+
+  BoutReal ***r=fld.getData();
+
+  //Copy data into fftw input array, really just a flattening of
+  //fld.block->data, except we skip the repeat z point.
+  int itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<nk;k++){
+  	  fin[k+itot*nk][0] = in[i][j][k].real();
+  	  fin[k+itot*nk][1] = in[i][j][k].imag();
+  	}
+  	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<nk;k++){
+  	  fin[itot+k*nmany][0] = in[i][j][k].real();
+  	  fin[itot+k*nmany][1] = in[i][j][k].imag();
+  	}
+  	itot++;
+      }
+    }
+  }
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data out of fftw output array into output
+  itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<n3;k++){
+  	  r[i][j][k] = fout[k+itot*n3];
+  	}
+  	r[i][j][n3] = r[i][j][0];
+  	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<n3;k++){
+  	  r[i][j][k] = fout[itot+k*nmany];
+  	}
+  	r[i][j][n3] = r[i][j][0];
+  	itot++;
+      }
+    }
+  };
+}
+
+void irfft(Field3D &fld, bool transpose) {
+  irfft(fld,fld.fft_coef,transpose);
 }
 
 #else

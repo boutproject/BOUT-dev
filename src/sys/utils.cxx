@@ -164,6 +164,36 @@ void free_r3tensor(BoutReal ***m) {
   free(m);
 }
 
+dcomplex ***c3tensor(int nrow, int ncol, int ndep) {
+  int i,j;
+  dcomplex ***t;
+
+  /* allocate pointers to pointers to rows */
+  t=(dcomplex ***) malloc((size_t)(nrow*sizeof(dcomplex**)));
+
+  /* allocate pointers to rows and set pointers to them */
+  t[0]=(dcomplex **) malloc((size_t)(nrow*ncol*sizeof(dcomplex*)));
+
+  /* allocate rows and set pointers to them */
+  t[0][0]=(dcomplex *) malloc((size_t)(nrow*ncol*ndep*sizeof(dcomplex)));
+
+  for(j=1;j!=ncol;j++) t[0][j]=t[0][j-1]+ndep;
+  for(i=1;i!=nrow;i++) {
+    t[i]=t[i-1]+ncol;
+    t[i][0]=t[i-1][0]+ncol*ndep;
+    for(j=1;j!=ncol;j++) t[i][j]=t[i][j-1]+ndep;
+  }
+
+  /* return pointer to array of pointers to rows */
+  return t;
+}
+
+void free_c3tensor(dcomplex ***m) {
+  free(m[0][0]);
+  free(m[0]);
+  free(m);
+}
+
 int ***i3tensor(int nrow, int ncol, int ndep) {
   int i,j;
   int ***t;

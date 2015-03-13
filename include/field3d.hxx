@@ -31,6 +31,7 @@ class Field3D;
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
+#include "dcomplex.hxx"
 
 #include "bout/deprecated.hxx"
 
@@ -189,15 +190,25 @@ class Field3D : public Field, public FieldData {
   void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
+  /// Static members for shiftZ phases
+  static dcomplex*** phs;
+  static dcomplex*** cphs;
+
   /// Shifts specified points by angle
-  void shiftZ(int jx, int jy, double zangle);
+  void shiftZ(int jx, int jy, bool fwd);
+  void shiftZ(int jx, int jy, double zangle); //Would like to remove
+
   /// Shift all points in z by specified angle
   const Field3D shiftZ(const Field2D zangle) const; 
   const Field3D shiftZ(const BoutReal zangle) const;
 
-  void shiftZ2D(const Field2D zangle,const int dir, const bool do2d);
-  const Field3D shiftZ2D(const Field2D zangle, const int dir) const; 
-  const Field3D shiftZ2D(const BoutReal zangle, const int dir) const;
+  void shiftZ2D(const Field2D zangle,const bool fwd, const bool do2d);
+  const Field3D shiftZ2D(const Field2D zangle, const bool fwd) const; 
+  const Field3D shiftZ2D(const BoutReal zangle, const bool fwd) const;
+
+  void shiftZ3D(const Field2D zangle,const bool fwd, const bool do2d);
+  const Field3D shiftZ3D(const Field2D zangle, const bool fwd) const; 
+  const Field3D shiftZ3D(const BoutReal zangle, const bool fwd) const;
   
   /// Shifts to/from BoutReal-space (using zShift global variable)
   const Field3D shiftZ(bool toBoutReal) const; 
@@ -205,7 +216,6 @@ class Field3D : public Field, public FieldData {
   void shiftToReal(bool toBoutReal) {
     *this = shiftZ(toBoutReal);
   }
-  
   // Slicing
 
   // NOTE: No shifting done in z for x array
@@ -275,11 +285,13 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
-  
+
+  dcomplex ***fft_coef=(dcomplex ***) NULL;
+
  private:
   /// Boundary - add a 2D field
   const Field2D *background;
-  
+
   /// Interpolates in z using up to 4 points
   BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;
 
