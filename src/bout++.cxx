@@ -178,7 +178,9 @@ int BoutInitialise(int &argc, char **&argv) {
 
   /// Open an output file to echo everything to
   /// On processor 0 anything written to output will go to stdout and the file
-  output.open("%s/BOUT.log.%d", data_dir, MYPE);
+  if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+    return 1;
+  }
 
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
