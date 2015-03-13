@@ -31,6 +31,7 @@ class Field3D;
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 #include "bout_types.hxx"
+#include "dcomplex.hxx"
 
 #include "bout/deprecated.hxx"
 
@@ -209,6 +210,9 @@ class Field3D : public Field, public FieldData {
   void shiftToReal(bool toBoutReal) {
     *this = shiftZ(toBoutReal);
   }
+
+  //FFTs
+  mutable dcomplex ***fft_coef = (dcomplex ***) NULL;
   
   // Slicing
 

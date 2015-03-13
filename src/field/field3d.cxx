@@ -2931,6 +2931,11 @@ void Field3D::allocData() const {
       block = newBlock();
     
     }
+    if (fft_coef == (dcomplex ***) NULL){
+      //FFT data
+      int nkz=1+(mesh->ngz-1)/2;
+      fft_coef=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    };
   } // End of OMP critical section
 }
 
@@ -2960,6 +2965,10 @@ void Field3D::freeData() {
     }
 
     block = NULL;
+
+    //FFT data
+    free_c3tensor(fft_coef);
+    fft_coef = (dcomplex ***) NULL;
   } // End of OMP critical section
 }
 
