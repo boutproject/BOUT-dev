@@ -198,6 +198,10 @@ class Field3D : public Field, public FieldData {
   void shiftZ2D(const Field2D zangle,const int dir, const bool do2d);
   const Field3D shiftZ2D(const Field2D zangle, const int dir) const; 
   const Field3D shiftZ2D(const BoutReal zangle, const int dir) const;
+
+  void shiftZ3D(const Field2D zangle,const int dir, const bool do2d);
+  const Field3D shiftZ3D(const Field2D zangle, const int dir) const; 
+  const Field3D shiftZ3D(const BoutReal zangle, const int dir) const;
   
   /// Shifts to/from BoutReal-space (using zShift global variable)
   const Field3D shiftZ(bool toBoutReal) const; 

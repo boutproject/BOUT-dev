@@ -1962,6 +1962,142 @@ void Field3D::shiftZ2D(const Field2D zangle, const int dir, const bool do2D){
   };
 };
 
+const Field3D Field3D::shiftZ3D(const Field2D zangle, const int dir) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ3D(zangle,dir,true);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+
+  return result;
+
+};
+
+const Field3D Field3D::shiftZ3D(const BoutReal zangle, const int dir) const{
+  Field3D result;
+
+#ifdef CHECK
+  msg_stack.push("Field3D: shiftZ ( Field2D )");
+  checkData();
+#endif
+
+  result = *this;
+
+  result.shiftZ3D(zangle,dir,true);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+
+  return result;
+
+};
+
+//2d fft based shift
+void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
+  static dcomplex **v = (dcomplex**) NULL;
+  static BoutReal **r = (BoutReal**) NULL;
+  static dcomplex **phs = (dcomplex**) NULL;
+  BoutReal kwave;
+
+#ifdef CHECK
+  // Check data set
+  if(block == NULL)
+    throw BoutException("Field3D: Shifting in Z an empty data set\n");
+#endif
+
+  //Get number of unique z points, exit if only 1
+  const int ncz = mesh->ngz-1;
+  if(ncz == 1)
+    return;
+  const int nx = mesh->ngx;
+  const int ny = mesh->ngy;
+  const int ntot = nx*ny;
+  const int nkz = 1+ncz/2;
+  
+  //Make v matrix if required, used to hold FFT data
+  //Maybe this could become a field3D member, can then
+  //reuse (possibly save ffts if no operation on data)
+  if(v == (dcomplex**) NULL) {
+    v = cmatrix(ntot,nkz);
+  };
+  
+  //Precalculate the possible phases as dcomplex is slow
+  if(phs == (dcomplex**) NULL) {
+    phs = cmatrix(ntot,nkz);
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
+	  phs[jx*ny + jy][jz]=phase;
+	}
+      }
+    }
+  };
+  if(r == (BoutReal**) NULL) {
+    r = rmatrix(ntot,ncz);
+  };
+  
+  //Ensure this field has an allocated data block
+  allocate(); //Why is this needed --> CHECK
+
+  //Now loop over planes
+
+  //Populate 2d array, this is likely to be inefficient.
+  //Currently have to copy data out of block->data, operate on it
+  //and then copy the result back. If this could be done inplace
+  //then we may well save some time.
+  for(int jx=0;jx<nx;jx++){
+    for(int jy=0;jy<ny;jy++){
+      for(int jz=0;jz<ncz;jz++){
+  	r[jy+jx*ny][jz] = block->data[jx][jy][jz];
+      }
+    }
+  }
+
+  //Now do the FFT of field3d into v
+  rfft(r, ntot, ncz, v, true);
+
+  //Do phase shift
+  if(dir==1){
+    for(int jtot=0;jtot<ntot;jtot++){
+      for(int jz=0;jz<nkz;jz++){
+	v[jtot][jz] *= phs[jtot][jz];
+      }
+    }
+  }else{
+    for(int jtot=0;jtot<ntot;jtot++){
+      for(int jz=0;jz<nkz;jz++){
+	v[jtot][jz] *= conj(phs[jtot][jz]);
+      }
+    }
+  }
+
+  // Reverse FFT
+  irfft(v, ntot, ncz, r, true); 
+
+  //This copying is likely to be inefficient, see above
+  for(int jx=0;jx<nx;jx++){
+    for(int jy=0;jy<ny;jy++){
+      for(int jz=0;jz<ncz;jz++){
+	block->data[jx][jy][jz]=r[jx*ny + jy][jz];
+      }
+      block->data[jx][jy][ncz]=r[jx*ny + jy][0];
+    }
+  }
+};
+
 //1d based shiftZ
 void Field3D::shiftZ(int jx, int jy, double zangle)
 {
@@ -2049,14 +2185,21 @@ const Field3D Field3D::shiftZ(const BoutReal zangle) const {
 }
 
 const Field3D Field3D::shiftZ(bool toBoutReal) const {
-  if(toBoutReal) {
-    return shiftZ2D(mesh->zShift,1);
-  }
-  return shiftZ2D(mesh->zShift,-1);
+
   // if(toBoutReal) {
-  //   return shiftZ2D(mesh->zShift);
+  //   return shiftZ2D(mesh->zShift,1);
   // }
-  // return shiftZ2D(-mesh->zShift);
+  // return shiftZ2D(mesh->zShift,-1);
+
+  if(toBoutReal) {
+    return shiftZ3D(mesh->zShift,1);
+  }
+  return shiftZ3D(mesh->zShift,-1);
+  
+  // if(toBoutReal) {
+  //    return shiftZ(mesh->zShift);
+  // }
+  // return shiftZ(-mesh->zShift);
 }
 
 
