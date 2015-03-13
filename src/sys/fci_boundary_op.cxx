@@ -37,6 +37,7 @@ void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
   Field3D& f_next = fcimap.f_next(f);
 
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
+  Coordinates& coord = *(mesh->coordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
@@ -49,7 +50,7 @@ void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
     // Scale the field and normalise to the desired value
     BoutReal y_prime = fcimap.y_prime[x][y][z];
-    BoutReal f2 = (f[x][y][z] - value) * (mesh->dy(x, y) - y_prime) / y_prime;
+    BoutReal f2 = (f[x][y][z] - value) * (coord.dy(x, y) - y_prime) / y_prime;
 
     f_next(x, y+fcimap.dir, z) = value - f2;
   }

@@ -85,6 +85,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
 
+  Coordinates& coord = *(mesh.coordinates());
+
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
 	for(int y=mesh.ystart; y<=mesh.yend;y++) {
 	  for(int z=0;z<ncz;z++) {
@@ -119,9 +121,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 			xt_prime[x][y][z] > mesh.GlobalNx) {
 		  x_boundary[x][y][z] = true;
 
-		  BoutReal dx2 = mesh.dx(x,y)/2.;
-		  BoutReal dy = mesh.dy(x,y);
-		  y_prime_x =  dx2 * (dy / (t_x * mesh.dx(x, y)));
+		  BoutReal dx2 = coord.dx(x,y)/2.;
+		  BoutReal dy = coord.dy(x,y);
+		  y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
 		} else {
 		  x_boundary[x][y][z] = false;
 		}
@@ -132,7 +134,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 			 y + dir > mesh.yend) && !yperiodic) {
 		  y_boundary[x][y][z] = true;
 
-		  y_prime_y =  mesh.dy(x,y) / 2.;
+		  y_prime_y =  coord.dy(x,y) / 2.;
 		} else {
 		  y_boundary[x][y][z] = false;
 		}
@@ -143,9 +145,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 			 zt_prime[x][y][z] > ncz-1) && !zperiodic) {
 		  z_boundary[x][y][z] = true;
 
-		  BoutReal dz2 = mesh.dz/2.;
-		  BoutReal dy = mesh.dy(x,y);
-		  y_prime_z =  dz2 * (dy / (t_z * mesh.dz));
+		  BoutReal dz2 = coord.dz/2.;
+		  BoutReal dy = coord.dy(x,y);
+		  y_prime_z =  dz2 * (dy / (t_z * coord.dz));
 		} else {
 		  z_boundary[x][y][z] = false;
 		}
@@ -240,9 +242,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 Field3D& FCIMap::f_next(Field3D &f) const {
   switch(dir) {
   case +1:
-    return *(f.yup());
+    return f.yup();
   case -1:
-    return *(f.ydown());
+    return f.ydown();
   default:
 	throw BoutException("Trying to determine f_next for FCIMap with strange direction: %d. Only +/-1 currently supported.", dir);
   }
@@ -425,7 +427,7 @@ const Field3D FCI::Div_par(Field3D &f) {
   Coordinates *coord = mesh.coordinates();
 
   Field3D tmp = f/coord->Bxy;
-  Field3D result = coord->Bxy*Grad_par(tmp, keep);
+  Field3D result = coord->Bxy*Grad_par(tmp);
 
 #ifdef TRACK
   result.name = "FCI::Div_par("+f.name+")";

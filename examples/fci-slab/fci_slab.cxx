@@ -38,9 +38,11 @@ public:
 	D = 10;
 	//OPTION(Options::getRoot(), D, 1.);
 
-	mesh->get(mesh->g_22, "g_22");
+    Coordinates *coord = mesh->coordinates();
 
-	mesh->geometry();
+	mesh->get(coord->g_22, "g_22");
+
+	coord->geometry();
 
 	solver->add(f, "f");
 	solver->add(g, "g");
@@ -69,14 +71,16 @@ BOUTMAIN(FCISlab);
 int FCISlab::rhs(BoutReal time) {
   mesh->communicate(f,g);
 
+  Coordinates *coord = mesh->coordinates();
+
   fci.calcYUpDown(f);
   fci.applyBoundary(f, FCI::DIRICHLET, f_gen, time);
   fci.calcYUpDown(g);
   fci.applyBoundary(g, FCI::DIRICHLET, g_gen, time);
 
-  ddt(f) = fci.Grad_par(g) + D*SQ(mesh->dy)*fci.Grad2_par2(f);
+  ddt(f) = fci.Grad_par(g) + D*SQ(coord->dy)*fci.Grad2_par2(f);
 
-  ddt(g) = fci.Grad_par(f) + D*SQ(mesh->dy)*fci.Grad2_par2(g);
+  ddt(g) = fci.Grad_par(f) + D*SQ(coord->dy)*fci.Grad2_par2(g);
 
   return 0;
 }
