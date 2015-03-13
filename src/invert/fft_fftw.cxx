@@ -379,6 +379,8 @@ void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
 			       NULL,ostride,odist,flags);
   }
 
+  BoutReal ***r=fld.getData();
+
   //Copy data into fftw input array, really just a flattening of
   //fld.block->data, except we skip the repeat z point.
   int itot=0;
@@ -386,7 +388,7 @@ void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
 	for(int k=0;k<n3;k++){
-	  fin[k+itot*n3] = fld[i][j][k];
+	  fin[k+itot*n3] = r[i][j][k];
 	}
 	itot++;
       }
@@ -395,7 +397,7 @@ void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
 	for(int k=0;k<n3;k++){
-	  fin[itot+k*nmany] = fld[i][j][k];
+	  fin[itot+k*nmany] = r[i][j][k];
 	}
 	itot++;
       }
@@ -617,6 +619,8 @@ void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
 			       NULL,ostride,odist,flags);
   }
 
+  BoutReal ***r=fld.getData();
+
   //Copy data into fftw input array, really just a flattening of
   //fld.block->data, except we skip the repeat z point.
   int itot=0;
@@ -651,9 +655,9 @@ void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
   	for(int k=0;k<n3;k++){
-  	  fld[i][j][k] = fout[k+itot*n3];
+  	  r[i][j][k] = fout[k+itot*n3];
   	}
-  	fld[i][j][n3] = fld[i][j][0];
+  	r[i][j][n3] = r[i][j][0];
   	itot++;
       }
     }
@@ -661,9 +665,9 @@ void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
   	for(int k=0;k<n3;k++){
-  	  fld[i][j][k] = fout[itot+k*nmany];
+  	  r[i][j][k] = fout[itot+k*nmany];
   	}
-  	fld[i][j][n3] = fld[i][j][0];
+  	r[i][j][n3] = r[i][j][0];
   	itot++;
       }
     }
