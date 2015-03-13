@@ -283,11 +283,16 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
-  
+
+ protected:
+  static dcomplex ***phs;
+  static dcomplex ***cphs;
+  dcomplex ***fft_coef=(dcomplex ***) NULL;
+
  private:
   /// Boundary - add a 2D field
   const Field2D *background;
-  
+
   /// Interpolates in z using up to 4 points
   BoutReal interpZ(int jx, int jy, int jz0, BoutReal zoffset, int order) const;
 

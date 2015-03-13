@@ -38,6 +38,10 @@
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
 
+//Initialise static members
+dcomplex*** Field3D::phs=(dcomplex***) NULL;
+dcomplex*** Field3D::cphs=(dcomplex***) NULL;
+
 /// Constructor
 Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef MEMDEBUG
@@ -122,6 +126,10 @@ Field3D::~Field3D() {
   
   if((ydown_field != NULL) && (ydown_field != this))
     delete ydown_field;
+  
+  if(fft_coef != (dcomplex ***) NULL){
+    free_c3tensor(fft_coef);
+  }
 }
 
 Field3D* Field3D::clone() const {
@@ -2004,8 +2012,6 @@ const Field3D Field3D::shiftZ3D(const BoutReal zangle, const int dir) const{
 
 //2d fft based shift
 void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
-  static dcomplex ***v = (dcomplex***) NULL;
-  static dcomplex ***phs = (dcomplex***) NULL;
   BoutReal kwave;
 
 #ifdef CHECK
@@ -2022,17 +2028,11 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   const int ny = mesh->ngy;
   const int ntot = nx*ny;
   const int nkz = 1+ncz/2;
-  
-  //Make v matrix if required, used to hold FFT data
-  //Maybe this could become a field3D member, can then
-  //reuse (possibly save ffts if no operation on data)
-  if(v == (dcomplex***) NULL) {
-    v = c3tensor(nx,ny,nkz);
-  };
-  
+
   //Precalculate the possible phases as dcomplex is slow
   if(phs == (dcomplex***) NULL) {
     phs = c3tensor(nx,ny,nkz);
+    cphs = c3tensor(nx,ny,nkz);
     BoutReal fac=2.0*PI/mesh->zlength;
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
@@ -2040,6 +2040,7 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
 	  kwave=jz*fac; // wave number is 1/[rad]
 	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
 	  phs[jx][jy][jz]=phase;
+	  cphs[jx][jy][jz]=dcomplex(cos(kwave*zangle[jx][jy]) , sin(kwave*zangle[jx][jy]));;
 	}
       }
     }
@@ -2048,34 +2049,35 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   //Ensure this field has an allocated data block
   allocate(); //Why is this needed --> CHECK
 
+  if(fft_coef == (dcomplex***) NULL) {
+    fft_coef = c3tensor(nx,ny,nkz);
+  };
+    
   // //Now do the FFT of field3d into v
-  rfft(*this, v, true);
-
+  rfft(*this, fft_coef, true);
+ 
   //Do phase shift
-  int jtot=0;
   if(dir==1){
-    //for(int jtot=0;jtot<ntot;jtot++){
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
   	for(int jz=0;jz<nkz;jz++){
-  	  v[jx][jy][jz] *= phs[jx][jy][jz];
+  	  fft_coef[jx][jy][jz] *= phs[jx][jy][jz];
   	}
-  	jtot++;
       }
     }
   }else{
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
   	for(int jz=0;jz<nkz;jz++){
-  	  v[jx][jy][jz] *= conj(phs[jx][jy][jz]);
+  	  //v[jx][jy][jz] *= conj(phs[jx][jy][jz]);
+  	  fft_coef[jx][jy][jz] *= cphs[jx][jy][jz];
   	}
-  	jtot++;
       }
     }
   }
-
+  
   // Reverse FFT
-  irfft(*this, v, true); 
+  irfft(*this, fft_coef, true); 
 };
 
 //1d based shiftZ
