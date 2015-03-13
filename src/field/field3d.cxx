@@ -114,8 +114,18 @@ Field3D::~Field3D() {
   freeData();
   
   /// Delete the time derivative variable if allocated
-  if(deriv != NULL)
+  if(deriv != NULL) {
+    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
+    // only delete once
+    // Also need to check that separate yup_field exists
+    if (yup_field != this)
+      yup_field->deriv = NULL;
+    if (ydown_field != this)
+      ydown_field->deriv = NULL;
+
+    // Now delete them as part of the deriv vector
     delete deriv;
+  }
   
   if(yup_field != this)
     delete yup_field;
@@ -148,9 +158,22 @@ BoutReal*** Field3D::getData() const {
 }
 
 Field3D* Field3D::timeDeriv() {
-  if(deriv == NULL)
+  if(deriv == NULL) {
     deriv = new Field3D();
 
+    // Check if the yup/ydown have a time-derivative
+    // Need to make sure that ddt(f.yup) = ddt(f).yup
+
+    if(yup()->deriv != NULL) {
+      deriv->yup_field = yup()->deriv;
+    }
+    if(ydown()->deriv != NULL) {
+      deriv->ydown_field = ydown()->deriv;
+    }
+    // Set the yup/ydown time-derivatives
+    yup()->deriv = deriv->yup();
+    ydown()->deriv = deriv->ydown();
+  }
   return deriv;
 }
 

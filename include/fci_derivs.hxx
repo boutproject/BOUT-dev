@@ -31,17 +31,34 @@
 #include <globals.hxx>
 #include <utils.hxx>
 #include <bout_types.hxx> // See this for codes
+#include <vector>
+#include <bout/constants.hxx>
+#include <field_factory.hxx>
+#include <fci_boundary_region.hxx>
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Private constructor - must be initialised with mesh
   FCIMap();
 public:
-  // dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir);
+  typedef std::vector<std::vector<std::vector<bool> > > B3vec;
 
-  int*** i_corner;				// x-index of bottom-left grid point
-  int*** k_corner;				// z-index of bottom-left grid point
+  // dir MUST be either +1 or -1
+  FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
+
+  // Direction of map
+  int dir;
+
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+  B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
+  B3vec y_boundary;     // boundary mask - has the field line left the domain through the y-sides
+  B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
+  Field3D y_prime;		// distance to intersection with boundary
+
+  Field3D& f_next(Field3D &f) const;
+
+  BoundaryRegionFCI* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
   //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -71,18 +88,45 @@ private:
   // not change
   Mesh& mesh;
 
+  // Is the y-direction periodic?
+  bool yperiodic;
+
+  // Is the z-direction periodic?
+  bool zperiodic;
+
   // Private constructor - must be initialised with mesh
   FCI();
 public:
-  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1) {}
+  enum BndryType { DIRICHLET, NEUMANN };
+
+  FCI(Mesh& m) : mesh(m),
+				 forward_map(m, +1, true, true),
+				 backward_map(m, -1, true, true),
+				 yperiodic(true),
+				 zperiodic(true) {}
+  FCI(Mesh& m, bool yperiodic, bool zperiodic) : 
+	mesh(m),
+	forward_map(m, +1, yperiodic, zperiodic),
+	backward_map(m, -1, yperiodic, zperiodic),
+	yperiodic(yperiodic),
+	zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
-  void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
+  void interpolate(Field3D &f, const FCIMap &fcimap);
 
   // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, bool keep = false);
-  const Field3D Div_par(Field3D &f, bool keep = false);
+  const Field3D Grad_par(Field3D &f);
+  const Field3D Grad2_par2(Field3D &f);
+  const Field3D Div_par(Field3D &f);
+
+  // Boundary conditions
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value, BoutReal t);
+  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value);
+
+  void calcYUpDown(Field3D &f);
+
 };
 
 #endif // __FCI_DERIVS_H__
