@@ -212,7 +212,7 @@ class Field3D : public Field, public FieldData {
   }
 
   //FFTs
-  mutable dcomplex ***fft_coef = (dcomplex ***) NULL;
+  //mutable dcomplex ***fft_coef = (dcomplex ***) NULL;
   
   // Slicing
 

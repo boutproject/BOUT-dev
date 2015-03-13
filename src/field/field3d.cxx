@@ -2004,9 +2004,8 @@ const Field3D Field3D::shiftZ3D(const BoutReal zangle, const int dir) const{
 
 //2d fft based shift
 void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
-  static dcomplex **v = (dcomplex**) NULL;
-  static BoutReal **r = (BoutReal**) NULL;
-  static dcomplex **phs = (dcomplex**) NULL;
+  static dcomplex ***v = (dcomplex***) NULL;
+  static dcomplex ***phs = (dcomplex***) NULL;
   BoutReal kwave;
 
 #ifdef CHECK
@@ -2027,75 +2026,56 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   //Make v matrix if required, used to hold FFT data
   //Maybe this could become a field3D member, can then
   //reuse (possibly save ffts if no operation on data)
-  if(v == (dcomplex**) NULL) {
-    v = cmatrix(ntot,nkz);
+  if(v == (dcomplex***) NULL) {
+    v = c3tensor(nx,ny,nkz);
   };
   
   //Precalculate the possible phases as dcomplex is slow
-  if(phs == (dcomplex**) NULL) {
-    phs = cmatrix(ntot,nkz);
+  if(phs == (dcomplex***) NULL) {
+    phs = c3tensor(nx,ny,nkz);
     BoutReal fac=2.0*PI/mesh->zlength;
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
 	for(int jz=0;jz<nkz;jz++){
 	  kwave=jz*fac; // wave number is 1/[rad]
 	  dcomplex phase(cos(kwave*zangle[jx][jy]) , -sin(kwave*zangle[jx][jy]));
-	  phs[jx*ny + jy][jz]=phase;
+	  phs[jx][jy][jz]=phase;
 	}
       }
     }
-  };
-  if(r == (BoutReal**) NULL) {
-    r = rmatrix(ntot,ncz);
   };
   
   //Ensure this field has an allocated data block
   allocate(); //Why is this needed --> CHECK
 
-  //Now loop over planes
-
-  //Populate 2d array, this is likely to be inefficient.
-  //Currently have to copy data out of block->data, operate on it
-  //and then copy the result back. If this could be done inplace
-  //then we may well save some time.
-  for(int jx=0;jx<nx;jx++){
-    for(int jy=0;jy<ny;jy++){
-      for(int jz=0;jz<ncz;jz++){
-  	r[jy+jx*ny][jz] = block->data[jx][jy][jz];
-      }
-    }
-  }
-
-  //Now do the FFT of field3d into v
-  rfft(r, ntot, ncz, v, true);
+  // //Now do the FFT of field3d into v
+  rfft(*this, v, true);
 
   //Do phase shift
+  int jtot=0;
   if(dir==1){
-    for(int jtot=0;jtot<ntot;jtot++){
-      for(int jz=0;jz<nkz;jz++){
-	v[jtot][jz] *= phs[jtot][jz];
+    //for(int jtot=0;jtot<ntot;jtot++){
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+  	for(int jz=0;jz<nkz;jz++){
+  	  v[jx][jy][jz] *= phs[jx][jy][jz];
+  	}
+  	jtot++;
       }
     }
   }else{
-    for(int jtot=0;jtot<ntot;jtot++){
-      for(int jz=0;jz<nkz;jz++){
-	v[jtot][jz] *= conj(phs[jtot][jz]);
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+  	for(int jz=0;jz<nkz;jz++){
+  	  v[jx][jy][jz] *= conj(phs[jx][jy][jz]);
+  	}
+  	jtot++;
       }
     }
   }
 
   // Reverse FFT
-  irfft(v, ntot, ncz, r, true); 
-
-  //This copying is likely to be inefficient, see above
-  for(int jx=0;jx<nx;jx++){
-    for(int jy=0;jy<ny;jy++){
-      for(int jz=0;jz<ncz;jz++){
-	block->data[jx][jy][jz]=r[jx*ny + jy][jz];
-      }
-      block->data[jx][jy][ncz]=r[jx*ny + jy][0];
-    }
-  }
+  irfft(*this, v, true); 
 };
 
 //1d based shiftZ
@@ -2535,6 +2515,11 @@ void Field3D::cleanup()
     nblocks--;
   }
   
+  // //FFT data
+  // output<<"Freeing fft_coef"<<endl;
+  // free_c3tensor(fft_coef);
+  // fft_coef = (dcomplex ***) NULL;
+
   // Reset to starting
   nblocks = 0;
   free_block = NULL;
@@ -2931,11 +2916,11 @@ void Field3D::allocData() const {
       block = newBlock();
     
     }
-    if (fft_coef == (dcomplex ***) NULL){
-      //FFT data
-      int nkz=1+(mesh->ngz-1)/2;
-      fft_coef=c3tensor(mesh->ngx,mesh->ngy,nkz);
-    };
+    // if (fft_coef == (dcomplex ***) NULL){
+    //   //FFT data
+    //   int nkz=1+(mesh->ngz-1)/2;
+    //   fft_coef=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    // };
   } // End of OMP critical section
 }
 
@@ -2966,9 +2951,6 @@ void Field3D::freeData() {
 
     block = NULL;
 
-    //FFT data
-    free_c3tensor(fft_coef);
-    fft_coef = (dcomplex ***) NULL;
   } // End of OMP critical section
 }
 

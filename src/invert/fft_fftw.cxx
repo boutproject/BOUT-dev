@@ -330,7 +330,7 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, b
 
 
 //Hacked Field3D version
-void rfft(Field3D fld, dcomplex ***out, bool transpose) {
+void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;
@@ -360,7 +360,7 @@ void rfft(Field3D fld, dcomplex ***out, bool transpose) {
     tpose = transpose;
     first=false;
 
-    fin = (double*) fftw_malloc(sizeof(double) * nmany * n2);
+    fin = (double*) fftw_malloc(sizeof(double) * nmany * n3);
     fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
 
     unsigned int flags = FFTW_ESTIMATE;
@@ -429,9 +429,9 @@ void rfft(Field3D fld, dcomplex ***out, bool transpose) {
   };
 }
 
-void rfft(Field3D fld, bool transpose) {
-  rfft(fld,fld.fft_coef,transpose);
-}
+// void rfft(Field3D fld, bool transpose) {
+//   rfft(fld,fld.fft_coef,transpose);
+// }
 
 void irfft(dcomplex *in, int length, BoutReal *out)
 {
@@ -568,7 +568,7 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, 
 }
 
 //Hacked Field3D version
-void irfft(Field3D fld, dcomplex ***in, bool transpose) {
+void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
   static double *fout;
   static fftw_complex *fin;
   static fftw_plan p;
@@ -598,7 +598,7 @@ void irfft(Field3D fld, dcomplex ***in, bool transpose) {
     tpose = transpose;
     first=false;
 
-    fout = (double*) fftw_malloc(sizeof(double) * nmany * n2);
+    fout = (double*) fftw_malloc(sizeof(double) * nmany * n3);
     fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
 
     unsigned int flags = FFTW_ESTIMATE;
@@ -609,8 +609,8 @@ void irfft(Field3D fld, dcomplex ***in, bool transpose) {
     int istride=nmany, idist=1;
     int ostride=nmany, odist=1;
     if(tpose){
-      istride=1 ; idist=n3;
-      ostride=1 ; odist=nk;
+      istride=1 ; idist=nk;
+      ostride=1 ; odist=n3;
     }
     p = fftw_plan_many_dft_c2r(1,sz,nmany,fin,
 			       NULL,istride,idist,fout,
@@ -623,21 +623,21 @@ void irfft(Field3D fld, dcomplex ***in, bool transpose) {
   if(tpose){
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
-	for(int k=0;k<nk;k++){
-	  fin[k+itot*nk][0] = in[i][j][k].real();
-	  fin[k+itot*nk][1] = in[i][j][k].imag();
-	}
-	itot++;
+  	for(int k=0;k<nk;k++){
+  	  fin[k+itot*nk][0] = in[i][j][k].real();
+  	  fin[k+itot*nk][1] = in[i][j][k].imag();
+  	}
+  	itot++;
       }
     }
   }else{
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
-	for(int k=0;k<nk;k++){
-	  fin[itot+k*nmany][0] = in[i][j][k].real();
-	  fin[itot+k*nmany][1] = in[i][j][k].imag();
-	}
-	itot++;
+  	for(int k=0;k<nk;k++){
+  	  fin[itot+k*nmany][0] = in[i][j][k].real();
+  	  fin[itot+k*nmany][1] = in[i][j][k].imag();
+  	}
+  	itot++;
       }
     }
   }
@@ -646,34 +646,33 @@ void irfft(Field3D fld, dcomplex ***in, bool transpose) {
   fftw_execute(p);
 
   //Copy data out of fftw output array into output
-  BoutReal fac=1.0/(double)n3;
   itot=0;
   if(tpose){
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
-	for(int k=0;k<n3;k++){
-	  fld[i][j][k] = fout[k+itot*n3];
-	}
-	fld[i][j][n3] = fld[i][j][0];
-	itot++;
+  	for(int k=0;k<n3;k++){
+  	  fld[i][j][k] = fout[k+itot*n3];
+  	}
+  	fld[i][j][n3] = fld[i][j][0];
+  	itot++;
       }
     }
   }else{
     for(int i=0;i<n1;i++){
       for(int j=0;j<n2;j++){
-	for(int k=0;k<n3;k++){
-	  fld[i][j][k] = fout[itot+k*nmany];
-	}
-	fld[i][j][n3] = fld[i][j][0];
-	itot++;
+  	for(int k=0;k<n3;k++){
+  	  fld[i][j][k] = fout[itot+k*nmany];
+  	}
+  	fld[i][j][n3] = fld[i][j][0];
+  	itot++;
       }
     }
   };
 }
 
-void irfft(Field3D fld, bool transpose) {
-  irfft(fld,fld.fft_coef,transpose);
-}
+// void irfft(Field3D fld, bool transpose) {
+//   irfft(fld,fld.fft_coef,transpose);
+// }
 
 #else
 // Parallel thread-safe version of rfft and irfft
