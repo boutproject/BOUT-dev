@@ -122,6 +122,7 @@ int BoutInitialise(int &argc, char **&argv) {
 
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
+  /// Check for help flag separately
   for (int i=1;i<argc;i++) {
     if (strncasecmp(argv[i], "-h", 2) == 0 ||
     	strncasecmp(argv[i], "--help", 6) == 0) {
@@ -137,6 +138,8 @@ int BoutInitialise(int &argc, char **&argv) {
 
       return -1;
     }
+  }
+  for (int i=1;i<argc;i++) {
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
