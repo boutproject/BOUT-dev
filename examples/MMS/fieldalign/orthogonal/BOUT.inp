@@ -20,6 +20,9 @@ g22 = 1.
 g33 = 1.
 g23 = nu
 
+vy = 1 + nu
+vz = 1
+
 zShift = 0 
 nu = 0
 

@@ -17,11 +17,14 @@ dy = 2*pi / ny
 dz = 2*pi / nz
 
 g22 = 1.
-g33 = 1.
+g33 = 1 + nu^2
 g23 = -nu
 
 zShift = 0.1*y
 nu = 0.1
+
+vy = 1 + nu
+vz = 1
 
 shiftangle = 0.1 * 2*pi
 
