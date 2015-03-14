@@ -308,6 +308,7 @@ int BoutInitialise(int &argc, char **&argv) {
     BoutComm::cleanup();
     throw;
   }
+  return 0;
 }
 
 int bout_run(Solver *solver, rhsfunc physics_run) {
