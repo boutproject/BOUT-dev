@@ -44,6 +44,9 @@ void irfft(Field3D &fld, bool transpose=false);
 
 void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
+
+void ZFFT(BoutReal *in, int ix, int iy, dcomplex *cv, bool shift = true);
+void ZFFT_rev(dcomplex *cv, int ix, int iy, BoutReal *out, bool shift = true);
 // Discrete Sine Transform
 void DST(BoutReal *in, int length, dcomplex *out);
 void DST_rev(dcomplex *in, int length, BoutReal *out);

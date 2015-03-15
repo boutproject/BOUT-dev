@@ -30,6 +30,8 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
+#include <utils.hxx>
+
 #include <fftw3.h>
 #include <math.h>
 
@@ -811,6 +813,39 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
   }
 }
 
+void ZFFT(BoutReal *in, int ix, int iy, dcomplex *cv, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , -sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+
+  rfft(in, ncz, cv);
+
+  if((mesh->ShiftXderivs) && shift) {
+    // Forward FFT
+    for(int jz=0;jz<nkz;jz++) {
+      
+      // Multiply by EXP(-ik*zoffset)
+      cv[jz] *= phs[ix][iy][jz];
+    }
+  }
+}
+
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
 {
   int jz;
@@ -824,6 +859,37 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
       
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
+    }
+  }
+
+  irfft(cv, ncz, out);
+}
+
+void ZFFT_rev(dcomplex *cv, int ix, int iy, BoutReal *out, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+  
+  if((mesh->ShiftXderivs) && shift) {
+    for(int jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
+      // Multiply by EXP(ik*zoffset)
+      cv[jz] *= phs[ix][iy][jz];
     }
   }
 
