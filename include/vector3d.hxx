@@ -162,11 +162,11 @@ class Vector3D : public FieldData {
   BoutReal *getData(int component) {
     switch(component) {
     case 0:
-      return **(x.getData());
+      return x.getData(0);
     case 1:
-      return **(y.getData());
+      return y.getData(0);
     case 2:
-      return **(z.getData());
+      return z.getData(0);
     }
     return NULL;
   }

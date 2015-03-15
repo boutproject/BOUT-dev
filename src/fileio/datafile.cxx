@@ -531,13 +531,13 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   f->allocate();
   
   if(grow) {
-    if(!file->read_rec(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
+    if(!file->read_rec(f->getData(0), name, mesh->ngx, mesh->ngy)) {
       output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
     }
   }else {
-    if(!file->read(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
+    if(!file->read(f->getData(0), name, mesh->ngx, mesh->ngy)) {
       output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
@@ -550,13 +550,13 @@ bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   f->allocate();
   
   if(grow) {
-    if(!file->read_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
+    if(!file->read_rec(f->getData(0), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
       output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
     }
   }else {
-    if(!file->read(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
+    if(!file->read(f->getData(0), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
       output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
       *f = 0.0;
       return false;
@@ -570,9 +570,9 @@ bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
     return false; // No data allocated
   
   if(grow) {
-    return file->write_rec(*(f->getData()), name, mesh->ngx, mesh->ngy);
+    return file->write_rec(f->getData(0), name, mesh->ngx, mesh->ngy);
   }else {
-    return file->write(*(f->getData()), name, mesh->ngx, mesh->ngy);
+    return file->write(f->getData(0), name, mesh->ngx, mesh->ngy);
   }
 }
 
@@ -583,9 +583,9 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
   }
 
   if(grow) {
-    return file->write_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write_rec(f->getData(0), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }else {
-    return file->write(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz);
+    return file->write(f->getData(0), name, mesh->ngx, mesh->ngy, mesh->ngz);
   }
 }
 

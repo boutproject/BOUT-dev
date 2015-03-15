@@ -1053,12 +1053,12 @@ int Solver::save_vars(BoutReal *udata) {
   unsigned int i;
 
   for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
-      return(1);
+    if(!f2d[i].var->isAllocated())
+      return 1;
 
   for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
-      return(1);
+    if(!f3d[i].var->isAllocated())
+      return 1;
   
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {

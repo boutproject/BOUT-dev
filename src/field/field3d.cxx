@@ -134,19 +134,6 @@ void Field3D::allocate() const {
   allocData();
 }
 
-/// getData returns a pointer to the underlying data,
-/// and should be used as little as possible.
-/// NOTE: Can't check data here since may not be set yet.
-///       Using this function circumvents the checking
-BoutReal*** Field3D::getData() const {
-  ASSERT1(block !=  NULL);
-  
-  // User might alter data, so need to make unique
-  allocate();
-
-  return(block->data);
-}
-
 Field3D* Field3D::timeDeriv() {
   if(deriv == NULL)
     deriv = new Field3D();
@@ -297,36 +284,25 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
 }
 
 Field3D & Field3D::operator=(const Field2D &rhs) {
-  BoutReal **d;
+  MsgStackItem("Field3D = Field2D");
+  
+  ASSERT1(rhs.isAllocated());
 
-#ifdef CHECK
-  msg_stack.push("Field3D: Assignment from Field2D");
+#if CHECK > 1
   rhs.checkData(true);
 #endif
-
-  d = rhs.getData();
-
-#ifdef TRACK
-  name = "F3D("+rhs.name+")";
-#endif
-
+ 
   allocate();
 
   /// Copy data
 
-#pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
-    for(int jz=0;jz<mesh->ngz;jz++)
-      block->data[0][j][jz] = d[0][j];
+  for(auto i : (*this))
+    (*this)[i] = rhs[i];
   
-  /// Only 3D fields have locations
+  /// Only 3D fields have locations for now
   //location = CELL_CENTRE;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
-  return(*this);
+  
+  return *this;
 }
 
 Field3D & Field3D::operator=(const FieldPerp &rhs) {
@@ -447,18 +423,17 @@ F3D_UPDATE_F3D(/=,/);    // operator/= Field3D
     rhs.checkData();                                         \
     checkData();                                             \
                                                              \
-    BoutReal **d = rhs.getData();                            \
     if(block->refs == 1) {                                   \
       /* This is the only reference to this data */          \
-      for(int j=0;j<mesh->ngx*mesh->ngy;j++)                 \
-        for(int jz=0;jz<mesh->ngz;jz++)                      \
-          block->data[0][j][jz] op d[0][j];                  \
+      for(auto i : (*this))                                  \
+        (*this)[i] op rhs[i];                                \
     }else {                                                  \
       /* Need to put result in a new block */                \
       memblock3d *nb = newBlock();                           \
-      for(int j=0;j<mesh->ngx*mesh->ngy;j++)                 \
-        for(int jz=0;jz<mesh->ngz;jz++)                      \
-          nb->data[0][j][jz] = block->data[0][j][jz] bop d[0][j]; \
+      for(int i=0;i<mesh->ngx;i++)                           \
+	for(int j=0;j<mesh->ngy;j++)                         \
+          for(int k=0;k<mesh->ngz;k++)                       \
+            nb->data[i][j][k] = block->data[i][j][k] bop rhs(i,j); \
       block->refs--;                                         \
       block = nb;                                            \
     }                                                        \

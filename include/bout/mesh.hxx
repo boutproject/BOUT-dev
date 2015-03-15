@@ -199,7 +199,7 @@ class Mesh {
   virtual int YGLOBAL(int yloc) const = 0;
 
   // poloidal lowpass filter for n=0 mode
-  virtual void slice_r_y(BoutReal *, BoutReal *, int , int)=0;
+  virtual void slice_r_y(const BoutReal *, BoutReal *, int , int)=0;
   virtual void get_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual void set_ri( dcomplex *, int, BoutReal *, BoutReal *)=0;
   virtual const Field2D lowPass_poloidal(const Field2D &,int)=0;

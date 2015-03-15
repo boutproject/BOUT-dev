@@ -32,6 +32,8 @@
 #include <utils.hxx>
 #include <boutexception.hxx>
 
+#include <bout/assert.hxx>
+
 extern BoutReal** rmatrix(int nx, int ny);
 
 FieldPerp::FieldPerp() {
@@ -54,12 +56,7 @@ FieldPerp* FieldPerp::clone() const {
 
 void FieldPerp::set(const Field3D &f, int y) {
   int jx, jz;
-  BoutReal ***d = f.getData();
-
-  if(d == (BoutReal***) NULL) {
-    error("FieldPerp: Setting from empty Field3D");
-    return;
-  }
+  ASSERT1(f.isAllocated());
 
   yindex = y;
 
@@ -67,7 +64,7 @@ void FieldPerp::set(const Field3D &f, int y) {
 
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = d[jx][y][jz];
+      data[jx][jz] = f(jx,y,jz);
 }
 
 void FieldPerp::allocate() {
@@ -163,58 +160,29 @@ FieldPerp & FieldPerp::operator+=(const FieldPerp &rhs) {
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator+=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
+FieldPerp & FieldPerp::operator+=(const Field3D &rhs) {
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
   
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: += operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += d[jx][yindex][jz];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] += rhs(jx,yindex,jz);
 
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator+=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
+FieldPerp & FieldPerp::operator+=(const Field2D &rhs) {
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
 
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: += operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: += operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] += d[jx][yindex];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] += rhs(jx,yindex);
 
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator+=(const BoutReal rhs)
-{
+FieldPerp & FieldPerp::operator+=(const BoutReal rhs) {
   int jx, jz;
 
   if(data == (BoutReal**) NULL) {
@@ -253,67 +221,33 @@ FieldPerp & FieldPerp::operator-=(const FieldPerp &rhs)
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator-=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
+FieldPerp & FieldPerp::operator-=(const Field3D &rhs) {
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
   
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: -= operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= d[jx][yindex][jz];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] -= rhs(jx,yindex,jz);
 
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator-=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
+FieldPerp & FieldPerp::operator-=(const Field2D &rhs) {
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
 
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: -= operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] -= d[jx][yindex];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] -= rhs(jx,yindex);
 
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator-=(const BoutReal rhs)
-{
-  int jx, jz;
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: -= operates on empty data");
-    return(*this);
-  }
+FieldPerp & FieldPerp::operator-=(const BoutReal rhs) {
+  ASSERT1(isAllocated());
   
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] -= rhs;
 
   return(*this);
@@ -321,8 +255,7 @@ FieldPerp & FieldPerp::operator-=(const BoutReal rhs)
 
 /////////////////// MULTIPLICATION ///////////////////////
 
-FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
-{
+FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs) {
   int jx, jz;
   
   if(rhs.data == (BoutReal**) NULL) {
@@ -345,50 +278,23 @@ FieldPerp & FieldPerp::operator*=(const FieldPerp &rhs)
 
 FieldPerp & FieldPerp::operator*=(const Field3D &rhs)
 {
-  int jx, jz;
-  BoutReal ***d;
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
 
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: *= operates on empty Field3D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= d[jx][yindex][jz];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] *= rhs(jx,yindex,jz);
 
   return(*this);
 }
 
-FieldPerp & FieldPerp::operator*=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
+FieldPerp & FieldPerp::operator*=(const Field2D &rhs) {
+  ASSERT1(rhs.isAllocated());
+  ASSERT1(isAllocated());
 
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: *= operates on empty Field2D");
-    return(*this);
-  }
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: *= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] *= d[jx][yindex];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] *= rhs(jx,yindex);
 
   return(*this);
 }
@@ -435,50 +341,20 @@ FieldPerp & FieldPerp::operator/=(const FieldPerp &rhs)
 
 FieldPerp & FieldPerp::operator/=(const Field3D &rhs)
 {
-  int jx, jz;
-  BoutReal ***d;
 
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: /= operates on empty Field3D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= d[jx][yindex][jz];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] /= rhs(jx,yindex,jz);
 
   return(*this);
 }
 
 FieldPerp & FieldPerp::operator/=(const Field2D &rhs)
 {
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
   
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: /= operates on empty Field2D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: /= operates on empty data");
-    return(*this);
-  }
-  
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] /= d[jx][yindex];
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      data[jx][jz] /= rhs(jx,yindex);
 
   return(*this);
 }
@@ -495,96 +371,6 @@ FieldPerp & FieldPerp::operator/=(const BoutReal rhs)
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
       data[jx][jz] /= rhs;
-
-  return(*this);
-}
-
-///////////////// EXPONENTIATION //////////////////
-
-FieldPerp & FieldPerp::operator^=(const FieldPerp &rhs)
-{
-  int jx, jz;
-  
-  if(rhs.data == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty FieldPerp");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], rhs.data[jx][jz]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const Field3D &rhs)
-{
-  int jx, jz;
-  BoutReal ***d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal***) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty Field3D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], d[jx][yindex][jz]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const Field2D &rhs)
-{
-  int jx, jz;
-  BoutReal **d;
-
-  d = rhs.getData();
-  
-  if(d == (BoutReal**) NULL) {
-    // No data
-    error("FieldPerp: ^= operates on empty Field2D");
-    return(*this);
-  }
-
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], d[jx][yindex]);
-
-  return(*this);
-}
-
-FieldPerp & FieldPerp::operator^=(const BoutReal rhs)
-{
-  int jx, jz;
-  
-  if(data == (BoutReal**) NULL) {
-    error("FieldPerp: ^= operates on empty data");
-    return(*this);
-  }
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      data[jx][jz] = pow(data[jx][jz], rhs);
 
   return(*this);
 }
@@ -696,36 +482,6 @@ const FieldPerp FieldPerp::operator/(const BoutReal other) const
 {
   FieldPerp result = *this;
   result /= other;
-  return(result);
-}
-
-///////////////// EXPONENTIATION ///////////////
-
-const FieldPerp FieldPerp::operator^(const FieldPerp &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const Field3D &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const Field2D &other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
-  return(result);
-}
-
-const FieldPerp FieldPerp::operator^(const BoutReal other) const
-{
-  FieldPerp result = *this;
-  result ^= other;
   return(result);
 }
 
@@ -907,19 +663,6 @@ const FieldPerp operator/(const BoutReal lhs, const FieldPerp &rhs)
   for(jx=0;jx<mesh->ngx;jx++)
     for(jz=0;jz<mesh->ngz;jz++)
       d[jx][jz] = lhs/d[jx][jz];
-
-  return(result);
-}
-
-const FieldPerp operator^(const BoutReal lhs, const FieldPerp &rhs)
-{
-  int jx,jz;
-  FieldPerp result = rhs;
-  BoutReal **d = result.getData();
-
-  for(jx=0;jx<mesh->ngx;jx++)
-    for(jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = pow(lhs, d[jx][jz]);
 
   return(result);
 }

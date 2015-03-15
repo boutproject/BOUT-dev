@@ -150,11 +150,11 @@ class Vector2D : public FieldData {
   BoutReal *getData(int component) {
     switch(component) {
     case 0:
-      return *(x.getData());
+      return &x(0,0);
     case 1:
-      return *(y.getData());
+      return &y(0,0);
     case 2:
-      return *(z.getData());
+      return &z(0,0);
     }
     return NULL;
   }

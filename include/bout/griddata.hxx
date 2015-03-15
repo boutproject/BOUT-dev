@@ -91,11 +91,11 @@ class GridFile : public GridDataSource {
 
   bool readgrid_3dvar_fft(Mesh *m, const string &name, 
 			  int yread, int ydest, int ysize, 
-			  int xge, int xlt, BoutReal ***var);
+			  int xge, int xlt, Field3D &var);
   
   bool readgrid_3dvar_real(Mesh *m, const string &name, 
 			   int yread, int ydest, int ysize, 
-			   int xge, int xlt, BoutReal ***var);
+			   int xge, int xlt, Field3D &var);
 };
 
 class GridFromOptions : GridDataSource {

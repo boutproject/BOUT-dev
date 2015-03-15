@@ -54,7 +54,8 @@ class FieldPerp : public Field {
   void setIndex(int y);
 
   void allocate();
-
+  bool isAllocated() const { return data != nullptr; }
+  
   // operators
 
   BoutReal* operator[](int jx) const;
@@ -96,11 +97,6 @@ class FieldPerp : public Field {
   FieldPerp & operator/=(const Field2D &rhs);
   FieldPerp & operator/=(const BoutReal rhs);
 
-  FieldPerp & operator^=(const FieldPerp &rhs);
-  FieldPerp & operator^=(const Field3D &rhs);
-  FieldPerp & operator^=(const Field2D &rhs);
-  FieldPerp & operator^=(const BoutReal rhs);
-
   // Binary operators
 
   const FieldPerp operator+(const FieldPerp &other) const;
@@ -120,11 +116,6 @@ class FieldPerp : public Field {
   const FieldPerp operator/(const Field3D &other) const;
   const FieldPerp operator/(const Field2D &other) const;
   const FieldPerp operator/(const BoutReal rhs) const;
-
-  const FieldPerp operator^(const FieldPerp &other) const;
-  const FieldPerp operator^(const Field3D &other) const;
-  const FieldPerp operator^(const Field2D &other) const;
-  const FieldPerp operator^(const BoutReal rhs) const;
 
   // Stencils
 

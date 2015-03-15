@@ -230,7 +230,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 			       m->ystart,// Insert data starting from y=ystart
 			       m->yend-m->ystart+1, // Length of data in Y
 			       0, m->ngx, // All x indices (local indices)
-			       var.getData()) ) {
+			       var) ) {
 	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
 	
       }
@@ -243,7 +243,7 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
 			      m->ystart,// Insert data starting from y=ystart
 			      m->yend-m->ystart+1, // Length of data in Y
 			      0, m->ngx, // All x indices (local indices)
-			      var.getData()) ) {
+			      var) ) {
 	throw BoutException("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name.c_str());
       }
     }
@@ -316,7 +316,7 @@ bool GridFile::get(Mesh *m, vector<BoutReal> &var, const string &name, int len, 
  */
 bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name, 
 				 int yread, int ydest, int ysize, 
-				 int xge, int xlt, BoutReal ***var) {
+				 int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
   if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
     return false;
@@ -394,7 +394,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
 	//fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
       }
       
-      irfft(fdata, ncz, var[jx][ydest+jy]);
+      irfft(fdata, ncz, &var(jx,ydest+jy,0));
     }
   }
 
@@ -413,7 +413,7 @@ bool GridFile::readgrid_3dvar_fft(Mesh *m, const string &name,
  */ 
 bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name, 
 				   int yread, int ydest, int ysize, 
-				   int xge, int xlt, BoutReal ***var) {
+				   int xge, int xlt, Field3D &var) {
   /// Check the arguments make sense
   if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
     return false;
@@ -435,7 +435,7 @@ bool GridFile::readgrid_3dvar_real(Mesh *m, const string &name,
       int yind = yread + jy; // Global location to read from
       
       file->setGlobalOrigin(jx + m->OffsetX, yind);
-      if(!file->read(var[jx][ydest+jy], name, 1, 1, size[2]))
+      if(!file->read(&var(jx,ydest+jy,0), name, 1, 1, size[2]))
 	return false;
     }
   }

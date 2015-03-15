@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   ASSERT0(fabs(f3d(2,2,0) + 1.0) < 1e-10);
   f3d *= f2d;
   ASSERT0(fabs(f3d(2,2,0) + 2.0) < 1e-10);
-  f3d ^= f2d;
+  f3d = pow(f3d, f2d);
   ASSERT0(fabs(f3d(2,2,0) - 4.0) < 1e-10);
   
   BoutFinalise();

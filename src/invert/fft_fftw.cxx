@@ -398,7 +398,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 }
 #endif
 
-void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
+void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 {
   int jz;
   BoutReal kwave;

@@ -56,9 +56,11 @@ class Field2D : public Field, public FieldData {
   Field2D(BoutReal val);
   ~Field2D();
 
-  DEPRECATED(Field2D* clone() const);
+  /// Data type
+  using value_type = BoutReal;
 
-  BoutReal **getData() const; // Remove this!
+  
+  DEPRECATED(Field2D* clone() const);
   
   static void cleanup(); // Frees all memory
 
@@ -95,8 +97,6 @@ class Field2D : public Field, public FieldData {
     return operator()(i.x, i.y);
   }
   
-  DEPRECATED(BoutReal* operator[](int jx) const);
-  
   inline BoutReal& operator()(int jx, int jy) {
 #if CHECK > 2
     if(!isAllocated())
@@ -128,8 +128,6 @@ class Field2D : public Field, public FieldData {
   Field2D & operator*=(const BoutReal rhs);
   Field2D & operator/=(const Field2D &rhs);
   Field2D & operator/=(const BoutReal rhs);
-  Field2D & operator^=(const Field2D &rhs);
-  Field2D & operator^=(const BoutReal rhs);
   
   // Binary operators
 
@@ -142,8 +140,6 @@ class Field2D : public Field, public FieldData {
   const Field2D operator*(const BoutReal rhs) const;
   const Field2D operator/(const Field2D &other) const;
   const Field2D operator/(const BoutReal rhs) const;
-  const Field2D operator^(const Field2D &other) const;
-  const Field2D operator^(const BoutReal rhs) const;
 
   // Left binary operators
 
@@ -151,15 +147,12 @@ class Field2D : public Field, public FieldData {
   const Field3D operator-(const Field3D &other) const;
   const Field3D operator*(const Field3D &other) const;
   const Field3D operator/(const Field3D &other) const;
-  const Field3D operator^(const Field3D &other) const;
 
   const FieldPerp operator+(const FieldPerp &other) const;
   const FieldPerp operator-(const FieldPerp &other) const;
   const FieldPerp operator*(const FieldPerp &other) const;
   const FieldPerp operator/(const FieldPerp &other) const;
   friend const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
-  const FieldPerp operator^(const FieldPerp &other) const;
-  friend const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
     
   // Stencils
 
@@ -178,13 +171,7 @@ class Field2D : public Field, public FieldData {
   void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-
-  // Functions
   
-  BoutReal min(bool allpe=false) const;
-  BoutReal max(bool allpe=false) const;
-  bool finite() const;
-
   // FieldData virtual functions
   
   bool isReal() const   { return true; }         // Consists of BoutReal values
@@ -198,8 +185,7 @@ class Field2D : public Field, public FieldData {
 
   bool ioSupport() { return true; } ///< This class supports I/O operations
   BoutReal *getData(int component) { 
-    BoutReal **d = getData();
-    return *d;
+    return data[0];
   }
   void zeroComponent(int component){
     *this = 0.0;
@@ -241,14 +227,30 @@ const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
 const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
 
 // Non-member functions
+
+
+/// Square
 const Field2D SQ(const Field2D &f);
+
+/// Square root
 const Field2D sqrt(const Field2D &f);
+
+/// Absolute value
 const Field2D abs(const Field2D &f);
+
+/// Minimum over field. By default only on this processor
 BoutReal min(const Field2D &f, bool allpe=false);
+
+/// Maximum over field. By default only on this processor
 BoutReal max(const Field2D &f, bool allpe=false);
+
+/// Test if all values of this field are finite
 bool finite(const Field2D &f);
 
+/// Exponential
 const Field2D exp(const Field2D &f);
+
+/// Natural logarithm
 const Field2D log(const Field2D &f);
   
 const Field2D sin(const Field2D &f);
@@ -259,9 +261,16 @@ const Field2D sinh(const Field2D &f);
 const Field2D cosh(const Field2D &f);
 const Field2D tanh(const Field2D &f);
 
+/// Make an independent copy of field f
 const Field2D copy(const Field2D &f);
 
+/// Sets a floor on var, so minimum of the return value is >= f
 const Field2D floor(const Field2D &var, BoutReal f);
+
+/// Power, lhs ** rhs
+Field2D pow(const Field2D &lhs, const Field2D &rhs);
+Field2D pow(const Field2D &lhs, BoutReal rhs);
+Field2D pow(BoutReal lhs, const Field2D &rhs);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

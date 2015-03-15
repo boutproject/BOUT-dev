@@ -2350,8 +2350,7 @@ void BoutMesh::outputVars(Datafile &file) {
 // Developed by T. Rhee and S. S. Kim
 //================================================================
 
-void BoutMesh::slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy)
-{
+void BoutMesh::slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy) {
   int i,j;
   for(i=0;i<ncy;i++)
       fxy[i]=fori[i+ystart];
@@ -2415,8 +2414,8 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 
   for(jx=0;jx<ncx;jx++){ //start x
      //saving the real 2D data
-     slice_r_y(*(var.getData()+jx),f1d,ystart,ncy); // 2d -> 1d
-
+     slice_r_y(&var(jx,0),f1d,ystart,ncy); // 2d -> 1d
+     
      for(jy=0;jy<ncy;jy++)
        ayn[jy]=dcomplex(f1d[jy],0.);
 

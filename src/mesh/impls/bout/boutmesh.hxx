@@ -88,7 +88,7 @@ class BoutMesh : public Mesh {
   int YGLOBAL(int yloc) const;
 
   // poloidal lowpass filtering for n=0 mode
-  void slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
+  void slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
   void get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   void set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   const Field2D lowPass_poloidal(const Field2D &var,int mmax);

@@ -210,17 +210,17 @@ int physics_init(bool restarting) {
 
   /**************** CALCULATE METRICS ******************/
 
-  coord->g11 = (Rxy*Bpxy)^2;
-  coord->g22 = 1.0 / (hthe^2);
-  coord->g33 = (I^2)*coord->g11 + (coord->Bxy^2)/coord->g11;
+  coord->g11 = SQ(Rxy*Bpxy);
+  coord->g22 = 1.0 / SQ(hthe);
+  coord->g33 = SQ(I)*coord->g11 + SQ(coord->Bxy)/coord->g11;
   coord->g12 = 0.0;
   coord->g13 = -I*coord->g11;
   coord->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
   coord->J = hthe / Bpxy;
   
-  coord->g_11 = 1.0/coord->g11 + ((I*Rxy)^2);
-  coord->g_22 = (coord->Bxy*hthe/Bpxy)^2;
+  coord->g_11 = 1.0/coord->g11 + SQ(I*Rxy);
+  coord->g_22 = SQ(coord->Bxy*hthe/Bpxy);
   coord->g_33 = Rxy*Rxy;
   coord->g_12 = Btxy*hthe*I*Rxy/Bpxy;
   coord->g_13 = I*Rxy*Rxy;
@@ -331,10 +331,10 @@ int physics_run(BoutReal t)
   Vit = Vi0; // + Vi;
 
   // Update non-linear coefficients on the mesh
-  nu      = nu_hat * Nit / (Tet^1.5);
-  mu_i    = mui_hat * Nit / (Tit^0.5);
-  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
-  kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
+  nu      = nu_hat * Nit / pow(Tet,1.5);
+  mu_i    = mui_hat * Nit / sqrt(Tit);
+  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
+  kapa_Ti = 3.9*(wci/nuiix)*pow(Tit,2.5);
   
   // note: nonlinear terms are not here
   pei = (Te0+Ti0)*Ni + (Te + Ti)*Ni0;

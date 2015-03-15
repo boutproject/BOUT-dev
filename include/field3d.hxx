@@ -73,13 +73,16 @@ class Field3D : public Field, public FieldData {
   /// Destructor
   ~Field3D();
 
+  /// Data type
+  using value_type = BoutReal;
+  
   DEPRECATED(Field3D* clone() const);
 
   /// Ensures that memory is allocated
   void allocate() const;
-  /// Returns a pointer to internal data (REMOVE THIS)
-  BoutReal*** getData() const;
-  bool isAllocated() const { return block !=  NULL; } ///< Test if data is allocated
+  
+  /// Test if data is allocated
+  bool isAllocated() const { return block !=  NULL; } 
   
   /// Return a pointer to the time-derivative field
   Field3D* timeDeriv();
@@ -273,8 +276,7 @@ class Field3D : public Field, public FieldData {
 
   bool ioSupport() { return true; } ///< This class supports I/O operations
   BoutReal *getData(int component) { 
-    BoutReal ***d = getData();
-    return **d;
+    return block->data[0][0];
   }
   void zeroComponent(int component){
     *this = 0.0;

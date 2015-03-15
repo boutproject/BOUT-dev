@@ -1016,8 +1016,6 @@ const Field2D Mesh::applyXdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 
   bindex bx;
 
-  BoutReal **r = result.getData();
-
   start_index(&bx, RGN_NOX);
   stencil s;
   do {
@@ -1099,7 +1097,6 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   }
   
   bindex bx;
-  BoutReal ***r = result.getData();
   
   start_index(&bx, RGN_NOX);
   stencil s;
@@ -1185,7 +1182,6 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
   Field2D result;
   result.allocate(); // Make sure data allocated
-  BoutReal **r = result.getData();
   
   bindex bx;
   
@@ -1206,7 +1202,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
 	calc_index(&bx);
 	var.setYStencil(s, bx, loc);
-	r[bx.jx][bx.jy] = func(s);
+	result(bx.jx,bx.jy) = func(s);
       }
     #ifdef CHECK
       result.bndry_xin = true;
@@ -1217,7 +1213,7 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       for (bx.jy=mesh->ystart; bx.jy<=mesh->ystart; bx.jy++) {
 	calc_index(&bx);
 	var.setYStencil(s, bx, loc);
-	r[bx.jx][bx.jy] = func(s);
+	result(bx.jx,bx.jy) = func(s);
       }
     #ifdef CHECK
       result.bndry_xout = true;
@@ -1232,8 +1228,8 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       calc_index(&bx);
       var.setYStencil(fs, bx, loc);
       funcs_pair = func_in(fs);
-      r[bx.jx][bx.jy] = funcs_pair.inner;
-      r[bx.jx][bx.jym] = funcs_pair.outer;
+      result(bx.jx,bx.jy) = funcs_pair.inner;
+      result(bx.jx,bx.jym) = funcs_pair.outer;
     }
     #ifdef CHECK
       result.bndry_ydown = true;
@@ -1248,8 +1244,8 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
       calc_index(&bx);
       var.setYStencil(bs, bx, loc);
       funcs_pair = func_out(bs);
-      r[bx.jx][bx.jy] = funcs_pair.inner;
-      r[bx.jx][bx.jyp] = funcs_pair.outer;
+      result(bx.jx,bx.jy) = funcs_pair.inner;
+      result(bx.jx,bx.jyp) = funcs_pair.outer;
     }
     #ifdef CHECK
       result.bndry_yup = true;
@@ -1262,17 +1258,15 @@ const Field2D Mesh::applyYdiff(const Field2D &var, Mesh::deriv_func func, Mesh::
 const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::inner_boundary_deriv_func func_in, Mesh::outer_boundary_deriv_func func_out, CELL_LOC loc) {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  BoutReal ***r = result.getData();
   
   bindex bx;
   
   start_index(&bx, RGN_NOBNDRY);
   stencil s;
   do {
-    //output.write("apply %d %d\n", bx.jx, bx.jy);
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
       var.setYStencil(s, bx, loc);
-      r[bx.jx][bx.jy][bx.jz] = func(s);
+      result(bx.jx,bx.jy,bx.jz) = func(s);
     }
   }while(next_index2(&bx));
 
@@ -1287,7 +1281,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_xin = true;
@@ -1299,7 +1293,7 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  calc_index(&bx);
 	  var.setYStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_xout = true;
@@ -1315,8 +1309,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	calc_index(&bx);
 	var.setYStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
-	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner;
-	r[bx.jx][bx.jym][bx.jz] = funcs_pair.outer;
+	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
+	result(bx.jx,bx.jym,bx.jz) = funcs_pair.outer;
       }
     #ifdef CHECK
       result.bndry_ydown = true;
@@ -1332,8 +1326,8 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	calc_index(&bx);
 	var.setYStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);
-	r[bx.jx][bx.jy][bx.jz] = funcs_pair.inner;
-	r[bx.jx][bx.jyp][bx.jz] = funcs_pair.outer;
+	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
+	result(bx.jx,bx.jyp,bx.jz) = funcs_pair.outer;
       }
     #ifdef CHECK
       result.bndry_yup = true;
@@ -1348,7 +1342,6 @@ const Field3D Mesh::applyYdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_LOC loc) {
   Field3D result;
   result.allocate(); // Make sure data allocated
-  BoutReal ***r = result.getData();
   
   bindex bx;
 
@@ -1356,7 +1349,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
   stencil s;
   do {
     var.setZStencil(s, bx, loc);
-    r[bx.jx][bx.jy][bx.jz] = func(s);
+    result(bx.jx,bx.jy,bx.jz) = func(s);
   }while(next_index3(&bx));
 
   if (mesh->freeboundary_xin && mesh->firstX() && !mesh->periodicX) {
@@ -1365,7 +1358,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_xin = true;
@@ -1378,7 +1371,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_xout = true;
@@ -1392,7 +1385,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_ydown = true;
@@ -1406,7 +1399,7 @@ const Field3D Mesh::applyZdiff(const Field3D &var, Mesh::deriv_func func, CELL_L
 	  bx.jx = it.ind;
 	  calc_index(&bx);
 	  var.setZStencil(s, bx, loc);
-	  r[bx.jx][bx.jy][bx.jz] = func(s);
+	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
       result.bndry_yup = true;

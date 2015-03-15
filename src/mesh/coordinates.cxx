@@ -642,11 +642,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
   
   Field3D result;
   result.allocate();
-
-  BoutReal ***fd, ***rd;
-  fd = f.getData();
-  rd = result.getData();
-
+  
   int ncz = mesh->ngz-1;
   
   static dcomplex **ft = (dcomplex**) NULL, **delft;
@@ -662,7 +658,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Take forward FFT
     
     for(int jx=0;jx<mesh->ngx;jx++)
-      ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
+      ZFFT(&f(jx,jy,0), mesh->zShift(jx, jy), ft[jx]);
 
     // Loop over kz
     for(int jz=0;jz<=ncz/2;jz++) {
@@ -681,14 +677,14 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Reverse FFT
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
 
-      ZFFT_rev(delft[jx], mesh->zShift(jx,jy), rd[jx][jy]);
-      rd[jx][jy][ncz] = rd[jx][jy][0];
+      ZFFT_rev(delft[jx], mesh->zShift(jx,jy), &result(jx,jy,0));
+      result(jx,jy,ncz) = result(jx,jy,0);
     }
 
     // Boundaries
     for(int jz=0;jz<ncz;jz++) {
-      rd[0][jy][jz] = 0.0;
-      rd[mesh->ngx-1][jy][jz] = 0.0;
+      result(0,jy,jz) = 0.0;
+      result(mesh->ngx-1,jy,jz) = 0.0;
     }
   }
   

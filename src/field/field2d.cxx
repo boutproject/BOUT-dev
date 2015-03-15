@@ -83,14 +83,6 @@ Field2D* Field2D::timeDeriv() {
   return deriv;
 }
 
-BoutReal **Field2D::getData() const {
-#ifdef CHECK
-  if(data == NULL)
-    throw BoutException("Field2D::getData returning null pointer\n");
-#endif  
-  return data;
-}
-
 ///////////// OPERATORS ////////////////
 
 Field2D & Field2D::operator=(const Field2D &rhs) {
@@ -154,19 +146,6 @@ const DataIterator Field2D::end() const {
   return ++DataIterator(mesh->ngx-1, 0, mesh->ngx-1,
 						mesh->ngy-1, 0, mesh->ngy-1,
 						0, 0, 0);
-}
-
-BoutReal* Field2D::operator[](int jx) const {
-#ifdef CHECK
-
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: [] operator on empty data");
-  
-  if((jx < 0) || (jx >= mesh->ngx))
-    throw BoutException("Field2D: [] operator out of bounds (%d , %d)\n", jx, mesh->ngx);
-#endif
-  
-  return(data[jx]);
 }
 
 ///////// Operators
@@ -334,48 +313,6 @@ Field2D & Field2D::operator/=(const BoutReal rhs) {
   return(*this);
 }
 
-Field2D & Field2D::operator^=(const Field2D &rhs) {
-#ifdef CHECK
-  if(rhs.data == (BoutReal**) NULL) {
-    // Invalid data
-    throw BoutException("Field2D: ^ operator has invalid Field2D argument");
-  }
-
-  if(data == (BoutReal**) NULL) {
-    throw BoutException("Field2D: *= operates on empty data");
-  }
-#endif
-
-#ifdef TRACK
-  name = "("+name + "^" + rhs.name + ")";
-#endif
-  
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
-    data[0][j] = pow(data[0][j], rhs.data[0][j]);
-
-  return(*this);
-}
-
-Field2D & Field2D::operator^=(const BoutReal rhs) {
-#ifdef CHECK
-  if(data == (BoutReal**) NULL) {
-    throw BoutException("Field2D: *= operates on empty data");
-  }
-#endif
-
-#ifdef TRACK
-  name = "("+name + "^BoutReal)";
-#endif
-  
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++) {
-    data[0][j] = pow(data[0][j], rhs);
-  }
-  
-  return(*this);
-}
-
 
 ///////////////// BINARY OPERATORS ////////////////////
 
@@ -437,111 +374,50 @@ const Field2D Field2D::operator/(const Field2D &other) const {
 const Field2D Field2D::operator/(const BoutReal rhs) const {
   Field2D result = *this;
   result /= rhs;
-  return(result);
-}
-
-const Field2D Field2D::operator^(const Field2D &other) const {
-  Field2D result = *this;
-  result ^= other;
-  return(result);
-}
-
-const Field2D Field2D::operator^(const BoutReal rhs) const {
-  Field2D result = *this;
-  result ^= rhs;
-  return(result);
+  return result;
 }
 
 ///////////// Left binary operators ////////////////
 
 const Field3D Field2D::operator+(const Field3D &other) const {
   // just turn operator around
-  return(other + (*this));
+  return other + (*this);
 }
 
 const Field3D Field2D::operator-(const Field3D &other) const {
-  Field3D result = other;
-  BoutReal ***d;
+  MsgStackItem("Field2D - Field3D");
 
-  d = result.getData();
+  ASSERT2(isAllocated());
+  ASSERT2(other.isAllocated());
+  
+  Field3D result;
+  result.allocate();
 
-#ifdef CHECK
-  if(d == (BoutReal***) NULL)
-    throw BoutException("Field2D: - operator has invalid Fiel3D argument");
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: - operates on empty data");
-#endif
-
-#ifdef TRACK
-  result.name = "(" + name + "-" + other.name + ")";
-#endif  
-
-  #pragma omp parallel for
-  for(int j=0;j<mesh->ngx*mesh->ngy;j++)
-    for(int jz=0;jz<mesh->ngz;jz++)
-      d[0][j][jz] = data[0][j] - d[0][j][jz];
+  for(auto i : result)
+    result[i] = (*this)[i] - other[i];
 
   result.setLocation( other.getLocation() );
 
-  return(result);
+  return result;
 }
 
 const Field3D Field2D::operator*(const Field3D &other) const {
   // turn operator around
-  return(other * (*this));
+  return other * (*this);
 }
 
 const Field3D Field2D::operator/(const Field3D &other) const {
-  Field3D result = other;
-  BoutReal ***d;
+  MsgStackItem("Field2D - Field3D");
 
-  d = result.getData();
-
-#ifdef CHECK
-  if(d == (BoutReal***) NULL)
-    throw BoutException("Field2D: / operator has invalid Fiel3D argument");
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: / operates on empty data");
-#endif  
-
-#ifdef TRACK
-  result.name = "(" + name + "/" + other.name + ")";
-#endif
-
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	d[jx][jy][jz] = data[jx][jy] / d[jx][jy][jz];
-
-  result.setLocation( other.getLocation() );
-
-  return(result);
-}
-
-const Field3D Field2D::operator^(const Field3D &other) const {
-  Field3D result = other;
-  BoutReal ***d;
-
-  d = result.getData();
-
-#ifdef CHECK
-  if(d == (BoutReal***) NULL)
-    throw BoutException("Field2D: ^ operator has invalid Fiel3D argument");
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: ^ operates on empty data");
-#endif
-
-#ifdef TRACK
-  result.name = "(" + name + "^" + other.name + ")";
-#endif  
+  ASSERT2(isAllocated());
+  ASSERT2(other.isAllocated());
   
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      for(int jz=0;jz<mesh->ngz;jz++)
-	d[jx][jy][jz] = pow(data[jx][jy], d[jx][jy][jz]);
+  Field3D result;
+  result.allocate();
 
+  for(auto i : result)
+    result[i] = (*this)[i] / other[i];
+  
   result.setLocation( other.getLocation() );
 
   return(result);
@@ -594,25 +470,6 @@ const FieldPerp Field2D::operator/(const FieldPerp &other) const {
 
   return(result);
 }
-
-const FieldPerp Field2D::operator^(const FieldPerp &other) const {
-  FieldPerp result = other;
-  BoutReal **d = result.getData();
-
-  int jy = result.getIndex();
-
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = pow(data[jx][jy], d[jx][jz]);
-
-#ifdef TRACK
-  result.name = "(" + name + "^" + other.name + ")";
-#endif
-
-  return(result);
-}
-
 
 ////////////////////// STENCILS //////////////////////////
 
@@ -768,85 +625,6 @@ void Field2D::setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc) const {
 ///////////////////// MATH FUNCTIONS ////////////////////
 
 
-BoutReal Field2D::min(bool allpe) const {
-#ifdef CHECK
-  // Check data set
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: Taking min of empty data\n");
-  if(allpe) {
-    msg_stack.push("Field2D::Min() over all PEs");
-  }else
-    msg_stack.push("Field2D::Min()");
-#endif
-
-  BoutReal result = data[0][0];
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      if(data[jx][jy] < result)
-	result = data[jx][jy];
-  
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
-  }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return result;
-}
-
-BoutReal Field2D::max(bool allpe) const {
-#ifdef CHECK
-  // Check data set
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: Taking max of empty data\n");
-  if(allpe) {
-    msg_stack.push("Field2D::Max() over all PEs");
-  }else
-    msg_stack.push("Field2D::Max()");
-#endif
-
-  BoutReal result = data[mesh->xstart][mesh->ystart];
-
-  for(int jx=mesh->xstart;jx<mesh->xend;jx++)
-    for(int jy=mesh->ystart;jy<mesh->yend;jy++) {
-      //if(!isfinite(data[jx][jy]))
-      //  output.write("Non-finite number at %d,%d\n", jx, jy);
-      if(data[jx][jy] > result)
-	result = data[jx][jy];
-    }
-  
-  if(allpe) {
-    // MPI reduce
-    BoutReal localresult = result;
-    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
-  }
-  
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return result;
-}
-
-bool Field2D::finite() const {
-#ifdef CHECK
-  // Check data set
-  if(data == (BoutReal**) NULL)
-    throw BoutException("Field2D: Taking finite of empty data\n");
-#endif
-  
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      if(!::finite(data[jx][jy]))
-	return false;
-
-  return true;
-}
 
 ///////////////////// FieldData VIRTUAL FUNCTIONS //////////
 
@@ -1150,29 +928,6 @@ const Field2D operator/(const BoutReal lhs, const Field2D &rhs) {
   return(result);
 }
 
-const Field2D operator^(const BoutReal lhs, const Field2D &rhs) {
-  Field2D result = rhs;
-  BoutReal **d;
-
-  d = result.data;
-
-#ifdef CHECK
-  if(d == (BoutReal**) NULL)
-    throw BoutException("Field2D: left ^ operator has invalid Field2D argument");
-#endif
-
-#ifdef TRACK
-  result.name = "(BoutReal^"+rhs.name+")";
-#endif
-  
-  #pragma omp parallel for
-  for(int jx=0;jx<mesh->ngx;jx++)
-    for(int jy=0;jy<mesh->ngy;jy++)
-      d[jx][jy] = pow(lhs, d[jx][jy]);
-
-  return(result);
-}
-
 //////////////// NON-MEMBER FUNCTIONS //////////////////
 
 const Field2D SQ(const Field2D &f) {
@@ -1180,15 +935,54 @@ const Field2D SQ(const Field2D &f) {
 }
 
 BoutReal min(const Field2D &f, bool allpe) {
-  return f.min(allpe);
+  MsgStackItem("min(Field2D)");
+  
+  ASSERT2(f.isAllocated());
+
+  BoutReal result = f(0,0);
+
+  for(auto i : f)
+    if(f[i] < result)
+      result = f[i];
+  
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MIN, BoutComm::get());
+  }
+  
+  return result;
 }
 
 BoutReal max(const Field2D &f, bool allpe) {
-  return f.max(allpe);
+  MsgStackItem("max(Field2D)");
+  
+  ASSERT2(f.isAllocated());
+
+  BoutReal result = f(mesh->xstart,mesh->ystart);
+
+  for(auto i : f)
+    if(f[i] > result)
+      result = f[i];
+  
+  if(allpe) {
+    // MPI reduce
+    BoutReal localresult = result;
+    MPI_Allreduce(&localresult, &result, 1, MPI_DOUBLE, MPI_MAX, BoutComm::get());
+  }
+  
+  return result;
 }
 
 bool finite(const Field2D &f) {
-  return f.finite();
+  MsgStackItem("finite(Field2D)");
+  ASSERT0(f.isAllocated());
+
+  for(auto i : f)
+    if(!::finite(f[i]))
+      return false;
+  
+  return true;
 }
 
 /////////////////////////////////////////////////
@@ -1211,10 +1005,6 @@ bool finite(const Field2D &f) {
     msg_stack.pop();                                       \
     return result;                                         \
   }
-
-//for(int jx=0;jx<mesh->ngx;jx++)
-//  for(int jy=0;jy<mesh->ngy;jy++)
-//    result.data[jx][jy] = ::exp(f.data[jx][jy]);
 
 F2D_FUNC(abs, ::fabs);
 
@@ -1246,3 +1036,56 @@ const Field2D floor(const Field2D &var, BoutReal f) {
   
   return result;
 }
+
+Field2D pow(const Field2D &lhs, const Field2D &rhs) {
+  MsgStackItem("pow(Field2D, Field2D)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
+  Field2D result;
+  result.allocate();
+
+  // Loop over domain
+  for(auto i: result) {
+    result[i] = ::pow(lhs[i], rhs[i]);
+    ASSERT3(finite(result[i]));
+  }
+  return result;
+}
+
+Field2D pow(const Field2D &lhs, BoutReal rhs) {
+  MsgStackItem("pow(Field2D, BoutReal)");
+  // Check if the inputs are allocated
+  ASSERT1(lhs.isAllocated());
+
+  // Define and allocate the output result
+  Field2D result;
+  result.allocate();
+
+  // Loop over domain
+  for(auto i: result) {
+    result[i] = ::pow(lhs[i], rhs);
+    ASSERT3(finite(result[i]));
+  }
+  return result;
+}
+
+Field2D pow(BoutReal lhs, const Field2D &rhs) {
+  MsgStackItem("pow(lhs, Field2D)");
+  // Check if the inputs are allocated
+  ASSERT1(rhs.isAllocated());
+
+  // Define and allocate the output result
+  Field2D result;
+  result.allocate();
+
+  // Loop over domain
+  for(auto i: result) {
+    result[i] = ::pow(lhs, rhs[i]);
+    ASSERT3(finite(result[i]));
+  }
+  return result;
+}
+
