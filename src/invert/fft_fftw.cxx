@@ -431,9 +431,9 @@ void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
   };
 }
 
-// void rfft(Field3D fld, bool transpose) {
-//   rfft(fld,fld.fft_coef,transpose);
-// }
+void rfft(Field3D &fld, bool transpose) {
+  rfft(fld,fld.fft_coef,transpose);
+}
 
 void irfft(dcomplex *in, int length, BoutReal *out)
 {
@@ -674,9 +674,9 @@ void irfft(Field3D &fld, dcomplex ***in, bool transpose) {
   };
 }
 
-// void irfft(Field3D fld, bool transpose) {
-//   irfft(fld,fld.fft_coef,transpose);
-// }
+void irfft(Field3D &fld, bool transpose) {
+  irfft(fld,fld.fft_coef,transpose);
+}
 
 #else
 // Parallel thread-safe version of rfft and irfft

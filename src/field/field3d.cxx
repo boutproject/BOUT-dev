@@ -38,10 +38,6 @@
 #include <bout/constants.hxx>
 #include <bout/assert.hxx>
 
-//Initialise static members
-dcomplex*** Field3D::phs=(dcomplex***) NULL;
-dcomplex*** Field3D::cphs=(dcomplex***) NULL;
-
 /// Constructor
 Field3D::Field3D() : background(NULL), block(NULL), deriv(NULL), yup_field(0), ydown_field(0) {
 #ifdef MEMDEBUG
@@ -2013,6 +2009,8 @@ const Field3D Field3D::shiftZ3D(const BoutReal zangle, const int dir) const{
 //2d fft based shift
 void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   BoutReal kwave;
+  static dcomplex ***phs=(dcomplex***) NULL;
+  static dcomplex ***cphs=(dcomplex***) NULL;
 
 #ifdef CHECK
   // Check data set
@@ -2054,7 +2052,7 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   };
     
   // //Now do the FFT of field3d into v
-  rfft(*this, fft_coef, true);
+  rfft(*this, true);
  
   //Do phase shift
   if(dir==1){
@@ -2069,7 +2067,6 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
   	for(int jz=0;jz<nkz;jz++){
-  	  //v[jx][jy][jz] *= conj(phs[jx][jy][jz]);
   	  fft_coef[jx][jy][jz] *= cphs[jx][jy][jz];
   	}
       }
@@ -2077,7 +2074,7 @@ void Field3D::shiftZ3D(const Field2D zangle, const int dir, const bool do2D){
   }
   
   // Reverse FFT
-  irfft(*this, fft_coef, true); 
+  irfft(*this, true); 
 };
 
 //1d based shiftZ
@@ -2516,11 +2513,6 @@ void Field3D::cleanup()
     blocklist = nb;
     nblocks--;
   }
-  
-  // //FFT data
-  // output<<"Freeing fft_coef"<<endl;
-  // free_c3tensor(fft_coef);
-  // fft_coef = (dcomplex ***) NULL;
 
   // Reset to starting
   nblocks = 0;
@@ -2918,11 +2910,6 @@ void Field3D::allocData() const {
       block = newBlock();
     
     }
-    // if (fft_coef == (dcomplex ***) NULL){
-    //   //FFT data
-    //   int nkz=1+(mesh->ngz-1)/2;
-    //   fft_coef=c3tensor(mesh->ngx,mesh->ngy,nkz);
-    // };
   } // End of OMP critical section
 }
 

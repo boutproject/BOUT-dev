@@ -210,10 +210,6 @@ class Field3D : public Field, public FieldData {
   void shiftToReal(bool toBoutReal) {
     *this = shiftZ(toBoutReal);
   }
-
-  //FFTs
-  //mutable dcomplex ***fft_coef = (dcomplex ***) NULL;
-  
   // Slicing
 
   // NOTE: No shifting done in z for x array
@@ -284,9 +280,6 @@ class Field3D : public Field, public FieldData {
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
 
- protected:
-  static dcomplex ***phs;
-  static dcomplex ***cphs;
   dcomplex ***fft_coef=(dcomplex ***) NULL;
 
  private:
