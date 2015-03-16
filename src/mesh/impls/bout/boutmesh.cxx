@@ -1321,17 +1321,16 @@ int BoutMesh::wait(comm_handle handle) {
       if((*it)->is3D()) {
 	
 	// Lower boundary
-
 	if(TS_down_in && (DDATA_INDEST  != -1)) {
 	  for(jx=0;jx<DDATA_XSPLIT;jx++)
 	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
+	      ((Field3D *)*it)->shiftZ(jx, jy, true);
       
 	}
 	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
 	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
 	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
+	      ((Field3D *)*it)->shiftZ(jx, jy, true);
 	  
 	}
 	
@@ -1340,13 +1339,13 @@ int BoutMesh::wait(comm_handle handle) {
 	if(TS_up_in && (UDATA_INDEST  != -1)) {
 	  for(jx=0;jx<UDATA_XSPLIT; jx++)
 	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
+	      ((Field3D *)*it)->shiftZ(jx, jy, false);
 	  
 	}
 	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
 	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
 	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
+	      ((Field3D *)*it)->shiftZ(jx, jy, false);
 	  
 	}
       }

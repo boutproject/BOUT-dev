@@ -191,7 +191,9 @@ class Field3D : public Field, public FieldData {
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
 
   /// Shifts specified points by angle
+  void shiftZ(int jx, int jy, bool fwd);
   void shiftZ(int jx, int jy, double zangle);
+
   /// Shift all points in z by specified angle
   const Field3D shiftZ(const Field2D zangle) const; 
   const Field3D shiftZ(const BoutReal zangle) const;
