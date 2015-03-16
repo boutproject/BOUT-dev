@@ -36,6 +36,8 @@ class Field3D;
 
 #include "bout/deprecated.hxx"
 
+#include "bout/field_visitor.hxx"
+
 /// Structure to store blocks of memory for Field3D class
 struct memblock3d {
   /// memory block
@@ -282,6 +284,9 @@ class Field3D : public Field, public FieldData {
     *this = 0.0;
   }
 
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override { v.accept(*this); }
+  
 #ifdef CHECK
   bool checkData(bool vital = false) const; ///< Checks if the data is all valid. 
 

@@ -40,6 +40,8 @@ class Field3D; //#include "field3d.hxx"
 
 #include "bout/deprecated.hxx"
 
+#include "bout/field_visitor.hxx"
+
 #include <stack>
 using std::stack;
 
@@ -173,6 +175,9 @@ class Field2D : public Field, public FieldData {
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   
   // FieldData virtual functions
+
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override {v.accept(*this);}
   
   bool isReal() const   { return true; }         // Consists of BoutReal values
   bool is3D() const     { return false; }        // Field is 2D

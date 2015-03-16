@@ -542,14 +542,19 @@ const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs)
  ***************************************************************/
 
 // Return the magnitude of a vector
-const Field3D abs(const Vector3D &v)
-{
+const Field3D abs(const Vector3D &v) {
   return sqrt(v*v);
 }
 
 /***************************************************************
  *               FieldData VIRTUAL FUNCTIONS
  ***************************************************************/
+
+////////////////////////////////////////////////////////////
+// Visitor pattern support
+void Vector3D::accept(FieldVisitor &v) {
+  v.accept(*this);
+}
 
 int Vector3D::getData(int jx, int jy, int jz, void *vptr) const
 {

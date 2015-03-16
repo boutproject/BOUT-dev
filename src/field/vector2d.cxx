@@ -391,6 +391,13 @@ const Field2D abs(const Vector2D &v) {
  *               FieldData VIRTUAL FUNCTIONS
  ***************************************************************/
 
+////////////////////////////////////////////////////////////
+// Visitor pattern support
+
+void Vector2D::accept(FieldVisitor &v) {
+  v.accept(*this);
+}
+
 int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
 #ifdef CHECK
   // check ranges
