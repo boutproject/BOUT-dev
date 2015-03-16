@@ -697,15 +697,12 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
+  MsgStackItem("Coordinates::Delp2( FieldPerp )");
+  
   FieldPerp result;
   result.allocate();
   
-  int msg_pos = msg_stack.push("Coordinates::Delp2( FieldPerp )");
-
   static dcomplex **ft = (dcomplex**) NULL, **delft;
-  
-  BoutReal **fd = f.getData();
-  BoutReal **rd = result.getData();
 
   int jy = f.getIndex();
   result.setIndex(jy);
@@ -720,7 +717,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   // Take forward FFT
   for(int jx=0;jx<mesh->ngx;jx++)
-    ZFFT(fd[jx], mesh->zShift(jx, jy), ft[jx]);
+    ZFFT(f[jx], mesh->zShift(jx, jy), ft[jx]);
 
   // Loop over kz
   for(int jz=0;jz<=ncz/2;jz++) {
@@ -738,20 +735,16 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   // Reverse FFT
   for(int jx=1;jx<(mesh->ngx-1);jx++) {
-    ZFFT_rev(delft[jx], mesh->zShift(jx,jy), rd[jx]);
-    rd[jx][ncz] = rd[jx][0];
+    ZFFT_rev(delft[jx], mesh->zShift(jx,jy), result[jx]);
+    result(jx,ncz) = result(jx,0);
   }
 
   // Boundaries
   for(int jz=0;jz<ncz;jz++) {
-    rd[0][jz] = 0.0;
-    rd[mesh->ngx-1][jz] = 0.0;
+    result(0,jz) = 0.0;
+    result(mesh->ngx-1,jz) = 0.0;
   }
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
+  
   return result;
 }
 

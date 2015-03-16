@@ -426,49 +426,43 @@ const Field3D Field2D::operator/(const Field3D &other) const {
 const FieldPerp Field2D::operator+(const FieldPerp &other) const {
   FieldPerp result = other;
   result += (*this);
-  return(result);
+  return result;
 }
 
 const FieldPerp Field2D::operator-(const FieldPerp &other) const {
-  FieldPerp result = other;
-  BoutReal **d = result.getData();
+  FieldPerp result;
+  result.allocate();
 
   int jy = result.getIndex();
 
-  #pragma omp parallel for
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = data[jx][jy] - d[jx][jz];
-  
-#ifdef TRACK
-  result.name = "(" + name + "-" + other.name + ")";
-#endif
+      result(jx, jz) = data[jx][jy] - other(jx,jz);
 
-  return(result);
+  return result;
 }
 
 const FieldPerp Field2D::operator*(const FieldPerp &other) const {
   FieldPerp result = other;
   result *= (*this);
-  return(result);
+  return result;
 }
 
 const FieldPerp Field2D::operator/(const FieldPerp &other) const {
-  FieldPerp result = other;
-  BoutReal **d = result.getData();
+  FieldPerp result;
+  result.allocate();
 
   int jy = result.getIndex();
 
-  #pragma omp parallel for
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = data[jx][jy] / d[jx][jz];
+      result(jx,jz) = data[jx][jy] / other(jx,jz);
 
 #ifdef TRACK
   result.name = "(" + name + "/" + other.name + ")";
 #endif
 
-  return(result);
+  return result;
 }
 
 ////////////////////// STENCILS //////////////////////////

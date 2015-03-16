@@ -287,7 +287,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 
 #else
 // Parallel thread-safe version of rfft and irfft
-void rfft(BoutReal *in, int length, dcomplex *out) {
+void rfft(const BoutReal *in, int length, dcomplex *out) {
   static double *finall;
   static fftw_complex *foutall;
   static fftw_plan *p;
@@ -446,7 +446,7 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
 
 //  Discrete sine transforms (B Shanahan)
 
-void DST(BoutReal *in, int length, dcomplex *out) {
+void DST(const BoutReal *in, int length, dcomplex *out) {
   static double *fin;
   static fftw_complex *fout;
   static fftw_plan p;

@@ -180,18 +180,16 @@ void Mesh::communicate(FieldGroup &g) {
 void Mesh::communicate(FieldPerp &f) {
   comm_handle recv[2];
   
-  BoutReal **fd = f.getData();
-  
   int nin = xstart; // Number of x points in inner guard cell
   int nout = ngx-xend-1; // Number of x points in outer guard cell
   
   // Post receives for guard cell regions
-  recv[0] = irecvXIn(fd[0],       nin*ngz, 0);
-  recv[1] = irecvXOut(fd[xend+1], nout*ngz, 1);
+  recv[0] = irecvXIn(f[0],       nin*ngz, 0);
+  recv[1] = irecvXOut(f[xend+1], nout*ngz, 1);
   
   // Send data
-  sendXIn(fd[xstart], nin*ngz, 1);
-  sendXOut(fd[xend-nout+1], nout*ngz, 0);
+  sendXIn(f[xstart], nin*ngz, 1);
+  sendXOut(f[xend-nout+1], nout*ngz, 0);
  
   // Wait for receive
   wait(recv[0]);

@@ -306,18 +306,15 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
 }
 
 Field3D & Field3D::operator=(const FieldPerp &rhs) {
-  BoutReal **d;
-  
   int jy = rhs.getIndex();
+
+  ASSERT1(rhs.isAllocated());
   
-  d = rhs.getData();
-  
-  ASSERT1(d != (BoutReal**) NULL);
 #if CHECK > 1
   /// Test rhs values
   for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
     for(int jz=0;jz<mesh->ngz-1;jz++)
-      if(!finite(d[jx][jz])) {
+      if(!finite(rhs(jx,jz))) {
 	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
       }
 #endif
@@ -330,16 +327,11 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
 
   /// Copy data
   
-#pragma omp parallel
-  {
-    for(int jx=0;jx<mesh->ngx;jx++) {
-#pragma omp for
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] = d[jx][jz];
-    }
-  }
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[jx][jy][jz] = rhs(jx,jz);
 
-  return(*this);
+  return *this;
 }
 
 const bvalue & Field3D::operator=(const bvalue &bv)
@@ -477,22 +469,14 @@ F3D_UPDATE_REAL(/=,/);    // operator/= Field2D
 ////////////////// FieldPerp operators //////////////////////
 
 Field3D & Field3D::operator+=(const FieldPerp &rhs) {
-  BoutReal **d;
-  
   int jy = rhs.getIndex();
-  
-  d = rhs.getData();
 
-#ifdef CHECK
-  if(d == (BoutReal**) NULL) {
-    // No data
-    throw BoutException("Field3D: No data in assignment from FieldPerp");
-  }
-  
+  ASSERT1(rhs.isAllocated());
+#if CHECK > 1
   /// Test rhs values
   for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
     for(int jz=0;jz<mesh->ngz-1;jz++)
-      if(!finite(d[jx][jz])) {
+      if(!finite(rhs(jx,jz))) {
 	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
       }
 #endif
@@ -505,39 +489,28 @@ Field3D & Field3D::operator+=(const FieldPerp &rhs) {
 
   /// Copy data
   
-#pragma omp parallel
-  {
-    for(int jx=0;jx<mesh->ngx;jx++) {
-#pragma omp for
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] += d[jx][jz];
-    }
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[jx][jy][jz] += rhs(jx,jz);
   }
 
-  return(*this);
+  return *this;
 }
 
 Field3D & Field3D::operator-=(const FieldPerp &rhs) {
-  BoutReal **d;
-  
   int jy = rhs.getIndex();
-  
-  d = rhs.getData();
 
-#ifdef CHECK
-  if(d == (BoutReal**) NULL) {
-    // No data
-    throw BoutException("Field3D: No data in assignment from FieldPerp");
-  }
+  ASSERT1(rhs.isAllocated());
   
+#if CHECK > 1
   /// Test rhs values
   for(int jx=mesh->xstart;jx<=mesh->xend;jx++)
     for(int jz=0;jz<mesh->ngz-1;jz++)
-      if(!finite(d[jx][jz])) {
+      if(!finite(rhs(jx,jz))) {
 	throw BoutException("Field3D: Assignment from non-finite FieldPerp data at (%d,%d,%d)\n", jx,jy,jz);
       }
 #endif
-
+  
 #ifdef TRACK
   name = "F3D("+rhs.name+")";
 #endif
@@ -546,13 +519,9 @@ Field3D & Field3D::operator-=(const FieldPerp &rhs) {
 
   /// Copy data
   
-#pragma omp parallel
-  {
-    for(int jx=0;jx<mesh->ngx;jx++) {
-#pragma omp for
-      for(int jz=0;jz<mesh->ngz;jz++)
-        block->data[jx][jy][jz] -= d[jx][jz];
-    }
+  for(int jx=0;jx<mesh->ngx;jx++) {
+    for(int jz=0;jz<mesh->ngz;jz++)
+      block->data[jx][jy][jz] -= rhs(jx,jz);
   }
 
   return(*this);
@@ -597,17 +566,15 @@ const Field3D Field3D::operator-(const Field2D &other) const {
 }
 
 const FieldPerp Field3D::operator-(const FieldPerp &other) const {
-  BoutReal **d;
   int jy = other.getIndex();
-  FieldPerp result = other;
+  FieldPerp result;
+  result.allocate();
 
   ASSERT1(block != NULL);
-
-  d = result.getData();
-#pragma omp parallel for
+  
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = block->data[jx][jy][jz] - d[jx][jz];
+      result(jx,jz) = block->data[jx][jy][jz] - other(jx, jz);
   
   return(result);
 }
@@ -664,20 +631,15 @@ const Field3D Field3D::operator/(const Field2D &other) const
 }
 
 const FieldPerp Field3D::operator/(const FieldPerp &other) const {
-  BoutReal **d;
   int jy = other.getIndex();
-  FieldPerp result = other;
-  
-#ifdef CHECK
-  if(block == NULL)
-    throw BoutException("Field3D: / FieldPerp operates on empty data");
-#endif
+  FieldPerp result;
+  result.allocate();
 
-  d = result.getData();
-#pragma omp parallel for
+  ASSERT1(block != NULL);
+  
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz;jz++)
-      d[jx][jz] = block->data[jx][jy][jz] / d[jx][jz];
+      result(jx,jz) = block->data[jx][jy][jz] / other(jx,jz);
   
 #ifdef TRACK
   result.name = "(" + name + "/" + other.name + ")";
@@ -1284,17 +1246,8 @@ void Field3D::setZArray(int x, int y, const rvec &zv)
     block->data[x][y][z] = zv[z];
 }
 
-const FieldPerp Field3D::slice(int y) const
-{
-  FieldPerp result;
-
-  result.set(*this, y);
-
-#ifdef TRACK
-  result.name = "Slice("+name+")";
-#endif
-
-  return(result);
+const FieldPerp Field3D::slice(int y) const {
+  return sliceXZ(*this, y);
 }
 
 ///////////////////// FieldData VIRTUAL FUNCTIONS //////////

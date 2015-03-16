@@ -96,8 +96,8 @@ void Inverter::A(BoutReal *b, BoutReal *x)
 {
   FieldPerp Fb, Fx;
   
-  Fb.setData(&b);
-  Fx.setData(&x);
+  //Fb.setData(&b);
+  //Fx.setData(&x);
   
   if(parallel) {
     // Communicate Fx
