@@ -1,3 +1,4 @@
+from __future__ import print_function
 # File I/O class
 # A wrapper around various NetCDF libraries, used by
 # BOUT++ routines. Creates a consistent interface

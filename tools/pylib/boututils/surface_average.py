@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from boututils.support import deriv, int_func
 from boututils.idl_tabulate import idl_tabulate

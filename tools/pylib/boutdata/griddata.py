@@ -1,9 +1,10 @@
+from __future__ import print_function
 # Routines for manipulating grid files
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: restart module needs DataFile"
+    print("ERROR: restart module needs DataFile")
     raise
 
 def slice(infile, outfile, region = None, xind=None, yind=None):

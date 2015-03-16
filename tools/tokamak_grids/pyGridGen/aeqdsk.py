@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import re
 import numpy
 
@@ -125,7 +126,7 @@ class Aeqdsk:
 	   raise 'Read error at line %d:%s' % (counter, line)
 
 	mco2v = self.data['mco2v'][0]
-	print 'mco2v=', mco2v
+	print('mco2v=', mco2v)
 
 # read (neqdsk,1040) (rco2v(k,jj),k=1,mco2v)
 	data = []
@@ -144,7 +145,7 @@ class Aeqdsk:
 	self.data['dco2v'] = numpy.array(data),   "line average electron density in cm3 from vertical CO2 chord"
 	
 	mco2r = self.data['mco2r'][0]
-	print 'mco2r=', mco2r
+	print('mco2r=', mco2r)
 
 # read (neqdsk,1040) (rco2r(k,jj),k=1,mco2r)
 	data = []
@@ -308,7 +309,7 @@ class Aeqdsk:
 	
 	nsilop = self.data['nsilop'][0]
 	magpri = self.data['magpri'][0]
-	print 'nsilop=', nsilop, ' magpri=', magpri
+	print('nsilop=', nsilop, ' magpri=', magpri)
 	data = []
 	while len(data) < nsilop + magpri:
 	      line = lines[counter]
@@ -453,17 +454,17 @@ def main():
 	eq.openFile(options.filename)
 	
 	if options.inquire:
-	   print eq.getAllVars()
+	   print(eq.getAllVars())
 
 	if options.all:
-	   print eq.getAll()
+	   print(eq.getAll())
 
 	vs = eq.getAllVars()
 	if options.vars != '*':
 	   vs = options.vars.split(',')
 
 	for v in vs:
-	    print '%s: %s'% (v, str(eq.get(v)))
+	    print('%s: %s'% (v, str(eq.get(v))))
 
 
 

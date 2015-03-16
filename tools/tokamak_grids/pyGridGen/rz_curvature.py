@@ -1,3 +1,4 @@
+from __future__ import print_function
 from bunch import Bunch
 import numpy
 from support import deriv
@@ -80,9 +81,9 @@ def dct2dslow( fun, inverse=None):
 # NOTE: theta component needs to be divided by hthe
 
 def pdiff ( nr, nz, r, z, f):
-    print "Calculating DCT..."
+    print("Calculating DCT...")
     dctf= dct2dslow( f )
-    print "Finished DCT"
+    print("Finished DCT")
 
     drdi = deriv(r)
     dzdi = deriv(z)

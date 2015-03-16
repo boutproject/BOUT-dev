@@ -5,6 +5,7 @@ Written by Luke Easy
 le590@york.ac.uk
 Last Updated 6/1/2014
 """
+from __future__ import print_function
 
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d

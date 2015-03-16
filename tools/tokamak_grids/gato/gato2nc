@@ -7,29 +7,30 @@
 #
 # Ben Dudson, University of York, Nov 2009
 
+from __future__ import print_function
 try:
     import sys
 
 except ImportError:
-    print "ERROR: sys module not available"
+    print("ERROR: sys module not available")
     raise SystemExit
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise SystemExit
 
 try:
     import re
 except:
-    print "ERROR: Regular expression module 're' not available"
+    print("ERROR: Regular expression module 're' not available")
     raise SystemExit
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH"
+    print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
     raise SystemExit
 
 # Check command-line arguments
@@ -40,10 +41,10 @@ infile = None
 outfile = None
 
 if (nargs > 3) or (nargs < 2):
-    print "Useage:"
-    print "  " + sys.argv[0] + " <input file> [ <output file> ]"
-    print "input file is an GATO format file"
-    print "output is (optionally) an output NetCDF file"
+    print("Useage:")
+    print("  " + sys.argv[0] + " <input file> [ <output file> ]")
+    print("input file is an GATO format file")
+    print("output is (optionally) an output NetCDF file")
     raise SystemExit
 elif nargs == 2:
     # Only specified input file
@@ -60,11 +61,11 @@ else:
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: boututils.DataFile not available"
-    print "=> Set $PYTHONPATH variable to include BOUT++ pylib"
+    print("ERROR: boututils.DataFile not available")
+    print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
     raise SystemExit
 
-print "Reading: " + infile
+print("Reading: " + infile)
 
 ################################################
 # Read the GATO equilibrium file
@@ -74,14 +75,14 @@ f = open(infile)
 # First line contains the date
 date = f.readline()
 if not date:
-   print "ERROR: Cannot read from input file"
+   print("ERROR: Cannot read from input file")
    raise SystemExit
 
-print "Date: " + date
+print("Date: " + date)
 
 # Second is description
 desc = f.readline()
-print "Description: " + desc
+print("Description: " + desc)
 
 # Define a generator to get the next token from the file
 def file_tokens(fp):
@@ -100,61 +101,61 @@ token = file_tokens(f)
 
 # Third contains number of mesh points
 try:
-    npsi = int(token.next())
-    ntheta = int(token.next())
-    isym = int(token.next())
+    npsi = int(next(token))
+    ntheta = int(next(token))
+    isym = int(next(token))
 except StopIteration:
-    print "ERROR: Unexpected end of file while reading grid size"
+    print("ERROR: Unexpected end of file while reading grid size")
     raise SystemExit
 except ValueError:
-    print "ERROR: Third line should contain npsi, ntheta and isym"
+    print("ERROR: Third line should contain npsi, ntheta and isym")
     raise SystemExit
 
-print "Grid size %d %d %d" % (npsi, ntheta, isym)
+print("Grid size %d %d %d" % (npsi, ntheta, isym))
 
 # Check values
 if (isym < 0) or (isym > 1):
-    print "ERROR: isym must be either 0 or 1"
+    print("ERROR: isym must be either 0 or 1")
     raise SystemExit
 if (npsi < 1) or (ntheta < 1):
-    print "ERROR: "
+    print("ERROR: ")
 
 # Read normalisation factors
 
 try:
-    rcnt = float(token.next())
-    xma  = float(token.next())
-    zma  = float(token.next())
-    btor = float(token.next())
+    rcnt = float(next(token))
+    xma  = float(next(token))
+    zma  = float(next(token))
+    btor = float(next(token))
 except:
-    print "ERROR: Couldn't read normalisation factors"
+    print("ERROR: Couldn't read normalisation factors")
     raise SystemExit
 
-print "rcnt = %e, xma = %e, zma = %e, btor = %e" % (rcnt, xma, zma, btor)
+print("rcnt = %e, xma = %e, zma = %e, btor = %e" % (rcnt, xma, zma, btor))
 
 try:
-    curtot = float(token.next())
-    eaxe   = float(token.next())
-    dnorm  = float(token.next())
+    curtot = float(next(token))
+    eaxe   = float(next(token))
+    dnorm  = float(next(token))
 except:
-    print "ERROR: Couldn't read normalisation factors"
+    print("ERROR: Couldn't read normalisation factors")
     raise SystemExit
 
-print "curtot = %e, eaxe = %e, dnorm = %e\n" % (curtot, eaxe, dnorm)
+print("curtot = %e, eaxe = %e, dnorm = %e\n" % (curtot, eaxe, dnorm))
 
 def read_array(n, name="Unknown"):
     data = np.zeros([n])
     try:
         for i in np.arange(n):
-            data[i] = float(token.next())
+            data[i] = float(next(token))
     except:
-        print "ERROR: Failed reading array '"+name+"' of size ", n
+        print("ERROR: Failed reading array '"+name+"' of size ", n)
         raise SystemExit
     return data
 
 def read_2d(nx, ny, name="Unknown"):
     data = np.zeros([nx, ny])
-    print "Reading 2D variable " + name
+    print("Reading 2D variable " + name)
     for i in np.arange(nx):
         data[i,:] = read_array(ny, name+"["+str(i)+"]")
     return data
@@ -181,14 +182,14 @@ try:
     Br = read_2d(ntheta, npsi, "Br")
     Bz = read_2d(ntheta, npsi, "Bz")
 except:
-    print "=> File does not contain Br and Bz"
+    print("=> File does not contain Br and Bz")
     Br = Bz = None
 
 ny = ntheta
 
 if isym == 1:
     # Fill in values for up-down symmetric case
-    print "Grid is up-down symmetric. Reflecting grid about midplane"
+    print("Grid is up-down symmetric. Reflecting grid about midplane")
     ny = tsize = 2*(ntheta - 1) + 1
     
     def reflect(data, mapfunc = lambda x:x):
@@ -225,7 +226,7 @@ else:
 Btor = fnorm / xnorm
 
 # Output file
-print "Writing data to '"+outfile+"'"
+print("Writing data to '"+outfile+"'")
 of = DataFile()
 of.open(outfile, create=True)
 
@@ -254,4 +255,4 @@ of.write("Btor", np.transpose(Btor))
 
 of.close()
 
-print "Done"
+print("Done")

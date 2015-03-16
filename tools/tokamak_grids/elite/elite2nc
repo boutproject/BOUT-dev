@@ -2,17 +2,18 @@
 
 # Convert an ELITE .eqin file to a NetCDF equilibrium file
 
+from __future__ import print_function
 try:
     import sys
 
 except ImportError:
-    print "ERROR: sys module not available"
+    print("ERROR: sys module not available")
     raise SystemExit
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise SystemExit
 
 # Check command-line arguments
@@ -23,10 +24,10 @@ infile = None
 outfile = None
 
 if (nargs > 3) or (nargs < 2):
-    print "Useage:"
-    print "  " + sys.argv[0] + " <input file> [ <output file> ]"
-    print "input file is an ELITE .eqin format file"
-    print "output is (optionally) an output NetCDF file"
+    print("Useage:")
+    print("  " + sys.argv[0] + " <input file> [ <output file> ]")
+    print("input file is an ELITE .eqin format file")
+    print("output is (optionally) an output NetCDF file")
     raise SystemExit
 elif nargs == 2:
     # Only specified input file
@@ -44,12 +45,12 @@ else:
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: boututils.DataFile not available"
-    print "=> Set $PYTHONPATH variable to include BOUT++ pylib"
+    print("ERROR: boututils.DataFile not available")
+    print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
     raise SystemExit
 
 
-print "Reading: " + infile
+print("Reading: " + infile)
 
 ################################################
 # Read the ELITE EQIN file
@@ -60,10 +61,10 @@ f = open(infile)
 
 desc = f.readline()
 if not desc:
-    print "ERROR: Cannot read from input file"
+    print("ERROR: Cannot read from input file")
     raise SystemExit
 
-print "Description: " + desc
+print("Description: " + desc)
 
 # Define a generator to get the next token from the file
 def file_tokens(fp):
@@ -78,23 +79,23 @@ def file_tokens(fp):
 token = file_tokens(f)
 
 try:
-    npsi = int(token.next())
-    npol = int(token.next())
+    npsi = int(next(token))
+    npol = int(next(token))
 except StopIteration:
-    print "ERROR: Unexpected end of file while reading grid size"
+    print("ERROR: Unexpected end of file while reading grid size")
     raise SystemExit
 except ValueError:
-    print "ERROR: Second line should contain Npsi and Npol"
+    print("ERROR: Second line should contain Npsi and Npol")
     raise SystemExit
 
-print "Size of grid: %d by %d\n" % (npsi, npol)
+print("Size of grid: %d by %d\n" % (npsi, npol))
 
 # var will be a dictionary of variables
 var=dict()
 
 while True:
     try:
-        varname = token.next()
+        varname = next(token)
     except:
         break
     
@@ -104,21 +105,21 @@ while True:
             data = np.zeros([npsi, npol])
             for j in np.arange(npol):
                 for i in np.arange(npsi):
-                    data[i,j] = float(token.next())
+                    data[i,j] = float(next(token))
         except StopIteration:
-            print "ERROR: Unexpected end of file while reading " + varname
+            print("ERROR: Unexpected end of file while reading " + varname)
             raise SystemExit
         except ValueError:
-            print "ERROR: Expecting float while reading " + varname
+            print("ERROR: Expecting float while reading " + varname)
             raise SystemExit
         except:
-            print "ERROR: Out of cheese. Variable " + varname
+            print("ERROR: Out of cheese. Variable " + varname)
             raise SystemExit
 
         # Add this variable to the dictionary
         var[varname] = data
 
-        print "Read 2D variable " + varname
+        print("Read 2D variable " + varname)
         
     else:
         # Assume it's a 1D (psi) variable
@@ -126,21 +127,21 @@ while True:
         try:
             data = np.zeros([npsi])
             for i in np.arange(npsi):
-                data[i] = float(token.next())
+                data[i] = float(next(token))
         except StopIteration:
-            print "ERROR: Unexpected end of file while reading " + varname
+            print("ERROR: Unexpected end of file while reading " + varname)
             raise SystemExit
         except ValueError:
-            print "ERROR: Expecting float while reading " + varname
+            print("ERROR: Expecting float while reading " + varname)
             raise SystemExit
         except:
-            print "ERROR: Out of cheese. Variable " + varname
+            print("ERROR: Out of cheese. Variable " + varname)
             raise SystemExit
         
         # Add this variable to the dictionary
         var[varname] = data
 
-        print "Read 1D variable " + varname
+        print("Read 1D variable " + varname)
 
 # Finished reading data
 
@@ -156,39 +157,39 @@ try:
         Bt[i,:] = f[i] * R[i,:]
     var['Bt'] = Bt
 except KeyError:
-    print "ERROR: Need f(psi) and R to calculate Bt"
+    print("ERROR: Need f(psi) and R to calculate Bt")
     raise SystemExit
 
 # Temperatures: If only have one, set equal
 
-if var.has_key('Te') and not var.has_key('Ti'):
+if 'Te' in var and 'Ti' not in var:
     var['Ti'] = var['Te']
 
-if var.has_key('Ti') and not var.has_key('Te'):
+if 'Ti' in var and 'Te' not in var:
     var['Te'] = var['Ti']
 
 
 # Calculate pressure
 
-if not var.has_key('p'):
-    if var.has_key('ne') and var.has_key('Te'):
+if 'p' not in var:
+    if 'ne' in var and 'Te' in var:
         # Calculate using Ni, Te and Ti
-        print "Calculating pressure from ne, Te, Ti"
+        print("Calculating pressure from ne, Te, Ti")
         var['p'] = var['ne'] * (var['Te'] + var['Ti']) * 1.602e-19 * (4.0*3.14159*1e-7)
         # Could check against pprime
     else:
         # No plasma quantities to use, so integrate pprime
-        print "SORRY: integrating pprime not implemented yet"
+        print("SORRY: integrating pprime not implemented yet")
 
 # Open the output file
 
-print "\nWriting: " + outfile
+print("\nWriting: " + outfile)
 
 try:
     of = DataFile()
     of.open(outfile, create=True)
 except:
-    print "ERROR: Could not open output file"
+    print("ERROR: Could not open output file")
     raise SystemExit
 
 # Write data
@@ -216,12 +217,12 @@ try:
         try:
             of.write(on, var[vn])
         except KeyError:
-            print "WARNING: Not writing variable " + on
+            print("WARNING: Not writing variable " + on)
 
 except:
-    print "ERROR: Could not write data"
+    print("ERROR: Could not write data")
     raise
 
 of.close()
 
-print "done"
+print("done")

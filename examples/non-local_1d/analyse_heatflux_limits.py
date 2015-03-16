@@ -5,6 +5,7 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import print_function
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -41,12 +42,12 @@ tlength = len(Te[:,2,0,0])
 
 try: dy = collect("dy", path="data", info=True, yguards=True)
 except TypeError:
-  print "Warning, could not find dy, setting to 1.0"
+  print("Warning, could not find dy, setting to 1.0")
   dy=[[1.]*ylength]*5
 
 try: g_22 = collect("g_22", path="data", info=True, yguards=True)
 except TypeError:
-  print "Warning, could not find g_22, setting to (80./256)^2"
+  print("Warning, could not find g_22, setting to (80./256)^2")
   g_22=[[pow(80./256,2)]*ylength]*5
 
 try:
@@ -56,7 +57,7 @@ try:
       for j in range(2,ylength-2):
 	q[i/t_interval][j] = qin[i,2,j,0]
 except TypeError:
-  print "Calculating Braginskii heat flux"
+  print("Calculating Braginskii heat flux")
   q = [[0.]*ylength for i in range(0,tlength/t_interval+1)]
   tau_ei = 0
   gradT = 0

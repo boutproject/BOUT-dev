@@ -3,17 +3,18 @@
 
 
 """
+from __future__ import print_function
 
 try:
     from numpy import max
 except ImportError:
-    print "ERROR: numpy module required"
+    print("ERROR: numpy module required")
     raise
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: restart module needs boututils.DataFile"
+    print("ERROR: restart module needs boututils.DataFile")
     raise
 
 def grid2bout(input, output="bout.grd.nc"):
@@ -38,10 +39,10 @@ def grid2bout(input, output="bout.grd.nc"):
     for k,v in dimensions.iteritems():
         nd = infile.ndims(k)
         if nd == None:
-            print "ERROR: Variable missing: " + k
+            print("ERROR: Variable missing: " + k)
             return False
         if v != nd:
-            print "ERROR: Variable '"+k+"' has wrong number of dimensions"
+            print("ERROR: Variable '"+k+"' has wrong number of dimensions")
             return False
         
         # Read the variables
@@ -58,6 +59,6 @@ def grid2bout(input, output="bout.grd.nc"):
     # Check if the last point is the same as the first
     dl = (Rxy[:,ny-1] - Rxy[:,0])**2 + (Zxy[:,ny-1] - Zxy[:,0])**2
     if dl.max() < 1.e-4:
-        print "**Last poloidal point duplicates the first. Removing..."
+        print("**Last poloidal point duplicates the first. Removing...")
     
     

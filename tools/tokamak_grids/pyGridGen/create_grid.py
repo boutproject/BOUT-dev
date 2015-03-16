@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Tokamak grid generator
 # ======================
 # 
@@ -176,7 +177,7 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
     else:
         pardist = poldist # Just use the same poloidal distance
 
-    print "PARWEIGHT: ", parweight
+    print("PARWEIGHT: ", parweight)
 
     dist = parweight*pardist + (1. - parweight)*poldist
 
@@ -220,7 +221,7 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
         #dloc = ydown_dist + c*i + b*i^2 + a*i^3
     
     else :
-        print "SORRY; Need 2 points in each region"
+        print("SORRY; Need 2 points in each region")
         sys.exit("Error message")
 
 
@@ -283,7 +284,7 @@ def grid_region ( interp_data, R, Z,
     ffirst = fvals[sfirst]
     flast = fvals[slast]
 
-    print "    => Gridding range: ", numpy.min(fvals), numpy.max(fvals)
+    print("    => Gridding range: ", numpy.min(fvals), numpy.max(fvals))
   
     nr = interp_data.nx
     nz = interp_data.ny
@@ -320,7 +321,7 @@ def grid_region ( interp_data, R, Z,
     zixy = numpy.zeros((nsurf, npar))
     status=0
     
-    print 'Starting'
+    print('Starting')
 
     for i in range (npar) :
     
@@ -494,7 +495,7 @@ def create_grid( F, R, Z, in_settings, critical,
     if iter==None:
         iter = 0
     if iter > 3:
-        print "ERROR: Too many iterations"
+        print("ERROR: Too many iterations")
         return #, {error:1}
 
 
@@ -533,7 +534,7 @@ def create_grid( F, R, Z, in_settings, critical,
     s = numpy.ndim(F)
     s1 = numpy.shape(F)
     if s != 2:
-        print "ERROR: First argument must be 2D array of psi values"
+        print("ERROR: First argument must be 2D array of psi values")
         return #, {error:1}
     nx = s1[0]
     ny = s1[1]
@@ -541,13 +542,13 @@ def create_grid( F, R, Z, in_settings, critical,
     s = numpy.ndim(R)
     s1 = numpy.size(R)
     if s != 1  or s1 != nx :
-        print "ERROR: Second argument must be 1D array of major radii"
+        print("ERROR: Second argument must be 1D array of major radii")
         return # {error:1}
   
     s = numpy.ndim(Z)
     s1 = numpy.size(Z)
     if s != 1  or s1 != ny:
-        print "ERROR: Second argument must be 1D array of heights"
+        print("ERROR: Second argument must be 1D array of heights")
         return # {error:1}
 
 
@@ -570,7 +571,7 @@ def create_grid( F, R, Z, in_settings, critical,
         s = numpy.ndim(boundary)
         s1= numpy.shape(boundary)
         if s != 2  or s1[0] != 2:
-            print "WARNING: boundary must be a 2D array: [2, n]. Ignoring"
+            print("WARNING: boundary must be a 2D array: [2, n]. Ignoring")
             boundary = 0
         else:       
         # Calculate indices
@@ -592,7 +593,7 @@ def create_grid( F, R, Z, in_settings, critical,
                  f= F)       # Always include function
                
     if fast == 'fast':
-        print "Using Fast settings"
+        print("Using Fast settings")
         interp_data.method = 2
   
 
@@ -657,7 +658,7 @@ def create_grid( F, R, Z, in_settings, critical,
     if critical.n_xpoint == 0 :
     #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     # Grid entirely in the core
-    	print "Generating grid entirely in the core"
+    	print("Generating grid entirely in the core")
 
     nrad = numpy.sum(settings.nrad) # Add up all points
     npol = numpy.sum(settings.npol)
@@ -696,7 +697,7 @@ def create_grid( F, R, Z, in_settings, critical,
             #xx = [xx,v[:,0]]
             #yy = [yy,v[:,1]]
 
-    print "PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt]
+    print("PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt])
 
     if numpy.shape(vn)[0] > 1 :
         # Find the surface closest to the o-point
@@ -707,7 +708,7 @@ def create_grid( F, R, Z, in_settings, critical,
         
         x=xx[ind]
         y=yy[ind]
-        print "Contour: ", ind
+        print("Contour: ", ind)
     else:
         ind = 0
         x=xx[0]
@@ -742,7 +743,7 @@ def create_grid( F, R, Z, in_settings, critical,
       # R should be increasing at the top. Need to reverse
         start_ri = start_ri[::-1]
         start_zi = start_zi[::-1]
-        print 'points reversed'
+        print('points reversed')
         
 
     ## Last point should be the same as the first

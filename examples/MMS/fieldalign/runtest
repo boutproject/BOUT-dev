@@ -3,6 +3,7 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
+from __future__ import print_function
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -102,8 +103,8 @@ for dir in inputs:
     plt.close()
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

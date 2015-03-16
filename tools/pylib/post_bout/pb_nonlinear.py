@@ -1,6 +1,7 @@
+from __future__ import absolute_import
 #some function to plot nonlinear stuff
-from pb_corral import LinRes
-from ListDict import ListDictKey, ListDictFilt
+from .pb_corral import LinRes
+from .ListDict import ListDictKey, ListDictFilt
 import numpy as np
 
 import matplotlib.pyplot as plt

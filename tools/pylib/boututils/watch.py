@@ -2,6 +2,7 @@
 Routines for watching files for changes
 
 """
+from __future__ import print_function
 
 import time
 import os
@@ -54,7 +55,7 @@ def watch(files, timeout=None, poll=2):
             lastmod = os.stat(files).st_mtime
             iterable = False
     except:
-        print "Can't test modified time. Wrong file name?"
+        print("Can't test modified time. Wrong file name?")
         raise
 
     start_time = time.time()

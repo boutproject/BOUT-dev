@@ -1,9 +1,10 @@
+from __future__ import print_function
 # Routines for manipulating restart files
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: restart module needs DataFile"
+    print("ERROR: restart module needs DataFile")
     raise
 
 from numpy import mean
@@ -13,7 +14,7 @@ try:
     import sys
     import glob
 except ImportError:
-    print "ERROR: os, sys or glob modules not available"
+    print("ERROR: os, sys or glob modules not available")
     raise
 
 def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
@@ -31,18 +32,18 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     npes = nxpe * nype
 
     if npes <= 0:
-        print "ERROR: Negative or zero number of processors"
+        print("ERROR: Negative or zero number of processors")
         return False
     
     if path == output:
-        print "ERROR: Can't overwrite restart files"
+        print("ERROR: Can't overwrite restart files")
         return False
 
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
     nfiles = len(file_list)
 
     if nfiles == 0:
-        print "ERROR: No restart files found"
+        print("ERROR: No restart files found")
         return False
 
     # Read old processor layout
@@ -51,29 +52,29 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     # Get list of variables
     var_list = f.list()
     if len(var_list) == 0:
-        print "ERROR: No data found"
+        print("ERROR: No data found")
         return False
     
     old_npes = f.read('NPES')
     old_nxpe = f.read('NXPE')
 
     if nfiles != old_npes:
-        print "WARNING: Number of restart files inconsistent with NPES"
-        print "Setting nfiles = " + str(old_npes)
+        print("WARNING: Number of restart files inconsistent with NPES")
+        print("Setting nfiles = " + str(old_npes))
         nfiles = old_npes
 
     if old_npes % old_nxpe != 0:
-        print "ERROR: Old NPES is not a multiple of old NXPE"
+        print("ERROR: Old NPES is not a multiple of old NXPE")
         return False
 
     old_nype = old_npes / old_nxpe
 
     if nype % old_nype != 0:
-        print "SORRY: New nype must be a multiple of old nype"
+        print("SORRY: New nype must be a multiple of old nype")
         return False
 
     if nxpe % old_nxpe != 0:
-        print "SORRY: New nxpe must be a multiple of old nxpe"
+        print("SORRY: New nxpe must be a multiple of old nxpe")
         return False
 
     # Get dimension sizes
@@ -95,7 +96,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     # Calculate total size of the grid
     nx = old_mxsub * old_nxpe
     ny = old_mysub * old_nype
-    print "Grid sizes: ", nx, ny, mz
+    print("Grid sizes: ", nx, ny, mz)
     
     # Create the new restart files
     for mype in range(npes):
@@ -118,8 +119,8 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
         ymin = old_y*mysub
         ymax = ymin + mysub - 1 + 2*myg
 
-        print "New: "+str(mype)+" ("+str(pex)+", "+str(pey)+")"
-        print " =>  "+str(old_mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")"
+        print("New: "+str(mype)+" ("+str(pex)+", "+str(pey)+")")
+        print(" =>  "+str(old_mype)+" ("+str(old_pex)+", "+str(old_pey)+") : ("+str(old_x)+", "+str(old_y)+")")
 
         # 
 
@@ -131,7 +132,7 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
         outformat = informat
     
     if path == output:
-        print "ERROR: Can't overwrite restart files when expanding"
+        print("ERROR: Can't overwrite restart files when expanding")
         return False
     
     def is_pow2(x):
@@ -139,7 +140,7 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
         return (x > 0) and ((x & (x-1)) == 0)
     
     if not is_pow2(newz-1):
-        print "ERROR: New Z size must be a power of 2 + 1"
+        print("ERROR: New Z size must be a power of 2 + 1")
         return False
     
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
@@ -177,32 +178,32 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
     file_list = glob.glob(os.path.join(path, "BOUT.dmp.*."+informat))
     nfiles = len(file_list)
     
-    print "Number of data files: ", nfiles
+    print("Number of data files: ", nfiles)
 
     for i in range(nfiles):
         # Open each data file
         infname  = os.path.join(path, "BOUT.dmp."+str(i)+"."+informat)
         outfname = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
 
-        print infname, " -> ", outfname
+        print(infname, " -> ", outfname)
         
         infile = DataFile(infname)
         outfile = DataFile(outfname, create=True)
 
         # Get the data always needed in restart files
         hist_hi = infile.read("iteration")
-        print "hist_hi = ", hist_hi
+        print("hist_hi = ", hist_hi)
         outfile.write("hist_hi", hist_hi)
         
         t_array = infile.read("t_array")
         tt = t_array[final]
-        print "tt = ", tt
+        print("tt = ", tt)
         outfile.write("tt", tt)
 
         NXPE = infile.read("NXPE")
         NYPE = infile.read("NYPE")
         NPES = NXPE * NYPE
-        print "NPES = ", NPES, " NXPE = ", NXPE
+        print("NPES = ", NPES, " NXPE = ", NXPE)
         outfile.write("NPES", NPES)
         outfile.write("NXPE", NXPE)
         
@@ -213,7 +214,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
             if infile.ndims(var) == 4:
                 # Could be an evolving variable
 
-                print " -> ", var
+                print(" -> ", var)
                 
                 data = infile.read(var)
 
@@ -222,7 +223,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
                 else:
                     slice = mean(data[(final - averagelast):final,:,:,:], axis=0)
 
-                print slice.shape
+                print(slice.shape)
                 
                 outfile.write(var, slice)
         

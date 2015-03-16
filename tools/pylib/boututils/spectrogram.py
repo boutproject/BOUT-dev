@@ -29,6 +29,7 @@
     updated:    4/10/2013
 
 """
+from __future__ import print_function
 
 try:
 
@@ -37,7 +38,7 @@ try:
     from scipy import pi
     
 except ImportError:
-    print "ERROR: NumPy or SciPy module not available"
+    print("ERROR: NumPy or SciPy module not available")
     raise
 
 def spectrogram(data, dx, sigma, clip=1.0):
@@ -88,7 +89,7 @@ def test_spectrogram(n, d, s):
   try:
     import matplotlib.pyplot as plt
   except ImportError:
-    print "ERROR: MatPlotLib module not available"
+    print("ERROR: MatPlotLib module not available")
     raise
   """
     Function used to test the performance of spectrogram with various values of sigma

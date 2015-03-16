@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###
 # compute average growth rate for all points
 ###
@@ -25,5 +26,5 @@ d=np.ma.masked_array(growth,np.isnan(growth))
 # masked arrays
 # http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed    
                         
-print np.mean(np.ma.masked_array(d,np.isinf(d)))
-print np.mean(np.ma.masked_array(growth[:,32],np.isnan(growth[:,32])))
+print(np.mean(np.ma.masked_array(d,np.isinf(d))))
+print(np.mean(np.ma.masked_array(growth[:,32],np.isnan(growth[:,32]))))

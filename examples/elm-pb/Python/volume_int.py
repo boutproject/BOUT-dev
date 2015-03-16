@@ -1,3 +1,4 @@
+from __future__ import print_function
 from boututils import file_import, volume_integral
 from boutdata import collect
 # Integrate over a volume
@@ -13,4 +14,4 @@ var=collect("P", path=path)
    
 sol=volume_integral(var, g)
 
-print sol
+print(sol)

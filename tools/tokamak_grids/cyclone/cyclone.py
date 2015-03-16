@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 try:
     from numpy import *
     from scipy.integrate import quad
 except ImportError:
-    print "ERROR: Need NumPy and SciPy modules"
+    print("ERROR: Need NumPy and SciPy modules")
     raise
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH"
+    print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
     raise
 
 ######################################################
@@ -66,8 +67,8 @@ hthe = zeros([nx,ny]) + rminor
 
 Btxy = Bt0 * Rmaj / Rxy
 
-print "Toroidal field varies from "+str(Bt0*Rmaj/(Rmaj + rminor)) + \
-    " to "+str(Bt0*Rmaj/(Rmaj - rminor))
+print("Toroidal field varies from "+str(Bt0*Rmaj/(Rmaj + rminor)) + \
+    " to "+str(Bt0*Rmaj/(Rmaj - rminor)))
 
 # Minor radius offset
 drprof = dr*((arange(nx) / float(nx-1)) - 0.5)
@@ -75,7 +76,7 @@ drprof = dr*((arange(nx) / float(nx-1)) - 0.5)
 # q profile
 qprof = q + (s*q/rminor) * drprof
 
-print "q varies from "+str(min(qprof))+" to "+str(max(qprof))
+print("q varies from "+str(min(qprof))+" to "+str(max(qprof)))
 
 ShiftAngle = qprof * 2.*pi
 
@@ -84,7 +85,7 @@ if varyBp:
     # Vary Bp to get shear
     for y in range(ny):
         Bpxy[:,y] = Bp * q / qprof
-    print "Poloidal field varies from "+str(amin(Bpxy))+" to "+str(amax(Bpxy))
+    print("Poloidal field varies from "+str(amin(Bpxy))+" to "+str(amax(Bpxy)))
 else:
     # Constant Bp, but shift angle varies
     Bpxy += Bp
@@ -159,7 +160,7 @@ npol = [ny]
 
 ######################################################
 
-print "Writing grid to file "+output
+print("Writing grid to file "+output)
 
 of = DataFile()
 of.open(output, create=True)
@@ -216,4 +217,4 @@ of.write("logB", logB)
 
 of.close()
 
-print "Done"
+print("Done")

@@ -1,3 +1,4 @@
+from __future__ import print_function
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Follow the gradient from a given point to a target f
 # 
@@ -13,7 +14,7 @@ from bunch import Bunch
 try:
     from ode.lsode import lsode
 except ImportError:
-    print "No ode.lsode available. Trying scipy.integrate.odeint"
+    print("No ode.lsode available. Trying scipy.integrate.odeint")
     from scipy.integrate import odeint 
     
     # Define a class to emulate lsode behavior
@@ -128,7 +129,7 @@ def follow_gradient( interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=0,
   
     ood = 0
 
-    if ftarget==None : print ftarget
+    if ftarget==None : print(ftarget)
 
   # Get starting f
     out=local_gradient( interp_data, ri0, zi0, status=status, f=0., dfdr=None, dfdz=None)

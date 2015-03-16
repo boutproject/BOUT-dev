@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 tol = 1e-7                  # Absolute tolerance
 
 from boututils import shell,launch,getmpirun
@@ -9,7 +10,7 @@ from sys import stdout, exit
 
 MPIRUN=getmpirun()
 
-print "Making Delp2 operator test"
+print("Making Delp2 operator test")
 shell("make > make.log")
 
 # The command to run
@@ -24,7 +25,7 @@ success = True
 
 for i, opts in enumerate(settings):
   # Read benchmark values
-  print "Args: " + opts
+  print("Args: " + opts)
   cmd = exefile + " " + opts
   
   s, out = launch(cmd, runcmd=MPIRUN, nproc=1, pipe=True)
@@ -45,18 +46,18 @@ for i, opts in enumerate(settings):
     # Collect output data
     n = collect("n", path="data",info=False)
     if np.shape(n) != np.shape(n0):
-      print "Fail, wrong shape"
+      print("Fail, wrong shape")
       success = False
     diff =  np.max(np.abs(n - n0))
     if diff > tol:
-      print "Fail, maximum difference = "+str(diff)
+      print("Fail, maximum difference = "+str(diff))
       success = False
     else:
-      print "Pass"
+      print("Pass")
 
 if success:
-  print " => All Delp2 tests passed"
+  print(" => All Delp2 tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

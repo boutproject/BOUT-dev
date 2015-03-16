@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as numpy
 import sys
 from pylab import plot,xlabel,ylim,savefig,gca, xlim, show, clf, draw, title
@@ -207,7 +208,7 @@ def mode_structure( var_in, grid_in, period=1,
       
         if numpy.max(theta) > 1.0 :
           # mis-match between q and nu (integration error?)
-            if quiet==None : print("Mismatch  ", x, numpy.max(theta))
+            if quiet==None : print(("Mismatch  ", x, numpy.max(theta)))
             theta = theta / (numpy.max(theta) + numpy.abs(theta[1] - theta[0]))
        
       
@@ -285,7 +286,7 @@ def mode_structure( var_in, grid_in, period=1,
         # go through and plot each mode
         for i in range(nf):
             if numpy.max(famp[:,i]) > 0.05*numpy.max(famp):
-                print("Mode m = ", i+1, " of ", nf)
+                print(("Mode m = ", i+1, " of ", nf))
                 plot(xarr, famp[:,i], 'k')
                 ylim(0,numpy.max(famp))
                 xlim(xrange)
@@ -354,7 +355,7 @@ def mode_structure( var_in, grid_in, period=1,
             minind = numpy.min(inds[0:count])
             maxind = numpy.max(inds[0:count])
       
-            print("Mode number range: ", minind, maxind)
+            print(("Mode number range: ", minind, maxind))
       
             plot( xarr, famp[:,0], 'k', visible=False)
             ylim(0,numpy.max(famp))

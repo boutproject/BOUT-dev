@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from boututils import file_import
 from enthought.mayavi import mlab
@@ -59,7 +60,7 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
     nskip = np.int_(np.round(nskip))
     ny2 = np.int_(ny2 + np.sum(nskip))
 
-    print("Number of poloidal points in output:", ny2)
+    print(("Number of poloidal points in output:", ny2))
 
     var2d = np.zeros((nx, ny2))
     r = np.zeros((nx, ny2))
@@ -77,7 +78,7 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
       
         ypos = ypos + 1
     
-        print(y, ypos)
+        print((y, ypos))
 
       # and the extra points
     

@@ -4,6 +4,7 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import print_function
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -23,11 +24,11 @@ q = collect("heat_flux", path=data_path, xind=2, info=True, yguards=True)
 # q has dimensions [Time, X, Y, Z]
 length=len(q[0,0,:,0])
 for index, item in enumerate(q[slice_index,0,:,0]):
-	print index, item
+	print(index, item)
 
-print "minimum_q =", min(q[slice_index,0,3:length-3,0]), " maximum_q =", max(q[slice_index,0,3:length-3,0])
-print " "
-print "data_path is",data_path
+print("minimum_q =", min(q[slice_index,0,3:length-3,0]), " maximum_q =", max(q[slice_index,0,3:length-3,0]))
+print(" ")
+print("data_path is",data_path)
 
 localminq=0
 for i in range(length/2-1,0,-1):
@@ -43,7 +44,7 @@ for i in range(length/2+1,length):
 		break
 	localmaxq=test
 
-print "localminq =", localminq, " localmaxq =", localmaxq
+print("localminq =", localminq, " localmaxq =", localmaxq)
 
 # Make contour plot
 plotdata.plotdata(q[slice_index,0,:,0],title="Electron Heat Flux Profile at t="+str(argv[1]))

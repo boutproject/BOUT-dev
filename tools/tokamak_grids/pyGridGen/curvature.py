@@ -1,3 +1,4 @@
+from __future__ import print_function
 #; Calculates curvature from GATO grid
 #; adapted from M.Umansky's code
 import numpy
@@ -104,7 +105,7 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
 #; Calculate the magnetic field curvature and other related quantities
 #;--------------------------------------------------------------------
 
-    print 'Calculating curvature-related quantities...'
+    print('Calculating curvature-related quantities...')
    
 #;;-vector quantities are stored as 2D arrays of structures {r,phi,z}
     vec=Bunch( r=0.,phi=0.,z=0.)
@@ -212,7 +213,7 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
    
 #   if DEBUG : sys.exit()
            
-    print '...done'
+    print('...done')
 
     return bxcv
         

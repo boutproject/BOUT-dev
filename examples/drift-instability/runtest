@@ -4,6 +4,7 @@
 # Run the test, compare results against the benchmark
 #
 
+from __future__ import print_function
 nproc = 2       # Number of processors to run on
 
 # Relative tolerance in frequency and growth rate
@@ -17,7 +18,7 @@ from sys import stdout, exit
 
 MPIRUN = getmpirun()
 
-print "Making resistive drift instability test"
+print("Making resistive drift instability test")
 shell("make > make.log")
 
 zlist          = [2, 32, 256]  # Just test a few
@@ -63,7 +64,7 @@ for zeff in zlist:
     # Delete old output files
     shell("rm data/BOUT.dmp.*.nc")
 
-    print "Running drift instability test, zeff = ", zeff
+    print("Running drift instability test, zeff = ", zeff)
 
     # Run the case
     s, out = launch("./2fluid timestep="+str(timestep), runcmd=MPIRUN, nproc=nproc, pipe=True)
@@ -176,16 +177,16 @@ for zeff in zlist:
         omegadiff = None
         gammadiff = None
     
-    print "  Normalised omega = ", omega, " analytic = ", wr, " original = ", origr, " (", 100.*omegadiff,"%)"
-    print "  Normalised gamma = ", gamma, " analytic = ", wi, " original = ", origi, " (",100.*gammadiff,"%)"
+    print("  Normalised omega = ", omega, " analytic = ", wr, " original = ", origr, " (", 100.*omegadiff,"%)")
+    print("  Normalised gamma = ", gamma, " analytic = ", wi, " original = ", origi, " (",100.*gammadiff,"%)")
     
     if omegadiff != None:
         if (omegadiff > omega_tol) or (gammadiff > gamma_tol):
             code = 1 # Failed test
-            print "  => FAILED"
+            print("  => FAILED")
         else:
-            print "  => PASSED"
+            print("  => PASSED")
     else:
-        print "  => No original to compare against"
+        print("  => No original to compare against")
     
 exit(code)    

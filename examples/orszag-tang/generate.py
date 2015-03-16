@@ -1,3 +1,4 @@
+from __future__ import print_function
 # the Scientific Python netCDF 3 interface
 # http://dirac.cnrs-orleans.fr/ScientificPython/
 #from Scientific.IO.NetCDF import NetCDFFile as Dataset
@@ -123,4 +124,4 @@ B0y[:,:]=By
 
 
 ncfile.close()
-print '*** SUCCESS writing file otv.grd.py.nc!'
+print('*** SUCCESS writing file otv.grd.py.nc!')

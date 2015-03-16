@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Adjusts Jpar0 to get force balance in reduced MHD models
 # i.e. the equilibrium terms in the vorticity equation: 
 #
@@ -62,7 +63,7 @@ def adjust_jpar( grid, smoothp=None, jpar=None, noplot=None):
         if last==1 : break
   
     if mid_ind < 0 :
-        print "ERROR: No closed flux surfaces?"
+        print("ERROR: No closed flux surfaces?")
         return
    
   #; Calculate 2*b0xk dot Grad P

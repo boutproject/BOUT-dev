@@ -1,5 +1,7 @@
 #! /usr/bin/env python
 # note - these commands are only run by default in interactive mode
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 import sys
 try:
@@ -13,15 +15,15 @@ try:
     [sys.path.append(elem) for elem in allpath]
 
 except:
-   print 'unable to append needed .py files'
+   print('unable to append needed .py files')
 
 sys.path.append('/usr/local/pylib')
 
 import post_bout as post_bout
-from ListDict import ListDictKey, ListDictFilt
-from read_inp import parse_inp, read_inp, read_log
-from basic_info import weighted_avg_and_std
-from read_cxx import read_cxx, findlowpass
+from .ListDict import ListDictKey, ListDictFilt
+from .read_inp import parse_inp, read_inp, read_log
+from .basic_info import weighted_avg_and_std
+from .read_cxx import read_cxx, findlowpass
 
 
 
@@ -34,7 +36,7 @@ import subprocess
 def corral(cached=True,refresh=False,debug=False,IConly=1,
            logname='status.log',skew=False):
 
-   print 'in corral'
+   print('in corral')
    log  = read_log(logname=logname) 
    #done = log['done']
    runs = log['runs'] #a list of all directories, we need this,
@@ -42,13 +44,13 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
   
    current = log['current'] #always return the last data_dir    
    
-   print log
-   print 'current:', current
+   print(log)
+   print('current:', current)
    
    if refresh==True:
       
       for i,path in enumerate(runs):
-         print i,path
+         print(i,path)
          a = post_bout.save(path=path,IConly=IConly) #re post-process a run
          
          
@@ -64,9 +66,9 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
      
    all_ave = []
    all_modes =[]
-   print 'last_one: '
+   print('last_one: ')
    for i,val in enumerate(runs):
-      print val
+      print(val)
       mode_db,ave_db = post_bout.read(path=val)
       #alldata.append(array)
       all_modes.append(mode_db)

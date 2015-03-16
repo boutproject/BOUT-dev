@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 #some standard analytic stuff to plot, if appending just overplot gam or omeg
-from pb_corral import LinRes
-from ListDict import ListDictKey, ListDictFilt
+from .pb_corral import LinRes
+from .ListDict import ListDictKey, ListDictFilt
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -75,10 +77,10 @@ class LinResDraw(LinRes):
         #     y = np.array(s.omegamax)[ki]
       
         for m in s.models:
-            print m.name
+            print(m.name)
 
         for i,m in enumerate(s.models):   
-            print m.name,comp,m.soln[comp].shape
+            print(m.name,comp,m.soln[comp].shape)
             
             if allroots:
                 for elem in m.soln[comp]:
@@ -86,14 +88,14 @@ class LinResDraw(LinRes):
                 #elem has 2 or more elements
                     y = (np.array(elem)[ki]).flatten() #n values
                 #y = y.astype('float')
-                    print y.shape
+                    print(y.shape)
                     canvas.plot((allk[ki]).flatten(),y,',',
                                 label=label,c=cm.jet(.2*i))
             try:   
                 ymax =  (np.array(m.soln[comp+'max'])[ki]).flatten() 
                 #ymax =  (np.array(m.gammamax)[ki]).flatten() 
                 ymax = ymax.astype('float')
-                print comp,' ymax:', ymax
+                print(comp,' ymax:', ymax)
                 canvas.plot((allk[ki]).flatten(),ymax,'-',
                             label=label,c=cm.jet(.2*i))
                 # if comp=='gamma':
@@ -108,7 +110,7 @@ class LinResDraw(LinRes):
 
                 
             except:
-                print 'fail to add theory curve'
+                print('fail to add theory curve')
 
             canvas.annotate(m.name,(allk[ki[0]],1.1*ymax[0]),fontsize = 8)
             canvas.annotate(m.name,(1.1*allk[ki[-1]],1.1*ymax[-1]),fontsize = 8)
@@ -121,7 +123,7 @@ class LinResDraw(LinRes):
                         canvas.plot((allk[ki]).flatten(),y,'--',
                                     label=label,c=cm.jet(.2*i))
             except:
-                print 'no reference curve'
+                print('no reference curve')
 
                     
         if ownpage: #set scales if this is its own plot
@@ -137,7 +139,7 @@ class LinResDraw(LinRes):
          
             for i,m in enumerate(s.models):   
                 textstr = r'$\chi^2$'+ '$=%.2f$'%(m.chi[comp].sum())
-                print textstr
+                print(textstr)
             #textstr = '$\L=%.2f$'%(m.chi[comp].sum())
                 props = dict(boxstyle='square', facecolor='white', alpha=0.3)
                 textbox = canvas.text(0.1, 0.1, textstr, transform=canvas.transAxes, fontsize=10,
@@ -181,8 +183,8 @@ class LinResDraw(LinRes):
             maxZ = min(s.maxN)
             modelist = []
             [modelist.append([q,p+1]) for p in range(maxZ-1)]
-            print modelist
-            print q,'in plotgamma'
+            print(modelist)
+            print(q,'in plotgamma')
         
         s = subset(s.db,'mn',modelist)
          
@@ -198,7 +200,7 @@ class LinResDraw(LinRes):
         
         kfactor = np.mean(s.k_r[:,1,s.nx/2]/s.k[:,1,s.nx/2]) #good enough for now
   
-        print k[:,1,s.nx/2].shape, y[:,0,s.nx/2].shape, len(colors), ownpage#,k[:,1,s.nx/2],y[:,0,s.nx/2]
+        print(k[:,1,s.nx/2].shape, y[:,0,s.nx/2].shape, len(colors), ownpage)#,k[:,1,s.nx/2],y[:,0,s.nx/2]
         
         parhandles.append(canvas.errorbar(np.squeeze(k[:,1,s.nx/2]),
                                              np.squeeze(y[:,0,s.nx/2]),
@@ -217,7 +219,7 @@ class LinResDraw(LinRes):
         ymax_data = 0 #for bookeeping
 
         for p in list(set(s.path).union()):
-            print p, 'in plotomega'
+            print(p, 'in plotomega')
             
             sub_s = subset(s.db,'path',[p])
             j = sub_s.dz[0]
@@ -246,7 +248,7 @@ class LinResDraw(LinRes):
 
                
 
-               print 'dzhandle color', jj
+               print('dzhandle color', jj)
                #dzlabels.append("DZ: "+ str(2*j)+r'$\pi$')
                dzlabels.append(j) 
                
@@ -254,11 +256,11 @@ class LinResDraw(LinRes):
                   factor = 10
                else:
                   factor = 2
-               print 'annotating'
+               print('annotating')
                canvas.annotate(str(j),(k[s_i[0],1,sub_s.nx/2],y[s_i[0],0,sub_s.nx/2]),fontsize = 8)
                p = canvas.axvspan(k[s_i[0],1,sub_s.nx/2], k[s_i[-1],1,sub_s.nx/2], 
                                facecolor=colordash[jj], alpha=0.01)
-               print 'done annotating'
+               print('done annotating')
             else:
                canvas.plot(k[s_i,1,sub_s.nx/2],
                         y[s_i,0,sub_s.nx/2],color=colordash[jj],alpha=.3)
@@ -275,7 +277,7 @@ class LinResDraw(LinRes):
         dzhandles = dzhandles[dz_i]
         dzlabels_cp = np.array(dzlabels)[dz_i]
       
-        print type(dzlabels), np.size(dzlabels)
+        print(type(dzlabels), np.size(dzlabels))
         for i in range(np.size(dzlabels)):
             dzlabels[i] = "DZ: "+ str(dzlabels_cp[i])#+r"$\pi$"
      
@@ -284,7 +286,7 @@ class LinResDraw(LinRes):
       
       #if pltlegend =='both':    #
       
-        print 'legends'
+        print('legends')
 
       #l1 = legend(parhandles,parlabels,loc = 3,prop={'size':6})
       #l2 = legend(dzhandles,dzlabels,loc = 1,prop={'size':6})
@@ -297,7 +299,7 @@ class LinResDraw(LinRes):
                 self.plottheory(pp,canvas=canvas,comp=comp,field=field)
                 #self.plottheory(pp,comp=comp)
             except:
-                print 'no theory plot'
+                print('no theory plot')
         if infobox:
             textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][s.nx/2],
                                                                                    s.meta['L'][s.nx/2,s.ny/2],
@@ -329,7 +331,7 @@ class LinResDraw(LinRes):
             try:
                 canvas.set_yscale('symlog')
             except:
-                print 'scaling failed completely'
+                print('scaling failed completely')
    
         
         #print '[xmin, xmax, ymin, ymax]: ',[xmin, xmax, ymin, ymax]
@@ -345,7 +347,7 @@ class LinResDraw(LinRes):
                 clonex.yaxis.set_major_formatter(formatter)
                 #canvas.useOffset=False
         except:
-            print 'fail 1'
+            print('fail 1')
         [xmin, xmax, ymin, ymax] = canvas.axis()    
         
       
@@ -369,7 +371,7 @@ class LinResDraw(LinRes):
                 if yscale =='linear':
                     cloney.yaxis.set_major_formatter(formatter)
             except:
-                print 'fail trans'
+                print('fail trans')
                 #     cloney.useOffset=False
       
         
@@ -399,7 +401,7 @@ class LinResDraw(LinRes):
                 cloney.set_ylim(ymin,ymax) #because cloney shares the yaxis with canvas it may overide them, this fixes that
                 cloney.set_xlabel(r'$k_{\perp} \rho_{ci}$',fontsize=18)
         except:
-            print 'moar fail'
+            print('moar fail')
             #clonex.set_xscale(xscale)
                 
         # except:
@@ -447,7 +449,7 @@ class LinResDraw(LinRes):
             try:
                 fig1.savefig(pp, format='pdf')
             except:
-                print 'pyplt doesnt like you'
+                print('pyplt doesnt like you')
             plt.close(fig1)
 
     def plotfreq(self,pp,field='Ni',clip=0,
@@ -464,7 +466,7 @@ class LinResDraw(LinRes):
             s = subset(self.db,'field',[field]) #pick  field across all dz sets
             modelist = []
             [modelist.append([q+1,p+1]) for p in range(5)]
-            print q,'in plotgamma'
+            print(q,'in plotgamma')
             s = subset(s.db,'mn',modelist)
       
       
@@ -488,7 +490,7 @@ class LinResDraw(LinRes):
         try:
             plt.yscale(yscale)
         except:
-            print 'yscale fail'
+            print('yscale fail')
 
        
         try:
@@ -564,7 +566,7 @@ class LinResDraw(LinRes):
  
         #pull up the data
         y = np.array(ListDictKey(s.db,comp))
-        print 'y.shape', y.shape
+        print('y.shape', y.shape)
 
         #in case multiple timesteps are indicated
         all_y = []
@@ -646,7 +648,7 @@ class LinResDraw(LinRes):
                     canvas.annotate(str(j),(k[s_i[0],1,sub_s.nx/2],y[elem][s_i[0],sub_s.nx/2]),fontsize = 8)
                #p = canvas.axvspan(k[s_i[0],1,sub_s.nx/2], k[s_i[-1],1,sub_s.nx/2], 
                 #               facecolor=colordash[jj], alpha=0.01)
-                    print 'done annotating'
+                    print('done annotating')
                 else:
                     canvas.plot(k[s_i,1,sub_s.nx/2],
                                 y[elem][s_i,sub_s.nx/2],color=colordash[jj],alpha=.3)
@@ -675,7 +677,7 @@ class LinResDraw(LinRes):
                 self.plottheory(pp,canvas=canvas,comp=comp,field=field)
                 #self.plottheory(pp,comp=comp)
             except:
-                print 'no theory plot'
+                print('no theory plot')
         if infobox:
             textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][s.nx/2],
                                                                                    s.meta['L'][s.nx/2,s.ny/2],
@@ -702,7 +704,7 @@ class LinResDraw(LinRes):
             try:
                 canvas.set_yscale('symlog')
             except:
-                print 'scaling failed completely'
+                print('scaling failed completely')
    
     ##################################################################
        
@@ -717,7 +719,7 @@ class LinResDraw(LinRes):
                     clonex.yaxis.set_major_formatter(formatter)
                 #canvas.useOffset=False
             except:
-                print 'fail 1'
+                print('fail 1')
             [xmin, xmax, ymin, ymax] = canvas.axis()    
         
       
@@ -741,7 +743,7 @@ class LinResDraw(LinRes):
                     if yscale =='linear':
                         cloney.yaxis.set_major_formatter(formatter)
                 except:
-                    print 'fail trans'
+                    print('fail trans')
                 
             Ln_drive_scale = s.meta['w_Ln'][0]**-1
             #Ln_drive_scale = 2.1e3
@@ -756,7 +758,7 @@ class LinResDraw(LinRes):
                     cloney.set_ylim(ymin,ymax) #because cloney shares the yaxis with canvas it may overide them, this fixes that
                     cloney.set_xlabel(r'$k_{\perp} \rho_{ci}$',fontsize=18)
             except:
-                print 'moar fail'
+                print('moar fail')
             #clonex.set_xscale(xscale)
                 
       
@@ -785,7 +787,7 @@ class LinResDraw(LinRes):
 
         
         if not ownpage:
-            print 'probably for a movie'
+            print('probably for a movie')
             fig1 = rootfig
             # canvasjunk = fig1.add_subplot(1,1,1) 
             # canvasjunk = canvas
@@ -796,12 +798,12 @@ class LinResDraw(LinRes):
                 try:
                     fig1.savefig(pp,format='pdf')
                 except:
-                    print 'pyplt doesnt like you'
+                    print('pyplt doesnt like you')
             else: 
                 try:
                     fig1.savefig(file,dpi=200)
                 except:
-                    print 'no movie for you ;('
+                    print('no movie for you ;(')
 
         if ownpage:
             #fig1.close()
@@ -883,12 +885,12 @@ class LinResDraw(LinRes):
                 else:
                     x = np.array(ListDictKey(s.db,xaxis))[i,:,xr] 
                #x #an N? by nx array
-                    print x[:,1], out[:,0]
+                    print(x[:,1], out[:,0])
                     plt.scatter(x[:,1],out[:,0])#,c=colors[k]) 
                     ax.scatter(x[:,1],out[:,0])#,c=colors[k])#,alpha = (1 +i)/s.nmodes) 
                
             #detect error (bar data
-                    print 'error bars:',x,out
+                    print('error bars:',x,out)
            
            
             #ax.legend(handles,labels,loc='best',prop={'size':6}) 
@@ -905,7 +907,7 @@ class LinResDraw(LinRes):
                 try:
                     ax.set_yscale(yscale)  
                 except:
-                    print 'may get weird axis'
+                    print('may get weird axis')
                     ax.set_yscale('symlog')
             # if comp=='phase' or yscale=='linear':
             #         ax.set_xscale('symlog',linthreshx=1.0)
@@ -930,12 +932,12 @@ class LinResDraw(LinRes):
             x = np.array(range(y.size))
          
         
-            print imax,xi_max
+            print(imax,xi_max)
        
             label = str([round(elem,3) for elem in s.MN[imax]])+ str(s.mn[imax])+' at x= '+str(xi_max)+' ,'+str(round(s.gamma[imax,2,xi_max]/s.gamma[imax,0,xi_max],3))+'%  '+str(round(s.gamma[imax,0,xi_max],4))
 
             short_label = str(dz)
-            print short_label,x.shape,y.shape
+            print(short_label,x.shape,y.shape)
             allcurves.plot(x,y,'.',c=cm.jet(1.*k/len(x)),
                            label=label) 
          #print len(x), k*len(x)/(Nplots+2),s.nrun
@@ -973,7 +975,7 @@ class LinResDraw(LinRes):
             try:
                 allcurves.set_yscale(yscale) 
             except:
-                print 'may get weird axis scaling'
+                print('may get weird axis scaling')
             if yscale=='log':
                 allcurves.axis('tight')
             #allcurves.set_ylim(data.min(),data.max())
@@ -1018,7 +1020,7 @@ class LinResDraw(LinRes):
 
 
         for p in list(set(Modes.path).union()):
-            print p
+            print(p)
             s = subset(Modes.db,'path',[p]) #pick run
          #data = np.array(ListDictKey(s.db,comp)) #pick component   
             j =  s.dz[0]
@@ -1064,7 +1066,7 @@ class LinResDraw(LinRes):
             y = data[imax,s.nt[0]-1,:]
          #allcurves.plot(x,y,c= colors[k])
             allcurves.plot(x,y,c=cm.jet(.1*k/len(x)))
-            print k
+            print(k)
             k= k+1
          
         fig2.savefig(pp, format='pdf')  
@@ -1115,7 +1117,7 @@ class LinResDraw(LinRes):
            for i in range(s.nmodes):
                out = data[i,:,xr]
                
-           print j,i
+           print(j,i)
            if xaxis=='t':   
                x = range(out.size)
                #plt.scatter(x,out.flatten(),c=colors[k]) 
@@ -1127,12 +1129,12 @@ class LinResDraw(LinRes):
            else:
                x = np.array(ListDictKey(s.db,xaxis))[i,:,xr] 
                #x #an N? by nx array
-               print x[:,1], out[:,0]
+               print(x[:,1], out[:,0])
                plt.scatter(x[:,1],out[:,0])#,c=colors[k]) 
                axarr[j%(col),j/col].scatter(x[:,1],out[:,0])#,c=colors[k])#,alpha = (1 +i)/s.nmodes) 
 
             #detect error (bar data
-               print 'error bars:',x,out
+               print('error bars:',x,out)
    
              
                
@@ -1171,11 +1173,11 @@ class LinResDraw(LinRes):
         
     def savemovie(self,field='Ni',yscale='log',xscale='log',moviename='spectrum.avi'):
         
-        print 'Making movie animation.mpg - this make take a while'
+        print('Making movie animation.mpg - this make take a while')
         files = []
                     
         for t in range(self.nt[0]-3):
-               print t
+               print(t)
                filename = str('%03d' %(t+1) + '.png')
                self.plotvsK('dont need pp',yscale='log',t=[1,t+2],xscale='log',
                           overplot=False,comp='amp',trans=True,file=filename)
@@ -1293,11 +1295,11 @@ class LinResDraw(LinRes):
         for i,elem in enumerate(self.meta):
             #if type(self.meta[elem]) != type(np.array([])):
             
-            print elem, type(self.meta[elem])
+            print(elem, type(self.meta[elem]))
             
 
             if type(self.meta[elem])== type({}):
-                print '{}'
+                print('{}')
                 data = np.array(self.meta[elem]['v'])
                 unit_label = str(self.meta[elem]['u'])
             else:
@@ -1322,7 +1324,7 @@ class LinResDraw(LinRes):
                 metasection.append(header(str(elem)+': '+str(data)+ ' '+ unit_label, 
                                           sep=0.1, style=ParaStyle))
             else:
-                print elem, data,data.shape
+                print(elem, data,data.shape)
                 metasection.append(header(str(elem)+': '+str(data)+ ' '+ unit_label, 
                                           sep=0.1, style=ParaStyle))
                    
@@ -1369,7 +1371,7 @@ class LinResDraw(LinRes):
         outputStream = file(outputFile, "wb")
         output.write(outputStream)
         outputStream.close()
-        print "Consolidation complete."
+        print("Consolidation complete.")
 
 
 class subset(LinResDraw):

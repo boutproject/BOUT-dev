@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 import matplotlib.pyplot as plt

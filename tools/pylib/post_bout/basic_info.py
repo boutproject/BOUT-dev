@@ -1,10 +1,11 @@
+from __future__ import print_function
 #basic_info return some statistical averages and harmonic info
 import numpy as np
 import math
 
 def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
     
-    print 'in basic_info'
+    print('in basic_info')
     #from . import read_grid,parse_inp,read_inp,show
  
     dims = data.shape
@@ -15,9 +16,9 @@ def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
 
     if ndims ==4:
         nt,nx,ny,nz = data.shape
-        print nt,nx,ny
+        print(nt,nx,ny)
     else:
-        print "something with dimesions"
+        print("something with dimesions")
 
     dc = data.mean(1).mean(1).mean(1) # there MUST be a way to indicate all axis at once
     amp = abs(data).max(1).max(1).max(1)
@@ -30,7 +31,7 @@ def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
         dc_n = dc/amp_o
         data_n = data/fourDamp
         
-        print data.shape
+        print(data.shape)
         dfdt = np.gradient(data)[0]
         dfdt = abs(dfdt).max(1).max(1).max(1)
 
@@ -39,7 +40,7 @@ def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
         ave = {'amp':amp,'dc':dc,'amp_o':amp_o,'dfdt':dfdt}
         
     else:
-        print "no rescaling"
+        print("no rescaling")
         ave = {'amp':amp,'dc':dc}
 
     if nonlinear != None: #add nonlinear part if user provides
@@ -51,9 +52,9 @@ def basic_info(data,meta,rescale=True,rotate=False,user_peak=0,nonlinear=None):
 
 
     if rotate:
-        print 'rotate stuff'
+        print('rotate stuff')
         # will need to provide some grid geometry to do this one
-    else:        print 'or not'
+    else:        print('or not')
 
     #let's identify the dominant modes, for now at every [t,x] slice
     #if the data set is too large we can average over x
@@ -68,16 +69,16 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
     
     
         
-    print 'in fft_inf0'
+    print('in fft_inf0')
 
     dims = data.shape
     ndims = len(dims)
     
     if ndims==4:
         nt,nx,ny,nz = data.shape
-        print data.shape
+        print(data.shape)
     else:
-        print "something with dimesions"
+        print("something with dimesions")
        
     # data2 = data    
     # if edgefix:
@@ -100,12 +101,12 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
     kz_max = nz/2 
     amp = abs(data).max(2).max(2) #nt x nx
  
-    print 'dt: ',dt
+    print('dt: ',dt)
 
     #print data[0,2,:,:]
 
     IC = amp[0,:].max() #intial condition, set
-    print IC
+    print(IC)
 
     fft_data = np.fft.fft2(data)[:,:,0:ky_max,0:kz_max] #by default the last 2 dimensions
  
@@ -128,7 +129,7 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
     
     if user_peak != 0:
         for mem in user_peak:
-            print mem
+            print(mem)
             peak_hist[int(mem[0])][int(mem[1])] = abs(power.mean(0).mean(0)[int(mem[0]),int(mem[1])])
         
         #floor =  ((IC*(kz_max*ky_max))**2)/10000
@@ -152,7 +153,7 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
     net_peak = local_maxima(peak_hist,user_peak,bug=False)
     
 
-    print 'net_peak: ',net_peak,user_peak != 0
+    print('net_peak: ',net_peak,user_peak != 0)
     #dom_mode = [{'amp':[],'amp_n':[],'phase':[],'freq':[],'gamma':[]} for x in net_peak]
     dom_mode_db = []
     
@@ -172,7 +173,7 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
     hthe0_n = 1e2*meta['hthe0']['v']/rho_s #no x dep
     hthe0_n_x = L_y/(2*np.pi) #no x dep
 
-    print 'L_z,Ly: ' , L_z,L_y
+    print('L_z,Ly: ' , L_z,L_y)
 
     #if user provides the harmo    nic info overide the found peaks
 
@@ -233,7 +234,7 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
         try:
             lnamp = np.log(amp[nt/2:,:])
         except:
-            print 'some log(0) stuff in basic_info'
+            print('some log(0) stuff in basic_info')
 
         t = dt*np.array(range(nt)) #dt matters obviouslyww
         r = np.polyfit(t[nt/2:],lnamp,1,full=True)
@@ -251,7 +252,7 @@ def fft_info(data,user_peak,dimension=[3,4],rescale=False,wavelet=False,show=Fal
                 #sig0 = sig*np.sqrt(1/(x['nt'])+ ) # who cares
         sig1 = sig*np.sqrt(1.0/(nt * t.var()))
         nt = np.array(nt)
-        print 'shapes ', nt.shape, nt, lnamp.shape, res.shape, gamma_est
+        print('shapes ', nt.shape, nt, lnamp.shape, res.shape, gamma_est)
         #print r
         res = 1 - res/(nt*lnamp.var(0)) #nx 
         res[0:2] = 0
@@ -344,7 +345,7 @@ def local_maxima(array2d,user_peak,index=False,count=4,floor=0,bug=False):
 
     #ignore the lesser local maxima, throw out anything with a ZERO
     if bug==True:    
-        print array2d,array2d[where.nonzero()],where.nonzero()[0]
+        print(array2d,array2d[where.nonzero()],where.nonzero()[0])
     
     peaks = zip(where.nonzero()[0],where.nonzero()[1],array2d[where.nonzero()])
     

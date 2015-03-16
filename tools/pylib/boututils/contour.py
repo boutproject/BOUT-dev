@@ -4,18 +4,19 @@ Contour calculation routines
 http://members.bellatlantic.net/~vze2vrva/thesis.html
 
 """
+from __future__ import print_function
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
 
 def contour(f, level):
     """Return a list of contours matching the given level"""
 
     if len(f.shape) != 2:
-        print "Contour only works on 2D data"
+        print("Contour only works on 2D data")
         return None
     nx,ny = f.shape
     

@@ -4,6 +4,7 @@ Derivatives and integrals of periodic and non-periodic functions
 
 B.Dudson, University of York, Nov 2009
 """
+from __future__ import print_function
 
 try:
     from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply

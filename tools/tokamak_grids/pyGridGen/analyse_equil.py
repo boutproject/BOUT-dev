@@ -1,3 +1,4 @@
+from __future__ import print_function
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Equilibrium analysis routine
 # 
@@ -83,7 +84,7 @@ def analyse_equil ( F, R, Z):
     for e in range (nextrema) :
       
       # Fit in index space so result is index number
-        print "Critical point "+str(e)
+        print("Critical point "+str(e))
     
      
         valid = 1
@@ -105,9 +106,9 @@ def analyse_equil ( F, R, Z):
         det = 4.*res[4]*res[5] - res[3]**2
     
         if det < 0.0 :
-            print "   X-point"
+            print("   X-point")
         else:
-            print "   O-point"
+            print("   O-point")
     
     
     # Get location (2x2 matrix of coefficients)
@@ -119,10 +120,10 @@ def analyse_equil ( F, R, Z):
       #; Method has gone slightly wrong. Try a different method.
       #; Get a contour line starting at this point. Should
       #; produce a circle around the real o-point. 
-            print "   Fitted location deviates too much"
+            print("   Fitted location deviates too much")
             if det < 0.0 :
-                print "   => X-point probably not valid"
-                print "      deviation = "+numpy.str(rinew)+","+numpy.str(zinew)
+                print("   => X-point probably not valid")
+                print("      deviation = "+numpy.str(rinew)+","+numpy.str(zinew))
                 #valid = 0
 #            else:
 #    
@@ -154,16 +155,16 @@ def analyse_equil ( F, R, Z):
             rinew = rinew + rex[e]
             zinew = zinew + zex[e]
       
-            print "   Starting index: " + str(rex[e])+", "+str(zex[e])
-            print "   Refined  index: " + str(rinew)+", "+str(zinew)
+            print("   Starting index: " + str(rex[e])+", "+str(zex[e]))
+            print("   Refined  index: " + str(rinew)+", "+str(zinew))
       
             x=numpy.arange(numpy.size(R))
             y=numpy.arange(numpy.size(Z))
             rnew = numpy.interp(rinew,x,R)
             znew = numpy.interp(zinew, y, Z)
       
-            print "   Position: " + str(rnew)+", "+str(znew)
-            print "   F = "+str(fnew)
+            print("   Position: " + str(rnew)+", "+str(znew))
+            print("   F = "+str(fnew))
       
             if det < 0.0 :
 
@@ -176,7 +177,7 @@ def analyse_equil ( F, R, Z):
             # Check if this duplicates an existing point
                     
                     if rinew in xpt_ri and zinew in xpt_zi :
-                        print "   Duplicates existing X-point."
+                        print("   Duplicates existing X-point.")
                     else:
                         xpt_ri = numpy.append(xpt_ri, rinew)
                         xpt_zi = numpy.append(xpt_zi, zinew)
@@ -200,7 +201,7 @@ def analyse_equil ( F, R, Z):
             # Check if this duplicates an existing point
         
                     if rinew in opt_ri and zinew in opt_zi :
-                        print "   Duplicates existing O-point"
+                        print("   Duplicates existing O-point")
                     else:
                         opt_ri = numpy.append(opt_ri, rinew)
                         opt_zi = numpy.append(opt_zi, zinew)
@@ -213,8 +214,8 @@ def analyse_equil ( F, R, Z):
                 draw()
      
                       
-    print "Number of O-points: "+numpy.str(n_opoint)
-    print "Number of X-points: "+numpy.str(n_xpoint)
+    print("Number of O-points: "+numpy.str(n_opoint))
+    print("Number of X-points: "+numpy.str(n_xpoint))
 
     
     if n_opoint == 0 :
@@ -223,10 +224,10 @@ def analyse_equil ( F, R, Z):
             opt_f = [fnew]
             n_opoint = n_opoint + 1
 
-    print "Number of O-points: "+str(n_opoint)
+    print("Number of O-points: "+str(n_opoint))
 
     if n_opoint == 0 :
-        print "No O-points! Giving up on this equilibrium"
+        print("No O-points! Giving up on this equilibrium")
         return Bunch(n_opoint=0, n_xpoint=0, primary_opt=-1)
   
 
@@ -242,8 +243,8 @@ def analyse_equil ( F, R, Z):
             mind = d
     
     primary_opt = ind
-    print "Primary O-point is at "+str(numpy.interp(opt_ri[ind],x,R)) + ", " + str(numpy.interp(opt_zi[ind],y,Z))
-    print ""
+    print("Primary O-point is at "+str(numpy.interp(opt_ri[ind],x,R)) + ", " + str(numpy.interp(opt_zi[ind],y,Z)))
+    print("")
   
     if n_xpoint > 0 :
 
@@ -285,7 +286,7 @@ def analyse_equil ( F, R, Z):
        
 
         if nkeep > 0 :
-            print "Keeping x-points ", keep
+            print("Keeping x-points ", keep)
             xpt_ri = xpt_ri[keep]
             xpt_zi = xpt_zi[keep]
             xpt_f = xpt_f[keep]
@@ -306,7 +307,7 @@ def analyse_equil ( F, R, Z):
    
         xpt_f = 0.5*(numpy.max(F) + numpy.min(F))
     
-        print "WARNING: No X-points. Setting separatrix to F = "+str(xpt_f)
+        print("WARNING: No X-points. Setting separatrix to F = "+str(xpt_f))
 
         xpt_ri = 0
         xpt_zi = 0

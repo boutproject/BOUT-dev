@@ -2,6 +2,8 @@
 """Classes and functions for running several mpi-runs with BOUT++ at
    once. All post-processing are placed in own files.
    Run demo() for instructions."""
+from __future__ import print_function
+from __future__ import absolute_import
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
@@ -23,10 +25,10 @@ from numpy import logspace
 import numpy as np
 from subprocess import Popen, PIPE
 from boututils import shell, launch, getmpirun
-from bout_runners.bout_plotters import convergence_plotter,\
+from .bout_runners.bout_plotters import convergence_plotter,\
                                        solution_plotter,\
                                        solution_and_error_plotter
-from bout_runners.common_bout_functions import create_folder,\
+from .bout_runners.common_bout_functions import create_folder,\
                                                find_variable_in_BOUT_inp,\
                                                warning_printer,\
                                                check_for_plotters_errors,\

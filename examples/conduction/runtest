@@ -6,6 +6,7 @@
 
 
 
+from __future__ import print_function
 nproc = 2  # Number of processors to use
 
 from boututils import shell, launch, plotdata, getmpirun
@@ -14,7 +15,7 @@ import numpy as np
 
 MPIRUN = getmpirun()
 
-print "Making conduction example"
+print("Making conduction example")
 shell("make > make.log")
 
 s, out = launch("./conduction ", runcmd=MPIRUN, nproc=nproc, pipe=True)

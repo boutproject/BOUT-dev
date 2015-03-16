@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 nxlist = [4, 8, 16, 32, 64, 128]
 

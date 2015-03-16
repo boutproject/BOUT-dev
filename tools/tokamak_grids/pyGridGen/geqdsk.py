@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import re
 import numpy
 
@@ -91,7 +92,7 @@ class Geqdsk:
 	
 	line = lines[counter]
 	m = re.search(r'^\s*(\d+)\s+(\d+)', line)
-	print line
+	print(line)
 	nbbbs = int(m.group(1))
 	limitr = int(m.group(2))
 	self.data['nbbbs'] = nbbbs, "Number of boundary points"
@@ -157,24 +158,24 @@ def main():
 	geq.openFile(options.filename)
 
 	if options.inquire:
-	   print geq.getAllVars()
+	   print(geq.getAllVars())
 
 	if options.all:
-	   print geq.getAll()
+	   print(geq.getAll())
 
 	vs = geq.getAllVars()
 	if options.vars != '*':
 	   vs = options.vars.split(',')
 
 	for v in vs:
-	    print '%s: %s'% (v, str(geq.get(v)))
+	    print('%s: %s'% (v, str(geq.get(v))))
 
 	if options.plot:
 	   from matplotlib import pylab
 
 	   if options.vars == '*': 
 	      options.vars = geq.getAllVars()
-	      print options.vars
+	      print(options.vars)
 	   else:
 	      vs = options.vars.split(',')
 	      options.vars = vs

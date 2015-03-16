@@ -3,6 +3,7 @@
 # Python script to run and analyse MMS test
 #
 from __future__ import division
+from __future__ import print_function
 
 from boututils import shell,launch,getmpirun, DataFile
 from boutdata import collect

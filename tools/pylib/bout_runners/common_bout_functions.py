@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Functions common for files associated with bout_runners.py Could also
 have interest independently of bout_runner associated files."""
+from __future__ import print_function
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s

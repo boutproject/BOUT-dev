@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 # Generate the test case using SymPy
 #
@@ -243,26 +244,26 @@ print("solution = " + exprToStr(phi.subs(replace)))
 print("\nsource   = " + exprToStr(Sphi.subs(replace)))
 
 
-print "\n\nDelp2 phi = ", Delp2(phi, metric).subs(replace)
+print("\n\nDelp2 phi = ", Delp2(phi, metric).subs(replace))
 
 ##########################################
 # Check magnitudes of individual terms
 
-print "\n\nDensity terms:"
-print "  bracket : ", (-bracket(phi, Ne, metric)).subs(replace), "\n"
-print "  (2/B)*C(Pe) : ", ((2/B) * C(Pe)).subs(replace), "\n"
-print "  (2/B)*Ne*C(phi) : ", ((2/B)*Ne*C(phi)).subs(replace), "\n"
+print("\n\nDensity terms:")
+print("  bracket : ", (-bracket(phi, Ne, metric)).subs(replace), "\n")
+print("  (2/B)*C(Pe) : ", ((2/B) * C(Pe)).subs(replace), "\n")
+print("  (2/B)*Ne*C(phi) : ", ((2/B)*Ne*C(phi)).subs(replace), "\n")
 
 
-print "\n\nTemperature terms:"
-print "  bracket : ", (- bracket(phi, Te, metric)).subs(replace)
-print "  C(Te)   : ", ((4./3)*(Te/B) *(7./2)*C(Te)).subs(replace)
-print "  (Te/Ne)*C(Ne) : ", ((4./3)*(Te/B) *(Te/Ne)*C(Ne)).subs(replace)
-print "  C(phi)  : ", (-(4./3)*(Te/B) * C(phi)).subs(replace)
+print("\n\nTemperature terms:")
+print("  bracket : ", (- bracket(phi, Te, metric)).subs(replace))
+print("  C(Te)   : ", ((4./3)*(Te/B) *(7./2)*C(Te)).subs(replace))
+print("  (Te/Ne)*C(Ne) : ", ((4./3)*(Te/B) *(Te/Ne)*C(Ne)).subs(replace))
+print("  C(phi)  : ", (-(4./3)*(Te/B) * C(phi)).subs(replace))
 
 
 
-print "\n\nVorticity terms:"
-print "  bracket : ", (- bracket(phi, Vort, metric)).subs(replace)
-print "  C(Pe)   : ", (2.*B*C(Pe)/Ne).subs(replace)
-print "  C(Gi)   : ", B*C(Gi)/(3.*Ne)
+print("\n\nVorticity terms:")
+print("  bracket : ", (- bracket(phi, Vort, metric)).subs(replace))
+print("  C(Pe)   : ", (2.*B*C(Pe)/Ne).subs(replace))
+print("  C(Gi)   : ", B*C(Gi)/(3.*Ne))
