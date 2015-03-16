@@ -237,7 +237,7 @@ bool H5Format::setGlobalOrigin(int x, int y, int z) {
 
 bool H5Format::setLocalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
   
-  if(!setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ, offset_x, offset_y, offset_z))
+  if(!setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ))
     return false;
   
   x0_local = offset_x;
