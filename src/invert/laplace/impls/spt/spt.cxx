@@ -61,14 +61,14 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
 
   // Temporary array for taking FFTs
   int ncz = mesh->ngz-1;
-  dc1d = new dcomplex[ncz/2 + 1];
+  dc2d = cmatrix(mesh->ngx,ncz/2 + 1);
 }
 
 LaplaceSPT::~LaplaceSPT() {
   alldata += ys; // Return to index from 0
   delete[] alldata;
   
-  delete[] dc1d;
+  free_cmatrix(dc2d);
 }
 
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
@@ -275,13 +275,15 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   int ncz = mesh->ngz-1;
   
-  for(int ix=0; ix < mesh->ngx; ix++) {
-    //ZFFT(b[ix], mesh->zShift[ix][data.jy], dc1d);
-    ZFFT(b[ix], ix, data.jy, dc1d);
-    for(int kz = 0; kz <= maxmode; kz++)
-      data.bk[kz][ix] = dc1d[kz];
+  //FFT
+  ZFFT(b.getData(), mesh->ngx, data.jy, dc2d);
+  //Transpose
+  for (int ix=0; ix<mesh->ngx; ix++){
+    for (int kz=0; kz<=maxmode; kz++){
+      data.bk[kz][ix] = dc2d[ix][kz];
+    }
   }
-  
+
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
                data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
@@ -463,22 +465,23 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   while(next(data) == 0) {}
 
   // Have result in Fourier space. Convert back to real space
-  
-  for(int ix=0; ix<=ncx; ix++){
-    
-    for(int kz = 0; kz<= maxmode; kz++) {
-      dc1d[kz] = data.xk[kz][ix];
+  //Prepare fft
+  for(int ix=0; ix<mesh->ngx; ix++){
+    for(int kz=0;kz<=maxmode; kz++){
+      dc2d[ix][kz] = data.xk[kz][ix];
     }
-    for(int kz = maxmode + 1; kz <= ncz/2; kz++)
-      dc1d[kz] = 0.0;
-
-    if(global_flags & INVERT_ZERO_DC)
-      dc1d[0] = 0.0;
-
-    //ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], xdata[ix]);
-    ZFFT_rev(dc1d, ix, data.jy, xdata[ix]);
-    
-    xdata[ix][ncz] = xdata[ix][0]; // enforce periodicity
+    for(int kz=maxmode+1; kz<1+ncz/2; kz++){
+      dc2d[ix][kz]=0.;
+    }
+    if(global_flags & INVERT_ZERO_DC){
+      dc2d[ix][0]=0.;
+    }
+  }
+  //FFT
+  ZFFT_rev(dc2d,mesh->ngx,data.jy,xdata);
+  //Ensure periodicity
+  for(int ix=0; ix<mesh->ngx; ix++){
+    xdata[ix][ncz]=xdata[ix][0];
   }
 
   if(!mesh->firstX()) {
