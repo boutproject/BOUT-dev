@@ -126,7 +126,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     mz    = f.read("MZ")
     myg   = f.read("MYG")
     t_array = f.read("t_array")
-    nt = len(t_array)
+    if t_array is None:
+        nt = 1
+        t_array = np.zeros(1)
+    else:
+        nt = len(t_array)
     
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))

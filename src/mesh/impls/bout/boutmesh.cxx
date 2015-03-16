@@ -73,9 +73,6 @@ BoutMesh::~BoutMesh() {
   // Delete the boundary regions
   for(vector<BoundaryRegion*>::iterator it = boundary.begin(); it != boundary.end(); it++)
     delete (*it);
-
-  delete[] ShiftAngle;
-  
   
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
@@ -115,10 +112,9 @@ int BoutMesh::load() {
     throw BoutException("Mesh must contain ny");
 
   int MZ;
-  nz_in_grid_file = true;
+  
   if(Mesh::get(MZ, "nz")) {
     // No "nz" variable in the grid file. Instead read MZ from options
-    nz_in_grid_file = false;
     
     OPTION(options, MZ,           65);
     if(!is_pow2(MZ-1)) {
@@ -439,21 +435,18 @@ int BoutMesh::load() {
       IntShiftTorsion = 0.0;
     }
   }
-  // Allocate some memory for twist-shift
 
-  ShiftAngle  = new BoutReal[ngx];
-
+  ShiftAngle.resize(ngx);
+  
   // Try to read the shift angle from the grid file
   // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
   if(source->hasVar("ShiftAngle")) {
-    source->open("ShiftAngle");
-    source->setGlobalOrigin(XGLOBAL(0));
-    if(!source->fetch(ShiftAngle,  "ShiftAngle", ngx)) {
+    if(!source->get(this, ShiftAngle,  "ShiftAngle",
+		    ngx, XGLOBAL(0))) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
       for(int i=0;i<ngx;i++)
         ShiftAngle[i] = 0.0;
     }
-    source->close();
   }else if(MYG > 0) {
     output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
 
@@ -488,7 +481,7 @@ int BoutMesh::load() {
     delete[] ranks;
     
     if(MYPE_IN_CORE)
-      MPI_Bcast(ShiftAngle, ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
+      MPI_Bcast(&ShiftAngle[0], ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
     
     // Free MPI handles
     if(core_comm != MPI_COMM_NULL)
@@ -977,394 +970,6 @@ int BoutMesh::load() {
 #endif
   
   return 0;
-}
-
-/*****************************************************************************
- * get routines
- *****************************************************************************/
-
-int BoutMesh::get(Field2D &var, const char *name, BoutReal def) {
-  if(name == NULL)
-    return 1;
-  
-  int msg_pos = msg_stack.push("Loading 2D field: BoutMesh::get(Field2D, %s)", name);
-  
-  if(!source->hasVar(name)) {
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-    var = def;
-    msg_stack.pop(msg_pos);
-    return 2;
-  }
-
-  BoutReal **data;
-  int jy;
-  
-  var = 0;// Makes sure the memory is allocated
-  
-  data = var.getData(); // Get a pointer to the data
-  
-  // Send an open signal to the source
-  source->open(name);
-  
-  // Get the size of the variable
-  vector<int> size = source->getSize(name);
-  switch(size.size()) {
-  case 1: {
-    // 0 or 1 dimension
-    if(size[0] != 1) {
-      output.write("Expecting a 2D variable, but '%s' is 1D with %d elements\n", name, size[0]);
-      source->close();
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 1;
-    }
-    BoutReal val;
-    if(!source->fetch(&val, name)) {
-      output.write("Couldn't read 0D variable '%s'\n", name);
-      source->close();
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 1;
-    }
-    
-    var = val;
-    
-    // Close source
-    source->close();
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 0;
-  }
-  case 2: {
-    if((size[0] != nx) || (size[1] != ny)) {
-      output.write("Error: Variable '%s' has dimensions [%d,%d]. Expecting [%d,%d]\n",
-                   name, size[0], size[1], nx, ny);
-      source->close();
-#ifdef CHECK
-      msg_stack.pop(msg_pos);
-#endif
-      return 1;
-    }
-    break;
-  }
-  default: {
-    output.write("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
-                 name, size.size());
-    source->close();
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 1;
-  }
-  }
-  
-  // Read in data for bulk of points
-  
-  if(readgrid_2dvar(source, name,
-		    YGLOBAL(MYG), // Start reading at global index for y=MYG
-		    MYG,          // Insert data starting from y=MYG
-		    MYSUB,        // Length of data is MYSUB
-		    0, ngx,       // All x indices (local indices)
-		    data)) {
-    output.write("\tWARNING: Could not read bulk of '%s' from grid. Setting to %le\n", name, def);
-    var = def;
-#ifdef CHECK
-    msg_stack.pop(msg_pos);
-#endif
-    return 1;
-  }
-
-  if(MYG > 0) {
-    // Read in data for upper boundary
-    // lowest (smallest y) part of UDATA_*DEST processor domain
-    
-    if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
-      // Inner data exists and has a destination 
-      
-      if(readgrid_2dvar(source, name,
-                        (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
-                        MYSUB+MYG,            // the same as the upper guard cell
-                        MYG,                  // Only one y point
-                        0, UDATA_XSPLIT,    // Just the inner cells
-                        data)) {
-        output.write("\tWARNING: Could not read '%s' upper boundary from grid. Setting to %le\n", name, def);
-        var = def;
-#ifdef CHECK
-        msg_stack.pop(msg_pos);
-#endif
-        return 2;
-      }
-
-    }else if(UDATA_XSPLIT > 0) {
-      // Inner part exists but has no destination => boundary
-      for(jy=0;jy<MYG;jy++)
-        cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
-    }
-    
-    if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
-      
-      if(readgrid_2dvar(source, name,
-                        (UDATA_OUTDEST / NXPE)*MYSUB,
-                        MYSUB+MYG,
-                        MYG,
-                        UDATA_XSPLIT, ngx, // the outer cells
-                        data)) {
-        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-        var = def;
-#ifdef CHECK
-        msg_stack.pop(msg_pos);
-#endif
-        return 2;
-      }
-    }else if(UDATA_XSPLIT < MX) {
-      // Inner data exists, but has no destination
-      for(jy=0;jy<MYG;jy++)
-        cpy_2d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
-    }
-    
-    // Read in data for lower boundary
-    if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
-      //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
-      
-      if(readgrid_2dvar(source, name,
-                        ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
-                        0,  // belongs in the lower guard cell
-                        MYG,  // just one y point
-                        0, DDATA_XSPLIT, // just the inner data
-                        data)) {
-        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-        var = def;
-#ifdef CHECK
-        msg_stack.pop(msg_pos);
-#endif
-        return 2;
-      }
-      
-    }else if(DDATA_XSPLIT > 0) {
-      for(jy=0;jy<MYG;jy++)
-        cpy_2d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
-    }
-    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
-      
-      if(readgrid_2dvar(source, name,
-                        ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
-                        0,
-                        MYG,
-                        DDATA_XSPLIT, ngx,
-                        data)) {
-        output.write("\tWARNING: Could not read '%s' from grid. Setting to %le\n", name, def);
-        var = def;
-#ifdef CHECK
-        msg_stack.pop(msg_pos);
-#endif
-        return 2;
-      }
-    }else if(DDATA_XSPLIT < ngx) {
-      for(jy=0;jy<MYG;jy++)
-        cpy_2d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
-    }
-  }
-  /*
-  if(IDATA_DEST >= 0) {
-    int xfrom = (IDATA_DEST % NXPE)*MXSUB + MXSUB;
-    int yfrom = (IDATA_DEST/NXPE)*MYSUB;
-    for(int i=0;i<MXG;i++) {
-      output.write("in: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, i, MYG);
-      s->setGlobalOrigin(xfrom+i, yfrom);
-      s->fetch(&(data[i][MYG]), name, 1, MYSUB);
-    }
-    s->setGlobalOrigin();
-  }
-  if(ODATA_DEST >= 0) {
-    int xfrom = (ODATA_DEST % NXPE)*MXSUB + MXG;
-    int yfrom = (ODATA_DEST/NXPE)*MYSUB;
-    for(int i=0;i<MXG;i++) {
-      output.write("out: (%d,%d) -> (%d,%d)\n", xfrom+i, yfrom, MXG+MXSUB+i, MYG);
-      s->setGlobalOrigin(xfrom+i, yfrom);
-      s->fetch(&(data[MXG+MXSUB+i][MYG]), name, 1, MYSUB);
-    }
-    s->setGlobalOrigin();
-  }
-  */
-#ifdef TRACK
-  var.name = copy_string(name);
-#endif
-   
-  // Close source
-  source->close();
-  
-#ifdef CHECK
-  // Check that the data is ok
-  var.checkData(true);
-  
-  msg_stack.pop(msg_pos);
-#endif
-  
-  return 0;
-}
-
-int BoutMesh::get(Field2D &var, const string &name, BoutReal def) {
-  return get(var, name.c_str());
-}
-
-/// Load a 3D variable from the grid file
-/*!
-  Data stored as toroidal FFTs in BoutReal space at each X-Y point.
-  In toroidal direction, array must have an odd number of points.
-  Format is:
-
-  DC, r1,i1, r2,i2, ... , rn,in
-
-  with the BoutReal and imaginary parts of each (positive) frequency
-  up to the nyquist frequency.
- */
-int BoutMesh::get(Field3D &var, const char *name) {
-  if(name == NULL)
-    return 1;
-  
-#ifdef CHECK
-  msg_stack.push("Loading 3D field: BoutMesh::get(Field3D, %s)", name);
-#endif
-  
-  if(!source->hasVar(name)) {
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-    var = 0.0;
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return 2;
-  }
-  
-  int jy;
-
-  var = 0.0; // Makes sure the memory is allocated
-
-  BoutReal ***data = var.getData(); // Get a pointer to the data
-
-  // Send open signal to data source
-  source->open(name);
-
-  // Read in data for bulk of points
-  if(readgrid_3dvar(source, name,
-		    YGLOBAL(MYG), // Start reading at global index for y=MYG
-		    MYG,          // Insert data starting from y=MYG
-		    MYSUB,        // Length of data is MYSUB
-		    0, ngx,       // All x indices (local indices)
-		    data)) {
-    output.write("\tWARNING: Could not read '%s' from grid. Setting to zero\n", name);
-    var = 0.0;
-#ifdef CHECK
-    msg_stack.pop();
-#endif
-    return 1;
-  }
-
-  if(MYG > 0) {
-    // Read in data for upper boundary
-    // lowest (smallest y) part of UDATA_*DEST processor domain
-    
-    if((UDATA_INDEST != -1) && (UDATA_XSPLIT > 0)) {
-      // Inner data exists and has a destination 
-      
-      if(readgrid_3dvar(source, name,
-                        (UDATA_INDEST/NXPE)*MYSUB, // the "bottom" (y=1) of the destination processor
-                        MYSUB+MYG,            // the same as the upper guard cell
-                        MYG,                  // Only one y point
-                        0, UDATA_XSPLIT,    // Just the inner cells
-                        data)) {
-        output.write("\tWARNING: Could not read upper inner '%s' from grid. Setting to zero\n", name);
-        var = 0.0;
-#ifdef CHECK
-        msg_stack.pop();
-#endif
-        return 2;
-      }
-      
-    }else if(UDATA_XSPLIT > 0) {
-      // Inner part exists but has no destination => boundary
-      for(jy=0;jy<MYG;jy++)
-        cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, 0, UDATA_XSPLIT, data); // copy values from last index into guard cell
-    }
-    
-    if((UDATA_OUTDEST != -1) && (UDATA_XSPLIT < ngx)) { 
-      
-      if(readgrid_3dvar(source, name,
-                        (UDATA_OUTDEST / NXPE)*MYSUB,
-                        MYSUB+MYG,
-                        MYG,
-                        UDATA_XSPLIT, ngx, // the outer cells
-                        data)) {
-        output.write("\tWARNING: Could not read upper outer '%s' from grid. Setting to zero\n", name);
-        var = 0.0;
-#ifdef CHECK
-        msg_stack.pop();
-#endif
-        return 2;
-      }
-    }else if(UDATA_XSPLIT < MX) {
-      // Inner data exists, but has no destination
-      for(jy=0;jy<MYG;jy++)
-        cpy_3d_data(MYSUB+MYG-1-jy, MYSUB+MYG+jy, UDATA_XSPLIT, ngx, data);
-    }
-    
-    // Read in data for lower boundary
-    if((DDATA_INDEST != -1) && (DDATA_XSPLIT > 0)) {
-      //output.write("Reading DDEST: %d\n", (DDATA_INDEST+1)*MYSUB -1);
-      
-      if(readgrid_3dvar(source, name,
-                        ((DDATA_INDEST/NXPE)+1)*MYSUB - MYG, // The "top" of the destination processor
-                        0,  // belongs in the lower guard cell
-                        MYG,  // just one y point
-                        0, DDATA_XSPLIT, // just the inner data
-                        data)) {
-        output.write("\tWARNING: Could not read lower inner '%s' from grid. Setting to zero\n", name);
-        var = 0.0;
-#ifdef CHECK
-        msg_stack.pop();
-#endif
-        return 2;
-      }
-      
-    }else if(DDATA_XSPLIT > 0) {
-      for(jy=0;jy<MYG;jy++)
-        cpy_3d_data(MYG+jy, MYG-1-jy, 0, DDATA_XSPLIT, data);
-    }
-    if((DDATA_OUTDEST != -1) && (DDATA_XSPLIT < ngx)) {
-      
-      if(readgrid_3dvar(source, name,
-                        ((DDATA_OUTDEST/NXPE)+1)*MYSUB - MYG,
-                        0,
-                        MYG,
-                        DDATA_XSPLIT, ngx,
-                        data)) {
-        output.write("\tWARNING: Could not read lower outer '%s' from grid. Setting to zero\n", name);
-        var = 0.0;
-#ifdef CHECK
-        msg_stack.pop();
-#endif
-        return 2;
-      }
-    }else if(DDATA_XSPLIT < ngx) {
-      for(jy=0;jy<MYG;jy++)
-        cpy_3d_data(MYG+jy, MYG-1-jy, DDATA_XSPLIT, ngx, data);
-    }
-  }
-  
-#ifdef CHECK
-  // Check that the data is ok
-  var.checkData(true);
-  
-  msg_stack.pop();
-#endif
-  
-  return 0;
-}
-
-int BoutMesh::get(Field3D &var, const string &name) {
-  return get(var, name.c_str());
 }
 
 /****************************************************************
@@ -2642,207 +2247,6 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
 }
 
 /****************************************************************
- *                   Private data reading routines
- ****************************************************************/
-
-int BoutMesh::readgrid_3dvar(GridDataSource *s, const char *name, 
-	                     int yread, int ydest, int ysize, 
-                             int xge, int xlt, BoutReal ***var) {
-  if(nz_in_grid_file) {
-    // nz specified in input file, so 3D data is in real space
-    return readgrid_3dvar_real(s, name, 
-			      yread, ydest, ysize, 
-			      xge, xlt, var);
-  }
-  
-  // nz not given in input file, so 3D data is in FFT format
-  return readgrid_3dvar_fft(s, name, 
-			    yread, ydest, ysize, 
-			    xge, xlt, var);
-}
-
-/// Reads in a portion of the X-Y domain
-int BoutMesh::readgrid_3dvar_fft(GridDataSource *s, const char *name, 
-				 int yread, int ydest, int ysize, 
-				 int xge, int xlt, BoutReal ***var) {
-  /// Check the arguments make sense
-  if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
-    return 1;
-  
-  /// Check the size of the data
-  vector<int> size = s->getSize(name);
-  
-  if(size.size() != 3) {
-    output.write("\tWARNING: Number of dimensions of %s incorrect\n", name);
-    return 1;
-  }
-  
-  if((size[0] != nx) || (size[1] != ny)) {
-    output.write("\tWARNING: X or Y size of %s incorrect\n", name);
-    return 1;
-  }
-
-  if((size[2] & 1) != 1) {
-    output.write("\tWARNING: Z size of %s should be odd\n", name);
-    return 1;
-  }
-
-  int maxmode = (size[2] - 1)/2; ///< Maximum mode-number n
-
-  int ncz = ngz-1;
-
-  // Print out which modes are going to be read in
-  if(zperiod > maxmode) {
-    // Domain is too small: Only DC
-    output.write(" => Only reading n = 0 component\n");
-  }else {
-    // Get maximum mode in the input which is a multiple of zperiod
-    int mm = ((int) (maxmode/zperiod))*zperiod;
-    if( (ncz/2)*zperiod < mm )
-      mm = (ncz/2)*zperiod; // Limited by Z resolution
-    
-    if(mm == zperiod) {
-      output.write(" => Reading n = 0, %d\n", zperiod);
-    }else
-      output.write(" => Reading n = 0, %d ... %d\n", zperiod, mm);
-  }
-
-  /// Data for FFT. Only positive frequencies
-  dcomplex* fdata = new dcomplex[ncz/2 + 1];
-  BoutReal* zdata = new BoutReal[size[2]];
-
-  for(int jx=xge;jx<xlt;jx++) {
-    // Set the global X index
-    
-    for(int jy=0; jy < ysize; jy++) {
-      /// Read data
-      
-      int yind = yread + jy; // Global location to read from
-      
-      s->setGlobalOrigin(XGLOBAL(jx), yind);
-      if(!s->fetch(zdata, name, 1, 1, size[2]))
-	return 1;
-      
-      /// Load into dcomplex array
-      
-      fdata[0] = zdata[0]; // DC component
-
-      for(int i=1;i<=ncz/2;i++) {
-	int modenr = i*zperiod; // Z mode number
-	
-	if(modenr <= maxmode) {
-	  // Have data for this mode
-	  fdata[i] = dcomplex(zdata[modenr*2 - 1], zdata[modenr*2]);
-	}else {
-	  fdata[i] = 0.0;
-	}
-      }
-      
-      // Inverse FFT, shifting in the z direction
-      for(int jz=0;jz<=ncz/2;jz++) {
-	BoutReal kwave;
-	
-	kwave=jz*2.0*PI/zlength; // wave number is 1/[rad]
-      
-	// Multiply by EXP(ik*zoffset)
-	fdata[jz] *= dcomplex(cos(kwave*zShift[jx][jy]) , sin(kwave*zShift[jx][jy]));
-      }
-      
-      irfft(fdata, ncz, var[jx][ydest+jy]);
-    }
-  }
-
-  s->setGlobalOrigin();
-
-  // free data
-  delete[] zdata;
-  delete[] fdata;
-  
-  return 0;
-}
-
-int BoutMesh::readgrid_3dvar_real(GridDataSource *s, const char *name, 
-				  int yread, int ydest, int ysize, 
-				  int xge, int xlt, BoutReal ***var) {
-  /// Check the arguments make sense
-  if((yread < 0) || (ydest < 0) || (ysize < 0) || (xge < 0) || (xlt < 0))
-    return 1;
-  
-  /// Check the size of the data
-  vector<int> size = s->getSize(name);
-  
-  if(size.size() != 3) {
-    output.write("\tWARNING: Number of dimensions of %s incorrect\n", name);
-    return 1;
-  }
-  
-  if((size[0] != nx) || (size[1] != ny)) {
-    output.write("\tWARNING: X or Y size of %s incorrect\n", name);
-    return 1;
-  }
-
-  if(size[2] != ngz-1) {
-    output.write("\tWARNING: Z size of %s is incorrect\n", name);
-    return 1;
-  }
-  
-  for(int jx=xge;jx<xlt;jx++) {
-    // Set the global X index
-    
-    for(int jy=0; jy < ysize; jy++) {
-      /// Read data
-      
-      int yind = yread + jy; // Global location to read from
-      
-      s->setGlobalOrigin(XGLOBAL(jx), yind);
-      if(!s->fetch(var[jx][ydest+jy], name, 1, 1, size[2]))
-	return 1;
-    }
-  }
-  s->setGlobalOrigin();
-  
-  return 0;
-}
-
-/// Copies a section of a 3D variable
-void BoutMesh::cpy_3d_data(int yfrom, int yto, int xge, int xlt, BoutReal ***var) {
-  int i, k;
-  for(i=xge;i!=xlt;i++)
-    for(k=0;k<ngz;k++)
-      var[i][yto][k] = var[i][yfrom][k];
-}
-
-/// Helper routine for reading in grid data
-/*!
-  Reads in a single 2D variable varname[xge:xlt-1][yread:yread+ysize-1]
-  and puts it into var[xge:xlt-1][ydest:ydesy+ysize-1]
-  
-  July 2008: Adapted to take into account X offsets
-*/
-int BoutMesh::readgrid_2dvar(GridDataSource *s, const char *varname, 
-                             int yread, int ydest, int ysize, 
-                             int xge, int xlt, BoutReal **var) {
-  for(int i=xge;i!=xlt;i++) { // go through all the x indices 
-    // Set the indices to read in this x position 
-    s->setGlobalOrigin(XGLOBAL(i), yread);
-    // Read in the block of data for this x value (C ordering)
-    if(!s->fetch(&(var[i][ydest]), varname, 1, ysize))
-      return 1;
-  }
-  
-  s->setGlobalOrigin();
-  
-  return 0;
-}
-
-void BoutMesh::cpy_2d_data(int yfrom, int yto, int xge, int xlt, BoutReal **var) {
-  msg_stack.push("cpy_2d_data(%d,%d,%d,%d)", yfrom, yto, xge, xlt);
-  for(int i=xge;i<xlt;i++)
-    var[i][yto] = var[i][yfrom];
-  msg_stack.pop();
-}
-
-/****************************************************************
  *                 SURFACE ITERATION
  ****************************************************************/
 
@@ -3299,8 +2703,8 @@ void BoutMesh::slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy)
 void BoutMesh::get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag)
 {
   for(int i=0;i<ncy;i++){
-    ayn_Real[i]=ayn[i].Real();
-    ayn_Imag[i]=ayn[i].Imag();
+    ayn_Real[i]=ayn[i].real();
+    ayn_Imag[i]=ayn[i].imag();
   }
 }
 
@@ -3386,7 +2790,7 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
      set_ri(ayn,ncy,aynReal,aynImag);
 
      for(jy=0;jy<ncy;jy++)
-      f1d[jy]=ayn[jy].Real();
+      f1d[jy]=ayn[jy].real();
 
     for(jy=0;jy<ncy;jy++)
       t1=result.setData(jx,jy+ystart,1,f1d+jy); 
