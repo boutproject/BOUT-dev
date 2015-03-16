@@ -1,3 +1,4 @@
+from builtins import str
 # Determine the number of CPUs on a system
 #
 # Taken from a post on stackoverflow:

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 import matplotlib.pyplot as plt
@@ -147,11 +149,11 @@ def linelineintersect(a, b, atol=1e-08):
         use_x = x12 != x11 #avoid vertical lines diviiding by zero
         use_y = ~use_x
 
-        ua[use_x] = (x21[use_x]-x11[use_x]) / (x12[use_x]-x11[use_x])
-        ua[use_y] = (y21[use_y]-y11[use_y]) / (y12[use_y]-y11[use_y])
+        ua[use_x] = old_div((x21[use_x]-x11[use_x]), (x12[use_x]-x11[use_x]))
+        ua[use_y] = old_div((y21[use_y]-y11[use_y]), (y12[use_y]-y11[use_y]))
 
-        ub[use_x] = (x22[use_x]-x11[use_x]) / (x12[use_x]-x11[use_x])
-        ub[use_y] = (y22[use_y]-y11[use_y]) / (y12[use_y]-y11[use_y])
+        ub[use_x] = old_div((x22[use_x]-x11[use_x]), (x12[use_x]-x11[use_x]))
+        ub[use_y] = old_div((y22[use_y]-y11[use_y]), (y12[use_y]-y11[use_y]))
 
         np.ma.clip(ua, a_min=0,a_max = 1, out = ua)
         np.ma.clip(ub, a_min=0,a_max = 1, out = ub)

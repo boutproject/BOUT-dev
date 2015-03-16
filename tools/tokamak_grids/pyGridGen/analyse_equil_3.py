@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Equilibrium analysis routine
 # 
@@ -203,10 +207,10 @@ def analyse_equil ( F, R, Z):
   #;;;;;;;;;;;;;; Find plasma centre ;;;;;;;;;;;;;;;;;;;
   # Find the O-point closest to the middle of the grid
   
-    mind = (opt_ri[0] - (numpy.float(nx)/2.))**2 + (opt_zi[0] - (numpy.float(ny)/2.))**2
+    mind = (opt_ri[0] - (old_div(numpy.float(nx),2.)))**2 + (opt_zi[0] - (old_div(numpy.float(ny),2.)))**2
     ind = 0
     for i in range (1, n_opoint) :
-        d = (opt_ri[i] - (numpy.float(nx)/2.))**2 + (opt_zi[i] - (numpy.float(ny)/2.))**2
+        d = (opt_ri[i] - (old_div(numpy.float(nx),2.)))**2 + (opt_zi[i] - (old_div(numpy.float(ny),2.)))**2
         if d < mind :
             ind = i
             mind = d
@@ -221,14 +225,14 @@ def analyse_equil ( F, R, Z):
 
     # First remove non-monotonic separatrices
         nkeep = 0
-        for i in xrange (n_xpoint) :
+        for i in range (n_xpoint) :
       # Draw a line between the O-point and X-point
 
             n = 100 # Number of points
             farr = numpy.zeros(n)
-            dr = (xpt_ri[i] - opt_ri[ind]) / numpy.float(n)
-            dz = (xpt_zi[i] - opt_zi[ind]) / numpy.float(n)
-            for j in xrange (n) :
+            dr = old_div((xpt_ri[i] - opt_ri[ind]), numpy.float(n))
+            dz = old_div((xpt_zi[i] - opt_zi[ind]), numpy.float(n))
+            for j in range (n) :
                 # interpolate f at this location
                 func = RectBivariateSpline(x, y, F)
 

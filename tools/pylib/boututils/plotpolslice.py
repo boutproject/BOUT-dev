@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from boututils import file_import
 from enthought.mayavi import mlab
@@ -50,11 +53,11 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
 
     ny2=ny
     nskip=np.zeros(ny-1)
-    for i in xrange(ny-1):
+    for i in range(ny-1):
         ip=(i+1)%ny
         nskip[i]=0
-        for x in xrange(nx):
-            ns=np.max(np.abs(zShift[x,ip]-zShift[x,i]))/dz-1
+        for x in range(nx):
+            ns=old_div(np.max(np.abs(zShift[x,ip]-zShift[x,i])),dz)-1
             if ns > nskip[i] : nskip[i] = ns 
 
     nskip = np.int_(np.round(nskip))
@@ -67,10 +70,10 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
     z = np.zeros((nx, ny2))
 
     ypos = 0
-    for y in xrange (ny-1) :
+    for y in range (ny-1) :
       # put in the original points
-        for x in xrange (nx):
-            zind = (zangle - zShift[x,y])/dz
+        for x in range (nx):
+            zind = old_div((zangle - zShift[x,y]),dz)
             var2d[x,ypos] = zinterp(var3d[x,y,:], zind)
      #     IF KEYWORD_SET(profile) THEN var2d[x,ypos] = var2d[x,ypos] + profile[x,y]
             r[x,ypos] = rxy[x,y]
@@ -82,15 +85,15 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
 
       # and the extra points
     
-        for x in xrange (nx):
-            zi0 = (zangle - zShift[x,y])/dz
-            zip1 = (zangle - zShift[x,y+1])/dz
+        for x in range (nx):
+            zi0 = old_div((zangle - zShift[x,y]),dz)
+            zip1 = old_div((zangle - zShift[x,y+1]),dz)
 
-            dzi = (zip1 - zi0) / (nskip[y] + 1)
+            dzi = old_div((zip1 - zi0), (nskip[y] + 1))
 
-            for i in xrange (nskip[y]):
+            for i in range (nskip[y]):
                 zi = zi0 + float(i+1)*dzi # zindex 
-                w = float(i+1)/float(nskip[y]+1) # weighting
+                w = old_div(float(i+1),float(nskip[y]+1)) # weighting
 
                 var2d[x,ypos+i] = w*zinterp(var3d[x,y+1,:], zi) + (1.0-w)*zinterp(var3d[x,y,:], zi)
             #  IF KEYWORD_SET(profile) THEN var2d[x,ypos+i] = var2d[x,ypos+i] + w*profile[x,y+1] + (1.0-w)*profile[x,y]
@@ -104,8 +107,8 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
 
   # FINAL POINT
 
-    for x in xrange(nx):
-        zind = (zangle - zShift[x,ny-1])/dz
+    for x in range(nx):
+        zind = old_div((zangle - zShift[x,ny-1]),dz)
         var2d[x,ypos] = zinterp(var3d[x,ny-1,:], zind)
      # IF KEYWORD_SET(profile) THEN var2d[x,ypos] = var2d[x,ypos] + profile[x,ny-1]
         r[x,ypos] = rxy[x,ny-1]

@@ -1,5 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from builtins import str
+from past.utils import old_div
+from builtins import object
 from read_grid import read_grid
 from ordereddict import OrderedDict
 import numpy as np
@@ -127,7 +131,7 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     
     
     #gridoptions = {'grid':grid,'mesh':mesh}
-    if '[mesh]' in inp.keys():
+    if '[mesh]' in list(inp.keys()):
        #IC = outinfo  
        IC = read_grid(path+'/BOUT.dmp.0.nc') #output data again
     elif 'grid' in inp['[main]']:
@@ -172,7 +176,7 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     #figure out which fields are evolved
     print(fieldkeys)
     
-    for section in inp.keys(): #loop over section keys 
+    for section in list(inp.keys()): #loop over section keys 
        print('section: ', section)
        if section in fieldkeys: #pick the relevant sections
           print(section)
@@ -225,9 +229,9 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     print('evolved: ',evolved)
 
     # read meta data from .inp file, this is whre most metadata get written
-    for section in inp.keys():
+    for section in list(inp.keys()):
         if (('evolve' not in inp[section]) and ('first' not in inp[section])): #hacky way to exclude some less relevant metadata
-           for elem in inp[section].keys():
+           for elem in list(inp[section].keys()):
               meta[elem] = ValUnit(ToFloat(inp[section][elem]))
               d[elem] = np.array(ToFloat(inp[section][elem]))
               
@@ -243,7 +247,7 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     tmp1 = np.array([x for x in availkeys])
     #b = np.array([x if x not in available for x in a])
     tmp2 = np.array([x for x in tmp1 if x not in available])
-    static_fields = np.array([x for x in tmp2 if x in norms.keys()])
+    static_fields = np.array([x for x in tmp2 if x in list(norms.keys())])
     #static_fields = tmp2
     
     #print availkeys
@@ -260,7 +264,7 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     
     for elem in IC.variables:
        if elem not in meta:
-          if elem in norms.keys():
+          if elem in list(norms.keys()):
              meta[elem] = ValUnit(IC.variables[elem][:]*norms[elem].v,norms[elem].u)
              d[elem] = np.array(IC.variables[elem][:]*norms[elem].v)
           else:
@@ -308,32 +312,32 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     
     meta['fmei']  = ValUnit(1./1836.2/d['AA'])   
     
-    meta['lambda_ei'] = 24.-np.log(np.sqrt(d['Ni_x'])/d['Te_x']) ;
+    meta['lambda_ei'] = 24.-np.log(old_div(np.sqrt(d['Ni_x']),d['Te_x'])) ;
     meta['lambda_ii'] = 23.-np.log(d['ZZ']**3 * np.sqrt(2.*d['Ni_x'])/(d['Ti_x']**1.5)) #
 
     meta['wci']       = 1.0*9.58e3*d['ZZ']*d['bmag']/d['AA'] # ion gyrofrteq
-    meta['wpi']       = 1.32e3*d['ZZ']*np.sqrt(d['Ni_x']/d['AA']) # ion plasma freq 
+    meta['wpi']       = 1.32e3*d['ZZ']*np.sqrt(old_div(d['Ni_x'],d['AA'])) # ion plasma freq 
 
     meta['wce']       = 1.78e7*d['bmag'] #electron gyrofreq
     meta['wpe']       = 5.64e4*np.sqrt(d['Ni_x'])#electron plasma freq
     
     meta['v_the']    = 4.19e7*np.sqrt(d['Te_x'])#cm/s
-    meta['v_thi']    = 9.79e5*np.sqrt(d['Ti_x']/d['AA']) #cm/s
+    meta['v_thi']    = 9.79e5*np.sqrt(old_div(d['Ti_x'],d['AA'])) #cm/s
     meta['c_s']      = 9.79e5*np.sqrt(5.0/3.0 * d['ZZ'] * d['Te_x']/d['AA'])#
-    meta['v_A']     = 2.18e11*np.sqrt(1.0/(d['AA'] * d['Ni_x']))
+    meta['v_A']     = 2.18e11*np.sqrt(old_div(1.0,(d['AA'] * d['Ni_x'])))
     
     meta['nueix']     = 2.91e-6*d['Ni_x']*meta['lambda_ei']/d['Te_x']**1.5 #
     meta['nuiix']     = 4.78e-8*d['ZZ']**4.*d['Ni_x']*meta['lambda_ii']/d['Ti_x']**1.5/np.sqrt(d['AA']) #
     meta['nu_hat']    = meta['Zeff'].v*meta['nueix']/meta['wci'] 
     
-    meta['L_d']      = 7.43e2*np.sqrt(d['Te_x']/d['Ni_x'])
-    meta['L_i_inrt']  = 2.28e7*np.sqrt(d['AA']/d['Ni_x'])/ d['ZZ'] #ion inertial length in cm
+    meta['L_d']      = 7.43e2*np.sqrt(old_div(d['Te_x'],d['Ni_x']))
+    meta['L_i_inrt']  = 2.28e7*np.sqrt(old_div(d['AA'],d['Ni_x']))/ d['ZZ'] #ion inertial length in cm
     meta['L_e_inrt']  = 5.31e5*np.sqrt(d['Ni_x']) #elec inertial length in cm
     
     meta['Ve_x'] = 4.19e7*d['Te_x']
 
     
-    meta['R0'] =  (d['Rxy'].max()+d['Rxy'].min())/2.0 
+    meta['R0'] =  old_div((d['Rxy'].max()+d['Rxy'].min()),2.0) 
     
  
     print(d['Rxy'].mean(1)) 
@@ -343,14 +347,14 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     meta['dz'] = (d['ZMAX'] - d['ZMIN'])
  
     #meta['lbNorm']=meta['L_z']*(d['Bpxy']/d['Bxy']).mean(1)     #-binormal coord range [cm]
-    meta['lbNorm']=meta['L_z']*(d['Bxy']/d['Bpxy']).mean(1)
+    meta['lbNorm']=meta['L_z']*(old_div(d['Bxy'],d['Bpxy'])).mean(1)
     
     #meta['zPerp']=np.array(meta['lbNorm']).mean*np.array(range(d['MZ']))/(d['MZ']-1) 
   #let's calculate some profile properties
     dx = np.gradient(d['Rxy'])[0]
     meta['L'] = 1.0*1e2*dx*(meta['Ni0'].v)/np.gradient(meta['Ni0'].v)[0]/meta['rho_s'].v
     
-    meta['w_Ln']     =  meta['c_s']/(np.min(abs(meta['L']))*meta['wci'] *meta['rho_s'].v) #normed to wci
+    meta['w_Ln']     =  old_div(meta['c_s'],(np.min(abs(meta['L']))*meta['wci'] *meta['rho_s'].v)) #normed to wci
 
     AA = meta['AA'].v
     ZZ = d['ZZ']
@@ -358,12 +362,12 @@ def metadata(inpfile='BOUT.inp',path ='.',v=False):
     Ti_x = d['Ti_x']
     fmei = meta['fmei'].v
     
-    meta['lpar'] =1e2*((d['Bxy']/d['Bpxy'])*d['dlthe']).sum(1)/meta['rho_s'].v #-[normed], average over flux surfaces, parallel length
+    meta['lpar'] =1e2*((old_div(d['Bxy'],d['Bpxy']))*d['dlthe']).sum(1)/meta['rho_s'].v #-[normed], average over flux surfaces, parallel length
 
     #yes dlthe is always the vertical displacement 
     #dlthe = (hthe0*2 pi)/nz
     #meta['lpar']=1e2*(d['Bxy']/d['Bpxy']).mean(1)*d['dlthe'].mean(1) #function of x
-    meta['sig_par'] = 1.0/(fmei*0.51*meta['nu_hat'])
+    meta['sig_par'] = old_div(1.0,(fmei*0.51*meta['nu_hat']))
     #meta['heat_nue'] = ((2*np.pi/meta['lpar'])**2)/(fmei*meta['nu_hat'])
     #kz_e = kz_i*(rho_e/rho_i)
     # kz_s = kz_i*(rho_s/rho_i)

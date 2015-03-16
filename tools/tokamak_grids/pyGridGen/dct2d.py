@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 #; Fast 2D Discrete Cosine Transform
 #;
 #; http://fourier.eng.hmc.edu/e161/lectures/dct/node2.html
@@ -30,7 +33,7 @@ def DCT2D ( sig, inverse=None):
     if inverse == None :
         result = result * 2. * numpy.sqrt(nx*ny)
     else:
-        result = result / (2.* numpy.sqrt(nx*ny))
+        result = old_div(result, (2.* numpy.sqrt(nx*ny)))
    
       
     return result

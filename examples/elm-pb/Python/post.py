@@ -2,6 +2,8 @@
 # Replicate the graphs from Xu_3fields_hands-on.pdf (BOUT++ workshop 2013)
 # needs runs in data & data0 folders
 # After running the cases define path0 and path1 accordingly
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 from boututils import file_import
 from boutdata import collect
@@ -31,7 +33,7 @@ psixy=g.get('psixy')
 PSI_AXIS=g.get('psi_axis')
 PSI_BNDRY=g.get('psi_bndry')
 #
-psix=(psixy[:,32]-PSI_AXIS)/(PSI_BNDRY-PSI_AXIS)
+psix=old_div((psixy[:,32]-PSI_AXIS),(PSI_BNDRY-PSI_AXIS))
 Epsi=-deriv(phi0[:,32],psix)
 #
 #

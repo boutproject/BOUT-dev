@@ -5,6 +5,8 @@
 #
 
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 nproc = 2       # Number of processors to run on
 reltol = 1.e-3  # Allowed relative tolerance in growth-rate
 
@@ -31,7 +33,7 @@ def growth_rate(path, nproc, log=False):
     tarr = collect("t_array", path=path)
     nt = len(tarr)
     wci = collect("wci", path=path)
-    tarr = tarr / wci
+    tarr = old_div(tarr, wci)
 
     # Read density
     Ni = collect("Ni", path=path, xind=5, yind=30, info=False)
@@ -43,7 +45,7 @@ def growth_rate(path, nproc, log=False):
 
     # Get the growth rate
     ln = np.log(Nirms)
-    return (ln[nt-5] - 8.*ln[nt-4] + 8.*ln[nt-2] - ln[nt-1]) / (6. * (tarr[nt-2] - tarr[nt-4]))
+    return old_div((ln[nt-5] - 8.*ln[nt-4] + 8.*ln[nt-2] - ln[nt-1]), (6. * (tarr[nt-2] - tarr[nt-4])))
 
 code = 0 # Return code
 
@@ -56,7 +58,7 @@ orig = 2.148177e+05 # 24th October 2011, revision c4f7ec92786b333a5502c5256b5e60
 analytic = 2.2e5
 print("   Growth-rate = %e, original = %e, analytic = %e" % (growth, orig, analytic))
 absdev = abs(growth - orig)
-reldev = absdev / orig
+reldev = old_div(absdev, orig)
 print("   Deviation from original: %e (%e %%)" % (absdev, reldev*100.))
 
 if reldev > reltol:
@@ -75,7 +77,7 @@ orig = 6.457835e+04  # 25th April 2014, revision fd032da
 analytic = 6.3e4
 print("   Growth-rate = %e, original = %e, analytic = %e" % (growth, orig, analytic))
 absdev = abs(growth - orig)
-reldev = absdev / orig
+reldev = old_div(absdev, orig)
 print("   Deviation from original: %e (%e %%)" % (absdev, reldev*100.))
 
 if reldev > reltol:

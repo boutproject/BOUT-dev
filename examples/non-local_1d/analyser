@@ -3,6 +3,8 @@
 #NOTE: THIS FILE WAS NOT COMPLETED WHEN PORTING TO PYTHON 3
 
 from __future__ import print_function
+from builtins import str
+from builtins import range
 from boututils import shell, launch, plotdata
 from boutdata import collect
 import numpy as np

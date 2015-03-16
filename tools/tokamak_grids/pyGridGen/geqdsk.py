@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import re
 import numpy
 
@@ -15,7 +20,7 @@ The official document describing g-eqdsk files:
 http://fusion.gat.com/conferences/snowmass/working/mfe/physics/p3/equilibria/g_eqdsk_s.pdf
 """
 
-class Geqdsk:
+class Geqdsk(object):
    
       def __init__(self):
 	"""
@@ -123,7 +128,7 @@ class Geqdsk:
 	return self.data
 
       def getAllVars(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
       def get(self, varname): 
 	return self.data[varname.lower()][0]
@@ -183,7 +188,7 @@ def main():
 	   xmin = geq.get('simag')
 	   xmax = geq.get('sibry')
 	   nx   = geq.get('nw')
-	   dx = (xmax - xmin)/float(nx - 1)
+	   dx = old_div((xmax - xmin),float(nx - 1))
 	   x = numpy.arange(xmin, xmin + (xmax-xmin)*(1.+1.e-6), dx)
 	   for v in options.vars:
 	       if v[0] != 'r' and v[0] != 'z':
@@ -199,10 +204,10 @@ def main():
 	   nh = geq.get('nh')
 	   rmin = geq.get('rleft')
 	   rmax = rmin + geq.get('rdim')
-	   dr = (rmax - rmin)/float(nw - 1)
-	   zmin = geq.get('zmid') - geq.get('zdim')/2.0
-	   zmax = geq.get('zmid') + geq.get('zdim')/2.0
-	   dz = (zmax - zmin)/float(nh - 1)
+	   dr = old_div((rmax - rmin),float(nw - 1))
+	   zmin = geq.get('zmid') - old_div(geq.get('zdim'),2.0)
+	   zmax = geq.get('zmid') + old_div(geq.get('zdim'),2.0)
+	   dz = old_div((zmax - zmin),float(nh - 1))
 	   rs = numpy.arange(rmin, rmin + (rmax-rmin)*(1.+1.e-10), dr)
 	   zs = numpy.arange(zmin, zmin + (zmax-zmin)*(1.+1.e-10), dz)
 	   pylab.figure()

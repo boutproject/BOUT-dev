@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 
 # Generate MMS solutions for a tokamak geometry
 
@@ -24,9 +26,9 @@ ZMAX = 1
 
 # Turn solution into real x and z coordinates
 # NOTE: Z is shifted, so y is now the parallel coordinate
-zShift = shape.zShift.subs(x, metric.x/metric.Lx)
-sinty = shape.sinty.subs(x, metric.x/metric.Lx)
-replace = [ (x, metric.x/metric.Lx), (z, metric.z / ZMAX + zShift) ]
+zShift = shape.zShift.subs(x, old_div(metric.x,metric.Lx))
+sinty = shape.sinty.subs(x, old_div(metric.x,metric.Lx))
+replace = [ (x, old_div(metric.x,metric.Lx)), (z, old_div(metric.z, ZMAX) + zShift) ]
 
 drive = drive.subs(replace)
 advect = advect.subs(replace)

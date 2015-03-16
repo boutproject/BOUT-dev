@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 # Adjusts Jpar0 to get force balance in reduced MHD models
 # i.e. the equilibrium terms in the vorticity equation: 
 #
@@ -30,7 +32,7 @@ import sys
 
 def grad_par( var, mesh):
   dtheta = 2.*numpy.pi / numpy.float(numpy.sum(mesh.npol))
-  return (mesh.Bpxy / (mesh.Bxy * mesh.hthe)) * DDY(var, mesh)*dtheta / mesh.dy
+  return (old_div(mesh.Bpxy, (mesh.Bxy * mesh.hthe))) * DDY(var, mesh)*dtheta / mesh.dy
  
 
 def adjust_jpar( grid, smoothp=None, jpar=None, noplot=None):
@@ -72,7 +74,7 @@ def adjust_jpar( grid, smoothp=None, jpar=None, noplot=None):
     
   #; Calculate B^2 Grad_par(Jpar0)
   
-    gj = data.Bxy**2 * grad_par(data.jpar0/data.Bxy, data)
+    gj = data.Bxy**2 * grad_par(old_div(data.jpar0,data.Bxy), data)
 
   
   #; Generate Jpar0 by integrating kp (Pfirsch-Schluter current)
@@ -114,7 +116,7 @@ def adjust_jpar( grid, smoothp=None, jpar=None, noplot=None):
         if (w != 0) and period != None :
       # Crosses midplane
       
-            dj_b = dj[xi] / data.Bxy[xi,mid_ind]
+            dj_b = old_div(dj[xi], data.Bxy[xi,mid_ind])
             jpar[xi,yi] = jpar[xi,yi] + dj_b * data.Bxy[xi,yi]
      
         if last==1 : break

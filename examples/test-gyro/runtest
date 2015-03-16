@@ -6,6 +6,7 @@
 
 # Variables to compare
 from __future__ import print_function
+from builtins import str
 vars = ['pade1', 'pade2']
   
 tol = 1e-5                  # Absolute tolerance

@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 # Tokamak grid generator
 # ======================
 # 
@@ -163,8 +166,8 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
                 btr = numpy.interp(f, fpsi[0,:], fpsi[1,:])
     
       
-            bp[i] = numpy.sqrt(dfdr**2 + dfdz**2) / numpy.interp(ri[i], numpy.arange(R.size).astype(float), R)
-            bt[i] = numpy.abs( btr / numpy.interp( ri[i], numpy.arange(R.size).astype(float),R ))
+            bp[i] = old_div(numpy.sqrt(dfdr**2 + dfdz**2), numpy.interp(ri[i], numpy.arange(R.size).astype(float), R))
+            bt[i] = numpy.abs( old_div(btr, numpy.interp( ri[i], numpy.arange(R.size).astype(float),R )))
      
         interp_data.method = m
         b = numpy.sqrt(bt**2 + bp**2)
@@ -206,8 +209,8 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
     
     
         a = yd*2.
-        b = (2.*yu - a) / fn
-        c = d/fn - a - 0.5*b*fn
+        b = old_div((2.*yu - a), fn)
+        c = old_div(d,fn) - a - 0.5*b*fn
                 
         dloc =  ydown_dist + a*i + 0.5*b*i**2 + c*(i - numpy.sin(2.*numpy.pi*i / fn)*fn/(2.*numpy.pi))
         
@@ -265,7 +268,7 @@ def grid_region ( interp_data, R, Z,
         nin = sind
     else:
     # Starting position between surfaces
-        n = numpy.size(ri)/2
+        n = old_div(numpy.size(ri),2)
         out=local_gradient (interp_data, ri[n], zi[n], status=0, f=f0)
         status=out.status
         f0=out.f[0][0]
@@ -670,7 +673,7 @@ def create_grid( F, R, Z, in_settings, critical,
 
 
     # Create a starting surface
-    sind = numpy.int(nrad / 2)
+    sind = numpy.int(old_div(nrad, 2))
     start_f = fvals[sind]
     
 
@@ -689,7 +692,7 @@ def create_grid( F, R, Z, in_settings, critical,
     yy=[v[:,1]]
     
     if numpy.shape(vn)[0] > 1:
-        for i in xrange(1,numpy.shape(vn)[0]):
+        for i in range(1,numpy.shape(vn)[0]):
             v = p[i].vertices
             vn[i]=numpy.shape(v)[0]
             xx.append(v[:,0])
@@ -795,7 +798,7 @@ def create_grid( F, R, Z, in_settings, critical,
     # Get other useful variables
     psixy = numpy.zeros((nrad, npol))
     for i in range (0, npol) :
-        psixy[:,i] = (fvals - faxis)/fnorm # to get normalised psi
+        psixy[:,i] = old_div((fvals - faxis),fnorm) # to get normalised psi
     
     # Calculate magnetic field components
     dpsidR = numpy.zeros((nrad, npol))
@@ -812,8 +815,8 @@ def create_grid( F, R, Z, in_settings, critical,
             dfdr=out.dfdr[0][0]
             dfdz=out.dfdz[0][0]
     # dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-            dpsidR[i,j] = dfdr/numpy.interp(a.rixy[i,j], numpy.arange(R.size).astype(float),numpy.gradient(R)) 
-            dpsidZ[i,j] = dfdz/numpy.interp(a.zixy[i,j], numpy.arange(Z.size).astype(float),numpy.gradient(Z)) 
+            dpsidR[i,j] = old_div(dfdr,numpy.interp(a.rixy[i,j], numpy.arange(R.size).astype(float),numpy.gradient(R))) 
+            dpsidZ[i,j] = old_div(dfdz,numpy.interp(a.zixy[i,j], numpy.arange(Z.size).astype(float),numpy.gradient(Z))) 
                  
 
     # Set topology to connect in the core
@@ -872,7 +875,7 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     if include_out==None:
         m = m + 0.5
  
-    x = x / m 
+    x = old_div(x, m) 
   
 
     if in_dp==None and out_dp==None :
@@ -884,12 +887,12 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 
     if in_dp != None and out_dp != None :
     # Fit to dist = a*i^3 + b*i^2 + c*i
-        c = in_dp/norm
-        b = 3.*(1. - c) - out_dp/norm + c
+        c = old_div(in_dp,norm)
+        b = 3.*(1. - c) - old_div(out_dp,norm) + c
         a = 1. - c - b
     elif in_dp != None :
     # Only inner set
-        c = in_dp/norm
+        c = old_div(in_dp,norm)
         a = 0.5*(c-1.)
         b = 1. - c - a
     
@@ -899,9 +902,9 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     else:
     # Only outer set. Used in PF region
     # Fit to (1-b)*x^a + bx for fixed b
-        df = out_dp / norm
+        df = old_div(out_dp, norm)
         b = 0.25 < df  # Make sure a > 0
-        a = (df - b) / (1. - b)
+        a = old_div((df - b), (1. - b))
         vals = pin + (pout - pin)*( (1.-b)*x^a + b*x )
         return vals
   
@@ -922,7 +925,7 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 #
 
 def int_func(**kwargs):
-    if kwargs.iteritems() == 1 :
+    if iter(list(kwargs.items())) == 1 :
         f = kwargs.xin
         x = numpy.arrange(numpy.size(f))*1.
     else:
@@ -942,7 +945,7 @@ def int_func(**kwargs):
          
     else:
      
-        n2 = numpy.int(n/2)
+        n2 = numpy.int(old_div(n,2))
      
         g[0] = 0.0
         for i in range (n2, n) :

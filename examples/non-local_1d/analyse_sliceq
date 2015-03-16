@@ -5,6 +5,10 @@
 # 
 
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -31,14 +35,14 @@ print(" ")
 print("data_path is",data_path)
 
 localminq=0
-for i in range(length/2-1,0,-1):
+for i in range(old_div(length,2)-1,0,-1):
 	test=q[slice_index,0,i,0]
 	if test>localminq:
 		break
 	localminq=test
 
 localmaxq=0
-for i in range(length/2+1,length):
+for i in range(old_div(length,2)+1,length):
 	test=q[slice_index,0,i,0]
 	if test<localmaxq:
 		break

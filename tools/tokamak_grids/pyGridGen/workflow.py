@@ -1,3 +1,7 @@
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from past.utils import old_div
 #import matplotlib
 #matplotlib.use('Qt4Agg')
 #from pylab import *
@@ -8,7 +12,7 @@ import create_grid
 from process_grid import process_grid
 from analyse_equil_3 import analyse_equil
 from saveobject import saveobject
-import cPickle as pickle 
+import pickle as pickle 
 from pylab import figure, show, draw, plot
 from read_geqdsk import read_geqdsk
 
@@ -36,7 +40,7 @@ plot(g.xlim,g.ylim,'g-')
 draw()
 
 
-npsigrid=numpy.arange(numpy.size(g.pres)).astype(float)/(numpy.size(g.pres)-1)
+npsigrid=old_div(numpy.arange(numpy.size(g.pres)).astype(float),(numpy.size(g.pres)-1))
 
 #fpsi = numpy.zeros((2, numpy.size(fpol)), numpy.float64)
 #fpsi[0,:] = (simagx + npsigrid * ( sibdry -simagx ))

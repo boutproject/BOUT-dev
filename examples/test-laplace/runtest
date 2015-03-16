@@ -6,6 +6,7 @@
 
 # Variables to compare
 from __future__ import print_function
+from builtins import str
 vars = ['flag0', 'flag3', 'flagis', 'flagos',
         'flag0a', 'flag3a', 'flagisa', 'flagosa',
         'flag0ac', 'flag3ac','flagisac', 'flagosac',

@@ -3,6 +3,7 @@
 # Convert an ELITE .eqin file to a NetCDF equilibrium file
 
 from __future__ import print_function
+from builtins import next
 try:
     import sys
 
@@ -213,7 +214,7 @@ try:
     of.write("nx", npsi)
     of.write("ny", npol)
 
-    for on, vn in vnames.iteritems():
+    for on, vn in vnames.items():
         try:
             of.write(on, var[vn])
         except KeyError:

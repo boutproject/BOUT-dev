@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 from bunch import Bunch
 import numpy
 from support import deriv
@@ -41,7 +44,7 @@ def dct2dslow( fun, inverse=None):
                numpy.dot( numpy.cos(iu*numpy.float_(numpy.pi)*(2*numpy.arange(nx).astype(float)+1)/(2*nx)) , numpy.cos(jv*numpy.float_(numpy.pi)*(2*numpy.arange(ny).astype(float)+1)/(2*ny))) )
       
 
-        fsig *= 2/numpy.sqrt(numpy.float_(nx*ny))
+        fsig *= old_div(2,numpy.sqrt(numpy.float_(nx*ny)))
         fsig[0,:] *= numpy.sqrt(numpy.float_(0.5))
         fsig[:,0] *= numpy.sqrt(numpy.float_(0.5))
         
@@ -69,7 +72,7 @@ def dct2dslow( fun, inverse=None):
                    numpy.dot( numpy.cos(numpy.arange(nx).astype(float)*numpy.float_(numpy.pi)*(2*ix+1)/(2*nx)) , numpy.cos(numpy.arange(ny).astype(float)*numpy.float_(numpy.pi)*(2*jy+1)/(2*ny)) ) )
 
 
-        sig *= 2/numpy.sqrt(numpy.float_(nx*ny))
+        sig *= old_div(2,numpy.sqrt(numpy.float_(nx*ny)))
 
 
         return sig
@@ -99,8 +102,8 @@ def pdiff ( nr, nz, r, z, f):
             dfdz=g.dfdz[0][0]
 
             # dfd* are derivatives wrt the indices. Need to divide by dr/di etc
-            dfdR[i,j] = dfdr/drdi[i]
-            dfdZ[i,j] = dfdz/dzdi[j]
+            dfdR[i,j] = old_div(dfdr,drdi[i])
+            dfdZ[i,j] = old_div(dfdz,dzdi[j])
     
     
     return Bunch(r=dfdR, z=dfdZ, phi=0.0)
@@ -138,7 +141,7 @@ def curlcyl ( vecR, vecV, gradVr, gradVphi, gradVz ):
 #-------------------------------------------------
 
 
-    curl=Bunch(r=-gradVphi.z, phi=gradVr.z-gradVz.r, z=vecV.phi/vecR.r+gradVphi.r)
+    curl=Bunch(r=-gradVphi.z, phi=gradVr.z-gradVz.r, z=old_div(vecV.phi,vecR.r)+gradVphi.r)
 #
 #
 #
@@ -202,13 +205,13 @@ def rz_curvature( mesh, rixy=None, zixy=None ):
         Z2D[i,:] = mesh.Z
      
 
-    Br = grad_psi.Z / R2D
-    Bz = -grad_psi.R / R2D
+    Br = old_div(grad_psi.Z, R2D)
+    Bz = old_div(-grad_psi.R, R2D)
 
     Bphi = numpy.zeros((nr, nz))
     for i in range (nr) :
         for j in range (nz):
-            psinorm = (mesh.psi[i,j] - mesh.simagx) / (mesh.sibdry - mesh.simagx)
+            psinorm = old_div((mesh.psi[i,j] - mesh.simagx), (mesh.sibdry - mesh.simagx))
             if psinorm > 1. :
                 fpol = mesh.fpol[numpy.size(mesh.fpol)-1]
             else:
@@ -218,25 +221,25 @@ def rz_curvature( mesh, rixy=None, zixy=None ):
 
                 #fpol = SPLINE(mesh.npsigrid, mesh.fpol, psinorm)
              
-            Bphi[i,j] = fpol / mesh.R[i]
+            Bphi[i,j] = old_div(fpol, mesh.R[i])
   
     # Total B field
     Bpol = numpy.sqrt(Br**2 + Bz**2)
     B = numpy.sqrt(Bphi**2 + Bpol**2)
   
     # DCT method produces very oscillatory solution
-    grad_Br_unit   = pdiff_xy(nr, nz, mesh.R, mesh.Z, Br/B)
-    grad_Bz_unit   = pdiff_xy(nr, nz, mesh.R, mesh.Z, Bz/B)
-    grad_Bphi_unit = pdiff_xy(nr, nz, mesh.R, mesh.Z, Bphi/B)
+    grad_Br_unit   = pdiff_xy(nr, nz, mesh.R, mesh.Z, old_div(Br,B))
+    grad_Bz_unit   = pdiff_xy(nr, nz, mesh.R, mesh.Z, old_div(Bz,B))
+    grad_Bphi_unit = pdiff_xy(nr, nz, mesh.R, mesh.Z, old_div(Bphi,B))
   
     vecR=Bunch(r=R2D,z=Z2D)
-    vecB_unit=Bunch(r=Br/B,z=Bz/B,phi=Bphi/B)
+    vecB_unit=Bunch(r=old_div(Br,B),z=old_div(Bz,B),phi=old_div(Bphi,B))
   
     Bpxy = Bpol
     Rxy = R2D
   
     # Get grad phi
-    grad_Phi=Bunch(r=0.0,z=0.0,phi=1./Rxy) #-gradient of the toroidal angle
+    grad_Phi=Bunch(r=0.0,z=0.0,phi=old_div(1.,Rxy)) #-gradient of the toroidal angle
   
     # Curl of unit b vector
     curlb_unit = curlcyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)
@@ -248,8 +251,8 @@ def rz_curvature( mesh, rixy=None, zixy=None ):
   
     # grad Theta (without factor of 1/hthe)
     grad_Theta = xprod(grad_Phi, grad_psi)
-    grad_Theta.r   = grad_Theta.r   / Bpxy
-    grad_Theta.z   = grad_Theta.z   / Bpxy
+    grad_Theta.r   = old_div(grad_Theta.r, Bpxy)
+    grad_Theta.z   = old_div(grad_Theta.z, Bpxy)
 
     #-calculate bxcurvec dotted with grad_psi, grad_theta, and grad_phi
     bxcv = Bunch(psi=dotprod(bxcurvec,grad_psi),  

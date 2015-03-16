@@ -4,6 +4,10 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from boututils import shell, launch, plotdata
 from boutdata import collect
 import numpy as np
@@ -48,7 +52,7 @@ if end_index<0:
 alpha0 = 1
 alphaoveralpha0 = []
 for i in range(end_index):
-	alphaoveralpha0.append(f[i]/alpha0)
+	alphaoveralpha0.append(old_div(f[i],alpha0))
 	print(i,alphaoveralpha0[i])
 
 # Make plot

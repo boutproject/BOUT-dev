@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import re
 import numpy
 
@@ -15,7 +17,7 @@ The official document describing a-eqdsk files:
 http://fusion.gat.com/THEORY/efit/a_eqdsk.html
 """
 
-class Aeqdsk:
+class Aeqdsk(object):
    
       def __init__(self):
 	"""
@@ -424,7 +426,7 @@ class Aeqdsk:
 	return self.data
 
       def getAllVars(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
       def get(self, varname): 
 	return self.data[varname]

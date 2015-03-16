@@ -6,6 +6,7 @@
 
 # Variables to compare
 from __future__ import print_function
+from builtins import str
 vars = ['var0_2D', 'var0_3D', 
         'var1_2D', 'var1_3D', 
         'var2_2D', 'var2_3D', 

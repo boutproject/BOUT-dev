@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from boututils import file_import, surface_average, showdata
 from boutdata import collect
@@ -38,7 +41,7 @@ psi0=g.get('psi_axis')
 psix=g.get('psi_bndry')
 
 xarr = psixy[:,0]
-xarr = (xarr - psi0) / (-psi0 + psix) #for this grid
+xarr = old_div((xarr - psi0), (-psi0 + psix)) #for this grid
     
     
 fig=figure()    

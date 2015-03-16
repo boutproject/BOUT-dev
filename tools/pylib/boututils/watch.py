@@ -3,6 +3,7 @@ Routines for watching files for changes
 
 """
 from __future__ import print_function
+from builtins import zip
 
 import time
 import os

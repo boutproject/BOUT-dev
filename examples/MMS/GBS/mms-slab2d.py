@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 #
 # Generate the test case using SymPy
 #
@@ -47,12 +49,12 @@ AA    = 2     # Ion atomic mass
 # 
 
 mi_me = AA * 1.67262158e-27 / 9.109e-31
-beta_e = qe*Tnorm*Nnorm / (Bnorm**2/mu0)
+beta_e = qe*Tnorm*Nnorm / (old_div(Bnorm**2,mu0))
 
 # Normalisation parameters
 Cs0      = sqrt(qe*Tnorm / (AA*Mp))
 Omega_ci = qe*Bnorm / (AA*Mp)
-rho_s0   = Cs0 / Omega_ci
+rho_s0   = old_div(Cs0, Omega_ci)
 
 # Define a metric
 
@@ -93,16 +95,16 @@ metric = Metric() # Identity
 Lx = dx * (nx - 2.*MXG) # Size of the X domain
 
 metric.g11 = (Rxy*Bpxy)**2
-metric.g22 = 1.0 / (hthe**2)
-metric.g33 = (sinty**2)*metric.g11 + (Bxy**2)/metric.g11
+metric.g22 = old_div(1.0, (hthe**2))
+metric.g33 = (sinty**2)*metric.g11 + old_div((Bxy**2),metric.g11)
 metric.g12 = 0.0
 metric.g13 = -sinty*metric.g11
 metric.g23 = -sbp*Btxy/(hthe*Bpxy*Rxy)
   
-metric.J = hthe / Bpxy
+metric.J = old_div(hthe, Bpxy)
 B = metric.B = Bxy
   
-metric.g_11 = 1.0/metric.g11 + ((sinty*Rxy)**2)
+metric.g_11 = old_div(1.0,metric.g11) + ((sinty*Rxy)**2)
 metric.g_22 = (Bxy*hthe/Bpxy)**2
 metric.g_33 = Rxy*Rxy
 metric.g_12 = sbp*Btxy*hthe*sinty*Rxy/Bpxy
@@ -123,7 +125,7 @@ psi = sin(pi*x) *(0.5*x - cos(7*t)*sin(3.*x**2 - 3*z)) # Must satisfy Dirichlet 
 
 # Substitute to get in terms of actual x,y,z coordinates
 
-replace = [ (x, metric.x / Lx), (z, metric.z / ZMAX) ]
+replace = [ (x, old_div(metric.x, Lx)), (z, old_div(metric.z, ZMAX)) ]
 
 Ne    = Ne.subs(replace)
 Te    = Te.subs(replace)
@@ -147,7 +149,7 @@ nu = 0.0
 
 dNedt = (
     - bracket(phi, Ne, metric)
-    + (2/B) * ( C(Pe) - Ne*C(phi) )
+    + (old_div(2,B)) * ( C(Pe) - Ne*C(phi) )
     )
 
 if parallel:
@@ -157,12 +159,12 @@ if parallel:
 
 dTedt = (
     - bracket(phi, Te, metric)
-    + (4./3)*(Te/B) * ( (7./2)*C(Te) + (Te/Ne)*C(Ne) - C(phi) )
+    + (old_div(4.,3))*(old_div(Te,B)) * ( (old_div(7.,2))*C(Te) + (old_div(Te,Ne))*C(Ne) - C(phi) )
     )
 
 if parallel:
     dTedt -= Vpar_Grad_par(Ve, Te, metric);
-    dTedt += (2./3.)*Te*( 0.71*Grad_par(Vi, metric) - 1.71*Grad_par(Ve, metric) + 0.71*(Vi-Ve)*Grad_par(log(Ne), metric))
+    dTedt += (old_div(2.,3.))*Te*( 0.71*Grad_par(Vi, metric) - 1.71*Grad_par(Ve, metric) + 0.71*(Vi-Ve)*Grad_par(log(Ne), metric))
 
 ### Vorticity
 
@@ -183,7 +185,7 @@ if parallel:
     dVePsidt = (
         - bracket(phi, Ve, metric)
         - Vpar_Grad_par(Ve, Ve, metric)
-        - mi_me*(2./3.)*Grad_par(Ge, metric)
+        - mi_me*(old_div(2.,3.))*Grad_par(Ge, metric)
         - mi_me*nu*(Ve - Vi)
         + mi_me*Grad_par(phi, metric)
         - mi_me*(  Te*Grad_par(log(Ne), metric) + 1.71*Grad_par(Te, metric) )
@@ -197,7 +199,7 @@ if parallel:
     dVidt = (
         - bracket(phi, Vi, metric)
         - Vpar_Grad_par(Vi, Vi, metric)
-        - (2./3.)*Grad_par(Gi, metric)
+        - (old_div(2.,3.))*Grad_par(Gi, metric)
         - (Grad_par(Te, metric) + Te*Grad_par(log(Ne), metric))
         )
 else:
@@ -251,15 +253,15 @@ print("\n\nDelp2 phi = ", Delp2(phi, metric).subs(replace))
 
 print("\n\nDensity terms:")
 print("  bracket : ", (-bracket(phi, Ne, metric)).subs(replace), "\n")
-print("  (2/B)*C(Pe) : ", ((2/B) * C(Pe)).subs(replace), "\n")
-print("  (2/B)*Ne*C(phi) : ", ((2/B)*Ne*C(phi)).subs(replace), "\n")
+print("  (2/B)*C(Pe) : ", ((old_div(2,B)) * C(Pe)).subs(replace), "\n")
+print("  (2/B)*Ne*C(phi) : ", ((old_div(2,B))*Ne*C(phi)).subs(replace), "\n")
 
 
 print("\n\nTemperature terms:")
 print("  bracket : ", (- bracket(phi, Te, metric)).subs(replace))
-print("  C(Te)   : ", ((4./3)*(Te/B) *(7./2)*C(Te)).subs(replace))
-print("  (Te/Ne)*C(Ne) : ", ((4./3)*(Te/B) *(Te/Ne)*C(Ne)).subs(replace))
-print("  C(phi)  : ", (-(4./3)*(Te/B) * C(phi)).subs(replace))
+print("  C(Te)   : ", ((old_div(4.,3))*(old_div(Te,B)) *(old_div(7.,2))*C(Te)).subs(replace))
+print("  (Te/Ne)*C(Ne) : ", ((old_div(4.,3))*(old_div(Te,B)) *(old_div(Te,Ne))*C(Ne)).subs(replace))
+print("  C(phi)  : ", (-(old_div(4.,3))*(old_div(Te,B)) * C(phi)).subs(replace))
 
 
 

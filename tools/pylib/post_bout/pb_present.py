@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import str
+from builtins import range
 from .pb_draw import LinResDraw,subset
 from .pb_corral import LinRes
 from .pb_nonlinear import NLinResDraw

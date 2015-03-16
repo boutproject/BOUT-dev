@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy
 from scipy.integrate import simps
 import copy
@@ -10,13 +13,13 @@ def deriv(y, x=None):
     
     if x==None :
   
-        dy[0] = (-3*y[0] + 4*y[1] - y[2]) / 2
+        dy[0] = old_div((-3*y[0] + 4*y[1] - y[2]), 2)
     
         for i in range (1,n-1):        
-            dy[i] = (y[i+1] - y[i-1]) / 2 #where i = 1...N-2
+            dy[i] = old_div((y[i+1] - y[i-1]), 2) #where i = 1...N-2
 
         
-        dy[n-1] = (3*y[n-1] - 4*y[n-2] + y[n-3]) / 2
+        dy[n-1] = old_div((3*y[n-1] - 4*y[n-2] + y[n-3]), 2)
 
 
     else:
@@ -40,9 +43,9 @@ def deriv(y, x=None):
             
             
             dy[i] = (
-                    y[i+1] * (x12 / (x01*x02)) +   #Middle points
-                    y[i] * (1./x12 - 1./x01) -  
-                    y[i-1] * (x01 / (x02 * x12))
+                    y[i+1] * (old_div(x12, (x01*x02))) +   #Middle points
+                    y[i] * (old_div(1.,x12) - old_div(1.,x01)) -  
+                    y[i-1] * (old_div(x01, (x02 * x12)))
                     )
                     
                     
@@ -92,7 +95,7 @@ def int_func( xin, fin=None, simple=None):
          
     else:
      
-        n2 = numpy.int(n/2)
+        n2 = numpy.int(old_div(n,2))
      
         g[0] = 0.0
         for i in range (n2, n) :
@@ -118,7 +121,7 @@ def fft_deriv ( var ):
                  
     n = numpy.size(var)
 
-    F = numpy.fft.fft(var)/n  #different definition between IDL - python
+    F = old_div(numpy.fft.fft(var),n)  #different definition between IDL - python
                  
     imag = numpy.complex(0.0, 1.0)
     imag = numpy.complex_(imag)
@@ -128,15 +131,15 @@ def fft_deriv ( var ):
                 
     if (n % 2) == 0 :
       # even number
-        for i in range (1, n/2) :
+        for i in range (1, old_div(n,2)) :
           a = imag*2.0*numpy.pi*numpy.float(i)/numpy.float(n)
           F[i] = F[i] * a         # positive frequencies
           F[n-i] = - F[n-i] * a   # negative frequencies
            
-        F[n/2] = F[n/2] * (imag*numpy.pi)
+        F[old_div(n,2)] = F[old_div(n,2)] * (imag*numpy.pi)
     else:
       # odd number
-        for i in range (1, (n-1)/2+1) :
+        for i in range (1, old_div((n-1),2)+1) :
           a = imag*2.0*numpy.pi*numpy.float(i)/numpy.float(n)
           F[i] = F[i] * a
           F[n-i] = - F[n-i] * a 

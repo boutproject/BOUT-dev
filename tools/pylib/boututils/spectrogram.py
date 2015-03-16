@@ -30,6 +30,9 @@
 
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 
 try:
 
@@ -48,16 +51,16 @@ def spectrogram(data, dx, sigma, clip=1.0):
     
     if clip: # clip to 6 std dev on either side for speed
 	
-	n_clipped = int(n/clip)
+	n_clipped = int(old_div(n,clip))
 	
-	spectra = zeros((n,n_clipped/2))
+	spectra = zeros((n,old_div(n_clipped,2)))
 
 	omega = fftpack.fftfreq(n_clipped, dx)
-	omega = omega[0:n_clipped/2]
+	omega = omega[0:old_div(n_clipped,2)]
       
 	for i in range(n):
-	    beg = i-n_clipped/2
-	    end = i+n_clipped/2-1
+	    beg = i-old_div(n_clipped,2)
+	    end = i+old_div(n_clipped,2)-1
 	    if beg < 0:
 		end = end-beg
 		beg = 0
@@ -66,20 +69,20 @@ def spectrogram(data, dx, sigma, clip=1.0):
 	        beg = end - n_clipped + 1 
 	    gaussian = 1.0 / (sigma * 2.0 * pi) * exp(-0.5 * power(( xx[beg:end] - xx[i] ),2.0) / (2.0 * sigma) )
 	    fftt = abs(fftpack.fft(data[beg:end] * gaussian))
-	    fftt = fftt[:n_clipped/2]
+	    fftt = fftt[:old_div(n_clipped,2)]
 	    spectra[i,:] = fftt
 	    
     else:
 
-	spectra = zeros((n,n/2))
+	spectra = zeros((n,old_div(n,2)))
 	
 	omega = fftpack.fftfreq(n, dx)
-	omega = omega[0:n/2]
+	omega = omega[0:old_div(n,2)]
       
 	for i in range(n):
 	    gaussian = 1.0 / (sigma * 2.0 * pi) * exp(-0.5 * power(( xx - xx[i] ),2.0) / (2.0 * sigma) )
 	    fftt = abs(fftpack.fft(data * gaussian))
-	    fftt = fftt[:n/2]
+	    fftt = fftt[:old_div(n,2)]
 	    spectra[i,:] = fftt
     
     return (transpose(spectra), omega)
@@ -94,10 +97,10 @@ def test_spectrogram(n, d, s):
   """
     Function used to test the performance of spectrogram with various values of sigma
   """
-  xx = arange(n)/d
+  xx = old_div(arange(n),d)
   test_data = sin(2.0*pi*512.0*xx * ( 1.0 + 0.005*cos(xx*50.0))) + 0.5*exp(xx)*cos(2.0*pi*100.0*power(xx,2))
   test_sigma = s
-  dx = 1.0/d
+  dx = old_div(1.0,d)
   
   s1 = test_sigma*0.1
   s2 = test_sigma

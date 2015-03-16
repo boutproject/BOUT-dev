@@ -8,6 +8,10 @@
 # Ben Dudson, University of York, Nov 2009
 
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import next
+from past.utils import old_div
 try:
     import sys
 
@@ -223,7 +227,7 @@ else:
     Bpol = np.sqrt(Br**2 + Bz**2)
 
 # Calculate toroidal field
-Btor = fnorm / xnorm
+Btor = old_div(fnorm, xnorm)
 
 # Output file
 print("Writing data to '"+outfile+"'")

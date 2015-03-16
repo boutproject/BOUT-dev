@@ -36,7 +36,7 @@ def grid2bout(input, output="bout.grd.nc"):
     vars = {}
 
     # Check the required variables
-    for k,v in dimensions.iteritems():
+    for k,v in list(dimensions.items()):
         nd = infile.ndims(k)
         if nd == None:
             print("ERROR: Variable missing: " + k)

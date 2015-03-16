@@ -5,6 +5,9 @@ Derivatives and integrals of periodic and non-periodic functions
 B.Dudson, University of York, Nov 2009
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 
 try:
     from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
@@ -51,12 +54,12 @@ def deriv(*args, **kwargs):
         f[0] = 0.0 # Zero constant term
         if n % 2 == 0:
             # Even n
-            for i in arange(1,n/2):
+            for i in arange(1,old_div(n,2)):
                 f[i] *= 2.0j * pi * float(i)/float(n)
             f[-1] = 0.0 # Nothing from Nyquist frequency
         else:
             # Odd n
-            for i in arange(1,(n-1)/2 + 1):
+            for i in arange(1,old_div((n-1),2) + 1):
                 f[i] *= 2.0j * pi * float(i)/float(n)
         return irfft(f)
     else:
@@ -65,13 +68,13 @@ def deriv(*args, **kwargs):
         if n > 2:
             for i in arange(1, n-1):
                 # 2nd-order central difference in the middle of the domain
-                result[i] = (var[i+1] - var[i-1]) / (x[i+1] - x[i-1])
+                result[i] = old_div((var[i+1] - var[i-1]), (x[i+1] - x[i-1]))
             # Use left,right-biased stencils on edges (2nd order)
-            result[0]   = (-1.5*var[0]   + 2.*var[1]   - 0.5*var[2]) / (x[1] - x[0])
-            result[n-1] =  (1.5*var[n-1] - 2.*var[n-2] + 0.5*var[n-3]) / (x[n-1] - x[n-2])
+            result[0]   = old_div((-1.5*var[0]   + 2.*var[1]   - 0.5*var[2]), (x[1] - x[0]))
+            result[n-1] =  old_div((1.5*var[n-1] - 2.*var[n-2] + 0.5*var[n-3]), (x[n-1] - x[n-2]))
         elif n == 2:
             # Just 1st-order difference for both points
-            result[0] = result[1] = (var[1] - var[0])/(x[1] - x[0])
+            result[0] = result[1] = old_div((var[1] - var[0]),(x[1] - x[0]))
         elif n == 1:
             result[0] = 0.0
         return result
@@ -97,26 +100,26 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
   if noise_suppression:  
     if s[axis] < 11:
       raise RuntimeError("Data too small to use 11th order method")
-    tmp = array([-1.0/512.0,-8.0/512.0,-27.0/512.0,-48.0/512.0,-42.0/512.0,0.0,42.0/512.0,48.0/512.0,27.0/512.0,8.0/512.0,1.0/512.0])
+    tmp = array([old_div(-1.0,512.0),old_div(-8.0,512.0),old_div(-27.0,512.0),old_div(-48.0,512.0),old_div(-42.0,512.0),0.0,old_div(42.0,512.0),old_div(48.0,512.0),old_div(27.0,512.0),old_div(8.0,512.0),old_div(1.0,512.0)])
   else:
     if s[axis] < 9:
       raise RuntimeError("Data too small to use 9th order method")
-    tmp = array([1.0/280.0,-4.0/105.0,1.0/5.0,-4.0/5.0,0.0,4.0/5.0,-1.0/5.0,4.0/105.0,-1.0/280.0])       
+    tmp = array([old_div(1.0,280.0),old_div(-4.0,105.0),old_div(1.0,5.0),old_div(-4.0,5.0),0.0,old_div(4.0,5.0),old_div(-1.0,5.0),old_div(4.0,105.0),old_div(-1.0,280.0)])       
   
-  N = (tmp.size-1)/2
+  N = old_div((tmp.size-1),2)
   if axis==1:
     W = transpose(tmp[:,None])
     data_deriv = convolve(data,W,mode='same')/dx*-1.0
     for i in range(s[0]):
-      data_deriv[i,0:N-1] = deriv(data[i,0:N-1])/dx
-      data_deriv[i,s[1]-N:] = deriv(data[i,s[1]-N:])/dx
+      data_deriv[i,0:N-1] = old_div(deriv(data[i,0:N-1]),dx)
+      data_deriv[i,s[1]-N:] = old_div(deriv(data[i,s[1]-N:]),dx)
     
   elif axis==0:
     W = tmp[:,None]
     data_deriv = convolve(data,W,mode='same')/dx*-1.0
     for i in range(s[1]):
-      data_deriv[0:N-1,i] = deriv(data[0:N-1,i])/dx
-      data_deriv[s[0]-N:,i] = deriv(data[s[0]-N:,i])/dx
+      data_deriv[0:N-1,i] = old_div(deriv(data[0:N-1,i]),dx)
+      data_deriv[s[0]-N:,i] = old_div(deriv(data[s[0]-N:,i]),dx)
   else:
     data_deriv = zeros((s[0],s[1],2))
     if len(dx)==1:
@@ -125,14 +128,14 @@ def deriv2D(data,axis=-1,dx=1.0,noise_suppression=True):
     W = tmp[:,None]#transpose(multiply(tmp,ones((s[1],tmp.size))))
     data_deriv[:,:,0] = convolve(data,W,mode='same')/dx[0]*-1.0
     for i in range(s[1]):
-      data_deriv[0:N-1,i,0]  =  deriv(data[0:N-1,i])/dx[0]
-      data_deriv[s[0]-N:s[0]+1,i,0] = deriv(data[s[0]-N:s[0]+1,i])/dx[0]
+      data_deriv[0:N-1,i,0]  =  old_div(deriv(data[0:N-1,i]),dx[0])
+      data_deriv[s[0]-N:s[0]+1,i,0] = old_div(deriv(data[s[0]-N:s[0]+1,i]),dx[0])
     
     W = transpose(tmp[:,None])#multiply(tmp,ones((s[0],tmp.size)))
     data_deriv[:,:,1] = convolve(data,W,mode='same')/dx[1]*-1.0
     for i in range(s[0]):
-      data_deriv[i,0:N-1,1] = deriv(data[i,0:N-1])/dx[1]
-      data_deriv[i,s[1]-N:s[1]+1,1] = deriv(data[i,s[1]-N:s[1]+1])/dx[1]
+      data_deriv[i,0:N-1,1] = old_div(deriv(data[i,0:N-1]),dx[1])
+      data_deriv[i,s[1]-N:s[1]+1,1] = old_div(deriv(data[i,s[1]-N:s[1]+1]),dx[1])
 
   return data_deriv
 
@@ -150,12 +153,12 @@ def integrate(var, periodic=False):
         f[0] = 0.
         if n % 2 == 0:
             # Even n
-            for i in arange(1,n/2):
+            for i in arange(1,old_div(n,2)):
                 f[i] /= 2.0j * pi * float(i)/float(n)
             f[-1] = 0.0 # Nothing from Nyquist frequency
         else:
             # Odd n
-            for i in arange(1,(n-1)/2 + 1):
+            for i in arange(1,old_div((n-1),2) + 1):
                 f[i] /= 2.0j * pi * float(i)/float(n)
         return result + irfft(f)
     else:
@@ -179,7 +182,7 @@ def integrate(var, periodic=False):
                 return 3.*(f[0] + 3.*f[1] + 3.*f[2] + f[3])/8.
             elif n == 3:
                 # 4th-order Simpson's rule
-                return (f[0] + 4.*f[1] + f[2])/3.
+                return old_div((f[0] + 4.*f[1] + f[2]),3.)
             elif n == 2:
                 # 2nd-order Trapezium rule
                 return 0.5*(f[0] + f[1])
@@ -188,7 +191,7 @@ def integrate(var, periodic=False):
                 return 0.0
         # Integrate using maximum number of grid-points
         n = var.size
-        n2 = int(n/2)
+        n2 = int(old_div(n,2))
         result = zeros(n)
         for i in arange(n2, n):
             result[i] = int_total(var[0:(i+1)])
@@ -219,7 +222,7 @@ def simpson_integrate(data,dx,dy,kernel=0.0,weight=1.0):
   if len(kernel)==1:
     kernel = simpson_matrix(Nx,Ny,dx,dy)
 
-  return sum(multiply(multiply(weight,kernel),data))/sum(multiply(weight,kernel))
+  return old_div(sum(multiply(multiply(weight,kernel),data)),sum(multiply(weight,kernel)))
 
 
 def simpson_matrix(Nx,Ny,dx,dy):

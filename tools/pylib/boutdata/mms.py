@@ -3,6 +3,10 @@
 
 """
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from past.utils import old_div
+from builtins import object
 
 from sympy import symbols, cos, sin, diff, sqrt, pi, simplify, trigsimp, Wild
 
@@ -20,7 +24,7 @@ y = symbols('y')
 z = symbols('z')
 t = symbols('t')
 
-class Metric:
+class Metric(object):
     def __init__(self):
         # Create an identity metric
         self.x = symbols('x\'')
@@ -92,9 +96,9 @@ def b0xGrad_dot_Grad(phi, A, metric = identity):
     vy = metric.g_23*dpdx - metric.g_12*dpdz;
     vz = metric.g_12*dpdy - metric.g_22*dpdx;
     
-    return (+ vx*DDX(A, metric)
+    return old_div((+ vx*DDX(A, metric)
             + vy*DDY(A, metric)
-            + vz*DDZ(A, metric) ) / (metric.J*sqrt(metric.g_22))
+            + vz*DDZ(A, metric) ), (metric.J*sqrt(metric.g_22)))
 
 def Delp2(f, metric = identity, all_terms=True):
     """ Laplacian in X-Z
@@ -111,8 +115,8 @@ def Delp2(f, metric = identity, all_terms=True):
     result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
     
     if all_terms:
-        G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric))/metric.J
-        G3 = (DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric))/metric.J
+        G1 = old_div((DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric)),metric.J)
+        G3 = old_div((DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric)),metric.J)
         result += G1 * diff(f, metric.x) + G3 * diff(f, metric.z)
         
     return result
@@ -124,7 +128,7 @@ def Delp4(f, metric = identity):
     return d4fdx4 + d4fdz4
 
 def Grad_par(f, metric = identity):
-    return diff(f, metric.y) / sqrt(metric.g_22)
+    return old_div(diff(f, metric.y), sqrt(metric.g_22))
 
 def Vpar_Grad_par(v, f, metric = identity):
     return v * Grad_par(f, metric=metric)
@@ -133,7 +137,7 @@ def Laplace_par(f, metric=identity):
     """
     Div( b (b.Grad(f) ) ) = (1/J) d/dy ( J/g_22 * df/dy )
     """
-    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y) / metric.J
+    return old_div(diff( (old_div(metric.J,metric.g_22))*diff(f, metric.y), metric.y), metric.J)
 
 
 # Convert expression to string
@@ -254,7 +258,7 @@ class SimpleTokamak(object):
         print("psi width = %e" % self.psiwidth)
         
         # Integrated shear
-        self.sinty = diff(self.zShift, x) / self.psiwidth
+        self.sinty = old_div(diff(self.zShift, x), self.psiwidth)
         
         # Extra expressions to add to grid file
         self._extra = {}
@@ -282,13 +286,13 @@ class SimpleTokamak(object):
         ngy = ny
         
         # Create an x and y grid to evaluate expressions on
-        xarr = (arange(nx + 2*MXG) - MXG + 0.5) / nx
+        xarr = old_div((arange(nx + 2*MXG) - MXG + 0.5), nx)
         yarr = 2.*pi*arange(ny)/ny
         
         output.write("nx", ngx)
         output.write("ny", ngy)
         
-        dx = self.psiwidth / nx  + 0.*self.x
+        dx = old_div(self.psiwidth, nx)  + 0.*self.x
         dy = 2.*pi / ny + 0.*self.x
         
         for name, var in [ ("dx", dx),
@@ -310,7 +314,7 @@ class SimpleTokamak(object):
             
             output.write(name, values)
         
-        for name, var in self._extra.iteritems():
+        for name, var in list(self._extra.items()):
             values = zeros([ngx, ngy])
             for i, x in enumerate(xarr):
                 for j, y in enumerate(yarr):
@@ -337,25 +341,25 @@ class SimpleTokamak(object):
         # Calculate metric tensor
         
         m.g11 = (self.Rxy * self.Bpxy)**2
-        m.g22 = 1./self.hthe**2
-        m.g33 = self.sinty**2*m.g11 + self.Bxy**2/m.g11
+        m.g22 = old_div(1.,self.hthe**2)
+        m.g33 = self.sinty**2*m.g11 + old_div(self.Bxy**2,m.g11)
         m.g12 = 0.0*x
         m.g13 = -self.sinty*m.g11
-        m.g23 = -self.Btxy / (self.hthe * self.Bpxy * self.R)
+        m.g23 = old_div(-self.Btxy, (self.hthe * self.Bpxy * self.R))
         
-        m.g_11 = 1./m.g11 + (self.sinty*self.Rxy)**2
+        m.g_11 = old_div(1.,m.g11) + (self.sinty*self.Rxy)**2
         m.g_22 = (self.Bxy * self.hthe / self.Bpxy)**2
         m.g_33 = self.Rxy**2
         m.g_12 = self.Btxy*self.hthe*self.sinty*self.Rxy / self.Bpxy
         m.g_13 = self.sinty*self.Rxy**2
         m.g_23 = self.Btxy*self.hthe*self.Rxy / self.Bpxy
         
-        m.J = self.hthe / self.Bpxy
+        m.J = old_div(self.hthe, self.Bpxy)
         m.B = self.Bxy
         
         # Convert all "x" symbols from [0,1] into flux
         m.Lx = self.psiwidth
-        xsub = m.x / self.psiwidth
+        xsub = old_div(m.x, self.psiwidth)
         
         m.g11 = m.g11.subs(x, xsub)
         m.g22 = m.g22.subs(x, xsub)
@@ -414,7 +418,7 @@ class ShapedTokamak(object):
         rminx = rmin + (x-0.5)*dr
 
         # Analytical expression for R and Z coordinates as function of x and y
-        Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-x)*(dr/rmin)
+        Rxy = Rmaj - b + (rminx + b*cos(y))*cos(y + delta*sin(y)) + ss*(0.5-x)*(old_div(dr,rmin))
         Zxy = kappa * rminx * sin(y)
         
         # Toroidal magnetic field
@@ -425,9 +429,9 @@ class ShapedTokamak(object):
         # NOTE: Approximate calculation
         
         # Distance between flux surface relative to outboard midplane. 
-        expansion = (1 - (ss/rmin)*cos(y))/(1 - (ss/rmin))
+        expansion = old_div((1 - (old_div(ss,rmin))*cos(y)),(1 - (old_div(ss,rmin))))
         
-        Bpxy = Bp0 * ((Rmaj + rmin) / Rxy) / expansion
+        Bpxy = Bp0 * (old_div((Rmaj + rmin), Rxy)) / expansion
         
         # Calculate hthe
         hthe = sqrt(diff(Rxy, y)**2 + diff(Zxy, y)**2)
@@ -477,7 +481,7 @@ class ShapedTokamak(object):
         ngy = ny
         
         # Create an x and y grid to evaluate expressions on
-        xarr = (arange(nx + 2*MXG) - MXG + 0.5) / nx
+        xarr = old_div((arange(nx + 2*MXG) - MXG + 0.5), nx)
         yarr = 2.*pi*arange(ny)/ny
         
         Rxy = zeros([ngx, ngy])
@@ -521,20 +525,20 @@ class ShapedTokamak(object):
         # Calculate metric tensor
         
         m.g11 = (self.R * self.Bp)**2
-        m.g22 = 1./self.hthe**2
-        m.g33 = self.I**2*m.g11 + self.B**2/m.g11
+        m.g22 = old_div(1.,self.hthe**2)
+        m.g33 = self.I**2*m.g11 + old_div(self.B**2,m.g11)
         m.g12 = 0.0
         m.g13 = -self.I*m.g11
-        m.g23 = -self.Bt / (self.hthe * self.Bp * self.R)
+        m.g23 = old_div(-self.Bt, (self.hthe * self.Bp * self.R))
         
-        m.g_11 = 1./m.g11 + (self.I*self.R)**2
+        m.g_11 = old_div(1.,m.g11) + (self.I*self.R)**2
         m.g_22 = (self.B * self.hthe / self.Bpxy)**2
         m.g_33 = self.R**2
         m.g_12 = self.Bt*self.hthe*self.I*self.R / self.Bp
         m.g_13 = self.I*self.R**2
         m.g_23 = self.Bt*self.hthe*self.R / self.Bp
         
-        m.J = self.hthe / self.Bp
+        m.J = old_div(self.hthe, self.Bp)
         m.B = self.B
         
         return m

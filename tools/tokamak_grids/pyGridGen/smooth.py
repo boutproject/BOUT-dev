@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import numpy
 
 def SMOOTH(x,window_len=11,window='flat'):
@@ -54,7 +56,7 @@ def SMOOTH(x,window_len=11,window='flat'):
     else:
         w=eval('numpy.'+window+'(window_len)')
 
-    y=numpy.convolve(w/w.sum(),s,mode='valid')
+    y=numpy.convolve(old_div(w,w.sum()),s,mode='valid')
     return y
 
 

@@ -6,6 +6,7 @@
 
 
 from __future__ import print_function
+from builtins import str
 vars = ['a', 'b', 'c', 'd']  # Variables to compare
 tol = 1e-10                  # Absolute tolerance
 

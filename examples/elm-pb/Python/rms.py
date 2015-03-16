@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from pylab import plot, show
 from boutdata import collect
@@ -19,7 +22,7 @@ def rms(f):
             for k in range(ne):
                 ar=f[i,j,k,:]
 	        valav=np.sum(ar)
-        	tot=np.sum(np.power(ar-valav,2)/nz)
+        	tot=np.sum(old_div(np.power(ar-valav,2),nz))
                 rms[i,j,k]=np.sqrt(tot)
     return rms
         

@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 # Routines for manipulating restart files
 
 try:
@@ -67,7 +71,7 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
         print("ERROR: Old NPES is not a multiple of old NXPE")
         return False
 
-    old_nype = old_npes / old_nxpe
+    old_nype = old_div(old_npes, old_nxpe)
 
     if nype % old_nype != 0:
         print("SORRY: New nype must be a multiple of old nype")
@@ -102,10 +106,10 @@ def split(nxpe, nype, path="data", output="./", informat="nc", outformat=None):
     for mype in range(npes):
         # Calculate X and Y processor numbers
         pex = mype % nxpe
-        pey = int(mype / nxpe)
+        pey = int(old_div(mype, nxpe))
 
-        old_pex = int(pex / xs)
-        old_pey = int(pey / ys)
+        old_pex = int(old_div(pex, xs))
+        old_pey = int(old_div(pey, ys))
 
         old_x = pex % xs
         old_y = pey % ys

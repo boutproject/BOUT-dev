@@ -5,6 +5,10 @@
 #
 
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 nproc = 2       # Number of processors to run on
 
 # Relative tolerance in frequency and growth rate
@@ -88,7 +92,7 @@ for zeff in zlist:
     
     ##### Calculate geometric and physical quantities
     lZeta  = 1e2*zmax*2*np.pi*grid['R0']    # toroidal range [cm]
-    lbNorm = lZeta*((grid['Bpxy'])[0,ny/2]/(grid['Bxy'])[0,ny/2])  # binormal coord range [cm]
+    lbNorm = lZeta*(old_div((grid['Bpxy'])[0,old_div(ny,2)],(grid['Bxy'])[0,old_div(ny,2)]))  # binormal coord range [cm]
     zPerp  = lbNorm*np.arange(nz)/(nz-1)    # binormal coordinate [cm]
     
     cLight = 3e10                        # speed of light [cm/s]
@@ -97,20 +101,20 @@ for zeff in zlist:
     wce    = 1.76e7*1e4*grid['bmag']     # electron cyclotron frequency, [rad/s]
     
     # Ni scale length [cm]
-    Ln = np.mean(np.abs((grid['Ni0'])[:,ny/2] / 
-                      deriv( (grid['Rxy'])[:,ny/2]*1e2, (grid['Ni0'])[:,ny/2]))) 
+    Ln = np.mean(np.abs(old_div((grid['Ni0'])[:,old_div(ny,2)], 
+                      deriv( (grid['Rxy'])[:,old_div(ny,2)]*1e2, (grid['Ni0'])[:,old_div(ny,2)])))) 
     
-    vPe   = (vTe)**2/(wce*Ln) # electron diamagnetic drift speed [cm/s]
+    vPe   = old_div((vTe)**2,(wce*Ln)) # electron diamagnetic drift speed [cm/s]
     wstar = vPe*kperp 
     
-    logLam = 24. - np.log(np.sqrt(grid['Ni_x']*1e14)/grid['Te_x'])
+    logLam = 24. - np.log(old_div(np.sqrt(grid['Ni_x']*1e14),grid['Te_x']))
     nuei   = zeff*2.91e-6*(grid['Ni_x']*1e14)*logLam/(grid['Te_x'])**1.5
     #wci=9.58e3*(1./d.AA)*1e4*du.Bmag
     
-    lpar = np.sum((grid['Bxy']/grid['Bpxy'])*grid['dlthe'])/grid['nx'] # [m], average over flux surfaces
+    lpar = old_div(np.sum((old_div(grid['Bxy'],grid['Bpxy']))*grid['dlthe']),grid['nx']) # [m], average over flux surfaces
     kpar = 2*np.pi/(1e2*lpar) # cm-1
-    spar = (kpar/kperp)**2 * wci * wce / (0.51 * nuei) # [1/s]
-    sparn = spar / wstar
+    spar = (old_div(kpar,kperp))**2 * wci * wce / (0.51 * nuei) # [1/s]
+    sparn = old_div(spar, wstar)
     
     wpe   = 5.64e4*np.sqrt(1e14*grid['Ni_x']) # electron plasma frequency, [rad/s]
     mu    = (cLight*kperp/wpe)**2 
@@ -151,26 +155,26 @@ for zeff in zlist:
                 peak[i:(nt-nt0)] = peak[i:(nt-nt0)] - nz
 
     # Fit y = a + gamma*x
-    a, gamma = linear_regression(t_array[nt0:nt]/wci, np.log(maxVal))
+    a, gamma = linear_regression(old_div(t_array[nt0:nt],wci), np.log(maxVal))
     
     # Get phase velocity
-    a, Vphase = linear_regression(t_array[nt0:nt]/wci, peak*lbNorm/(nz-1))
+    a, Vphase = linear_regression(old_div(t_array[nt0:nt],wci), peak*lbNorm/(nz-1))
     
     # Calculate normalised quantities
     omega=np.abs(Vphase)*kperp/wstar
-    gamma=gamma/wstar
+    gamma=old_div(gamma,wstar)
     
     # Calculate analytic result
     t = 0.5*( np.sqrt(sparn**4 + 16*sparn**2) - sparn**2 )
     wr = 0.5*np.sqrt(t)
-    wi = sparn/np.sqrt(t) - 0.5*sparn
+    wi = old_div(sparn,np.sqrt(t)) - 0.5*sparn
     
     try:
         origr = omega_orig[zeff]
         origi = gamma_orig[zeff]
         
-        omegadiff = abs(omega - origr) / origr
-        gammadiff = abs(gamma - origi) / origi
+        omegadiff = old_div(abs(omega - origr), origr)
+        gammadiff = old_div(abs(gamma - origi), origi)
     except:
         origr = None
         origi = None

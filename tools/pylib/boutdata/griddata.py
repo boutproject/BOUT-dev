@@ -71,7 +71,7 @@ def slice(infile, outfile, region = None, xind=None, yind=None):
     outdf["ShiftAngle"] = indf["ShiftAngle"][xind[0]:xind[1]]
     
     # Loop over all variables
-    for v in indf.keys():
+    for v in list(indf.keys()):
         if v in special:
             continue # Skip these variables
         

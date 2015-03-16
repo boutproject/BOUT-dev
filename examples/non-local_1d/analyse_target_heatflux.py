@@ -6,6 +6,8 @@
 # 
 
 from __future__ import print_function
+from builtins import str
+from builtins import range
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata

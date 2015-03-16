@@ -1,3 +1,4 @@
+from builtins import range
 ####################################
 # Replicates IDL's showdata and more
 ####################################
@@ -36,7 +37,7 @@ fm=np.zeros((nt,nx,ny)) # array to store the time sequence of the poloidal cross
 
 #Compute all time frames
 
-for k in xrange(1,nt):
+for k in range(1,nt):
     fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
 
 ########################################################
