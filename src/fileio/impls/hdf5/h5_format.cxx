@@ -225,22 +225,26 @@ const vector<int> H5Format::getSize(const string &var) {
 }
 
 bool H5Format::setGlobalOrigin(int x, int y, int z) {
-  return setGlobalOrigin(x,y,z,0,0,0);
-}
-
-bool H5Format::setGlobalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
   x0 = x;
   y0 = y;
   z0 = z;
-  x0_local = offset_x;
-  y0_local = offset_y;
-  z0_local = offset_z;
+  x0_local = 0;
+  y0_local = 0;
+  z0_local = 0;
   
   return true;
 }
 
 bool H5Format::setLocalOrigin(int x, int y, int z, int offset_x, int offset_y, int offset_z) {
-  return setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ, offset_x, offset_y, offset_z);
+  
+  if(!setGlobalOrigin(x + mesh->OffsetX, y + mesh->OffsetY, z + mesh->OffsetZ, offset_x, offset_y, offset_z))
+    return false;
+  
+  x0_local = offset_x;
+  y0_local = offset_y;
+  z0_local = offset_z;
+  
+  return true;
 }
 
 bool H5Format::setRecord(int t) {
