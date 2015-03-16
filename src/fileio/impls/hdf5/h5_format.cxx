@@ -24,10 +24,10 @@
 #include "h5_format.hxx"
 
 #ifdef HDF5
-#include <H5Cpp.h>
 
 #include <utils.hxx>
 #include <cmath>
+#include <string>
 
 #include <output.hxx>
 #include <msg_stack.hxx>
@@ -414,8 +414,7 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
       throw BoutException("Failed to create dataSet");
     
     // Add attribute to say what kind of field this is
-    H5std_string datatype; // type of the data
-    datatype = "scalar";
+    std::string datatype = "scalar";
     if(lx != 0) datatype = "FieldX";
     if(ly != 0) datatype = "Field2D";
     if(lz != 0) datatype = "Field3D";
@@ -427,6 +426,8 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
     
     // Create new string datatype for attribute
     hid_t variable_length_string_type = H5Tcopy(H5T_C_S1);
+    if (variable_length_string_type < 0)
+      throw BoutException("Failed to create variable_length_string_type");
     if (H5Tset_size(variable_length_string_type, H5T_VARIABLE) < 0)
       throw BoutException("Failed to create string type");
     
@@ -681,8 +682,7 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
       throw BoutException("Failed to create dataSet");
     
     // Add attribute to say what kind of field this is
-    H5std_string datatype; // type of the data
-    datatype = "scalar_t";
+    std::string datatype = "scalar_t";
     if(lx != 0) datatype = "FieldX_t";
     if(ly != 0) datatype = "Field2D_t";
     if(lz != 0) datatype = "Field3D_t";
