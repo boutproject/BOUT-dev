@@ -24,6 +24,7 @@ pythonpath="@PYTHONCONFIGPATH@"
 has_pdb="@HAS_PDB@"
 has_netcdf="@HAS_NETCDF@"
 has_pnetcdf="@HAS_PNETCDF@"
+has_hdf5="@HAS_HDF5@"
 has_pvode="@HAS_PVODE@"
 has_cvode="@HAS_CVODE@"
 has_ida="@HAS_IDA@"
@@ -63,6 +64,7 @@ Available values for OPTION include:
   --has-pdb     PDB file support
   --has-netcdf  NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
+  --has-hdf5    HDF5 file support
   --has-pvode   PVODE solver support
   --has-cvode   SUNDIALS CVODE solver support
   --has-ida     SUNDIALS IDA solver support
@@ -100,6 +102,7 @@ all()
         echo "  --has-pdb     -> $has_pdb"
         echo "  --has-netcdf  -> $has_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
+        echo "  --has-hdf5    -> $has_hdf5"
         echo "  --has-pvode   -> $has_pvode"
         echo "  --has-cvode   -> $has_cvode"
         echo "  --has-ida     -> $has_ida"
@@ -191,6 +194,10 @@ while test $# -gt 0; do
 
     --has-pnetcdf)
         echo $has_pnetcdf
+        ;;
+
+    --has-hdf5)
+        echo $has_hdf5
         ;;
 
     --has-pvode)
