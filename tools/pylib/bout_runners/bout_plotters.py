@@ -14,14 +14,14 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.622beta'
-__date__    = '25.02.2015'
+__version__ = '0.623beta'
+__date__    = '16.03.2015'
 
 import os
 import re
 from boututils import shell
-from .bout_runners.plot_style import set_style
-from .bout_runners.common_bout_functions import create_folder,\
+from bout_runners.plot_style import set_style
+from bout_runners.common_bout_functions import create_folder,\
                                                warning_printer,\
                                                check_for_plotters_errors,\
                                                wait_for_runs_to_finish,\

@@ -14,8 +14,8 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.769beta'
-__date__    = '25.02.2015'
+__version__ = '0.770beta'
+__date__    = '16.03.2015'
 
 import textwrap
 import os
@@ -29,10 +29,10 @@ from numpy import logspace
 import numpy as np
 from subprocess import Popen, PIPE
 from boututils import shell, launch, getmpirun
-from .bout_runners.bout_plotters import convergence_plotter,\
+from bout_runners.bout_plotters import convergence_plotter,\
                                        solution_plotter,\
                                        solution_and_error_plotter
-from .bout_runners.common_bout_functions import create_folder,\
+from bout_runners.common_bout_functions import create_folder,\
                                                find_variable_in_BOUT_inp,\
                                                warning_printer,\
                                                check_for_plotters_errors,\
