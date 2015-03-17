@@ -564,66 +564,71 @@ const Field3D Delp2(const Field3D &f, BoutReal zsmooth) {
 	rd = result.getData();
 
 	int ncz = mesh->ngz-1;
-  
-	static dcomplex **ft = (dcomplex**) NULL, **delft;
-	if(ft == (dcomplex**) NULL) {
+	int nkz = 1+ncz/2;
+	int nx = mesh->ngx;
+	int ny = mesh->ngy;
+
+	static dcomplex ***ft = (dcomplex***) NULL, ***delft;
+
+	if(ft == (dcomplex***) NULL) {
 		//.allocate memory
-		ft = cmatrix(mesh->ngx, ncz/2 + 1);
-		delft = cmatrix(mesh->ngx, ncz/2 + 1);
+	  ft = c3tensor(nx,ny,nkz);
+	  delft = c3tensor(nx, ny, nkz);
 	}
   
-	// Loop over all y indices
-	for(int jy=0;jy<mesh->ngy;jy++) {
+	//Forward FFT
+	ZFFT(fd,nx,ny,ft);
 
-		// Take forward FFT
-    
+	//Filtering
+	// Loop over all indices except x boundaries
+	for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
+	  for(int jy=0;jy<ny;jy++) {
+	    // Loop over kz
 #pragma omp parallel for
-		for(int jx=0;jx<mesh->ngx;jx++)
-			ZFFT(fd[jx][jy], mesh->zShift(jx, jy), ft[jx]);
-
-		// Loop over kz
-#pragma omp parallel for
-		for(int jz=0;jz<=ncz/2;jz++) {
-			BoutReal filter;
-			dcomplex a, b, c;
+	    for(int jz=0;jz<nkz;jz++) {
+	      BoutReal filter;
+	      dcomplex a, b, c;
       
-			if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
+	      if ((zsmooth > 0.0) && (jz > (int) (zsmooth*((BoutReal) ncz)))) filter=0.0; else filter=1.0;
+	      // Perform x derivative
+	      
+	      laplace_tridag_coefs(jx, jy, jz, a, b, c);
 
-			// No smoothing in the x direction
-			for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
-				// Perform x derivative
+	      delft[jx][jy][jz] = a*ft[jx-1][jy][jz] + b*ft[jx][jy][jz] + c*ft[jx+1][jy][jz];
+	      delft[jx][jy][jz] *= filter;
 	
-				laplace_tridag_coefs(jx, jy, jz, a, b, c);
-
-				delft[jx][jz] = a*ft[jx-1][jz] + b*ft[jx][jz] + c*ft[jx+1][jz];
-				delft[jx][jz] *= filter;
-	
-				//Savitzky-Golay 2nd order, 2nd degree in x
-				/*
-				delft[jx][jz] = coef1*(  0.285714 * (ft[jx-2][jz] + ft[jx+2][jz])
-				- 0.142857 * (ft[jx-1][jz] + ft[jx+1][jz])
-				- 0.285714 * ft[jx][jz] );
-	
-				delft[jx][jz] -= SQ(kwave)*coef2*ft[jx][jz];
-				*/
-			}
-		}
-  
-		// Reverse FFT
-#pragma omp parallel for
-		for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
-
-			ZFFT_rev(delft[jx], mesh->zShift[jx][jy], rd[jx][jy]);
-			rd[jx][jy][ncz] = rd[jx][jy][0];
-		}
-
-		// Boundaries
-		for(int jz=0;jz<ncz;jz++) {
-			rd[0][jy][jz] = 0.0;
-			rd[mesh->ngx-1][jy][jz] = 0.0;
-		}
+	      //Savitzky-Golay 2nd order, 2nd degree in x
+	      /*
+		delft[jx][jz] = coef1*(  0.285714 * (ft[jx-2][jz] + ft[jx+2][jz])
+		- 0.142857 * (ft[jx-1][jz] + ft[jx+1][jz])
+		- 0.285714 * ft[jx][jz] );
+		
+		delft[jx][jz] -= SQ(kwave)*coef2*ft[jx][jz];
+	      */
+	    }
+	  }
 	}
-  
+
+	// Reverse FFT	
+	ZFFT_rev(delft,nx,ny,rd);
+
+	//Fix boundaries
+#pragma omp parallel for
+	for (int jy=0;jy<ny;jy++){
+	  for(int jz=0;jz<ncz;jz++) {
+	    rd[0][jy][jz] = 0.0;
+	    rd[mesh->ngx-1][jy][jz] = 0.0;
+	  }
+	}
+
+	//Fix duplicate point
+#pragma omp parallel for
+	for (int jx=0;jx<nx;jx++) {
+          for (int jy=0;jy<ny;jy++){
+            rd[jx][jy][ncz]=rd[jx][jy][0];
+	  }
+	}
+
 	msg_stack.pop(msg_pos);
 
 	// Set the output location
