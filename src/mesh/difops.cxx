@@ -1145,15 +1145,18 @@ const Field3D bracket(const Field3D &f, const Field2D &g, BRACKET_METHOD method,
 		  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
 		    fs = f.shiftZ(true);
 		  }
-	  
+		  BoutReal ***fsd=fs.getData();
+		  BoutReal **gd=g.getData();
 		  result.allocate();
 		  int ncz = mesh->ngz - 1;
 		  for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
-		    FieldPerp F=fs.slice(jy);
-
+		    //FieldPerp F=fs.slice(jy);
 		    for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
-		      BoutReal *Fxm=F[jx-1], *Fx=F[jx], *Fxp=F[jx+1];
-		      BoutReal Gxm=g[jx-1][jy], Gx=g[jx][jy], Gxp=g[jx+1][jy];
+		      // BoutReal *Fxm=F[jx-1], *Fx=F[jx], *Fxp=F[jx+1];
+		      // BoutReal Gxm=g[jx-1][jy], Gx=g[jx][jy], Gxp=g[jx+1][jy];
+
+		      BoutReal *Fxm=fsd[jx-1][jy], *Fx=fsd[jx][jy], *Fxp=fsd[jx+1][jy];
+		      BoutReal Gxm=gd[jx-1][jy], Gx=gd[jx][jy], Gxp=gd[jx+1][jy];
 		      //Move this out of inner loop
 		      BoutReal scal=1.0/(12.0*mesh->dx[jx][jy] * mesh->dz);
 
@@ -1447,17 +1450,18 @@ const Field3D bracket(const Field3D &f, const Field3D &g, BRACKET_METHOD method,
 			}
     
 			int ncz = mesh->ngz - 1;
+			BoutReal ***fsd=fs.getData();
+			BoutReal ***gsd=gs.getData();
 			for(int jy=mesh->ystart;jy<=mesh->yend;jy++){
 			  // FieldPerp F=fs.slice(jy);
 			  // FieldPerp G=gs.slice(jy);
-
 			  for(int jx=mesh->xstart;jx<=mesh->xend;jx++){
 			    // BoutReal *Fxm=F[jx-1], *Fx=F[jx], *Fxp=F[jx+1];
 			    // BoutReal *Gxm=G[jx-1], *Gx=G[jx], *Gxp=G[jx+1];
 
 			    //Below means we don't need to use fieldperp objs
-			    BoutReal *Fxm=fs[jx-1][jy], *Fx=fs[jx][jy], *Fxp=fs[jx+1][jy];
-			    BoutReal *Gxm=gs[jx-1][jy], *Gx=gs[jx][jy], *Gxp=gs[jx+1][jy];
+			    BoutReal *Fxm=fsd[jx-1][jy], *Fx=fsd[jx][jy], *Fxp=fsd[jx+1][jy];
+			    BoutReal *Gxm=gsd[jx-1][jy], *Gx=gsd[jx][jy], *Gxp=gsd[jx+1][jy];
 
 			    //Move this out of inner loop
 			    BoutReal scal=1.0/(12.0*mesh->dx[jx][jy] * mesh->dz);
