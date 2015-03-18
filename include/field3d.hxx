@@ -102,6 +102,10 @@ class Field3D : public Field, public FieldData {
   Field3D& ydown() { return *ydown_field; }
   const Field3D& ydown() const { return *ydown_field; }
 
+  /// Return yup if dir=+1, and ydown if dir=-1
+  Field3D& ynext(int dir);
+  const Field3D& ynext(int dir) const;
+
   // Staggered grids
   void setLocation(CELL_LOC loc); // Set variable location
   CELL_LOC getLocation() const; // Variable location

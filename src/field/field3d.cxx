@@ -197,6 +197,28 @@ void Field3D::mergeYupYdown() {
   ydown_field = this;
 }
 
+Field3D& Field3D::ynext(int dir) {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
+}
+
+const Field3D& Field3D::ynext(int dir) const {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
+}
+
 void Field3D::setLocation(CELL_LOC loc)
 {
   if(loc == CELL_VSHIFT)
