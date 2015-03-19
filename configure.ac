@@ -38,6 +38,7 @@ AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
 AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
 AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files])
+AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
@@ -595,6 +596,12 @@ fi
 # HDF5 library
 #############################################################
 HDFPATH=""  # Indicates not found
+HAS_PHDF5="no"
+
+if test "$with_parallelhdf5" != "no" && test "$with_parallelhdf5" != ""
+then
+  with_hdf5="$with_parallelhdf5"
+fi
 
 if test "$with_hdf5" != "no"
 then
@@ -640,9 +647,14 @@ then
   then
     echo "HDF5 path: $HDFPATH"
     CXXFLAGS="$CXXFLAGS -DHDF5"
+    if test "$with_phdf5" != "no" && test "$with_parallelhdf5" != ""
+    then
+      CXXFLAGS="$CXXFLAGS -DPHDF5"
+      HAS_PHDF5="yes"
+    fi
     
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/lib -lhdf5"
+    EXTRA_LIBS="$EXTRA_LIBS $HDFPATH/lib/libhdf5.a -lz"
 
     file_formats="$file_formats HDF5"
   else
@@ -1459,7 +1471,7 @@ echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
 
-echo "  HDF5 support: $HAS_HDF5" | tee -a config-build.log
+echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 

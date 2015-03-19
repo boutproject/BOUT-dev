@@ -48,7 +48,6 @@ class H5Format;
 #include "dataformat.hxx"
 
 #include <hdf5.h>
-#include <H5FDmpio.h>
 
 #include <map>
 #include <string>
