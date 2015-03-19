@@ -37,7 +37,7 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(const Datafile &other);
-  ~Datafile();
+//   ~Datafile(); Default destructor is adequate
   
   Datafile& operator=(const Datafile &rhs);
 

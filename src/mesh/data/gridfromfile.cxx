@@ -26,6 +26,7 @@ GridFile::GridFile(DataFormat *format, const string gridfilename) : file(format)
   if(! file->openr(filename) ) {
     throw BoutException("Could not open file '%s'", filename.c_str());
   }
+  file->setGlobalOrigin();
 }
 
 GridFile::~GridFile() {

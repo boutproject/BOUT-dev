@@ -85,10 +85,8 @@ Datafile& Datafile::operator=(const Datafile &rhs) {
   return *this;
 }
 
-Datafile::~Datafile() {
-  if(file != NULL)
-    delete file;
-}
+// Datafile::~Datafile() {
+// }
 
 bool Datafile::openr(const char *format, ...) {
   va_list ap;  // List of arguments
@@ -223,6 +221,8 @@ void Datafile::close() {
     return;
   if(!openclose)
     file->close();
+  delete file;
+  file = NULL;
 }
 
 void Datafile::setLowPrecision() {

@@ -54,13 +54,8 @@ H5Format::H5Format(bool parallel) {
   if (parallel)
     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
       throw BoutException("Failed to set dataSet_plist");
-//   hid_t error_stack;
-//   if (H5Eget_auto(error_stack, NULL, NULL) < 0)
-//     throw BoutException("Failed to get error stack");
-//   if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-//     throw BoutException("Failed to set error stack to not print errors");
-//   if (H5Eclose_stack(error_stack) < 0)
-//     throw BoutException("Failed to close error stack handle");
+  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
 }
 
 H5Format::H5Format(const char *name, bool parallel) {
@@ -76,6 +71,8 @@ H5Format::H5Format(const char *name, bool parallel) {
     throw BoutException("Failed to set error stack to not print errors");
   if (H5Eclose_stack(error_stack) < 0)
     throw BoutException("Failed to close error stack handle");
+  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
   openr(name);
 }
 
@@ -92,6 +89,8 @@ H5Format::H5Format(const string &name, bool parallel) {
     throw BoutException("Failed to set error stack to not print errors");
   if (H5Eclose_stack(error_stack) < 0)
     throw BoutException("Failed to close error stack handle");
+  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
   openr(name);
 }
 
@@ -327,8 +326,11 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
 //       throw BoutException("Failed to select hyperslab");
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
-  if (dataSet < 0)
-    throw BoutException("Failed to open dataSet");
+  if (dataSet < 0) {
+    // Variable does not exist (presumably)
+//     throw BoutException("Failed to open dataSet");
+    return false;
+  }
   
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
