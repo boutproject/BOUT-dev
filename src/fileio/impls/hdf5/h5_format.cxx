@@ -34,7 +34,34 @@
 #include <msg_stack.hxx>
 #include <boutcomm.hxx>
 
-H5Format::H5Format(bool parallel) {
+H5Format::H5Format(bool parallel_in) {
+  parallel = parallel_in;
+  x0 = y0 = z0 = t0 = 0;
+  lowPrecision = false;
+  fname = NULL;
+  dataFile = -1;
+  chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
+  
+  dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
+  if (dataFile_plist < 0)
+    throw BoutException("Failed to create dataFile_plist");
+  if (parallel)
+    if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
+      throw BoutException("Failed to set dataFile_plist");
+  
+  dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
+  if (dataSet_plist < 0)
+    throw BoutException("Failed to create dataSet_plist");
+  if (parallel)
+    if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_INDEPENDENT) < 0) // Default, independent writes
+//     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0) // Alternative, collective writes
+      throw BoutException("Failed to set dataSet_plist");
+  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
+    throw BoutException("Failed to set error stack to not print errors");
+}
+
+H5Format::H5Format(const char *name, bool parallel_in) {
+  parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   fname = NULL;
@@ -56,39 +83,30 @@ H5Format::H5Format(bool parallel) {
       throw BoutException("Failed to set dataSet_plist");
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
-}
-
-H5Format::H5Format(const char *name, bool parallel) {
-  throw BoutException("Fix this like H5Format(bool parallel)");
-  x0 = y0 = z0 = t0 = 0;
-  lowPrecision = false;
-  dataFile = -1;
-  chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  hid_t error_stack;
-  if (H5Eget_auto(error_stack, NULL, NULL) < 0)
-    throw BoutException("Failed to get error stack");
-  if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-    throw BoutException("Failed to set error stack to not print errors");
-  if (H5Eclose_stack(error_stack) < 0)
-    throw BoutException("Failed to close error stack handle");
-  if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-    throw BoutException("Failed to set error stack to not print errors");
   openr(name);
 }
 
-H5Format::H5Format(const string &name, bool parallel) {
-  throw BoutException("Fix this like H5Format(bool parallel)");
+H5Format::H5Format(const string &name, bool parallel_in) {
+  parallel = parallel_in;
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
+  fname = NULL;
   dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
-  hid_t error_stack;
-  if (H5Eget_auto(error_stack, NULL, NULL) < 0)
-    throw BoutException("Failed to get error stack");
-  if (H5Eset_auto(error_stack, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
-    throw BoutException("Failed to set error stack to not print errors");
-  if (H5Eclose_stack(error_stack) < 0)
-    throw BoutException("Failed to close error stack handle");
+  
+  dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
+  if (dataFile_plist < 0)
+    throw BoutException("Failed to create dataFile_plist");
+  if (parallel)
+    if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
+      throw BoutException("Failed to set dataFile_plist");
+  
+  dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
+  if (dataSet_plist < 0)
+    throw BoutException("Failed to create dataSet_plist");
+  if (parallel)
+    if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
+      throw BoutException("Failed to set dataSet_plist");
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
   openr(name);
@@ -132,11 +150,6 @@ bool H5Format::openw(const char *name, bool append) {
   msg_stack.push("H5Format::openw");
 #endif
   
-  if (parallel) {
-    // Need to do stuff here???
-    throw BoutException("HDF5 does not support parallel file access in the C++ interface. Boo!");
-  }
-
   if(dataFile > 0) // Already open. Close then re-open
     close(); 
 

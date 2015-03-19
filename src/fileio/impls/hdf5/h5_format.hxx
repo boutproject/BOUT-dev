@@ -58,9 +58,9 @@ using std::map;
 
 class H5Format : public DataFormat {
  public:
-  H5Format(bool parallel = false);
-  H5Format(const char *name, bool parallel = false);
-  H5Format(const string &name, bool parallel = false);
+  H5Format(bool parallel_in = false);
+  H5Format(const char *name, bool parallel_in = false);
+  H5Format(const string &name, bool parallel_in = false);
   ~H5Format();
   
   bool openr(const string &name);
