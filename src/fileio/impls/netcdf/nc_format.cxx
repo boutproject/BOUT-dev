@@ -617,8 +617,11 @@ bool NcFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
-    
-    for(int i=0;i<lx*ly*lz;i++) {
+    int i_max=1;
+    if (lx>0) i_max*=lx;
+    if (ly>0) i_max*=ly;
+    if (lz>0) i_max*=lz;
+    for(int i=0;i<i_max;i++) {
       if(data[i] > 1e20)
 	data[i] = 1e20;
       if(data[i] < -1e20)
@@ -865,8 +868,11 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
 	data[i] = -1e20;
     }
   }
-  
-  for(int i=0;i<lx*ly*lz;i++) {
+  int i_max=1;
+  if (lx>0) i_max*=lx;
+  if (ly>0) i_max*=ly;
+  if (lz>0) i_max*=lz;
+  for(int i=0;i<i_max;i++) {
     if(!finite(data[i]))
       data[i] = 0.0;
   }

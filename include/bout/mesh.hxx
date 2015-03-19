@@ -70,12 +70,13 @@ class Mesh {
   virtual int load() {return 1;}
   virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
 
-  // Get routines to request data from mesh file
-  virtual int get(int &ival, const string &name); ///< Get an integer
-  virtual int get(BoutReal &rval, const string &name); ///< Get a BoutReal number
   
-  virtual int get(Field2D &var, const string &name, BoutReal def=0.0);
-  virtual int get(Field3D &var, const string &name);
+  // Get routines to request data from mesh file
+  int get(int &ival, const string &name); ///< Get an integer
+  int get(BoutReal &rval, const string &name); ///< Get a BoutReal number
+  
+  int get(Field2D &var, const string &name, BoutReal def=0.0);
+  int get(Field3D &var, const string &name, BoutReal def=0.0);
   
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
@@ -244,13 +245,6 @@ class Mesh {
   
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
-  
-  /// Read a 2D array of data from a data source (e.g. file)
-  void read2Dvar(GridDataSource *s, const string &name, 
-                 int xs, int ys,  // Source origin
-                 int xd, int yd,  // Destination origin
-                 int nx, int ny,  // Size of the domain to copy
-                 BoutReal **data);
   
  private:
   int gaussj(BoutReal **a, int n);

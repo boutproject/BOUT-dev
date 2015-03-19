@@ -34,7 +34,7 @@
 
 /// Approximate G(f) = f + rho^2*Delp2(f) using Taylor expansion
 const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho) {
-  return f + rho^2 * Delp2(f);
+  return f + SQ(rho) * Delp2(f);
 }
 
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f

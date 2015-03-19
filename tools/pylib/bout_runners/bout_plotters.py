@@ -6,18 +6,18 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.621beta'
-__date__    = '10.12.2014'
+__version__ = '0.622beta'
+__date__    = '25.02.2015'
 
 import os
 import re
 from boututils import shell
-from boututils.plot_style import set_style
-from boututils.common_bout_functions import create_folder,\
-                                            warning_printer,\
-                                            check_for_plotters_errors,\
-                                            wait_for_runs_to_finish,\
-                                            find_variable_in_BOUT_inp
+from bout_runners.plot_style import set_style
+from bout_runners.common_bout_functions import create_folder,\
+                                               warning_printer,\
+                                               check_for_plotters_errors,\
+                                               wait_for_runs_to_finish,\
+                                               find_variable_in_BOUT_inp
 from boutdata import collect
 import matplotlib.pyplot as plt
 from pylab import plot

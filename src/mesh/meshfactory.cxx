@@ -55,9 +55,6 @@ Mesh* MeshFactory::createMesh(GridDataSource *source, Options *options) {
       source = (GridDataSource*) new GridFromOptions(options);
     }
   }
-  
-  if(!source->isValid())
-    throw BoutException("Invalid data source. Maybe the wrong grid file name?");
 
   // Get the type of mesh
   string type;

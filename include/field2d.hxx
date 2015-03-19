@@ -181,8 +181,11 @@ class Field2D : public Field, public FieldData {
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+#else 
+  bool checkData(bool vital = true) const {}
+  void doneComms() {}
 #endif
-  
+
   friend class Vector2D;
   
   void applyBoundary(bool init=false);

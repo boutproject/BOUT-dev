@@ -1,0 +1,30 @@
+
+[mesh]
+
+nx = 36
+ny = 16
+nz = 16
+
+# Screw pinch. Z is azimuthal angle, Y is along the axis
+
+rwidth = 0.4
+
+Rxy = 0.1 + rwidth*x  # Radius from axis     [m]
+L   = 10              # Length of the device [m]
+
+dy = L/ny
+hthe = 1.0
+
+Zxy = L * y / (2*pi)
+
+Bpxy = 1.0      # Axial field [T]
+Btxy = 0.1*Rxy  # Azimuthal field [T]
+Bxy = sqrt(Btxy^2 + Bpxy^2)
+
+dr = rwidth / nx
+dx = dr * Bpxy * Rxy
+
+zShift = Btxy * y * L / (2*pi*Rxy * Bpxy)
+
+# Define a twist-shift angle, for periodic in y runs
+ShiftAngle = Btxy * L / (Rxy * Bpxy)   # Should be just a function of x

@@ -8,12 +8,12 @@ have interest independently of bout_runner associated files."""
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '1.0beta'
-__date__    = '14.10.2014'
+__date__    = '26.02.2015'
 
 import re
 import os
 import time
-from boututils import shell
+from boututils.shell import shell
 
 
 #{{{find_variable_in_BOUT_inp

@@ -27,6 +27,7 @@
 #include <utils.hxx> // for lowercase
 
 #include <stdarg.h>
+#include <stdio.h>
 
 using std::map;
 using std::string;
