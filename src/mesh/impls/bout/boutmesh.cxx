@@ -1312,7 +1312,7 @@ int BoutMesh::wait(comm_handle handle) {
       MPI_Wait(ch->sendreq+5, &status);
   }
 
-  // TWIST-SHIFT CONDITION
+  // TWIST-SHIFT CONDITION -- Note this contributes to "comms" time.
   if(TwistShift && (TwistOrder == 0)) {
     int jx, jy;
     
@@ -2192,26 +2192,27 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   int len = 0;
   std::vector<FieldData*>::iterator it;
   
-  for(jx=xge; jx != xlt; jx++) {
     
-    /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
+  /// Loop over variables
+  for(it = var_list.begin(); it != var_list.end(); it++) {
+    if((*it)->is3D()) {
+      // 3D variable
 	
+      for(jx=xge; jx != xlt; jx++) {
 	for(jy=yge;jy < ylt;jy++)
 	  for(jz=0;jz < ngz-1;jz++)
 	    len += (*it)->getData(jx,jy,jz,buffer+len);
-	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
+      }
+    }else {
+      // 2D variable
+      for(jx=xge; jx != xlt; jx++) {
+	for(jy=yge;jy < ylt;jy++){
 	  len += (*it)->getData(jx,jy,0,buffer+len);
+	}
       }
     }
-    
   }
-  
+
   return(len);
 }
 
@@ -2221,27 +2222,28 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
   int len = 0;
   std::vector<FieldData*>::iterator it;
 
-  for(jx=xge; jx != xlt; jx++) {
-
-    /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
-   
-	for(jy=yge;jy < ylt;jy++)
+  /// Loop over variables
+  for(it = var_list.begin(); it != var_list.end(); it++) {
+    if((*it)->is3D()) {
+      // 3D variable
+      for(jx=xge; jx != xlt; jx++) {   
+	for(jy=yge;jy < ylt;jy++){
 	  for(jz=0;jz < ngz-1;jz++) {
 	    len += (*it)->setData(jx,jy,jz,buffer+len);
 	  }
+	}
+      }
 	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
+    }else {
+      // 2D variable
+      for(jx=xge; jx != xlt; jx++) {
+	for(jy=yge;jy < ylt;jy++){
 	  len += (*it)->setData(jx,jy,0,buffer+len);
+	}
       }
     }
-    
   }
-  
+      
   return(len);
 }
 

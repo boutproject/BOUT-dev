@@ -113,7 +113,7 @@ private:
   SPT_data slicedata; // Used to solve for a single FieldPerp
   SPT_data* alldata;  // Used to solve a Field3D
 
-  dcomplex *dc1d; ///< 1D in Z for taking FFTs
+  dcomplex **dc2d; ///< 2D in X,Z for taking FFTs
 
   void tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
                       dcomplex *r, dcomplex *u, int n,

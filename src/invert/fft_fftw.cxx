@@ -30,6 +30,8 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
+#include <utils.hxx>
+
 #include <fftw3.h>
 #include <math.h>
 
@@ -328,6 +330,105 @@ void rfft(BoutReal **in, const int length1, const int length2, dcomplex **out, b
   };
 }
 
+//Hacked 3D version
+void rfft(BoutReal ***in, const int length1, const int length2, const int length3, dcomplex ***out, bool transpose) {
+  static double *fin;
+  static fftw_complex *fout;
+  static fftw_plan p;
+  static bool first=true;
+  static int n3 = 0;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  static int nmany = 0;
+  static bool tpose=false;
+  if(first || transpose != tpose) {
+
+    if(n3 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    //Set static vars
+    n1 = length1;
+    n2 = length2;
+    n3 = length3;
+    nmany = n1*n2;
+    nk = (n3/2)+1;
+    tpose = transpose;
+    first=false;
+
+    fin = (double*) fftw_malloc(sizeof(double) * nmany * n3);
+    fout = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    int const * sz = &n3;
+    int istride=nmany, idist=1;
+    int ostride=nmany, odist=1;
+    if(tpose){
+      istride=1 ; idist=n3;
+      ostride=1 ; odist=nk;
+    }
+    p = fftw_plan_many_dft_r2c(1,sz,nmany,fin,
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
+  }
+
+  //Copy data into fftw input array, really just a flattening of
+  //fld.block->data, except we skip the repeat z point.
+  int itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<n3;k++){
+	  fin[k+itot*n3] = in[i][j][k];
+	}
+	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<n3;k++){
+	  fin[itot+k*nmany] = in[i][j][k];
+	}
+	itot++;
+      }
+    }
+  }
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data out of fftw output array into output
+  BoutReal fac=1.0/(double)n3;
+  itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<nk;k++){
+	  out[i][j][k] = dcomplex(fout[k+itot*nk][0], fout[k+itot*nk][1])*fac; // Normalise
+	}
+	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+	for(int k=0;k<nk;k++){
+	  out[i][j][k] = dcomplex(fout[itot+k*nmany][0], fout[itot+k*nmany][1])*fac; // Normalise
+	}
+	itot++;
+      }
+    }
+  };
+}
 
 //Hacked Field3D version
 void rfft(Field3D &fld, dcomplex ***out, bool transpose) {
@@ -566,6 +667,107 @@ void irfft(dcomplex **in, const int length1, const int length2, BoutReal **out, 
 	out[i][j] = fout[i+j*n1];
       };
     };
+  };
+}
+
+//Hacked 3D version
+void irfft(dcomplex ***in, const int length1, const int length2, const int length3, BoutReal ***out, bool transpose) {
+  static double *fout;
+  static fftw_complex *fin;
+  static fftw_plan p;
+  static bool first=true;
+  static int n3 = 0;
+  static int n2 = 0;
+  static int n1 = 0;
+  static int nk = 0;
+  static int nmany = 0;
+  static bool tpose=false;
+  if(first || transpose != tpose) {
+
+    if(n3 > 0) {
+      fftw_destroy_plan(p);
+      fftw_free(fin);
+      fftw_free(fout);
+    }
+    
+    fft_init();
+
+    //Set static vars
+    n1 = length1;
+    n2 = length2;
+    n3 = length3;
+    nmany = n1*n2;
+    nk = (n3/2)+1;
+    tpose = transpose;
+    first=false;
+
+    fout = (double*) fftw_malloc(sizeof(double) * nmany * n3);
+    fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * nmany * nk);
+
+    unsigned int flags = FFTW_ESTIMATE;
+    if(fft_measure)
+      flags = FFTW_MEASURE;
+
+    int const * sz = &n3;
+    int istride=nmany, idist=1;
+    int ostride=nmany, odist=1;
+    if(tpose){
+      istride=1 ; idist=nk;
+      ostride=1 ; odist=n3;
+    }
+    p = fftw_plan_many_dft_c2r(1,sz,nmany,fin,
+			       NULL,istride,idist,fout,
+			       NULL,ostride,odist,flags);
+  }
+
+  //Copy data into fftw input array, really just a flattening of
+  //fld.block->data, except we skip the repeat z point.
+  int itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<nk;k++){
+  	  fin[k+itot*nk][0] = in[i][j][k].real();
+  	  fin[k+itot*nk][1] = in[i][j][k].imag();
+  	}
+  	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<nk;k++){
+  	  fin[itot+k*nmany][0] = in[i][j][k].real();
+  	  fin[itot+k*nmany][1] = in[i][j][k].imag();
+  	}
+  	itot++;
+      }
+    }
+  }
+
+  //Do the transform
+  fftw_execute(p);
+
+  //Copy data out of fftw output array into output
+  itot=0;
+  if(tpose){
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<n3;k++){
+  	  out[i][j][k] = fout[k+itot*n3];
+  	}
+  	itot++;
+      }
+    }
+  }else{
+    for(int i=0;i<n1;i++){
+      for(int j=0;j<n2;j++){
+  	for(int k=0;k<n3;k++){
+  	  out[i][j][k] = fout[itot+k*nmany];
+  	}
+  	itot++;
+      }
+    }
   };
 }
 
@@ -811,6 +1013,109 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
   }
 }
 
+void ZFFT(BoutReal *in, int ix, int iy, dcomplex *cv, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , -sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+
+  rfft(in, ncz, cv);
+
+  if((mesh->ShiftXderivs) && shift) {
+    // Forward FFT
+    for(int jz=0;jz<nkz;jz++) {
+      
+      // Multiply by EXP(-ik*zoffset)
+      cv[jz] *= phs[ix][iy][jz];
+    }
+  }
+}
+
+void ZFFT(BoutReal **in, int nx, int iy, dcomplex **cv, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , -sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+
+  rfft(in, nx, ncz, cv, true);
+
+  if((mesh->ShiftXderivs) && shift) {
+    // Forward FFT
+    for(int jx=0;jx<nx;jx++) {
+      for(int jz=0;jz<nkz;jz++) {
+	// Multiply by EXP(-ik*zoffset)
+	cv[jx][jz] *= phs[jx][iy][jz];
+      }
+    }
+  }
+}
+
+void ZFFT(BoutReal ***in, int nx, int ny, dcomplex ***cv, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , -sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+  
+  
+  rfft(in, nx, ny, ncz, cv, true);
+  
+  if((mesh->ShiftXderivs) && shift) {
+    // Forward FFT
+    for(int jx=0;jx<nx;jx++) {
+      for(int jy=0;jy<ny;jy++) {
+	for(int jz=0;jz<nkz;jz++) {
+	  // Multiply by EXP(-ik*zoffset)
+	  cv[jx][jy][jz] *= phs[jx][jy][jz];
+	}
+      }
+    }
+  }
+}
+
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
 {
   int jz;
@@ -828,6 +1133,105 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
   }
 
   irfft(cv, ncz, out);
+}
+
+void ZFFT_rev(dcomplex *cv, int ix, int iy, BoutReal *out, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+  
+  if((mesh->ShiftXderivs) && shift) {
+    for(int jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
+      // Multiply by EXP(ik*zoffset)
+      cv[jz] *= phs[ix][iy][jz];
+    }
+  }
+
+  irfft(cv, ncz, out);
+}
+
+void ZFFT_rev(dcomplex **cv, int nx, int iy, BoutReal **out, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+  
+  if((mesh->ShiftXderivs) && shift) {
+    for(int jx=0;jx<nx;jx++){
+      for(int jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
+	// Multiply by EXP(ik*zoffset)
+	cv[jx][jz] *= phs[jx][iy][jz];
+      }
+    }
+  }
+  
+  irfft(cv, nx, ncz, out, true);
+}
+
+void ZFFT_rev(dcomplex ***cv, int nx, int ny, BoutReal ***out, bool shift)
+{
+  int ncz = mesh->ngz-1;
+  int nkz = 1+(ncz/2);
+  static dcomplex ***phs=(dcomplex ***) NULL;
+  if(phs == (dcomplex ***) NULL){
+    phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
+    BoutReal kwave;
+    BoutReal fac=2.0*PI/mesh->zlength;
+    for(int jx=0;jx<mesh->ngx;jx++){
+      for(int jy=0;jy<mesh->ngy;jy++){
+	for(int jz=0;jz<nkz;jz++){
+	  kwave=jz*fac; // wave number is 1/[rad]
+	  dcomplex phase(cos(kwave*mesh->zShift[jx][jy]) , sin(kwave*mesh->zShift[jx][jy]));
+	  phs[jx][jy][jz]=phase;
+	}
+      }
+    }
+  };
+
+  
+  if((mesh->ShiftXderivs) && shift) {
+    for(int jx=0;jx<nx;jx++){
+      for(int jy=0;jy<ny;jy++){
+	for(int jz=0;jz<nkz;jz++) { // Only do positive frequencies
+	  // Multiply by EXP(ik*zoffset)
+	  cv[jx][jy][jz] *= phs[jx][jy][jz];
+	}
+      }
+    }
+  }
+
+  irfft(cv, nx, ny, ncz, out, true);
 }
 
 
