@@ -28,9 +28,11 @@
 #include <utils.hxx>
 #include <cmath>
 #include <string>
+#include <mpi.h>
 
 #include <output.hxx>
 #include <msg_stack.hxx>
+#include <boutcomm.hxx>
 
 H5Format::H5Format(bool parallel) {
   x0 = y0 = z0 = t0 = 0;
@@ -38,6 +40,20 @@ H5Format::H5Format(bool parallel) {
   fname = NULL;
   dataFile = -1;
   chunk_length = 10; // could change this to try to optimize IO performance (i.e. allocate new chunks of disk space less often)
+  
+  dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
+  if (dataFile_plist < 0)
+    throw BoutException("Failed to create dataFile_plist");
+  if (parallel)
+    if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
+      throw BoutException("Failed to set dataFile_plist");
+  
+  dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
+  if (dataSet_plist < 0)
+    throw BoutException("Failed to create dataSet_plist");
+  if (parallel)
+    if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
+      throw BoutException("Failed to set dataSet_plist");
 //   hid_t error_stack;
 //   if (H5Eget_auto(error_stack, NULL, NULL) < 0)
 //     throw BoutException("Failed to get error stack");
@@ -48,6 +64,7 @@ H5Format::H5Format(bool parallel) {
 }
 
 H5Format::H5Format(const char *name, bool parallel) {
+  throw BoutException("Fix this like H5Format(bool parallel)");
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dataFile = -1;
@@ -63,6 +80,7 @@ H5Format::H5Format(const char *name, bool parallel) {
 }
 
 H5Format::H5Format(const string &name, bool parallel) {
+  throw BoutException("Fix this like H5Format(bool parallel)");
   x0 = y0 = z0 = t0 = 0;
   lowPrecision = false;
   dataFile = -1;
@@ -79,6 +97,7 @@ H5Format::H5Format(const string &name, bool parallel) {
 
 H5Format::~H5Format() {
   close();
+  H5Pclose(dataFile_plist);
 }
 
 bool H5Format::openr(const string &name) {
@@ -93,11 +112,7 @@ bool H5Format::openr(const char *name) {
   if(dataFile > 0) // Already open. Close then re-open
     close();
 
-  if(!is_valid()) {
-    return false;
-  }
-  
-  dataFile = H5Fopen(name, H5F_ACC_RDONLY, H5P_DEFAULT);
+  dataFile = H5Fopen(name, H5F_ACC_RDONLY, dataFile_plist);
   if( dataFile < 0 ) {
     throw BoutException("Failed to open dataFile");
   }
@@ -127,10 +142,10 @@ bool H5Format::openw(const char *name, bool append) {
     close(); 
 
   if(append) {
-    dataFile = H5Fopen(name, H5F_ACC_RDWR, H5P_DEFAULT);
+    dataFile = H5Fopen(name, H5F_ACC_RDWR, dataFile_plist);
   }
   else {
-    dataFile = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    dataFile = H5Fcreate(name, H5F_ACC_TRUNC, H5P_DEFAULT, dataFile_plist);
   }
   if( dataFile < 0 ) {
     throw BoutException("Failed to open dataFile");
@@ -176,46 +191,59 @@ void H5Format::flush() {
 }
 
 const vector<int> H5Format::getSize(const char *name) {
-  throw BoutException("H5Format::getSize not implemented");
   vector<int> size;
-// 
-// #ifdef NCDF_VERBOSE
-//   NcError err(NcError::verbose_nonfatal);
-// #else
-//   NcError err(NcError::silent_nonfatal);
-// #endif
-// 
-//   if(!is_valid())
-//     return size;
-// 
-// #ifdef CHECK
-//   msg_stack.push("H5Format::getSize");
-// #endif
-// 
-//   NcVar *var;
-//   
-//   if(!(var = dataFile->get_var(name)))
-//     return size;
-//   
-//   if(!var->is_valid())
-//     return size;
-// 
-//   int nd = var->num_dims(); // Number of dimensions
-// 
-//   if(nd == 0) {
-//     size.push_back(1);
-//     return size;
-//   }
-//   
-//   long *ls = var->edges();
-//   for(int i=0;i<nd;i++)
-//     size.push_back((int) ls[i]);
-// 
-//   delete[] ls;
-//   
+
+  if(!is_valid())
+    return size;
+
 #ifdef CHECK
-  msg_stack.pop();
+  msg_stack.push("H5Format::getSize");
 #endif
+  
+  hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
+  if (dataSet < 0) {
+    // variable does not exist in file, so return empty size
+    return size;
+  }
+  
+  hid_t dataSpace = H5Dget_space(dataSet);
+  if (dataSpace < 0)
+    throw BoutException("Failed to create dataSpace");
+  
+  int nd = H5Sget_simple_extent_ndims(dataSpace);
+  if (nd < 0)
+    throw BoutException("Failed to get dataSpace ndims");
+  
+  if (nd==0) {
+    if (H5Sclose(dataSpace) < 0)
+      throw BoutException("Failed to close dataSpace");
+    if (H5Dclose(dataSet) < 0)
+      throw BoutException("Failed to close dataSet");
+    
+    size.push_back(1);
+    return size;
+#ifdef CHECK
+    msg_stack.pop();
+#endif
+  }
+  else {
+    hsize_t dims[nd];
+    int error = H5Sget_simple_extent_dims(dataSpace, dims, NULL);
+    if (error < 0)
+      throw BoutException("Failed to get dimensions of dataSpace");
+    
+    if (H5Sclose(dataSpace) < 0)
+      throw BoutException("Failed to close dataSpace");
+    if (H5Dclose(dataSet) < 0)
+      throw BoutException("Failed to close dataSet");
+    
+    for (int i=0; i<nd; i++)
+      size.push_back(dims[i]);
+    
+#ifdef CHECK
+    msg_stack.pop();
+#endif
+  }
 
   return size;
 }
@@ -288,13 +316,15 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   counts[0]=lx; counts[1]=ly; counts[2]=lz;
   offset[0]=x0; offset[1]=y0; offset[2]=z0;
   offset_local[0]=x0_local;offset_local[1]=y0_local;offset_local[2]=z0_local;
-  init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+//   init_size_local[0]=mesh->ngx; init_size_local[1]=mesh->ngy; init_size_local[2]=mesh->ngz;
+  init_size_local[0]=offset_local[0]+counts[0]; init_size_local[1]=offset_local[1]+counts[1]; init_size_local[2]=offset_local[2]+counts[2]; // Want to be able to use without needing mesh to be initialised; makes hyperslab selection redundant
   
   hid_t mem_space = H5Screate_simple(nd, init_size_local, init_size_local);
   if (mem_space < 0)
     throw BoutException("Failed to create mem_space");
-  if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
-    throw BoutException("Failed to select hyperslab");
+//   if (nd > 0 && !(nd==1 && lx==1))
+//     if (H5Sselect_hyperslab(mem_space, H5S_SELECT_SET, offset_local, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+//       throw BoutException("Failed to select hyperslab");
   
   hid_t dataSet = H5Dopen(dataFile, name, H5P_DEFAULT);
   if (dataSet < 0)
@@ -303,8 +333,9 @@ bool H5Format::read(void *data, hid_t hdf5_type, const char *name, int lx, int l
   hid_t dataSpace = H5Dget_space(dataSet);
   if (dataSpace < 0)
     throw BoutException("Failed to create dataSpace");
-  if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
-    throw BoutException("Failed to select hyperslab");
+  if (nd > 0 && !(nd==1 && lx==1))
+    if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
+      throw BoutException("Failed to select hyperslab");
   
   if (H5Dread(dataSet, hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
     throw BoutException("Failed to read data");
@@ -459,7 +490,7 @@ bool H5Format::write(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type, con
   if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
     throw BoutException("Failed to select hyperslab");
   
-  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
     throw BoutException("Failed to write data");
   
   if (H5Sclose(mem_space) < 0)
@@ -736,7 +767,7 @@ bool H5Format::write_rec(void *data, hid_t mem_hdf5_type, hid_t write_hdf5_type,
   if (H5Sselect_hyperslab(dataSpace, H5S_SELECT_SET, offset, /*stride=*/NULL, counts, /*block=*/NULL) < 0)
     throw BoutException("Failed to select hyperslab");
   
-  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, H5P_DEFAULT, data) < 0)
+  if (H5Dwrite(dataSet, mem_hdf5_type, mem_space, dataSpace, dataSet_plist, data) < 0)
     throw BoutException("Failed to write data");
   
   if (H5Sclose(mem_space) < 0)

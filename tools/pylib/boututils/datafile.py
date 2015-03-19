@@ -543,4 +543,4 @@ class DataFile_HDF5(DataFile):
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
         
-        self.handle.create_dataset(name, data)
+        self.handle.create_dataset(name, data=data)

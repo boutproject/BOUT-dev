@@ -306,6 +306,7 @@ int BoutFinalise() {
 
   // Close the output file
   dump.close();
+  dump.~Datafile(); // Make sure everything gets tidied up by destructors: needs to be called before BoutComm::cleanup() for parallel HDF5
   
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());

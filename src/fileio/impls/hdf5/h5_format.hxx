@@ -48,6 +48,7 @@ class H5Format;
 #include "dataformat.hxx"
 
 #include <hdf5.h>
+#include <H5FDmpio.h>
 
 #include <map>
 #include <string>
@@ -114,6 +115,8 @@ class H5Format : public DataFormat {
   char *fname; ///< Current file name
   
   hid_t dataFile;
+  hid_t dataFile_plist;
+  hid_t dataSet_plist;
 
 //   /// Pointer to netCDF file
 //   NcFile *dataFile;
