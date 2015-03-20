@@ -14,8 +14,8 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.770beta'
-__date__    = '16.03.2015'
+__version__ = '0.771beta'
+__date__    = '20.03.2015'
 
 import textwrap
 import os
@@ -53,6 +53,8 @@ from bout_runners.common_bout_functions import create_folder,\
 #       to the simulation folder
 # TODO: When doing a convergence run: Let nx, ny and MZ be set
 #       independently (as shown in Salari and Knupp)
+# Consider: Write a temporary shell script file from job_string, and
+#           delete it afterwards
 
 #{{{demo
 def demo(argument = None, plot_type = False, convergence_type = False):
@@ -1191,9 +1193,13 @@ class basic_runner(object):
 
 #{{{remove_data
     def remove_data(self):
-        """Removes all data (expect the input file) from the dump directory"""
+        """Removes *.nc, *.log, *.png and *.pdf files from the dump directory"""
         print("Removing old data")
-        command = "find ./" + self.dmp_folder + " -type f -not -name '*inp' | xargs rm"
+        command = "rm -f ./" + self.dmp_folder +\
+                  "*.nc ./" + self.dmp_folder +\
+                  "*.log ./" + self.dmp_folder +\
+                  "*.png ./" + self.dmp_folder +\
+                  "*.pdf"
         shell(command)
 #}}}
 
@@ -2048,7 +2054,7 @@ class basic_qsub_runner(basic_runner):
         # First line of the script
         self.python_tmp =\
             'import os\n' +\
-            'from boututils.common_bout_functions import '+\
+            'from bout_runners.common_bout_functions import '+\
             'wait_for_runs_to_finish\n'
         # Call wait_for_runs_to_finish
         self.python_tmp +=\
@@ -2246,7 +2252,12 @@ class basic_qsub_runner(basic_runner):
         # Open a pipe to the qsub
         process = Popen(['qsub'], stdin = PIPE)
         # Put in the script
-        process.communicate(job_string)
+        # Old solution: process.communicate(job_string)
+        # New solution on next 2 lines (py2 and py3 compatible):
+        # Consider FIXME: Make the string to a temporary shell script which is
+        #                 later deleted
+        process.stdin.write(bytes(job_string + "\n", "ascii"))
+        process.stdin.flush()
         # Close the pipe
         process.stdin.close()
 #}}}
