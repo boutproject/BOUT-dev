@@ -37,6 +37,59 @@ FUNCTION surface_average, var, mesh
   RETURN, f
 END
 
+function calc_angle, x1, x2, x3, y1, y2, y3
+; calculates angle associated with point 1 given 3 points (law of cosines)
+	; length of segements between points
+	P12 = sqrt((x1-x2)^2 + (y1-y2)^2)
+	P13 = sqrt((x1-x3)^2 + (y1-y3)^2)
+	P23 = sqrt((x2-x3)^2 + (y2-y3)^2)
+	;calculate angle
+	return, acos((P12^2 + P13^2 - P23^2)/(2.*P12*P13))
+end
+
+function calc_beta, r, z, x
+; 
+	nx = size(r,/dimensions)
+	ny = nx[1]
+	nx = nx[0]
+
+	beta = dblarr(ny)
+	; loop to calc eta for non-edges
+	if (x eq 0) then begin
+		for j=1,ny-2 do begin
+			beta[j] = calc_angle(r[x,j],r[x+1,j],r[x,j+1],z[x,j],z[x+1,j],z[x,j+1])
+			beta[j] += !PI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
+			beta[j] /= 2.0
+		endfor
+		beta[0] = calc_angle(r[x,0],r[x+1,0],r[x,1],z[x,0],z[x+1,0],z[x,1])
+		beta[ny-1] = !PI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2])
+	endif else if (x eq nx-1) then begin
+		for j=1,ny-2 do begin
+			; average angle across the grid point
+			beta[j] = calc_angle(r[x,j],r[x-1,j],r[x,j-1],z[x,j],z[x-1,j],z[x,j-1])
+			beta[j] += !PI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
+			beta[j] /= 2.0
+		endfor
+		beta[0] = !PI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1])
+		beta[ny-1] = calc_angle(r[x,ny-1],r[x-1,ny-1],r[x,ny-2],z[x,ny-1],z[x-1,ny-1],z[x,ny-2])
+	endif else begin
+		for j=1,ny-2 do begin
+			; average angle across the grid point
+			beta[j] = calc_angle(r[x,j],r[x-1,j],r[x,j-1],z[x,j],z[x-1,j],z[x,j-1])
+			beta[j] += calc_angle(r[x,j],r[x+1,j],r[x,j+1],z[x,j],z[x+1,j],z[x,j+1])
+			beta[j] += !PI - calc_angle(r[x,j],r[x-1,j],r[x,j+1],z[x,j],z[x-1,j],z[x,j+1])
+			beta[j] += !PI - calc_angle(r[x,j],r[x+1,j],r[x,j-1],z[x,j],z[x+1,j],z[x,j-1])
+			beta[j] /= 4.0
+		endfor
+		beta[0] = 0.5*calc_angle(r[x,0],r[x+1,0],r[x,1],z[x,0],z[x+1,0],z[x,1])
+		beta[0] = beta[0] + 0.5*(!PI - calc_angle(r[x,0],r[x-1,0],r[x,1],z[x,0],z[x-1,0],z[x,1]))
+		beta[ny-1] = 0.5*calc_angle(r[x,ny-1],r[x-1,ny-1],r[x,ny-2],z[x,ny-1],z[x-1,ny-1],z[x,ny-2])
+		beta[ny-1] = beta[ny-1] + 0.5*(!PI - calc_angle(r[x,ny-1],r[x+1,ny-1],r[x,ny-2],z[x,ny-1],z[x+1,ny-1],z[x,ny-2]))
+	endelse
+	
+	return, beta
+end
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Calculate f = R * Bt
 ; Using LSODE method
@@ -116,6 +169,93 @@ FUNCTION newton_Bt, psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh
 
   RETURN, fxy / Rxy
 END
+
+function intx, Rxy, data
+
+	nx = size(data,/dimensions)
+	ny = nx[1]
+	nx = nx[0]
+
+	result = dblarr(nx,ny)
+	result[*,*] = 0.0
+	for i=0, ny-1 do begin
+		for j=1, nx-1 do begin
+			result[j,i] = int_tabulated(Rxy[0:j,i],data[0:j,i])
+		endfor
+	endfor
+	
+	return, result
+end
+
+function inty, Zxy, data
+
+	nx = size(data,/dimensions)
+	ny = nx[1]
+	nx = nx[0]
+
+	result = dblarr(nx,ny)
+	result[*,*] = 0.0
+	for i=1, ny-1 do begin
+		for j=0, nx-1 do begin
+			result[j,i] = int_tabulated(Zxy[j,0:i],data[j,0:i])
+		endfor
+	endfor
+	
+	return, result
+end
+
+; Integrate a function over y
+FUNCTION my_int_y, var, yaxis, mesh, loop=loop, nosmooth=nosmooth, simple=simple
+  f = var
+  
+  s = SIZE(var, /dim)
+  nx = s[0]
+  loop = FLTARR(nx)
+  
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=period)
+    
+    f[xi,yi] = inty(yaxis[xi,yi],var[xi,yi])
+    IF NOT KEYWORD_SET(nosmooth) THEN BEGIN
+      f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
+    ENDIF
+    loop[xi] = f[xi,yi[N_ELEMENTS(yi)-1]] - f[xi,yi[0]]
+  ENDREP UNTIL last
+  
+  RETURN, f
+END
+
+; derivative function that takes in an axis as well
+function dfdy, f, y, mesh
+
+	s = size(f, /dim)
+	nx = s[0]
+	ny = s[1]
+	result = dblarr(nx,ny)
+
+	status = gen_surface(mesh=mesh) ; Start generator
+	REPEAT BEGIN
+		yi = gen_surface(last=last, xi=xi)
+		result[xi,yi] = DERIV(y[xi,yi],f[xi,yi])
+	ENDREP UNTIL last
+	return, result
+end
+
+function dfdx, f, x
+	
+	nx = size(f,/dimensions)
+	ny = nx[1]
+	nx = nx[0]
+
+	result = dblarr(nx,ny)
+	result[*,*] = 0.0
+	for i=0, ny-1 do begin
+		result[*,i] = DERIV(reform(x[*,i]),reform(f[*,i]));
+	endfor
+	
+	return, result
+end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Solve for pressure and f=R*Bt using force balance
@@ -813,16 +953,98 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     ENDELSE
   ENDIF
 
+  ; Need yxy values at all points for nonorthogonal calculations
+  yxy = FLTARR(nx, ny)
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    ; Get the next domain
+    yi = gen_surface(period=period, last=last, xi=xi)
+    yxy[xi,yi] = DINDGEN(N_ELEMENTS(yi))*dtheta
+  ENDREP UNTIL last
+
+  ; Calculate hrad and dhrad for thetaxy calculation
+  hrad = dblarr(nx,ny) 
+  dhrad = dblarr(nx,ny) 
+  for j=0,ny-1 do begin
+    for i=0, nx-1 do begin
+      if(i eq 0) then begin
+        r2 = Rxy[i,j]
+        z2 = Zxy[i,j]
+        r3 = Rxy[i+1,j]
+        z3 = Zxy[i+1,j]
+	hrad[i,j] = sqrt((r2-r3)^2+(z2-z3)^2)
+	dhrad[i,j] = sqrt((r2-r3)^2+(z2-z3)^2)
+      endif else if(i eq nx-1) then begin
+        r1 = Rxy[i-1,j]
+        z1 = Zxy[i-1,j]
+        r2 = Rxy[i,j]
+        z2 = Zxy[i,j]
+	hrad[i,j] = hrad[i-1,j] + sqrt((r2-r1)^2+(z2-z1)^2)
+	dhrad[i,j] = sqrt((r2-r1)^2+(z2-z1)^2)
+      endif else begin
+        r1 = Rxy[i-1,j]
+        z1 = Zxy[i-1,j]
+        r2 = Rxy[i,j]
+        z2 = Zxy[i,j]
+        r3 = Rxy[i+1,j]
+        z3 = Zxy[i+1,j]
+	hrad[i,j] = hrad[i-1,j] + sqrt(((r2-r1)/2. + (r3-r2)/2.)^2+((z2-z1)/2. + (z3-z2)/2.)^2)
+	dhrad[i,j] = sqrt(((r2-r1)/2. + (r3-r2)/2.)^2+((z2-z1)/2. + (z3-z2)/2.)^2)
+      endelse
+    endfor
+  endfor
+
+  ; Calculate beta (angle between x and y coord)
+  beta = dblarr(nx,ny)
+  thetaxy = dblarr(nx,ny)
+  npol = round(total(mesh.npol,/cumulative))
+  Nnpol = n_elements(npol)
+  status = gen_surface(mesh=mesh) ; Start generator
+  REPEAT BEGIN
+    yi = gen_surface(last=last, xi=xi, period=period)
+    ; find beta using one field line at xi, with y range yi
+    ; for better angle calculation, need to split yi into sections based on gridding
+    if (xi GE mesh.nrad[0]) then begin  ; if outside the separatrix
+      for i=1,Nnpol-1 do begin
+        loc = where((yi GE npol[i-1]) AND (yi LT npol[i]))
+	if(total(loc) NE -1) then begin
+	  yi_curr = yi[loc]
+	  beta[xi,yi_curr] = !PI/2. - calc_beta(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+        endif
+      endfor
+      loc = where(yi LT mesh.npol[0])
+      if(total(loc) NE -1) then begin
+        yi_curr = yi[loc]
+        beta[xi,yi_curr] = !PI/2. - calc_beta(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+      endif
+    endif else begin
+	beta[xi,yi] = !PI/2. - calc_beta(Rxy[*,yi], Zxy[*,yi], xi)
+    endelse
+  ENDREP UNTIL last
+
+  beta = smooth(beta,5) ; need to smooth beta b/c it's bad around xpoints
+  ; Calculate eta (poloidal non-orthogonality parameter)
+  eta = sin(beta) ; from geometry
+  yshift = intx(hrad, eta) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
+  thetaxy = yxy + yshift
+
+  G = 1. - dfdy(yshift,thetaxy,mesh)
+  dyshiftdy = dfdy(yshift,yxy,mesh)
+
   ; Calculate field-line pitch
   pitch = hthe * Btxy / (Bpxy * Rxy)
   
   ; derivative with psi
   dqdpsi = DDX(psixy, pitch)
-  
-  qinty = int_y(pitch, mesh, loop=qloop, /simple, /nosmooth) * dtheta
-  qloop = qloop * dtheta
-  sinty = int_y(dqdpsi, mesh, /simple, /nosmooth) * dtheta
-  
+
+  ;int_y(pitch, mesh, loop=qloop, /simple, /nosmooth) * dyy
+  ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
+  qinty = my_int_y(pitch*(1.+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
+  qloop = dblarr(nx)
+  for i=0, nx-1 do qloop[i] = max(qinty[i,*]) - min(qinty[i,*])
+  sinty = DDX(psixy,qinty)
+  H = dfdy(qinty,thetaxy,mesh)
+
   ; NOTE: This is only valid in the core
   pol_angle = FLTARR(nx,ny)
   FOR i=0, nx-1 DO pol_angle[i, *] = 2.0*!PI * qinty[i,*] / qloop[i]
@@ -842,10 +1064,12 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
       ; Crosses the midplane
       qinty[xi, yi] = qinty[xi, yi] - qinty[xi, ymidplane]
       sinty[xi, yi] = sinty[xi, yi] - sinty[xi, ymidplane]
+;       H[xi, yi] = H[xi, yi] - H[xi, ymidplane]
     ENDIF ELSE BEGIN
       ; Doesn't include a point at the midplane
       qinty[xi, yi] = qinty[xi, yi] - qinty[xi,yi[0]]
       sinty[xi, yi] = sinty[xi, yi] - sinty[xi,yi[0]]
+;       H[xi, yi] = H[xi, yi] - H[xi,yi[0]]
     ENDELSE
   ENDREP UNTIL last
   
@@ -859,13 +1083,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     PRINT, "*** Calculating curvature in toroidal coordinates"
     
-    thetaxy = FLTARR(nx, ny)
-    status = gen_surface(mesh=mesh) ; Start generator
-    REPEAT BEGIN
-      ; Get the next domain
-      yi = gen_surface(period=period, last=last, xi=xi)
-      thetaxy[xi,yi] = FINDGEN(N_ELEMENTS(yi))*dtheta
-    ENDREP UNTIL last
     
     curvature, nx, ny, FLOAT(Rxy), FLOAT(Zxy), FLOAT(brxy), FLOAT(bzxy), FLOAT(btxy), $
       FLOAT(psixy), FLOAT(thetaxy), hthe, $
@@ -1168,7 +1385,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
     
     REPEAT BEGIN
       te_x = get_float("Maximum temperature [eV]:")
-      
       ni_x = max(pressure) / (2.*Te_x* 1.602e-19*1.0e20)
       
       PRINT, "Maximum density [10^20 m^-3]:", ni_x
@@ -1185,6 +1401,36 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   bmag = MAX(ABS(Bxy))
   PRINT, "Setting bmag = ", bmag
+
+  I = sinty
+
+  g11 = (Rxy*Bpxy)^2;
+  g22 = G^2/hthe^2 + eta^2*g11;
+  g33 = I^2*g11 + H^2/hthe^2 + 1.0/Rxy^2;
+  g12 = -eta*g11;
+  g13 = -I*g11;
+  g23 = I*eta*g11 - G*H/hthe^2;
+
+  J = hthe / Bpxy / G
+
+  g_11 = 1.0/g11 + (hthe*eta/G)^2 + (Rxy*H*eta/G + I*Rxy)^2;
+  g_22 = hthe^2/G^2 + Rxy^2*H^2/G^2;
+  g_33 = Rxy^2;
+  g_12 = hthe^2*eta/G^2 + Rxy^2*H/G*(H*eta/G + I);
+  g_13 = Rxy^2*(H*eta/G+I);
+  g_23 = H*Rxy^2/G;
+
+  ; check to make sure jacobian is good
+  Jcheck = 1. / sqrt(g11*g22*g33 + 2.0*g12*g13*g23 - g11*g23*g23 - g22*g13*g13 - g33*g12*g12);
+  whr = where(abs(J-Jcheck) gt 0.01,count)
+  if(count gt 0) then begin
+    print,""
+    print,"*********************************"
+    print,"WARNING: Jacobians not consistent"
+    print,"*********************************"
+    print,""
+  endif
+  stop
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; save to file
@@ -1216,6 +1462,11 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "zShift", qinty)
   s = file_write(handle, "pol_angle", pol_angle)
   s = file_write(handle, "ShiftTorsion", dqdpsi)
+  s = file_write(handle, "Gxy", G)
+  s = file_write(handle, "Hxy", H)
+  s = file_write(handle, "etaxy", eta)
+  s = file_write(handle, "beta", beta)
+  s = file_write(handle, "yshift", yshift)
 
   s = file_write(handle, "Rxy",  Rxy)
   s = file_write(handle, "Zxy",  Zxy)
@@ -1223,8 +1474,11 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "Btxy", Btxy)
   s = file_write(handle, "Bxy",  Bxy)
   s = file_write(handle, "hthe", hthe)
+  s = file_write(handle, "hrad", hrad)
   s = file_write(handle, "sinty", sinty)
   s = file_write(handle, "psixy", psixy)
+  s = file_write(handle, "thetaxy", thetaxy)
+  s = file_write(handle, "yxy", yxy)
 
   ; Topology for general configurations
   s = file_write(handle, "yup_xsplit", mesh.yup_xsplit)
@@ -1253,6 +1507,21 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   s = file_write(handle, "bxcvx", bxcvx)
   s = file_write(handle, "bxcvy", bxcvy)
   s = file_write(handle, "bxcvz", bxcvz)
+
+  ; Metric tensor terms
+  s = file_write(handle, "g11", g11)
+  s = file_write(handle, "g22", g22)
+  s = file_write(handle, "g33", g33)
+  s = file_write(handle, "g12", g12)
+  s = file_write(handle, "g13", g13)
+  s = file_write(handle, "g23", g23)
+  s = file_write(handle, "g_11", g_11)
+  s = file_write(handle, "g_22", g_22)
+  s = file_write(handle, "g_33", g_33)
+  s = file_write(handle, "g_12", g_12)
+  s = file_write(handle, "g_13", g_13)
+  s = file_write(handle, "g_23", g_23)
+  s = file_write(handle, "J", J)
 
   ; Psi range
   s = file_write(handle, "psi_axis", mesh.faxis)
