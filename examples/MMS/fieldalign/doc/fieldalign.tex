@@ -1,0 +1,80 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{calc}% http://ctan.org/pkg/calc
+\usepackage[
+  letterpaper,%
+  textheight={47\baselineskip+\topskip},%
+  textwidth={\paperwidth-126pt},%
+  footskip=75pt,%
+  marginparwidth=0pt,%
+  top={\topskip+0.75in}]{geometry}% http://ctan.org/pkg/geometry
+\usepackage{fancyhdr}% http://ctan.org/pkg/fancyhdr
+
+\newcommand{\kpar}{k_{||}}
+\newcommand{\kperp}{k_\perp}
+
+\pagestyle{fancy}
+%\fancyhead{}
+\fancyfoot{}% Clear header & footer
+%\fancyhead[L]{Electrostatic Ohm's law}% Set centered header
+%\fancyhead[R]{ 22$^{nd}$ March 2014 }
+\fancyfoot[C]{\thepage}% Set centered footer
+\renewcommand{\headrulewidth}{0.5pt}% Add header rule
+
+% Titling
+\title{ Testing non-orthogonal coordinates }% Your title
+\author{ Ben Dudson }% Your author
+\date{ 12$^{th}$ March 2015 }% Your date
+\makeatletter
+% Definition of proc.cls' \maketitle:
+\def\@maketitle{% 
+  \vbox to 1.25in{%
+    \vskip 0.5em
+    {\large \begin{tabular}[t]{ll}
+        Title: & \@title \\
+        Author: & \@author \\
+        Date: & \@date \\
+        Project: & 
+      \end{tabular}\par}
+    \vfil}\noindent\hrulefill
+    \vskip 2em}
+\makeatother
+\begin{document}
+\maketitle % Produce title
+\thispagestyle{fancy}% Override titling page style with fancy
+
+Solving the equation
+\[
+\frac{\partial f}{\partial t} = \frac{\partial f}{\partial \theta} + \frac{\partial f}{\partial \phi} = \left(\hat{\bf{e}}_\theta + \hat{\bf{e}}_\phi\right)\cdot\nabla f
+\]
+on a 2D $\left(\theta, \phi\right)$ doubly periodic domain with sides of length $2\pi$.
+
+Transform into coordinates
+\begin{eqnarray*}
+y &=& \theta \\
+z &=& \phi - \int_{\theta_0}^\theta \nu d\theta
+\end{eqnarray*}
+with pitch $\nu$. Taking the gradient of these expressions, and
+using $\nabla = \nabla y \frac{\partial}{\partial y} + \nabla z\frac{\partial}{\partial z}$ assuming
+\[
+\left|\nabla\theta\right| = 1 \qquad \left|\nabla\phi\right| = 1
+\]
+gives
+\begin{eqnarray*}
+\nabla y &=& \nabla \theta \\
+\nabla z &=& \nabla \phi - \nu \nabla \theta
+\end{eqnarray*}
+
+\[
+\frac{\partial f}{\partial t} = \left[ \left(1 + \nu\right) \nabla y + \nabla z \right] \cdot \nabla f
+\]
+which when expanded gives
+\begin{eqnarray*}
+\frac{\partial f}{\partial t} &=& \underbrace{\left(1 + \nu\right)}_{v_y}\left[g^{yy} \frac{\partial f}{\partial y} + g^{yz}\frac{\partial f}{\partial z}\right] \\
+&+& \underbrace{1}_{v_z}\left[g^{zz} \frac{\partial f}{\partial z} + g^{yz}\frac{\partial f}{\partial y}\right]
+\end{eqnarray*}
+with
+\[
+g^{yy} = 1 \qquad g^{yz} = -\nu \qquad g^{zz} = 1 + \nu^2
+\]
+
+\end{document}

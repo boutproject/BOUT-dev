@@ -4,7 +4,6 @@ VPATH=$(TEXDIR)
 .PHONY:all
 
 all: user_manual.pdf \
-	reference.pdf \
 	developer_manual.pdf \
 	preconditioning.pdf \
 	coordinates.pdf \

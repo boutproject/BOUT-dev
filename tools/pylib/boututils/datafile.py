@@ -168,10 +168,20 @@ class DataFile:
             else:
                 return var[:]
 
+    def __getitem__(self, name):
+        var = self.read(name)
+        if var is None:
+            raise KeyError("No variable found: "+name)
+        return var
+
     def list(self):
         """List all variables in the file."""
         if self.handle == None: return []
         return self.handle.variables.keys()
+
+    def keys(self):
+        """List all variables in the file."""
+        return self.list()
 
     def dimensions(self, varname):
         """Array of dimension names"""
@@ -347,5 +357,6 @@ class DataFile:
             # And some others only this
             var[:] = data
             
+    def __setitem__(self, key, value):
+        self.write(key, value)
         
-            

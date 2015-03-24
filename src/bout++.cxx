@@ -97,13 +97,13 @@ char get_spin();                    // Produces a spinning bar
   places in BOUT++.
   
  */
-void BoutInitialise(int &argc, char **&argv) {
+int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
 
   const char *data_dir; ///< Directory for data input/output
   const char *opt_file; ///< Filename for the options file
-  
+
 #ifdef SIGHANDLE
   /// Set a signal handler for segmentation faults
   signal(SIGSEGV, bout_signal_handler);
@@ -115,12 +115,29 @@ void BoutInitialise(int &argc, char **&argv) {
 
   /// Check command-line arguments
   /// NB: "restart" and "append" are now caught by options
+  /// Check for help flag separately
+  for (int i=1;i<argc;i++) {
+    if (strncasecmp(argv[i], "-h", 2) == 0 ||
+    	strncasecmp(argv[i], "--help", 6) == 0) {
+      // Print help message
+      fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
+      fprintf(stdout, "\n"
+	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
+	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+	      "  -h, --help\t\tThis message\n"
+	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
+	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
+
+      return -1;
+    }
+  }
   for (int i=1;i<argc;i++) {
     if (strncasecmp(argv[i], "-d", 2) == 0) {
       // Set data directory
       if (i+1 >= argc) {
-        fprintf(stderr, "Useage is %s -d <data directory>\n", argv[0]);
-        return;
+        fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
+        return 1;
       }
       i++;
       data_dir = argv[i];
@@ -128,14 +145,14 @@ void BoutInitialise(int &argc, char **&argv) {
     if (strncasecmp(argv[i], "-f", 2) == 0) {
       // Set options file
       if (i+1 >= argc) {
-        fprintf(stderr, "Useage is %s -f <options filename>\n", argv[0]);
-        return;
+        fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
+        return 1;
       }
       i++;
       opt_file = argv[i];
     }
   }
-  
+
   // Set options
   Options::getRoot()->set("datadir", string(data_dir));
   Options::getRoot()->set("optionfile", string(opt_file));
@@ -154,7 +171,9 @@ void BoutInitialise(int &argc, char **&argv) {
 
   /// Open an output file to echo everything to
   /// On processor 0 anything written to output will go to stdout and the file
-  output.open("%s/BOUT.log.%d", data_dir, MYPE);
+  if (output.open("%s/BOUT.log.%d", data_dir, MYPE)) {
+    return 1;
+  }
 
   /// Print intro
   output.write("\nBOUT++ version %.2f\n", BOUT_VERSION);
@@ -229,7 +248,7 @@ void BoutInitialise(int &argc, char **&argv) {
   }catch(BoutException &e) {
     output << "Error encountered during initialisation\n";
     output << e.what() << endl;
-    return;
+    return 1;
   }
 
   try {
@@ -246,7 +265,7 @@ void BoutInitialise(int &argc, char **&argv) {
     /// Setup derivative methods
     if (derivs_init()) {
       output.write("Failed to initialise derivative methods. Aborting\n");
-      return;
+      return 1;
     }
 
     ////////////////////////////////////////////
@@ -282,6 +301,7 @@ void BoutInitialise(int &argc, char **&argv) {
     BoutComm::cleanup();
     throw;
   }
+  return 0;
 }
 
 int bout_run(Solver *solver, rhsfunc physics_run) {
@@ -365,6 +385,9 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");
   int ncalls            = solver->rhs_ncalls;
+  int ncalls_e		= solver->rhs_ncalls_e;
+  int ncalls_i		= solver->rhs_ncalls_i;
+  bool output_split     = solver->split_monitor;
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
@@ -386,18 +409,31 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     first_time = false;
 
     /// Print the column header for timing info
-    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-
+    if(!output_split){
+	    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    }else{
+	    output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    }
   }
   
-  output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+ 
+  if(!output_split){
+    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  
+  }else{
+    output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+               simtime, ncalls_e, ncalls_i, wtime,
+               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+               100.*wtime_invert/wtime,  // Inversions
+               100.0*wtime_comms/wtime,  // Communications
+               100.* wtime_io / wtime,      // I/O
+               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+  }
   
   // This bit only to screen, not log file
 
