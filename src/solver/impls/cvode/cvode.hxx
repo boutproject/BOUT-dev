@@ -33,8 +33,8 @@ typedef EmptySolver CvodeSolver;
 #else
 class CvodeSolver;
 
-#ifndef __SUNDIAL_SOLVER_H__
-#define __SUNDIAL_SOLVER_H__
+#ifndef __CVODE_SOLVER_H__
+#define __CVODE_SOLVER_H__
 
 // NOTE: MPI must be included before SUNDIALS, otherwise complains
 #include "mpi.h"
@@ -90,7 +90,7 @@ class CvodeSolver : public Solver {
     void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
-#endif // __SUNDIAL_SOLVER_H__
+#endif // __CVODE_SOLVER_H__
 
 #endif
 
