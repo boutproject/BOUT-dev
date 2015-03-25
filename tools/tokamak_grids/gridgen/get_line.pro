@@ -1,4 +1,4 @@
-FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt
+FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt, vec=vec, weight=weight
   IF NOT KEYWORD_SET(npt) THEN npt=10
   ; Get starting f
   
@@ -16,7 +16,7 @@ FUNCTION get_line, interp_data, R, Z, ri0, zi0, fto, npt=npt
     d = FLOAT(j+1)/FLOAT(npt)
     ftarg = d*fto + (1.0 - d)*ffrom
     follow_gradient, interp_data, R, Z, rixpt[j], zixpt[j], $
-      ftarg, rinext, zinext
+      ftarg, rinext, zinext, vec=vec, weight=weight
     rixpt[j+1] = rinext
     zixpt[j+1] = zinext
   ENDFOR

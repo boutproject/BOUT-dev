@@ -47,8 +47,8 @@ function calc_angle, x1, x2, x3, y1, y2, y3
 	return, acos((P12^2 + P13^2 - P23^2)/(2.*P12*P13))
 end
 
-function calc_beta, r, z, x
-; 
+function calc_beta_withgrid, r, z, x
+
 	nx = size(r,/dimensions)
 	ny = nx[1]
 	nx = nx[0]
@@ -88,6 +88,68 @@ function calc_beta, r, z, x
 	endelse
 	
 	return, beta
+end
+
+function calc_beta, Rxy, Zxy, mesh, rz_grid, method
+	; calculate beta using local field line gradient
+
+	s = size(Rxy, /dim)
+	nx = s[0]
+	ny = s[1]
+	beta = dblarr(nx,ny)
+
+	if(method EQ 0) then begin
+		; interpolate from cartesian grid with psi values on it (ie. from efit)
+		interp_data = {nx: rz_grid.nr, ny:rz_grid.nz, method:0, f:rz_grid.psi}
+		
+		for j=0,ny-1 do begin
+			dRdr = DERIV(Rxy[*,j])
+			dZdr = DERIV(Zxy[*,j])
+			for i=0,nx-1 do begin
+				local_gradient, interp_data, mesh.Rixy[i,j], mesh.Zixy[i,j], status=status, dfdr=dfdr, dfdz=dfdz
+				dPsidR = dfdr/INTERPOLATE(DERIV(rz_grid.r),i)
+				dPsidZ = dfdz/INTERPOLATE(DERIV(rz_grid.z),j)
+	
+				angle1 = atan(dPsidR,dPsidZ)
+				angle2 = atan(dZdr[i],-dRdr[i])
+	
+				beta[i,j] = angle1 - angle2 - !PI/2.
+			endfor
+		endfor	
+
+	endif else if(method EQ 1) then begin
+		npol = round(total(mesh.npol,/cumulative))
+		Nnpol = n_elements(npol)
+		status = gen_surface(mesh=mesh) ; Start generator
+		REPEAT BEGIN
+			yi = gen_surface(last=last, xi=xi, period=period)
+			; find beta using one field line at xi, with y range yi
+			; for better angle calculation, need to split yi into sections based on gridding
+			if (xi GE mesh.nrad[0]) then begin  ; if outside the separatrix
+				for i=1,Nnpol-1 do begin
+					loc = where((yi GE npol[i-1]) AND (yi LT npol[i]))
+					if(total(loc) NE -1) then begin
+					yi_curr = yi[loc]
+					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+					endif
+				endfor
+				loc = where(yi LT mesh.npol[0])
+				if(total(loc) NE -1) then begin
+					yi_curr = yi[loc]
+					beta[xi,yi_curr] = !PI/2. - calc_beta_withgrid(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
+				endif
+			endif else begin
+				beta[xi,yi] = !PI/2. - calc_beta_withgrid(Rxy[*,yi], Zxy[*,yi], xi)
+			endelse
+		ENDREP UNTIL last
+		beta = smooth(beta,5) ; smooth beta, it's ugly
+	endif else begin
+		print,"UNKNOWN METHOD FOR BETA CALCULATION"
+		beta = 0.0
+	endelse
+
+	return, beta
+
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -995,34 +1057,12 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   endfor
 
   ; Calculate beta (angle between x and y coord)
-  beta = dblarr(nx,ny)
-  thetaxy = dblarr(nx,ny)
-  npol = round(total(mesh.npol,/cumulative))
-  Nnpol = n_elements(npol)
-  status = gen_surface(mesh=mesh) ; Start generator
-  REPEAT BEGIN
-    yi = gen_surface(last=last, xi=xi, period=period)
-    ; find beta using one field line at xi, with y range yi
-    ; for better angle calculation, need to split yi into sections based on gridding
-    if (xi GE mesh.nrad[0]) then begin  ; if outside the separatrix
-      for i=1,Nnpol-1 do begin
-        loc = where((yi GE npol[i-1]) AND (yi LT npol[i]))
-	if(total(loc) NE -1) then begin
-	  yi_curr = yi[loc]
-	  beta[xi,yi_curr] = !PI/2. - calc_beta(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
-        endif
-      endfor
-      loc = where(yi LT mesh.npol[0])
-      if(total(loc) NE -1) then begin
-        yi_curr = yi[loc]
-        beta[xi,yi_curr] = !PI/2. - calc_beta(Rxy[*,yi_curr], Zxy[*,yi_curr], xi)
-      endif
-    endif else begin
-	beta[xi,yi] = !PI/2. - calc_beta(Rxy[*,yi], Zxy[*,yi], xi)
-    endelse
-  ENDREP UNTIL last
+  ; beta_method - 0 to use local grad psi for calculation
+  ; 		- 1 to use gridpoint locations to calculate angle
+  beta_method = 0
+retrybetacalc:
+  beta = calc_beta(Rxy,Zxy,mesh,rz_grid,beta_method) ; use local gradient
 
-  beta = smooth(beta,5) ; need to smooth beta b/c it's bad around xpoints
   ; Calculate eta (poloidal non-orthogonality parameter)
   eta = sin(beta) ; from geometry
   yshift = intx(hrad, eta) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
@@ -1072,7 +1112,46 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
 ;       H[xi, yi] = H[xi, yi] - H[xi,yi[0]]
     ENDELSE
   ENDREP UNTIL last
-  
+
+  ; Calculate metrics - check jacobian
+  I = sinty
+
+  g11 = (Rxy*Bpxy)^2;
+  g22 = G^2/hthe^2 + eta^2*g11;
+  g33 = I^2*g11 + H^2/hthe^2 + 1.0/Rxy^2;
+  g12 = -eta*g11;
+  g13 = -I*g11;
+  g23 = I*eta*g11 - G*H/hthe^2;
+
+  J = hthe / Bpxy / G
+
+  g_11 = 1.0/g11 + (hthe*eta/G)^2 + (Rxy*H*eta/G + I*Rxy)^2;
+  g_22 = hthe^2/G^2 + Rxy^2*H^2/G^2;
+  g_33 = Rxy^2;
+  g_12 = hthe^2*eta/G^2 + Rxy^2*H/G*(H*eta/G + I);
+  g_13 = Rxy^2*(H*eta/G+I);
+  g_23 = H*Rxy^2/G;
+
+  ; check to make sure jacobian is good
+  Jcheck = 1. / sqrt(g11*g22*g33 + 2.0*g12*g13*g23 - g11*g23*g23 - g22*g13*g13 - g33*g12*g12);
+  whr = where(abs(J-Jcheck) gt 0.01,count)
+  if(count gt 0) then begin
+    if(beta_method EQ 0) then begin
+	print,""
+	print,"*****************************************************************"
+	print,"WARNING: Jacobians not consistent - trying other beta_calc method"
+	print,"*****************************************************************"
+	print,""
+	beta_method = 1
+        goto, retrybetacalc
+    endif else begin
+	print,""
+	print,"********************************************************************"
+	print,"WARNING: Jacobians not consistent - both beta_calc methods attempted"
+	print,"********************************************************************"
+	print,""
+    endelse
+  endif
   PRINT, ""
   PRINT, "==== Calculating curvature ===="
   
@@ -1401,36 +1480,6 @@ PRO process_grid, rz_grid, mesh, output=output, poorquality=poorquality, $
   
   bmag = MAX(ABS(Bxy))
   PRINT, "Setting bmag = ", bmag
-
-  I = sinty
-
-  g11 = (Rxy*Bpxy)^2;
-  g22 = G^2/hthe^2 + eta^2*g11;
-  g33 = I^2*g11 + H^2/hthe^2 + 1.0/Rxy^2;
-  g12 = -eta*g11;
-  g13 = -I*g11;
-  g23 = I*eta*g11 - G*H/hthe^2;
-
-  J = hthe / Bpxy / G
-
-  g_11 = 1.0/g11 + (hthe*eta/G)^2 + (Rxy*H*eta/G + I*Rxy)^2;
-  g_22 = hthe^2/G^2 + Rxy^2*H^2/G^2;
-  g_33 = Rxy^2;
-  g_12 = hthe^2*eta/G^2 + Rxy^2*H/G*(H*eta/G + I);
-  g_13 = Rxy^2*(H*eta/G+I);
-  g_23 = H*Rxy^2/G;
-
-  ; check to make sure jacobian is good
-  Jcheck = 1. / sqrt(g11*g22*g33 + 2.0*g12*g13*g23 - g11*g23*g23 - g22*g13*g13 - g33*g12*g12);
-  whr = where(abs(J-Jcheck) gt 0.01,count)
-  if(count gt 0) then begin
-    print,""
-    print,"*********************************"
-    print,"WARNING: Jacobians not consistent"
-    print,"*********************************"
-    print,""
-  endif
-  stop
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; save to file
