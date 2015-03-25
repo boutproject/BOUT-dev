@@ -89,3 +89,8 @@ try:
     from boututils.showdata import showdata
 except:
     print("No showdata")
+
+try:
+    from boututils.shiftz import shiftZ
+except:
+    print("No shiftZ")
