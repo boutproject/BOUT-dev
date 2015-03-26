@@ -1077,11 +1077,8 @@ retrybetacalc:
   ; derivative with psi
   dqdpsi = DDX(psixy, pitch)
 
-  ;int_y(pitch, mesh, loop=qloop, /simple, /nosmooth) * dyy
   ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
   qinty = my_int_y(pitch*(1.+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
-  qloop = dblarr(nx)
-  for i=0, nx-1 do qloop[i] = max(qinty[i,*]) - min(qinty[i,*])
   sinty = DDX(psixy,qinty)
   H = dfdy(qinty,thetaxy,mesh)
 

@@ -6,7 +6,7 @@
 ; Input: pos[0] = R, pos[1] = Z
 ; Output [0] = dR/df = -Bz/B^2 , [1] = dZ/df = Br/B^2
 FUNCTION radial_differential, fcur, pos
-  COMMON rd_com, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, R, Z, ood, boundary, ri0, zi0, tol, vec, weightc, bndry_periodic
   
   local_gradient, idata, pos[0], pos[1], status=status, dfdr=dfdr, dfdz=dfdz
   
@@ -25,7 +25,7 @@ FUNCTION radial_differential, fcur, pos
     ; Got a boundary - check for crossings
     
     cpos = line_crossings([ri0, pos[0]], [zi0, pos[1]], 0, $
-                          boundary[0,*], boundary[1,*], 1, ncross=ncross, inds2=inds2)
+                          boundary[0,*], boundary[1,*], bndry_periodic, ncross=ncross, inds2=inds2)
     IF (ncross MOD 2) EQ 1 THEN BEGIN ; Odd number of boundary crossings
       ; Check how far away the crossing is
       IF SQRT( (pos[0] - cpos[0,0])^2 + (pos[1] - cpos[1,0])^2 ) GT tol THEN BEGIN
@@ -44,7 +44,16 @@ FUNCTION radial_differential, fcur, pos
   Bz = -dfdr/dRdi
   B2 = Br^2 + Bz^2
 
-  RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
+  IF KEYWORD_SET(vec) THEN BEGIN
+  ;; V*mod(R)/mod(V) w + (1-w) vec(r)
+     newvec = vec * SQRT((-Bz/B2/dRdi)^2 + (Br/B2/dZdi)^2) * weightc + (1-weightc)*[-Bz/B2/dRdi, Br/B2/dZdi]
+     RETURN, newvec
+     ;;RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
+     
+  ENDIF ELSE BEGIN
+  ;; stop
+     RETURN, [-Bz/B2/dRdi, Br/B2/dZdi]
+  ENDELSE
 END
 
 ;
@@ -59,9 +68,10 @@ END
 ; fbndry    (out)   If hits boundary, gives final f value
 ; ibndry    (out)   If hits boundary, index where hit
 ;
-PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
-                     boundary=boundary, fbndry=fbndry, ibndry=ibndry
-  COMMON rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol
+PRO follow_gradient_nonorth, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status, $
+                     boundary=boundary, fbndry=fbndry, ibndry=ibndry, $
+                     vec=vec, weight=weight, bndry_noperiodic=bndry_noperiodic
+  COMMON rd_com_no, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, bndry, ri0c, zi0c, tol, vec_comm, weightc, bndry_periodic
   
   tol = 0.1
 
@@ -78,6 +88,18 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
     zi0c = zi0
   ENDIF ELSE bndry = 0
   ood = 0
+
+  bndry_periodic = 1
+  IF KEYWORD_SET(bndry_noperiodic) THEN bndry_periodic = 0
+
+  IF NOT KEYWORD_SET(weight) THEN BEGIN
+     weight = 0.
+  ENDIF
+  
+  IF KEYWORD_SET(vec) THEN BEGIN
+     vec_comm = vec
+     weightc = weight*1.0
+  ENDIF 
 
   IF SIZE(ftarget, /TYPE) EQ 0 THEN PRINT, ftarget
 
@@ -169,8 +191,9 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
     ; Check if the line crossed a boundary
     ;PRINT, "Checking boundary ", boundary[*,1:2], [ri0, ri], [zi0, zi]
     cpos = line_crossings([ri0, ri], [zi0, zi], 0, $
-                          boundary[0,*], boundary[1,*], 1, ncross=ncross, inds2=inds2)
+                          boundary[0,*], boundary[1,*], bndry_periodic, ncross=ncross, inds2=inds2)
     IF (ncross MOD 2) EQ 1 THEN BEGIN ; Odd number of boundary crossings
+      
       IF SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 ) GT 0.1 THEN BEGIN
         ;PRINT, "FINDING BOUNDARY", SQRT( (ri - cpos[0,0])^2 + (zi - cpos[1,0])^2 )
         ; Use divide-and-conquer to find crossing point
@@ -200,6 +223,7 @@ PRO follow_gradient, interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=status
             
             CATCH, /cancel
           ENDELSE
+          
         ENDREP UNTIL ABS(fmax - fcur) LT 0.01*ABS(ftarget - f0)
         ri = rzcur[0]
         zi = rzcur[1]
