@@ -408,7 +408,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime(); // NB: Miss time for first step (can be big!)
+    mpi_start_time = MPI_Wtime() - wtime;
 
     first_time = false;
 
