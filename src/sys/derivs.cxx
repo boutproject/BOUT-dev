@@ -2367,27 +2367,45 @@ boundary_derivs_pair D4D4_B2(backward_stencil &f) {
 }
 
 const Field3D D4DX4(const Field3D &f) {
-  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+  CELL_LOC loc = f.getLocation() ; 
+  Field3D result = applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 const Field2D D4DX4(const Field2D &f) {
-  return applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+  CELL_LOC loc = f.getLocation() ; 
+  Field2D result = applyXdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dx)));
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 const Field3D D4DY4(const Field3D &f) {
-  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+  CELL_LOC loc = f.getLocation() ; 
+  Field3D result =  applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 const Field2D D4DY4(const Field2D &f) {
-  return applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+  CELL_LOC loc = f.getLocation() ; 
+  Field2D result = applyYdiff(f, D4DX4_C2, D4D4_F2, D4D4_B2, SQ(SQ(mesh->dy)));
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 const Field3D D4DZ4(const Field3D &f) {
-  return applyZdiff(f, D4DX4_C2, SQ(SQ(mesh->dz)));
+  CELL_LOC loc = f.getLocation() ; 
+  Field3D result =  applyZdiff(f, D4DX4_C2, SQ(SQ(mesh->dz)));
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 const Field2D D4DZ4(const Field2D &f) {
-  return Field2D(0.0);
+  CELL_LOC loc = f.getLocation() ; 
+  Field2D result = Field2D(0.0);
+  result.setLocation(loc) ;
+  return result ;  
 }
 
 /*******************************************************************************
