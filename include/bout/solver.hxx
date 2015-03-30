@@ -233,7 +233,8 @@ protected:
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
 
-  bool mms; // Enable sources and solutions for Method of Manufactured Solutions
+  bool mms; ///< Enable sources and solutions for Method of Manufactured Solutions
+  bool mms_initialise; ///< Initialise variables to the manufactured solution
 
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);

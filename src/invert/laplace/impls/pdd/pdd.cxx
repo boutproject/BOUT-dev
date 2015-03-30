@@ -124,6 +124,10 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   if(mesh->firstX() && mesh->lastX())
     throw BoutException("Error: PDD method only works for NXPE > 1\n");
+  
+  if(mesh->periodicX) {
+      throw BoutException("LaplacePDD does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    }
 
   if(data.bk == NULL) {
     // Need to allocate working memory
@@ -244,10 +248,10 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     }
     
     // Put values into communication buffers
-    data.snd[4*kz]   = x0.Real();
-    data.snd[4*kz+1] = x0.Imag();
-    data.snd[4*kz+2] = v0.Real();
-    data.snd[4*kz+3] = v0.Imag();
+    data.snd[4*kz]   = x0.real();
+    data.snd[4*kz+1] = x0.imag();
+    data.snd[4*kz+2] = v0.real();
+    data.snd[4*kz+3] = v0.imag();
   }
   
   // Stage 3: Communicate x0, v0 from node i to i-1
@@ -302,8 +306,8 @@ void LaplacePDD::next(PDD_data &data) {
     // Send value to the (i+1)th processor
     
     for(int kz = 0; kz <= maxmode; kz++) {
-      data.snd[2*kz]   = data.y2i[kz].Real();
-      data.snd[2*kz+1] = data.y2i[kz].Imag();
+      data.snd[2*kz]   = data.y2i[kz].real();
+      data.snd[2*kz+1] = data.y2i[kz].imag();
     }
     
     mesh->sendXOut(data.snd, 2*(maxmode+1), PDD_COMM_Y);

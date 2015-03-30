@@ -1,9 +1,15 @@
 /*!************************************************************************
  *
- * \file bout.hxx
- * \brief File included into the physics code
+ * @mainpage BOUT++
+ * 
+ * @version 2.0
+ * 
+ * @par Description 
+ * Framework for the solution of partial differential
+ * equations, in particular fluid models in plasma physics.
  *
- * Just includes commonly needed definitions from other include files
+ * @par Include files
+ * - bout++.hxx includes commonly used routines and classes
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
@@ -57,12 +63,33 @@
 
 #include "utils.hxx"
 
-const BoutReal BOUT_VERSION = 1.1;  ///< Version number
+const BoutReal BOUT_VERSION = 2;  ///< Version number
 
 // BOUT++ main functions
-void BoutInitialise(int &argc, char **&argv);
+
+/*!
+ * BOUT++ initialisation. This function must be
+ * called first, passing command-line arguments.
+ * 
+ * This will call MPI_Initialize, and if BOUT++
+ * has been configured with external libraries such as
+ * PETSc then these will be initialised as well.
+ * 
+ */
+int BoutInitialise(int &argc, char **&argv);
+
 int bout_run(Solver *solver, rhsfunc physics_run);
+
 int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT); 
+
+/*!
+ * BOUT++ finalisation. This should be called at the
+ * end of the program.
+ *
+ * Frees memory, flushes buffers, and closes files.
+ * If BOUT++ initialised MPI or external libraries,
+ * then these are also finalised.
+ */
 int BoutFinalise();
 
 #endif // __BOUT_H__

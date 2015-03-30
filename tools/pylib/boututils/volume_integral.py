@@ -1,5 +1,5 @@
 import numpy as np
-from support import deriv
+from boututils.support import deriv
 from bunch import bunchify
 # Integrate over a volume
 
@@ -37,7 +37,7 @@ def volume_integral( var, g, xr=False):
   
   
     elif s != 2 :
-        print "ERROR: volume_integral var must be 2, 3 or 4D"
+        print("ERROR: volume_integral var must be 2, 3 or 4D")
    
   
     # 2D [x,y]

@@ -182,4 +182,11 @@ const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
 
+/*!
+ * @brief Time derivative of 2D vector field
+ */
+inline Vector2D& ddt(Vector2D &f) {
+  return *(f.timeDeriv());
+}
+
 #endif // __VECTOR2D_H__

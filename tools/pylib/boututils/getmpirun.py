@@ -12,6 +12,6 @@ def getmpirun( default="mpirun -np" ):
 
   if MPIRUN == None:
     MPIRUN = default
-    print "getmpirun: using the default ", default
+    print("getmpirun: using the default ", default)
 
   return MPIRUN   

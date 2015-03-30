@@ -85,7 +85,7 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g -O0"
 else
   CXXFLAGS="$CXXFLAGS -O"
 fi
