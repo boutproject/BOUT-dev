@@ -962,9 +962,6 @@ PRO hypnotoad
                              value = 1,                    $
                              xsize=8                         $
                            )
-
-  mesh_button = WIDGET_BUTTON(tab1, VALUE='Generate mesh', $
-                              uvalue='mesh', tooltip="Generate a new mesh")
   
   detail_button = WIDGET_BUTTON(tab1, VALUE='Detailed settings', $
                                 uvalue='detail', $
@@ -992,10 +989,13 @@ PRO hypnotoad
   fast_check = WIDGET_BUTTON(checkboxbase, VALUE="Fast", uvalue='fast', tooltip="Uses faster but less acurate methods")
   Widget_Control, fast_check, set_button=0
   
-    
-  ; Experimental
-  mesh2_button = WIDGET_BUTTON(tab1, VALUE='Nonorthogonal mesh', $
-                              uvalue='mesh2', tooltip="Under development")
+  gen_mesh_text = WIDGET_LABEL(tab1, VALUE='Generate Mesh:', frame=0)
+
+  mesh_button = WIDGET_BUTTON(tab1, VALUE='Orthogonal mesh', $
+                              uvalue='mesh', tooltip="Generate a new orthogonal mesh")
+
+  mesh2_button = WIDGET_BUTTON(tab1, VALUE='Non-orthogonal mesh', $
+                              uvalue='mesh2', tooltip="Generate a new non-orthogonal mesh")
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Output tab
