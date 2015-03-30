@@ -1607,11 +1607,11 @@ BoundaryOp* BoundaryNeumann::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BoundaryNeumann::apply(Field2D &f) {
+  bndry->first();
   // Calculate derivatives for metric use
-  Field2D dfdx = DDX(f);
   Field2D dfdy = DDY(f);
   // Loop over all elements and set equal to the next point in
-  for(bndry->first(); !bndry->isDone(); bndry->next()) {
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
     BoutReal g11shift = 0.5*(mesh->g11(bndry->x,bndry->y) + mesh->g11(bndry->x-bndry->bx,bndry->y));
     BoutReal g12shift = 0.5*(mesh->g12(bndry->x,bndry->y) + mesh->g12(bndry->x-bndry->bx,bndry->y));
@@ -1620,29 +1620,38 @@ void BoundaryNeumann::apply(Field2D &f) {
     // NOTE: should be fixed to interpolate to boundary line
     BoutReal xshift = g12shift*dfdy(bndry->x-bndry->bx,bndry->y);
 
-    if(bndry->bx != 0 && bndry->by == 0){
+    if(bndry->bx != 0 && bndry->by == 0) {
     // x boundaries only
       BoutReal delta = bndry->bx*mesh->dx[bndry->x][bndry->y];
       f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y] + delta/g11shift*(val - xshift);
-    } else if(bndry->by != 0 && bndry->bx == 0){
+      if (bndry->bx == 2){
+        f[bndry->x + bndry->bx][bndry->y] = f[bndry->x - 2*bndry->bx][bndry->y] + 3.0*delta/g11shift*(val - xshift);
+      }
+    } else if(bndry->by != 0 && bndry->bx == 0) {
     // y boundaries only
     //   no need to shift this b/c we want parallel nuemann not theta
       BoutReal delta = bndry->by*mesh->dy[bndry->x][bndry->y];
-      f[bndry->x][bndry->y] = f[bndry->x][bndry->y - bndry->by] + delta*val; 
+      f[bndry->x][bndry->y] = f[bndry->x][bndry->y - bndry->by] + delta*val;
+      if (bndry->width == 2){
+        f[bndry->x][bndry->y + bndry->by] = f[bndry->x][bndry->y - 2*bndry->by] + 3.0*delta*val;
+      }
     } else {
     // set corners to zero
       f[bndry->x][bndry->y] = 0.0;
+      if (bndry->width == 2){
+        f[bndry->x + bndry->bx][bndry->y + bndry->by] = 0.0;
+      }
     }
   }
 }
 
 void BoundaryNeumann::apply(Field3D &f) {
+  bndry->first();
   // Calculate derivatives for metric use
-  Field3D dfdx = DDX(f);
   Field3D dfdy = DDY(f);
   Field3D dfdz = DDZ(f);
   // Loop over all elements and set equal to the next point in
-  for(bndry->first(); !bndry->isDone(); bndry->next()) {
+  for(; !bndry->isDone(); bndry->next1d()) {
     // Interpolate (linearly) metrics to halfway between last cell and boundary cell
     BoutReal g11shift = 0.5*(mesh->g11(bndry->x,bndry->y) + mesh->g11(bndry->x-bndry->bx,bndry->y));
     BoutReal g12shift = 0.5*(mesh->g12(bndry->x,bndry->y) + mesh->g12(bndry->x-bndry->bx,bndry->y));
@@ -1653,19 +1662,27 @@ void BoundaryNeumann::apply(Field3D &f) {
     for(int z=0;z<mesh->ngz;z++) {
       BoutReal xshift = g12shift*dfdy(bndry->x-bndry->bx,bndry->y,z) 
 				+ g13shift*dfdz(bndry->x-bndry->bx,bndry->y,z);
-
       if(bndry->bx != 0 && bndry->by == 0) {
       // x boundaries only
         BoutReal delta = bndry->bx*mesh->dx[bndry->x][bndry->y];
         f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y][z] + delta/g11shift*(val - xshift);
+	if (bndry->width == 2){
+          f[bndry->x + bndry->bx][bndry->y][z] = f[bndry->x - 2*bndry->bx][bndry->y][z] + 3.0*delta/g11shift*(val - xshift);
+        }
       } else if(bndry->by != 0 && bndry->bx == 0) {
       // y boundaries only
       //   no need to shift this b/c we want parallel nuemann not theta
         BoutReal delta = bndry->by*mesh->dy[bndry->x][bndry->y];
         f[bndry->x][bndry->y][z] = f[bndry->x][bndry->y - bndry->by][z] + delta*val;
+	if (bndry->width == 2){
+          f[bndry->x][bndry->y + bndry->by][z] = f[bndry->x][bndry->y - 2*bndry->by][z] + 3.0*delta*val;
+        }
       } else {
       // set corners to zero
         f[bndry->x][bndry->y][z] = 0.0;
+	if (bndry->width == 2){
+          f[bndry->x + bndry->bx][bndry->y + bndry->by][z] = 0.0;
+        }
       }
     }
   }
