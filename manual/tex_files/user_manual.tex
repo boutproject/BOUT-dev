@@ -10,7 +10,7 @@
 \usepackage{listings}
 \usepackage{color}
 \usepackage{textcomp}
-\usepackage{pdflscape} % For landscape mode to the folder_tree figure
+\usepackage{pdflscape} % For landscape mode to the folder_tree 
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
@@ -3219,16 +3219,88 @@ lap->setCoefA(a);
 lap->setCoefC(0.5);
 \end{lstlisting}
 arguments can be \lstinline!Field2D!, \lstinline!Field3D!, or real values. 
-Settings are controlled using \lstinline!setFlags! 
+
+Settings for the inversion can be set in the input file under the section \code{laplace} (default) or whichever settings section name was specified when the \lstinline!Laplacian! class was created.  Commonly used settings are listed in tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.  
+
+In particular boundary conditions on the $x$ boundaries can be set using the \path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current') refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k ̸= 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC ones).  Multiple boundary conditions can be selected by adding together the required boundary condition flag values together.  For example, \lstinline!inner_boundary_flags = 3! will set a Neumann boundary condition on both AC and DC components.
+
+It is pertinent to note here that the boundary in BOUT++ is defined by default to be located half way between the first guard point and first point inside the domain.  For example, when a Dirichlet boundary condition is set, using \lstinline!inner_boundary_flags = 0!, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to $f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and $v$ is the value to which the boundary is being set to.  
+
+The \code{global\_flags}, \code{inner\_boundary\_flags},  \code{outer\_boundary\_flags} and \code{flags} values can also be set from within the physics module using \lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!,  \lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!.  
 \begin{lstlisting}
-lap->setFlags(flags);
+lap->setGlobalFlags(Global_Flags_Value);
+lap->setInnerBoundaryFlags(Inner_Flags_Value);
+lap->setOuterBoundaryFlags(Outer_Flags_Value);
+lap->setFlags(Flags_Value);
 \end{lstlisting}
-\code{flags} is an \code{int} which determines boundary conditions
-and other options. Its value is calculated by adding the settings given
-in \code{invert\_laplace.hxx}, and reproduced in
-table~\ref{tab:laplaceflags}.
-\begin{table}[htbp!]
-\caption{Laplacian inversion flags: add the required quantities together.}
+ 
+\begin{table}
+\caption{Laplacian inversion options}
+\label{tab:laplacesettings}
+\centering
+\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
+\hline
+Name & Meaning & Default value\\
+\hline
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} (parallel) \\
+\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, if using Fourier solver & 0\\
+\code{maxmode} & Fi􏰀lter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
+\code{all\_terms} & Include fi􏰀rst derivative terms & \code{true}\\
+\code{global\_flags} & Sets global inversion options See table \ref{tab:laplaceglobalflags}& \code{0}\\
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  See table \ref{tab:laplaceBCflags} & \code{0}\\
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  See table \ref{tab:laplaceBCflags}& \code{0}\\
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
+\code{include\_yguards} & Perform inversion in $y$-boundary guard
+cells & \code{true}\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{global\_flags} values: add the required quantities together.}
+\label{tab:laplaceglobalflags}
+\centering
+\begin{tabular}[c]{c|l}
+\hline
+Flag & Meaning \\
+\hline
+0 &  No global option set \\
+1 &  zero DC component (Fourier solvers) \\
+2 &  set initial guess to 0 (iterative solvers) \\
+4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 128}\\
+8 & Use 4th order differencing (Apparently not actually implemented anywhere!!!) \\
+16 & Set constant component ($k_x = k_z = 0$) to zero \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{outer\_boundary\_flags} or \code{inner\_boundary\_flags} values: add the required quantities together.}
+\label{tab:laplaceBCflags}
+\centering
+\begin{tabular}[c]{c|p{14cm}}
+\hline
+Flag & Meaning \\
+\hline
+0 &  Dirichlet (Set boundary to 0) \\
+1 &  Neumann on DC component (set gradient to 0) \\
+2 &  Neumann on AC component (set gradient to 0) \\
+4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial x^2}+k_z^2$ vanishes/decays)\\
+8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order now) \\
+16 & Set Dirichlet boundary condition to values in boundary guard cells of second argument, \code{x0}, of \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  Useful for setting a Dirichlet BC to values which are $\neq 0$ or $f(y)$ \\
+32 & Set Dirichlet boundary condition to values in boundary guard cells of RHS, \code{b} in  \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  Useful for setting a Dirichlet BC to values which are $\neq 0$ or $f(y)$\\
+64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial x^2}$ vanishes/decays) \\
+128 &  Assert that there is only one guard cell in the
+$x$-boundary \\
+256 &  DC value is set to parallel gradient, $\nabla_\parallel f$ \\
+512 &  DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ \\
+1024 & Boundary condition for inner `boundary' of cylinder \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the required quantities together.}
 \label{tab:laplaceflags}
 \centering
 \begin{tabular}[c]{c | l}
