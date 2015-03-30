@@ -3287,8 +3287,8 @@ Flag & Meaning \\
 2 &  Neumann on AC component (set gradient to 0) \\
 4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial x^2}+k_z^2$ vanishes/decays)\\
 8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order now) \\
-16 & Set Dirichlet boundary condition to values in boundary guard cells of second argument, \code{x0}, of \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  Useful for setting a Dirichlet BC to values which are $\neq 0$ or $f(y)$ \\
-32 & Set Dirichlet boundary condition to values in boundary guard cells of RHS, \code{b} in  \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  Useful for setting a Dirichlet BC to values which are $\neq 0$ or $f(y)$\\
+16 & Set boundary condition to values in boundary guard cells of second argument, \code{x0}, of \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
+32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} in  \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
 64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial x^2}$ vanishes/decays) \\
 128 &  Assert that there is only one guard cell in the
 $x$-boundary \\
