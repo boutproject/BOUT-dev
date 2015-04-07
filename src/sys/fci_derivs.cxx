@@ -91,16 +91,17 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 		// The integer part of xt_prime, zt_prime are the indices of the cell
 		// containing the field line end-point
-		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+		i_corner[x][y][z] = floor(xt_prime[x][y][z]);
 
-		// Needed here if periodic BCs taken care of elsewhere?
-		// // z is periodic, so make sure the z-index wraps around
-		zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int)(zt_prime[x][y][z] / ((BoutReal) ncz)) );
+		// z is periodic, so make sure the z-index wraps around
+        if (zperiodic) {
+          zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int)(zt_prime[x][y][z] / ((BoutReal) ncz)) );
 
-		if(zt_prime[x][y][z] < 0.0)
-		  zt_prime[x][y][z] += ncz;
+          if (zt_prime[x][y][z] < 0.0)
+            zt_prime[x][y][z] += ncz;
+        }
 
-		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
+		k_corner[x][y][z] = floor(zt_prime[x][y][z]);
 
 		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
 		// calculated by taking the remainder of the floating point index
@@ -117,7 +118,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 		// Field line leaves through x boundary
 		if (xt_prime[x][y][z] < 0 ||
-			xt_prime[x][y][z] > mesh.GlobalNx) {
+			xt_prime[x][y][z] >= mesh.GlobalNx - 1) {
 		  x_boundary[x][y][z] = true;
 
 		  BoutReal dx2 = mesh.dx(x,y)/2.;
@@ -129,8 +130,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 		// Field line leaves through y boundary
 		// Only add this point if the domain is NOT periodic in y
-		if ((y + dir < mesh.ystart ||
-			 y + dir > mesh.yend) && !yperiodic) {
+		if ((y + dir < 0 ||
+			 y + dir > mesh.GlobalNy - 1) && !yperiodic) {
 		  y_boundary[x][y][z] = true;
 
 		  y_prime_y =  mesh.dy(x,y) / 2.;
@@ -179,7 +180,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 		} else if (!x_b && y_b && z_b) {
 		  // y & z
 		  temp = std::min(y_prime_y, y_prime_z);
-		} else if (!x_b && !y_b && z_b) {
+		} else if (x_b && !y_b && z_b) {
 		  // z & x
 		  temp = std::min(y_prime_x, y_prime_z);
 		} else if (x_b && y_b && z_b) {
@@ -287,8 +288,8 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
 		// x-boundary, or through the z-boundary and the domain is not
 		// periodic, skip it
 		if (fcimap.x_boundary[x][y][z] ||
-            (fcimap.y_boundary[x][y][z] && !yperiodic) ||
-            (fcimap.z_boundary[x][y][z] && !zperiodic)) continue;
+            fcimap.y_boundary[x][y][z] ||
+            fcimap.z_boundary[x][y][z]) continue;
 
 		// Due to lack of guard cells in z-direction, we need to ensure z-index
 		// wraps around
