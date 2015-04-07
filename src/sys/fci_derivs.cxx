@@ -56,31 +56,42 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
   // Ugly ugly code
   x_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-					(mesh.ngy, std::vector<bool>
-					 (mesh.ngz-1)));
+                    (mesh.ngy, std::vector<bool>
+                     (mesh.ngz-1)));
   y_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-					(mesh.ngy, std::vector<bool>
-					 (mesh.ngz-1)));
+                    (mesh.ngy, std::vector<bool>
+                     (mesh.ngz-1)));
   z_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-					(mesh.ngy, std::vector<bool>
-					 (mesh.ngz-1)));
+                    (mesh.ngy, std::vector<bool>
+                     (mesh.ngz-1)));
 
   Field3D xt_prime, zt_prime;
 
   // Load the floating point indices from the grid file
   // Future, higher order parallel derivatives could require maps to +/-2 slices
   if (dir == +1) {
-	mesh.get(xt_prime, "forward_xt_prime");
-	mesh.get(zt_prime, "forward_zt_prime");
+    mesh.get(xt_prime, "forward_xt_prime");
+    mesh.get(zt_prime, "forward_zt_prime");
     boundary = new BoundaryRegionFCI("FCI_forward", BNDRY_FCI_FWD);
   } else if (dir == -1) {
-	mesh.get(xt_prime, "backward_xt_prime");
-	mesh.get(zt_prime, "backward_zt_prime");
+    mesh.get(xt_prime, "backward_xt_prime");
+    mesh.get(zt_prime, "backward_zt_prime");
     boundary = new BoundaryRegionFCI("FCI_backward", BNDRY_FCI_BKWD);
   } else {
-	// Definitely shouldn't be called
-	throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
+    // Definitely shouldn't be called
+    throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
+
+  // Allocate Field3D members
+  y_prime.allocate();
+  h00_x.allocate();
+  h01_x.allocate();
+  h10_x.allocate();
+  h11_x.allocate();
+  h00_z.allocate();
+  h01_z.allocate();
+  h10_z.allocate();
+  h11_z.allocate();
 
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
@@ -88,146 +99,140 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   Coordinates& coord = *(mesh.coordinates());
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
-	for(int y=mesh.ystart; y<=mesh.yend;y++) {
-	  for(int z=0;z<ncz;z++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<ncz;z++) {
 
-		// The integer part of xt_prime, zt_prime are the indices of the cell
-		// containing the field line end-point
-        i_corner[x][y][z] = (int)(xt_prime(x,y,z));
+        // The integer part of xt_prime, zt_prime are the indices of the cell
+        // containing the field line end-point
+        i_corner[x][y][z] = floor(xt_prime(x,y,z));
 
-		// z is periodic, so make sure the z-index wraps around
-		zt_prime(x,y,z) = zt_prime(x,y,z) - ncz * ( (int)(zt_prime(x,y,z) / ((BoutReal) ncz)) );
+        // z is periodic, so make sure the z-index wraps around
+        if (zperiodic) {
+          zt_prime(x,y,z) = zt_prime(x,y,z) - ncz * ( (int)(zt_prime(x,y,z) / ((BoutReal) ncz)) );
 
-		if(zt_prime(x,y,z) < 0.0)
-		  zt_prime(x,y,z) += ncz;
+          if (zt_prime(x,y,z) < 0.0)
+            zt_prime(x,y,z) += ncz;
+        }
 
-		k_corner[x][y][z] = (int)(zt_prime(x,y,z));
+        k_corner[x][y][z] = floor(zt_prime(x,y,z));
 
-		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
-		// calculated by taking the remainder of the floating point index
-		t_x = xt_prime(x,y,z) - (BoutReal)i_corner[x][y][z];
-		t_z = zt_prime(x,y,z) - (BoutReal)k_corner[x][y][z];
+        // t_x, t_z are the normalised coordinates \in [0,1) within the cell
+        // calculated by taking the remainder of the floating point index
+        t_x = xt_prime(x,y,z) - (BoutReal)i_corner[x][y][z];
+        t_z = zt_prime(x,y,z) - (BoutReal)k_corner[x][y][z];
 
-		//----------------------------------------
-		// Boundary stuff
+        //----------------------------------------
+        // Boundary stuff
 
-		// Distances to intersections with boundaries
-		BoutReal y_prime_x;
-		BoutReal y_prime_y;
-		BoutReal y_prime_z;
+        // Distances to intersections with boundaries
+        BoutReal y_prime_x;
+        BoutReal y_prime_y;
+        BoutReal y_prime_z;
 
-		// Field line leaves through x boundary
-		if (xt_prime[x][y][z] < 0 ||
-			xt_prime[x][y][z] > mesh.GlobalNx) {
-		  x_boundary[x][y][z] = true;
+        // Field line leaves through x boundary
+        if (xt_prime(x,y,z) < 0 ||
+            xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
+          x_boundary[x][y][z] = true;
 
-		  BoutReal dx2 = coord.dx(x,y)/2.;
-		  BoutReal dy = coord.dy(x,y);
-		  y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
-		} else {
-		  x_boundary[x][y][z] = false;
-		}
+          BoutReal dx2 = mesh.dx(x,y)/2.;
+          BoutReal dy = mesh.dy(x,y);
+          y_prime_x =  dx2 * (dy / (t_x * mesh.dx(x, y)));
+        } else {
+          x_boundary[x][y][z] = false;
+        }
 
-		// Field line leaves through y boundary
-		// Only add this point if the domain is NOT periodic in y
-		if ((y + dir < mesh.ystart ||
-			 y + dir > mesh.yend) && !yperiodic) {
-		  y_boundary[x][y][z] = true;
+        // Field line leaves through y boundary
+        // Only add this point if the domain is NOT periodic in y
+        if ((y + dir < 0 ||
+             y + dir > mesh.GlobalNy - 1) && !yperiodic) {
+          y_boundary[x][y][z] = true;
 
-		  y_prime_y =  coord.dy(x,y) / 2.;
-		} else {
-		  y_boundary[x][y][z] = false;
-		}
+          y_prime_y =  mesh.dy(x,y) / 2.;
+        } else {
+          y_boundary[x][y][z] = false;
+        }
 
-		// Field line leaves through z boundary
-		// Only add this point if the domain is NOT periodic in Z
-		if ((zt_prime[x][y][z] < 0 ||
-			 zt_prime[x][y][z] > ncz-1) && !zperiodic) {
-		  z_boundary[x][y][z] = true;
+        // Field line leaves through z boundary
+        // Only add this point if the domain is NOT periodic in Z
+        if ((zt_prime(x,y,z) < 0 ||
+             zt_prime(x,y,z) > ncz-1) && !zperiodic) {
+          z_boundary[x][y][z] = true;
 
-		  BoutReal dz2 = coord.dz/2.;
-		  BoutReal dy = coord.dy(x,y);
-		  y_prime_z =  dz2 * (dy / (t_z * coord.dz));
-		} else {
-		  z_boundary[x][y][z] = false;
-		}
+          BoutReal dz2 = mesh.dz/2.;
+          BoutReal dy = mesh.dy(x,y);
+          y_prime_z =  dz2 * (dy / (t_z * mesh.dz));
+        } else {
+          z_boundary[x][y][z] = false;
+        }
 
-		// If field line leaves the domain at this point, then add it
-		// to the boundary
-		if (x_boundary[x][y][z] || y_boundary[x][y][z] || z_boundary[x][y][z]) {
-		  boundary->add_point(x, y, z);
-		}
+        // If field line leaves the domain at this point, then add it
+        // to the boundary
+        if (x_boundary[x][y][z] || y_boundary[x][y][z] || z_boundary[x][y][z]) {
+          boundary->add_point(x, y, z);
+        }
 
-		// Find the closest intersection with a boundary - seven
-		// possible regions field line could end up in
-		// Temp variables for convenience
-		bool x_b = x_boundary[x][y][z];
-		bool y_b = y_boundary[x][y][z];
-		bool z_b = z_boundary[x][y][z];
-		BoutReal temp;
-		if (x_b && !y_b && !z_b) {
-		  // x
-		  temp = y_prime_x;
-		} else if (!x_b && y_b && !z_b) {
-		  // y
-		  temp = y_prime_y;
-		} else if (!x_b && !y_b && z_b) {
-		  // z
-		  temp = y_prime_z;
-		} else if (x_b && y_b && !z_b) {
-		  // x & y
-		  temp = std::min(y_prime_x, y_prime_y);
-		} else if (!x_b && y_b && z_b) {
-		  // y & z
-		  temp = std::min(y_prime_y, y_prime_z);
-		} else if (!x_b && !y_b && z_b) {
-		  // z & x
-		  temp = std::min(y_prime_x, y_prime_z);
-		} else if (x_b && y_b && z_b) {
-		  // x & y & z
-		  temp = std::min(std::min(y_prime_x, y_prime_y), y_prime_z);
-		} else {
-		  // none
-		  temp = 0;
-		}
-		y_prime.setData(x, y, z, &temp);
+        // Find the closest intersection with a boundary - seven
+        // possible regions field line could end up in
+        // Temp variables for convenience
+        bool x_b = x_boundary[x][y][z];
+        bool y_b = y_boundary[x][y][z];
+        bool z_b = z_boundary[x][y][z];
+        BoutReal temp;
+        if (x_b && !y_b && !z_b) {
+          // x
+          temp = y_prime_x;
+        } else if (!x_b && y_b && !z_b) {
+          // y
+          temp = y_prime_y;
+        } else if (!x_b && !y_b && z_b) {
+          // z
+          temp = y_prime_z;
+        } else if (!x_b && y_b && z_b) {
+          // y & z
+          temp = std::min(y_prime_y, y_prime_z);
+        } else if (x_b && !y_b && z_b) {
+          // z & x
+          temp = std::min(y_prime_x, y_prime_z);
+        } else if (x_b && y_b && !z_b) {
+          // x & y
+          temp = std::min(y_prime_x, y_prime_y);
+        } else if (x_b && y_b && z_b) {
+          // x & y & z
+          temp = std::min(std::min(y_prime_x, y_prime_y), y_prime_z);
+        } else {
+          // none
+          temp = 0;
+        }
+        y_prime(x, y, z) = temp;
 
-		//----------------------------------------
+        //----------------------------------------
 
-		// Check that t_x and t_z are in range
-		if( (t_x < 0.0) || (t_x > 1.0) )
-		  throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
+        // Check that t_x and t_z are in range
+        if( (t_x < 0.0) || (t_x > 1.0) )
+          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
 
-		if( (t_z < 0.0) || (t_z > 1.0) )
-		  throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
+        if( (t_z < 0.0) || (t_z > 1.0) )
+          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
 
-		// NOTE: A (small) hack to avoid one-sided differences
-		if( i_corner[x][y][z] == mesh.xend ) {
-		  i_corner[x][y][z] -= 1;
-		  t_x = 1.0;
-		}
+        // NOTE: A (small) hack to avoid one-sided differences
+        if( i_corner[x][y][z] == mesh.xend ) {
+          i_corner[x][y][z] -= 1;
+          t_x = 1.0;
+        }
 
-		temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
-		h00_x.setData(x, y, z, &temp);
-		temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
-		h00_z.setData(x, y, z, &temp);
+        h00_x(x, y, z) = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
+        h00_z(x, y, z) = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
 
-		temp = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
-		h01_x.setData(x, y, z, &temp);
-		temp = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
-		h01_z.setData(x, y, z, &temp);
+        h01_x(x, y, z) = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
+        h01_z(x, y, z) = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
 
-		temp = t_x*(1.-t_x)*(1.-t_x);
-		h10_x.setData(x, y, z, &temp);
-		temp = t_z*(1.-t_z)*(1.-t_z);
-		h10_z.setData(x, y, z, &temp);
+        h10_x(x, y, z) = t_x*(1.-t_x)*(1.-t_x);
+        h10_z(x, y, z) = t_z*(1.-t_z)*(1.-t_z);
 
-		temp = t_x*t_x*t_x - t_x*t_x;
-		h11_x.setData(x, y, z, &temp);
-		temp = t_z*t_z*t_z - t_z*t_z;
-		h11_z.setData(x, y, z, &temp);
-	  }
-	}
+        h11_x(x, y, z) = t_x*t_x*t_x - t_x*t_x;
+        h11_z(x, y, z) = t_z*t_z*t_z - t_z*t_z;
+      }
+    }
   }
 
 }
@@ -246,7 +251,7 @@ Field3D& FCIMap::f_next(Field3D &f) const {
   case -1:
     return f.ydown();
   default:
-	throw BoutException("Trying to determine f_next for FCIMap with strange direction: %d. Only +/-1 currently supported.", dir);
+    throw BoutException("Trying to determine f_next for FCIMap with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 }
 
@@ -284,51 +289,51 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
     for(int y=mesh.ystart; y<=mesh.yend;y++) {
       for(int z=0;z<mesh.ngz-1;z++) {
 
-		// If this field line leaves the domain through the
-		// x-boundary, or through the z-boundary and the domain is not
-		// periodic, skip it
-		if (fcimap.x_boundary[x][y][z] ||
-            (fcimap.y_boundary[x][y][z] && !yperiodic) ||
-            (fcimap.z_boundary[x][y][z] && !zperiodic)) continue;
+        // If this field line leaves the domain through the
+        // x-boundary, or through the z-boundary and the domain is not
+        // periodic, skip it
+        if (fcimap.x_boundary[x][y][z] ||
+            fcimap.y_boundary[x][y][z] ||
+            fcimap.z_boundary[x][y][z]) continue;
 
-		// Due to lack of guard cells in z-direction, we need to ensure z-index
-		// wraps around
-		int ncz = mesh.ngz-1;
-		int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
-		int z_mod_p1 = (z_mod + 1) % ncz;
+        // Due to lack of guard cells in z-direction, we need to ensure z-index
+        // wraps around
+        int ncz = mesh.ngz-1;
+        int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
+        int z_mod_p1 = (z_mod + 1) % ncz;
 
-		// Interpolate f in X at Z
-		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-		  + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
+        // Interpolate f in X at Z
+        BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+          + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+          + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+          + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
 
-		// Interpolate f in X at Z+1
-		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-		  + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
+        // Interpolate f in X at Z+1
+        BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+          + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+          + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+          + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
-		// Interpolate fz in X at Z
-		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
+        // Interpolate fz in X at Z
+        BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+          + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+          + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+          + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
 
-		// Interpolate fz in X at Z+1
-		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
+        // Interpolate fz in X at Z+1
+        BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+          + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+          + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+          + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
-		// Interpolate in Z
-		f_next(x,y + fcimap.dir,z) =
-		  + f_z    * fcimap.h00_z(x,y,z)
-		  + f_zp1  * fcimap.h01_z(x,y,z)
-		  + fz_z   * fcimap.h10_z(x,y,z)
-		  + fz_zp1 * fcimap.h11_z(x,y,z);
-	  }
-	}
+        // Interpolate in Z
+        f_next(x,y + fcimap.dir,z) =
+          + f_z    * fcimap.h00_z(x,y,z)
+          + f_zp1  * fcimap.h01_z(x,y,z)
+          + fz_z   * fcimap.h10_z(x,y,z)
+          + fz_zp1 * fcimap.h11_z(x,y,z);
+      }
+    }
   }
 }
 
@@ -449,9 +454,9 @@ void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalu
     down_op = new BoundaryOpFCI_dirichlet(backward_map, downvalue);
     break;
   case NEUMANN:
-     up_op = new BoundaryOpFCI_neumann(forward_map, upvalue);
-     down_op = new BoundaryOpFCI_neumann(backward_map, downvalue);
-     break;
+    up_op = new BoundaryOpFCI_neumann(forward_map, upvalue);
+    down_op = new BoundaryOpFCI_neumann(backward_map, downvalue);
+    break;
   default:
     throw BoutException("Not a valid boundary type for FCI!");
   }

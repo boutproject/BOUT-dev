@@ -19,7 +19,7 @@ BoutReal BoundaryOpFCI::getValue(int x, int y, int z, BoutReal t) {
     znorm = ((BoutReal)(z))/(mesh->ngz-1);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
-    value = (*field_values)[x][y][z];
+    value = (*field_values)(x,y,z);
     return value;
   case REAL:
     return real_value;
@@ -49,8 +49,8 @@ void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
     BoutReal value = getValue(x, y, z, t);
 
     // Scale the field and normalise to the desired value
-    BoutReal y_prime = fcimap.y_prime[x][y][z];
-    BoutReal f2 = (f[x][y][z] - value) * (coord.dy(x, y) - y_prime) / y_prime;
+    BoutReal y_prime = fcimap.y_prime(x,y,z);
+    BoutReal f2 = (f(x,y,z) - value) * (mesh->dy(x, y) - y_prime) / y_prime;
 
     f_next(x, y+fcimap.dir, z) = value - f2;
   }
