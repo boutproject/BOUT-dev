@@ -54,14 +54,14 @@ public:
   B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
   B3vec y_boundary;     // boundary mask - has the field line left the domain through the y-sides
   B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
-  Field3D y_prime;		// distance to intersection with boundary
+  Field3D y_prime;      // distance to intersection with boundary
 
   Field3D& f_next(Field3D &f) const;
 
-  BoundaryRegionFCI* boundary;			/**< boundary region */
+  BoundaryRegionFCI* boundary;          /**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
-  //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
   // The h00 and h01 basis functions are applied to the function itself
   // and the h10 and h11 basis functions are applied to its derivative
   // along the interpolation direction.
@@ -99,17 +99,18 @@ private:
 public:
   enum BndryType { DIRICHLET, NEUMANN };
 
-  FCI(Mesh& m) : mesh(m),
-				 forward_map(m, +1, true, true),
-				 backward_map(m, -1, true, true),
-				 yperiodic(true),
-				 zperiodic(true) {}
-  FCI(Mesh& m, bool yperiodic, bool zperiodic) : 
-	mesh(m),
-	forward_map(m, +1, yperiodic, zperiodic),
-	backward_map(m, -1, yperiodic, zperiodic),
-	yperiodic(yperiodic),
-	zperiodic(zperiodic) {}
+  FCI(Mesh& m) :
+    mesh(m),
+    forward_map(m, +1, true, true),
+    backward_map(m, -1, true, true),
+    yperiodic(true),
+    zperiodic(true) {}
+  FCI(Mesh& m, bool yperiodic, bool zperiodic) :
+    mesh(m),
+    forward_map(m, +1, yperiodic, zperiodic),
+    backward_map(m, -1, yperiodic, zperiodic),
+    yperiodic(yperiodic),
+    zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
   void interpolate(Field3D &f, const FCIMap &fcimap);
