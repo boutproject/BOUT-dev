@@ -82,6 +82,17 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 	throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
+  // Allocate Field3D members
+  y_prime.allocate();
+  h00_x.allocate();
+  h01_x.allocate();
+  h10_x.allocate();
+  h11_x.allocate();
+  h00_z.allocate();
+  h01_z.allocate();
+  h10_z.allocate();
+  h11_z.allocate();
+
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
 
@@ -91,22 +102,22 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 		// The integer part of xt_prime, zt_prime are the indices of the cell
 		// containing the field line end-point
-		i_corner[x][y][z] = floor(xt_prime[x][y][z]);
+		i_corner[x][y][z] = floor(xt_prime(x,y,z));
 
 		// z is periodic, so make sure the z-index wraps around
         if (zperiodic) {
-          zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int)(zt_prime[x][y][z] / ((BoutReal) ncz)) );
+          zt_prime(x,y,z) = zt_prime(x,y,z) - ncz * ( (int)(zt_prime(x,y,z) / ((BoutReal) ncz)) );
 
-          if (zt_prime[x][y][z] < 0.0)
-            zt_prime[x][y][z] += ncz;
+          if (zt_prime(x,y,z) < 0.0)
+            zt_prime(x,y,z) += ncz;
         }
 
-		k_corner[x][y][z] = floor(zt_prime[x][y][z]);
+		k_corner[x][y][z] = floor(zt_prime(x,y,z));
 
 		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
 		// calculated by taking the remainder of the floating point index
-		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
-		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
+		t_x = xt_prime(x,y,z) - (BoutReal)i_corner[x][y][z];
+		t_z = zt_prime(x,y,z) - (BoutReal)k_corner[x][y][z];
 
 		//----------------------------------------
 		// Boundary stuff
@@ -117,8 +128,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 		BoutReal y_prime_z;
 
 		// Field line leaves through x boundary
-		if (xt_prime[x][y][z] < 0 ||
-			xt_prime[x][y][z] >= mesh.GlobalNx - 1) {
+		if (xt_prime(x,y,z) < 0 ||
+			xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
 		  x_boundary[x][y][z] = true;
 
 		  BoutReal dx2 = mesh.dx(x,y)/2.;
@@ -141,8 +152,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
 		// Field line leaves through z boundary
 		// Only add this point if the domain is NOT periodic in Z
-		if ((zt_prime[x][y][z] < 0 ||
-			 zt_prime[x][y][z] > ncz-1) && !zperiodic) {
+		if ((zt_prime(x,y,z) < 0 ||
+			 zt_prime(x,y,z) > ncz-1) && !zperiodic) {
 		  z_boundary[x][y][z] = true;
 
 		  BoutReal dz2 = mesh.dz/2.;
@@ -190,7 +201,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 		  // none
 		  temp = 0;
 		}
-		y_prime.setData(x, y, z, &temp);
+		y_prime(x, y, z) = temp;
 
 		//----------------------------------------
 
@@ -205,27 +216,19 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 		if( i_corner[x][y][z] == mesh.xend ) {
 		  i_corner[x][y][z] -= 1;
 		  t_x = 1.0;
-		}
+        }
 
-		temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
-		h00_x.setData(x, y, z, &temp);
-		temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
-		h00_z.setData(x, y, z, &temp);
+        h00_x(x, y, z) = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
+        h00_z(x, y, z) = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
 
-		temp = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
-		h01_x.setData(x, y, z, &temp);
-		temp = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
-		h01_z.setData(x, y, z, &temp);
+        h01_x(x, y, z) = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
+        h01_z(x, y, z) = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
 
-		temp = t_x*(1.-t_x)*(1.-t_x);
-		h10_x.setData(x, y, z, &temp);
-		temp = t_z*(1.-t_z)*(1.-t_z);
-		h10_z.setData(x, y, z, &temp);
+        h10_x(x, y, z) = t_x*(1.-t_x)*(1.-t_x);
+        h10_z(x, y, z) = t_z*(1.-t_z)*(1.-t_z);
 
-		temp = t_x*t_x*t_x - t_x*t_x;
-		h11_x.setData(x, y, z, &temp);
-		temp = t_z*t_z*t_z - t_z*t_z;
-		h11_z.setData(x, y, z, &temp);
+        h11_x(x, y, z) = t_x*t_x*t_x - t_x*t_x;
+        h11_z(x, y, z) = t_z*t_z*t_z - t_z*t_z;
 	  }
 	}
   }
@@ -298,35 +301,35 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
 		int z_mod_p1 = (z_mod + 1) % ncz;
 
 		// Interpolate f in X at Z
-		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+		  + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
 
 		// Interpolate f in X at Z+1
-		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+		  + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+		  + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
 		// Interpolate fz in X at Z
-		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x[x][y][z];
+		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
 
 		// Interpolate fz in X at Z+1
-		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+		  + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+		  + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
 
 		// Interpolate in Z
 		f_next(x,y + fcimap.dir,z) =
-		  + f_z    * fcimap.h00_z[x][y][z]
-		  + f_zp1  * fcimap.h01_z[x][y][z]
-		  + fz_z   * fcimap.h10_z[x][y][z]
-		  + fz_zp1 * fcimap.h11_z[x][y][z];
+		  + f_z    * fcimap.h00_z(x,y,z)
+		  + f_zp1  * fcimap.h01_z(x,y,z)
+		  + fz_z   * fcimap.h10_z(x,y,z)
+		  + fz_zp1 * fcimap.h11_z(x,y,z);
       }
     }
   }
