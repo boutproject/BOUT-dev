@@ -10,29 +10,26 @@
 class BoundaryOpFCI : public BoundaryOp {
 public:
   BoundaryOpFCI();
-  BoundaryOpFCI(const FCIMap& fcimap, FieldGenerator* value) :
-    BoundaryOp(fcimap.boundary),
-    fcimap(fcimap),
+  BoundaryOpFCI(BoundaryRegionFCI *region, FieldGenerator* value) :
+    BoundaryOp(region),
     gen_values(value),
     value_type(GEN) {}
-  BoundaryOpFCI(const FCIMap& fcimap, Field3D* value) :
-    BoundaryOp(fcimap.boundary),
-    fcimap(fcimap),
+  BoundaryOpFCI(BoundaryRegionFCI *region, Field3D* value) :
+    BoundaryOp(region),
     field_values(value),
     value_type(FIELD) {}
-  BoundaryOpFCI(const FCIMap& fcimap, BoutReal value) :
-    BoundaryOp(fcimap.boundary),
-    fcimap(fcimap),
+  BoundaryOpFCI(BoundaryRegionFCI *region, BoutReal value) :
+    BoundaryOp(region),
     real_value(value),
     value_type(REAL) {}
 
   void apply(Field2D &f)
   {
-      throw BoutException("Can't apply FCI boundary conditions to Field2D!");
+    throw BoutException("Can't apply FCI boundary conditions to Field2D!");
   }
   void apply(Field2D &f, BoutReal t)
   {
-      throw BoutException("Can't apply FCI boundary conditions to Field2D!");
+    throw BoutException("Can't apply FCI boundary conditions to Field2D!");
   }
   void apply(Field3D &f) {}
   void apply(Field3D &f, BoutReal t) {}
@@ -42,7 +39,6 @@ public:
   void apply_ddt(Field3D &f) {};
 
 protected:
-  const FCIMap& fcimap;
 
   /// Possible ways to get boundary values
   FieldGenerator* gen_values;
@@ -63,12 +59,12 @@ protected:
 class BoundaryOpFCI_dirichlet : public BoundaryOpFCI {
 public:
   BoundaryOpFCI_dirichlet();
-  BoundaryOpFCI_dirichlet(const FCIMap& fcimap, FieldGenerator* value) :
-    BoundaryOpFCI(fcimap, value) {}
-  BoundaryOpFCI_dirichlet(const FCIMap& fcimap, Field3D* value) :
-    BoundaryOpFCI(fcimap, value) {}
-  BoundaryOpFCI_dirichlet(const FCIMap& fcimap, BoutReal value) :
-    BoundaryOpFCI(fcimap, value) {}
+  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, FieldGenerator* value) :
+    BoundaryOpFCI(region, value) {}
+  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, Field3D* value) :
+    BoundaryOpFCI(region, value) {}
+  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, BoutReal value) :
+    BoundaryOpFCI(region, value) {}
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);
@@ -78,12 +74,12 @@ public:
 class BoundaryOpFCI_neumann : public BoundaryOpFCI {
 public:
   BoundaryOpFCI_neumann();
-  BoundaryOpFCI_neumann(const FCIMap& fcimap, FieldGenerator* value) :
-    BoundaryOpFCI(fcimap, value) {}
-  BoundaryOpFCI_neumann(const FCIMap& fcimap, Field3D* value) :
-    BoundaryOpFCI(fcimap, value) {}
-  BoundaryOpFCI_neumann(const FCIMap& fcimap, BoutReal value) :
-    BoundaryOpFCI(fcimap, value) {}
+  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, FieldGenerator* value) :
+    BoundaryOpFCI(region, value) {}
+  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, Field3D* value) :
+    BoundaryOpFCI(region, value) {}
+  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, BoutReal value) :
+    BoundaryOpFCI(region, value) {}
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);

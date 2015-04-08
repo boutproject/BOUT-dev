@@ -97,10 +97,10 @@ int Mesh::get(Field2D &var, const string &name, BoutReal def) {
 
 int Mesh::get(Field3D &var, const string &name, BoutReal def) {
   MsgStackItem msg("Loading 3D field: Mesh::get(Field3D)");
-  
+
   // Ensure data allocated
   var.allocate();
-  
+
   if(!source->get(this, var, name, def))
     return 1;
   

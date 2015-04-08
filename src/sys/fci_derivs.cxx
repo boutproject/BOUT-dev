@@ -72,18 +72,17 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   if (dir == +1) {
     mesh.get(xt_prime, "forward_xt_prime");
     mesh.get(zt_prime, "forward_zt_prime");
-    boundary = new BoundaryRegionFCI("FCI_forward", BNDRY_FCI_FWD);
+    boundary = new BoundaryRegionFCI("FCI_forward", BNDRY_FCI_FWD, dir);
   } else if (dir == -1) {
     mesh.get(xt_prime, "backward_xt_prime");
     mesh.get(zt_prime, "backward_zt_prime");
-    boundary = new BoundaryRegionFCI("FCI_backward", BNDRY_FCI_BKWD);
+    boundary = new BoundaryRegionFCI("FCI_backward", BNDRY_FCI_BKWD, dir);
   } else {
     // Definitely shouldn't be called
     throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
   // Allocate Field3D members
-  y_prime.allocate();
   h00_x.allocate();
   h01_x.allocate();
   h10_x.allocate();
@@ -165,46 +164,45 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
           z_boundary = false;
         }
 
-        // If field line leaves the domain at this point, then add it
-        // to the boundary
-        if (x_boundary || y_boundary || z_boundary) {
-          boundary_mask[x][y][z] = true;
-          boundary->add_point(x, y, z);
-        }
-
         // Find the closest intersection with a boundary - seven
         // possible regions field line could end up in
         // Temp variables for convenience
         bool x_b = x_boundary;
         bool y_b = y_boundary;
         bool z_b = z_boundary;
-        BoutReal temp;
+        BoutReal y_prime;
         if (x_b && !y_b && !z_b) {
           // x
-          temp = y_prime_x;
+          y_prime = y_prime_x;
         } else if (!x_b && y_b && !z_b) {
           // y
-          temp = y_prime_y;
+          y_prime = y_prime_y;
         } else if (!x_b && !y_b && z_b) {
           // z
-          temp = y_prime_z;
+          y_prime = y_prime_z;
         } else if (!x_b && y_b && z_b) {
           // y & z
-          temp = std::min(y_prime_y, y_prime_z);
+          y_prime = std::min(y_prime_y, y_prime_z);
         } else if (x_b && !y_b && z_b) {
           // z & x
-          temp = std::min(y_prime_x, y_prime_z);
+          y_prime = std::min(y_prime_x, y_prime_z);
         } else if (x_b && y_b && !z_b) {
           // x & y
-          temp = std::min(y_prime_x, y_prime_y);
+          y_prime = std::min(y_prime_x, y_prime_y);
         } else if (x_b && y_b && z_b) {
           // x & y & z
-          temp = std::min(std::min(y_prime_x, y_prime_y), y_prime_z);
+          y_prime = std::min(std::min(y_prime_x, y_prime_y), y_prime_z);
         } else {
           // none
-          temp = 0;
+          y_prime = 0;
         }
-        y_prime(x, y, z) = temp;
+
+        // If field line leaves the domain at this point, then add it
+        // to the boundary
+        if (x_boundary || y_boundary || z_boundary) {
+          boundary_mask[x][y][z] = true;
+          boundary->add_point(x, y, z, y_prime, 0.0);
+        }
 
         //----------------------------------------
 
@@ -342,7 +340,7 @@ const Field3D FCI::Grad_par(Field3D &f) {
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
     for (int y=mesh.ystart;y<=mesh.yend;++y) {
       for (int z=0;z<mesh.ngz-1;++z) {
-	result(x,y,z) = (yup(x,y+1,z) - ydown(x,y-1,z))/(2*coord->dy(x,y)*sqrt(coord->g_22(x,y)));
+        result(x,y,z) = (yup(x,y+1,z) - ydown(x,y-1,z))/(2*coord->dy(x,y)*sqrt(coord->g_22(x,y)));
       }
     }
   }
@@ -382,13 +380,13 @@ const Field3D FCI::Grad2_par2(Field3D &f) {
   Field3D &ydown = f.ydown();
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = (yup(x,y+1,z) - 2*f(x,y,z) + ydown(x,y-1,z))/(coord->dy(x,y) * coord->dy(x,y) * coord->g_22(x,y));
-	  }
-	}
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
+        result(x,y,z) = (yup(x,y+1,z) - 2*f(x,y,z) + ydown(x,y-1,z))/(coord->dy(x,y) * coord->dy(x,y) * coord->g_22(x,y));
+      }
+    }
   }
-  
+
 #ifdef TRACK
   result.name = "FCI::Grad2_par2("+f.name+")";
 #endif
@@ -431,12 +429,12 @@ void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalu
 
   switch(bndry_type) {
   case DIRICHLET:
-    up_op = new BoundaryOpFCI_dirichlet(forward_map, upvalue);
-    down_op = new BoundaryOpFCI_dirichlet(backward_map, downvalue);
+    up_op = new BoundaryOpFCI_dirichlet(forward_map.boundary, upvalue);
+    down_op = new BoundaryOpFCI_dirichlet(backward_map.boundary, downvalue);
     break;
   case NEUMANN:
-    up_op = new BoundaryOpFCI_neumann(forward_map, upvalue);
-    down_op = new BoundaryOpFCI_neumann(backward_map, downvalue);
+    up_op = new BoundaryOpFCI_neumann(forward_map.boundary, upvalue);
+    down_op = new BoundaryOpFCI_neumann(backward_map.boundary, downvalue);
     break;
   default:
     throw BoutException("Not a valid boundary type for FCI!");

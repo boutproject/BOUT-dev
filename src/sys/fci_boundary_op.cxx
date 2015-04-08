@@ -34,25 +34,26 @@ BoutReal BoundaryOpFCI::getValue(int x, int y, int z, BoutReal t) {
 
 void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
-  Field3D& f_next = f.ynext(fcimap.dir);
-
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
+
+  Field3D& f_next = f.ynext(bndry_fci->dir);
+
   Coordinates& coord = *(mesh->coordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
     // temp variables for convenience
-    int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
+    int x = bndry_fci->x; int y = bndry_fci->y; int z = bndry_fci->z;
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
 
     // Scale the field and normalise to the desired value
-    BoutReal y_prime = fcimap.y_prime(x,y,z);
+    BoutReal y_prime = bndry_fci->length;
     BoutReal f2 = (f(x,y,z) - value) * (coord.dy(x, y) - y_prime) / y_prime;
 
-    f_next(x, y+fcimap.dir, z) = value - f2;
+    f_next(x, y+bndry_fci->dir, z) = value - f2;
   }
 
 }
@@ -62,20 +63,20 @@ void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
 void BoundaryOpFCI_neumann::apply(Field3D &f, BoutReal t) {
 
-  Field3D& f_next = f.ynext(fcimap.dir);
-
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
+
+  Field3D& f_next = f.ynext(bndry_fci->dir);
 
   // If point is in boundary, then fill in f_next such that the derivative
   // would be VALUE on the boundary
   for (bndry_fci->first(); !bndry_fci->isDone(); bndry_fci->next()) {
     // temp variables for convience
-    int x = bndry_fci->x; int y = bndry_fci->y; int	z = bndry_fci->z;
+    int x = bndry_fci->x; int y = bndry_fci->y; int z = bndry_fci->z;
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
 
-    f_next(x, y+fcimap.dir, z) = 2.*value + f(x, y, z);
+    f_next(x, y+bndry_fci->dir, z) = 2.*value + f(x, y, z);
   }
 
 }

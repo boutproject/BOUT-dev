@@ -18,15 +18,16 @@ enum BndryLoc {BNDRY_XIN=1,
 
 /// Describes a region of the boundary, and a means of iterating over it
 class BoundaryRegion {
- public:
- BoundaryRegion() {}
+public:
+  BoundaryRegion() {}
+  BoundaryRegion(const string &name, BndryLoc loc) : label(name), location(loc) {}
   BoundaryRegion(const string &name, int xd, int yd) : label(name),bx(xd), by(yd), width(2) {}
   virtual ~BoundaryRegion() {}
-  
+
   string label; // Label for this boundary region
-  
+
   BndryLoc location; // Which side of the domain is it on?
-  
+
   int x,y; // Indices of the point in the boundary
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
 
@@ -41,58 +42,58 @@ class BoundaryRegion {
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {
- public:
+public:
   BoundaryRegionXIn(const string &name, int ymin, int ymax);
-  
+
   void first();
   void next();
   void next1d();
   void nextX();
   void nextY();
   bool isDone();
- private:
+private:
   int ys, ye;
 };
 
 class BoundaryRegionXOut : public BoundaryRegion {
- public:
+public:
   BoundaryRegionXOut(const string &name, int ymin, int ymax);
-  
+
   void first();
   void next();
   void next1d();
   void nextX();
   void nextY();
   bool isDone();
- private:
+private:
   int ys, ye;
 };
 
 class BoundaryRegionYDown : public BoundaryRegion {
- public:
+public:
   BoundaryRegionYDown(const string &name, int xmin, int xmax);
-  
+
   void first();
   void next();
   void next1d();
   void nextX();
   void nextY();
   bool isDone();
- private:
+private:
   int xs, xe;
 };
 
 class BoundaryRegionYUp : public BoundaryRegion {
- public:
+public:
   BoundaryRegionYUp(const string &name, int xmin, int xmax);
-  
+
   void first();
   void next();
   void next1d();
   void nextX();
   void nextY();
   bool isDone();
- private:
+private:
   int xs, xe;
 };
 
