@@ -41,7 +41,7 @@ class FCIMap {
   // Private constructor - must be initialised with mesh
   FCIMap();
 public:
-  typedef std::vector<std::vector<std::vector<bool> > > B3vec;
+  typedef std::vector<std::vector<std::vector<bool>>> B3vec;
 
   // dir MUST be either +1 or -1
   FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
@@ -51,9 +51,7 @@ public:
 
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
-  B3vec x_boundary;     // boundary mask - has the field line left the domain through the x-sides
-  B3vec y_boundary;     // boundary mask - has the field line left the domain through the y-sides
-  B3vec z_boundary;     // boundary mask - has the field line left the domain through the z-sides
+  B3vec boundary_mask;  // boundary mask - has the field line left the domain
   Field3D y_prime;      // distance to intersection with boundary
 
   BoundaryRegionFCI* boundary;			/**< boundary region */

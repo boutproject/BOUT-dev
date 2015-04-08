@@ -54,16 +54,16 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
   k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+
+  bool x_boundary;     // has the field line left the domain through the x-sides
+  bool y_boundary;     // has the field line left the domain through the y-sides
+  bool z_boundary;     // has the field line left the domain through the z-sides
+
+  // Make the boundary_mask the correct size
   // Ugly ugly code
-  x_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-                    (mesh.ngy, std::vector<bool>
-                     (mesh.ngz-1)));
-  y_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-                    (mesh.ngy, std::vector<bool>
-                     (mesh.ngz-1)));
-  z_boundary.resize(mesh.ngx, std::vector<std::vector<bool> >
-                    (mesh.ngy, std::vector<bool>
-                     (mesh.ngz-1)));
+  boundary_mask.resize(mesh.ngx, std::vector<std::vector<bool>>
+                       (mesh.ngy, std::vector<bool>
+                        (mesh.ngz-1)));
 
   Field3D xt_prime, zt_prime;
 
@@ -132,51 +132,52 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         // Field line leaves through x boundary
         if (xt_prime(x,y,z) < 0 ||
             xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
-          x_boundary[x][y][z] = true;
+          x_boundary = true;
 
           BoutReal dx2 = coord.dx(x,y)/2.;
           BoutReal dy = coord.dy(x,y);
           y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
         } else {
-          x_boundary[x][y][z] = false;
+          x_boundary = false;
         }
 
         // Field line leaves through y boundary
         // Only add this point if the domain is NOT periodic in y
         if ((y + dir < 0 ||
              y + dir > mesh.GlobalNy - 1) && !yperiodic) {
-          y_boundary[x][y][z] = true;
+          y_boundary = true;
 
           y_prime_y =  coord.dy(x,y) / 2.;
         } else {
-          y_boundary[x][y][z] = false;
+          y_boundary = false;
         }
 
         // Field line leaves through z boundary
         // Only add this point if the domain is NOT periodic in Z
         if ((zt_prime(x,y,z) < 0 ||
              zt_prime(x,y,z) > ncz-1) && !zperiodic) {
-          z_boundary[x][y][z] = true;
+          z_boundary = true;
 
           BoutReal dz2 = coord.dz/2.;
           BoutReal dy = coord.dy(x,y);
           y_prime_z =  dz2 * (dy / (t_z * coord.dz));
         } else {
-          z_boundary[x][y][z] = false;
+          z_boundary = false;
         }
 
         // If field line leaves the domain at this point, then add it
         // to the boundary
-        if (x_boundary[x][y][z] || y_boundary[x][y][z] || z_boundary[x][y][z]) {
+        if (x_boundary || y_boundary || z_boundary) {
+          boundary_mask[x][y][z] = true;
           boundary->add_point(x, y, z);
         }
 
         // Find the closest intersection with a boundary - seven
         // possible regions field line could end up in
         // Temp variables for convenience
-        bool x_b = x_boundary[x][y][z];
-        bool y_b = y_boundary[x][y][z];
-        bool z_b = z_boundary[x][y][z];
+        bool x_b = x_boundary;
+        bool y_b = y_boundary;
+        bool z_b = z_boundary;
         BoutReal temp;
         if (x_b && !y_b && !z_b) {
           // x
@@ -274,9 +275,7 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
         // If this field line leaves the domain through the
         // x-boundary, or through the z-boundary and the domain is not
         // periodic, skip it
-        if (fcimap.x_boundary[x][y][z] ||
-            fcimap.y_boundary[x][y][z] ||
-            fcimap.z_boundary[x][y][z]) continue;
+        if (fcimap.boundary_mask[x][y][z]) continue;
 
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
