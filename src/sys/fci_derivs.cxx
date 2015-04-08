@@ -483,6 +483,8 @@ void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value)
 
 void FCI::calcYUpDown(Field3D &f) {
 
+  f.splitYupYdown();
+
   interpolate(f, forward_map);
   interpolate(f, backward_map);
 
