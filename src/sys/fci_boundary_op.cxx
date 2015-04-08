@@ -34,7 +34,7 @@ BoutReal BoundaryOpFCI::getValue(int x, int y, int z, BoutReal t) {
 
 void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
-  Field3D& f_next = fcimap.f_next(f);
+  Field3D& f_next = f.ynext(fcimap.dir);
 
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
   Coordinates& coord = *(mesh->coordinates());
@@ -62,7 +62,7 @@ void BoundaryOpFCI_dirichlet::apply(Field3D &f, BoutReal t) {
 
 void BoundaryOpFCI_neumann::apply(Field3D &f, BoutReal t) {
 
-  Field3D& f_next = fcimap.f_next(f);
+  Field3D& f_next = f.ynext(fcimap.dir);
 
   BoundaryRegionFCI* bndry_fci = static_cast<BoundaryRegionFCI*>(bndry);
 

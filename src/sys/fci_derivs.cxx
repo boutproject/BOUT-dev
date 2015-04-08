@@ -238,24 +238,6 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 }
 
 /**
- * Return a reference to the appropriate yup/ydown field for this FCIMap
- *
- * @param f The field of interest
- *
- * @return A reference to either f.yup_field or f.ydown_field
- */
-Field3D& FCIMap::f_next(Field3D &f) const {
-  switch(dir) {
-  case +1:
-    return f.yup();
-  case -1:
-    return f.ydown();
-  default:
-    throw BoutException("Trying to determine f_next for FCIMap with strange direction: %d. Only +/-1 currently supported.", dir);
-  }
-}
-
-/**
  * Use cubic Hermite splines to interpolate field f
  *
  * Use cubic Hermite splines to interpolate field f on the adjacent
@@ -282,7 +264,7 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
   fxz = mesh.indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
   mesh.communicate(fxz);
 
-  Field3D& f_next = fcimap.f_next(f);
+  Field3D& f_next = f.ynext(fcimap.dir);
   f_next = 0;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
