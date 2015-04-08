@@ -134,9 +134,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
             xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
           x_boundary[x][y][z] = true;
 
-          BoutReal dx2 = mesh.dx(x,y)/2.;
-          BoutReal dy = mesh.dy(x,y);
-          y_prime_x =  dx2 * (dy / (t_x * mesh.dx(x, y)));
+          BoutReal dx2 = coord.dx(x,y)/2.;
+          BoutReal dy = coord.dy(x,y);
+          y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
         } else {
           x_boundary[x][y][z] = false;
         }
@@ -147,7 +147,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
              y + dir > mesh.GlobalNy - 1) && !yperiodic) {
           y_boundary[x][y][z] = true;
 
-          y_prime_y =  mesh.dy(x,y) / 2.;
+          y_prime_y =  coord.dy(x,y) / 2.;
         } else {
           y_boundary[x][y][z] = false;
         }
@@ -158,9 +158,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
              zt_prime(x,y,z) > ncz-1) && !zperiodic) {
           z_boundary[x][y][z] = true;
 
-          BoutReal dz2 = mesh.dz/2.;
-          BoutReal dy = mesh.dy(x,y);
-          y_prime_z =  dz2 * (dy / (t_z * mesh.dz));
+          BoutReal dz2 = coord.dz/2.;
+          BoutReal dy = coord.dy(x,y);
+          y_prime_z =  dz2 * (dy / (t_z * coord.dz));
         } else {
           z_boundary[x][y][z] = false;
         }
