@@ -6,11 +6,11 @@
 #include <vector>
 
 /**
- * Boundary region for FCI. This contains a vector of points that are
+ * Boundary region for parallel direction. This contains a vector of points that are
  * inside the boundary.
  *
  */
-class BoundaryRegionFCI : public BoundaryRegionBase {
+class BoundaryRegionPar : public BoundaryRegionBase {
 
   struct Indices {
     int x;
@@ -29,9 +29,9 @@ class BoundaryRegionFCI : public BoundaryRegionBase {
   IndicesIter bndry_position;
 
 public:
-  BoundaryRegionFCI(const string &name, const int dir) :
+  BoundaryRegionPar(const string &name, const int dir) :
     BoundaryRegionBase(name), dir(dir) {}
-  BoundaryRegionFCI(const string &name, BndryLoc loc, const int dir) :
+  BoundaryRegionPar(const string &name, BndryLoc loc, const int dir) :
     BoundaryRegionBase(name, loc), dir(dir) {}
 
   /// Add a point to the boundary

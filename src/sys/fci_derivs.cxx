@@ -72,11 +72,11 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   if (dir == +1) {
     mesh.get(xt_prime, "forward_xt_prime");
     mesh.get(zt_prime, "forward_zt_prime");
-    boundary = new BoundaryRegionFCI("FCI_forward", BNDRY_FCI_FWD, dir);
+    boundary = new BoundaryRegionPar("FCI_forward", BNDRY_PAR_FWD, dir);
   } else if (dir == -1) {
     mesh.get(xt_prime, "backward_xt_prime");
     mesh.get(zt_prime, "backward_zt_prime");
-    boundary = new BoundaryRegionFCI("FCI_backward", BNDRY_FCI_BKWD, dir);
+    boundary = new BoundaryRegionPar("FCI_backward", BNDRY_PAR_BKWD, dir);
   } else {
     // Definitely shouldn't be called
     throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
@@ -424,17 +424,17 @@ const Field3D FCI::Div_par(Field3D &f) {
 
 void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
 
-  BoundaryOpFCI* up_op;
-  BoundaryOpFCI* down_op;
+  BoundaryOpPar* up_op;
+  BoundaryOpPar* down_op;
 
   switch(bndry_type) {
   case DIRICHLET:
-    up_op = new BoundaryOpFCI_dirichlet(forward_map.boundary, upvalue);
-    down_op = new BoundaryOpFCI_dirichlet(backward_map.boundary, downvalue);
+    up_op = new BoundaryOpPar_dirichlet(forward_map.boundary, upvalue);
+    down_op = new BoundaryOpPar_dirichlet(backward_map.boundary, downvalue);
     break;
   case NEUMANN:
-    up_op = new BoundaryOpFCI_neumann(forward_map.boundary, upvalue);
-    down_op = new BoundaryOpFCI_neumann(backward_map.boundary, downvalue);
+    up_op = new BoundaryOpPar_neumann(forward_map.boundary, upvalue);
+    down_op = new BoundaryOpPar_neumann(backward_map.boundary, downvalue);
     break;
   default:
     throw BoutException("Not a valid boundary type for FCI!");

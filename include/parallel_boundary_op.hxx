@@ -9,29 +9,29 @@
 //////////////////////////////////////////////////
 // Base class
 
-class BoundaryOpFCI : public BoundaryOpBase {
+class BoundaryOpPar : public BoundaryOpBase {
 public:
-  BoundaryOpFCI();
-  BoundaryOpFCI(BoundaryRegionFCI *region, FieldGenerator* value) :
+  BoundaryOpPar();
+  BoundaryOpPar(BoundaryRegionPar *region, FieldGenerator* value) :
     bndry(region),
     gen_values(value),
     value_type(GEN) {}
-  BoundaryOpFCI(BoundaryRegionFCI *region, Field3D* value) :
+  BoundaryOpPar(BoundaryRegionPar *region, Field3D* value) :
     bndry(region),
     field_values(value),
     value_type(FIELD) {}
-  BoundaryOpFCI(BoundaryRegionFCI *region, BoutReal value) :
+  BoundaryOpPar(BoundaryRegionPar *region, BoutReal value) :
     bndry(region),
     real_value(value),
     value_type(REAL) {}
 
   void apply(Field2D &f)
   {
-    throw BoutException("Can't apply FCI boundary conditions to Field2D!");
+    throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
   void apply(Field2D &f, BoutReal t)
   {
-    throw BoutException("Can't apply FCI boundary conditions to Field2D!");
+    throw BoutException("Can't apply parallel boundary conditions to Field2D!");
   }
   void apply(Field3D &f) {}
   void apply(Field3D &f, BoutReal t) {}
@@ -40,7 +40,7 @@ public:
   // Unlikely to be used?
   void apply_ddt(Field3D &f) {};
 
-  BoundaryRegionFCI *bndry;
+  BoundaryRegionPar *bndry;
 
 protected:
 
@@ -60,30 +60,30 @@ protected:
 //////////////////////////////////////////////////
 // Implementations
 
-class BoundaryOpFCI_dirichlet : public BoundaryOpFCI {
+class BoundaryOpPar_dirichlet : public BoundaryOpPar {
 public:
-  BoundaryOpFCI_dirichlet();
-  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, FieldGenerator* value) :
-    BoundaryOpFCI(region, value) {}
-  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, Field3D* value) :
-    BoundaryOpFCI(region, value) {}
-  BoundaryOpFCI_dirichlet(BoundaryRegionFCI *region, BoutReal value) :
-    BoundaryOpFCI(region, value) {}
+  BoundaryOpPar_dirichlet();
+  BoundaryOpPar_dirichlet(BoundaryRegionPar *region, FieldGenerator* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_dirichlet(BoundaryRegionPar *region, Field3D* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_dirichlet(BoundaryRegionPar *region, BoutReal value) :
+    BoundaryOpPar(region, value) {}
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);
 
 };
 
-class BoundaryOpFCI_neumann : public BoundaryOpFCI {
+class BoundaryOpPar_neumann : public BoundaryOpPar {
 public:
-  BoundaryOpFCI_neumann();
-  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, FieldGenerator* value) :
-    BoundaryOpFCI(region, value) {}
-  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, Field3D* value) :
-    BoundaryOpFCI(region, value) {}
-  BoundaryOpFCI_neumann(BoundaryRegionFCI *region, BoutReal value) :
-    BoundaryOpFCI(region, value) {}
+  BoundaryOpPar_neumann();
+  BoundaryOpPar_neumann(BoundaryRegionPar *region, FieldGenerator* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_neumann(BoundaryRegionPar *region, Field3D* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_neumann(BoundaryRegionPar *region, BoutReal value) :
+    BoundaryOpPar(region, value) {}
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);

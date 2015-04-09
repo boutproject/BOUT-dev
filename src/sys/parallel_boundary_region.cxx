@@ -1,10 +1,10 @@
 #include "parallel_boundary_region.hxx"
 
-void BoundaryRegionFCI::add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle) {
+void BoundaryRegionPar::add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle) {
   bndry_points.push_back({x, y, z, length, angle});
 }
 
-void BoundaryRegionFCI::first() {
+void BoundaryRegionPar::first() {
   bndry_position = begin(bndry_points);
   if (!isDone()) {
     x      = bndry_position->x;
@@ -15,7 +15,7 @@ void BoundaryRegionFCI::first() {
   }
 }
 
-void BoundaryRegionFCI::next() {
+void BoundaryRegionPar::next() {
   ++bndry_position;
   if (!isDone()) {
     x      = bndry_position->x;
@@ -26,7 +26,7 @@ void BoundaryRegionFCI::next() {
   }
 }
 
-bool BoundaryRegionFCI::isDone() {
+bool BoundaryRegionPar::isDone() {
   return (bndry_position == end(bndry_points));
 }
 

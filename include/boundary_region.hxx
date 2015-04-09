@@ -12,8 +12,8 @@ enum BndryLoc {BNDRY_XIN=1,
                BNDRY_YDOWN=4,
                BNDRY_YUP=8,
                BNDRY_ALL=15,
-               BNDRY_FCI_FWD=16,   // Don't include FCI boundaries
-               BNDRY_FCI_BKWD=32};
+               BNDRY_PAR_FWD=16,   // Don't include parallel boundaries
+               BNDRY_PAR_BKWD=32};
 
 class BoundaryRegionBase {
 public:

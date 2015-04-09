@@ -54,7 +54,7 @@ public:
   B3vec boundary_mask;  // boundary mask - has the field line left the domain
   Field3D y_prime;      // distance to intersection with boundary
 
-  BoundaryRegionFCI* boundary;			/**< boundary region */
+  BoundaryRegionPar* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
