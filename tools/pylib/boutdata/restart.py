@@ -234,9 +234,26 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
 def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None):
     """Resize restart files across NPES processors.
     
-    Does not check if new processor arrangement is compatible with the branch cuts. In this respect restart.split is safer.
+    Does not check if new processor arrangement is compatible with the branch cuts. In this respect restart.split is safer. However, BOUT++ checks the topology during initialisation anyway so this is not too serious.
+    
+    Parameters
+    ----------
+    npes : int
+        number of processors for the new restart files
+    path : string, optional
+        location of old restart files
+    nxpe : int, optional
+        number of processors to use in the x-direction (determines split: npes = nxpe * nype). Default is None which uses the same algorithm as BoutMesh (but without topology information) to determine a suitable value for nxpe.
+    output : string, optional
+        location to save new restart files
+    informat : string, optional
+        specify file format of old restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default uses the format of the first 'BOUT.restart.*' file listed by glob.glob.
+    outformat : string, optional
+        specify file format of new restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default is to use the same as informat.
 
-    Returns True on success
+    Returns
+    -------
+    True on success
     """
     
     mxg = 2
