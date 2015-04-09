@@ -7,19 +7,19 @@
 //////////////////////////////////////////////////
 // Base class
 
-class BoundaryOpFCI : public BoundaryOp {
+class BoundaryOpFCI : public BoundaryOpBase {
 public:
   BoundaryOpFCI();
   BoundaryOpFCI(BoundaryRegionFCI *region, FieldGenerator* value) :
-    BoundaryOp(region),
+    bndry(region),
     gen_values(value),
     value_type(GEN) {}
   BoundaryOpFCI(BoundaryRegionFCI *region, Field3D* value) :
-    BoundaryOp(region),
+    bndry(region),
     field_values(value),
     value_type(FIELD) {}
   BoundaryOpFCI(BoundaryRegionFCI *region, BoutReal value) :
-    BoundaryOp(region),
+    bndry(region),
     real_value(value),
     value_type(REAL) {}
 
@@ -37,6 +37,8 @@ public:
   // Apply to time derivative
   // Unlikely to be used?
   void apply_ddt(Field3D &f) {};
+
+  BoundaryRegionFCI *bndry;
 
 protected:
 

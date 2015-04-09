@@ -15,30 +15,38 @@ enum BndryLoc {BNDRY_XIN=1,
                BNDRY_FCI_FWD=16,   // Don't include FCI boundaries
                BNDRY_FCI_BKWD=32};
 
-
-/// Describes a region of the boundary, and a means of iterating over it
-class BoundaryRegion {
+class BoundaryRegionBase {
 public:
-  BoundaryRegion() {}
-  BoundaryRegion(const string &name, BndryLoc loc) : label(name), location(loc) {}
-  BoundaryRegion(const string &name, int xd, int yd) : label(name),bx(xd), by(yd), width(2) {}
-  virtual ~BoundaryRegion() {}
+  BoundaryRegionBase() {}
+  BoundaryRegionBase(const string &name) : label(name) {}
+  BoundaryRegionBase(const string &name, BndryLoc loc) : label(name), location(loc) {}
+  virtual ~BoundaryRegionBase() {}
 
   string label; // Label for this boundary region
 
   BndryLoc location; // Which side of the domain is it on?
+
+  virtual void first() = 0;
+  virtual void next() = 0;   // Loop over every element from inside out (in X or Y first)
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+};
+
+/// Describes a region of the boundary, and a means of iterating over it
+class BoundaryRegion : public BoundaryRegionBase {
+public:
+  BoundaryRegion() {}
+  BoundaryRegion(const string &name, BndryLoc loc) : BoundaryRegionBase(name, loc) {}
+  BoundaryRegion(const string &name, int xd, int yd) : BoundaryRegionBase(name), bx(xd), by(yd), width(2) {}
+  virtual ~BoundaryRegion() {}
 
   int x,y; // Indices of the point in the boundary
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
 
   int width; // Width of the boundary
 
-  virtual void first() = 0;
-  virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
   virtual void next1d() = 0; // Loop over the innermost elements
   virtual void nextX() = 0; // Just loop over X
   virtual void nextY() = 0; // Just loop over Y
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
 };
 
 class BoundaryRegionXIn : public BoundaryRegion {

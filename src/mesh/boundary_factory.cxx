@@ -66,7 +66,7 @@ void BoundaryFactory::cleanup() {
   instance = NULL;
 }
 
-BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) {
+BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegionBase *region) {
   
   // Search for a string of the form: modifier(operation)  
   int pos = name.find('(');
@@ -83,7 +83,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
     
     // Clone the boundary operation, passing the region to operate over and an empty args list
     list<string> args;
-    return op->clone(region, args); 
+    return op->clone(static_cast<BoundaryRegion*>(region), args);
   }
   // Contains a bracket. Find the last bracket and remove
   int pos2 = name.rfind(')');
@@ -152,7 +152,7 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
   BoundaryOp *op = findBoundaryOp(trim(func));
   if(op != NULL) {
     // An operation with arguments
-    return op->clone(region, arglist); 
+    return op->clone(static_cast<BoundaryRegion*>(region), arglist);
   }
   // Otherwise nothing matches
   output << "  Boundary setting is neither an operation nor modifier: " << func << endl;
@@ -160,11 +160,11 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
   return NULL;
 }
 
-BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region) {
+BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegionBase *region) {
   return create(string(name), region);
 }
 
-BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegion *region) {
+BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegionBase *region) {
   if(region == NULL)
     return NULL;
   
@@ -239,7 +239,7 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
   // values. If a user want to override, specify "none" or "null"
 }
 
-BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegion *region) {
+BoundaryOp* BoundaryFactory::createFromOptions(const char* varname, BoundaryRegionBase *region) {
   return createFromOptions(string(varname), region);
 }
 

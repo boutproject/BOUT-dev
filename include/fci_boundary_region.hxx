@@ -10,7 +10,7 @@
  * inside the boundary.
  *
  */
-class BoundaryRegionFCI : public BoundaryRegion {
+class BoundaryRegionFCI : public BoundaryRegionBase {
 
   struct Indices {
     int x;
@@ -29,8 +29,10 @@ class BoundaryRegionFCI : public BoundaryRegion {
   IndicesIter bndry_position;
 
 public:
+  BoundaryRegionFCI(const string &name, const int dir) :
+    BoundaryRegionBase(name), dir(dir) {}
   BoundaryRegionFCI(const string &name, BndryLoc loc, const int dir) :
-    BoundaryRegion(name, loc), dir(dir) {}
+    BoundaryRegionBase(name, loc), dir(dir) {}
 
   /// Add a point to the boundary
   void add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle);
@@ -43,7 +45,7 @@ public:
   bool isDone();
 
   /// Index of the point in the boundary
-  int z;
+  int x, y, z;
   BoutReal length;
   BoutReal angle;
 
