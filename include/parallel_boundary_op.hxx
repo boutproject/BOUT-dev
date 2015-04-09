@@ -1,8 +1,10 @@
-#ifndef __FCI_BNDRY_OP_H__
-#define __FCI_BNDRY_OP_H__
+#ifndef __PAR_BNDRY_OP_H__
+#define __PAR_BNDRY_OP_H__
 
-#include <fci_derivs.hxx>
-#include <boundary_op.hxx>
+#include "boundary_op.hxx"
+#include "bout_types.hxx"
+#include "parallel_boundary_region.hxx"
+#include "utils.hxx"
 
 //////////////////////////////////////////////////
 // Base class
@@ -88,4 +90,4 @@ public:
 
 };
 
-#endif // __FCI_BNDRY_OP_H__
+#endif // __PAR_BNDRY_OP_H__

@@ -34,7 +34,7 @@
 #include <vector>
 #include <bout/constants.hxx>
 #include <field_factory.hxx>
-#include <fci_boundary_region.hxx>
+#include "parallel_boundary_region.hxx"
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {

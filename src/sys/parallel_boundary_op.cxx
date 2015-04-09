@@ -1,5 +1,9 @@
-#include <fci_boundary_op.hxx>
-#include <output.hxx>
+#include "bout/constants.hxx"
+#include "bout/mesh.hxx"
+#include "field_factory.hxx"
+#include "globals.hxx"
+#include "output.hxx"
+#include "parallel_boundary_op.hxx"
 
 BoutReal BoundaryOpFCI::getValue(int x, int y, int z, BoutReal t) {
 

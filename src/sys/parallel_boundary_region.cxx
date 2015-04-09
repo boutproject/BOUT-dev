@@ -1,4 +1,4 @@
-#include <fci_boundary_region.hxx>
+#include "parallel_boundary_region.hxx"
 
 void BoundaryRegionFCI::add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle) {
   bndry_points.push_back({x, y, z, length, angle});

@@ -37,8 +37,8 @@
  *
  **************************************************************************/
 
-#include <fci_boundary_region.hxx>
-#include <fci_boundary_op.hxx>
+#include "parallel_boundary_region.hxx"
+#include "parallel_boundary_op.hxx"
 #include <fci_derivs.hxx>
 #include <derivs.hxx>
 #include <msg_stack.hxx>
