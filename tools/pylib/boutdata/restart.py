@@ -416,7 +416,6 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
               print "ERROR: variable found with unexpected number of dimensions,",ndims,v
               return False
                   
-          
           # write data
           for i in range(npes):
               ix = i%nxpe
