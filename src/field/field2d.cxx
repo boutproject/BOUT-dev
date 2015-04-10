@@ -710,9 +710,9 @@ void Field2D::applyBoundary(bool init) {
       output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
 #endif
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
-      (*it)->apply(*this);
+  for(auto&& bndry : bndry_op)
+    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      bndry->apply(*this);
   msg_stack.pop();
 }
 
@@ -730,12 +730,9 @@ void Field2D::applyBoundary(const string &condition) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over the mesh boundary regions
-  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    BoundaryOp* op = bfact->create(condition, (*it));
+  for(auto&& reg : mesh->getBoundaries()) {
+    BoundaryOp* op = bfact->create(condition, reg);
     op->apply(*this);
     delete op;
   }
@@ -769,13 +766,10 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over the mesh boundary regions
-  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    if((*it)->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, (*it));
+  for(auto&& reg : mesh->getBoundaries()) {
+    if(reg->label.compare(region) == 0) {
+      BoundaryOp* op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
       break;
@@ -802,8 +796,8 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 }
 
 void Field2D::applyTDerivBoundary() {
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply_ddt(*this);
+  for(auto&& bndry : bndry_op)
+    bndry->apply_ddt(*this);
 }
 
 void Field2D::setBoundaryTo(const Field2D &f2d) {
@@ -815,15 +809,11 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
     throw BoutException("Setting boundary condition to empty data\n");
 #endif
 
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over boundary regions
-  for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
-    BoundaryRegion* bndry= *it;
+  for(auto&& reg : mesh->getBoundaries()) {
     /// Loop within each region
-    for(bndry->first(); !bndry->isDone(); bndry->next())
-      data[bndry->x][bndry->y] = f2d.data[bndry->x][bndry->y];
+    for(reg->first(); !reg->isDone(); reg->next())
+      data[reg->x][reg->y] = f2d.data[reg->x][reg->y];
   }
 #ifdef CHECK
   msg_stack.pop();
@@ -987,7 +977,7 @@ bool finite(const Field2D &f) {
     Field2D result;                                        \
     result.allocate();                                     \
     /* Loop over domain */                                 \
-    for(DataIterator d = begin(result); !d.done(); ++d) {  \
+    for(auto d : result) {                                 \
       result[d] = func(f[d]);                              \
       /* If checking is set to 3 or higher, test result */ \
       ASSERT3(finite(result[d]));                          \
@@ -1020,7 +1010,7 @@ const Field2D copy(const Field2D &f) {
 const Field2D floor(const Field2D &var, BoutReal f) {
   Field2D result = copy(var);
 
-  for(DataIterator d = begin(result); !d.done(); ++d)
+  for(auto d : result)
     if(result[d] < f)
       result[d] = f;
   

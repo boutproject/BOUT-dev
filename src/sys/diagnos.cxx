@@ -83,8 +83,8 @@ const vector< BoutReal > Diagnos::run()
 
   vector< BoutReal > result;
   
-  for(std::vector< diag_item >::iterator it = item.begin(); it != item.end(); it++) {
-    result.push_back(run(*it));
+  for(auto&& it : item) {
+    result.push_back(run(it));
   }
 
 #ifdef CHECK

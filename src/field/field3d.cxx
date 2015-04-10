@@ -1382,33 +1382,33 @@ void Field3D::applyBoundary(bool init) {
     Field3D tot = *this + (*background);
     tot.applyBoundary(init);
     *this = tot - (*background);
-  }else {
+  } else {
     // Apply boundary to this field
-    for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-      if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
-	(*it)->apply(*this);
+    for(auto&& bndry : bndry_op)
+      if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+        bndry->apply(*this);
   }
   
   if (init) {
     // Set the corners to zero. ddt vanishes for the corners, so only need to be set once
     for(int jx=0;jx<mesh->xstart;jx++) {
       for(int jy=0;jy<mesh->ystart;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = 0.;
+        for(int jz=0;jz<mesh->ngz;jz++)
+          block->data[jx][jy][jz] = 0.;
       }
       for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = 0.;
+        for(int jz=0;jz<mesh->ngz;jz++)
+          block->data[jx][jy][jz] = 0.;
       }
     }
     for(int jx=mesh->xend+1;jx<mesh->ngx;jx++) {
       for(int jy=0;jy<mesh->ystart;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = 0.;
+        for(int jz=0;jz<mesh->ngz;jz++)
+          block->data[jx][jy][jz] = 0.;
       }
       for(int jy=mesh->yend+1;jy<mesh->ngy;jy++) {
-	for(int jz=0;jz<mesh->ngz;jz++)
-	  block->data[jx][jy][jz] = 0.;
+        for(int jz=0;jz<mesh->ngz;jz++)
+          block->data[jx][jy][jz] = 0.;
       }
     }
   }
@@ -1441,8 +1441,8 @@ void Field3D::applyBoundary(BoutReal t) {
     *this = tot - (*background);
   }else {
     // Apply boundary to this field
-    for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-      (*it)->apply(*this,t);
+    for(auto&& bndry : bndry_op)
+      bndry->apply(*this,t);
   }
 
   // Set the corners to zero
@@ -1495,12 +1495,9 @@ void Field3D::applyBoundary(const string &condition) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over the mesh boundary regions
-  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    BoundaryOp* op = bfact->create(condition, (*it));
+  for(auto&& reg : mesh->getBoundaries()) {
+    BoundaryOp* op = bfact->create(condition, reg);
     op->apply(*this);
     delete op;
   }
@@ -1538,13 +1535,10 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over the mesh boundary regions
-  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    if((*it)->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, (*it));
+  for(auto&& reg : mesh->getBoundaries()) {
+    if(reg->label.compare(region) == 0) {
+      BoundaryOp* op = bfact->create(condition, reg);
       op->apply(*this);
       delete op;
       break;
@@ -1593,8 +1587,8 @@ void Field3D::applyTDerivBoundary() {
   if(background != NULL)
     *this += *background;
     
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply_ddt(*this);
+  for(auto&& bndry : bndry_op)
+    bndry->apply_ddt(*this);
   
   if(background != NULL)
     *this -= *background;
@@ -1635,16 +1629,12 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
     throw BoutException("Setting boundary condition to empty data\n");
 #endif
 
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-  
   /// Loop over boundary regions
-  for(vector<BoundaryRegion*>::iterator it = reg.begin(); it != reg.end(); it++) {
-    BoundaryRegion* bndry= *it;
+  for(auto&& reg : mesh->getBoundaries()) {
     /// Loop within each region
-    for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(reg->first(); !reg->isDone(); reg->next())
       for(int z=0;z<mesh->ngz;z++)
-        block->data[bndry->x][bndry->y][z] = f3d.block->data[bndry->x][bndry->y][z];
+        block->data[reg->x][reg->y][z] = f3d.block->data[reg->x][reg->y][z];
   }
 #ifdef CHECK
   msg_stack.pop();
@@ -1991,7 +1981,7 @@ BoutReal max(const Field3D &f, bool allpe) {
     Field3D result;                                        \
     result.allocate();                                     \
     /* Loop over domain */                                 \
-    for(DataIterator d = begin(result); !d.done(); ++d) {  \
+    for(auto d : result) {                                 \
       result[d] = func(f[d]);                              \
       /* If checking is set to 3 or higher, test result */ \
       ASSERT3(finite(result[d]));                          \
@@ -2188,7 +2178,7 @@ const Field3D copy(const Field3D &f) {
 const Field3D floor(const Field3D &var, BoutReal f) {
   Field3D result = copy(var);
   
-  for(DataIterator d = begin(result); !d.done(); ++d)
+  for(auto d : result)
     if(result[d] < f)
       result[d] = f;
   

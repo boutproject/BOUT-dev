@@ -59,8 +59,9 @@ FieldPerp & FieldPerp::operator=(const FieldPerp &rhs) {
 FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
   allocate();
 
-  for(BoutReal *it = data.begin(); it != data.end(); it++)
-    *it = rhs;
+  for(auto&& d : data) {
+    d = rhs;
+  }
   
   return *this;
 }

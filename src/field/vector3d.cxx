@@ -624,13 +624,13 @@ int Vector3D::setData(int jx, int jy, int jz, BoutReal *rptr)
 
 void Vector3D::applyBoundary(bool init)
 {
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    if ( !(*it)->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
-      (*it)->apply(*this);
+  for(auto&& bndry : bndry_op)
+    if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
+      bndry->apply(*this);
 }
 
 void Vector3D::applyTDerivBoundary()
 {
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-    (*it)->apply_ddt(*this);
+  for(auto&& bndry : bndry_op)
+    bndry->apply_ddt(*this);
 }

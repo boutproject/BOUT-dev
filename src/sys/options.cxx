@@ -6,8 +6,8 @@
 
 Options::~Options() {
   // Delete sub-sections
-  for(map<string,Options*>::iterator it=sections.begin(); it != sections.end(); it++) {
-    delete it->second;
+  for(auto&& it : sections) {
+    delete it.second;
   }
 }
 
@@ -197,8 +197,8 @@ string Options::str() {
 void Options::printUnused() {
   bool allused = true;
   // Check if any options are unused
-  for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
-    if(!it->second.used) {
+  for(auto&& it : options) {
+    if(!it.second.used) {
       allused = false;
       break;
     }
@@ -207,16 +207,16 @@ void Options::printUnused() {
     output << "All options used\n";
   }else {
     output << "Unused options:\n";
-    for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
-      if(!it->second.used) {
-	output << "\t" << sectionName << "/" << it->first << " = " << it->second.value;
-	if(!it->second.source.empty())
-	  output << " (" << it->second.source << ")";
-	output << endl;
+    for(auto&& it : options) {
+      if(!it.second.used) {
+        output << "\t" << sectionName << "/" << it.first << " = " << it.second.value;
+        if(!it.second.source.empty())
+          output << " (" << it.second.source << ")";
+        output << endl;
       }
     }
   }
-  for(map<string,Options*>::iterator it=sections.begin(); it != sections.end(); it++) {
-    it->second->printUnused();
+  for(auto&& it : sections) {
+    it.second->printUnused();
   }
 }

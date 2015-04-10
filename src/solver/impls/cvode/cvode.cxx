@@ -150,13 +150,13 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     vector<BoutReal> f2dtols;
     vector<BoutReal> f3dtols;
     BoutReal* abstolvec_data = NV_DATA_P(abstolvec);
-    for (int i=0; i<f2d.size(); i++) {
-      abstol_options = Options::getRoot()->getSection(f2d[i].name);
+    for (auto&& f : f2d) {
+      abstol_options = Options::getRoot()->getSection(f.name);
       abstol_options->get("abstol", tempabstol, abstol);
       f2dtols.push_back(tempabstol);
     }
-    for (int i=0; i<f3d.size(); i++) {
-      abstol_options = Options::getRoot()->getSection(f3d[i].name);
+    for (auto&& f : f3d) {
+      abstol_options = Options::getRoot()->getSection(f.name);
       abstol_options->get("atol", tempabstol, abstol);
       f3dtols.push_back(tempabstol);
     }
@@ -642,19 +642,19 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
 
 void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry) {
   // Loop over 2D variables
-  for(int i=0;i<f2dtols.size();i++) {
-    if(bndry && !f2d[i].evolve_bndry)
+  for(auto&& f : f2dtols) {
+    if(bndry && !f.evolve_bndry)
       continue;
-    abstolvec_data[p] = f2dtols[i];
+    abstolvec_data[p] = f;
     p++;
   }
   
   for (int jz=0; jz < mesh->ngz-1; jz++) {
     // Loop over 3D variables
-    for(int i=0;i<f3dtols.size();i++) {
-      if(bndry && !f3d[i].evolve_bndry)
-	continue;
-      abstolvec_data[p] = f3dtols[i];
+    for(auto&& f : f3dtols) {
+      if(bndry && !f.evolve_bndry)
+        continue;
+      abstolvec_data[p] = f;
       p++;
     }  
   }

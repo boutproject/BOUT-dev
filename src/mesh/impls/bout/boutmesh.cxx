@@ -71,8 +71,8 @@ BoutMesh::~BoutMesh() {
   clear_handles();
   
   // Delete the boundary regions
-  for(vector<BoundaryRegion*>::iterator it = boundary.begin(); it != boundary.end(); it++)
-    delete (*it);
+  for(auto&& bndry : boundary)
+    delete bndry;
   
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
@@ -848,8 +848,8 @@ int BoutMesh::load() {
 
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";
-    for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
-      output << (*it)->label << ", ";
+    for(auto&& bndry : boundary) {
+      output << bndry->label << ", ";
     }
     output << endl;
   }else {
@@ -1118,7 +1118,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
-  
+
   CommHandle *ch = (CommHandle*) handle;
 
   if(!ch->in_progress)
@@ -1126,18 +1126,18 @@ int BoutMesh::wait(comm_handle handle) {
 
   /// Start timer
   Timer timer("comms");
-  
+
   ///////////// WAIT FOR DATA //////////////
-  
+
   int ind, len;
   MPI_Status status;
 
   if(ch->var_list.size() == 0) {
-    
+
     // Just waiting for a single MPI request
     MPI_Wait(ch->request, &status);
     free_handle(ch);
-    
+
     return 0;
   }
 
@@ -1173,8 +1173,8 @@ int BoutMesh::wait(comm_handle handle) {
     }
     if(ind != MPI_UNDEFINED)
       ch->request[ind] = MPI_REQUEST_NULL;
-  }while(ind != MPI_UNDEFINED);
-  
+  } while(ind != MPI_UNDEFINED);
+
   if(async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status status;
@@ -1196,51 +1196,46 @@ int BoutMesh::wait(comm_handle handle) {
   // TWIST-SHIFT CONDITION
   if(TwistShift) {
     int jx, jy;
-    
-    // Perform Twist-shift using shifting method (rather than in setStencil)
-    for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-      if((*it)->is3D()) {
-	
-	// Lower boundary
 
-	if(TS_down_in && (DDATA_INDEST  != -1)) {
-	  for(jx=0;jx<DDATA_XSPLIT;jx++)
-	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
-      
-	}
-	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
-	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
-	  
-	}
-	
-	// Upper boundary
-	
-	if(TS_up_in && (UDATA_INDEST  != -1)) {
-	  for(jx=0;jx<UDATA_XSPLIT; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
-	  
-	}
-	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
-	  
-	}
+    // Perform Twist-shift using shifting method (rather than in setStencil)
+    for(auto&& var : ch->var_list) {
+      if(var->is3D()) {
+
+        // Lower boundary
+        if(TS_down_in && (DDATA_INDEST  != -1)) {
+          for(jx=0;jx<DDATA_XSPLIT;jx++)
+            for(jy=0;jy != MYG; jy++)
+              var->shiftZ(jx, jy, ShiftAngle[jx]);
+        }
+        if(TS_down_out && (DDATA_OUTDEST  != -1)) {
+          for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+            for(jy=0;jy != MYG; jy++)
+              var->shiftZ(jx, jy, ShiftAngle[jx]);
+        }
+
+        // Upper boundary
+        if(TS_up_in && (UDATA_INDEST  != -1)) {
+          for(jx=0;jx<UDATA_XSPLIT; jx++)
+            for(jy=ngy-MYG;jy != ngy; jy++)
+              var->shiftZ(jx, jy, -ShiftAngle[jx]);
+        }
+        if(TS_up_out && (UDATA_OUTDEST  != -1)) {
+          for(jx=UDATA_XSPLIT;jx<ngx; jx++)
+            for(jy=ngy-MYG;jy != ngy; jy++)
+              var->shiftZ(jx, jy, -ShiftAngle[jx]);
+        }
       }
+    }
   }
 
 #ifdef CHECK
   // Keeping track of whether communications have been done
-  for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-    (*it)->doneComms();
+  for(auto&& var : ch->var_list)
+    var->doneComms();
 #endif
 
   free_handle(ch);
-  
+
   return 0;
 }
 
@@ -2073,27 +2068,25 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   int jx, jy, jz;
   int len = 0;
   std::vector<FieldData*>::iterator it;
-  
+
   for(jx=xge; jx != xlt; jx++) {
-    
+
     /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
-	
-	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < ngz-1;jz++)
-	    len += (*it)->getData(jx,jy,jz,buffer+len);
-	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
-	  len += (*it)->getData(jx,jy,0,buffer+len);
+    for(auto&& var : var_list) {
+      if(var->is3D()) {
+        // 3D variable
+
+        for(jy=yge;jy < ylt;jy++)
+          for(jz=0;jz < ngz-1;jz++)
+            len += var->getData(jx,jy,jz,buffer+len);
+      } else {
+        // 2D variable
+        for(jy=yge;jy < ylt;jy++)
+          len += var->getData(jx,jy,0,buffer+len);
       }
     }
-    
   }
-  
+
   return(len);
 }
 
@@ -2106,24 +2099,21 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
   for(jx=xge; jx != xlt; jx++) {
 
     /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
-   
-	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < ngz-1;jz++) {
-	    len += (*it)->setData(jx,jy,jz,buffer+len);
-	  }
-	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
-	  len += (*it)->setData(jx,jy,0,buffer+len);
+    for(auto&& var : var_list) {
+      if(var->is3D()) {
+        // 3D variable
+
+        for(jy=yge;jy < ylt;jy++)
+          for(jz=0;jz < ngz-1;jz++)
+            len += var->setData(jx,jy,jz,buffer+len);
+      } else {
+        // 2D variable
+        for(jy=yge;jy < ylt;jy++)
+          len += var->setData(jx,jy,0,buffer+len);
       }
     }
-    
   }
-  
+
   return(len);
 }
 

@@ -360,27 +360,23 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
   int i;
   int jz;
  
-  int n2d = f2d.size();
-  int n3d = f3d.size();
-
   switch(op) {
   case LOAD_VARS: {
     /// Load variables from IDA into BOUT++
     
     // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
+    for(auto&& f : f2d) {
+      d2d = f.var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
     }
     
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
       // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
+      for(auto&& f : f3d) {
+        d3d = f.var->getData(); // Get pointer to data
+        d3d[jx][jy][jz] = udata[p];
+        p++;
       }  
     }
     break;
@@ -390,19 +386,18 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Used for preconditioner
     
     // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
+    for(auto&& f : f2d) {
+      d2d = f.F_var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
     }
     
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
       // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
+      for(auto&& f : f3d) {
+        d3d = f.F_var->getData(); // Get pointer to data
+        d3d[jx][jy][jz] = udata[p];
+        p++;
       }  
     }
     
@@ -412,11 +407,11 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Set the type of equation (Differential or Algebraic)
     
     // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      if(f2d[i].constraint) {
-	udata[p] = ZERO;
+    for(auto&& f : f2d) {
+      if(f.constraint) {
+        udata[p] = ZERO;
       }else {
-	udata[p] = ONE;
+        udata[p] = ONE;
       }
       p++;
     }
@@ -424,13 +419,13 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	if(f3d[i].constraint) {
-	  udata[p] = ZERO;
-	}else {
-	  udata[p] = ONE;
-	}
-	p++;
+      for(auto&& f : f3d) {
+        if(f.constraint) {
+          udata[p] = ZERO;
+        }else {
+          udata[p] = ONE;
+        }
+        p++;
       }
     }
     
@@ -440,8 +435,8 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
     // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].var->getData(); // Get pointer to data
+    for(auto&& f : f2d) {
+      d2d = f.var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
     }
@@ -449,10 +444,10 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
+      for(auto&& f : f3d) {
+        d3d = f.var->getData(); // Get pointer to data
+        udata[p] = d3d[jx][jy][jz];
+        p++;
       }  
     }
     break;
@@ -461,8 +456,8 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
   case SAVE_DERIVS: {
     
     // Loop over 2D variables
-    for(i=0;i<n2d;i++) {
-      d2d = f2d[i].F_var->getData(); // Get pointer to data
+    for(auto&& f : f2d) {
+      d2d = f.F_var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
     }
@@ -470,10 +465,10 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
+      for(auto&& f : f3d) {
+        d3d = f.F_var->getData(); // Get pointer to data
+        udata[p] = d3d[jx][jy][jz];
+        p++;
       }  
     }
     break;
@@ -526,21 +521,21 @@ void IdaSolver::load_vars(BoutReal *udata)
   unsigned int i;
   
   // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].var->allocate();
-    f3d[i].var->setLocation(f3d[i].location);
+  for(auto&& f : 2d) 
+    f.var->allocate();
+  for(auto&& f : 3d) {
+    f.var->allocate();
+    f.var->setLocation(f.location);
   }
 
   loop_vars(udata, LOAD_VARS);
 
   // Mark each vector as either co- or contra-variant
 
-  for(i=0;i<v2d.size();i++)
-    v2d[i].var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].var->covariant = v3d[i].covariant;
+  for(auto&& v : 2d) 
+    v.var->covariant = v.covariant;
+  for(auto&& v : 3d) 
+    v.var->covariant = v.covariant;
 }
 
 void IdaSolver::load_derivs(BoutReal *udata)
@@ -548,21 +543,21 @@ void IdaSolver::load_derivs(BoutReal *udata)
   unsigned int i;
   
   // Make sure data is allocated
-  for(i=0;i<f2d.size();i++)
-    f2d[i].F_var->allocate();
-  for(i=0;i<f3d.size();i++) {
-    f3d[i].F_var->allocate();
-    f3d[i].F_var->setLocation(f3d[i].location);
+  for(auto&& f : 2d) 
+    f.F_var->allocate();
+  for(auto&& f : 3d) {
+    f.F_var->allocate();
+    f.F_var->setLocation(f.location);
   }
 
   loop_vars(udata, LOAD_DERIVS);
 
   // Mark each vector as either co- or contra-variant
 
-  for(i=0;i<v2d.size();i++)
-    v2d[i].F_var->covariant = v2d[i].covariant;
-  for(i=0;i<v3d.size();i++)
-    v3d[i].F_var->covariant = v3d[i].covariant;
+  for(auto&& v : 2d) 
+    v.F_var->covariant = v.covariant;
+  for(auto&& v : 3d) 
+    v.F_var->covariant = v.covariant;
 }
 
 void IdaSolver::set_id(BoutReal *udata)
@@ -575,26 +570,26 @@ int IdaSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
-  for(i=0;i<f2d.size();i++)
-    if(f2d[i].var->getData() == (BoutReal**) NULL)
+  for(auto&& f : 2d) 
+    if(f.var->getData() == (BoutReal**) NULL)
       return(1);
 
-  for(i=0;i<f3d.size();i++)
-    if(f3d[i].var->getData() == (BoutReal***) NULL)
+  for(auto&& f : 3d) 
+    if(f.var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].var->toCovariant();
+  for(auto&& v : 2d) {
+    if(v.covariant) {
+      v.var->toCovariant();
     }else
-      v2d[i].var->toContravariant();
+      v.var->toContravariant();
   }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].var->toCovariant();
+  for(auto&& v : 3d) {
+    if(v.covariant) {
+      v.var->toCovariant();
     }else
-      v3d[i].var->toContravariant();
+      v.var->toContravariant();
   }
 
   loop_vars(udata, SAVE_VARS);
@@ -607,24 +602,24 @@ void IdaSolver::save_derivs(BoutReal *dudata)
   unsigned int i;
 
   // Make sure vectors in correct basis
-  for(i=0;i<v2d.size();i++) {
-    if(v2d[i].covariant) {
-      v2d[i].F_var->toCovariant();
+  for(auto&& v : 2d) {
+    if(v.covariant) {
+      v.F_var->toCovariant();
     }else
-      v2d[i].F_var->toContravariant();
+      v.F_var->toContravariant();
   }
-  for(i=0;i<v3d.size();i++) {
-    if(v3d[i].covariant) {
-      v3d[i].F_var->toCovariant();
+  for(auto&& v : 3d) {
+    if(v.covariant) {
+      v.F_var->toCovariant();
     }else
-      v3d[i].F_var->toContravariant();
+      v.F_var->toContravariant();
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(vector< VarStr<Field3D> >::iterator it = f3d.begin(); it != f3d.end(); it++) {
-    if((*it).location != ((*it).F_var)->getLocation()) {
+  for(auto&& it : f3d) {
+    if(it.location != (it.F_var)->getLocation()) {
       //output.write("SOLVER: Interpolating\n");
-      *((*it).F_var) = interp_to(*((*it).F_var), (*it).location);
+      *(it.F_var) = interp_to(*(it.F_var), it.location);
     }
   }
 

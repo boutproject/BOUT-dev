@@ -84,9 +84,9 @@ int QuiltMesh::load(MPI_Comm comm) {
   // Assign domains to processors
   output << "done\n\tAssigning...";
   int p = 0;
-  for(Domain::iterator it=domains[0]->begin(); it != domains[0]->end(); it++) {
+  for(auto&& it : domains[0]) {
     // For now very simple numbering. Should cluster nearby domains
-    QuiltDomain *qd = static_cast<QuiltDomain*>( &(*it) );
+    QuiltDomain *qd = static_cast<QuiltDomain*>( &it );
     
     // Check that domain is large enough
     if( (qd->xSize() < MXG) || (qd->ySize() < MYG) )
@@ -112,17 +112,16 @@ int QuiltMesh::load(MPI_Comm comm) {
   xlow_range = xhigh_range = RangeIterator(0, ngy-1);
   
   // Iterate through boundaries to get guard cell regions
-  for(QuiltDomain::bndry_iterator it = mydomain->bndry_begin(); it != mydomain->bndry_end(); it++) {
-    Domain::Bndry* b = *it;
-     
-    QuiltDomain* to = (QuiltDomain*) b->getNeighbour(mydomain);
+  for(auto&& b : mydomain->bndry) {
+
+    QuiltDomain* to = (QuiltDomain*) b.getNeighbour(mydomain);
     
     // Check which boundary(s) this is on
     // (multiple boundaries in case of periodic domain)
-    if(b->onSide(mydomain, Domain::xlow)) {
+    if(b.onSide(mydomain, Domain::xlow)) {
       // get range of indices
-      int min = b->getMin(Domain::xlow);
-      int max = b->getMax(Domain::xlow);
+      int min = b.getMin(Domain::xlow);
+      int max = b.getMax(Domain::xlow);
       
       // Create new GuardRange 
       GuardRange *g = new GuardRange();
@@ -136,10 +135,10 @@ int QuiltMesh::load(MPI_Comm comm) {
       xlow_guards.push_back(g);
       xlow_range -= RangeIterator(min, max);
     }
-    if(b->onSide(mydomain, Domain::xhigh)) {
+    if(b.onSide(mydomain, Domain::xhigh)) {
       // get range of indices
-      int min = b->getMin(Domain::xhigh);
-      int max = b->getMax(Domain::xhigh);
+      int min = b.getMin(Domain::xhigh);
+      int max = b.getMax(Domain::xhigh);
       
       // Create new GuardRange 
       GuardRange *g = new GuardRange();
@@ -153,10 +152,10 @@ int QuiltMesh::load(MPI_Comm comm) {
       xhigh_guards.push_back(g);
       xhigh_range -= RangeIterator(min, max);
     }
-    if(b->onSide(mydomain, Domain::ylow)) {
+    if(b.onSide(mydomain, Domain::ylow)) {
       // get range of indices
-      int min = b->getMin(Domain::ylow);
-      int max = b->getMax(Domain::ylow);
+      int min = b.getMin(Domain::ylow);
+      int max = b.getMax(Domain::ylow);
       
       // Create new GuardRange 
       GuardRange *g = new GuardRange();
@@ -171,10 +170,10 @@ int QuiltMesh::load(MPI_Comm comm) {
       // Remove range from boundary
       ylow_range -= RangeIterator(min, max);
     }
-    if(b->onSide(mydomain, Domain::yhigh)) {
+    if(b.onSide(mydomain, Domain::yhigh)) {
       // get range of indices
-      int min = b->getMin(Domain::yhigh);
-      int max = b->getMax(Domain::yhigh);
+      int min = b.getMin(Domain::yhigh);
+      int max = b.getMax(Domain::yhigh);
       
       // Create new GuardRange 
       GuardRange *g = new GuardRange();
@@ -232,12 +231,11 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
   handle->var_list = g.get();
   
   // Iterate over guard cells
-  for(vector<GuardRange*>::const_iterator it=all_guards.begin(); it != all_guards.end(); it++) {
+  for(auto&& guard : all_guards) {
     // Post recieves
-    GuardRange* g = *it;
-    
+
     // Calculate length of the message
-    int len = msg_len(handle->var_list, g->xmin, g->xmax+1, g->ymin, g->ymax+1);
+    int len = msg_len(handle->var_list, guard.xmin, guard.xmax+1, guard.ymin, guard.ymax+1);
     
     // Get a request handle of this size
     QMRequest* rq = getRequestHandle(len);
@@ -246,7 +244,7 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
     MPI_Irecv(&(rq->buffer[0]),
 	      len,
 	      PVEC_REAL_MPI_TYPE,
-	      g->proc,
+	      guard.proc,
 	      1234,
 	      BoutComm::get(),
 	      &(rq->request));
@@ -256,12 +254,11 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
     handle->mpi_rq.push_back(rq->request);
   }
   
-  for(vector<GuardRange*>::const_iterator it=all_guards.begin(); it != all_guards.end(); it++) {
+  for(auto&& guard : all_guards) {
     // Send data
-    GuardRange* g = *it;
-    
+
     // Calculate length of the message
-    int len = msg_len(handle->var_list, g->xmin, g->xmax+1, g->ymin, g->ymax+1);
+    int len = msg_len(handle->var_list, guard.xmin, guard.xmax+1, guard.ymin, guard.ymax+1);
     
     // Get a request handle of this size
     QMRequest* rq = getRequestHandle(len);
@@ -275,7 +272,7 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
       MPI_Isend(&(rq->buffer[0]), // Buffer to send
                 len,              // Length of buffer in BoutReals
                 PVEC_REAL_MPI_TYPE,  // Real variable type
-                g->proc,          // Destination processor
+                guard.proc,          // Destination processor
                 1234,             // Label (tag) for the message
                 BoutComm::get(),  // Communicator
                 &(rq->request));  // MPI Request handle
@@ -287,7 +284,7 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
       MPI_Send(&(rq->buffer[0]),
                len,
                PVEC_REAL_MPI_TYPE, 
-               g->proc,
+               guard.proc,
                1234,
                BoutComm::get());
       
@@ -507,18 +504,18 @@ void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vect
   
   len = 0;
   // Loop over variables
-  for(vector<FieldData*>::const_iterator it = vars.begin(); it != vars.end(); it++) {
-    if((*it)->is3D()) {
+  for(auto&& var : vars) {
+    if(var->is3D()) {
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)
-	for(int y=range->ymin; y <= range->ymax; y++)
-	  for(int z=0;z<ngz-1;z++)
-	    len += (*it)->getData(x,y,z,&data[len]);
-    }else {
+        for(int y=range->ymin; y <= range->ymax; y++)
+          for(int z=0;z<ngz-1;z++)
+            len += var->getData(x,y,z,&data[len]);
+    } else {
       // 2D variable
       for(int x=range->xmin; x <= range->xmax; x++)
-	for(int y=range->ymin; y <= range->ymax; y++)
-	  len += (*it)->getData(x,y,0,&data[len]);
+        for(int y=range->ymin; y <= range->ymax; y++)
+          len += var->getData(x,y,0,&data[len]);
     }
   }
 }
@@ -526,18 +523,18 @@ void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vect
 void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars) {
   int len = 0;
   // Loop over variables
-  for(vector<FieldData*>::iterator it = vars.begin(); it != vars.end(); it++) {
-    if((*it)->is3D()) {
+  for(auto&& var : vars) {
+    if(var->is3D()) {
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)
-	for(int y=range->ymin; y <= range->ymax; y++)
-	  for(int z=0;z<ngz-1;z++)
-	    len += (*it)->setData(x,y,z,&data[len]);
-    }else {
+        for(int y=range->ymin; y <= range->ymax; y++)
+          for(int z=0;z<ngz-1;z++)
+            len += var->setData(x,y,z,&data[len]);
+    } else {
       // 2D variable
       for(int x=range->xmin; x <= range->xmax; x++)
-	for(int y=range->ymin; y <= range->ymax; y++)
-	  len += (*it)->setData(x,y,0,&data[len]);
+        for(int y=range->ymin; y <= range->ymax; y++)
+          len += var->setData(x,y,0,&data[len]);
     }
   }
 }

@@ -137,15 +137,15 @@ ExpressionParser::ExpressionParser() {
 
 ExpressionParser::~ExpressionParser() {
   // Free memory
-  for(map<string, FieldGenerator*>::iterator it = gen.begin(); it != gen.end(); it++)
-    delete it->second;
+  for(auto&& it : gen)
+    delete it.second;
   
-  for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
-    delete it->second.first;
+  for(auto&& it : bin_op)
+    delete it.second.first;
   
   // Delete allocated generators
-  for(list<FieldGenerator*>::iterator it = genheap.begin(); it != genheap.end(); it++)
-    delete *it;
+  for(auto&& it : genheap)
+    delete it;
 }
 
 void ExpressionParser::addGenerator(string name, FieldGenerator* g) {
