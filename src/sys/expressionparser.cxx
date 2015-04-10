@@ -137,14 +137,14 @@ ExpressionParser::ExpressionParser() {
 
 ExpressionParser::~ExpressionParser() {
   // Free memory
-  for(auto&& it : gen)
+  for(const auto& it : gen)
     delete it.second;
   
-  for(auto&& it : bin_op)
+  for(const auto& it : bin_op)
     delete it.second.first;
   
   // Delete allocated generators
-  for(auto&& it : genheap)
+  for(const auto& it : genheap)
     delete it;
 }
 

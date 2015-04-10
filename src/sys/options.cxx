@@ -6,7 +6,7 @@
 
 Options::~Options() {
   // Delete sub-sections
-  for(auto&& it : sections) {
+  for(const auto& it : sections) {
     delete it.second;
   }
 }
@@ -197,7 +197,7 @@ string Options::str() {
 void Options::printUnused() {
   bool allused = true;
   // Check if any options are unused
-  for(auto&& it : options) {
+  for(const auto& it : options) {
     if(!it.second.used) {
       allused = false;
       break;
@@ -207,7 +207,7 @@ void Options::printUnused() {
     output << "All options used\n";
   }else {
     output << "Unused options:\n";
-    for(auto&& it : options) {
+    for(const auto& it : options) {
       if(!it.second.used) {
         output << "\t" << sectionName << "/" << it.first << " = " << it.second.value;
         if(!it.second.source.empty())
@@ -216,7 +216,7 @@ void Options::printUnused() {
       }
     }
   }
-  for(auto&& it : sections) {
+  for(const auto& it : sections) {
     it.second->printUnused();
   }
 }

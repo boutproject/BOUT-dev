@@ -710,7 +710,7 @@ void Field2D::applyBoundary(bool init) {
       output << "WARNING: Call to Field2D::applyBoundary(), but no boundary set" << endl;
   }
 #endif
-  for(auto&& bndry : bndry_op)
+  for(const auto& bndry : bndry_op)
     if ( !bndry->apply_to_ddt || init) // Always apply to the values when initialising fields, otherwise apply only if wanted
       bndry->apply(*this);
   msg_stack.pop();
@@ -731,7 +731,7 @@ void Field2D::applyBoundary(const string &condition) {
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
   /// Loop over the mesh boundary regions
-  for(auto&& reg : mesh->getBoundaries()) {
+  for(const auto& reg : mesh->getBoundaries()) {
     BoundaryOp* op = bfact->create(condition, reg);
     op->apply(*this);
     delete op;
@@ -767,7 +767,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
   /// Loop over the mesh boundary regions
-  for(auto&& reg : mesh->getBoundaries()) {
+  for(const auto& reg : mesh->getBoundaries()) {
     if(reg->label.compare(region) == 0) {
       BoundaryOp* op = bfact->create(condition, reg);
       op->apply(*this);
@@ -796,7 +796,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
 }
 
 void Field2D::applyTDerivBoundary() {
-  for(auto&& bndry : bndry_op)
+  for(const auto& bndry : bndry_op)
     bndry->apply_ddt(*this);
 }
 
@@ -810,7 +810,7 @@ void Field2D::setBoundaryTo(const Field2D &f2d) {
 #endif
 
   /// Loop over boundary regions
-  for(auto&& reg : mesh->getBoundaries()) {
+  for(const auto& reg : mesh->getBoundaries()) {
     /// Loop within each region
     for(reg->first(); !reg->isDone(); reg->next())
       data[reg->x][reg->y] = f2d.data[reg->x][reg->y];

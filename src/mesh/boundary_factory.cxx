@@ -41,10 +41,10 @@ BoundaryFactory::BoundaryFactory() {
 
 BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
-  for(auto&& it : opmap) {
+  for(const auto& it : opmap) {
     delete it.second;
   }
-  for(auto&& it : modmap) {
+  for(const auto& it : modmap) {
     delete it.second;
   }
 }

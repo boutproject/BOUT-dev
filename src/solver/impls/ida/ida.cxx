@@ -365,7 +365,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Load variables from IDA into BOUT++
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       d2d = f.var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
@@ -373,7 +373,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     
     for (jz=0; jz < mesh->ngz-1; jz++) {
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         d3d = f.var->getData(); // Get pointer to data
         d3d[jx][jy][jz] = udata[p];
         p++;
@@ -386,7 +386,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Used for preconditioner
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       d2d = f.F_var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
@@ -394,7 +394,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     
     for (jz=0; jz < mesh->ngz-1; jz++) {
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         d3d = f.F_var->getData(); // Get pointer to data
         d3d[jx][jy][jz] = udata[p];
         p++;
@@ -407,7 +407,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Set the type of equation (Differential or Algebraic)
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       if(f.constraint) {
         udata[p] = ZERO;
       }else {
@@ -419,7 +419,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         if(f.constraint) {
           udata[p] = ZERO;
         }else {
@@ -435,7 +435,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       d2d = f.var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
@@ -444,7 +444,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         d3d = f.var->getData(); // Get pointer to data
         udata[p] = d3d[jx][jy][jz];
         p++;
@@ -456,7 +456,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
   case SAVE_DERIVS: {
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       d2d = f.F_var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
@@ -465,7 +465,7 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         d3d = f.F_var->getData(); // Get pointer to data
         udata[p] = d3d[jx][jy][jz];
         p++;
@@ -521,9 +521,9 @@ void IdaSolver::load_vars(BoutReal *udata)
   unsigned int i;
   
   // Make sure data is allocated
-  for(auto&& f : 2d) 
+  for(const auto& f : 2d) 
     f.var->allocate();
-  for(auto&& f : 3d) {
+  for(const auto& f : 3d) {
     f.var->allocate();
     f.var->setLocation(f.location);
   }
@@ -532,9 +532,9 @@ void IdaSolver::load_vars(BoutReal *udata)
 
   // Mark each vector as either co- or contra-variant
 
-  for(auto&& v : 2d) 
+  for(const auto& v : 2d) 
     v.var->covariant = v.covariant;
-  for(auto&& v : 3d) 
+  for(const auto& v : 3d) 
     v.var->covariant = v.covariant;
 }
 
@@ -543,9 +543,9 @@ void IdaSolver::load_derivs(BoutReal *udata)
   unsigned int i;
   
   // Make sure data is allocated
-  for(auto&& f : 2d) 
+  for(const auto& f : 2d) 
     f.F_var->allocate();
-  for(auto&& f : 3d) {
+  for(const auto& f : 3d) {
     f.F_var->allocate();
     f.F_var->setLocation(f.location);
   }
@@ -554,9 +554,9 @@ void IdaSolver::load_derivs(BoutReal *udata)
 
   // Mark each vector as either co- or contra-variant
 
-  for(auto&& v : 2d) 
+  for(const auto& v : 2d) 
     v.F_var->covariant = v.covariant;
-  for(auto&& v : 3d) 
+  for(const auto& v : 3d) 
     v.F_var->covariant = v.covariant;
 }
 
@@ -570,22 +570,22 @@ int IdaSolver::save_vars(BoutReal *udata)
 {
   unsigned int i;
 
-  for(auto&& f : 2d) 
+  for(const auto& f : 2d) 
     if(f.var->getData() == (BoutReal**) NULL)
       return(1);
 
-  for(auto&& f : 3d) 
+  for(const auto& f : 3d) 
     if(f.var->getData() == (BoutReal***) NULL)
       return(1);
   
   // Make sure vectors in correct basis
-  for(auto&& v : 2d) {
+  for(const auto& v : 2d) {
     if(v.covariant) {
       v.var->toCovariant();
     }else
       v.var->toContravariant();
   }
-  for(auto&& v : 3d) {
+  for(const auto& v : 3d) {
     if(v.covariant) {
       v.var->toCovariant();
     }else
@@ -602,13 +602,13 @@ void IdaSolver::save_derivs(BoutReal *dudata)
   unsigned int i;
 
   // Make sure vectors in correct basis
-  for(auto&& v : 2d) {
+  for(const auto& v : 2d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
       v.F_var->toContravariant();
   }
-  for(auto&& v : 3d) {
+  for(const auto& v : 3d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
@@ -616,7 +616,7 @@ void IdaSolver::save_derivs(BoutReal *dudata)
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(auto&& it : f3d) {
+  for(const auto& it : f3d) {
     if(it.location != (it.F_var)->getLocation()) {
       //output.write("SOLVER: Interpolating\n");
       *(it.F_var) = interp_to(*(it.F_var), it.location);

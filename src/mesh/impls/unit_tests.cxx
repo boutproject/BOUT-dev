@@ -20,13 +20,13 @@ int main() {
   
   cout << "Split X\n";
   
-  for(auto&& it : d) {
+  for(const auto& it : d) {
     cout << it;
   
   d.splitY(5);
   
   cout << "Split Y\n";
-  for(auto&& it : d) {
+  for(const auto& it : d) {
     cout << it;
   
   cout << "\n\n";
@@ -36,7 +36,7 @@ int main() {
   partition(&t, 5);
   
   cout << "\nPartitioned\n";
-  for(auto&& it : t) {
+  for(const auto& it : t) {
     cout << it;
   
   return 0;

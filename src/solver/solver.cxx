@@ -603,7 +603,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
     /// Add variables to the restart and dump files.
     /// NOTE: Since vector components are already in the field arrays,
     ///       only loop over scalars, not vectors
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       // Add to restart file (not appending)
       restart.add(*(f.var), f.name.c_str(), 0);
       
@@ -613,7 +613,7 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
       //f.var->applyBoundary();
       /// NOTE: boundary conditions on the initial profiles have also been set in add()
     }  
-    for(auto&& f : f3d) {
+    for(const auto& f : f3d) {
       // Add to restart file (not appending)
       restart.add(*(f.var), f.name.c_str(), 0);
       
@@ -690,11 +690,11 @@ int Solver::init(bool restarting, int nout, BoutReal tstep) {
 
 void Solver::outputVars(Datafile &outputfile) {
   // Add 2D and 3D evolving fields to output file
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     // Add to dump file (appending)
     outputfile.add(*(f.var), f.name.c_str(), 1);
   }  
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     // Add to dump file (appending)
     outputfile.add(*(f.var), f.name.c_str(), 1);
     
@@ -741,7 +741,7 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     }
     
     // Call C function monitors
-    for(auto&& monitor : monitors) {
+    for(const auto& monitor : monitors) {
       // Call each monitor one by one
       int ret = monitor(this, simtime,iter, NOUT);
       if(ret)
@@ -775,7 +775,7 @@ int Solver::call_timestep_monitors(BoutReal simtime, BoutReal lastdt) {
   if(!monitor_timestep)
     return 0;
   
-  for(auto&& monitor : timestep_monitors) {
+  for(const auto& monitor : timestep_monitors) {
     // Call each monitor one by one
     int ret = monitor(this, simtime, lastdt);
     if(ret)
@@ -810,13 +810,13 @@ int Solver::getLocalN() {
   //////////// How many variables have evolving boundaries?
   
   int n2dbndry = 0;
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     if(f.evolve_bndry)
       n2dbndry++;
   }
   
   int n3dbndry = 0;
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(f.evolve_bndry)
       n3dbndry++;
   }
@@ -873,7 +873,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     /// Load variables from IDA into BOUT++
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
       (*f.var)(jx, jy) = udata[p];
@@ -883,7 +883,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
         (*f.var)(jx, jy, jz) = udata[p];
@@ -897,7 +897,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     /// Used for preconditioner
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
       (*f.F_var)(jx, jy) = udata[p];
@@ -907,7 +907,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
         (*f.F_var)(jx, jy, jz) = udata[p];
@@ -921,7 +921,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
       udata[p] = (*f.var)(jx, jy);
@@ -931,7 +931,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
         udata[p] = (*f.var)(jx, jy, jz);
@@ -944,7 +944,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
   case SAVE_DERIVS: {
     
     // Loop over 2D variables
-    for(auto&& f : f2d) {
+    for(const auto& f : f2d) {
       if(bndry && !f.evolve_bndry)
         continue;
       udata[p] = (*f.F_var)(jx, jy);
@@ -954,7 +954,7 @@ void Solver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR_OP
     for (jz=0; jz < mesh->ngz-1; jz++) {
       
       // Loop over 3D variables
-      for(auto&& f : f3d) {
+      for(const auto& f : f3d) {
         if(bndry && !f.evolve_bndry)
           continue;
         udata[p] = (*f.F_var)(jx, jy, jz);
@@ -1009,9 +1009,9 @@ void Solver::load_vars(BoutReal *udata) {
   unsigned int i;
   
   // Make sure data is allocated
-  for(auto&& f : f2d) 
+  for(const auto& f : f2d) 
     f.var->allocate();
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     f.var->allocate();
     f.var->setLocation(f.location);
   }
@@ -1020,9 +1020,9 @@ void Solver::load_vars(BoutReal *udata) {
 
   // Mark each vector as either co- or contra-variant
 
-  for(auto&& v : v2d) 
+  for(const auto& v : v2d) 
     v.var->covariant = v.covariant;
-  for(auto&& v : v3d) 
+  for(const auto& v : v3d) 
     v.var->covariant = v.covariant;
 }
 
@@ -1030,9 +1030,9 @@ void Solver::load_derivs(BoutReal *udata) {
   unsigned int i;
   
   // Make sure data is allocated
-  for(auto&& f : f2d) 
+  for(const auto& f : f2d) 
     f.F_var->allocate();
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     f.F_var->allocate();
     f.F_var->setLocation(f.location);
   }
@@ -1041,9 +1041,9 @@ void Solver::load_derivs(BoutReal *udata) {
 
   // Mark each vector as either co- or contra-variant
 
-  for(auto&& v : v2d) 
+  for(const auto& v : v2d) 
     v.F_var->covariant = v.covariant;
-  for(auto&& v : v3d) 
+  for(const auto& v : v3d) 
     v.F_var->covariant = v.covariant;
 }
 
@@ -1051,22 +1051,22 @@ void Solver::load_derivs(BoutReal *udata) {
 int Solver::save_vars(BoutReal *udata) {
   unsigned int i;
 
-  for(auto&& f : f2d) 
+  for(const auto& f : f2d) 
     if(!f.var->isAllocated())
       return 1;
 
-  for(auto&& f : f3d) 
+  for(const auto& f : f3d) 
     if(!f.var->isAllocated())
       return 1;
   
   // Make sure vectors in correct basis
-  for(auto&& v : v2d) {
+  for(const auto& v : v2d) {
     if(v.covariant) {
       v.var->toCovariant();
     }else
       v.var->toContravariant();
   }
-  for(auto&& v : v3d) {
+  for(const auto& v : v3d) {
     if(v.covariant) {
       v.var->toCovariant();
     }else
@@ -1082,13 +1082,13 @@ void Solver::save_derivs(BoutReal *dudata) {
   unsigned int i;
 
   // Make sure vectors in correct basis
-  for(auto&& v : v2d) {
+  for(const auto& v : v2d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
       v.F_var->toContravariant();
   }
-  for(auto&& v : v3d) {
+  for(const auto& v : v3d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
@@ -1096,7 +1096,7 @@ void Solver::save_derivs(BoutReal *dudata) {
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(f.location != (f.F_var)->getLocation()) {
       //output.write("SOLVER: Interpolating\n");
       *(f.F_var) = interp_to(*(f.F_var), f.location);
@@ -1207,9 +1207,9 @@ int Solver::run_diffusive(BoutReal t) {
     post_rhs(t);
   }else {
     // Zero if not split
-    for(auto&& f : f3d)
+    for(const auto& f : f3d)
       *(f.F_var) = 0.0;
-    for(auto&& f : f2d)
+    for(const auto& f : f2d)
       *(f.F_var) = 0.0;
   }
   
@@ -1219,12 +1219,12 @@ int Solver::run_diffusive(BoutReal t) {
 void Solver::pre_rhs(BoutReal t) {
 
   // Apply boundary conditions to the values
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     if(!f.constraint) // If it's not a constraint
       f.var->applyBoundary(t);
   }
   
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(!f.constraint)
       f.var->applyBoundary(t);
   }
@@ -1233,19 +1233,19 @@ void Solver::pre_rhs(BoutReal t) {
 
 void Solver::post_rhs(BoutReal t) {
 #ifdef CHECK
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(!f.F_var->isAllocated())
       throw BoutException("Time derivative for '%s' not set", f.name.c_str());
   }
 #endif
   // Make sure vectors in correct basis
-  for(auto&& v : v2d) {
+  for(const auto& v : v2d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
       v.F_var->toContravariant();
   }
-  for(auto&& v : v3d) {
+  for(const auto& v : v3d) {
     if(v.covariant) {
       v.F_var->toCovariant();
     }else
@@ -1253,7 +1253,7 @@ void Solver::post_rhs(BoutReal t) {
   }
 
   // Make sure 3D fields are at the correct cell location
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(f.location != (f.F_var)->getLocation()) {
       //output.write("SOLVER: Interpolating\n");
       *(f.F_var) = interp_to(*(f.F_var), f.location);
@@ -1261,18 +1261,18 @@ void Solver::post_rhs(BoutReal t) {
   }
 
   // Apply boundary conditions to the time-derivatives
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     if(!f.constraint && f.evolve_bndry) // If it's not a constraint and if the boundary is evolving
       f.var->applyTDerivBoundary();
   }
   
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(!f.constraint && f.evolve_bndry)
       f.var->applyTDerivBoundary();
   }
 #if CHECK > 2
   msg_stack.push("Solver checking time derivatives");
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     msg_stack.push("Variable: %s", f.name.c_str());
     f.F_var->checkData();
     msg_stack.pop();
@@ -1282,22 +1282,22 @@ void Solver::post_rhs(BoutReal t) {
 }
 
 bool Solver::varAdded(const string &name) {
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     if(f.name == name)
       return true;
   }
   
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     if(f.name == name)
       return true;
   }
   
-  for(auto&& f : v2d) {
+  for(const auto& f : v2d) {
     if(f.name == name)
       return true;
   }
   
-  for(auto&& f : v3d) {
+  for(const auto& f : v3d) {
     if(f.name == name)
       return true;
   }
@@ -1330,11 +1330,11 @@ void Solver::add_mms_sources(BoutReal t) {
   FieldFactory *fact = FieldFactory::get();
     
   // Iterate over 2D variables
-  for(auto&& f : f2d) {
+  for(const auto& f : f2d) {
     *f.F_var += fact->create2D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
   }
   
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     *f.F_var += fact->create3D("source", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
   }
 }
@@ -1343,7 +1343,7 @@ void Solver::add_mms_sources(BoutReal t) {
 void Solver::calculate_mms_error(BoutReal t) {
   FieldFactory *fact = FieldFactory::get();
   
-  for(auto&& f : f3d) {
+  for(const auto& f : f3d) {
     Field3D solution = fact->create3D("solution", Options::getRoot()->getSection(f.name), mesh, (f.var)->getLocation(), t);
     
     *(f.MMS_err) = *(f.var) - solution;

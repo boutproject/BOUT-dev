@@ -71,7 +71,7 @@ BoutMesh::~BoutMesh() {
   clear_handles();
   
   // Delete the boundary regions
-  for(auto&& bndry : boundary)
+  for(const auto& bndry : boundary)
     delete bndry;
   
   if(comm_x != MPI_COMM_NULL)
@@ -848,7 +848,7 @@ int BoutMesh::load() {
 
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";
-    for(auto&& bndry : boundary) {
+    for(const auto& bndry : boundary) {
       output << bndry->label << ", ";
     }
     output << endl;
@@ -1198,7 +1198,7 @@ int BoutMesh::wait(comm_handle handle) {
     int jx, jy;
 
     // Perform Twist-shift using shifting method (rather than in setStencil)
-    for(auto&& var : ch->var_list) {
+    for(const auto& var : ch->var_list) {
       if(var->is3D()) {
 
         // Lower boundary
@@ -1230,7 +1230,7 @@ int BoutMesh::wait(comm_handle handle) {
 
 #ifdef CHECK
   // Keeping track of whether communications have been done
-  for(auto&& var : ch->var_list)
+  for(const auto& var : ch->var_list)
     var->doneComms();
 #endif
 
@@ -2072,7 +2072,7 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   for(jx=xge; jx != xlt; jx++) {
 
     /// Loop over variables
-    for(auto&& var : var_list) {
+    for(const auto& var : var_list) {
       if(var->is3D()) {
         // 3D variable
 
@@ -2099,7 +2099,7 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
   for(jx=xge; jx != xlt; jx++) {
 
     /// Loop over variables
-    for(auto&& var : var_list) {
+    for(const auto& var : var_list) {
       if(var->is3D()) {
         // 3D variable
 

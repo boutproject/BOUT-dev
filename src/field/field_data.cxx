@@ -12,7 +12,7 @@ FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations
-    for(auto&& bndry : bndry_op)
+    for(const auto& bndry : bndry_op)
       delete bndry;
   }
 }
@@ -23,7 +23,7 @@ void FieldData::setBoundary(const string &name) {
   
   output << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(auto&& reg : mesh->getBoundaries()) {
+  for(const auto& reg : mesh->getBoundaries()) {
     BoundaryOp* op = bfact->createFromOptions(name, reg);
     if(op != NULL)
       bndry_op.push_back(op);
@@ -42,7 +42,7 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   
 
   /// Find if we're replacing an existing boundary
-  for(auto&& bndry : bndry_op) {
+  for(const auto& bndry : bndry_op) {
     if( bndry->bndry == op->bndry ) {
       // Replacing this boundary
       output << "Replacing ";
@@ -65,7 +65,7 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
 
 void FieldData::addBndryGenerator(FieldGenerator* gen, BndryLoc location){
   if(location == BNDRY_ALL){
-    for(auto&& reg : mesh->getBoundaries()) {
+    for(const auto& reg : mesh->getBoundaries()) {
       bndry_generator[reg->location] = gen;
     }
   } else {

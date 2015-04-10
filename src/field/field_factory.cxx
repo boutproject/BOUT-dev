@@ -279,11 +279,11 @@ FieldGenerator* FieldFactory::resolve(string &name) {
     // Look up in options
     
     // Check if already looking up this symbol
-    for(auto&& it : lookup) {
+    for(const auto& it : lookup) {
       if( key.compare(it) == 0 ) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for(auto&& it : lookup) {
+        for(const auto& it : lookup) {
           output << it << " -> ";
         }
         output << name << endl;

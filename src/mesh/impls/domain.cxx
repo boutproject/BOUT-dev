@@ -23,7 +23,7 @@ DomainIterator& DomainIterator::operator++() {
     Domain* d = stack.front();
     
     // Go through all boundaries of this domain
-    for(auto&& b : d->boundary) {
+    for(const auto& b : d->boundary) {
       Domain *neighbour = b->getNeighbour(d);
       if((neighbour != NULL) && !visited(neighbour)) {
         // If neighbour exists, and hasn't been visited
@@ -45,7 +45,7 @@ Domain::Domain(int NX, int NY) : nx(NX), ny(NY) {}
 Domain::Domain(int NX, int NY, const string &Name) : nx(NX), ny(NY), name(Name) {}
 
 Domain::~Domain() {
-  for(auto&& b : boundary) {
+  for(const auto& b : boundary) {
     // Remove pointers to here from neighbours
     if(b->from == this)
       b->from = NULL;
@@ -98,7 +98,7 @@ void Domain::addBoundary(Bndry *b) {
   }
 
   // Check that the range doesn't overlap an existing boundary
-  for(auto&& bndry : boundary) {
+  for(const auto& bndry : boundary) {
     if( (bndry->side != b->side) && (bndry->side != reverse(b->side)) )
       continue;
     
@@ -150,7 +150,7 @@ Domain* Domain::splitX(int xind) {
   // Copy the list of boundaries so not iterating over a changing list
   list<Bndry*> oldboundary(boundary);
   
-  for(auto&& b : oldboundary) {
+  for(const auto& b : oldboundary) {
 
     if(b->onSide(this, xhigh)) {
       // Move to new domain
@@ -216,7 +216,7 @@ Domain* Domain::splitY(int yind) {
   // Copy the list of boundaries
   list<Bndry*> oldboundary(boundary);
   
-  for(auto&& b : oldboundary) {
+  for(const auto& b : oldboundary) {
     if(b->onSide(this, yhigh)) {
       // Move to new domain
       b->setNeighbour(ylow, d);
@@ -279,7 +279,7 @@ std::ostream& operator<<(std::ostream &os, const Domain &d) {
     os << std::endl;
     for(int i=0;i<4;i++) {
       os << "\tBoundary "<< i << std::endl;
-      for(auto&& b : d.boundary) {
+      for(const auto& b : d.boundary) {
         if(b->onSide(&d, (Domain::BndrySide) i)) {
           os << "\t\tRange: " << b->getMin((Domain::BndrySide)i) << " -> " << b->getMax((Domain::BndrySide)i)
              << " to domain " << b->getNeighbour(&d) << std::endl;

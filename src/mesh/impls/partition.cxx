@@ -213,7 +213,7 @@ void partitionAll(Domain* d, int n) {
     throw BoutException("Cannot partition %d domains into %d pieces", ndomains, n);
 
   // Now partition each one
-  for(auto&& it : domains) {
+  for(const auto& it : domains) {
     int area = it->area();
     int nsub = roundi(n * (D(area) / total));
     if(nsub < 1)

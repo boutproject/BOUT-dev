@@ -84,7 +84,7 @@ int QuiltMesh::load(MPI_Comm comm) {
   // Assign domains to processors
   output << "done\n\tAssigning...";
   int p = 0;
-  for(auto&& it : domains[0]) {
+  for(const auto& it : domains[0]) {
     // For now very simple numbering. Should cluster nearby domains
     QuiltDomain *qd = static_cast<QuiltDomain*>( &it );
     
@@ -112,7 +112,7 @@ int QuiltMesh::load(MPI_Comm comm) {
   xlow_range = xhigh_range = RangeIterator(0, ngy-1);
   
   // Iterate through boundaries to get guard cell regions
-  for(auto&& b : mydomain->bndry) {
+  for(const auto& b : mydomain->bndry) {
 
     QuiltDomain* to = (QuiltDomain*) b.getNeighbour(mydomain);
     
@@ -231,7 +231,7 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
   handle->var_list = g.get();
   
   // Iterate over guard cells
-  for(auto&& guard : all_guards) {
+  for(const auto& guard : all_guards) {
     // Post recieves
 
     // Calculate length of the message
@@ -254,7 +254,7 @@ comm_handle QuiltMesh::send(FieldGroup &g) {
     handle->mpi_rq.push_back(rq->request);
   }
   
-  for(auto&& guard : all_guards) {
+  for(const auto& guard : all_guards) {
     // Send data
 
     // Calculate length of the message
@@ -504,7 +504,7 @@ void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vect
   
   len = 0;
   // Loop over variables
-  for(auto&& var : vars) {
+  for(const auto& var : vars) {
     if(var->is3D()) {
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)
@@ -523,7 +523,7 @@ void QuiltMesh::packData(const vector<FieldData*> &vars, GuardRange* range, vect
 void QuiltMesh::unpackData(vector<BoutReal> &data, GuardRange* range, vector<FieldData*> &vars) {
   int len = 0;
   // Loop over variables
-  for(auto&& var : vars) {
+  for(const auto& var : vars) {
     if(var->is3D()) {
       // 3D variable
       for(int x=range->xmin; x <= range->xmax; x++)

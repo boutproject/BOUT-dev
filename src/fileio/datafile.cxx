@@ -292,7 +292,7 @@ bool Datafile::read() {
   file->setRecord(-1); // Read the latest record
 
   // Read integers
-  for(auto&& var : int_arr) {
+  for(const auto& var : int_arr) {
     if(var.grow) {
       if(!file->read_rec(var.ptr, var.name.c_str())) {
         output.write("\tWARNING: Could not read integer %s. Setting to zero\n", var.name.c_str());
@@ -309,7 +309,7 @@ bool Datafile::read() {
   }
 
   // Read BoutReals
-  for(auto&& var : BoutReal_arr) {
+  for(const auto& var : BoutReal_arr) {
     if(var.grow) {
       if(!file->read_rec(var.ptr, var.name)) {
 	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", var.name.c_str());
@@ -326,17 +326,17 @@ bool Datafile::read() {
   }
   
   // Read 2D fields
-  for(auto&& var : f2d_arr) {
+  for(const auto& var : f2d_arr) {
     read_f2d(var.name, var.ptr, var.grow);
   }
 
   // Read 3D fields
-  for(auto&& var : f3d_arr) {
+  for(const auto& var : f3d_arr) {
     read_f3d(var.name, var.ptr, var.grow);
   }
 
   // 2D vectors
-  for(auto&& var : v2d_arr) {
+  for(const auto& var : v2d_arr) {
     if(var.covar) {
       // Reading covariant vector
       read_f2d(var.name+string("_x"), &(var.ptr->x), var.grow);
@@ -352,7 +352,7 @@ bool Datafile::read() {
   }
 
   // 3D vectors
-  for(auto&& var : v3d_arr) {
+  for(const auto& var : v3d_arr) {
     if(var.covar) {
       // Reading covariant vector
       read_f3d(var.name+string("_x"), &(var.ptr->x), var.grow);
@@ -403,7 +403,7 @@ bool Datafile::write() {
   file->setRecord(-1); // Latest record
 
   // Write integers
-  for(auto&& var : int_arr) {
+  for(const auto& var : int_arr) {
     if(var.grow) {
       file->write_rec(var.ptr, var.name);
     } else {
@@ -412,7 +412,7 @@ bool Datafile::write() {
   }
   
   // Write BoutReals
-  for(auto&& var : BoutReal_arr) {
+  for(const auto& var : BoutReal_arr) {
     if(var.grow) {
       file->write_rec(var.ptr, var.name);
     } else {
@@ -421,17 +421,17 @@ bool Datafile::write() {
   }
 
   // Write 2D fields
-  for(auto&& var : f2d_arr) {
+  for(const auto& var : f2d_arr) {
     write_f2d(var.name, var.ptr, var.grow);
   }
 
   // Write 3D fields
-  for(auto&& var : f3d_arr) {
+  for(const auto& var : f3d_arr) {
     write_f3d(var.name, var.ptr, var.grow);
   }
   
   // 2D vectors
-  for(auto&& var : v2d_arr) {
+  for(const auto& var : v2d_arr) {
     if(var.covar) {
       // Writing covariant vector
       Vector2D v  = *(var.ptr);
@@ -452,7 +452,7 @@ bool Datafile::write() {
   }
 
   // 3D vectors
-  for(auto&& var : v3d_arr) {
+  for(const auto& var : v3d_arr) {
     if(var.covar) {
       // Writing covariant vector
       Vector3D v  = *(var.ptr);
@@ -580,32 +580,32 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
 }
 
 bool Datafile::varAdded(const string &name) {
-  for(auto&& var : int_arr ) {
+  for(const auto& var : int_arr ) {
     if(name == var.name)
       return true;
   }
 
-  for(auto&& var : BoutReal_arr ) {
+  for(const auto& var : BoutReal_arr ) {
     if(name == var.name)
       return true;
   }
 
-  for(auto&& var : f2d_arr ) {
+  for(const auto& var : f2d_arr ) {
     if(name == var.name)
       return true;
   }
   
-  for(auto&& var : f3d_arr ) {
+  for(const auto& var : f3d_arr ) {
     if(name == var.name)
       return true;
   }
   
-  for(auto&& var : v2d_arr ) {
+  for(const auto& var : v2d_arr ) {
     if(name == var.name)
       return true;
   }
 
-  for(auto&& var : v3d_arr ) {
+  for(const auto& var : v3d_arr ) {
     if(name == var.name)
       return true;
   }

@@ -83,7 +83,7 @@ const vector< BoutReal > Diagnos::run()
 
   vector< BoutReal > result;
   
-  for(auto&& it : item) {
+  for(const auto& it : item) {
     result.push_back(run(it));
   }
 

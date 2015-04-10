@@ -171,7 +171,7 @@ void Mesh::communicate(FieldGroup &g) {
   wait(h);
 
   // Calculate yup and ydown fields for 3D fields
-  for(auto&& fptr : g.field3d())
+  for(const auto& fptr : g.field3d())
     getParallelTransform().calcYUpDown(*fptr);
 }
 
@@ -200,7 +200,7 @@ int Mesh::msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge,
   int len = 0;
 
   /// Loop over variables
-  for(auto&& var : var_list) {
+  for(const auto& var : var_list) {
     if(var->is3D()) {
       len += (xlt - xge) * (ylt - yge) * (ngz-1) * var->BoutRealSize();
     } else {
