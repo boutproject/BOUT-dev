@@ -71,7 +71,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
 
   for(int jx=0;jx<mesh->ngx;jx++) {
     for(int jy=0;jy<mesh->ngy;jy++) {
-      shiftZ(f[jx][jy], mesh->ngz-1, zangle(jx,jy), result[jx][jy]);
+      shiftZ(f(jx,jy), mesh->ngz-1, zangle(jx,jy), result(jx,jy));
     }
   }
   

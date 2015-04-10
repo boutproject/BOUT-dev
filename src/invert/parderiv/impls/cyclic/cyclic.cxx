@@ -129,7 +129,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Take Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
-      rfft(f[x][y+2], mesh->ngz-1, rhs[y+y0]);
+      rfft(f(x,y+2), mesh->ngz-1, rhs[y+y0]);
     
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
@@ -214,7 +214,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Inverse Fourier transform 
     for(int y=0;y<size;y++)
-      irfft(rhs[y], mesh->ngz-1, result[x][y+2-y0]);
+      irfft(rhs[y], mesh->ngz-1, result(x,y+2-y0));
     
   }
   

@@ -89,7 +89,7 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     
     // Take Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
-      rfft(f[x][y+2], mesh->ngz-1, rhs[y]);
+      rfft(f(x,y+2), mesh->ngz-1, rhs[y]);
     
     // Solve cyclic tridiagonal system for each k
     int nyq = (mesh->ngz-1)/2;
@@ -135,7 +135,7 @@ const Field3D InvertParSerial::solve(const Field3D &f) {
     
     // Inverse Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
-      irfft(rhs[y], mesh->ngz-1, result[x][y+2]);
+      irfft(rhs[y], mesh->ngz-1, result(x,y+2));
   }
   
 #ifdef CHECK

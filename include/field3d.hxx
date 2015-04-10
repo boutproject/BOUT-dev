@@ -166,6 +166,19 @@ class Field3D : public Field, public FieldData {
 #endif
     return block->data[jx][jy][jz];
   }
+
+  inline BoutReal* operator()(int jx, int jy) const {
+#if CHECK > 2
+    if(block == NULL)
+      throw BoutException("Field3D: () operator on empty data");
+
+    if((jx < 0) || (jx >= mesh->ngx) ||
+       (jy < 0) || (jy >= mesh->ngy))
+      throw BoutException("Field3D: (%d, %d) operator out of bounds (%d, %d)",
+                          jx, jy, mesh->ngx, mesh->ngy);
+#endif
+    return block->data[jx][jy];
+  }
   
   /////////////////////////////////////////////////////////
   // Operators

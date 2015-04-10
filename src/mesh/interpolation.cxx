@@ -198,8 +198,8 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	// [jx + delta_x[jx][jy][jz]][jy][jz + delta_z[jx][jy][jz]]
 
 	// get lower (rounded down) index
-	int jxmnew = (int) delta_x[jx][jy][jz];
-	int jzmnew = (int) delta_z[jx][jy][jz];
+	int jxmnew = (int) delta_x(jx,jy,jz);
+	int jzmnew = (int) delta_z(jx,jy,jz);
 	// and the distance from this point
 	BoutReal xs = delta_x(jx,jy,jz) - ((BoutReal) jxmnew);
 	BoutReal zs = delta_z(jx,jy,jz) - ((BoutReal) jzmnew);

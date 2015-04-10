@@ -2351,8 +2351,8 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 2 points in domain
-    ZFFT(f[x-bx][y], mesh->zShift(x-bx,y), c0);
-    ZFFT(f[x-2*bx][y], mesh->zShift(x-2*bx,y), c1);
+    ZFFT(f(x-bx,y), mesh->zShift(x-bx,y), c0);
+    ZFFT(f(x-2*bx,y), mesh->zShift(x-2*bx,y), c1);
     c1[0] = c0[0] - c1[0]; // Only need gradient
     
     // Solve  metric->g11*d2f/dx2 - metric->g33*kz^2f = 0
@@ -2370,7 +2370,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
 	c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
-      ZFFT_rev(c0, mesh->zShift(x,y), f[x][y]);
+      ZFFT_rev(c0, mesh->zShift(x,y), f(x,y));
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
@@ -2437,8 +2437,8 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 2 points in domain
-    ZFFT(f[x-bx][y], mesh->zShift(x-bx,y), c1);
-    ZFFT(f[x-2*bx][y], mesh->zShift(x-2*bx,y), c2);
+    ZFFT(f(x-bx,y), mesh->zShift(x-bx,y), c1);
+    ZFFT(f(x-2*bx,y), mesh->zShift(x-2*bx,y), c2);
     
     // Loop in X towards edge of domain
     do {
@@ -2459,7 +2459,7 @@ void BoundaryZeroLaplace2::apply(Field3D &f) {
 	*/
       }
       // Reverse FFT
-      ZFFT_rev(c0, mesh->zShift(x,y), f[x][y]);
+      ZFFT_rev(c0, mesh->zShift(x,y), f(x,y));
       // cycle c0 -> c1 -> c2 -> c0
       dcomplex *tmp = c2; c2 = c1; c1 = c0; c0 = tmp;
       
@@ -2532,9 +2532,9 @@ void BoundaryConstLaplace::apply(Field3D &f) {
     int y = bndry->y;
     
     // Take FFT of last 3 points in domain
-    ZFFT(f[x-bx][y], mesh->zShift(x-bx,y), c0);
-    ZFFT(f[x-2*bx][y], mesh->zShift(x-2*bx,y), c1);
-    ZFFT(f[x-3*bx][y], mesh->zShift(x-3*bx,y), c2);
+    ZFFT(f(x-bx,y), mesh->zShift(x-bx,y), c0);
+    ZFFT(f(x-2*bx,y), mesh->zShift(x-2*bx,y), c1);
+    ZFFT(f(x-3*bx,y), mesh->zShift(x-3*bx,y), c2);
     dcomplex k0lin = (c1[0] - c0[0])/metric->dx(x-bx,y); // for kz=0 solution
     
     // Calculate Delp2 on point MXG+1 (and put into c1)
@@ -2564,7 +2564,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
 	c2[jz] = c0[jz] - c1[jz]/(metric->g33(x-bx,y)*kwave*kwave); 
       }
       // Reverse FFT
-      ZFFT_rev(c2, mesh->zShift(x,y), f[x][y]);
+      ZFFT_rev(c2, mesh->zShift(x,y), f(x,y));
       
       bndry->nextX();
       x = bndry->x; y = bndry->y;
