@@ -14,8 +14,8 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.771beta'
-__date__    = '20.03.2015'
+__version__ = '0.772beta'
+__date__    = '23.03.2015'
 
 import textwrap
 import os
@@ -39,6 +39,9 @@ from bout_runners.common_bout_functions import create_folder,\
                                                wait_for_runs_to_finish,\
                                                message_chunker
 
+# TODO: Make it possible to give a function to the waiting routine in
+#       qsub runners, so that it is possible to give a function which
+#       will be run when a job has completed
 # TODO: Make qsub usable on different clusters (and update documentation)
 #       Can be done by checking the current cluster? (Need to set the
 #       path to the correct libraries, and use the correct MPI runner)
@@ -1196,10 +1199,10 @@ class basic_runner(object):
         """Removes *.nc, *.log, *.png and *.pdf files from the dump directory"""
         print("Removing old data")
         command = "rm -f ./" + self.dmp_folder +\
-                  "*.nc ./" + self.dmp_folder +\
-                  "*.log ./" + self.dmp_folder +\
-                  "*.png ./" + self.dmp_folder +\
-                  "*.pdf"
+                  "/*.nc ./" + self.dmp_folder +\
+                  "/*.log ./" + self.dmp_folder +\
+                  "/*.png ./" + self.dmp_folder +\
+                  "/*.pdf"
         shell(command)
 #}}}
 
