@@ -54,6 +54,8 @@ class Mesh;
 #include "fieldgroup.hxx"
 
 #include "boundary_region.hxx"
+#include "parallel_boundary_region.hxx"
+
 #include "sys/range.hxx" // RangeIterator
 
 #include "bout/deprecated.hxx"
@@ -182,6 +184,8 @@ class Mesh {
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
   virtual void addBoundary(BoundaryRegion* bndry) {}
+  virtual vector<BoundaryRegionPar*> getBoundariesPar() = 0;
+  virtual void addBoundaryPar(BoundaryRegionPar* bndry) {}
   
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}

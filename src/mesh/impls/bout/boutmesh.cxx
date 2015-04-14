@@ -2236,6 +2236,16 @@ vector<BoundaryRegion*> BoutMesh::getBoundaries() {
   return boundary;
 }
 
+vector<BoundaryRegionPar*> BoutMesh::getBoundariesPar() {
+  return par_boundary;
+}
+
+void BoutMesh::addBoundaryPar(BoundaryRegionPar* bndry) {
+  output << "Adding new parallel boundary: " << bndry->label;
+  output << endl;
+  par_boundary.push_back(bndry);
+}
+
 const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
   Field3D result(f);
   if((ixseps_inner > 0) && (ixseps_inner < nx-1)) {

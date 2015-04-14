@@ -82,6 +82,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
     throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
+  // Add the boundary region to the mesh's vector of parallel boundaries
+  mesh.addBoundaryPar(boundary);
+
   // Allocate Field3D members
   h00_x.allocate();
   h01_x.allocate();

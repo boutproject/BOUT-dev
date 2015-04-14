@@ -37,6 +37,7 @@ using std::string;
 // Including the next line leads to compiler errors
 //#include "boundary_op.hxx"
 class BoundaryOp;
+class BoundaryOpPar;
 
 #include <vector>
 using std::vector;
@@ -44,7 +45,8 @@ using std::vector;
 #include <map>
 using std::map;
 
-#include <boundary_region.hxx>
+#include "boundary_region.hxx"
+#include "parallel_boundary_region.hxx"
 
 class FieldGenerator; // Forward declaration
 
@@ -57,7 +59,7 @@ class FCI; // Forward declaration
 */
 class FieldData {
   friend class FCI;
- public:
+public:
   FieldData();
   virtual ~FieldData();
 
@@ -103,12 +105,13 @@ class FieldData {
   
   FieldGenerator* getBndryGenerator(BndryLoc location);
 
- protected:
+protected:
   vector<BoundaryOp*> bndry_op; // Boundary conditions
   bool boundaryIsCopy; // True if bndry_op is a copy
-  
   bool boundaryIsSet; // Set to true when setBoundary called
- 
+  // Parallel boundaries
+  vector<BoundaryOpPar*> bndry_op_par; // Boundary conditions
+
  std::map <BndryLoc,FieldGenerator*> bndry_generator;
 };
 
