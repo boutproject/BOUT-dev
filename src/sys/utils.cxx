@@ -364,14 +364,18 @@ const string lowercasequote(const string &str) {
 BoutReal stringToReal(const std::string &s) {
   std::stringstream ss(s);
   BoutReal val;
-  ss >> val;
+  if(!(ss >> val)) {
+    throw BoutException("Could not convert string '%s' to BoutReal\n", s.c_str());
+  }
   return val;
 }
 
 int stringToInt(const std::string &s) {
   std::stringstream ss(s);
   int val;
-  ss >> val;
+  if(!(ss >> val)) {
+    throw BoutException("Could not convert string '%s' to int\n", s.c_str());
+  }
   return val;
 }
 
