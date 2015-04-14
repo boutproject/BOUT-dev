@@ -38,26 +38,24 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
 void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
-  BoundaryRegionPar* bndry_par = static_cast<BoundaryRegionPar*>(bndry);
-
-  Field3D& f_next = f.ynext(bndry_par->dir);
+  Field3D& f_next = f.ynext(bndry->dir);
 
   Coordinates& coord = *(mesh->coordinates());
 
   // Loop over grid points If point is in boundary, then fill in
   // f_next such that the field would be VALUE on the boundary
-  for (bndry_par->first(); !bndry_par->isDone(); bndry_par->next()) {
+  for (bndry->first(); !bndry->isDone(); bndry->next()) {
     // temp variables for convenience
-    int x = bndry_par->x; int y = bndry_par->y; int z = bndry_par->z;
+    int x = bndry->x; int y = bndry->y; int z = bndry->z;
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
 
     // Scale the field and normalise to the desired value
-    BoutReal y_prime = bndry_par->length;
+    BoutReal y_prime = bndry->length;
     BoutReal f2 = (f(x,y,z) - value) * (coord.dy(x, y) - y_prime) / y_prime;
 
-    f_next(x, y+bndry_par->dir, z) = value - f2;
+    f_next(x, y+bndry->dir, z) = value - f2;
   }
 
 }
@@ -67,20 +65,18 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
 void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
 
-  BoundaryRegionPar* bndry_par = static_cast<BoundaryRegionPar*>(bndry);
-
-  Field3D& f_next = f.ynext(bndry_par->dir);
+  Field3D& f_next = f.ynext(bndry->dir);
 
   // If point is in boundary, then fill in f_next such that the derivative
   // would be VALUE on the boundary
-  for (bndry_par->first(); !bndry_par->isDone(); bndry_par->next()) {
+  for (bndry->first(); !bndry->isDone(); bndry->next()) {
     // temp variables for convience
-    int x = bndry_par->x; int y = bndry_par->y; int z = bndry_par->z;
+    int x = bndry->x; int y = bndry->y; int z = bndry->z;
 
     // Generate the boundary value
     BoutReal value = getValue(x, y, z, t);
 
-    f_next(x, y+bndry_par->dir, z) = 2.*value + f(x, y, z);
+    f_next(x, y+bndry->dir, z) = 2.*value + f(x, y, z);
   }
 
 }
