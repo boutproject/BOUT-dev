@@ -13,30 +13,7 @@ public:
 
   int init(bool restarting) {
 
-	Options *globalOptions = Options::getRoot();
-
-	Options *f_options = globalOptions->getSection("f");
-
-	string f_BC;
-	OPTION(f_options, f_BC, "0.0");
-
-	if(!f_BC.empty()) {
-	  // First argument should be an expression
-	  f_gen = FieldFactory::get()->parse(f_BC);
-	}
-
-	Options *g_options = globalOptions->getSection("g");
-
-	string g_BC;
-	OPTION(g_options, g_BC, "0.0");
-
-	if(!g_BC.empty()) {
-	  // First argument should be an expression
-	  g_gen = FieldFactory::get()->parse(g_BC);
-	}
-
 	D = 10;
-	//OPTION(Options::getRoot(), D, 1.);
 
     Coordinates *coord = mesh->coordinates();
 
@@ -74,9 +51,9 @@ int FCISlab::rhs(BoutReal time) {
   Coordinates *coord = mesh->coordinates();
 
   fci.calcYUpDown(f);
-  fci.applyBoundary(f, FCI::DIRICHLET, f_gen, time);
+  f.applyParallelBoundary(time);
   fci.calcYUpDown(g);
-  fci.applyBoundary(g, FCI::DIRICHLET, g_gen, time);
+  g.applyParallelBoundary(time);
 
   ddt(f) = fci.Grad_par(g) + D*SQ(coord->dy)*fci.Grad2_par2(f);
 

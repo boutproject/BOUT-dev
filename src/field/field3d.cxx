@@ -1768,6 +1768,140 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
 #endif
 }
 
+void Field3D::applyParallelBoundary() {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary()");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary()" << endl;
+
+  if(!boundaryIsSet)
+    output << "WARNING: Call to Field3D::applyParallelBoundary(), but no boundary set." << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary();
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(vector<BoundaryOpPar*>::iterator it = bndry_op_par.begin(); it != bndry_op_par.end(); it++)
+      (*it)->apply(*this);
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(BoutReal t) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary()");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary()" << endl;
+
+  if(!boundaryIsSet)
+    output << "WARNING: Call to Field3D::applyParallelBoundary(), but no boundary set." << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(t);
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(vector<BoundaryOpPar*>::iterator it = bndry_op_par.begin(); it != bndry_op_par.end(); it++)
+      (*it)->apply(*this, t);
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &condition) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(condition)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(condition)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Get the mesh boundary regions
+    vector<BoundaryRegionPar*> reg = mesh->getBoundariesPar();
+
+    /// Loop over the mesh boundary regions
+    for(vector<BoundaryRegionPar*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, (*it)));
+      op->apply(*this);
+      delete op;
+    }
+  }
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(condition)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(condition)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Get the mesh boundary regions
+    vector<BoundaryRegionPar*> reg = mesh->getBoundariesPar();
+
+    /// Loop over the mesh boundary regions
+    for(vector<BoundaryRegionPar*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      if((*it)->label.compare(region) == 0) {
+        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, (*it)));
+        op->apply(*this);
+        delete op;
+        break;
+      }
+    }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
 /***************************************************************
  *                     PRIVATE FUNCTIONS
  ***************************************************************/

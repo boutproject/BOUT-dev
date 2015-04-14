@@ -15,3 +15,5 @@ symmetricglobalx = true
 scale = 1.0
 function = cos(y-z)
 
+bndry_par_yup = parallel_dirichlet(0.0)
+bndry_par_ydown = parallel_dirichlet(0.0)

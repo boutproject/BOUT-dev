@@ -302,8 +302,14 @@ class Field3D : public Field, public FieldData {
   void applyBoundary(const string &region, const string &condition);
   void applyTDerivBoundary();
   void setBoundaryTo(const Field3D &f3d); ///< Copy the boundary region
+
+  void applyParallelBoundary();
+  void applyParallelBoundary(BoutReal t);
+  void applyParallelBoundary(const string &condition);
+  void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
+  void applyParallelBoundary(const string &region, const string &condition);
   
- private:
+private:
   /// Boundary - add a 2D field
   const Field2D *background;
   

@@ -254,6 +254,14 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
     varOpts->get(prefix+"all", set, "");
     return create(set, region);
   }
+
+  /// Then (var, all)
+  if(region->isParallel) {
+    if(varOpts->isSet(prefix+"par_all")) {
+      varOpts->get(prefix+"par_all", set, "");
+      return create(set, region);
+    }
+  }
   
   // Get the "all" options
   varOpts = options->getSection("All");
@@ -273,7 +281,7 @@ BoundaryOpBase* BoundaryFactory::createFromOptions(const string &varname, Bounda
   /// Then (all, all)
   if(region->isParallel) {
     // Different default for parallel boundary regions
-    varOpts->get(prefix+"all", set, "parallel_dirichlet");
+    varOpts->get(prefix+"par_all", set, "parallel_dirichlet");
   } else {
     varOpts->get(prefix+"all", set, "dirichlet");
   }
