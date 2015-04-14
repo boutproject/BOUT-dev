@@ -30,9 +30,11 @@ class BoundaryRegionPar : public BoundaryRegionBase {
 
 public:
   BoundaryRegionPar(const string &name, const int dir) :
-    BoundaryRegionBase(name), dir(dir) {}
+    BoundaryRegionBase(name), dir(dir) {
+    BoundaryRegionBase::isParallel = true;}
   BoundaryRegionPar(const string &name, BndryLoc loc, const int dir) :
-    BoundaryRegionBase(name, loc), dir(dir) {}
+    BoundaryRegionBase(name, loc), dir(dir) {
+    BoundaryRegionBase::isParallel = true;}
 
   /// Add a point to the boundary
   void add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle);

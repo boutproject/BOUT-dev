@@ -967,7 +967,7 @@ void Field2D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    BoundaryOp* op = bfact->create(condition, (*it));
+    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, (*it)));
     op->apply(*this);
     delete op;
   }
@@ -1007,7 +1007,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   /// Loop over the mesh boundary regions
   for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
     if((*it)->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, (*it));
+      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, (*it)));
       op->apply(*this);
       delete op;
       break;

@@ -36,6 +36,21 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 //////////////////////////////////////////
 // Dirichlet boundary
 
+BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const list<string> &args) {
+  if(!args.empty()) {
+    try {
+      real_value = stringToReal(args.front());
+      return new BoundaryOpPar_dirichlet(region, real_value);
+    } catch (BoutException e) {
+      FieldGenerator* newgen = 0;
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+      return new BoundaryOpPar_dirichlet(region, newgen);
+    }
+  }
+  return new BoundaryOpPar_dirichlet(region);
+}
+
 void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
   Field3D& f_next = f.ynext(bndry->dir);
@@ -62,6 +77,21 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
 //////////////////////////////////////////
 // Neumann boundary
+
+BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const list<string> &args) {
+  if(!args.empty()) {
+    try {
+      real_value = stringToReal(args.front());
+      return new BoundaryOpPar_neumann(region, real_value);
+    } catch (BoutException e) {
+      FieldGenerator* newgen = 0;
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+      return new BoundaryOpPar_neumann(region, newgen);
+    }
+  }
+  return new BoundaryOpPar_neumann(region);
+}
 
 void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {
 

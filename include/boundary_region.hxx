@@ -24,7 +24,8 @@ public:
 
   string label; // Label for this boundary region
 
-  BndryLoc location; // Which side of the domain is it on?
+  BndryLoc location;         // Which side of the domain is it on?
+  bool isParallel = false;   // Is this a parallel boundary?
 
   virtual void first() = 0;
   virtual void next() = 0;   // Loop over every element from inside out (in X or Y first)
