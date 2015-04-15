@@ -231,4 +231,23 @@ private:
   list<FieldGenerator*> input;
 };
 
+
+//////////////////////////////////////////////////////////
+// Ballooning transform
+// Use a truncated Ballooning transform to enforce periodicity
+// in doubly periodic domains
+
+#include <bout/mesh.hxx>
+
+class FieldBallooning : public FieldGenerator {
+public:
+  FieldBallooning(Mesh *m, FieldGenerator* a = NULL, int n = 3) : mesh(m), arg(a), ball_n(n) {}
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(double x, double y, double z, double t);
+private:
+  Mesh *mesh;
+  FieldGenerator *arg;
+  int ball_n;   // How many times around in each direction
+};
+
 #endif // __FIELDGENERATORS_H__

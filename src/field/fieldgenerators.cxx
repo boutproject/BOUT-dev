@@ -120,3 +120,56 @@ FieldGenerator* FieldHeaviside::clone(const list<FieldGenerator*> args) {
 BoutReal FieldHeaviside::generate(double x, double y, double z, double t) {
   return (gen->generate(x,y,z,t) > 0.0) ? 1.0 : 0.0;
 }
+
+//////////////////////////////////////////////////////////
+// Ballooning transform
+// Use a truncated Ballooning transform to enforce periodicity in y and z
+
+FieldGenerator* FieldBallooning::clone(const list<FieldGenerator*> args) {
+  int n = ball_n;
+  switch(args.size()) {
+  case 2: {
+    // Second optional argument is ball_n, an integer
+    // This should probably warn if arg isn't constant
+    n = ROUND( args.back()->generate(0,0,0,0) );
+  } // Fall through
+  case 1: {
+    return new FieldBallooning(mesh, args.front(), n);
+    break;
+  }
+  };
+  
+  throw ParseException("ballooning function must have one or two arguments");
+}
+
+BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
+  if(!mesh)
+    throw BoutException("ballooning function needs a valid mesh");
+  if(ball_n < 1)
+    throw BoutException("ballooning function ball_n less than 1");
+  
+  BoutReal ts; // Twist-shift angle
+  
+  // Need to find the nearest flux surface (x index)
+  // This assumes that mesh->GlobalX is linear in x index
+  BoutReal dx = (mesh->GlobalX(mesh->xend) - mesh->GlobalX(mesh->xstart)) /
+    (mesh->xend - mesh->xstart);
+  int jx = ROUND((x - mesh->GlobalX(0)) / dx);
+  
+  if(mesh->periodicY(jx, ts)) {
+    // Start with the value at this point
+    BoutReal value = arg->generate(x,y,z,t);
+    
+    for(int i=1; i<= ball_n; i++) {
+      // y - i * 2pi
+      value += arg->generate(x,y - i*TWOPI,z + i*ts,t);
+      
+      // y + i * 2pi
+      value += arg->generate(x,y + i*TWOPI,z - i*ts,t);
+    }
+    return value;
+  }
+  
+  // Open surfaces. Not sure what to do, so set to zero
+  return 0.0;
+}
