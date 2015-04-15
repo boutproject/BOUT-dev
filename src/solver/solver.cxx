@@ -56,7 +56,8 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Zero timing
   rhs_ncalls = 0;
-
+  rhs_ncalls_e = 0;
+  rhs_ncalls_i = 0;
   // Restart directory
   if(options->isSet("restartdir")) {
     // Solver-specific restart directory
@@ -75,6 +76,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Split operator
   split_operator = false;
+  split_monitor = false;    //flag for runtime output with split operator
   max_dt = -1.0;
 
   // Output monitor
@@ -1170,7 +1172,8 @@ int Solver::run_rhs(BoutReal t) {
   add_mms_sources(t);
 
   rhs_ncalls++;
-
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
   return status;
 }
 
@@ -1179,7 +1182,7 @@ int Solver::run_convective(BoutReal t) {
   int status;
   
   Timer timer("rhs");
-  
+  pre_rhs(t);
   if(split_operator) {
     if(model) {
       status = model->runConvective(t);
@@ -1198,7 +1201,7 @@ int Solver::run_convective(BoutReal t) {
   add_mms_sources(t);
   
   rhs_ncalls++;
-  
+  rhs_ncalls_e++;
   return status;
 }
 
@@ -1206,8 +1209,9 @@ int Solver::run_diffusive(BoutReal t) {
   int status = 0;
   
   Timer timer("rhs");
-
+  pre_rhs(t);
   if(split_operator) {
+
     if(model) {
       status = model->runDiffusive(t);
     }else 
@@ -1220,7 +1224,7 @@ int Solver::run_diffusive(BoutReal t) {
     for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
       *((*it).F_var) = 0.0;
   }
-  
+  rhs_ncalls_i++;
   return status;
 }
 
