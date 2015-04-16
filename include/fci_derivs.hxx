@@ -93,15 +93,7 @@ private:
   // Private constructor - must be initialised with mesh
   FCI();
 public:
-  enum BndryType { DIRICHLET, NEUMANN };
-
-  FCI(Mesh& m) :
-    mesh(m),
-    forward_map(m, +1, true, true),
-    backward_map(m, -1, true, true),
-    yperiodic(true),
-    zperiodic(true) {}
-  FCI(Mesh& m, bool yperiodic, bool zperiodic) :
+  FCI(Mesh& m, bool yperiodic=true, bool zperiodic=true) :
     mesh(m),
     forward_map(m, +1, yperiodic, zperiodic),
     backward_map(m, -1, yperiodic, zperiodic),
@@ -115,12 +107,6 @@ public:
   const Field3D Grad_par(Field3D &f);
   const Field3D Grad2_par2(Field3D &f);
   const Field3D Div_par(Field3D &f);
-
-  // Boundary conditions
-  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t);
-  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue);
-  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value, BoutReal t);
-  void applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value);
 
   void calcYUpDown(Field3D &f);
 

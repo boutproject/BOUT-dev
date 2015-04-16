@@ -41,9 +41,6 @@ public:
 
   void first();
   void next();
-  void next1d() {}
-  void nextX() {}
-  void nextY() {}
   bool isDone();
 
   /// Index of the point in the boundary

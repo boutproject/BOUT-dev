@@ -425,44 +425,6 @@ const Field3D FCI::Div_par(Field3D &f) {
   return result;
 }
 
-void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue, BoutReal t) {
-
-  BoundaryOpPar* up_op;
-  BoundaryOpPar* down_op;
-
-  switch(bndry_type) {
-  case DIRICHLET:
-    up_op = new BoundaryOpPar_dirichlet(forward_map.boundary, upvalue);
-    down_op = new BoundaryOpPar_dirichlet(backward_map.boundary, downvalue);
-    break;
-  case NEUMANN:
-    up_op = new BoundaryOpPar_neumann(forward_map.boundary, upvalue);
-    down_op = new BoundaryOpPar_neumann(backward_map.boundary, downvalue);
-    break;
-  default:
-    throw BoutException("Not a valid boundary type for FCI!");
-  }
-
-  up_op->apply(f, t);
-  down_op->apply(f, t);
-
-  delete up_op;
-  delete down_op;
-
-}
-
-void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* upvalue, FieldGenerator* downvalue) {
-  applyBoundary(f, bndry_type, upvalue, downvalue, 0);
-}
-
-void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value, BoutReal t) {
-  applyBoundary(f, bndry_type, value, value, t);
-}
-
-void FCI::applyBoundary(Field3D &f, BndryType bndry_type, FieldGenerator* value) {
-  applyBoundary(f, bndry_type, value, value, 0);
-}
-
 void FCI::calcYUpDown(Field3D &f) {
 
   f.splitYupYdown();
