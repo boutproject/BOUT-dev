@@ -6,7 +6,9 @@ except ImportError:
     print "ERROR: restart module needs DataFile"
     raise
 
+import numpy
 from numpy import mean
+from math import sqrt
 
 try:
     import os
@@ -228,3 +230,217 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
         
         infile.close()
         outfile.close()
+        
+def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None):
+    """Resize restart files across NPES processors.
+    
+    Does not check if new processor arrangement is compatible with the branch cuts. In this respect restart.split is safer. However, BOUT++ checks the topology during initialisation anyway so this is not too serious.
+    
+    Parameters
+    ----------
+    npes : int
+        number of processors for the new restart files
+    path : string, optional
+        location of old restart files
+    nxpe : int, optional
+        number of processors to use in the x-direction (determines split: npes = nxpe * nype). Default is None which uses the same algorithm as BoutMesh (but without topology information) to determine a suitable value for nxpe.
+    output : string, optional
+        location to save new restart files
+    informat : string, optional
+        specify file format of old restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default uses the format of the first 'BOUT.restart.*' file listed by glob.glob.
+    outformat : string, optional
+        specify file format of new restart files (must be a suffix understood by DataFile, e.g. 'nc'). Default is to use the same as informat.
+
+    Returns
+    -------
+    True on success
+    """
+    
+    mxg = 2
+    myg = 2
+    
+    if npes <= 0:
+        print "ERROR: Negative or zero number of processors"
+        return False
+    
+    if path == output:
+        print "ERROR: Can't overwrite restart files"
+        return False
+    
+    if informat == None:
+        file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    else:
+        file_list = glob.glob(os.path.join(path, "BOUT.restart.*."+informat))
+    
+    nfiles = len(file_list)
+    
+    # Read old processor layout
+    f = DataFile(file_list[0])
+
+    # Get list of variables
+    var_list = f.list()
+    if len(var_list) == 0:
+        print "ERROR: No data found"
+        return False
+    
+    old_npes = f.read('NPES')
+    old_nxpe = f.read('NXPE')
+    old_nype = old_npes/old_nxpe
+
+    if nfiles != old_npes:
+        print "WARNING: Number of restart files inconsistent with NPES"
+        print "Setting nfiles = " + str(old_npes)
+        nfiles = old_npes
+
+    if nfiles == 0:
+        print "ERROR: No restart files found"
+        return False
+    
+    informat = file_list[0].split(".")[-1]
+    if outformat == None:
+        outformat = informat
+    
+    old_mxsub = 0
+    old_mysub = 0
+    mz = 0
+    
+    for v in var_list:
+        if f.ndims(v) == 3:
+            s = f.size(v)
+            old_mxsub = s[0] - 2*mxg
+            if old_mxsub < 0:
+                if s[0] == 1:
+                    old_mxsub = 1
+                    mxg = 0
+                elif s[0] == 3:
+                    old_mxsub = 1
+                    mxg = 1
+                else:
+                    print "Number of x points is wrong?"
+                    return False
+            
+            old_mysub = s[1] - 2*myg
+            if old_mysub < 0:
+                if s[1] == 1:
+                    old_mysub = 1
+                    myg = 0
+                elif s[1] == 3:
+                    old_mysub = 1
+                    myg = 1
+                else:
+                    print "Number of y points is wrong?"
+                    return False
+            
+            mz = s[2]
+            break
+    
+    # Calculate total size of the grid
+    nx = old_mxsub * old_nxpe
+    ny = old_mysub * old_nype
+    print "Grid sizes: ", nx, ny, mz
+    
+    if nxpe == None: # Copy algorithm from BoutMesh for selecting nxpe
+        ideal = sqrt(float(nx) * float(npes) / float(ny)) # Results in square domain
+        
+        for i in range(1,npes+1):
+            if npes%i == 0 and nx%i == 0 and nx/i >= mxg and ny%(npes/i) == 0:
+                # Found an acceptable value
+                # Warning: does not check branch cuts!
+                
+                if nxpe==None or abs(ideal - i) < abs(ideal - nxpe):
+                    nxpe = i # Keep value nearest to the ideal
+            
+        if nxpe == None:
+            print "ERROR: could not find a valid value for nxpe"
+            return False
+    
+    nype = npes/nxpe
+    
+    outfile_list = []
+    for i in range(npes):
+        outpath = os.path.join(output, "BOUT.restart."+str(i)+"."+outformat)
+        outfile_list.append(DataFile(outpath, write=True, create=True))
+    infile_list = []
+    for i in range(old_npes):
+        inpath = os.path.join(path, "BOUT.restart."+str(i)+"."+outformat)
+        infile_list.append(DataFile(inpath))
+    
+    old_mxsub = nx/old_nxpe
+    old_mysub = ny/old_nype
+    mxsub = nx/nxpe
+    mysub = ny/nype
+    for v in var_list:
+          ndims = f.ndims(v)
+          
+          #collect data
+          if ndims == 0:
+              #scalar
+              data = f.read(v)
+          elif ndims == 2:
+              data = numpy.zeros( (nx+2*mxg,ny+2*nyg) )
+              for i in range(old_npes):
+                  ix = i%old_nxpe
+                  iy = i/old_nxpe
+                  ixstart = mxg
+                  if ix == 0:
+                      ixstart = 0
+                  ixend = -mxg
+                  if ix == old_nxpe:
+                      ixend = 0
+                  iystart = myg
+                  if iy == 0:
+                      iystart = 0
+                  iyend = -myg
+                  if iy == old_nype:
+                      iyend = 0
+                  data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
+          elif ndims == 3:
+              data = numpy.zeros( (nx+2*mxg,ny+2*myg,mz) )
+              for i in range(old_npes):
+                  ix = i%old_nxpe
+                  iy = i/old_nxpe
+                  ixstart = mxg
+                  if ix == 0:
+                      ixstart = 0
+                  ixend = -mxg
+                  if ix == old_nxpe:
+                      ixend = 0
+                  iystart = myg
+                  if iy == 0:
+                      iystart = 0
+                  iyend = -myg
+                  if iy == old_nype:
+                      iyend = 0
+                  data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend, :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
+          else:
+              print "ERROR: variable found with unexpected number of dimensions,",ndims,v
+              return False
+                  
+          # write data
+          for i in range(npes):
+              ix = i%nxpe
+              iy = i/nxpe
+              outfile = outfile_list[i]
+              if v == "NPES":
+                  outfile.write(v,npes)
+              elif v == "NXPE":
+                  outfile.write(v,nxpe)
+              elif ndims == 0:
+                  # scalar
+                  outfile.write(v,data)
+              elif ndims == 2:
+                  # Field2D
+                  outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
+              elif ndims == 3:
+                  # Field2D
+                  outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
+              else:
+                  print "ERROR: variable found with unexpected number of dimensions,",f.ndims(v)
+    
+    f.close()
+    for infile in infile_list:
+        infile.close()
+    for outfile in outfile_list:
+        outfile.close()
+    
+    return True

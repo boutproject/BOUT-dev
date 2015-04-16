@@ -39,6 +39,7 @@ class Laplacian;
 #include "fieldperp.hxx"
 #include "field3d.hxx"
 #include "field2d.hxx"
+#include <boutexception.hxx>
 
 #include "dcomplex.hxx"
 #include "options.hxx"
@@ -112,6 +113,14 @@ public:
   virtual void setCoefC(const Field2D &val) = 0;
   virtual void setCoefC(const Field3D &val) { setCoefC(val.DC()); }
   virtual void setCoefC(const BoutReal &r) { Field2D f(r); setCoefC(f); }
+  
+  virtual void setCoefC1(const Field2D &val) { throw BoutException("setCoefC1 is not implemented for this Laplacian solver"); }
+  virtual void setCoefC1(const Field3D &val) { setCoefC1(val.DC()); }
+  virtual void setCoefC1(const BoutReal &r) { Field2D f(r); setCoefC1(f); }
+  
+  virtual void setCoefC2(const Field2D &val) { throw BoutException("setCoefC2 is not implemented for this Laplacian solver"); }
+  virtual void setCoefC2(const Field3D &val) { setCoefC2(val.DC()); }
+  virtual void setCoefC2(const BoutReal &r) { Field2D f(r); setCoefC2(f); }
   
   virtual void setCoefD(const Field2D &val) = 0;
   virtual void setCoefD(const Field3D &val) { setCoefD(val.DC()); }
