@@ -51,6 +51,10 @@ BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, const l
   return new BoundaryOpPar_dirichlet(region);
 }
 
+BoundaryOpPar* BoundaryOpPar_dirichlet::clone(BoundaryRegionPar *region, Field3D *f) {
+  return new BoundaryOpPar_dirichlet(region, f);
+}
+
 void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
   Field3D& f_next = f.ynext(bndry->dir);
@@ -91,6 +95,10 @@ BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const lis
     }
   }
   return new BoundaryOpPar_neumann(region);
+}
+
+BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, Field3D *f) {
+  return new BoundaryOpPar_neumann(region, f);
 }
 
 void BoundaryOpPar_neumann::apply(Field3D &f, BoutReal t) {

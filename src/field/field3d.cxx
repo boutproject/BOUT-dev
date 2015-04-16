@@ -1800,13 +1800,13 @@ void Field3D::applyParallelBoundary() {
 
 void Field3D::applyParallelBoundary(BoutReal t) {
 #ifdef CHECK
-  msg_stack.push("Field3D::applyParallelBoundary()");
+  msg_stack.push("Field3D::applyParallelBoundary(t)");
 
   if(block == NULL)
-    output << "WARNING: Empty data in Field3D::applyParallelBoundary()" << endl;
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(t)" << endl;
 
   if(!boundaryIsSet)
-    output << "WARNING: Call to Field3D::applyParallelBoundary(), but no boundary set." << endl;
+    output << "WARNING: Call to Field3D::applyParallelBoundary(t), but no boundary set." << endl;
 #endif
 
   if(block == NULL)
@@ -1865,10 +1865,10 @@ void Field3D::applyParallelBoundary(const string &condition) {
 
 void Field3D::applyParallelBoundary(const string &region, const string &condition) {
 #ifdef CHECK
-  msg_stack.push("Field3D::applyParallelBoundary(condition)");
+  msg_stack.push("Field3D::applyParallelBoundary(region, condition)");
 
   if(block == NULL)
-    output << "WARNING: Empty data in Field3D::applyParallelBoundary(condition)" << endl;
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(region, condition)" << endl;
 #endif
 
   if(block == NULL)
@@ -1891,6 +1891,47 @@ void Field3D::applyParallelBoundary(const string &region, const string &conditio
       if((*it)->label.compare(region) == 0) {
         BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, (*it)));
         op->apply(*this);
+        delete op;
+        break;
+      }
+    }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(region, condition, f)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(region, condition, f)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition, f);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Loop over the mesh boundary regions
+    for(const auto& reg : mesh->getBoundariesPar()) {
+      if(reg->label.compare(region) == 0) {
+        // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
+        // boundary of the right type
+        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        // then clone that with the actual argument
+        BoundaryOpPar* op = tmp->clone(reg, f);
+        op->apply(*this);
+        delete tmp;
         delete op;
         break;
       }

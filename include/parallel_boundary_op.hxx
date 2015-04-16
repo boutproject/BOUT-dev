@@ -28,6 +28,7 @@ public:
 
   // Note: All methods must implement clone, except for modifiers (see below)
   virtual BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args) {return NULL; }
+  virtual BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f) {return NULL; }
 
   void apply(Field2D &f)
   {
@@ -77,6 +78,7 @@ public:
   BoundaryOpPar_dirichlet(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);
@@ -96,6 +98,7 @@ public:
   BoundaryOpPar_neumann(BoundaryRegionPar *region, BoutReal value) :
     BoundaryOpPar(region, value) {}
   BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
 
   void apply(Field3D &f) {return apply(f, 0);}
   void apply(Field3D &f, BoutReal t);

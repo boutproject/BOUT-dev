@@ -308,6 +308,7 @@ class Field3D : public Field, public FieldData {
   void applyParallelBoundary(const string &condition);
   void applyParallelBoundary(const char* condition) { applyParallelBoundary(string(condition)); }
   void applyParallelBoundary(const string &region, const string &condition);
+  void applyParallelBoundary(const string &region, const string &condition, Field3D *f);
   
 private:
   /// Boundary - add a 2D field
