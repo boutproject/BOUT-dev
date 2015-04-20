@@ -2351,6 +2351,43 @@ output from different codes and converting into input to BOUT++.
 \label{fig:gridgen}
 \end{figure}
 
+\subsection{BOUT++ Topology}
+\subsubsection{Basic}
+In order to handle tokamak geometry BOUT++ contains an internal topology which is determined by the branch-cut locations (\code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and
+  \code{jyseps2\_2}) and separatrix locations (\code{ixseps1} and  \code{ixseps2}).
+
+The separatrix locations, \code{ixseps1} and  \code{ixseps2}, give the indices in the \code{x} domain where the first and second separatrices are located. If \code{ixseps1 == ixseps2} then there is a single separatrix representing the boundary between the core region and the SOL region and the grid is a connected double null configuration. If \code{ixseps1 > ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps2} so the tokamak is an upper double null. If \code{ixseps1 < ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps1} so the tokamak is a lower double null. These values are set either in the grid file or in \code{BOUT.inp}. Figure \ref{fig:topology_cross_section} shows schematically how \code{ixseps} is used. 
+
+The branch cut locations, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}, split the \code{y} domain into logical regions defining the SOL, the PFR and the core of the tokamak. This is illustrated also in figure \ref{fig:topology_cross_section}.  If \code{jyseps1\_2 == jyseps2\_1} then the grid is a single null configuration, otherwise the grid is a double null configuration. 
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=0.7\paperwidth, keepaspectratio]{figs/topology_cross_section.pdf}
+\caption{Deconstruction of a poloidal tokamak cross-section into logical domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
+\label{fig:topology_cross_section}
+\end{figure}
+
+\subsubsection{Advanced}
+The internal domain in BOUT++ is deconstructed into a series of logically rectangular subdomains with boundaries determined by the \code{ixseps} and \code{jyseps} parameters. The boundaries coinside with processor boundaries so the number of grid points within each subdomain must be an integer multiple of \code{ny/nypes} where \code{ny} is the number of grid points in \code{y} and \code{nypes} is the number of processors used to split the y domain. Processor communication across the domain boundaries is then handled internally. Figure \ref{fig:topology_schematic} shows schematically how the different regions of a double null tokamak with \code{ixseps1 = ixseps2} are connected together via communications. 
+
+\note{To ensure that each subdomain follows logically, the \code{jyseps} indices must adhere to the following conditions:
+\begin{itemize}
+\item \code{jyseps1\_1 > -1} 
+\item \code{jyseps2\_1} $\geq$ \code{jyseps1\_1 + 1}
+\item \code{jyseps1\_2} $\geq$ \code{jyseps2\_1}
+\item \code{jyseps2\_2} $\leq$ \code{ny -1}
+\end{itemize}
+
+To ensure that communications work branch cuts must align with processor boundaries.}
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=\textwidth, keepaspectratio]{figs/topology_schematic.pdf}
+\caption{Schematic illustration of domain decomposition and communication in BOUT++ with \code{ixseps1 = ixseps2}.}
+\label{fig:topology_schematic}
+\end{figure} 
+\subsubsection{Implementations}
+
 \subsection{3D variables}
 
 BOUT++ was originally designed for tokamak simulations where the input equilibrium varies only in X-Y, and Z is used as
