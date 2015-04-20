@@ -12,11 +12,26 @@
  */
 class BoundaryRegionPar : public BoundaryRegionBase {
 
+  struct IndexPoint {
+    int jx;
+    int jy;
+    int jz;
+  };
+
+  struct RealPoint {
+    BoutReal s_x;
+    BoutReal s_y;
+    BoutReal s_z;
+  };
+
   struct Indices {
-    int x;
-    int y;
-    int z;
+    // Indices of the boundary point
+    IndexPoint index;
+    // Intersection with boundary in index space
+    RealPoint intersection;
+    // Distance to intersection
     BoutReal length;
+    // Angle between field line and boundary
     BoutReal angle;
   };
 
@@ -37,7 +52,9 @@ public:
     BoundaryRegionBase::isParallel = true;}
 
   /// Add a point to the boundary
-  void add_point(const int x, const int y, const int z, const BoutReal length, const BoutReal angle);
+  void add_point(const int jx, const int jy, const int jz,
+                 const BoutReal x, const BoutReal y, const BoutReal z,
+                 const BoutReal length, const BoutReal angle);
 
   void first();
   void next();
@@ -45,6 +62,7 @@ public:
 
   /// Index of the point in the boundary
   int x, y, z;
+  BoutReal s_x, s_y, s_z;
   BoutReal length;
   BoutReal angle;
 

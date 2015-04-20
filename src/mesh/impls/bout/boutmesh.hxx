@@ -83,11 +83,15 @@ class BoutMesh : public Mesh {
 
   BoutReal GlobalX(int jx) const;
   BoutReal GlobalY(int jy) const;
+  BoutReal GlobalX(BoutReal jx) const;
+  BoutReal GlobalY(BoutReal jy) const;
 
   void outputVars(Datafile &file);
 
   int XGLOBAL(int xloc) const;
   int YGLOBAL(int yloc) const;
+  int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
   // poloidal lowpass filtering for n=0 mode
   void slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy);

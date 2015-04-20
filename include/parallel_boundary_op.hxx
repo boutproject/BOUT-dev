@@ -59,6 +59,7 @@ protected:
   const ValueType value_type;
 
   BoutReal getValue(int x, int y, int z, BoutReal t);
+  BoutReal getValue(const BoundaryRegionPar &bndry, BoutReal t);
 
 };
 

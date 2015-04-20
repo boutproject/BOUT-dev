@@ -100,9 +100,31 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
   Coordinates& coord = *(mesh.coordinates());
 
+  // Vector in real space
+  struct RealVector {
+    BoutReal x;
+    BoutReal y;
+    BoutReal z;
+  };
+
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
     for(int y=mesh.ystart; y<=mesh.yend;y++) {
       for(int z=0;z<ncz;z++) {
+
+        // Dot product of two vectors
+        // Only needed in this function, so use a named lambda
+        // Defined inside loop to capture x, y, z
+        auto dot = [&](const RealVector &lhs, const RealVector &rhs) {
+          BoutReal result;
+          result = lhs.x*rhs.x*coord.g11(x, y)
+          + lhs.y*rhs.y*coord.g22(x, y)
+          + lhs.z*rhs.z*coord.g33(x, y);
+          result += (lhs.x*rhs.y + lhs.y*rhs.x)*coord.g12(x, y)
+          + (lhs.x*rhs.z + lhs.z*rhs.x)*coord.g13(x, y)
+          + (lhs.y*rhs.z + lhs.z*rhs.y)*coord.g23(x, y);
+
+          return result;
+        };
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
@@ -126,10 +148,31 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         //----------------------------------------
         // Boundary stuff
 
-        // Distances to intersections with boundaries
+        // Field line vector
+        RealVector b_hat = {t_x*coord.dx(x,y), coord.dy(x,y), t_z*coord.dz};
+        // Length of field line
+        BoutReal length = sqrt(dot(b_hat, b_hat));
+        // Normal to boundary
+        RealVector norm;
+        RealVector norm_x = {1., 0., 0.};
+        RealVector norm_y = {0., 1., 0.};
+        RealVector norm_z = {0., 0., 1.};
+
+        // Distance to intersection point
+        BoutReal s_intersect;
+        // Angle between field line and boundary
+        BoutReal angle;
+
+        // Distances to intersections with boundaries along y-axis
+        // for the three different boundaries
         BoutReal y_prime_x;
         BoutReal y_prime_y;
         BoutReal y_prime_z;
+        // Parameterised distance to intersection with boundary
+        // for the three different boundaries
+        BoutReal s_intersect_x;
+        BoutReal s_intersect_y;
+        BoutReal s_intersect_z;
 
         // Field line leaves through x boundary
         if (xt_prime(x,y,z) < 0 ||
@@ -138,6 +181,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
           BoutReal dx2 = coord.dx(x,y)/2.;
           BoutReal dy = coord.dy(x,y);
+
+          s_intersect_x = 1. / (2.*t_x);
+
           y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
         } else {
           x_boundary = false;
@@ -148,6 +194,8 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         if ((y + dir < 0 ||
              y + dir > mesh.GlobalNy - 1) && !yperiodic) {
           y_boundary = true;
+
+          s_intersect_y = 0.5;
 
           y_prime_y =  coord.dy(x,y) / 2.;
         } else {
@@ -162,6 +210,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
           BoutReal dz2 = coord.dz/2.;
           BoutReal dy = coord.dy(x,y);
+
+          s_intersect_z = 1. / (2.*t_z);
+
           y_prime_z =  dz2 * (dy / (t_z * coord.dz));
         } else {
           z_boundary = false;
@@ -203,8 +254,33 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         // If field line leaves the domain at this point, then add it
         // to the boundary
         if (x_boundary || y_boundary || z_boundary) {
+          // y_prime is set to that of the closest boundary, so set the other
+          // variables based on that
+          if (y_prime == y_prime_x) {
+            norm = norm_x;
+            s_intersect = s_intersect_x;
+          } else if (y_prime == y_prime_y) {
+            norm = norm_y;
+            s_intersect = s_intersect_y;
+          } else if (y_prime == y_prime_z) {
+            norm = norm_z;
+            s_intersect = s_intersect_z;
+          } else {
+            // Shouldn't reach here - boundary set, but y_prime not
+            // equal to a boundary y_prime
+            throw BoutException("Something weird happened in FCIMap...");
+          }
+
+          BoutReal s_x = x + s_intersect*t_x;
+          BoutReal s_y = y + s_intersect;
+          BoutReal s_z = z + s_intersect*t_z;
+          angle = asin( dot(norm, b_hat) / length );
+          // This would be correct, but need to work out correct modification to
+          // the boundary conditions to use it
+          // y_prime = s_intersect * length;
+
           boundary_mask[x][y][z] = true;
-          boundary->add_point(x, y, z, y_prime, 0.0);
+          boundary->add_point(x, y, z, s_x, s_y, s_z, y_prime, angle);
         }
 
         //----------------------------------------

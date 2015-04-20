@@ -31,7 +31,29 @@ BoutReal BoundaryOpPar::getValue(int x, int y, int z, BoutReal t) {
 
 }
 
-// void BoundaryOpPar::apply_ddt(Field3D &f)
+BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
+
+  BoutReal xnorm;
+  BoutReal ynorm;
+  BoutReal znorm;
+
+  BoutReal value;
+
+  switch (value_type) {
+  case GEN:
+    // Need to use GlobalX, except with BoutReal as argument...
+    xnorm = mesh->GlobalX(bndry.s_x);
+    ynorm = mesh->GlobalY(bndry.s_y);
+    znorm = bndry.s_z/(mesh->ngz-1);
+    return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
+  case FIELD:
+    value = (*field_values)(bndry.x,bndry.y,bndry.z);
+    return value;
+  case REAL:
+    return real_value;
+  }
+
+}
 
 //////////////////////////////////////////
 // Dirichlet boundary
@@ -68,7 +90,7 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
     int x = bndry->x; int y = bndry->y; int z = bndry->z;
 
     // Generate the boundary value
-    BoutReal value = getValue(x, y, z, t);
+    BoutReal value = getValue(*bndry, t);
 
     // Scale the field and normalise to the desired value
     BoutReal y_prime = bndry->length;

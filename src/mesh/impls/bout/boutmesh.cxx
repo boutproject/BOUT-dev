@@ -1598,6 +1598,12 @@ int BoutMesh::XGLOBAL(int xloc) const {
   return xloc + PE_XIND * MXSUB;
 }
 
+/// Returns the global X index given a local index
+int BoutMesh::XGLOBAL(BoutReal xloc, BoutReal &xglo) const {
+  xglo = xloc + PE_XIND * MXSUB;
+  return xglo;
+}
+
 /// Returns a local X index given a global index
 int BoutMesh::XLOCAL(int xglo) const {
   return xglo - PE_XIND * MXSUB;
@@ -1606,6 +1612,12 @@ int BoutMesh::XLOCAL(int xglo) const {
 /// Returns the global Y index given a local index
 int BoutMesh::YGLOBAL(int yloc) const {
   return yloc + PE_YIND*MYSUB - MYG;
+}
+
+/// Returns the global Y index given a local index
+int BoutMesh::YGLOBAL(BoutReal yloc, BoutReal &yglo) const {
+  yglo = yloc + PE_YIND*MYSUB - MYG;
+  return yglo;
 }
 
 /// Global Y index given local index and processor
@@ -2297,6 +2309,21 @@ BoutReal BoutMesh::GlobalX(int jx) const {
   return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) MX);
 }
 
+BoutReal BoutMesh::GlobalX(BoutReal jx) const {
+
+  // Get global X index as a BoutReal
+  BoutReal xglo;
+  XGLOBAL(jx, xglo);
+
+  if(symmetricGlobalX) {
+    // Symmetric X index, mainly for reconnection studies
+    //return ((BoutReal) XGLOBAL(jx)) / ((BoutReal) nx-1);
+    //jmad. With this definition the boundary sits dx/2 away form the first/last inner points
+    return ((BoutReal) (0.5 + xglo - ((BoutReal)(nx-MX))*0.5)) / ((BoutReal) MX);
+  }
+  return xglo / ((BoutReal) MX);
+}
+
 BoutReal BoutMesh::GlobalY(int jy) const {
   if(symmetricGlobalY) {
     BoutReal yi = YGLOBAL(jy);
@@ -2337,6 +2364,51 @@ BoutReal BoutMesh::GlobalY(int jy) const {
   //output.write("GlobalY: %d, %d, %d, %d -> %e\n", jy, YGLOBAL(jy), ly, nycore, ((BoutReal) ly) / ((BoutReal) nycore));
 
   return ((BoutReal) ly) / ((BoutReal) nycore);
+}
+
+BoutReal BoutMesh::GlobalY(BoutReal jy) const {
+
+  // Get global Y index as a BoutReal
+  BoutReal yglo;
+  YGLOBAL(jy, yglo);
+
+  if(symmetricGlobalY) {
+    BoutReal yi = yglo;
+    int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+    if(yi < ny_inner) {
+      yi -= jyseps1_1 + 0.5;
+    }else {
+      // Result in core between 0.5 and 1.0
+      yi -= jyseps1_1 + 0.5 + (jyseps1_2 - jyseps2_1);
+    }
+    return yi / nycore;
+  }
+
+  int nycore = (jyseps2_1 - jyseps1_1) + (jyseps2_2 - jyseps1_2);
+
+  if(MYPE_IN_CORE) {
+    // Turn yglo into an index over the core cells onyglo
+    if(yglo <= jyseps2_1) {
+      yglo -= jyseps1_1+1;
+    } else {
+      yglo -= jyseps1_1+1 + (jyseps1_2 - jyseps2_1);
+    }
+  } else {
+    // Not in core. Need to get the last "core" value
+    if(yglo <= jyseps1_1) {
+      // Inner lower leg
+      yglo = 0;
+    } else if((yglo > jyseps2_1) && (yglo <= jyseps1_2)) {
+      // Upper legs
+      yglo = jyseps2_1 - jyseps1_1;
+    } else if(yglo > jyseps2_2) {
+      // Outer lower leg
+      yglo = nycore;
+    }
+  }
+
+  return yglo / ((BoutReal) nycore);
 }
 
 void BoutMesh::outputVars(Datafile &file) {
