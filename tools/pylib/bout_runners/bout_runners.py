@@ -15,7 +15,7 @@ from builtins import object
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '0.772beta'
-__date__    = '23.03.2015'
+__date__    = '22.04.2015'
 
 import textwrap
 import os
@@ -27,7 +27,7 @@ import datetime
 import math
 from numpy import logspace
 import numpy as np
-from subprocess import Popen, PIPE
+from subprocess import check_output
 from boututils import shell, launch, getmpirun
 from bout_runners.bout_plotters import convergence_plotter,\
                                        solution_plotter,\
@@ -36,9 +36,11 @@ from bout_runners.common_bout_functions import create_folder,\
                                                find_variable_in_BOUT_inp,\
                                                warning_printer,\
                                                check_for_plotters_errors,\
-                                               wait_for_runs_to_finish,\
+                                               clean_up_runs,\
                                                message_chunker
 
+# FIXME: qsub does not always delete the clean-up files??
+#        Fixed for basic qsub (test it), fix for the rest
 # TODO: Make it possible to give a function to the waiting routine in
 #       qsub runners, so that it is possible to give a function which
 #       will be run when a job has completed
@@ -56,8 +58,6 @@ from bout_runners.common_bout_functions import create_folder,\
 #       to the simulation folder
 # TODO: When doing a convergence run: Let nx, ny and MZ be set
 #       independently (as shown in Salari and Knupp)
-# Consider: Write a temporary shell script file from job_string, and
-#           delete it afterwards
 
 #{{{demo
 def demo(argument = None, plot_type = False, convergence_type = False):
@@ -138,7 +138,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
                         " the class/function. The docstring can be read in")
         for message in messages:
             print(normal_text_wrapper.fill(message))
-    
+
         messages = []
         messages.append("1) The source code")
         messages.append("2) By importing the function/class in an"+\
@@ -173,7 +173,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
 
         return
 #}}}
- 
+
 #{{{ Lists of argument and kwargs possibilities
     possible_classes = [\
         'basic_runner',\
@@ -476,7 +476,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
                    " 'value':{'fluid:heat_flux':[2,3],"+\
                    " 'fluid:viscosity':[1,2,3]}}\n"
         message += "    my_class_instance.restart = False\n"
-       
+
         if (plot_type == 'solution_plot' or\
            plot_type == 'solution_and_error_plot') and\
            'diffusion2' in example_folder:
@@ -526,7 +526,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
                                 " BOUT++ manual.")
             elif argument == 'nproc':
                 messages.append("Must be given as a number. Determines"+\
-                                " the number in") 
+                                " the number in")
                 messages.append("mpirun -np=number ...")
             elif argument == 'methods':
                 messages.append("Must be given as a dictionary.")
@@ -634,7 +634,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
             elif argument == 'queue':
                 messages.append("Specify the queue system to submit the"+\
                                 " job to.")
-        
+
         # Get info about possible_sol_plotter_kwargs arguments
         elif argument in possible_sol_plotter_kwargs:
             messages.append("Additional keyword used in "+\
@@ -705,7 +705,7 @@ class basic_runner(object):
 
     By default self.directory = 'data' and self.nproc = 1.
 
-    self.program_name is by default set to the same name as any .o files in the 
+    self.program_name is by default set to the same name as any .o files in the
     folder where an instance of the object is created. If none is found
     the creator tries to run make. If no .o files are found then,
     self.program_name is set to False.
@@ -714,7 +714,7 @@ class basic_runner(object):
 
     The data members will override the corresponding options given in
     self.directory/BOUT.inp.
-    
+
     Run demo() for examples."""
 #}}}
 
@@ -736,17 +736,17 @@ class basic_runner(object):
 
         # Member functions related to keyword options which can be given
         # in BOUT++
-        self.solvers    = solvers   
-        self.nproc      = nproc     
-        self.methods    = methods   
-        self.grids      = grids     
-        self.directory  = directory 
-        self.nout       = nout      
-        self.timestep   = timestep  
-        self.MXG        = MXG       
-        self.MYG        = MYG       
+        self.solvers    = solvers
+        self.nproc      = nproc
+        self.methods    = methods
+        self.grids      = grids
+        self.directory  = directory
+        self.nout       = nout
+        self.timestep   = timestep
+        self.MXG        = MXG
+        self.MYG        = MYG
         self.additional = additional
-        self.restart    = restart   
+        self.restart    = restart
 
         # self.warnings will be filled with eventual warnings which will
         # be printed when the destructor is called
@@ -783,7 +783,7 @@ class basic_runner(object):
         self.MPIRUN     = getmpirun()
 
         # The dmp_folder is the the folder where the runs are stored
-        # It will be set by self.prepare_dmp_folder 
+        # It will be set by self.prepare_dmp_folder
         self.dmp_folder = False
 
         # The run type is going to be written in the run.log file
@@ -812,10 +812,10 @@ class basic_runner(object):
         # check for finished runs and change the status of the runs to
         # 'done' (for more info see the qsub_runner class)
         self.run_groups[self.group_no] ={'dmp_folder':[], 'job_status':[]}
-#}}}        
+#}}}
 
 # The destructor
-#{{{__del__ 
+#{{{__del__
     def __del__(self):
         """The destructor will print all the error messages (if any)"""
         if len(self.warnings) == 0:
@@ -829,10 +829,10 @@ class basic_runner(object):
             for warning in self.warnings:
                 print(warning + '\n')
             print('\n'*3)
-#}}}            
+#}}}
 
 # The main function
-#{{{run    
+#{{{run
     def run(self, remove_old = False, **kwargs):
         """Makes a run for each of the combination given by the member
         data"""
@@ -943,7 +943,7 @@ class basic_runner(object):
             header = '    '.join(header)
             f.write('#' + header + '\n')
             f.close()
-    
+
             # Preparation of the run
             print("\nRunning with inputs from '%s'" %self.directory)
         return run_log
@@ -1032,7 +1032,7 @@ class basic_runner(object):
         if ('convergence_type' in list(kwargs.keys())) == False:
             all_combinations = self.list_of_combinations(all_possibilities)
 
-        # The special way of finding all combinations 
+        # The special way of finding all combinations
         else:
             if kwargs['convergence_type'] == 'spatial':
                 # If we want to check for spatial convergence, we increase
@@ -1063,7 +1063,7 @@ class basic_runner(object):
                 # nx = number of inner points + number of guard cells
                 #      number of guard cells = 2*MXG
                 # ny = number of inner points
-                # MZ = number of inner points + 1 extra point 
+                # MZ = number of inner points + 1 extra point
                 #      (due to  historical reasons)
 
                 # Therefore, for each combination in all_combinations, we will
@@ -1102,7 +1102,7 @@ class basic_runner(object):
                     # and we need to set the MZ range)
                     MZ = find_variable_in_BOUT_inp(self.directory, 'MZ')
                     if (type(MZ) == int) and (MZ > 3):
-                        
+
                         # Find inner_points from either ny or nx
                         if 'ny' in grid_keys:
                             the_direction = 'mesh:ny'
@@ -1174,7 +1174,7 @@ class basic_runner(object):
                         new_combinations.append(\
                             combination + ' ' + grid_spacing)
                 # Make all_combinations = new_combinations
-                all_combinations = new_combinations 
+                all_combinations = new_combinations
 
         return all_combinations
 #}}}
@@ -1190,7 +1190,7 @@ class basic_runner(object):
         # Copy the input file into this folder
         command = 'cp ' + self.directory + '/BOUT.inp ' + self.dmp_folder
         shell(command)
-    
+
         return
 #}}}
 
@@ -1240,14 +1240,14 @@ class basic_runner(object):
 #{{{append_run_log
     def append_run_log(self, start, run_log, run_no, run_time):
         """Appends the run_log"""
-    
+
         # Convert seconds to H:M:S
         run_time = str(datetime.timedelta(seconds=run_time))
-    
+
         start_time = (str(start.year) + '-' + str(start.month) + '-' +\
                       str(start.day) + '.' + str(start.hour) + ":" +\
                       str(start.minute) + ':' + str(start.second))
-       
+
         # If the run is restarted with initial values from the last run
         if self.restart:
             dmp_line = self.dmp_folder + '-restart-'+self.restart
@@ -1302,7 +1302,7 @@ class basic_runner(object):
             raise RuntimeError("No BOUT.inp files found in " +\
                                 self.directory)
 
-        # Check if the solvers are set correctly                               
+        # Check if the solvers are set correctly
         if self.solvers != False and type(self.solvers) != list:
             self.error_raiser("self.solvers")
 
@@ -1351,13 +1351,13 @@ class basic_runner(object):
         methods=[]
         guard_nout_timestep = []
         grid_folder = []
-        rm=[] 
+        rm=[]
         directions = ['ddx', 'ddy', 'ddz']
         grids = ['nx', 'ny', 'MZ']
-        
+
         for expression in combination:
             # Set solver, MYG, MXG, nout and timestep to be removed from
-            # the combination  string 
+            # the combination  string
             if 'solver' in expression:
                 # See http://www.tutorialspoint.com/python/python_reg_expressions.htm
                 # for regex explanation
@@ -1372,7 +1372,7 @@ class basic_runner(object):
             elif 'timestep' in expression and len(self.timestep) == 1:
                 # Remove this from the name if it doesn't change
                 rm. append(expression)
-            # The following could be nicely done with 
+            # The following could be nicely done with
             # elif any(direction in expression for direction in directions):
             # however, any(iterable) has a strange behavior in ipython,
             # therefore a more brute force method is used
@@ -1410,7 +1410,7 @@ class basic_runner(object):
             combination_folder = solver + '/methods_unchanged'
         else:
             combination_folder = solver + '/' + methods
-        
+
         # Append the folder path if not empty
         if additional_folder != '':
             combination_folder += '/' + additional_folder
@@ -1422,7 +1422,7 @@ class basic_runner(object):
         # Replace unwanted characters
         combination_folder = combination_folder.replace('=','-')
         combination_folder = combination_folder.replace(':','-')
-        
+
         return combination_folder
 #}}}
 
@@ -1529,8 +1529,8 @@ class basic_runner(object):
 
 #{{{list_of_combinations
     def list_of_combinations(self, input_list):
-        """ Takes a list with lists as element as an input. 
-        Returns a list of all combinations between the elements of the 
+        """ Takes a list with lists as element as an input.
+        Returns a list of all combinations between the elements of the
         lists of the input list """
 
         all_combinations_as_tuple = list(itertools.product(*input_list))
@@ -1571,7 +1571,7 @@ class basic_runner(object):
         # If the run is restarted with initial values from the last run
         if self.restart != False:
             if self.restart == 'overwrite':
-                arg += ' restart' 
+                arg += ' restart'
             elif self.restart == 'append':
                 arg += ' restart append'
             else:
@@ -1659,7 +1659,7 @@ class run_with_plots(basic_runner):
                                              additional = additional,\
                                              restart    = restart,\
                                              **kwargs)
-          
+
         if plot_type == False:
             raise TypeError ("Keyword argument 'plot_type' must be given"+\
                              " when running run_with_plots")
@@ -1678,7 +1678,7 @@ class run_with_plots(basic_runner):
             warning_printer(message)
             import matplotlib.pyplot as plt
             plt.switch_backend('Agg')
-#}}}        
+#}}}
 
 # Functions called directly by the main function
 #{{{
@@ -1695,7 +1695,7 @@ class run_with_plots(basic_runner):
         # to do is to create an instance of the class
         plotter_error_checker =\
            check_for_plotters_errors(self.plot_type, grids=self.grids,
-                                     timestep=self.timestep, **kwargs) 
+                                     timestep=self.timestep, **kwargs)
 #}}}
 
 #{{{post_run
@@ -1804,7 +1804,7 @@ class run_with_plots(basic_runner):
         make_my_convergence_plots.collect_and_plot()
 #}}}
 
-#{{{set_nx_range                    
+#{{{set_nx_range
     def set_nx_range(self, grid_keys, inner_points, ranges):
         """Append ranges (a list filled with the number of grid points) with
         the grid points in nx (given from the list 'inner ranges')"""
@@ -1829,7 +1829,7 @@ class run_with_plots(basic_runner):
         return ranges
 #}}}
 
-#{{{set_ny_range                    
+#{{{set_ny_range
     def set_ny_range(self, grid_keys, inner_points, ranges):
         """Append ranges (a list filled with the number of grid points) with
         the grid points in ny (given from the list 'inner_points')"""
@@ -1841,7 +1841,7 @@ class run_with_plots(basic_runner):
         return ranges
 #}}}
 
-#{{{set_nz_range                    
+#{{{set_nz_range
     def set_MZ_range(self, grid_keys, inner_points, ranges):
         """Append ranges (a list filled with the number of grid points) with
         the grid points in MZ (given from the list 'inner_points')"""
@@ -1882,7 +1882,7 @@ class run_with_plots(basic_runner):
             # have to be set to False if not given by the user input)
             plot_times, number_of_overplots =\
                 self.get_plot_times_and_number_of_overplots(**kwargs)
-           
+
             if self.plot_type == 'solution_plot':
                 # Call the solution plotter
                 self.solution_plotter(\
@@ -1892,7 +1892,7 @@ class run_with_plots(basic_runner):
                     collect_x_ghost_points = collect_x_ghost_points,\
                     collect_y_ghost_points = collect_y_ghost_points,\
                     variables = kwargs['variables'],\
-                    plot_direction = kwargs['plot_direction'])          
+                    plot_direction = kwargs['plot_direction'])
             elif self.plot_type == 'solution_and_error_plot':
                 # Call the solution and error plotter
                 self.solution_and_error_plotter(\
@@ -1915,7 +1915,7 @@ class run_with_plots(basic_runner):
             raise TypeError ("The given 'plot_type' '" + str(self.plot_type) +\
                              "' is invalid. See run_with_plots"+\
                              " documentation for valid possibilities.")
-#}}}                             
+#}}}
 #}}}
 #}}}
 
@@ -1985,11 +1985,13 @@ class basic_qsub_runner(basic_runner):
         # A string which will be used to write a self deleting python
         # script
         self.python_tmp = ''
-#}}}        
+        # The jobid returned from the qsub
+        self.qsub_id = None
+#}}}
 
 # The run_driver
 #{{{run_driver
-    def run_driver(self, do_run, combination, run_no, run_log): 
+    def run_driver(self, do_run, combination, run_no, run_log):
         """The machinery which actually performs the run"""
         if do_run:
             job_name = self.single_submit(combination, run_no)
@@ -2020,17 +2022,17 @@ class basic_qsub_runner(basic_runner):
         # submitted
         job_name, job_string =\
             self.get_job_string(run_no, combination)
- 
+
         # The submission
-        self.pipe_to_qsub(job_string)
+        self.qsub_id = self.submit_to_qsub(job_string)
         return job_name
 #}}}
 
 #{{{post_run
     def post_run(self):
         """Creates a self deleting python scripts which calls
-        wait_for_runs_to_finish.
-        
+        clean_up_runs.
+
         If we would not submit this a job, it would have caused a bottle
         neck if the driver running the basic_runner class would iterate
         over several folders."""
@@ -2047,9 +2049,10 @@ class basic_qsub_runner(basic_runner):
         # Creating the job string
         job_name = 'clean_up_' + self.run_type + '_'+ start_time
 
-        # Get the core of the job_string
+        # Get the core of the job_string (note that we only need to use
+        # one node and one processor for this)
         job_string = self.create_qsub_core_string(\
-            job_name, self.nodes, self.ppn, self.walltime,\
+            job_name, '1', '1', self.walltime,\
             folder = self.directory + '/qsub_output/')
         # We will write a python script which calls the
         # relevant bout_plotter
@@ -2058,10 +2061,10 @@ class basic_qsub_runner(basic_runner):
         self.python_tmp =\
             'import os\n' +\
             'from bout_runners.common_bout_functions import '+\
-            'wait_for_runs_to_finish\n'
-        # Call wait_for_runs_to_finish
+            'clean_up_runs\n'
+        # Call clean_up_runs
         self.python_tmp +=\
-            "wait_for_runs_to_finish("+\
+            "clean_up_runs("+\
             str(self.run_groups) + ","+\
             "'" + str(self.directory)  + "')\n"
         # When the script has run, it will delete itself
@@ -2078,7 +2081,7 @@ class basic_qsub_runner(basic_runner):
 
         # Submit the job
         print('\nSubmitting a script which waits for the runs to finish')
-        self.pipe_to_qsub(job_string)
+        self.submit_to_qsub(job_string, dependent_job = self.qsub_id)
 #}}}
 #}}}
 
@@ -2137,13 +2140,13 @@ class basic_qsub_runner(basic_runner):
                     ('.' in variable) == False:
                         raise ValueError ("self.mail must be an email"\
                                           "address")
-#}}}        
+#}}}
 
 #{{{get_job_string
     def get_job_string(self, run_no, combination):
         """Make a string which will act as a shell script when sent to
         qsub."""
-        
+
         # Find the combination name
         # Split the name to a list
         combination_name = combination.split(' ')
@@ -2156,11 +2159,11 @@ class basic_qsub_runner(basic_runner):
         combination_name = combination_name.replace(':','')
         combination_name = combination_name.replace('=','-')
 
-        # Name of job 
+        # Name of job
         job_name = combination_name + '_' + self.directory + '_' + str(run_no)
 
         command = self.get_command_to_run( combination )
-        command = 'mpirun -np ' + str(self.nproc) + ' ' + command 
+        command = 'mpirun -np ' + str(self.nproc) + ' ' + command
 
         # Print the command
         print(command + '\n')
@@ -2192,7 +2195,7 @@ class basic_qsub_runner(basic_runner):
         # run_log.txt
         # This could be done with lsof command as described in
         # http://askubuntu.com/questions/14252/how-in-a-script-can-i-determine-if-a-file-is-currently-being-written-to-by-ano
-        # However, lsof is not available on all clusters 
+        # However, lsof is not available on all clusters
         job_string += "echo '" +\
                       start_time + " "*4 +\
                       self.run_type + " "*4 +\
@@ -2234,7 +2237,7 @@ class basic_qsub_runner(basic_runner):
         job_string += '#PBS -l nodes=' + nodes + ':ppn=' + ppn  + '\n'
         # Wall time, must be in format HOURS:MINUTES:SECONDS
         job_string += '#PBS -l walltime=' + walltime + '\n'
-        if self.queue != False:    
+        if self.queue != False:
             job_string += '#PBS -q ' + self.queue + '\n'
         job_string += '#PBS -o ' + folder + job_name + '.log' + '\n'
         job_string += '#PBS -e ' + folder + job_name + '.err' + '\n'
@@ -2249,20 +2252,37 @@ class basic_qsub_runner(basic_runner):
         return job_string
 #}}}
 
-#{{{pipe_to_qsub
-    def pipe_to_qsub(self, job_string):
-        """Creates a qsub process, and pipes a string to qsub """
-        # Open a pipe to the qsub
-        process = Popen(['qsub'], stdin = PIPE)
-        # Put in the script
-        # Old solution: process.communicate(job_string)
-        # New solution on next 2 lines (py2 and py3 compatible):
-        # Consider FIXME: Make the string to a temporary shell script which is
-        #                 later deleted
-        process.stdin.write(bytes(job_string + "\n", "ascii"))
-        process.stdin.flush()
-        # Close the pipe
-        process.stdin.close()
+#{{{submit_to_qsub
+    def submit_to_qsub(self, job_string, dependent_job=None):
+        """Saves the job_string as a shell script, submits it and
+        deletes it. Returns the output from qsub as a string"""
+        # We will use the subprocess.check_output in order to get the
+        # jobid number
+        # http://stackoverflow.com/questions/2502833/store-output-of-subprocess-popen-call-in-a-string
+
+        # Create the name of the temporary shell script
+        # Get the start_time
+        start_time = self.get_start_time()
+        script_name = 'tmp_'+start_time+'.sh'
+
+        # Save the string as a script
+        with open(script_name, "w") as shell_script:
+                shell_script.write(job_string)
+
+        if dependent_job==None:
+            output = check_output(["qsub", "./"+script_name])
+        else:
+            # http://stackoverflow.com/questions/19517923/how-to-wait-for-a-torque-job-array-to-complete
+            output = check_output(["qsub", "depend=afterok:"+dependent_job,\
+                                    "./" + script_name])
+        # Trims the end of the output string
+        output = output.strip(' \t\n\r')
+
+        # Delete the shell script
+        command = "rm -f "+script_name
+        shell(command)
+
+        return output
 #}}}
 #}}}
 #}}}
@@ -2284,7 +2304,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 #}}}
 
 # The constructor
-#{{{__init__    
+#{{{__init__
     def __init__(self,\
                  plot_type  = False,\
                  extension  = 'png',\
@@ -2374,7 +2394,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
         walltime = [int(element) for element in walltime]
         # Add an hour to the 'hours'
         walltime[0] += 1
-        # Convert walltime back to strings 
+        # Convert walltime back to strings
         walltime = [str(element) for element in walltime]
         # Check that the lenght is two (format needs to be HH:MM:SS)
         for nr in range(len(walltime)):
@@ -2393,7 +2413,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 
         # First line of the script
         self.python_tmp = 'import os\n'
-       
+
         # Append self.python_tmp with the right plotter
         self.plotter_chooser(**kwargs)
 
@@ -2410,7 +2430,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 
         # Submit the job
         print('\nSubmitting a job which calls ' + self.plot_type)
-        self.pipe_to_qsub(job_string)
+        self.submit_to_qsub(job_string)
 #}}}
 #}}}
 
