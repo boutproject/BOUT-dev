@@ -173,3 +173,60 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
   // Open surfaces. Not sure what to do, so set to zero
   return 0.0;
 }
+
+////////////////////////////////////////////////////////////////
+
+FieldMixmode::FieldMixmode(FieldGenerator* a, BoutReal seed) : arg(a) {
+  // Calculate the phases -PI to +PI
+  // using genRand [0,1]
+  
+  for(int i=0;i<14;i++)
+    phase[i] = PI * (2.*genRand(seed + i) - 1.);
+}
+
+FieldGenerator* FieldMixmode::clone(const list<FieldGenerator*> args) {
+  BoutReal seed = 0.5;
+  switch(args.size()) {
+  case 2: {
+    // Second optional argument is the seed, which should be a constant
+    seed = args.back()->generate(0,0,0,0);
+  } // Fall through
+  case 1: {
+    return new FieldMixmode(args.front(), seed);
+  }
+  };
+  
+  throw ParseException("mixmode function must have one or two arguments");
+}
+
+BoutReal FieldMixmode::generate(double x, double y, double z, double t) {
+  BoutReal result = 0.0;
+  
+  // A mixture of mode numbers
+  for(int i=0;i<14;i++) {
+    // This produces a spectrum which is peaked around mode number 4
+    result += ( 1./SQ(1. + abs(i - 4)) ) * 
+      cos(i * arg->generate(x,y,z,t) + phase[i]);
+  }
+  
+  return result;
+}
+
+BoutReal FieldMixmode::genRand(BoutReal seed) {
+  // Make sure seed is 
+  if(seed < 0.0)
+    seed *= -1;
+  
+  // Round the seed to get the number of iterations
+  int niter = 11 + (23 + ROUND(seed)) % 79;
+  
+  // Start x between 0 and 1
+  const BoutReal A = 0.01, B = 1.23456789;
+  BoutReal x = (A + fmod(seed,B)) / (B - 2.*A);
+  
+  // Iterate logistic map
+  for(int i=0;i!=niter;++i)
+    x = 3.99 * x * (1. - x);
+  
+  return x;
+}

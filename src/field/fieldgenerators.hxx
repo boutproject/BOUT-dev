@@ -250,4 +250,22 @@ private:
   int ball_n;   // How many times around in each direction
 };
 
+//////////////////////////////////////////////////////////
+// Mix of mode numbers
+// This is similar to BOUT initialisation option 3
+
+class FieldMixmode : public FieldGenerator {
+public:
+  FieldMixmode(FieldGenerator* a = NULL, BoutReal seed = 0.5);
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(double x, double y, double z, double t);
+private:
+  /// Generate a random number between 0 and 1
+  /// given an arbitrary seed value
+  BoutReal genRand(BoutReal seed);
+  
+  FieldGenerator *arg;
+  BoutReal phase[14];
+};
+
 #endif // __FIELDGENERATORS_H__

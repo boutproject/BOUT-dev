@@ -79,6 +79,9 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   
   // Ballooning transform
   addGenerator("ballooning", new FieldBallooning(fieldmesh));
+  
+  // Mixmode function
+  addGenerator("mixmode", new FieldMixmode());
 }
 
 FieldFactory::~FieldFactory() {
