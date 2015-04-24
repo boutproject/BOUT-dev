@@ -88,8 +88,8 @@
 \begin{document}
 
 \title{BOUT++ Users Manual}
-\author{B.Dudson, University of York}
-\date{July 14, 2013\\Updated\\ February 25, 2015}
+\author{B.Dudson (Uni.York) and BOUT++ contributors}
+\date{Last updated April 24, 2015}
 \maketitle
 
 \tableofcontents
@@ -1752,76 +1752,6 @@ is run (i.e. running ``\code{ls ./data/BOUT.inp}'' gives the options file)
 grid = "data/cbm18_8_y064_x260.pdb"
 \end{lstlisting}
 
-\subsection{Time integration solver}
-\label{sec:timeoptions}
-\index{time integration}
-BOUT++ can be compiled with several different time-integration solvers
-% 2015.02.17 loeiten: commented this as the section does not exist
-%(see section~\ref{sec:solverlibrary})
-,
-and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
-
-The solver library used is set using the \code{solver:type} option, so either in BOUT.inp:
-\begin{lstlisting}[language=bash,numbers=none]
-[solver]
-type = rk4  # Set the solver to use
-\end{lstlisting}
-or on the command line by adding \code{solver:type=pvode} for example:
-\begin{lstlisting}[language=bash,numbers=none]
-mpirun -np 4 ./2fluid solver:type=rk4
-\end{lstlisting}
-{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver:type =pvode} won't work (probably).
-Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
-options needed to make the solver available.
-\begin{table}[htb!]
-\centering
-\caption{Available time integration solvers}
-\label{tab:solvers}
-\begin{tabular}{c | c | c}
-\hline
-Name & Description & Compile options \\
-\hline
-euler & Euler explicit method & Always available \\
-rk4 & Runge-Kutta 4th-order explicit method & Always available \\
-karniadakis & Karniadakis explicit method & Always available \\
-pvode & 1998 PVODE with BDF method & Always available \\
-cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
-ida & SUNDIALS IDA. DAE solver & --with-ida \\
-petsc & PETSc TS methods & --with-petsc \\
-\hline
-\end{tabular}
-\end{table}
-
-Each solver can have its own settings which work in slightly different ways, but some common
-settings and which solvers they are used in are given in table~\ref{tab:solveropts}.
-\begin{table}[htb!]
-\centering
-\caption{Time integration solver options}
-\label{tab:solveropts}
-\begin{tabular}{c | c | c}
-\hline
-Option & Description & Solvers used \\
-\hline
-atol & Absolute tolerance & rk4, pvode, cvode, ida \\
-rtol & Relative tolerance & rk4, pvode, cvode, ida \\
-mxstep & Maximum internal steps  & rk4 \\
-       & per output step & \\
-max\_timestep & Maximum timestep & rk4, cvode \\
-timestep & Starting timestep & rk4, karniadakis, euler \\
-adaptive & Adapt timestep? (Y/N) & rk4 \\
-use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
-mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
-mukeep, mlkeep & & \\
-maxl & & \\
-use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
-adams\_moulton & Use Adams-Moulton method & cvode \\
- & rather than BDF & \\
-diagnose & Collect and print additional diagnostics & cvode \\
-\hline
-\end{tabular}
-\end{table}
-The most commonly changed options are the  absolute and relative solver tolerances,
-\code{ATOL} and \code{RTOL} which should be varied to check convergence.
 
 \subsection{Input and Output}
 \label{sec:iooptions}
@@ -1928,7 +1858,7 @@ Another way is to look at the output logs: when BOUT++ is run, (nearly) all opti
 out with their default values. This won't provide much explanation of what they do, but may be useful anyway.
 See section~\ref{sec:output} for more details.
 
-\subsection{Variable initialisation}
+\section{Variable initialisation}
 \index{variable initialisation}
 Each variable being evolved has its own section, with the same name as the
 output data. For example, the high-$\beta$ model has variables ``P'',
@@ -2076,8 +2006,726 @@ H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 \end{tabular}
 \end{table}
 
+\index{variable initialisation}
+\subsection{\texttt{FieldFactory} class}
 
-\subsection{Boundary conditions}
+This class provides a way to generate a field with a specified form. It implements
+a recursive descent parser to turn a string containing something like
+\lstinline!"gauss(x-0.5,0.2)*gauss(y)*sin(3*z)"! into values in a \lstinline!Field3D!
+or \lstinline!Field2D! object. Examples are given in the \texttt{test-fieldfactory} example:
+\index{FieldFactory}
+\begin{lstlisting}
+FieldFactory f;
+Field2D b = f.create2D("1 - x");
+Field3D d = f.create3D("gauss(x-0.5,0.2)*gauss(y)*sin(z)");
+\end{lstlisting}
+
+This is done by creating a tree of \lstinline!FieldGenerator! objects
+which then generate the field values: \index{FieldGenerator}
+\begin{lstlisting}[firstnumber=49]
+class FieldGenerator {
+ public:
+  virtual ~FieldGenerator() { }
+  virtual FieldGenerator* clone(const list<FieldGenerator*> args) {return NULL;}
+  virtual BoutReal generate(int x, int y, int z) = 0;
+};
+\end{lstlisting}
+All classes inheriting from \lstinline!FieldGenerator! must implement a
+\lstinline!generate! function, which returns the value
+at the given \lstinline!(x,y,z)! position. Classes should also implement a
+\lstinline!clone! function, which takes a list of arguments and creates a new
+instance of its class. This takes as input a list of other \lstinline!FieldGenerator! objects,
+allowing a variable number of arguments. 
+
+The simplest generator is a fixed numerical value, which is represented
+by a \lstinline!FieldValue! object: \index{FieldValue}
+\begin{lstlisting}[firstnumber=59]
+class FieldValue : public FieldGenerator {
+ public:
+  FieldValue(BoutReal val) : value(val) {}
+  BoutReal generate(int x, int y, int z) { return value; }
+ private:
+  BoutReal value;
+};
+\end{lstlisting}
+
+\subsection{Adding a new function}
+
+To add a new function to the FieldFactory, a new \lstinline!FieldGenerator! class
+must be defined. Here we will use the example of the \lstinline!sinh! function, implemented
+using a class \lstinline!FieldSinh!. This takes a single argument as input, but
+\lstinline!FieldPI! takes no arguments, and \lstinline!FieldGaussian! takes either one or two.
+Study these after reading this to see how these are handled.
+
+First, edit \file{include/field\_factory.hxx} and add a class definition:
+\begin{lstlisting}[firstnumber=122]
+class FieldSinh : public FieldGenerator {
+ public:
+  FieldSinh(FieldGenerator* g) : gen(g) {}
+  ~FieldSinh() {if(gen) delete gen;}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(int x, int y, int z);
+ private:
+  FieldGenerator *gen;
+};
+\end{lstlisting}
+
+The \lstinline!gen! member is used to store the input argument, and to make sure it's deleted
+properly we add some code to the destructor. The constructor takes a single input, the \lstinline!FieldGenerator! argument to the \lstinline!sinh! function, which is stored in the member \lstinline!gen!.
+
+Next edit \file{src/field/field\_factory.cxx} and add the implementation of the \lstinline!clone! and
+\lstinline!generate! functions:
+\begin{lstlisting}[firstnumber=100]
+FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 1) {
+    output << "FieldFactory error: Incorrect number of arguments to sinh function. Expecting 1, got " << args.size() << endl;
+    return NULL;
+  }
+  
+  return new FieldSinh(args.front());
+}
+
+BoutReal FieldSinh::generate(int x, int y, int z) {
+  return sinh(gen->generate(x,y,z));
+}
+\end{lstlisting}
+
+The \lstinline!clone! function first checks the number of arguments using \lstinline!args.size()!. This
+is used in \lstinline!FieldGaussian! to handle different numbers of input, but in this case we 
+print an error message and return \lstinline!NULL! if the number of inputs isn't one. \lstinline!clone! then creates
+a new \lstinline!FieldSinh! object, passing the first argument (\lstinline!args.front()!) to the constructor (which
+then gets stored in the \lstinline!gen! member variable). 
+
+The \lstinline!generate! function for \lstinline!sinh! just gets the value of the input by calling
+\lstinline!gen->generate(x,y,z)!, calculates \lstinline!sinh! of it and returns the result.
+
+The \lstinline!clone! function means that the parsing code can make copies of any \lstinline!FieldGenerator! class
+if it's given a single instance to start with. The final step is therefore to give the \lstinline!FieldFactory! 
+class an instance of this new generator. Edit the \lstinline!FieldFactory! constructor \lstinline!FieldFactory::FieldFactory()! in \file{src/field/field\_factory.cxx} and add the line:
+\begin{lstlisting}[firstnumber=196]
+addGenerator("sinh", new FieldSinh(NULL));
+\end{lstlisting}
+
+That's it! This line associates the string \lstinline!"sinh"! with a \lstinline!FieldGenerator!. Even
+though \lstinline!FieldFactory! doesn't know what type of \lstinline!FieldGenerator! it is, it can make more copies
+by calling the \lstinline!clone! member function. This is a useful technique for polymorphic objects in C++ called the
+``Virtual Constructor'' idiom.
+
+\subsection{Parser internals}
+
+When a \lstinline!FieldGenerator! is added using the \lstinline!addGenerator! function,
+it is entered into a \lstinline!std::map! which maps strings to \lstinline!FieldGenerator!
+objects (\file{include/field\_factory.hxx}):
+
+\begin{lstlisting}[firstnumber=223]
+map<string, FieldGenerator*> gen;
+\end{lstlisting}
+
+Parsing a string into a tree of \lstinline!FieldGenerator! objects is done by first splitting the string up
+into separate tokens like operators like '*', brackets '(', names like 'sinh' and so on, then 
+recognising patterns in the stream of tokens. Recognising tokens is done in \file{src/field/field\_factory.cxx}:
+\begin{lstlisting}[firstnumber=259]
+char FieldFactory::nextToken() {
+ ...
+\end{lstlisting}
+
+This returns the next token, and setting the variable \lstinline!char curtok! to the same value. 
+This can be one of:
+\begin{itemize}
+\item -1 if the next token is a number. The variable \lstinline!BoutReal curval! is set to
+  the value of the token
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything which starts with a letter, and
+  contains only letters, numbers, and underscores. The string is stored in the variable \lstinline!string curident!. 
+\item 0 to mean end of input
+\item The character if none of the above. Since letters and numbers are taken care of (see above), this includes
+  brackets and operators like '+' and '-'.
+\end{itemize}
+
+The parsing stage turns these tokens into a tree of \lstinline!FieldGenerator! objects, starting
+with the \lstinline!parse()! function
+\begin{lstlisting}[firstnumber=484]
+FieldGenerator* FieldFactory::parse(const string &input) {
+   ...
+\end{lstlisting}
+which puts the input string into a stream so that \lstinline!nextToken()! can use it, then
+calls the \lstinline!parseExpression()! function to do the actual parsing:
+\begin{lstlisting}[firstnumber=477]
+FieldGenerator* FieldFactory::parseExpression() {
+   ...
+\end{lstlisting}
+
+This breaks down expressions in stages, starting with writing every expression as
+\begin{verbatim}
+expression := primary [ op primary ]
+\end{verbatim}
+i.e. a primary expression, and optionally an operator and another primary expression. Primary
+expressions are handled by the \lstinline!parsePrimary()! function, so first \lstinline!parsePrimary()! is called, 
+and then \lstinline!parseBinOpRHS! which checks if there is an operator, and if so calls \lstinline!parsePrimary()! to
+parse it. This code also takes care of operator precedence by keeping track of the precedence
+of the current operator. Primary expressions are then further broken down and can consist of either
+a number, a name (identifier), a minus sign and a primary expression, or brackets around an  expression:
+\begin{verbatim}
+primary := number
+        := identifier
+        := '-' primary
+        := '(' expression ')'
+        := '[' expression ']'
+\end{verbatim}
+The minus sign case is needed to handle the unary minus e.g. \lstinline!"-x"!. Identifiers are handled
+in \lstinline!parseIdentifierExpr()! which handles either variable names, or functions
+\begin{verbatim}
+identifier := name
+           := name '(' expression [ ',' expression [ ',' ... ] ] ')'
+\end{verbatim}
+i.e. a name, optionally followed by brackets containing one or more expressions separated by commas.
+names without brackets are treated the same as those with empty brackets, so \lstinline!"x"! is the same
+as \lstinline!"x()"!. A list of inputs (\lstinline!list<FieldGenerator*> args;!) is created, 
+the \lstinline!gen! map is searched to find the \lstinline!FieldGenerator! object corresponding to the name,
+and the list of inputs is passed to the object's \lstinline!clone! function.
+
+\section{Implementation}
+\index{Options}
+To control the behaviour of BOUT++ a set of options is used, with
+options organised into sections which can be nested. To represent this
+tree structure there is the \lstinline!Options! class defined in
+\file{bout++/include/options.hxx} 
+\begin{lstlisting}
+class Options {
+ public:
+  // Setting options
+  void set(const string &key,const int &val,const string &source="");
+  ...
+  // Testing if set
+  bool isSet(const string &key);
+  // Getting options
+  void get(const string &key,int &val,const int &def,bool log=true);
+  ...
+  // Get a subsection. Creates if doesn't exist
+  Options* getSection(const string &name);
+};
+\end{lstlisting}
+
+To access the options, there is a static function (singleton)
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+\end{lstlisting}
+which gives the top-level (root) options class. Setting options
+is done using the \lstinline!set()! methods which are currently
+defined for \lstinline!int!, \lstinline!BoutReal!, \lstinline!bool! and
+\lstinline!string!. For example:
+\begin{lstlisting}
+  options->set("nout", 10);      // Set an integer
+  options->set("restart", true); // A bool
+\end{lstlisting}
+Often it's useful to see where an option setting has come from
+e.g. the name of the options file or ``command line''. To specify
+a source, pass it as a third argument:
+\begin{lstlisting}
+  options->set("nout", 10, "manual");
+\end{lstlisting}
+To create a section, just use \lstinline!getSection!: if it doesn't
+exist it will be created.
+\begin{lstlisting}
+  Options *section = options->getSection("mysection");
+  section->set("myswitch", true);
+\end{lstlisting}
+
+To get options, use the \lstinline!get()! method which take 
+the name of the option, the variable to set, and the default value.
+\begin{lstlisting}
+  int nout;
+  options->get("nout", nout, 1);
+\end{lstlisting}
+Internally, \lstinline!Options! converts all types to strings
+and does type conversion when needed, so the following code would work:
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  options->set("test", "123");
+  int val;
+  options->get("test", val, 1);
+\end{lstlisting}
+This is because often the type of the option is not known
+at the time when it's set, but only when it's requested.
+
+By default, the \lstinline!get! methods output a message to
+the log files giving the value used and the source of that value.
+To suppress this, set the \lstinline!log! argument to \lstinline!false!:
+\begin{lstlisting}
+  options->get("test", val, 1, false);
+\end{lstlisting}
+
+\subsection{Reading options}
+
+To allow different input file formats, each file parser implements
+the \lstinline!OptionParser! interface defined in
+\file{bout++/src/sys/options/optionparser.hxx}
+\index{OptionParser}
+\begin{lstlisting}
+class OptionParser {
+ public:
+  virtual void read(Options *options, const string &filename) = 0;
+ private:
+};
+\end{lstlisting}
+and so just needs to implement a single function which reads a
+given file name and inserts the options into the given \lstinline!Options!
+object.
+
+To use these parsers and read in a file, there is the
+\lstinline!OptionsReader! class defined in
+\file{bout++/include/optionsreader.hxx} \index{OptionsReader}
+\begin{lstlisting}
+class OptionsReader {
+ public:
+ void read(Options *options, const char *file, ...);
+ void parseCommandLine(Options *options, int argc, char **argv);
+};
+\end{lstlisting}
+This is a singleton object which is accessed using
+\begin{lstlisting}
+  OptionsReader *reader = OptionsReader::getInstance();
+\end{lstlisting}
+so to read a file \file{BOUT.inp} in a directory given in a variable
+\lstinline!data_dir! the following code is used in \file{bout++.cxx}:
+\begin{lstlisting}
+  Options *options = Options::getRoot();
+  OptionsReader *reader = OptionsReader::getInstance();
+  reader->read(options, "%s/BOUT.inp", data_dir);
+\end{lstlisting}
+
+To parse command line arguments as options, the \lstinline!OptionsReader!
+class has a method:
+\begin{lstlisting}
+  reader->parseCommandLine(options, argc, argv);
+\end{lstlisting}
+This is currently quite rudimentary and needs improving.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Time integration}
+
+\subsection{Options}
+\label{sec:timeoptions}
+\index{time integration}
+BOUT++ can be compiled with several different time-integration solvers
+% 2015.02.17 loeiten: commented this as the section does not exist
+%(see section~\ref{sec:solverlibrary})
+,
+and at minimum should have Runge-Kutta (RK4) and PVODE (BDF/Adams) solvers available.
+
+The solver library used is set using the \code{solver:type} option, so either in BOUT.inp:
+\begin{lstlisting}[language=bash,numbers=none]
+[solver]
+type = rk4  # Set the solver to use
+\end{lstlisting}
+or on the command line by adding \code{solver:type=pvode} for example:
+\begin{lstlisting}[language=bash,numbers=none]
+mpirun -np 4 ./2fluid solver:type=rk4
+\end{lstlisting}
+{\bf NB}: Make sure there are no spaces around the ``='' sign: \code{solver:type =pvode} won't work (probably).
+Table~\ref{tab:solvers} gives a list of time integration solvers, along with any compile-time
+options needed to make the solver available.
+\begin{table}[htb!]
+\centering
+\caption{Available time integration solvers}
+\label{tab:solvers}
+\begin{tabular}{c | c | c}
+\hline
+Name & Description & Compile options \\
+\hline
+euler & Euler explicit method & Always available \\
+rk4 & Runge-Kutta 4th-order explicit method & Always available \\
+karniadakis & Karniadakis explicit method & Always available \\
+pvode & 1998 PVODE with BDF method & Always available \\
+cvode & SUNDIALS CVODE. BDF and Adams methods & --with-cvode \\
+ida & SUNDIALS IDA. DAE solver & --with-ida \\
+petsc & PETSc TS methods & --with-petsc \\
+\hline
+\end{tabular}
+\end{table}
+
+Each solver can have its own settings which work in slightly different ways, but some common
+settings and which solvers they are used in are given in table~\ref{tab:solveropts}.
+\begin{table}[htb!]
+\centering
+\caption{Time integration solver options}
+\label{tab:solveropts}
+\begin{tabular}{c | c | c}
+\hline
+Option & Description & Solvers used \\
+\hline
+atol & Absolute tolerance & rk4, pvode, cvode, ida \\
+rtol & Relative tolerance & rk4, pvode, cvode, ida \\
+mxstep & Maximum internal steps  & rk4 \\
+       & per output step & \\
+max\_timestep & Maximum timestep & rk4, cvode \\
+timestep & Starting timestep & rk4, karniadakis, euler \\
+adaptive & Adapt timestep? (Y/N) & rk4 \\
+use\_precon & Use a preconditioner? (Y/N) & pvode, cvode, ida \\
+mudq, mldq & BBD preconditioner settings & pvode, cvode, ida \\
+mukeep, mlkeep & & \\
+maxl & & \\
+use\_jacobian & Use user-supplied Jacobian? (Y/N) & cvode \\
+adams\_moulton & Use Adams-Moulton method & cvode \\
+ & rather than BDF & \\
+diagnose & Collect and print additional diagnostics & cvode \\
+\hline
+\end{tabular}
+\end{table}
+The most commonly changed options are the  absolute and relative solver tolerances,
+\code{ATOL} and \code{RTOL} which should be varied to check convergence.
+
+
+\subsection{ODE integration}
+
+The Solver class can be used to solve systems of ODEs inside a physics model: Multiple Solver objects
+can exist besides the main one used for time integration.
+Example code is in \file{examples/test-integrate}.
+
+To use this feature, systems of ODEs must be represented by a class derived
+from \code{PhysicsModel} (see section~\ref{sec:newapi}).
+
+\begin{lstlisting}
+class MyFunction : public PhysicsModel {
+ public:
+  int init(bool restarting) {
+    // Initialise ODE
+    // Add variables to solver as usual
+    solver->add(result, "result");
+    ...
+  }
+  
+  int rhs(BoutReal time) {
+    // Specify derivatives of fields as usual
+    ddt(result) = ...
+  }
+ private:
+  Field3D result;
+};
+\end{lstlisting}
+
+To solve this ODE, create a new Solver object:
+\begin{lstlisting}[numbers=none]
+Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
+\end{lstlisting}
+This will look in the section \texttt{[ode]} in the options file.
+{\bf Important:} To prevent this solver overwriting the main restart files
+with its own restart files, either disable restart files:
+\begin{lstlisting}[numbers=none]
+[ode]
+enablerestart = false
+\end{lstlisting}
+or specify a different directory to put the restart files:
+\begin{lstlisting}[numbers=none]
+[ode]
+restartdir = ode  # Restart files ode/BOUT.restart.0.nc, ...
+\end{lstlisting}
+
+Create a model object, and pass it to the solver:
+\begin{lstlisting}[numbers=none]
+MyFunction* model = new MyFunction();
+ode->setModel(model);
+\end{lstlisting}
+
+Finally tell the solver to perform the integration:
+\begin{lstlisting}[numbers=none]
+ode->solve(5, 0.1);
+\end{lstlisting}
+The first argument is the number of steps to take, and the second is the size of each step. These can also be specified in the options, so calling
+\begin{lstlisting}[numbers=none]
+ode->solve();
+\end{lstlisting}
+will cause ode to look in the input for \texttt{nout} and \texttt{timestep} options:
+\begin{lstlisting}[numbers=none]
+[ode]
+nout = 5
+timestep = 0.1
+\end{lstlisting}
+Finally, delete the model and solver when finished:
+\begin{lstlisting}[numbers=none]
+delete model;
+delete solver;
+\end{lstlisting}
+
+{\bf Note: } If an ODE needs to be solved multiple times, at the moment
+it is recommended to delete the solver, and create a new one each time. 
+
+\subsection{Preconditioning}
+
+At every time step, an implicit scheme such as BDF has to solve a non-linear 
+problem to find the next
+solution. This is usually done using Newton's method, each step of which involves solving a linear (matrix)
+problem. For $N$ evolving variables is an $N\times N$ matrix and so can be very large. 
+By default matrix-free methods are used, in which the 
+Jacobian $\mathcal{J}$ is approximated by finite differences (see next subsection), and so this matrix
+never needs to be explicitly calculated. Finding a solution to this matrix can still be difficult, particularly
+as $\delta t$ gets large compared with some time-scales in the system (i.e. a 
+stiff problem).
+
+A preconditioner is a function which quickly finds an approximate solution to this matrix, speeding up
+convergence to a solution. A preconditioner does not need to include all the terms in the problem being
+solved, as the preconditioner only affects the convergence rate and not the final solution. A good preconditioner
+can therefore concentrate on solving the parts of the problem with the fastest 
+time-scales.
+
+A simple example\footnote{Taken from a talk by L.Chacon available here \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a coupled wave equation, solved in the \texttt{test-precon} example code:
+\[
+\frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial v}{\partial t} = \partial_{||} u
+\]
+First, calculate the Jacobian of this set of equations by taking partial derivatives of the time-derivatives with respect to each of the evolving variables
+\[
+\mathcal{J} = \left(\begin{array}{cc}
+\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
+\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
+\end{array}\right) = \left(\begin{array}{cc}
+0 & \partial_{||} \\
+\partial_{||} & 0
+\end{array}\right)
+\]
+In this case $\frac{\partial u}{\partial t}$ doesn't depend on $u$ nor $\frac{\partial v}{\partial t}$ on $v$,
+so the diagonal is empty. Since the equations are linear, the Jacobian doesn't depend on $u$ or $v$ and so
+\[
+\frac{\partial}{\partial t}\left(\begin{array}{c}
+u \\
+v
+\end{array}\right) = \mathcal{J} \left(\begin{array}{c}
+u \\
+v
+\end{array}\right)
+\]
+In general for non-linear functions $\mathcal{J}$ gives the change in 
+time-derivatives in response to changes
+in the state variables $u$ and $v$. 
+
+In implicit time stepping, the preconditioner needs to solve an equation
+\[
+\mathcal{I} - \gamma \mathcal{J}
+\]
+where $\mathcal{I}$ is the identity matrix, and $\gamma$ depends on the time 
+step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For the 
+simple wave equation problem, this is
+\[
+\mathcal{I} - \gamma \mathcal{J} = \left(\begin{array}{cc}
+1 & -\gamma\partial_{||} \\
+-\gamma\partial_{||} & 1
+\end{array}\right)
+\]
+This matrix can be block inverted using Schur factorisation\footnote{See paper \url{http://arxiv.org/abs/1209.2054} for an application to 2-fluid equations}
+\[
+\left(\begin{array}{cc}
+  \bb{E} & \bb{U} \\
+  \bb{L} & \bb{D}
+\end{array}\right)^{-1} =
+\left(\begin{array}{cc}
+  \bb{I} & -\bb{E}^{-1}\bb{U} \\
+  0 & \bb{I}
+\end{array}\right)\left(\begin{array}{cc}
+  \bb{E}^{-1} & 0 \\
+  0 & \bb{P}_{Schur}^{-1}
+\end{array}\right)\left(\begin{array}{cc}
+  \bb{I} & 0 \\
+  -\bb{L}\bb{E}^{-1} & \bb{I}
+\end{array}\right)
+\]
+where $\bb{P}_{Schur} = \bb{D} - \bb{L}\bb{E}^{-1}\bb{U}$
+Using this, the wave problem becomes:
+\begin{equation}
+\left(\begin{array}{cc}
+1 & -\gamma\partial_{||} \\
+-\gamma\partial_{||} & 1
+\end{array}\right)^{-1} = \left(\begin{array}{cc}
+1 & \gamma\partial_{||} \\
+0 & 1
+\end{array}\right)\left(\begin{array}{cc}
+1 & 0 \\
+0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+\end{array}\right)\left(\begin{array}{cc}
+1 & 0 \\
+\gamma\partial_{||} & 1
+\end{array}\right)
+\label{eq:precon}
+\end{equation}
+The preconditioner is implemented by defining a function of the form
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  ...
+}
+\end{lstlisting}
+which takes as input the current time, the $\gamma$ factor appearing above, and $\delta$ which is only important for constrained problems (not discussed here... yet). The current state of the system is stored in the state variables (here \lstinline!u! and \lstinline!v!), whilst the vector to be preconditioned is stored in the time derivatives 
+(here \lstinline!ddt(u)! and \lstinline!ddt(v)!). At the end of the preconditioner the result should be in the time derivatives. A preconditioner which is just the identity matrix and so does nothing is therefore:
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+}
+\end{lstlisting}
+\note{This changed in github/bendudson on 15th Aug 2014. In older versions the result must be returned
+in the state variables}
+
+To implement the preconditioner in equation~\ref{eq:precon}, first apply the rightmost matrix to the given
+vector:
+\[
+\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right) = \left(\begin{array}{cc}
+1 & 0 \\
+\gamma\partial_{||} & 1
+\end{array}\right)\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right)
+\]
+\begin{lstlisting}[numbers=none]
+int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
+  mesh->communicate(ddt(u));
+  //ddt(u) = ddt(u);
+  ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
+\end{lstlisting}
+note that since the preconditioner is linear, it doesn't depend on $u$ or $v$. 
+As in the RHS function, since we are taking a differential of \texttt{ddt(u)},
+it first needs to be communicated to exchange guard cell values.
+
+The second matrix
+\[
+\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right) \leftarrow \left(\begin{array}{cc}
+1 & 0 \\
+0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+\end{array}\right)\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right)
+\]
+doesn't alter $u$, but solves a parabolic equation in the parallel direction. There is a solver class to do this 
+called \texttt{InvertPar} which solves the equation $\left(A + B\partial_{||}^2\right)x = b$ where $A$ and $B$ are
+\lstinline!Field2D! or constants\footnote{This \texttt{InvertPar} class can handle cases with closed field-lines and twist-shift boundary conditions for tokamak simulations}. In \lstinline!physics_init! we create one of these solvers:
+\begin{lstlisting}[numbers=none]
+InvertPar *inv; // Parallel inversion class
+int physics_init(bool restarting) {
+   ...
+   inv = InvertPar::Create();
+   inv->setCoefA(1.0);
+   ...
+}
+\end{lstlisting}
+In the preconditioner we then use this solver to update $v$:
+\begin{lstlisting}[numbers=none]
+  inv->setCoefB(-SQ(gamma));
+  ddt(v) = inv->solve(ddt(v));
+\end{lstlisting}
+which solves $ddt(v) \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1} ddt(v)$.
+The final matrix just updates $u$ using this new solution for $v$
+\[
+\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right) \leftarrow \left(\begin{array}{cc}
+1 & \gamma\partial_{||} \\
+0 & 1
+\end{array}\right)\left(\begin{array}{c}
+\texttt{ddt(u)} \\
+\texttt{ddt(v)}
+\end{array}\right)
+\]
+\begin{lstlisting}[numbers=none]
+  mesh->communicate(ddt(v));
+  ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
+\end{lstlisting}
+Finally, boundary conditions need to be imposed, which should be consistent with the conditions used in the RHS
+\begin{lstlisting}[numbers=none]
+  ddt(u).applyBoundary("dirichlet");
+  ddt(v).applyBoundary("dirichlet");
+\end{lstlisting}
+
+To use the preconditioner, pass the function to the solver in \lstinline!physics_init!
+\begin{lstlisting}
+int physics_init(bool restarting) {
+  solver->setPrecon(precon);
+  ...
+}
+\end{lstlisting}
+then in the \texttt{BOUT.inp} settings file switch on the preconditioner
+\begin{lstlisting}[language=bash,numbers=none]
+[solver]
+type = cvode          # Need CVODE or PETSc
+use_precon = true     # Use preconditioner
+rightprec = false     # Use Right preconditioner (default left)
+\end{lstlisting}
+
+\subsection{Jacobian function}
+
+
+
+\subsection{DAE constraint equations}
+
+Using the IDA solver, BOUT++ can solve Differential Algebraic Equations (DAEs), in which 
+algebraic constraints are used for some variables. 
+
+
+\subsection{Monitoring the simulation output}
+
+Monitoring of the solution can be done at two levels: output monitoring, and timestep monitoring. Output monitoring
+occurs only when data is written to file, whereas timestep monitoring is every timestep and so (usually) much more
+frequent. Examples of both are in \file{examples/monitor} and \file{examples/monitor-newapi}.
+
+{\bf Output monitoring}: At every output timestep the solver calls a monitor function, which writes the output dump file,  
+calculates and prints timing information and estimated time remaining. If you want to run additional code or write data to a different file, you can add monitor function(s).
+
+You can call your output monitor function whatever you like, but it must have 4 inputs and return an int:
+\begin{lstlisting}
+int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+  ...
+}
+\end{lstlisting}
+
+The first input is the solver object, the second is the current simulation time, the third is the output number, and the last is the total number of outputs requested. To get the solver to call this function every output time, put in your \lstinline!physics_init! code:
+\begin{lstlisting}
+  solver->addMonitor(my_output_monitor);
+\end{lstlisting}
+If you want to later remove a monitor, you can do so with
+\begin{lstlisting}
+  solver->removeMonitor(my_output_monitor);
+\end{lstlisting}
+
+A simple example using this monitor is:
+\begin{lstlisting}
+int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
+  output.write("My monitor, time = %e, dt = %e\n", 
+      simtime, solver->getCurrentTimestep());
+}
+
+int physics_init(bool restarting) {
+  solver->addMonitor(my_monitor);
+}
+\end{lstlisting}
+
+See the monitor example (\file{examples/monitor}) for full code.
+
+
+{\bf Timestep monitoring}: This works in the same way as output monitoring. First define a monitor function:
+\begin{lstlisting}
+int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
+  ...
+}
+\end{lstlisting}
+where \lstinline!simtime! will again contain the current simulation time, and \lstinline!lastdt! the last
+timestep taken. Add this function to the solver:
+\begin{lstlisting}
+  solver->addTimestepMonitor(my_timestep_monitor);
+\end{lstlisting}
+Timestep monitoring is disabled by default, unlike output monitoring. To enable timestep monitoring, set in
+the options file (BOUT.inp):
+\begin{lstlisting}
+[solver]
+monitor_timestep = true
+\end{lstlisting}
+or put on the command line \lstinline!solver:monitor_timestep=true!. When this is enabled, it will
+change how solvers like CVODE and PVODE (the default solvers) are used. Rather than being run in NORMAL
+mode, they will instead be run in SINGLE\_STEP mode (see the SUNDIALS notes here:\url{http://computation.llnl.gov/casc/sundials/support/notes.html}). This may in some cases be less efficient.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Boundary conditions}
 \label{sec:bndryopts}
 \index{boundary conditions}
 Like the variable initialisation, boundary conditions can be set for
@@ -2148,7 +2796,7 @@ can be used. Currently the following are available:
 \end{itemize}
 These are described in the following subsections.
 
-\subsubsection{Relaxing boundaries}
+\subsection{Relaxing boundaries}
 
 All boundaries can be modified to be ``relaxing'' which are a combination
 of zero-gradient time-derivative, and whatever boundary condition they are
@@ -2173,7 +2821,7 @@ By default, the relaxation rate is set to $10$ (i.e. a time-scale of
 $\tau=0.1$).
 To change this, give the rate as the second argument e.g. \code{relax(dirichlet, 2)} would relax to a Dirichlet boundary condition at a rate of $2$.
 
-\subsubsection{Shifted boundaries}
+\subsection{Shifted boundaries}
 
 By default boundary conditions are applied in field-aligned coordinates, where $y$ is along field-lines but
 $x$ has a discontinuity at the twist-shift location. If radial derivatives are being done in shifted
@@ -2185,7 +2833,7 @@ bndry_core = shifted( neumann )
 \end{lstlisting}
 would ensure that radial derivatives were zero in shifted coordinates on the core boundary.
 
-\subsubsection{Changing the width of boundaries}
+\subsection{Changing the width of boundaries}
 
 To change the width of a boundary region, the \code{width} modifier
 changes the width of a boundary region before applying the boundary condition,
@@ -2214,7 +2862,7 @@ Limitations:
     are done that the width asked for fits within a single processor.
 \end{enumerate}
 
-\subsubsection{Examples}
+\subsection{Examples}
 
 This example is taken from the UEDGE benchmark test (in \texttt{examples/uedge-benchmark}):
 \begin{lstlisting}[language=bash,numbers=none]
@@ -2246,6 +2894,342 @@ then the ``target'' boundary condition for \code{Ni} would first search
 in the \code{[Ni]} section for \code{bndry\_target}, then for \code{bndry\_all}
 in the \code{[Ni]} section. This is set to \code{relax(dirichlet(0.1))}, not
 the Neumann condition desired.
+
+\subsection{Boundary regions}
+
+The boundary condition code (see section~\ref{sec:boundaries}) needs
+ways to loop over the boundary regions, without needing to know
+the details of the mesh.
+
+At the moment two mechanisms are provided: A RangeIterator over upper and lower Y boundaries,
+and a vector of BoundaryRegion \index{BoundaryRegion} objects.
+
+\begin{lstlisting}
+// Boundary region iteration
+virtual const RangeIterator iterateBndryLowerY() const = 0;
+virtual const RangeIterator iterateBndryUpperY() const = 0;
+
+bool hasBndryLowerY();
+bool hasBndryUpperY();
+
+bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
+\end{lstlisting}
+  
+The \code{RangeIterator} class is an iterator \index{RangeIterator}
+which allows looping over a set of indices. Details are given in
+section~\ref{sec:rangeiterator}. For example, in
+\file{src/solver/solver.cxx} to loop over the upper Y boundary of a 2D variable
+\code{var}:
+\begin{lstlisting}
+for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
+  ...
+}
+\end{lstlisting}
+
+The \lstinline!BoundaryRegion! class is defined in \file{include/boundary\_region.hxx}
+\subsection{Boundary regions}
+\label{sec:BoundaryRegion}
+
+Different regions of the boundary such as ``core'', ``sol'' etc. are
+labelled by the \code{Mesh} class (i.e. \code{BoutMesh}), which
+implements a member function defined in \file{mesh.hxx}:
+\begin{lstlisting}[firstnumber=150]
+  // Boundary regions
+  virtual vector<BoundaryRegion*> getBoundaries() = 0;
+\end{lstlisting}
+This returns a vector of pointers to \code{BoundaryRegion} objects,
+each of which describes a boundary region with a label, a \code{BndryLoc} 
+location (i.e. inner x, outer x, lower y, upper y or all), and iterator
+functions for looping over the points. This class is
+defined in \file{boundary\_region.hxx}:\index{BoundaryRegion}
+\begin{lstlisting}[firstnumber=12]
+/// Describes a region of the boundary, and a means of iterating over it
+class BoundaryRegion {
+  public:
+  BoundaryRegion();
+  BoundaryRegion(const string &name, int xd, int yd);
+  virtual ~BoundaryRegion();
+  
+  string label; // Label for this boundary region
+  
+  BndryLoc location; // Which side of the domain is it on?
+  
+  int x,y; // Indices of the point in the boundary
+  int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
+
+  virtual void first() = 0;
+  virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
+  virtual void nextX() = 0; // Just loop over X
+  virtual void nextY() = 0; // Just loop over Y
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+};
+\end{lstlisting}
+
+{\bf Example:} To loop over all points in \code{BoundaryRegion *bndry} , use
+\begin{lstlisting}[numbers=none]
+  for(bndry->first(); !bndry->isDone(); bndry->next()) {
+    ...
+  }
+\end{lstlisting}
+Inside the loop, \code{bndry->x} and \code{bndry->y} are the indices
+of the point, whilst \code{bndry->bx} and \code{bndry->by} are unit vectors
+out of the domain. The loop is over all the points from the domain outwards 
+i.e. the point
+\code{[bndry->x - bndry->bx][bndry->y - bndry->by]} will always be defined.
+
+Sometimes it's useful to be able to loop over just one direction along the
+boundary. To do this, it is possible to use \code{nextX()} or \code{nextY()}
+rather than \code{next()}. It is also possible to loop over both dimensions
+using:
+\begin{lstlisting}[numbers=none]
+  for(bndry->first(); !bndry->isDone(); bndry->nextX())
+    for(; !bndry->isDone(); bndry->nextY()) {
+      ...
+    }
+\end{lstlisting}
+
+\subsection{Boundary operations}
+
+On each boundary, conditions must be specified for each variable. 
+The different conditions are imposed by \code{BoundaryOp} objects.
+These set the values in the boundary region such that they obey e.g.
+Dirichlet or Neumann conditions. The \code{BoundaryOp} class is defined
+in \file{boundary\_op.hxx}: \index{BoundaryOp}
+\begin{lstlisting}[firstnumber=21]
+/// An operation on a boundary
+class BoundaryOp {
+ public:
+  BoundaryOp() {bndry = NULL;}
+  BoundaryOp(BoundaryRegion *region)
+  
+  // Note: All methods must implement clone, except for modifiers (see below)
+  virtual BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  
+  /// Apply a boundary condition on field f
+  virtual void apply(Field2D &f) = 0;
+  virtual void apply(Field3D &f) = 0;
+  
+  virtual void apply(Vector2D &f);
+  
+  virtual void apply(Vector3D &f);
+
+  /// Apply a boundary condition on ddt(f)
+  virtual void apply_ddt(Field2D &f);
+  virtual void apply_ddt(Field3D &f);
+  virtual void apply_ddt(Vector2D &f);
+  virtual void apply_ddt(Vector3D &f);
+  
+  BoundaryRegion *bndry;
+};
+\end{lstlisting}
+(where the implementations have been removed for clarity). 
+Which has a pointer to a \code{BoundaryRegion} object specifying which
+region this boundary is operating on.
+
+Boundary conditions need to be imposed on the initial conditions (after
+\code{physics\_init()}), and on the time-derivatives
+(after \code{physics\_run()}). The \code{apply()} functions are therefore
+called during initialisation and given the evolving variables, whilst the
+\code{apply\_ddt} functions are passed the time-derivatives.
+
+To implement a boundary operation, as a minimum the \code{apply(Field2D)}, 
+\code{apply(Field2D)} and \code{clone()} need to be implemented: By default
+the \code{apply(Vector)} will call the \code{apply(Field)} functions on each
+component individually, and the \code{apply\_ddt()} functions just call
+the \code{apply()} functions.
+
+{\bf Example}: Neumann boundary conditions are defined in
+\file{boundary\_standard.hxx}:
+\begin{lstlisting}[firstnumber=22]
+/// Neumann (zero-gradient) boundary condition
+class BoundaryNeumann : public BoundaryOp {
+ public:
+  BoundaryNeumann() {}
+ BoundaryNeumann(BoundaryRegion *region):BoundaryOp(region) { }
+  BoundaryOp* clone(BoundaryRegion *region, const list<string> &args);
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+};
+\end{lstlisting}
+and implemented in \file{boundary\_standard.cxx} \index{BoundaryNeumann}
+\begin{lstlisting}[firstnumber=52]
+void BoundaryNeumann::apply(Field2D &f) {
+  // Loop over all elements and set equal to the next point in
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    f[bndry->x][bndry->y] = f[bndry->x - bndry->bx][bndry->y - bndry->by];
+}
+
+void BoundaryNeumann::apply(Field3D &f) {
+  for(bndry->first(); !bndry->isDone(); bndry->next())
+    for(int z=0;z<mesh->ngz;z++)
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
+}
+\end{lstlisting}
+This is all that's needed in this case since there's no difference between
+applying Neumann conditions to a variable and to its time-derivative, 
+and Neumann conditions for vectors are just Neumann conditions
+on each vector component. 
+
+To create a boundary condition, we need to give it a boundary region
+to operate over:
+\begin{lstlisting}[numbers=none]
+BoundaryRegion *bndry = ...
+BoundaryOp op = new BoundaryOp(bndry);
+\end{lstlisting}
+
+The \code{clone} function is used to create
+boundary operations given a single object as a template
+in \code{BoundaryFactory}. This can take additional arguments
+as a vector of strings - see explanation in section~\ref{sec:BoundaryFactory}.
+
+\subsection{Boundary modifiers}
+
+To create more complicated boundary conditions from simple ones (such as
+Neumann conditions above), boundary operations can be modified by
+wrapping them up in a \code{BoundaryModifier} object, defined
+in \file{boundary\_op.hxx}: \index{BoundaryModifier}
+\begin{lstlisting}[firstnumber=63]
+class BoundaryModifier : public BoundaryOp {
+ public:
+  virtual BoundaryOp* clone(BoundaryOp *op, const list<string> &args) = 0;
+ protected:
+  BoundaryOp *op;
+};
+\end{lstlisting}
+Since \code{BoundaryModifier} inherits from \code{BoundaryOp}, 
+modified boundary operations are just a different boundary operation and can
+be treated the same (Decorator pattern). Boundary modifiers could also be
+nested inside each other to create even more complicated boundary operations.
+Note that the \code{clone} function is different to the \code{BoundaryOp} one:
+instead of a \code{BoundaryRegion} to operate on, modifiers are passed a
+\code{BoundaryOp} to modify.
+
+Currently the only modifier is \code{BoundaryRelax}, defined in
+\file{boundary\_standard.hxx}: \index{BoundaryRelax}
+\begin{lstlisting}[firstnumber=64]
+/// Convert a boundary condition to a relaxing one
+class BoundaryRelax : public BoundaryModifier {
+ public:
+  BoundaryRelax(BoutReal rate) {r = fabs(rate);}
+  BoundaryOp* clone(BoundaryOp *op, const list<string> &args);
+  
+  void apply(Field2D &f);
+  void apply(Field3D &f);
+  
+  void apply_ddt(Field2D &f);
+  void apply_ddt(Field3D &f);
+ private:
+  BoundaryRelax() {} // Must be initialised with a rate
+  BoutReal r;
+};
+\end{lstlisting}
+
+\subsection{Boundary factory}
+\label{sec:BoundaryFactory}
+\index{BoundaryFactory}
+The boundary factory creates new boundary operations from input strings,
+for example turning "relax(dirichlet)" into a relaxing Dirichlet boundary
+operation on a given region. It is defined in \file{boundary\_factory.hxx}
+as a Singleton, so to get a pointer to the boundary factory use
+\begin{lstlisting}[numbers=none]
+  BoundaryFactory *bfact = BoundaryFactory::getInstance();
+\end{lstlisting}
+and to delete this singleton, free memory and cleanup at the end use:
+\begin{lstlisting}[numbers=none]
+  BoundaryFactory::cleanup();
+\end{lstlisting}
+
+Because users should be able to add new boundary conditions during
+\code{physics\_init()}, boundary conditions are not hard-wired into
+\code{BoundaryFactory}. Instead, boundary conditions must be registered
+with the factory, passing an instance which can later be cloned. This
+is done in \file{bout++.cxx} for the standard boundary conditions:
+\begin{lstlisting}[firstnumber=258]
+  BoundaryFactory* bndry = BoundaryFactory::getInstance();
+  bndry->add(new BoundaryDirichlet(), "dirichlet");
+  ...
+  bndry->addMod(new BoundaryRelax(10.), "relax");
+\end{lstlisting}
+where the \code{add} function adds BoundaryOp objects, whereas
+\code{addMod} adds \code{BoundaryModifier} objects. {\bf Note}: The
+objects passed to \code{BoundaryFactory} will be deleted when \code{cleanup()}
+is called. 
+
+When a boundary operation is added, it is given a name
+such as ``dirichlet'', and similarly for the modifiers (``relax'' above).
+These labels and object pointers are stored internally in \code{BoundaryFactory}
+in maps defined in \file{boundary\_factory.hxx}:
+\begin{lstlisting}[firstnumber=43]
+  // Database of available boundary conditions and modifiers
+  map<string, BoundaryOp*> opmap;
+  map<string, BoundaryModifier*> modmap;
+\end{lstlisting}
+These are then used by \code{BoundaryFactory::create()}:
+\begin{lstlisting}[firstnumber=24]
+  /// Create a boundary operation object
+  BoundaryOp* create(const string &name, BoundaryRegion *region);
+  BoundaryOp* create(const char* name, BoundaryRegion *region);
+\end{lstlisting}
+to turn a string such as ``relax(dirichlet)'' and a \code{BoundaryRegion}
+pointer into a \code{BoundaryOp} object. These functions are implemented
+in \file{boundary\_factory.cxx}, starting around line 42. The parsing is
+done recursively by matching the input string to one of:
+\begin{itemize}
+\item \code{modifier(<expression>, arg1, ...)}
+\item \code{modifier(<expression>)}
+\item \code{operation(arg1, ...)}
+\item \code{operation}
+\end{itemize}
+the \code{<expression>} variable is then resolved into a BoundaryOp
+object by calling \code{create(<expression, region)}.
+
+When an operator or modifier is found, it is created from the pointer
+stored in the \code{opmap} or \code{modmap} maps using the
+\code{clone} method, passing
+a \code{list<string>} reference containing any arguments. It's up
+to the operation implementation to ensure that the correct number of
+arguments are passed, and to parse them into floats or other types.
+
+{\bf Example}: The Dirichlet boundary condition can take an optional
+argument to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
+\index{BoundaryDirichlet}
+\begin{lstlisting}[firstnumber=13]
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
+  if(!args.empty()) {
+    // First argument should be a value
+    stringstream ss;
+    ss << args.front();
+    
+    BoutReal val;
+    ss >> val;
+    return new BoundaryDirichlet(region, val);
+  }
+  return new BoundaryDirichlet(region);
+}
+\end{lstlisting}
+If no arguments are passed i.e. the string was ``dirichlet'' or ``dirichlet()''
+then the \code{args} list is empty, and the default value (0.0) is used.
+If one or more arguments is used then the first argument is parsed into a
+\code{BoutReal} type and used to create a new \code{BoundaryDirichlet} object.
+If more arguments are passed then these are just ignored; probably a warning
+should be printed.
+
+To set boundary conditions on a field, \code{FieldData} methods are
+defined in \file{field\_data.hxx}: \index{FieldData}
+\begin{lstlisting}
+// Boundary conditions
+  void setBoundary(const string &name); ///< Set the boundary conditions
+  void setBoundary(const string &region, BoundaryOp *op); ///< Manually set
+  virtual void applyBoundary() {}
+  virtual void applyTDerivBoundary() {};
+ protected:
+  vector<BoundaryOp*> bndry_op; // Boundary conditions
+\end{lstlisting}
+The \code{setBoundary(const string \&name)} method is implemented in
+\file{field\_data.cxx}. It first gets a vector of pointers to
+\code{BoundaryRegion}s from the mesh, then loops over these calling
+\code{BoundaryFactory::createFromOptions} for each one and adding the resulting
+boundary operator to the \code{bndry\_op} vector.
 
 \section{Generating input grids}
 \label{sec:gridgen}
@@ -3758,280 +4742,6 @@ This section describes the more advanced methods which can be used to speed up s
 implicit time stepping schemes. At the time of writing (Dec '12), they can be used with either the SUNDIALS CVODE
 or PETSc solvers. 
 
-\subsection{Preconditioning}
-
-At every time step, an implicit scheme such as BDF has to solve a non-linear 
-problem to find the next
-solution. This is usually done using Newton's method, each step of which involves solving a linear (matrix)
-problem. For $N$ evolving variables is an $N\times N$ matrix and so can be very large. 
-By default matrix-free methods are used, in which the 
-Jacobian $\mathcal{J}$ is approximated by finite differences (see next subsection), and so this matrix
-never needs to be explicitly calculated. Finding a solution to this matrix can still be difficult, particularly
-as $\delta t$ gets large compared with some time-scales in the system (i.e. a 
-stiff problem).
-
-A preconditioner is a function which quickly finds an approximate solution to this matrix, speeding up
-convergence to a solution. A preconditioner does not need to include all the terms in the problem being
-solved, as the preconditioner only affects the convergence rate and not the final solution. A good preconditioner
-can therefore concentrate on solving the parts of the problem with the fastest 
-time-scales.
-
-A simple example\footnote{Taken from a talk by L.Chacon available here \url{https://bout.llnl.gov/pdf/workshops/2011/talks/Chacon_bout2011.pdf}} is a coupled wave equation, solved in the \texttt{test-precon} example code:
-\[
-\frac{\partial u}{\partial t} = \partial_{||}v \qquad \frac{\partial v}{\partial t} = \partial_{||} u
-\]
-First, calculate the Jacobian of this set of equations by taking partial derivatives of the time-derivatives with respect to each of the evolving variables
-\[
-\mathcal{J} = \left(\begin{array}{cc}
-\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
-\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
-\end{array}\right) = \left(\begin{array}{cc}
-0 & \partial_{||} \\
-\partial_{||} & 0
-\end{array}\right)
-\]
-In this case $\frac{\partial u}{\partial t}$ doesn't depend on $u$ nor $\frac{\partial v}{\partial t}$ on $v$,
-so the diagonal is empty. Since the equations are linear, the Jacobian doesn't depend on $u$ or $v$ and so
-\[
-\frac{\partial}{\partial t}\left(\begin{array}{c}
-u \\
-v
-\end{array}\right) = \mathcal{J} \left(\begin{array}{c}
-u \\
-v
-\end{array}\right)
-\]
-In general for non-linear functions $\mathcal{J}$ gives the change in 
-time-derivatives in response to changes
-in the state variables $u$ and $v$. 
-
-In implicit time stepping, the preconditioner needs to solve an equation
-\[
-\mathcal{I} - \gamma \mathcal{J}
-\]
-where $\mathcal{I}$ is the identity matrix, and $\gamma$ depends on the time 
-step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For the 
-simple wave equation problem, this is
-\[
-\mathcal{I} - \gamma \mathcal{J} = \left(\begin{array}{cc}
-1 & -\gamma\partial_{||} \\
--\gamma\partial_{||} & 1
-\end{array}\right)
-\]
-This matrix can be block inverted using Schur factorisation\footnote{See paper \url{http://arxiv.org/abs/1209.2054} for an application to 2-fluid equations}
-\[
-\left(\begin{array}{cc}
-  \bb{E} & \bb{U} \\
-  \bb{L} & \bb{D}
-\end{array}\right)^{-1} =
-\left(\begin{array}{cc}
-  \bb{I} & -\bb{E}^{-1}\bb{U} \\
-  0 & \bb{I}
-\end{array}\right)\left(\begin{array}{cc}
-  \bb{E}^{-1} & 0 \\
-  0 & \bb{P}_{Schur}^{-1}
-\end{array}\right)\left(\begin{array}{cc}
-  \bb{I} & 0 \\
-  -\bb{L}\bb{E}^{-1} & \bb{I}
-\end{array}\right)
-\]
-where $\bb{P}_{Schur} = \bb{D} - \bb{L}\bb{E}^{-1}\bb{U}$
-Using this, the wave problem becomes:
-\begin{equation}
-\left(\begin{array}{cc}
-1 & -\gamma\partial_{||} \\
--\gamma\partial_{||} & 1
-\end{array}\right)^{-1} = \left(\begin{array}{cc}
-1 & \gamma\partial_{||} \\
-0 & 1
-\end{array}\right)\left(\begin{array}{cc}
-1 & 0 \\
-0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
-\end{array}\right)\left(\begin{array}{cc}
-1 & 0 \\
-\gamma\partial_{||} & 1
-\end{array}\right)
-\label{eq:precon}
-\end{equation}
-The preconditioner is implemented by defining a function of the form
-\begin{lstlisting}[numbers=none]
-int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  ...
-}
-\end{lstlisting}
-which takes as input the current time, the $\gamma$ factor appearing above, and $\delta$ which is only important for constrained problems (not discussed here... yet). The current state of the system is stored in the state variables (here \lstinline!u! and \lstinline!v!), whilst the vector to be preconditioned is stored in the time derivatives 
-(here \lstinline!ddt(u)! and \lstinline!ddt(v)!). At the end of the preconditioner the result should be in the time derivatives. A preconditioner which is just the identity matrix and so does nothing is therefore:
-\begin{lstlisting}[numbers=none]
-int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-}
-\end{lstlisting}
-\note{This changed in github/bendudson on 15th Aug 2014. In older versions the result must be returned
-in the state variables}
-
-To implement the preconditioner in equation~\ref{eq:precon}, first apply the rightmost matrix to the given
-vector:
-\[
-\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right) = \left(\begin{array}{cc}
-1 & 0 \\
-\gamma\partial_{||} & 1
-\end{array}\right)\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right)
-\]
-\begin{lstlisting}[numbers=none]
-int precon(BoutReal t, BoutReal gamma, BoutReal delta) {
-  mesh->communicate(ddt(u));
-  //ddt(u) = ddt(u);
-  ddt(v) = gamma*Grad_par(ddt(u)) + ddt(v);
-\end{lstlisting}
-note that since the preconditioner is linear, it doesn't depend on $u$ or $v$. 
-As in the RHS function, since we are taking a differential of \texttt{ddt(u)},
-it first needs to be communicated to exchange guard cell values.
-
-The second matrix
-\[
-\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right) \leftarrow \left(\begin{array}{cc}
-1 & 0 \\
-0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
-\end{array}\right)\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right)
-\]
-doesn't alter $u$, but solves a parabolic equation in the parallel direction. There is a solver class to do this 
-called \texttt{InvertPar} which solves the equation $\left(A + B\partial_{||}^2\right)x = b$ where $A$ and $B$ are
-\lstinline!Field2D! or constants\footnote{This \texttt{InvertPar} class can handle cases with closed field-lines and twist-shift boundary conditions for tokamak simulations}. In \lstinline!physics_init! we create one of these solvers:
-\begin{lstlisting}[numbers=none]
-InvertPar *inv; // Parallel inversion class
-int physics_init(bool restarting) {
-   ...
-   inv = InvertPar::Create();
-   inv->setCoefA(1.0);
-   ...
-}
-\end{lstlisting}
-In the preconditioner we then use this solver to update $v$:
-\begin{lstlisting}[numbers=none]
-  inv->setCoefB(-SQ(gamma));
-  ddt(v) = inv->solve(ddt(v));
-\end{lstlisting}
-which solves $ddt(v) \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1} ddt(v)$.
-The final matrix just updates $u$ using this new solution for $v$
-\[
-\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right) \leftarrow \left(\begin{array}{cc}
-1 & \gamma\partial_{||} \\
-0 & 1
-\end{array}\right)\left(\begin{array}{c}
-\texttt{ddt(u)} \\
-\texttt{ddt(v)}
-\end{array}\right)
-\]
-\begin{lstlisting}[numbers=none]
-  mesh->communicate(ddt(v));
-  ddt(u) = ddt(u) + gamma*Grad_par(ddt(v));
-\end{lstlisting}
-Finally, boundary conditions need to be imposed, which should be consistent with the conditions used in the RHS
-\begin{lstlisting}[numbers=none]
-  ddt(u).applyBoundary("dirichlet");
-  ddt(v).applyBoundary("dirichlet");
-\end{lstlisting}
-
-To use the preconditioner, pass the function to the solver in \lstinline!physics_init!
-\begin{lstlisting}
-int physics_init(bool restarting) {
-  solver->setPrecon(precon);
-  ...
-}
-\end{lstlisting}
-then in the \texttt{BOUT.inp} settings file switch on the preconditioner
-\begin{lstlisting}[language=bash,numbers=none]
-[solver]
-type = cvode          # Need CVODE or PETSc
-use_precon = true     # Use preconditioner
-rightprec = false     # Use Right preconditioner (default left)
-\end{lstlisting}
-
-\subsection{Jacobian function}
-
-
-
-\subsection{DAE constraint equations}
-
-Using the IDA solver, BOUT++ can solve Differential Algebraic Equations (DAEs), in which 
-algebraic constraints are used for some variables. 
-
-
-\subsection{Monitoring the simulation output}
-
-Monitoring of the solution can be done at two levels: output monitoring, and timestep monitoring. Output monitoring
-occurs only when data is written to file, whereas timestep monitoring is every timestep and so (usually) much more
-frequent. Examples of both are in \file{examples/monitor} and \file{examples/monitor-newapi}.
-
-{\bf Output monitoring}: At every output timestep the solver calls a monitor function, which writes the output dump file,  
-calculates and prints timing information and estimated time remaining. If you want to run additional code or write data to a different file, you can add monitor function(s).
-
-You can call your output monitor function whatever you like, but it must have 4 inputs and return an int:
-\begin{lstlisting}
-int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-  ...
-}
-\end{lstlisting}
-
-The first input is the solver object, the second is the current simulation time, the third is the output number, and the last is the total number of outputs requested. To get the solver to call this function every output time, put in your \lstinline!physics_init! code:
-\begin{lstlisting}
-  solver->addMonitor(my_output_monitor);
-\end{lstlisting}
-If you want to later remove a monitor, you can do so with
-\begin{lstlisting}
-  solver->removeMonitor(my_output_monitor);
-\end{lstlisting}
-
-A simple example using this monitor is:
-\begin{lstlisting}
-int my_output_monitor(Solver *solver, BoutReal simtime, int iter, int NOUT) {
-  output.write("My monitor, time = %e, dt = %e\n", 
-      simtime, solver->getCurrentTimestep());
-}
-
-int physics_init(bool restarting) {
-  solver->addMonitor(my_monitor);
-}
-\end{lstlisting}
-
-See the monitor example (\file{examples/monitor}) for full code.
-
-
-{\bf Timestep monitoring}: This works in the same way as output monitoring. First define a monitor function:
-\begin{lstlisting}
-int my_timestep_monitor(Solver *solver, BoutReal simtime, BoutReal lastdt) {
-  ...
-}
-\end{lstlisting}
-where \lstinline!simtime! will again contain the current simulation time, and \lstinline!lastdt! the last
-timestep taken. Add this function to the solver:
-\begin{lstlisting}
-  solver->addTimestepMonitor(my_timestep_monitor);
-\end{lstlisting}
-Timestep monitoring is disabled by default, unlike output monitoring. To enable timestep monitoring, set in
-the options file (BOUT.inp):
-\begin{lstlisting}
-[solver]
-monitor_timestep = true
-\end{lstlisting}
-or put on the command line \lstinline!solver:monitor_timestep=true!. When this is enabled, it will
-change how solvers like CVODE and PVODE (the default solvers) are used. Rather than being run in NORMAL
-mode, they will instead be run in SINGLE\_STEP mode (see the SUNDIALS notes here:\url{http://computation.llnl.gov/casc/sundials/support/notes.html}). This may in some cases be less efficient.
-
 \subsection{Global field gather / scatter}
 
 In BOUT++ each processor performs calculations on a sub-set of the mesh, and communicates with other
@@ -4099,82 +4809,27 @@ or by getting a pointer to the underlying data, which is stored as a 1D array:
 
 See the example \file{examples/test-globalfield} for more examples.
 
+\section{Testing}
 
-\subsection{ODE integration}
+Two types of tests are currently used in BOUT++ to catch bugs as early as possible: Unit tests, which 
+check a small piece of the code separately, and a test suite which runs the entire code on a short problem.
 
-The Solver class can be used to solve systems of ODEs inside a physics model: Multiple Solver objects
-can exist besides the main one used for time integration.
-Example code is in \file{examples/test-integrate}.
+\index{Unit tests}
+Unit tests can be run using the \file{src/unit\_tests} Python script. This searches through the directories
+looking for an executable script called \file{unit\_test}, runs them, and collates the results. Not many
+tests are currently available as much of the code is too tightly coupled. If done correctly, the unit tests
+should describe and check the behavior of each part of the code, and hopefully the number of these will increase
+over time.
 
-To use this feature, systems of ODEs must be represented by a class derived
-from \code{PhysicsModel} (see section~\ref{sec:newapi}).
+\index{Test suite}
+The test suite is in the \file{examples} directory, and is run using the \file{test\_suite} python script. At the top
+of this file is a list of the subdirectories to run (e.g. \file{test-io}, \file{test-laplace}, and \file{interchange-instability}). In each of those subdirectories the script \file{runtest} is executed, and the return value used to determine if the test passed or failed.
 
-\begin{lstlisting}
-class MyFunction : public PhysicsModel {
- public:
-  int init(bool restarting) {
-    // Initialise ODE
-    // Add variables to solver as usual
-    solver->add(result, "result");
-    ...
-  }
-  
-  int rhs(BoutReal time) {
-    // Specify derivatives of fields as usual
-    ddt(result) = ...
-  }
- private:
-  Field3D result;
-};
-\end{lstlisting}
+All tests should be short, otherwise it discourages people from running the tests before committing changes. A few minutes or less on a typical desktop, and ideally only a few seconds. If you have a large simulation which you want
+to stop anyone breaking, find starting parameters which are as sensitive as possible so that the simulation
+can be run quickly. 
 
-To solve this ODE, create a new Solver object:
-\begin{lstlisting}[numbers=none]
-Solver* ode = Solver::create(Options::getRoot()->getSection("ode"));
-\end{lstlisting}
-This will look in the section \texttt{[ode]} in the options file.
-{\bf Important:} To prevent this solver overwriting the main restart files
-with its own restart files, either disable restart files:
-\begin{lstlisting}[numbers=none]
-[ode]
-enablerestart = false
-\end{lstlisting}
-or specify a different directory to put the restart files:
-\begin{lstlisting}[numbers=none]
-[ode]
-restartdir = ode  # Restart files ode/BOUT.restart.0.nc, ...
-\end{lstlisting}
-
-Create a model object, and pass it to the solver:
-\begin{lstlisting}[numbers=none]
-MyFunction* model = new MyFunction();
-ode->setModel(model);
-\end{lstlisting}
-
-Finally tell the solver to perform the integration:
-\begin{lstlisting}[numbers=none]
-ode->solve(5, 0.1);
-\end{lstlisting}
-The first argument is the number of steps to take, and the second is the size of each step. These can also be specified in the options, so calling
-\begin{lstlisting}[numbers=none]
-ode->solve();
-\end{lstlisting}
-will cause ode to look in the input for \texttt{nout} and \texttt{timestep} options:
-\begin{lstlisting}[numbers=none]
-[ode]
-nout = 5
-timestep = 0.1
-\end{lstlisting}
-Finally, delete the model and solver when finished:
-\begin{lstlisting}[numbers=none]
-delete model;
-delete solver;
-\end{lstlisting}
-
-{\bf Note: } If an ODE needs to be solved multiple times, at the moment
-it is recommended to delete the solver, and create a new one each time. 
-
-\section{Testing using the Method of Manufactured Solutions}
+\subsection{Method of Manufactured Solutions}
 
 The Method of Manufactured solutions (MMS) is a rigorous way to check
 that a numerical algorithm is implemented correctly. A known
@@ -4200,6 +4855,65 @@ Common mistakes:
 \item Don't use terms multiplying coordinates together e.g. \texttt{x * z} or \texttt{y * z}. These are not periodic in $y$ and/or $z$, so will give strange answers and usually no convergence. Instead use \texttt{x * sin(z)} or similar, which are periodic.
 \end{itemize}
 
+\subsection{Timing}
+\label{sec:timerclass}
+\index{Timer}
+
+To time parts of the code, and calculate the percentage of time spent in communications, file I/O, etc. there is the \lstinline!Timer! class defined
+in \file{include/bout/sys/timer.hxx}. To use it, just create a \lstinline!Timer!
+object at the beginning of the function you want to time:
+\begin{lstlisting}
+#include <bout/sys/timer.hxx>
+
+void someFunction() {
+  Timer timer("test")
+  ...
+}
+\end{lstlisting}
+Creating the object starts the timer, and since the object is destroyed when
+the function returns (since it goes out of scope) the destructor stops
+the timer.
+\begin{lstlisting}
+class Timer {
+public:
+  Timer();
+  Timer(const std::string &label);
+  ~Timer();
+
+  double getTime();
+  double resetTime();
+};
+\end{lstlisting}
+The empty constructor is equivalent to setting \lstinline!label = ""!. 
+Constructors call a private function \lstinline!getInfo()!, which looks
+up the \lstinline!timer_info! structure corresponding to the label in 
+a \lstinline!map<string, timer_info*>!. If no such structure exists, then one
+is created. This structure is defined as:
+\begin{lstlisting}
+struct timer_info {
+  double time;    ///< Total time
+  bool running;   ///< Is the timer currently running?
+  double started; ///< Start time
+};
+\end{lstlisting}
+Since each timer can only have one entry in the map, creating two
+timers with the same label at the same time will lead to trouble. 
+Hence this code is {\bf not} thread-safe.
+
+The member functions \lstinline!getTime()! and \lstinline!resetTime()!
+both return the current time. Whereas \lstinline!getTime()! only returns
+the time without modifying the timer, \lstinline!resetTime()! also resets
+the timer to zero. 
+
+If you don't have the object, you can still get and reset the time using
+static methods:
+\begin{lstlisting}
+double Timer::getTime(const std::string &label);
+double Timer::resetTime(const std::string &label);
+\end{lstlisting}
+These look up the \lstinline!timer_info! structure, and perform
+the same task as their non-static namesakes. These functions are used by the
+monitor function in \file{bout++.cxx} to print the percentage timing information.
 
 \section{Examples}
 \label{sec:examples}
