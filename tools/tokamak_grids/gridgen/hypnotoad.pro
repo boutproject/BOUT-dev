@@ -460,6 +460,16 @@ PRO event_handler, event
         DEVICE, file=filename
         plot_mesh, *(info.flux_mesh), xtitle="Major radius [m]", $
           ytitle="Height [m]", title="Generated: "+SYSTIME()
+
+        ; Plot boundary
+        IF in_struct(*info.rz_grid, "nlim") THEN BEGIN
+          data = *info.rz_grid
+          IF data.nlim GT 2 THEN BEGIN
+            OPLOT, [REFORM(data.rlim), data.rlim[0]], [REFORM(data.zlim), data.zlim[0]], $
+                   thick=2,color=2
+          ENDIF
+        ENDIF
+        
         DEVICE, /close
         SET_PLOT, 'X'
         WIDGET_CONTROL, info.status, set_value="Plotted mesh to file "+filename
