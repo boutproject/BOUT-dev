@@ -144,7 +144,7 @@ function calc_beta, Rxy, Zxy, mesh, rz_grid, method
 		ENDREP UNTIL last
 		beta = smooth(beta,5) ; smooth beta, it's ugly
 	endif else begin
-		print,"UNKNOWN METHOD FOR BETA CALCULATION"
+		print,"*** ERROR: UNKNOWN METHOD FOR BETA CALCULATION ***"
 		beta = 0.0
 	endelse
 
@@ -302,6 +302,27 @@ function dfdy, f, y, mesh
 		result[xi,yi] = DERIV(y[xi,yi],f[xi,yi])
 	ENDREP UNTIL last
 	return, result
+end
+
+; derivative of function in y, separating into flux regions
+function dfdy_seps, f, y, mesh
+
+	s = size(f, /dim)
+	nx = s[0]
+	ny = s[1]
+	result = dblarr(nx,ny)
+	N_ints = n_elements(mesh.npol)
+
+	for j=0,nx-1 do begin
+		ylow = 0
+		for i=0,N_ints-1 do begin
+			ylocs = indgen(mesh.npol[i])+ylow
+			result[j,ylocs] = DERIV(y[j,ylocs],f[j,ylocs])
+			ylow += mesh.npol[i]
+		endfor
+	endfor
+	return, result
+
 end
 
 function dfdx, f, x
@@ -1068,8 +1089,10 @@ retrybetacalc:
   yshift = intx(hrad, eta) ; b/c angle was calculated real space, integrate in real space as well (hrad instead of psixy)
   thetaxy = yxy + yshift
 
-  G = 1. - dfdy(yshift,thetaxy,mesh)
-  dyshiftdy = dfdy(yshift,yxy,mesh)
+  G = 1. - dfdy_seps(yshift,thetaxy,mesh)
+  dyshiftdy = dfdy_seps(yshift,yxy,mesh)
+;   G = 1. - dfdy(yshift,thetaxy,mesh)
+;   dyshiftdy = dfdy(yshift,yxy,mesh)
 
   ; Calculate field-line pitch
   pitch = hthe * Btxy / (Bpxy * Rxy)
@@ -1080,7 +1103,8 @@ retrybetacalc:
   ; Calculate zshift (qinty), sinty = d(zshift)/dpsi, and H = d(zshift)/dtheta
   qinty = my_int_y(pitch*(1.+dyshiftdy), yxy, mesh, /nosmooth, loop=qloop)
   sinty = DDX(psixy,qinty)
-  H = dfdy(qinty,thetaxy,mesh)
+  H = dfdy_seps(qinty,thetaxy,mesh)
+;   H = dfdy(qinty,thetaxy,mesh)
 
   ; NOTE: This is only valid in the core
   pol_angle = FLTARR(nx,ny)

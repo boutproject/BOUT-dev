@@ -408,6 +408,16 @@ int BoutMesh::load() {
   get(g12, "g12", 0.0);
   get(g13, "g13", 0.0);
   get(g23, "g23", 0.0);
+
+  // Diagonal components of metric tensor g^{ij} (default to 1)
+  get(g_11, "g_11", 1.0);
+  get(g_22, "g_22", 1.0);
+  get(g_33, "g_33", 1.0);
+  
+  // Off-diagonal elements. Default to 0
+  get(g_12, "g_12", 0.0);
+  get(g_13, "g_13", 0.0);
+  get(g_23, "g_23", 0.0);
   
   // Check input metrics
   if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
@@ -513,8 +523,8 @@ int BoutMesh::load() {
   }
 
   /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
+//   if(calcCovariant())
+//     throw BoutException("Error in calcCovariant call");
 
   /// Calculate Jacobian and Bxy
   if(jacobian())
@@ -550,7 +560,7 @@ int BoutMesh::load() {
   
   MPI_Group group_world;
   MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
-  
+
   //////////////////////////////////////////////////////
   /// Communicator in X
   
