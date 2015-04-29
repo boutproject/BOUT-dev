@@ -558,15 +558,15 @@ const FieldPerp LaplaceMumps::solve(const FieldPerp &b) {
   sol = 0.;
   sol.setIndex(y);
   
-  // Set Dirichlet boundary conditions through rhs if needed
-  if (!(inner_boundary_flags && INVERT_AC_GRAD+INVERT_RHS)) {
+  // Set boundary conditions through rhs if needed
+  if (!(inner_boundary_flags & INVERT_RHS)) {
     if (mesh->firstX())
       for (int z=0; z<mesh->ngz-1; z++)
 	for (int x=mesh->xstart-1; x>=0; x--) {
 	  b[x][z]=0.;
 	}
   }
-  if (!(outer_boundary_flags && INVERT_AC_GRAD+INVERT_RHS)) {
+  if (!(outer_boundary_flags & INVERT_RHS)) {
     if (mesh->lastX())
       for (int z=0; z<mesh->ngz-1; z++)
 	for (int x=mesh->xend+1; x<mesh->ngx; x++) {
@@ -614,24 +614,24 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 	if(inner_boundary_flags & INVERT_AC_GRAD)
 	  if( fourth_order ) {
 	    // Fourth Order Accuracy on Boundary
-	    mumps_struc.a_loc[i] = -25.0 / (12.0*mesh->dx[x][y]);
+	    mumps_struc.a_loc[i] = -25.0 / (12.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = 4.0 / mesh->dx[x][y];
+	    mumps_struc.a_loc[i] = 4.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = -3.0 / mesh->dx[x][y];
+	    mumps_struc.a_loc[i] = -3.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = 4.0 / (3.0*mesh->dx[x][y]);
+	    mumps_struc.a_loc[i] = 4.0 / (3.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = -1.0 / (4.0*mesh->dx[x][y]);
+	    mumps_struc.a_loc[i] = -1.0 / (4.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]);
 	    i++;
 	  }
 	  else {
 	    // Second Order Accuracy on Boundary
-	    mumps_struc.a_loc[i] = -3.0 / (2.0*mesh->dx[x][y]);
+	    mumps_struc.a_loc[i] = -3.0 / (2.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = 2.0 / mesh->dx[x][y];
+	    mumps_struc.a_loc[i] = 2.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]);
 	    i++;
-	    mumps_struc.a_loc[i] = -1.0 / (2.0*mesh->dx[x][y]);
+	    mumps_struc.a_loc[i] = -1.0 / (2.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]);
 	    i++;
 	  }
 	else {
@@ -804,24 +804,24 @@ void LaplaceMumps::solve(BoutReal* rhs, int y) {
 	if(outer_boundary_flags & INVERT_AC_GRAD) {
 	  if( fourth_order ) {
 	    // Fourth Order Accuracy on Boundary
-	    mumps_struc.a_loc[i] = 25.0 / (12.0*mesh->dx[x][y]); 
+	    mumps_struc.a_loc[i] = 25.0 / (12.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = -4.0 / mesh->dx[x][y]; 
+	    mumps_struc.a_loc[i] = -4.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = 3.0 / mesh->dx[x][y]; 
+	    mumps_struc.a_loc[i] = 3.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = -4.0 / (3.0*mesh->dx[x][y]); 
+	    mumps_struc.a_loc[i] = -4.0 / (3.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = 1.0 / (4.0*mesh->dx[x][y]); 
+	    mumps_struc.a_loc[i] = 1.0 / (4.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]); 
 	    i++;
 	  }
 	  else {
 	    // Second Order Accuracy on Boundary
-	    mumps_struc.a_loc[i] = 3.0 / (2.0*mesh->dx[x][y]); 
+	    mumps_struc.a_loc[i] = 3.0 / (2.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = -2.0 / mesh->dx[x][y]; 
+	    mumps_struc.a_loc[i] = -2.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]); 
 	    i++;
-	    mumps_struc.a_loc[i] = 1.0 / (2.0*mesh->dx[x][y]); 
+	    mumps_struc.a_loc[i] = 1.0 / (2.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]); 
 	    i++;
 	  }
 	}

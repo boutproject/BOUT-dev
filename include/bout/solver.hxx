@@ -81,6 +81,7 @@ using std::string;
 #define SOLVEREULER       "euler"
 #define SOLVERRK3SSP      "rk3ssp"
 #define SOLVERPOWER       "power"
+#define SOLVERARKODE	  "arkode"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -147,7 +148,9 @@ class Solver {
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
   
-  int rhs_ncalls; ///< Number of calls to the RHS function
+  int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
+  
+  bool split_monitor; //For split operator runtime output
 
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
