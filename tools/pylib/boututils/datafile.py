@@ -332,7 +332,7 @@ class DataFile(object):
             
             # Create the variable
             if library == "Scientific":
-                if t == 'int':
+                if t == 'int' or t == '<i4' or t == 'int32':
                     tc = Int
                 elif t=='<f4':
                     tc = Float32

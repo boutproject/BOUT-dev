@@ -88,21 +88,14 @@ char get_spin();                    // Produces a spinning bar
 
 /*!
   Initialise BOUT++
-
+  
   Inputs
   ------
-
+  
   The command-line arguments argc and argv are passed by
   reference, and pointers to these will be stored in various
   places in BOUT++.
-
-  Outputs
-  -------
-
-  Any non-zero return value should halt the simulation. If the return value is
-  less than zero, the exit status from BOUT++ is 0, otherwise it is the return
-  value of BoutInitialise.
-
+  
  */
 int BoutInitialise(int &argc, char **&argv) {
 
@@ -392,6 +385,9 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");
   int ncalls            = solver->rhs_ncalls;
+  int ncalls_e		= solver->rhs_ncalls_e;
+  int ncalls_i		= solver->rhs_ncalls_i;
+  bool output_split     = solver->split_monitor;
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
@@ -408,23 +404,36 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
     wall_limit *= 60.0*60.0;  // Convert from hours to seconds
 
     /// Record the starting time
-    mpi_start_time = MPI_Wtime(); // NB: Miss time for first step (can be big!)
+    mpi_start_time = MPI_Wtime() - wtime;
 
     first_time = false;
 
     /// Print the column header for timing info
-    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
-
+    if(!output_split){
+	    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    }else{
+	    output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+    }
   }
   
-  output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
+ 
+  if(!output_split){
+    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
                simtime, ncalls, wtime,
                100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
                100.*wtime_invert/wtime,  // Inversions
                100.0*wtime_comms/wtime,  // Communications
                100.* wtime_io / wtime,      // I/O
                100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
-  
+  }else{
+    output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+               simtime, ncalls_e, ncalls_i, wtime,
+               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+               100.*wtime_invert/wtime,  // Inversions
+               100.0*wtime_comms/wtime,  // Communications
+               100.* wtime_io / wtime,      // I/O
+               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+  }
   
   // This bit only to screen, not log file
 

@@ -3,7 +3,7 @@ Visualisation and animation routines
 
 Written by Luke Easy
 le590@york.ac.uk
-Last Updated 6/1/2014
+Last Updated 19/3/2015
 """
 from __future__ import print_function
 from __future__ import division
@@ -21,9 +21,7 @@ from boutdata import collect
 
 
 ####################################################################
-# Specify ffmpeg path
-plt.rcParams['animation.ffmpeg_path'] = '/opt/local/bin/ffmpeg'
-
+# Create FFMpeg writer
 FFwriter = animation.FFMpegWriter()
 ####################################################################
 
