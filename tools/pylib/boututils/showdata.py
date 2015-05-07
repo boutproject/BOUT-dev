@@ -12,6 +12,7 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata import collect
+#import pdb
 
 
 ####################################################################
@@ -28,7 +29,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = []):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
@@ -312,6 +313,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     dummymax = []
     dummymin = []
     clevels = []
+
     for i in range(0,Nvar):
         
         dummymax.append([])
@@ -324,8 +326,15 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for j in range(0,Nlines[i]):
             dummymax[i][j] = max(x[i][j])
         xmax.append(max(dummymax[i]))
-        
-        clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+        if not (global_colors):
+            clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+    if(global_colors): 
+        fmaxglobal = max(fmax)
+        fminglobal = min(fmin)
+        for i in range(0,Nvar):
+            fmax[i]  = fmaxglobal
+            fmin[i]  = fminglobal	
+            clevels.append(linspace(fmin[i], fmax[i], Ncolors))	
         
     # Create figures for animation plotting
     if (Nvar < 2):
