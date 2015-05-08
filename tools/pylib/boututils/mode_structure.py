@@ -1,8 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as numpy
 import sys
 from pylab import plot,xlabel,ylim,savefig,gca, xlim, show, clf, draw, title
 from boututils.fft_integrate import fft_integrate
-from ask import query_yes_no
+from .ask import query_yes_no
 
 #; Calculates mode structure from BOUT++ output
 #; for comparison to ELITE
@@ -80,11 +82,11 @@ def mode_structure( var_in, grid_in, period=1,
     
     s = numpy.shape(vr)
     if numpy.size(s) != 3 :
-        print "Error: Variable must be 3 dimensional"
+        print("Error: Variable must be 3 dimensional")
         return
   
     if (s[0] != nx) or (s[1] != ny) :
-      print "Error: Size of variable doesn't match grid"
+      print("Error: Size of variable doesn't match grid")
       
       return
   
@@ -97,15 +99,15 @@ def mode_structure( var_in, grid_in, period=1,
     tn = numpy.char.upper(tn)
     count = numpy.where(tn == "QINTY")
     if numpy.size(count) > 0 :
-        print "Using qinty as toroidal shift angle"
+        print("Using qinty as toroidal shift angle")
         zShift = grid.get('qinty')
     else:
         count = numpy.where(tn == "ZSHIFT")
         if numpy.size(count) > 0 :
-           print "Using zShift as toroidal shift angle"
+           print("Using zShift as toroidal shift angle")
            zShift = grid.get('zShift')
         else:
-           print "ERROR: Can't find qinty or zShift variable"
+           print("ERROR: Can't find qinty or zShift variable")
            return
 
     zshift=grid.get('zShift')
@@ -150,7 +152,7 @@ def mode_structure( var_in, grid_in, period=1,
       
       # interpolate values onto points
         
-        ypos = 0l
+        ypos = 0
         for y in range(ny-1):
           # original points
             zind = (zangle - zshift[x,y])/dz
@@ -208,7 +210,7 @@ def mode_structure( var_in, grid_in, period=1,
       
         if numpy.max(theta) > 1.0 :
           # mis-match between q and nu (integration error?)
-            if quiet==None : print "Mismatch  ", x, numpy.max(theta)
+            if quiet==None : print("Mismatch  ", x, numpy.max(theta))
             theta = theta / (numpy.max(theta) + numpy.abs(theta[1] - theta[0]))
        
       
@@ -265,7 +267,7 @@ def mode_structure( var_in, grid_in, period=1,
         
         else:
             # Use hard-wired values
-            print "WARNING: Using hard-wired psi normalisation"
+            print("WARNING: Using hard-wired psi normalisation")
             # for circular case
             #xarr = (xarr + 0.1937) / (0.25044 + 0.1937)
             # for ellipse case
@@ -286,7 +288,7 @@ def mode_structure( var_in, grid_in, period=1,
         # go through and plot each mode
         for i in range(nf):
             if numpy.max(famp[:,i]) > 0.05*numpy.max(famp):
-                print "Mode m = ", i+1, " of ", nf
+                print("Mode m = ", i+1, " of ", nf)
                 plot(xarr, famp[:,i], 'k')
                 ylim(0,numpy.max(famp))
                 xlim(xrange)
@@ -355,7 +357,7 @@ def mode_structure( var_in, grid_in, period=1,
             minind = numpy.min(inds[0:count])
             maxind = numpy.max(inds[0:count])
       
-            print "Mode number range: ", minind, maxind
+            print("Mode number range: ", minind, maxind)
       
             plot( xarr, famp[:,0], 'k', visible=False)
             ylim(0,numpy.max(famp))

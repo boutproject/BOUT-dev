@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from numpy import *;
 #from scipy.io import readsav;
@@ -25,8 +26,8 @@ fphi = fft.fft(data, axis=3)
 
 plt.figure();
 for i in range(1, 9):
-   print "Growth rate for mode number", i
-   print gradient(log(abs(fphi[:,34, 32, i])))
+   print("Growth rate for mode number", i)
+   print(gradient(log(abs(fphi[:,34, 32, i]))))
    plt.semilogy(((abs(fphi[:,34, 32, i]))), label = 'n=' + str(i * 5));
 
 plt.legend(loc=2);

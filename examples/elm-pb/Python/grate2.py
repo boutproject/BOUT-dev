@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###
 # computes average growth rate for all points at the final timestep 
 # computes average growth rate for points in the mead plane at the final timestep 
@@ -36,12 +37,12 @@ d=np.ma.masked_array(growth,np.isnan(growth))
 # masked arrays
 # http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed    
                         
-print 'Total mean value = ', np.mean(np.ma.masked_array(d,np.isinf(d)))
+print('Total mean value = ', np.mean(np.ma.masked_array(d,np.isinf(d))))
 mm=np.ma.masked_array(growth[:,nmpy],np.isnan(growth[:,nmpy]))
 if np.isinf(np.mean(mm)) :
-    print 'There is an Inf value in the mead plane'
-    print 'Mean value of floating numbers in mead plane is = ', np.mean(np.ma.masked_array(mm,np.isinf(mm)))
+    print('There is an Inf value in the mead plane')
+    print('Mean value of floating numbers in mead plane is = ', np.mean(np.ma.masked_array(mm,np.isinf(mm))))
 else:
-    print 'Mean value in mead plane= ', np.mean(mm)
+    print('Mean value in mead plane= ', np.mean(mm))
     
 

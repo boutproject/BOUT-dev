@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from bunch import Bunch
 
@@ -30,7 +31,7 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
  
         d = np.shape(sig_xyzt)
         if np.size(d) != 4 :
-            print "Error: Variable must be 4D (x,y,z,t)"
+            print("Error: Variable must be 4D (x,y,z,t)")
             return
             
     
@@ -42,10 +43,10 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
         
         data = sig_xyzt
         if np.modf(np.log2(siz[3]))[0] != 0.0 :
-            print "WARNING: Expecting a power of 2 in Z direction"
+            print("WARNING: Expecting a power of 2 in Z direction")
       
             if np.modf(np.log2(siz[3]-1))[0] and (siz[3] > 1) :
-                print " -> Truncating last point to get power of 2"
+                print(" -> Truncating last point to get power of 2")
                 data = data[:,:,0:(siz[3]-2),:]
                 siz[3] = siz[3] - 1
               
@@ -69,8 +70,8 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
             res.ac = ac
 
         if 'RMS' not in args and 'DC' not in args and 'AC' not in args :
-            print 'Wrong argument'
+            print('Wrong argument')
         return res
     except:
-        print 'moment_xyz failed'
+        print('moment_xyz failed')
         return

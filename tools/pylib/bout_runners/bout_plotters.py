@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 """Classes and functions for plotting BOUT++ runs."""
+from __future__ import print_function
+from __future__ import absolute_import
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
@@ -12,8 +14,8 @@ __date__    = '25.02.2015'
 import os
 import re
 from boututils import shell
-from bout_runners.plot_style import set_style
-from bout_runners.common_bout_functions import create_folder,\
+from .bout_runners.plot_style import set_style
+from .bout_runners.common_bout_functions import create_folder,\
                                                warning_printer,\
                                                check_for_plotters_errors,\
                                                wait_for_runs_to_finish,\

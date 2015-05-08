@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from boututils import deriv
 from bunch import bunchify
@@ -37,7 +38,7 @@ def volume_integral( var, g, xr=False):
   
   
     elif s != 2 :
-        print "ERROR: volume_integral var must be 2, 3 or 4D"
+        print("ERROR: volume_integral var must be 2, 3 or 4D")
    
   
     # 2D [x,y]

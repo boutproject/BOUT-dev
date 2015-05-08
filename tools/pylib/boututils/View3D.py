@@ -7,15 +7,16 @@ based on enthought's example by Gael Varoquaux <gael.varoquaux@normalesup.org>
 http://docs.enthought.com/mayavi/mayavi/auto/example_magnetic_field.html#example-magnetic-field
 
 """
+from __future__ import absolute_import
 
 
 from boutdata import collect
 import numpy as np
 from mayavi import mlab
-from read_geqdsk import read_geqdsk
+from .read_geqdsk import read_geqdsk
 from boututils import View2D
 from scipy import interpolate
-from boutgrid import *
+from .boutgrid import *
 from boututils import file_import
 
 

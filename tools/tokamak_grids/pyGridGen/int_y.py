@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy
 from gen_surface import gen_surface
 import copy
@@ -24,7 +25,7 @@ def int_y( var, mesh, loop=None, nosmooth=None, simple=None):
         f[xi,yi] = int_func(var[xi,yi], simple=simple)
                 
         if nosmooth==None :
-            print 'no smooth yet'
+            print('no smooth yet')
             #f[xi,yi] = SMOOTH(SMOOTH(f[xi,yi], 5, /edge_truncate), 5, /edge_truncate)
           
         loop[xi] = f[xi,yi[numpy.size(yi)-1]] - f[xi,yi[0]]

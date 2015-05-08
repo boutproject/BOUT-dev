@@ -1,3 +1,4 @@
+from __future__ import print_function
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Equilibrium analysis routine
 # 
@@ -84,8 +85,8 @@ def analyse_equil ( F, R, Z):
                                                                
 
                                                                                           
-    print "Number of O-points: "+numpy.str(n_opoint)
-    print "Number of X-points: "+numpy.str(n_xpoint)
+    print("Number of O-points: "+numpy.str(n_opoint))
+    print("Number of X-points: "+numpy.str(n_xpoint))
     
  # Deduce the O & X points   
     
@@ -145,10 +146,10 @@ def analyse_equil ( F, R, Z):
 
     draw()
 
-    print "Number of O-points: "+str(n_opoint)
+    print("Number of O-points: "+str(n_opoint))
 
     if n_opoint == 0 :
-        print "No O-points! Giving up on this equilibrium"
+        print("No O-points! Giving up on this equilibrium")
         return Bunch(n_opoint=0, n_xpoint=0, primary_opt=-1)
 
 
@@ -164,8 +165,8 @@ def analyse_equil ( F, R, Z):
             mind = d
     
     primary_opt = ind
-    print "Primary O-point is at "+ numpy.str(numpy.interp(opt_ri[ind],numpy.arange(numpy.size(R)),R)) + ", " + numpy.str(numpy.interp(opt_zi[ind],numpy.arange(numpy.size(Z)),Z))
-    print ""
+    print("Primary O-point is at "+ numpy.str(numpy.interp(opt_ri[ind],numpy.arange(numpy.size(R)),R)) + ", " + numpy.str(numpy.interp(opt_zi[ind],numpy.arange(numpy.size(Z)),Z)))
+    print("")
   
     if n_xpoint > 0 :
 
@@ -207,7 +208,7 @@ def analyse_equil ( F, R, Z):
        
 
         if nkeep > 0 :
-            print "Keeping x-points ", keep
+            print("Keeping x-points ", keep)
             xpt_ri = xpt_ri[keep]
             xpt_zi = xpt_zi[keep]
             xpt_f = xpt_f[keep]
@@ -230,7 +231,7 @@ def analyse_equil ( F, R, Z):
    
         xpt_f = 0.5*(numpy.max(F) + numpy.min(F))
     
-        print "WARNING: No X-points. Setting separatrix to F = "+str(xpt_f)
+        print("WARNING: No X-points. Setting separatrix to F = "+str(xpt_f))
 
         xpt_ri = 0
         xpt_zi = 0

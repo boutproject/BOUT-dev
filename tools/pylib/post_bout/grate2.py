@@ -1,3 +1,4 @@
+from __future__ import print_function
 ###
 # compute average growth rate bout variable f and plane y
 # prints value in plane y and total average
@@ -31,8 +32,8 @@ def avgrate(p, y=None, tind=None):
 # masked arrays
 # http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed    
                         
-    print 'Total average growth rate= ', np.mean(np.ma.masked_array(d,np.isinf(d)))
-    if y != None : print 'Growth rate in plane', y, '= ', np.mean(np.ma.masked_array(growth[:,y],np.isnan(growth[:,y])))
+    print('Total average growth rate= ', np.mean(np.ma.masked_array(d,np.isinf(d))))
+    if y != None : print('Growth rate in plane', y, '= ', np.mean(np.ma.masked_array(growth[:,y],np.isnan(growth[:,y]))))
 
 
 

@@ -54,7 +54,7 @@ try:
     from boututils.getmpirun import getmpirun
 except:
     print("No getmpirun command")
- 
+
 try:
     from boututils.fft_integrate import fft_integrate
 except:
@@ -102,12 +102,12 @@ try:
     from boututils.fft_deriv import fft_deriv
 except:
     print("No fft_deriv")
- 
+
 try:
-    from boututils.int_func  import int_func  
+    from boututils.int_func  import int_func
 except:
     print("No int_func")
- 
+
 try:
     from boututils.surface_average import surface_average
 except:
@@ -135,4 +135,4 @@ except:
 try:
     from boututils.View3D import View3D
 except:
-    print traceback.format_exc()
+    print(traceback.format_exc())

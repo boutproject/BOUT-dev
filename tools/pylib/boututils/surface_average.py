@@ -1,6 +1,8 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import numpy as np
 from boututils import deriv, int_func
-from idl_tabulate import idl_tabulate
+from .idl_tabulate import idl_tabulate
 from bunch import bunchify
 
 
@@ -36,7 +38,7 @@ def surface_average ( var, g, area=None):
     
         return result
     elif s != 3 :
-        print "ERROR: surface_average var must be 3 or 4D"
+        print("ERROR: surface_average var must be 3 or 4D")
         return 0
 
   

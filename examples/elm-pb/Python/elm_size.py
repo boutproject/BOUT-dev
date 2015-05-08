@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from bunch import Bunch
 
@@ -6,7 +7,7 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
   
     lis=[dcp,p0,uedge]
     if np.size(lis) != 3 :
-        print "lack of parameters"
+        print("lack of parameters")
         return 0
     
 
@@ -25,7 +26,7 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
     s=np.shape(mydcp)
 
     if np.ndim(mydcp) != 3 :
-        print "dcp should be 3D(t,x,y)"
+        print("dcp should be 3D(t,x,y)")
  
 
     nt=s[0]

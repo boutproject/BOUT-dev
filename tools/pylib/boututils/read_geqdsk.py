@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy
 from bunch import Bunch
 from geqdsk import Geqdsk
@@ -70,7 +71,7 @@ def read_geqdsk (file):
 
     f=f.T
     
-    print 'nxefit =  ', nxefit, '  nyefit=  ', nyefit
+    print('nxefit =  ', nxefit, '  nyefit=  ', nyefit)
 
     return Bunch(nx=nxefit, ny=nyefit, # Number of horizontal and vertical points
             r=r, z=z,   # Location of the grid-points

@@ -1,3 +1,4 @@
+from __future__ import print_function
 ####################################
 # Replicates IDL's showdata and more
 ####################################
@@ -10,7 +11,7 @@ try:
 except ImportError:
     try: from mayavi import mlab
     except ImportError:
-        print "No mlab available"
+        print("No mlab available")
      
 from boututils import anim
 ###########################

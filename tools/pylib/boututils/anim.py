@@ -1,3 +1,4 @@
+from __future__ import print_function
 from boutdata import collect
 import numpy as np
 import os
@@ -9,7 +10,7 @@ except ImportError:
         from mayavi import mlab
         from mayavi.mlab import *
     except ImportError:
-        print "No mlab available"
+        print("No mlab available")
 
 from tvtk.tools import visual
 
@@ -36,9 +37,9 @@ def anim(s, d, *args, **kwargs):
             
     nt=d.shape[0]
     
-    print 'animating for ',nt,'timesteps' 
+    print('animating for ',nt,'timesteps') 
     if save == True : 
-        print 'Saving pics in folder Movie' 
+        print('Saving pics in folder Movie') 
         if not os.path.exists('Movie'):
             os.makedirs('Movie')
 

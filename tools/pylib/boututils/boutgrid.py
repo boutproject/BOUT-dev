@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 import numpy as np
 from numpy import cos, sin, pi
@@ -13,7 +14,7 @@ def aligned_points(grid, nz=1, period=1.0, maxshift=0.4):
         Rxy = grid["Rxy"]
         Zxy = grid["Zxy"]
     except:
-        print "Missing required data"
+        print("Missing required data")
         return None
     
     
@@ -60,12 +61,12 @@ def create_grid(grid, data, period=1):
     ny = grid["ny"]#[0]
     nz = s[2]
     
-    print "data: %d,%d,%d   grid: %d,%d\n" % (s[0],s[1],s[2], nx,ny)
+    print("data: %d,%d,%d   grid: %d,%d\n" % (s[0],s[1],s[2], nx,ny))
     
     dims = (nx, nz, ny)
     sgrid = tvtk.StructuredGrid(dimensions=dims)
     pts = aligned_points(grid, nz, period)
-    print np.shape(pts)
+    print(np.shape(pts))
     sgrid.points = pts
     
     scalar = np.zeros([nx*ny*nz])
@@ -76,7 +77,7 @@ def create_grid(grid, data, period=1):
         #scalar[start:end] = (data[:,y,:]).transpose().ravel()
         scalar[start:end] = (data[:,y,:]).ravel()
 
-        print y, " = " , np.max(scalar[start:end])
+        print(y, " = " , np.max(scalar[start:end]))
         start = end
     
     sgrid.point_data.scalars = np.ravel(scalar.copy())

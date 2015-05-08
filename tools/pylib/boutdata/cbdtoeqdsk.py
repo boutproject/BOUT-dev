@@ -1,3 +1,4 @@
+from __future__ import print_function
 from boututils import file_import
 from bunch import Bunch
 import numpy as np
@@ -26,4 +27,4 @@ def cbmtogeqdsk(g):
 if __name__ == '__main__':
     gfile='../cbm18_dens8.dskgato.cdl'
     g=file_import(gfile)
-    print cbmtogeqdsk(g)
+    print(cbmtogeqdsk(g))

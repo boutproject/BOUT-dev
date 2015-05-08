@@ -3,14 +3,15 @@
 #matplotlib.use('Qt4Agg')
 #from pylab import *
 
+from __future__ import absolute_import
 import numpy as np
 from bunch import Bunch
-from radial_grid import radial_grid
-from analyse_equil_2 import analyse_equil
+from .radial_grid import radial_grid
+from .analyse_equil_2 import analyse_equil
 from pylab import figure, show, draw, plot, contour, setp, clabel, title, streamplot, cm, gca, annotate, subplot2grid, Rectangle, tight_layout, text, subplots_adjust, figaspect, setp, legend, tick_params
 from boututils import closest_line
-from ask import query_yes_no
-from read_geqdsk import read_geqdsk
+from .ask import query_yes_no
+from .read_geqdsk import read_geqdsk
 from scipy import interpolate
 
 
