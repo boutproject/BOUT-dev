@@ -1,21 +1,13 @@
 #!/usr/bin/env python
 """Classes and functions for plotting BOUT++ runs."""
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-from builtins import zip
-from builtins import str
-from builtins import range
-from past.utils import old_div
-from builtins import object
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.623beta'
-__date__    = '16.03.2015'
+__version__ = '0.622beta'
+__date__    = '25.02.2015'
 
 import os
 import re
@@ -109,7 +101,7 @@ class bout_plotter(object):
 
             # Rewrite run_groups made from bout_runners.py
             if type(run_groups[0]) == dict:                
-                groups = list(run_groups.keys())
+                groups = run_groups.keys()
                 self.run_groups = {}
                 for group in groups:
                     # Make the dictionary
@@ -268,7 +260,7 @@ class solution_plotter(bout_plotter):
 
         # In this kind of plot, one group equals one job
         # We will here make one plot per job
-        groups = list(self.run_groups.keys())
+        groups = self.run_groups.keys()
         for group in groups:
             # Each job is stored in a list
             # As we would like the job as a string we will pick the
@@ -415,7 +407,7 @@ class solution_plotter(bout_plotter):
         z_len = len( whole_array[0,0,0,:] )
 
         number_of_slices = 0
-        keys = list(self.plot_direction.keys())
+        keys = self.plot_direction.keys()
         for key in keys:
             if key == 'x':
                 if self.plot_direction[key] == 'all':
@@ -454,11 +446,11 @@ class solution_plotter(bout_plotter):
 
         if self.number_of_overplots != False:
             # Divide into list of integers 
-            step = int(np.floor(old_div(float(nout),float(self.number_of_overplots))))
+            step = int(np.floor(float(nout)/float(self.number_of_overplots)))
             # 1 is the smallest step in range
             if step == 0:
                 step = 1
-            t_array_indices = list(range( 0, nout, step))
+            t_array_indices = range( 0, nout, step )
             # Set the corresponding time values
             self.plot_times = [index*timestep for index in t_array_indices]
             # If get one more index than asked for
@@ -517,7 +509,7 @@ class solution_plotter(bout_plotter):
         # Convert the plot_time to index in the t_array
         time_indices = []
         for the_time in self.plot_times:
-            time_indices.append(round(old_div(the_time,timestep)))
+            time_indices.append(round(the_time/timestep))
         for plot_times_index, t_array_index in enumerate(time_indices):
             # Check if there are numbers in the plot_times out of bounds
             if t_array_index >= nout:
@@ -676,7 +668,7 @@ class convergence_plotter(bout_plotter):
         # the collecting and plotting routines whenever qsub=True
         # Check for errors
         # Find the grid and timestep from the folder
-        groups = list(run_groups.keys())
+        groups = run_groups.keys()
         for group in groups:
             # Find the folder name from run_groups
             folder_names = run_groups[group]['dmp_folder']
@@ -739,7 +731,7 @@ class convergence_plotter(bout_plotter):
         """Drives the collection and plotting of the convergence groups"""
 
         # Finding the convergence group from the dictionary
-        groups = list(self.run_groups.keys())
+        groups = self.run_groups.keys()
 
         # Loop over the convergence groups
         for group_no in groups:
@@ -944,11 +936,11 @@ class convergence_plotter(bout_plotter):
                      (self.errors[variable]['spacing'][-1],\
                       self.errors[variable]['spacing'][0]),\
                      (\
-                      ((old_div(self.errors[variable]['spacing'][-1],\
-                        self.errors[variable]['spacing'][-1]))**order_inf)*\
+                      ((self.errors[variable]['spacing'][-1]/\
+                        self.errors[variable]['spacing'][-1])**order_inf)*\
                         self.errors[variable]['error_inf'][-1],\
-                      ((old_div(self.errors[variable]['spacing'][0],\
-                        self.errors[variable]['spacing'][-1]))**order_inf)*\
+                      ((self.errors[variable]['spacing'][0]/\
+                        self.errors[variable]['spacing'][-1])**order_inf)*\
                         self.errors[variable]['error_inf'][-1]\
                      ),\
                      'm--',\
@@ -962,11 +954,11 @@ class convergence_plotter(bout_plotter):
                      (self.errors[variable]['spacing'][-1],\
                       self.errors[variable]['spacing'][0]),\
                      (\
-                      ((old_div(self.errors[variable]['spacing'][-1],\
-                        self.errors[variable]['spacing'][-1]))**order_2)*\
+                      ((self.errors[variable]['spacing'][-1]/\
+                        self.errors[variable]['spacing'][-1])**order_2)*\
                         self.errors[variable]['error_2'][-1],\
-                      ((old_div(self.errors[variable]['spacing'][0],\
-                        self.errors[variable]['spacing'][-1]))**order_2)*\
+                      ((self.errors[variable]['spacing'][0]/\
+                        self.errors[variable]['spacing'][-1])**order_2)*\
                         self.errors[variable]['error_2'][-1]\
                      ),\
                      'c--',\
@@ -1082,9 +1074,9 @@ class convergence_plotter(bout_plotter):
         # Sort the data in case it is unsorted (may be the case from
         # qsub runners)
         list_of_tuples_to_be_sorted =\
-            list(zip(self.errors[variable]['spacing'],\
+            zip(self.errors[variable]['spacing'],\
                 self.errors[variable]['error_inf'],\
-                self.errors[variable]['error_2']))
+                self.errors[variable]['error_2'])
         # Sort the list
         # Note that we are sorting in reverse order, as we want the
         # highest grid spacing first
@@ -1093,7 +1085,7 @@ class convergence_plotter(bout_plotter):
         self.errors[variable]['spacing'],\
             self.errors[variable]['error_inf'],\
             self.errors[variable]['error_2'] =\
-            list(zip(*sorted_list))
+            zip(*sorted_list)
 
         # Initialize the orders
         order_2 = [' '*7]
@@ -1136,11 +1128,11 @@ class convergence_plotter(bout_plotter):
                                [error_start_inf, error_end_inf], 1)
             order_inf.append(order[0])
 
-        outstring = list(zip(self.errors[variable]['spacing'],\
+        outstring = zip(self.errors[variable]['spacing'],\
                         self.errors[variable]['error_2'],\
                         order_2,\
                         self.errors[variable]['error_inf'],\
-                        order_inf))
+                        order_inf)
         # Write the found orders
         f = open( file_name + '.txt', 'w' )        
         header = '#spacing    error_2    order_2    error_inf    order_inf' 
