@@ -1983,14 +1983,16 @@ field and in the core this will have a discontinuity at the twist-shift
 location where field-lines are matched onto each other. To handle this,
 a truncated Ballooning transformation can be used to construct a smooth
 initial perturbation:
-\[
+\begin{equation}
 U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + q2\pi i\right)
-\]
+\label{eq:ballooning_transform}
+\end{equation}
 
 \begin{figure}[h]
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_noballoon.png}
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
 \caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
+\label{fig:ballooning}
 \end{figure}
 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
@@ -2046,7 +2048,7 @@ particular way which is more symmetric than the default. To do this, set in BOUT
 This will change the definition of $x$ to \code{i / (nx - 1)}, so $x$ is then between $0$ and $1$
 everywhere.
 
-The following functions are also available in expressions:
+The functions in table~\ref{tab:initexprfunc} are also available in expressions.
 \begin{table}[htb!]
 \centering
 \caption{Initialisation expression functions}
@@ -2057,25 +2059,37 @@ Name & Description \\
 \hline
 abs(x) & Absolute value $\left|x\right|$\\
 asin(x), acos(x), atan(x), atan(y,x) & Inverse trigonometric functions \\
+ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, fig~\ref{fig:ballooning}) \\
+ballooning(x,n) & Ballooning transform, using $n$ terms (default 3) \\
 cos(x) & Cosine\\
 cosh(x) & Hyperbolic cosine\\
 exp(x) & Exponential \\
 tanh(x) & Hyperbolic tangent \\
 gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
 gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
+H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 log(x) & Natural logarithm \\
-min(x,y,...) & Minimum (variable arguments) \\
 max(x,y,...) & Maximum (variable arguments) \\
+min(x,y,...) & Minimum (variable arguments) \\
+mixmode(x) & A mixture of Fourier modes \\
+mixmode(x, seed) & seed determines random phase (default 0.5) \\
 power(x,y) & Exponent $x^y$ \\
 sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
-H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 \hline
 \end{tabular}
 \end{table}
+Note that to apply a ballooning transform in analytic expressions the \texttt{ballooning} function should be used, and the global flag ``ballooning'' has no effect. There is an example code \texttt{test-ballooning} which compares methods of setting initial conditions with ballooning transform.
 
+The \texttt{mixmode(x)} function is a mixture of Fourier modes of the form:
+\[
+\mathrm{mixmode}\left(x\right) = \sum_{i=1}^{14} \frac{1}{\left(1 + \left|i-4\right|\right)^2}\cos\left[ix + \phi\left(i, \mathrm{seed}\right)\right]
+\]
+where $\phi$ is a random phase between $-\pi$ and $+\pi$, which depends on the seed. The factor in front of each term
+is chosen so that the 4th harmonic ($i=4$) has the highest amplitude. This is useful mainly for initialising turbulence simulations,
+where a mixture of mode numbers is desired.
 
 \subsection{Boundary conditions}
 \label{sec:bndryopts}

@@ -76,6 +76,12 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   addGenerator("max", new FieldMax());
   
   addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
+  
+  // Ballooning transform
+  addGenerator("ballooning", new FieldBallooning(fieldmesh));
+  
+  // Mixmode function
+  addGenerator("mixmode", new FieldMixmode());
 }
 
 FieldFactory::~FieldFactory() {
