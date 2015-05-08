@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Classes and functions for setting style to plots."""
+from builtins import object
 
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
@@ -17,7 +18,7 @@ from _tkinter import TclError
 
 
 #{{{set_style
-class set_style():
+class set_style(object):
     """Class for setting the plotting style in plots from BOUT++"""
 
     # The following is shared by all instances
@@ -122,7 +123,7 @@ def find_exponents(max_number, use_metric_prefix=True,\
 
     if use_metric_prefix:
         # Make a list of the keys in the dictionary
-        prefixes = np.sort(metric_prefixes.keys())
+        prefixes = np.sort(list(metric_prefixes.keys()))
         # We would like the numbers to range from 0 to 100
         exponent = -24
         for prefix in prefixes:
