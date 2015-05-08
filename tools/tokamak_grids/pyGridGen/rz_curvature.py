@@ -4,7 +4,7 @@ from builtins import range
 from past.utils import old_div
 from bunch import Bunch
 import numpy
-from support import deriv
+from boututils import deriv
 from create_grid import local_gradient
 from scipy import interpolate
 
@@ -115,11 +115,11 @@ def pdiff_xy ( nr, nz, r, z, f ):
     dfdZ = numpy.zeros((nr, nz))
   
     for i in range (nz) :
-        dfdR[:,i] = deriv(r, f[:,i])
+        dfdR[:,i] = deriv(f[:,i], r)
      
   
     for i in range (nr) :
-        dfdZ[i,:] = deriv(z, f[i,:])
+        dfdZ[i,:] = deriv(f[i,:], z)
      
   
     return Bunch(r=dfdR, z=dfdZ, phi=0.0)

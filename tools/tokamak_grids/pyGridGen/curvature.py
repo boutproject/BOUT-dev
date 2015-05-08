@@ -7,7 +7,7 @@ from past.utils import old_div
 import numpy
 from bunch import Bunch
 from gen_surface import gen_surface
-from support import deriv, fft_deriv
+from boututils import deriv, fft_deriv
 import sys
 
 

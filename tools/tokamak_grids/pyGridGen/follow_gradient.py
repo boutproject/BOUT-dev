@@ -37,7 +37,7 @@ except ImportError:
 
 from local_gradient import local_gradient
 from itertools import chain
-from support import deriv
+from boututils  import deriv
 from saveobject import saveobject
 
 global rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, tol, Ri, Zi, dR, dZ

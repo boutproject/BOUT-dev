@@ -4,6 +4,8 @@ Visualisation and animation routines
 Written by Luke Easy
 le590@york.ac.uk
 Last Updated 19/3/2015
+Additional functionality by George Breyiannis 26/12/2014
+
 """
 from __future__ import print_function
 from __future__ import division
@@ -21,7 +23,9 @@ from boutdata import collect
 
 
 ####################################################################
-# Create FFMpeg writer
+# Specify manually ffmpeg path
+#plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
+
 FFwriter = animation.FFMpegWriter()
 ####################################################################
 

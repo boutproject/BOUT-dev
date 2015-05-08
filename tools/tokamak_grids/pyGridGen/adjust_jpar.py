@@ -27,7 +27,9 @@ from past.utils import old_div
 #
 import numpy
 from gen_surface import gen_surface
-from support import DDY, DDX, int_y
+from ddy import DDY
+from ddx import  DDX
+from int_y import  int_y
 import sys
 
 def grad_par( var, mesh):

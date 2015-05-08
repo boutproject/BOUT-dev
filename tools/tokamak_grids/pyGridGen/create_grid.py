@@ -101,7 +101,7 @@ from scipy import integrate
 from local_gradient import local_gradient
 from follow_gradient import follow_gradient
 from ask import query_yes_no
-from support import deriv
+from boututils import deriv
 from smooth import SMOOTH
 
 
@@ -636,9 +636,11 @@ def create_grid( F, R, Z, in_settings, critical,
     opt_ri = critical.opt_ri
     opt_zi = critical.opt_zi
     opt_f  = critical.opt_f
-    xpt_ri = critical.xpt_ri
-    xpt_zi = critical.xpt_zi
-    xpt_f  = critical.xpt_f
+    xpt_ri = critical.xpt_ri.flatten()
+    xpt_zi = critical.xpt_zi.flatten()
+    xpt_f  = critical.xpt_f.flatten()
+    
+    
 
 
   # Overplot the separatrices, O-points
@@ -646,9 +648,9 @@ def create_grid( F, R, Z, in_settings, critical,
 
   # Psi normalisation factors
 
-    faxis = critical.opt_f[critical.primary_opt]
+    faxis = opt_f[primary_opt]
     
-    fnorm = critical.xpt_f[critical.inner_sep] - critical.opt_f[critical.primary_opt]
+    fnorm = xpt_f[inner_sep] - opt_f[primary_opt]
     
 
 
@@ -671,7 +673,7 @@ def create_grid( F, R, Z, in_settings, critical,
     # work out where to put the surfaces in the core
     fvals = radial_grid(nrad, f_inner, f_outer, 1, 1, [xpt_f[inner_sep]], rad_peaking)
 
-
+    fvals = fvals.flatten()
     # Create a starting surface
     sind = numpy.int(old_div(nrad, 2))
     start_f = fvals[sind]
@@ -735,7 +737,9 @@ def create_grid( F, R, Z, in_settings, critical,
 
     ans=query_yes_no('Press enter to create grid')  
     
-    if ans != 1 : sys.exit()
+    if ans != 1 : 
+        show()
+	sys.exit()
       
     start_ri, start_zi=transform_xy(x,y,R,Z)
     

@@ -4,7 +4,7 @@ from builtins import range
 from past.utils import old_div
 import numpy as np
 from boututils import file_import
-from enthought.mayavi import mlab
+from mayavi import mlab
 from tvtk.tools import visual
 
 

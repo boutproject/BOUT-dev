@@ -4,7 +4,10 @@ from __future__ import print_function
 #
 # Generic routines, useful for all data
 ##################################################
+
 import sys
+import traceback
+
 print("Loading data utilities")
 
 # Load routines from separate files
@@ -12,7 +15,6 @@ print("Loading data utilities")
 #    from plotdata import plotdata
 #except:
 #    print "No plotdata"
-
 try:
     from boututils.datafile import DataFile
 except:
@@ -90,3 +92,47 @@ try:
     from boututils.showdata import showdata
 except:
     print("No showdata")
+
+try:
+    from boututils.closest_line import closest_line
+except:
+    print("No closest_line")
+
+try:
+    from boututils.fft_deriv import fft_deriv
+except:
+    print("No fft_deriv")
+ 
+try:
+    from boututils.int_func  import int_func  
+except:
+    print("No int_func")
+ 
+try:
+    from boututils.surface_average import surface_average
+except:
+    print("No surface_average ")
+
+try:
+    from boututils.efit_analyzer import View2D
+except:
+    print("No View2D ")
+
+try:
+    if sys.version_info[0]==3:
+        print("mlab uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from mayavi import mlab
+except:
+    print("No mlab")
+
+try:
+    from boututils.anim import anim
+except:
+    print(traceback.format_exc())
+
+try:
+    from boututils.View3D import View3D
+except:
+    print traceback.format_exc()
