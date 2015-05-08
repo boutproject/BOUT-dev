@@ -6,7 +6,6 @@ from __future__ import print_function
 ##################################################
 
 import sys
-import traceback
 
 print("Loading data utilities")
 
@@ -66,12 +65,13 @@ except:
     print("No mode_structure command")
 
 try:
-    from boututils.plotpolslice import plotpolslice
-except:
-    print("No plotpolslice command")
     if sys.version_info[0]==3:
         print("polplotslice uses the VTK library through mayavi, which"+\
               " is currently only available in python 2")
+    else:
+        from boututils.plotpolslice import plotpolslice
+except:
+    print("No plotpolslice command")
 
 try:
     from boututils.moment_xyzt import moment_xyzt
@@ -128,11 +128,19 @@ except:
     print("No mlab")
 
 try:
-    from boututils.anim import anim
+    if sys.version_info[0]==3:
+        print("anim uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from boututils.anim import anim
 except:
-    print(traceback.format_exc())
+    print("No anim")
 
 try:
-    from boututils.View3D import View3D
+    if sys.version_info[0]==3:
+        print("View3D uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from boututils.View3D import View3D
 except:
-    print(traceback.format_exc())
+    print("No View3D")

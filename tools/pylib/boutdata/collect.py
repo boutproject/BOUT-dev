@@ -8,7 +8,7 @@ from past.utils import old_div
 #  - NumPy
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: boututils.DataFile couldn't be loaded")
     raise
