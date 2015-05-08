@@ -1,3 +1,4 @@
+from builtins import range
 ####################################
 # computes polslice for time series 
 ####################################
@@ -34,7 +35,7 @@ fm=np.zeros((nt,nx,ny)) # array to store the time sequence of the poloidal cross
 
 #Compute all time frames
 
-for k in xrange(nt):
+for k in range(nt):
     fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
     
 np.savez('pslice',fm=fm, z=z, r=r)

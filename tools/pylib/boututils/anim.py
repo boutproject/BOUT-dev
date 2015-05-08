@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 from boutdata import collect
 import numpy as np
 import os
@@ -44,7 +45,7 @@ def anim(s, d, *args, **kwargs):
             os.makedirs('Movie')
 
    
-    for i in xrange(nt):
+    for i in range(nt):
         s.mlab_source.scalars = d[i,:,:]
         if s1 != None : s1.mlab_source.scalars = d[i,:,:]
         title="t="+np.string0(i)

@@ -4,6 +4,9 @@
 #from pylab import *
 
 from __future__ import absolute_import
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from bunch import Bunch
 from .radial_grid import radial_grid
@@ -73,7 +76,7 @@ def View2D(g, option=0):
 # Function fpol and qpsi are given between simagx (psi on the axis) and sibdry (
 # psi on limiter or separatrix). So the toroidal field (fpol/R) and the q profile are within these boundaries 
 
-    npsigrid=np.arange(np.size(g.pres)).astype(float)/(np.size(g.pres)-1)
+    npsigrid=old_div(np.arange(np.size(g.pres)).astype(float),(np.size(g.pres)-1))
 
     fpsi = np.zeros((2, np.size(g.fpol)), np.float64)
     fpsi[0,:] = (g.simagx + npsigrid * ( g.sibdry -g.simagx ))
@@ -198,8 +201,8 @@ def View2D(g, option=0):
 
     Bp=np.gradient(g.psi)  
 
-    dr=(np.max(g.r[:,0])-np.min(g.r[:,0]))/np.size(g.r[:,0])
-    dz=(np.max(g.z[0,:])-np.min(g.z[0,:]))/np.size(g.z[0,:])
+    dr=old_div((np.max(g.r[:,0])-np.min(g.r[:,0])),np.size(g.r[:,0]))
+    dz=old_div((np.max(g.z[0,:])-np.min(g.z[0,:])),np.size(g.z[0,:]))
     
     dpsidr=Bp[0]
     dpsidz=Bp[1]

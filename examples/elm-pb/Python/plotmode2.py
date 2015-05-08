@@ -1,4 +1,8 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 
 from numpy import *;
 #from scipy.io import readsav;
@@ -51,7 +55,7 @@ plt.show(block=False);
 
 plt.figure();
 for i in range(1, 9):
-   plt.plot(abs(fphi[-1, :, 32, i])/abs(fphi[-1, :, 32, i]).max(), label = 'n=' + str(i * 5));
+   plt.plot(old_div(abs(fphi[-1, :, 32, i]),abs(fphi[-1, :, 32, i]).max()), label = 'n=' + str(i * 5));
 
 plt.legend();
 plt.xlabel('X index');

@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 ###
 # computes average growth rate for all points at the final timestep 
 # computes average growth rate for points in the mead plane at the final timestep 
@@ -11,7 +14,7 @@ path='./data/'
 
 p=collect('P',path=path)
 
-nmpy=p.shape[2]/2  # define mead plane
+nmpy=old_div(p.shape[2],2)  # define mead plane
 
 ik = 50 # disregard the first ik timesteps
 

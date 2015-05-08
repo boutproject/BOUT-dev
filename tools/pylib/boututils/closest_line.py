@@ -1,3 +1,4 @@
+from builtins import range
 import numpy
 # Find the closest contour line to a given point
 def closest_line(n, x, y, ri, zi, mind=None):

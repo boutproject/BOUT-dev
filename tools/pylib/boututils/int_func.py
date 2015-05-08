@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy
 from scipy.integrate import simps
 import copy
@@ -34,7 +37,7 @@ def int_func( xin, fin=None, simple=None):
          
     else:
      
-        n2 = numpy.int(n/2)
+        n2 = numpy.int(old_div(n,2))
      
         g[0] = 0.0
         for i in range (n2, n) :

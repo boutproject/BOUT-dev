@@ -1,4 +1,5 @@
 from __future__ import division
+from builtins import zip
 from builtins import range
 from past.utils import old_div
 import numpy as np
@@ -47,8 +48,8 @@ plot(xarr, q[:,-1],'k',label='t='+np.str(nt))
 
 from collections import OrderedDict
 handles, labels = gca().get_legend_handles_labels()
-by_label = OrderedDict(zip(labels, handles))
-legend(by_label.values(), by_label.keys())
+by_label = OrderedDict(list(zip(labels, handles)))
+legend(list(by_label.values()), list(by_label.keys()))
 
 
 xlabel(r"$\psi$",fontsize=25)

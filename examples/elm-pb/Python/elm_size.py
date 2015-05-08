@@ -1,4 +1,7 @@
 from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from bunch import Bunch
 
@@ -43,7 +46,7 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
     Dpsi[0,:]=psixy[1,:]-psixy[0,:]
     Dpsi[nx-1,:]=psixy[nx-1,:]-psixy[nx-2,:]
     for i in range(1,nx-2):
-        Dpsi[i,:]=(psixy[i+1,:]-psixy[i-1,:])/2
+        Dpsi[i,:]=old_div((psixy[i+1,:]-psixy[i-1,:]),2)
      
 
     Ddcp1=np.zeros(nt)
@@ -68,9 +71,9 @@ def elm_size(dcp,p0,uedge,xmin=None,xmax=None,yind=None,Bbar=None):
     s3=np.zeros(nt)
     E_loss=np.zeros(nt)
 
-    s1=-Ddcp1/Tp01   #1D elm size
-    s2=-Ddcp2/Tp02   #2D elm size
-    s3=-Ddcp3/Tp03   #3D elm size
+    s1=old_div(-Ddcp1,Tp01)   #1D elm size
+    s2=old_div(-Ddcp2,Tp02)   #2D elm size
+    s3=old_div(-Ddcp3,Tp03)   #3D elm size
 
     E_loss=-Ddcp3*(0.5*Bbar*Bbar/MU0)    #energy loss, unit J
     E_total=Tp03*(0.5*Bbar*Bbar/MU0)     #total energy, unit J

@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import numpy
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # 
@@ -27,7 +29,7 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     if include_out==None:
         m = m + 0.5
  
-    x = x / m 
+    x = old_div(x, m) 
   
 
     if in_dp==None and out_dp==None :
@@ -39,12 +41,12 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 
     if in_dp != None and out_dp != None :
     # Fit to dist = a*i^3 + b*i^2 + c*i
-        c = in_dp/norm
-        b = 3.*(1. - c) - out_dp/norm + c
+        c = old_div(in_dp,norm)
+        b = 3.*(1. - c) - old_div(out_dp,norm) + c
         a = 1. - c - b
     elif in_dp != None :
     # Only inner set
-        c = in_dp/norm
+        c = old_div(in_dp,norm)
         a = 0.5*(c-1.)
         b = 1. - c - a
     
@@ -54,9 +56,9 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     else:
     # Only outer set. Used in PF region
     # Fit to (1-b)*x^a + bx for fixed b
-        df = out_dp / norm
+        df = old_div(out_dp, norm)
         b = 0.25 < df  # Make sure a > 0
-        a = (df - b) / (1. - b)
+        a = old_div((df - b), (1. - b))
         vals = pin + (pout - pin)*( (1.-b)*x^a + b*x )
         return vals
   

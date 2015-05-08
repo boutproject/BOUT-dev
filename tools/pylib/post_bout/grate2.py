@@ -1,4 +1,5 @@
 from __future__ import print_function
+from builtins import range
 ###
 # compute average growth rate bout variable f and plane y
 # prints value in plane y and total average

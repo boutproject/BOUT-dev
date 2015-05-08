@@ -4,6 +4,10 @@
    Run demo() for instructions."""
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import zip
+from builtins import str
+from builtins import range
+from builtins import object
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
@@ -1020,7 +1024,7 @@ class basic_runner(object):
         """ Find all combinations of the changed data members """
 
         # The normal way of finding all combinations
-        if ('convergence_type' in kwargs.keys()) == False:
+        if ('convergence_type' in list(kwargs.keys())) == False:
             all_combinations = self.list_of_combinations(all_possibilities)
 
         # The special way of finding all combinations 
@@ -1067,7 +1071,7 @@ class basic_runner(object):
 
                 # First we check if MZ is set in self.grid, as this has the
                 # constraint that it needs to be on the form 2^n+1
-                grid_keys = self.grids.keys()
+                grid_keys = list(self.grids.keys())
                 if 'MZ' in grid_keys:
                     # If MZ is found, this is going to be the basis for the
                     # order grid numbers
@@ -1149,11 +1153,11 @@ class basic_runner(object):
                 # Make the range to a convergence string, which one can make
                 # combinations from
                 if len(ranges)==1:
-                    convergence_zip = zip(ranges[0])
+                    convergence_zip = list(zip(ranges[0]))
                 elif len(ranges)==2:
-                    convergence_zip = zip(ranges[0], ranges[1])
+                    convergence_zip = list(zip(ranges[0], ranges[1]))
                 elif len(ranges)==3:
-                    convergence_zip = zip(ranges[0], ranges[1], ranges[2])
+                    convergence_zip = list(zip(ranges[0], ranges[1], ranges[2]))
 
                 convergence_strings = [' '.join(element)\
                                        for element in convergence_zip]
@@ -1259,11 +1263,11 @@ class basic_runner(object):
 
         # Due to plotting it is convenient to put runs belonging to the
         # same convergence plot into one group
-        if ('convergence_type' in kwargs.keys()):
+        if ('convergence_type' in list(kwargs.keys())):
             if kwargs['convergence_type'] == 'spatial':
                 # How many runs must we make before we can make a
                 # convergence plot
-                keys = self.grids.keys()
+                keys = list(self.grids.keys())
                 self.no_runs_in_group = len(self.grids[keys[0]])
             elif kwargs['convergence_type'] == 'temporal':
                 # How many runs must we make before we can make a
@@ -1295,9 +1299,9 @@ class basic_runner(object):
 
         # Check if the methods are set correctly
         if type(self.methods) == dict:
-            first_keys = self.methods.keys()
+            first_keys = list(self.methods.keys())
             if type(self.methods[first_keys[0]]) == dict:
-                second_keys = self.methods[first_keys[0]].keys()
+                second_keys = list(self.methods[first_keys[0]].keys())
         if self.methods != False and (type(self.methods) != dict\
           or type(self.methods[first_keys[0]]) != dict\
           or type(self.methods[first_keys[0]][second_keys[0]]) != list):
@@ -1305,14 +1309,14 @@ class basic_runner(object):
 
         # Check if the grids are set correctly
         if type(self.grids) == dict:
-            first_keys = self.grids.keys()
+            first_keys = list(self.grids.keys())
         if self.grids != False and (type(self.grids) != dict\
           or type(self.grids[first_keys[0]]) != list):
             self.error_raiser("self.grids")
 
         # Check if the additional is set correctly
         if type(self.additional) == dict:
-            first_keys = self.additional.keys()
+            first_keys = list(self.additional.keys())
         if self.additional != False and (type(self.additional) != dict):
             self.error_raiser("self.additional")
 
@@ -1461,7 +1465,7 @@ class basic_runner(object):
 
         list_of_lists=[]
         # Iterate over a dictionary, (the for-loop returns both key and value)
-        for key, val in level_1_dictionary.iteritems():
+        for key, val in level_1_dictionary.items():
             list_of_possibilities = []
             # Iterates over the iterable (for example list) in the value of
             # the innermost dictionary
@@ -1491,13 +1495,13 @@ class basic_runner(object):
         # Appendable list_of_lists which in the end will be returned
         list_of_lists = []
         # Find the uppermost (first level) keys in the dictionary
-        uppermost_keys = level_2_dictionary.keys()
+        uppermost_keys = list(level_2_dictionary.keys())
 
         for upper_key in uppermost_keys:
             # Appendable list which we will find a subcombo from
             find_subcombo_from = []
             # Find the lowermost (second level) keys in the dictionary
-            lowermost_keys = level_2_dictionary[upper_key].keys()
+            lowermost_keys = list(level_2_dictionary[upper_key].keys())
             for lower_key in lowermost_keys:
                 # List to collect string with the same second level key
                 list_with_same_lower_key = []
@@ -1753,7 +1757,7 @@ class run_with_plots(basic_runner):
 
         if self.plot_type == 'solution_and_error_plot' or\
            self.plot_type == 'solution_plot':
-            kwarg_keys = kwargs.keys()
+            kwarg_keys = list(kwargs.keys())
 
             if ('plot_times' in kwarg_keys) == False:
                 plot_times = False
@@ -1849,7 +1853,7 @@ class run_with_plots(basic_runner):
         """Calls the correct plotter from bout_plotters"""
 
         # Set option
-        kwarg_keys = kwargs.keys()
+        kwarg_keys = list(kwargs.keys())
         if 'show_plots' in kwarg_keys:
             show_plots = kwargs['show_plots']
         else:

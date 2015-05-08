@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 ###
 # rms(f) : compute growth rate vs. time based on rms of bout variable f for all grid points
 # plot_rms (x,y): plots the graph growth_rate vs. time for grid point x,y
@@ -28,7 +31,7 @@ def rms(f):
             for k in range(ne):
                 ar=f[i,j,k,:]
 	        valav=np.sum(ar)
-        	tot=np.sum(np.power(ar-valav,2)/nz)
+        	tot=np.sum(old_div(np.power(ar-valav,2),nz))
                 rms[i,j,k]=np.sqrt(tot)
     return rms
         

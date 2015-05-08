@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 import numpy
 from gen_surface import gen_surface
 import copy
@@ -17,6 +19,6 @@ def DDY( var, mesh):
     else:
         f[xi,yi] = numpy.gradient(var[xi,yi])
     if last : break
-  return f / dtheta
+  return old_div(f, dtheta)
  
  
