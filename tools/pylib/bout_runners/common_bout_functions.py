@@ -12,20 +12,21 @@ from builtins import object
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '1.0beta'
-__date__    = '26.02.2015'
+__date__    = '22.04.2015'
 
 import re
 import os
 import time
 from boututils.shell import shell
 
+# FIXME: Don't let the clean_up_runs wait
 
 #{{{find_variable_in_BOUT_inp
 def find_variable_in_BOUT_inp(directory, variable):
     """Finds an integer value of a variable in BOUT.inp"""
     # Length of the variable we want to find
     variable_length = len(variable)
-    
+
     # Open the file
     f = open(directory + '/BOUT.inp','r')
     # Read the file
@@ -40,7 +41,7 @@ def find_variable_in_BOUT_inp(directory, variable):
     # Seek for the match
     variable_line = [line for line in inp_lines if line[0:variable_length]
     == variable]
-    
+
     # If find more than one line
     if len(variable_line) == 1:
         variable_line = variable_line[0]
@@ -55,7 +56,7 @@ def find_variable_in_BOUT_inp(directory, variable):
         return 'Variable not found'
 #}}}
 
-#{{{move_log_err_files                            
+#{{{move_log_err_files
 def move_log_err_files(job, directory):
     """Move .err and .log output from the torque system"""
     # Move the error and log file
@@ -93,16 +94,18 @@ def message_chunker(message, chunk=76):
         yield message[start:start + chunk]
 #}}}
 
-#{{{wait_for_runs_to_finish
-def wait_for_runs_to_finish(run_groups, directory,\
+#{{{clean_up_runs
+# FIXME: THE CLEAN-UP DOES NO LONGER HAVE TO WAIT TO CLEAN UP AS IT IS
+#        SENT WITH DEPENDENCIES
+def clean_up_runs(run_groups, directory,\
                             group_done_function = lambda *args, **kwargs:None,\
                             *args, **kwargs):
 #{{{docstring
     """Checks if the run_groups submitted to the cluster are finished.
-    
+
     If a job has finished, the .err and .log file will be moved to
     the qsub_output folder.
-    
+
     Takes a function 'group_done_function' as an, which describes what to
     be done when a group has finished. If no function is given,
     nothing will be done (default is a lambda function which returns
@@ -136,7 +139,7 @@ def wait_for_runs_to_finish(run_groups, directory,\
                 # default lambda function
                 # Function which calls whatever needs to be done when a
                 # group of jobs has finished
-               
+
                 group_done_function(run_groups = run_groups, group = group)
 
                 # Remove the group from run_groups
@@ -154,7 +157,7 @@ def wait_for_runs_to_finish(run_groups, directory,\
                 for index_no, job in\
                     enumerate(\
                     run_groups[group]['job_status']):
-                   
+
                     # If the job has finished, a .log and a .err is
                     # made
                     if (job + '.log' in files) and (job + '.err' in files):
@@ -218,7 +221,7 @@ class check_for_plotters_errors(object):
                 if (keyword[0] in kwarg_keys)==False and\
                    (keyword[1] in kwarg_keys)==False:
                     raise RuntimeError (error_message)
-        
+
 #}}}
 
 # Plotter specific error checkers
@@ -257,7 +260,7 @@ class check_for_plotters_errors(object):
             raise ValueError("The keyword 'convergence_type' must be set to"+\
                              " either 'spatial' or 'temporal'")
 
-        if kwargs['convergence_type'] == 'spatial':            
+        if kwargs['convergence_type'] == 'spatial':
             # Check if the conditions are set for a convergence test
             if kwargs['grids'] == False:
                 raise TypeError("In order to make a convergence test, "+\
@@ -268,7 +271,7 @@ class check_for_plotters_errors(object):
                                 "you must specify a range of grid values.")
         elif kwargs['convergence_type'] == 'temporal':
             # Check if a range is given, so that we can perform a
-            # convergence test            
+            # convergence test
             if type(kwargs['timestep']) != list:
                 raise TypeError("In order to make a convergence test, "+\
                                 "you must specify a range of grid values.")
