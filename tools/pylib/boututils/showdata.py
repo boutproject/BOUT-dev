@@ -4,7 +4,15 @@ Visualisation and animation routines
 Written by Luke Easy
 le590@york.ac.uk
 Last Updated 19/3/2015
+Additional functionality by George Breyiannis 26/12/2014
+
 """
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import chr
+from builtins import range
+from past.utils import old_div
 
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d
@@ -16,7 +24,9 @@ from boutdata import collect
 
 
 ####################################################################
-# Create FFMpeg writer
+# Specify manually ffmpeg path
+#plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
+
 FFwriter = animation.FFMpegWriter()
 ####################################################################
 
@@ -289,7 +299,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             t = linspace(0,Nt[0][0], Nt[0][0])
     
     # Obtain number of frames
-    Nframes = Nt[0][0]/intv
+    Nframes = old_div(Nt[0][0],intv)
 
     # Generate grids for plotting
     x = []
@@ -432,11 +442,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             if (Nx[i][0]<= 20):
                 xstride.append(1)
             else:
-                xstride.append(int(floor(Nx[i][0]/20)))
+                xstride.append(int(floor(old_div(Nx[i][0],20))))
             if (Ny[i][0]<=20):
                 ystride.append(1)
             else:
-                ystride.append(int(floor(Ny[i][0]/20)))
+                ystride.append(int(floor(old_div(Ny[i][0],20))))
             ax.append(fig.add_subplot(row,col,i+1, projection='3d'))
             plots.append(ax[i].plot_wireframe(x[i][0], y[i], vars[i][0][0,:,:].T, rstride=ystride[i], cstride=xstride[i]))
             title = fig.suptitle(r'', fontsize=14 )
@@ -526,14 +536,14 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
     # Save movie with given name
-    if ((isinstance(movie,basestring)==1)):
+    if ((isinstance(movie,str)==1)):
         try:
             anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
         except Exception:
             print("Save failed: Check ffmpeg path")
 
     # Save movie with default name
-    if ((isinstance(movie,basestring)==0)):
+    if ((isinstance(movie,str)==0)):
         if (movie != 0):
             try:
                 anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])

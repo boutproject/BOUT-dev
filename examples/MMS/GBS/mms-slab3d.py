@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 #
 # Generate the test case using SymPy
 #
@@ -38,14 +41,14 @@ AA    = 0.1     # Ion atomic mass
 # 
 
 mi_me = AA * 1.67262158e-27 / 9.109e-31
-beta_e = qe*Tnorm*Nnorm / (Bnorm**2/mu0)
+beta_e = qe*Tnorm*Nnorm / (old_div(Bnorm**2,mu0))
 
 # Normalisation parameters
 Cs0      = sqrt(qe*Tnorm / (AA*Mp))
 Omega_ci = qe*Bnorm / (AA*Mp)
-rho_s0   = Cs0 / Omega_ci
+rho_s0   = old_div(Cs0, Omega_ci)
 Coulomb = 6.6 - 0.5*log(Nnorm * 1e-20) + 1.5*log(Tnorm);
-tau_e0 = 1. / (2.91e-6 * (Nnorm / 1e6) * Coulomb * Tnorm **(-3./2))
+tau_e0 = old_div(1., (2.91e-6 * (old_div(Nnorm, 1e6)) * Coulomb * Tnorm **(old_div(-3.,2))))
 # Input settings
 
 ZMAX = 1e-3
@@ -91,16 +94,16 @@ Lx = dx * (nx - 2.*MXG) # Size of the X domain
 Ly = dy * ny            # Size of the Y domain
 
 metric.g11 = (Rxy*Bpxy)**2
-metric.g22 = 1.0 / (hthe**2)
-metric.g33 = (sinty**2)*metric.g11 + (Bxy**2)/metric.g11
+metric.g22 = old_div(1.0, (hthe**2))
+metric.g33 = (sinty**2)*metric.g11 + old_div((Bxy**2),metric.g11)
 metric.g12 = 0.0
 metric.g13 = -sinty*metric.g11
 metric.g23 = -sbp*Btxy/(hthe*Bpxy*Rxy)
   
-metric.J = hthe / Bpxy
+metric.J = old_div(hthe, Bpxy)
 B = metric.B = Bxy
   
-metric.g_11 = 1.0/metric.g11 + ((sinty*Rxy)**2)
+metric.g_11 = old_div(1.0,metric.g11) + ((sinty*Rxy)**2)
 metric.g_22 = (Bxy*hthe/Bpxy)**2
 metric.g_33 = Rxy*Rxy
 metric.g_12 = sbp*Btxy*hthe*sinty*Rxy/Bpxy
@@ -128,7 +131,7 @@ psi = sin(pi*x) *(0.5*x - 0.1*cos(7*t)*sin(3.*x**2 + y - z)) # Must satisfy Diri
 
 # Substitute to get in terms of actual x,y,z coordinates
 
-replace = [ (x, metric.x / Lx), (y, 2*pi*metric.y / Ly), (z, metric.z / ZMAX) ]
+replace = [ (x, old_div(metric.x, Lx)), (y, 2*pi*metric.y / Ly), (z, old_div(metric.z, ZMAX)) ]
 
 Ne    = Ne.subs(replace)
 Te    = Te.subs(replace)
@@ -146,22 +149,22 @@ if estatic:
 else:
     Ve = VePsi - 0.5*mi_me*beta_e*psi
 
-print "mi_me = ", mi_me
-print "beta_e = ", beta_e
-print "mi_me*beta_e = ", mi_me*beta_e
+print("mi_me = ", mi_me)
+print("beta_e = ", beta_e)
+print("mi_me*beta_e = ", mi_me*beta_e)
 
 Gi = 0.0
 Ge = 0.0
 
 tau_e = Omega_ci*tau_e0 * (Te**1.5)/Ne; # Normalised collision time
 
-nu = 1. / (1.96 * Ne * tau_e * mi_me)
+nu = old_div(1., (1.96 * Ne * tau_e * mi_me))
 
 ### Electron density
 
 dNedt = (
     - bracket(phi, Ne, metric)
-    + (2/B) * ( C(Pe) - Ne*C(phi) )
+    + (old_div(2,B)) * ( C(Pe) - Ne*C(phi) )
     )
 
 if parallel:
@@ -171,12 +174,12 @@ if parallel:
 
 dTedt = (
     - bracket(phi, Te, metric)
-    + (4./3)*(Te/B) * ( (7./2)*C(Te) + (Te/Ne)*C(Ne) - C(phi) )
+    + (old_div(4.,3))*(old_div(Te,B)) * ( (old_div(7.,2))*C(Te) + (old_div(Te,Ne))*C(Ne) - C(phi) )
     )
 
 if parallel:
     dTedt -= Vpar_Grad_par(Ve, Te, metric)
-    dTedt += (2./3.)*Te*( 0.71*Grad_par(Vi, metric) - 1.71*Grad_par(Ve, metric) + 0.71*(Vi-Ve)*Grad_par(Ne, metric)/Ne)
+    dTedt += (old_div(2.,3.))*Te*( 0.71*Grad_par(Vi, metric) - 1.71*Grad_par(Ve, metric) + 0.71*(Vi-Ve)*Grad_par(Ne, metric)/Ne)
 
 ### Vorticity
 
@@ -197,7 +200,7 @@ if parallel:
     dVePsidt = (
         - bracket(phi, Ve, metric)
         - Vpar_Grad_par(Ve, Ve, metric)
-        - mi_me*(2./3.)*Grad_par(Ge, metric)
+        - mi_me*(old_div(2.,3.))*Grad_par(Ge, metric)
         - mi_me*nu*(Ve - Vi)
         + mi_me*Grad_par(phi, metric)
         - mi_me*(  Te*Grad_par(Ne, metric)/Ne + 1.71*Grad_par(Te, metric) )
@@ -211,7 +214,7 @@ if parallel:
     dVidt = (
         - bracket(phi, Vi, metric)
         - Vpar_Grad_par(Vi, Vi, metric)
-        - (2./3.)*Grad_par(Gi, metric)
+        - (old_div(2.,3.))*Grad_par(Gi, metric)
         - (Grad_par(Te, metric) + Te*Grad_par(Ne, metric)/Ne)
         )
 else:
@@ -293,55 +296,55 @@ def exprmag(expr):
 
 
 
-print "\n\n########################################"
-print "\n\nDensity terms:"
-print "  bracket : ", exprmag(-bracket(phi, Ne, metric)), "\n"
-print "  (2/B)*C(Pe) : ", exprmag((2/B) * C(Pe)), "\n"
-print "  (2/B)*Ne*C(phi) : ", exprmag((2/B)*Ne*C(phi)), "\n"
-print "  Ne*Grad_par(Ve) :", exprmag(Ne*Grad_par(Ve, metric)), "\n"
-print "  Vpar_Grad_par(Ve, Ne)", exprmag(Vpar_Grad_par(Ve, Ne, metric))
+print("\n\n########################################")
+print("\n\nDensity terms:")
+print("  bracket : ", exprmag(-bracket(phi, Ne, metric)), "\n")
+print("  (2/B)*C(Pe) : ", exprmag((old_div(2,B)) * C(Pe)), "\n")
+print("  (2/B)*Ne*C(phi) : ", exprmag((old_div(2,B))*Ne*C(phi)), "\n")
+print("  Ne*Grad_par(Ve) :", exprmag(Ne*Grad_par(Ve, metric)), "\n")
+print("  Vpar_Grad_par(Ve, Ne)", exprmag(Vpar_Grad_par(Ve, Ne, metric)))
 
-print "\n\n########################################"
-print "\n\nTemperature terms:"
-print "  bracket : ", exprmag(- bracket(phi, Te, metric)), "\n"
-print "  C(Te)   : ", exprmag((4./3)*(Te/B) *(7./2)*C(Te)), "\n"
-print "  (Te/Ne)*C(Ne) : ", exprmag((4./3)*(Te/B) *(Te/Ne)*C(Ne)), "\n"
-print "  C(phi)  : ", exprmag(-(4./3)*(Te/B) * C(phi)), "\n"
-print "  Vpar_Grad_par(Ve, Te)", exprmag(Vpar_Grad_par(Ve, Te, metric)), "\n"
-print "  (2./3.)*Te*( 0.71*Grad_par(Vi)", exprmag((2./3.)*Te*0.71*Grad_par(Vi, metric)), "\n"
-print "  (2./3.)*Te*1.71*Grad_par(Ve)", exprmag(-(2./3.)*Te*1.71*Grad_par(Ve, metric)) , "\n"
-print "  (2./3.)*Te*0.71*(Vi-Ve)*Grad_par(log(Ne))", exprmag((2./3.)*Te*0.71*(Vi-Ve)*Grad_par(log(Ne), metric)), "\n"
-
-
-print "\n\n########################################"
-print "\n\nVorticity terms:"
-print "  bracket : ", exprmag(- bracket(phi, Vort, metric)), "\n"
-print "  C(Pe)   : ", exprmag(2.*B*C(Pe)/Ne), "\n"
-print "  C(Gi)   : ", exprmag(B*C(Gi)/(3.*Ne)), "\n"
-print "  Vpar_Grad_par(Vi, Vort) : ", exprmag(- Vpar_Grad_par(Vi, Vort, metric)), "\n"
-print "  B**2*Grad_par(Vi - Ve) :", exprmag(B**2*Grad_par(Vi - Ve, metric)), "\n"
-print "  B**2*(Vi - Ve)*Grad_par(log(Ne)) :", exprmag(B**2 * (Vi - Ve)*Grad_par(log(Ne), metric)), "\n"
-
-print "\n\n########################################"
-print "\n\nOhm's law terms:"
-
-print "  bracket : ", exprmag(- bracket(phi, Ve, metric)), "\n"
-print "  Vpar_Grad_par(Ve, Ve) : ", exprmag(- Vpar_Grad_par(Ve, Ve, metric)), "\n"
-print "  mi_me*(2./3.)*Grad_par(Ge)", exprmag(- mi_me*(2./3.)*Grad_par(Ge, metric)), "\n"
-print "  mi_me*nu*(Ve - Vi)", exprmag(- mi_me*nu*(Ve - Vi)), "\n"
-print "  mi_me*Grad_par(phi)", exprmag(mi_me*Grad_par(phi, metric)), "\n"
-print "  mi_me*Te*Grad_par(log(Ne))", exprmag(- mi_me*Te*Grad_par(log(Ne), metric)), "\n"
-print "  mi_me*1.71*Grad_par(Te) : ", exprmag(- mi_me*1.71*Grad_par(Te, metric)), "\n"
+print("\n\n########################################")
+print("\n\nTemperature terms:")
+print("  bracket : ", exprmag(- bracket(phi, Te, metric)), "\n")
+print("  C(Te)   : ", exprmag((old_div(4.,3))*(old_div(Te,B)) *(old_div(7.,2))*C(Te)), "\n")
+print("  (Te/Ne)*C(Ne) : ", exprmag((old_div(4.,3))*(old_div(Te,B)) *(old_div(Te,Ne))*C(Ne)), "\n")
+print("  C(phi)  : ", exprmag(-(old_div(4.,3))*(old_div(Te,B)) * C(phi)), "\n")
+print("  Vpar_Grad_par(Ve, Te)", exprmag(Vpar_Grad_par(Ve, Te, metric)), "\n")
+print("  (2./3.)*Te*( 0.71*Grad_par(Vi)", exprmag((old_div(2.,3.))*Te*0.71*Grad_par(Vi, metric)), "\n")
+print("  (2./3.)*Te*1.71*Grad_par(Ve)", exprmag(-(old_div(2.,3.))*Te*1.71*Grad_par(Ve, metric)) , "\n")
+print("  (2./3.)*Te*0.71*(Vi-Ve)*Grad_par(log(Ne))", exprmag((old_div(2.,3.))*Te*0.71*(Vi-Ve)*Grad_par(log(Ne), metric)), "\n")
 
 
-print "\nVe mag: ", exprmag(Ve), exprmag(VePsi), exprmag(0.5*mi_me*beta_e*psi)
+print("\n\n########################################")
+print("\n\nVorticity terms:")
+print("  bracket : ", exprmag(- bracket(phi, Vort, metric)), "\n")
+print("  C(Pe)   : ", exprmag(2.*B*C(Pe)/Ne), "\n")
+print("  C(Gi)   : ", exprmag(B*C(Gi)/(3.*Ne)), "\n")
+print("  Vpar_Grad_par(Vi, Vort) : ", exprmag(- Vpar_Grad_par(Vi, Vort, metric)), "\n")
+print("  B**2*Grad_par(Vi - Ve) :", exprmag(B**2*Grad_par(Vi - Ve, metric)), "\n")
+print("  B**2*(Vi - Ve)*Grad_par(log(Ne)) :", exprmag(B**2 * (Vi - Ve)*Grad_par(log(Ne), metric)), "\n")
 
-print "\n\n########################################"
-print "\n\nVi terms:"
+print("\n\n########################################")
+print("\n\nOhm's law terms:")
 
-print "  bracket : ", exprmag(- bracket(phi, Vi, metric)), "\n"
-print "  Vpar_Grad_par(Vi, Vi)", exprmag(- Vpar_Grad_par(Vi, Vi, metric)), "\n"
-print "  (2./3.)*Grad_par(Gi)", exprmag((2./3.)*Grad_par(Gi, metric)), "\n"
-print "  Grad_par(Te", exprmag(-Grad_par(Te, metric)), "\n"
-print "  Te*Grad_par(log(Ne))", exprmag(-Te*Grad_par(log(Ne), metric)), "\n"
+print("  bracket : ", exprmag(- bracket(phi, Ve, metric)), "\n")
+print("  Vpar_Grad_par(Ve, Ve) : ", exprmag(- Vpar_Grad_par(Ve, Ve, metric)), "\n")
+print("  mi_me*(2./3.)*Grad_par(Ge)", exprmag(- mi_me*(old_div(2.,3.))*Grad_par(Ge, metric)), "\n")
+print("  mi_me*nu*(Ve - Vi)", exprmag(- mi_me*nu*(Ve - Vi)), "\n")
+print("  mi_me*Grad_par(phi)", exprmag(mi_me*Grad_par(phi, metric)), "\n")
+print("  mi_me*Te*Grad_par(log(Ne))", exprmag(- mi_me*Te*Grad_par(log(Ne), metric)), "\n")
+print("  mi_me*1.71*Grad_par(Te) : ", exprmag(- mi_me*1.71*Grad_par(Te, metric)), "\n")
+
+
+print("\nVe mag: ", exprmag(Ve), exprmag(VePsi), exprmag(0.5*mi_me*beta_e*psi))
+
+print("\n\n########################################")
+print("\n\nVi terms:")
+
+print("  bracket : ", exprmag(- bracket(phi, Vi, metric)), "\n")
+print("  Vpar_Grad_par(Vi, Vi)", exprmag(- Vpar_Grad_par(Vi, Vi, metric)), "\n")
+print("  (2./3.)*Grad_par(Gi)", exprmag((old_div(2.,3.))*Grad_par(Gi, metric)), "\n")
+print("  Grad_par(Te", exprmag(-Grad_par(Te, metric)), "\n")
+print("  Te*Grad_par(log(Ne))", exprmag(-Te*Grad_par(log(Ne), metric)), "\n")
 

@@ -24,7 +24,10 @@ def shell(command, pipe=False):
     else:
         if pipe:
             child = Popen(command, stderr=STDOUT, stdout=PIPE, shell=True)
-            output = child.stdout.read()
+            # This returns a b'string' which is casted to string in
+            # python 2. However, as we want to use f.write() in our
+            # runtest, we cast this to utf-8 here
+            output = child.stdout.read().decode("utf-8")
             status = child.returncode
         else:
             status = call(command, shell=True)

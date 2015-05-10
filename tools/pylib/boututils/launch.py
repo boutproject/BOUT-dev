@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 # Launch a parallel job
 # 
 # If run on a known machine, will generate a run script and submit a job for

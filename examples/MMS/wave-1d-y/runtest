@@ -3,6 +3,9 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -112,8 +115,8 @@ plt.savefig("norm.pdf")
 plt.close()
 
 if success:
-  print " => Test passed"
+  print(" => Test passed")
   exit(0)
 else:
-  print " => Test failed"
+  print(" => Test failed")
   exit(1)

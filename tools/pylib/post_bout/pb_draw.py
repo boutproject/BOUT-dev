@@ -1,6 +1,12 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 #some standard analytic stuff to plot, if appending just overplot gam or omeg
-from pb_corral import LinRes
-from ListDict import ListDictKey, ListDictFilt
+from .pb_corral import LinRes
+from .ListDict import ListDictKey, ListDictFilt
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -55,7 +61,7 @@ class LinResDraw(LinRes):
    
         s = subset(s.db,'mn',modelist)
          
-        allk = s.k[:,1,s.nx/2]
+        allk = s.k[:,1,old_div(s.nx,2)]
         ki = np.argsort(allk)
     
         ownpage = False
@@ -75,10 +81,10 @@ class LinResDraw(LinRes):
         #     y = np.array(s.omegamax)[ki]
       
         for m in s.models:
-            print m.name
+            print(m.name)
 
         for i,m in enumerate(s.models):   
-            print m.name,comp,m.soln[comp].shape
+            print(m.name,comp,m.soln[comp].shape)
             
             if allroots:
                 for elem in m.soln[comp]:
@@ -86,14 +92,14 @@ class LinResDraw(LinRes):
                 #elem has 2 or more elements
                     y = (np.array(elem)[ki]).flatten() #n values
                 #y = y.astype('float')
-                    print y.shape
+                    print(y.shape)
                     canvas.plot((allk[ki]).flatten(),y,',',
                                 label=label,c=cm.jet(.2*i))
             try:   
                 ymax =  (np.array(m.soln[comp+'max'])[ki]).flatten() 
                 #ymax =  (np.array(m.gammamax)[ki]).flatten() 
                 ymax = ymax.astype('float')
-                print comp,' ymax:', ymax
+                print(comp,' ymax:', ymax)
                 canvas.plot((allk[ki]).flatten(),ymax,'-',
                             label=label,c=cm.jet(.2*i))
                 # if comp=='gamma':
@@ -108,7 +114,7 @@ class LinResDraw(LinRes):
 
                 
             except:
-                print 'fail to add theory curve'
+                print('fail to add theory curve')
 
             canvas.annotate(m.name,(allk[ki[0]],1.1*ymax[0]),fontsize = 8)
             canvas.annotate(m.name,(1.1*allk[ki[-1]],1.1*ymax[-1]),fontsize = 8)
@@ -121,7 +127,7 @@ class LinResDraw(LinRes):
                         canvas.plot((allk[ki]).flatten(),y,'--',
                                     label=label,c=cm.jet(.2*i))
             except:
-                print 'no reference curve'
+                print('no reference curve')
 
                     
         if ownpage: #set scales if this is its own plot
@@ -137,7 +143,7 @@ class LinResDraw(LinRes):
          
             for i,m in enumerate(s.models):   
                 textstr = r'$\chi^2$'+ '$=%.2f$'%(m.chi[comp].sum())
-                print textstr
+                print(textstr)
             #textstr = '$\L=%.2f$'%(m.chi[comp].sum())
                 props = dict(boxstyle='square', facecolor='white', alpha=0.3)
                 textbox = canvas.text(0.1, 0.1, textstr, transform=canvas.transAxes, fontsize=10,
@@ -176,19 +182,19 @@ class LinResDraw(LinRes):
         dzlabels=[]
         
         m_shift = 1
-        for q in np.array(range(1))+m_shift:
+        for q in np.array(list(range(1)))+m_shift:
             s = subset(self.db,'field',[field]) #pick  field
             maxZ = min(s.maxN)
             modelist = []
             [modelist.append([q,p+1]) for p in range(maxZ-1)]
-            print modelist
-            print q,'in plotgamma'
+            print(modelist)
+            print(q,'in plotgamma')
         
         s = subset(s.db,'mn',modelist)
          
-        xrange = s.nx/2-2
+        xrange = old_div(s.nx,2)-2
             
-        xrange = [s.nx/2,s.nx/2+xrange]
+        xrange = [old_div(s.nx,2),old_div(s.nx,2)+xrange]
       
  
         y = np.array(ListDictKey(s.db,comp))
@@ -196,13 +202,13 @@ class LinResDraw(LinRes):
          #y = s.gamma #nmodes x 2 x nx ndarray
         k = s.k ##nmodes x 2 x nx ndarray k_zeta
         
-        kfactor = np.mean(s.k_r[:,1,s.nx/2]/s.k[:,1,s.nx/2]) #good enough for now
+        kfactor = np.mean(old_div(s.k_r[:,1,old_div(s.nx,2)],s.k[:,1,old_div(s.nx,2)])) #good enough for now
   
-        print k[:,1,s.nx/2].shape, y[:,0,s.nx/2].shape, len(colors), ownpage#,k[:,1,s.nx/2],y[:,0,s.nx/2]
+        print(k[:,1,old_div(s.nx,2)].shape, y[:,0,old_div(s.nx,2)].shape, len(colors), ownpage)#,k[:,1,s.nx/2],y[:,0,s.nx/2]
         
-        parhandles.append(canvas.errorbar(np.squeeze(k[:,1,s.nx/2]),
-                                             np.squeeze(y[:,0,s.nx/2]),
-                                             yerr= np.squeeze(y[:,1,s.nx/2]),
+        parhandles.append(canvas.errorbar(np.squeeze(k[:,1,old_div(s.nx,2)]),
+                                             np.squeeze(y[:,0,old_div(s.nx,2)]),
+                                             yerr= np.squeeze(y[:,1,old_div(s.nx,2)]),
                                              fmt=colors[q]))
         
   
@@ -217,7 +223,7 @@ class LinResDraw(LinRes):
         ymax_data = 0 #for bookeeping
 
         for p in list(set(s.path).union()):
-            print p, 'in plotomega'
+            print(p, 'in plotomega')
             
             sub_s = subset(s.db,'path',[p])
             j = sub_s.dz[0]
@@ -229,8 +235,8 @@ class LinResDraw(LinRes):
 
             k = sub_s.k ##
             if q == m_shift: #fix the parallel mode
-               dzhandles.append(canvas.plot(k[s_i,1,sub_s.nx/2],
-                                            y[s_i,0,sub_s.nx/2],color=colordash[jj],alpha=.5))
+               dzhandles.append(canvas.plot(k[s_i,1,old_div(sub_s.nx,2)],
+                                            y[s_i,0,old_div(sub_s.nx,2)],color=colordash[jj],alpha=.5))
                #clonex.plot(k[s_i,1,sub_s.nx/2],
                            #y_alt[s_i,0,sub_s.nx/2],color=colordash[jj],alpha=.5)
                # if np.any(sub_s.trans) and trans:
@@ -240,13 +246,13 @@ class LinResDraw(LinRes):
                #     cloney.plot(k[s_i,1,sub_s.nx/2],
                #                 y2[s_i,0,sub_s.nx/2],'k.',ms = 3)
 
-               ymin_data = np.min([np.min(y[s_i,0,sub_s.nx/2]),ymin_data])
-               ymax_data = np.max([np.max(y[s_i,0,sub_s.nx/2]),ymax_data])
+               ymin_data = np.min([np.min(y[s_i,0,old_div(sub_s.nx,2)]),ymin_data])
+               ymax_data = np.max([np.max(y[s_i,0,old_div(sub_s.nx,2)]),ymax_data])
                
 
                
 
-               print 'dzhandle color', jj
+               print('dzhandle color', jj)
                #dzlabels.append("DZ: "+ str(2*j)+r'$\pi$')
                dzlabels.append(j) 
                
@@ -254,14 +260,14 @@ class LinResDraw(LinRes):
                   factor = 10
                else:
                   factor = 2
-               print 'annotating'
-               canvas.annotate(str(j),(k[s_i[0],1,sub_s.nx/2],y[s_i[0],0,sub_s.nx/2]),fontsize = 8)
-               p = canvas.axvspan(k[s_i[0],1,sub_s.nx/2], k[s_i[-1],1,sub_s.nx/2], 
+               print('annotating')
+               canvas.annotate(str(j),(k[s_i[0],1,old_div(sub_s.nx,2)],y[s_i[0],0,old_div(sub_s.nx,2)]),fontsize = 8)
+               p = canvas.axvspan(k[s_i[0],1,old_div(sub_s.nx,2)], k[s_i[-1],1,old_div(sub_s.nx,2)], 
                                facecolor=colordash[jj], alpha=0.01)
-               print 'done annotating'
+               print('done annotating')
             else:
-               canvas.plot(k[s_i,1,sub_s.nx/2],
-                        y[s_i,0,sub_s.nx/2],color=colordash[jj],alpha=.3)
+               canvas.plot(k[s_i,1,old_div(sub_s.nx,2)],
+                        y[s_i,0,old_div(sub_s.nx,2)],color=colordash[jj],alpha=.3)
 
             jj=jj+1
       
@@ -275,7 +281,7 @@ class LinResDraw(LinRes):
         dzhandles = dzhandles[dz_i]
         dzlabels_cp = np.array(dzlabels)[dz_i]
       
-        print type(dzlabels), np.size(dzlabels)
+        print(type(dzlabels), np.size(dzlabels))
         for i in range(np.size(dzlabels)):
             dzlabels[i] = "DZ: "+ str(dzlabels_cp[i])#+r"$\pi$"
      
@@ -284,7 +290,7 @@ class LinResDraw(LinRes):
       
       #if pltlegend =='both':    #
       
-        print 'legends'
+        print('legends')
 
       #l1 = legend(parhandles,parlabels,loc = 3,prop={'size':6})
       #l2 = legend(dzhandles,dzlabels,loc = 1,prop={'size':6})
@@ -297,11 +303,11 @@ class LinResDraw(LinRes):
                 self.plottheory(pp,canvas=canvas,comp=comp,field=field)
                 #self.plottheory(pp,comp=comp)
             except:
-                print 'no theory plot'
+                print('no theory plot')
         if infobox:
-            textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][s.nx/2],
-                                                                                   s.meta['L'][s.nx/2,s.ny/2],
-                                                                                   s.meta['Bpxy']['v'][s.nx/2,s.ny/2])
+            textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][old_div(s.nx,2)],
+                                                                                   s.meta['L'][old_div(s.nx,2),old_div(s.ny,2)],
+                                                                                   s.meta['Bpxy']['v'][old_div(s.nx,2),old_div(s.ny,2)])
             props = dict(boxstyle='square', facecolor='white', alpha=0.3)
             textbox = canvas.text(0.82, 0.95, textstr, transform=canvas.transAxes, fontsize=10,
                                    verticalalignment='top', bbox=props)
@@ -329,7 +335,7 @@ class LinResDraw(LinRes):
             try:
                 canvas.set_yscale('symlog')
             except:
-                print 'scaling failed completely'
+                print('scaling failed completely')
    
         
         #print '[xmin, xmax, ymin, ymax]: ',[xmin, xmax, ymin, ymax]
@@ -345,7 +351,7 @@ class LinResDraw(LinRes):
                 clonex.yaxis.set_major_formatter(formatter)
                 #canvas.useOffset=False
         except:
-            print 'fail 1'
+            print('fail 1')
         [xmin, xmax, ymin, ymax] = canvas.axis()    
         
       
@@ -369,7 +375,7 @@ class LinResDraw(LinRes):
                 if yscale =='linear':
                     cloney.yaxis.set_major_formatter(formatter)
             except:
-                print 'fail trans'
+                print('fail trans')
                 #     cloney.useOffset=False
       
         
@@ -399,7 +405,7 @@ class LinResDraw(LinRes):
                 cloney.set_ylim(ymin,ymax) #because cloney shares the yaxis with canvas it may overide them, this fixes that
                 cloney.set_xlabel(r'$k_{\perp} \rho_{ci}$',fontsize=18)
         except:
-            print 'moar fail'
+            print('moar fail')
             #clonex.set_xscale(xscale)
                 
         # except:
@@ -447,7 +453,7 @@ class LinResDraw(LinRes):
             try:
                 fig1.savefig(pp, format='pdf')
             except:
-                print 'pyplt doesnt like you'
+                print('pyplt doesnt like you')
             plt.close(fig1)
 
     def plotfreq(self,pp,field='Ni',clip=0,
@@ -464,17 +470,17 @@ class LinResDraw(LinRes):
             s = subset(self.db,'field',[field]) #pick  field across all dz sets
             modelist = []
             [modelist.append([q+1,p+1]) for p in range(5)]
-            print q,'in plotgamma'
+            print(q,'in plotgamma')
             s = subset(s.db,'mn',modelist)
       
       
             gamma = s.freq #nmodes x 2 x nx ndarray
             k = s.k ##nmodes x 2 x nx ndarray
          
-            plt.errorbar(k[:,1,s.nx/2],gamma[:,0,s.nx/2],
-                         yerr=gamma[:,1,s.nx/2],fmt=colors[q])
-            plt.plot(k[:,1,s.nx/2],
-                     gamma[:,0,s.nx/2],'k:',alpha=.3)
+            plt.errorbar(k[:,1,old_div(s.nx,2)],gamma[:,0,old_div(s.nx,2)],
+                         yerr=gamma[:,1,old_div(s.nx,2)],fmt=colors[q])
+            plt.plot(k[:,1,old_div(s.nx,2)],
+                     gamma[:,0,old_div(s.nx,2)],'k:',alpha=.3)
          
 #loop over dz sets and connect with dotted line  . . .
             for j in list(set(s.dz).union()):
@@ -482,13 +488,13 @@ class LinResDraw(LinRes):
                 sub_s = subset(s.db,'dz',[j]) 
                 gamma = sub_s.gamma 
                 k = sub_s.k ##
-                plt.plot(k[:,1,sub_s.nx/2],
-                         gamma[:,0,sub_s.nx/2],'k:',alpha=.1)
+                plt.plot(k[:,1,old_div(sub_s.nx,2)],
+                         gamma[:,0,old_div(sub_s.nx,2)],'k:',alpha=.1)
 
         try:
             plt.yscale(yscale)
         except:
-            print 'yscale fail'
+            print('yscale fail')
 
        
         try:
@@ -549,7 +555,7 @@ class LinResDraw(LinRes):
         
         #pick the modes
         m_shift = m
-        for q in np.array(range(1))+m_shift:
+        for q in np.array(list(range(1)))+m_shift:
             s = subset(self.db,'field',[field]) #pick  field
             maxZ = min(s.maxN)
             modelist = []
@@ -558,13 +564,13 @@ class LinResDraw(LinRes):
         s = subset(s.db,'mn',modelist)
          
         #set x-range
-        xrange = s.nx/2-2
-        xrange = [s.nx/2,s.nx/2+xrange]
+        xrange = old_div(s.nx,2)-2
+        xrange = [old_div(s.nx,2),old_div(s.nx,2)+xrange]
       
  
         #pull up the data
         y = np.array(ListDictKey(s.db,comp))
-        print 'y.shape', y.shape
+        print('y.shape', y.shape)
 
         #in case multiple timesteps are indicated
         all_y = []
@@ -586,14 +592,14 @@ class LinResDraw(LinRes):
 
         k = s.k ##nmodes x 2 x nx ndarray k_zeta
         
-        kfactor = np.mean(s.k_r[:,1,s.nx/2]/s.k[:,1,s.nx/2]) #good enough for now
+        kfactor = np.mean(old_div(s.k_r[:,1,old_div(s.nx,2)],s.k[:,1,old_div(s.nx,2)])) #good enough for now
         
         
         for elem in range(np.size(t)):
             #print 'printing line' , elem
-            errorline = parhandles.append(canvas.errorbar(k[:,1,s.nx/2],
-                                                          all_y[elem][:,s.nx/2],
-                                                          yerr=all_yerr[elem][:,s.nx/2],
+            errorline = parhandles.append(canvas.errorbar(k[:,1,old_div(s.nx,2)],
+                                                          all_y[elem][:,old_div(s.nx,2)],
+                                                          yerr=all_yerr[elem][:,old_div(s.nx,2)],
                                                           fmt=colors[q]))
         
             
@@ -628,12 +634,12 @@ class LinResDraw(LinRes):
             
             for elem in range(np.size(t)):
                 if q == m_shift: #fix the parallel mode
-                    dzhandles.append(canvas.plot(k[s_i,1,sub_s.nx/2],
-                                                 all_y[elem][s_i,sub_s.nx/2],color=colordash[jj],alpha=.5))
+                    dzhandles.append(canvas.plot(k[s_i,1,old_div(sub_s.nx,2)],
+                                                 all_y[elem][s_i,old_div(sub_s.nx,2)],color=colordash[jj],alpha=.5))
               
 
-                    ymin_data = np.min([np.min(y[s_i,sub_s.nx/2]),ymin_data])
-                    ymax_data = np.max([np.max(y[s_i,sub_s.nx/2]),ymax_data])
+                    ymin_data = np.min([np.min(y[s_i,old_div(sub_s.nx,2)]),ymin_data])
+                    ymax_data = np.max([np.max(y[s_i,old_div(sub_s.nx,2)]),ymax_data])
                
 
                     dzlabels.append(j) 
@@ -643,13 +649,13 @@ class LinResDraw(LinRes):
                     else:
                         factor = 2
                #print 'annotating'
-                    canvas.annotate(str(j),(k[s_i[0],1,sub_s.nx/2],y[elem][s_i[0],sub_s.nx/2]),fontsize = 8)
+                    canvas.annotate(str(j),(k[s_i[0],1,old_div(sub_s.nx,2)],y[elem][s_i[0],old_div(sub_s.nx,2)]),fontsize = 8)
                #p = canvas.axvspan(k[s_i[0],1,sub_s.nx/2], k[s_i[-1],1,sub_s.nx/2], 
                 #               facecolor=colordash[jj], alpha=0.01)
-                    print 'done annotating'
+                    print('done annotating')
                 else:
-                    canvas.plot(k[s_i,1,sub_s.nx/2],
-                                y[elem][s_i,sub_s.nx/2],color=colordash[jj],alpha=.3)
+                    canvas.plot(k[s_i,1,old_div(sub_s.nx,2)],
+                                y[elem][s_i,old_div(sub_s.nx,2)],color=colordash[jj],alpha=.3)
 
                 jj=jj+1
       
@@ -675,11 +681,11 @@ class LinResDraw(LinRes):
                 self.plottheory(pp,canvas=canvas,comp=comp,field=field)
                 #self.plottheory(pp,comp=comp)
             except:
-                print 'no theory plot'
+                print('no theory plot')
         if infobox:
-            textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][s.nx/2],
-                                                                                   s.meta['L'][s.nx/2,s.ny/2],
-                                                                                   s.meta['Bpxy']['v'][s.nx/2,s.ny/2])
+            textstr = '$\L_{\parallel}=%.2f$\n$\L_{\partial_r n}=%.2f$\n$B=%.2f$'%(s.meta['lpar'][old_div(s.nx,2)],
+                                                                                   s.meta['L'][old_div(s.nx,2),old_div(s.ny,2)],
+                                                                                   s.meta['Bpxy']['v'][old_div(s.nx,2),old_div(s.ny,2)])
             props = dict(boxstyle='square', facecolor='white', alpha=0.3)
             textbox = canvas.text(0.82, 0.95, textstr, transform=canvas.transAxes, fontsize=10,
                                    verticalalignment='top', bbox=props)
@@ -702,7 +708,7 @@ class LinResDraw(LinRes):
             try:
                 canvas.set_yscale('symlog')
             except:
-                print 'scaling failed completely'
+                print('scaling failed completely')
    
     ##################################################################
        
@@ -717,7 +723,7 @@ class LinResDraw(LinRes):
                     clonex.yaxis.set_major_formatter(formatter)
                 #canvas.useOffset=False
             except:
-                print 'fail 1'
+                print('fail 1')
             [xmin, xmax, ymin, ymax] = canvas.axis()    
         
       
@@ -741,7 +747,7 @@ class LinResDraw(LinRes):
                     if yscale =='linear':
                         cloney.yaxis.set_major_formatter(formatter)
                 except:
-                    print 'fail trans'
+                    print('fail trans')
                 
             Ln_drive_scale = s.meta['w_Ln'][0]**-1
             #Ln_drive_scale = 2.1e3
@@ -756,7 +762,7 @@ class LinResDraw(LinRes):
                     cloney.set_ylim(ymin,ymax) #because cloney shares the yaxis with canvas it may overide them, this fixes that
                     cloney.set_xlabel(r'$k_{\perp} \rho_{ci}$',fontsize=18)
             except:
-                print 'moar fail'
+                print('moar fail')
             #clonex.set_xscale(xscale)
                 
       
@@ -785,7 +791,7 @@ class LinResDraw(LinRes):
 
         
         if not ownpage:
-            print 'probably for a movie'
+            print('probably for a movie')
             fig1 = rootfig
             # canvasjunk = fig1.add_subplot(1,1,1) 
             # canvasjunk = canvas
@@ -796,12 +802,12 @@ class LinResDraw(LinRes):
                 try:
                     fig1.savefig(pp,format='pdf')
                 except:
-                    print 'pyplt doesnt like you'
+                    print('pyplt doesnt like you')
             else: 
                 try:
                     fig1.savefig(file,dpi=200)
                 except:
-                    print 'no movie for you ;('
+                    print('no movie for you ;(')
 
         if ownpage:
             #fig1.close()
@@ -842,11 +848,11 @@ class LinResDraw(LinRes):
         for j in list(set(Modes.path).union()):  #
             s = subset(Modes.db,'path',[j]) #pick run
             dz = s.dz[0]
-            xr = range(s.nx/2-xrange/2,s.nx/2+xrange/2+1)
+            xr = list(range(old_div(s.nx,2)-old_div(xrange,2),old_div(s.nx,2)+old_div(xrange,2)+1))
             data = np.array(ListDictKey(s.db,comp)) #pick component should be ok for a fixed dz key
          
             data = data #+ 1e-32 #hacky way to deal with buggy scaling 
-            ax =fig2.add_subplot(round(Nplots/3.0 + 1.0),3,k+1)
+            ax =fig2.add_subplot(round(old_div(Nplots,3.0) + 1.0),3,k+1)
             
             ax.grid(True,linestyle='-',color='.75')
             handles=[]
@@ -859,20 +865,20 @@ class LinResDraw(LinRes):
             z = where.nonzero() #mode index and n index
             imax = z[0][0]
             #xi_max = z[1][0]
-            xi_max = s.nx/2
+            xi_max = old_div(s.nx,2)
 
             if debug and yscale=='log':
                 gamma = np.array(ListDictKey(s.db,'gamma'))  #nmodes x 2 x nx
                 
             for i in range(s.nmodes):
                 if math=='gamma':
-                    out = np.gradient(data[i,:,xr])[1]/data[i,:,xr]
+                    out = old_div(np.gradient(data[i,:,xr])[1],data[i,:,xr])
                 else:
                     out = data[i,2:,xi_max] #skip the first 2 points
                     
                 if xaxis=='t':
                #print 'out.size', out.size, out.shape
-                    x = np.array(range(out.size))
+                    x = np.array(list(range(out.size)))
                #plt.plot(x,out.flatten(),c=colors[k])
                     label = str(s.mn[i])
                     #handles.append(ax.plot(x,out.flatten(),
@@ -883,12 +889,12 @@ class LinResDraw(LinRes):
                 else:
                     x = np.array(ListDictKey(s.db,xaxis))[i,:,xr] 
                #x #an N? by nx array
-                    print x[:,1], out[:,0]
+                    print(x[:,1], out[:,0])
                     plt.scatter(x[:,1],out[:,0])#,c=colors[k]) 
                     ax.scatter(x[:,1],out[:,0])#,c=colors[k])#,alpha = (1 +i)/s.nmodes) 
                
             #detect error (bar data
-                    print 'error bars:',x,out
+                    print('error bars:',x,out)
            
            
             #ax.legend(handles,labels,loc='best',prop={'size':6}) 
@@ -905,7 +911,7 @@ class LinResDraw(LinRes):
                 try:
                     ax.set_yscale(yscale)  
                 except:
-                    print 'may get weird axis'
+                    print('may get weird axis')
                     ax.set_yscale('symlog')
             # if comp=='phase' or yscale=='linear':
             #         ax.set_xscale('symlog',linthreshx=1.0)
@@ -925,17 +931,17 @@ class LinResDraw(LinRes):
          
             t0=2
             if clip == True: 
-                t0 = round(s.nt[0]/3)
+                t0 = round(old_div(s.nt[0],3))
             y = np.squeeze(data[imax,t0:,xi_max])
-            x = np.array(range(y.size))
+            x = np.array(list(range(y.size)))
          
         
-            print imax,xi_max
+            print(imax,xi_max)
        
-            label = str([round(elem,3) for elem in s.MN[imax]])+ str(s.mn[imax])+' at x= '+str(xi_max)+' ,'+str(round(s.gamma[imax,2,xi_max]/s.gamma[imax,0,xi_max],3))+'%  '+str(round(s.gamma[imax,0,xi_max],4))
+            label = str([round(elem,3) for elem in s.MN[imax]])+ str(s.mn[imax])+' at x= '+str(xi_max)+' ,'+str(round(old_div(s.gamma[imax,2,xi_max],s.gamma[imax,0,xi_max]),3))+'%  '+str(round(s.gamma[imax,0,xi_max],4))
 
             short_label = str(dz)
-            print short_label,x.shape,y.shape
+            print(short_label,x.shape,y.shape)
             allcurves.plot(x,y,'.',c=cm.jet(1.*k/len(x)),
                            label=label) 
          #print len(x), k*len(x)/(Nplots+2),s.nrun
@@ -973,7 +979,7 @@ class LinResDraw(LinRes):
             try:
                 allcurves.set_yscale(yscale) 
             except:
-                print 'may get weird axis scaling'
+                print('may get weird axis scaling')
             if yscale=='log':
                 allcurves.axis('tight')
             #allcurves.set_ylim(data.min(),data.max())
@@ -1018,11 +1024,11 @@ class LinResDraw(LinRes):
 
 
         for p in list(set(Modes.path).union()):
-            print p
+            print(p)
             s = subset(Modes.db,'path',[p]) #pick run
          #data = np.array(ListDictKey(s.db,comp)) #pick component   
             j =  s.dz[0]
-            ax =fig2.add_subplot(round(Nplots/3.0 + 1.0),3,k+1)  
+            ax =fig2.add_subplot(round(old_div(Nplots,3.0) + 1.0),3,k+1)  
             ax.grid(True,linestyle='-',color='.75')
             data = np.array(ListDictKey(s.db,comp)) #pick component 
             handles=[]
@@ -1040,7 +1046,7 @@ class LinResDraw(LinRes):
             for i in range(s.nmodes): 
             #out = mode[mode.ny/2,:]
             #print i,s.Rxynorm.shape,s.ny
-                x = np.squeeze(s.Rxynorm[i,:,s.ny/2])
+                x = np.squeeze(s.Rxynorm[i,:,old_div(s.ny,2)])
                 y = data[i,s.nt[0]-1,:]
             
                 handles.append(ax.plot(x,y,c=cm.jet(1.*k/len(x))))
@@ -1060,11 +1066,11 @@ class LinResDraw(LinRes):
             ax.set_title(str(j),fontsize=10)
          
          
-            x = np.squeeze(s.Rxynorm[imax,:,s.ny/2])
+            x = np.squeeze(s.Rxynorm[imax,:,old_div(s.ny,2)])
             y = data[imax,s.nt[0]-1,:]
          #allcurves.plot(x,y,c= colors[k])
             allcurves.plot(x,y,c=cm.jet(.1*k/len(x)))
-            print k
+            print(k)
             k= k+1
          
         fig2.savefig(pp, format='pdf')  
@@ -1099,7 +1105,7 @@ class LinResDraw(LinRes):
        
        canvas = FigureCanvas(fig)
        k = 0
-       nrow = round(Nplots/3.0 + 1.0)
+       nrow = round(old_div(Nplots,3.0) + 1.0)
        ncol = 3
       #nrow = round(Nplots/3.0 + 1.0)
       #ncol = round(Nplots/3.0 + 1.0)
@@ -1108,44 +1114,44 @@ class LinResDraw(LinRes):
        for p in list(set(Modes.path).union()):  # 
            s = subset(Modes.db,'path',[p]) #pick run
            j= s.dz[0]
-           xr = range(s.nx/2-xrange/2,s.nx/2+xrange/2+1)
+           xr = list(range(old_div(s.nx,2)-old_div(xrange,2),old_div(s.nx,2)+old_div(xrange,2)+1))
            data = np.array(ListDictKey(s.db,comp)) #pick component   
          #ax =fig.add_subplot(round(Nplots/3.0 + 1.0),3,k+1)  
          
            for i in range(s.nmodes):
                out = data[i,:,xr]
                
-           print j,i
+           print(j,i)
            if xaxis=='t':   
-               x = range(out.size)
+               x = list(range(out.size))
                #plt.scatter(x,out.flatten(),c=colors[k]) 
                plt.scatter(x,out.flatten(), 
                            c=cm.jet(1.*k/len(x))) 
                #axarr[j%(ncol),j/ncol].scatter(x,out.flatten(),c=colors[k])#,alpha = (1 +i)/s.nmodes) 
-               axarr[j/ncol,j%(ncol)].scatter(x,out.flatten(),c=cm.jet(1.*k/len(x)))#
+               axarr[old_div(j,ncol),j%(ncol)].scatter(x,out.flatten(),c=cm.jet(1.*k/len(x)))#
                
            else:
                x = np.array(ListDictKey(s.db,xaxis))[i,:,xr] 
                #x #an N? by nx array
-               print x[:,1], out[:,0]
+               print(x[:,1], out[:,0])
                plt.scatter(x[:,1],out[:,0])#,c=colors[k]) 
-               axarr[j%(col),j/col].scatter(x[:,1],out[:,0])#,c=colors[k])#,alpha = (1 +i)/s.nmodes) 
+               axarr[j%(col),old_div(j,col)].scatter(x[:,1],out[:,0])#,c=colors[k])#,alpha = (1 +i)/s.nmodes) 
 
             #detect error (bar data
-               print 'error bars:',x,out
+               print('error bars:',x,out)
    
              
                
-           axarr[j/ncol,j%(ncol)].set_yscale(yscale)
-           axarr[j/ncol,j%(ncol)].set_xscale(xscale)
-           axarr[j/ncol,j%(ncol)].set_title(str(j),fontsize=10)
-           axarr[j/ncol,j%(ncol)].set_xlabel(xaxis)
+           axarr[old_div(j,ncol),j%(ncol)].set_yscale(yscale)
+           axarr[old_div(j,ncol),j%(ncol)].set_xscale(xscale)
+           axarr[old_div(j,ncol),j%(ncol)].set_title(str(j),fontsize=10)
+           axarr[old_div(j,ncol),j%(ncol)].set_xlabel(xaxis)
          
            plt.setp([a.get_xticklabels() for a in axarr[0,:]], visible=False)
            plt.setp([a.get_yticklabels() for a in axarr[:,ncol-1]], visible=False)
 
            if ylim:
-               axarr[j%(ncol),j/ncol].set_ylim(data.min(),5*data.max())
+               axarr[j%(ncol),old_div(j,ncol)].set_ylim(data.min(),5*data.max())
            k+=1
             
        plt.title(field+ ' '+comp+', all runs, '+yscale+' yscale',fontsize=10)
@@ -1171,11 +1177,11 @@ class LinResDraw(LinRes):
         
     def savemovie(self,field='Ni',yscale='log',xscale='log',moviename='spectrum.avi'):
         
-        print 'Making movie animation.mpg - this make take a while'
+        print('Making movie animation.mpg - this make take a while')
         files = []
                     
         for t in range(self.nt[0]-3):
-               print t
+               print(t)
                filename = str('%03d' %(t+1) + '.png')
                self.plotvsK('dont need pp',yscale='log',t=[1,t+2],xscale='log',
                           overplot=False,comp='amp',trans=True,file=filename)
@@ -1235,7 +1241,7 @@ class LinResDraw(LinRes):
       
         def graphout(name, datain,xaxis=None):
             if xaxis is None:
-                xaxis=range(datain.size)
+                xaxis=list(range(datain.size))
             if xlabel is None:
                 xlabel = ''
             if ylabel is None:
@@ -1293,21 +1299,21 @@ class LinResDraw(LinRes):
         for i,elem in enumerate(self.meta):
             #if type(self.meta[elem]) != type(np.array([])):
             
-            print elem, type(self.meta[elem])
+            print(elem, type(self.meta[elem]))
             
 
             if type(self.meta[elem])== type({}):
-                print '{}'
+                print('{}')
                 data = np.array(self.meta[elem]['v'])
                 unit_label = str(self.meta[elem]['u'])
             else:
                 data = np.array(self.meta[elem])
                 unit_label = ''
 
-            xaxis = np.squeeze(self.meta['Rxy']['v'][:,self.ny/2])
+            xaxis = np.squeeze(self.meta['Rxy']['v'][:,old_div(self.ny,2)])
             
             if data.shape == (self.nx,self.ny):
-                datastr = np.squeeze(data[:,self.ny/2])
+                datastr = np.squeeze(data[:,old_div(self.ny,2)])
             #metasection.append(graphout('stuff',datastr,xaxis=xaxis))  
             #metasection.append(RL_Plot(datastr,xaxis))
                 
@@ -1322,7 +1328,7 @@ class LinResDraw(LinRes):
                 metasection.append(header(str(elem)+': '+str(data)+ ' '+ unit_label, 
                                           sep=0.1, style=ParaStyle))
             else:
-                print elem, data,data.shape
+                print(elem, data,data.shape)
                 metasection.append(header(str(elem)+': '+str(data)+ ' '+ unit_label, 
                                           sep=0.1, style=ParaStyle))
                    
@@ -1369,7 +1375,7 @@ class LinResDraw(LinRes):
         outputStream = file(outputFile, "wb")
         output.write(outputStream)
         outputStream.close()
-        print "Consolidation complete."
+        print("Consolidation complete.")
 
 
 class subset(LinResDraw):

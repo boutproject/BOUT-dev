@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 
 
 def blob_velocity(n,**kwargs):
@@ -44,8 +46,8 @@ def blob_velocity(n,**kwargs):
 			data = n[i,:,:] - n[0,0,0]   #use corner cell rather than nmin
 			ntot = np.sum(data[:,:])
 		
-			z[i] = np.sum(np.sum(data[:,:],axis=0)*(np.arange(size[2])))/ntot
-			x[i] = np.sum(np.sum(data[:,:],axis=1)*(np.arange(size[1])))/ntot
+			z[i] = old_div(np.sum(np.sum(data[:,:],axis=0)*(np.arange(size[2]))),ntot)
+			x[i] = old_div(np.sum(np.sum(data[:,:],axis=1)*(np.arange(size[1]))),ntot)
 				
 	vx = Calc.deriv(x)
 	vz = Calc.deriv(z)

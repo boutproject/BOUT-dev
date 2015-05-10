@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Flux surface generator for tokamak grid files
 
 try:
@@ -81,7 +82,7 @@ def gen_surface(grid):
             ystart[1] = jyseps1_1+1
         else:
             # Double null
-            raise "SORRY - NO DOUBLE NULL YET"
+            raise RuntimeError("SORRY - NO DOUBLE NULL YET")
     else:
         # Use domains stored in the file
         ndomains = npol.size # Number of domains
