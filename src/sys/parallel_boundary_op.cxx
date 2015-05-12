@@ -102,6 +102,55 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 }
 
 //////////////////////////////////////////
+// Dirichlet with interpolation
+
+BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, const list<string> &args) {
+  if(!args.empty()) {
+    try {
+      real_value = stringToReal(args.front());
+      return new BoundaryOpPar_dirichlet_interp(region, real_value);
+    } catch (BoutException e) {
+      FieldGenerator* newgen = 0;
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+      return new BoundaryOpPar_dirichlet_interp(region, newgen);
+    }
+  }
+  return new BoundaryOpPar_dirichlet_interp(region);
+}
+
+BoundaryOpPar* BoundaryOpPar_dirichlet_interp::clone(BoundaryRegionPar *region, Field3D *f) {
+  return new BoundaryOpPar_dirichlet_interp(region, f);
+}
+
+void BoundaryOpPar_dirichlet_interp::apply(Field3D &f, BoutReal t) {
+
+  Field3D& f_next = f.ynext(bndry->dir);
+  Field3D& f_prev = f.ynext(-bndry->dir);
+
+  Coordinates& coord = *(mesh->coordinates());
+
+  // Loop over grid points If point is in boundary, then fill in
+  // f_next such that the field would be VALUE on the boundary
+  for (bndry->first(); !bndry->isDone(); bndry->next()) {
+    // temp variables for convenience
+    int x = bndry->x; int y = bndry->y; int z = bndry->z;
+
+    // Generate the boundary value
+    BoutReal fs = getValue(*bndry, t);
+
+    // Scale the field and normalise to the desired value
+    BoutReal dy = coord.dy(x, y);
+    BoutReal s = bndry->length*dy;
+
+    f_next(x, y+bndry->dir, z) = f_prev(x, y-bndry->dir, z)*(1.-(2.*s/(dy+s)))
+      + 2.*f(x, y, z)*((s-dy)/s)
+      + fs*(dy/s - (2./s + 1.));
+  }
+
+}
+
+//////////////////////////////////////////
 // Neumann boundary
 
 BoundaryOpPar* BoundaryOpPar_neumann::clone(BoundaryRegionPar *region, const list<string> &args) {
