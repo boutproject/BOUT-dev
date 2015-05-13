@@ -152,22 +152,10 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         RealVector b_hat = {t_x*coord.dx(x,y), coord.dy(x,y), t_z*coord.dz};
         // Length of field line
         BoutReal length = sqrt(dot(b_hat, b_hat));
-        // Normal to boundary
-        RealVector norm;
-        RealVector norm_x = {1., 0., 0.};
-        RealVector norm_y = {0., 1., 0.};
-        RealVector norm_z = {0., 0., 1.};
 
-        // Distance to intersection point
+        // Parameterised distance to intersection point
         BoutReal s_intersect;
-        // Angle between field line and boundary
-        BoutReal angle;
 
-        // Distances to intersections with boundaries along y-axis
-        // for the three different boundaries
-        BoutReal y_prime_x;
-        BoutReal y_prime_y;
-        BoutReal y_prime_z;
         // Parameterised distance to intersection with boundary
         // for the three different boundaries
         BoutReal s_intersect_x;
@@ -178,13 +166,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         if (xt_prime(x,y,z) < 0 ||
             xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
           x_boundary = true;
-
-          BoutReal dx2 = coord.dx(x,y)/2.;
-          BoutReal dy = coord.dy(x,y);
-
           s_intersect_x = 1. / (2.*t_x);
-
-          y_prime_x =  dx2 * (dy / (t_x * coord.dx(x, y)));
         } else {
           x_boundary = false;
         }
@@ -194,10 +176,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         if ((y + dir < 0 ||
              y + dir > mesh.GlobalNy - 1) && !yperiodic) {
           y_boundary = true;
-
           s_intersect_y = 0.5;
-
-          y_prime_y =  coord.dy(x,y) / 2.;
         } else {
           y_boundary = false;
         }
@@ -207,74 +186,69 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         if ((zt_prime(x,y,z) < 0 ||
              zt_prime(x,y,z) > ncz-1) && !zperiodic) {
           z_boundary = true;
-
-          BoutReal dz2 = coord.dz/2.;
-          BoutReal dy = coord.dy(x,y);
-
           s_intersect_z = 1. / (2.*t_z);
-
-          y_prime_z =  dz2 * (dy / (t_z * coord.dz));
         } else {
           z_boundary = false;
         }
 
         // Find the closest intersection with a boundary - seven
         // possible regions field line could end up in
-        // Temp variables for convenience
-        bool x_b = x_boundary;
-        bool y_b = y_boundary;
-        bool z_b = z_boundary;
-        BoutReal y_prime;
-        if (x_b && !y_b && !z_b) {
+        if (x_boundary && !y_boundary && !z_boundary) {
           // x
-          y_prime = y_prime_x;
-        } else if (!x_b && y_b && !z_b) {
+          s_intersect = s_intersect_x;
+        } else if (!x_boundary && y_boundary && !z_boundary) {
           // y
-          y_prime = y_prime_y;
-        } else if (!x_b && !y_b && z_b) {
+          s_intersect = s_intersect_y;
+        } else if (!x_boundary && !y_boundary && z_boundary) {
           // z
-          y_prime = y_prime_z;
-        } else if (!x_b && y_b && z_b) {
+          s_intersect = s_intersect_z;
+        } else if (!x_boundary && y_boundary && z_boundary) {
           // y & z
-          y_prime = std::min(y_prime_y, y_prime_z);
-        } else if (x_b && !y_b && z_b) {
+          s_intersect = std::min(s_intersect_y, s_intersect_z);
+        } else if (x_boundary && !y_boundary && z_boundary) {
           // z & x
-          y_prime = std::min(y_prime_x, y_prime_z);
-        } else if (x_b && y_b && !z_b) {
+          s_intersect = std::min(s_intersect_x, s_intersect_z);
+        } else if (x_boundary && y_boundary && !z_boundary) {
           // x & y
-          y_prime = std::min(y_prime_x, y_prime_y);
-        } else if (x_b && y_b && z_b) {
+          s_intersect = std::min(s_intersect_x, s_intersect_y);
+        } else if (x_boundary && y_boundary && z_boundary) {
           // x & y & z
-          y_prime = std::min(std::min(y_prime_x, y_prime_y), y_prime_z);
+          s_intersect = std::min(std::min(s_intersect_x, s_intersect_y), s_intersect_z);
         } else {
           // none
-          y_prime = 0;
+          s_intersect = 0;
         }
 
         // If field line leaves the domain at this point, then add it
         // to the boundary
         if (x_boundary || y_boundary || z_boundary) {
-          // y_prime is set to that of the closest boundary, so set the other
-          // variables based on that
-          if (y_prime == y_prime_x) {
-            norm = norm_x;
-            s_intersect = s_intersect_x;
-          } else if (y_prime == y_prime_y) {
-            norm = norm_y;
-            s_intersect = s_intersect_y;
-          } else if (y_prime == y_prime_z) {
-            norm = norm_z;
-            s_intersect = s_intersect_z;
+          // Normal to boundary
+          RealVector norm;
+          // s_intersect is set to that of the closest boundary, so set the normal
+          // based on that
+          if (s_intersect == s_intersect_x) {
+            norm = {1., 0., 0.};
+          } else if (s_intersect == s_intersect_y) {
+            norm = {0., 1., 0.};
+          } else if (s_intersect == s_intersect_z) {
+            norm = {0., 0., 1.};
           } else {
-            // Shouldn't reach here - boundary set, but y_prime not
-            // equal to a boundary y_prime
+            // Shouldn't reach here - boundary set, but s_intersect not
+            // equal to a boundary s_intersect_(x|y|z)
             throw BoutException("Something weird happened in FCIMap...");
           }
 
+          // y-distance to boundary intersection
+          BoutReal y_prime = coord.dy(x,y) * s_intersect;
+
+          // Index-space coordinates of intersection
           BoutReal s_x = x + s_intersect*t_x;
           BoutReal s_y = y + s_intersect;
           BoutReal s_z = z + s_intersect*t_z;
-          angle = asin( dot(norm, b_hat) / length );
+
+          // Angle between field line and boundary
+          BoutReal angle = asin( dot(norm, b_hat) / length );
+
           // This would be correct, but need to work out correct modification to
           // the boundary conditions to use it
           // y_prime = s_intersect * length;
