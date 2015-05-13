@@ -1,16 +1,18 @@
 #BOUT++ documentation
 To build these LaTeX files into a PDF document, run "make":
 
-    $ make
+```bash
+$ make
+```
 
 
 ## User manual
-This describes how to use BOUT++, starting with installation 
+This describes how to use BOUT++, starting with installation
 and simple examples.
 
 
 ## Developer manual
-This describes in more detail how parts of the code work internally. 
+This describes in more detail how parts of the code work internally.
 The developer manual is written assuming some level of C++ knowledge,
 and that you have read the user manual.
 

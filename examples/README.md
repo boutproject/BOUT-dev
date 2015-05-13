@@ -14,13 +14,17 @@ Some simple examples to get started are
 
 To run the test suite, run the Python code "test_suite" :
 
-   $ ./test_suite
+```bash
+$ ./test_suite
+```
 
 This should run through the tests, provided that python is set up correctly.
 If you encounter problems, first check that PYTHONPATH includes the BOUT++
 pylib directory:
 
-   $ echo $PYTHONPATH
+```bash
+$ echo $PYTHONPATH
+```
 
 The test suite currently includes:
 
