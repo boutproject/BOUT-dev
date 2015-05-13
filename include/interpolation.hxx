@@ -1,11 +1,11 @@
 /**************************************************************************
  * Functions to interpolate between cell locations (e.g. lower Y and centred)
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -44,5 +44,52 @@ const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3D &delta_z);
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
+
+////////////////////////////////////////
+
+class Interpolation {
+public:
+  virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
+
+  virtual const Field3D interpolate(const Field3D& f) const = 0;
+  virtual const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) = 0;
+};
+
+class HermiteSpline : public Interpolation {
+public:
+  HermiteSpline(int y_offset=0);
+
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
+
+  // Use precalculated weights
+  const Field3D interpolate(const Field3D& f) const;
+  // Calculate weights and interpolate
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
+
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+
+private:
+  // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
+  int y_offset;
+
+  // 3D vector of points to skip (true -> skip this point)
+  BoutMask skip_mask;
+
+  // Basis functions for cubic Hermite spline interpolation
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  // The h00 and h01 basis functions are applied to the function itself
+  // and the h10 and h11 basis functions are applied to its derivative
+  // along the interpolation direction.
+
+  Field3D h00_x;
+  Field3D h01_x;
+  Field3D h10_x;
+  Field3D h11_x;
+  Field3D h00_z;
+  Field3D h01_z;
+  Field3D h10_z;
+  Field3D h11_z;
+};
 
 #endif // __INTERP_H__
