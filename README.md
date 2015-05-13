@@ -95,7 +95,7 @@ when using this code:
 
 
 
-# License
+## License
 Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
 
 BOUT++ is free software: you can redistribute it and/or modify
