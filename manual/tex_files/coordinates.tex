@@ -124,7 +124,7 @@ L.L.LoDestro\dag \\
   \S Department of Physics, University of York, UK \\
   \dag Lawrence Livermore National Laboratory, USA \\
   \ddag IFTS, China}
-\date{29$^{th}$ June 2011\\Revised 12$^{th}$ May 2015}
+  \date{}
 \maketitle
 
 \tableofcontents
@@ -230,6 +230,9 @@ Where $\nu$ is the local field-line pitch given by
 \frac{\Bt\hthe}{\Bp R} = \frac{\left(F/R\right)h_\theta}{\Bp R} = FJ/R^2
 \end{align*}
 %
+where $F=\Bt R$ is a function only of $\psi$ (sometimes called the 
+poloidal current function).
+
 The coordinate system is chosen so that $x$ increases radially outwards, from
 plasma to the wall.
 The sign of the toroidal field $\Bt$ can then be either + or -.
@@ -400,7 +403,7 @@ The perpendicular gradient operator:
 
 
 
-\subsection{$J\times B$ in field-aligned coordinates}
+\subsection{\texorpdfstring{$J\times B$}{J x B} in field-aligned coordinates}
 \label{sec:jxb_fac}
 Components of the magnetic field in field-aligned coordinates:
 %
@@ -628,7 +631,8 @@ R}{B^2\hthe}\left[\frac{\mu_0}{B}\deriv{P}{x} + \deriv{B}{x}\right] \\
 
 
 
-\subsection{Curvature from $\nabla\times\left(\bvec / B\right)$}
+\subsection{Curvature from \texorpdfstring{$\nabla\times\left(\bvec / 
+B\right)$}{div (b/B)}}
 The vector $\bvec\times\kvec$ is an approximation of
 %
 \begin{align*}
@@ -811,7 +815,8 @@ R}{\hthe}\deriv{}{\psi}\left(\frac{\hthe\Bp}{B}\right)\ehat_\phi
 
 
 
-\subsection{$\psi$ derivative of $B$ field}
+\subsection{\texorpdfstring{$\psi$}{psi} derivative of the 
+	    \texorpdfstring{$B$}{B} field}
 Needed to calculate magnetic shear, and one way to get the curvature.
 The simplest way is to use finite differencing, but there is another way
 using local derivatives (implemented using DCT).
@@ -886,7 +891,7 @@ From the definition $B=\sqrt{\Bt^2 + \Bp^2}$,
 
 
 
-\subsection{Parallel derivative of $B$ field}
+\subsection{Parallel derivative of the \texorpdfstring{$B$}{B} field}
 To get the parallel gradients of the $B$ field components, start with
 %
 \begin{align*}
@@ -956,7 +961,7 @@ Which gives
 
 
 
-\subsection{Magnetic shear from $J\times B$}
+\subsection{Magnetic shear from \texorpdfstring{$J\times B$}{J x B}}
 Re-arranging the radial force balance equation~\ref{eq:xbalance} gives
 %
 \begin{align*}
@@ -987,7 +992,8 @@ $\partial\hthe/\partial\psi$ needs to be evaluated
 
 
 
-\subsection{$\psi$ derivative of $\hthe$}
+\subsection{\texorpdfstring{$\psi$}{psi} derivative of 
+            \texorpdfstring{$\hthe$}{h}}
 From the expression for curvature \ref{eq:curvature}, and using $\nabla x \cdot
 \nabla \psi = \sbt \left(R\Bp\right)^2$ and $\nabla z\cdot\nabla \psi = -\sbt I
 \left(R\Bp\right)^2$
@@ -1161,8 +1167,8 @@ derivatives is:
 
 
 
-\subsubsection{In orthogonal $\left(\psi, \theta, \zeta\right)$ flux 
-coordinates}
+\subsubsection{In orthogonal \texorpdfstring{$\left(\psi, \theta, 
+\zeta\right)$}{(psi, theta, zeta)} flux coordinates}
 For comparison, the perpendicular Laplacian can be derived in orthogonal 
 ``flux'' coordinates
 %
@@ -1221,7 +1227,8 @@ and \ref{eq:delp_flux} are the same, as they should be.
 
 
 
-\subsection{Operator $\Bvec\times\nabla\phi\cdot\nabla A$}
+\subsection{Operator \texorpdfstring{$\Bvec\times\nabla\phi\cdot\nabla A$}{Bx 
+Nabla Phi Dot Nabla A}}
 %
 \begin{align*}
 \Bvec\times\nabla\phi\cdot\nabla A =& \left(\deriv{\phi}{x}\deriv{A}{y} - 
