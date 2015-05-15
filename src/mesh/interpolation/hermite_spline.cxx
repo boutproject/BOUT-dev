@@ -23,14 +23,11 @@
 #include "bout/mesh.hxx"
 #include "globals.hxx"
 #include "interpolation.hxx"
-#include "utils.hxx"
 
 #include <vector>
 
-HermiteSpline::HermiteSpline(int y_offset) : y_offset(y_offset),
-                                             skip_mask(mesh->ngx, std::vector<std::vector<bool>>
-                                                       (mesh->ngy, std::vector<bool>
-                                                        (mesh->ngz-1, false))) {
+HermiteSpline::HermiteSpline(int y_offset) :
+  y_offset(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->ngx, mesh->ngy, mesh->ngz-1);
@@ -55,7 +52,7 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       for(int z=0;z<mesh->ngz-1;z++) {
 
-        if (skip_mask[x][y][z]) continue;
+        if (skip_mask(x, y, z)) continue;
 
         // The integer part of xt_prime, zt_prime are the indices of the cell
         // containing the field line end-point
@@ -64,8 +61,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
 
         // t_x, t_z are the normalised coordinates \in [0,1) within the cell
         // calculated by taking the remainder of the floating point index
-        t_x = delta_x(x,y,z) - (BoutReal)i_corner[x][y][z];
-        t_z = delta_z(x,y,z) - (BoutReal)k_corner[x][y][z];
+        t_x = delta_x(x,y,z) - static_cast<BoutReal>(i_corner[x][y][z]);
+        t_z = delta_z(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
 
         // NOTE: A (small) hack to avoid one-sided differences
         if( i_corner[x][y][z] == mesh->xend ) {
@@ -97,6 +94,11 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
   }
 }
 
+void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+  skip_mask = mask;
+  calcWeights(delta_x, delta_z);
+}
+
 const Field3D HermiteSpline::interpolate(const Field3D& f) const {
 
   Field3D f_interp;
@@ -115,7 +117,7 @@ const Field3D HermiteSpline::interpolate(const Field3D& f) const {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       for(int z=0;z<mesh->ngz-1;z++) {
 
-        if (skip_mask[x][y][z]) continue;
+        if (skip_mask(x, y, z)) continue;
 
         // Due to lack of guard cells in z-direction, we need to ensure z-index
         // wraps around
@@ -126,29 +128,25 @@ const Field3D HermiteSpline::interpolate(const Field3D& f) const {
         int y_next = y + y_offset;
 
         // Interpolate f in X at Z
-        BoutReal f_z = 
-            f( i_corner[x][y][z],   y_next, z_mod)*h00_x(x,y,z)
+        BoutReal f_z = f( i_corner[x][y][z],   y_next, z_mod)*h00_x(x,y,z)
           + f( i_corner[x][y][z]+1, y_next, z_mod)*h01_x(x,y,z)
           + fx(i_corner[x][y][z],   y_next, z_mod)*h10_x(x,y,z)
           + fx(i_corner[x][y][z]+1, y_next, z_mod)*h11_x(x,y,z);
 
         // Interpolate f in X at Z+1
-        BoutReal f_zp1 = 
-            f( i_corner[x][y][z],   y_next, z_mod_p1)*h00_x(x,y,z)
+        BoutReal f_zp1 = f( i_corner[x][y][z],   y_next, z_mod_p1)*h00_x(x,y,z)
           + f( i_corner[x][y][z]+1, y_next, z_mod_p1)*h01_x(x,y,z)
           + fx(i_corner[x][y][z],   y_next, z_mod_p1)*h10_x(x,y,z)
           + fx(i_corner[x][y][z]+1, y_next, z_mod_p1)*h11_x(x,y,z);
 
         // Interpolate fz in X at Z
-        BoutReal fz_z = 
-            fz( i_corner[x][y][z],   y_next, z_mod)*h00_x(x,y,z)
+        BoutReal fz_z = fz( i_corner[x][y][z],   y_next, z_mod)*h00_x(x,y,z)
           + fz( i_corner[x][y][z]+1, y_next, z_mod)*h01_x(x,y,z)
           + fxz(i_corner[x][y][z],   y_next, z_mod)*h10_x(x,y,z)
           + fxz(i_corner[x][y][z]+1, y_next, z_mod)*h11_x(x,y,z);
 
         // Interpolate fz in X at Z+1
-        BoutReal fz_zp1 = 
-            fz( i_corner[x][y][z],   y_next, z_mod_p1)*h00_x(x,y,z)
+        BoutReal fz_zp1 = fz( i_corner[x][y][z],   y_next, z_mod_p1)*h00_x(x,y,z)
           + fz( i_corner[x][y][z]+1, y_next, z_mod_p1)*h01_x(x,y,z)
           + fxz(i_corner[x][y][z],   y_next, z_mod_p1)*h10_x(x,y,z)
           + fxz(i_corner[x][y][z]+1, y_next, z_mod_p1)*h11_x(x,y,z);
@@ -170,8 +168,7 @@ const Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_
   return interpolate(f);
 }
 
-// onst Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, const BoutMask mask) {
-//   calcWeights(delta_x, delta_z);
-//   return interpolate(f);
-// }
-
+const Field3D HermiteSpline::interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) {
+  calcWeights(delta_x, delta_z, mask);
+  return interpolate(f);
+}

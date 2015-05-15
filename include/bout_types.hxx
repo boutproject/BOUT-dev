@@ -40,6 +40,4 @@ enum REGION {RGN_ALL, RGN_NOBNDRY, RGN_NOX, RGN_NOY, RGN_NOZ};
 //jmad Boundary condition function
 typedef BoutReal (*FuncPtr)(BoutReal t, BoutReal x, BoutReal y, BoutReal z);
 
-typedef std::vector<std::vector<std::vector<bool>>> BoutMask;
-
 #endif // __BOUT_TYPES_H__

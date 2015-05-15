@@ -53,21 +53,18 @@ inline BoutReal sgn(BoutReal val) {
 
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
-FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
+FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
+  dir(dir), spline(dir), boundary_mask(mesh) {
 
   // Index arrays contain guard cells in order to get subscripts right
-  i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
-  k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+  // x-index of bottom-left grid point
+  int*** i_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
+  // z-index of bottom-left grid point
+  int*** k_corner = i3tensor(mesh.ngx, mesh.ngy, mesh.ngz-1);
 
   bool x_boundary;     // has the field line left the domain through the x-sides
   bool y_boundary;     // has the field line left the domain through the y-sides
   bool z_boundary;     // has the field line left the domain through the z-sides
-
-  // Make the boundary_mask the correct size
-  // Ugly ugly code
-  boundary_mask.resize(mesh.ngx, std::vector<std::vector<bool>>
-                       (mesh.ngy, std::vector<bool>
-                        (mesh.ngz-1)));
 
   Field3D xt_prime, zt_prime;
 
@@ -89,15 +86,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
   // Add the boundary region to the mesh's vector of parallel boundaries
   mesh.addBoundaryPar(boundary);
 
-  // Allocate Field3D members
-  h00_x.allocate();
-  h01_x.allocate();
-  h10_x.allocate();
-  h11_x.allocate();
-  h00_z.allocate();
-  h01_z.allocate();
-  h10_z.allocate();
-  h11_z.allocate();
+  spline.calcWeights(xt_prime, zt_prime);
 
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
@@ -264,7 +253,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
           // the boundary conditions to use it
           // y_prime = s_intersect * length;
 
-          boundary_mask[x][y][z] = true;
+          boundary_mask(x, y, z) = true;
           boundary->add_point(x, y, z, s_x, s_y, s_z, y_prime, angle);
         }
 
@@ -277,137 +266,14 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         if( (t_z < 0.0) || (t_z > 1.0) )
           throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
 
-        // NOTE: A (small) hack to avoid one-sided differences
-        if( i_corner[x][y][z] == mesh.xend ) {
-          i_corner[x][y][z] -= 1;
-          t_x = 1.0;
-        }
-
-        h00_x(x, y, z) = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
-        h00_z(x, y, z) = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
-
-        h01_x(x, y, z) = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
-        h01_z(x, y, z) = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
-
-        h10_x(x, y, z) = t_x*(1.-t_x)*(1.-t_x);
-        h10_z(x, y, z) = t_z*(1.-t_z)*(1.-t_z);
-
-        h11_x(x, y, z) = t_x*t_x*t_x - t_x*t_x;
-        h11_z(x, y, z) = t_z*t_z*t_z - t_z*t_z;
       }
     }
   }
 
-}
+  spline.setMask(boundary_mask);
 
-/**
- * Use cubic Hermite splines to interpolate field f
- *
- * Use cubic Hermite splines to interpolate field f on the adjacent
- * toroidal slice. Spline coefficients and direction of slice are
- * stored in fcimap, and the interpolated field is stored in either
- * f.yup or f.ydown, according to the direction.
- *
- * @param f      The field to interpolate
- * @param fcimap Information on mapping field lines onto next slice
- */
-void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
-
-  if(!mesh.FCI)
-    return; // Not using FCI method. Print error / warning?
-
-  Field3D fx, fz, fxz;
-
-  Field3D& f_next = f.ynext(fcimap.dir);
-  f_next = 0;
-
-  // HACK: If only one point in x, don't bother interpolating that way!
-  if (mesh.xstart == mesh.xend) {
-    fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
-    mesh.communicate(fz);
-
-    int x = mesh.xstart;
-    for(int y=mesh.ystart; y<=mesh.yend;y++) {
-      for(int z=0;z<mesh.ngz-1;z++) {
-        // If this field line leaves the domain through the
-        // x-boundary, or through the z-boundary and the domain is not
-        // periodic, skip it
-        if (fcimap.boundary_mask[x][y][z]) continue;
-
-        // Due to lack of guard cells in z-direction, we need to ensure z-index
-        // wraps around
-        int ncz = mesh.ngz-1;
-        int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
-        int z_mod_p1 = (z_mod + 1) % ncz;
-
-        // Interpolate in Z
-        f_next(x,y + fcimap.dir,z) =
-          + f(x,  y + fcimap.dir, z_mod)    * fcimap.h00_z(x,y,z)
-          + f(x,  y + fcimap.dir, z_mod_p1) * fcimap.h01_z(x,y,z)
-          + fz(x, y + fcimap.dir, z_mod)    * fcimap.h10_z(x,y,z)
-          + fz(x, y + fcimap.dir, z_mod_p1) * fcimap.h11_z(x,y,z);
-      }
-    }
-  } else {
-
-    // Derivatives are used for tension and need to be on dimensionless
-    // coordinates
-    fx = mesh.indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
-    mesh.communicate(fx);
-    fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
-    mesh.communicate(fz);
-    fxz = mesh.indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
-    mesh.communicate(fxz);
-
-    for(int x=mesh.xstart;x<=mesh.xend;x++) {
-      for(int y=mesh.ystart; y<=mesh.yend;y++) {
-        for(int z=0;z<mesh.ngz-1;z++) {
-
-          // If this field line leaves the domain through the
-          // x-boundary, or through the z-boundary and the domain is not
-          // periodic, skip it
-          if (fcimap.boundary_mask[x][y][z]) continue;
-
-          // Due to lack of guard cells in z-direction, we need to ensure z-index
-          // wraps around
-          int ncz = mesh.ngz-1;
-          int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
-          int z_mod_p1 = (z_mod + 1) % ncz;
-
-          // Interpolate f in X at Z
-          BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-            + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-            + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-            + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
-
-          // Interpolate f in X at Z+1
-          BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-            + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-            + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-            + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
-
-          // Interpolate fz in X at Z
-          BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-            + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-            + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-            + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
-
-          // Interpolate fz in X at Z+1
-          BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-            + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-            + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-            + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
-
-          // Interpolate in Z
-          f_next(x,y + fcimap.dir,z) =
-            + f_z    * fcimap.h00_z(x,y,z)
-            + f_zp1  * fcimap.h01_z(x,y,z)
-            + fz_z   * fcimap.h10_z(x,y,z)
-            + fz_zp1 * fcimap.h11_z(x,y,z);
-        }
-      }
-    }
-  }
+  free_i3tensor(i_corner);
+  free_i3tensor(k_corner);
 }
 
 /*******************************************************************************
@@ -520,7 +386,7 @@ void FCI::calcYUpDown(Field3D &f) {
 
   f.splitYupYdown();
 
-  interpolate(f, forward_map);
-  interpolate(f, backward_map);
+  f.ynext(forward_map.dir) = forward_map.interpolate(f);
+  f.ynext(backward_map.dir) = backward_map.interpolate(f);
 
 }

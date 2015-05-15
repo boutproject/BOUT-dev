@@ -35,41 +35,29 @@
 #include <bout/constants.hxx>
 #include <field_factory.hxx>
 #include "parallel_boundary_region.hxx"
+#include "interpolation.hxx"
+#include "mask.hxx"
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
+  // Interpolation object
+  HermiteSpline spline;
+
   // Private constructor - must be initialised with mesh
   FCIMap();
 public:
-  typedef std::vector<std::vector<std::vector<bool>>> B3vec;
-
   // dir MUST be either +1 or -1
   FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
 
   // Direction of map
   int dir;
 
-  int*** i_corner;      // x-index of bottom-left grid point
-  int*** k_corner;      // z-index of bottom-left grid point
-  B3vec boundary_mask;  // boundary mask - has the field line left the domain
+  BoutMask boundary_mask;  // boundary mask - has the field line left the domain
   Field3D y_prime;      // distance to intersection with boundary
 
   BoundaryRegionPar* boundary;			/**< boundary region */
 
-  // Basis functions for cubic Hermite spline interpolation
-  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
-  // The h00 and h01 basis functions are applied to the function itself
-  // and the h10 and h11 basis functions are applied to its derivative
-  // along the interpolation direction.
-
-  Field3D h00_x;
-  Field3D h01_x;
-  Field3D h10_x;
-  Field3D h11_x;
-  Field3D h00_z;
-  Field3D h01_z;
-  Field3D h10_z;
-  Field3D h11_z;
+  const Field3D interpolate(Field3D &f) const { return spline.interpolate(f); }
 };
 
 // A class for performing flux-coordinate independent parallel derivatives
@@ -99,9 +87,6 @@ public:
     backward_map(m, -1, yperiodic, zperiodic),
     yperiodic(yperiodic),
     zperiodic(zperiodic) {}
-
-  // Interpolate field in direction DIR
-  void interpolate(Field3D &f, const FCIMap &fcimap);
 
   // Parallel derivatives
   const Field3D Grad_par(Field3D &f);

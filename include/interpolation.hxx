@@ -26,8 +26,10 @@
 #ifndef __INTERP_H__
 #define __INTERP_H__
 
-#include "field3d.hxx"
 #include "bout_types.hxx"
+#include "field3d.hxx"
+#include "mask.hxx"
+#include "utils.hxx"
 
 /// Interpolate to a give cell location
 const Field3D interp_to(const Field3D &var, CELL_LOC loc);
@@ -48,33 +50,30 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x);
 ////////////////////////////////////////
 
 class Interpolation {
+protected:
+  // 3D vector of points to skip (true -> skip this point)
+  BoutMask skip_mask;
 public:
+  Interpolation() {}
+  Interpolation(BoutMask mask) : skip_mask(mask) {}
+  virtual ~Interpolation() {}
+
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
+  virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) = 0;
 
   virtual const Field3D interpolate(const Field3D& f) const = 0;
   virtual const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z) = 0;
+  virtual const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) = 0;
+
+  void setMask(BoutMask mask) { skip_mask = mask; }
 };
 
 class HermiteSpline : public Interpolation {
-public:
-  HermiteSpline(int y_offset=0);
-
-  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
-
-  // Use precalculated weights
-  const Field3D interpolate(const Field3D& f) const;
-  // Calculate weights and interpolate
-  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
-
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
 
-private:
   // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
   int y_offset;
-
-  // 3D vector of points to skip (true -> skip this point)
-  BoutMask skip_mask;
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -90,6 +89,26 @@ private:
   Field3D h01_z;
   Field3D h10_z;
   Field3D h11_z;
+
+public:
+  HermiteSpline(int y_offset=0);
+  HermiteSpline(BoutMask mask, int y_offset=0) : HermiteSpline(y_offset) {
+    skip_mask = mask;}
+
+  ~HermiteSpline() {
+    free_i3tensor(i_corner);
+    free_i3tensor(k_corner);
+  }
+
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+
+  // Use precalculated weights
+  const Field3D interpolate(const Field3D& f) const;
+  // Calculate weights and interpolate
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+
 };
 
 #endif // __INTERP_H__
