@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 #; Monotone interpolation using Hermite splines
 #; 
 #; x, y - input points
@@ -31,7 +34,7 @@ def spline_mono( x, y, u, yp0=None, ypn_1=None):
    
 
   # Calculate delta
-  D = (y[1::] - y[0:(n-1)]) / (x[1::] - x[0:(n-1)])
+  D = old_div((y[1::] - y[0:(n-1)]), (x[1::] - x[0:(n-1)]))
   
   if numpy.size(yp0) == 0 : yp0 = D[0]
   if numpy.size(ypn_1) == 0 : ypn_1 = D[n-2]
@@ -45,12 +48,12 @@ def spline_mono( x, y, u, yp0=None, ypn_1=None):
       m[i] = 0.
       m[i+1 < (n-1)] = 0.
     else:
-      a = m[i] / D[i]
-      b = m[i+1] / D[i]
+      a = old_div(m[i], D[i])
+      b = old_div(m[i+1], D[i])
       
       c = numpy.sqrt(a**2 + b**2)
       if c > 3. :
-        t = 3. / c
+        t = old_div(3., c)
         m[i] = t * a * D[i]
         m[i+1] = t* b * D[i]
   
@@ -74,7 +77,7 @@ def spline_mono( x, y, u, yp0=None, ypn_1=None):
     xlow = xup - 1
     
     h = numpy.float(x[xup] - x[xlow])
-    t = (numpy.float(u[i]) - numpy.float(x[xlow])) / h
+    t = old_div((numpy.float(u[i]) - numpy.float(x[xlow])), h)
     
     result[i] = (
                 y[xlow] * h00(t) +  

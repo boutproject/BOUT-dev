@@ -6,6 +6,9 @@
 #
 
 from __future__ import division
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 
 from boututils import shell,launch,getmpirun, DataFile
 from boutdata import collect
@@ -152,8 +155,8 @@ plt.show()
 plt.close()
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

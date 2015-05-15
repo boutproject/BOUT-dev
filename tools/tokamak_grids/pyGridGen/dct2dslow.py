@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 #; 2D Discrete Cosine Transform 
 #; 
 #; Author: Maxim Umansky, LLNL
@@ -36,7 +39,7 @@ def dct2dslow( sig, fsig, inverse=None):
                numpy.dot( numpy.cos(iu*numpy.float_(numpy.pi)*(2*numpy.arange(nx).astype(float)+1)/(2*nx)) , numpy.cos(jv*numpy.float_(numpy.pi)*(2*numpy.arange(ny).astype(float)+1)/(2*ny))) )
       
 
-        fsig *= 2/numpy.sqrt(numpy.float_(nx*ny))
+        fsig *= old_div(2,numpy.sqrt(numpy.float_(nx*ny)))
         fsig[0,:] *= numpy.sqrt(numpy.float_(0.5))
         fsig[:,0] *= numpy.sqrt(numpy.float_(0.5))
         
@@ -62,7 +65,7 @@ def dct2dslow( sig, fsig, inverse=None):
                    numpy.dot( numpy.cos(numpy.arange(nx).astype(float)*numpy.float_(numpy.pi)*(2*ix+1)/(2*nx)) , numpy.cos(numpy.arange(ny).astype(float)*numpy.float_(numpy.pi)*(2*jy+1)/(2*ny)) ) )
 
 
-        sig *= 2/numpy.sqrt(numpy.float_(nx*ny))
+        sig *= old_div(2,numpy.sqrt(numpy.float_(nx*ny)))
 
 
         return sig

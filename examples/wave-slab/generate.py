@@ -5,6 +5,8 @@
 # Slab inputs
 
 from __future__ import division
+from __future__ import print_function
+from builtins import range
 
 # Size of the domain
 

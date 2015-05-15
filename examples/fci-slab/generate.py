@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 #
 # Routines to generate slab meshes for FCI
 # 
@@ -37,9 +40,9 @@ def slab(nx, ny, nz,
     Ly = float(Ly)
     Lz = float(Lz)
     
-    delta_x = Lx/(nx-2.*MXG)
-    delta_pol = Lz/(nz)
-    delta_tor = Ly/(ny)
+    delta_x = old_div(Lx,(nx-2.*MXG))
+    delta_pol = old_div(Lz,(nz))
+    delta_tor = old_div(Ly,(ny))
     
     # Coord arrays
     x = Lx * (np.arange(nx) - MXG + 0.5)/(nx - 2.*MXG)  # 0 and 1 half-way between cells
@@ -49,30 +52,30 @@ def slab(nx, ny, nz,
     ############################################################
 
     # Effective major radius
-    R = Ly / (2.*pi)
+    R = old_div(Ly, (2.*pi))
 
     # Set poloidal magnetic field
 
-    Bpx = Bp + (x-Lx/2) * Bpprime
+    Bpx = Bp + (x-old_div(Lx,2)) * Bpprime
     
     Bpxy = np.transpose(np.resize(Bpx, (nz, ny, nx)), (2,1,0))
     
     Bxy = np.sqrt(Bpxy**2 + Bt**2)
     
-    class Mappoint():
+    class Mappoint(object):
         def __init__(self, xt, zt):
             self.xt = xt
             self.zt = zt
 
-            self.xt_prime = xt/delta_x + MXG - 0.5
-            self.zt_prime = zt/delta_pol
+            self.xt_prime = old_div(xt,delta_x) + MXG - 0.5
+            self.zt_prime = old_div(zt,delta_pol)
 
     def unroll_map_coeff(map_list, coeff):
         coeff_array = np.transpose(np.resize(np.array([getattr(f, coeff) for f in map_list]).reshape( (nx,nz) ), (ny, nx, nz) ), (1, 0, 2) )
         return coeff_array
 
     def b_field(vector, y):
-        x0 = Lx/2.                    # Centre of box, where bz = 0.
+        x0 = old_div(Lx,2.)                    # Centre of box, where bz = 0.
         x, z = vector;
         bx = 0.
         bz = Bp + (x-x0) * Bpprime
@@ -99,7 +102,7 @@ def slab(nx, ny, nz,
 
     X,Y = np.meshgrid(x,y,indexing='ij')
     x0 = 0.5
-    g_22 = ((Bp + (X-x0) * Lx * Bpprime)**2 + Bt**2) / Bt**2
+    g_22 = old_div(((Bp + (X-x0) * Lx * Bpprime)**2 + Bt**2), Bt**2)
     
     with bdata.DataFile(filename, write=True, create=True) as f:
         f.write('nx', nx)

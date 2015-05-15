@@ -1,3 +1,5 @@
+from __future__ import division
+from past.utils import old_div
 #
 # Perform a linear regression fit
 #
@@ -19,7 +21,7 @@ def linear_regression(x, y):
     mx = mean(x)
     my = mean(y)
 
-    b = (mean(x*y) - mx*my) / (mean(x**2) - mx**2)
+    b = old_div((mean(x*y) - mx*my), (mean(x**2) - mx**2))
     a = my - b*mx
     
     return a, b
