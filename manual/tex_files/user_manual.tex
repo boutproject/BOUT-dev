@@ -6,6 +6,7 @@
 \usepackage{fancyhdr}
 \usepackage{hyperref}
 
+\usepackage{amsmath}
 \usepackage{subfigure}
 \usepackage{listings}
 \usepackage{color}
@@ -605,7 +606,8 @@ or
 if your CVODE library is in a non-standard place.
 
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE) solver, which evolves a system of the form
-$\mathbf{f}\left(\mathbf{u}, \dot\mathbf{u}, t\right) = 0$. This allows algebraic constraints on variables
+$\mathbf{f}\left(\mathbf{u}, \dot{\mathbf{u}}, t\right) = 0$. This allows 
+algebraic constraints on variables
 to be specified. If you want this functionality, compile in the IDA library using
 \begin{verbatim}
 ./configure --with-ida
@@ -2914,10 +2916,10 @@ mode, they will instead be run in SINGLE\_STEP mode (see the SUNDIALS notes here
 \section{Boundary conditions}
 \label{sec:bndryopts}
 \index{boundary conditions}
-\emph{Important note:} The boundary conditions are currently not set in the
+\note{The boundary conditions are currently not set in the
 corner cells. Therefore: When using stecils which uses corner cells (like the
 Arakawa scheme) care must be taken, and the boundary conditions in the corner
-cells must be set manually.
+cells must be set manually.}
 
 Like the variable initialisation, boundary conditions can be set for
 each variable in individual sections, with default values in a section
@@ -3525,15 +3527,45 @@ output from different codes and converting into input to BOUT++.
 \caption{Generation of BOUT++ grid files. In red are the file formats, and in black the conversion routines. Blue are external codes.}
 \label{fig:gridgen}
 \end{figure}
+\clearpage
 
 \subsection{BOUT++ Topology}
 \subsubsection{Basic}
 In order to handle tokamak geometry BOUT++ contains an internal topology which is determined by the branch-cut locations (\code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and
   \code{jyseps2\_2}) and separatrix locations (\code{ixseps1} and  \code{ixseps2}).
 
-The separatrix locations, \code{ixseps1} and  \code{ixseps2}, give the indices in the \code{x} domain where the first and second separatrices are located. If \code{ixseps1 == ixseps2} then there is a single separatrix representing the boundary between the core region and the SOL region and the grid is a connected double null configuration. If \code{ixseps1 > ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps2} so the tokamak is an upper double null. If \code{ixseps1 < ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps1} so the tokamak is a lower double null. These values are set either in the grid file or in \code{BOUT.inp}. Figure \ref{fig:topology_cross_section} shows schematically how \code{ixseps} is used.
+The separatrix locations, \code{ixseps1} and  \code{ixseps2}, give the indices 
+in the \code{x} domain where the first and second separatrices are located.
 
-The branch cut locations, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}, split the \code{y} domain into logical regions defining the SOL, the PFR and the core of the tokamak. This is illustrated also in figure \ref{fig:topology_cross_section}.  If \code{jyseps1\_2 == jyseps2\_1} then the grid is a single null configuration, otherwise the grid is a double null configuration.
+If \code{ixseps1 == ixseps2} then there is a single separatrix representing the 
+boundary between the core region and the SOL region and the grid is a connected 
+double null configuration. If \code{ixseps1 > ixseps2} then there are two 
+separatrices and the inner separatrix is \code{ixseps2} so the tokamak is an 
+upper double null. If \code{ixseps1 < ixseps2} then there are two separatrices 
+and the inner separatrix is \code{ixseps1} so the tokamak is a lower double 
+null.
+
+In other words: Let us for illustrative purposes say that \code{ixseps1 >
+ixseps2} (see figure \ref{fig:topology_cross_section}). Let us say that we 
+have a field \code{f(x,y,z)} with a global \code{x}-index which includes ghost 
+points. \code{f(x<=xseps1,y,z)}) will then be periodic in the 
+\code{y}-direction, \code{f(xspes1<x<=xseps2,y,z)}) will have boundary condition 
+in the \code{y}-direction set by the lowermost \code{ydown} and \code{yup}.
+If \code{f(xspes2<x,y,z)}) the boundary condition in the \code{y}-direction 
+will be set by the uppermost \code{ydown} and \code{yup}. As for now, there is 
+no difference between the two sets of upper and lower \code{ydown} and 
+\code{yup} boundary conditions (unless manually specified, see section 
+\ref{sec:custom_BC}).
+
+These values are set either in the grid file or in \code{BOUT.inp}. Figure 
+\ref{fig:topology_cross_section} shows schematically how \code{ixseps} is used.
+
+The branch cut locations, \code{jyseps1\_1}, \code{jyseps1\_2}, 
+\code{jyseps2\_1}, and \code{jyseps2\_2}, split the \code{y} domain into logical 
+regions defining the SOL, the PFR (private flux region) and the core of the 
+tokamak. This is illustrated also in figure \ref{fig:topology_cross_section}.  
+If \code{jyseps1\_2 == jyseps2\_1} then the grid is a single null 
+configuration, otherwise the grid is a double null configuration.
 
 \begin{figure}[htbp!]
 \centering
@@ -4126,7 +4158,7 @@ Field3D a, b;
 \end{lstlisting}
 
 \subsubsection{Custom boundary conditions}
-
+\label{sec:custom_BC}
 The boundary conditions supplied with the BOUT++ library cover the most common situations,
 but cannot cover all of them. If the boundary condition you need isn't
 available, then it's quite straightforward
@@ -4413,7 +4445,9 @@ Quite a common problem in plasma simulation codes is to invert an equation of th
 \[
 \nabla_\perp^2 x + a x = b
 \]
-where $a$ is symmetric in z, and the operator $\nabla_\perp = \nabla - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right) = -\mathbf{b\times} \left(\mathbf{b\times}\nabla\right)$. For example, this operator
+where $a$ is symmetric in z, and the operator $\nabla_\perp = \nabla - 
+\mathbf{b}_0\left(\mathbf{b}_0\cdot\nabla\right) = -\mathbf{b\times} 
+\left(\mathbf{b\times}\nabla\right)$. For example, this operator
 appears in reduced MHD for the vorticity inversion and $j_||$.
 
 Efficiently inverting this operator is done by taking FFTs in the $z$ direction
@@ -4518,7 +4552,8 @@ Flag & Meaning \\
 $x$-boundary \\
 256 &  DC value is set to parallel gradient, $\nabla_\parallel f$ \\
 512 &  DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ \\
-1024 & Boundary condition for inner `boundary' of cylinder \\
+1024 & {\color{red} \textbf{UNTESTED}} Boundary condition for inner `boundary' 
+of cylinder \\
 \hline
 \end{tabular}
 \end{table}
@@ -4756,6 +4791,8 @@ FDDZ(f, g) & $\partial/\partial x\left( f * g \right)$ \\
 By default the method used will be the one specified in the options input file (see section~\ref{sec:diffmethodoptions}), but most of these methods can take an optional \lstinline!DIFF\_METHOD! argument, specifying exactly which method to use.
 
 \subsection{Non-uniform meshes}
+{\color{red} \textbf{examples/test-nonuniform seems to not work?}}
+
 \index{non-uniform mesh}
 Setting \texttt{non\_uniform = true} in the BOUT.inp options file
 enables corrections to second derivatives in $X$ and $Y$. This correction
@@ -4787,7 +4824,8 @@ These are differential operators which are for a general coordinate system.
 f &=& \nabla\cdot\mathbf{a} &\qquad \code{Field} &=& \code{Div(Vector)} \\
 \mathbf{v} &=& \nabla\times\mathbf{a} &\qquad \code{Vector} &=& \code{Curl(Vector)} \\
 f &=& \mathbf{v}\cdot\nabla g &\qquad \code{Field} &=& \code{V\_dot\_Grad(Vector, Field)} \\
-\mathbf{v} &=& \mathbf{a}\cdot\nabla\mathbf{b} &\qquad \code{Vector} &=& \code{V\_dot\_Grad(Vector, Vector)} \\
+\mathbf{v} &=& \mathbf{a}\cdot\nabla\mathbf{c} &\qquad \code{Vector} &=& 
+\code{V\_dot\_Grad(Vector, Vector)} \\
 f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplace(Field)}
 \end{array}
 \]
@@ -4796,34 +4834,59 @@ f &=& \nabla^2 f &\qquad \code{Field} &=& \code{Laplace(Field)}
 \nabla\phi &=& \deriv{\phi}{u^i}\nabla u^i \Rightarrow \left(\nabla\phi\right)_i = \deriv{\phi}{u^i} \\
 \nabla\cdot A &=& = \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}A_j\right) \\
 \nabla^2\phi &=& \Gamma^i\deriv{\phi}{u^i} + g^{ij}\frac{\partial^2\phi}{\partial u^i\partial u^j} \\
-& &\Gamma^i = \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}\right)
 \end{eqnarray*}
+%
+where we have defined
+%
+\begin{align*}
+\Gamma^i =& \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}\right)
+\end{align*}
+%
+\textbf{not} to be confused with the Cristoffel symbol of the second kind
 
 Another set of operators assume that the equilibrium magnetic field is written
 in Clebsch form as \index{Clebsch}
 \[
-\mathbf{B}_0 = \nabla z\times\nabla x \qquad \left|B_0\right| = \frac{\sqrt{g_{yy}}}{J}
+\mathbf{B}_0 = \nabla z\times\nabla x \qquad B_0 = \frac{\sqrt{g_{yy}}}{J}
 \]
-
+%
+where
+%
+\begin{align}
+\mathbf{B}_0 = \left|\mathbf{B}_0\right|\mathbf{b}_0 = B_0 \mathbf{b}_0
+\end{align}
+%
+is the background \emph{equilibrium} magnetic field.
+%
 \begin{table}[htb!]
 \centering
 \caption{Clebsch operators}
+%
 \label{tab:clebsch_operators}
+%
 \begin{tabular}{l c}
 \hline
 Function & Formula \\
 \hline
-\code{Grad\_par} & $\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}$ \\
-\code{Div\_par} & $\displaystyle \nabla^0_{||}F = B_0\partial^0_{||}\left(\frac{F}{B_0}\right)$ \\
-\code{Grad2\_par2} & $\displaystyle \partial^2_{||}\phi = \partial^0_{||}\left(\partial^0_{||}\phi\right) = \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}$ \\
-\code{Laplace\_par} & $\displaystyle \nabla_{||}^2\phi = \nabla\cdot\mathbf{b}\mathbf{b}\cdot\nabla\phi = \frac{1}{J}\deriv{}{y}\left(\frac{J}{g_{yy}}\deriv{\phi}{y}\right)$ \\
-\code{Laplace\_perp} & $\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2$ \\
+\code{Grad\_par} & $\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla =
+\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}$ \\
+\code{Div\_par} & $\displaystyle \nabla^0_{||}f =
+B_0\partial^0_{||}\left(\frac{f}{B_0}\right)$ \\
+\code{Grad2\_par2} & $\displaystyle \partial^2_{||}\phi =
+\partial^0_{||}\left(\partial^0_{||}\phi\right) =
+\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{
+\phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}$ \\
+\code{Laplace\_par} & $\displaystyle \nabla_{||}^2\phi =
+\nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
+\frac{1}{J}\deriv{}{y}\left(\frac{J}{g_{yy}}\deriv{\phi}{y}\right)$ \\
+\code{Laplace\_perp} & $\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2$
+\\
 \code{Delp2} & Perpendicular Laplacian, neglecting all $y$ derivatives \\
              & The \code{Laplacian} solver performs the inverse operation \\
 \hline
 \end{tabular}
+%
 \end{table}
-
 \begin{eqnarray*}
 \mathbf{b}_0\cdot\nabla\phi\times\nabla A &=& \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} - g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x} - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} + \left(g_{xy}\deriv{\phi}{y} - g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
 \end{eqnarray*}
