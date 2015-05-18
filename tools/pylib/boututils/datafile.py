@@ -1,8 +1,11 @@
 from __future__ import print_function
-from builtins import map
-from builtins import zip
-from builtins import str
-from builtins import object
+try:
+    from builtins import map
+    from builtins import zip
+    from builtins import str
+    from builtins import object
+except:
+    pass
 # File I/O class
 # A wrapper around various NetCDF libraries, used by
 # BOUT++ routines. Creates a consistent interface

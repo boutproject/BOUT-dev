@@ -1,8 +1,15 @@
 from __future__ import print_function
 from __future__ import division
-from builtins import str
-from builtins import range
-from past.utils import old_div
+try:
+    from builtins import str
+except:
+    print("Warning: No str in builtins")
+
+try:
+    from builtins import range
+except:
+    print("Warning: No range in builtins")
+
 # Requires:
 #  - boututils
 #  - NumPy
@@ -225,7 +232,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
     for i in range(npe):
         # Get X and Y processor indices
-        pe_yind = int(old_div(i, nxpe))
+        pe_yind = int(i/nxpe)
         pe_xind = i % nxpe
 
         inrange = True
