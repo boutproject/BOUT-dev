@@ -14,17 +14,16 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.622beta'
-__date__    = '25.02.2015'
+__version__ = '0.623beta'
+__date__    = '16.03.2015'
 
 import os
 import re
 from boututils import shell
-from .bout_runners.plot_style import set_style
-from .bout_runners.common_bout_functions import create_folder,\
+from bout_runners.plot_style import set_style
+from bout_runners.common_bout_functions import create_folder,\
                                                warning_printer,\
                                                check_for_plotters_errors,\
-                                               wait_for_runs_to_finish,\
                                                find_variable_in_BOUT_inp
 from boutdata import collect
 import matplotlib.pyplot as plt
@@ -34,6 +33,8 @@ import time
 import re
 import warnings
 
+# FIXME: wait_for_runs_to_finish does no longer exists, see common
+# functions in bout
 # TODO: Check if the l2 norm is correct if one takes into account that
 #       the boundary point is staggered
 # Consider: Make it easier to call manually
@@ -60,14 +61,14 @@ class bout_plotter(object):
         qsub                   = False):
         """The constructor of this parent class is called by all plotter
         classes.
-        
+
         If bout_plotters are called from a qsub routine, the variable 'qsub'
         will be set to 'True', which means that the collection and
         plotting routine will be called from this constructor"""
 
         print('\nNow making the plots\n')
 
-        # Create an errorfilter to catch RuntimeWarings 
+        # Create an errorfilter to catch RuntimeWarings
         # This will catch the division by zero Runtimewarning in np.log
         warnings.simplefilter("error", RuntimeWarning)
         # Member function which stores warnings
@@ -108,7 +109,7 @@ class bout_plotter(object):
             #   {0:{'dmp_folder':[...], 'job_status',[...]}, 1:...}
 
             # Rewrite run_groups made from bout_runners.py
-            if type(run_groups[0]) == dict:                
+            if type(run_groups[0]) == dict:
                 groups = list(run_groups.keys())
                 self.run_groups = {}
                 for group in groups:
@@ -130,13 +131,17 @@ class bout_plotter(object):
                 # Initialize the folder counter and self.errors
                 self.reset_folder_counter_and_self_errors()
 
+            #FIXME: This routine does not exist any more
             # Wait for the runs to finish, and call collect_and_plot as
             # they finish
+
+            # So: Need only to call the group_done_functions when runs
+            # are finished
             wait_for_runs_to_finish(\
                 run_groups, self.directory, self.group_done_function)
-#}}}                
+#}}}
 
-#{{{__del__ 
+#{{{__del__
     def __del__(self):
         """The destructor will print all the error messages (if any)"""
         if len(self.warnings) == 0:
@@ -150,7 +155,7 @@ class bout_plotter(object):
             for warning in self.warnings:
                 print(warning + '\n')
             print('\n'*3)
-#}}}        
+#}}}
 
 # Functions called by the constructor
 #{{{group_done_function
@@ -159,7 +164,7 @@ class bout_plotter(object):
         # Rewrite self.run_groups to be the finished
         # group, and call collect_and_plot
         self.run_groups = {0:run_groups[group]['dmp_folder']}
-        
+
         # Call the plotting routine
         self.collect_and_plot()
 #}}}
@@ -184,7 +189,7 @@ class bout_plotter(object):
             warning_printer(message)
             collected = 'skip_iteration'
         return collected
-#}}}            
+#}}}
 #}}}
 
 
@@ -237,7 +242,7 @@ class solution_plotter(bout_plotter):
             # Setting this to 20 gives two columns
             self.additional_subplot_index = 10
             self.style_name               = 'single_plot'
-            self.plot_id                  = 'solution' 
+            self.plot_id                  = 'solution'
         # Call the constructor of the superclass
         super(solution_plotter, self).__init__(\
                 run_groups = run_groups,\
@@ -255,15 +260,15 @@ class solution_plotter(bout_plotter):
                                      variables = self.variables,\
                                      plot_direction = self.plot_direction,\
                                      plot_times = self.plot_times,\
-                                     number_of_overplots = self.number_of_overplots) 
-#}}}                
+                                     number_of_overplots = self.number_of_overplots)
+#}}}
 
 # Main function
 #{{{collect_and_plot
     def collect_and_plot(self):
         """Drives the collection and plotting of the solution and error plot"""
 
-        # Plotting preparation 
+        # Plotting preparation
         number_of_variables = len(self.variables)
 
         # In this kind of plot, one group equals one job
@@ -324,7 +329,7 @@ class solution_plotter(bout_plotter):
             # Do the plotting
             for variable_no, variable in enumerate(self.variables):
                 # Find the labels
-                xlabel, ylabel = self.get_labels(x_slice, y_slice, z_slice) 
+                xlabel, ylabel = self.get_labels(x_slice, y_slice, z_slice)
 
                 if ylabel == '':
                     ylabel = variable
@@ -390,7 +395,7 @@ class solution_plotter(bout_plotter):
     def additional_plot(self, **kwargs):
         """Virtual function to be overridden by child classes."""
         return False
-#}}}        
+#}}}
 
 #{{{find_slices
     def find_slices(self, in_folder):
@@ -403,12 +408,12 @@ class solution_plotter(bout_plotter):
 
         To be updated when 2D plots will be implimented.
         """
-        
+
         # Used to find the lengths
         whole_array = self.try_to_collect(self.variables[0], in_folder)
         if whole_array == 'skip_iteration':
             # Jump to the next iteration
-            return 'skip_iteration', None, None 
+            return 'skip_iteration', None, None
 
         x_len = len( whole_array[0,:,0,0] )
         y_len = len( whole_array[0,0,:,0] )
@@ -444,7 +449,7 @@ class solution_plotter(bout_plotter):
                     z_slice = self.plot_direction[key]
                 else:
                     z_slice = z_len - 1
-        
+
         return x_slice, y_slice, z_slice
 #}}}
 
@@ -453,7 +458,7 @@ class solution_plotter(bout_plotter):
         """Get the indices of the over plots"""
 
         if self.number_of_overplots != False:
-            # Divide into list of integers 
+            # Divide into list of integers
             step = int(np.floor(old_div(float(nout),float(self.number_of_overplots))))
             # 1 is the smallest step in range
             if step == 0:
@@ -485,7 +490,7 @@ class solution_plotter(bout_plotter):
         else:
             # Use standard format
             return "{:.2f}".format(float(current_time))
-#}}}            
+#}}}
 
 #{{{get_labels
     def get_labels(self, x_slice, y_slice, z_slice):
@@ -525,7 +530,7 @@ class solution_plotter(bout_plotter):
                 # index
                 time_indices[plot_times_index] = nout - 1
         return time_indices
-#}}}            
+#}}}
 #}}}
 #}}}
 
@@ -567,7 +572,7 @@ class solution_and_error_plotter(solution_plotter):
         # Setting this to 20 gives two columns
         self.additional_subplot_index = 20
         self.style_name               = 'two_columns'
-        self.plot_id                  = 'solution_error' 
+        self.plot_id                  = 'solution_error'
 
         # Call the constructor of the superclass
         super(solution_and_error_plotter, self).__init__(\
@@ -582,7 +587,7 @@ class solution_and_error_plotter(solution_plotter):
                 plot_times = plot_times,\
                 number_of_overplots = number_of_overplots,\
                 qsub = qsub)
-#}}}                
+#}}}
 
 # Functions called by the main function
 #{{{
@@ -609,7 +614,7 @@ class solution_and_error_plotter(solution_plotter):
             ax = fig.add_subplot(subplot_index)
             ax.plot(error[index, x_slice, y_slice, z_slice],\
                      label="t="+current_time)
-        if variable_no == 0:                         
+        if variable_no == 0:
             ax.set_title('Error')
         if variable_no + 1 == len_variables:
             ax.set_xlabel(xlabel)
@@ -731,7 +736,7 @@ class convergence_plotter(bout_plotter):
                                          self.convergence_type,\
                                          timestep = timestep,\
                                          grids = grids)
-#}}}                
+#}}}
 
 # Main function
 #{{{collect_and_plot
@@ -762,7 +767,7 @@ class convergence_plotter(bout_plotter):
 # Functions called by the main function
 #{{{
 #{{{convergence_collect
-    def convergence_collect(self, in_folder): 
+    def convergence_collect(self, in_folder):
         """Collects the data members belonging to a convergence plot"""
 
         self.folder_no_counter += 1
@@ -805,7 +810,7 @@ class convergence_plotter(bout_plotter):
                 warning_printer(message)
                 # Jump to the next iteration
                 continue
-    
+
             # We have already found the E_inf norm for one time step. The
             # infinity error of this is the max of the absolute of the
             # error
@@ -815,10 +820,10 @@ class convergence_plotter(bout_plotter):
             self.errors[variable]['error_inf'].append(\
                 np.max(np.abs( error_array )) \
                 )
-    
+
             # We want to find the spacing.
             folders = in_folder.split('/')
-           
+
             if self.convergence_type == 'spatial':
                 # The convergence run is constructed in a way such that all
                 # of the gridspaces shoul be equal for a equidistant grid
@@ -861,7 +866,7 @@ class convergence_plotter(bout_plotter):
                         self.errors[variable]['spacing'].append(spacing)
                         # Exit the for-loop
                         break
-                        
+
             elif self.convergence_type == 'temporal':
                 # Find the folder cotaining the timestep among all the folders
                 for folder in folders:
@@ -878,7 +883,7 @@ class convergence_plotter(bout_plotter):
                                 timestep_number = info.split('-')
                                 # The number is stored the least
                                 number = float(timestep_number[-1])
-                                self.errors[variable]['spacing'].append(number) 
+                                self.errors[variable]['spacing'].append(number)
                                 # Exit the for-loop
                                 break
     #}}}
@@ -907,7 +912,7 @@ class convergence_plotter(bout_plotter):
                 warning_printer(message)
                 # Jump to the next iteration
                 continue
-                        
+
             # Plot errors
             # Set the plotting style
             style = set_style(self.style_name)
@@ -918,7 +923,7 @@ class convergence_plotter(bout_plotter):
                      self.errors[variable]['error_inf'],\
                      'r-^',\
                      label=r'$L_\infty$')
-            # In the log-log plot, we have 
+            # In the log-log plot, we have
             # ln(y) = a*ln(x) + ln(b)
             # y = error
             # x = spacing (found from linear regression)
@@ -1100,12 +1105,12 @@ class convergence_plotter(bout_plotter):
         order_inf = [' '*7]
 
         # The order will be found by finding a linear fit between two
-        # nearby points in the error-spacing plot. Hence, we must let 
+        # nearby points in the error-spacing plot. Hence, we must let
         # the index in the for loop run to the length minus one
         # If an runtimewarning is occuring
         for index in range(len(self.errors[variable]['spacing']) - 1):
             # p = polyfit(x,y,n) finds the coefficients of a polynomial p(x)
-            # of degree that fits the data, p(x(i)) to y(i), in a least squares 
+            # of degree that fits the data, p(x(i)) to y(i), in a least squares
             # sense.
             # The result p is a row vector of length n+1 containing the
             # polynomial coefficients in descending powers
@@ -1113,7 +1118,7 @@ class convergence_plotter(bout_plotter):
             # Check if the logarithm has bad values
             # Create a filter
             try:
-                spacing_start   = np.log(self.errors[variable]['spacing'][index]) 
+                spacing_start   = np.log(self.errors[variable]['spacing'][index])
                 spacing_end     = np.log(self.errors[variable]['spacing'][index + 1])
                 error_start_2   = np.log(self.errors[variable]['error_2'][index])
                 error_end_2     = np.log(self.errors[variable]['error_2'][index + 1])
@@ -1142,8 +1147,8 @@ class convergence_plotter(bout_plotter):
                         self.errors[variable]['error_inf'],\
                         order_inf))
         # Write the found orders
-        f = open( file_name + '.txt', 'w' )        
-        header = '#spacing    error_2    order_2    error_inf    order_inf' 
+        f = open( file_name + '.txt', 'w' )
+        header = '#spacing    error_2    order_2    error_inf    order_inf'
         # Write the header to a file and on screen
         f.write(header + '\n')
         print('\nNow printing the results of the convergence test:')
