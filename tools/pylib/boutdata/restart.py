@@ -9,6 +9,7 @@ except ImportError:
 import numpy
 from numpy import mean
 from math import sqrt
+from numpy.random import normal
 
 try:
     import os
@@ -150,6 +151,44 @@ def expand(newz, path="data", output="./", informat="nc", outformat=None):
     # Get the file extension
     ind = file_list[0].rfind(".")
     
+
+def addnoise(path=".", var=None, scale=1e-5):
+    """
+    Add random noise to restart files
+    
+    Inputs
+    ------
+    
+    path   Path to the restart files
+    var    The variable to modify. By default all 3D variables are modified
+    scale  Amplitude of the noise. Gaussian noise is used, with zero mean
+           and this parameter as the standard deviation
+
+    Returns
+    -------
+    None
+    """
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    nfiles = len(file_list)
+
+    print "Number of data files: ", nfiles
+
+    for file in file_list:
+        print(file)
+        with DataFile(file, write=True) as d:
+            if var == None:
+                for v in d.list():
+                    if d.ndims(v) == 3:
+                        print(" -> "+v)
+                        data = d.read(v)
+                        data += normal(scale=scale, size=data.shape)
+                        d.write(v, data)
+            else:
+                # Modify a single variable
+                data = d.read(var)
+                data += normal(scale=scale, size=data.shape)
+                d.write(var, data)
+
 
 def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
     """

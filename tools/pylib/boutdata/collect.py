@@ -117,6 +117,8 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         raise CollectError
 
     mxsub = f.read("MXSUB")
+    if mxsub is None:
+        raise CollectError("Missing MXSUB variable")
     mysub = f.read("MYSUB")
     mz    = f.read("MZ")
     myg   = f.read("MYG")
