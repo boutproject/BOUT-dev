@@ -1015,6 +1015,12 @@ PRO hypnotoad
                               uvalue='mesh2', tooltip="Under development")
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Profiles tab
+
+  tab3 = WIDGET_BASE(tab_base, title="Profiles", /COLUMN, EVENT_PRO = 'event_handler')
+  
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Output tab
   
   tab2 = WIDGET_BASE(tab_base, title="Output", /COLUMN, EVENT_PRO = 'event_handler')
