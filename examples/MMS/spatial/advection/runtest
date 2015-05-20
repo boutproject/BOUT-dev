@@ -6,6 +6,9 @@
 #
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
+from builtins import range
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -141,9 +144,9 @@ plt.figure()
 for e, label, sym in err_inf_all:
     plt.plot(dx, e, sym, label=label)
     for i in range(len(dx)):
-        print str(label)+ ": %d  Err: %e " % (nxlist[i], e[i])
+        print(str(label)+ ": %d  Err: %e " % (nxlist[i], e[i]))
         if i > 0:
-            print " -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1]))
+            print(" -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1])))
 
 plt.legend(loc="upper left")
 plt.grid()
@@ -161,20 +164,20 @@ plt.close()
 print("\n\n==== l-infty norm ====")
 for e, label, sym in err_inf_all:
     for i in range(len(dx)):
-        print str(label)+ ": %d  Err: %e " % (nxlist[i], e[i])
+        print(str(label)+ ": %d  Err: %e " % (nxlist[i], e[i]))
         if i > 0:
-            print " -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1]))
+            print(" -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1])))
 
 print("\n\n==== l-2 norm ====")
 for e, label, sym in err_2_all:
     for i in range(len(dx)):
-        print str(label)+ ": %d  Err: %e " % (nxlist[i], e[i])
+        print(str(label)+ ": %d  Err: %e " % (nxlist[i], e[i]))
         if i > 0:
-            print " -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1]))
+            print(" -> Rate %e " % (log(e[i] / e[i-1]) / log(dx[i] / dx[i-1])))
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from pylab import plot, show
 
@@ -6,7 +10,7 @@ def fft_integrate(y, loop=None):
 
         n = np.size(y)
     
-        f = np.fft.fft(y)/n
+        f = old_div(np.fft.fft(y),n)
         imag = np.complex(0.0, 1.0)
 
         result = np.arange(n)*f[0]
@@ -17,20 +21,20 @@ def fft_integrate(y, loop=None):
         if (n % 2) == 0 :
             # even number of points
 
-            for i in range (1, n/2) :
+            for i in range (1, old_div(n,2)) :
                 a = imag*2.0*np.pi*np.float(i)/np.float(n)
-                f[i] = f[i] / a         # positive frequencies
-                f[n-i] = - f[n-i] / a   # negative frequencies
+                f[i] = old_div(f[i], a)         # positive frequencies
+                f[n-i] = old_div(- f[n-i], a)   # negative frequencies
              
 
-            f[n/2] = f[n/2] / (imag*np.pi)
+            f[old_div(n,2)] = old_div(f[old_div(n,2)], (imag*np.pi))
         else:
             # odd number of points
 
-            for i in range (1, (n-1)/2+1):
+            for i in range (1, old_div((n-1),2)+1):
                 a = imag*2.0*np.pi*np.float(i)/np.float(n)
-                f[i] = f[i] / a
-                f[n-i] = - f[n-i] / a
+                f[i] = old_div(f[i], a)
+                f[n-i] = old_div(- f[n-i], a)
              
 
         result = result + np.fft.ifft(f)*n

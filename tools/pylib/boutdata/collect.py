@@ -1,9 +1,21 @@
+from __future__ import print_function
+from __future__ import division
+try:
+    from builtins import str
+except:
+    print("Warning: No str in builtins")
+
+try:
+    from builtins import range
+except:
+    print("Warning: No range in builtins")
+
 # Requires:
 #  - boututils
 #  - NumPy
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: boututils.DataFile couldn't be loaded")
     raise
@@ -25,12 +37,12 @@ except ImportError:
 def findVar(varname, varlist):
     """
     Find variable name in a list
-    
+
     First does case insensitive comparison, then
     checks for abbreviations.
-    
+
     Returns the matched string, or raises a ValueError
-    
+
     """
     # Try a variation on the case
     v = [name for name in varlist if name.lower() == varname.lower()]
@@ -41,31 +53,31 @@ def findVar(varname, varlist):
     elif len(v) > 1:
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
         raise ValueError("Variable '"+varname+"' not found")
-    
+
     # None found. Check if it's an abbreviation
     v = [name for name in varlist if name[:len(varname)].lower() == varname.lower()]
     if len(v) == 1:
         print("Variable '%s' not found. Using '%s' instead" % (varname, v[0]))
         return v[0]
-    
+
     if len(v) > 1:
         print("Variable '"+varname+"' not found, and is ambiguous. Could be one of: "+str(v))
-    raise ValueError("Variable '"+varname+"' not found") 
+    raise ValueError("Variable '"+varname+"' not found")
 
 def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguards=False, xguards=True, info=True,prefix="BOUT.dmp"):
     """Collect a variable from a set of BOUT++ outputs.
-    
+
     data = collect(name)
-    
+
     name   Name of the variable (string)
-    
+
     Optional arguments:
 
     xind = [min,max]   Range of X indices to collect
     yind = [min,max]   Range of Y indices to collect
     zind = [min,max]   Range of Z indices to collect
     tind = [min,max]   Range of T indices to collect
-    
+
     path    = "."          Path to data files
     prefix  = "BOUT.dmp"   File prefix
     yguards = False        Collect Y boundary guard cells?
@@ -74,27 +86,27 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
                            definition of nx)
     info    = True         Print information about collect?
     """
-    
+
     # Search for BOUT++ dump files in NetCDF format
     file_list = glob.glob(os.path.join(path, prefix+".nc"))
     if file_list != []:
         print("Single (parallel) data file")
         f = DataFile(file_list[0]) # Open the file
-        
+
         data = f.read(varname)
         return data
-    
+
     file_list = glob.glob(os.path.join(path, prefix+"*.nc"))
     file_list.sort()
     if file_list == []:
         raise ValueError("ERROR: No data files found")
-    
+
     nfiles = len(file_list)
     #print "Number of files: " + str(nfiles)
-    
+
     # Read data from the first file
     f = DataFile(file_list[0])
-   
+
     #print "File format    : " + f.file_format
     try:
         dimens = f.dimensions(varname)
@@ -102,11 +114,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
     except:
         # Find the variable
         varname = findVar(varname, f.list())
-        
+
         dimens = f.dimensions(varname)
         ndims = len(dimens)
-    
-    if ndims < 2:
+
+    if ndims < 1:
         # Just read from file
         data = f.read(varname)
         f.close()
@@ -128,7 +140,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         t_array = np.zeros(1)
     else:
         nt = len(t_array)
-    
+
     if info:
         print("mxsub = %d mysub = %d mz = %d\n" % (mxsub, mysub, mz))
 
@@ -141,14 +153,14 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         mxg  = f.read("MXG")
         nype = f.read("NYPE")
         npe = nxpe * nype
-        
+
         if info:
             print("nxpe = %d, nype = %d, npe = %d\n" % (nxpe, nype, npe))
             if npe < nfiles:
                 print("WARNING: More files than expected (" + str(npe) + ")")
             elif npe > nfiles:
                 print("WARNING: Some files missing. Expected " + str(npe))
-       
+
         if xguards:
             nx = nxpe * mxsub + 2*mxg
         else:
@@ -166,11 +178,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         ny = mysub * nype + 2*myg
     else:
         ny = mysub * nype
-    
+
     f.close();
 
     # Check ranges
-    
+
     def check_range(r, low, up, name="range"):
         r2 = r
         if r != None:
@@ -200,31 +212,31 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         else:
             r2 = [low, up]
         return r2
-    
+
     xind = check_range(xind, 0, nx-1, "xind")
     yind = check_range(yind, 0, ny-1, "yind")
     zind = check_range(zind, 0, mz-2, "zind")
     tind = check_range(tind, 0, nt-1, "tind")
-    
+
     xsize = xind[1] - xind[0] + 1
     ysize = yind[1] - yind[0] + 1
     zsize = zind[1] - zind[0] + 1
     tsize = tind[1] - tind[0] + 1
-    
+
     # Map between dimension names and output size
     sizes = {'x':xsize, 'y':ysize, 'z':zsize, 't':tsize}
 
     # Create a list with size of each dimension
-    ddims = map(lambda d: sizes[d], dimens)
-    
+    ddims = [sizes[d] for d in dimens]
+
     # Create the data array
     data = np.zeros(ddims)
-    
+
     for i in range(npe):
         # Get X and Y processor indices
-        pe_yind = int(i / nxpe)
+        pe_yind = int(i/nxpe)
         pe_xind = i % nxpe
-        
+
         inrange = True
 
         if yguards:
@@ -253,7 +265,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             # Calculate global indices
             ygmin = ymin + pe_yind * mysub
             ygmax = ymax + pe_yind * mysub
-            
+
         else:
             # Get local ranges
             ymin = yind[0] - pe_yind*mysub + myg
@@ -275,7 +287,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             # Get local ranges
             xmin = xind[0] - pe_xind*mxsub
             xmax = xind[1] - pe_xind*mxsub
-        
+
             # Check lower x boundary
             if pe_xind == 0:
                 # Keeping inner boundary
@@ -284,7 +296,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
             else:
                 if xmax < mxg: inrange = False
                 if xmin < mxg: xmin = mxg
-            
+
             # Upper x boundary
             if pe_xind == (nxpe - 1):
                 # Keeping outer boundary
@@ -322,7 +334,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if not inrange:
             continue # Don't need this file
-        
+
         filename = os.path.join(path, prefix+"." + str(i) + ".nc")
         if info:
             sys.stdout.write("\rReading from " + filename + ": [" + \
@@ -335,31 +347,36 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
 
         if ndims == 4:
             d = f.read(varname, ranges=[tind[0],tind[1]+1,
-                                        xmin, xmax+1, 
-                                        ymin, ymax+1, 
+                                        xmin, xmax+1,
+                                        ymin, ymax+1,
                                         zind[0],zind[1]+1])
             data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
         elif ndims == 3:
             # Could be xyz or txy
-            
+
             if dimens[2] == 'z': # xyz
-                d = f.read(varname, ranges=[xmin, xmax+1, 
-                                            ymin, ymax+1, 
+                d = f.read(varname, ranges=[xmin, xmax+1,
+                                            ymin, ymax+1,
                                             zind[0],zind[1]+1])
                 data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc), :] = d
             else: # txy
                 d = f.read(varname, ranges=[tind[0],tind[1]+1,
-                                            xmin, xmax+1, 
+                                            xmin, xmax+1,
                                             ymin, ymax+1])
                 data[:, (xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
         elif ndims == 2:
             # xy
-            d = f.read(varname, ranges=[xmin, xmax+1, 
+            d = f.read(varname, ranges=[xmin, xmax+1,
                                         ymin, ymax+1])
             data[(xgmin-xind[0]):(xgmin-xind[0]+nx_loc), (ygmin-yind[0]):(ygmin-yind[0]+ny_loc)] = d
+        elif ndims == 1:
+            if dimens[0] == 't':
+                # t
+                d = f.read(varname, ranges=[tind[0],tind[1]+1])
+                data[:] = d
 
         f.close()
-    
+
     # Force the precision of arrays of dimension>1
     if ndims>1:
         try:

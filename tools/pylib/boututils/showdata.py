@@ -4,7 +4,17 @@ Visualisation and animation routines
 Written by Luke Easy
 le590@york.ac.uk
 Last Updated 19/3/2015
+Additional functionality by George Breyiannis 26/12/2014
+
 """
+from __future__ import print_function
+from __future__ import division
+try:
+    from builtins import str
+    from builtins import chr
+    from builtins import range
+except:
+    pass
 
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d
@@ -12,10 +22,13 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
 from boutdata import collect
+#import pdb
 
 
 ####################################################################
-# Create FFMpeg writer
+# Specify manually ffmpeg path
+#plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
+
 FFwriter = animation.FFMpegWriter()
 ####################################################################
 
@@ -28,7 +41,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = []):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
@@ -288,7 +301,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             t = linspace(0,Nt[0][0], Nt[0][0])
     
     # Obtain number of frames
-    Nframes = Nt[0][0]/intv
+    Nframes = int(Nt[0][0]/intv)
 
     # Generate grids for plotting
     x = []
@@ -312,6 +325,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     dummymax = []
     dummymin = []
     clevels = []
+
     for i in range(0,Nvar):
         
         dummymax.append([])
@@ -324,8 +338,15 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for j in range(0,Nlines[i]):
             dummymax[i][j] = max(x[i][j])
         xmax.append(max(dummymax[i]))
-        
-        clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+        if not (global_colors):
+            clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+    if(global_colors): 
+        fmaxglobal = max(fmax)
+        fminglobal = min(fmin)
+        for i in range(0,Nvar):
+            fmax[i]  = fmaxglobal
+            fmin[i]  = fminglobal	
+            clevels.append(linspace(fmin[i], fmax[i], Ncolors))	
         
     # Create figures for animation plotting
     if (Nvar < 2):
@@ -517,14 +538,14 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
     # Save movie with given name
-    if ((isinstance(movie,basestring)==1)):
+    if ((isinstance(movie,str)==1)):
         try:
             anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
         except Exception:
             print("Save failed: Check ffmpeg path")
 
     # Save movie with default name
-    if ((isinstance(movie,basestring)==0)):
+    if ((isinstance(movie,str)==0)):
         if (movie != 0):
             try:
                 anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])

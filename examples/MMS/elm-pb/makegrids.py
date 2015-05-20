@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 
 nxlist = [4, 8, 16, 32, 64, 128]
 
@@ -18,7 +21,7 @@ MU0 = 4.0e-7*pi
 
 J0 = 1 - x - sin(x*pi)**2 * cos(y)   # Parallel current
 P0 = 2 + cos(x*pi)   # Pressure pedestal
-bxcvz = -(1./shape.Rxy)**2*cos(y)  # Curvature
+bxcvz = -(old_div(1.,shape.Rxy))**2*cos(y)  # Curvature
 
 # Normalisation
 Lbar = 1.

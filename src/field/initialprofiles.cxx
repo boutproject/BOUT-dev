@@ -89,7 +89,12 @@ int initial_profile(const char *name, Field3D &var)
   BoutReal xs_wd, ys_wd, zs_wd;
   int jx, jy, jz;
   BoutReal cx, cy, cz;
-
+  
+  CELL_LOC loc = CELL_DEFAULT;
+  if (mesh->StaggerGrids) {
+    loc = var.getLocation();
+  }
+  
   var = 0.0;
 
   /////////// get options //////////
@@ -113,7 +118,7 @@ int initial_profile(const char *name, Field3D &var)
     FieldFactory f(mesh);
     string s;
     varOpts->get("function", s, "");
-    var = scale*f.create3D(s);
+    var = scale*f.create3D(s, varOpts, NULL, loc);
   }else {
     // Backwards-compatible method
     
@@ -211,7 +216,8 @@ int initial_profile(const char *name, Field2D &var)
   BoutReal xs_wd, ys_wd;
   int jx, jy;
   BoutReal cx, cy;
-
+  
+  CELL_LOC loc = var.getLocation();
   var = 0.0;
 
   /////////// get options //////////
@@ -235,7 +241,7 @@ int initial_profile(const char *name, Field2D &var)
     FieldFactory f(mesh);
     string s;
     varOpts->get("function", s, "");
-    var = scale*f.create2D(s);
+    var = scale*f.create2D(s, varOpts, NULL, loc);
   }else {
     // What type of profile? 0 - constant, 1 - Gaussian, 2 - Sinusoidal
     

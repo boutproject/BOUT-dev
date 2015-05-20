@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 """Functions common for files associated with bout_runners.py Could also
 have interest independently of bout_runner associated files."""
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from builtins import object
 
 # NOTE: This document uses folding. A hash-symbol followed by three {'s
 # denotes the start of a fold, and a hash-symbol followed by three }'s
@@ -108,8 +112,8 @@ def wait_for_runs_to_finish(run_groups, directory,\
 #}}}
 
     # Checks whether or not all the run_groups has completed
-    while len(run_groups.keys()) != 0:
-        groups = run_groups.keys()
+    while len(list(run_groups.keys())) != 0:
+        groups = list(run_groups.keys())
 
         # Checks whether or not a group has finished to run
         for group in groups:
@@ -169,7 +173,7 @@ def wait_for_runs_to_finish(run_groups, directory,\
 
 
 #{{{class check_for_plotters_errors
-class check_for_plotters_errors:
+class check_for_plotters_errors(object):
     """A class where the constructor searches for eventual user
     errors"""
 
@@ -195,7 +199,7 @@ class check_for_plotters_errors:
     def check_keyword_arguments(self, keywords, options=False, **kwargs):
         """Check that the necessary additional keyword arguments are given"""
 
-        kwarg_keys = kwargs.keys()
+        kwarg_keys = list(kwargs.keys())
         kw_error = " needs to be given as a keyword argument when"+\
                    " running '" + self.plot_type + "'."
 
@@ -258,7 +262,7 @@ class check_for_plotters_errors:
             if kwargs['grids'] == False:
                 raise TypeError("In order to make a convergence test, "+\
                                 "you must specify a range of grid values.")
-            keys = kwargs['grids'].keys()
+            keys = list(kwargs['grids'].keys())
             if len(kwargs['grids'][keys[0]]) <= 1:
                 raise TypeError("In order to make a convergence test, "+\
                                 "you must specify a range of grid values.")

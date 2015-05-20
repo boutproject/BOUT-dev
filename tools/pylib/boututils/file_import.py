@@ -2,7 +2,7 @@
 # Import an entire NetCDF file into memory
 #
 
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 def file_import(name):
     f = DataFile(name)   # Open file

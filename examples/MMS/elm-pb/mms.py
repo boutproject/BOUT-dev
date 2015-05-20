@@ -2,6 +2,7 @@
 # Generate MMS solutions for tokamak geometry
 
 from __future__ import division
+from __future__ import print_function
 
 from boutdata.mms import *
 
