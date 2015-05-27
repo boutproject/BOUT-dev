@@ -23,15 +23,18 @@
 
 class RKScheme;
 
-#include <bout_types.hxx>
-
 #ifndef __RKSCHEME_H__
 #define __RKSCHEME_H__
 
+#include <bout_types.hxx>
+#include <options.hxx>
+
 #include <string>
+#include <vector>
 #include <list>
 
 using std::string;
+using std::vector;
 
 #define RKSchemeType const char*
 #define RKSCHEME_RKF45       "rkf45"
@@ -72,7 +75,6 @@ class RKScheme {
   int numStages; //Number of stages in the scheme
   bool followHighOrder; //If true the recommended solution is the higher order one.
   string type; //What type of scheme am I?
-  bool initDone=false;
 };
 
 #endif // __RKSCHEME_H__

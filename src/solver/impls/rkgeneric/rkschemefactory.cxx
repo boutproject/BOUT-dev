@@ -1,27 +1,27 @@
-#include "RKSchemefactory.hxx"
+#include "rkschemefactory.hxx"
 
-#include "impls/rkf45/rkf45.hxx"
-#include "impls/cashkarp/cashkarp.hxx"
+//#include "impls/rkf45/rkf45.hxx"
+//#include "impls/cashkarp/cashkarp.hxx"
 
 #include <boutexception.hxx>
 
-RKSchemefactory* RKSchemefactory::instance = NULL;
+RKSchemeFactory* RKSchemeFactory::instance = NULL;
 
-RKSchemefactory* RKSchemefactory::getInstance() {
+RKSchemeFactory* RKSchemeFactory::getInstance() {
   if(instance == NULL) {
     // Create the singleton object
-    instance = new RKSchemefactory();
+    instance = new RKSchemeFactory();
   }
   return instance;
 }
 
-inline RKSchemeType RKSchemefactory::getDefaultRKSchemeType() {
+inline RKSchemeType RKSchemeFactory::getDefaultRKSchemeType() {
   RKSchemeType type = NULL;
   type = RKSCHEME_RKF45;
   return type;
 }
 
-RKScheme* RKSchemefactory::createRKScheme(Options *options) {
+RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
   RKSchemeType type = getDefaultRKSchemeType();
 
   if(options == NULL) 
@@ -35,15 +35,15 @@ RKScheme* RKSchemefactory::createRKScheme(Options *options) {
   return createRKScheme(type, options);
 }
 
-RKScheme* RKSchemefactory::createRKScheme(RKSchemeType &type, Options *options) {
+RKScheme* RKSchemeFactory::createRKScheme(RKSchemeType &type, Options *options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
   
-  if(!strcasecmp(type, RKSCHEME_RKF45)) {
-    return new RKF45Scheme(options);
-  } else if(!strcasecmp(type, RKSCHEME_CASHKARP)) {
-    return new CashKarpScheme(options);
-  };
+  // if(!strcasecmp(type, RKSCHEME_RKF45)) {
+  //   return new RKF45Scheme(options);
+  // } else if(!strcasecmp(type, RKSCHEME_CASHKARP)) {
+  //   return new CashKarpScheme(options);
+  // };
 
   // Need to throw an error saying 'Supplied option "type"' was not found
   throw BoutException("No such scheme exists in this build, type: %s", type);

@@ -7,15 +7,10 @@
 
 //Initialise
 RKScheme::RKScheme(Options *opts){
-  initDone = true;
 };
 
 //Cleanup
 RKScheme::~RKScheme(){
-  //Don't try anything if not Initialised
-  if(!initDone) return;
-
-  //Now we have to free the vector associated memory
   //In C++11 we can do vec.clear() ; vec.shrink_to_fit(); //Though this is non-binding
   //For now we provide support for older compilers using the following;
   //vec.clear(); //Destroys each vector member

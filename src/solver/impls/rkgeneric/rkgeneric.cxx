@@ -10,25 +10,19 @@
 
 #include <output.hxx>
 
-RK4Solver::RK4Solver(Options *options) : Solver(options) {
+RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
   f0 = 0; // Mark as uninitialised
 }
 
-RK4Solver::~RK4Solver() {
+RKGenericSolver::~RKGenericSolver() {
   if(f0 != 0) {
     delete[] f0;
     delete[] f1;
     delete[] f2;
-    
-    delete[] k1;
-    delete[] k2;
-    delete[] k3;
-    delete[] k4;
-    delete[] k5;
   }
 }
 
-void RK4Solver::setMaxTimestep(BoutReal dt) {
+void RKGenericSolver::setMaxTimestep(BoutReal dt) {
   if(dt > timestep)
     return; // Already less than this
   
@@ -36,7 +30,7 @@ void RK4Solver::setMaxTimestep(BoutReal dt) {
     timestep = dt; // Won't be used this time, but next
 }
 
-int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
+int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising RK4 solver");
   
@@ -68,13 +62,6 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   f1 = new BoutReal[nlocal];
   f2 = new BoutReal[nlocal];
   
-  // memory for taking a single time step
-  k1 = new BoutReal[nlocal];
-  k2 = new BoutReal[nlocal];
-  k3 = new BoutReal[nlocal];
-  k4 = new BoutReal[nlocal];
-  k5 = new BoutReal[nlocal];
-
   // Put starting values into f0
   save_vars(f0);
   
@@ -91,8 +78,8 @@ int RK4Solver::init(bool restarting, int nout, BoutReal tstep) {
   return 0;
 }
 
-int RK4Solver::run() {
-  int msg_point = msg_stack.push("RK4Solver::run()");
+int RKGenericSolver::run() {
+  int msg_point = msg_stack.push("RKGenericSolver::run()");
   
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
@@ -180,37 +167,5 @@ int RK4Solver::run() {
   return 0;
 }
 
-void RK4Solver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
-  
-  load_vars(start);
-  run_rhs(curtime);
-  save_derivs(k1);
-  
-  #pragma omp parallel for
-  for(int i=0;i<nlocal;i++)
-    k5[i] = start[i] + 0.5*dt*k1[i];
-  
-  load_vars(k5);
-  run_rhs(curtime + 0.5*dt);
-  save_derivs(k2);
-  
-  #pragma omp parallel for 
-  for(int i=0;i<nlocal;i++)
-    k5[i] = start[i] + 0.5*dt*k2[i];
-  
-  load_vars(k5);
-  run_rhs(curtime + 0.5*dt);
-  save_derivs(k3);
- 
-  #pragma omp parallel for
-  for(int i=0;i<nlocal;i++)
-    k5[i] = start[i] + dt*k3[i];
-  
-  load_vars(k5);
-  run_rhs(curtime + dt);
-  save_derivs(k4);
-  
-  #pragma omp parallel for
-  for(int i=0;i<nlocal;i++)
-    result[i] = start[i] + (1./6.)*dt*(k1[i] + 2.*k2[i] + 2.*k3[i] + k4[i]);
+void RKGenericSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
 }
