@@ -1,5 +1,6 @@
 
 #include "rkgeneric.hxx"
+#include "rkschemefactory.hxx"
 
 #include <boutcomm.hxx>
 #include <utils.hxx>
@@ -11,15 +12,12 @@
 #include <output.hxx>
 
 RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
-  f0 = 0; // Mark as uninitialised
+  //Create scheme
+  scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
 }
 
 RKGenericSolver::~RKGenericSolver() {
-  if(f0 != 0) {
-    delete[] f0;
-    delete[] f1;
-    delete[] f2;
-  }
+  delete scheme;
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -32,13 +30,13 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
 
 int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
-  int msg_point = msg_stack.push("Initialising RK4 solver");
+  int msg_point = msg_stack.push("Initialising RKGeneric solver");
   
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
   
-  output << "\n\tRunge-Kutta 4th-order solver\n";
+  output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;

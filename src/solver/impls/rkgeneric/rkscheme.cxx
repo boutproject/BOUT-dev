@@ -7,6 +7,7 @@
 
 //Initialise
 RKScheme::RKScheme(Options *opts){
+  //Currently not reading anything from the options here
 };
 
 //Cleanup
@@ -45,8 +46,6 @@ RKScheme::~RKScheme(){
   //timeCoeffs
   timeCoeffs.clear();
   vector<BoutReal>().swap(timeCoeffs);
-
-  initDone=false;
 };
 
 //Returns the evolved state vector along with an error estimate
@@ -59,16 +58,14 @@ RKScheme::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *re
 ////////////////////
 
 //Print out details of the scheme
-RKScheme::debugPrint(){
+void RKScheme::debugPrint(){
 };
 
-
-RKScheme::setStageCoeffs(int stage, const vector<BoutReal> coeffs){
+void RKScheme::setStageCoeffs(int stage, const vector<BoutReal> coeffs){
 };
 
-RKScheme::setResultCoeffs(int stage, const BoutReal highOrder, const BoutReal lowOrder){
+void RKScheme::setResultCoeffs(int stage, const BoutReal highOrder, const BoutReal lowOrder){
 };
 
-RKScheme::setTimeCoeffs(int stage, const BoutReal coeff){
-
+void RKScheme::setTimeCoeffs(int stage, const BoutReal coeff){
 };

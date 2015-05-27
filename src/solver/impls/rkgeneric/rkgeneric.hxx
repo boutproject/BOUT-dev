@@ -32,7 +32,7 @@ class RKGenericSolver;
 
 #include <bout_types.hxx>
 #include <bout/solver.hxx>
-
+#include <bout/rkscheme.hxx>
 
 class RKGenericSolver : public Solver {
  public:
@@ -64,6 +64,9 @@ class RKGenericSolver : public Solver {
   void take_step(BoutReal curtime, BoutReal dt, 
                  BoutReal *start, BoutReal *result); // Take a single step to calculate f1
   
+  //Pointer to the actual scheme used
+  RKScheme *scheme;
+
 };
 
 #endif // __RKGENERIC_SOLVER_H__

@@ -51,6 +51,10 @@ class RKScheme {
   //we keep whilst resultAlt is the other. Some schemes use local extrapolation, meaning we keep the
   //higher order result, whilst others suggest we should keep the lower order one.
   void take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, BoutReal errEst);
+
+  //Returns the string name for the given scheme
+  virtual string getType(){return label;};
+
  private:
 
   void debugPrint(); //Prints the cofficients -- only used in testing
@@ -75,6 +79,7 @@ class RKScheme {
   int numStages; //Number of stages in the scheme
   bool followHighOrder; //If true the recommended solution is the higher order one.
   string type; //What type of scheme am I?
+  string label;
 };
 
 #endif // __RKSCHEME_H__
