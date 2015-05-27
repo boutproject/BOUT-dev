@@ -28,6 +28,7 @@ class RKScheme;
 
 #include <bout_types.hxx>
 #include <options.hxx>
+#include <utils.hxx>
 
 #include <string>
 #include <vector>
@@ -45,41 +46,50 @@ class RKScheme {
 
   RKScheme(Options *opts = NULL); //Options picks the scheme, pretty much everything else is automated
   ~RKScheme();
-  
+
+  //Finish generic initialisation
+  void init(const int nlocal);
+
   //Takes current state of variables and returns the evolved vars from both High and Low order schemes
   //along with the embedded error estimate. Note that resultFollow is the result this scheme suggests
   //we keep whilst resultAlt is the other. Some schemes use local extrapolation, meaning we keep the
   //higher order result, whilst others suggest we should keep the lower order one.
-  void take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, BoutReal errEst);
+  //void take_step(BoutReal timeIn, BoutReal dt, BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, BoutReal errEst);
+
+  BoutReal setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage);
+  void setCurState(const BoutReal *start, BoutReal *out, const int nlocal, const int curStage, const BoutReal dt);
+  void setOutputStates(const BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, const int nlocal, const BoutReal dt);
 
   //Returns the string name for the given scheme
   virtual string getType(){return label;};
 
- private:
+  //The intermediate stages
+  BoutReal **steps;
 
-  void debugPrint(); //Prints the cofficients -- only used in testing
+  int numStages; //Number of stages in the scheme
+  string label;
+
+ protected:
+  //Information about scheme
+  bool followHighOrder; //If true the recommended solution is the higher order one.
+  string type; //What type of scheme am I?
 
   //Coefficient setup (sets the Butcher Tableau)
   void setStageCoeffs(int stage, const vector<BoutReal> coeffs); //Set the stageCoeffs at a given stage
   void setResultCoeffs(int stage, const BoutReal highOrder, const BoutReal lowOrder); //Set the result coeffs as given stage
   void setTimeCoeffs(int stage, const BoutReal coeff); //Set the time coefficient at given stage
 
-  //Sets which order result we prefer
-  void setFollowHighOrder(const bool followHigh = true);
 
-  //The deconstructure Butcher Tableau
-  vector< vector<BoutReal> > stageCoeffs; //[numStage][numCoeff] // a_i,j
-  vector< vector<BoutReal> > resultCoeffs; //[numStage][order] //b_i
-  vector<BoutReal> timeCoeffs; //[numStage] //c_j
+  //The Butcher Tableau
+  BoutReal **stageCoeffs;
+  BoutReal **resultCoeffs;
+  BoutReal *timeCoeffs;
 
-  //The intermediate stages
-  vector< vector<BoutReal> > steps; //[numstage][nlocal]
+ private:
 
-  //Information about scheme
-  int numStages; //Number of stages in the scheme
-  bool followHighOrder; //If true the recommended solution is the higher order one.
-  string type; //What type of scheme am I?
-  string label;
+  void debugPrint(); //Prints the cofficients -- only used in testing
+
+  int nlocal; 
 };
 
 #endif // __RKSCHEME_H__

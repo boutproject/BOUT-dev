@@ -39,30 +39,35 @@ class RKGenericSolver : public Solver {
   RKGenericSolver(Options *options);
   ~RKGenericSolver();
   
+  //Utilities only used by the CTU bracket approach
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
-  
+
+  //Setup solver and scheme
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
+  //Actually evolve
   int run();
+
  private:
+  //Take a step using the scheme
+  void take_step(BoutReal timeIn, BoutReal dt, BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, BoutReal *errEst);
+
+  //Used for storing current state and two estimates of next step
+  BoutReal *f0, *f1, *f2;
+  BoutReal *tmpState;
+
+  //Inputs
   BoutReal atol, rtol;   // Tolerances for adaptive timestepping
   BoutReal max_timestep; // Maximum timestep
   int mxstep; // Maximum number of internal steps between outputs
-  
-  BoutReal *f0, *f1, *f2;
-  
-  BoutReal out_timestep; // The output timestep
-  int nsteps; // Number of output steps
-  
-  BoutReal timestep; // The internal timestep
-  
   bool adaptive;   // Adapt timestep?
 
+  //Internal vars
+  BoutReal out_timestep; // The output timestep
+  int nsteps; // Number of output steps
+  BoutReal timestep; // The internal timestep
   int nlocal, neq; // Number of variables on local processor and in total
-  
-  void take_step(BoutReal curtime, BoutReal dt, 
-                 BoutReal *start, BoutReal *result); // Take a single step to calculate f1
   
   //Pointer to the actual scheme used
   RKScheme *scheme;

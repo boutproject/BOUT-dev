@@ -82,6 +82,7 @@ using std::string;
 #define SOLVERRK3SSP      "rk3ssp"
 #define SOLVERPOWER       "power"
 #define SOLVERARKODE	  "arkode"
+#define SOLVERRKGENERIC	  "rkgeneric"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 

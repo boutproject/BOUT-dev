@@ -1,6 +1,7 @@
 
 #include "rkgeneric.hxx"
 #include "rkschemefactory.hxx"
+#include <bout/rkscheme.hxx>
 
 #include <boutcomm.hxx>
 #include <utils.hxx>
@@ -12,12 +13,21 @@
 #include <output.hxx>
 
 RKGenericSolver::RKGenericSolver(Options *options) : Solver(options) {
+  f0 = 0; // Mark as uninitialised
+
   //Create scheme
   scheme=RKSchemeFactory::getInstance()->createRKScheme(options);
 }
 
 RKGenericSolver::~RKGenericSolver() {
   delete scheme;
+
+  if(f0 != 0) {
+    delete[] f0;
+    delete[] f1;
+    delete[] f2;
+    delete[] tmpState;
+  };
 }
 
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
@@ -35,7 +45,7 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
-  
+
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
   nsteps = nout; // Save number of output steps
@@ -56,10 +66,11 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
   // Allocate memory
-  f0 = new BoutReal[nlocal];
-  f1 = new BoutReal[nlocal];
-  f2 = new BoutReal[nlocal];
-  
+  f0 = new BoutReal[nlocal]; //Input
+  f1 = new BoutReal[nlocal]; //Result--alternative order
+  f2 = new BoutReal[nlocal]; //Result--follow order
+  tmpState = new BoutReal[nlocal];
+
   // Put starting values into f0
   save_vars(f0);
   
@@ -69,9 +80,12 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, max_timestep, tstep); // Maximum timestep
   OPTION(options, timestep, max_timestep); // Starting timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  OPTION(options, adaptive, false);
+  OPTION(options, adaptive, true); // Prefer adaptive scheme
 
   msg_stack.pop(msg_point);
+
+  //Initialise scheme
+  scheme->init(nlocal);
 
   return 0;
 }
@@ -95,66 +109,60 @@ int RKGenericSolver::run() {
           dt = target - simtime; // Make sure the last timestep is on the output 
           running = false;
         }
-        if(adaptive) {
-          // Take two half-steps
-          take_step(simtime,          0.5*dt, f0, f1);
-          take_step(simtime + 0.5*dt, 0.5*dt, f1, f2);
-          
-          // Take a full step
-          take_step(simtime, dt, f0, f1);
-          
-          // Check accuracy
-          BoutReal local_err = 0.;
-          #pragma omp parallel for reduction(+: local_err)   
-          for(int i=0;i<nlocal;i++) {
-            local_err += fabs(f2[i] - f1[i]) / ( fabs(f1[i]) + fabs(f2[i]) + atol );
-          }
-        
-          // Average over all processors
-          BoutReal err;
-          if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
-            throw BoutException("MPI_Allreduce failed");
-          }
 
+	BoutReal err;
+
+	//Take a step
+	take_step(simtime, dt, f0, f2, f1, &err);
+	//output<<"Err="<<err<<endl;
+        if(adaptive) {
           err /= (BoutReal) neq;
-        
+
+	  //Really the following should apply to both adaptive and non-adaptive
+	  //approaches, but the non-adaptive can be determined without needing
+	  //to do any solves so could perhaps be check during init instead.
           internal_steps++;
           if(internal_steps > mxstep)
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
 
+	  //Update the time step if required
           if((err > rtol) || (err < 0.1*rtol)) {
+	    /////THIS SHOULD PROBABLY BE A SCHEME SPECIFIC ROUTINE
+	    /////AS ORDER ETC CAN CHANGE
+	    //scheme->updateTimestep(timestep,err,rtol,atol);
             // Need to change timestep. Error ~ dt^5
             timestep /= pow(err / (0.5*rtol), 0.2);
-            
+	    //timestep *= pow(rtol/err,0.2);
+
+	    //output<<"Timestep is now "<<timestep<<endl;
             if((max_timestep > 0) && (timestep > max_timestep))
               timestep = max_timestep;
           }
-          if(err < rtol) {
-            break; // Acceptable accuracy
-          }
+
+	  //If accuracy ok then break
+          if(err < rtol) break;
+
         }else {
           // No adaptive timestepping
-          take_step(simtime, dt, f0, f2);
           break;
         }
       }while(true);
       
-      // Taken a step, swap buffers
+      // Taken a step, swap buffers to put result into f0
       swap(f2, f0);
       simtime += dt;
-      
+
+      //Call the per internal timestep monitors
       call_timestep_monitors(simtime, dt);
+
     }while(running);
     
     load_vars(f0); // Put result into variables
 
     iteration++; // Advance iteration number
     
-    /// Call the monitor function
-    
-    if(call_monitors(simtime, s, nsteps)) {
-      break; // Stop simulation
-    }
+    /// Call the output step monitor function
+    if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
     
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
@@ -165,5 +173,34 @@ int RKGenericSolver::run() {
   return 0;
 }
 
-void RKGenericSolver::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *result) {
-}
+//Returns the evolved state vector along with an error estimate
+void RKGenericSolver::take_step(BoutReal timeIn, BoutReal dt, BoutReal *start, BoutReal *resultFollow, 
+			  BoutReal *resultAlt, BoutReal *errEst){
+
+  BoutReal curTime;
+
+  //Calculate the intermediate stages
+  for(int curStage=0;curStage<scheme->numStages;curStage++){
+    //Use scheme to get this stage's time and state
+    curTime=scheme->setCurTime(timeIn,dt,curStage);
+    scheme->setCurState(start, tmpState, nlocal, curStage, dt);
+
+    //Get derivs for this stage
+    load_vars(tmpState);
+    run_rhs(curTime);
+    save_derivs(scheme->steps[curStage]);
+  };
+
+  scheme->setOutputStates(start, resultFollow, resultAlt, nlocal, dt);
+
+  BoutReal local_err = 0.;
+  for(int i=0;i<nlocal;i++) {
+    local_err += fabs(resultFollow[i] - resultAlt[i]) / ( fabs(resultFollow[i]) + fabs(resultAlt[i]) + atol );
+    //local_err += fabs(resultFollow[i] - resultAlt[i]);
+  }
+  //output<<"local_err = "<<local_err<<endl;
+  if(MPI_Allreduce(&local_err, errEst, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+    throw BoutException("MPI_Allreduce failed");
+  }
+  //output<<"ErrA="<<*errEst<<endl;
+};

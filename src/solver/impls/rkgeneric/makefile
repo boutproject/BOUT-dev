@@ -2,7 +2,7 @@
 BOUT_TOP = ../../../..
 
 DIRS		= impls
-SOURCEC		= rkgeneric.cxx rkschemefactory.cxx
+SOURCEC		= rkgeneric.cxx rkscheme.cxx rkschemefactory.cxx
 SOURCEH		= $(SOURCEC:%.cxx=%.hxx)
 INCLUDE		= -Iimpls/rkf45 -Iimpls/cashkarp
 TARGET		= lib

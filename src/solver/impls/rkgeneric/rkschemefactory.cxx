@@ -1,6 +1,6 @@
 #include "rkschemefactory.hxx"
 
-//#include "impls/rkf45/rkf45.hxx"
+#include "impls/rkf45/rkf45.hxx"
 //#include "impls/cashkarp/cashkarp.hxx"
 
 #include <boutexception.hxx>
@@ -39,8 +39,9 @@ RKScheme* RKSchemeFactory::createRKScheme(RKSchemeType &type, Options *options) 
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
   
-  // if(!strcasecmp(type, RKSCHEME_RKF45)) {
-  //   return new RKF45Scheme(options);
+  if(!strcasecmp(type, RKSCHEME_RKF45)) {
+    return new RKF45Scheme(options);
+  };
   // } else if(!strcasecmp(type, RKSCHEME_CASHKARP)) {
   //   return new CashKarpScheme(options);
   // };

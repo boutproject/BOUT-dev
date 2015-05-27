@@ -1,5 +1,8 @@
-#include <bout/RKScheme.hxx>
-#include "RKSchemefactory.hxx"
+#include "rkschemefactory.hxx"
+#include <bout/rkscheme.hxx>
+#include <output.hxx>
+#include <cmath>
+#include <boutcomm.hxx>
 
 ////////////////////
 // PUBLIC
@@ -8,50 +11,72 @@
 //Initialise
 RKScheme::RKScheme(Options *opts){
   //Currently not reading anything from the options here
+
+  //Init the pointer arrays to null
+  stageCoeffs = (BoutReal**)NULL;
+  resultCoeffs = (BoutReal**)NULL;
+  timeCoeffs = (BoutReal*)NULL;
+  steps = (BoutReal**)NULL;
 };
 
 //Cleanup
 RKScheme::~RKScheme(){
-  //In C++11 we can do vec.clear() ; vec.shrink_to_fit(); //Though this is non-binding
-  //For now we provide support for older compilers using the following;
-  //vec.clear(); //Destroys each vector member
-  //vector<type>().swap(vec); //Creates an empty temp vector and swaps it into vec
-  //The result is that the memory associated with vec is freed.
-
   //stageCoeffs
-  for(int i=0,i<stageCoeffs.size();i++){
-    stageCoeffs[i].clear();
-    vector<BoutReal>().swap(stageCoeffs[i]);
-  };
-  stageCoeffs.clear();
-  vector< vector<BoutReal> >().swap(stageCoeffs);
-
+  free_rmatrix(stageCoeffs);
 
   //resultCoeffs
-  for(int i=0,i<resultCoeffs.size();i++){
-    resultCoeffs[i].clear();
-    vector<BoutReal>().swap(resultCoeffs[i]);
-  };
-  resultCoeffs.clear();
-  vector< vector<BoutReal> >().swap(resultCoeffs);
-   
+  free_rmatrix(resultCoeffs);
+
   //steps
-  for(int i=0,i<steps.size();i++){
-    steps[i].clear();
-    vector<BoutReal>().swap(steps[i]);
-  };
-  steps.clear();
-  vector< vector<BoutReal> >().swap(steps);
+  free_rmatrix(steps);
 
   //timeCoeffs
-  timeCoeffs.clear();
-  vector<BoutReal>().swap(timeCoeffs);
+  delete[] timeCoeffs;
 };
 
-//Returns the evolved state vector along with an error estimate
-RKScheme::take_step(BoutReal curtime, BoutReal dt, BoutReal *start, BoutReal *resultFollow, 
-			  BoutReal *resultAlt, BoutReal errEst){
+//Finish generic initialisation
+void RKScheme::init(const int nlocal){
+  //Allocate storage for stages
+  steps = rmatrix(numStages,nlocal);
 };
+
+BoutReal RKScheme::setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage){
+  return timeIn+dt*timeCoeffs[curStage];
+};
+
+void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int nlocal, const int curStage, const BoutReal dt){
+  for(int i=0;i<nlocal;i++){
+    out[i] = start[i];
+    if(curStage==1) continue;
+    for(int j=0;j<curStage;j++){
+      out[i] = out[i] + stageCoeffs[curStage][j]*dt*steps[j][i];
+    };
+  }
+};
+
+void RKScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow, BoutReal *resultAlt, const int nlocal, const BoutReal dt){
+
+  int followInd, altInd;
+  if(followHighOrder){
+    followInd=0; altInd=1;
+  }else{
+    followInd=1; altInd=0;
+  }
+
+  //Initialise the return data
+  for(int i=0;i<nlocal;i++){
+    resultFollow[i]=start[i];
+    resultAlt[i]=start[i];
+  }
+
+  //Now construct the two solutions
+  for(int curStage=0;curStage<numStages;curStage++){
+    for(int i=0;i<nlocal;i++){
+      resultFollow[i]=resultFollow[i]+dt*resultCoeffs[curStage][followInd]*steps[curStage][i];
+      resultAlt[i]=resultAlt[i]+dt*resultCoeffs[curStage][altInd]*steps[curStage][i];
+    }
+  }
+}
 
 ////////////////////
 // PRIVATE
