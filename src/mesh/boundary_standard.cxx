@@ -65,8 +65,8 @@ BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O2::apply(Field2D &f){
-	output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
-	output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   
 	BndDirichlet_O2::apply(f,0.);
 
@@ -244,24 +244,24 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 	
 				val = fg->generate(xnorm,TWOPI*ynorm,0.0, t);
 			}
-      
 			f(bndry->x,bndry->y) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by);
 			
 			// Need to set second guard cell, as may be used for interpolation or upwinding derivatives
 			for(int i=1;i<bndry->width;i++) {
 				int xi = bndry->x + i*bndry->bx;
-				int yi = bndry->y + i*bndry->bx;						
-				f(xi, yi) = 2*f(xi - bndry->bx, yi - bndry->by) - f(xi - 2*bndry->bx, yi - 2*bndry->by);	
+				int yi = bndry->y + i*bndry->by;						
+				f(xi, yi) = 2*f(xi - bndry->bx, yi - bndry->by) - f(xi - 2*bndry->bx, yi - 2*bndry->by);
 			}	
 		}
 	}
+        
 }
 
 
 void BndDirichlet_O2::apply(Field3D &f) {
 	//BndDirichlet_O2::apply(f,0.);
-	output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-	output << "applying boundary condition for t = 0.!!!!!\n";
+	//output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+        //	output << "applying boundary condition for t = 0.!!!!!\n";
   
 	BndDirichlet_O2::apply(f,0.);
 }
@@ -486,7 +486,6 @@ void BndDirichlet_O2::apply(Field3D &f,BoutReal t) {
               f(bndry->x,bndry->y,zk) = 2*val - f(bndry->x-bndry->bx, bndry->y-bndry->by, zk);
               // f(bndry->x,bndry->y,zk) = (8./3.)*val - 2.*f(bndry->x-bndry->bx, bndry->y-bndry->by,zk) + f(bndry->x-2*bndry->bx, bndry->y-2*bndry->by,zk)/3.;
 				
-				
               // Need to set second guard cell, as may be used for interpolation or upwinding derivatives
               for(int i=1;i<bndry->width;i++) {
                 int xi = bndry->x + i*bndry->bx;
@@ -546,8 +545,8 @@ BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O3::apply(Field2D &f){
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field2D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field2D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O3::apply(f,0.);
 
@@ -735,8 +734,8 @@ void BndDirichlet_O3::apply(Field2D &f,BoutReal t) {
 
 void BndDirichlet_O3::apply(Field3D &f) {
   //BndDirichlet_O3::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field3D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O3::apply(f,0.);
 }
@@ -1030,8 +1029,8 @@ BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O4::apply(Field2D &f){
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field2D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field2D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O4::apply(f,0.);
 
@@ -1233,8 +1232,8 @@ void BndDirichlet_O4::apply(Field2D &f,BoutReal t) {
 
 void BndDirichlet_O4::apply(Field3D &f) {
   //BndDirichlet_O4::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field3D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O4::apply(f,0.);
 }
@@ -1709,8 +1708,8 @@ BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &arg
 
 void BndNeumann_O2::apply(Field2D &f) {
   //BndDirichlet_O2::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   BndNeumann_O2::apply(f,0.);
 }
 
@@ -1912,8 +1911,8 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 
 void BndNeumann_O2::apply(Field3D &f) {
   //BndDirichlet_O2::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  //  output << "applying boundary condition for t = 0.!!!!!\n";
   BndNeumann_O2::apply(f,0.);
 }
 
@@ -3243,6 +3242,10 @@ void BoundaryShifted::apply(Field2D &f) {
   op->apply(f); // Doesn't affect 2D boundary conditions
 }
 
+void BoundaryShifted::apply(Field2D &f, BoutReal t) {
+  op->apply(f, t); // Doesn't affect 2D boundary conditions
+}
+
 void BoundaryShifted::apply(Field3D &f) {
   if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
     Field3D g = f.shiftZ(true); // Shift into orthogonal coordinates
@@ -3250,6 +3253,15 @@ void BoundaryShifted::apply(Field3D &f) {
     f = g.shiftZ(false);        // Shift back to field-aligned
   }else
     op->apply(f);
+}
+
+void BoundaryShifted::apply(Field3D &f, BoutReal t) {
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    Field3D g = f.shiftZ(true); // Shift into orthogonal coordinates
+    op->apply(g, t);            // Apply the boundary condition
+    f = g.shiftZ(false);        // Shift back to field-aligned
+  }else
+    op->apply(f, t);
 }
 
 void BoundaryShifted::apply_ddt(Field2D &f) {
