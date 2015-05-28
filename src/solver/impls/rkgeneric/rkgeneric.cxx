@@ -110,12 +110,23 @@ int RKGenericSolver::run() {
           running = false;
         }
 
-	BoutReal err;
-
 	//Take a step
-	take_step(simtime, dt, f0, f2, f1, &err);
-	//output<<"Err="<<err<<endl;
+	take_step(simtime, dt, f0, f2, f1);
+
+	//Calculate and check error if adaptive
         if(adaptive) {
+	  BoutReal err;
+
+	  //Get local part of relative error
+	  BoutReal local_err = 0.;
+	  for(int i=0;i<nlocal;i++) {
+	    local_err += fabs(f2[i] - f1[i]) / ( fabs(f2[i]) + fabs(f1[i]) + atol );
+	  }
+	  //Reduce over procs
+	  if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+	    throw BoutException("MPI_Allreduce failed");
+	  }
+	  //Normalise by number of values
           err /= (BoutReal) neq;
 
 	  //Really the following should apply to both adaptive and non-adaptive
@@ -127,14 +138,11 @@ int RKGenericSolver::run() {
 
 	  //Update the time step if required
           if((err > rtol) || (err < 0.1*rtol)) {
-	    /////THIS SHOULD PROBABLY BE A SCHEME SPECIFIC ROUTINE
-	    /////AS ORDER ETC CAN CHANGE
-	    //scheme->updateTimestep(timestep,err,rtol,atol);
-            // Need to change timestep. Error ~ dt^5
-            timestep /= pow(err / (0.5*rtol), 0.2);
-	    //timestep *= pow(rtol/err,0.2);
 
-	    //output<<"Timestep is now "<<timestep<<endl;
+	    //Get new timestep
+	    timestep=scheme->updateTimestep(timestep,rtol,err);
+
+	    //Limit timestep to specified maximum
             if((max_timestep > 0) && (timestep > max_timestep))
               timestep = max_timestep;
           }
@@ -143,7 +151,7 @@ int RKGenericSolver::run() {
           if(err < rtol) break;
 
         }else {
-          // No adaptive timestepping
+          // No adaptive timestepping so just accept step
           break;
         }
       }while(true);
@@ -174,15 +182,13 @@ int RKGenericSolver::run() {
 }
 
 //Returns the evolved state vector along with an error estimate
-void RKGenericSolver::take_step(BoutReal timeIn, BoutReal dt, BoutReal *start, BoutReal *resultFollow, 
-			  BoutReal *resultAlt, BoutReal *errEst){
-
-  BoutReal curTime;
+void RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
+				BoutReal *resultFollow, BoutReal *resultAlt){
 
   //Calculate the intermediate stages
-  for(int curStage=0;curStage<scheme->numStages;curStage++){
+  for(int curStage=0;curStage<scheme->getStageCount();curStage++){
     //Use scheme to get this stage's time and state
-    curTime=scheme->setCurTime(timeIn,dt,curStage);
+    BoutReal curTime=scheme->setCurTime(timeIn,dt,curStage);
     scheme->setCurState(start, tmpState, nlocal, curStage, dt);
 
     //Get derivs for this stage
@@ -193,14 +199,4 @@ void RKGenericSolver::take_step(BoutReal timeIn, BoutReal dt, BoutReal *start, B
 
   scheme->setOutputStates(start, resultFollow, resultAlt, nlocal, dt);
 
-  BoutReal local_err = 0.;
-  for(int i=0;i<nlocal;i++) {
-    local_err += fabs(resultFollow[i] - resultAlt[i]) / ( fabs(resultFollow[i]) + fabs(resultAlt[i]) + atol );
-    //local_err += fabs(resultFollow[i] - resultAlt[i]);
-  }
-  //output<<"local_err = "<<local_err<<endl;
-  if(MPI_Allreduce(&local_err, errEst, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
-    throw BoutException("MPI_Allreduce failed");
-  }
-  //output<<"ErrA="<<*errEst<<endl;
 };
