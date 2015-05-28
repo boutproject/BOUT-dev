@@ -134,8 +134,10 @@ bool GridFile::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
     break;
   }
   default: {
-    throw BoutException("Error: Variable '%s' should be 2D, but has %d dimensions\n", 
-			name.c_str(), size.size());
+    output.write("WARNING: Variable '%s' should be 2D, but has %d dimensions. Ignored\n", 
+                 name.c_str(), size.size());
+    var = def;
+    return false;
   }
   };
 
@@ -224,7 +226,12 @@ bool GridFile::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
     // Check whether "nz" is defined
     if(hasVar("nz")) {
       // Read directly into arrays
-
+      
+      // Check the array is the right size
+      
+      if(size[2] != m->ngz-1)
+        throw BoutException("3D variable '%s' has incorrect size %d (expecting %d)", name.c_str(), size[2], m->ngz-1);
+      
       if(! readgrid_3dvar_real(m, name,
 			       m->OffsetY,// Start reading at global index
 			       m->ystart,// Insert data starting from y=ystart

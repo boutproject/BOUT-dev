@@ -88,7 +88,7 @@ plt.xscale('log')
 plt.xlabel(r'Mesh spacing $\delta x$')
 plt.ylabel("Error norm")
 
-plt.savefig("norm.pdf")
+plt.savefig("wave_norm.pdf")
 
 #plt.show()
 plt.close()
