@@ -42,7 +42,7 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Level 2
   resultCoeffs[2][0] = 6656.0/12825.0; resultCoeffs[2][1] = 1408.0/2565.0;
   //Level 3
-  resultCoeffs[3][0] = 28561.0/56403.0; resultCoeffs[3][1] = 2197.0/4104.0;
+  resultCoeffs[3][0] = 28561.0/56430.0; resultCoeffs[3][1] = 2197.0/4104.0;
   //Level 4
   resultCoeffs[4][0] = -9.0/50.0; resultCoeffs[4][1] = -1.0/5.0;
   //Level 5
