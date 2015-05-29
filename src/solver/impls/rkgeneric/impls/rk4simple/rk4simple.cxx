@@ -62,21 +62,21 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   //Set coefficients : resultCoeffs
   //////////////////////////////////
   //Large time step
-  resultCoeffs[0][0] = 1.0/6.0;
-  resultCoeffs[1][0] = 1.0/3.0;
-  resultCoeffs[2][0] = 1.0/3.0;
-  resultCoeffs[3][0] = 1.0/6.0;
+  resultCoeffs[0][1] = 1.0/6.0;
+  resultCoeffs[1][1] = 1.0/3.0;
+  resultCoeffs[2][1] = 1.0/3.0;
+  resultCoeffs[3][1] = 1.0/6.0;
 
   //small time step
-  resultCoeffs[4][1] = 1.0/12.0;
-  resultCoeffs[5][1] = 1.0/6.0;
-  resultCoeffs[6][1] = 1.0/6.0;
-  resultCoeffs[7][1] = 1.0/12.0;
+  resultCoeffs[4][0] = 1.0/12.0;
+  resultCoeffs[5][0] = 1.0/6.0;
+  resultCoeffs[6][0] = 1.0/6.0;
+  resultCoeffs[7][0] = 1.0/12.0;
   //Second half
-  resultCoeffs[8][1] = 1.0/12.0;
-  resultCoeffs[9][1] = 1.0/6.0;
-  resultCoeffs[10][1] = 1.0/6.0;
-  resultCoeffs[11][1] = 1.0/12.0;
+  resultCoeffs[8][0] = 1.0/12.0;
+  resultCoeffs[9][0] = 1.0/6.0;
+  resultCoeffs[10][0] = 1.0/6.0;
+  resultCoeffs[11][0] = 1.0/12.0;
 
   //////////////////////////////////
   //Set coefficients : timeCoeffs
