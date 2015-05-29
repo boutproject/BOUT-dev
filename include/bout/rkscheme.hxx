@@ -21,6 +21,15 @@
  *
  **************************************************************************/
 
+//////////////////////////////////////////
+//// COMMENTS
+/*   Originally designed to deal with embedded schemes.
+     Doesn't currently support FSAL optimisations.
+     Would be nice to replace the coeff arrays with stl containers.
+     Could perhaps add a flag to enable "local extrapolation"
+*/
+//////////////////////////////////////////
+
 class RKScheme;
 
 #ifndef __RKSCHEME_H__
@@ -30,12 +39,10 @@ class RKScheme;
 #include <options.hxx>
 #include <utils.hxx>
 
+#include <iomanip>
 #include <string>
-#include <vector>
-#include <list>
-
 using std::string;
-using std::vector;
+using std::setw;
 
 #define RKSchemeType const char*
 #define RKSCHEME_RKF45       "rkf45"
@@ -48,28 +55,30 @@ class RKScheme {
   ~RKScheme();
 
   //Finish generic initialisation
-  void init(const int nlocal);
+  void init(const int nlocalIn, const int neqIn, 
+	    const BoutReal atolIn, const BoutReal rtolIn);
 
   //Get the time at given stage
   BoutReal setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage);
 
   //Get the state vector at given stage
-  void setCurState(const BoutReal *start, BoutReal *out, const int nlocal, 
-		   const int curStage, const BoutReal dt);
+  void setCurState(const BoutReal *start, BoutReal *out, const int curStage, const BoutReal dt);
 
   //Calculate the two updated states
   void setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
-		       BoutReal *resultAlt, const int nlocal, const BoutReal dt);
+		       BoutReal *resultAlt, const BoutReal dt);
 
   //Update the timestep
-  virtual BoutReal updateTimestep(const BoutReal dt, const BoutReal rtol, 
-				  const BoutReal err);
+  virtual BoutReal updateTimestep(const BoutReal dt, const BoutReal err);
 
   //Returns the string name for the given scheme
   virtual string getType(){return label;};
 
   //Returns the number of stages for the current scheme
   int getStageCount(){return numStages;};
+
+  //Returns the number of orders for the current scheme
+  int getNumOrders(){return numOrders;};
 
   //The intermediate stages
   BoutReal **steps;
@@ -79,6 +88,7 @@ class RKScheme {
   bool followHighOrder; //If true the recommended solution is the higher order one.
   string label;
   int numStages; //Number of stages in the scheme
+  int numOrders; //Number of orders in the scheme
   int order; //Order of scheme
 
   //The Butcher Tableau
@@ -87,6 +97,14 @@ class RKScheme {
   BoutReal *timeCoeffs;
 
  private:
+  int nlocal;
+  int neq;
+  BoutReal atol;
+  BoutReal rtol;
+
+  void verifyCoeffs();
+  void printButcherTableau();
+  void zeroSteps();
 };
 
 #endif // __RKSCHEME_H__

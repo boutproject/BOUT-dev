@@ -138,6 +138,11 @@ int RK4Solver::run() {
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
 
           if((err > rtol) || (err < 0.1*rtol)) {
+	    //NOTE: Probably don't really want to increase timestep if dt/=timestep
+	    //as this indicates we've got an artificially small timestep here to reach
+	    //the output time exactly, hence would expect errors to be extra small on
+	    //this step. To fix could add "&& running" inside last logic above.
+
             // Need to change timestep. Error ~ dt^5
             timestep /= pow(err / (0.5*rtol), 0.2);
             

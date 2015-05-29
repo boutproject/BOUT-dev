@@ -85,7 +85,7 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   msg_stack.pop(msg_point);
 
   //Initialise scheme
-  scheme->init(nlocal);
+  scheme->init(nlocal,neq,atol,rtol);
 
   return 0;
 }
@@ -99,9 +99,10 @@ int RKGenericSolver::run() {
     BoutReal dt;
     bool running = true;
     int internal_steps = 0;
+
+    // Take a single output time step
     do {
-      // Take a single time step
-      
+      // Take a single internal time step
       do {
         dt = timestep;
         running = true;
@@ -115,7 +116,10 @@ int RKGenericSolver::run() {
 
 	//Calculate and check error if adaptive
         if(adaptive) {
-	  BoutReal err;
+
+	  //NOTE: The following error calculation should probably be moved
+	  //      to the scheme class to allow scheme specific treatment.
+	  BoutReal err=0.;
 
 	  //Get local part of relative error
 	  BoutReal local_err = 0.;
@@ -136,11 +140,12 @@ int RKGenericSolver::run() {
           if(internal_steps > mxstep)
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
 
-	  //Update the time step if required
-          if((err > rtol) || (err < 0.1*rtol)) {
+	  //Update the time step if required, note we ignore increases to the timestep
+	  //when on the last internal step as here we may have an artificially small dt
+	  if((err > rtol) || ((err < 0.1*rtol) && running)) {
 
 	    //Get new timestep
-	    timestep=scheme->updateTimestep(timestep,rtol,err);
+	    timestep=scheme->updateTimestep(dt,err);
 
 	    //Limit timestep to specified maximum
             if((max_timestep > 0) && (timestep > max_timestep))
@@ -189,7 +194,7 @@ void RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const 
   for(int curStage=0;curStage<scheme->getStageCount();curStage++){
     //Use scheme to get this stage's time and state
     BoutReal curTime=scheme->setCurTime(timeIn,dt,curStage);
-    scheme->setCurState(start, tmpState, nlocal, curStage, dt);
+    scheme->setCurState(start, tmpState, curStage, dt);
 
     //Get derivs for this stage
     load_vars(tmpState);
@@ -197,6 +202,6 @@ void RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const 
     save_derivs(scheme->steps[curStage]);
   };
 
-  scheme->setOutputStates(start, resultFollow, resultAlt, nlocal, dt);
+  scheme->setOutputStates(start, resultFollow, resultAlt, dt);
 
 };

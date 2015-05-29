@@ -3,14 +3,26 @@
 RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Set characteristics of scheme
   numStages = 6;
+  numOrders = 2;
   order = 4;
   label = "rkf45";
   followHighOrder = false;
 
   //Allocate coefficient arrays
   stageCoeffs = rmatrix(numStages,numStages);
-  resultCoeffs = rmatrix(numStages,2);
+  resultCoeffs = rmatrix(numStages,numOrders);
   timeCoeffs = new BoutReal[numStages];
+
+  //Zero out arrays (shouldn't be needed, but do for testing)
+  for(int i=0;i<numStages;i++){
+    timeCoeffs[i]=0.;
+    for(int j=0;j<numStages;j++){
+      stageCoeffs[i][j]=0.;
+    }
+    for(int j=0;j<numOrders;j++){
+      resultCoeffs[i][j]=0.;
+    }
+  }
 
   //////////////////////////////////
   //Set coefficients : stageCoeffs
