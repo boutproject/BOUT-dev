@@ -45,17 +45,29 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   stageCoeffs[10][9] = 1.0/4.0;
   stageCoeffs[11][10] = 1.0/2.0;
   //Second half step -- result from first half
-  stageCoeffs[8][3] = 1.0/12.0; stageCoeffs[8][4] = 1.0/6.0;
-  stageCoeffs[8][5] = 1.0/6.0; stageCoeffs[8][6] = 1.0/12.0;
+  stageCoeffs[8][4] = 1.0/12.0; stageCoeffs[8][5] = 1.0/6.0;
+  stageCoeffs[8][6] = 1.0/6.0; stageCoeffs[8][7] = 1.0/12.0;
 
-  stageCoeffs[9][3] = 1.0/12.0; stageCoeffs[9][4] = 1.0/6.0;
-  stageCoeffs[9][5] = 1.0/6.0; stageCoeffs[9][6] = 1.0/12.0;
+  stageCoeffs[9][4] = 1.0/12.0; stageCoeffs[9][5] = 1.0/6.0;
+  stageCoeffs[9][6] = 1.0/6.0; stageCoeffs[9][7] = 1.0/12.0;
 
-  stageCoeffs[10][3] = 1.0/12.0; stageCoeffs[10][4] = 1.0/6.0;
-  stageCoeffs[10][5] = 1.0/6.0; stageCoeffs[10][6] = 1.0/12.0;
+  stageCoeffs[10][4] = 1.0/12.0; stageCoeffs[10][5] = 1.0/6.0;
+  stageCoeffs[10][6] = 1.0/6.0; stageCoeffs[10][7] = 1.0/12.0;
 
-  stageCoeffs[11][3] = 1.0/12.0; stageCoeffs[11][4] = 1.0/6.0;
-  stageCoeffs[11][5] = 1.0/6.0; stageCoeffs[11][6] = 1.0/12.0;
+  stageCoeffs[11][4] = 1.0/12.0; stageCoeffs[11][5] = 1.0/6.0;
+  stageCoeffs[11][6] = 1.0/6.0; stageCoeffs[11][7] = 1.0/12.0;
+
+  // stageCoeffs[8][3] = 1.0/12.0; stageCoeffs[8][4] = 1.0/6.0;
+  // stageCoeffs[8][5] = 1.0/6.0; stageCoeffs[8][6] = 1.0/12.0;
+
+  // stageCoeffs[9][3] = 1.0/12.0; stageCoeffs[9][4] = 1.0/6.0;
+  // stageCoeffs[9][5] = 1.0/6.0; stageCoeffs[9][6] = 1.0/12.0;
+
+  // stageCoeffs[10][3] = 1.0/12.0; stageCoeffs[10][4] = 1.0/6.0;
+  // stageCoeffs[10][5] = 1.0/6.0; stageCoeffs[10][6] = 1.0/12.0;
+
+  // stageCoeffs[11][3] = 1.0/12.0; stageCoeffs[11][4] = 1.0/6.0;
+  // stageCoeffs[11][5] = 1.0/6.0; stageCoeffs[11][6] = 1.0/12.0;
 
 
   //////////////////////////////////
