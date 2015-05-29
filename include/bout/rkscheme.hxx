@@ -47,6 +47,7 @@ using std::setw;
 #define RKSchemeType const char*
 #define RKSCHEME_RKF45       "rkf45"
 #define RKSCHEME_CASHKARP    "cashkarp"
+#define RKSCHEME_RK4         "rk4"
 
 class RKScheme {
  public:

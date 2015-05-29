@@ -2,6 +2,7 @@
 
 #include "impls/rkf45/rkf45.hxx"
 #include "impls/cashkarp/cashkarp.hxx"
+#include "impls/rk4simple/rk4simple.hxx"
 
 #include <boutexception.hxx>
 
@@ -43,6 +44,8 @@ RKScheme* RKSchemeFactory::createRKScheme(RKSchemeType &type, Options *options) 
     return new RKF45Scheme(options);
   }else if(!strcasecmp(type, RKSCHEME_CASHKARP)) {
     return new CASHKARPScheme(options);
+  }else if(!strcasecmp(type, RKSCHEME_RK4)) {
+    return new RK4SIMPLEScheme(options);
   };
 
   // Need to throw an error saying 'Supplied option "type"' was not found
