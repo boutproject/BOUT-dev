@@ -118,3 +118,31 @@ RK4SIMPLEScheme::~RK4SIMPLEScheme(){
   
 };
 
+void RK4SIMPLEScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
+				 BoutReal *resultAlt, const BoutReal dt){
+
+  if(followHighOrder){
+    for(int i=0;i<nlocal;i++){
+      resultAlt[i]=start[i]+dt*(resultCoeffs[0][1]*steps[0][i]+resultCoeffs[1][1]*steps[1][i]
+				+resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
+
+      resultFollow[i]=start[i]+dt*(resultCoeffs[4][0]*steps[4][i]+resultCoeffs[5][0]*steps[5][i]
+				   +resultCoeffs[6][0]*steps[6][i]+resultCoeffs[7][0]*steps[7][i]);
+
+      resultFollow[i]=resultFollow[i]+dt*(resultCoeffs[8][0]*steps[8][i]+resultCoeffs[9][0]*steps[9][i]
+				   +resultCoeffs[10][0]*steps[10][i]+resultCoeffs[11][0]*steps[11][i]);
+    }
+  }else{
+    for(int i=0;i<nlocal;i++){
+
+      resultFollow[i]=start[i]+dt*(resultCoeffs[0][1]*steps[0][i]+resultCoeffs[1][1]*steps[1][i]
+				   +resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
+
+      resultAlt[i]=start[i]+dt*(resultCoeffs[4][0]*steps[4][i]+resultCoeffs[5][0]*steps[5][i]
+				+resultCoeffs[6][0]*steps[6][i]+resultCoeffs[7][0]*steps[7][i]);
+
+      resultAlt[i]=resultAlt[i]+dt*(resultCoeffs[8][0]*steps[8][i]+resultCoeffs[9][0]*steps[9][i]
+				   +resultCoeffs[10][0]*steps[10][i]+resultCoeffs[11][0]*steps[11][i]);
+    }
+  }
+}

@@ -63,10 +63,11 @@ class RKScheme {
   BoutReal setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage);
 
   //Get the state vector at given stage
-  void setCurState(const BoutReal *start, BoutReal *out, const int curStage, const BoutReal dt);
+  virtual void setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
+			   const BoutReal dt);
 
   //Calculate the two updated states
-  void setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
+  virtual void setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
 		       BoutReal *resultAlt, const BoutReal dt);
 
   //Update the timestep
@@ -97,12 +98,12 @@ class RKScheme {
   BoutReal **resultCoeffs;
   BoutReal *timeCoeffs;
 
- private:
   int nlocal;
   int neq;
   BoutReal atol;
   BoutReal rtol;
 
+ private:
   void verifyCoeffs();
   void printButcherTableau();
   void zeroSteps();

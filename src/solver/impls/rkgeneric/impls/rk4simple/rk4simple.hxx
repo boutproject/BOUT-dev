@@ -11,8 +11,11 @@ class RK4SIMPLEScheme : public RKScheme{
  public:
   RK4SIMPLEScheme(Options *options);
   ~RK4SIMPLEScheme();
+  
+  void setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
+		       BoutReal *resultAlt, const BoutReal dt);
  private:
-
+  
 };
 
 #endif // __RK4SIMPLE_SCHEME_H__
