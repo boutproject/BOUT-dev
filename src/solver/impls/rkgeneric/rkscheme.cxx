@@ -74,6 +74,7 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
   
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
+    if(abs(stageCoeffs[curStage][j]) < atol) continue;
     BoutReal fac=stageCoeffs[curStage][j]*dt;
     for(int i=0;i<nlocal;i++){
       out[i] = out[i] + fac*steps[j][i];
@@ -102,9 +103,11 @@ void RKScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow,
 
   //Now construct the two solutions
   for(int curStage=0;curStage<getStageCount();curStage++){
+    BoutReal followFac=dt*resultCoeffs[curStage][followInd];
+    BoutReal altFac=dt*resultCoeffs[curStage][altInd];
     for(int i=0;i<nlocal;i++){
-      resultFollow[i]=resultFollow[i]+dt*resultCoeffs[curStage][followInd]*steps[curStage][i];
-      resultAlt[i]=resultAlt[i]+dt*resultCoeffs[curStage][altInd]*steps[curStage][i];
+      resultFollow[i]=resultFollow[i]+followFac*steps[curStage][i];
+      resultAlt[i]=resultAlt[i]+altFac*steps[curStage][i];
     }
   }
 }
