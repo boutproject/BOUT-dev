@@ -112,16 +112,24 @@ def slab(nx, ny, nz,
         f.write("dy", delta_tor)
         f.write("g_22", g_22)
         f.write("Bxy", transform3D(Bxy))
+
+        # Note: If "nz" is put into the file, then 3D variables 
+        # should not be transformed since they will be read directly into
+        # BOUT++ arrays without Fourier transforming
     
         xt_prime = unroll_map_coeff(forward_map, 'xt_prime')
-        f.write('forward_xt_prime', transform3D(xt_prime))
+        #f.write('forward_xt_prime', transform3D(xt_prime))
+	f.write('forward_xt_prime', xt_prime)
         zt_prime = unroll_map_coeff(forward_map, 'zt_prime')
-        f.write('forward_zt_prime', transform3D(zt_prime))
+        #f.write('forward_zt_prime', transform3D(zt_prime))
+	f.write('forward_zt_prime', zt_prime)
 
         xt_prime = unroll_map_coeff(backward_map, 'xt_prime')
-        f.write('backward_xt_prime', transform3D(xt_prime))
+        #f.write('backward_xt_prime', transform3D(xt_prime))
+	f.write('backward_xt_prime', xt_prime)
         zt_prime = unroll_map_coeff(backward_map, 'zt_prime')
-        f.write('backward_zt_prime', transform3D(zt_prime))
+        #f.write('backward_zt_prime', transform3D(zt_prime))
+	f.write('backward_zt_prime', zt_prime)
 
 
 if __name__ == "__main__":

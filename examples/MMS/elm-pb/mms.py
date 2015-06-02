@@ -20,11 +20,11 @@ metric = shape.metric()  # Get the metric tensor
 
 phi = (sin(z - x + t) + 0.001*cos(y - z))*sin(2.*pi*x) # Must satisfy Dirichlet BCs for now
 
-Psi = 1e-4*cos(4*x**2 + z - y) # + sin(t)*sin(3*x + 2*z - y))
+Psi = 1e-2*cos(4*x**2 + z - y) # + sin(t)*sin(3*x + 2*z - y))
 
-U  = 2.*sin(2*t)*cos(x - z + 4*y)
+U  = 2.*cos(2*t)*cos(x - z + 4*y)
 
-P  = 1 + 0.5*cos(t)*cos(3*x**2 - 2*z) + 0.005*sin(y-z)*sin(t)
+P  = 1 + 0.5*cos(t)*cos(3*x**2 - z + y) + 0.005*sin(y-z)*sin(t)
 
 P0 = 2 + cos(x*pi)   # Pressure pedestal
 J0 = 1 - x - sin(x*pi)**2 * cos(y)  # Parallel current
@@ -33,10 +33,12 @@ bxcvz = -(1./shape.Rxy)**2*cos(y)  # Curvature
 eta = 1e-1   # core_resist =  1 / core_lund
 hyperresist = -1e-6   # negative -> none
 
+viscos_par = 1.0
+
 ZMAX = 1
 
-nonlinear = False
-diamag = False
+nonlinear = True
+diamag = True
 
 # Turn solution into real x and z coordinates
 # NOTE: Z is shifted, so y is now the parallel coordinate
@@ -124,12 +126,19 @@ vars = [
 #       Need to scale the toroidal angle part of z, not zShift part
 replace = [ (metric.x, x * metric.Lx), (metric.z, (z - shape.zShift) * ZMAX + shape.zShift) ]
 
+# For applying boundary conditions to shifted fields, remove zShift
+replace_shiftbc = [ (metric.x, x * metric.Lx), (metric.z, (z - shape.zShift) * ZMAX) ]
+
 #print "MAG: ", exprMag(a.subs(replace)), exprMag(b.subs(replace)), exprMag(c.subs(replace))#, exprMag(d.subs(replace))
 
 
 # Potential
-# Delp2(phi) = U + Sphi
-Sphi = Delp2(phi, metric) - U
+if diamag:
+    # Delp2(phi + 0.5*P/B0) = U + Sphi
+    Sphi = Delp2(phi + 0.5*P/B0, metric) - U
+else:
+    # Delp2(phi) = U + Sphi
+    Sphi = Delp2(phi, metric) - U
 phi = phi.subs(replace)
 Sphi = Sphi.subs(replace)
 print("[phi]")
@@ -152,6 +161,7 @@ for f, dfdt, name in vars:
 
     # Substitute back to get in terms of x,y,z
     
+    fbc  = f.subs(replace_shiftbc)
     f    = f.subs(replace)
     dfdt = dfdt.subs(replace)
     S    = S.subs(replace)
@@ -160,6 +170,7 @@ for f, dfdt, name in vars:
     
     print("\n["+name+"]")
     print("solution = "+exprToStr(f))
+    print("solution_zshift = "+exprToStr(fbc))
     print("\nddx = "+exprToStr(dfdx))
     print("\nddy = "+exprToStr(dfdy))
     print("\nsource = "+exprToStr(S))

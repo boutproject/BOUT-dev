@@ -90,7 +90,11 @@ int initial_profile(const char *name, Field3D &var)
   int jx, jy, jz;
   BoutReal cx, cy, cz;
   
-  CELL_LOC loc = var.getLocation();
+  CELL_LOC loc = CELL_DEFAULT;
+  if (mesh->StaggerGrids) {
+    loc = var.getLocation();
+  }
+  
   var = 0.0;
 
   /////////// get options //////////

@@ -1,8 +1,6 @@
-BOUT++ examples
-===============
+#BOUT++ examples
 
-Getting started
----------------
+## Getting started
 
 Some simple examples to get started are
 
@@ -12,18 +10,21 @@ Some simple examples to get started are
 * **hasegawa-wakatani** Solves the H-W equations (optionally with modified zonal response) in 2D
 * **test-staggered** shows how to use staggered grids in BOUT++
 
-Test suite
-----------
+## Test suite
 
-To run the test suite, run the Python code "test_suite" ::
+To run the test suite, run the Python code "test_suite" :
 
- $ ./test_suite
+```bash
+$ ./test_suite
+```
 
 This should run through the tests, provided that python is set up correctly.
 If you encounter problems, first check that PYTHONPATH includes the BOUT++
-pylib directory ::
+pylib directory:
 
- $ echo $PYTHONPATH
+```bash
+$ echo $PYTHONPATH
+```
 
 The test suite currently includes:
 
