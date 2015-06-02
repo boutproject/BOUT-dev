@@ -48,6 +48,7 @@ using std::setw;
 #define RKSCHEME_RKF45       "rkf45"
 #define RKSCHEME_CASHKARP    "cashkarp"
 #define RKSCHEME_RK4         "rk4"
+#define RKSCHEME_RKF34       "rkf34"
 
 class RKScheme {
  public:
