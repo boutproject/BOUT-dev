@@ -3,7 +3,6 @@
    once. All post-processing are placed in own files.
    Run demo() for instructions."""
 from __future__ import print_function
-from __future__ import absolute_import
 from builtins import zip
 from builtins import str
 from builtins import range
@@ -14,8 +13,8 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.772beta'
-__date__    = '22.04.2015'
+__version__ = '0.773beta'
+__date__    = '03.06.2015'
 
 import textwrap
 import os
@@ -41,6 +40,8 @@ from bout_runners.common_bout_functions import create_folder,\
 
 # FIXME: qsub does not always delete the clean-up files??
 #        Fixed for basic qsub (test it), fix for the rest
+# TODO: Add grid functionality
+# TODO: Clean up the mess in basic_error_checker
 # TODO: Make it possible to give a function to the waiting routine in
 #       qsub runners, so that it is possible to give a function which
 #       will be run when a job has completed
@@ -76,26 +77,126 @@ def demo(argument = None, plot_type = False, convergence_type = False):
                                              subsequent_indent=' '*8,\
                                              width = 80)
 
-    # Some whitespace
-    print('\n'*2)
-    message = "Welcome to the 'demo' of 'bout_runners'. Run demo():"
-    print(normal_text_wrapper.fill(message))
-    # Appendable list
-    messages = []
-    messages.append("a) Without any arguments to get basic info")
-    messages.append("b) The name of one of the classes to print text which"+\
-                    " can  be used as a 'driver'")
-    messages.append("c) The name of one of the member data in order to get"+\
-                    " info of the usage")
-    messages.append("d) Any other string (will give a list of possibilities)")
-    for message in messages:
-        print(lists_text_wrapper.fill(message))
+#{{{ Lists of argument and kwargs possibilities
+    possible_classes = [\
+        'basic_runner',\
+        'run_with_plots',\
+        'basic_qsub_runner',\
+        'qsub_run_with_plots']
 
-    # Some whitespace
-    print('\n'*2)
+    possible_basic_runner_member_data = [\
+        'solvers',\
+        'nproc',\
+        'methods',\
+        'grids',\
+        'directory',\
+        'nout',\
+        'timestep',\
+        'MXG',\
+        'MYG',\
+        'additional',\
+        'restart']
+
+    possible_run_with_plots_member_data = [\
+        'plot_type',\
+        'extension']
+
+    possible_basic_qsub_runner_member_data = [\
+        'nodes',\
+        'ppn',\
+        'walltime',\
+        'mail',\
+        'queue']
+
+    possible_plot_types = [\
+        'solution_plot',\
+        'solution_and_error_plot',\
+        'convergence_plot']
+
+    possible_sol_plotter_kwargs = [\
+        'plot_direction',\
+        'plot_times',\
+        'number_of_overplots',\
+        'collect_x_ghost_points',\
+        'collect_y_ghost_points',\
+        'show_plots']
+
+    possible_conv_plotter_kwargs = [\
+        'convergence_type',\
+        'collect_x_ghost_points',\
+        'collect_y_ghost_points',\
+        'show_plots']
+
+    possible_conv_type_kwargs = [\
+        'spatial',\
+        'temporal'
+        ]
+#}}}
+
+##{{{ get_list_of_possibilities
+    def get_list_of_possibilities():
+        """Returns 'messages', a list of all possibility arguments for demo()"""
+        # Appendable list
+        messages = []
+        messages.append("\nInfo about the demo function:")
+        messages.append("    None")
+        messages.append("\n")
+
+        messages.append( "\nExample drivers:")
+        for arg in possible_classes:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        messages.append( "\nUsage of 'basic_runner' member data:")
+        for arg in possible_basic_runner_member_data:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        messages.append( "\nUsage of 'run_with_plots' member data:")
+        for arg in possible_run_with_plots_member_data:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        messages.append( "\nUsage of 'basic_qsub_runner' member data:")
+        for arg in possible_basic_qsub_runner_member_data:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        messages.append( "\nUsage of addition keyword arguments"+\
+                        " in 'solution_plot' and"+\
+                        " 'solution_and_error_plot':")
+        for arg in possible_sol_plotter_kwargs:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        messages.append( "\nUsage of addition keyword arguments in "+\
+                        " 'convergence_plot':")
+        for arg in possible_conv_plotter_kwargs:
+            messages.append( "    '" + arg + "'")
+        messages.append("\n")
+
+        return messages
+#}}}
 
 #{{{The basic info
     if argument == None:
+        # Some whitespace
+        print('\n'*2)
+        # Appendable list
+        messages = []
+        messages.append("Welcome to the 'demo' of 'bout_runners'")
+        messages.append("Use one of the following arguments in the demo()"+\
+                        " function in order to get info about:\n")
+        for message in messages:
+            print(normal_text_wrapper.fill(message))
+
+        # Get the possibilities
+        messages=get_list_of_possibilities()
+        for message in messages:
+            print(lists_text_wrapper.fill(message))
+        # Some whitespace
+        print('\n'*2)
+
         # Appendable list
         messages = []
         # Writing the basic info
@@ -236,42 +337,13 @@ def demo(argument = None, plot_type = False, convergence_type = False):
         and (argument in possible_basic_qsub_runner_member_data) == False\
         and (argument in possible_sol_plotter_kwargs) == False\
         and (argument in possible_conv_plotter_kwargs) == False:
-##{{{ Check that valid argument is given
-        message = "demo() was not given a valid argument.\n"
-        message += "\nFor example drivers use one of the following arguments:\n"
-        for arg in possible_classes:
-            message += "    '" + arg + "'\n"
 
-        message += "\nFor usage of 'basic_runner' member data use one of the"+\
-                   " following arguments:\n"
-        for arg in possible_basic_runner_member_data:
-            message += "    '" + arg + "'\n"
-
-        message += "\nFor usage of 'run_with_plots' member data use one of the"+\
-                   " following arguments:\n"
-        for arg in possible_run_with_plots_member_data:
-            message += "    '" + arg + "'\n"
-
-        message += "\nFor usage of 'basic_qsub_runner' member data use one of the"+\
-                   " following arguments:\n"
-        for arg in possible_basic_qsub_runner_member_data:
-            message += "    '" + arg + "'\n"
-
-        message += "\nFor usage of addition keyword arguments"+\
-                   " in 'solution_plot' and"+\
-                   " 'solution_and_error_plot' use one of the"+\
-                   " following arguments:\n"
-        for arg in possible_sol_plotter_kwargs:
-            message += "    '" + arg + "'\n"
-
-        message += "\nFor usage of addition keyword arguments in "+\
-                   " 'convergence_plot' use one of the following"+\
-                   " arguments:\n"
-        for arg in possible_conv_plotter_kwargs:
-            message += "    '" + arg + "'\n"
-
+        messages=get_list_of_possibilities()
+        # Cast the list to a string in order to be able to print it in
+        # the TypeError
+        message = "\n".join(messages)
+        message = message.replace('\n\n\n\n','\n\n')
         raise TypeError (message)
-#}}}
 
     elif (argument in possible_classes):
 #{{{ Print the demo script
@@ -847,6 +919,8 @@ class basic_runner(object):
         # Get the combinations of the member functions
         all_possibilities, grid_possibilities, timestep_possibilities =\
             self.get_possibilities()
+        import pdb
+        pdb.set_trace()
         all_combinations = self.get_combinations(\
             all_possibilities, grid_possibilities, timestep_possibilities,\
             **kwargs)
@@ -953,9 +1027,6 @@ class basic_runner(object):
     def get_possibilities(self):
         """ Returns a list of list containing the possibilities from
         the changed data members"""
-        # Check if a name is provided
-        if self.program_name == False:
-            self.error_raiser("self.program_name")
 
         # List of all the data members
         data_members = [self.solvers, self.nproc, self.methods,\
@@ -1296,6 +1367,10 @@ class basic_runner(object):
 #{{{basic_error_check
     def basic_error_check(self, remove_old):
         """Check if there are any type errors in the data members"""
+
+        # FIXME: Just patched this, but it needs a cleanup. Maybe
+        # redefine the possibilities function
+
         # Check if there are any BOUT.inp files in self.directory
         inp_file = glob.glob(self.directory + "/BOUT.inp")
         if len(inp_file) == 0:
@@ -1303,8 +1378,10 @@ class basic_runner(object):
                                 self.directory)
 
         # Check if the solvers are set correctly
-        if self.solvers != False and type(self.solvers) != list:
-            self.error_raiser("self.solvers")
+        if self.solvers != False and\
+           (type(self.solvers) == str):
+            # Make the strings an iterable
+            self.solvers = [self.solvers]
 
         # Check if the methods are set correctly
         if type(self.methods) == dict:
@@ -1313,21 +1390,32 @@ class basic_runner(object):
                 second_keys = list(self.methods[first_keys[0]].keys())
         if self.methods != False and (type(self.methods) != dict\
           or type(self.methods[first_keys[0]]) != dict\
-          or type(self.methods[first_keys[0]][second_keys[0]]) != list):
-            self.error_raiser("self.methods")
+          or hasattr(self.methods[first_keys[0]][second_keys[0]],\
+                     "__iter__") == False):
+            # Make the non-iterable an iterable
+            self.methods = [self.methods]
+
+        # Check if the timestep is set correctly
+        if self.timestep != False and\
+           hasattr(self.timestep, "__iter__") == False:
+            # Make the non-iterable an iterable
+            self.timestep = [self.timestep]
 
         # Check if the grids are set correctly
         if type(self.grids) == dict:
             first_keys = list(self.grids.keys())
         if self.grids != False and (type(self.grids) != dict\
-          or type(self.grids[first_keys[0]]) != list):
-            self.error_raiser("self.grids")
+          or hasattr(self.grids[first_keys[0]], "__iter__") == False):
+            # Make the non-iterable an iterable
+            self.grids = [self.grids]
 
         # Check if the additional is set correctly
         if type(self.additional) == dict:
             first_keys = list(self.additional.keys())
-        if self.additional != False and (type(self.additional) != dict):
-            self.error_raiser("self.additional")
+        if self.additional != False and\
+            (hasattr(self.additional, "__iter__") == False):
+            # Make the non-iterable an iterable
+            self.additional = [self.additional]
 
         # Check if remove_old and restart is set on the same time
         if remove_old == True and self.restart != False:
@@ -1594,14 +1682,6 @@ class basic_runner(object):
         # Check if any errors occured
         if os.stat("make.err").st_size != 0:
             raise RuntimeError("Error encountered during make, see 'make.err'.")
-#}}}
-
-#{{{error_raiser
-    def error_raiser(self, data_member):
-        """Message to be raised if there are any errors."""
-        message = "The data member " + data_member + " has the wrong type. "+\
-                  "See the documentation for examples."
-        raise TypeError(message)
 #}}}
 #}}}
 #}}}
