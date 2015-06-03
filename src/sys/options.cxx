@@ -73,7 +73,10 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
   
   stringstream ss;
   ss << it->second.value;
-  ss >> val;
+  if(!(ss >> val)) {
+    // Parse failed. Can't read integer
+    throw BoutException("Can't read '%s' as an integer (%s)", it->second.value.c_str(), key.c_str());
+  }
   
   it->second.used = true;
   if(log) {
