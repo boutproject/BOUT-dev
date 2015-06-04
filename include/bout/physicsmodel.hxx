@@ -46,11 +46,10 @@ class PhysicsModel;
  */
 class PhysicsModel {
 public:
-  typedef int (PhysicsModel::*rhsfunc)(BoutReal t);
   typedef int (PhysicsModel::*preconfunc)(BoutReal t, BoutReal gamma, BoutReal delta);
   typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
   
-  PhysicsModel() : solver(0), userrhs(&PhysicsModel::rhs), userconv(0), userdiff(0), 
+  PhysicsModel() : solver(0), splitop(false), 
                    userprecon(0), userjacobian(0) {}
   ~PhysicsModel();
   
@@ -99,13 +98,25 @@ protected:
    */
   virtual int rhs(BoutReal t) {return 1;} 
 
+  /* 
+     If split operator is set to true, then
+     convective() and diffusive() are called instead of rhs()
+     
+     For implicit-explicit schemes, convective() will typically
+     be treated explicitly, whilst diffusive() will be treated implicitly.
+     For unsplit methods, both convective and diffusive will be called
+     and the sum used to evolve the system:
+     rhs() = convective() + diffusive()
+   */
+  virtual int convective(BoutReal t) {return 1;}
+  virtual int diffusive(BoutReal t) {return 1;}
+
   // Implemented by user code to monitor solution
   virtual int outputMonitor(BoutReal simtime, int iter, int NOUT) {return 0;}
   virtual int timestepMonitor(BoutReal simtime, BoutReal dt) {return 0;}
 
   // Functions called by the user to set callback functions
-  void setRHS(rhsfunc fset);
-  void setSplitOperator(rhsfunc conv, rhsfunc diff);
+  void setSplitOperator(bool split=true) {splitop = split;}
   void setPrecon(preconfunc pset) {userprecon = pset;}
   void setJacobian(jacobianfunc jset) {userjacobian = jset;}
 
@@ -117,8 +128,7 @@ protected:
   
   bool bout_constrain(Field3D &var, Field3D &F_var, const char *name);
 private:
-  rhsfunc      userrhs;
-  rhsfunc      userconv, userdiff; // Split operator functions
+  bool splitop;
   preconfunc   userprecon;
   jacobianfunc userjacobian;
 };

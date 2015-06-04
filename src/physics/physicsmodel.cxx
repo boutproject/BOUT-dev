@@ -34,27 +34,19 @@ PhysicsModel::~PhysicsModel() {
 }
 
 int PhysicsModel::runRHS(BoutReal time) {
-  if (!userrhs)
-    return 1;
-  return (*this.*userrhs)(time);
+  return rhs(time);
 }
 
 bool PhysicsModel::splitOperator() {
-  return (userconv != 0);
+  return splitop;
 }
 
 int PhysicsModel::runConvective(BoutReal time) {
-  if(!userconv)
-    return 1;
-  
-  return (*this.*userconv)(time);
+  return convective(time);
 }
 
 int PhysicsModel::runDiffusive(BoutReal time) {
-  if(!userdiff)
-    return 1;
-  
-  return (*this.*userdiff)(time);
+  return diffusive(time);
 }
 
 bool PhysicsModel::hasPrecon() {

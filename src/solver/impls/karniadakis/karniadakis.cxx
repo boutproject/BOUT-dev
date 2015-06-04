@@ -58,8 +58,6 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
     return 1;
   
   output << "\n\tKarniadakis solver\n";
-  
-  split_monitor=true;
  
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;

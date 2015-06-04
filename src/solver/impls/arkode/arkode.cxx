@@ -85,8 +85,6 @@ ArkodeSolver::~ArkodeSolver() {
 int ArkodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   int msg_point = msg_stack.push("Initialising ARKODE solver");
 
-  split_monitor = true;  
-
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
@@ -486,8 +484,6 @@ BoutReal ArkodeSolver::run(BoutReal tout) {
 #endif
 
   MPI_Barrier(BoutComm::get());
-
-  //split_monitor = true;
 
   rhs_ncalls = 0;
   rhs_ncalls_i = 0;
