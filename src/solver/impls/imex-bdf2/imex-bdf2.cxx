@@ -319,9 +319,9 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   
   // G(x) now in fdata
   for(int i=0;i<nlocal;i++) {
-    output.write("\n%d, %e, %e, %e ", i, xdata[i], fdata[i], rhs[i]);
+    //output.write("\n%d, %e, %e, %e ", i, xdata[i], fdata[i], rhs[i]);
     fdata[i] = xdata[i] - implicit_gamma * fdata[i] - rhs[i];
-    output.write("-> %e\n", fdata[i]);
+    //output.write("-> %e\n", fdata[i]);
   }
   
   // Restore data arrays to PETSc
