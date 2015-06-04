@@ -13,6 +13,7 @@
 #include "impls/euler/euler.hxx"
 #include "impls/rk3-ssp/rk3-ssp.hxx"
 #include "impls/power/power.hxx"
+#include "impls/rkgeneric/rkgeneric.hxx"
 
 #include <boutexception.hxx>
 
@@ -80,6 +81,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new PowerSolver;
   } else if(!strcasecmp(type, SOLVERARKODE)){
     return new ArkodeSolver(options);
+  } else if(!strcasecmp(type, SOLVERRKGENERIC)){
+    return new RKGenericSolver(options);
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found
