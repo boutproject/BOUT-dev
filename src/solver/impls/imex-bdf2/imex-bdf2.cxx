@@ -15,6 +15,7 @@
 #include "petscsnes.h"
 
 IMEXBDF2::IMEXBDF2(Options *opt) : Solver(opt), u(0) {
+  
 }
 
 IMEXBDF2::~IMEXBDF2() {
@@ -116,7 +117,14 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   //SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
   MatCreateSeqAIJ(PETSC_COMM_SELF,nlocal,nlocal,3,PETSC_NULL,&Jmf);
   SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
-  
+  MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+
+  // Set tolerances
+  BoutReal atol, rtol; // Tolerances for SNES solver
+  options->get("atol", atol, 1e-16);
+  options->get("rtol", rtol, 1e-10);
+  SNESSetTolerances(snes,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
+
   // Get runtime options
   SNESSetFromOptions(snes);
   
@@ -263,8 +271,10 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   BoutReal *xdata;
   int ierr;
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  for(int i=0;i<nlocal;i++)
-    xdata[i] = rhs[i];   // If G = 0
+  for(int i=0;i<nlocal;i++) {
+    //xdata[i] = rhs[i];   // If G = 0
+    xdata[i] = u_1[i];     // Use previous solution
+  }
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
   /*
@@ -290,7 +300,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   int its;
   SNESGetIterationNumber(snes,&its);
   
-  output << "Number of SNES iterations: " << its << endl;
+  //output << "Number of SNES iterations: " << its << endl;
   
   // Put the result into u
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);

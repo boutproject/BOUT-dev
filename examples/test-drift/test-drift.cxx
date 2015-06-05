@@ -55,7 +55,7 @@ protected:
     
     ddt(Ne) -= Grad_par(Ve);
     
-    ddt(Vort) -= Div_par(Ve);
+    ddt(Vort) = -Div_par(Ve);
     
     return 0;
   }

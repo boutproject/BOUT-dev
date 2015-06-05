@@ -1,8 +1,8 @@
 # Drift wave test
 # All variables in normalised units
 
-timestep = 10
-nout = 10
+timestep = 100
+nout = 100
 
 [mesh]
 
@@ -18,7 +18,10 @@ dx = Lx / (nx - 4)
 dy = Ly / ny
 dz = Lz / nz
 
-ni0 = 1.5 - x
+ne0 = 1 + 0.1*(0.5 - x)
+
+[drift]
+nu = 0.1
 
 [solver]
 
