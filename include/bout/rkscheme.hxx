@@ -57,7 +57,7 @@ class RKScheme {
   ~RKScheme();
 
   //Finish generic initialisation
-  void init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
+  void init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn,
 	    const BoutReal rtolIn, Options *options=NULL);
 
   //Get the time at given stage
@@ -67,9 +67,8 @@ class RKScheme {
   virtual void setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
 			   const BoutReal dt);
 
-  //Calculate the two updated states
-  virtual void setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
-		       BoutReal *resultAlt, const BoutReal dt);
+  //Calculate the output state and return the error estimate (if adaptive)
+  virtual BoutReal setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow);
 
   //Update the timestep
   virtual BoutReal updateTimestep(const BoutReal dt, const BoutReal err);
@@ -98,13 +97,26 @@ class RKScheme {
   BoutReal **stageCoeffs;
   BoutReal **resultCoeffs;
   BoutReal *timeCoeffs;
+  
+  BoutReal *resultAlt;
 
   int nlocal;
   int neq;
   BoutReal atol;
   BoutReal rtol;
-  
+  bool adaptive;
+
   BoutReal dtfac;
+
+  virtual BoutReal getErr(BoutReal *solA, BoutReal *solB);
+
+  virtual void constructOutput(const BoutReal *start, const BoutReal dt, 
+			       const int index, BoutReal *sol);
+
+  virtual void constructOutputs(const BoutReal *start, const BoutReal dt, 
+				const int indexFollow, const int indexAlt,
+				BoutReal *solFollow, BoutReal *solAlt);
+
  private:
   void verifyCoeffs();
   void printButcherTableau();

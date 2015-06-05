@@ -38,10 +38,12 @@ RKScheme::~RKScheme(){
 
   //timeCoeffs
   delete[] timeCoeffs;
+  
+  if(adaptive) delete[] resultAlt;
 };
 
 //Finish generic initialisation
-void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
+void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
 		    const BoutReal rtolIn, Options *options){
 
   bool diagnose;
@@ -53,10 +55,14 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn,
   neq = neqIn;
   atol = atolIn;
   rtol = rtolIn;
-  
+  adaptive = adaptiveIn;
+
   //Allocate storage for stages
   steps = rmatrix(getStageCount(),nlocal);
   zeroSteps();
+
+  //Allocate array for storing alternative order result
+  if(adaptive) resultAlt = new BoutReal[nlocal]; //Result--alternative order
 
   //Will probably only want the following when debugging, but leave it on for now
   if(diagnose){
@@ -93,10 +99,9 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
 };
 
 //Construct the system state at the next time
-void RKScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow, 
-			       BoutReal *resultAlt, const BoutReal dt){
+BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
   //Only really need resultAlt in order to calculate the error, so if not adaptive could avoid it
-  //*and* techinically we can write resultFollow-resultAlt in terms of resultCoeffs and steps.
+  //*and* technically we can write resultFollow-resultAlt in terms of resultCoeffs and steps.
 
   int followInd, altInd;
   if(followHighOrder){
@@ -105,31 +110,100 @@ void RKScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow,
     followInd=1; altInd=0;
   }
 
-  //Initialise the return data
-  for(int i=0;i<nlocal;i++){
-    resultFollow[i]=start[i];
-    resultAlt[i]=start[i];
+  //NOTE: It's slightly slower to split construction of output
+  //      into two separate loops as we're doing below *when*
+  //      we want both solutions, but it's faster when not adaptive.
+  //      To get the best of both worlds we could probably do something
+  //      like:
+  /*      
+	  if(adapative){
+	    constructOutputs;
+	  }else{
+            constructOutput;
+	  };
+   */
+
+  //Get the result
+  constructOutput(start,dt,followInd,resultFollow);
+
+  //If adaptive get the second state
+  if(adaptive){
+    constructOutput(start,dt,altInd,resultAlt);
   }
 
-  //Now construct the two solutions
-  for(int curStage=0;curStage<getStageCount();curStage++){
-    BoutReal followFac=dt*resultCoeffs[curStage][followInd];
-    BoutReal altFac=dt*resultCoeffs[curStage][altInd];
-    for(int i=0;i<nlocal;i++){
-      resultFollow[i]=resultFollow[i]+followFac*steps[curStage][i];
-      resultAlt[i]=resultAlt[i]+altFac*steps[curStage][i];
-    }
-  }
+  //Get the error coefficient
+  return getErr(resultFollow,resultAlt);
 }
 
 BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
-
   return dtfac*dt*pow(rtol/(2.0*err),1.0/(order+1.0));
 }
 
 ////////////////////
 // PRIVATE
 ////////////////////
+
+//Estimate the error, given two solutions
+BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
+  BoutReal err=0.;
+
+  //If not adaptive don't care about the error
+  if(!adaptive){return err;};
+
+  //Get local part of relative error
+  BoutReal local_err = 0.;
+  for(int i=0;i<nlocal;i++) {
+    local_err += fabs(solA[i] - solB[i]) / ( fabs(solA[i]) + fabs(solB[i]) + atol );
+  }
+  //Reduce over procs
+  if(MPI_Allreduce(&local_err, &err, 1, MPI_DOUBLE, MPI_SUM, BoutComm::get())) {
+    throw BoutException("MPI_Allreduce failed");
+  }
+  //Normalise by number of values
+  err /= (BoutReal) neq;
+  
+  return err;
+};
+
+void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt, 
+			       const int index, BoutReal *sol){
+  //Initialise the return data
+  for(int i=0;i<nlocal;i++){
+    sol[i]=start[i];
+  };
+
+  //Construct the solution
+  for(int curStage=0;curStage<getStageCount();curStage++){
+    if(resultCoeffs[curStage][index] == 0.) continue; //Real comparison not great
+    BoutReal fac=dt*resultCoeffs[curStage][index];
+    for(int i=0;i<nlocal;i++){
+      sol[i]=sol[i]+fac*steps[curStage][i];
+    }
+  }
+  
+};
+
+void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt, 
+				const int indexFollow, const int indexAlt, 
+				BoutReal *solFollow, BoutReal *solAlt){
+  //Initialise the return data
+  for(int i=0;i<nlocal;i++){
+    solFollow[i]=start[i];
+    solAlt[i]=start[i];
+  };
+
+  //Construct the solution
+  for(int curStage=0;curStage<getStageCount();curStage++){
+    BoutReal facFol=dt*resultCoeffs[curStage][indexFollow];
+    BoutReal facAlt=dt*resultCoeffs[curStage][indexAlt];
+
+    for(int i=0;i<nlocal;i++){
+      solFollow[i]=solFollow[i]+facFol*steps[curStage][i];
+      solAlt[i]=solAlt[i]+facAlt*steps[curStage][i];
+    }
+  }
+  
+};
 
 //Check that the coefficients are consistent
 void RKScheme::verifyCoeffs(){
