@@ -42,11 +42,7 @@ RKScheme::~RKScheme(){
 
 //Finish generic initialisation
 void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
-		    const BoutReal rtolIn, Options options){
-
-  //Read scheme related options
-  if(options == NULL)
-    options = Options::getRoot()->getSection("solver");
+		    const BoutReal rtolIn, Options *options){
 
   bool diagnose;
   OPTION(options, dtfac, dtfac); //Time step adjustment factor

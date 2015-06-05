@@ -58,7 +58,7 @@ class RKScheme {
 
   //Finish generic initialisation
   void init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
-	    const BoutReal rtolIn, Options options=NULL);
+	    const BoutReal rtolIn, Options *options=NULL);
 
   //Get the time at given stage
   BoutReal setCurTime(const BoutReal timeIn, const BoutReal dt, const int curStage);
