@@ -296,8 +296,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                  
     # Collect time data from file
     if (tslice == 0):           # Only wish to collect time data if it matches 
-        t = collect('t_array')
-        if t == None:
+        try:
+            t = collect('t_array')
+            if t == None:
+                raise ValueError("t_array is None")
+        except:
             t = linspace(0,Nt[0][0], Nt[0][0])
     
     # Obtain number of frames

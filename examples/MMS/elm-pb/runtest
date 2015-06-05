@@ -54,8 +54,8 @@ print("Making MMS elm-pb test")
 shell("make > make.log")
 
 # List of NX values to use
-nxlist = [4, 8, 16] #, 32] #, 64, 128]#, 256]
-nprocs = [2, 4,  4,  8,  8,  8, 8] 
+nxlist = [8, 16, 32, 64]#, 128]#, 256]
+nprocs = [4,  4,  8,  8,  8, 8] 
 
 success = True
 
@@ -69,39 +69,51 @@ for var in varlist:
     error_2[var]   = []  # The L2 error (RMS)
     error_inf[var] = []  # The maximum error
 
-for nx,nproc in zip(nxlist, nprocs):
-    # Generate a new mesh file
-    
-    filename = "grid%d.nc" % nx
-    
-    if isfile(filename):
-        print("Grid file '%s' already exists" % filename)
-    else:
-        print("Creating grid file '%s'" % filename)
-        f = DataFile(filename, create=True)
-        shape.write(nx,nx, f)
-        f.close()
-    
-    args = " MZ="+str(nx)+" grid="+filename #+" solver:timestep="+str(0.1/nx)
-        
-    print("  Running with " + args)
+running = True # Run the simulations?
 
-    # Delete old data
-    shell("rm data/BOUT.dmp.*.nc")
-        
-    # Command to run
-    cmd = "./elm_pb "+args
-    # Launch using MPI
-    s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-        
-    # Save output to log file
-    f = open("run.log."+str(nx), "w")
-    f.write(out)
-    f.close()
+for nx,nproc in zip(nxlist, nprocs):
+    directory = "grid%d" % nx
     
+    if running:
+        # Generate a mesh file if needed
+        
+        filename = "grid%d.nc" % nx
+    
+        if isfile(filename):
+            print("Grid file '%s' already exists" % filename)
+        else:
+            print("Creating grid file '%s'" % filename)
+            f = DataFile(filename, create=True)
+            shape.write(nx,nx, f)
+            f.close()
+    
+        args = " MZ="+str(nx)+" grid="+filename #+" solver:timestep="+str(0.1/nx)
+        
+        print("  Running with " + args)
+
+        
+
+        # Run each simulation in a different directory
+        shell("mkdir " + directory)
+        shell("cp data/BOUT.inp "+directory)
+        # Delete old data
+        shell("rm %s/BOUT.dmp.*.nc" % directory)
+    
+        args = " -d "+directory+" "+args
+    
+        # Command to run
+        cmd = "./elm_pb "+args
+        # Launch using MPI
+        s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
+        
+        # Save output to log file
+        f = open("run.log."+str(nx), "w")
+        f.write(out)
+        f.close()
+        
     for var in varlist:
         # Collect data
-        E = collect("E_"+var, tind=[1,1], info=False, path="data")
+        E = collect("E_"+var, tind=[1,1], info=False, path=directory)
         E = E[:,2:-2, :,:]
         
         # Average error over domain

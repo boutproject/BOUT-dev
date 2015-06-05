@@ -42,6 +42,8 @@ Field3D Jpar, phi; // Parallel current, electric potential
 
 Field3D Jpar2; //  Delp2 of Parallel current
 
+Field3D PsiExact;
+
 // Parameters
 BoutReal density; // Number density [m^-3]
 BoutReal Bbar, Lbar, Tbar, Va; // Normalisation constants
@@ -52,7 +54,6 @@ BoutReal omega_i; // ion gyrofrequency
 
 BoutReal diffusion_par;  // Parallel pressure diffusion
 
-BoutReal viscos_par;  // Parallel viscosity
 BoutReal viscos_perp; // Perpendicular viscosity
 
 // options
@@ -261,7 +262,6 @@ int physics_init(bool restarting) {
   OPTION(options, Zeff,              2.0);    // Z effective
 
   // Viscosity and hyper-viscosity
-  OPTION(options, viscos_par,        -1.0);  // Parallel viscosity
   OPTION(options, viscos_perp,       -1.0);  // Perpendicular viscosity
   
   // parallel pressure diffusion
@@ -477,6 +477,9 @@ int physics_init(bool restarting) {
 
   phi.setBoundary("phi"); // Set boundary conditions
   Jpar.setBoundary("J");
+  Jpar2.setBoundary("J");
+
+  PsiExact.setBoundary("Psi");
 
   return 0;
 }
@@ -535,15 +538,23 @@ int physics_run(BoutReal t) {
   mesh->communicate(phi); 
   
   // Get J from Psi
+  //PsiExact = FieldFactory::get()->create3D("psi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //PsiExact.applyBoundary(t);
+  //Jpar = Delp2(PsiExact);
   Jpar = Delp2(Psi);
   
   Jpar.applyBoundary(t);
   mesh->communicate(Jpar);
-  
+
+  //Jpar = FieldFactory::get()->create3D("j:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+  //Jpar.applyBoundary(t);
+
+  //phi = FieldFactory::get()->create3D("phi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
+
   // Get Delp2(J) from J
   Jpar2 = Delp2(Jpar);
 
-  Jpar2.applyBoundary();
+  Jpar2.applyBoundary(t);
   mesh->communicate(Jpar2);
   
   ////////////////////////////////////////////////////
@@ -594,12 +605,12 @@ int physics_run(BoutReal t) {
   }
 
   // Viscosity terms 
-  if(viscos_par > 0.0)
-    ddt(U) += viscos_par * Grad2_par2(U); // Parallel viscosity
   
   if(viscos_perp > 0.0)
     ddt(U) += viscos_perp * Delp2(U);     // Perpendicular viscosity
-  
+
+  ddt(U) -= 10*(SQ(SQ(mesh->dx))*D4DX4(U) + SQ(SQ(mesh->dz))*D4DZ4(U));
+
   ////////////////////////////////////////////////////
   // Pressure equation
 
@@ -616,6 +627,8 @@ int physics_run(BoutReal t) {
   if(diffusion_par > 0.0)
     ddt(P) += diffusion_par * Grad2_par2(P); // Parallel diffusion
   
+  ddt(P) -= 10*(SQ(SQ(mesh->dx))*D4DX4(P) + SQ(SQ(mesh->dz))*D4DZ4(P));
+
   ////////////////////////////////////////////////////
   // Compressional effects
   
@@ -636,7 +649,6 @@ int physics_run(BoutReal t) {
     if(nonlinear)
       ddt(Vpar) -= bracket(phi, Vpar, bm_exb)*B0; // Advection
   }
-  
 
   if(filter_z) {
     // Filter out all except filter_z_mode
