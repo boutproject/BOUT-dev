@@ -8,6 +8,8 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   label = "rkf45";
   followHighOrder = false;
 
+  OPTION(options, followHighOrder, followHighOrder);
+
   //Allocate coefficient arrays
   stageCoeffs = rmatrix(numStages,numStages);
   resultCoeffs = rmatrix(numStages,numOrders);

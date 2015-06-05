@@ -65,12 +65,6 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
-  // Allocate memory
-  f0 = new BoutReal[nlocal]; //Input
-  f1 = new BoutReal[nlocal]; //Result--alternative order
-  f2 = new BoutReal[nlocal]; //Result--follow order
-  tmpState = new BoutReal[nlocal];
-
   // Put starting values into f0
   save_vars(f0);
   
@@ -84,8 +78,14 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   msg_stack.pop(msg_point);
 
+  // Allocate memory
+  f0 = new BoutReal[nlocal]; //Input
+  f1 = new BoutReal[nlocal]; //Result--alternative order
+  f2 = new BoutReal[nlocal]; //Result--follow order
+  tmpState = new BoutReal[nlocal];
+
   //Initialise scheme
-  scheme->init(nlocal,neq,atol,rtol);
+  scheme->init(nlocal,neq,atol,rtol,options);
 
   return 0;
 }

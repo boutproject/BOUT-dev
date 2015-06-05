@@ -8,6 +8,13 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   label = "rkf34";
   followHighOrder = false;//true;
 
+  OPTION(options, followHighOrder, followHighOrder);
+  if(followHighOrder){
+    dtfac = 0.9;
+  }else{
+    dtfac = 0.5;
+  }
+
   //Allocate coefficient arrays
   stageCoeffs = rmatrix(numStages,numStages);
   resultCoeffs = rmatrix(numStages,numOrders);
