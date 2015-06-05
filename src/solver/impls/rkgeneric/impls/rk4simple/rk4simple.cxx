@@ -6,7 +6,9 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
   numOrders = 2;
   order = 4;
   label = "rk4simple";
-  followHighOrder = true;//false;
+  followHighOrder = true;
+
+  OPTION(options, followHighOrder, followHighOrder);
 
   //Allocate coefficient arrays
   stageCoeffs = rmatrix(numStages,numStages);

@@ -8,6 +8,8 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   label = "cashkarp";
   followHighOrder = false;
 
+  OPTION(options, followHighOrder, followHighOrder);
+
   //Allocate coefficient arrays
   stageCoeffs = rmatrix(numStages,numStages);
   resultCoeffs = rmatrix(numStages,numOrders);

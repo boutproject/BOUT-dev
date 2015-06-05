@@ -17,6 +17,9 @@ RKScheme::RKScheme(Options *opts){
   resultCoeffs = (BoutReal**)NULL;
   timeCoeffs = (BoutReal*)NULL;
   steps = (BoutReal**)NULL;
+
+  //Initialise internals
+  dtfac = 1.0; //Time step factor
 };
 
 //Cleanup
@@ -38,7 +41,17 @@ RKScheme::~RKScheme(){
 };
 
 //Finish generic initialisation
-void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn, const BoutReal rtolIn){
+void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
+		    const BoutReal rtolIn, Options options){
+
+  //Read scheme related options
+  if(options == NULL)
+    options = Options::getRoot()->getSection("solver");
+
+  bool diagnose;
+  OPTION(options, dtfac, dtfac); //Time step adjustment factor
+  OPTION(options, diagnose, false); //Diagnostics enabled?
+
   //Store configuration data
   nlocal = nlocalIn;
   neq = neqIn;
@@ -50,8 +63,10 @@ void RKScheme::init(const int nlocalIn, const int neqIn, const BoutReal atolIn, 
   zeroSteps();
 
   //Will probably only want the following when debugging, but leave it on for now
-  verifyCoeffs();
-  printButcherTableau();
+  if(diagnose){
+    verifyCoeffs();
+    printButcherTableau();
+  };
 };
 
 //Get the time at given stage
@@ -70,7 +85,6 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
 
   //If on the first stage we don't need to modify the state
   if(curStage==0) return;//Don't realy need this as below loop won't execute
-  //if(curStage==1) return;//This shouldn't be here but solution blows up without it at the moment.
   
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
@@ -113,18 +127,8 @@ void RKScheme::setOutputStates(const BoutReal *start, BoutReal *resultFollow,
 }
 
 BoutReal RKScheme::updateTimestep(const BoutReal dt, const BoutReal err){
-  BoutReal dtNew;
-  // BoutReal stepFac=1.0;
-  // if(err<rtol){
-  //   dtNew = stepFac*dt*pow(rtol/(2.0*err),1.0/(order+1.0));
-  // }else{
-  //   dtNew = stepFac*dt*pow(rtol/(2.0*err),1.0/(order));
-  // };
 
-  //dtNew = dt*pow(rtol/(2.0*err),1.0/(order+1.0));
-  dtNew = dt/pow(2.0*err/rtol,1.0/(order+1.0));
-
-  return dtNew;
+  return dtfac*dt*pow(rtol/(2.0*err),1.0/(order+1.0));
 }
 
 ////////////////////
