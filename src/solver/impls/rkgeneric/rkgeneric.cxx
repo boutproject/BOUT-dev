@@ -69,9 +69,6 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
-  // Put starting values into f0
-  save_vars(f0);
-  
   // Get options
   OPTION(options, atol, 1.e-5); // Absolute tolerance
   OPTION(options, rtol, 1.e-3); // Relative tolerance
@@ -80,16 +77,19 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   OPTION(options, adaptive, true); // Prefer adaptive scheme
 
-  msg_stack.pop(msg_point);
-
   // Allocate memory
   f0 = new BoutReal[nlocal]; //Input
   f1 = new BoutReal[nlocal]; //Result--alternative order
   f2 = new BoutReal[nlocal]; //Result--follow order
   tmpState = new BoutReal[nlocal];
 
+  // Put starting values into f0
+  save_vars(f0);
+
   //Initialise scheme
   scheme->init(nlocal,neq,atol,rtol,options);
+
+  msg_stack.pop(msg_point);
 
   return 0;
 }
