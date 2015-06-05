@@ -46,6 +46,10 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   if(Solver::init(restarting, nout, tstep))
     return 1;
 
+  //Read options
+  if(options == NULL)
+    options = Options::getRoot()->getSection("solver");
+
   output << "\n\tRunge-Kutta generic solver with scheme type "<<scheme->getType()<<"\n";
 
   nsteps = nout; // Save number of output steps
