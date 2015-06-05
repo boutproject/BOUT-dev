@@ -14,6 +14,7 @@
 #include "impls/rk3-ssp/rk3-ssp.hxx"
 #include "impls/power/power.hxx"
 #include "impls/rkgeneric/rkgeneric.hxx"
+#include "impls/imex-bdf2/imex-bdf2.hxx"
 
 #include <boutexception.hxx>
 
@@ -83,6 +84,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new ArkodeSolver(options);
   } else if(!strcasecmp(type, SOLVERRKGENERIC)){
     return new RKGenericSolver(options);
+  } else if(!strcasecmp(type, SOLVERIMEXBDF2)) {
+    return new IMEXBDF2(options);
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found

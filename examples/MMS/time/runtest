@@ -29,6 +29,7 @@ options = [
     ,("solver:type=karniadakis", "Karniadakis", "-x")
     ,("solver:type=rk3ssp", "RK3-SSP", "-s")
     ,("solver:type=rk4", "RK4", "-o")
+    ,("solver:type=imexbdf2", "IMEX-BDF2", "-+")
     ]
 
 # List of NX values to use

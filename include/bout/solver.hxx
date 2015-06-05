@@ -83,6 +83,7 @@ using std::string;
 #define SOLVERPOWER       "power"
 #define SOLVERARKODE	  "arkode"
 #define SOLVERRKGENERIC	  "rkgeneric"
+#define SOLVERIMEXBDF2    "imexbdf2"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -151,7 +152,7 @@ class Solver {
   
   int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
   
-  bool split_monitor; //For split operator runtime output
+  bool splitOperator() {return split_operator;}
 
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
