@@ -12,7 +12,7 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   if(followHighOrder){
     dtfac = 0.9;
   }else{
-    dtfac = 0.5;
+    dtfac = 0.9; //Could make this different if needed
   }
 
   //Allocate coefficient arrays
