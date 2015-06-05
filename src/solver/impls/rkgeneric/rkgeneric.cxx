@@ -83,7 +83,6 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   // Allocate memory
   f0 = new BoutReal[nlocal]; //Input
-  f1 = new BoutReal[nlocal]; //Result--alternative order
   f2 = new BoutReal[nlocal]; //Result--follow order
   tmpState = new BoutReal[nlocal];
 
