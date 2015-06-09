@@ -1,6 +1,11 @@
 /**************************************************************************
  * 2nd order IMEX-BDF scheme
  * 
+ * Scheme taken from this paper: http://homepages.cwi.nl/~willem/DOCART/JCP07.pdf
+ * W.Hundsdorfer, S.J.Ruuth "IMEX extensions of linear multistep methods with general
+ * monotonicity and boundedness properties" JCP 225 (2007) 2016-2042
+ *  
+ * 
  * Uses PETSc for the SNES interface
  * 
  **************************************************************************
@@ -80,6 +85,7 @@ class IMEXBDF2 : public Solver {
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
   BoutReal implicit_gamma;
   BoutReal implicit_curtime;
+  int predictor;    // Predictor method
   PetscLib lib; // Handles initialising, finalising PETSc
   Vec      snes_f;  // Used by SNES to store function
   Vec      snes_x;  // Result of SNES

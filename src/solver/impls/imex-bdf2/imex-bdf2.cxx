@@ -115,7 +115,14 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   // Set up the Jacobian
   //MatCreateSNESMF(snes,&Jmf);
   //SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
-  MatCreateSeqAIJ(PETSC_COMM_SELF,nlocal,nlocal,3,PETSC_NULL,&Jmf);
+  MatCreateAIJ(BoutComm::get(),
+               nlocal,nlocal,  // Local sizes
+               PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
+               3,   // Number of nonzero entries in diagonal portion of local submatrix
+               PETSC_NULL,
+               0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
+               PETSC_NULL, 
+               &Jmf);
   SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
   MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
 
@@ -125,6 +132,9 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   options->get("rtol", rtol, 1e-10);
   SNESSetTolerances(snes,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
 
+  // Predictor method
+  options->get("predictor", predictor, 1);
+  
   // Get runtime options
   SNESSetFromOptions(snes);
   
@@ -158,7 +168,8 @@ int IMEXBDF2::run() {
     }
     
     load_vars(u); // Put result into variables
- 
+    run_rhs(simtime); // Run RHS to calculate auxilliary variables
+    
     iteration++; // Advance iteration number
     
     /// Call the monitor function
@@ -203,6 +214,22 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
   // Save to rhs vector
   for(int i=0;i<nlocal;i++)
     rhs[i] = u_1[i] + dt*f_1[i];
+  
+  switch(predictor) {
+  case 1: {
+    // Copy u_1 to u_2, since this will be used in predictor
+    for(int i=0;i<nlocal;i++)
+      u_2[i] = u_1[i];
+    break;
+  }
+  case 2: {
+    // Copy u_1 to u_2 and u, since these will be used in predictor
+    for(int i=0;i<nlocal;i++)
+      u[i] = u_2[i] = u_1[i];
+    break;
+  }
+  }
+  
 
   // Now need to solve u - dt*G(u) = rhs
   // Using run_diffusive as G
@@ -271,9 +298,35 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   BoutReal *xdata;
   int ierr;
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  for(int i=0;i<nlocal;i++) {
-    //xdata[i] = rhs[i];   // If G = 0
-    xdata[i] = u_1[i];     // Use previous solution
+
+  switch(predictor) {
+  case 0: {
+    // Constant, so next step is same as last step
+    for(int i=0;i<nlocal;i++) {
+      xdata[i] = u_1[i];     // Use previous solution
+    }
+    break;
+  }
+  case 1: {
+    // Linear extrapolation from last two steps
+    for(int i=0;i<nlocal;i++) {
+      xdata[i] = 2.*u_1[i] - u_2[i];
+    }
+    break;
+  }
+  case 2: {
+    // Quadratic extrapolation. Uses the fact that u has not yet been overwritten
+    // and still contains u_3
+    for(int i=0;i<nlocal;i++) {
+      xdata[i] = 3.*u_1[i] - 3.*u_2[i] + u[i];
+    }
+  }
+  default: {
+    // Assume that there is no non-linear solve, so G = 0
+    for(int i=0;i<nlocal;i++) {
+      xdata[i] = rhs[i];   // If G = 0
+    }
+  }
   }
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
