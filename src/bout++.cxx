@@ -133,7 +133,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
   for (int i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "-d", 2) == 0) {
+    if (string(argv[i]) == "-d") {
       // Set data directory
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
@@ -142,7 +142,7 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       data_dir = argv[i];
     }
-    if (strncasecmp(argv[i], "-f", 2) == 0) {
+    if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
