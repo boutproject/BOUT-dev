@@ -162,6 +162,7 @@ int IMEXBDF2::run() {
       }
       // No adaptive timestepping for now
       
+      
       simtime += dt;
       
       call_timestep_monitors(simtime, dt);
@@ -173,7 +174,7 @@ int IMEXBDF2::run() {
     iteration++; // Advance iteration number
     
     /// Call the monitor function
-    
+
     if(call_monitors(simtime, s, nsteps)) {
       // User signalled to quit
       break;
@@ -181,6 +182,7 @@ int IMEXBDF2::run() {
     
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
+    
   }
   
   msg_stack.pop(msg_point);
@@ -230,7 +232,6 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
   }
   }
   
-
   // Now need to solve u - dt*G(u) = rhs
   // Using run_diffusive as G
   solve_implicit(curtime+dt, dt);
@@ -254,7 +255,6 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
  * f_2 - Time-derivative of u_2
  */
 void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt) {
-  
   BoutReal *tmp;
   // Move f_1 to f_2, then f_1 will be overwritten with new time-derivative
   tmp = f_1;
@@ -320,6 +320,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     for(int i=0;i<nlocal;i++) {
       xdata[i] = 3.*u_1[i] - 3.*u_2[i] + u[i];
     }
+    break;
   }
   default: {
     // Assume that there is no non-linear solve, so G = 0
@@ -328,6 +329,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
     }
   }
   }
+  //output.write("\nIMEX: Solving, %e, %e, %e, (%e)\n", u[0], u_2[0], u_1[0], xdata[0]);
+  
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
   /*
@@ -339,7 +342,6 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
   MatView(Jmf, 	PETSC_VIEWER_STDOUT_SELF);
   */
-  
   SNESSolve(snes,NULL,snes_x);
   
   // Find out if converged
@@ -357,6 +359,8 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
   
   // Put the result into u
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
+  //output.write("\nIMEX: Done -> %e\n", xdata[0]);
+  
   for(int i=0;i<nlocal;i++)
     u[i] = xdata[i];
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
@@ -364,7 +368,6 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
 
 // f = (x - gamma*G(x)) - rhs
 PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
-  
   BoutReal *xdata, *fdata;
   int ierr;
   
