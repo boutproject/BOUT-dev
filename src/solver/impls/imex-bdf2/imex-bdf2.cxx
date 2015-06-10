@@ -82,8 +82,8 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   rhs = new BoutReal[nlocal];
 
   // Put starting values into u
-  save_vars(u);
-  
+  saveVars(u);
+
   // Get options
   OPTION(options, timestep, tstep); // Internal timestep
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
@@ -168,7 +168,7 @@ int IMEXBDF2::run() {
       call_timestep_monitors(simtime, dt);
     }
     
-    load_vars(u); // Put result into variables
+    loadVars(u);// Put result into variables
     run_rhs(simtime); // Run RHS to calculate auxilliary variables
     
     iteration++; // Advance iteration number
@@ -209,10 +209,10 @@ void IMEXBDF2::startup(BoutReal curtime, BoutReal dt) {
   u = tmp;
   
   // Calculate time-derivative of u_1, put into f_1
-  load_vars(u_1);
+  loadVars(u_1);
   run_convective(curtime);
-  save_derivs(f_1);
-  
+  saveDerivs(f_1);
+
   // Save to rhs vector
   for(int i=0;i<nlocal;i++)
     rhs[i] = u_1[i] + dt*f_1[i];
@@ -267,10 +267,11 @@ void IMEXBDF2::take_step(BoutReal curtime, BoutReal dt) {
   u = tmp;
 
   // Calculate time-derivative of u_1, put into f_1
-  load_vars(u_1);
-  run_convective(curtime);
-  save_derivs(f_1);
   
+  loadVars(u_1);
+  run_convective(curtime);
+  saveDerivs(f_1);
+
   // Save to rhs vector
   for(int i=0;i<nlocal;i++)
     rhs[i] = (4./3)*u_1[i] - (1./3)*u_2[i] + (4./3)*dt*f_1[i] - (2./3)*dt*f_2[i];
@@ -374,14 +375,14 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   // Get data from PETSc into BOUT++ fields
   ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
   
-  load_vars(xdata);
+  loadVars(xdata);
   
   // Call RHS function
   run_diffusive(implicit_curtime);
   
   // Copy derivatives back
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
-  save_derivs(fdata);
+  saveDerivs(fdata);
   
   // G(x) now in fdata
   for(int i=0;i<nlocal;i++) {
@@ -395,6 +396,199 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
   
   return 0;
+}
+
+/*!
+ * Loop over arrays, using template parameter
+ * to specify the operation to be performed at each point
+ * 
+ */
+template< class Op >
+void IMEXBDF2::loopVars(BoutReal *u) {
+  // Loop over 2D variables
+  for(vector< VarStr<Field2D> >::const_iterator it = f2d.begin(); it != f2d.end(); ++it) {
+    Op op(it->var, it->F_var); // Initialise the operator
+    
+    if(it->evolve_bndry) {
+      // Include boundary regions
+      
+      // Inner X
+      if(mesh->firstX() && !mesh->periodicX) {
+        for(int jx=0;jx<mesh->xstart;++jx)
+          for(int jy=mesh->ystart;jy<=mesh->yend;++jy) {
+            op.run(jx, jy, u); ++u;
+          }
+      }
+      
+      // Outer X
+      if(mesh->lastX() && !mesh->periodicX) {
+        for(int jx=mesh->xend+1;jx<mesh->ngx;++jx)
+          for(int jy=mesh->ystart;jy<=mesh->yend;++jy) {
+            op.run(jx, jy, u); ++u;
+          }
+      }
+      // Lower Y
+      for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
+        for(int jy=0;jy<mesh->ystart;++jy) {
+          op.run(*xi, jy, u); ++u;
+        }
+      }
+      
+      // Upper Y
+      for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
+        for(int jy=mesh->yend+1;jy<mesh->ngy;++jy) {
+          op.run(*xi, jy, u); ++u;
+        }
+      }
+    }
+    
+    // Bulk of points
+    for(int jx=mesh->xstart; jx <= mesh->xend; ++jx)
+      for(int jy=mesh->ystart; jy <= mesh->yend; ++jy) {
+        op.run(jx, jy, u); ++u;
+      }
+  }
+  
+  // Loop over 3D variables
+  for(vector< VarStr<Field3D> >::const_iterator it = f3d.begin(); it != f3d.end(); ++it) {
+    Op op(it->var, it->F_var); // Initialise the operator
+    if(it->evolve_bndry) {
+      // Include boundary regions
+      
+      // Inner X
+      if(mesh->firstX() && !mesh->periodicX) {
+        for(int jx=0;jx<mesh->xstart;++jx)
+          for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
+            for(int jz=0; jz < mesh->ngz-1; ++jz) {
+              op.run(jx, jy, jz, u); ++u;
+            }
+      }
+      
+      // Outer X
+      if(mesh->lastX() && !mesh->periodicX) {
+        for(int jx=mesh->xend+1;jx<mesh->ngx;++jx)
+          for(int jy=mesh->ystart;jy<=mesh->yend;++jy)
+            for(int jz=0; jz < mesh->ngz-1; ++jz) {
+              op.run(jx, jy, jz, u); ++u;
+            }
+      }
+      // Lower Y
+      for(RangeIterator xi = mesh->iterateBndryLowerY(); !xi.isDone(); ++xi) {
+        for(int jy=0;jy<mesh->ystart;++jy)
+          for(int jz=0; jz < mesh->ngz-1; ++jz) {
+            op.run(*xi, jy, jz, u); ++u;
+          }
+      }
+      
+      // Upper Y
+      for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); ++xi) {
+        for(int jy=mesh->yend+1;jy<mesh->ngy;++jy)
+          for(int jz=0; jz < mesh->ngz-1; ++jz) {
+            op.run(*xi, jy, jz, u); ++u;
+          }
+      }
+    }
+    
+    // Bulk of points
+    for(int jx=mesh->xstart; jx <= mesh->xend; ++jx)
+      for(int jy=mesh->ystart; jy <= mesh->yend; ++jy)
+        for(int jz=0; jz < mesh->ngz-1; ++jz) {
+          op.run(jx, jy, jz, u); ++u;
+        }
+  }
+}
+
+///////////////////////////////////////////////////////////////////
+
+class SaveVarOp {
+public:
+  // Initialise with a Field2D iterator
+  SaveVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  // Initialise with a Field3D iterator
+  SaveVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  
+  // Perform operation on 2D field
+  inline void run(int jx, int jy, BoutReal *u) {
+    *u = (*var2D)(jx,jy);
+  }
+  
+  // Perform operation on 3D field
+  inline void run(int jx, int jy, int jz, BoutReal *u) {
+    *u = (*var3D)(jx,jy,jz);
+  }
+private:
+  Field2D *var2D;
+  Field3D *var3D;
+};
+
+/*!
+ * Copy data from fields into array
+ */
+void IMEXBDF2::saveVars(BoutReal *u) {
+  //loopVars<SaveVarOp>(u);
+  save_vars(u);
+}
+
+///////////////////////////////////////////////////////////////////
+
+class LoadVarOp {
+public:
+  // Initialise with a Field2D iterator
+  LoadVarOp(Field2D *var, Field2D *F_var) : var2D(var) {}
+  // Initialise with a Field3D iterator
+  LoadVarOp(Field3D *var, Field3D *F_var) : var3D(var) {}
+  
+  // Perform operation on 2D field
+  inline void run(int jx, int jy, BoutReal *u) {
+    (*var2D)(jx,jy) = *u;
+  }
+  
+  // Perform operation on 3D field
+  inline void run(int jx, int jy, int jz, BoutReal *u) {
+    (*var3D)(jx,jy,jz) = *u;
+  }
+private:
+  Field2D *var2D;
+  Field3D *var3D;
+};
+
+/*!
+ * Copy data from array into fields
+ */
+void IMEXBDF2::loadVars(BoutReal *u) {
+  //loopVars<LoadVarOp>(u);
+  load_vars(u);
+}
+
+///////////////////////////////////////////////////////////////////
+
+class SaveDerivsOp {
+public:
+  // Initialise with a Field2D iterator
+  SaveDerivsOp(Field2D *var, Field2D *F_var) : F_var2D(F_var) {}
+  // Initialise with a Field3D iterator
+  SaveDerivsOp(Field3D *var, Field3D *F_var) : F_var3D(F_var) {}
+  
+  // Perform operation on 2D field
+  inline void run(int jx, int jy, BoutReal *u) {
+    *u = (*F_var2D)(jx,jy);
+  }
+  
+  // Perform operation on 3D field
+  inline void run(int jx, int jy, int jz, BoutReal *u) {
+    *u = (*F_var3D)(jx,jy,jz);
+  }
+private:
+  Field2D *F_var2D;
+  Field3D *F_var3D;
+};
+
+/*!
+ * Copy time derivatives from fields into array
+ */
+void IMEXBDF2::saveDerivs(BoutReal *u) {
+  //loopVars<SaveDerivsOp>(u);
+  save_derivs(u);
 }
 
 #endif // BOUT_HAS_PETSC
