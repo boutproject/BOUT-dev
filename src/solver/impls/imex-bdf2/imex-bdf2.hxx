@@ -91,6 +91,13 @@ class IMEXBDF2 : public Solver {
   Vec      snes_x;  // Result of SNES
   SNES     snes;    // SNES context
   Mat      Jmf;     // Matrix-free Jacobian
+  
+  template< class Op >
+  void loopVars(BoutReal *u);
+  
+  void saveVars(BoutReal *u);
+  void loadVars(BoutReal *u);
+  void saveDerivs(BoutReal *u);
 };
 
 #endif // __IMEXBDF2_SOLVER_H__
