@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+
+# NOTE: THE BOUT-RUNNERS ARE UNDER REVISION. THINGS MAY NOT WORK AS
+# EXPECTED
+
+
 """Classes and functions for running several mpi-runs with BOUT++ at
    once. All post-processing are placed in own files.
    Run demo() for instructions."""
@@ -13,8 +19,8 @@ from builtins import object
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.773beta'
-__date__    = '03.06.2015'
+__version__ = '0.774beta'
+__date__    = '11.06.2015'
 
 import textwrap
 import os
@@ -88,7 +94,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
         'solvers',\
         'nproc',\
         'methods',\
-        'grids',\
+        'n_points',\
         'directory',\
         'nout',\
         'timestep',\
@@ -286,7 +292,7 @@ def demo(argument = None, plot_type = False, convergence_type = False):
         'solvers',\
         'nproc',\
         'methods',\
-        'grids',\
+        'n_points',\
         'directory',\
         'nout',\
         'timestep',\
@@ -501,8 +507,8 @@ def demo(argument = None, plot_type = False, convergence_type = False):
             message += my_method +\
                        "{'ddx':{'upwind':['U1', 'W3'], 'second':['C2']},"+\
                        " 'ddy':{'upwind':['U1']}}\n"
-        # Setting the grids
-        my_grid = "    my_class_instance.grids = "
+        # Setting the n_points
+        my_grid = "    my_class_instance.n_points = "
         if 'test-wave' in example_folder:
             message += my_grid + "{'mesh:ny':spacing}\n"
         elif 'diffusion2' in example_folder:
@@ -611,13 +617,13 @@ def demo(argument = None, plot_type = False, convergence_type = False):
                                 " The values of the top level"+\
                                 " dictionary must be a list of the methods"+\
                                 " (f.ex. 'C2', 'W3' etc.")
-            elif argument == 'grids':
+            elif argument == 'n_points':
                 messages.append("Must be given as a dictionary.")
                 messages.append("The keys of the dictionary must be"+\
                                 " either 'mesh:nx', 'mesh:ny' or 'MZ'.")
                 messages.append("The values of the keys must be"+\
                                 " a list of number representing the"+\
-                                " number of grids in a run.")
+                                " number of points in the grid.")
                 messages.append("Note that these numbers can be altered"+\
                                 " by 'convergence_plot' in order to"+\
                                 " get equal grid size in all directions.")
@@ -796,7 +802,7 @@ class basic_runner(object):
                  solvers    = False,\
                  nproc      = 1,\
                  methods    = False,\
-                 grids      = False,\
+                 n_points   = False,\
                  directory  = 'data',\
                  nout       = False,\
                  timestep   = False,\
@@ -811,7 +817,7 @@ class basic_runner(object):
         self.solvers    = solvers
         self.nproc      = nproc
         self.methods    = methods
-        self.grids      = grids
+        self.n_points   = n_points
         self.directory  = directory
         self.nout       = nout
         self.timestep   = timestep
@@ -1030,7 +1036,7 @@ class basic_runner(object):
 
         # List of all the data members
         data_members = [self.solvers, self.nproc, self.methods,\
-                        self.grids, self.nout, self.timestep,\
+                        self.n_points, self.nout, self.timestep,\
                         self.MXG, self.MYG, self.additional]
 
         # List comprehension to get the non-false values
@@ -1057,7 +1063,7 @@ class basic_runner(object):
             self.list_of_possibilities(self.solvers, changed_members, 1,\
             'solver')
         grid_possibilities = \
-            self.list_of_possibilities(self.grids, changed_members, 2)
+            self.list_of_possibilities(self.n_points, changed_members, 2)
         method_possibilities = \
             self.list_of_possibilities(self.methods, changed_members, 3)
 
@@ -1138,8 +1144,9 @@ class basic_runner(object):
                 #      (due to  historical reasons)
 
                 # Therefore, for each combination in all_combinations, we will
-                # make new combinations with the grids given one of the keys of
-                # self.grids
+                # make new combinations with the number of points given
+                # in one of the keys of
+                # self.n_points
 
                 # A list to be filled with the number of grid points (the
                 # range) for each direction nx, ny and MZ (if found)
@@ -1147,11 +1154,11 @@ class basic_runner(object):
 
                 # First we check if MZ is set in self.grid, as this has the
                 # constraint that it needs to be on the form 2^n+1
-                grid_keys = list(self.grids.keys())
+                grid_keys = list(self.n_points.keys())
                 if 'MZ' in grid_keys:
                     # If MZ is found, this is going to be the basis for the
                     # order grid numbers
-                    convergence_list_z = self.grids['MZ']
+                    convergence_list_z = self.n_points['MZ']
                     # The number of inner grid points
                     inner_points = [number-1 for number in\
                                     convergence_list_z]
@@ -1180,8 +1187,8 @@ class basic_runner(object):
                         else:
                             the_direction = 'mesh:nx'
 
-                        min_convergence_list = min(self.grids[the_direction])
-                        max_convergence_list = max(self.grids[the_direction])
+                        min_convergence_list = min(self.n_points[the_direction])
+                        max_convergence_list = max(self.n_points[the_direction])
                         # Create a range from the min and the max
                         min_power = round(math.log(min_convergence_list,2))
                         max_power = round(math.log(min_convergence_list,2))
@@ -1204,7 +1211,7 @@ class basic_runner(object):
                         # MZ is not of importance
                         # Find inner_points from either ny or nx
                         if 'mesh:ny' in grid_keys:
-                            convergence_list_y = self.grids['mesh:ny']
+                            convergence_list_y = self.n_points['mesh:ny']
                             # The number of inner grid points
                             inner_points = [number for number in\
                                             convergence_list_y]
@@ -1220,7 +1227,7 @@ class basic_runner(object):
                                     grid_keys, inner_points, ranges)
                         elif 'mesh:nx' in grid_keys:
                             # Only x is of importance
-                            convergence_list_x = self.grids['mesh:nx']
+                            convergence_list_x = self.n_points['mesh:nx']
                             x_range =\
                                 ['mesh:nx=' + str(nr)\
                                     for nr in convergence_list_x]
@@ -1347,8 +1354,8 @@ class basic_runner(object):
             if kwargs['convergence_type'] == 'spatial':
                 # How many runs must we make before we can make a
                 # convergence plot
-                keys = list(self.grids.keys())
-                self.no_runs_in_group = len(self.grids[keys[0]])
+                keys = list(self.n_points.keys())
+                self.no_runs_in_group = len(self.n_points[keys[0]])
             elif kwargs['convergence_type'] == 'temporal':
                 # How many runs must we make before we can make a
                 # convergence plot
@@ -1401,13 +1408,13 @@ class basic_runner(object):
             # Make the non-iterable an iterable
             self.timestep = [self.timestep]
 
-        # Check if the grids are set correctly
-        if type(self.grids) == dict:
-            first_keys = list(self.grids.keys())
-        if self.grids != False and (type(self.grids) != dict\
-          or hasattr(self.grids[first_keys[0]], "__iter__") == False):
+        # Check if the number of points are set correctly
+        if type(self.n_points) == dict:
+            first_keys = list(self.n_points.keys())
+        if self.n_points != False and (type(self.n_points) != dict\
+          or hasattr(self.n_points[first_keys[0]], "__iter__") == False):
             # Make the non-iterable an iterable
-            self.grids = [self.grids]
+            self.n_points = [self.n_points]
 
         # Check if the additional is set correctly
         if type(self.additional) == dict:
@@ -1441,7 +1448,7 @@ class basic_runner(object):
         grid_folder = []
         rm=[]
         directions = ['ddx', 'ddy', 'ddz']
-        grids = ['nx', 'ny', 'MZ']
+        n_points = ['nx', 'ny', 'MZ']
 
         for expression in combination:
             # Set solver, MYG, MXG, nout and timestep to be removed from
@@ -1472,7 +1479,7 @@ class basic_runner(object):
                         methods.append(expression.replace(':','-'))
                         rm.append(expression)
                 # Finding the grid folder
-                for grid in grids:
+                for grid in n_points:
                     if grid in expression:
                         # Append the grid as a part of the folder name
                         grid_folder.append(expression.replace(':','-'))
@@ -1707,7 +1714,7 @@ class run_with_plots(basic_runner):
                  solvers    = False,\
                  nproc      = 1,\
                  methods    = False,\
-                 grids      = False,\
+                 n_points   = False,\
                  directory  = 'data',\
                  nout       = False,\
                  timestep   = False,\
@@ -1730,7 +1737,7 @@ class run_with_plots(basic_runner):
         super(run_with_plots, self).__init__(solvers    = solvers,\
                                              nproc      = nproc,\
                                              methods    = methods,\
-                                             grids      = grids,\
+                                             n_points   = n_points,\
                                              directory  = directory,\
                                              nout       = nout,\
                                              timestep   = timestep,\
@@ -1774,7 +1781,7 @@ class run_with_plots(basic_runner):
         # The error checker is called by the constructor, so all we have
         # to do is to create an instance of the class
         plotter_error_checker =\
-           check_for_plotters_errors(self.plot_type, grids=self.grids,
+           check_for_plotters_errors(self.plot_type, n_points=self.n_points,
                                      timestep=self.timestep, **kwargs)
 #}}}
 
@@ -2023,7 +2030,7 @@ class basic_qsub_runner(basic_runner):
                  solvers    = False,\
                  nproc      = 1,\
                  methods    = False,\
-                 grids      = False,\
+                 n_points   = False,\
                  directory  = 'data',\
                  nout       = False,\
                  timestep   = False,\
@@ -2045,7 +2052,7 @@ class basic_qsub_runner(basic_runner):
         super(basic_qsub_runner, self).__init__(solvers    = solvers,\
                                                 nproc      = nproc,\
                                                 methods    = methods,\
-                                                grids      = grids,\
+                                                n_points   = n_points,\
                                                 directory  = directory,\
                                                 nout       = nout,\
                                                 timestep   = timestep,\
@@ -2396,7 +2403,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
                  solvers    = False,\
                  nproc      = 1,\
                  methods    = False,\
-                 grids      = False,\
+                 n_points   = False,\
                  directory  = 'data',\
                  nout       = False,\
                  timestep   = False,\
@@ -2418,7 +2425,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
                                                   solvers    = solvers,\
                                                   nproc      = nproc,\
                                                   methods    = methods,\
-                                                  grids      = grids,\
+                                                  n_points   = n_points,\
                                                   directory  = directory,\
                                                   nout       = nout,\
                                                   timestep   = timestep,\
@@ -2439,7 +2446,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
         # Call the error checker for plotter errors from
         # common_bout_functions
         plotter_error_checker =\
-           check_for_plotters_errors(self.plot_type, grids=self.grids,
+           check_for_plotters_errors(self.plot_type, n_points=self.n_points,
                                      timestep=self.timestep, **kwargs)
 
         # Call the qsub error checker

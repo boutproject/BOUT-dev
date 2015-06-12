@@ -686,7 +686,7 @@ class convergence_plotter(bout_plotter):
             # Find the folder name from run_groups
             folder_names = run_groups[group]['dmp_folder']
             # Appendable lists
-            grids = []
+            n_points = []
             timestep = []
             for folder_name in folder_names:
                 # Split the strings by /
@@ -704,7 +704,7 @@ class convergence_plotter(bout_plotter):
                 # integer number
                 number = int(re.findall(r'\d+', mesh_folder)[0])
                 # Add the number to the grid list
-                grids.append(number)
+                n_points.append(number)
 
                 # Find the folder containing the timestep folder
                 timestep_folder = [folder for folder in folder_list if\
@@ -724,9 +724,9 @@ class convergence_plotter(bout_plotter):
                 # Save the number as a float
                 timestep.append(float(timestep_now))
 
-            # Cast grids in to a dictionary (due to the construction of
+            # Cast n_points in to a dictionary (due to the construction of
             # the plotter_error_checker)
-            grids = {'reconstructed_grids':grids}
+            n_points = {'reconstructed_n_points':n_points}
 
             # Check for errors
             plotter_error_checker =\
@@ -735,7 +735,7 @@ class convergence_plotter(bout_plotter):
                                          convergence_type =
                                          self.convergence_type,\
                                          timestep = timestep,\
-                                         grids = grids)
+                                         n_points = n_points)
 #}}}
 
 # Main function

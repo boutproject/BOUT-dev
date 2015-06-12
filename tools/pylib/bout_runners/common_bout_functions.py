@@ -262,11 +262,11 @@ class check_for_plotters_errors(object):
 
         if kwargs['convergence_type'] == 'spatial':
             # Check if the conditions are set for a convergence test
-            if kwargs['grids'] == False:
+            if kwargs['n_points'] == False:
                 raise TypeError("In order to make a convergence test, "+\
                                 "you must specify a range of grid values.")
-            keys = list(kwargs['grids'].keys())
-            if len(kwargs['grids'][keys[0]]) <= 1:
+            keys = list(kwargs['n_points'].keys())
+            if len(kwargs['n_points'][keys[0]]) <= 1:
                 raise TypeError("In order to make a convergence test, "+\
                                 "you must specify a range of grid values.")
         elif kwargs['convergence_type'] == 'temporal':
