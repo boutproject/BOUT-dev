@@ -176,7 +176,7 @@ def addnoise(path=".", var=None, scale=1e-5):
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
     nfiles = len(file_list)
 
-    print "Number of data files: ", nfiles
+    print("Number of data files: ", nfiles)
 
     for file in file_list:
         print(file)
@@ -275,7 +275,7 @@ def create(averagelast=1, final=-1, path="data", output="./", informat="nc", out
         infile.close()
         outfile.close()
 
-def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None):
+def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outformat=None, mxg=2, myg=2):
     """Resize restart files across NPES processors.
 
     Does not check if new processor arrangement is compatible with the branch cuts. In this respect restart.split is safer. However, BOUT++ checks the topology during initialisation anyway so this is not too serious.
@@ -299,9 +299,6 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
     -------
     True on success
     """
-
-    mxg = 2
-    myg = 2
 
     if npes <= 0:
         print("ERROR: Negative or zero number of processors")
@@ -429,13 +426,13 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                   if ix == 0:
                       ixstart = 0
                   ixend = -mxg
-                  if ix == old_nxpe:
+                  if ix == old_nxpe-1:
                       ixend = 0
                   iystart = myg
                   if iy == 0:
                       iystart = 0
                   iyend = -myg
-                  if iy == old_nype:
+                  if iy == old_nype-1:
                       iyend = 0
                   data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend]
           elif ndims == 3:
@@ -447,13 +444,13 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                   if ix == 0:
                       ixstart = 0
                   ixend = -mxg
-                  if ix == old_nxpe:
+                  if ix == old_nxpe-1:
                       ixend = 0
                   iystart = myg
                   if iy == 0:
                       iystart = 0
                   iyend = -myg
-                  if iy == old_nype:
+                  if iy == old_nype-1:
                       iyend = 0
                   data[ix*old_mxsub+ixstart:(ix+1)*old_mxsub+2*mxg+ixend, iy*old_mysub+iystart:(iy+1)*old_mysub+2*myg+iyend, :] = infile_list[i].read(v)[ixstart:old_mxsub+2*mxg+ixend, iystart:old_mysub+2*myg+iyend, :]
           else:
@@ -476,7 +473,7 @@ def redistribute(npes, path="data", nxpe=None, output=".", informat=None, outfor
                   # Field2D
                   outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg])
               elif ndims == 3:
-                  # Field2D
+                  # Field3D
                   outfile.write(v,data[ix*mxsub:(ix+1)*mxsub+2*mxg, iy*mysub:(iy+1)*mysub+2*myg, :])
               else:
                   print("ERROR: variable found with unexpected number of dimensions,",f.ndims(v))
