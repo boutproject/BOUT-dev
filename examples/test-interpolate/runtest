@@ -9,15 +9,19 @@ from boutdata import collect
 from numpy import sqrt, max, abs, mean, array, log, pi, polyfit, meshgrid, exp, sin, cos
 from sys import stdout, exit
 import matplotlib.pyplot as plt
+from scipy import interpolate
+from scipy.interpolate import interp2d
 
 # List of NX values to use
 nxlist = [16, 32, 64, 128, 256, 512]
 
+# Only testing 2D (x, z) slices, so only need one processor
 nproc = 1
 
-varlist = ['a', 'b', 'c']  # Variables to compare
+# Variables to compare
+varlist = ['a', 'b', 'c']
 markers = ['bo', 'r^', 'kx']
-labels = [r'$a$', r'$b$', r'$c$']
+labels = [r'$'+var+r'$' for var in varlist]
 
 MPIRUN=getmpirun()
 
@@ -46,9 +50,8 @@ for nx in nxlist:
     with open("run.log."+str(nx), "w") as f:
         f.write(out)
 
-     # Collect output data
+    # Collect output data
     for var in varlist:
-        initial = collect(var, path="data", xguards=False, info=False)
         interp = collect(var+"_interp", path="data", xguards=False, info=False)
         solution = collect(var+"_solution", path="data", xguards=False, info=False)
 
@@ -60,7 +63,7 @@ for nx in nxlist:
         error_2[var].append( l2 )
         error_inf[var].append( linf )
 
-        print("%s : l-2 %f l-inf %f" % (var, l2, linf))
+        print("{0:s} : l-2 {1:.8f} l-inf {2:.8f}".format(var, l2, linf))
 
 dx = 1./array(nxlist)
 
@@ -74,7 +77,7 @@ for var,mark,label in zip(varlist, markers, labels):
 
     fit = polyfit(log(dx), log(error_2[var]), 1)
     order = fit[0]
-    stdout.write("%s Convergence order = %f" % (var, order))
+    stdout.write("{0:s} Convergence order = {1:.2f}".format(var, order))
 
     if order < 2.5: # Should be third order accurate
         print("............ FAIL")

@@ -15,20 +15,14 @@ MYG = 0
 # grid = "test_interpolate.grd.nc"
 
 [mesh]
-symmetricGlobalX = true
-periodicX = true
+symmetricGlobalX = false
+periodicX = false
 dx = 0.3926990816 # 2pi / 16
 nx = 8
 ny = 1
 
-[mesh:ddx]
-first = C4
-
-[mesh:ddz]
-first = C4
-
 [interpolation]
-type = "lagrange4pt"
+type = "hermitespline"
 
 [a]
 solution = sin(3*z)
@@ -37,6 +31,5 @@ solution = sin(3*z)
 solution = cos(2*pi*x)
 
 [c]
-solution = sin(2*pi*x)
-# solution = gauss(x-0.5,0.2)*gauss(y)*sin(z)
+solution = gauss(x-0.5,0.2)*gauss(y)*sin(z)
 
