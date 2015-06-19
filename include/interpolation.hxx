@@ -100,6 +100,11 @@ public:
     free_i3tensor(k_corner);
   }
 
+  /// Callback function for InterpolationFactory
+  static Interpolation* CreateHermiteSpline() {
+    return new HermiteSpline;
+  }
+
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
   void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
 

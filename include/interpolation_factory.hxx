@@ -10,13 +10,17 @@
 using std::string;
 
 class InterpolationFactory {
+public:
+  /// Callback function definition for creating Interpolation objects
+  typedef Interpolation* (*CreateInterpCallback)();
+private:
   /// Prevent instantiation of this class
   InterpolationFactory();
   /// The only instance of this class (singleton)
   static InterpolationFactory* instance;
 
   /// Database of available interpolations
-  std::map<string, Interpolation*> interp_map;
+  std::map<string, CreateInterpCallback> interp_map;
   /// Look up interpolations in database
   Interpolation* findInterpolation(const string &name);
 public:
@@ -25,12 +29,16 @@ public:
   /// Return a pointer to the only instance
   static InterpolationFactory* getInstance();
 
+  static void cleanup();
+
+  inline string getDefaultInterpType();
+
   /// Create an interpolation object
-  Interpolation* createInterpolation(Options *opts = nullptr);
-  Interpolation* createInterpolation(const string &name, Options *opts = nullptr);
+  Interpolation* create(Options *options = nullptr);
+  Interpolation* create(const string &name, Options *options = nullptr);
 
   /// Add available interpolations to database
-  void add(Interpolation* interp, const string &name);
+  void add(CreateInterpCallback interp, const string &name);
 };
 
 #endif //__INTERP_FACTORY_H__
