@@ -116,4 +116,40 @@ public:
 
 };
 
+class Lagrange4pt : public Interpolation {
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+
+  // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
+  int y_offset;
+
+  Field3D t_x, t_z;
+
+public:
+  Lagrange4pt(int y_offset=0);
+  Lagrange4pt(BoutMask mask, int y_offset=0) : Lagrange4pt(y_offset) {
+    skip_mask = mask;}
+
+  ~Lagrange4pt() {
+    free_i3tensor(i_corner);
+    free_i3tensor(k_corner);
+  }
+
+  /// Callback function for InterpolationFactory
+  static Interpolation* CreateLagrange4pt() {
+    return new Lagrange4pt;
+  }
+
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+
+  // Use precalculated weights
+  const Field3D interpolate(const Field3D& f) const;
+  // Calculate weights and interpolate
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+  const BoutReal lagrange_4pt(const BoutReal v2m, const BoutReal vm, const BoutReal vp, const BoutReal v2p, const BoutReal offset) const;
+  const BoutReal lagrange_4pt(const BoutReal v[], const BoutReal offset) const;
+};
+
 #endif // __INTERP_H__
