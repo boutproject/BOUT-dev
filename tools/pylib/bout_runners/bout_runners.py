@@ -20,7 +20,7 @@ from builtins import object
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '0.8beta'
-__date__    = '14.06.2015'
+__date__    = '15.06.2015'
 
 import textwrap
 import os
@@ -30,20 +30,25 @@ import glob
 import timeit
 import datetime
 import math
+import six
 from numpy import logspace
 from numbers import Number
 import numpy as np
 from subprocess import check_output
 from boututils import shell, launch, getmpirun
-from bout_runners.bout_plotters import convergence_plotter,\
-                                       solution_plotter,\
-                                       solution_and_error_plotter
-from bout_runners.common_bout_functions import create_folder,\
-                                               find_variable_in_BOUT_inp,\
-                                               warning_printer,\
-                                               check_for_plotters_errors,\
-                                               clean_up_runs,\
-                                               message_chunker
+from boututils.datafile import DataFile
+try:
+    from bout_runners.bout_plotters import convergence_plotter,\
+                                           solution_plotter,\
+                                           solution_and_error_plotter
+    from bout_runners.common_bout_functions import create_folder,\
+                                                   find_variable_in_BOUT_inp,\
+                                                   warning_printer,\
+                                                   check_for_plotters_errors,\
+                                                   clean_up_runs,\
+                                                   message_chunker
+except ImportError:
+    print("Could not load bout_runners from the current directory")
 
 # FIXME: qsub does not always delete the clean-up files??
 #        Fixed for basic qsub (test it), fix for the rest
@@ -784,6 +789,8 @@ def demo(argument = None, plot_type = False, convergence_type = False):
 # object as input
 class basic_runner(object):
 # TODO: Edit here how it is going to be
+# TODO: Tell that self.nx, self.ny and self.nz can be set by the grid
+#       file
 #{{{docstring
     """Class for mpi running one or several runs with BOUT++.
     Calling self.run() will run your BOUT++ program with all possible
@@ -837,35 +844,52 @@ class basic_runner(object):
                  MXG        = None,\
                  MYG        = None,\
                  additional = None,\
-                 restart    = None):
+                 restart    = None,\
+                 cpy_source = None):
         """The constructor of the basic_runner"""
 
         # Setting the member data
         self.nproc      = nproc
         self.directory  = directory
-        self.solver     = solver
-        self.nx         = nx
-        self.ny         = ny
-        self.nz         = nz
-        self.grid_file  = grid_file
-        self.ddx_first  = ddx_first
-        self.ddx_second = ddx_second
-        self.ddx_upwind = ddx_upwind
-        self.ddx_flux   = ddx_flux
-        self.ddy_first  = ddy_first
-        self.ddy_second = ddy_second
-        self.ddy_upwind = ddy_upwind
-        self.ddy_flux   = ddy_flux
-        self.ddz_first  = ddz_first
-        self.ddz_second = ddz_second
-        self.ddz_upwind = ddz_upwind
-        self.ddz_flux   = ddz_flux
-        self.nout       = nout
-        self.timestep   = timestep
-        self.MXG        = MXG
-        self.MYG        = MYG
+        self.solver     = self.set_member_data(solver)
+        self.nx         = self.set_member_data(nx)
+        self.ny         = self.set_member_data(ny)
+        self.nz         = self.set_member_data(nz)
+        self.grid_file  = self.set_member_data(grid_file)
+        self.ddx_first  = self.set_member_data(ddx_first)
+        self.ddx_second = self.set_member_data(ddx_second)
+        self.ddx_upwind = self.set_member_data(ddx_upwind)
+        self.ddx_flux   = self.set_member_data(ddx_flux)
+        self.ddy_first  = self.set_member_data(ddy_first)
+        self.ddy_second = self.set_member_data(ddy_second)
+        self.ddy_upwind = self.set_member_data(ddy_upwind)
+        self.ddy_flux   = self.set_member_data(ddy_flux)
+        self.ddz_first  = self.set_member_data(ddz_first)
+        self.ddz_second = self.set_member_data(ddz_second)
+        self.ddz_upwind = self.set_member_data(ddz_upwind)
+        self.ddz_flux   = self.set_member_data(ddz_flux)
+        self.nout       = self.set_member_data(nout)
+        self.timestep   = self.set_member_data(timestep)
+        self.MXG        = self.set_member_data(MXG)
+        self.MYG        = self.set_member_data(MYG)
         self.additional = additional
         self.restart    = restart
+        self.cpy_source = cpy_source
+
+        # self.additional must be on a special form (see
+        # basic_error_checker).
+        if self.additional != None:
+            if not(hasattr(self.additional, "__iter__")) or\
+               (type(self.additional) == str) or\
+               (type(self.additional) == dict):
+                # Put additional as a double iterable
+                self.additional = [(self.additional)]
+            else:
+                if not(hasattr(self.additional[0], "__iter__")) or\
+                   (type(self.additional[0]) == str) or\
+                   (type(self.additional) == dict):
+                    # Put self.additional as an iterable
+                    self.additional = [self.additional]
 
         # Initializing self.warnings and self.error
         # self.warnings will be filled with warnings
@@ -873,7 +897,6 @@ class basic_runner(object):
         # The warnings and errors will be printed when the destructor is called
         self.warnings   = []
         self.errors     = []
-
 
         # Check if the program is made. Make it if it isn't
         # Find all files with the extension .o
@@ -992,11 +1015,14 @@ class basic_runner(object):
         # run_log is the directory for the run_log (string)
         run_log = self.initialize_run(remove_old)
 
+        # FIXME: YOU ARE CURRENTLY HERE!
+        # TODO: bout_runner_examples/tester.py
+
         # Get the combinations of the member functions
-        all_possibilities, grid_possibilities, timestep_possibilities =\
-            self.get_possibilities()
         import pdb
         pdb.set_trace()
+        all_possibilities, grid_possibilities, timestep_possibilities =\
+            self.get_possibilities()
         all_combinations = self.get_combinations(\
             all_possibilities, grid_possibilities, timestep_possibilities,\
             **kwargs)
@@ -1079,17 +1105,15 @@ class basic_runner(object):
 
 #{{{initialize_run
     def initialize_run(self, remove_old):
-        """Checks for errors and make a run log file if it doesn't exists"""
+        """The purpose of the function is twofold:
+        1. Check for errors
+        2. Make a run_log file if it doesn't exists"""
 
         # Check for errors
-        # FIXME: YOU ARE CURRENTLY HERE
         self.basic_error_check(remove_old)
 
-        import pdb
-        pdb.set_trace()
         # Checks if run_log exists
         run_log = self.directory + "/run_log.txt"
-
         if os.path.isfile(run_log) == False:
             # Create a file to be appended for each run
             f = open(run_log , "w")
@@ -1100,7 +1124,7 @@ class basic_runner(object):
             f.close()
 
             # Preparation of the run
-            print("\nRunning with inputs from '%s'" %self.directory)
+            print("\nRunning with inputs from '" + self.directory + "'")
         return run_log
 #}}}
 
@@ -1109,14 +1133,77 @@ class basic_runner(object):
         """ Returns a list of list containing the possibilities from
         the changed data members"""
 
+        # TODO: Ok, we need a clear idea of what is going to happen in
+        #       this section. We can implement it as a list of
+        #       list...in the end we can say that the possibilities are
+        #       just an "addon" to the normal runner
+        #       Thus, the easiest would be to run the bout runners
+        #       without any looping, that would lead to the normal
+        #       BOUT.inp file.
+        #       The next step would be to change the grid size (this
+        #       would be different than the time and nout)
+        #       Finally, we can add the different combinations of the
+        #       other input parameters
+
+
+        # FIXME: If we are looping over set of grid_files:
+        #        Obtain the nx, ny and nz
+        #        Check that they are good according to the domain split
+
+        # FIXME: Problem with this: If not all the dimensions are set
+        # We start by making a zip of nx, ny and nz
+        # For all elements in this zip, we will do all the combinations
+        # In order to use zip, the parameters must support iteration
+        # We will therefore make the parameters iterable if they are not
+        if not(hasattr(self.nx, "__iter__")):
+            self.nx = [self.nx]
+            self.ny = [self.ny]
+            self.nz = [self.nz]
+        # Do the zip
+        # Notice that zip behaves differently in python 3 and python 2
+        spatial_domain_size = zip(self.nx, self.ny, self.nz)
+
+        # We check that the given combination of nx, ny and nz is
+        # possible to perform with the given nproc
+
+
+        # We also make a zip of timestep and nout (as they come in
+        # pairs)
+        # We will make the parameters iterable if they are not
+        if not(hasattr(self.timestep, "__iter__")):
+            self.timestep = [self.timestep]
+            self.nout     = [self.nout]
+        # Do the zip
+        # Notice that zip behaves differently in python 3 and python 2
+        temporal_domain_size = zip(self.timestep, self.nout)
+
+        # For each combination of nx, ny and nz, there will be all
+        # possible combinations of the timestep nout pair
+
+
+
+
+        # FIXME: This is just about to be implemented, was previously in
+        # #        the error checker
+        # # If the solver is set and it is a string, make it to an
+        # # iterable
+        # # Most variables (except nx, ny and nz can do this)
+        # if self.solver != None and\
+        #    (type(self.solver) == str):
+        #     # Make the strings an iterable
+        #     self.solver = [self.solver]
+
+
+
+
         # List of all the data members
         data_members = [self.solver, self.nproc, self.methods,\
                         self.n_points, self.nout, self.timestep,\
                         self.MXG, self.MYG, self.additional]
 
-        # List comprehension to get the non-false values
+        # List comprehension to get the non-none values
         changed_members = [member for member in data_members\
-                           if member != False]
+                           if member != None]
 
         # Finding all combinations which can be used in the run argument
         nproc_possibilities = \
@@ -1450,37 +1537,50 @@ class basic_runner(object):
 # FIXME: Mention that timestep and nout need to be of the same length
 # FIXME: Mention that MXG, MYG need to be of the same length
 #{{{
+#{{{set_member_data
+    def set_member_data(self, input_parameter):
+        """Returns the input_parameter as a list if it is different than None,
+        and if it is not iterable"""
+
+       # If the input_data is not set, the value in BOUT.inp will
+       # be used
+        if input_parameter != None:
+            # If the input_data is not an iterable, or if it is a
+            # string: Put it to a list
+            if not(hasattr(input_parameter, "__iter__")) or\
+               (type(input_parameter)) == str:
+                input_parameter = [input_parameter]
+
+        return input_parameter
+#}}}
+
 #{{{basic_error_check
     def basic_error_check(self, remove_old):
         """Check if there are any type errors in the data members"""
 
-        # Check if there are any BOUT.inp files in self.directory
+        # nproc and directory is set by default, however, we must check that
+        # the user has not given them as wrong input
+        if type(self.nproc) != int:
+            message  = "nproc is of wrong type\n"+\
+                       "nproc must be given as an int"
+            self.errors.append("TypeError")
+            raise TypeError(message)
+        if type(self.directory) != str:
+            message  = "directory is of wrong type\n"+\
+                       "directory must be given as a str"
+            self.errors.append("TypeError")
+            raise TypeError(message)
+
+        # Check if there are any BOUT.inp files in the self.directory
         inp_file = glob.glob(self.directory + "/BOUT.inp")
         if len(inp_file) == 0:
             self.errors.append("RuntimeError")
-            raise RuntimeError("No BOUT.inp files found in " +\
-                                self.directory)
-
-        # FIXME: This is not really an error, consider to move it
-        # If the solver is set and it is a string, make it to an
-        # iterable
-        # Most variables (except nx, ny and nz can do this)
-        if self.solver != None and\
-           (type(self.solver) == str):
-            # Make the strings an iterable
-            self.solver = [self.solver]
-
-        # FIXME: Just patched this, but it needs a cleanup. Maybe
-        # redefine the possibilities function
-
-        # TODO: What do we really need? We need to check if stuff is set
-        #       like a string or an iterable with string as elements
-
+            raise RuntimeError("No BOUT.inp files found in '" +\
+                                self.directory + "'")
 
         # Check if the following is an integer, or an iterable
         # containing only integers
-        check_if_int = [                    \
-            (self.nproc     , 'nproc')     ,\
+        check_if_int = [\
             (self.nx        , 'nx')        ,\
             (self.ny        , 'ny')        ,\
             (self.nz        , 'nz')        ,\
@@ -1502,7 +1602,6 @@ class basic_runner(object):
 
         # Check if instance is string, or an iterable containing strings
         check_if_string = [\
-            (self.directory , 'directory') ,\
             (self.solver    , 'solver')    ,\
             (self.grid_file , 'grid_file') ,\
             (self.ddx_first , 'ddx_first') ,\
@@ -1640,6 +1739,55 @@ class basic_runner(object):
                 self.check_if_possible(var           = var,\
                                        possibilities = possible_method)
 
+        # Check if nx, ny, nz and gridfile is set at the same time
+        if (self.nx != None and self.grid_file != None) or\
+           (self.ny != None and self.grid_file != None) or\
+           (self.nz != None and self.grid_file != None):
+            # Read the variable from the file
+            for grid_file in self.grid_file:
+                # Open (and automatically close) the grid files
+                f = DataFile(grid_file)
+                # Search for nx, ny and nz in the grid file
+                domain_types = ["nx", "ny", "nz"]
+                for domain_type in domain_types:
+                    grid_variable = f.read(domain_type)
+                    # If the variable is found
+                    if grid_variable != None:
+                        self.errors.append("TypeError")
+                        message  = domain_type + " was specified both in the "
+                        message += "driver and in the grid file.\n"
+                        message += "Please remove " + domain_type
+                        message += " from the driver if you would "
+                        message += "like to run with a grid file."
+                        raise TypeError(message)
+
+        # If grid files are set, use the nx, ny and nz values in the
+        # member data if applicable
+        if self.grid_file != None:
+            # Make a dict of appendable lists
+            spatial_domain = {'nx':[], 'ny':[], 'nz':[]}
+            for grid_file in self.grid_file:
+                # Open (and automatically close) the grid files
+                f = DataFile(grid_file)
+                # Search for nx, ny and nz in the grid file
+                domain_types = ["nx", "ny", "nz"]
+                for domain_type in domain_types:
+                    grid_variable = f.read(domain_type)
+                    # If the variable is found
+                    if grid_variable != None:
+                        spatial_domain[domain_type].append(grid_variable)
+            # Check that the lengths of nx, ny and nz are the same
+            # unless they are not found
+            len_nx = len(spatial_domain['nx'])
+            len_ny = len(spatial_domain['ny'])
+            len_nz = len(spatial_domain['nz'])
+            if len_nx != 0:
+                self.nx = spatial_domain['nx']
+            if len_ny != 0:
+                self.ny = spatial_domain['ny']
+            if len_nz != 0:
+                self.nz = spatial_domain['nz']
+
         # Check that nx, ny and nz are set correctly
         if self.nx != None and self.ny != None:
             self.check_same_length((self.nx, 'nx'), (self.ny, 'ny'))
@@ -1669,19 +1817,10 @@ class basic_runner(object):
             # Check if self.addition is iterable
             if hasattr(self.additional, "__iter__"):
                 # Check if self.additional is a string
-                if type(self.additional) != str:
-                    # Check if the first element (the section) is a string
-                    # (this would mean that the square brackets are missing, but
-                    # this will be accepted)
-                    if type(self.additional[0]) == str:
-                        # Check that the second element (the name) is a string
-                        if type(self.additional[1]) != str:
-                            success = False
-                        # If more than three elements are given
-                        if len(self.additional) != 3:
-                            success = False
+                if type(self.additional) != str and\
+                   type(self.additional) != dict:
                     # If additional is given as an iterable
-                    elif hasattr(self.additional[0], "__iter__" ):
+                    if hasattr(self.additional[0], "__iter__" ):
                         # Do the same check as above for all the
                         # elements
                         for elem in self.additional:
@@ -1710,7 +1849,7 @@ class basic_runner(object):
                     # self.additional[0] is not a string, and not iterable
                     else:
                         success = False
-                # self.additional is a string
+                # self.additional is a string or a dict
                 else:
                     success = False
             # self.additional is not iterable
@@ -1753,6 +1892,14 @@ class basic_runner(object):
                 self.errors.append("RuntimeError")
                 raise RuntimeError(message)
 
+        # Check if boolean
+        check_if_bool = [\
+            (self.cpy_source, 'cpy_source')\
+            ]
+
+        self.check_for_correct_type(var = check_if_bool,\
+                                    the_type = bool)
+
         # Check if remove_old and restart is set on the same time
         if remove_old == True and self.restart != None:
             self.errors.append("RuntimeError")
@@ -1764,7 +1911,13 @@ class basic_runner(object):
     def check_for_correct_type(self,\
                                var      = None,\
                                the_type = None):
-        """Checks if a varible has the correct type"""
+        """Checks if a varible has the correct type
+
+        Input:
+        var      - a tuple consisting of
+                   var[0] - the variable (a data member)
+                   var[1] - the name of the varible given as a string
+        the_type - the data type"""
 
         # Set a variable which is False if the test fails
         success = True
@@ -1775,7 +1928,8 @@ class basic_runner(object):
                 # Check for the correct type
                 if isinstance(cur_var[0], the_type) == False:
                     # Check if it is an iterable
-                    if hasattr(cur_var[0], "__iter__" ):
+                    if hasattr(cur_var[0], "__iter__") and\
+                       type(cur_var[0]) != dict:
                         for elem in cur_var[0]:
                             # Check for the correct type
                             if isinstance(elem, the_type) == False:
@@ -3067,5 +3221,7 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 if __name__ == '__main__':
     """If bout_runners is run as a script, it will just call the demo
     function"""
-    demo()
+
+    print("\n\nTo find out about the bout_runners, please read the user's"+\
+          " manual, or have a look at 'BOUT/examples/bout_runners_example'")
 #}}}
