@@ -20,7 +20,7 @@ from builtins import object
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '0.8beta'
-__date__    = '15.06.2015'
+__date__    = '16.06.2015'
 
 import textwrap
 import os
@@ -845,7 +845,8 @@ class basic_runner(object):
                  MYG        = None,\
                  additional = None,\
                  restart    = None,\
-                 cpy_source = None):
+                 cpy_source = None,\
+                 allow_size_modification = False):
         """The constructor of the basic_runner"""
 
         # Setting the member data
@@ -875,6 +876,7 @@ class basic_runner(object):
         self.additional = additional
         self.restart    = restart
         self.cpy_source = cpy_source
+        self.allow_size_modification = allow_size_modification
 
         # self.additional must be on a special form (see
         # basic_error_checker).
@@ -1011,20 +1013,27 @@ class basic_runner(object):
         # Check for errors
         self.error_checker(**kwargs)
 
-        # Initialize the run
-        # run_log is the directory for the run_log (string)
-        run_log = self.initialize_run(remove_old)
+        # Check for errors
+        self.basic_error_check(remove_old)
 
-        # FIXME: YOU ARE CURRENTLY HERE!
-        # TODO: bout_runner_examples/tester.py
+        # Initialize the run by checking errors, and making the run_log
+        self.create_run_log()
+
+        # We check that the given combination of nx and ny is
+        # possible to perform with the given nproc
+        # FIXME: YOU ARE HERE
+        #        SHOULD NOT BE POSSIBLE TO HAVE SEVERAL POSSIBILITIES OF
+        #        MXG AND MYG
+        if (self.nx != None) and (self.ny != None):
+            self.get_correct_domain_split()
 
         # Get the combinations of the member functions
         import pdb
         pdb.set_trace()
-        all_possibilities, grid_possibilities, timestep_possibilities =\
+        all_possibilities, spatial_grid_possibilities, timestep_possibilities =\
             self.get_possibilities()
         all_combinations = self.get_combinations(\
-            all_possibilities, grid_possibilities, timestep_possibilities,\
+            all_possibilities, spatial_grid_possibilities, timestep_possibilities,\
             **kwargs)
 
         # Set the run_counter and the number of runs in one group
@@ -1044,7 +1053,7 @@ class basic_runner(object):
             # Check if the run has been performed previously
             do_run = self.check_if_run_already_performed()
             # Do the actual runs
-            self.run_driver(do_run, combination, run_no, run_log)
+            self.run_driver(do_run, combination, run_no)
 
             # Append the current dump folder to the current run_group
             self.run_groups[self.group_no]['dmp_folder'].append(self.dmp_folder)
@@ -1073,14 +1082,14 @@ class basic_runner(object):
 
 # The run_driver
 #{{{run_driver
-    def run_driver(self, do_run, combination, run_no, run_log):
+    def run_driver(self, do_run, combination, run_no):
         """The machinery which actually performs the run"""
         # Do the run
         if do_run:
             start = datetime.datetime.now()
             output, run_time = self.single_run( combination )
             # Print info to the log file for the runs
-            self.append_run_log(start, run_log, run_no, run_time)
+            self.append_run_log(start, run_no, run_time)
         print('\n')
 
         # As the jobs are being run in serial, the status of the job
@@ -1103,20 +1112,15 @@ class basic_runner(object):
         return
 #}}}
 
-#{{{initialize_run
-    def initialize_run(self, remove_old):
-        """The purpose of the function is twofold:
-        1. Check for errors
-        2. Make a run_log file if it doesn't exists"""
-
-        # Check for errors
-        self.basic_error_check(remove_old)
+#{{{create_run_log
+    def create_run_log(self):
+        """Makes a run_log file if it doesn't exists"""
 
         # Checks if run_log exists
-        run_log = self.directory + "/run_log.txt"
-        if os.path.isfile(run_log) == False:
+        self.run_log = self.directory + "/run_log.txt"
+        if os.path.isfile(self.run_log) == False:
             # Create a file to be appended for each run
-            f = open(run_log , "w")
+            f = open(self.run_log , "w")
             # The header
             header = ['start_time', 'run_type', 'run_no', 'dump_folder', 'run_time_H:M:S']
             header = '    '.join(header)
@@ -1125,7 +1129,6 @@ class basic_runner(object):
 
             # Preparation of the run
             print("\nRunning with inputs from '" + self.directory + "'")
-        return run_log
 #}}}
 
 #{{{get_possibilities
@@ -1146,123 +1149,185 @@ class basic_runner(object):
         #       other input parameters
 
 
-        # FIXME: If we are looping over set of grid_files:
-        #        Obtain the nx, ny and nz
-        #        Check that they are good according to the domain split
 
-        # FIXME: Problem with this: If not all the dimensions are set
-        # We start by making a zip of nx, ny and nz
-        # For all elements in this zip, we will do all the combinations
-        # In order to use zip, the parameters must support iteration
-        # We will therefore make the parameters iterable if they are not
-        if not(hasattr(self.nx, "__iter__")):
-            self.nx = [self.nx]
-            self.ny = [self.ny]
-            self.nz = [self.nz]
-        # Do the zip
-        # Notice that zip behaves differently in python 3 and python 2
-        spatial_domain_size = zip(self.nx, self.ny, self.nz)
+        # Set the combination of nx, ny and nz (if it is not already
+        # given by the gridfile)
+        if (self.grid_file == None):
+            # Appendable lists
+            spatial_grid_possibilities = []
+            nx_str = []
+            ny_str = []
+            nz_str = []
+            # Append the different dimension to the list of strings
+            if self.nx != None:
+                for nx in self.nx:
+                    nx_str.append(' mesh:nx=' + str(nx))
+            if self.ny != None:
+                for ny in self.ny:
+                    ny_str.append(' mesh:ny=' + str(ny))
+            if self.nz != None:
+                for nz in self.nz:
+                    nz_str.append(' mesh:nz=' + str(nz))
+            # Combine the strings to one string
+            # Find the largest length
+            max_len = np.max([len(nx_str), len(ny_str), len(nz_str)])
+            # Make the strings the same length
+            if len(nx_str) < max_len:
+                nx_str.append('')
+            if len(ny_str) < max_len:
+                ny_str.append('')
+            if len(nz_str) < max_len:
+                nz_str.append('')
+            for number in range(max_len):
+                spatial_grid_possibilities.append(nx_str(number) +\
+                                          ny_str(number) +\
+                                          nz_str(number))
 
-        # We check that the given combination of nx, ny and nz is
-        # possible to perform with the given nproc
+        # Set the combination of timestep and nout if set
+        # Appendable lists
+        temporal_grid_possibilities = []
+        timestep_str = []
+        nout_str     = []
+        # Append the different time options to the list of strings
+        if self.timestep != None:
+            for timestep in self.timestep:
+                timestep_str.append(' timestep=' + str(timestep))
+        if self.nout != None:
+            for nout in self.nout:
+                nout_str.append(' nout=' + str(nout))
+        # Combine the strings to one string
+        # Find the largest length
+        max_len = np.max([len(timestep_str), len(nout_str)])
+        # Make the strings the same length
+        if len(timestep_str) < max_len:
+            nx_str.append('')
+        if len(nout_str) < max_len:
+            nout_str.append('')
+        for number in range(max_len):
+            temporal_grid_possibilities.append(timestep_str(number) +\
+                                               nout_str(number))
 
+        # List of the possibilities of the different variables
+        list_of_possibilities = [[spatial_grid_possibilities],\
+                                 [temporal_grid_possibilities]]
 
-        # We also make a zip of timestep and nout (as they come in
-        # pairs)
-        # We will make the parameters iterable if they are not
-        if not(hasattr(self.timestep, "__iter__")):
-            self.timestep = [self.timestep]
-            self.nout     = [self.nout]
-        # Do the zip
-        # Notice that zip behaves differently in python 3 and python 2
-        temporal_domain_size = zip(self.timestep, self.nout)
-
-        # For each combination of nx, ny and nz, there will be all
-        # possible combinations of the timestep nout pair
-
-
-
-
-        # FIXME: This is just about to be implemented, was previously in
-        # #        the error checker
-        # # If the solver is set and it is a string, make it to an
-        # # iterable
-        # # Most variables (except nx, ny and nz can do this)
-        # if self.solver != None and\
-        #    (type(self.solver) == str):
-        #     # Make the strings an iterable
-        #     self.solver = [self.solver]
-
-
-
-
-        # List of all the data members
-        data_members = [self.solver, self.nproc, self.methods,\
-                        self.n_points, self.nout, self.timestep,\
-                        self.MXG, self.MYG, self.additional]
-
-        # List comprehension to get the non-none values
-        changed_members = [member for member in data_members\
-                           if member != None]
-
-        # Finding all combinations which can be used in the run argument
-        nproc_possibilities = \
-            self.list_of_possibilities(self.nproc, changed_members, 0,\
-            'nproc')
-        nout_possibilities = \
-            self.list_of_possibilities(self.nout, changed_members, 0,\
-            'nout')
-        MYG_possibilities = \
-            self.list_of_possibilities(self.MXG, changed_members, 0,\
-            'MXG')
-        MXG_possibilities = \
-            self.list_of_possibilities(self.MYG, changed_members, 0,\
-            'MYG')
-        timestep_possibilities = \
-            self.list_of_possibilities(self.timestep, changed_members, 1,\
-            'timestep')
-        solver_possibilities = \
-            self.list_of_possibilities(self.solver, changed_members, 1,\
-            'solver')
-        grid_possibilities = \
-            self.list_of_possibilities(self.n_points, changed_members, 2)
-        method_possibilities = \
-            self.list_of_possibilities(self.methods, changed_members, 3)
-
-        # Additional possibilities can take any form
-        if self.additional == False:
-                additional_possibilities = \
-                    self.list_of_possibilities(\
-                        self.additional, changed_members, 0)
-        else:
-            level = self.additional['level']
-            name  = self.additional['name']
-            value = self.additional['value']
-            changed_members.append(value)
-            additional_possibilities = \
-                self.list_of_possibilities(value, changed_members, level, name)
-
-        # Make the possibility list
-        possibility_list = [\
-            solver_possibilities,\
-            MYG_possibilities,\
-            MXG_possibilities,\
-            nout_possibilities,\
-            timestep_possibilities,\
-            method_possibilities,\
-            additional_possibilities,\
-            grid_possibilities,\
+        # List of tuple of varibles to generate possibilities from
+        variable_tuples = [\
+            (self.solver,     "solver", "type"),\
+            (self.grid_file,  "",       "grid"),\
+            (self.ddx_first,  "ddx",    "first"),\
+            (self.ddx_second, "ddx",    "second"),\
+            (self.ddx_upwind, "ddx",    "upwind"),\
+            (self.ddx_flux,   "ddx",    "flux"),\
+            (self.ddy_first,  "ddy",    "first"),\
+            (self.ddy_second, "ddy",    "second"),\
+            (self.ddy_upwind, "ddy",    "upwind"),\
+            (self.ddy_flux,   "ddy",    "flux"),\
+            (self.ddz_first,  "ddz",    "first"),\
+            (self.ddz_second, "ddz",    "second"),\
+            (self.ddz_upwind, "ddz",    "upwind"),\
+            (self.ddz_flux,   "ddz",    "flux"),\
+            (self.MXG,        "",       "MXG"),\
+            (self.MYG,        "",       "MYG"),\
             ]
 
-        # The two last return values are used in the convergence_run
-        # class
-        return possibility_list, grid_possibilities, timestep_possibilities
+        for additional in self.additional:
+            variable_tuples.append(additional[0],\
+                            additional[1],\
+                            additional[2])
+
+
+        # TODO: What is happening with additional?
+
+        # Append the possibilities to the list of possibilities
+        for var in variable_tuples:
+            list_of_possibilitie.append(\
+                    [self.generate_possibilities(var[0], var[1], var[2])]\
+                    )
+
+        import pdb
+        pdb.set_trace()
+        ##FIXME: What is happening with nproc???????????
+        #             nproc      = 1,\
+        #             restart    = None,\
+        #             cpy_source = None,\
+
+
+
+
+
+
+
+#        # List of all the data members
+#        data_members = [self.solver, self.nproc, self.methods,\
+#                        self.n_points, self.nout, self.timestep,\
+#                        self.MXG, self.MYG, self.additional]
+#
+#        # List comprehension to get the non-none values
+#        changed_members = [member for member in data_members\
+#                           if member != None]
+#
+#
+#        spatial_grid_possibilities = \
+#            self.list_of_possibilities(self.n_points, changed_members, 2)
+#
+#
+#        # Finding all combinations which can be used in the run argument
+#        nproc_possibilities = \
+#            self.list_of_possibilities(self.nproc, changed_members, 0,\
+#            'nproc')
+#        nout_possibilities = \
+#            self.list_of_possibilities(self.nout, changed_members, 0,\
+#            'nout')
+#        MYG_possibilities = \
+#            self.list_of_possibilities(self.MXG, changed_members, 0,\
+#            'MXG')
+#        MXG_possibilities = \
+#            self.list_of_possibilities(self.MYG, changed_members, 0,\
+#            'MYG')
+#        timestep_possibilities = \
+#            self.list_of_possibilities(self.timestep, changed_members, 1,\
+#            'timestep')
+#        solver_possibilities = \
+#            self.list_of_possibilities(self.solver, changed_members, 1,\
+#            'solver')
+#        method_possibilities = \
+#            self.list_of_possibilities(self.methods, changed_members, 3)
+#
+#        # Additional possibilities can take any form
+#        if self.additional == False:
+#                additional_possibilities = \
+#                    self.list_of_possibilities(\
+#                        self.additional, changed_members, 0)
+#        else:
+#            level = self.additional['level']
+#            name  = self.additional['name']
+#            value = self.additional['value']
+#            changed_members.append(value)
+#            additional_possibilities = \
+#                self.list_of_possibilities(value, changed_members, level, name)
+#
+#        # Make the possibility list
+#        possibility_list = [\
+#            solver_possibilities,\
+#            MYG_possibilities,\
+#            MXG_possibilities,\
+#            nout_possibilities,\
+#            timestep_possibilities,\
+#            method_possibilities,\
+#            additional_possibilities,\
+#            spatial_grid_possibilities,\
+#            ]
+#
+#        # The two last return values are used in the convergence_run
+#        # class
+        return possibility_list, spatial_grid_possibilities, timestep_possibilities
 #}}}
 
 #{{{get_combinations
     def get_combinations(self,\
                         all_possibilities,\
-                        grid_possibilities,\
+                        spatial_grid_possibilities,\
                         timestep_possibilities,\
                         **kwargs):
         """ Find all combinations of the changed data members """
@@ -1277,9 +1342,9 @@ class basic_runner(object):
                 # If we want to check for spatial convergence, we increase
                 # the number of grid points with equal amount for all
                 # directions in the grid
-                # We start by removing the grid_possibilities from the
+                # We start by removing the spatial_grid_possibilities from the
                 # possibility list
-                all_possibilities.remove(grid_possibilities)
+                all_possibilities.remove(spatial_grid_possibilities)
             elif kwargs['convergence_type'] == 'temporal':
                 # If we want to check for temporal convergence, we decrease
                 # the time increment
@@ -1478,7 +1543,7 @@ class basic_runner(object):
 #}}}
 
 #{{{append_run_log
-    def append_run_log(self, start, run_log, run_no, run_time):
+    def append_run_log(self, start, run_no, run_time):
         """Appends the run_log"""
 
         # Convert seconds to H:M:S
@@ -1497,7 +1562,7 @@ class basic_runner(object):
         # Line to write
         line = [start_time, self.run_type, run_no, dmp_line, run_time]
         # Opens for appending
-        f = open(run_log , "a")
+        f = open(self.run_log , "a")
         f.write('    '.join(str(element) for element in line) + "\n")
         f.close()
 #}}}
@@ -1894,7 +1959,8 @@ class basic_runner(object):
 
         # Check if boolean
         check_if_bool = [\
-            (self.cpy_source, 'cpy_source')\
+            (self.cpy_source, 'cpy_source'),\
+            (self.allow_size_modification, 'allow_size_modification')\
             ]
 
         self.check_for_correct_type(var = check_if_bool,\
@@ -2092,6 +2158,70 @@ class basic_runner(object):
         return combination_folder
 #}}}
 
+#{{{get_correct_domain_split
+    def get_correct_domain_split(self):
+        """Checks that the grid can be split in the correct number of
+        processors. If not, vary the number of points until value is found."""
+
+        # Flag which is True when a warning should be produce
+        produce_warning = False
+
+        for size_nr in range(len(self.nx)):
+            split_found = False
+            add_number = 1
+            print("Check grid split for mesh")
+            while split_found == False:
+                # The same check as below is performed internally in
+                # BOUT++ (see boutmesh.cxx)
+                # FIXME: YOU MAY HAVE DIFFERENT MXG
+                for i in range(1, self.nproc+1, 1):
+                    MX = self.nx[size_nr] - 2*self.MXG
+                    if (self.nprocs % i == 0) and \
+                       (MX % i == 0) and \
+                       (self.ny[size_nr] % (self.nprocs/i) == 0):
+                        # If the test passes
+                        split_found = True
+
+                # If the value tried is not a good value
+                if split_found == False:
+                    # If modification is allowd
+                    if self.allow_size_modification and self.grid_file == None:
+                        # Produce a warning
+                        produce_warning = True
+                        self.nx[size_nr] += add_number
+                        self.ny[size_nr] += add_number
+                        print("Mismatch, trying "+ str(self.nx[size_nr]) +\
+                              "*" + str(self.ny[size_nr]))
+                        add_number = (-1)**(abs(add_number))\
+                                     *(abs(add_number) + 1)
+                    else:
+                        # If the split fails and the a grid file is given
+                        if self.grid_file != None:
+                            self.errors.append("RuntimeError")
+                            message = "The grid can not be split using the"+\
+                                      " current number of nproc"
+                            raise RuntimeError(message)
+                        # If the split fails and no grid file is given
+                        else:
+                            self.errors.append("RuntimeError")
+                            message  = "The grid can not be split using the"+\
+                                       " current number of nprocs.\n"
+                            message += "Setting allow_size_modification=True"+\
+                                       " will allow modification of the grid"+\
+                                       " so that it can be split with the"+\
+                                       " current number of nprocs"
+                            raise RuntimeError(message)
+            # When the good value is found
+            print("Sucessfully found good values for the mesh.")
+            print("New mesh x=" + str(self.nx[size_nr]) + " y=" + str(self.ny[size_nr]))
+
+            # Make the warning
+            if produce_warning:
+                message = "The mesh was changed to allow the split given by nproc"
+                self.warnings.append(message)
+#}}}
+
+# TODO: Delete this function
 #{{{list_of_possibilities
     def list_of_possibilities(\
         self, data_member, changed_member, level, data_member_name = None):
@@ -2130,6 +2260,24 @@ class basic_runner(object):
             return ['']
 #}}}
 
+#{{{generate_posssibilities
+    def generate_possibilities(self, variables=None, section=None, name=None):
+        """Generate the list of strings of possibilities"""
+
+        if variables != None:
+            # Set the section name correctly
+            if section != None:
+                section = section + ":"
+            else:
+                section = ""
+            # Set the combination of the varibale
+            var_possibilities = []
+            # Find the number of different dimensions
+            for var in variables:
+                var_possibilities.append(' ' + section + name + '=' + str(var))
+#}}}
+
+# TODO: Delete this function
 #{{{level_1_dictionary_to_level_2_list
     def level_1_dictionary_to_level_2_list(self, level_1_dictionary):
         """Takes a dictionary with an iterable as values.
@@ -2151,6 +2299,7 @@ class basic_runner(object):
         return list_of_lists
 #}}}
 
+# TODO: Delete this function
 #{{{level_2_dictionary_to_level_2_list
     def level_2_dictionary_to_level_2_list(self, level_2_dictionary):
         """Takes a dictionary with dictionaries as values, where the values of
@@ -2653,7 +2802,7 @@ class basic_qsub_runner(basic_runner):
 
 # The run_driver
 #{{{run_driver
-    def run_driver(self, do_run, combination, run_no, run_log):
+    def run_driver(self, do_run, combination, run_no):
         """The machinery which actually performs the run"""
         if do_run:
             job_name = self.single_submit(combination, run_no)

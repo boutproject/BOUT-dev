@@ -24,7 +24,8 @@ my_instance = basic_runner(\
                     timestep   = [1, 2],\
                     MXG        = [1,2],\
                     MYG        = [1,2],\
-                    additional = ('test','ok',1),\
+                    # additional = ('test1','ok1',1),\
+                    additional = [('test1','ok1',1), ('test1','ok1',1)],\
                     restart    = 'overwrite',\
                     cpy_source = True)
 
