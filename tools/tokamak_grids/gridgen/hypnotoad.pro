@@ -842,6 +842,8 @@ PRO event_handler, event
         str_set, info, "fast", oldinfo.fast
         Widget_Control, info.fast_check, Set_Button=info.fast
         
+        str_set, info, "path", oldinfo.path, /over
+        
         IF info.rz_grid_valid THEN BEGIN
           plot_rz_equil, *info.rz_grid
         ENDIF

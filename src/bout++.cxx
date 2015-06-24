@@ -117,9 +117,9 @@ int BoutInitialise(int &argc, char **&argv) {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "-h", 2) == 0 ||
-    	strncasecmp(argv[i], "--help", 6) == 0) {
-      // Print help message
+    if (string(argv[i]) == "-h" ||
+    	string(argv[i]) == "--help") {
+      // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
       fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
       fprintf(stdout, "\n"
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
@@ -133,7 +133,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
   for (int i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "-d", 2) == 0) {
+    if (string(argv[i]) == "-d") {
       // Set data directory
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
@@ -142,7 +142,7 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       data_dir = argv[i];
     }
-    if (strncasecmp(argv[i], "-f", 2) == 0) {
+    if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);

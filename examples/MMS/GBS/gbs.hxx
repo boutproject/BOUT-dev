@@ -25,7 +25,7 @@ private:
   Field3D psi, Ve;
 
   // Sources of density and energy
-  Field2D Sn, Sp;
+  Field3D Sn, Sp;
 
   // Stress tensor
   Field3D Gi, Ge;
@@ -44,6 +44,19 @@ private:
   bool parallel; // Include parallel dynamics?
   bool estatic; // Electrostatic
   
+  // Bracket method for advection terms // Poisson brackets: b0 x Grad(f) dot Grad(g) / B = [f, g]
+  // Method to use: BRACKET_ARAKAWA, BRACKET_STD or BRACKET_SIMPLE      
+  /*
+   * Bracket method 
+   *
+   * BRACKET_STD      - Same as b0xGrad_dot_Grad, methods in BOUT.inp
+   * BRACKET_SIMPLE   - Subset of terms, used in BOUT-06
+   * BRACKET_ARAKAWA  - Arakawa central differencing (2nd order)
+   * BRACKET_CTU      - 1st order upwind method
+   *
+   */
+  BRACKET_METHOD bm_exb;
+
   bool mms;
   
   // Stress tensor components
@@ -52,6 +65,9 @@ private:
 
   // Diffusion parameters
   BoutReal Dn, Dvort, Dve, Dvi, Dte;
+  
+  // Numerical hyper-diffusion parameters
+  BoutReal Hn, Hvort, Hve, Hvi, Hte;
 
   // Normalisation parameters
   BoutReal Tnorm, Nnorm, Bnorm, Rnorm;
@@ -67,7 +83,8 @@ private:
   // Operators
   const Field3D C(const Field3D &f); // Curvature operator
   const Field3D D(const Field3D &f, BoutReal d); // Diffusion operator
-  // Powers of the mesh spacing for D operator
+  const Field3D H(const Field3D &f, BoutReal h); // Hyper-diffusion
+  // Powers of the mesh spacing for H operator
   Field2D dx4, dy4;
   BoutReal dz4;
   
