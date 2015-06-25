@@ -5,6 +5,27 @@
 # EXPECTED
 
 
+# NOTE: IDEA: SEND OVER THE LIST OF FOLDERS
+#       FOLDER NAME SHOULD INCLUDE BOTH GRIDNAME AND SIZES
+#       SHOULD KEEP PLOTTING ROUTINES? BOUTUTILS?
+
+# NOTE: FOR THE MMS EXAMPLE: FILTER OUT ONLY THE STRINGS WHERE THE
+#       DIMENSIONS ARE CHANGING. CAN FOR EXAMPLE POP THEM
+#       THE STRINGS CONTAIN ALL THE INFORMATION, BUT HOW EASY ARE THEY
+#       TO USE? (FIND THE STRING WHICH nx, ny and nz are not the same,
+#       but the same in all other aspect
+#       HOW TO SORT THEM????
+#       SOLUTION: MAKE A HOLD_CONSTANT FUCTION
+#       THE ITERTOOLS...YOU DO KNOW WHAT WAS PUT IN THERE?
+#       CAN YOU SEARCH IN THE POSSIBILITIES LIST AND ORDER THE HOLD
+#       CONSTANT : SO THAT: LETS SAY THAT ITERTOOLS IS VARYING THE LAST
+#       LIST (IN THE LIST) THE FASTEST. THUS YOU CAN SWAP ELEMENTS, SO
+#       THAT THE STUFF YOU WOULD LIKE TO VARY IS CHANGING THE FASTEST
+#       NOW, NEXT CHALLENGE IS TO GET THE FOLDER NAME OF THE PROPER LIST
+#       OF COMBINATIONS...BUT DO WE NOT ALREADY HAVE THIS? JUST USE THE
+#       SAME STEP
+
+# TODO: MAKE THE FUNCTIONS PRIVATE/PROTECTED
 """Classes and functions for running several mpi-runs with BOUT++ at
    once. All post-processing are placed in own files.
    Run demo() for instructions."""
@@ -20,7 +41,7 @@ from builtins import object
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '0.8beta'
-__date__    = '16.06.2015'
+__date__    = '17.06.2015'
 
 import textwrap
 import os
@@ -778,12 +799,6 @@ def demo(argument = None, plot_type = False, convergence_type = False):
 
 
 
-# FIXME: Idea: Dimension given as a tuple (nx, ny, nz)
-#              Can read dimension from grid file
-#              If not found in grid file, read from BOUT.inp
-#              grid file has higher preceedence than BOUT.inp
-
-
 #{{{class basic_runner
 # As an inherit class uses the super function, the class must allow an
 # object as input
@@ -871,8 +886,8 @@ class basic_runner(object):
         self.ddz_flux   = self.set_member_data(ddz_flux)
         self.nout       = self.set_member_data(nout)
         self.timestep   = self.set_member_data(timestep)
-        self.MXG        = self.set_member_data(MXG)
-        self.MYG        = self.set_member_data(MYG)
+        self.MXG        = MXG
+        self.MYG        = MYG
         self.additional = additional
         self.restart    = restart
         self.cpy_source = cpy_source
@@ -900,35 +915,13 @@ class basic_runner(object):
         self.warnings   = []
         self.errors     = []
 
-        # Check if the program is made. Make it if it isn't
+        # Set self.program_name from the *.o file. Make the program if
+        # the *.o file is not found
+        self.set_program_name()
         # Find all files with the extension .o
-        o_files = glob.glob("*.o")
-        if len(o_files) > 0:
-            # Pick the first instance as the name
-            self.program_name = o_files[0].replace('.o', '')
-        else:
-            # Check if there exists a make
-            make_file = glob.glob("*make*")
-            if len(make_file) > 0:
-                # Run make
-                self.make()
-                # Search for the .o file again
-                o_files = glob.glob("*.o")
-                if len(o_files) > 0:
-                    self.program_name = o_files[0].replace('.o', '')
-                else:
-                    self.program_name = False
-                    message = 'The constructor could not make your'+\
-                              ' program'
-                    self.warnings.append(message)
-                    warning_printer(message)
-            else:
-                self.errors.append("RuntimeError")
-                raise RuntimeError("No make file found in current" +\
-                                   " directory")
 
         # Obtain the MPIRUN
-        self.MPIRUN     = getmpirun()
+        self.MPIRUN = getmpirun()
 
         # Data members used internally in this class and its subclasses
         # The dmp_folder is the the folder where the runs are stored
@@ -1008,37 +1001,33 @@ class basic_runner(object):
         """Makes a run for each of the combination given by the member
         data"""
 
-        # TODO: Check if this is superfluous, as initialize run is doing
-        #       the error checks
-        # Check for errors
-        self.error_checker(**kwargs)
-
         # Check for errors
         self.basic_error_check(remove_old)
+
+        # TODO: Check if this is superfluous, as initialize run is doing
+        #       the error checks
+        # Check for additional errors
+        self.additional_error_check(**kwargs)
 
         # Initialize the run by checking errors, and making the run_log
         self.create_run_log()
 
         # We check that the given combination of nx and ny is
         # possible to perform with the given nproc
-        # FIXME: YOU ARE HERE
-        #        SHOULD NOT BE POSSIBLE TO HAVE SEVERAL POSSIBILITIES OF
-        #        MXG AND MYG
         if (self.nx != None) and (self.ny != None):
             self.get_correct_domain_split()
 
         # Get the combinations of the member functions
-        import pdb
-        pdb.set_trace()
-        all_possibilities, spatial_grid_possibilities, timestep_possibilities =\
-            self.get_possibilities()
-        all_combinations = self.get_combinations(\
-            all_possibilities, spatial_grid_possibilities, timestep_possibilities,\
-            **kwargs)
+        possibilities = self.get_possibilities()
+        combinations = self.get_combinations(possibilities)
 
         # Set the run_counter and the number of runs in one group
         self.set_run_counter(**kwargs)
 
+
+
+        # FIXME: THINK THE ANSWER TO OUR PRAYERS ARE HERE - GET THE
+        # FOLDER NAMES FROM THE STRINGS :D
         # The run
         self.print_run_or_submit()
         for run_no, combination in enumerate(all_combinations):
@@ -1097,6 +1086,58 @@ class basic_runner(object):
         self.run_groups[self.group_no]['job_status'].append('done')
 #}}}
 
+# Functions called by the constructor
+#{{{
+#{{{set_member_data
+    def set_member_data(self, input_parameter):
+        """Returns the input_parameter as a list if it is different than None,
+        and if it is not iterable"""
+
+       # If the input_data is not set, the value in BOUT.inp will
+       # be used
+        if input_parameter != None:
+            # If the input_data is not an iterable, or if it is a
+            # string: Put it to a list
+            if not(hasattr(input_parameter, "__iter__")) or\
+               (type(input_parameter)) == str:
+                input_parameter = [input_parameter]
+
+        return input_parameter
+#}}}
+
+#{{{set_program_name
+    def set_program_name(self):
+        """Set self.program_name from the *.o file. Make the program if
+        the *.o file is not found"""
+
+        # Find the *.o file
+        o_files = glob.glob("*.o")
+        if len(o_files) > 0:
+            # Pick the first instance as the name
+            self.program_name = o_files[0].replace('.o', '')
+        else:
+            # Check if there exists a make
+            make_file = glob.glob("*make*")
+            if len(make_file) > 0:
+                # Run make
+                self.make()
+                # Search for the .o file again
+                o_files = glob.glob("*.o")
+                if len(o_files) > 0:
+                    self.program_name = o_files[0].replace('.o', '')
+                else:
+                    self.program_name = False
+                    message = 'The constructor could not make your'+\
+                              ' program'
+                    self.errors.append("RuntimeError")
+                    raise RuntimeError(message)
+            else:
+                self.errors.append("RuntimeError")
+                raise RuntimeError("No make file found in current" +\
+                                   " directory")
+#}}}
+#}}}
+
 # Functions called directly by the main function
 #{{{
 #{{{print_run_or_submit
@@ -1105,8 +1146,8 @@ class basic_runner(object):
         print("\nNow running:")
 #}}}
 
-#{{{error_checker
-    def error_checker(self, **kwargs):
+#{{{additional_error_check
+    def additional_error_check(self, **kwargs):
         """Virtual function. Will in child classes check for additional
         errors"""
         return
@@ -1133,41 +1174,29 @@ class basic_runner(object):
 
 #{{{get_possibilities
     def get_possibilities(self):
-        """ Returns a list of list containing the possibilities from
-        the changed data members"""
-
-        # TODO: Ok, we need a clear idea of what is going to happen in
-        #       this section. We can implement it as a list of
-        #       list...in the end we can say that the possibilities are
-        #       just an "addon" to the normal runner
-        #       Thus, the easiest would be to run the bout runners
-        #       without any looping, that would lead to the normal
-        #       BOUT.inp file.
-        #       The next step would be to change the grid size (this
-        #       would be different than the time and nout)
-        #       Finally, we can add the different combinations of the
-        #       other input parameters
-
-
+        """ Returns the list of the possibilities. In get_combinations
+        the elements of this list is going to be put together to a list
+        of strings which will be used when making a run."""
 
         # Set the combination of nx, ny and nz (if it is not already
         # given by the gridfile)
+        # Appendable list
+        spatial_grid_possibilities = []
         if (self.grid_file == None):
             # Appendable lists
-            spatial_grid_possibilities = []
             nx_str = []
             ny_str = []
             nz_str = []
             # Append the different dimension to the list of strings
             if self.nx != None:
                 for nx in self.nx:
-                    nx_str.append(' mesh:nx=' + str(nx))
+                    nx_str.append('mesh:nx=' + str(nx))
             if self.ny != None:
                 for ny in self.ny:
-                    ny_str.append(' mesh:ny=' + str(ny))
+                    ny_str.append('mesh:ny=' + str(ny))
             if self.nz != None:
                 for nz in self.nz:
-                    nz_str.append(' mesh:nz=' + str(nz))
+                    nz_str.append('mesh:nz=' + str(nz))
             # Combine the strings to one string
             # Find the largest length
             max_len = np.max([len(nx_str), len(ny_str), len(nz_str)])
@@ -1178,10 +1207,14 @@ class basic_runner(object):
                 ny_str.append('')
             if len(nz_str) < max_len:
                 nz_str.append('')
+            # Append the spatial grid possibilities as a string
             for number in range(max_len):
-                spatial_grid_possibilities.append(nx_str(number) +\
-                                          ny_str(number) +\
-                                          nz_str(number))
+                # Make a list
+                current_grid = [nx_str[number],\
+                                ny_str[number],\
+                                nz_str[number]]
+                # Join the strings in the list and append
+                spatial_grid_possibilities.append(' '.join(current_grid))
 
         # Set the combination of timestep and nout if set
         # Appendable lists
@@ -1191,28 +1224,41 @@ class basic_runner(object):
         # Append the different time options to the list of strings
         if self.timestep != None:
             for timestep in self.timestep:
-                timestep_str.append(' timestep=' + str(timestep))
+                timestep_str.append('timestep=' + str(timestep))
         if self.nout != None:
             for nout in self.nout:
-                nout_str.append(' nout=' + str(nout))
+                nout_str.append('nout=' + str(nout))
         # Combine the strings to one string
         # Find the largest length
         max_len = np.max([len(timestep_str), len(nout_str)])
         # Make the strings the same length
         if len(timestep_str) < max_len:
-            nx_str.append('')
+            timestep_str.append('')
         if len(nout_str) < max_len:
             nout_str.append('')
+        # Append the temporal grid possibilities as a string
         for number in range(max_len):
-            temporal_grid_possibilities.append(timestep_str(number) +\
-                                               nout_str(number))
+            # Make a list
+            current_times = [timestep_str[number],\
+                             nout_str[number]\
+                            ]
+            # Join the strings in the list and append
+            temporal_grid_possibilities.append(' '.join(current_times))
 
         # List of the possibilities of the different variables
-        list_of_possibilities = [[spatial_grid_possibilities],\
-                                 [temporal_grid_possibilities]]
+        list_of_possibilities = [spatial_grid_possibilities,\
+                                 temporal_grid_possibilities]
+
+        # Put MXG and MYG into a list if they are not set to None
+        # This makes the memberdata iterable, and useable in
+        # generate_possibilities
+        if self.MXG != None:
+            self.MXG = [self.MXG]
+        if self.MYG != None:
+            self.MYG = [self.MYG]
 
         # List of tuple of varibles to generate possibilities from
-        variable_tuples = [\
+        tuple_of_variables = [\
             (self.solver,     "solver", "type"),\
             (self.grid_file,  "",       "grid"),\
             (self.ddx_first,  "ddx",    "first"),\
@@ -1231,257 +1277,66 @@ class basic_runner(object):
             (self.MYG,        "",       "MYG"),\
             ]
 
+        # Append the additional option to tuple of variables
         for additional in self.additional:
-            variable_tuples.append(additional[0],\
-                            additional[1],\
-                            additional[2])
-
-
-        # TODO: What is happening with additional?
+            # If the last element of additional is not iterable we need
+            # put them into a list to make them iterable (in order to
+            # use them in generate_possibilities)
+            if not(hasattr(additional[2], "__iter__")):
+                # We have to specify the whole additional, as this can
+                # be given as a tuple, and tuples does not support item
+                # assignments
+                additional = (additional[0],\
+                              additional[1],\
+                              [additional[2]])
+            # Append the additional to tuple of variables
+            tuple_of_variables.append(\
+                            (additional[2],\
+                            additional[0],\
+                            additional[1])\
+                            )
 
         # Append the possibilities to the list of possibilities
-        for var in variable_tuples:
-            list_of_possibilitie.append(\
-                    [self.generate_possibilities(var[0], var[1], var[2])]\
+        for var in tuple_of_variables:
+            list_of_possibilities.append(\
+                    self.generate_possibilities(var[0], var[1], var[2])\
                     )
+
+        # Return the list_of possibilities
+        return list_of_possibilities
+#}}}
+
+# TODO: SHOULD ADD THE OPTION: FASTEST VARYING
+#{{{get_combinations
+    def get_combinations(self, input_list):
+        """ Takes a list with lists as element as an input.
+        Returns a list of all combinations between the elements of the
+        lists of the input list """
+
+        # Remove empty elements in input_list in order for
+        # itertools.product to work
+        input_list = [elem for elem in input_list if elem != []]
+
+        # The list of combinations is a list with tuples as elements
+        # We would like to combind the element in these tuples to one
+        # string
+        # The last element in the list will be the fastest varying
+        # element
+        # TODO: GET THE STRING FROM THIS FASTEST VARYING?
+        all_combinations_as_tuple = list(itertools.product(*input_list))
 
         import pdb
         pdb.set_trace()
-        ##FIXME: What is happening with nproc???????????
-        #             nproc      = 1,\
-        #             restart    = None,\
-        #             cpy_source = None,\
 
+        # Make an appendable list
+        all_combinations_as_strings = []
 
+        # Loop over the elements in the list containing tuples
+        for a_tuple in all_combinations_as_tuple:
+            # Join the elements in a tuple and store it
+            all_combinations_as_strings.append(' '.join(a_tuple))
 
-
-
-
-
-#        # List of all the data members
-#        data_members = [self.solver, self.nproc, self.methods,\
-#                        self.n_points, self.nout, self.timestep,\
-#                        self.MXG, self.MYG, self.additional]
-#
-#        # List comprehension to get the non-none values
-#        changed_members = [member for member in data_members\
-#                           if member != None]
-#
-#
-#        spatial_grid_possibilities = \
-#            self.list_of_possibilities(self.n_points, changed_members, 2)
-#
-#
-#        # Finding all combinations which can be used in the run argument
-#        nproc_possibilities = \
-#            self.list_of_possibilities(self.nproc, changed_members, 0,\
-#            'nproc')
-#        nout_possibilities = \
-#            self.list_of_possibilities(self.nout, changed_members, 0,\
-#            'nout')
-#        MYG_possibilities = \
-#            self.list_of_possibilities(self.MXG, changed_members, 0,\
-#            'MXG')
-#        MXG_possibilities = \
-#            self.list_of_possibilities(self.MYG, changed_members, 0,\
-#            'MYG')
-#        timestep_possibilities = \
-#            self.list_of_possibilities(self.timestep, changed_members, 1,\
-#            'timestep')
-#        solver_possibilities = \
-#            self.list_of_possibilities(self.solver, changed_members, 1,\
-#            'solver')
-#        method_possibilities = \
-#            self.list_of_possibilities(self.methods, changed_members, 3)
-#
-#        # Additional possibilities can take any form
-#        if self.additional == False:
-#                additional_possibilities = \
-#                    self.list_of_possibilities(\
-#                        self.additional, changed_members, 0)
-#        else:
-#            level = self.additional['level']
-#            name  = self.additional['name']
-#            value = self.additional['value']
-#            changed_members.append(value)
-#            additional_possibilities = \
-#                self.list_of_possibilities(value, changed_members, level, name)
-#
-#        # Make the possibility list
-#        possibility_list = [\
-#            solver_possibilities,\
-#            MYG_possibilities,\
-#            MXG_possibilities,\
-#            nout_possibilities,\
-#            timestep_possibilities,\
-#            method_possibilities,\
-#            additional_possibilities,\
-#            spatial_grid_possibilities,\
-#            ]
-#
-#        # The two last return values are used in the convergence_run
-#        # class
-        return possibility_list, spatial_grid_possibilities, timestep_possibilities
-#}}}
-
-#{{{get_combinations
-    def get_combinations(self,\
-                        all_possibilities,\
-                        spatial_grid_possibilities,\
-                        timestep_possibilities,\
-                        **kwargs):
-        """ Find all combinations of the changed data members """
-
-        # The normal way of finding all combinations
-        if ('convergence_type' in list(kwargs.keys())) == False:
-            all_combinations = self.list_of_combinations(all_possibilities)
-
-        # The special way of finding all combinations
-        else:
-            if kwargs['convergence_type'] == 'spatial':
-                # If we want to check for spatial convergence, we increase
-                # the number of grid points with equal amount for all
-                # directions in the grid
-                # We start by removing the spatial_grid_possibilities from the
-                # possibility list
-                all_possibilities.remove(spatial_grid_possibilities)
-            elif kwargs['convergence_type'] == 'temporal':
-                # If we want to check for temporal convergence, we decrease
-                # the time increment
-                # Put the time_step last in the possibility list, so that we
-                # are changing the timestep the fastest when making runs
-                all_possibilities.remove(timestep_possibilities)
-                all_possibilities.append(timestep_possibilities)
-
-            # Find all combinations of the changed data members
-            all_combinations = self.list_of_combinations( all_possibilities )
-
-
-            if kwargs['convergence_type'] == 'spatial':
-                # To do the convergence test, we would like all the
-                # directions (nx, ny, MZ) to have the same amount of INNER
-                # points  (excluding guard cells)
-
-                # NOTE:
-                # nx, ny and MZ are defined differently
-                # nx = number of inner points + number of guard cells
-                #      number of guard cells = 2*MXG
-                # ny = number of inner points
-                # MZ = number of inner points + 1 extra point
-                #      (due to  historical reasons)
-
-                # Therefore, for each combination in all_combinations, we will
-                # make new combinations with the number of points given
-                # in one of the keys of
-                # self.n_points
-
-                # A list to be filled with the number of grid points (the
-                # range) for each direction nx, ny and MZ (if found)
-                ranges = []
-
-                # First we check if MZ is set in self.grid, as this has the
-                # constraint that it needs to be on the form 2^n+1
-                grid_keys = list(self.n_points.keys())
-                if 'MZ' in grid_keys:
-                    # If MZ is found, this is going to be the basis for the
-                    # order grid numbers
-                    convergence_list_z = self.n_points['MZ']
-                    # The number of inner grid points
-                    inner_points = [number-1 for number in\
-                                    convergence_list_z]
-                    # If nx is also a part of the grid list
-                    if 'mesh:nx' in grid_keys:
-                        # Append ranges with the nx_range
-                        ranges =\
-                            self.set_nx_range(grid_keys, inner_points, ranges)
-                    # ny can be set with the number of inner_points
-                    if 'mesh:ny' in grid_keys:
-                        # Append ranges with the ny_range
-                        ranges =\
-                            self.set_ny_range(grid_keys, inner_points, ranges)
-                    # Set the grid list in Z
-                    ranges = self.set_MZ_range(grid_keys, inner_points, ranges)
-                else:
-                    # Check if MZ is set in BOUT.inp instead, and if MZ is over
-                    # 3 (in that case inner_points must be on the form 2^n,
-                    # and we need to set the MZ range)
-                    MZ = find_variable_in_BOUT_inp(self.directory, 'MZ')
-                    if (type(MZ) == int) and (MZ > 3):
-
-                        # Find inner_points from either ny or nx
-                        if 'ny' in grid_keys:
-                            the_direction = 'mesh:ny'
-                        else:
-                            the_direction = 'mesh:nx'
-
-                        min_convergence_list = min(self.n_points[the_direction])
-                        max_convergence_list = max(self.n_points[the_direction])
-                        # Create a range from the min and the max
-                        min_power = round(math.log(min_convergence_list,2))
-                        max_power = round(math.log(min_convergence_list,2))
-                        inner_points =\
-                            logspace(min_power, max_power,\
-                                     (max_power-min_power)+1,\
-                                     base=2)
-                        # Convert to list
-                        inner_points = list(inner_points)
-                        # Convert to integers
-                        inner_points = [int(point) for point in inner_points]
-                        # Set the ranges
-                        ranges = self.set_nx_range(grid_keys, inner_points,\
-                                                   ranges)
-                        ranges = self.set_ny_range(grid_keys, inner_points,\
-                                                   ranges)
-                        ranges = self.set_MZ_range(grid_keys, inner_points,\
-                                                   ranges)
-                    else:
-                        # MZ is not of importance
-                        # Find inner_points from either ny or nx
-                        if 'mesh:ny' in grid_keys:
-                            convergence_list_y = self.n_points['mesh:ny']
-                            # The number of inner grid points
-                            inner_points = [number for number in\
-                                            convergence_list_y]
-                            # If nx is also a part of the grid list
-                            if 'mesh:nx' in grid_keys:
-                                # Append the x range
-                                ranges =\
-                                    self.set_nx_range(\
-                                        grid_keys, inner_points, ranges)
-                            # Append the y range
-                            ranges =\
-                                self.set_ny_range(\
-                                    grid_keys, inner_points, ranges)
-                        elif 'mesh:nx' in grid_keys:
-                            # Only x is of importance
-                            convergence_list_x = self.n_points['mesh:nx']
-                            x_range =\
-                                ['mesh:nx=' + str(nr)\
-                                    for nr in convergence_list_x]
-                            ranges.append(x_range)
-
-                # Make the range to a convergence string, which one can make
-                # combinations from
-                if len(ranges)==1:
-                    convergence_zip = list(zip(ranges[0]))
-                elif len(ranges)==2:
-                    convergence_zip = list(zip(ranges[0], ranges[1]))
-                elif len(ranges)==3:
-                    convergence_zip = list(zip(ranges[0], ranges[1], ranges[2]))
-
-                convergence_strings = [' '.join(element)\
-                                       for element in convergence_zip]
-
-                # Append the new combination to a list
-                new_combinations = []
-                for combination in all_combinations:
-                    for grid_spacing in convergence_strings:
-                        new_combinations.append(\
-                            combination + ' ' + grid_spacing)
-                # Make all_combinations = new_combinations
-                all_combinations = new_combinations
-
-        return all_combinations
+        return all_combinations_as_strings
 #}}}
 
 #{{{prepare_dmp_folder
@@ -1602,22 +1457,6 @@ class basic_runner(object):
 # FIXME: Mention that timestep and nout need to be of the same length
 # FIXME: Mention that MXG, MYG need to be of the same length
 #{{{
-#{{{set_member_data
-    def set_member_data(self, input_parameter):
-        """Returns the input_parameter as a list if it is different than None,
-        and if it is not iterable"""
-
-       # If the input_data is not set, the value in BOUT.inp will
-       # be used
-        if input_parameter != None:
-            # If the input_data is not an iterable, or if it is a
-            # string: Put it to a list
-            if not(hasattr(input_parameter, "__iter__")) or\
-               (type(input_parameter)) == str:
-                input_parameter = [input_parameter]
-
-        return input_parameter
-#}}}
 
 #{{{basic_error_check
     def basic_error_check(self, remove_old):
@@ -1636,6 +1475,22 @@ class basic_runner(object):
             self.errors.append("TypeError")
             raise TypeError(message)
 
+        # Check if MXG and MYG is given as a single int
+        # One should not be allowed to specify MXG and MYG as an
+        # iterable, as MXG is used to find the correct split, and
+        # because it in principle could be incompatible with the method
+        # (first, second etc.) used
+        if self.MXG != None and type(self.MXG) != int:
+            message  = "MXG is of wrong type\n"+\
+                       "MXG must be given as an int"
+            self.errors.append("TypeError")
+            raise TypeError(message)
+        if self.MYG != None and type(self.MYG) != int:
+            message  = "MYG is of wrong type\n"+\
+                       "MYG must be given as an int"
+            self.errors.append("TypeError")
+            raise TypeError(message)
+
         # Check if there are any BOUT.inp files in the self.directory
         inp_file = glob.glob(self.directory + "/BOUT.inp")
         if len(inp_file) == 0:
@@ -1650,8 +1505,6 @@ class basic_runner(object):
             (self.ny        , 'ny')        ,\
             (self.nz        , 'nz')        ,\
             (self.nout      , 'nout')      ,\
-            (self.MXG       , 'MXG')       ,\
-            (self.MYG       , 'MYG')        \
             ]
 
         self.check_for_correct_type(var = check_if_int,\
@@ -2166,19 +2019,36 @@ class basic_runner(object):
         # Flag which is True when a warning should be produce
         produce_warning = False
 
+        # First we check if self.MXG is given
+        if self.MXG == None:
+            # We need to find MXG in BOUT.inp
+            self.MXG = self.find_variable_in_BOUT_inp("MXG")
+
+            # Check that one unique variable was found
+            if len(self.MXG) > 1:
+                self.errors.append("RuntimeError")
+                message =  "Several matches was found when searching for "
+                message += "MXG.\n"
+                message += "Please check " + self.directory + "/BOUT.inp"
+                raise RuntimeError(message)
+
+            # Pick the only element
+            self.MXG = int(self.MXG[0])
+
+        print("\nChecking the grid split for the meshes\n")
         for size_nr in range(len(self.nx)):
+            print("Checking nx=" + str(self.nx[size_nr]) +\
+                  " and ny=" + str(self.ny[size_nr]))
             split_found = False
             add_number = 1
-            print("Check grid split for mesh")
             while split_found == False:
                 # The same check as below is performed internally in
                 # BOUT++ (see boutmesh.cxx)
-                # FIXME: YOU MAY HAVE DIFFERENT MXG
                 for i in range(1, self.nproc+1, 1):
                     MX = self.nx[size_nr] - 2*self.MXG
-                    if (self.nprocs % i == 0) and \
+                    if (self.nproc % i == 0) and \
                        (MX % i == 0) and \
-                       (self.ny[size_nr] % (self.nprocs/i) == 0):
+                       (self.ny[size_nr] % (self.nproc/i) == 0):
                         # If the test passes
                         split_found = True
 
@@ -2205,68 +2075,85 @@ class basic_runner(object):
                         else:
                             self.errors.append("RuntimeError")
                             message  = "The grid can not be split using the"+\
-                                       " current number of nprocs.\n"
+                                       " current number of nproc.\n"
                             message += "Setting allow_size_modification=True"+\
                                        " will allow modification of the grid"+\
                                        " so that it can be split with the"+\
-                                       " current number of nprocs"
+                                       " current number of nproc"
                             raise RuntimeError(message)
             # When the good value is found
-            print("Sucessfully found good values for the mesh.")
-            print("New mesh x=" + str(self.nx[size_nr]) + " y=" + str(self.ny[size_nr]))
+            print("Sucessfully found the following good values for the mesh:")
+            print("nx=" + str(self.nx[size_nr]) +\
+                  " ny=" + str(self.ny[size_nr]) +\
+                  "\n")
 
-            # Make the warning
+            # Make the warning if produced
             if produce_warning:
                 message = "The mesh was changed to allow the split given by nproc"
                 self.warnings.append(message)
 #}}}
 
-# TODO: Delete this function
-#{{{list_of_possibilities
-    def list_of_possibilities(\
-        self, data_member, changed_member, level, data_member_name = None):
-        """Returns the different possibilities as a list of strings.
-        level=0 denotes a data_member given as a number.
-        level=1 denotes a data_member given as a list.
-        level=2 denotes a data_member given as a dictionary of lists..
-        level=3 denotes a data_member given as a dictionary of dictionary of lists."""
+#{{{ find_variable_in_BOUT_inp
+    def find_variable_in_BOUT_inp(self, variable):
+        """Find a variable in BOUT.inp using regex.
+        The value of the variable is returned"""
 
-        if data_member in changed_member:
-            if level == 0:
-                return [data_member_name + "=" + str(data_member)]
-            elif level == 1:
-                if data_member_name == 'solver':
-                    possibilities = ["solver:type=" + possibility \
-                                     for possibility in data_member]
-                    return possibilities
-                elif data_member_name == 'timestep':
-                    possibilities = ["timestep=" + str(possibility) \
-                                     for possibility in data_member]
-                    return possibilities
-                else:
-                    # The data_member_name comes from self.additional
-                    possibilities = [data_member_name + "=" + str(possibility) \
-                                     for possibility in data_member]
-                    return possibilities
-            elif level == 2:
-                data_member_as_list = \
-                    self.level_1_dictionary_to_level_2_list( data_member )
-                return self.list_of_combinations( data_member_as_list )
-            elif level == 3:
-                data_member_as_list = \
-                    self.level_2_dictionary_to_level_2_list( data_member )
-                return self.list_of_combinations( data_member_as_list )
-        else:
-            return ['']
+        # First, read the file
+        with open (self.directory + "/BOUT.inp", "r") as BOUT_inp_file:
+                BOUT_inp = BOUT_inp_file.readlines()
+
+        # Make the string to search for
+        # http://www.tutorialspoint.com/python/python_reg_expressions.htm
+        # r denotes a raw string
+        # First ^ is the start of the string (excludes comments etc.)
+        # \s is any whitespace, * repeats any number of times, () encloses the statement
+        # = is the literal =
+        # \d is digit
+        # {n,m} Matches at least n and at most m occurrences of preceding
+        # expression.
+        # \. is literal . (as only . matches any single character except newline)
+        string_to_match = r'^' + variable +\
+                          r'(\s*)=(\s*)(\d*)(\.){0,1}(\d*)'
+
+        # Appendable list
+        matches = []
+        for line in BOUT_inp:
+            matchObj = re.match(string_to_match, line, flags=0)
+            if matchObj != None:
+                matches.append(matchObj.group())
+
+        # Check that a match was found
+        if len(matches) == 0:
+            self.errors.append("RuntimeError")
+            message =  "No matches was found when searching for "
+            message += str(variable) + ".\n"
+            message += "Please check " + self.directory + "/BOUT.inp"
+            raise RuntimeError(message)
+
+        # Make an appendable list
+        matches_as_floats = []
+
+        for match_as_string in matches:
+            # Remove the preceeding numbers
+            # re.sub(search, replace, string, max=0)
+            # $ matches the beginning of the line
+            # . matches any single character except newline
+            # * repeats any number of times
+            number_as_string = re.sub(r'^(.*)(\s*)=(\s*)', "", match_as_string)
+
+            # Cast the string to a float and append it
+            matches_as_floats.append(float(number_as_string))
+
+        return matches_as_floats
 #}}}
 
-#{{{generate_posssibilities
+#{{{generate_possibilities
     def generate_possibilities(self, variables=None, section=None, name=None):
         """Generate the list of strings of possibilities"""
 
         if variables != None:
             # Set the section name correctly
-            if section != None:
+            if section != "":
                 section = section + ":"
             else:
                 section = ""
@@ -2274,106 +2161,11 @@ class basic_runner(object):
             var_possibilities = []
             # Find the number of different dimensions
             for var in variables:
-                var_possibilities.append(' ' + section + name + '=' + str(var))
-#}}}
-
-# TODO: Delete this function
-#{{{level_1_dictionary_to_level_2_list
-    def level_1_dictionary_to_level_2_list(self, level_1_dictionary):
-        """Takes a dictionary with an iterable as values.
-        Returns a list of a list. The elements of each innermost
-        list are strings containing all possible choices of key=val,
-        where key is the key of the level 1 dictionary, and val is a element
-        of the iterable in the innermost dictionary"""
-
-        list_of_lists=[]
-        # Iterate over a dictionary, (the for-loop returns both key and value)
-        for key, val in list(level_1_dictionary.items()):
-            list_of_possibilities = []
-            # Iterates over the iterable (for example list) in the value of
-            # the innermost dictionary
-            for the_iterated in val:
-                list_of_possibilities.append(key+"="+str(the_iterated))
-            list_of_lists.append(list_of_possibilities)
-
-        return list_of_lists
-#}}}
-
-# TODO: Delete this function
-#{{{level_2_dictionary_to_level_2_list
-    def level_2_dictionary_to_level_2_list(self, level_2_dictionary):
-        """Takes a dictionary with dictionaries as values, where the values of
-        the subdictionaries are iterables.
-        For each subdictionaries in the dictionary, the function will
-        find what will be referred to as a subcombination. The function
-        will in the end return a list where the elements are lists of
-        the subcombinations.
-        A subcombination is a combination which contains one element
-        from each of the values of the keys in the subdictionary. The
-        subcombinations will the form
-        'key11:key21=val_of_21 key11:key22=val_of_22 ...
-         key1n:key2m=val_of_2m',
-        where in keyij, i refers to the level of the dictionary (2 being
-        the subdictionary) an j refers to the number of key"""
-
-        # Appendable list_of_lists which in the end will be returned
-        list_of_lists = []
-        # Find the uppermost (first level) keys in the dictionary
-        uppermost_keys = list(level_2_dictionary.keys())
-
-        for upper_key in uppermost_keys:
-            # Appendable list which we will find a subcombo from
-            find_subcombo_from = []
-            # Find the lowermost (second level) keys in the dictionary
-            lowermost_keys = list(level_2_dictionary[upper_key].keys())
-            for lower_key in lowermost_keys:
-                # List to collect string with the same second level key
-                list_with_same_lower_key = []
-                for element in level_2_dictionary[upper_key][lower_key]:
-                    # Append the string
-                    list_with_same_lower_key.append(\
-                        upper_key + ':' + lower_key + '=' + element)
-                find_subcombo_from.append(list_with_same_lower_key)
-            # Find the subcombo
-            subcombo = self.list_of_combinations(find_subcombo_from)
-            # Append the subcombo
-            list_of_lists.append(subcombo)
-
-        return list_of_lists
-#}}}
-
-#{{{list_of_combinations
-    def list_of_combinations(self, input_list):
-        """ Takes a list with lists as element as an input.
-        Returns a list of all combinations between the elements of the
-        lists of the input list """
-
-        all_combinations_as_tuple = list(itertools.product(*input_list))
-        all_combinations_as_strings = []
-
-        # If the input_list only contains one list (corresponds to a
-        # level below 2 in list_of_possibilities)
-        if len(all_combinations_as_tuple[0]) == 1:
-            # Loop over all the tuples in the innermost list
-            for combination in all_combinations_as_tuple:
-                # Store the elements of the innermost list as strings in a
-                # list
-                # (The zeroth element unwraps the list)
-                all_combinations_as_strings.append(' ' + combination[0])
-        # If the input_list contains more than one list (corresponds to
-        # a level above 2 in list_of_possibilities)
+                var_possibilities.append(section + name + '=' + str(var))
         else:
-            # Loop over the elements in the list containing tuples
-            for a_tuple in all_combinations_as_tuple:
-                string = ''
-                # Loop over all the elements of the tuple
-                for element in a_tuple:
-                    # Make the elements of the tuple into one string
-                    string += ' ' + element
-                # Store the string in a list
-                all_combinations_as_strings.append(string)
+            var_possibilities = []
 
-        return all_combinations_as_strings
+        return var_possibilities
 #}}}
 
 #{{{get_command_to_run
@@ -2492,8 +2284,8 @@ class run_with_plots(basic_runner):
 
 # Functions called directly by the main function
 #{{{
-#{{{error_checker
-    def error_checker(self, **kwargs):
+#{{{additional_error_check
+    def additional_error_check(self, **kwargs):
         """Checks for errors related to the relevant plotter to the current
         class"""
 
@@ -2820,8 +2612,8 @@ class basic_qsub_runner(basic_runner):
         print("\nSubmitting:")
 #}}}
 
-#{{{error_checker
-    def error_checker(self, **kwargs):
+#{{{additional_error_check
+    def additional_error_check(self, **kwargs):
         """Calls all the error checkers"""
         self.qsub_error_check(**kwargs)
 #}}}
@@ -3171,8 +2963,8 @@ class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
 
 # Functions called directly by the main function
 #{{{
-#{{{error_checker
-    def error_checker(self, **kwargs):
+#{{{additional_error_check
+    def additional_error_check(self, **kwargs):
         """Calls all the error checkers"""
 
         # Call the error checker for plotter errors from
