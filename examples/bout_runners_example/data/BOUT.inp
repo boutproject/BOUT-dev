@@ -11,7 +11,7 @@ dump_format="nc"     # Write NetCDF format files
 
 grid="conduct_grid.nc"
 
-MXG = 1
+#MXG = 1
 ##################################################
 [ddy]   # Methods used for parallel (y) derivative terms
 
