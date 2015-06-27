@@ -14,19 +14,18 @@
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
 __version__ = '0.9beta'
-__date__    = '26.06.2015'
+__date__    = '27.06.2015'
 
-
+# TODO: Do not save make.log and make.err
 # TODO: SHOULD KEEP PLOTTING ROUTINES? BOUTUTILS?
 
 # TODO: Check if you can delete these
-from __future__ import print_function
-from builtins import zip
-from builtins import str
-from builtins import range
-from builtins import object
+#from __future__ import print_function
+#from builtins import zip
+#from builtins import str
+#from builtins import range
+#from builtins import object
 
-import textwrap
 import os
 import re
 import itertools
@@ -34,27 +33,11 @@ import glob
 import timeit
 import datetime
 import math
-import six
-from numpy import logspace
 from numbers import Number
 import numpy as np
 from subprocess import check_output
 from boututils import shell, launch, getmpirun
 from boututils.datafile import DataFile
-try:
-    # TODO: ACTUALLY DELETE THIS?
-    from bout_runners.bout_plotters import convergence_plotter,\
-                                           solution_plotter,\
-                                           solution_and_error_plotter
-    # TODO: ACTUALLY DELETE THIS?
-    from bout_runners.common_bout_functions import create_folder,\
-                                                   find_variable_in_BOUT_inp,\
-                                                   warning_printer,\
-                                                   check_for_plotters_errors,\
-                                                   clean_up_runs,\
-                                                   message_chunker
-except ImportError:
-    print("Could not load bout_runners from the current directory")
 
 # FIXME: qsub does not always delete the clean-up files??
 #        Fixed for basic qsub (test it), fix for the rest
@@ -99,7 +82,6 @@ class basic_runner(object):
     See BOUT/examples/bout_runners_example for examples."""
 #}}}
 
-# The constructor
 #{{{__init__
     def __init__(self,\
                  nproc      = 1,\
@@ -129,6 +111,7 @@ class basic_runner(object):
                  restart    = None,\
                  cpy_source = None,\
                  sort_by    = None,\
+                 make       = None,\
                  allow_size_modification = False):
         #{{{docstring
         """The constructor of the basic_runner.
@@ -197,7 +180,13 @@ class basic_runner(object):
                         'ddz_second',
                         'ddz_upwind',
                         'ddz_flux',
-                        or any 'variable_name' from additional
+                        any 'variable_name' from additional
+                        an iterable consisting of several of these. If
+                        an iterable is given, then the first element is
+                        going to be the fastest varying variable, the
+                        second element is going to be the second fastest
+                        varying variable and so on.
+        make        -   Whether or not to make the progam (bool)
 
         allow_size_modification - Whether or not to allow bout_runners
                                   modify nx and ny in order to find a
@@ -238,8 +227,25 @@ class basic_runner(object):
         self.__additional = additional
         self.__restart    = restart
         self.__cpy_source = cpy_source
-        self.__sort_by    = sort_by
+        self.__sort_by    = self.__set_member_data(sort_by)
+        self.__make       = make
         self.__allow_size_modification = allow_size_modification
+
+        # Make some space to distinguish from the rest of the terminal
+        print("\n")
+
+        # Initializing self.__warnings and self.__error
+        # self.__warnings will be filled with warnings
+        # self.__errors will be filled with errors
+        # The warnings and errors will be printed when the destructor is called
+        self.__warnings = []
+        self.__errors   = []
+
+        # Check if make is a boolean
+        if self.__make != None:
+            if type(self.__make) != bool:
+                self.__errors.append("TypeError")
+                raise TypeError("make must be boolean if set")
 
         # self.__additional must be on a special form (see
         # basic_error_checker).
@@ -256,61 +262,24 @@ class basic_runner(object):
                     # Put self.__additional as an iterable
                     self.__additional = [self.__additional]
 
-        # Initializing self.__warnings and self.__error
-        # self.__warnings will be filled with warnings
-        # self.__errors will be filled with errors
-        # The warnings and errors will be printed when the destructor is called
-        self.__warnings   = []
-        self.__errors     = []
-
         # Set self.__program_name from the *.o file. Make the program if
         # the *.o file is not found
         self.__set_program_name()
-        # Find all files with the extension .o
+
+        # Make the file if make is True
+        if self.__make:
+            self.__run_make()
 
         # Obtain the MPIRUN
         self.__MPIRUN = getmpirun()
 
-        # Data members used internally in this class and its subclasses
-        # The dmp_folder is the the folder where the runs are stored
-        # It will be set by self.__prepare_dmp_folder
-        self.__dmp_folder = None
-
-        #{{{TODO: Check if this can be deleted
-        ## The run type is going to be written in the run.log file
-        #self.__run_type   = 'basic'
-
-        ## Counters
-        ## Number of runs per group
-        ## The runs are going to be divided into groups.
-        ## For example if we are doing a convergence plot:
-        ## One group equals one convergence plot
-        ## Usually a group only contains one run
-        #self.__no_runs_in_group = False
-        ## Count number of runs in a group
-        #self.__run_counter      = False
-        ## A group counter
-        #self.__group_no = 0
-        ## Dictionary to be filled with the folders and the status of the
-        ## different runs in the  group
-        #self.__run_groups = {}
-        ## The entries of dmp_folder are the paths where the dmp files
-        ## will be sotred. This makes our job easy when we want to make
-        ## a plot of grouped runs.
-        ## The entries in job_status will be filled with the job_name
-        ## If the job has already been done previously, the job status will
-        ## be set to 'done'.
-        #self.__run_groups[self.__group_no] ={'dmp_folder':[], 'job_status':[]}
-        #}}}
+        # The run type is going to be written in the run.log file
+        self.__run_type   = 'basic'
 
         # Check if the instance is set correctly
         self.__check_for_basic_instance_error()
 #}}}
 
-# The destructor
-# TODO: Get the exit code of the process. If the process failed, write
-#       that an error occured instead
-#       Could eventually check if a error flag has been set to true
 #{{{__del__
     def __del__(self):
         """The destructor will print all the warning and error messages"""
@@ -341,7 +310,6 @@ class basic_runner(object):
                   " 'bout_runners'. |")
 #}}}
 
-# The run function
 #{{{run
     def run(self,\
             remove_old = False,\
@@ -356,11 +324,20 @@ class basic_runner(object):
         remove_old                  - boolean telling whether old run
                                       files should be deleted or not
         post_processing_function    - a function to be called after
-                                      one or several run
+                                      one or several run. This function
+                                      must accept the string of
+                                      self.__dmp_folder if
+                                      post_process_after_each_run is
+                                      True, and a list of dmp folders if
+                                      post_process_after_each_run is
+                                      False
         post_process_after_each_run - boolean telling whether
                                       post_processing_function
-                                      should be called after each run,
-                                      or rather after
+                                      should be called after each run
+                                      (if True), or after the number of
+                                      runs decided by self.__sort_by
+                                      (see the constructor of
+                                      basic_runner for more info)
         **kwargs                    - parameters to be passed to the
                                       post_processing_function
         """
@@ -370,10 +347,6 @@ class basic_runner(object):
         self.__error_check_for_run_input(remove_old,\
                                          post_processing_function,\
                                          post_process_after_every_run)
-
-        # TODO: Could possibly delete this then
-        # Check for additional errors (if any)
-        self.__additional_error_check(**kwargs)
 
         # Create the run log
         self.__create_run_log()
@@ -387,20 +360,15 @@ class basic_runner(object):
         possibilities = self.__get_possibilities()
         combinations = self.__get_combinations(possibilities)
 
+        # If we are not running the post processing function after every
+        # run, make an appendable list over all the runs which will be
+        # passed as an input parameter to the post processing function
+        if not(post_process_after_every_run):
+            list_of_dmp_folders = []
+
         # Print either 'now running' or 'now submitting'
         self.__print_run_or_submit()
 
-        # TODO: See if you can remove this
-        ## Set the run_counter and the number of runs in one group
-        #self.__set_run_counter(**kwargs)
-        # TODO: Is the run counter superflous as we already have the run
-        #       counter?
-        # Set the run counter
-        self.__run_counter = 0
-
-
-        # FIXME: THINK THE ANSWER TO OUR PRAYERS ARE HERE - GET THE
-        # FOLDER NAMES FROM THE STRINGS :D
         # The run
         for run_no, combination in enumerate(combinations):
 
@@ -413,62 +381,30 @@ class basic_runner(object):
 
             # Check if the run has been performed previously
             do_run = self.__check_if_run_already_performed()
-            # FIXME: YOU ARE HERE
             # Do the actual runs
             if do_run:
                 # Call the driver for a run
                 self.__run_driver(combination, run_no)
 
-                # Add one to the run counter
-                self.run_counter +=1
-
-            #{{{ TODO: Check if can delete
-            ## Append the current dump folder to the current run_group
-            #self.__run_groups[self.__group_no]['dmp_folder'].append(self.__dmp_folder)
-            ## Update the run counter
-            #self.__run_counter += 1
-
-            ## If we have looped over all the folders in a run
-            ## group, we will change the run group (as long as run_no is
-            ## lower than all_combinations [remember that run_no starts
-            ## from 0 and len() 'starts' from 1])
-            #}}}
-
-
-            # FIXME: Question: would we like to sort, AND NOT do
-            #        postprocessing?
-            #        Assume yes...because of maybe the run takes long
-            #        time or whatever
-
-            # FIXME: YOU ARE HERE
-            # If a post processing function is to be given
-            # OK, think here, what do we need to pass to the post
-            # processing function...the names of all the folder in a
-            # group
-            # TODO: Let the run function allow kwargs
-            #       Let the run function accept a post-processing
-            #       function
-            if post_processing_after_one_run:
-                call the post_processing_function(current_dmp)
-
-            if post_processing_after_group_of_run_finished
-                append_the_dmp to dmps
-                if...se below:
-                    call the post_processing_function(current_dmps)
-
-
-            # TODO: Check when THE CONSTANT is changing and post a
-            #       post-processing commit
-            # TODO: Make a flag whether or not to group runs
-            if (self.__run_counter % self.__no_runs_in_group == 0)\
-                and (run_no < len(all_combinations)-1):
-
-                # Update the group number
-                self.__group_no += 1
-                # Create a new key in the dictionary for the new
-                # run group
-                self.__run_groups[self.__group_no] =\
-                    {'dmp_folder':[], 'job_status':[]}
+            # If we would like to call a post_processing function
+            if post_process_after_every_run != None:
+                if post_process_after_every_run:
+                    # Call the post processing function
+                    self.__call_post_processing_function(\
+                            function = post_processing_function,\
+                            folders  = self.__dmp_folder,\
+                            **kwargs)
+                else:
+                    # Append the dmp folder to the list of dmp folders
+                    list_of_dmp_folders.append(self.__dmp_folder)
+                    if (run_no % self.__len_group == 0):
+                        # Call the post processing function
+                        self.__call_post_processing_function(\
+                                function = post_processing_function,\
+                                folders  = list_of_dmp_folders,\
+                                **kwargs)
+                        # Reset the list_of_dmp_folders
+                        list_of_dmp_folders = []
 
         # post_run defines what to be done after the runs have finished/
         # been submitted (if anything)
@@ -482,15 +418,10 @@ class basic_runner(object):
         # Get the time when the run starts
         start = datetime.datetime.now()
         # Do the run
-        output, run_time = self.__single_run( combination )
+        output, run_time = self.__single_run(combination)
         # Print info to the log file for the runs
         self.__append_run_log(start, run_no, run_time)
         print('\n')
-
-        # TODO: DELETE THIS
-        ## As the jobs are being run in serial, the status of the job
-        ## will be done for all jobs
-        #self.__run_groups[self.__group_no]['job_status'].append('done')
 #}}}
 
 #{{{ Functions called by the constructor
@@ -526,7 +457,9 @@ class basic_runner(object):
             make_file = glob.glob("*make*")
             if len(make_file) > 0:
                 # Run make
-                self.__make()
+                self.__run_make()
+                # Set the make flag to False, so it is not made again
+                self.__make = False
                 # Search for the .o file again
                 o_files = glob.glob("*.o")
                 if len(o_files) > 0:
@@ -638,7 +571,7 @@ class basic_runner(object):
                                     the_type = Number)
         #}}}
 
-        #{{{Check if solver, grid_file and methos is str or list of str
+        #{{{Check if solver, grid_file, methods and sort_by is str/list of str
         # Check if instance is string, or an iterable containing strings
         check_if_string = [\
             (self.__solver    , 'solver')    ,\
@@ -655,6 +588,7 @@ class basic_runner(object):
             (self.__ddz_second, 'ddz_second'),\
             (self.__ddz_upwind, 'ddz_upwind'),\
             (self.__ddz_flux  , 'ddz_flux')  ,\
+            (self.__sort_by   , 'sort_by')    \
             ]
 
         self.__check_for_correct_type(var = check_if_string,\
@@ -761,36 +695,8 @@ class basic_runner(object):
                                               possibilities = possible_method)
         #}}}
 
-        #{{{Check if restart is set correctly
-        if self.__restart != None:
-            if type(self.__restart) != str:
-                self.__errors.append("TypeError")
-                raise TypeError ("restart must be set as a string when set")
-
-        possible_method = [\
-            'overwrite',\
-            'append'\
-            ]
-
-        # Make a list of the variables
-        the_vars = [\
-            (self.__restart, 'restart')\
-            ]
-
-        for var in the_vars:
-            # Do the check if the method is set
-            if var[0] != None:
-                self.__check_if_set_correctly(var           = var,\
-                                              possibilities = possible_method)
-        #}}}
-
-        #{{{Check if sort_by is set correctly
-        if self.__sort_by != None:
-            if type(self.__sort_by) != str:
-                self.__errors.append("TypeError")
-                raise TypeError ("sort_by must be set as a string when set")
-
-        possible_method = [\
+        #{{{Check if sort_by is set to the correct possibility
+        possible_sort_by = [\
             'spatial_domain',\
             'temporal_domain',\
             'solver',\
@@ -815,11 +721,34 @@ class basic_runner(object):
                 # The additional now contains a tuple of three elements
                 # We would like to extract the name of them, and append
                 # it to the possibilities list
-                possible_method.append(additional[0])
+                possible_sort_by.append(additional[0])
 
         # Make a list of the variables
         the_vars = [\
             (self.__sort_by, 'sort_by')\
+            ]
+
+        for var in the_vars:
+            # Do the check if the method is set
+            if var[0] != None:
+                self.__check_if_set_correctly(var           = var,\
+                                              possibilities = possible_sort_by)
+        #}}}
+
+        #{{{Check if restart is set correctly
+        if self.__restart != None:
+            if type(self.__restart) != str:
+                self.__errors.append("TypeError")
+                raise TypeError ("restart must be set as a string when set")
+
+        possible_method = [\
+            'overwrite',\
+            'append'\
+            ]
+
+        # Make a list of the variables
+        the_vars = [\
+            (self.__restart, 'restart')\
             ]
 
         for var in the_vars:
@@ -996,6 +925,15 @@ class basic_runner(object):
             raise RuntimeError(message)
         #}}}
 
+        #{{{Check that the post_process_after_every_run is not set alone
+        if (post_process_after_every_run != None) and\
+           (type(post_processing_function) == None):
+            self.__errors.append("RuntimeError")
+            message = "post_process_after_every_run can only be set if"+\
+                      " post_processing_function is given"
+            raise RuntimeError(message)
+        #}}}
+
         #{{{Check that the post_process_after_every_run is a boolean
         if (post_process_after_every_run != None) and\
            (type(post_process_after_every_run) != bool):
@@ -1004,15 +942,6 @@ class basic_runner(object):
                       " a boolean when set"
             raise RuntimeError(message)
         #}}}
-#}}}
-
-# TODO: Could probably delete this as we are now doing the error check
-#       in the constructor
-#{{{__additional_error_check
-    def __additional_error_check(self, **kwargs):
-        """Virtual function. Will in child classes check for additional
-        errors"""
-        return
 #}}}
 
 #{{{__create_run_log
@@ -1221,24 +1150,25 @@ class basic_runner(object):
             (self.__MYG,        "",       "MYG"),\
             ]
 
-        # Append the additional option to tuple of variables
-        for additional in self.__additional:
-            # If the last element of additional is not iterable we need
-            # put them into a list to make them iterable (in order to
-            # use them in generate_possibilities)
-            if not(hasattr(additional[2], "__iter__")):
-                # We have to specify the whole additional, as this can
-                # be given as a tuple, and tuples does not support item
-                # assignments
-                additional = (additional[0],\
-                              additional[1],\
-                              [additional[2]])
-            # Append the additional to tuple of variables
-            tuple_of_variables.append(\
-                            (additional[2],\
-                            additional[0],\
-                            additional[1])\
-                            )
+        # Append the additional option to tuple of variables if set
+        if self.__additional != None:
+            for additional in self.__additional:
+                # If the last element of additional is not iterable we need
+                # put them into a list to make them iterable (in order to
+                # use them in generate_possibilities)
+                if not(hasattr(additional[2], "__iter__")):
+                    # We have to specify the whole additional, as this can
+                    # be given as a tuple, and tuples does not support item
+                    # assignments
+                    additional = (additional[0],\
+                                  additional[1],\
+                                  [additional[2]])
+                # Append the additional to tuple of variables
+                tuple_of_variables.append(\
+                                (additional[2],\
+                                additional[0],\
+                                additional[1])\
+                                )
 
         # Append the possibilities to the list of possibilities
         for var in tuple_of_variables:
@@ -1250,40 +1180,31 @@ class basic_runner(object):
         return list_of_possibilities
 #}}}
 
-# TODO: SHOULD ADD THE OPTION: FASTEST VARYING
 #{{{__get_combinations
     def __get_combinations(self, input_list):
-        """ Takes a list with lists as element as an input.
+        """The input_list is a list with lists as element.
         Returns a list of all combinations between the elements of the
-        lists of the input list """
+        input_list."""
 
         # Remove empty elements in input_list in order for
         # itertools.product to work
         input_list = [elem for elem in input_list if elem != []]
 
-        # TODO: Rewrite the comments
-        # The list of combinations is a list with tuples as elements
-        # We would like to combind the element in these tuples to one
-        # string
-        # The last element in the list will be the fastest varying
-        # element
-        print(input_list)
-        import pdb
-        pdb.set_trace()
-        # TODO: GET THE STRING FROM THIS FASTEST VARYING?
-
-        # Sort the input list (so that the fastest varying variable can
-        # be chosen)
-
-        # If we would like to sort
+        # If we would like to sort the input list (choose which varible
+        # to be the fastest varying)
         if self.__sort_by != None:
             # Swap the list corresponding to the sort_by statement so
             # that that list will be the last. The itertools.product
             # will then make that list the fastest varying in the list
             input_list = self.__get_swapped_input_list()
 
+        # The last element in the input_list will be the fastest varying
+        # element
         all_combinations_as_tuple = list(itertools.product(*input_list))
 
+        # all_combination_as_tuple is a list with tuples as elements
+        # We would like to combind the elements in these tuples to one
+        # string
         # Make an appendable list
         all_combinations_as_strings = []
 
@@ -1306,17 +1227,24 @@ class basic_runner(object):
         """Set the folder to dump data in based on the input from the
         combination. Copy the input file to the final folder. Copy the
         source files to the final folder is cpy_source is True."""
-        # Obtain file and folder names
+        # Obtain folder names
         folder_name = self.__get_folder_name(combination)
+        self.__dmp_folder = os.path.join(self.__directory, folder_name)
+        # If the last character is '/', then remove it
+        if self.__dmp_folder[-1] == '/':
+            self.__dmp_folder = self.__dmp_folder[:-1]
+
         # Create folder if it doesn't exists
-        self.__dmp_folder = self.__directory + "/" + folder_name
-        create_folder(self.__dmp_folder)
-        # Copy the input file into this folder
-        command = 'cp ' + self.__directory + '/BOUT.inp ' + self.__dmp_folder
-        shell(command)
+        self.__create_folder(self.__dmp_folder)
+        # If self.__dmp_folder contains anything other than
+        # self.__directory
+        if self.__dmp_folder != self.__directory:
+            # Copy the input file into this folder
+            command = 'cp ' + self.__directory + '/BOUT.inp ' +\
+                      self.__dmp_folder + '/'
+            shell(command)
 
         # Copy the source files if cpy_source is True
-        self.__cpy_source = True
         if self.__cpy_source:
             # This will copy all C++ files to the dmp_folder
             cpp_extension= ['.cc', '.cpp', '.cxx', '.C', '.c++',\
@@ -1325,7 +1253,7 @@ class basic_runner(object):
             for extension in cpp_extension:
                 file_names = glob.glob('*' + extension)
                 for a_file in file_names:
-                    command = 'cp ' + a_file + ' ' + self.__dmp_folder
+                    command = 'cp ' + a_file + ' ' + self.__dmp_folder + '/'
                     shell(command)
 #}}}
 
@@ -1351,10 +1279,20 @@ class basic_runner(object):
         if len(dmp_files) != 0 and self.__restart == None:
             print('Skipping the run as *.dmp.* files was found in '\
                   + self.__dmp_folder)
-            print('To overwrite old files, run with self.__run(remove_old=True)\n')
+            print('To overwrite old files, run with self.run(remove_old=True)\n')
             return False
         else:
             return True
+#}}}
+
+#{{{__call_post_processing_function
+    def __call_post_processing_function(\
+                    function = None,\
+                    folders  = None,\
+                    **kwargs):
+        """Function which calls the post_processing_function"""
+        function(folders, **kwarg)
+
 #}}}
 
 #{{{__post_run
@@ -1365,16 +1303,17 @@ class basic_runner(object):
 #}}}
 
 #{{{Function called by __set_program_name
-#{{{__make
-    def __make(self):
+#{{{__run_make
+    def __run_make(self):
         """Makes the .cxx program, saves the make.log and make.err"""
-        print("Making the .cxx program")
-        command = "make > make.log 2> make.err"
-        shell(command)
+        print("Making the .cxx program\n")
+        command = "make"
+        status, output = shell(command, pipe=True)
+        print(output)
         # Check if any errors occured
-        if os.stat("make.err").st_size != 0:
+        if status != 0:
             self.__errors.append("RuntimeError")
-            raise RuntimeError("Error encountered during make, see 'make.err'.")
+            raise RuntimeError("Error encountered during make.")
 #}}}
 #}}}
 
@@ -1560,31 +1499,41 @@ class basic_runner(object):
         mesh                = ['_'.join(mesh)]
 
         # Put all the folders into the combination_folder
-        # We access the zeroth element as the folders are given as a
-        # list
-        combination_folder = [solver[0],\
-                              method[0],\
-                              additional[0],\
-                              ghost_nout_timestep[0],\
-                              mesh[0]]
+        combination_folder = [solver,\
+                              method,\
+                              additional,\
+                              ghost_nout_timestep,\
+                              mesh]
+        # We access the zeroth element (if given) as the folders are
+        # given as a list
+        combination_folder = [folder[0] for folder in combination_folder\
+                              if (folder != []) and (folder !=[''])]
 
         # Make the combination folder as a string
         combination_folder = '/'.join(combination_folder)
 
         return combination_folder
 #}}}
+
+
+#{{{__create_folder
+    def __create_folder(self, folder):
+        """Creates a folder if it doesn't exists"""
+
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+            print(folder + " created\n")
+#}}}
 #}}}
 
 #{{{Function called by __run_driver
 #{{{__single_run
-    def __single_run(self, combination=''):
+    def __single_run(self, combination):
         """Makes a single MPIRUN of the program"""
 
         # Get the command to be used
-        command = self.__get_command_to_run( combination )
+        command = self.__get_command_to_run(combination)
 
-        import pdb
-        pdb.set_trace()
         # Time how long the time took
         tic = timeit.default_timer()
 
@@ -1594,6 +1543,18 @@ class basic_runner(object):
                              nproc = self.__nproc,\
                              pipe = True,\
                              verbose = True)
+
+        # If the run returns an exit code other than 0
+        if status != 0:
+            message = "! An error occured. Printing the output to stdout !"
+            print("\n" + "!"*len(message))
+            print(message)
+            print("!"*len(message) + "\n")
+            print(out)
+            self.__errors.append("RuntimeError")
+            message =  "An error occured the run."
+            message += " Please see the output above for details."
+            raise RuntimeError(message)
 
         # Estimate elapsed time
         toc = timeit.default_timer()
@@ -1715,85 +1676,120 @@ class basic_runner(object):
         index, so that itertools.product will make this the fastest
         varying varibale"""
 
-        # Initialize the length of a group (see below for explanaition)
-        self.__len_group = None
-        # Find what list in the list which contains what we would sort
-        # by
-        # If we would like to sort by the spatial domain
-        if self.__sort_by == 'spatial_domain':
-            # nx, ny and nz are all under the section 'mesh'
-            find_in_list = 'mesh'
-            # Text to be printed if find_in_list is not found
-            text_if_not_found = 'neither nx, ny or nz was found'
-        # If we would like to sort by the temporal domain
-        elif self.__sort_by == 'temporal_domain':
-            # If we are sorting by the temporal domain, we can either
-            # search for timestep or nout
-            if self.__timestep != None:
-                find_in_list = 'timestep'
-            elif self.__nout != None:
-                find_in_list = 'nout'
+        # We make a sort list containing the string to find in the
+        # input_list
+        sort_list = []
+        # We also make a list over text to write to the error riser if
+        # the text in input_list was not found
+        text_if_not_found_list = []
+
+        # We loop over the elements in self.__sort_by to find what
+        # string we need to be looking for in the elements of the lists
+        # in input_list
+        for sort_by in self.__sort_by:
+            # Find what list in the input_list which contains what we
+            # would sort by
+
+            # If we would like to sort by the spatial domain
+            if sort_by == 'spatial_domain':
+                # nx, ny and nz are all under the section 'mesh'
+                find_in_list = 'mesh'
+                # Text to be printed if find_in_list is not found
+                text_if_not_found = 'neither nx, ny or nz was found'
+
+            # If we would like to sort by the temporal domain
+            elif sort_by == 'temporal_domain':
+                # If we are sorting by the temporal domain, we can either
+                # search for timestep or nout
+                if self.__timestep != None:
+                    find_in_list = 'timestep'
+                elif self.__nout != None:
+                    find_in_list = 'nout'
+                else:
+                    message = "Could not sort by 'temporal_domain' as"+\
+                              " neither 'timestep' nor 'nout' is given"
+                    raise RuntimeError(message)
+
+            # If we would like to sort by the method
+            elif (sort_by == 'ddx_first') or\
+                 (sort_by == 'ddx_second') or\
+                 (sort_by == 'ddx_upwind') or\
+                 (sort_by == 'ddx_flux') or\
+                 (sort_by == 'ddy_first') or\
+                 (sort_by == 'ddy_second') or\
+                 (sort_by == 'ddy_upwind') or\
+                 (sort_by == 'ddy_flux') or\
+                 (sort_by == 'ddz_first') or\
+                 (sort_by == 'ddz_second') or\
+                 (sort_by == 'ddz_upwind') or\
+                 (sort_by == 'ddz_flux'):
+                find_in_list = sort_by.replace('_',':')
+                text_if_not_found = sort_by + " was not found"
+
+            # If we would like to sort by the solver
+            elif sort_by == 'solver':
+                find_in_list = sort_by
+                text_if_not_found = sort_by + "was not found"
+
+            # If we would like to sort by additional
             else:
-                message = "Could not sort by 'temporal_domain' as"+\
-                          " neither 'timestep' nor 'nout' is given")
-                raise RuntimeError(message)
-        # If we would like to sort by the method
-        elif (self.__sort_by == 'ddx_first' or\
-             (self.__sort_by == 'ddx_second') or\
-             (self.__sort_by == 'ddx_upwind') or\
-             (self.__sort_by == 'ddx_flux') or\
-             (self.__sort_by == 'ddy_first') or\
-             (self.__sort_by == 'ddy_second') or\
-             (self.__sort_by == 'ddy_upwind') or\
-             (self.__sort_by == 'ddy_flux') or\
-             (self.__sort_by == 'ddz_first') or\
-             (self.__sort_by == 'ddz_second') or\
-             (self.__sort_by == 'ddz_upwind') or\
-             (self.__sort_by == 'ddz_flux'):
-            find_in_list = self.__sort_by.replace('_',':')
-            text_if_not_found = self.__sort_by + " was not found"
-        # One is either sorting by solver
-        elif self.__sort_by == 'solver':
-            find_in_list = self.__sort_by
-            text_if_not_found = self.__sort_by + "was not found"
-        # One is solving by additional
-        else:
-            text_if_not_found = self.__sort_by + " was not given as"+\
-                                " an 'additional' option"
+                find_in_list = sort_by
+                text_if_not_found = sort_by + " was not given as "+ \
+                                    " an additional option."
+
+            # Append what to be found in the input_list, and what text
+            # to be printed if it is not found to the respective lists
+            sort_list.append(find_in_list)
+            text_if_not_found_list.append(text_if_not_found)
 
 
-        # Loop over the lists in the input list
-        # Make a flag to break the outermost loop if find_in_list is
-        # found
-        break_outer = False
-        for elem_nr, elem in enumerate(input_list):
-            # Each of the elements in this list is a string
-            for string in elem:
-                # Check if fins_in_list is in the string
-                if find_in_list in string:
-                    # If there is a match, store the element number
-                    swap_from_index = elem_nr
-                    # Check the length of the element (as this is the
-                    # number of times the run is repeated, only changing
-                    # the values of sort_by [defining a group])
-                    self.__len_group = len(elem)
-                    # Break the loop to save time
-                    break_outer = True
+        # For all the find_in_list, we would like check if the match
+        # can be found in any of the elements in input_list
+        for sort_nr, sort_by_txt in enumerate(sort_list):
+            # Make a flag to break the outermost loop if find_in_list is
+            # found
+            break_outer = False
+            # Make a flag to state whether or not the sort criteria was
+            # found in the elements of input_list
+            found = False
+            # Loop over the lists in the input_list to find the match
+            for elem_nr, elem in enumerate(input_list):
+                # Each of the elements in this list is a string
+                for string in elem:
+                    # Check if fins_in_list is in the string
+                    if sort_by_txt in string:
+                        # If there is a match, store the element number
+                        swap_from_index = elem_nr
+                        # Check the length of the element (as this is
+                        # the number of times the run is repeated, only
+                        # changing the values of sort_by [defining a
+                        # group])
+                        len_cur_input_list_elem = len(elem)
+                        # Break the loop to save time
+                        found = True
+                        break_outer = True
+                        break
+                # Break the outer loop if find_in_list_is_found
+                if break_outer:
                     break
-            # Break the outer loop if find_in_list_is_found
-            if break_outer:
-                break
 
-        # If there was no match, throw an error
-        if self.__len_group == None:
-            message  = "Could not sort by " + self.__sort_by + " as "
-            message += text_if_not_found
-            raise RuntimeError(message)
+            # If there was no match, throw an error
+            if not(found):
+                message  = "Could not sort by " + sort_by_txt + " as "
+                message += text_if_not_found_list[sort_nr]
+                raise RuntimeError(message)
 
-        # As it is the last index which changes the fastest, we swap the
-        # element where the find_in_list was found with the last element
-        input_list[swap_from_index], input_list[-1] =\
-                input_list[-1], input_list[swap_from_index]
+            # As it is the last index which changes the fastest, we swap the
+            # element where the find_in_list was found with the last element
+            input_list[swap_from_index], input_list[-(sort_nr + 1)] =\
+                    input_list[-(sort_nr + 1)], input_list[swap_from_index]
+
+        # The number of runs in one 'group'
+        # Initialize self.__len_group with one as we are going to
+        # multiply it with all the elements in len_cur_input_list_elem
+        self.__len_group = 1
+        for elem in len_cur_input_list_elem:
+            self.__len_group *= len_cur_input_list_elem
 
         return input_list
 #}}}
@@ -1809,7 +1805,7 @@ class basic_runner(object):
         arg = " -d " + self.__dmp_folder + combination
 
         # If the run is restarted with initial values from the last run
-        if self.__restart != False:
+        if self.__restart != None:
             if self.__restart == 'overwrite':
                 arg += ' restart'
             elif self.__restart == 'append':
@@ -1825,29 +1821,6 @@ class basic_runner(object):
 
         return command
 #}}}
-#}}}
-
-# TODO: Check if this can be deleted
-#{{{__set_run_counter
-    def __set_run_counter(self, **kwargs):
-        """Sets self.__run_counter and self.__no_runs_in_group"""
-
-        self.__run_counter = 0
-        # Normally there is only one job in a group
-        self.__no_runs_in_group = 1
-
-        # Due to plotting it is convenient to put runs belonging to the
-        # same convergence plot into one group
-        if ('convergence_type' in list(kwargs.keys())):
-            if kwargs['convergence_type'] == 'spatial':
-                # How many runs must we make before we can make a
-                # convergence plot
-                keys = list(self.__n_points.keys())
-                self.__no_runs_in_group = len(self.__n_points[keys[0]])
-            elif kwargs['convergence_type'] == 'temporal':
-                # How many runs must we make before we can make a
-                # convergence plot
-                self.__no_runs_in_group = len(self.__timestep)
 #}}}
 #}}}
 
@@ -2223,581 +2196,6 @@ class basic_qsub_runner(basic_runner):
         shell(command)
 
         return output
-#}}}
-#}}}
-#}}}
-
-
-
-# TODO: Delete this
-#{{{class run_with_plots
-class run_with_plots(basic_runner):
-#{{{docstring
-    """Class running BOUT++ in the same way as the basic_runner, with
-    the additional feature that it calls one of the plotters in
-    'bout_plotters'.
-
-    For further details, see the documentation of basic_runner.
-    """
-#}}}
-
-# The constructor
-#{{{__init__
-    def __init__(self,\
-                 plot_type  = False,\
-                 extension  = 'png',\
-                 solver     = False,\
-                 nproc      = 1,\
-                 methods    = False,\
-                 n_points   = False,\
-                 directory  = 'data',\
-                 nout       = False,\
-                 timestep   = False,\
-                 MXG        = False,\
-                 MYG        = False,\
-                 additional = False,\
-                 restart    = False,\
-                 **kwargs):
-        """Specify either how many time indices you want to plot in one
-        plot, or give a list of time indices. If both are given, then the
-        list of plot_times has higher precedence."""
-
-        # Note that the constructor accepts additional keyword
-        # arguments. This is because the constructor can be called with
-        # 'super' from qsub_run_with_plots, which inherits from both
-        # basic_qsub_runner and run_with_plots (which takes different
-        # arguments as input)
-
-        # Call the constructor of the superclass
-        super(run_with_plots,  self.__init__(solver     = solver,\
-                                             nproc      = nproc,\
-                                             methods    = methods,\
-                                             n_points   = n_points,\
-                                             directory  = directory,\
-                                             nout       = nout,\
-                                             timestep   = timestep,\
-                                             MXG        = MXG,\
-                                             MYG        = MYG,\
-                                             additional = additional,\
-                                             restart    = restart,\
-                                             **kwargs))
-
-        if plot_type == False:
-            self.__errors.append("TypeError")
-            raise TypeError ("Keyword argument 'plot_type' must be given"+\
-                             " when running run_with_plots")
-
-        self.__plot_type           = plot_type
-        self.__file_extension      = extension
-        self.__run_type            = 'plot_' + self.__plot_type
-
-        # Check if a DISPLAY is set
-        try:
-            os.environ['DISPLAY']
-        except KeyError:
-            message =  "No display is set! Changing the backend to 'Agg' in"+\
-                       " order to plot."
-            self.__warnings.append(message)
-            warning_printer(message)
-            import matplotlib.pyplot as plt
-            plt.switch_backend('Agg')
-#}}}
-
-# Functions called directly by the main function
-#{{{
-#{{{additional_error_check
-    def additional_error_check(self, **kwargs):
-        """Checks for errors related to the relevant plotter to the current
-        class"""
-
-        # Since the error checkers should be called from both
-        # bout_runners and bout_plotters, the error_checkers have been
-        # put in the class check_for_plotters_errors defined in
-        # common_bout_functions
-        # The error checker is called by the constructor, so all we have
-        # to do is to create an instance of the class
-        plotter_error_checker =\
-           check_for_plotters_errors(self.__plot_type, n_points=self.__n_points,
-                                     timestep=self.__timestep, **kwargs)
-#}}}
-
-#{{{post_run
-    def post_run(self, **kwargs):
-        """Calls self.__plotter_chooser"""
-        self.__plotter_chooser(**kwargs)
-#}}}
-#}}}
-
-# Plotter specific
-#{{{
-#solution_plot specific
-#{{{
-#{{{solution_plotter
-    def solution_plotter(self,\
-            show_plots = False,\
-            collect_x_ghost_points = False, collect_y_ghost_points = False,\
-            **kwargs):
-        """Calls the correct plotter from bout_plotters"""
-
-        # Creates an instance of solution_plotter
-        make_my_sol_plot = solution_plotter(\
-            run_groups             = self.__run_groups,\
-            directory              = self.__directory,\
-            file_extension         = self.__file_extension,\
-            show_plots             = show_plots,\
-            collect_x_ghost_points = collect_x_ghost_points,\
-            collect_y_ghost_points = collect_y_ghost_points,\
-            variables              = kwargs['variables'],\
-            plot_direction         = kwargs['plot_direction'],\
-            plot_times             = kwargs['plot_times'],\
-            number_of_overplots    = kwargs['number_of_overplots'])
-
-        # Run the plotter
-        make_my_sol_plot.collect_and_plot()
-#}}}
-#}}}
-
-#solution_and_error_plotter specific
-#{{{
-#{{{solution_and_error_plotter
-    def solution_and_error_plotter(self,\
-            show_plots = False,\
-            collect_x_ghost_points = False, collect_y_ghost_points = False,\
-            **kwargs):
-        """Calls the correct plotter from bout_plotters"""
-
-        # Creates an instance of solution_and_error_plotter
-        make_my_sol_err_plot = solution_and_error_plotter(\
-            run_groups             = self.__run_groups,\
-            directory              = self.__directory,\
-            file_extension         = self.__file_extension,\
-            show_plots             = show_plots,\
-            collect_x_ghost_points = collect_x_ghost_points,\
-            collect_y_ghost_points = collect_y_ghost_points,\
-            variables              = kwargs['variables'],\
-            plot_direction         = kwargs['plot_direction'],\
-            plot_times             = kwargs['plot_times'],\
-            number_of_overplots    = kwargs['number_of_overplots'])
-
-        # Run the plotter
-        make_my_sol_err_plot.collect_and_plot()
-#}}}
-
-#{{{get_plot_times_and_number_of_overplots
-    def get_plot_times_and_number_of_overplots(self, **kwargs):
-        """Returns plot_times and number_of_overplots"""
-
-        if self.__plot_type == 'solution_and_error_plot' or\
-           self.__plot_type == 'solution_plot':
-            kwarg_keys = list(kwargs.keys())
-
-            if ('plot_times' in kwarg_keys) == False:
-                plot_times = False
-            else:
-                plot_times = kwargs['plot_times']
-            if ('number_of_overplots' in kwarg_keys) == False:
-                number_of_overplots = False
-            else:
-                number_of_overplots = kwargs['number_of_overplots']
-
-        return plot_times, number_of_overplots
-#}}}
-#}}}
-
-#convergence_plot specific
-#{{{
-#{{{convergence_plotter
-    def convergence_plotter(self,\
-            show_plots = False,\
-            collect_x_ghost_points = False, collect_y_ghost_points = False,\
-            **kwargs):
-        """Calls the convergence plotter from bout_plotters"""
-        # Creates an instance of convergence_plotter
-        make_my_convergence_plots = convergence_plotter(\
-           run_groups             =  self.__run_groups,\
-           directory              =  self.__directory,\
-           file_extension         =  self.__file_extension,\
-           show_plots             =  show_plots,\
-           collect_x_ghost_points =  collect_x_ghost_points,\
-           collect_y_ghost_points =  collect_y_ghost_points,\
-           variables              =  kwargs['variables'],\
-           convergence_type       =  kwargs['convergence_type'])
-
-        # Run the plotter
-        make_my_convergence_plots.collect_and_plot()
-#}}}
-
-#{{{set_nx_range
-    def set_nx_range(self, grid_keys, inner_points, ranges):
-        """Append ranges (a list filled with the number of grid points) with
-        the grid points in nx (given from the list 'inner ranges')"""
-        # We must find the guard cells in x to find the
-        # correct nx
-        # We search first if MXG is set
-        if self.__MXG:
-            MXG = self.__MXG
-        else:
-            # We must find it in the input file
-            MXG = find_variable_in_BOUT_inp(self.__directory,\
-                                            'MXG')
-            # If MXG was not found
-            if type(MXG) == str:
-                # MXG is set to the default value
-                MXG = 2
-        # Write the range to a list of strings
-        # Set the x_range
-        x_range = ['mesh:nx=' + str(nr+2*MXG) for nr in \
-                   inner_points]
-        ranges.append(x_range)
-        return ranges
-#}}}
-
-#{{{set_ny_range
-    def set_ny_range(self, grid_keys, inner_points, ranges):
-        """Append ranges (a list filled with the number of grid points) with
-        the grid points in ny (given from the list 'inner_points')"""
-        # ny is the number of inner_points
-        # Write the range to a list of strings
-        # Set the y_range
-        y_range = ['mesh:ny=' + str(nr) for nr in inner_points]
-        ranges.append(y_range)
-        return ranges
-#}}}
-
-#{{{set_nz_range
-    def set_MZ_range(self, grid_keys, inner_points, ranges):
-        """Append ranges (a list filled with the number of grid points) with
-        the grid points in MZ (given from the list 'inner_points')"""
-        # MZ is the number of inner_points + 1
-        # Write the range to a list of strings
-        # Set the z_range
-        z_range = ['MZ=' + str(nr+1) for nr in inner_points]
-        ranges.append(z_range)
-        return ranges
-#}}}
-#}}}
-#}}}
-
-# Auxiliary functions
-#{{{
-#{{{plotter_chooser
-    def plotter_chooser(self, **kwargs):
-        """Calls the correct plotter from bout_plotters"""
-
-        # Set option
-        kwarg_keys = list(kwargs.keys())
-        if 'show_plots' in kwarg_keys:
-            show_plots = kwargs['show_plots']
-        else:
-            show_plots = False
-        if 'collect_x_ghost_points' in kwarg_keys:
-            collect_x_ghost_points = kwargs['collect_x_ghost_points']
-        else:
-            collect_x_ghost_points = False
-        if 'collect_y_ghost_points' in kwarg_keys:
-            collect_y_ghost_points = kwargs['collect_y_ghost_points']
-        else:
-            collect_y_ghost_points = False
-
-        if self.__plot_type == 'solution_and_error_plot' or\
-           self.__plot_type == 'solution_plot':
-            # Get the plot_times or the number_of_overplots (one may
-            # have to be set to False if not given by the user input)
-            plot_times, number_of_overplots =\
-                self.__get_plot_times_and_number_of_overplots(**kwargs)
-
-            if self.__plot_type == 'solution_plot':
-                # Call the solution plotter
-                self.__solution_plotter(\
-                    plot_times = plot_times,\
-                    number_of_overplots = number_of_overplots,\
-                    show_plots = show_plots,\
-                    collect_x_ghost_points = collect_x_ghost_points,\
-                    collect_y_ghost_points = collect_y_ghost_points,\
-                    variables = kwargs['variables'],\
-                    plot_direction = kwargs['plot_direction'])
-            elif self.__plot_type == 'solution_and_error_plot':
-                # Call the solution and error plotter
-                self.__solution_and_error_plotter(\
-                    plot_times = plot_times,\
-                    number_of_overplots = number_of_overplots,\
-                    show_plots = show_plots,\
-                    collect_x_ghost_points = collect_x_ghost_points,\
-                    collect_y_ghost_points = collect_y_ghost_points,\
-                    variables = kwargs['variables'],\
-                    plot_direction = kwargs['plot_direction'])
-        elif self.__plot_type == 'convergence_plot':
-            # Call the convergence_plotter
-            self.__convergence_plotter(\
-                show_plots = show_plots,\
-                collect_x_ghost_points = collect_x_ghost_points,\
-                collect_y_ghost_points = collect_y_ghost_points,\
-                variables = kwargs['variables'],\
-                convergence_type = kwargs['convergence_type'])
-        else:
-            self.__errors.append("TypeError")
-            raise TypeError ("The given 'plot_type' '" + str(self.__plot_type) +\
-                             "' is invalid. See run_with_plots"+\
-                             " documentation for valid possibilities.")
-#}}}
-#}}}
-#}}}
-
-
-
-# TODO: Delete this
-#{{{qsub_run_with_plots
-# Note that the basic_qsub_runner runner is inherited first, since we
-# want functions in this class to have precedence over the ones run_with_plots
-class qsub_run_with_plots(basic_qsub_runner, run_with_plots):
-#{{{docstring
-    """Class running BOUT++ in the same way as the basic_qsub_runner, with
-    the additional feature that it calls one of the plotters in
-    'bout_plotters'.
-
-    For further details, see the documentation of basic_qsub_runner and
-    run_with_plots.
-    """
-#}}}
-
-# The constructor
-#{{{__init__
-    def __init__(self,\
-                 plot_type  = False,\
-                 extension  = 'png',\
-                 nodes      = '1',\
-                 ppn        = '4',\
-                 walltime   = '50:00:00',\
-                 mail       = False,\
-                 queue      = False,\
-                 solver     = False,\
-                 nproc      = 1,\
-                 methods    = False,\
-                 n_points   = False,\
-                 directory  = 'data',\
-                 nout       = False,\
-                 timestep   = False,\
-                 MXG        = False,\
-                 MYG        = False,\
-                 additional = False,\
-                 restart    = False):
-        """Calls the constructors of the super classes."""
-        # The cleanest way of doing this is explained in the following link
-        # http://stackoverflow.com/questions/13124961/how-to-pass-arguments-efficiently-kwargs-in-python
-        # Call the constructors of the super classes
-        super(qsub_run_with_plots, self.__init__(plot_type  = plot_type,\
-                                                  extension  = extension,\
-                                                  nodes      = nodes,\
-                                                  ppn        = ppn,\
-                                                  walltime   = walltime,\
-                                                  mail       = mail,\
-                                                  queue      = queue,\
-                                                  solver     = solver,\
-                                                  nproc      = nproc,\
-                                                  methods    = methods,\
-                                                  n_points   = n_points,\
-                                                  directory  = directory,\
-                                                  nout       = nout,\
-                                                  timestep   = timestep,\
-                                                  MYG        = MYG,\
-                                                  MXG        = MXG,\
-                                                  additional = additional,\
-                                                  restart    = restart))
-
-        self.__run_type = 'qsub_plot_' + self.__plot_type
-##}}}
-
-# Functions called directly by the main function
-#{{{
-#{{{additional_error_check
-    def additional_error_check(self, **kwargs):
-        """Calls all the error checkers"""
-
-        # Call the error checker for plotter errors from
-        # common_bout_functions
-        plotter_error_checker =\
-           check_for_plotters_errors(self.__plot_type, n_points=self.__n_points,
-                                     timestep=self.__timestep, **kwargs)
-
-        # Call the qsub error checker
-        self.__qsub_error_check()
-#}}}
-
-#{{{post_run
-# This should not be a post_run at all, but a common for all plotters
-    def post_run(self, **kwargs):
-        """Submits a job which calls the plotter from bout_plotters"""
-
-        # Make folder to move the error and log files
-        create_folder(self.__directory + '/qsub_output')
-
-        # Get the start_time
-        start_time = self.__get_start_time()
-
-        # The name of the file
-        python_name = 'tmp'+start_time+'.py'
-
-        # Creating the job string
-        job_name = 'post_' + self.__run_type + '_'+ start_time
-
-        # The wall-time of the post-processing should be longer than the
-        # wall-time of the runs, as the post-processing will wait for
-        # the runs to finish
-        # Since plotting should not take to long, we add one hour to the
-        # wall time of the run
-        # Convert the string to a list of strings
-        walltime = self.__walltime.split(':')
-        # Convert them to a string
-        walltime = [int(element) for element in walltime]
-        # Add an hour to the 'hours'
-        walltime[0] += 1
-        # Convert walltime back to strings
-        walltime = [str(element) for element in walltime]
-        # Check that the lenght is two (format needs to be HH:MM:SS)
-        for nr in range(len(walltime)):
-            if len(walltime[nr]) < 2:
-                walltime[nr] = '0' + walltime[nr]
-        # Join the list of strings
-        walltime = ':'.join(walltime)
-
-        # Get the core of the job_string
-        job_string = self.__create_qsub_core_string(\
-            job_name, nodes='1', ppn='1',\
-            walltime=walltime, folder=self.__directory + '/qsub_output/')
-
-        # We will write a python script which calls the
-        # relevant bout_plotter
-
-        # First line of the script
-        self.__python_tmp = 'import os\n'
-
-        # Append self.__python_tmp with the right plotter
-        self.__plotter_chooser(**kwargs)
-
-        # When the script has run, it will delete itself
-        self.__python_tmp += "os.remove('" + python_name + "')\n"
-        # Write the python script
-        f = open(python_name, "w")
-        f.write(self.__python_tmp)
-        f.close()
-
-        # Call the python script in the submission
-        job_string += 'python ' + python_name + '\n'
-        job_string += 'exit'
-
-        # Submit the job
-        print('\nSubmitting a job which calls ' + self.__plot_type)
-        self.__submit_to_qsub(job_string)
-#}}}
-#}}}
-
-
-# Plotter specific
-#{{{
-#solution_plot specific
-#{{{
-#{{{solution_plotter
-    def solution_plotter(self,\
-                         show_plots = False,\
-                         collect_x_ghost_points = False,\
-                         collect_y_ghost_points = False,\
-                         **kwargs):
-        """Append self.__python_tmp with a creation of the
-        solution_plotter instance."""
-        # Import the bout_plotters class
-        self.__python_tmp +=\
-            'from bout_runners.bout_plotters import solution_plotter\n'
-
-        # Creates an instance of solution_and_error_plotter
-        # Since we set qsub = True, the constructor will call the
-        # collect_and_plot function
-        # show_plots is set to false when running qsub
-        self.__python_tmp +=\
-          "make_my_plotter=solution_plotter(\n"+\
-          "run_groups="             + str(self.__run_groups)        +",\n    "+\
-          "show_plots="             + str(False)                  +",\n    "+\
-          "collect_x_ghost_points=" + str(collect_x_ghost_points) +",\n    "+\
-          "collect_y_ghost_points=" + str(collect_y_ghost_points) +",\n    "+\
-          "directory='"             + str(self.__directory)        +"',\n    "+\
-          "file_extension='"        + str(self.__file_extension)   +"',\n    "+\
-          "variables="              + str(kwargs['variables'])    +",\n    "+\
-          "plot_direction="         +\
-                                str(kwargs['plot_direction'])     +",\n    "+\
-          "plot_times="             + str(kwargs['plot_times'])   +",\n    "+\
-          "number_of_overplots="    +\
-          "qsub = True"                                          + ")\n"
-#}}}
-#}}}
-
-#solution_and_error_plotter specific
-#{{{
-#{{{solution_and_error_plotter
-    def solution_and_error_plotter(self,\
-                         show_plots = False,\
-                         collect_x_ghost_points = False,\
-                         collect_y_ghost_points = False,\
-                         **kwargs):
-        """Append self.__python_tmp with a creation of the
-        solution_and_error_plotter instance."""
-
-        # Import the bout_plotters class
-        self.__python_tmp +=\
-            'from bout_runners.bout_plotters import solution_and_error_plotter\n'
-
-        # Creates an instance of solution_and_error_plotter
-        # Since we set qsub = True, the constructor will call the
-        # collect_and_plot function
-        # show_plots is set to false when running qsub
-        self.__python_tmp +=\
-          "make_my_plotter=solution_and_error_plotter(\n"+\
-          "run_groups="             + str(self.__run_groups)        +",\n    "+\
-          "show_plots="             + str(False)                  +",\n    "+\
-          "collect_x_ghost_points=" + str(collect_x_ghost_points) +",\n    "+\
-          "collect_y_ghost_points=" + str(collect_y_ghost_points) +",\n    "+\
-          "directory='"             + str(self.__directory)        +"',\n    "+\
-          "file_extension='"        + str(self.__file_extension)   +"',\n    "+\
-          "variables="              + str(kwargs['variables'])    +",\n    "+\
-          "plot_direction="         +\
-                                str(kwargs['plot_direction'])     +",\n    "+\
-          "plot_times="             + str(kwargs['plot_times'])   +",\n    "+\
-          "number_of_overplots="    +\
-                            str(kwargs['number_of_overplots'])    +",\n    "+\
-          "qsub = True"                                          + ")\n"
-#}}}
-#}}}
-
-#convergence_plot specific
-#{{{
-#{{{convergence_plotter
-    def convergence_plotter(self,\
-                         show_plots = False,\
-                         collect_x_ghost_points = False,\
-                         collect_y_ghost_points = False,\
-                         **kwargs):
-        """Append self.__python_tmp with a creation of the convergence_plotter
-        instance."""
-
-        # Import the bout_plotters class
-        self.__python_tmp +=\
-            'from bout_runners.bout_plotters import convergence_plotter\n'
-
-        # Creates an instance of solution_and_error_plotter
-        # Since we set qsub = True, the constructor will call the
-        # collect_and_plot function
-        # show_plots is set to false when running qsub
-        self.__python_tmp +=\
-          "make_my_plotter=convergence_plotter(\n"+\
-          "run_groups="             + str(self.__run_groups)        +",\n    "+\
-          "show_plots="             + str(False)                  +",\n    "+\
-          "collect_x_ghost_points=" + str(collect_x_ghost_points) +",\n    "+\
-          "collect_y_ghost_points=" + str(collect_y_ghost_points) +",\n    "+\
-          "directory='"             + str(self.__directory)        +"',\n    "+\
-          "file_extension='"        + str(self.__file_extension)   +"',\n    "+\
-          "variables="              + str(kwargs['variables'])    +",\n    "+\
-          "convergence_type='"      +\
-                                str(kwargs['convergence_type'])  +"',\n    "+\
-          "qsub = True"                                          + ")\n"
-#}}}
 #}}}
 #}}}
 #}}}

@@ -1,6 +1,6 @@
 
 BOUT_TOP	= ../..
 
-SOURCEC		= conduction.cxx
+SOURCEC		= 3D_diffusion.cxx
 
 include $(BOUT_TOP)/make.config

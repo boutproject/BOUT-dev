@@ -1,42 +1,124 @@
 #
-# Input file for conduction case
+# Input file for "bout_runners_example/data"
 #
 
-nout = 100       # Number of output timesteps
-timestep = 0.1  # Time between outputs
+# Root option
+###############################################################################
+nout = 10              # Number of output timesteps
+timestep = 0.01        # Time between outputs
 
-MZ = 1          # Number of points in z
+dump_format="nc"   # Write NetCDF format files
 
-dump_format="nc"     # Write NetCDF format files
+# Setting the z coordinate
+ZMIN = 0.0
+ZMAX = 1.0 # dz = 2*pi(ZMAX - ZMIN)/(MZ - 1)
 
-grid="conduct_grid.nc"
+# Number of guard cells
+MXG = 1
+MYG = 1
+###############################################################################
 
-#MXG = 1
-##################################################
-[ddy]   # Methods used for parallel (y) derivative terms
 
-first = C4
-second = C4
-upwind = W3
-flux = U1
+# Mesh option
+###############################################################################
+[mesh]
+# Puts the boundaries half a step outside the last gridpoints
+symmetricGlobalY=true
+symmetricGlobalX=true
 
-##################################################
-[solver] # Solver settings
+# The spatial dimension
+nx = 18
+ny = 16
+nz = 16
 
-type = pvode # Which solver to use
+# Position of the separatrix (-1 is non periodic, >ny is periodic)
+# --------Non-periodic----------
+ixseps1 = -1
+ixseps2 = -1
+# ------------------------------
+###############################################################################
 
-atol = 1.0e-10 # absolute tolerance
-rtol = 1.0e-5  # relative tolerance
 
-##################################################
-[conduct]  # Settings for the conduction model
+# Methods option
+###############################################################################
+# Methods used for the radial (x) derivative terms
+[ddx]
+second = C2 # d^2/dx^2 (f)
 
-chi = 1.0
+# Methods used for parallel (y) derivative terms
+[ddy]
+second = C2  # d^2/dy^2 (f)
 
-##################################################
-[T] # Settings for the T variable
+#Methods used for the azimuthal (z) derivative terms
+[ddz]
+second = FTT # d^2/dz^2 (f)
+###############################################################################
 
-scale = 1.0  # Size of the initial perturbation
-function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
 
-bndry_all = dirichlet
+# Solver settings
+###############################################################################
+[solver]
+type = pvode             # Which solver to use (cvode should be same as pvode)
+mms = false              # false by default
+
+atol = 1.0e-7 # absolute tolerance
+rtol = 1.0e-7 # relative tolerance
+
+# Max allowed iterations in one step
+mxstep = 100000000
+###############################################################################
+
+
+# Specifying the output
+###############################################################################
+[output]
+floats = false # floats = false => output in double
+###############################################################################
+
+
+# Additional options
+###############################################################################
+# Geometry
+# -----------------------------------------------------------------------------
+[geom]
+Lx     = 2*pi               # The length of x from boundary to boundary
+Ly     = 2*pi               # The length of y from boundary to boundary
+# Setting the spatial variables
+yl = y * geom:Ly / (2.0*pi) #y in range [0,Ly]
+xl = x * geom:Lx            #x in range [0,Lx]
+# -----------------------------------------------------------------------------
+
+# Constants
+# -----------------------------------------------------------------------------
+[cst]
+D_par  = 1.0           # Parallel diffusion constant
+D_perp = 1.0           # Perpendicular diffusion constant
+x0 = 0.5 * geom:Lx     # The x centering of the gaussian
+y0 = 0.5 * geom:Ly     # The y centering of the gaussian
+z0 = pi                # The z centering of the gaussian
+w  = 2                 # Width of the gaussian
+# -----------------------------------------------------------------------------
+
+# Flags
+# -----------------------------------------------------------------------------
+[flag]
+Lx_Ly_from_grid = False     # Lx and Ly loaded from a grid file
+# -----------------------------------------------------------------------------
+
+# The particle density
+# -----------------------------------------------------------------------------
+[n]
+# Scaling
+scale = 1.0
+
+# Inital condition (a "spherical" gaussian centered in the middle of the domain)
+function = gauss(geom:xl - cst:x0, cst:w)*gauss(geom:yl - cst:y0, cst:w)*gauss(z - cst:z0, cst:w)
+
+# Boundary conditions
+# Set the boundary to the initial condition
+bndry_xin   = dirichlet(n:function)
+bndry_xout  = dirichlet(n:function)
+bndry_ydown = dirichlet(n:function)
+bndry_yup   = dirichlet(n:function)
+# -----------------------------------------------------------------------------
+##############################################################################
