@@ -28,9 +28,12 @@ def shell(command, pipe=False):
             # python 2. However, as we want to use f.write() in our
             # runtest, we cast this to utf-8 here
             output = child.stdout.read().decode("utf-8")
-            # Check if child process has terminated. Set and return
-            # returncode attribute.
-            status = child.poll()
+            # Wait for the process to finish. Note that child.wait()
+            # would have deadlocked the system as stdout is PIPEd, we
+            # therefore use communicate, which in the end also waits for
+            # the process to finish
+            child.communicate()
+            status = child.returncode
         else:
             status = call(command, shell=True)
 
