@@ -1,7 +1,7 @@
 
 #ifdef BOUT_HAS_PETSC
 
-#include "imex-bdf2.hxx"
+#include "snes.hxx"
 
 #include <boutcomm.hxx>
 #include <utils.hxx>
@@ -14,7 +14,7 @@
 
 #include "petscsnes.h"
 
-SNESSolver::SNESSolver(Options *opt) : Solver(opt), u(0) {
+SNESSolver::SNESSolver(Options *opt) : Solver(opt) {
   
 }
 
@@ -55,23 +55,6 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
 	       n3Dvars(), n2Dvars(), neq, nlocal);
   
-  // Allocate memory
-  u = new BoutReal[nlocal];
-  u_1 = new BoutReal[nlocal];
-  u_2 = new BoutReal[nlocal];
-  
-  f_1 = new BoutReal[nlocal];
-  f_2 = new BoutReal[nlocal];
-
-  rhs = new BoutReal[nlocal];
-  
-  // Set initial guess at the solution from variables
-  BoutReal *xdata;
-  int ierr;
-  ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  saveVars(xdata);
-  ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-
   // Get options
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   
@@ -84,6 +67,12 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
   ierr = VecSetFromOptions(snes_x);CHKERRQ(ierr);
   
   VecDuplicate(snes_x,&snes_f);
+  
+  // Set initial guess at the solution from variables
+  BoutReal *xdata;
+  ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
+  save_vars(xdata);
+  ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),&snes);
@@ -148,17 +137,17 @@ int SNESSolver::run() {
   
   // Put the result into variables
   BoutReal *xdata;
+  int ierr;
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
-  loadVars(xdata);
+  load_vars(xdata);
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
   
   run_rhs(0.0); // Run RHS to calculate auxilliary variables
     
   /// Call the monitor function
   
-  if(call_monitors(0.0, s, nsteps)) {
+  if(call_monitors(0.0, 1, 1)) {
     // User signalled to quit
-    break;
   }
   
   msg_stack.pop(msg_point);
@@ -173,7 +162,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   
   // Get data from PETSc into BOUT++ fields
   ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  loadVars(xdata);  
+  load_vars(xdata);  
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
 
   // Call RHS function
@@ -181,7 +170,7 @@ PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   
   // Copy derivatives back
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
-  saveDerivs(fdata);
+  save_derivs(fdata);
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
   
   return 0;
