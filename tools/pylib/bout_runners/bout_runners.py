@@ -13,8 +13,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.91beta'
-__date__    = '28.06.2015'
+__version__ = '0.92beta'
+__date__    = '01.07.2015'
 
 # TODO: DELETE PLOTTING ROUTINES? BOUTUTILS?
 # TODO: Check that nx, ny and nz not input when using grid file
@@ -38,11 +38,24 @@ from subprocess import check_output
 from boututils import shell, launch, getmpirun
 from boututils.datafile import DataFile
 
-# TODO: Add all time integration solver option as given in "Table 6: Time
-#       integration solver options" in the user manual
-# TODO: Add additional error checks on the branch cuts
-# TODO: Check if MXG and MYG is in the grid file
-# TODO: Check if branch cut is in the grid file
+# TODO: Things to add in __init__ and appropriate places
+#       The following can already be set with the "additional" member
+#       data
+#       1.  Add all time integration solver option as given in "Table 6: Time
+#           integration solver options" in the user manual
+#       2.  Add laplace solver options
+
+# TODO: Add additional error checks
+#       1. For the branch cuts (to check if correct NXPE and NYPE)
+
+# TODO: Make a check to see if the following is in the grid file
+#       1. Check if branch cut is in the grid file
+
+# TODO: Move allow_size_modification = False to execute_run, as it is
+#       better to also write the run_no there?
+
+# TODO: Rewrite documentation in the manual (also the nice chart)
+
 # FIXME: qsub does not always delete the clean-up files??
 #        Fixed for basic qsub (test it), fix for the rest
 # TODO: Make it possible to give a function to the waiting routine in
@@ -54,10 +67,6 @@ from boututils.datafile import DataFile
 # TODO: Submit and postprocess to a different queue
 # TODO: Check if it is possible to use qsub with dependencies (only
 #       found depricated documentation)
-# TODO: Check if MXG is in grid file, check if ixseps is in grid file
-# TODO: Set ZMIN and ZMAX
-# TODO: Allow setting dx, dy and dz
-# TODO: Rewrite documentation in the manual (also the nice chart)
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -136,6 +145,7 @@ class basic_runner(object):
                  additional = None,\
                  restart    = None,\
                  cpy_source = None,\
+                 cpy_grid   = None,\
                  sort_by    = None,\
                  make       = None,\
                  allow_size_modification = False):
@@ -211,6 +221,8 @@ class basic_runner(object):
         restart     -    Wheter or not to use the restart files
                          ('overwrite' or 'append')
         cpy_source  -    Wheter or not to copy the source files to the
+                         folder of the *.dmp.* files (bool)
+        cpy_grid    -    Wheter or not to copy the grid files to the
                          folder of the *.dmp.* files (bool)
         sort_by     -    Defining what will be the fastest running
                          variable in the run, which can be useful if one
@@ -298,6 +310,7 @@ class basic_runner(object):
         self.__additional = additional
         self.__restart    = restart
         self.__cpy_source = cpy_source
+        self.__cpy_grid   = cpy_grid
         self.__sort_by    = self.__set_member_data(sort_by)
         self.__make       = make
         self.__allow_size_modification = allow_size_modification
@@ -373,15 +386,14 @@ class basic_runner(object):
             print('-'*80)
             for warning in self.__warnings:
                 print(warning + '\n')
-            print('\n'*3)
-            print(' ' + '~'*69 + '\n'*3)
+            print('-'*80 + '\n'*3)
         elif len(self.__warnings) > 0 and not(error_occured):
             print('\n'*3 + ' ' + '~'*69)
             print("| No WARNINGS detected before instance destruction in"+\
                   " 'bout_runners'. |")
 #}}}
 
-#{{{execute_runs
+#{{{execute_run
     def execute_runs(self,\
                      remove_old = False,\
                      post_processing_function = None,\
@@ -450,6 +462,21 @@ class basic_runner(object):
                 # Remove old data
                self.__remove_data()
 
+            # Copy the grid (if any) if cpy_grid files is True We must
+            # do this after self.__remove_data as this removes all *.nc
+            # files
+            if (self.__cpy_grid) and (self.__grid_file != None):
+                combination_list = combination.split()
+                # Loop through all the combinations
+                for elem in combination_list:
+                    # Find the grid
+                    if 'grid' in elem:
+                        # Remove grid=, so that only the path remains
+                        cur_grid = elem.replace('grid=', '')
+                        # Copy the grid file
+                        command = 'cp ' + cur_grid + ' ' + self.__dmp_folder + '/'
+                        shell(command)
+
             # Check if the run has been performed previously
             do_run = self.__check_if_run_already_performed()
             # Do the actual runs
@@ -458,7 +485,7 @@ class basic_runner(object):
                 self.__run_driver(combination, run_no)
 
             # If we would like to call a post_processing function
-            if post_process_after_every_run != None:
+            if post_processing_function != None:
                 if post_process_after_every_run:
                     # Call the post processing function
                     self.__call_post_processing_function(\
@@ -876,9 +903,9 @@ class basic_runner(object):
                         # If the variable is found
                         if grid_variable != None:
                             self.__errors.append("TypeError")
-                            message  = mesh_type + " was specified both in the "
+                            message  = var[1] + " was specified both in the "
                             message += "driver and in the grid file.\n"
-                            message += "Please remove " + mesh_type
+                            message += "Please remove " + var[1]
                             message += " from the driver if you would "
                             message += "like to run with a grid file."
                             raise TypeError(message)
@@ -935,6 +962,15 @@ class basic_runner(object):
             self.__errors.append("TypeError")
             message = "dz and zperiod cannot be set simulatneously."
             raise TypeError(message)
+        #}}}
+
+        #{{{Check that dz is not set
+        # dz is currently set throught zmin and zmax
+        if self.__dz != None:
+            self.__errors.append("TypeError")
+            message  = "dz can currently just be set through zmin and zmax\n"
+            message += "dz = 2*pi*(zmax-zmin)/(MZ-1)"
+            raise TypeError (message)
         #}}}
 
         #{{{Check that dx, dy and dz are of the same length
@@ -1026,17 +1062,27 @@ class basic_runner(object):
                 raise TypeError(message)
         #}}}
 
-        #{{{Check mms, symGlobX, symGlobY, cpy_source, allow_size_mod is bool
+        #{{{Check mms, symGlobX, symGlobY, cpy_src/grid, allow_size_mod is bool
         check_if_bool = [\
             (self.__mms                    , 'mms')                    ,\
             (self.__symGlobX               , 'symGlobX')               ,\
             (self.__symGlobY               , 'symGlobY')               ,\
             (self.__cpy_source             , 'cpy_source')             ,\
+            (self.__cpy_grid               , 'cpy_grid')               ,\
             (self.__allow_size_modification, 'allow_size_modification') \
             ]
 
         self.__check_for_correct_type(var = check_if_bool,\
                                     the_type = bool)
+        #}}}
+
+        #{{{Check grid_file == None if cpy_grid==True
+        if (self.__grid_file == None) and (self.__cpy_grid == True):
+            # Raise error
+            self.__errors.append("TypeError")
+            message = "Cannot copy the grid files if none exists in "+\
+                      " self.__grid_file"
+            raise TypeError(message)
         #}}}
 
         #{{{Check that zmin and zmax has the same length
@@ -1057,6 +1103,15 @@ class basic_runner(object):
         """Check if there are any type errors in input for the run
         function"""
 
+        #{{{Check if remove_old is of the correct type
+        check_if_bool = [\
+            (remove_old , 'remove_old'),\
+            ]
+
+        self.__check_for_correct_type(var = check_if_bool,\
+                                    the_type = bool)
+        #}}}
+
         #{{{Check if remove_old and restart is set on the same time
         if remove_old == True and self.__restart != None:
             self.__errors.append("RuntimeError")
@@ -1066,7 +1121,7 @@ class basic_runner(object):
 
         #{{{Check that the post_processing_function is a fuction
         if (post_processing_function != None) and\
-           (type(post_processing_function) != function):
+           (not(hasattr(post_processing_function, '__call__'))):
             self.__errors.append("RuntimeError")
             message = "post_process_after_every_run must be a"+\
                       " function"
@@ -1122,10 +1177,10 @@ class basic_runner(object):
         # First we check if self.__MXG is given
         if self.__MXG == None:
             # We need to find MXG in BOUT.inp
-            self.__MXG = self.__find_variable_in_BOUT_inp("MXG")
+            local_MXG = self.__find_variable_in_BOUT_inp("MXG")
 
             # Check that one unique variable was found
-            if len(self.__MXG) > 1:
+            if len(local_MXG) > 1:
                 self.__errors.append("RuntimeError")
                 message =  "Several matches was found when searching for "
                 message += "MXG.\n"
@@ -1133,7 +1188,9 @@ class basic_runner(object):
                 raise RuntimeError(message)
 
             # Pick the only element
-            self.__MXG = int(self.__MXG[0])
+            local_MXG = int(local_MXG[0])
+        else:
+            local_MXG = self.__MXG
 
         print("\nChecking the grid split for the meshes\n")
         for size_nr in range(len(self.__nx)):
@@ -1145,7 +1202,7 @@ class basic_runner(object):
                 # The same check as below is performed internally in
                 # BOUT++ (see boutmesh.cxx)
                 for i in range(1, self.__nproc+1, 1):
-                    MX = self.__nx[size_nr] - 2*self.__MXG
+                    MX = self.__nx[size_nr] - 2*local_MXG
                     if (self.__nproc % i == 0) and \
                        (MX % i == 0) and \
                        (self.__ny[size_nr] % (self.__nproc/i) == 0):
@@ -1190,6 +1247,7 @@ class basic_runner(object):
             # Make the warning if produced
             if produce_warning:
                 message = "The mesh was changed to allow the split given by nproc"
+                self.__warning_printer(message)
                 self.__warnings.append(message)
 #}}}
 
@@ -1227,8 +1285,8 @@ class basic_runner(object):
                     # Fill the appendable list with the elements from
                     # the variable
                     for elem in spatial_grid_str[key][0]:
-                        spatial_grid_str[2].append(\
-                            spatial_grid_str[1] + key + '=' + str(elem)\
+                        spatial_grid_str[key][2].append(\
+                            spatial_grid_str[key][1] + key + '=' + str(elem)\
                                 )
 
             # The goal is to combine the these strings to one string
@@ -1280,13 +1338,19 @@ class basic_runner(object):
             temporal_grid_possibilities.append(' '.join(current_times))
         #}}}
 
-        #{{{Put MXG and MYG into a list if they are not set to None
+        #{{{Put non-iterable variables into a list if they are not set to None
         # This makes the memberdata iterable, and useable in
         # generate_possibilities
         if self.__MXG != None:
             self.__MXG = [self.__MXG]
         if self.__MYG != None:
             self.__MYG = [self.__MYG]
+        if self.__mms != None:
+            self.__mms = [self.__mms]
+        if self.__symGlobX != None:
+            self.__symGlobX = [self.__symGlobX]
+        if self.__symGlobY != None:
+            self.__symGlobY = [self.__symGlobY]
         #}}}
 
         #{{{List of tuple of varibles to generate possibilities from
@@ -1313,10 +1377,10 @@ class basic_runner(object):
             (self.__ddz_flux,   "ddz",    "flux")             ,\
             (self.__ixseps1,    "mesh",   "ixseps1")          ,\
             (self.__ixseps2,    "mesh",   "ixseps2")          ,\
-            (self.__jyseps1_1,  "mesh",   "ixseps1_1")        ,\
-            (self.__jyseps1_2,  "mesh",   "ixseps1_2")        ,\
-            (self.__jyseps2_1,  "mesh",   "ixseps2_1")        ,\
-            (self.__jyseps2_2,  "mesh",   "ixseps2_2")        ,\
+            (self.__jyseps1_1,  "mesh",   "jyseps1_1")        ,\
+            (self.__jyseps1_2,  "mesh",   "jyseps1_2")        ,\
+            (self.__jyseps2_1,  "mesh",   "jyseps2_1")        ,\
+            (self.__jyseps2_2,  "mesh",   "jyseps2_2")        ,\
             (self.__symGlobX,   "mesh",   "symmetricGlobalX") ,\
             (self.__symGlobY,   "mesh",   "symmetricGlobalY")  \
             ]
@@ -1328,7 +1392,8 @@ class basic_runner(object):
                 # If the last element of additional is not iterable we need
                 # put them into a list to make them iterable (in order to
                 # use them in generate_possibilities)
-                if not(hasattr(additional[2], "__iter__")):
+                if (not(hasattr(additional[2], "__iter__"))) or\
+                   (type(additional[2]) == str):
                     # We have to specify the whole additional, as this can
                     # be given as a tuple, and tuples does not support item
                     # assignments
@@ -1469,12 +1534,13 @@ class basic_runner(object):
 
 #{{{__call_post_processing_function
     def __call_post_processing_function(\
+                    self           ,\
                     function = None,\
                     folders  = None,\
                     **kwargs):
         """Function which calls the post_processing_function"""
 
-        function(folders, **kwarg)
+        function(folders, **kwargs)
 
 #}}}
 
@@ -1614,19 +1680,66 @@ class basic_runner(object):
         """Returning the folder name where the data will be stored.
 
         If all options are given the folder structure should be on the
-        form solver/method/nout_timestep/mesh/additional"""
+        form solver/method/nout_timestep/mesh/additional/grid"""
 
         # Combination is one of the combination of the data members
         # which is used as the command line arguments in the run
         combination = combination.split()
 
+        #{{{Append from eventual grid file
+        # If there is a grid file, we will extract the values from the
+        # file, and put it into this local combination variable, so that
+        # a proper dmp folder can be made on basis on the variables
+        # A flag to see whether or not the grid file was found
+        grid_file_found = False
+        # Check if grid is in element, and extract its path
+        for elem in combination:
+            if 'grid' in elem:
+                cur_grid = elem.replace('grid=','')
+                grid_file_found = True
+
+        # If the grid file is found, open it
+        if grid_file_found:
+            # Open (and automatically close) the grid files
+            f = DataFile(cur_grid)
+            # Search for mesh types in the grid file
+            mesh_types = [\
+                          ("mesh:", "nx"       ) ,\
+                          ("mesh:", "ny"       ) ,\
+                          ("mesh:", "nz"       ) ,\
+                          ("mesh:", "zperiod"  ) ,\
+                          ("mesh:", "zmin"     ) ,\
+                          ("mesh:", "zmax"     ) ,\
+                          ("mesh:", "dx"       ) ,\
+                          ("mesh:", "dy"       ) ,\
+                          ("mesh:", "dz"       ) ,\
+                          ("mesh:", "ixseps1"  ) ,\
+                          ("mesh:", "ixseps2"  ) ,\
+                          ("mesh:", "jyseps1_1") ,\
+                          ("mesh:", "jyseps1_2") ,\
+                          ("mesh:", "jyseps2_1") ,\
+                          ("mesh:", "jyseps2_2") ,\
+                          ("",      "MXG")       ,\
+                          ("",      "MYG")       ,\
+                          ]
+            for mesh_type in mesh_types:
+                grid_variable = f.read(mesh_type[1])
+                # If the variable is found
+                if grid_variable != None:
+                    # Append it to the combinations list
+                    combination.append(mesh_type[0] +\
+                                       mesh_type[1] +\
+                                       "=" + str(grid_variable))
+        #}}}
+
         # Make lists for the folder-type, so that we can append the
         # elements in the combination folders if it is found
-        solver              = []
-        method              = []
-        nout_timestep       = []
-        mesh                = []
-        additional          = []
+        solver        = []
+        method        = []
+        nout_timestep = []
+        mesh          = []
+        additional    = []
+        grid_file     = []
 
         # We will loop over the names describing the methods used
         # Possible directional derivatives
@@ -1653,11 +1766,24 @@ class basic_runner(object):
             # If mesh, MXG or MYG is in the combination
             elif ('mesh' in elem) or\
                  ('MXG' in elem) or\
-                 ('MYG' in elem):
+                 ('MYG' in elem) or\
+                 ('zperiod' in elem) or\
+                 ('zmin' in elem) or\
+                 ('zmax' in elem) or\
+                 (('dx' in elem) and not('ddx' in elem)) or\
+                 (('dy' in elem) and not('ddy' in elem)) or\
+                 (('dz' in elem) and not('ddz' in elem)):
                 # Remove 'mesh:', and append it to the mesh folder
                 cur_mesh = elem.replace('mesh:','')
                 cur_mesh = cur_mesh.replace('=','_')
                 mesh.append(cur_mesh)
+
+            # If a grid file is in the combination
+            elif ('grid' in elem):
+                # Remove .nc and =
+                cur_grid = elem.replace('.nc','')
+                cur_grid = cur_grid.replace('=','_')
+                grid_file.append(cur_grid)
 
             # If the element is none of the above
             else:
@@ -1688,11 +1814,35 @@ class basic_runner(object):
         # We sort the elements in the various folders alphabethically,
         # to ensure that the naming convention is always the same, no
         # matter how the full combination string looks like
+        # Sort alphabethically
         solver.sort()
+        #{{{ Manual sort solver
+        # We want 'type' to be first, and 'atol' and 'rtol' to be last
+        sort_these = [\
+                      ('type',0) ,\
+                      ('atol',-1),\
+                      ('rtol',-1) \
+                     ]
+        # Loop through everything we want to sort
+        for sort_this in sort_these:
+            # Flag to check if found
+            found_string = False
+            for elem_nr, elem in enumerate(solver):
+                if sort_this[0] in elem:
+                    swap_nr = elem_nr
+                    # Set the flag that the string is found
+                    found_string = True
+            # If type was found
+            if found_string != False:
+                # Swap the elements in the solver
+                solver[sort_this[1]], solver[swap_nr] =\
+                        solver[swap_nr], solver[sort_this[1]]
+        #}}}
         method.sort()
         nout_timestep.sort()
         mesh.sort()
         additional.sort()
+        grid_file.sort()
 
         # Combine the elements in the various folders
         solver              = ['_'.join(solver)]
@@ -1700,6 +1850,7 @@ class basic_runner(object):
         nout_timestep       = ['_'.join(nout_timestep)]
         mesh                = ['_'.join(mesh)]
         additional          = ['_'.join(additional)]
+        grid_file           = ['_'.join(grid_file)]
 
         # Put all the folders into the combination_folder
         combination_folder = [\
@@ -1707,7 +1858,8 @@ class basic_runner(object):
                               method       ,\
                               nout_timestep,\
                               mesh         ,\
-                              additional    \
+                              additional   ,\
+                              grid_file     \
                              ]
         # We access the zeroth element (if given) as the folders are
         # given as a list
@@ -1719,7 +1871,6 @@ class basic_runner(object):
 
         return combination_folder
 #}}}
-
 
 #{{{__create_folder
     def __create_folder(self, folder):
@@ -2007,7 +2158,7 @@ class basic_runner(object):
         program"""
 
         # Creating the arguments
-        arg = " -d " + self.__dmp_folder + combination
+        arg = " -d " + self.__dmp_folder + " " + combination
 
         # If the run is restarted with initial values from the last run
         if self.__restart != None:
@@ -2026,6 +2177,31 @@ class basic_runner(object):
 
         return command
 #}}}
+#}}}
+
+#{{{Functions called from several places in the code
+    #{{{__warning_printer
+    def __warning_printer(self, message):
+        """Function for printing warnings"""
+
+        print('\n'*3 + '*'*37 + 'WARNING' + '*'*36)
+        # Makes sure that no more than 80 characters are printed out at
+        # the same time
+        message_chunks=[]
+        for chunk in self.__message_chunker(message):
+            rigth_padding = ' '*(76 - len(chunk))
+            print('* ' + chunk + rigth_padding + ' *')
+        print('*'*80 + '\n'*3)
+    #}}}
+
+    #{{{__message_chunker
+    def __message_chunker(self, message, chunk=76):
+        """Generator used to chop a message so it doesn't exceed some
+        width"""
+
+        for start in range(0, len(message), chunk):
+            yield message[start:start + chunk]
+    #}}}
 #}}}
 #}}}
 

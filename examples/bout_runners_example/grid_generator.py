@@ -5,10 +5,10 @@
 # Wrapper around NetCDF4 libraries
 from boututils import DataFile
 
-def grid_generator(nx = 5,\
-                   ny = 64,\
-                   nz = 1,\
-                   file_name = "conduct_grid"):
+def generate_grid(nx = 20,\
+                  ny = 10,\
+                  nz = 8,\
+                  file_name = "3D_diffusion_grid"):
 
     # Create the grid file
     f = DataFile()
