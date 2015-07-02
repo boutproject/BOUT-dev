@@ -111,8 +111,9 @@ Lx_Ly_from_grid = False     # Lx and Ly loaded from a grid file
 # Scaling
 scale = 1.0
 
-# Inital condition (a "spherical" gaussian centered in the middle of the domain)
-function = gauss(geom:xl - cst:x0, cst:w)*gauss(geom:yl - cst:y0, cst:w)*gauss(z - cst:z0, cst:w)
+# Source and solution for MMS
+solution  = 10 + t^(2.5) + sin(3+geom:xl) + cos(2*geom:yl) + 4*z^2
+source    = 2.5*t^(1.5) - cst:D_perp*(cos(3+geom:xl) - geom:xl^2*sin(3+geom:xl) - 2*sin(2*geom:yl) + 4*y^(2)*sin(2*y)) + cst:D_par*8
 
 # Boundary conditions
 # Set the boundary to the initial condition

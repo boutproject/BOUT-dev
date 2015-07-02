@@ -54,6 +54,8 @@ from boututils.datafile import DataFile
 # TODO: Move allow_size_modification = False to execute_run, as it is
 #       better to also write the run_no there?
 
+# TODO: Test for python 2
+
 # TODO: Rewrite documentation in the manual (also the nice chart)
 
 # FIXME: qsub does not always delete the clean-up files??
@@ -397,7 +399,7 @@ class basic_runner(object):
     def execute_runs(self,\
                      remove_old = False,\
                      post_processing_function = None,\
-                     post_process_after_every_run = None,\
+                     post_process_after_every_run = True,\
                      **kwargs):
         #{{{docstring
         """
@@ -452,6 +454,18 @@ class basic_runner(object):
         # Print either 'now running' or 'now submitting'
         self.__print_run_or_submit()
 
+        # Set self.__len_group if post_processing_function is set, but
+        # self.__sort_by is None
+        if (post_processing_function != None) and\
+           (not(post_process_after_every_run)) and\
+           (self.__len_group == None):
+               # self.__len_group is to a number by __get_swapped_input_list
+               # (which is called if self.__sort_by != None)
+               # If there are no sorting, self.__len_group will be None
+               # We will make self.__len_group the length of the
+               # number of runs here
+               self.__len_group = len(combinations)
+
         # The run
         for run_no, combination in enumerate(combinations):
 
@@ -495,7 +509,8 @@ class basic_runner(object):
                 else:
                     # Append the dmp folder to the list of dmp folders
                     list_of_dmp_folders.append(self.__dmp_folder)
-                    if (run_no % self.__len_group == 0):
+                    # If the run_no+1 is divisible by self.__len_group
+                    if ((run_no+1) % self.__len_group == 0):
                         # Call the post processing function
                         self.__call_post_processing_function(\
                                 function = post_processing_function,\
@@ -1442,6 +1457,9 @@ class basic_runner(object):
             # that that list will be the last. The itertools.product
             # will then make that list the fastest varying in the list
             input_list = self.__get_swapped_input_list()
+        else:
+            # Initialize this member data to None
+            self.__len_group = None
 
         # The last element in the input_list will be the fastest varying
         # element

@@ -11,6 +11,8 @@ my_runs = basic_runner()
 # Put this in the post-processing function
 my_runs.execute_runs(\
                      post_processing_function = show_the_data,\
+                     # This function will be called every time after
+                     # performing a run
                      post_process_after_every_run = True,\
                      # Below are the kwargs arguments being passed to
                      # show_the_data
