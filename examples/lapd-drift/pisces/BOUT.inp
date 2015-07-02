@@ -4,24 +4,48 @@
 # settings used by the core code
 
 NOUT = 400       # number of time-steps
-TIMESTEP = 2.	   # time between outputs
-
-archive = 500
-
-ShiftXderivs = false # use shifted radial derivatives?
-TwistShift = false  # use twist-shift condition?
+TIMESTEP = 0.1	 # time between outputs
 
 MZ = 32     # number of points in z direction (2^n + 1)
-ZPERIOD = 5  # Number of periods
-
-MXG = 2
-MYG = 2
-
-grid="uedge.grd.nc"
-
-dump_format = "nc"   # Output format (PDB = "pdb", NetCDF="nc")
+ZPERIOD = 1  # Number of periods
 
 non_uniform = true
+
+[mesh]
+# Simple mesh for linear device
+
+nx = 68        # Number of radial grid points, including guards
+ny = 64        # Number of parallel (Y) grid points
+
+Length = 1     # length of machine in meters
+Rmin = 5e-3    # minimum radius in meters
+Rmax = 2.5e-2  # maximum radius
+
+Bxy = 0.15     # magnetic field in Tesla
+
+Ni0  = 1e-2*exp(-x^2)  # Density in units of 10^20 m^-3
+Te0  = 5               # Electron temperature in eV
+Ti0  = 0.1             # Ion temperature in eV
+
+Ni_x = 1e-2            # Density normalisation in units of 10^20 m^-3
+Te_x = 2               # Electron normalisation in eV
+Ti_x = Te_x            # Ion normalisation in eV
+bmag = 0.15            # Magnetic field normalisation in Tesla
+
+Bpxy = Bxy
+Btxy = 0
+hthe = 1
+dy = length / ny
+
+Rxy = Rmin + (Rmax - Rmin) * x
+
+dr = (Rmax - Rmin) / (nx - 4)
+dx = Bpxy * Rxy * dr
+dpsi = dx
+
+# ixseps1 and ixseps2 set the radial (x) index of the separatrix
+ixseps1 = 10000  # >= nx -> periodic in Y. -1 -> boundaries in Y
+ixseps2 = 10000
 
 ##################################################
 # derivative methods
@@ -148,7 +172,7 @@ zs_mode = 1 # asimuthal mode number
 #bndry_core = relax(neumann)
 #bndry_sol = relax(neumann)
 #bndry_target = none
-bndry_all = relax(neumann)
+bndry_all = neumann
 
 # Section for only the Ni equation
 # Contains switches for terms
@@ -193,6 +217,7 @@ rho_ve2t = false
 
 scale = -1.0e-8
 
+bndry_all = dirichlet_o2
 
 # Section for only the Ajpar equation
 # Contains switches for terms

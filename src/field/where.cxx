@@ -169,3 +169,19 @@ const Field2D where(const Field2D &test, BoutReal gt0, BoutReal le0) {
       }
   return result;
 }
+
+const Field3D where(const Field3D &test, BoutReal gt0, const Field3D &le0) {
+  Field3D result;
+  result.allocate();
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jy=0;jy<mesh->ngy;jy++)
+      for(int jz=0;jz<mesh->ngz-1;jz++) {
+        if(test(jx, jy, jz) > 0.0) {
+          result(jx, jy, jz) = gt0;
+        }else {
+          result(jx, jy, jz) = le0(jx, jy, jz);
+        }
+      }
+  return result;
+}

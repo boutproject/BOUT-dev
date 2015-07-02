@@ -300,6 +300,8 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             t = collect('t_array')
             if t == None:
                 raise ValueError("t_array is None")
+            if len(t) != Nt[0][0]:
+                raise ValueError("t_array is wrong size")
         except:
             t = linspace(0,Nt[0][0], Nt[0][0])
     

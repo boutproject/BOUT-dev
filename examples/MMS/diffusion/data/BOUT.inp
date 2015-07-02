@@ -63,7 +63,7 @@ flux = SPLIT
 
 atol = 1.0e-15 # absolute tolerance
 rtol = 1.0e-7  # relative tolerance
-mxstep = 10000000000000000
+mxstep = 1000000
 
 [cyto]
 dis = 1
