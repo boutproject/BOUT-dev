@@ -22,6 +22,8 @@ def perform_MMS_test(paths, extension='.pdf', show_plot=False):
         # Collect n_solution - n_numerical
         error_array = collect('E_n', path=path, info=False,\
                               xguards = False, yguards = False)
+        # Pick the last time point
+        error_array = error_array[-1]
 
         # The error in the 2-norm and infintiy-norm
         data['error_2']  .append( np.sqrt(np.mean( error_array**2.0 )) )
@@ -39,11 +41,12 @@ def perform_MMS_test(paths, extension='.pdf', show_plot=False):
         dy_spacing = np.max(dy_spacing)
         dz_spacing = np.max(dz_spacing)
 
+        # TODO: Decide
         # Store the spacing in the data
-        data['spacing'].append(dx_spacing + dy_spacing + dz_spacing)
+        # data['spacing'].append(dx_spacing + dy_spacing + dz_spacing)
+        # data['spacing'].append(dx_spacing)
+        data['spacing'].append(dy_spacing)
 
-    import pdb
-    pdb.set_trace()
     # Sort the data
     data = sort_data(data)
 
@@ -65,7 +68,6 @@ def perform_MMS_test(paths, extension='.pdf', show_plot=False):
     do_plot(data, order_2[-1], order_inf[-1],\
             root_folder, name, extension, show_plot)
 #}}}
-
 
 # Help functions
 #{{{sort_data

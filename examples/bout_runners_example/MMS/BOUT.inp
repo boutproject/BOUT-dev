@@ -81,8 +81,8 @@ floats = false # floats = false => output in double
 # Geometry
 # -----------------------------------------------------------------------------
 [geom]
-Lx     = 2*pi               # The length of x from boundary to boundary
-Ly     = 2*pi               # The length of y from boundary to boundary
+Lx = 1                  # The length of x from boundary to boundary
+Ly = 2*pi               # The length of y from boundary to boundary
 # Setting the spatial variables
 yl = y * geom:Ly / (2.0*pi) #y in range [0,Ly]
 xl = x * geom:Lx            #x in range [0,Lx]
@@ -93,16 +93,12 @@ xl = x * geom:Lx            #x in range [0,Lx]
 [cst]
 D_par  = 1.0           # Parallel diffusion constant
 D_perp = 1.0           # Perpendicular diffusion constant
-x0 = 0.5 * geom:Lx     # The x centering of the gaussian
-y0 = 0.5 * geom:Ly     # The y centering of the gaussian
-z0 = pi                # The z centering of the gaussian
-w  = 2                 # Width of the gaussian
 # -----------------------------------------------------------------------------
 
 # Flags
 # -----------------------------------------------------------------------------
 [flag]
-Lx_Ly_from_grid = False     # Lx and Ly loaded from a grid file
+use_grid = False     # Lx and Ly loaded from a grid file
 # -----------------------------------------------------------------------------
 
 # The particle density
@@ -112,11 +108,26 @@ Lx_Ly_from_grid = False     # Lx and Ly loaded from a grid file
 scale = 1.0
 
 # Source and solution for MMS
-solution  = 10 + t^(2.5) + sin(3+geom:xl) + cos(2*geom:yl) + 4*z^2
-source    = 2.5*t^(1.5) - cst:D_perp*(cos(3+geom:xl) - geom:xl^2*sin(3+geom:xl) - 2*sin(2*geom:yl) + 4*y^(2)*sin(2*y)) + cst:D_par*8
+# This does not seem to work....
+# solution  = sin(geom:yl)
+# source    = cst:D_par*sin(geom:yl)
+# solution  = geom:yl^3
+# source    = -6*cst:D_perp*geom:yl
+#
+# This works...
+# For yl
+solution = 0.9 + 0.9*geom:yl + 0.2*Cos(10*t)*Sin(5.*Power(geom:yl,2))
+source = -2.*Sin(10*t)*Sin(5.*Power(geom:yl,2)) + Cos(10*t)*(-2.*Cos(5.*Power(geom:yl,2)) + 20.*Power(geom:yl,2)*Sin(5.*Power(geom:yl,2)))
+# # For xl
+# solution  = sin(geom:xl)
+# source    = cst:D_perp*sin(geom:xl)
+#
+# Want this
+# solution  = 10 + t^(2.5) + sin(3+geom:xl) + cos(2*geom:yl) + 4*z^2
+# source    = 2.5*t^(1.5) - cst:D_perp*(-sin(3+geom:xl) + 8) - cst:D_par*(-4*cos(2*geom:yl))
 
 # Boundary conditions
 # Set the boundary to the initial condition
-bndry_all   = dirichlet(n:function)
+bndry_all   = dirichlet_o4(n:solution)
 # -----------------------------------------------------------------------------
 ##############################################################################

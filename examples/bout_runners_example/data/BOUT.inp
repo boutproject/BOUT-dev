@@ -81,8 +81,8 @@ floats = false # floats = false => output in double
 # Geometry
 # -----------------------------------------------------------------------------
 [geom]
-Lx     = 2*pi               # The length of x from boundary to boundary
-Ly     = 2*pi               # The length of y from boundary to boundary
+Lx = 1                  # The length of x from boundary to boundary
+Ly = 2*pi               # The length of y from boundary to boundary
 # Setting the spatial variables
 yl = y * geom:Ly / (2.0*pi) #y in range [0,Ly]
 xl = x * geom:Lx            #x in range [0,Lx]
@@ -101,8 +101,8 @@ w  = 2                 # Width of the gaussian
 
 # Flags
 # -----------------------------------------------------------------------------
-[flag]
-Lx_Ly_from_grid = False     # Lx and Ly loaded from a grid file
+[flags]
+use_grid = False     # Whether or not to read from a grid file
 # -----------------------------------------------------------------------------
 
 # The particle density
