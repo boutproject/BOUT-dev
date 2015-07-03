@@ -12,7 +12,7 @@
 Field3D n;               // The plasma density
 BoutReal D_par, D_perp;  // The diffusion constants and the box dimensions
 BoutReal Lx, Ly;         // The spatial domain size
-bool Lx_Ly_from_grid;    // If the spatial size should be loaded from the grid
+bool use_grid;    // If the spatial size should be loaded from the grid
 // ############################################################################
 
 // Initialization of the physics
@@ -38,17 +38,30 @@ int physics_init(bool restarting) {
     // ************************************************************************
     Options *flags = options->getSection("flags");
     // Get the option
-    flags->get("Lx_Ly_from_grid", Lx_Ly_from_grid, false);
-    if(Lx_Ly_from_grid){
+    flags->get("use_grid", use_grid, false);
+    if(use_grid){
         // Loading variables from the grid file so that they can be saved into the
-        // .dmp file
+        // .dmp file (other variables such as dx, ny etc. are stored
+        // automatically)
         GRID_LOAD2(Lx, Ly);
     }
     else{
         // Load from BOUT.inp
         Options *geometry = options->getSection("geom");
-        geometry->get("Lx", Lx, TWOPI);
-        geometry->get("Ly", Ly, TWOPI);
+        geometry->get("Lx", Lx, 1.0);
+        geometry->get("Ly", Ly, 1.0);
+        // Calculate the internal number of points
+        int internal_x_points = mesh->GlobalNx - 2*mesh->xstart;
+        int internal_y_points = mesh->GlobalNy - 2*mesh->ystart;
+        // Calculate dx and dy
+        // dx = Lx/line_segments_in_x
+        // On a line with equidistant points there is one less line
+        // segment than points from the first to the last point.
+        // The boundary lies (1/2)*dx away from the last point As there
+        // are 2 bounaries there will effectively add one more line
+        // segment in the domain. Hence
+        mesh->dx = Lx/(internal_x_points);
+        mesh->dy = Ly/(internal_y_points);
     }
     // ************************************************************************
 
@@ -70,7 +83,7 @@ int physics_run(BoutReal t){
     mesh->communicate(n); // Communicate guard cells
 
     // Density diffusion
-    ddt(n) = D_par *Laplace_par(n) + D_perp*Laplace_perp(n);
+    ddt(n) = D_par*Laplace_par(n) + D_perp*Laplace_perp(n);
     return 0;
 }
 // ############################################################################

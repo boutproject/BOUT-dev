@@ -58,6 +58,8 @@ from boututils.datafile import DataFile
 
 # TODO: Rewrite documentation in the manual (also the nice chart)
 
+# TODO: Make additional without combo
+
 # FIXME: qsub does not always delete the clean-up files??
 #        Fixed for basic qsub (test it), fix for the rest
 # TODO: Make it possible to give a function to the waiting routine in
@@ -145,6 +147,7 @@ class basic_runner(object):
                  nout       = None,\
                  timestep   = None,\
                  additional = None,\
+                 series_add = None,\
                  restart    = None,\
                  cpy_source = None,\
                  cpy_grid   = None,\
@@ -220,6 +223,9 @@ class basic_runner(object):
                          ('section_name','variable name', values) or as
                          iterable on the same form, where values can be
                          any value or string or an iterable of those
+        series_add  -    The same as above, with the exception that
+                         no combination will be performed between the elements
+                         during a run
         restart     -    Wheter or not to use the restart files
                          ('overwrite' or 'append')
         cpy_source  -    Wheter or not to copy the source files to the
@@ -247,7 +253,7 @@ class basic_runner(object):
                         'ddz_second',
                         'ddz_upwind',
                         'ddz_flux',
-                        any 'variable_name' from additional
+                        any 'variable_name' from additional or series_add
                         an iterable consisting of several of these. If
                         an iterable is given, then the first element is
                         going to be the fastest varying variable, the
@@ -310,6 +316,7 @@ class basic_runner(object):
         self.__nout       = self.__set_member_data(nout)
         self.__timestep   = self.__set_member_data(timestep)
         self.__additional = additional
+        self.__series_add = series_add
         self.__restart    = restart
         self.__cpy_source = cpy_source
         self.__cpy_grid   = cpy_grid
@@ -347,6 +354,19 @@ class basic_runner(object):
                    (type(self.__additional) == dict):
                     # Put self.__additional as an iterable
                     self.__additional = [self.__additional]
+        # Do the same for series_add
+        if self.__series_add != None:
+            if not(hasattr(self.__series_add, "__iter__")) or\
+               (type(self.__series_add) == str) or\
+               (type(self.__series_add) == dict):
+                # Put series_add as a double iterable
+                self.__series_add = [(self.__series_add)]
+            else:
+                if not(hasattr(self.__series_add[0], "__iter__")) or\
+                   (type(self.__series_add[0]) == str) or\
+                   (type(self.__series_add) == dict):
+                    # Put self.__series_add as an iterable
+                    self.__series_add = [self.__series_add]
 
         # Set self.__program_name from the *.o file. Make the program if
         # the *.o file is not found
@@ -840,7 +860,7 @@ class basic_runner(object):
             'ddz_flux',\
             ]
 
-        # Append the additionals
+        # Append the additionals and series_add
         # If additional is set
         if self.__additional != None:
             for additional in self.__additional:
@@ -848,6 +868,13 @@ class basic_runner(object):
                 # We would like to extract the name of them, and append
                 # it to the possibilities list
                 possible_sort_by.append(additional[0])
+        # Do the same for series_add
+        if self.__series_add != None:
+            for series_add in self.__series_add:
+                # The series_add now contains a tuple of three elements
+                # We would like to extract the name of them, and append
+                # it to the possibilities list
+                possible_sort_by.append(series_add[0])
 
         # Make a list of the variables
         the_vars = [\
@@ -1012,68 +1039,42 @@ class basic_runner(object):
                                    (self.__nout, 'nout'))
         #}}}
 
-        #{{{Check that additional is on the correct form
-        # additional should be on the form
-        # additional = [(section1, name1, [value1-1, value1-2, ...]),\
-        #               (section2, name2, [value2-1, value2-2, ...]),\
-        #               ...]
-        # We will now check that
-        if self.__additional != None:
-            # Set a success variable that will fail if anything goes
-            # wrong
-            success = True
-            # Check if self.__addition is iterable
-            if hasattr(self.__additional, "__iter__"):
-                # Check if self.__additional is a string
-                if type(self.__additional) != str and\
-                   type(self.__additional) != dict:
-                    # If additional is given as an iterable
-                    if hasattr(self.__additional[0], "__iter__" ):
-                        # Do the same check as above for all the
-                        # elements
-                        for elem in self.__additional:
-                            # Check if self.__addition is iterable
-                            if hasattr(elem, "__iter__"):
-                                # Check if elem is a string
-                                if type(elem) != str:
-                                    if type(elem[0]) == str:
-                                        # Check that the second element
-                                        # (the name) is a string
-                                        if type(elem[1]) != str:
-                                            success = False
-                                        # If more than three elements
-                                        # are given
-                                        if len(elem) != 3:
-                                            success = False
-                                    # elem[0] is not a string
-                                    else:
-                                        success = False
-                                # elem is a string
-                                else:
-                                    success = False
-                            # elem is not iterable
-                            else:
-                                success = False
-                    # self.__additional[0] is not a string, and not iterable
-                    else:
-                        success = False
-                # self.__additional is a string or a dict
-                else:
-                    success = False
-            # self.__additional is not iterable
-            else:
-                success = False
-            if not(success):
-                message  = "self.__additional is on the wrong form.\n"
-                message += "self.__additional should be on the form\n"
-                message += "self.__additional=\ \n"
+        #{{{Check that additional and series_add are on the correct form
+        self.__error_check_additional((self.__additional, 'additional'))
+        self.__error_check_additional((self.__series_add, 'series_add'))
+        #}}}
+
+        #{{{Check that self.__series_add[:][2] have the same length
+        if self.__series_add != None:
+            # Collect all second indices
+            second_indices = [elems[2] for elems in self.__series_add]
+            # Find the length of the second indices
+            lengths = [len(elem) for elem in second_indices\
+                       if (type(elem)!=str and type(elem)!=dict)]
+            # Check if any string or dicts were given
+            if len(second_indices) != len(lengths):
+                message  = "self.__series_add is on the wrong form.\n"
+                message += "self.__series_add should be on the form\n"
+                message += "self.__series_add=\ \n"
                 message +=\
-                        "     [(section1, name1, [value1-1, value1-2,...]),\ \n"
+                        "     [(section1, name1, [value1-1, value1-2,... ,"+\
+                        "value1-n]),\ \n"
                 message +=\
-                        "      (section2, name2, [value2-1, value2-2,...]),\ \n"
+                        "      (section2, name2, [value2-1, value2-2,... ,"+\
+                        "value2-n]),\ \n"
                 message +=\
                         "       ...])\n"
                 self.__errors.append("TypeError")
+                raise TypeError(message)
+
+            # Check that the length of the second indices are the same
+            # L.count(value) -> integer -- return number of occurrences
+            # of value
+            # stackoverflow.com/questions/3844801/check-if-all-elements-in-a-list-are-identical
+            if not(lengths.count(lengths[0]) == len(lengths)):
+                message = "The length of the second index of the elements"+\
+                          " of self.__series_add must be the same"
+                self.__errors.append(message)
                 raise TypeError(message)
         #}}}
 
@@ -1107,6 +1108,65 @@ class basic_runner(object):
 
         #}}}
 #}}}
+#}}}
+
+#{{{Functions called by __check_for_basic_instance_error
+    #{{{
+    def __error_check_additional(self, input_member):
+        #{{{docstring
+        """
+        Checks that the input_member is on the following form:
+
+        input_member = [(section1, name1, [value1-1, value1-2, ...]),
+                        (section2, name2, [value2-1, value2-2, ...]),
+                        ...]
+
+        Input:
+        Either self.__additional or self.__series_add
+        input_member[0]     -   the input data
+        input_member[1]     -   the name of the input data
+        """
+        #}}}
+
+        # If input_member is set
+        if input_member[0] != None:
+            # Set a success variable that will fail if anything goes
+            # wrong
+            success = True
+            # Loop through all elements in input_member
+            for elem in input_member[0]:
+                # Check if self.__addition is iterable, but not a string
+                # or dict
+                if (hasattr(elem, "__iter__")) and\
+                   (type(elem) != str) and\
+                   (type(elem) != dict):
+                    if type(elem[0]) == str:
+                        # Check that the second element (the name) is a
+                        # string
+                        if type(elem[1]) != str:
+                            success = False
+                        # If more than three elements are given
+                        if len(elem) != 3:
+                            success = False
+                    # elem[0] is not a string
+                    else:
+                        success = False
+                # elem is not iterable or is a dict or a string
+                else:
+                    success = False
+            if not(success):
+                message  = "self.__"+input_member[1]+" is on the wrong form.\n"
+                message += "self.__"+input_member[1]+" should be on the form\n"
+                message += "self.__"+input_member[1]+"=\ \n"
+                message +=\
+                        "     [(section1, name1, [value1-1, value1-2,...]),\ \n"
+                message +=\
+                        "      (section2, name2, [value2-1, value2-2,...]),\ \n"
+                message +=\
+                        "       ...])\n"
+                self.__errors.append("TypeError")
+                raise TypeError(message)
+        #}}}
 #}}}
 
 #{{{ Functions called by the run function
@@ -1169,16 +1229,15 @@ class basic_runner(object):
         # Checks if run_log exists
         self.__run_log = self.__directory + "/run_log.txt"
         if os.path.isfile(self.__run_log) == False:
-            # Create a file to be appended for each run
-            f = open(self.__run_log , "w")
             # The header
-            header = ['start_time', 'run_type', 'run_no', 'dump_folder', 'run_time_H:M:S']
-            header = '    '.join(header)
-            f.write('#' + header + '\n')
-            f.close()
+            header = ['start_time', 'run_type', 'run_no', 'run_time_H:M:S', 'dump_folder']
+            header_format = '{:<19}   {:<9}   {:<6}   {:<17}   {:<}'
+            # Create the log file, and print the header
+            with open(self.__run_log , "w") as f:
+                f.write(header_format.format(*header) + '\n')
 
-            # Preparation of the run
-            print("\nRunning with inputs from '" + self.__directory + "'")
+        # Preparation of the run
+        print("\nRunning with inputs from '" + self.__directory + "'")
 #}}}
 
 #{{{__get_correct_domain_split
@@ -1353,6 +1412,41 @@ class basic_runner(object):
             temporal_grid_possibilities.append(' '.join(current_times))
         #}}}
 
+        #{{{Set the combination of the series_add option if != None
+        # Appendable list
+        series_add_possibilities = []
+        if self.__series_add != None:
+            # Dictionary to handle the data, where the key is going to
+            # be the element number in self.__series_add, and the values
+            # are going to be the sub dictionary defined below
+            all_info = {}
+            # Loop through all elements and fill the dictionary
+            for nr, elem in enumerate(self.__series_add):
+                # Put in the sub dictionary
+                all_info[nr] = {'values':None,\
+                                'section_and_var':None,\
+                                'sec_var_vals':[]}
+                # Fill the values
+                all_info[nr]['values'] = elem[2]
+                # Fill the section and variable key
+                all_info[nr]['section_and_var'] = elem[0] + ":" + elem[1] + "="
+                # Fill in the combinations
+                for val in all_info[nr]['values']:
+                    all_info[nr]['sec_var_vals'].append(\
+                        all_info[nr]['section_and_var'] + str(val)\
+                            )
+
+            # Make an appendable list
+            all_sec_var_vals = []
+            for key in all_info.keys():
+                all_sec_var_vals.append(all_info[key]['sec_var_vals'])
+
+            # Zip the sec_var_vals together (* unpacks), join them with
+            # a space, and append them to series_add_possibilities
+            for one_possibility in zip(*all_sec_var_vals):
+                series_add_possibilities.append(' '.join(one_possibility))
+        #}}}
+
         #{{{Put non-iterable variables into a list if they are not set to None
         # This makes the memberdata iterable, and useable in
         # generate_possibilities
@@ -1427,7 +1521,8 @@ class basic_runner(object):
         # Start out with the already generated
         # spatial_grid_possibilities and temporal_grid_possibilities
         list_of_possibilities = [spatial_grid_possibilities,\
-                                 temporal_grid_possibilities]
+                                 temporal_grid_possibilities,\
+                                 series_add_possibilities]
 
         # Append the possibilities to the list of possibilities
         for var in tuple_of_variables:
@@ -1528,7 +1623,7 @@ class basic_runner(object):
         # Make the command
         command = "rm -f ./" + self.__dmp_folder +\
                   "/*.nc ./" + self.__dmp_folder +\
-                  "/*.log"
+                  "/*.log.*"
         # Execute the command
         shell(command)
 #}}}
@@ -1955,11 +2050,11 @@ class basic_runner(object):
             dmp_line = self.__dmp_folder
 
         # Line to write
-        line = [start_time, self.__run_type, run_no, dmp_line, run_time]
+        line = [start_time, self.__run_type, run_no, run_time, dmp_line]
         # Opens for appending
-        f = open(self.__run_log , "a")
-        f.write('    '.join(str(element) for element in line) + "\n")
-        f.close()
+        log_format = '{:<19}   {:^9}   {:^6}   {:<17}   {:<}'
+        with open(self.__run_log , "a") as f:
+            f.write(log_format.format(*line) + '\n')
 #}}}
 #}}}
 

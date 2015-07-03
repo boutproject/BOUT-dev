@@ -41,11 +41,8 @@ def perform_MMS_test(paths, extension='.pdf', show_plot=False):
         dy_spacing = np.max(dy_spacing)
         dz_spacing = np.max(dz_spacing)
 
-        # TODO: Decide
         # Store the spacing in the data
-        # data['spacing'].append(dx_spacing + dy_spacing + dz_spacing)
-        # data['spacing'].append(dx_spacing)
-        data['spacing'].append(dy_spacing)
+        data['spacing'].append(np.max([dx_spacing, dy_spacing, dz_spacing]))
 
     # Sort the data
     data = sort_data(data)
@@ -57,7 +54,9 @@ def perform_MMS_test(paths, extension='.pdf', show_plot=False):
     root_folder = paths[0].split('/')[0] + '/'
 
     # Get the name of the plot based on the first folder name
-    name = 'MMS_'+path[0].replace('/', '_')
+    name = paths[0].split('/')
+    # Remove the root folder and put 'MMS-' in front
+    name = 'MMS-' + '_'.join(name[1:])
 
     # Print the convergence rate
     print_convergence_rate(data, order_2, order_inf, root_folder, name)
@@ -93,8 +92,8 @@ def sort_data(data):
 def get_order(data):
     # TODO: Check this
     # Initialize the orders
-    order_2 = [' '*7]
-    order_inf = [' '*7]
+    order_2 = [np.nan]
+    order_inf = [np.nan]
 
     # The order will be found by finding a linear fit between two
     # nearby points in the error-spacing plot. Hence, we must let
@@ -134,27 +133,22 @@ def print_convergence_rate(data, order_2, order_inf, root_folder, name):
                          order_2,\
                          data['error_inf'],\
                          order_inf))
-
-    # Write the found orders
-    f = open( name + '.txt', 'w' )
-    header = '#spacing    error_2    order_2    error_inf    order_inf'
-    # Write the header to a file and on screen
-    f.write(header + '\n')
+    header = ['#spacing', 'error_2 ', 'order_2 ', 'error_inf ', 'order_inf']
+    # Format on the rows (: accepts the argument, < flushes left,
+    # 20 denotes character width, .10e denotes scientific notation with
+    # 10 in precision)
+    header_format = "{:<20}" * (len(header))
+    number_format = "{:<20.10e}" * (len(header))
+    # * in front of header unpacks
+    header_string = header_format.format(*header)
+    text = header_string
+    for string in outstring:
+        text += '\n' + number_format.format(*string)
     print('\nNow printing the results of the convergence test:')
-    print(header)
-    for nr, line in enumerate(outstring):
-        # Write the data to a file
-        string = '    '.join(str(element) for element in line)
-        f.write(string + "\n")
-        # The first line contains a string which cannot be converted
-        # to a float under the 'order_' sections
-        if nr == 0:
-            print("{:4.2e}    {:.2e}              {:.2e}".format(\
-              line[0], line[1], line[3]))
-        else:
-            print("{:.2e}    {:.2e}   {:.3e}  {:.2e}     {:.2e}".format(\
-                  line[0], line[1], line[2], line[3], line[4]))
-    f.close()
+    print(text)
+    # Write the found orders
+    with open(root_folder + name + '.txt', 'w' ) as f:
+        f.write(text)
     print('\n')
 #}}}
 
