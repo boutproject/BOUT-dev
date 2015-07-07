@@ -45,17 +45,24 @@ H5Format::H5Format(bool parallel_in) {
   dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
   if (dataFile_plist < 0)
     throw BoutException("Failed to create dataFile_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
       throw BoutException("Failed to set dataFile_plist");
-  
+#endif
+
   dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
   if (dataSet_plist < 0)
     throw BoutException("Failed to create dataSet_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_INDEPENDENT) < 0) // Default, independent writes
 //     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0) // Alternative, collective writes
       throw BoutException("Failed to set dataSet_plist");
+#endif
+
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
 }
@@ -71,16 +78,23 @@ H5Format::H5Format(const char *name, bool parallel_in) {
   dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
   if (dataFile_plist < 0)
     throw BoutException("Failed to create dataFile_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
       throw BoutException("Failed to set dataFile_plist");
-  
+#endif  
+
   dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
   if (dataSet_plist < 0)
     throw BoutException("Failed to create dataSet_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
       throw BoutException("Failed to set dataSet_plist");
+#endif
+
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
   openr(name);
@@ -97,16 +111,23 @@ H5Format::H5Format(const string &name, bool parallel_in) {
   dataFile_plist = H5Pcreate(H5P_FILE_ACCESS);
   if (dataFile_plist < 0)
     throw BoutException("Failed to create dataFile_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_fapl_mpio(dataFile_plist, BoutComm::get(), MPI_INFO_NULL) < 0)
       throw BoutException("Failed to set dataFile_plist");
+#endif
   
   dataSet_plist = H5Pcreate(H5P_DATASET_XFER);
   if (dataSet_plist < 0)
     throw BoutException("Failed to create dataSet_plist");
+
+#ifdef PHDF5
   if (parallel)
     if (H5Pset_dxpl_mpio(dataSet_plist, H5FD_MPIO_COLLECTIVE) < 0)
       throw BoutException("Failed to set dataSet_plist");
+#endif
+  
   if (H5Eset_auto(H5E_DEFAULT, NULL, NULL) < 0) // Disable automatic printing of error messages so that we can catch errors without printing error messages to stdout
     throw BoutException("Failed to set error stack to not print errors");
   openr(name);

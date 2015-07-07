@@ -131,9 +131,11 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
 ////////////////////// Private functions /////////////////////////////
 
 int FormatFactory::matchString(const char *str, int n, const char **match) {
-  for(int i=0;i<n;i++)
-    if(strcasecmp(str, match[i]) == 0)
+  for(int i=0;i<n;i++) {
+    if(strcasecmp(str, match[i]) == 0) {
       return i;
+    }
+  }
   return -1;
 }
 

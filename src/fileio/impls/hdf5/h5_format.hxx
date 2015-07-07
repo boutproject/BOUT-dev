@@ -1,10 +1,10 @@
 /*!
- * \file nc_format.hxx
+ * \file h5_format.hxx
  *
- * \brief netCDF data format interface
+ * \brief HDF5 data format interface
  *
- * \author B.Dudson
- * \date   April 2009
+ * \author John Omotani
+ * \date   2015
  *
  * Records: In netCDF, the time dimension for each dimension must be
  * the same. Hence when a record is appended to a variable, the size
@@ -116,14 +116,6 @@ class H5Format : public DataFormat {
   hid_t dataFile;
   hid_t dataFile_plist;
   hid_t dataSet_plist;
-
-//   /// Pointer to netCDF file
-//   NcFile *dataFile;
-//   
-//   /// Dimensions
-//   NcDim *xDim, *yDim, *zDim, *tDim;
-//   const NcDim **dimList; ///< List of dimensions (x,y,z)
-//   const NcDim **recDimList; ///< List of dimensions (t,x,y,z)
 
   bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
