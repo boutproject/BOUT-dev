@@ -1516,6 +1516,42 @@ bool BoutMesh::lastY() {
   return PE_YIND == NYPE-1;
 }
 
+bool BoutMesh::firstY(int xpos) {
+  int xglobal = XGLOBAL(xpos);
+  int rank;
+  
+  if(xglobal < ixseps_inner) {
+    MPI_Comm_rank(comm_inner,&rank);
+  }
+  else if(xglobal < ixseps_outer) {
+    MPI_Comm_rank(comm_middle,&rank);
+  }
+  else {
+    MPI_Comm_rank(comm_outer,&rank);
+  }
+  return rank == 0;
+}
+
+bool BoutMesh::lastY(int xpos) {
+  int xglobal = XGLOBAL(xpos);
+  int rank;
+  int size;
+  
+  if(xglobal < ixseps_inner) {
+    MPI_Comm_size(comm_inner,&size);
+    MPI_Comm_rank(comm_inner,&rank);
+  }
+  else if(xglobal < ixseps_outer) {
+    MPI_Comm_size(comm_middle,&size);
+    MPI_Comm_rank(comm_middle,&rank);
+  }
+  else {
+    MPI_Comm_size(comm_outer,&size);
+    MPI_Comm_rank(comm_outer,&rank);
+  }
+  return rank == size-1;
+}
+
 int BoutMesh::UpXSplitIndex() {
   return UDATA_XSPLIT;
 }

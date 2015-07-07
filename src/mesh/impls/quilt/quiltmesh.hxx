@@ -56,6 +56,8 @@ class QuiltMesh : public Mesh {
   
   bool firstY();
   bool lastY();
+  bool firstY(int xpos);
+  bool lastY(int xpos);
   int UpXSplitIndex();
   int DownXSplitIndex();
   int sendYOutIndest(BoutReal *buffer, int size, int tag);

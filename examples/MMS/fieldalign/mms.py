@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 # Test
 from sympy import symbols, cos, sin, diff
 from numpy import pi

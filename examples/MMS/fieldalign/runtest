@@ -103,7 +103,7 @@ for dir in inputs:
     #plt.show()
     plt.close()
 
-if success:
+
   print(" => All tests passed")
   exit(0)
 else:
