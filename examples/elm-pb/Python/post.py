@@ -2,6 +2,8 @@
 # Replicate the graphs from Xu_3fields_hands-on.pdf (BOUT++ workshop 2013)
 # needs runs in data & data0 folders
 # After running the cases define path0 and path1 accordingly
+from __future__ import division
+from past.utils import old_div
 import numpy as np
 from boututils import file_import
 from boutdata import collect
@@ -9,16 +11,16 @@ from pylab import plot, show, figure, xlabel, ylabel, annotate, xlim, ylim
 from boututils import moment_xyzt
 from boututils import mode_structure
 from boututils import plotpolslice
-from support import deriv
-from enthought.mayavi import mlab
+from boututils import deriv
+from mayavi import mlab
 
                         
-path0="../data0/"
-path1="../data/"
+path0="./data0/"
+path1="./data/"
 
 period=15 
 
-gfile='../cbm18_dens8.grid_nx68ny64.nc'
+gfile='./cbm18_dens8.grid_nx68ny64.nc'
 
 
 g = file_import(gfile)
@@ -31,7 +33,7 @@ psixy=g.get('psixy')
 PSI_AXIS=g.get('psi_axis')
 PSI_BNDRY=g.get('psi_bndry')
 #
-psix=(psixy[:,32]-PSI_AXIS)/(PSI_BNDRY-PSI_AXIS)
+psix=old_div((psixy[:,32]-PSI_AXIS),(PSI_BNDRY-PSI_AXIS))
 Epsi=-deriv(phi0[:,32],psix)
 #
 #
@@ -50,8 +52,8 @@ show(block=False)
 p_f0 = collect("P", path=path0)
 p_f = collect("P", path=path1)
 #
-rmsp_f0=moment_xyzt(p_f0, 'RMS')
-rmsp_f=moment_xyzt(p_f, 'RMS')
+rmsp_f0=moment_xyzt(p_f0, 'RMS').rms
+rmsp_f=moment_xyzt(p_f, 'RMS').rms
 #
 
 fig=figure(figsize=(10, 8))

@@ -252,6 +252,10 @@ class Field3D : public Field, public FieldData {
   bool checkData(bool vital = false) const; ///< Checks if the data is all valid. 
 
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+#else
+  // Define the above functions to do nothing
+  bool checkData(bool vital = false) const {}
+  void doneComms() {}
 #endif
 
   friend class Vector3D;
@@ -332,5 +336,15 @@ bool finite(const Field3D &var);
 const Field3D copy(const Field3D &f);
 
 const Field3D floor(const Field3D &var, BoutReal f);
+
+/*!
+ * @brief Returns a reference to the time-derivative of a field
+ * 
+ * Wrapper around member function f.timeDeriv()
+ *
+ */
+inline Field3D& ddt(Field3D &f) {
+  return *(f.timeDeriv());
+}
 
 #endif /* __FIELD3D_H__ */

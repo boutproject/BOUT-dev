@@ -6,6 +6,8 @@
 #
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -16,9 +18,11 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 
+import pickle
+
 MPIRUN = getmpirun()
 
-print("Making MMS diffusion test")
+print("Making MMS advection test")
 shell("make > make.log")
 
 # List of options to be passed for each test
@@ -30,11 +34,13 @@ options = [
     ]
 
 # List of NX values to use
-nxlist = [4, 8, 16, 32, 64, 128, 256]
+nxlist = [16, 32, 64, 128, 256, 512, 1024]
 
-nproc = 1
+nproc = 8
 
 success = True
+
+dt0 = 0.15
 
 err_2_all = []
 err_inf_all = []
@@ -47,7 +53,7 @@ for opts,label,sym in options:
 
         dx = 2.*pi / (nx)
 
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(0.1/nx)
+        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(dt0/nx)
         
         print("  Running with " + args)
 
@@ -58,7 +64,7 @@ for opts,label,sym in options:
         cmd = "./advection "+args
         # Launch using MPI
         s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-        
+
         # Save output to log file
         f = open("run.log."+str(nx), "w")
         f.write(out)
@@ -90,6 +96,19 @@ for opts,label,sym in options:
     order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
     print("Convergence order = %f" % (order))
     
+    if (label == "1st order upwind"):
+        if order < 0.75: # Should be first order accurate
+            print("............ FAIL")
+            success = False 
+        else:
+            print("............ PASS")
+    else:
+        if order < 1.75: # Should be second order accurate
+            print("............ FAIL")
+            success = False 
+        else:
+            print("............ PASS")
+    
     # plot errors
     if False:
         plt.figure()
@@ -112,6 +131,11 @@ for opts,label,sym in options:
 
         plt.show()
         plt.close()
+
+# Save the data
+with open("advection.pkl", "wb") as output:
+    pickle.dump(err_2_all, output)
+    pickle.dump(err_inf_all, output)
 
 # Plot all results for comparison
 plt.figure()
@@ -146,8 +170,8 @@ plt.close()
 
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

@@ -193,5 +193,12 @@ const Vector3D operator*(const BoutReal lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field2D &lhs, const Vector3D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector3D &rhs);
 
+/*!
+ * @brief Time derivative of 3D vector field
+ */
+inline Vector3D& ddt(Vector3D &f) {
+  return *(f.timeDeriv());
+}
+
 #endif // __VECTOR3D_H__
 

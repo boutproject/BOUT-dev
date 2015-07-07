@@ -1,6 +1,11 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
-from support import deriv, int_func
-from idl_tabulate import idl_tabulate
+from boututils import deriv, int_func
+from .idl_tabulate import idl_tabulate
 from bunch import bunchify
 
 
@@ -36,7 +41,7 @@ def surface_average ( var, g, area=None):
     
         return result
     elif s != 3 :
-        print "ERROR: surface_average var must be 3 or 4D"
+        print("ERROR: surface_average var must be 3 or 4D")
         return 0
 
   
@@ -67,9 +72,9 @@ def surface_average ( var, g, area=None):
         z = grid.Zxy[xi,yi]
         n = np.size(r)
         
-        dl = np.sqrt( deriv(r)**2 + deriv(z)**2 ) / dtheta
+        dl = old_div(np.sqrt( deriv(r)**2 + deriv(z)**2 ), dtheta)
         if area:
-            dA = (grid.Bxy[xi,yi]/grid.Bpxy[xi,yi])*r*dl
+            dA = (old_div(grid.Bxy[xi,yi],grid.Bpxy[xi,yi]))*r*dl
             A = int_func(np.arange(n),dA)
             theta[xi,yi] = 2.*np.pi*A/A[n-1]
         else:
@@ -85,6 +90,6 @@ def surface_average ( var, g, area=None):
         for y in range(ny) :
             vy[y] = np.mean(var[x,y,:])
    
-        result[x] = idl_tabulate(theta[x,:], vy) / (2.*np.pi)
+        result[x] = old_div(idl_tabulate(theta[x,:], vy), (2.*np.pi))
   
     return result

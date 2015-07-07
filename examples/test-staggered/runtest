@@ -11,6 +11,7 @@
 # calculated.
 # 
 
+from __future__ import print_function
 from boutdata import collect
 from numpy.fft import rfftn
 from numpy import argmax

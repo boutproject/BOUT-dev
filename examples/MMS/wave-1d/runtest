@@ -3,6 +3,8 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -86,14 +88,14 @@ plt.xscale('log')
 plt.xlabel(r'Mesh spacing $\delta x$')
 plt.ylabel("Error norm")
 
-plt.savefig("norm.pdf")
+plt.savefig("wave_norm.pdf")
 
 #plt.show()
 plt.close()
 
 if order > 1.8:
-  print " => Test passed"
+  print(" => Test passed")
   exit(0)
 else:
-  print " => Test failed"
+  print(" => Test failed")
   exit(1)

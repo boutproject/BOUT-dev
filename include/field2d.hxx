@@ -181,8 +181,11 @@ class Field2D : public Field, public FieldData {
 #ifdef CHECK
   bool checkData(bool vital = true) const; ///< Checks if the data is all valid.
   void doneComms() { bndry_xin = bndry_xout = bndry_yup = bndry_ydown = true; }
+#else 
+  bool checkData(bool vital = true) const {}
+  void doneComms() {}
 #endif
-  
+
   friend class Vector2D;
   
   void applyBoundary(bool init=false);
@@ -224,5 +227,15 @@ bool finite(const Field2D &f);
 const Field2D copy(const Field2D &f);
 
 const Field2D floor(const Field2D &var, BoutReal f);
+
+/*!
+ * @brief Returns a reference to the time-derivative of a field
+ * 
+ * Wrapper around member function f.timeDeriv()
+ *
+ */
+inline Field2D& ddt(Field2D &f) {
+  return *(f.timeDeriv());
+}
 
 #endif /* __FIELD2D_H__ */

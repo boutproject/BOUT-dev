@@ -51,8 +51,9 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
     options = options->getRoot();
 
     buffer = argv[i];
-    // Test if name starts with a '-'
-    bool startdash = buffer[0] == '-';
+    // Test if name starts with a '-', and remove if found
+    if (buffer[0] == '-')
+      buffer = buffer.substr(1);  // Remove the first character (-)
     
     // Test to see if the user put spaces around the '=' sign
     if (i < argc-1) {
@@ -77,8 +78,6 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       }
     }
     
-    if (startdash) buffer = buffer.substr(1);
-    
     size_t startpos = buffer.find_first_of("=");
 
     if (startpos == string::npos) {
@@ -94,15 +93,12 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
       string key = trim(buffer.substr(0, startpos));
       string value = trim(buffer.substr(startpos+1));
       
-      if(!startdash) {
-        // Only split into sections if no dash at start
-        size_t scorepos;
-        while((scorepos = key.find_first_of(":")) != string::npos) {
-          // sub-section
-          string section = key.substr(0,scorepos);
-          key = trim(key.substr(scorepos+1));
-          options = options->getSection(section);
-        }
+      size_t scorepos;
+      while((scorepos = key.find_first_of(":")) != string::npos) {
+	// sub-section
+	string section = key.substr(0,scorepos);
+	key = trim(key.substr(scorepos+1));
+	options = options->getSection(section);
       }
       
       if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value in command line '%s'\n", buffer.c_str());

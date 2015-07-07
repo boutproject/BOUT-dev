@@ -1,5 +1,8 @@
-/**************************************************************************
- * Base class for Physics Models
+/*!************************************************************************
+ * 
+ * @brief Base class for Physics Models
+ * 
+ * 
  *
  * Changelog:
  * 
@@ -38,6 +41,9 @@ class PhysicsModel;
 #include <msg_stack.hxx>
 #include "solver.hxx"
 
+/*!
+  Base class for physics models
+ */
 class PhysicsModel {
 public:
   typedef int (PhysicsModel::*rhsfunc)(BoutReal t);
@@ -70,7 +76,27 @@ public:
 protected:
 
   // These two functions implemented by user code to specify problem
+  /*!
+   * @brief This function is called once by the solver at the start of a simulation.
+   * 
+   * A valid PhysicsModel must implement this function
+   * 
+   * Variables should be read from the inputs, and the variables to 
+   * be evolved should be specified.
+   */
   virtual int init(bool restarting) = 0;
+  
+  /*!
+   * @brief This function is called by the time integration solver
+   * at least once per time step
+   * 
+   * Variables being evolved will be set by the solver
+   * before the call, and this function must calculate
+   * and set the time-derivatives.
+   *
+   * By default this function just returns an error,
+   * which will stop the simulation.
+   */
   virtual int rhs(BoutReal t) {return 1;} 
 
   // Implemented by user code to monitor solution
@@ -99,19 +125,29 @@ private:
 
 // Macro to define a simple main() which creates
 // the given model and runs it.
-#define BOUTMAIN(ModelClass)                        \
-  int main(int argc, char **argv) {                 \
-    BoutInitialise(argc, argv);                     \
-    ModelClass *model = new ModelClass();           \
-    Solver *solver = Solver::create();              \
-    solver->setModel(model);                        \
-    solver->addMonitor(bout_monitor, Solver::BACK); \
-    solver->outputVars(dump);                       \
-    solver->solve();                                \
-    delete model;                                   \
-    delete solver;                                  \
-    BoutFinalise();                                 \
-    return 0;                                       \
+#define BOUTMAIN(ModelClass)                          \
+  int main(int argc, char **argv) {                   \
+    int init_err = BoutInitialise(argc, argv);        \
+    if (init_err < 0)				      \
+      return 0;                                       \
+    else if (init_err > 0) 			      \
+      return init_err;				      \
+    try {                                             \
+      ModelClass *model = new ModelClass();           \
+      Solver *solver = Solver::create();              \
+      solver->setModel(model);                        \
+      solver->addMonitor(bout_monitor, Solver::BACK); \
+      solver->outputVars(dump);                       \
+      solver->solve();                                \
+      delete model;                                   \
+      delete solver;                                  \
+    }catch (BoutException &e) {                       \
+      output << "Error encountered\n";                \
+      output << e.what() << endl;                     \
+      MPI_Abort(BoutComm::get(), 1);                  \
+    }                                                 \
+    BoutFinalise();                                   \
+    return 0;                                         \
   }
 
 

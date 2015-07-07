@@ -49,6 +49,7 @@ AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
+AC_ARG_WITH(arkode, [  --with-arkode		   Use the SUNDIALS ARKODE solver])
 
 AC_ARG_VAR(EXTRA_INCS,[Extra compile flags])
 AC_ARG_VAR(EXTRA_LIBS,[Extra linking flags])
@@ -85,7 +86,7 @@ if test "$with_debug" != ""
 then
   echo "Enabling all debug options"
   with_checks="3"
-  CXXFLAGS="$CXXFLAGS -g"
+  CXXFLAGS="$CXXFLAGS -g -O0"
 else
   CXXFLAGS="$CXXFLAGS -O"
 fi
@@ -508,8 +509,86 @@ then
     EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
     
+
   fi
 fi
+
+############## ARKode ####################
+
+if ( ( test "$with_arkode" != "" ) && ( test "$with_arkode" != "no" ) )
+then
+  echo "Searching for SUNDIALS' ARKODE library"
+  if test "$with_arkode" = "yes"
+  then
+    # No path specified. Try using sundials-config (not currently available in SUNDIALS, but include here for the future)
+    if type sundials-config > /dev/null 2>&1; then
+       ARKODEINCS=`sundials-config -m arkode -t p -l c -s cppflags`
+       ARKODELIBS=`sundials-config -m arkode -t p -l c -s libs`
+       scr=`which sundials-config`
+       echo "=> Using SUNDIALS ARKODE solver, configured with $scr"
+    else
+       ARKODEINCS=""
+       ARKODELIBS=""
+    fi
+  else
+    # Specified with path
+    echo "Checking given path to SUNDIALS' ARKODE solver"
+    ARKODELIBS=$with_arkode
+    AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h $with_arkode/lib/libsundials_arkode.a $with_arkode/lib/libsundials_nvecparallel.a, , [
+      ARKODELIBS=""
+    ] )
+
+    if test "$ARKODELIBS" != ""
+    then
+      ARKODEINCS="-I$with_arkode/include"
+      ARKODELIBS="-L$with_arkode/lib -lsundials_arkode -lsundials_nvecparallel"
+      echo "=> Using SUNDIALS ARKODE solver, path $with_arkode"
+    else
+      echo " -> Given path not correct. Finding..."
+    fi
+  fi
+
+  if test "$ARKODELIBS" = ""
+  then
+    # Try some known paths
+    AC_CHECK_FILE($HOME/local/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME/local,
+    AC_CHECK_FILE($HOME/include/arkode/arkode_spgmr.h, ARKODELIBS=$HOME,
+    AC_CHECK_FILE(/usr/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr,
+    AC_CHECK_FILE(/usr/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/usr/local,
+    AC_CHECK_FILE(/opt/local/include/arkode/arkode_spgmr.h, ARKODELIBS=/opt/local,
+    )))))
+
+    if test "$ARKODELIBS" != ""
+    then
+        # Check the rest of the files
+        AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, , [
+          ARKODELIBS=""
+        ])
+    fi
+
+    if test "$ARKODELIBS" != ""
+    then
+      ARKODEINCS="-I$ARKODELIBS/include"
+      ARKODELIBS="-L$ARKODELIBS/lib -lsundials_arkode -lsundials_nvecparallel"
+    fi
+  fi
+  if test "$ARKODELIBS" = ""
+  then
+    echo "=> ARKODE solver not available"
+    echo
+  else
+    # Compile in the ARKODE solver
+    echo "=> ARKODE solver enabled"
+    echo
+    EXTRA_LIBS="$EXTRA_LIBS $ARKODELIBS"
+    EXTRA_INCS="$EXTRA_INCS $ARKODEINCS"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_ARKODE"
+
+
+  fi
+fi
+                                           
+
 
 #############################################################
 # FFT routines
@@ -1091,10 +1170,10 @@ AC_FUNC_VPRINTF
 
 # Check for OpenMP support
 : ${enable_openmp=no}  # Disable by default
-AC_OPENMP
+#AC_OPENMP
 # Add the flag to both compile and link stages
-CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
-EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
+#CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+#EXTRA_LIBS="$EXTRA_LIBS $OPENMP_CXXFLAGS"
 
 #############################################################
 # Check types for SUNDIALS
@@ -1185,6 +1264,55 @@ MYEOF
   
   CXXFLAGS="$CXXFLAGS -DIDAINT=$IDAINT"
 fi
+
+#### Test ARKode compile ########
+
+
+if test "$ARKODELIBS" != ""
+then
+  echo "checking ARKODE types..." | tee -a config-build.log
+
+  cat > test_arkode_compile.cxx <<MYEOF
+    #include <arkode/arkode_bbdpre.h>
+
+    #include <stdlib.h>
+
+    extern int arkode_bbd_rhs(ARKODEINT Nlocal,
+                   double, N_Vector u, N_Vector du,
+                   void *user_data);
+
+    int main() {
+      ARKBBDPrecInit(NULL, 0, 0, 0,
+                  0, 0, 0, arkode_bbd_rhs, NULL);
+      exit (0);
+    }
+MYEOF
+
+  # Try to compile
+  echo "Trying to compile test_arkode_compile.cxx" >> config-build.log
+
+  $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=int  >> config-build.log 2>&1
+
+  # Check return value
+  if test "$?" = "0"
+  then
+    ARKODEINT=int
+  else
+    $CXX -c test_arkode_compile.cxx $ARKODEINCS -DARKODEINT=long  >> config-build.log 2>&1
+    if test "$?" = "0"
+    then
+      ARKODEINT=long
+    else
+      echo "HEELP! Cannot compile ARKODE with either long or int"
+      exit
+    fi
+  fi
+  echo "  ARKODE BBD uses '$ARKODEINT' type" | tee -a config-build.log
+
+  CXXFLAGS="$CXXFLAGS -DARKODEINT=$ARKODEINT"
+fi
+
+
 
 #############################################################
 # Download + Build PVODE '98
@@ -1320,6 +1448,13 @@ then
   HAS_CVODE="no"
 fi
 
+HAS_ARKODE="yes"
+if test "$ARKODELIBS" = ""
+then
+  HAS_ARKODE="no"
+fi
+
+
 HAS_NETCDF="yes"
 if test "$NCPATH" = ""
 then
@@ -1384,6 +1519,8 @@ fi
 echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
 echo "  CVODE support: $HAS_CVODE" | tee -a config-build.log
+
+echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
 
 echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 
@@ -1450,6 +1587,7 @@ AC_SUBST(CHECK_LEVEL)
 AC_SUBST(HAS_PVODE)
 AC_SUBST(HAS_IDA)
 AC_SUBST(HAS_CVODE)
+AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
 AC_SUBST(HAS_PDB)

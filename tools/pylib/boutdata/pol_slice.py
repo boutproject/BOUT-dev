@@ -1,3 +1,9 @@
+from __future__ import print_function
+from __future__ import division
+try:
+    from past.utils import old_div
+except:
+    pass
 # Takes a 3D variable, and returns a 2D slice at fixed toroidal angle
 # 
 # N sets the number of times the data must be repeated for a full
@@ -7,14 +13,14 @@
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: boututils.DataFile not available"
-    print "=> Set $PYTHONPATH variable to include BOUT++ pylib"
+    print("ERROR: boututils.DataFile not available")
+    print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
     raise SystemExit
 
 def pol_slice(var3d, gridfile, n=1, zangle=0.0):
@@ -24,7 +30,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
 
     s = np.shape(var3d)
     if len(s) != 3:
-        print "ERROR: pol_slice expects a 3D variable"
+        print("ERROR: pol_slice expects a 3D variable")
         return None
 
     nx, ny, nz = s
@@ -37,28 +43,28 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
 
         # Check the grid size is correct
         if gf.read("nx") != nx:
-            print "ERROR: Grid X size is different to the variable"
+            print("ERROR: Grid X size is different to the variable")
             return None
         if gf.read("ny") != ny:
-            print "ERROR: Grid Y size is different to the variable"
+            print("ERROR: Grid Y size is different to the variable")
             return None
         
         # Get the toroidal shift
         zShift = gf.read("qinty")
     
         if zShift != None:
-            print "Using qinty as toroidal shift angle"
+            print("Using qinty as toroidal shift angle")
         else:
             zShift = gf.read("zShift")
             if zShift != None:
-                print "Using zShift as toroidal shift angle"
+                print("Using zShift as toroidal shift angle")
             else:
-                print "ERROR: Neither qinty nor zShift found"
+                print("ERROR: Neither qinty nor zShift found")
                 return None
 
         gf.close()
     except:
-        print "ERROR: pol_slice couldn't read grid file"
+        print("ERROR: pol_slice couldn't read grid file")
         return None
 
     var2d = np.zeros([nx, ny])
@@ -66,7 +72,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
     ######################################
     # Perform 2D slice
         
-    zind = (zangle - zShift) / dz
+    zind = old_div((zangle - zShift), dz)
     z0f = np.floor(zind)
     z0 = z0f.astype(int)
     p = zind - z0f

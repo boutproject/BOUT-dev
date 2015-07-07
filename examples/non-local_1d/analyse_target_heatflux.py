@@ -5,6 +5,9 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import print_function
+from builtins import str
+from builtins import range
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -34,7 +37,7 @@ elif len(argv)==4:
   end_index = int(argv[2])
   data_path = str(argv[3])
 else:
-  print "Arguments: 'gamma [end_index] [data_path]' or 'gamma [data_path]'"
+  print("Arguments: 'gamma [end_index] [data_path]' or 'gamma [data_path]'")
   Exit(1)
 
 electron_mass = 9.10938291e-31

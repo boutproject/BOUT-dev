@@ -1,6 +1,7 @@
 #include "solverfactory.hxx"
 
 #include "impls/cvode/cvode.hxx"
+#include "impls/arkode/arkode.hxx"
 #include "impls/petsc-3.1/petsc-3.1.hxx"
 #include "impls/petsc-3.2/petsc-3.2.hxx"
 #include "impls/petsc-3.3/petsc-3.3.hxx"
@@ -80,6 +81,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new RK3SSP(options);
   } else if(!strcasecmp(type, SOLVERPOWER)) {
     return new PowerSolver;
+  } else if(!strcasecmp(type, SOLVERARKODE)){
+    return new ArkodeSolver(options);
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found

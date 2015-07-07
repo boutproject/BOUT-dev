@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 import os
 
@@ -11,7 +12,7 @@ try:
     allpath = [boutpath,pylibpath,pbpath,boutdatapath,boututilpath]
     [sys.path.append(elem) for elem in allpath]
 except:
-   print 'meh'
+   print('meh')
 
 import numpy as np
 
@@ -25,7 +26,7 @@ def ListDictKey(input,key):
          #print x[key]
          output.append(x[key])
       except:
-         print 'Key not found'
+         print('Key not found')
          return 1
 
    return output

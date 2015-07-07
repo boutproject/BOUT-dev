@@ -1,3 +1,11 @@
+from __future__ import print_function
+try:
+    from builtins import map
+    from builtins import zip
+    from builtins import str
+    from builtins import object
+except:
+    pass
 # File I/O class
 # A wrapper around various NetCDF libraries, used by
 # BOUT++ routines. Creates a consistent interface
@@ -60,7 +68,7 @@ def getUserName():
         name = pwd_entry[0]
     return name
 
-class DataFile:
+class DataFile(object):
     handle = None
 
     def open(self, filename, write=False, create=False,
@@ -115,7 +123,7 @@ class DataFile:
         except KeyError:
             # Not found. Try to find using case-insensitive search
             var = None
-            for n in self.handle.variables.keys():
+            for n in list(self.handle.variables.keys()):
                 if n.lower() == name.lower():
                     print("WARNING: Reading '"+n+"' instead of '"+name+"'")
                     var = self.handle.variables[n]
@@ -168,10 +176,20 @@ class DataFile:
             else:
                 return var[:]
 
+    def __getitem__(self, name):
+        var = self.read(name)
+        if var is None:
+            raise KeyError("No variable found: "+name)
+        return var
+
     def list(self):
         """List all variables in the file."""
         if self.handle == None: return []
-        return self.handle.variables.keys()
+        return list(self.handle.variables.keys())
+
+    def keys(self):
+        """List all variables in the file."""
+        return self.list()
 
     def dimensions(self, varname):
         """Array of dimension names"""
@@ -207,7 +225,7 @@ class DataFile:
                     return dim
                 return len(dim)
             return 0
-        return map(lambda d: dimlen(d), var.dimensions)
+        return [dimlen(d) for d in var.dimensions]
 
     def write(self, name, data):
         """Writes a variable to file, making guesses for the dimensions"""
@@ -273,7 +291,7 @@ class DataFile:
                             return name
 
                     # Find another with the correct size
-                    for dn, d in self.handle.dimensions.iteritems():
+                    for dn, d in list(self.handle.dimensions.items()):
                         # Some implementations need len(d) here, some just d
                         if type(d).__name__ == 'int':
                             if d == size:
@@ -311,13 +329,13 @@ class DataFile:
                 return name
                 
             # List of (size, 'name') tuples
-            dlist = zip(s, defdims[len(s)])
+            dlist = list(zip(s, defdims[len(s)]))
             # Get new list of variables, and turn into a tuple
             dims = tuple( map(find_dim, dlist) )
             
             # Create the variable
             if library == "Scientific":
-                if t == 'int':
+                if t == 'int' or t == '<i4' or t == 'int32':
                     tc = Int
                 elif t=='<f4':
                     tc = Float32
@@ -347,5 +365,6 @@ class DataFile:
             # And some others only this
             var[:] = data
             
+    def __setitem__(self, key, value):
+        self.write(key, value)
         
-            

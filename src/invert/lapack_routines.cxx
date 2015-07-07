@@ -82,20 +82,20 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 
   for(int i=0;i<n;i++) {
     // Diagonal
-    d[i].r = b[i].Real();
-    d[i].i = b[i].Imag();
+    d[i].r = b[i].real();
+    d[i].i = b[i].imag();
     
     // Off-diagonal terms
     if(i != (n-1)) {
-      dl[i].r = a[i+1].Real();
-      dl[i].i = a[i+1].Imag();
+      dl[i].r = a[i+1].real();
+      dl[i].i = a[i+1].imag();
       
-      du[i].r = c[i].Real();
-      du[i].i = c[i].Imag();
+      du[i].r = c[i].real();
+      du[i].i = c[i].imag();
     }
 
-    x[i].r = r[i].Real();
-    x[i].i = r[i].Imag();
+    x[i].r = r[i].real();
+    x[i].i = r[i].imag();
   }
 
   /* LAPACK ZGTSV routine.
@@ -299,8 +299,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 
   // Copy RHS data
   for(int i=0;i<n;i++) {
-    x[i].r = b[i].Real();
-    x[i].i = b[i].Imag();
+    x[i].r = b[i].real();
+    x[i].i = b[i].imag();
   }
 
   // Put matrix elements into AB(ldab, N) (FORTRAN -> loops over ldab fastest)
@@ -310,8 +310,8 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
       // AB(kl + i, j) = A[j - ku + i][kl+ku - i]
       
       if( ((j - ku + i) >= 0) && ((j - ku + i) < n) ) {
-	AB[j*ldab + kl + i].r = a[j - ku + i][kl+ku - i].Real();
-	AB[j*ldab + kl + i].i = a[j - ku + i][kl+ku - i].Imag();
+	AB[j*ldab + kl + i].r = a[j - ku + i][kl+ku - i].real();
+	AB[j*ldab + kl + i].i = a[j - ku + i][kl+ku - i].imag();
       }
     }
   }
@@ -333,7 +333,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 
 #include <utils.hxx>
 
-/// Tri-diagonal complex matrix inversion
+/// Tri-diagonal complex matrix inversion (from Numerical Recipes)
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)
 {
   int j;  

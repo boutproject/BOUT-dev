@@ -1,9 +1,13 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 #; Calculates curvature from GATO grid
 #; adapted from M.Umansky's code
 import numpy
 from bunch import Bunch
 from gen_surface import gen_surface
-from support import deriv, fft_deriv
+from boututils import deriv, fft_deriv
 import sys
 
 
@@ -48,7 +52,7 @@ def curlcyl( vecR, vecV, gradVr, gradVphi, gradVz):
 #;-------------------------------------------------
 
 
-    curl=Bunch(r=-gradVphi.z, phi=gradVr.z-gradVz.r, z=vecV.phi/vecR.r+gradVphi.r)
+    curl=Bunch(r=-gradVphi.z, phi=gradVr.z-gradVz.r, z=old_div(vecV.phi,vecR.r)+gradVphi.r)
  
     return curl
  
@@ -104,7 +108,7 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
 #; Calculate the magnetic field curvature and other related quantities
 #;--------------------------------------------------------------------
 
-    print 'Calculating curvature-related quantities...'
+    print('Calculating curvature-related quantities...')
    
 #;;-vector quantities are stored as 2D arrays of structures {r,phi,z}
     vec=Bunch( r=0.,phi=0.,z=0.)
@@ -138,8 +142,8 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
         
         dl = numpy.sqrt(dr**2 + dz**2)
                 
-        dr = dr / dl
-        dz = dz / dl
+        dr = old_div(dr, dl)
+        dz = old_div(dz, dl)
         
     
     
@@ -164,9 +168,9 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
                    
 
             #grad_Theta = pdiff_rz(Rxy, Zxy, THETAxy, x, y, yp, ym)
-            grad_Theta = Bunch( r=dr[j]/hthexy[x,y], z=dz[j]/hthexy[x,y], phi=0.0 )
+            grad_Theta = Bunch( r=old_div(dr[j],hthexy[x,y]), z=old_div(dz[j],hthexy[x,y]), phi=0.0 )
 
-            grad_Phi=Bunch( r=0.0,z=0.0,phi=1./Rxy[x,y] ) #-gradient of the toroidal angle
+            grad_Phi=Bunch( r=0.0,z=0.0,phi=old_div(1.,Rxy[x,y]) ) #-gradient of the toroidal angle
 
             vecR=Bunch(  r=Rxy[x,y],z=Zxy[x,y] )
             vecB=Bunch( r=BRxy[x,y],z=BZxy[x,y],phi=BPHIxy[x,y] )
@@ -182,16 +186,16 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
             bstrength = numpy.sqrt(BRxy**2 + BZxy**2 + BPHIxy**2)
        
             #-unit B vector at cell center
-            vecB_unit=Bunch( r=BRxy[x,y]/bstrength[x,y],  
-                  z=BZxy[x,y]/bstrength[x,y],  
-                  phi=BPHIxy[x,y]/bstrength[x,y] )
+            vecB_unit=Bunch( r=old_div(BRxy[x,y],bstrength[x,y]),  
+                  z=old_div(BZxy[x,y],bstrength[x,y]),  
+                  phi=old_div(BPHIxy[x,y],bstrength[x,y]) )
        
             #-components of gradient of unit B vector at 5 locations in cell
-            grad_Br_unit = pdiff_rz(Rxy, Zxy, BRxy/bstrength, x, y, yp, ym)
+            grad_Br_unit = pdiff_rz(Rxy, Zxy, old_div(BRxy,bstrength), x, y, yp, ym)
        
-            grad_Bz_unit = pdiff_rz(Rxy, Zxy, BZxy/bstrength, x, y, yp, ym)
+            grad_Bz_unit = pdiff_rz(Rxy, Zxy, old_div(BZxy,bstrength), x, y, yp, ym)
        
-            grad_Bphi_unit = pdiff_rz(Rxy, Zxy, BPHIxy/bstrength, x, y, yp, ym)
+            grad_Bphi_unit = pdiff_rz(Rxy, Zxy, old_div(BPHIxy,bstrength), x, y, yp, ym)
 
             #-curl of unit B vector at cell center
             curlb_unit=curlcyl(vecR, vecB_unit, grad_Br_unit, grad_Bphi_unit, grad_Bz_unit)
@@ -212,7 +216,7 @@ def curvature( nx, ny, Rxy, Zxy, BRxy, BZxy, BPHIxy, PSIxy, THETAxy, hthexy,
    
 #   if DEBUG : sys.exit()
            
-    print '...done'
+    print('...done')
 
     return bxcv
         

@@ -123,6 +123,8 @@ int EulerSolver::run() {
       timestep = dt_limit; // Change back to limiting timestep
     }while(running);
     
+    load_vars(f0); // Put result into variables
+    
     iteration++; // Advance iteration number
     
     /// Call the monitor function

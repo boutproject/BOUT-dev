@@ -14,6 +14,7 @@
 #include <bout.hxx>
 #include <options.hxx>
 #include <msg_stack.hxx>
+#include <boutexception.hxx>
 
 #ifndef GLOBALORIGIN
 #define GLOBAL extern
@@ -96,31 +97,45 @@ int physics_run(BoutReal t);
 
 int main(int argc, char **argv) {
   /// Start BOUT++
-  BoutInitialise(argc, argv);
-  
-  /// Create the solver
-  solver = Solver::create();
-  
-  /// Get the restart option
-  bool restart;
-  OPTION(Options::getRoot(), restart, false);
-
-  /// Call the physics initialisation code
-  output.write("Initialising physics module\n");
-  int msg_point = msg_stack.push("Initialising physics module");
-  if (physics_init(restart)) {
-    output.write("Failed to initialise physics. Aborting\n");
-    delete solver;
-    BoutFinalise();
-    return 1;
+  int init_err = BoutInitialise(argc, argv);
+  if (init_err < 0) {
+    // User printed help message
+    return 0;
+  } else if (init_err > 0) {
+    // Other errors
+    return init_err;
   }
-  msg_stack.pop(msg_point);
 
-  solver->outputVars(dump); // Add evolving variables to the output file
+  try {
+    /// Create the solver
+    solver = Solver::create();
 
-  bout_run(solver, physics_run);
-  
-  delete solver; // Delete the solver
+    /// Get the restart option
+    bool restart;
+    OPTION(Options::getRoot(), restart, false);
+
+    /// Call the physics initialisation code
+    output.write("Initialising physics module\n");
+    int msg_point = msg_stack.push("Initialising physics module");
+    if (physics_init(restart)) {
+      output.write("Failed to initialise physics. Aborting\n");
+      delete solver;
+      BoutFinalise();
+      return 1;
+    }
+    msg_stack.pop(msg_point);
+    
+    solver->outputVars(dump); // Add evolving variables to the output file
+    
+    bout_run(solver, physics_run);
+    
+    delete solver; // Delete the solver
+  }catch (BoutException &e) {
+    output << "Error encountered\n";
+    output << e.what() << endl;
+    // Shut down all processes by calling Abort
+    MPI_Abort(BoutComm::get(), 1);
+  }
 
   BoutFinalise();
 

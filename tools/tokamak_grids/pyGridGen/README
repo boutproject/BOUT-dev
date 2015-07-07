@@ -27,6 +27,29 @@ ode.lsode  http://web.engr.illinois.edu/~mrgates2/ode/
 *Initial development on a MacOS X using Enthought Canopy 1.1 python installation. 
 Most packages should be there by default except maybe mayavi2, ode.lsode and bunch.
 
+
+=============
+Setup in Ubuntu
+=============
+
+
+sudo apt-get install python-setuptools
+sudo easy_install pip
+sudo apt-get install python-numpy
+sudo apt-get install python-scipy 
+sudo easy_install bunch
+sudo easy_install ipython (optional)
+sudo apt-get install python-matplotlib
+sudo apt-get install libhdf5-serial-dev
+sudo easy_install netCDF4
+
+sudo apt-get install libvtk5-dev python-vtk
+sudo apt-get install python-qt4 
+sudo easy_install mayavi[app]
+
+
+possible issue : sudo update-alternatives --config mpi (set it to mpich)
+
 =============
 Constrains:
 =============
@@ -56,4 +79,4 @@ LSODE has two options. The one uses fortran routines with a python wrapper (defa
 Authors:
 =============
 
-George Breyiannis, JAEA  Dec. 2013 - breyiannis.george@jaea.go.jp
+George Breyiannis, Dec. 2014 - breyiannis@gmail.com

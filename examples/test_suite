@@ -10,10 +10,11 @@
 
 
 # List of directories containing test cases
+from __future__ import print_function
 tests = ['test-io', 'test-fieldfactory', 'test-laplace', 
          "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
-         "test-delp2",
-         "MMS/diffusion","MMS/wave-1d",
+         "test-delp2", "test-griddata",
+         "MMS/diffusion","MMS/wave-1d","MMS/wave-1d-y",
          "drift-instability", 'interchange-instability']
 
 ##################################################################
@@ -32,23 +33,23 @@ for t in tests:
     status,out = shell("./runtest")
     
     if status != 0:
-        print "Test failed"
+        print("Test failed")
         nfailed = nfailed + 1
         failed.append(t)
     else:
         npassed = npassed + 1
     os.chdir(savepath)
 
-print "============================="
-print "PASSED: %d / %d" % (npassed, total)
-print "FAILED: %d / %d" % (nfailed, total)
-print ""
+print("=============================")
+print("PASSED: %d / %d" % (npassed, total))
+print("FAILED: %d / %d" % (nfailed, total))
+print("")
 
 if nfailed > 0:
-    print "The following tests failed"
+    print("The following tests failed")
     for t in failed:
-        print "   "+t
+        print("   "+t)
 else:
-    print " => All tests passed <="
+    print(" => All tests passed <=")
 
-print ""
+print("")

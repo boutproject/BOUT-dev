@@ -134,11 +134,4 @@ class Field {
   void error(const char *s, ...) const;
 };
 
-#ifndef ddt
-
-/// Concise way to write time-derivatives
-#define ddt(f) (*((f).timeDeriv()))
-
-#endif // ddt
-
 #endif /* __FIELD_H__ */

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # 
 # Get environment variable
 #
@@ -12,6 +13,6 @@ def getmpirun( default="mpirun -np" ):
 
   if MPIRUN == None:
     MPIRUN = default
-    print "getmpirun: using the default ", default
+    print("getmpirun: using the default " + str(default))
 
   return MPIRUN   

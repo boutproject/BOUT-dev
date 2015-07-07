@@ -1,17 +1,29 @@
 # Makefile for the reference and user manuals
-
+TEXDIR=tex_files
+VPATH=$(TEXDIR)
 .PHONY:all
 
-all: user_manual.pdf reference.pdf developer_manual.pdf preconditioning.pdf coordinates.pdf
+all: user_manual.pdf \
+	developer_manual.pdf \
+	preconditioning.pdf \
+	coordinates.pdf \
+	BOUT_Gradperp_op.pdf
 
 %.pdf: %.tex references.bib
-	pdflatex $(@F:.pdf=)
-	bibtex $(@F:.pdf=)
-	makeindex $(@F:.pdf=)
-	pdflatex $(@F:.pdf=)
+	@cd $(TEXDIR) &&\
+	pdflatex $(@F:.pdf=) &&\
+	if [ $(@F:.pdf=) != BOUT_Gradperp_op ]; \
+	then bibtex $(@F:.pdf=); \
+	fi &&\
+	makeindex $(@F:.pdf=) &&\
+	pdflatex $(@F:.pdf=) &&\
+	pdflatex $(@F:.pdf=) &&\
+	mv *.pdf ./..
 
 .PHONY:clean
 
 clean: 
-	@rm -f *.aux *.log *.bbl *.blg *.toc
-	@rm -f reference.pdf user_manual.pdf
+	@echo "Cleaning up..."
+	@cd $(TEXDIR) &&\
+	rm -f *.pdf *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
+	@rm -f *.pdf

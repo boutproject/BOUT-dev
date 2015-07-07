@@ -82,6 +82,7 @@ using std::string;
 #define SOLVEREULER       "euler"
 #define SOLVERRK3SSP      "rk3ssp"
 #define SOLVERPOWER       "power"
+#define SOLVERARKODE	  "arkode"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
@@ -154,7 +155,9 @@ class Solver {
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
   
-  int rhs_ncalls; ///< Number of calls to the RHS function
+  int rhs_ncalls,rhs_ncalls_e,rhs_ncalls_i; ///< Number of calls to the RHS function
+  
+  bool split_monitor; //For split operator runtime output
 
   bool canReset;
   void setRestartDir(const string &dir);
@@ -241,7 +244,8 @@ protected:
   bool split_operator;
   rhsfunc phys_conv, phys_diff; ///< Convective and Diffusive parts (if split operator)
 
-  bool mms; // Enable sources and solutions for Method of Manufactured Solutions
+  bool mms; ///< Enable sources and solutions for Method of Manufactured Solutions
+  bool mms_initialise; ///< Initialise variables to the manufactured solution
 
   void add_mms_sources(BoutReal t);
   void calculate_mms_error(BoutReal t);

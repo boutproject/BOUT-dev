@@ -2,6 +2,10 @@
     Method of Manufactured Solutions (MMS)
 
 """
+from __future__ import print_function
+from __future__ import division
+#from builtins import str
+#from builtins import object
 
 from sympy import symbols, cos, sin, diff, sqrt, pi, simplify, trigsimp, Wild
 
@@ -19,7 +23,7 @@ y = symbols('y')
 z = symbols('z')
 t = symbols('t')
 
-class Metric:
+class Metric(object):
     def __init__(self):
         # Create an identity metric
         self.x = symbols('x\'')
@@ -110,8 +114,8 @@ def Delp2(f, metric = identity, all_terms=True):
     result = metric.g11*d2fdx2 + metric.g33*d2fdz2 + 2.*metric.g13*d2fdxdz
     
     if all_terms:
-        G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric))/metric.J
-        G3 = (DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric))/metric.J
+        G1 = (DDX(metric.J*metric.g11, metric) + DDY(metric.J*metric.g12, metric) + DDZ(metric.J*metric.g13, metric)) / metric.J
+        G3 = (DDX(metric.J*metric.g13, metric) + DDY(metric.J*metric.g23, metric) + DDZ(metric.J*metric.g33, metric)) / metric.J
         result += G1 * diff(f, metric.x) + G3 * diff(f, metric.z)
         
     return result
@@ -132,7 +136,7 @@ def Laplace_par(f, metric=identity):
     """
     Div( b (b.Grad(f) ) ) = (1/J) d/dy ( J/g_22 * df/dy )
     """
-    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y) / metric.J
+    return diff( (metric.J/metric.g_22)*diff(f, metric.y), metric.y)/ metric.J
 
 
 # Convert expression to string
@@ -309,7 +313,7 @@ class SimpleTokamak(object):
             
             output.write(name, values)
         
-        for name, var in self._extra.iteritems():
+        for name, var in list(self._extra.items()):
             values = zeros([ngx, ngy])
             for i, x in enumerate(xarr):
                 for j, y in enumerate(yarr):
@@ -424,7 +428,7 @@ class ShapedTokamak(object):
         # NOTE: Approximate calculation
         
         # Distance between flux surface relative to outboard midplane. 
-        expansion = (1 - (ss/rmin)*cos(y))/(1 - (ss/rmin))
+        expansion = (1 - (old_div(ss,rmin))*cos(y))/(1 - (ss/rmin))
         
         Bpxy = Bp0 * ((Rmaj + rmin) / Rxy) / expansion
         
@@ -521,7 +525,7 @@ class ShapedTokamak(object):
         
         m.g11 = (self.R * self.Bp)**2
         m.g22 = 1./self.hthe**2
-        m.g33 = self.I**2*m.g11 + self.B**2/m.g11
+        m.g33 = self.I**2*m.g11 + self.B**2 / m.g11
         m.g12 = 0.0
         m.g13 = -self.I*m.g11
         m.g23 = -self.Bt / (self.hthe * self.Bp * self.R)

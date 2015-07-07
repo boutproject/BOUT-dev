@@ -5,6 +5,8 @@
 #
 
 # Variables to compare
+from __future__ import print_function
+from builtins import str
 vars = ['flag0', 'flag3', 'flagis', 'flagos',
         'flag0a', 'flag3a', 'flagisa', 'flagosa',
         'flag0ac', 'flag3ac','flagisac', 'flagosac',
@@ -18,17 +20,17 @@ from sys import stdout, exit
 
 MPIRUN = getmpirun()
 
-print "Making Laplacian inversion test"
+print("Making Laplacian inversion test")
 shell("rm test_laplace")
 shell("make > make.log")
 
 # Read benchmark values
-print "Reading benchmark data"
+print("Reading benchmark data")
 bmk = {}
 for v in vars:
   bmk[v] = collect(v, path="data", prefix="benchmark", info=False)
 
-print "Running Laplacian inversion test"
+print("Running Laplacian inversion test")
 success = True
 
 for nproc in [1,2,4]:
@@ -40,7 +42,7 @@ for nproc in [1,2,4]:
   
   shell("rm data/BOUT.dmp.*.nc")
 
-  print "   %d processors (nxpe = %d)...." % (nproc, nxpe)
+  print("   %d processors (nxpe = %d)...." % (nproc, nxpe))
   s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
   f = open("run.log."+str(nproc), "w")
   f.write(out)
@@ -52,18 +54,18 @@ for nproc in [1,2,4]:
     result = collect(v, path="data", info=False)
     # Compare benchmark and output
     if np.shape(bmk[v]) != np.shape(result):
-      print "Fail, wrong shape"
+      print("Fail, wrong shape")
       success = False
     diff =  np.max(np.abs(bmk[v] - result))
     if diff > tol:
-      print "Fail, maximum difference = "+str(diff)
+      print("Fail, maximum difference = "+str(diff))
       success = False
     else:
-      print "Pass"
+      print("Pass")
 
 if success:
-  print " => All Laplacian inversion tests passed"
+  print(" => All Laplacian inversion tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

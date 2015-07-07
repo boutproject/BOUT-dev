@@ -57,7 +57,8 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Zero timing
   rhs_ncalls = 0;
-
+  rhs_ncalls_e = 0;
+  rhs_ncalls_i = 0;
   // Restart directory
   if(options->isSet("restartdir")) {
     // Solver-specific restart directory
@@ -76,6 +77,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Split operator
   split_operator = false;
+  split_monitor = false;    //flag for runtime output with split operator
   max_dt = -1.0;
 
   // Output monitor
@@ -83,6 +85,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   
   // Method of Manufactured Solutions (MMS)
   options->get("mms", mms, false);
+  options->get("mms_initialise", mms_initialise, mms);
 }
 
 /**************************************************************************
@@ -138,17 +141,19 @@ void Solver::add(Field2D &v, const char* name) {
   ///       from modifying the initial perturbation (e.g. to prevent unphysical situations)
   ///       before it's loaded into the solver. If restarting, this perturbation
   ///       will be over-written anyway
-  if(mms) {
+  if(mms_initialise) {
     // Load solution at t = 0
     
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create2D("solution", Options::getRoot()->getSection(name), mesh);
-    
-    // Allocate storage for error variable
-    d.MMS_err = new Field2D(0.0);
   }else {
     initial_profile(name, v);
+  }
+  
+  if(mms) {
+    // Allocate storage for error variable
+    d.MMS_err = new Field2D(0.0);
   }
   
   // Check if the boundary regions should be evolved
@@ -197,16 +202,19 @@ void Solver::add(Field3D &v, const char* name) {
   v.name = name;
 #endif
 
-  if(mms) {
+  if(mms_initialise) {
     // Load solution at t = 0
     FieldFactory *fact = FieldFactory::get();
     
     v = fact->create3D("solution", Options::getRoot()->getSection(name), mesh, v.getLocation());
     
-    d.MMS_err = new Field3D();
-    (*d.MMS_err) = 0.0;
   }else {
     initial_profile(name, v);
+  }
+  
+  if(mms) {
+    d.MMS_err = new Field3D();
+    (*d.MMS_err) = 0.0;
   }
   
   // Check if the boundary regions should be evolved
@@ -471,19 +479,24 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
  **************************************************************************/
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
+  
+  bool dump_on_restart = false;
+  bool append = false;
   if(NOUT < 0) {
     /// Get options
     
     Options *globaloptions = Options::getRoot(); // Default from global options
     OPTION(globaloptions, NOUT, 1);
     OPTION(globaloptions, TIMESTEP, 1.0);
+    OPTION(globaloptions, append, false);
+    OPTION(globaloptions, dump_on_restart, !restarting || !append);
     
     // Check specific solver options, which override global options
     OPTION(options, NOUT, NOUT);
-    OPTION(options, TIMESTEP, TIMESTEP);
+    options->get("output_step", TIMESTEP, TIMESTEP);
   }
   
-  output.write("Solver running for %d outputs with timestep of %e\n", NOUT, TIMESTEP);
+  output.write("Solver running for %d outputs with output timestep of %e\n", NOUT, TIMESTEP);
   
   // Initialise
   if(init(restarting, NOUT, TIMESTEP)) {
@@ -499,7 +512,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
   Timer timer("run"); // Start timer
   
-  if (!restarting) {
+  if ( dump_on_restart ) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
@@ -541,7 +554,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
       restart.write("%s/BOUT.failed.%s", restartdir.c_str(), restartext.c_str());
     }
     
-    return 1;
+    throw e;
   }
 
   return 0;
@@ -1160,7 +1173,8 @@ int Solver::run_rhs(BoutReal t) {
   add_mms_sources(t);
 
   rhs_ncalls++;
-
+  rhs_ncalls_e++;
+  rhs_ncalls_i++;
   return status;
 }
 
@@ -1169,7 +1183,7 @@ int Solver::run_convective(BoutReal t) {
   int status;
   
   Timer timer("rhs");
-  
+  pre_rhs(t);
   if(split_operator) {
     if(model) {
       status = model->runConvective(t);
@@ -1188,7 +1202,7 @@ int Solver::run_convective(BoutReal t) {
   add_mms_sources(t);
   
   rhs_ncalls++;
-  
+  rhs_ncalls_e++;
   return status;
 }
 
@@ -1196,8 +1210,9 @@ int Solver::run_diffusive(BoutReal t) {
   int status = 0;
   
   Timer timer("rhs");
-
+  pre_rhs(t);
   if(split_operator) {
+
     if(model) {
       status = model->runDiffusive(t);
     }else 
@@ -1210,7 +1225,7 @@ int Solver::run_diffusive(BoutReal t) {
     for(vector< VarStr<Field2D> >::iterator it = f2d.begin(); it != f2d.end(); it++)
       *((*it).F_var) = 0.0;
   }
-  
+  rhs_ncalls_i++;
   return status;
 }
 
