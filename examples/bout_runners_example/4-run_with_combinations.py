@@ -34,6 +34,6 @@ my_runs = basic_runner(\
 # In total: 24 runs
 my_runs.execute_runs()
 
-# NOTE: If you feel that the explaination of the combinations was bad,
+# NOTE: If you feel that the explanation of the combinations was bad,
 #       have a look at the last lines of data/run_log.txt to see what
 #       runs have been performed after this run

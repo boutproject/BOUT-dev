@@ -1,39 +1,58 @@
 #!/usr/bin/env python
 
-"""Driver which runs 3d_diffusion and performs a MMS test."""
+"""Driver which runs 3D_diffusion and performs a MMS test by specifying
+the grids by using grid_files (see
+6a-run_with_MMS_post_processing_specify_numbers.py to see how to do the
+same is done by specifying the grid manually)"""
 
 from bout_runners.bout_runners import basic_runner
-from grid_generator import generate_grid
-from post_processing_MMS import MMS_test
+from post_processing_MMS import perform_MMS_test
+from grid_generator import  generate_grid
 
-# TODO: Make a a version and b version of this file, do not let user
-# specify
-
-# The test can be done by using grid files, or by specifying nx, ny and
-# nz. The choice is yours
-
-# Options
-# 'grid_file'
-# 'specify_numbers'
-MMS_by = 'grid_file'
-
-# Just checking if you managed to type MMS by correctly
-if MMS_by != 'grid_file' or MMS_by != 'specify_numbers':
-    raise TypeError("MMS must be 'grid_file' or 'specify_numbers'")
-
-# Do MMS test by the grid file
-if MMS_by == 'grid_file':
-
-# Do MMS test by specifying nx, ny and nz
-elif MMS_by == 'specify_numbers':
-
-# Generate a grid
-generate_grid(file_name="3D_diffusion_grid")
+# Generate the grids
+# Specify the grid dimensions
+grid_numbers = [4, 8, 16]
+# Make an append able list
+grid_files = []
+for grid_number in grid_numbers:
+    file_name = 'grid_file_' + str(grid_number)
+    # Generate the grids
+    generate_grid(nx        = grid_number,\
+                  ny        = grid_number,\
+                  nz        = grid_number,\
+                  inp_path  = 'MMS'      ,\
+                  file_name = file_name)
+    # Append the grid_files list
+    grid_files.append(file_name + '.nc')
 
 my_runs = basic_runner(\
-            grid_file = "3D_diffusion_grid.nc",\
+            nproc = 1,\
+            # Set the directory
+            directory = 'MMS',\
+            # Set the time domain
+            nout     = 1,\
+            timestep = 1,\
+            # Set mms to true
+            mms = True,\
+            # Set the spatial domain
+            grid_file = grid_files,\
+            # Set the flag in 3D_diffusion that a grid file will be
+            # used
+            additional = ('flags','use_grid','true'),\
             # Copy the grid file
-            cpy_grid = True\
+            cpy_grid = True,\
+            # Sort the runs by the spatial domain
+            sort_by = 'grid_file'
             )
 
-my_runs.execute_runs()
+# Put this in the post-processing function
+my_runs.execute_runs(\
+                     post_processing_function = perform_MMS_test,\
+                     # As we need several runs in order to perform the
+                     # MMS test, this needs to be false
+                     post_process_after_every_run = False,\
+                     # Below are the kwargs arguments being passed to
+                     # perform_MMS_test
+                     extension = 'png',\
+                     show_plot = True
+                    )

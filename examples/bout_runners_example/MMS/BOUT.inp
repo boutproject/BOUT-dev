@@ -1,5 +1,5 @@
 #
-# Input file for "bout_runners_example/data"
+# Input file for "bout_runners_example/MMS"
 #
 
 # Root option
@@ -22,7 +22,7 @@ MYG = 1
 # Mesh option
 ###############################################################################
 [mesh]
-# Puts the boundaries half a step outside the last gridpoints
+# Puts the boundaries half a step outside the last grid points
 symmetricGlobalY=true
 symmetricGlobalX=true
 
@@ -98,7 +98,7 @@ D_perp = 2.0           # Perpendicular diffusion constant
 # Flags
 # -----------------------------------------------------------------------------
 [flags]
-use_grid = False     # Whether or not to read from a grid file
+use_grid = false     # Whether or not to read from a grid file
 # -----------------------------------------------------------------------------
 
 # The particle density

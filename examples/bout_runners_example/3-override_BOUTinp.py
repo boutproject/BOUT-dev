@@ -23,7 +23,7 @@ my_runs = basic_runner(\
             zperiod    = None,\
             zmin       = None,\
             zmax       = None,\
-            # These are not set here, but the code hadles them
+            # These are not set here, but the code handles them
             # internally
             dx         = None,\
             dy         = None,\
@@ -59,7 +59,7 @@ my_runs = basic_runner(\
             timestep   = 0.02,\
             # Additional options
             # tuple[0] - section name
-            # tuple[1] - varibale name for the section
+            # tuple[1] - variable name for the section
             # tuple[2] - value of the variable name in the section
             additional = [('cst','D_perp',5), ('cst', 'D_par', 0.5)],\
             # Will remake the file
@@ -69,7 +69,7 @@ my_runs = basic_runner(\
             # Will copy the source file
             cpy_source = True,\
             # Code will return an error if False, due to the mismatch
-            # bweteen nx, ny and nproc
+            # between nx, ny and nproc
             allow_size_modification = True)
 
 my_runs.execute_runs(\

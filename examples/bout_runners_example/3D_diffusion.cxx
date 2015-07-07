@@ -9,8 +9,8 @@
 
 // Global variable initialization
 // ############################################################################
-Field3D n;               // The plasma density
-BoutReal D_par, D_perp;  // The diffusion constants and the box dimensions
+Field3D n;               // Evolved variable
+BoutReal D_par, D_perp;  // The diffusion constants
 BoutReal Lx, Ly;         // The spatial domain size
 bool use_grid;    // If the spatial size should be loaded from the grid
 // ############################################################################
@@ -58,7 +58,7 @@ int physics_init(bool restarting) {
         // On a line with equidistant points there is one less line
         // segment than points from the first to the last point.
         // The boundary lies (1/2)*dx away from the last point As there
-        // are 2 bounaries there will effectively add one more line
+        // are 2 boundaries there will effectively add one more line
         // segment in the domain. Hence
         mesh->dx = Lx/(internal_x_points);
         mesh->dy = Ly/(internal_y_points);
@@ -68,7 +68,7 @@ int physics_init(bool restarting) {
     // Specify what values should be stored in the .dmp file
     // ************************************************************************
     // Save these variables once
-    SAVE_ONCE2(Lx, Ly);
+    SAVE_ONCE4(Lx, Ly, D_par, D_perp);
 
     // Tell BOUT++ to solve for n
     SOLVE_FOR(n);

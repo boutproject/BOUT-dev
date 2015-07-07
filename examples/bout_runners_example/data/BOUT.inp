@@ -22,7 +22,7 @@ MYG = 1
 # Mesh option
 ###############################################################################
 [mesh]
-# Puts the boundaries half a step outside the last gridpoints
+# Puts the boundaries half a step outside the last grid point
 symmetricGlobalY=true
 symmetricGlobalX=true
 
@@ -93,12 +93,17 @@ xl = x * geom:Lx            #x in range [0,Lx]
 [cst]
 D_par  = 1.0           # Parallel diffusion constant
 D_perp = 2.0           # Perpendicular diffusion constant
+# Options for the Gaussian
+x0 = 0.5 * geom:Lx     # The x centering of the Gaussian
+y0 = 0.5 * geom:Ly     # The y centering of the Gaussian
+z0 = pi                # The z centering of the Gaussian
+w  = 2                 # Width of the Gaussian
 # -----------------------------------------------------------------------------
 
 # Flags
 # -----------------------------------------------------------------------------
 [flags]
-use_grid = False     # Whether or not to read from a grid file
+use_grid = false     # Whether or not to read from a grid file
 # -----------------------------------------------------------------------------
 
 # The particle density
@@ -107,8 +112,8 @@ use_grid = False     # Whether or not to read from a grid file
 # Scaling
 scale = 1.0
 
-# Inital condition (a "spherical" gaussian centered in the middle of the domain)
-function = gauss(mesh:xl - mesh:x0, mesh:w)*gauss(mesh:yl - mesh:y0, mesh:w)*gauss(z - mesh:z0, mesh:w)
+# Initial condition (a "spherical" Gaussian centered in the middle of the domain)
+function = gauss(geom:xl - cst:x0, cst:w)*gauss(geom:yl - cst:y0, cst:w)*gauss(z - cst:z0, cst:w)
 
 # Boundary conditions
 # Set the boundary to the initial condition
