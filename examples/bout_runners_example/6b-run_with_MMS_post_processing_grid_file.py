@@ -26,23 +26,23 @@ for grid_number in grid_numbers:
     grid_files.append(file_name + '.nc')
 
 my_runs = basic_runner(\
-            nproc = 1,\
+            nproc     = 1,\
             # Set the directory
-            directory = 'MMS',\
+            directory  = 'MMS',\
             # Set the time domain
-            nout     = 1,\
-            timestep = 1,\
+            nout       = 1,\
+            timestep   = 1,\
             # Set mms to true
-            mms = True,\
+            mms        = True,\
             # Set the spatial domain
-            grid_file = grid_files,\
+            grid_file  = grid_files,\
             # Set the flag in 3D_diffusion that a grid file will be
             # used
             additional = ('flags','use_grid','true'),\
             # Copy the grid file
-            cpy_grid = True,\
+            cpy_grid   = True,\
             # Sort the runs by the spatial domain
-            sort_by = 'grid_file'
+            sort_by    = 'grid_file'
             )
 
 # Put this in the post-processing function
@@ -54,5 +54,5 @@ my_runs.execute_runs(\
                      # Below are the kwargs arguments being passed to
                      # perform_MMS_test
                      extension = 'png',\
-                     show_plot = True
+                     show_plot = True\
                     )

@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from pylab import plot
 import numpy as np
-from _tkinter import TclError
 
 #{{{perform_MMS_test
 def perform_MMS_test(paths, extension='.pdf', show_plot=False):
@@ -171,7 +170,7 @@ def do_plot(data, order_2, order_inf, root_folder, name, extension, show_plot):
     # Try to make a figure with the current backend
     try:
         fig = plt.figure(fig_no, figsize = plt_size)
-    except TclError:
+    except:
         # Switch if a backend needs the display
         plt.switch_backend('Agg')
         fig = plt.figure(fig_no, figsize = plt_size)
@@ -257,6 +256,8 @@ def do_plot(data, order_2, order_inf, root_folder, name, extension, show_plot):
     plt.savefig(root_folder + name  + '.' + extension)
     print('\nPlot saved to ' + name + '.' + extension + '\n'*2)
 
-    plt.show()
+    if show_plot:
+        plt.show()
+
     plt.close()
 #}}}

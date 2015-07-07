@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-# NOTE: THE BOUT-RUNNERS ARE UNDER REVISION. THINGS MAY NOT WORK AS
-#       EXPECTED
-
 """Classes for running several mpi-runs with BOUT++ at once.
    Read the docstring of 'basic_runner', or refer to the user manual of
    BOUT++ for more info. Examples can be found in
@@ -34,7 +31,6 @@ import timeit
 import datetime
 from numbers import Number
 import numpy as np
-from subprocess import check_output
 from boututils import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
@@ -52,24 +48,9 @@ from boututils.datafile import DataFile
 # TODO: Make a check to see if the following is in the grid file
 #       1. Check if branch cut is in the grid file
 
-# TODO: Move allow_size_modification = False to execute_run, as it is
-#       better to also write the run_no there?
-
 # TODO: Test for python 2
 
 # TODO: Rewrite documentation in the manual (also the nice chart)
-
-# FIXME: qsub does not always delete the clean-up files??
-#        Fixed for basic qsub (test it), fix for the rest
-# TODO: Make it possible to give a function to the waiting routine in
-#       qsub runners, so that it is possible to give a function which
-#       will be run when a job has completed
-# TODO: Make qsub usable on different clusters (and update documentation)
-#       Can be done by checking the current cluster? (Need to set the
-#       path to the correct libraries, and use the correct MPI runner)
-# TODO: Submit and postprocess to a different queue
-# TODO: Check if it is possible to use qsub with dependencies (only
-#       found depricated documentation)
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -2283,27 +2264,6 @@ class basic_runner(object):
 
 
 
-# TODO: JUST CHECK
-# TODO: Check if can get a error message if you are sending to the wrong
-#       queue
-# TODO: Easy check if BOUT_mail python
-
-        # FIXME:
-        #   Keep the structure
-        #     If no postprocessing: Submit the jobs one by one?
-        #     Post them one by one anyways, keep the jobnumber?
-        #     Should one by one for maximum parallelization
-        #     rundriver stores the job_ids in a list, which is expanded
-        #     (and emptied) if need postprocess
-        #     Let the PBS script delete eventual created stuff
-        #     Direct error and log to _dmp_folder
-        #     How is the post-processing called? Could create a tmp.py
-        #     in the folder calling the routine
-        #   Summary:
-        #     Submit one by one, store jobid in list
-        #     If postprocessing, append the list to the call, and empty
-        #     it
-        #
 #{{{PBS_runner
 class PBS_runner(basic_runner):
 # TODO: REWRITE THIS
@@ -2321,7 +2281,7 @@ class PBS_runner(basic_runner):
     def __init__(self,\
                  BOUT_nodes            = 1         ,\
                  BOUT_ppn              = 4         ,\
-                 BOUT_walltime         = '50:00:00',\
+                 BOUT_walltime         = None      ,\
                  BOUT_mail             = None      ,\
                  BOUT_queue            = None      ,\
                  post_process_nproc    = None      ,\
@@ -2370,7 +2330,6 @@ class PBS_runner(basic_runner):
 #}}}
 
 # FIXME: REWRITE
-# TODO: Do not use self._ in error messages
 # The run_driver
 #{{{_run_driver
     def _run_driver(self, combination, run_no):
@@ -2412,7 +2371,6 @@ class PBS_runner(basic_runner):
                         self._post_process_nproc,\
                         self._post_process_nodes,\
                         self._post_process_ppn,\
-                        self._post_process_walltime,\
                        ]
         # All elements of check_if_set must be set if any is set
         not_None = 0
@@ -2434,7 +2392,7 @@ class PBS_runner(basic_runner):
                         (self._post_process_ppn,   'post_process_ppn') \
                        ]
         self._check_for_correct_type(var = check_if_int,\
-                                      the_type = str,\
+                                      the_type = int,\
                                       allow_iterable = False)
         #}}}
 
@@ -2448,17 +2406,14 @@ class PBS_runner(basic_runner):
                 raise TypeError(message)
         #}}}
 
-        #{{{Check if BOUT_walltime is of correct type
-        if type(self._BOUT_walltime) != str:
-            message  = "BOUT_walltime is of wrong type\n"+\
-                       "BOUT_walltime must be given as an str"
-            self._errors.append("TypeError")
-            raise TypeError(message)
-        #}}}
-
-        #{{{Check if post_process_walltime is str if set
+        #{{{Check if walltime, mail and queue is a string if set
         check_if_str = [\
-                        (self._post_process_nodes, 'post_process_walltime') \
+                        (self._BOUT_walltime,         'BOUT_walltime')     ,\
+                        (self._BOUT_mail,             'BOUT_mail')         ,\
+                        (self._BOUT_queue,            'BOUT_queue')        ,\
+                        (self._post_process_walltime, 'BOUT_walltime')     ,\
+                        (self._post_process_mail,     'post_process_mail') ,\
+                        (self._post_process_queue,    'post_process_queue') \
                        ]
         self._check_for_correct_type(var = check_if_str,\
                                       the_type = str,\
@@ -2467,7 +2422,11 @@ class PBS_runner(basic_runner):
 
         #{{{Check that walltime is on correct format
         # A list to loop over
-        walltimes = [(self._BOUT_walltime, 'BOUT_walltime')]
+        walltimes = []
+        # Append the walltimes if set
+        if self._BOUT_walltime != None:
+            walltimes.append((self._BOUT_walltime,\
+                              'BOUT_walltime'))
         if self._post_process_walltime != None:
             walltimes.append((self._post_process_walltime,\
                               'post_process_walltime'))
@@ -2482,20 +2441,31 @@ class PBS_runner(basic_runner):
             # Check that the list has three elements
             if len(walltime_list) == 3:
 
-                # Check that the last element (seconds) is a digit (int)
-                if walltime_list[2].isdigit():
-                    # Check that the element is less than 59
-                    if int(walltime_list[2]) > 59:
-                        sucess = False
-                # Seconds is not a digit
+                # Check that seconds is on the format SS
+                if len(walltime_list[2]) == 2:
+                    # Check that the last element (seconds) is a digit (int)
+                    if walltime_list[2].isdigit():
+                        # Check that the element is less than 59
+                        if int(walltime_list[2]) > 59:
+                            success = False
+                    # Seconds is not a digit
+                    else:
+                        success = False
+                # Seconds is not on the format SS
                 else:
                     success = False
 
+
                 # Do the same for the second last element (minutes)
-                if walltime_list[1].isdigit():
-                    if int(walltime_list[1]) > 59:
-                        sucess = False
-                # Minutes is not a digit
+                if len(walltime_list[1]) == 2:
+                    # Check that the last element (seconds) is a digit (int)
+                    if walltime_list[1].isdigit():
+                        if int(walltime_list[1]) > 59:
+                            success = False
+                    # Minutes is not a digit
+                    else:
+                        success = False
+                # Seconds is not on the format SS
                 else:
                     success = False
 
@@ -2511,18 +2481,6 @@ class PBS_runner(basic_runner):
                 message = walltime[1] + " must be on the form H...H:MM:SS"
                 self._errors.append("TypeError")
                 raise TypeError(message)
-        #}}}
-
-        #{{{Check if BOUT_mail/queue post_process_mail/queue is a string if set
-        check_if_str = [\
-                        (self._BOUT_mail,          'BOUT_mail')         ,\
-                        (self._BOUT_queue,         'BOUT_queue')        ,\
-                        (self._post_process_mail,  'post_process_mail') ,\
-                        (self._post_process_queue, 'post_process_queue') \
-                       ]
-        self._check_for_correct_type(var = check_if_str,\
-                                      the_type = str,\
-                                      allow_iterable = False)
         #}}}
     #}}}
 #}}}
@@ -2543,7 +2501,6 @@ class PBS_runner(basic_runner):
                             self._post_process_nproc,\
                             self._post_process_nodes,\
                             self._post_process_ppn,\
-                            self._post_process_walltime,\
                            ]
             # All elements of check_if_set must be set if any is set
             not_None = 0
@@ -2553,8 +2510,8 @@ class PBS_runner(basic_runner):
 
             if (not_None != 0) and (not_None != len(check_if_set)):
                 message = "post_process_nproc, post_process_nodes,"+\
-                           " post_process_ppn and post_process_walltime must"+\
-                           " be set if post_processing_function is set."
+                          " and post_process_ppn and must"+\
+                          " be set if post_processing_function is set."
                 self._errors.append("TypeError")
                 raise TypeError(message)
     #}}}
@@ -2586,6 +2543,7 @@ class PBS_runner(basic_runner):
 
     #{{{_call_post_processing_function
     def _call_post_processing_function(\
+                                       self            ,\
                                        function = None ,\
                                        folders  = None ,\
                                        **kwargs         \
@@ -2600,16 +2558,32 @@ class PBS_runner(basic_runner):
         start_time = self._get_start_time()
 
         # The name of the file
-        python_name = funtion.__name__ + '_'+start_time+'.py'
+        python_name = "tmp_" + function.__name__ + '_'+start_time+'.py'
 
         # Make the script
         python_tmp  = '#!/usr/bin/env python\n'
         python_tmp += 'import os\n'
-        # Call clean_up_runs
+        # Import the post processing function
+        python_tmp += 'from ' + function.__module__ +\
+                      ' import ' + function.__name__ + '\n'
+        # Convert the keyword args to propper arguments
+        # Appendable list
+        arguments = []
+        for key in kwargs.keys():
+            if type(kwargs[key]) != str:
+                # If the value is not a string, we can append it directly
+                arguments.append(str(key) + '=' + str(kwargs[key]))
+            else:
+                # If the value is a string, we need to put quotes around
+                arguments.append(str(key) + '="' + str(kwargs[key]) +'"')
+
+        # Put a comma in between the arguments
+        arguments = ', '.join(arguments)
+        # Call the post processing function
         python_tmp +=\
             function.__name__ + "("+\
             str(folders) + ","+\
-            "'" + str(**kwargs)  + "')\n"
+            arguments + ")\n"
         # When the script has run, it will delete itself
         python_tmp += "os.remove('" + python_name + "')\n"
 
@@ -2640,7 +2614,8 @@ class PBS_runner(basic_runner):
         dependencies = ':'.join(self._PBS_id)
 
         # Submit the job
-        print('\nSubmitting the post processing function')
+        print('\nSubmitting the post processing function "' +\
+                function.__name__ + '"\n')
         PBS_id = self._submit_to_PBS(job_string, dependent_job = dependencies)
         #}}}
     #}}}
@@ -2772,8 +2747,10 @@ class PBS_runner(basic_runner):
         # The job name
         job_string += '#PBS -N ' + job_name + '\n'
         job_string += '#PBS -l nodes=' + str(nodes) + ':ppn=' + str(ppn)  + '\n'
-        # Wall time, must be in format HOURS:MINUTES:SECONDS
-        job_string += '#PBS -l walltime=' + walltime + '\n'
+        # If walltime is set
+        if walltime != None:
+            # Wall time, must be in format HOURS:MINUTES:SECONDS
+            job_string += '#PBS -l walltime=' + walltime + '\n'
         # If submitting to a specific queue
         if queue != None:
             job_string += '#PBS -q ' + queue + '\n'
@@ -2783,7 +2760,7 @@ class PBS_runner(basic_runner):
                       '.err' + '\n'
         # If we want to be notified by mail
         if mail != None:
-            job_string += '#PBS -M ' + mail + '\n'
+            job_string += '#PBS -M e' + mail + '\n'
         # #PBS -m abe
         # a=aborted b=begin e=ended
         job_string += '#PBS -m e ' + '\n'
@@ -2798,10 +2775,6 @@ class PBS_runner(basic_runner):
         """Saves the job_string as a shell script, submits it and
         deletes it. Returns the output from PBS as a string"""
 
-        # We will use the subprocess.check_output in order to get the
-        # jobid number
-        # http://stackoverflow.com/questions/2502833/store-output-of-subprocess-popen-call-in-a-string
-
         # Create the name of the temporary shell script
         # Get the start_time used for the name of the script
         start_time = self._get_start_time()
@@ -2814,13 +2787,36 @@ class PBS_runner(basic_runner):
         # Submit the jobs
         if dependent_job==None:
             # Without dependencies
-            output = check_output(["qsub", "./"+script_name])
+            command = "qsub ./"+script_name
+            status, output = shell(command, pipe=True)
         else:
-            # With dependencies
-            output = check_output(["qsub", "depend=afterok:"+dependent_job,\
-                                    "./" + script_name])
-        # Cast to utf-8 (for python 3)
-        output = output.decode('utf-8')
+            # If the length of the depend job is 0, then all the jobs
+            # have completed, and we can carry on as usual without
+            # dependencies
+            if len(dependent_job) == 0:
+                command = "qsub ./"+script_name
+                status, output = shell(command, pipe=True)
+            else:
+                # With dependencies
+                command = "qsub -W depend=afterok:" + dependent_job + " ./"+script_name
+                status, output = shell(command, pipe=True)
+
+        # Check for success
+        if status != 0:
+            if status == 208:
+                message = "Runs finished before submission of the post"+\
+                          " processing function. When the runs are done:"+\
+                          " Run again with 'remove_old = False' to submit"+\
+                          " the function."
+                self._warnings.append(message)
+            else:
+                print("\nSubmission failed, printing output\n")
+                print(output)
+                self._errors.append("RuntimeError")
+                message = "The submission failed with exit code" + str(status) +\
+                          ", see the output above"
+                raise RuntimeError(message)
+
         # Trims the end of the output string
         output = output.strip(' \t\n\r')
 
