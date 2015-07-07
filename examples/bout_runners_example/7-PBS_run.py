@@ -7,4 +7,4 @@ from bout_runners.bout_runners import PBS_runner
 
 my_runs = PBS_runner()
 
-my_runs.execute_runs(remove_old=True)
+my_runs.execute_runs()

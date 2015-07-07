@@ -1260,6 +1260,7 @@ class basic_runner(object):
 #{{{Functions called by _error_check_for_run_input
     #{{{_check_for_child_class_errors
     def _check_for_child_class_errors(
+                                   self                        ,\
                                    remove_old                  ,\
                                    post_processing_function    ,\
                                    post_process_after_every_run \
@@ -2365,7 +2366,7 @@ class PBS_runner(basic_runner):
         self._check_for_PBS_instance_error()
 
         # Initialize the jobid returned from the PBS
-        self._PBS_id = None
+        self._PBS_id = []
 #}}}
 
 # FIXME: REWRITE
@@ -2529,6 +2530,7 @@ class PBS_runner(basic_runner):
 #{{{Functions called by _error_check_for_run_input
     #{{{_check_for_child_class_errors
     def _check_for_child_class_errors(
+                                   self                        ,\
                                    remove_old                  ,\
                                    post_processing_function    ,\
                                    post_process_after_every_run \
@@ -2584,9 +2586,9 @@ class PBS_runner(basic_runner):
 
     #{{{_call_post_processing_function
     def _call_post_processing_function(\
-                                       function = post_processing_function,\
-                                       folders  = self._dmp_folder        ,\
-                                       **kwargs                            \
+                                       function = None ,\
+                                       folders  = None ,\
+                                       **kwargs         \
                                        ):
         """Function which submits the post processing to the PBS
 
@@ -2612,7 +2614,7 @@ class PBS_runner(basic_runner):
         python_tmp += "os.remove('" + python_name + "')\n"
 
         # Write the python script
-        with open(python_name, "w") as f
+        with open(python_name, "w") as f:
             f.write(python_tmp)
         #}}}
 
@@ -2626,8 +2628,8 @@ class PBS_runner(basic_runner):
                                 nodes            = self._post_process_nodes   ,\
                                 ppn              = self._post_process_ppn     ,\
                                 walltime         = self._post_process_walltime,\
-                                mail             = self._post_process_walltime,\
-                                queue            = self._post_process_walltime \
+                                mail             = self._post_process_mail    ,\
+                                queue            = self._post_process_queue    \
                                 )
         # Call the python script in the submission
 
@@ -2680,8 +2682,8 @@ class PBS_runner(basic_runner):
                                 nodes            = self._BOUT_nodes   ,\
                                 ppn              = self._BOUT_ppn     ,\
                                 walltime         = self._BOUT_walltime,\
-                                mail             = self._BOUT_walltime,\
-                                queue            = self._BOUT_walltime \
+                                mail             = self._BOUT_mail    ,\
+                                queue            = self._BOUT_queue    \
                                 )
         #}}}
 
@@ -2720,11 +2722,11 @@ class PBS_runner(basic_runner):
             job_string += "echo '" +\
                           '{:<19}'.format(start_time)     + " "*3  +\
                           '{:^9}'.format(self._run_type)  + " "*3  +\
-                          '{:^6}'.format(str(run_no)      + " "*3  +\
+                          '{:^6}'.format(str(run_no))     + " "*3  +\
                           "'$h':'$m':'$s"                 + " "*10 +\
                           '{:<}'.format(self._dmp_folder) + " "*3  +\
                           " >> $PBS_O_WORKDIR/" + self._directory  +\
-                          "/run_log.txt \n"
+                          "/run_log.txt\n"
             #}}}
 
         # Exit the qsub
@@ -2809,8 +2811,6 @@ class PBS_runner(basic_runner):
         with open(script_name, "w") as shell_script:
                 shell_script.write(job_string)
 
-        import pdb
-        pdb.set_trace()
         # Submit the jobs
         if dependent_job==None:
             # Without dependencies
@@ -2819,6 +2819,8 @@ class PBS_runner(basic_runner):
             # With dependencies
             output = check_output(["qsub", "depend=afterok:"+dependent_job,\
                                     "./" + script_name])
+        # Cast to utf-8 (for python 3)
+        output = output.decode('utf-8')
         # Trims the end of the output string
         output = output.strip(' \t\n\r')
 
