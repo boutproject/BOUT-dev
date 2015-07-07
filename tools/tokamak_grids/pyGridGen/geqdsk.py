@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import re
 import numpy
 
@@ -14,7 +20,7 @@ The official document describing g-eqdsk files:
 http://fusion.gat.com/conferences/snowmass/working/mfe/physics/p3/equilibria/g_eqdsk_s.pdf
 """
 
-class Geqdsk:
+class Geqdsk(object):
    
       def __init__(self):
 	"""
@@ -91,7 +97,7 @@ class Geqdsk:
 	
 	line = lines[counter]
 	m = re.search(r'^\s*(\d+)\s+(\d+)', line)
-	print line
+	print(line)
 	nbbbs = int(m.group(1))
 	limitr = int(m.group(2))
 	self.data['nbbbs'] = nbbbs, "Number of boundary points"
@@ -122,7 +128,7 @@ class Geqdsk:
 	return self.data
 
       def getAllVars(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
       def get(self, varname): 
 	return self.data[varname.lower()][0]
@@ -157,24 +163,24 @@ def main():
 	geq.openFile(options.filename)
 
 	if options.inquire:
-	   print geq.getAllVars()
+	   print(geq.getAllVars())
 
 	if options.all:
-	   print geq.getAll()
+	   print(geq.getAll())
 
 	vs = geq.getAllVars()
 	if options.vars != '*':
 	   vs = options.vars.split(',')
 
 	for v in vs:
-	    print '%s: %s'% (v, str(geq.get(v)))
+	    print('%s: %s'% (v, str(geq.get(v))))
 
 	if options.plot:
 	   from matplotlib import pylab
 
 	   if options.vars == '*': 
 	      options.vars = geq.getAllVars()
-	      print options.vars
+	      print(options.vars)
 	   else:
 	      vs = options.vars.split(',')
 	      options.vars = vs
@@ -182,7 +188,7 @@ def main():
 	   xmin = geq.get('simag')
 	   xmax = geq.get('sibry')
 	   nx   = geq.get('nw')
-	   dx = (xmax - xmin)/float(nx - 1)
+	   dx = old_div((xmax - xmin),float(nx - 1))
 	   x = numpy.arange(xmin, xmin + (xmax-xmin)*(1.+1.e-6), dx)
 	   for v in options.vars:
 	       if v[0] != 'r' and v[0] != 'z':
@@ -198,10 +204,10 @@ def main():
 	   nh = geq.get('nh')
 	   rmin = geq.get('rleft')
 	   rmax = rmin + geq.get('rdim')
-	   dr = (rmax - rmin)/float(nw - 1)
-	   zmin = geq.get('zmid') - geq.get('zdim')/2.0
-	   zmax = geq.get('zmid') + geq.get('zdim')/2.0
-	   dz = (zmax - zmin)/float(nh - 1)
+	   dr = old_div((rmax - rmin),float(nw - 1))
+	   zmin = geq.get('zmid') - old_div(geq.get('zdim'),2.0)
+	   zmax = geq.get('zmid') + old_div(geq.get('zdim'),2.0)
+	   dz = old_div((zmax - zmin),float(nh - 1))
 	   rs = numpy.arange(rmin, rmin + (rmax-rmin)*(1.+1.e-10), dr)
 	   zs = numpy.arange(zmin, zmin + (zmax-zmin)*(1.+1.e-10), dz)
 	   pylab.figure()

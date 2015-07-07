@@ -1,3 +1,4 @@
+from __future__ import print_function
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Find the gradient at a given point by fitting
 # 
@@ -30,7 +31,7 @@ def local_gradient( interp_data, ri, zi, status=0, f=None, dfdr=None, dfdz=None)
                                       
         #Calculate derivatives
         
-        print "Calculating derivatives for local gradient (method 2)"
+        print("Calculating derivatives for local gradient (method 2)")
         
         dd  = numpy.gradient(interp_data.f)
         ddr = dd[0]

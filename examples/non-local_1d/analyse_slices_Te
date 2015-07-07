@@ -5,6 +5,10 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 nproc = 1  # Number of processors to use
 
 #from boututils import shell, launch, plotdata
@@ -37,7 +41,7 @@ slicetimes = [0,50,100,150,200,250,300]
 positions=[]
 totalgridpoints = len(T[0,0,2:-3,0])
 for i in range(totalgridpoints):
-  positions.append(80./float(totalgridpoints)*(float(i)+0.5-float(totalgridpoints)/2.))
+  positions.append(80./float(totalgridpoints)*(float(i)+0.5-old_div(float(totalgridpoints),2.)))
 
 #pyplot.figure(dpi=80, facecolor='w')
 pyplot.figure(dpi=800, facecolor='w')

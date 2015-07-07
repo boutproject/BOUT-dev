@@ -32,6 +32,7 @@ has_lapack="@HAS_LAPACK@"
 has_petsc="@HAS_PETSC@"
 has_hypre="@HAS_HYPRE@"
 has_mumps="@HAS_MUMPS@"
+has_arkode="@HAS_ARKODE@"
 
 petsc_version="@PETSC_VERSION@"
 petsc_release="@PETSC_RELEASE@"
@@ -110,6 +111,7 @@ all()
         echo "  --has-petsc   -> $has_petsc"
         echo "  --has-hypre   -> $has_hypre"
         echo "  --has-mumps   -> $has_mumps"
+	echo "  --has-arkode  -> $has_arkode"
         echo
         echo "  --petsc-version      -> $petsc_version"
         echo "  --petsc-release      -> $petsc_release"
@@ -227,6 +229,10 @@ while test $# -gt 0; do
     --has-mumps)
         echo $has_mumps
         ;;
+
+    --has-arkode)
+	echo $has_arkode
+	;;
 
     --petsc-version)
         echo $petsc_version

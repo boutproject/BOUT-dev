@@ -69,7 +69,7 @@ LaplaceSerialTri::~LaplaceSerialTri() {
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);
+  return solve(b,b);   // Call the solver below
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
@@ -82,6 +82,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   int ncz = mesh->ngz-1;
   int ncx = mesh->ngx-1;
   
+  // Used when checking if one should set the boundary
   int inbndry = 2, outbndry=2;
   
   if(global_flags & INVERT_BOTH_BNDRY_ONE) {
@@ -99,30 +100,41 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
        ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
+
+      // x0 and mesh->zShift are the inputs
+      // bk is the output
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
       
     }else
+      // b and mesh->zShift are the inputs
+      // bk is the output
       ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
   }
 
+  // Solve differential equation in x for each fourier mode of bk (up to half of max)
   for(int iz=0;iz<=ncz/2;iz++) {
-    // solve differential equation in x
 
     // set bk1d
     BoutReal flt;
     if (iz>maxmode) flt=0.0; else flt=1.0;
       
     for(int ix=0;ix<=ncx;ix++)
+      // Get bk of the current fourier mode
       bk1d[ix] = bk[ix][iz] * flt;
     
-    ///////// PERFORM INVERSION /////////
-    
+    // Sets the lower diagonal avec, the diagonal bvec and the upper
+    // diagonal cvec in the tridiagonal matrix (see "Numerical recipes" for 
+    // notation) with the correct numbers (including the metrics) by calling
+    // tridagCoef
+    // tridagMatrix also sets the boundary (by setting avec, bvec, cvec and bk
+    // for the boundary points) according to the given flags.    
     tridagMatrix(avec, bvec, cvec, bk1d, jy, 
-		 iz == 0, // DC?
+		 iz == 0, // Called "int kz" in the function. Used to check if DC.
 		 iz*2.0*PI/mesh->zlength, // kwave
 		 global_flags, inner_boundary_flags, outer_boundary_flags,
 		 &A, &C, &D);
-    
+
+    ///////// PERFORM INVERSION /////////
     if(!mesh->periodicX) {
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
@@ -147,15 +159,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         bk1d[ix] -= offset;
     }
       
-    // Fill xk
-      
+    // Set the answer xk for the current fourier mode
     for (int ix=0; ix<=ncx; ix++){
       xk[ix][iz]=xk1d[ix];
     }
   }
 
   // Done inversion, transform back
-  
   for(int ix=0; ix<=ncx; ix++){
     
     if(global_flags & INVERT_ZERO_DC)

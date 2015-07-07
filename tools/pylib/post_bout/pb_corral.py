@@ -1,5 +1,12 @@
 #! /usr/bin/env python
 # note - these commands are only run by default in interactive mode
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from builtins import filter
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import os
 import sys
 try:
@@ -13,15 +20,15 @@ try:
     [sys.path.append(elem) for elem in allpath]
 
 except:
-   print 'unable to append needed .py files'
+   print('unable to append needed .py files')
 
 sys.path.append('/usr/local/pylib')
 
 import post_bout as post_bout
-from ListDict import ListDictKey, ListDictFilt
-from read_inp import parse_inp, read_inp, read_log
-from basic_info import weighted_avg_and_std
-from read_cxx import read_cxx, findlowpass
+from .ListDict import ListDictKey, ListDictFilt
+from .read_inp import parse_inp, read_inp, read_log
+from .basic_info import weighted_avg_and_std
+from .read_cxx import read_cxx, findlowpass
 
 
 
@@ -34,7 +41,7 @@ import subprocess
 def corral(cached=True,refresh=False,debug=False,IConly=1,
            logname='status.log',skew=False):
 
-   print 'in corral'
+   print('in corral')
    log  = read_log(logname=logname) 
    #done = log['done']
    runs = log['runs'] #a list of all directories, we need this,
@@ -42,13 +49,13 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
   
    current = log['current'] #always return the last data_dir    
    
-   print log
-   print 'current:', current
+   print(log)
+   print('current:', current)
    
    if refresh==True:
       
       for i,path in enumerate(runs):
-         print i,path
+         print(i,path)
          a = post_bout.save(path=path,IConly=IConly) #re post-process a run
          
          
@@ -64,9 +71,9 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
      
    all_ave = []
    all_modes =[]
-   print 'last_one: '
+   print('last_one: ')
    for i,val in enumerate(runs):
-      print val
+      print(val)
       mode_db,ave_db = post_bout.read(path=val)
       #alldata.append(array)
       all_modes.append(mode_db)
@@ -81,7 +88,7 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
    def islist(input):
       return isinstance(input,list)
 
-   all_modes = filter(islist,all_modes)
+   all_modes = list(filter(islist,all_modes))
    #all_ave = filter(islist,all_ave)
 
    #alldb = sum(alldb,[])
@@ -94,7 +101,7 @@ def corral(cached=True,refresh=False,debug=False,IConly=1,
       nt = [max(nt)]
    
    nt = nt[0]
-   t = range(nt)             
+   t = list(range(nt))             
    i = 0
     
    if debug:
@@ -117,7 +124,7 @@ class LinRes(object):
         self.meta = np.array(ListDictKey(self.db,'meta'))[0]
       
 
-        self.keys = (self.mode_db)[0].keys()
+        self.keys = list((self.mode_db)[0].keys())
       #self.avekeys = data[0]['fields']['Ni']['ave'].keys()
       
       #self.nrun = len(alldb) #number of runs
@@ -343,8 +350,8 @@ class subset(LinRes):
 
 class _ref(object): #NOT a derived obj, just takes one as a var
     def __init__(self,input_obj,name='haswak',haswak=True):
-        allk = input_obj.k_r[:,1,input_obj.nx/2] #one location for now
-        allkpar = input_obj.k_r[:,0,input_obj.nx/2] #one location for now
+        allk = input_obj.k_r[:,1,old_div(input_obj.nx,2)] #one location for now
+        allkpar = input_obj.k_r[:,0,old_div(input_obj.nx,2)] #one location for now
         self.name = name
         
         self.gamma = []
@@ -354,19 +361,19 @@ class _ref(object): #NOT a derived obj, just takes one as a var
         self.soln['freq'] = []
  
         for i,k in enumerate(allk):
-            omega_star = -(k)/(input_obj.L[i,input_obj.nx/2,input_obj.ny/2]) 
+            omega_star = old_div(-(k),(input_obj.L[i,old_div(input_obj.nx,2),old_div(input_obj.ny,2)])) 
            
             
-            nu = (2*np.pi/input_obj.meta['lpar'][input_obj.nx/2])**2 * input_obj.meta['sig_par'][0]
+            nu = (2*np.pi/input_obj.meta['lpar'][old_div(input_obj.nx,2)])**2 * input_obj.meta['sig_par'][0]
             
             if haswak:
-                omega = -omega_star/(1 + (k)**2)
-                gamma = ((k**2)*omega_star**2)/(nu * (1+k**2)**3)
+                omega = old_div(-omega_star,(1 + (k)**2))
+                gamma = old_div(((k**2)*omega_star**2),(nu * (1+k**2)**3))
             else:
                 # omega = -np.sqrt(nu*omega_star)/(np.sqrt(2)*k) + nu**(3/2)/(8*np.sqrt(2*omega_star)*k**3)
                 # gamma = np.sqrt(nu*omega_star)/(np.sqrt(2)*k) - nu/(2* k**2) + nu**(3/2)/(8*np.sqrt(2*omega_star)*k**3)
-                omega = -omega_star + (2*k**4*omega_star**3)/nu**2 
-                gamma = (k*omega_star)**2/nu - (5*(k**6*omega_star*4/nu**3))
+                omega = -omega_star + old_div((2*k**4*omega_star**3),nu**2) 
+                gamma = old_div((k*omega_star)**2,nu) - (5*(k**6*omega_star*4/nu**3))
             self.gamma.append(gamma)
             self.omega.append(omega)
         
@@ -377,13 +384,13 @@ class _ref(object): #NOT a derived obj, just takes one as a var
 class _model(object):  #NOT a derived class,but one that takes a class as input
     def __init__(self,input_obj,name='drift',haswak=False,
                  rho_conv=False,haswak2=False,varL=False,Lval=1.0,m=1):
-        allk = input_obj.k_r[:,1,input_obj.nx/2] #one location for now
-        allkpar = input_obj.k_r[:,0,input_obj.nx/2] #one location for now
+        allk = input_obj.k_r[:,1,old_div(input_obj.nx,2)] #one location for now
+        allkpar = input_obj.k_r[:,0,old_div(input_obj.nx,2)] #one location for now
         
         #numerical value to compare against
 
-        numgam = input_obj.gamma[:,0,input_obj.nx/2]
-        numfreq =input_obj.freq[:,0,input_obj.nx/2]
+        numgam = input_obj.gamma[:,0,old_div(input_obj.nx,2)]
+        numfreq =input_obj.freq[:,0,old_div(input_obj.nx,2)]
         self.name = name
 
         self.M = []
@@ -421,9 +428,9 @@ class _model(object):  #NOT a derived class,but one that takes a class as input
                 k= 1e-5
 
             #print k {n,phi,v,ajpar}
-            M[0,1] = k/(input_obj.L[i,input_obj.nx/2,input_obj.ny/2])
-            M[1,0] = (2*m*np.pi/input_obj.meta['lpar'][input_obj.nx/2])**2 * input_obj.meta['sig_par'][0]*complex(0,(k)**-2)
-            M[1,1]= -(2*m*np.pi/input_obj.meta['lpar'][input_obj.nx/2])**2 * input_obj.meta['sig_par'][0]*complex(0,(k)**-2)
+            M[0,1] = old_div(k,(input_obj.L[i,old_div(input_obj.nx,2),old_div(input_obj.ny,2)]))
+            M[1,0] = (2*m*np.pi/input_obj.meta['lpar'][old_div(input_obj.nx,2)])**2 * input_obj.meta['sig_par'][0]*complex(0,(k)**-2)
+            M[1,1]= -(2*m*np.pi/input_obj.meta['lpar'][old_div(input_obj.nx,2)])**2 * input_obj.meta['sig_par'][0]*complex(0,(k)**-2)
             
             #parallel dynamics
             #M[2,2] = k/(input_obj.L[i,input_obj.nx/2,input_obj.ny/2])
@@ -436,8 +443,8 @@ class _model(object):  #NOT a derived class,but one that takes a class as input
             #ajpar dynamics - effectively parallel electron dynamics instead of 
 
             if haswak:
-                M[0,0] = -(2*m*np.pi/input_obj.meta['lpar'][input_obj.nx/2])**2 * input_obj.meta['sig_par'][0]*complex(0,1)
-                M[0,1] = ((2*m*np.pi/input_obj.meta['lpar'][input_obj.nx/2])**2 * input_obj.meta['sig_par'][0]*complex(0,1) + M[0,1])
+                M[0,0] = -(2*m*np.pi/input_obj.meta['lpar'][old_div(input_obj.nx,2)])**2 * input_obj.meta['sig_par'][0]*complex(0,1)
+                M[0,1] = ((2*m*np.pi/input_obj.meta['lpar'][old_div(input_obj.nx,2)])**2 * input_obj.meta['sig_par'][0]*complex(0,1) + M[0,1])
                 
             if varL:
                 M[0,1] = Lval*M[0,1]     
@@ -469,8 +476,8 @@ class _model(object):  #NOT a derived class,but one that takes a class as input
             
 
             #print k,gamma,where,M,omega
-            chigam = ((numgam - max(gamma))**2)/max(gamma)
-            chifreq =((numfreq - omega[where])**2)/omega[where]
+            chigam = old_div(((numgam - max(gamma))**2),max(gamma))
+            chifreq =old_div(((numfreq - omega[where])**2),omega[where])
 
             self.eigvec.append(eigvec)
             self.omegaA.append(omega)

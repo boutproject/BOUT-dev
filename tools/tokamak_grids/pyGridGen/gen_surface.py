@@ -1,3 +1,4 @@
+from builtins import range
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Generator of continuous surfaces
 #
@@ -67,7 +68,7 @@ def gen_surface ( mesh=None, period=None, last=None, xi=None):
     
         # Get the range of indices for this domain        
         
-        yi = range(ys[domain], ys[domain]+m.npol-1)
+        yi = list(range(ys[domain], ys[domain]+m.npol-1))
         
         
         if ny == 0 :

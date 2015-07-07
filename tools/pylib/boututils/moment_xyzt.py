@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 from bunch import Bunch
 
@@ -8,8 +12,8 @@ def RMSvalue( vec1d):
 #;------------------------
 
     nel=np.size(vec1d)
-    valav=np.sum(vec1d)/nel 
-    valrms=np.sqrt(np.sum((vec1d-valav)**2)/nel)
+    valav=old_div(np.sum(vec1d),nel) 
+    valrms=np.sqrt(old_div(np.sum((vec1d-valav)**2),nel))
     acvec=vec1d-valav
 
 
@@ -28,7 +32,6 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
 
     try:                     # return to caller
  
-
         d = np.shape(sig_xyzt)
         if np.size(d) != 4 :
             print("Error: Variable must be 4D (x,y,z,t)")
@@ -60,15 +63,18 @@ def moment_xyzt( sig_xyzt, *args):#rms=None, dc=None, ac=None):
                     dc[it,ix,iy]=val.valav
                     if 'AC' in args : ac[it,ix,iy,:]=[val.acvec,val.acvec[0]]
          
+        res=Bunch()
          
         if 'RMS' in args:
-            return rms
-        elif 'DC' in args:
-              return dc
-        elif 'AC' in args:
-              return ac
-        else:
+            res.rms = rms
+        if 'DC' in args:
+            res.dc = dc
+        if 'AC' in args:
+            res.ac = ac
+
+        if 'RMS' not in args and 'DC' not in args and 'AC' not in args :
             print('Wrong argument')
+        return res
     except:
         print('moment_xyz failed')
         return

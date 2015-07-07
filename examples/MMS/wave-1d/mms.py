@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import str
 #
 # Generate the test case using SymPy
 #

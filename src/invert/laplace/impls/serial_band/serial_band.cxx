@@ -219,9 +219,9 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     for(int ix=0;ix<xbndry;ix++) {
       // Set zero-value. Change to zero-gradient if needed
 
-      if(!(inner_boundary_flags & INVERT_RHS))
+      if(!(inner_boundary_flags & (INVERT_RHS|INVERT_SET)))
         bk1d[ix] = 0.0;
-      if(!(outer_boundary_flags & INVERT_RHS))
+      if(!(outer_boundary_flags & (INVERT_RHS|INVERT_SET)))
         bk1d[ncx-ix] = 0.0;
 
       A[ix][0] = A[ix][1] = A[ix][3] = A[ix][4] = 0.0;
@@ -235,18 +235,31 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
       // DC
 	
       // Inner boundary
-      if(inner_boundary_flags & INVERT_DC_GRAD) {
+      if(inner_boundary_flags & (INVERT_DC_GRAD+INVERT_SET) || inner_boundary_flags & (INVERT_DC_GRAD+INVERT_RHS)) {
         // Zero gradient at inner boundary. 2nd-order accurate
-        // One-sided differences
+        // Boundary at midpoint
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] =  0.;
           A[ix][1] =  0.;
-          A[ix][2] =  -3.;
-          A[ix][3] =  4.;
-          A[ix][4] =  -1.;
+          A[ix][2] = -.5/sqrt(mesh->g_11(ix,jy))/mesh->dx(ix,jy);
+          A[ix][3] =  .5/sqrt(mesh->g_11(ix,jy))/mesh->dx(ix,jy);
+          A[ix][4] =  0.;
         }
         
-      }else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
+      }
+      else if(inner_boundary_flags & INVERT_DC_GRAD) {
+        // Zero gradient at inner boundary. 2nd-order accurate
+        // Boundary at midpoint
+        for (int ix=0;ix<xbndry;ix++) {
+          A[ix][0] =  0.;
+          A[ix][1] =  0.;
+          A[ix][2] =  -.5;
+          A[ix][3] =  .5;
+          A[ix][4] =  0.;
+        }
+        
+      }
+      else if(inner_boundary_flags & INVERT_DC_GRADPAR) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] =  0.;
           A[ix][1] =  0.;
@@ -254,7 +267,8 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
           A[ix][3] =  4./sqrt(mesh->g_22(ix+1,jy));
           A[ix][4] =  -1./sqrt(mesh->g_22(ix+2,jy));
         }
-      }else if(inner_boundary_flags & INVERT_DC_GRADPARINV) {
+      }
+      else if(inner_boundary_flags & INVERT_DC_GRADPARINV) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] =  0.;
           A[ix][1] =  0.;
@@ -262,7 +276,8 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
           A[ix][3] =  4.*sqrt(mesh->g_22(ix+1,jy));
           A[ix][4] =  -sqrt(mesh->g_22(ix+2,jy));
         }
-      }else if (inner_boundary_flags & INVERT_DC_LAP) {
+      }
+      else if (inner_boundary_flags & INVERT_DC_LAP) {
         for (int ix=0;ix<xbndry;ix++) {
           A[ix][0] = 0.;
           A[ix][1] = 0.;

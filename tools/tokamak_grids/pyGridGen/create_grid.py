@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 # Tokamak grid generator
 # ======================
 # 
@@ -97,7 +101,7 @@ from scipy import integrate
 from local_gradient import local_gradient
 from follow_gradient import follow_gradient
 from ask import query_yes_no
-from support import deriv
+from boututils import deriv
 from smooth import SMOOTH
 
 
@@ -162,8 +166,8 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
                 btr = numpy.interp(f, fpsi[0,:], fpsi[1,:])
     
       
-            bp[i] = numpy.sqrt(dfdr**2 + dfdz**2) / numpy.interp(ri[i], numpy.arange(R.size).astype(float), R)
-            bt[i] = numpy.abs( btr / numpy.interp( ri[i], numpy.arange(R.size).astype(float),R ))
+            bp[i] = old_div(numpy.sqrt(dfdr**2 + dfdz**2), numpy.interp(ri[i], numpy.arange(R.size).astype(float), R))
+            bt[i] = numpy.abs( old_div(btr, numpy.interp( ri[i], numpy.arange(R.size).astype(float),R )))
      
         interp_data.method = m
         b = numpy.sqrt(bt**2 + bp**2)
@@ -176,7 +180,7 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
     else:
         pardist = poldist # Just use the same poloidal distance
 
-    print "PARWEIGHT: ", parweight
+    print("PARWEIGHT: ", parweight)
 
     dist = parweight*pardist + (1. - parweight)*poldist
 
@@ -205,8 +209,8 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
     
     
         a = yd*2.
-        b = (2.*yu - a) / fn
-        c = d/fn - a - 0.5*b*fn
+        b = old_div((2.*yu - a), fn)
+        c = old_div(d,fn) - a - 0.5*b*fn
                 
         dloc =  ydown_dist + a*i + 0.5*b*i**2 + c*(i - numpy.sin(2.*numpy.pi*i / fn)*fn/(2.*numpy.pi))
         
@@ -220,7 +224,7 @@ def poloidal_grid(interp_data, R, Z, ri, zi, n, fpsi=None, parweight=None,
         #dloc = ydown_dist + c*i + b*i^2 + a*i^3
     
     else :
-        print "SORRY; Need 2 points in each region"
+        print("SORRY; Need 2 points in each region")
         sys.exit("Error message")
 
 
@@ -264,7 +268,7 @@ def grid_region ( interp_data, R, Z,
         nin = sind
     else:
     # Starting position between surfaces
-        n = numpy.size(ri)/2
+        n = old_div(numpy.size(ri),2)
         out=local_gradient (interp_data, ri[n], zi[n], status=0, f=f0)
         status=out.status
         f0=out.f[0][0]
@@ -283,7 +287,7 @@ def grid_region ( interp_data, R, Z,
     ffirst = fvals[sfirst]
     flast = fvals[slast]
 
-    print "    => Gridding range: ", numpy.min(fvals), numpy.max(fvals)
+    print("    => Gridding range: ", numpy.min(fvals), numpy.max(fvals))
   
     nr = interp_data.nx
     nz = interp_data.ny
@@ -320,7 +324,7 @@ def grid_region ( interp_data, R, Z,
     zixy = numpy.zeros((nsurf, npar))
     status=0
     
-    print 'Starting'
+    print('Starting')
 
     for i in range (npar) :
     
@@ -494,7 +498,7 @@ def create_grid( F, R, Z, in_settings, critical,
     if iter==None:
         iter = 0
     if iter > 3:
-        print "ERROR: Too many iterations"
+        print("ERROR: Too many iterations")
         return #, {error:1}
 
 
@@ -533,7 +537,7 @@ def create_grid( F, R, Z, in_settings, critical,
     s = numpy.ndim(F)
     s1 = numpy.shape(F)
     if s != 2:
-        print "ERROR: First argument must be 2D array of psi values"
+        print("ERROR: First argument must be 2D array of psi values")
         return #, {error:1}
     nx = s1[0]
     ny = s1[1]
@@ -541,13 +545,13 @@ def create_grid( F, R, Z, in_settings, critical,
     s = numpy.ndim(R)
     s1 = numpy.size(R)
     if s != 1  or s1 != nx :
-        print "ERROR: Second argument must be 1D array of major radii"
+        print("ERROR: Second argument must be 1D array of major radii")
         return # {error:1}
   
     s = numpy.ndim(Z)
     s1 = numpy.size(Z)
     if s != 1  or s1 != ny:
-        print "ERROR: Second argument must be 1D array of heights"
+        print("ERROR: Second argument must be 1D array of heights")
         return # {error:1}
 
 
@@ -570,7 +574,7 @@ def create_grid( F, R, Z, in_settings, critical,
         s = numpy.ndim(boundary)
         s1= numpy.shape(boundary)
         if s != 2  or s1[0] != 2:
-            print "WARNING: boundary must be a 2D array: [2, n]. Ignoring"
+            print("WARNING: boundary must be a 2D array: [2, n]. Ignoring")
             boundary = 0
         else:       
         # Calculate indices
@@ -592,7 +596,7 @@ def create_grid( F, R, Z, in_settings, critical,
                  f= F)       # Always include function
                
     if fast == 'fast':
-        print "Using Fast settings"
+        print("Using Fast settings")
         interp_data.method = 2
   
 
@@ -632,9 +636,11 @@ def create_grid( F, R, Z, in_settings, critical,
     opt_ri = critical.opt_ri
     opt_zi = critical.opt_zi
     opt_f  = critical.opt_f
-    xpt_ri = critical.xpt_ri
-    xpt_zi = critical.xpt_zi
-    xpt_f  = critical.xpt_f
+    xpt_ri = critical.xpt_ri.flatten()
+    xpt_zi = critical.xpt_zi.flatten()
+    xpt_f  = critical.xpt_f.flatten()
+    
+    
 
 
   # Overplot the separatrices, O-points
@@ -642,9 +648,9 @@ def create_grid( F, R, Z, in_settings, critical,
 
   # Psi normalisation factors
 
-    faxis = critical.opt_f[critical.primary_opt]
+    faxis = opt_f[primary_opt]
     
-    fnorm = critical.xpt_f[critical.inner_sep] - critical.opt_f[critical.primary_opt]
+    fnorm = xpt_f[inner_sep] - opt_f[primary_opt]
     
 
 
@@ -657,7 +663,7 @@ def create_grid( F, R, Z, in_settings, critical,
     if critical.n_xpoint == 0 :
     #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     # Grid entirely in the core
-    	print "Generating grid entirely in the core"
+    	print("Generating grid entirely in the core")
 
     nrad = numpy.sum(settings.nrad) # Add up all points
     npol = numpy.sum(settings.npol)
@@ -667,9 +673,9 @@ def create_grid( F, R, Z, in_settings, critical,
     # work out where to put the surfaces in the core
     fvals = radial_grid(nrad, f_inner, f_outer, 1, 1, [xpt_f[inner_sep]], rad_peaking)
 
-
+    fvals = fvals.flatten()
     # Create a starting surface
-    sind = numpy.int(nrad / 2)
+    sind = numpy.int(old_div(nrad, 2))
     start_f = fvals[sind]
     
 
@@ -688,7 +694,7 @@ def create_grid( F, R, Z, in_settings, critical,
     yy=[v[:,1]]
     
     if numpy.shape(vn)[0] > 1:
-        for i in xrange(1,numpy.shape(vn)[0]):
+        for i in range(1,numpy.shape(vn)[0]):
             v = p[i].vertices
             vn[i]=numpy.shape(v)[0]
             xx.append(v[:,0])
@@ -696,7 +702,7 @@ def create_grid( F, R, Z, in_settings, critical,
             #xx = [xx,v[:,0]]
             #yy = [yy,v[:,1]]
 
-    print "PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt]
+    print("PRIMARY: ", primary_opt, opt_ri[primary_opt], opt_zi[primary_opt])
 
     if numpy.shape(vn)[0] > 1 :
         # Find the surface closest to the o-point
@@ -707,7 +713,7 @@ def create_grid( F, R, Z, in_settings, critical,
         
         x=xx[ind]
         y=yy[ind]
-        print "Contour: ", ind
+        print("Contour: ", ind)
     else:
         ind = 0
         x=xx[0]
@@ -731,7 +737,9 @@ def create_grid( F, R, Z, in_settings, critical,
 
     ans=query_yes_no('Press enter to create grid')  
     
-    if ans != 1 : sys.exit()
+    if ans != 1 : 
+        show()
+	sys.exit()
       
     start_ri, start_zi=transform_xy(x,y,R,Z)
     
@@ -742,7 +750,7 @@ def create_grid( F, R, Z, in_settings, critical,
       # R should be increasing at the top. Need to reverse
         start_ri = start_ri[::-1]
         start_zi = start_zi[::-1]
-        print 'points reversed'
+        print('points reversed')
         
 
     ## Last point should be the same as the first
@@ -794,7 +802,7 @@ def create_grid( F, R, Z, in_settings, critical,
     # Get other useful variables
     psixy = numpy.zeros((nrad, npol))
     for i in range (0, npol) :
-        psixy[:,i] = (fvals - faxis)/fnorm # to get normalised psi
+        psixy[:,i] = old_div((fvals - faxis),fnorm) # to get normalised psi
     
     # Calculate magnetic field components
     dpsidR = numpy.zeros((nrad, npol))
@@ -811,8 +819,8 @@ def create_grid( F, R, Z, in_settings, critical,
             dfdr=out.dfdr[0][0]
             dfdz=out.dfdz[0][0]
     # dfd* are derivatives wrt the indices. Need to multiply by dr/di etc
-            dpsidR[i,j] = dfdr/numpy.interp(a.rixy[i,j], numpy.arange(R.size).astype(float),numpy.gradient(R)) 
-            dpsidZ[i,j] = dfdz/numpy.interp(a.zixy[i,j], numpy.arange(Z.size).astype(float),numpy.gradient(Z)) 
+            dpsidR[i,j] = old_div(dfdr,numpy.interp(a.rixy[i,j], numpy.arange(R.size).astype(float),numpy.gradient(R))) 
+            dpsidZ[i,j] = old_div(dfdz,numpy.interp(a.zixy[i,j], numpy.arange(Z.size).astype(float),numpy.gradient(Z))) 
                  
 
     # Set topology to connect in the core
@@ -871,7 +879,7 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     if include_out==None:
         m = m + 0.5
  
-    x = x / m 
+    x = old_div(x, m) 
   
 
     if in_dp==None and out_dp==None :
@@ -883,12 +891,12 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 
     if in_dp != None and out_dp != None :
     # Fit to dist = a*i^3 + b*i^2 + c*i
-        c = in_dp/norm
-        b = 3.*(1. - c) - out_dp/norm + c
+        c = old_div(in_dp,norm)
+        b = 3.*(1. - c) - old_div(out_dp,norm) + c
         a = 1. - c - b
     elif in_dp != None :
     # Only inner set
-        c = in_dp/norm
+        c = old_div(in_dp,norm)
         a = 0.5*(c-1.)
         b = 1. - c - a
     
@@ -898,9 +906,9 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
     else:
     # Only outer set. Used in PF region
     # Fit to (1-b)*x^a + bx for fixed b
-        df = out_dp / norm
+        df = old_div(out_dp, norm)
         b = 0.25 < df  # Make sure a > 0
-        a = (df - b) / (1. - b)
+        a = old_div((df - b), (1. - b))
         vals = pin + (pout - pin)*( (1.-b)*x^a + b*x )
         return vals
   
@@ -921,7 +929,7 @@ def radial_grid( n, pin, pout, include_in, include_out, seps, sep_factor,
 #
 
 def int_func(**kwargs):
-    if kwargs.iteritems() == 1 :
+    if iter(list(kwargs.items())) == 1 :
         f = kwargs.xin
         x = numpy.arrange(numpy.size(f))*1.
     else:
@@ -941,7 +949,7 @@ def int_func(**kwargs):
          
     else:
      
-        n2 = numpy.int(n/2)
+        n2 = numpy.int(old_div(n,2))
      
         g[0] = 0.0
         for i in range (n2, n) :

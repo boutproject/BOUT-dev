@@ -59,6 +59,8 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
   
   output << "\n\tKarniadakis solver\n";
   
+  split_monitor=true;
+ 
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
   
@@ -149,6 +151,8 @@ int KarniadakisSolver::run() {
     }
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
+    rhs_ncalls_i = 0;
+    rhs_ncalls_e = 0;
   }
   
   msg_stack.pop(msg_point);

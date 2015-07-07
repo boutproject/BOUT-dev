@@ -11,6 +11,7 @@
 \usepackage{color}
 \usepackage{textcomp}
 \usepackage{pdflscape} % For landscape mode to the folder_tree figure
+
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
@@ -1215,7 +1216,19 @@ To restart from where the previous run finished, just add the keyword {\bf resta
 \begin{verbatim}
  $ mpirun -np 2 ./conduction restart
 \end{verbatim}
-Equivalently, put ``restart=true'' near the top of the BOUT.inp input file.
+Equivalently, put ``restart=true'' near the top of the BOUT.inp input file. Note that this will
+overwrite the existing data in the ``BOUT.dmp.*.nc'' files. If you want to append to them instead
+then add the keyword append to the command, for example:
+\begin{verbatim}
+ $ mpirun -np 2 ./conduction restart append
+\end{verbatim}
+or also put ``append=true'' near the top of the BOUT.inp input file.
+
+When restarting simulations BOUT++ will by default output the initial state, unless appending to
+existing data files when it will not output until the first timestep is completed. To override this
+behaviour, you can specify the option dump\_on\_restart manully. If dump\_on\_restart is true then
+the initial state will always be written out, if false then it never will be (regardless of the
+values of restart and append).
 
 If you need to restart from a different point in your simulation, or the BOUT.restart files
 become corrupted, you can either use archived restart files, or create new restart files.
@@ -1971,14 +1984,16 @@ field and in the core this will have a discontinuity at the twist-shift
 location where field-lines are matched onto each other. To handle this,
 a truncated Ballooning transformation can be used to construct a smooth
 initial perturbation:
-\[
+\begin{equation}
 U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z + q2\pi i\right)
-\]
+\label{eq:ballooning_transform}
+\end{equation}
 
 \begin{figure}[h]
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_noballoon.png}
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
 \caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
+\label{fig:ballooning}
 \end{figure}
 
 \note{The initial profiles code currently doesn't work very well for grids with branch-cuts (e.g. divertor tokamak), and will often have jumps which then make timesteps smaller}
@@ -2034,7 +2049,7 @@ particular way which is more symmetric than the default. To do this, set in BOUT
 This will change the definition of $x$ to \code{i / (nx - 1)}, so $x$ is then between $0$ and $1$
 everywhere.
 
-The following functions are also available in expressions:
+The functions in table~\ref{tab:initexprfunc} are also available in expressions.
 \begin{table}[htb!]
 \centering
 \caption{Initialisation expression functions}
@@ -2045,25 +2060,37 @@ Name & Description \\
 \hline
 abs(x) & Absolute value $\left|x\right|$\\
 asin(x), acos(x), atan(x), atan(y,x) & Inverse trigonometric functions \\
+ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, fig~\ref{fig:ballooning}) \\
+ballooning(x,n) & Ballooning transform, using $n$ terms (default 3) \\
 cos(x) & Cosine\\
 cosh(x) & Hyperbolic cosine\\
 exp(x) & Exponential \\
 tanh(x) & Hyperbolic tangent \\
 gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
 gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
+H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 log(x) & Natural logarithm \\
-min(x,y,...) & Minimum (variable arguments) \\
 max(x,y,...) & Maximum (variable arguments) \\
+min(x,y,...) & Minimum (variable arguments) \\
+mixmode(x) & A mixture of Fourier modes \\
+mixmode(x, seed) & seed determines random phase (default 0.5) \\
 power(x,y) & Exponent $x^y$ \\
 sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
-H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 \hline
 \end{tabular}
 \end{table}
+Note that to apply a ballooning transform in analytic expressions the \texttt{ballooning} function should be used, and the global flag ``ballooning'' has no effect. There is an example code \texttt{test-ballooning} which compares methods of setting initial conditions with ballooning transform.
 
+The \texttt{mixmode(x)} function is a mixture of Fourier modes of the form:
+\[
+\mathrm{mixmode}\left(x\right) = \sum_{i=1}^{14} \frac{1}{\left(1 + \left|i-4\right|\right)^2}\cos\left[ix + \phi\left(i, \mathrm{seed}\right)\right]
+\]
+where $\phi$ is a random phase between $-\pi$ and $+\pi$, which depends on the seed. The factor in front of each term
+is chosen so that the 4th harmonic ($i=4$) has the highest amplitude. This is useful mainly for initialising turbulence simulations,
+where a mixture of mode numbers is desired.
 
 \subsection{Boundary conditions}
 \label{sec:bndryopts}
@@ -2338,6 +2365,43 @@ output from different codes and converting into input to BOUT++.
 \caption{Generation of BOUT++ grid files. In red are the file formats, and in black the conversion routines. Blue are external codes.}
 \label{fig:gridgen}
 \end{figure}
+
+\subsection{BOUT++ Topology}
+\subsubsection{Basic}
+In order to handle tokamak geometry BOUT++ contains an internal topology which is determined by the branch-cut locations (\code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and
+  \code{jyseps2\_2}) and separatrix locations (\code{ixseps1} and  \code{ixseps2}).
+
+The separatrix locations, \code{ixseps1} and  \code{ixseps2}, give the indices in the \code{x} domain where the first and second separatrices are located. If \code{ixseps1 == ixseps2} then there is a single separatrix representing the boundary between the core region and the SOL region and the grid is a connected double null configuration. If \code{ixseps1 > ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps2} so the tokamak is an upper double null. If \code{ixseps1 < ixseps2} then there are two separatrices and the inner separatrix is \code{ixseps1} so the tokamak is a lower double null. These values are set either in the grid file or in \code{BOUT.inp}. Figure \ref{fig:topology_cross_section} shows schematically how \code{ixseps} is used. 
+
+The branch cut locations, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}, split the \code{y} domain into logical regions defining the SOL, the PFR and the core of the tokamak. This is illustrated also in figure \ref{fig:topology_cross_section}.  If \code{jyseps1\_2 == jyseps2\_1} then the grid is a single null configuration, otherwise the grid is a double null configuration. 
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=0.7\paperwidth, keepaspectratio]{figs/topology_cross_section.pdf}
+\caption{Deconstruction of a poloidal tokamak cross-section into logical domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
+\label{fig:topology_cross_section}
+\end{figure}
+
+\subsubsection{Advanced}
+The internal domain in BOUT++ is deconstructed into a series of logically rectangular subdomains with boundaries determined by the \code{ixseps} and \code{jyseps} parameters. The boundaries coinside with processor boundaries so the number of grid points within each subdomain must be an integer multiple of \code{ny/nypes} where \code{ny} is the number of grid points in \code{y} and \code{nypes} is the number of processors used to split the y domain. Processor communication across the domain boundaries is then handled internally. Figure \ref{fig:topology_schematic} shows schematically how the different regions of a double null tokamak with \code{ixseps1 = ixseps2} are connected together via communications. 
+
+\note{To ensure that each subdomain follows logically, the \code{jyseps} indices must adhere to the following conditions:
+\begin{itemize}
+\item \code{jyseps1\_1 > -1} 
+\item \code{jyseps2\_1} $\geq$ \code{jyseps1\_1 + 1}
+\item \code{jyseps1\_2} $\geq$ \code{jyseps2\_1}
+\item \code{jyseps2\_2} $\leq$ \code{ny -1}
+\end{itemize}
+
+To ensure that communications work branch cuts must align with processor boundaries.}
+
+\begin{figure}[htbp!]
+\centering
+\includegraphics[width=\textwidth, keepaspectratio]{figs/topology_schematic.pdf}
+\caption{Schematic illustration of domain decomposition and communication in BOUT++ with \code{ixseps1 = ixseps2}.}
+\label{fig:topology_schematic}
+\end{figure} 
+\subsubsection{Implementations}
 
 \subsection{3D variables}
 
@@ -3219,16 +3283,88 @@ lap->setCoefA(a);
 lap->setCoefC(0.5);
 \end{lstlisting}
 arguments can be \lstinline!Field2D!, \lstinline!Field3D!, or real values. 
-Settings are controlled using \lstinline!setFlags! 
+
+Settings for the inversion can be set in the input file under the section \code{laplace} (default) or whichever settings section name was specified when the \lstinline!Laplacian! class was created.  Commonly used settings are listed in tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.  
+
+In particular boundary conditions on the $x$ boundaries can be set using the \path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current') refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k ̸= 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC ones).  Multiple boundary conditions can be selected by adding together the required boundary condition flag values together.  For example, \lstinline!inner_boundary_flags = 3! will set a Neumann boundary condition on both AC and DC components.
+
+It is pertinent to note here that the boundary in BOUT++ is defined by default to be located half way between the first guard point and first point inside the domain.  For example, when a Dirichlet boundary condition is set, using \lstinline!inner_boundary_flags = 0!, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to $f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and $v$ is the value to which the boundary is being set to.  
+
+The \code{global\_flags}, \code{inner\_boundary\_flags},  \code{outer\_boundary\_flags} and \code{flags} values can also be set from within the physics module using \lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!,  \lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!.  
 \begin{lstlisting}
-lap->setFlags(flags);
+lap->setGlobalFlags(Global_Flags_Value);
+lap->setInnerBoundaryFlags(Inner_Flags_Value);
+lap->setOuterBoundaryFlags(Outer_Flags_Value);
+lap->setFlags(Flags_Value);
 \end{lstlisting}
-\code{flags} is an \code{int} which determines boundary conditions
-and other options. Its value is calculated by adding the settings given
-in \code{invert\_laplace.hxx}, and reproduced in
-table~\ref{tab:laplaceflags}.
-\begin{table}[htbp!]
-\caption{Laplacian inversion flags: add the required quantities together.}
+ 
+\begin{table}
+\caption{Laplacian inversion options}
+\label{tab:laplacesettings}
+\centering
+\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
+\hline
+Name & Meaning & Default value\\
+\hline
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} (parallel) \\
+\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, if using Fourier solver & 0\\
+\code{maxmode} & Fi􏰀lter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
+\code{all\_terms} & Include fi􏰀rst derivative terms & \code{true}\\
+\code{global\_flags} & Sets global inversion options See table \ref{tab:laplaceglobalflags}& \code{0}\\
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  See table \ref{tab:laplaceBCflags} & \code{0}\\
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  See table \ref{tab:laplaceBCflags}& \code{0}\\
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
+\code{include\_yguards} & Perform inversion in $y$-boundary guard
+cells & \code{true}\\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{global\_flags} values: add the required quantities together.}
+\label{tab:laplaceglobalflags}
+\centering
+\begin{tabular}[c]{c|l}
+\hline
+Flag & Meaning \\
+\hline
+0 &  No global option set \\
+1 &  zero DC component (Fourier solvers) \\
+2 &  set initial guess to 0 (iterative solvers) \\
+4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 128}\\
+8 & Use 4th order differencing (Apparently not actually implemented anywhere!!!) \\
+16 & Set constant component ($k_x = k_z = 0$) to zero \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{outer\_boundary\_flags} or \code{inner\_boundary\_flags} values: add the required quantities together.}
+\label{tab:laplaceBCflags}
+\centering
+\begin{tabular}[c]{c|p{14cm}}
+\hline
+Flag & Meaning \\
+\hline
+0 &  Dirichlet (Set boundary to 0) \\
+1 &  Neumann on DC component (set gradient to 0) \\
+2 &  Neumann on AC component (set gradient to 0) \\
+4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial x^2}+k_z^2$ vanishes/decays)\\
+8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order now) \\
+16 & Set boundary condition to values in boundary guard cells of second argument, \code{x0}, of \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
+32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} in  \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
+64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial x^2}$ vanishes/decays) \\
+128 &  Assert that there is only one guard cell in the
+$x$-boundary \\
+256 &  DC value is set to parallel gradient, $\nabla_\parallel f$ \\
+512 &  DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ \\
+1024 & Boundary condition for inner `boundary' of cylinder \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}
+\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the required quantities together.}
 \label{tab:laplaceflags}
 \centering
 \begin{tabular}[c]{c | l}

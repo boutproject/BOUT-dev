@@ -4,6 +4,8 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import print_function
+from builtins import str
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -23,7 +25,7 @@ R = collect("friction", path=data_path, xind=2, info=True, yguards=True)
 # R has dimensions [Time, X, Y, Z]
 length=len(R[0,0,:,0])
 for index, item in enumerate(R[slice_index,0,:,0]):
-	print index, item
+	print(index, item)
 
 # Make plot
 plotdata.plotdata(R[slice_index,0,:,0],title="Electron Friction Profile at t="+str(argv[1]))

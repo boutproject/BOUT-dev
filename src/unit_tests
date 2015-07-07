@@ -7,6 +7,7 @@
 #
 ##################################################################
 
+from __future__ import print_function
 import os
 from boututils import shell
 
@@ -14,32 +15,32 @@ failed = []
 passed = []
 for root, dirs, files in os.walk('.'):
     if "unit_test" in files:
-        print "Running unit test in ", root
+        print("Running unit test in ", root)
         savepath = os.getcwd()
         os.chdir(root)
         
         if not os.access("./unit_test", os.X_OK):
-            print "   Test not executable. Skipping."
+            print("   Test not executable. Skipping.")
         else:
             status,out = shell("./unit_test")
             os.chdir(savepath)
             
             if status != 0:
-                print "Unit test failed"
+                print("Unit test failed")
                 failed.append(root)
             else:
                 passed.append(root)
         os.chdir(savepath)
 
-print "============================="
-print "PASSED: ", len(passed)
-print "FAILED: ", len(failed)
+print("=============================")
+print("PASSED: ", len(passed))
+print("FAILED: ", len(failed))
 
 if len(failed) > 0:
-    print "The following tests failed"
+    print("The following tests failed")
     for t in failed:
-        print "   "+t
+        print("   "+t)
 else:
-    print " => All tests passed <="
+    print(" => All tests passed <=")
 
-print ""
+print("")

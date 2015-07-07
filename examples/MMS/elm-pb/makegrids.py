@@ -1,8 +1,18 @@
+#!/usr/bin/env python
+#
+# Creates the grid files and input options for
+# a set of simulations. These can then be submitted
+# to a batch queue and then processed with runtest
+# (setting "running = False")
+#
+
+from __future__ import print_function
+from __future__ import division
 
 nxlist = [4, 8, 16, 32, 64, 128]
 
-
 from boututils import DataFile
+from boututils import shell
 
 from os.path import isfile
 
@@ -42,3 +52,11 @@ for nx in nxlist:
         f = DataFile(filename, create=True)
         shape.write(nx,nx, f)
         f.close()
+
+    # Generate BOUT.inp file
+    
+    directory = "grid%d" % nx
+    shell("mkdir " + directory)
+    shell("cp data/BOUT.inp "+directory)
+    shell("sed -i 's/MZ = 17/MZ = %d/g' %s/BOUT.inp" % (nx, directory))
+    shell("sed -i 's/grid = \"grid16.nc\"/grid = \"%s\"/g' %s/BOUT.inp" % (filename, directory))

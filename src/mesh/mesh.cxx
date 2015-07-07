@@ -341,7 +341,7 @@ int Mesh::geometry() {
     + g23*(DDX(g_13) - 0.5*DDZ(g_11));
   G2_22 = g12*(DDY(g_12) - 0.5*DDX(g_22))
     + 0.5*g22*DDY(g_22)
-    + g23*(DDY(g23) - 0.5*DDZ(g_22));
+    + g23*(DDY(g_23) - 0.5*DDZ(g_22));
   G2_33 = g12*(DDZ(g_13) - 0.5*DDX(g_33))
     + g22*(DDZ(g_23) - 0.5*DDY(g_33))
     + 0.5*g23*DDZ(g_33);
