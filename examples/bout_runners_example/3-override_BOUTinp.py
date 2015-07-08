@@ -58,16 +58,18 @@ my_runs = basic_runner(\
             nout       = 11,\
             timestep   = 0.02,\
             # Additional options
+            # (An example ofadditional options run in series is found in
+            #  6a-run_with_MMS_post_processing_specify_numbers.py)
             # tuple[0] - section name
             # tuple[1] - variable name for the section
             # tuple[2] - value of the variable name in the section
             additional = [('cst','D_perp',5), ('cst', 'D_par', 0.5)],\
-            # Will remake the file
-            make       = True,\
             # Can set this to overwrite or append
             restart    = None,\
             # Will copy the source file
             cpy_source = True,\
+            # Will remake the file
+            make       = True,\
             # Code will return an error if False, due to the mismatch
             # between nx, ny and nproc
             allow_size_modification = True)

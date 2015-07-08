@@ -10,18 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '0.94beta'
-__date__    = '07.07.2015'
-
-# TODO: DELETE PLOTTING ROUTINES? BOUTUTILS?
-# TODO: Check that nx, ny and nz not input when using grid file
-
-# TODO: Check if you can delete these
-#from __future__ import print_function
-#from builtins import zip
-#from builtins import str
-#from builtins import range
-#from builtins import object
+__version__ = '1.0'
+__date__    = '08.07.2015'
 
 import os
 import re
@@ -34,23 +24,6 @@ import numpy as np
 from boututils import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
-
-# TODO: Things to add in __init__ and appropriate places
-#       The following can already be set with the "additional" member
-#       data
-#       1.  Add all time integration solver option as given in "Table 6: Time
-#           integration solver options" in the user manual
-#       2.  Add laplace solver options
-
-# TODO: Add additional error checks
-#       1. For the branch cuts (to check if correct NXPE and NYPE)
-
-# TODO: Make a check to see if the following is in the grid file
-#       1. Check if branch cut is in the grid file
-
-# TODO: Test for python 2
-
-# TODO: Rewrite documentation in the manual (also the nice chart)
 
 #{{{class basic_runner
 # As a child class uses the super function, the class must allow an
@@ -2266,14 +2239,15 @@ class basic_runner(object):
 
 #{{{PBS_runner
 class PBS_runner(basic_runner):
-# TODO: REWRITE THIS
 #{{{docstring
-    """Class for running BOUT++.
-    Works like the basic_runner, but submits the jobs to a torque queue
-    with qsub.
+    """Class for mpi running one or several runs with BOUT++.
+    Works like the basic_runner, but submits the jobs to a Portable
+    Batch System (PBS).
 
-    The link below gives a nice introduction to the PBS system
-    http://wiki.ibest.uidaho.edu/index.php/Tutorial:_Submitting_a_job_using_qsub"""
+    For the additional member data, see the docstring of __init__.
+
+    For more info check the docstring of bout_runners.
+    """
 #}}}
 
 # The constructor
@@ -2282,19 +2256,55 @@ class PBS_runner(basic_runner):
                  BOUT_nodes            = 1         ,\
                  BOUT_ppn              = 4         ,\
                  BOUT_walltime         = None      ,\
-                 BOUT_mail             = None      ,\
                  BOUT_queue            = None      ,\
+                 BOUT_mail             = None      ,\
                  post_process_nproc    = None      ,\
                  post_process_nodes    = None      ,\
                  post_process_ppn      = None      ,\
                  post_process_walltime = None      ,\
-                 post_process_mail     = None      ,\
                  post_process_queue    = None      ,\
+                 post_process_mail     = None      ,\
                  **kwargs):
-        # TODO: The docstring
         #{{{docstring
-        """The values in the constructor determines the detail of the
-        PBS job."""
+        """The constructor of the PBS_runner.
+
+        All the member data is set to None by default, with the
+        exception of BOUT_nodes (default=1) and BOUT_ppn (default = 4).
+
+        Input:
+        BOUT_nodes              -    Number of nodes for one submitted
+                                     BOUT job
+        BOUT_ppn                -    Processors per node for one
+                                     submitted BOUT job
+        BOUT_walltime           -    Maximum wall time for one submitted
+                                     BOUT job
+        BOUT_queue              -    The queue to submit the BOUT jobs
+        BOUT_mail               -    Mail address to notify when a BOUT job
+                                     has finished
+        post_process_nproc      -    Total number of processors for one
+                                     submitted post processing job
+        post_process_nodes      -    Number of nodes for one submitted
+                                     post processing job
+        post_process_ppn        -    Processors per node for one
+                                     submitted BOUT job
+        post_process_walltime   -    Maximum wall time for one
+                                     submitting post processing job
+        post_process_queue      -    The queue to submit the post
+                                     processing jobs
+        post_process_mail       -    Mail address to notify when a post
+                                     processing job has finished
+        **kwargs                -    As the constructor of bout_runners
+                                     is called, this additional keyword
+                                     makes it possible to specify the
+                                     member data of bout_runners in the
+                                     constructor of PBS_runner (i.e.
+                                     nprocs = 1
+                                     is an allowed keyword argument in
+                                     the constructor of PBS_runner).
+                                     For a full list of possible
+                                     keywords, see the docstring of the
+                                     bout_runners constructor.
+        """
         #}}}
 
         # Note that the constructor accepts additional keyword
@@ -2329,7 +2339,6 @@ class PBS_runner(basic_runner):
         self._PBS_id = []
 #}}}
 
-# FIXME: REWRITE
 # The run_driver
 #{{{_run_driver
     def _run_driver(self, combination, run_no):
@@ -2366,7 +2375,7 @@ class PBS_runner(basic_runner):
             raise TypeError(message)
         #}}}
 
-        #{{{Check all the propper post_process data is set if any is set
+        #{{{Check all the proper post_process data is set if any is set
         check_if_set = [\
                         self._post_process_nproc,\
                         self._post_process_nodes,\
@@ -2434,7 +2443,7 @@ class PBS_runner(basic_runner):
         # Loop over the walltimes
         for walltime in walltimes:
             # Set a flag which states whether or not the check was
-            # successfull
+            # successful
             success = True
             # Split the walltime string
             walltime_list = walltime[0].split(':')
@@ -2517,7 +2526,7 @@ class PBS_runner(basic_runner):
     #}}}
 #}}}
 
-#{{{Fuctions called by the execute_runs
+#{{{Functions called by the execute_runs
     #{{{ _print_run_or_submit
     def _print_run_or_submit(self):
         """Prints 'Submitting'"""
@@ -2528,7 +2537,7 @@ class PBS_runner(basic_runner):
 #{{{Functions called by _run_driver
     #{{{_single_submit
     def _single_submit(self, combination, run_no, append_to_run_log = None):
-        """Single PBS submission"""
+        """Submit a single BOUT job and submit the jobid to self._PBS_id"""
 
         # Get the script (as a string) which is going to be
         # submitted
@@ -2554,7 +2563,7 @@ class PBS_runner(basic_runner):
         that will be called by a PBS script."""
 
         #{{{ Create a python script, calling the post-processing function
-        # Get the start_time to be used in the name of the file
+        # Get the start_time (to be used in the name of the file)
         start_time = self._get_start_time()
 
         # The name of the file
@@ -2566,7 +2575,7 @@ class PBS_runner(basic_runner):
         # Import the post processing function
         python_tmp += 'from ' + function.__module__ +\
                       ' import ' + function.__name__ + '\n'
-        # Convert the keyword args to propper arguments
+        # Convert the keyword args to proper arguments
         # Appendable list
         arguments = []
         for key in kwargs.keys():
@@ -2580,10 +2589,7 @@ class PBS_runner(basic_runner):
         # Put a comma in between the arguments
         arguments = ', '.join(arguments)
         # Call the post processing function
-        python_tmp +=\
-            function.__name__ + "("+\
-            str(folders) + ","+\
-            arguments + ")\n"
+        python_tmp += function.__name__+"("+str(folders)+","+arguments+")\n"
         # When the script has run, it will delete itself
         python_tmp += "os.remove('" + python_name + "')\n"
 
@@ -2630,7 +2636,7 @@ class PBS_runner(basic_runner):
         #{{{Make the job name based on the combination
         # Split the name to a list
         combination_name = combination.split(' ')
-        # Remove whitespaces
+        # Remove whitespace
         combination_name = [element for element in combination_name\
                             if element != '']
         # Collect the elements
@@ -2663,7 +2669,7 @@ class PBS_runner(basic_runner):
         #}}}
 
         if append_to_run_log:
-            #{{{Get the time for start of the submission
+            #{{{ Get the time for start of the submission
             start = datetime.datetime.now()
             start_time = (str(start.year) + '-' + str(start.month) + '-' +\
                           str(start.day) + '.' + str(start.hour) + ":" +\
@@ -2719,8 +2725,8 @@ class PBS_runner(basic_runner):
         # The time is going to be appended to the  job name and python name
         time_now = datetime.datetime.now()
         start_time = str(getattr(time_now, 'hour')) + '-' +\
-                     str(getattr(time_now,'minute'))+ '-' +\
-                     str(getattr(time_now,'second'))
+                     str(getattr(time_now, 'minute'))+ '-' +\
+                     str(getattr(time_now, 'second'))
         # In case the process is really fast, so that more than one job
         # is submitted per second, we add a microsecond in the
         # names for safety
