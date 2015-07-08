@@ -36,6 +36,7 @@
 class Solver;
 
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -149,7 +150,7 @@ class Solver {
   virtual int run() = 0;
 
   //Should wipe out internal field vector and reset from current field object data
-  virtual void resetInternalFields(){};
+  virtual void resetInternalFields(){throw BoutException("resetInternalFields not supported by this Solver");}
 
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3

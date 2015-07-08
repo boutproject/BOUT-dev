@@ -573,8 +573,8 @@ void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
   boutEig=ci*log(slepcEig)/(tstep*nout);
   
   //Set return values
-  reEigOut=boutEig.Real();
-  imEigOut=boutEig.Imag();
+  reEigOut=boutEig.real();
+  imEigOut=boutEig.imag();
 }
 
 //Convert a BOUT++ eigenvalue to a Slepc one
@@ -584,11 +584,11 @@ void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
   dcomplex boutEig(reEigIn,imEigIn), ci(0.0,1.0);
   dcomplex slepcEig;
 
-  slepcEig=exp(-ci*boutEig*tstep*nout);
+  slepcEig=exp(-ci*boutEig* static_cast<BoutReal>(tstep*nout));
 
   //Set return values
-  reEigOut=slepcEig.Real();
-  imEigOut=slepcEig.Imag();
+  reEigOut=slepcEig.real();
+  imEigOut=slepcEig.imag();
 }
 
 

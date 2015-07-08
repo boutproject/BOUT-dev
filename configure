@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS EXTRA_INCS EXTRA_LIBS CXXFLAGS LDFLAGS MKDIR PRECON_SOURCE FACETS_SOURCE PETSC PACT LN_S SET_MAKE RANLIB ac_ct_RANLIB CXX CPPFLAGS ac_ct_CXX EXEEXT OBJEXT MPICXX MPILIBS CXXCPP EGREP LIBOBJS LTLIBOBJS CONFIG_CFLAGS CONFIG_LDFLAGS PREFIX IDLCONFIGPATH PYTHONCONFIGPATH BOUT_VERSION GIT_REVISION CHECK_LEVEL HAS_PVODE HAS_IDA HAS_CVODE HAS_ARKODE HAS_NETCDF HAS_PNETCDF HAS_PDB HAS_HYPRE HAS_MUMPS HAS_LAPACK HAS_PETSC PETSC_VERSION PETSC_RELEASE PETSC_HAS_SUNDIALS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS EXTRA_INCS EXTRA_LIBS CXXFLAGS LDFLAGS MKDIR PRECON_SOURCE FACETS_SOURCE PETSC SLEPC_VARS PACT LN_S SET_MAKE RANLIB ac_ct_RANLIB CXX CPPFLAGS ac_ct_CXX EXEEXT OBJEXT MPICXX MPILIBS CXXCPP EGREP LIBOBJS LTLIBOBJS CONFIG_CFLAGS CONFIG_LDFLAGS PREFIX IDLCONFIGPATH PYTHONCONFIGPATH BOUT_VERSION GIT_REVISION CHECK_LEVEL HAS_PVODE HAS_IDA HAS_CVODE HAS_ARKODE HAS_NETCDF HAS_PNETCDF HAS_PDB HAS_HYPRE HAS_MUMPS HAS_LAPACK HAS_PETSC HAS_SLEPC PETSC_VERSION PETSC_RELEASE PETSC_HAS_SUNDIALS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -873,6 +873,7 @@ Optional Packages:
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library
   --with-petsc            	   Enable PETSc interface
+  --with-slepc                Enable SLEPc interface
   --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)
   --with-hypre                Link to the Hypre library
   --with-mumps                Link with MUMPS library for direct matrix inversions
@@ -1425,6 +1426,12 @@ if test "${with_petsc+set}" = set; then
 
 fi;
 
+# Check whether --with-slepc or --without-slepc was given.
+if test "${with_slepc+set}" = set; then
+  withval="$with_slepc"
+
+fi;
+
 # Check whether --with-pvode or --without-pvode was given.
 if test "${with_pvode+set}" = set; then
   withval="$with_pvode"
@@ -1822,6 +1829,109 @@ then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
 fi
+
+echo
+
+#############################################################
+# SLEPc library
+#############################################################
+HAS_SLEPC="no"
+SLEPC_VARS=""
+
+if test "$with_slepc" != "" && test "$with_slepc" != "no"
+then
+  #PETSC_ARCH = ${PETSC_ARCH}
+  #SLEPC_DIR = ${SLEPC_DIR}
+
+  echo "Searching for SLEPc"
+
+  if test "$SLEPC_DIR" == ""
+  then
+    echo "Error - SLEPC_DIR not set"
+    exit
+  fi
+
+  # Check that the config directory exists
+  as_ac_File=`echo "ac_cv_file_$SLEPC_DIR/$PETSC_ARCH/conf" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $SLEPC_DIR/$PETSC_ARCH/conf" >&5
+echo $ECHO_N "checking for $SLEPC_DIR/$PETSC_ARCH/conf... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$SLEPC_DIR/$PETSC_ARCH/conf"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  :
+else
+  echo "Error - can't find SLEPc distribution"
+    exit
+fi
+
+
+  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+
+  # Find version number
+
+  as_ac_File=`echo "ac_cv_file_${SLEPC_DIR}/include/slepcversion.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${SLEPC_DIR}/include/slepcversion.h" >&5
+echo $ECHO_N "checking for ${SLEPC_DIR}/include/slepcversion.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${SLEPC_DIR}/include/slepcversion.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  :
+else
+  echo "Error - can't read include/slepcversion.h"
+    exit
+fi
+
+
+  SLEPC_VERSION_MAJOR="0"
+  SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+  SLEPC_VERSION_MINOR="0"
+  SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
+  then
+    # Version 3.4
+    echo "  -> Using interface for SLEPc 3.4"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
+    HAS_SLEPC="yes"
+
+    EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+    EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+  else
+    echo "Error - Unknown SLEPc version"
+    echo "  -> No SLEPc support"
+    HAS_SLEPC="no"
+  fi
+
+fi
+SLEPC_VARS=$SLEPC_VARS
+
 
 echo
 
@@ -8726,6 +8836,7 @@ else
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
+echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
 
 echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
@@ -9411,6 +9522,7 @@ s,@MKDIR@,$MKDIR,;t t
 s,@PRECON_SOURCE@,$PRECON_SOURCE,;t t
 s,@FACETS_SOURCE@,$FACETS_SOURCE,;t t
 s,@PETSC@,$PETSC,;t t
+s,@SLEPC_VARS@,$SLEPC_VARS,;t t
 s,@PACT@,$PACT,;t t
 s,@LN_S@,$LN_S,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
@@ -9704,6 +9816,7 @@ CONFIG_LDFLAGS=`make ldflags -f output.make`
 #############################################################
 # Write configuration to bout-config
 #############################################################
+
 
 
 
@@ -10375,6 +10488,7 @@ s,@MKDIR@,$MKDIR,;t t
 s,@PRECON_SOURCE@,$PRECON_SOURCE,;t t
 s,@FACETS_SOURCE@,$FACETS_SOURCE,;t t
 s,@PETSC@,$PETSC,;t t
+s,@SLEPC_VARS@,$SLEPC_VARS,;t t
 s,@PACT@,$PACT,;t t
 s,@LN_S@,$LN_S,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
@@ -10410,6 +10524,7 @@ s,@HAS_HYPRE@,$HAS_HYPRE,;t t
 s,@HAS_MUMPS@,$HAS_MUMPS,;t t
 s,@HAS_LAPACK@,$HAS_LAPACK,;t t
 s,@HAS_PETSC@,$HAS_PETSC,;t t
+s,@HAS_SLEPC@,$HAS_SLEPC,;t t
 s,@PETSC_VERSION@,$PETSC_VERSION,;t t
 s,@PETSC_RELEASE@,$PETSC_RELEASE,;t t
 s,@PETSC_HAS_SUNDIALS@,$PETSC_HAS_SUNDIALS,;t t

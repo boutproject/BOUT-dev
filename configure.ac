@@ -46,6 +46,7 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
+AC_ARG_WITH(slepc,  [  --with-slepc                Enable SLEPc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
@@ -280,6 +281,64 @@ then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
 fi
+
+echo
+
+#############################################################
+# SLEPc library
+#############################################################
+HAS_SLEPC="no"
+SLEPC_VARS=""
+
+if test "$with_slepc" != "" && test "$with_slepc" != "no"
+then
+  #PETSC_ARCH = ${PETSC_ARCH}
+  #SLEPC_DIR = ${SLEPC_DIR}
+  
+  echo "Searching for SLEPc"
+
+  if test "$SLEPC_DIR" == ""
+  then
+    echo "Error - SLEPC_DIR not set"
+    exit
+  fi
+ 
+  # Check that the config directory exists 
+  AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
+    echo "Error - can't find SLEPc distribution"
+    exit)
+ 
+  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+ 
+  # Find version number
+
+  AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
+    echo "Error - can't read include/slepcversion.h"
+    exit)
+
+  SLEPC_VERSION_MAJOR="0"
+  SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+  SLEPC_VERSION_MINOR="0"
+  SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4" 
+  then
+    # Version 3.4
+    echo "  -> Using interface for SLEPc 3.4"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
+    HAS_SLEPC="yes"
+    
+    EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+    EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+  else
+    echo "Error - Unknown SLEPc version"
+    echo "  -> No SLEPc support"
+    HAS_SLEPC="no"
+  fi
+  
+fi
+AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
 
 echo
 
@@ -1515,6 +1574,7 @@ else
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
+echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
 
 echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
@@ -1595,6 +1655,7 @@ AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
+AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
