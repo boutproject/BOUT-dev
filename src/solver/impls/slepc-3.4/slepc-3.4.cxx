@@ -103,18 +103,45 @@ string formatEig(BoutReal reEig, BoutReal imEig){
   return tmp.str();
 }
 
-SlepcSolver::SlepcSolver(){
+SlepcSolver::SlepcSolver(Options *options){
   has_constraints = false;
   initialised = false;
-  
-  //Setup actual advance solver -- We have to do this now to ensure that any 
-  //calls that are passed through to the actual solver are allowed
-  advanceSolver=NULL;
   f0=NULL;
   f1=NULL;
-  Options *globalOptions = Options::getRoot();
-  Options *options=globalOptions->getSection("slepc");
-  setAdvanceSolver(options);
+
+  // Slepc settings in the Solver section
+  
+  options->get("nEig",nEig,0);//0 means keep the current value, i.e. autoset
+
+  options->get("tol",tol,1.0e-6);// Tolerance --> Note this is on SLEPc eig not BOUT
+  options->get("maxIt",maxIt,PETSC_DECIDE);
+
+  options->get("targRe",targRe,0.0); // Target frequency when using user eig comparison
+  options->get("targIm",targIm,0.0); // Target growth rate when using user eig comparison
+
+  //Convert bout targs to slepc
+  if(targRe==0.0 && targIm==0.0){
+    target=999.0;
+  }else{
+    PetscScalar slepcRe,slepcIm;
+    boutToSlepc(targRe,targIm,slepcRe,slepcIm);
+    dcomplex tmp(slepcRe,slepcIm);
+    target=abs(tmp);
+  }
+  options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
+
+  options->get("userWhich",userWhich,false);
+
+  //Generic settings
+  options->get("useInitial",useInitial,true);
+  options->get("debugMonitor",debugMonitor,false);
+
+  // Solver to advance the state of the system
+  options->get("selfSolve", selfSolve, false); 
+  if(!selfSolve) {
+    // Use a sub-section called "advance"
+    advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
+  }
 }
 
 SlepcSolver::~SlepcSolver(){
@@ -151,14 +178,10 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   tstep = TIMESTEP;
 
   //Read options
-  readOptions();
   comm=PETSC_COMM_WORLD;
 
   //Initialise advanceSolver if not self
   if(!selfSolve){
-    //--> First set solver parameters which are usually done automatically
-    copySettingsToAdvanceSolver();
-    //--> Now call actual init
     advanceSolver->init(restarting,NOUT,TIMESTEP);
   }
 
@@ -192,53 +215,21 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   return 0;
 }
 
-//Read in the slepc options and set various things
-void SlepcSolver::readOptions(){
-  Options *globalOptions = Options::getRoot();
-  Options *options=globalOptions->getSection("slepc");
-
-  //Slepc settings
-  options->get("nEig",nEig,0);//0 means keep the current value, i.e. autoset
-  options->get("tol",tol,1.0e-6);//Tolerance --> Note this is on SLEPc eig not BOUT
-  options->get("maxIt",maxIt,PETSC_DECIDE);
-  options->get("targRe",targRe,0.0); //Target frequency when using user eig comparison
-  options->get("targIm",targIm,0.0); //Target growth rate when using user eig comparison
-  
-  //Convert bout targs to slepc
-  if(targRe==0.0 && targIm==0.0){
-    target=999.0;
-  }else{
-    PetscScalar slepcRe,slepcIm;
-    boutToSlepc(targRe,targIm,slepcRe,slepcIm);
-    dcomplex tmp(slepcRe,slepcIm);
-    target=abs(tmp);
+void SlepcSolver::setModel(PhysicsModel *model) {
+  if(!selfSolve) {
+    // Pass model through to advance solver
+    advanceSolver->setModel(model);
   }
-  options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
-  
-  options->get("userWhich",userWhich,false);
-
-  //Generic settings
-  options->get("useInitial",useInitial,true);
-  options->get("debugMonitor",debugMonitor,false);
+  // Call Solver implementation
+  Solver::setModel(model);
 }
 
-void SlepcSolver::copySettingsToAdvanceSolver(){
-  //Exit if don't have an advance solver
-  if(selfSolve){return;}
-
-  //If using new api then copy model, else copy function pointers
-  if(model){
-    advanceSolver->setModel(model);
-  }else{
-    advanceSolver->setRHS(phys_run);
-    advanceSolver->setPrecon(prefunc);
+void SlepcSolver::setRHS(rhsfunc f) {
+  if(!selfSolve) {
+    // Pass through to advance solver
+    advanceSolver->setRHS(f);
   }
-
-  //Could attach a monitor here, if so should we remove it from
-  //the SlepcSolver?
-  if(debugMonitor){advanceSolver->addMonitor(bout_monitor);}
-
-  return;
+  Solver::setRHS(f);
 }
 
 int SlepcSolver::run() {
@@ -265,38 +256,6 @@ int SlepcSolver::run() {
 
   //Return ok
   return 0;
-}
-
-//Create a solver instance based on options
-void SlepcSolver::setAdvanceSolver(Options *options){
-  if(options==NULL){
-    options=Options::getRoot()->getSection("slepc");
-  }
-
-  string typeTmp;
-  //  SolverType defType=SolverFactory::getInstance()->getDefaultSolverType();
-  //The above would be nice but doesn't currently seem to work so do:
-  SolverType defType=SOLVERRK4;
-  SolverType selfType=SOLVERSLEPCSELF;
-
-  options->get("advancesolver",typeTmp,string(defType));
-  SolverType type=typeTmp.c_str();
-
-  if(typeTmp == selfType){
-    selfSolve=true;
-    //Could we set advanceSolver=this in order to avoid branches on selfSolve later on?
-  }else{
-    selfSolve=false;
-    //Guard to protect against using anything that can't reset. Note to query the solver we have
-    //to create an instance which means we must destroy it if we want to make a new instance.
-    advanceSolver=SolverFactory::getInstance()->createSolver(type,NULL);
-    if(!advanceSolver->canReset){
-      output<<"WARNING:: CURRENTLY DON'T SUPPORT advanceSolver="<<type<<" --> Overriding to use "<<defType<<endl;
-      delete advanceSolver;
-      type=defType;
-      advanceSolver=SolverFactory::getInstance()->createSolver(type,NULL);
-    }
-  }
 }
 
 //This routine takes a Vec type object of length localSize and 

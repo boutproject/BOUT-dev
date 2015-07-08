@@ -91,21 +91,18 @@ enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
 class Solver {
  public:
-#ifdef BOUT_HAS_SLEPC
-  friend class SlepcSolver;
-#endif
   Solver(Options *opts = NULL);
   virtual ~Solver() { }
 
   /////////////////////////////////////////////
   // New API
   
-  void setModel(PhysicsModel *model); ///< Specify physics model to solve
+  virtual void setModel(PhysicsModel *model); ///< Specify physics model to solve
 
   /////////////////////////////////////////////
   // Old API
   
-  void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
+  virtual void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
   void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves

@@ -54,7 +54,7 @@ using std::vector;
 
 class SlepcSolver : public Solver {
  public:
-  SlepcSolver();
+  SlepcSolver(Options *options);
   ~SlepcSolver();
 
   int advanceStep(Mat &matOperator, Vec &inData, Vec &outData);
@@ -74,6 +74,9 @@ class SlepcSolver : public Solver {
   ///      This is only required if allow
   ///      use of additional solver
   ////////////////////////////////////////
+
+  void setModel(PhysicsModel *model);  // New API
+  void setRHS(rhsfunc f);  // Old API
 
   //////Following overrides all just pass through to advanceSolver
 
@@ -135,8 +138,6 @@ private:
   EPS eps; //Slepc solver handle
   Mat shellMat; //"Shell" matrix operator
   Solver* advanceSolver; //Pointer to actual solver used to advance fields
-  void setAdvanceSolver(Options *opts=NULL); //Used to set the advanceSolver pointer
-  void copySettingsToAdvanceSolver();
 
   void vecToFields(Vec &inVec);
   void fieldsToVec(Vec &outVec);
@@ -144,7 +145,6 @@ private:
   void createShellMat();
   void createEPS();
 
-  void readOptions();
   void analyseResults();
   void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
 		   BoutReal &reEigOut, BoutReal &imEigOut);
