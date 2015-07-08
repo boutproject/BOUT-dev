@@ -1,5 +1,5 @@
 """
-Module to allow BOUT.inp files to be read into python and 
+Module to allow BOUT.inp files to be read into python and
 manipulated with ease.
 
 
@@ -8,7 +8,8 @@ nick.walkden@ccfe.ac.uk
 """
 
 
-from copy import copy	
+from copy import copy
+import os
 
 class BOUTOptions(object):
 	"""
@@ -27,16 +28,16 @@ class BOUTOptions(object):
 	to print to screen too
 
 	Each section of the input is stored as a dictionary attribute so that,
-	if you want all the settings in the section [ddx] 
+	if you want all the settings in the section [ddx]
 
 		ddx_opt_dict = myOpts.ddx
 
 	and access individual settings by
-	
+
 		ddx_setting = myOpts.ddx['first']
 
-	Any settings in BOUT.inp without a section are stored in 
-		
+	Any settings in BOUT.inp without a section are stored in
+
 		root_dict = myOpts.root
 	"""
 
@@ -47,34 +48,34 @@ class BOUTOptions(object):
 		"""
 
 		self._sections = ['root']
-		
+
 		for section in self._sections:
 			super(BOUTOptions,self).__setattr__(section,{})
-		
+
 		if inp_path is not None:
 			self.read_inp(inp_path)
-				
+
 	def read_inp(self,inp_path=''):
-		
+
 		try:
-			inpfile = open(inp_path+'BOUT.inp','r')
+			inpfile = open(os.path.join(inp_path, 'BOUT.inp'),'r')
 		except:
-			raise InputError("ERROR: Could not read file "+inp_path+"BOUT.inp")
-		
+			raise TypeError("ERROR: Could not read file "+inp_path+"BOUT.inp")
+
 		current_section = 'root'
 		inplines = inpfile.read().splitlines()
 		for line in inplines:
 			#remove white space
 			line = line.replace(" ","")
-			
-			
+
+
 			if len(line) > 0 and line[0] is not '#':
 				#Only read lines that are not comments or blank
 				if '[' in line:
 					#Section header
 					section = line.split('[')[1].split(']')[0]
 					current_section = copy(section)
-					if current_section not in self._sections:	
+					if current_section not in self._sections:
 						self.add_section(current_section)
 
 				elif '=' in line:
@@ -85,7 +86,7 @@ class BOUTOptions(object):
 					value = value.replace("\t","")
 					value = value.replace("\r","")
 					value = value.replace("\"","")
-					self.__dict__[copy(current_section)][copy(attribute)] = copy(value)	
+					self.__dict__[copy(current_section)][copy(attribute)] = copy(value)
 				else:
 					pass
 
@@ -106,7 +107,4 @@ class BOUTOptions(object):
 			for section in self._sections:
 				print("\t"+section+"\n")
 
-		return self._sections		
-
-
-
+		return self._sections
