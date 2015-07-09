@@ -171,6 +171,7 @@ private:
 
   //Used for SLEPc options
   int nEig,maxIt;
+  int mpd;     // Maximum projected dimension
   PetscReal tol,target;
   BoutReal targRe, targIm;
   bool userWhich;

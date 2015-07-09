@@ -116,6 +116,8 @@ SlepcSolver::SlepcSolver(Options *options){
   options->get("tol",tol,1.0e-6);// Tolerance --> Note this is on SLEPc eig not BOUT
   options->get("maxIt",maxIt,PETSC_DECIDE);
 
+  options->get("mpd", mpd, PETSC_DECIDE);
+
   options->get("targRe",targRe,0.0); // Target frequency when using user eig comparison
   options->get("targIm",targIm,0.0); // Target growth rate when using user eig comparison
 
@@ -343,7 +345,8 @@ void SlepcSolver::createEPS(){
   
   //Probably want to read options and set EPS properties
   //at this point.
-  EPSSetDimensions(eps,nEig,PETSC_DECIDE,PETSC_DECIDE);
+  
+  EPSSetDimensions(eps,nEig,PETSC_DECIDE,mpd);
   EPSSetTolerances(eps,tol,maxIt);
   if(! (target==999)){
     EPSSetTarget(eps,target);
