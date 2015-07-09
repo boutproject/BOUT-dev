@@ -70,7 +70,7 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
   } else if(!strcasecmp(type, SOLVERPETSC)) {
     return new PetscSolver(options); 
   } else if(!strcasecmp(type, SOLVERSLEPC)) {
-    return new SlepcSolver; //Need to add options arg
+    return new SlepcSolver(options);
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
     return new KarniadakisSolver(options);
   } else if(!strcasecmp(type, SOLVERRK4)) {

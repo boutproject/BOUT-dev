@@ -51,10 +51,14 @@ public:
   typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
   
   PhysicsModel() : solver(0), userrhs(&PhysicsModel::rhs), userconv(0), userdiff(0), 
-                   userprecon(0), userjacobian(0) {}
+                   userprecon(0), userjacobian(0), initialised(false) {}
   ~PhysicsModel();
   
   int initialise(Solver *s, bool restarting) {
+    if(initialised)
+      return 0; // Ignore second initialisation
+    initialised = true;
+    
     solver = s;
     return init(restarting); // Call user code
   }
@@ -121,6 +125,8 @@ private:
   rhsfunc      userconv, userdiff; // Split operator functions
   preconfunc   userprecon;
   jacobianfunc userjacobian;
+  
+  bool initialised; // True if model already initialised
 };
 
 // Macro to define a simple main() which creates

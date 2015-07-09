@@ -74,10 +74,17 @@ class SlepcSolver : public Solver {
   ///      This is only required if allow
   ///      use of additional solver
   ////////////////////////////////////////
-
-  void setModel(PhysicsModel *model);  // New API
-  void setRHS(rhsfunc f);  // Old API
-
+  
+  void setModel(PhysicsModel *model) { // New API
+    Solver::setModel(model);
+    if(!selfSolve){advanceSolver->setModel(model);}
+  }
+  
+  void setRHS(rhsfunc f) {  // Old API
+    Solver::setRHS(f);
+    if(!selfSolve){advanceSolver->setRHS(f);}
+  }
+  
   //////Following overrides all just pass through to advanceSolver
 
   //Override virtual add functions in order to pass through to advanceSolver

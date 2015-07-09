@@ -480,7 +480,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  bool dump_on_restart = false;
+  dump_on_restart = false;
   bool append = false;
   if(NOUT < 0) {
     /// Get options

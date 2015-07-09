@@ -166,12 +166,11 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   output.write("Initialising SLEPc-3.4 solver\n");  
   if(selfSolve){
     Solver::init(restarting,NOUT,TIMESTEP);
-  }
-
-  //If no advanceSolver then can only advance one step at a time
-  if(selfSolve){
+    
+    //If no advanceSolver then can only advance one step at a time
     NOUT=1;
   }
+  
 
   //Save for use later
   nout = NOUT;
@@ -211,25 +210,10 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   msg_stack.pop(msg_point);
 #endif
 
+  dump_on_restart = false; // Disable writing initial time slice
+
   //Return ok
   return 0;
-}
-
-void SlepcSolver::setModel(PhysicsModel *model) {
-  if(!selfSolve) {
-    // Pass model through to advance solver
-    advanceSolver->setModel(model);
-  }
-  // Call Solver implementation
-  Solver::setModel(model);
-}
-
-void SlepcSolver::setRHS(rhsfunc f) {
-  if(!selfSolve) {
-    // Pass through to advance solver
-    advanceSolver->setRHS(f);
-  }
-  Solver::setRHS(f);
 }
 
 int SlepcSolver::run() {
@@ -399,9 +383,10 @@ void SlepcSolver::createEPS(){
 //structure.
 //Note: Hidden "this" argument prevents Slepc calling this routine directly
 int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
+  
   //First unpack input into fields
   vecToFields(inData);
-
+  
   //Now advance
   int retVal;
 
@@ -426,7 +411,7 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
 
   //Now pack evolved fields into output
   fieldsToVec(outData);
-
+  
   //Return
   return retVal;
 }

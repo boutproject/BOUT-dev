@@ -4188,6 +4188,33 @@ delete solver;
 {\bf Note: } If an ODE needs to be solved multiple times, at the moment
 it is recommended to delete the solver, and create a new one each time. 
 
+\section{Eigenvalue solver}
+
+By using the SLEPc library, BOUT++ can be used as an eigenvalue solver
+to find the eigenvectors and eigenvalues of sets of equations.
+
+\subsection{Configuring with SLEPc}
+
+The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with 
+PETSc 3.4.2. SLEPc version 3.4 should work, but other versions will not yet.
+
+
+\subsection{SLEPc options}
+
+
+Time derivatives can be taken directly from the RHS function,
+or by advancing the simulation in time by a relatively large increment.
+This second method acts to damp high frequency components
+
+\subsection{Examples}
+
+\subsubsection{Wave in a box}
+
+\texttt{examples/eigen-box}
+
+
+
+
 \section{Testing using the Method of Manufactured Solutions}
 
 The Method of Manufactured solutions (MMS) is a rigorous way to check

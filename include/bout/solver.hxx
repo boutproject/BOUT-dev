@@ -170,6 +170,7 @@ class Solver {
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
 protected:
   bool restarting;
+  bool dump_on_restart;  // True if initial values should be written to file
   
   // Command-line arguments
   static int* pargc;
@@ -234,9 +235,10 @@ protected:
   void save_derivs(BoutReal *dudata);
   
   BoutReal max_dt; ///< Maximum internal timestep
- private:
-  PhysicsModel *model;    ///< physics model being evolved
   
+private:
+  PhysicsModel *model;    ///< physics model being evolved
+
   rhsfunc phys_run;       ///< The user's RHS function
   PhysicsPrecon prefunc;  // Preconditioner
   bool split_operator;
