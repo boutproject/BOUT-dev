@@ -374,7 +374,8 @@ and the startup file is \texttt{\$HOME/.cshrc}. You should now be able to run
 %
 After getting an MPI compiler, the next step is to make sure the libraries
 BOUT++ needs are installed. At minimum BOUT++ needs the FFTW-3 library, and to
-run any of the examples you'll also need NetCDF-4 (prior to 4.2) installed.
+run any of the examples you'll also need NetCDF-4 (prior to 4.2) or HDF5
+installed.
 
 \note{There are currently issues with support for NetCDF's new C++ API, which
 appeared in 4.2.  For now use NetCDF 4.1.x}
@@ -678,18 +679,19 @@ PETSc.
 
 \subsection{File formats}
 %
-BOUT++ can currently use three different file formats: Portable Data Binary
+BOUT++ can currently use four different file formats: Portable Data Binary
 (PDB) which is part of PACT\footnote{\url{http://pact.llnl.gov}},
-NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}}, and
-experimental support for Parallel NetCDF.  PDB was developed at LLNL, was used
-in the UEDGE and BOUT codes, and was the original format used by BOUT++. NetCDF
-is a more widely used format and so has many more tools for viewing and
-manipulating files.  In particular, the NetCDF-4 library can produce files in
-either NetCDF3 ``classic'' format, which is backwards-compatible with NetCDF
-libraries since 1994 (version 2.3), or in the newer NetCDF4 format, which is
-based on (and compatible with) HDF5. If you have both libraries installed then
-BOUT++ can use both simultaneously, for example reading in grid files in PDB
-format, but writing output data in NetCDF format.
+NetCDF-4\footnote{\url{http://www.unidata.ucar.edu/software/netcdf/}},
+HDF5\footnote{\url{https://www.hdfgroup.org/HDF5/}} and experimental support
+for Parallel NetCDF.  PDB was developed at LLNL, was used in the UEDGE and BOUT
+codes, and was the original format used by BOUT++. NetCDF is a more widely used
+format and so has many more tools for viewing and manipulating files.  In
+particular, the NetCDF-4 library can produce files in either NetCDF3
+``classic'' format, which is backwards-compatible with NetCDF libraries since
+1994 (version 2.3), or in the newer NetCDF4 format, which is based on (and
+compatible with) HDF5. HDF5 is another widely used format. If you have multiple
+libraries installed then BOUT++ can use them simultaneously, for example
+reading in grid files in PDB format, but writing output data in NetCDF format.
 
 To enable NetCDF support, you will need to install NetCDF version 4.0.1 or
 later.  Note that although the NetCDF-4 library is used for the C++ interface,
@@ -2074,7 +2076,9 @@ There are several modules available for reading NetCDF files, so to provide a
 consistent interface, file access is wrapped into a class DataFile. This
 provides a simple interface for reading and writing files from any of the
 following modules: \texttt{netCDF4}; \texttt{Scientific.IO.NetCDF}; and
-\texttt{scipy.io.netcdf}.  To open a file using DataFile:
+\texttt{scipy.io.netcdf}. The DataFile class also provides allows access to
+HDF5 files through the same interface, using the h5py module.  To open a file
+using DataFile:
 %
 \begin{lstlisting}[language=python,numbers=none]
 from boututils import DataFile
@@ -2084,6 +2088,17 @@ var = f.read("variable") # Read a variable from the file
 f.close()                # Close the file
 \end{lstlisting}
 %
+or similarly for an HDF5 file
+%
+\begin{lstlisting}[language=python,numbers=none]
+from boututils import DataFile
+
+f = DataFile("file.hdf5")  # Open the file
+var = f.read("variable")   # Read a variable from the file
+f.close()                  # Close the file
+\end{lstlisting}
+
+
 To list the variables in a file e.g.
 %
 \begin{lstlisting}[language=python,numbers=none]
@@ -2452,6 +2467,18 @@ grid = "data/cbm18_8_y064_x260.pdb"
 \subsection{Input and Output}
 %
 \label{sec:iooptions}
+%
+The format of the output (dump) files can be controlled, if support for more
+than one output format has been configured, by setting the top-level option
+{\bf dump\_format} to one of the recognised file extensions: `nc' for NetCDF;
+`hdf5', `hdf' or `h5' for HDF5; `pdb' for PDB. For example to select HDF5
+instead of the default NetCDF format put
+%
+\begin{lstlisting}
+dump_format = hdf5
+\end{lstlisting}
+%
+before any section headers.
 %
 The output (dump) files with time-history are controlled by settings in a
 section called ``output''.  Restart files contain a single time-slice, and are
@@ -4730,9 +4757,9 @@ different section, prefix the variable with the section name e.g.
 
 More complex meshes can be created by supplying an input grid file to describe
 the grid points, geometry, and starting profiles.  Currently BOUT++ supports
-either NetCDF or PDB format binary files.  During startup, BOUT++ looks in the
-grid file for the following variables.  If any are not found, a warning will be
-printed and the default values used.
+either NetCDF, HDF5 or PDB format binary files.  During startup, BOUT++ looks
+in the grid file for the following variables.  If any are not found, a warning
+will be printed and the default values used.
 %
 \begin{itemize}
 \item X and Y grid sizes (integers) \code{nx} and \code{ny} {\bf REQUIRED}
@@ -5875,9 +5902,10 @@ mydata.openw("mydata.nc")
 %
 By default this only specifies the file name; actual opening of the file
 happens later when the data is written. If you are not using parallel I/O, the
-processor number is also inserted into the file name before the last ".", so
-"mydata.nc" becomes "mydata.0.nc", "mydata.1.nc" etc. The file format used
-depends on the extension, so ".nc" will open NetCDF, ".pdb" a PDB file etc.
+processor number is also inserted into the file name before the last ``.'', so
+mydata.nc'' becomes ``mydata.0.nc'', ``mydata.1.nc'' etc. The file format used
+depends on the extension, so ``.nc'' will open NetCDF, ``.hdf5'' an HDF5 file,
+``.pdb'' a PDB file etc.
 
 (see e.g. src/fileio/datafile.cxx line 139, which calls
 src/fileio/dataformat.cxx line 23, which then calls the file format interface
@@ -6133,7 +6161,7 @@ the
 In particular boundary conditions on the $x$ boundaries can be set using the
 \path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as
 detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current')
-refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k 
+refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k
 \neq 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC
 ones).  Multiple boundary conditions can be selected by adding together the
 required boundary condition flag values together.  For example,
@@ -8037,8 +8065,9 @@ Here the format is
 %
 \lstinline!class Datafile!
 %
- provides a convenient way to read and write NetCDF files. There are many different
-  NetCDF libraries available for Python, so this class tries to provide a consistent interface to many of them.
+ provides a convenient way to read and write NetCDF or HDF5 files. There are many different
+  NetCDF libraries available for Python, so this class tries to provide a
+  consistent interface to many of them, as well as to h5py.
 \item
 %
 \lstinline!deriv()!
