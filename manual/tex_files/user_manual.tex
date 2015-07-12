@@ -1163,11 +1163,15 @@ and code may give you an idea of how BOUT++ works. More information on setting
 up and running BOUT++ is given in section~\ref{sec:running}, and details of
 analysing the results using IDL are given in section~\ref{sec:output}.
 
-Alternatively, one can run BOUT++ with the python package
+Alternatively, one can run BOUT++ with the python wrapper
 %
 \lstinline!bout_runners!
 %
-, as explained in section \ref{sec:bout_runners}
+, as explained in section \ref{sec:bout_runners}. Examples of using
+%
+\lstinline!bout_runners!
+%
+can be found in \file{examples/bout\_runners\_example}.
 
 
 
@@ -8134,29 +8138,40 @@ Here the format is
 %
 \label{sec:bout_runners}
 %
-The package
+\lstinline!bout_runners!
+%
+contains classes which gives an alternative way of running BOUT++ simulations
+either normally using the class
+%
+\lstinline!basic_runner!
+%
+, or on a cluster through a generated Portable Batch System
+(PBS) script using the child class
+%
+\lstinline!PBS_runner!
+%
+. Examples can be found in \file{examples/bout\_runners\_example/}.
+
+\note{
 %
 \lstinline!bout_runners!
 %
- contains modules which gives an
-alternative way of running BOUT++ simulations. It is especially useful if one
-needs to make several runs with only small changes in the options (which is
-normally written in \file{BOUT.inp} or in the command-line), as is the
-case when performing MMS.
+ is currently only tested on clusters using
+%
+\lstinline!TORQUE!
+%
+}
 
-In addition, the
 %
 \lstinline!bout_runners!
 %
- package provides functions to make
-simple plots after finished simulations, to add a job/run to a submission queue
-on clusters supporting PBS scripts. It is also intended that the package in the
-future will provide ways to post-processing after finished simulations. The
-important parts of the package tree is given in figure~\ref{fig:program_tree}.
-
+ is especially useful if one needs to make several runs with only small
+changes in the options (which is normally written in \file{BOUT.inp} or in the
+command-line), as is the case when performing a parameter scan, or when
+performing a MMS test.
 
 Instead of making several runs with several different input files with only
-small changes in option, one can with
+small changes in the option, one can with
 %
 \lstinline!bout_runners!
 %
@@ -8175,13 +8190,27 @@ python script which imports
 running option as member data of that instance and finally calls the
 member function
 %
-\lstinline!self.run()!
+\lstinline!self.execute_runs()!
 %
 .
 
+In addition, the
+%
+\lstinline!bout_runners!
+%
+provides a way to run any python post-processing script after finished
+simulations (as long as it accept at least one parameter containing the folder
+name(s) of the run(s)). If the simulations have been performed using the
+%
+\lstinline!PBS_runner!
+%
+, the post-processing function will be submitted to the cluster (although it is
+possible to submit it to a different queue, using a different amount of nodes
+etc.).
+
 When the function
 %
-\lstinline!self.run()!
+\lstinline!self.execute_runs()!
 %
  is executed, a folder structure like
 the one presented in figure~\ref{fig:folder_tree} is created.
@@ -8190,20 +8219,6 @@ the one presented in figure~\ref{fig:folder_tree} is created.
 options specified in the driver is made. Eventually unset options are obtained
 from \file{BOUT.inp} or given a default value if the option is nowhere to be
 found.
-%
-\lstinline!bout_runners/bout_runners.py!
-%
- contains the function
-%
-\lstinline!demo()!
-%
- which provides example scripts, explains the member data of
-the classes and the usage when additional keyword arguments are passed to the
-%
-\lstinline!self.run()!
-%
- member function.
-
 %
 \begin{landscape}
 \thispagestyle{empty}
@@ -8215,7 +8230,7 @@ the classes and the usage when additional keyword arguments are passed to the
 \includegraphics[width=1.35\hsize]{figs/folder_tree.pdf}
 \caption{Longest possible folder tree made by the
 %
-\lstinline!self.run()!
+\lstinline!self.execute_runs()!
 %
 function.}
 %
@@ -8224,25 +8239,8 @@ function.}
 \end{figure}
 %
 \end{landscape}
-%
-\begin{figure}[htbp!]
-\centering
-\includegraphics[width=0.8\paperwidth]{figs/program_tree.pdf}
-\caption{The package tree of
-%
-\lstinline!bout_runners!
-%
-. Files are represented by
-square black boxes, functions are represented by blue ovals. Black arrows
-indicates that the file provides the function, blue arrows indicate
-interherance, red arrows indicate imports and green arrows indicate that the
-function calls function within that file. Stipulated objects are objects
-intended to be included in the future.}
-%
-\label{fig:program_tree}
-%
-\end{figure}
-%
+
+
 \printindex
 
 \end{document}
