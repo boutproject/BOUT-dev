@@ -3,6 +3,9 @@
 # Python script to run and analyse MMS test
 #
 from __future__ import division
+from __future__ import print_function
+from builtins import zip
+from builtins import str
 
 from boututils import shell,launch,getmpirun, DataFile
 from boutdata import collect
@@ -104,7 +107,7 @@ plt.xscale('log')
 plt.xlabel(r'Mesh spacing $\delta x$')
 plt.ylabel("Error norm")
     
-plt.savefig("norm.pdf")
+plt.savefig("fci-norm.pdf")
 
 plt.show()
 plt.close()

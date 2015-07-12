@@ -1316,6 +1316,7 @@ FUNCTION create_grid, F, R, Z, in_settings, critical=critical, $
                                                       [xpt_psi[xind]], settings.rad_peaking, $
                                                       out_dp=dpsi)
         ENDIF ELSE BEGIN
+          pf_psi_out = (pf_psi_vals[xind,0,npf] - 0.5*dpsi) < xpt_psi[xind]
           pf_psi_vals[xind,0,0:(npf-1)] = radial_grid(npf, psi_inner[id+1], $
                                                       pf_psi_out, $
                                                       1, 0, $

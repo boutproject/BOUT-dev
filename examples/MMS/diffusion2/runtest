@@ -8,6 +8,8 @@
  
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -26,15 +28,17 @@ shell("make > make.log")
 # List of input directories
 inputs = [
     ("X", ["mesh:nx"]),
-    ("Y",["mesh:ny"]),
-    ("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
+    ("Y",["mesh:ny"])#,
+    #("XYZ", ["mesh:nx", "mesh:ny", "MZ"])
     ]
 
 # List of NX values to use
 nxlist = [4, 8, 16, 32, 64] #, 128]
+#nxlist = [128,256,512,1024,2048,4096]
 
 nout = 1
-timestep = 0.1
+#timestep = 0.1
+timestep = 1000
 
 nproc = 2
 
@@ -114,8 +118,8 @@ for dir,sizes in inputs:
     plt.close()
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

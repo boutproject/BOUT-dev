@@ -8,7 +8,7 @@
   1. A slightly different definition of Poisson brackets is used in BOUT++:
      [f,g] = b.(Grad f cross Grad g) / B
      
-  2. This version is collocated, and uses
+  2. This version is collocated, and uses a
      4th-order smoother to stabilise the method
  */
 
@@ -30,6 +30,35 @@ int GBS::init(bool restarting) {
   OPTION(optgbs, resistivity, true); // Include resistivity?
   OPTION(optgbs, estatic, true);     // Electrostatic?
   
+  // option for ExB Poisson Bracket 
+  int bm_exb_flag;
+  OPTION(optgbs, bm_exb_flag,         2); // Arakawa default
+  switch(bm_exb_flag) {
+  case 0: {
+    bm_exb = BRACKET_STD;
+    output << "\tBrackets for ExB: default differencing\n";
+    break;
+  }
+  case 1: {
+    bm_exb = BRACKET_SIMPLE;
+    output << "\tBrackets for ExB: simplified operator\n";
+    break;
+  }
+  case 2: {
+    bm_exb = BRACKET_ARAKAWA;
+    output << "\tBrackets for ExB: Arakawa scheme\n";
+    break;
+  }
+  case 3: {
+    bm_exb = BRACKET_CTU;
+    output << "\tBrackets for ExB: Corner Transport Upwind method\n";
+    break;
+  }
+  default:
+    output << "ERROR: Invalid choice of bracket method. Must be 0 - 3\n";
+    return 1;
+  }
+
   OPTION(opt->getSection("solver"), mms, false);
 
   if(ionvis)
@@ -71,30 +100,46 @@ int GBS::init(bool restarting) {
   // Get switches from each variable section
   Options *optne = opt->getSection("Ne");
   optne->get("evolve", evolve_Ne, true);
-  optne->get("D", Dn, 0.0);
-  string source;
-  optne->get("source", source, "0.0");
-  Sn = FieldFactory::get()->create2D(source, NULL, mesh);
-  Sn /= Omega_ci;
+  optne->get("D", Dn, 1e-3);
+  optne->get("H", Hn, -1.0);
+  if(mms) {
+    Sn = 0.0;
+  }else {
+    string source;
+    optne->get("source", source, "0.0");
+    Sn = FieldFactory::get()->create3D(source, NULL, mesh);
+    Sn /= Omega_ci;
+    SAVE_ONCE(Sn);
+  }
   
   Options *optte = opt->getSection("Te");
   optte->get("evolve", evolve_Te, true);
-  optte->get("D", Dte, 0.0);
-  optte->get("source", source, "0.0");
-  Sp = FieldFactory::get()->create2D(source, NULL, mesh);
-  Sp /= Omega_ci;
+  optte->get("D", Dte, 1e-3);
+  optte->get("H", Hte, -1.0);
+  if(mms) {
+    Sp = 0.0;
+  }else {
+    string source;
+    optte->get("source", source, "0.0");
+    Sp = FieldFactory::get()->create3D(source, NULL, mesh);
+    Sp /= Omega_ci;
+    SAVE_ONCE(Sp);
+  }
   
   Options *optvort = opt->getSection("Vort");
   optvort->get("evolve", evolve_Vort, true);
-  optvort->get("D", Dvort, 0.0);
+  optvort->get("D", Dvort, 1e-3);
+  optvort->get("H", Hvort, -1.0);
 
   Options *optve = opt->getSection("VePsi");
   optve->get("evolve", evolve_Ve, true);
-  optve->get("D", Dve, 0.0);
+  optve->get("D", Dve, 1e-3);
+  optve->get("H", Hve, -1.0);
 
   Options *optvi = opt->getSection("Vi");
   optvi->get("evolve", evolve_Vi, true);
-  optvi->get("D", Dvi, 0.0);
+  optvi->get("D", Dvi, 1e-3);
+  optvi->get("H", Hvi, -1.0);
   
   OPTION(optgbs, parallel, true);
   if(!parallel) {
@@ -216,8 +261,7 @@ int GBS::init(bool restarting) {
   dz4 = SQ(SQ(mesh->dz));
 
   SAVE_REPEAT(Ve);
-
-
+  
   output.write("dx = %e, dy = %e, dz = %e\n", mesh->dx(2,2), mesh->dy(2,2), mesh->dz);
   output.write("g11 = %e, g22 = %e, g33 = %e\n", mesh->g11(2,2), mesh->g22(2,2), mesh->g33(2,2));
   output.write("g12 = %e, g23 = %e\n", mesh->g12(2,2), mesh->g23(2,2));
@@ -292,11 +336,11 @@ void GBS::LoadMetric(BoutReal Lnorm, BoutReal Bnorm) {
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( bracket(p, f, BRACKET_ARAKAWA) )
+#define vE_Grad(f, p) ( bracket(p, f, bm_exb) )
 
 int GBS::rhs(BoutReal t) {
-
-  output.write("TIME = %e\r", t);
+  
+  printf("TIME = %e\r", t); // Bypass logging, only to stdout
   
   // Communicate evolving variables
   mesh->communicate(evars);
@@ -324,13 +368,6 @@ int GBS::rhs(BoutReal t) {
     Ve = VePsi - 0.5*mi_me*beta_e*psi;
     mesh->communicate(psi, Ve);
   }
-
-  /// CHANGE
-  //Ve = FieldFactory::get()->create3D("VePsi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
-  //Vi = FieldFactory::get()->create3D("Vi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
-  //Te = FieldFactory::get()->create3D("Te:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
-  //Vort = FieldFactory::get()->create3D("Vort:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
-  //phi = FieldFactory::get()->create3D("phi:solution", Options::getRoot(), mesh, CELL_CENTRE, t);
 
   // Communicate auxilliary variables
   mesh->communicate(phi);
@@ -366,15 +403,18 @@ int GBS::rhs(BoutReal t) {
     ddt(Ne) = 
       - vE_Grad(Ne, phi)    // ExB term
       + (2./mesh->Bxy) * (C(Pe) - Ne*C(phi)) // Perpendicular compression
-      //+ D(Ne, Dn)
+      + D(Ne, Dn)
+      + H(Ne, Hn)
       ;
     
     if(parallel) {
       ddt(Ne) -= Ne*Grad_par(Ve) + Vpar_Grad_par(Ve, Ne); // Parallel compression, advection
     }
     
-    // Source term
-    ddt(Ne) += Sn*where(Sn, 1.0, Ne);
+    if(!mms) {
+      // Source term
+      ddt(Ne) += Sn*where(Sn, 1.0, Ne);
+    }
   }
   
   if(evolve_Te) {
@@ -383,6 +423,7 @@ int GBS::rhs(BoutReal t) {
       - vE_Grad(Te, phi)
       + (4./3.)*(Te/mesh->Bxy)*( (7./2.)*C(Te) + (Te/Ne)*C(Ne) - C(phi) )
       + D(Te, Dte)
+      + H(Te, Hte)
       ;
     
     if(parallel) {
@@ -390,8 +431,14 @@ int GBS::rhs(BoutReal t) {
       ddt(Te) += (2./3.)*Te*( 0.71*Grad_par(Vi) - 1.71*Grad_par(Ve) + 0.71*(Vi-Ve)*Grad_par(log(Ne)));
     }
     
-    // Source term. Note: Power source, so divide by Ne
-    ddt(Te) += Sp*where(Sp, 1.0, Te*Ne) / Ne;
+    if(!mms) {
+      // Source term. Note: Power source, so divide by Ne
+      ddt(Te) += Sp*where(Sp, 1.0, Te*Ne) / Ne;
+    
+      // Source of particles shouldn't include energy, so Ne*Te=const
+      // hence ddt(Te) = -(Te/Ne)*ddt(Ne)
+      ddt(Te) -= (Te/Ne)*Sn*where(Sn, 1.0, 0.0);
+    }
   }
   
   if(evolve_Vort) {
@@ -400,15 +447,13 @@ int GBS::rhs(BoutReal t) {
       - vE_Grad(Vort, phi)     // ExB term
       + 2.*mesh->Bxy*C(Pe)/Ne + mesh->Bxy*C(Gi)/(3.*Ne)
       + D(Vort, Dvort)
+      + H(Vort, Hvort)
       ;
 
     if(parallel) {
       ddt(Vort) -= Vpar_Grad_par(Vi, Vort); // Parallel advection
       ddt(Vort) += SQ(mesh->Bxy)*( Grad_par(Vi - Ve) + (Vi - Ve)*Grad_par(log(Ne)) );
     }
-    
-    // Sink term follows density loss
-    ddt(Vort) += Sn*where(Sn, 0.0, Vort);
   }
   
   if(evolve_Ve) {
@@ -422,20 +467,21 @@ int GBS::rhs(BoutReal t) {
       + mi_me*Grad_par(phi)
       - mi_me*(  Te*Grad_par(log(Ne)) + 1.71*Grad_par(Te) )
       + D(Ve, Dve)
+      + H(Ve, Hve)
       ;
   }
   
   if(evolve_Vi) {
+    // Ion velocity
+    
     ddt(Vi) = 
       - vE_Grad(Vi, phi)
       - Vpar_Grad_par(Vi, Vi)
       - (2./3.)*Grad_par(Gi)
       - (Grad_par(Te) + Te*Grad_par(log(Ne))) // Parallel pressure
       + D(Vi, Dvi)
+      + H(Vi, Hvi)
       ;
-    
-    // Sink term follows density loss
-    ddt(Vi) += Sn*where(Sn, 0.0, Vi);
   }
   
   return 0;
@@ -454,8 +500,15 @@ const Field3D GBS::C(const Field3D &f) { // Curvature operator
 const Field3D GBS::D(const Field3D &f, BoutReal d) { // Diffusion operator
   if(d < 0.0)
     return 0.0;
-  return -d*(dx4*D4DX4(f) + dz4*D4DZ4(f));// + dy4*D4DY4(f)
+  return d * Delp2(f);
 }
+
+const Field3D GBS::H(const Field3D &f, BoutReal h) { // Numerical hyper-diffusion operator
+  if(h < 0.0)
+    return 0.0;
+  return -h*(dx4*D4DX4(f) + dz4*D4DZ4(f));// + dy4*D4DY4(f)
+}
+
 
 // Standard main() function
 BOUTMAIN(GBS);

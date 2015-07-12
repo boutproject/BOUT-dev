@@ -1,5 +1,9 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
-from boututils.support import deriv
+from boututils import deriv
 from bunch import bunchify
 # Integrate over a volume
 
@@ -63,7 +67,7 @@ def volume_integral( var, g, xr=False):
             r = grid.Rxy[xi,yi]
             z = grid.Zxy[xi,yi]
             n = np.size(r)
-            dl = np.sqrt( deriv(r)**2 + deriv(z)**2 ) / dtheta
+            dl = old_div(np.sqrt( deriv(r)**2 + deriv(z)**2 ), dtheta)
       
       # Area of flux-surface
             dA = (grid.Bxy[xi,yi]/grid.Bpxy[xi,yi]*dl) * (r*2.*np.pi)

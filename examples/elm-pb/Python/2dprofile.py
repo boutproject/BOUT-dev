@@ -1,9 +1,12 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import matplotlib.pyplot as plt
 from boututils import file_import
 from matplotlib.ticker import FixedFormatter, FormatStrFormatter, AutoLocator, AutoMinorLocator
 
-g = file_import("../cbm18_dens8.grid_nx68ny64.nc")
+g = file_import("./cbm18_dens8.grid_nx68ny64.nc")
 
 majorLocator   = AutoLocator()
 majorFormatter = FormatStrFormatter('%3.0e')
@@ -23,13 +26,13 @@ ny=g.get('ny')
 
 q = np.zeros((nx, ny))
 for i in range(ny):
-    q[:,i] = - shiftangle / (2 * np.pi)
+    q[:,i] = old_div(- shiftangle, (2 * np.pi))
 
 
 
 
 xarr = psixy[:,0]
-xarr = (xarr + 0.854856) / (0.854856 + 0.0760856)
+xarr = old_div((xarr + 0.854856), (0.854856 + 0.0760856))
 
 
 fig=plt.figure()

@@ -4,6 +4,8 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import print_function
+from builtins import str
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -23,9 +25,9 @@ pi = collect("viscosity", path=data_path, xind=2, info=True, yguards=True)
 # pi has dimensions [Time, X, Y, Z]
 length=len(pi[0,0,:,0])
 for index, item in enumerate(pi[slice_index,0,:,0]):
-	print index, item
+	print(index, item)
 
-print "data_path is",data_path
+print("data_path is",data_path)
 
 # Make plot
 plotdata.plotdata(pi[slice_index,0,:,0],title="Electron Viscosity Profile at t="+str(argv[1]))

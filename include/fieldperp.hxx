@@ -39,6 +39,7 @@ class FieldPerp : public Field {
  public:
   FieldPerp();
   FieldPerp(const FieldPerp& f); // Copy constructor
+  FieldPerp(BoutReal val);
   ~FieldPerp();
 
   DEPRECATED(FieldPerp* clone() const);
@@ -109,6 +110,20 @@ class FieldPerp : public Field {
   const FieldPerp operator^(const Field3D &other) const;
   const FieldPerp operator^(const Field2D &other) const;
   const FieldPerp operator^(const BoutReal rhs) const;
+
+  // Functions
+  
+  friend const FieldPerp exp(const FieldPerp &f);
+  friend const FieldPerp log(const FieldPerp &f);
+  
+  friend const FieldPerp sin(const FieldPerp &f);
+  friend const FieldPerp cos(const FieldPerp &f);
+  friend const FieldPerp tan(const FieldPerp &f);
+
+  friend const FieldPerp sinh(const FieldPerp &f);
+  friend const FieldPerp cosh(const FieldPerp &f);
+  friend const FieldPerp tanh(const FieldPerp &f);
+
 
   // Stencils
 

@@ -4,13 +4,15 @@
 # Run the test, check it completed successfully
 #
 
+from __future__ import print_function
+from builtins import str
 from boututils import shell,launch,getmpirun
 from boutdata import collect
 from sys import stdout, exit
 
 MPIRUN=getmpirun()
 
-print "Making parallel inversion test"
+print("Making parallel inversion test")
 
 shell("make > make.log")
 
@@ -20,7 +22,7 @@ code = 0 # Return code
 for nproc in [1,2,4]:
     cmd = "./test_invpar"
     
-    print "   %d processors...." % (nproc)
+    print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
         stdout.write("\tflags '"+f+"' ... ")
@@ -37,14 +39,14 @@ for nproc in [1,2,4]:
         # Find out if it worked
         allpassed = collect("allpassed", path="data", info=False)
         if allpassed:
-            print "PASSED"
+            print("PASSED")
         else:
-            print "FAILED"
+            print("FAILED")
             code = 1
 
 if code == 0:
-    print " => All inversion tests passed"
+    print(" => All inversion tests passed")
 else:
-    print " => Some failed tests"
+    print(" => Some failed tests")
 
 exit(code)

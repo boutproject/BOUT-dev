@@ -36,14 +36,14 @@ LaplaceFactory* LaplaceFactory::getInstance() {
 Laplacian* LaplaceFactory::createLaplacian(Options *options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("laplace");
-  
+
   string type;
-  
+
   if(mesh->firstX() && mesh->lastX()) {
     // Can use serial algorithm
-  
+
     options->get("type", type, LAPLACE_TRI);
-    
+
     if(strcasecmp(type.c_str(), LAPLACE_TRI) == 0) {
       return new LaplaceSerialTri(options);
     }else if(strcasecmp(type.c_str(), LAPLACE_BAND) == 0) {
@@ -62,9 +62,10 @@ Laplacian* LaplaceFactory::createLaplacian(Options *options) {
       throw BoutException("Unknown serial Laplacian solver type '%s'", type.c_str());
     }
   }
-  
+
   options->get("type", type, LAPLACE_SPT);
 
+  // Parallel algorithm
   if(strcasecmp(type.c_str(), LAPLACE_PDD) == 0) {
     return new LaplacePDD(options);
   }else if(strcasecmp(type.c_str(), LAPLACE_SPT) == 0) {
