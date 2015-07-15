@@ -2629,7 +2629,10 @@ class PBS_runner(basic_runner):
         # Put a comma in between the arguments
         arguments = ', '.join(arguments)
         # Call the post processing function
-        python_tmp += function.__name__+"("+str(folders)+","+arguments+")\n"
+        if type(folders) == list:
+            python_tmp+=function.__name__+"("+str(folders)+","+arguments+")\n"
+        elif type(folders) == str:
+            python_tmp+=function.__name__+"('"+str(folders)+"',"+arguments+")\n"
         # When the script has run, it will delete itself
         python_tmp += "os.remove('" + python_name + "')\n"
 
