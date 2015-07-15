@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0'
-__date__    = '08.07.2015'
+__version__ = '1.0001'
+__date__    = '15.07.2015'
 
 import os
 import re
@@ -598,7 +598,7 @@ class basic_runner(object):
                                 self._directory + "'")
         #}}}
 
-        #{{{Check if grid_file are strings, and that they exsist
+        #{{{Check grid_file are strings, that they exsist, and one can sort
         if self._grid_file != None:
             # Set a variable which is has length over one if the test fails
             not_found = []
@@ -621,6 +621,26 @@ class basic_runner(object):
                 message += "\n".join(not_found)
                 self._errors.append("RuntimeError")
                 raise RuntimeError(message)
+            if (self._sort_by != None) and ('grid_file' in self._sort_by):
+                # Set a success flag
+                success = True
+                # The start name of the files
+                start_name = 'grid_file'
+                # Check if grid file is iterable
+                if hasattr(self._grid_file, "__iter__"):
+                    for grid in grid_file:
+                        if grid[0:len(start_name)] != start_name:
+                            success = False
+                else:
+                    # Only one grid file
+                    if self._grid_file[0:len(start_name)] != start_name:
+                        success = False
+                if not(success):
+                    message =  "The name of the grid file must start with"+\
+                               " 'grid_file' in order to sort by them."
+                    self._errors.append("RuntimeError")
+                    raise RuntimeError(message)
+
         #}}}
 
         #{{{Check nx, ny, nz, zperiod, nout, mxstep, separatrix are int/iterable
@@ -1027,6 +1047,22 @@ class basic_runner(object):
 
         #{{{Check that self._series_add[:][2] have the same length
         if self._series_add != None:
+            # Make the second indices iterable if they are not already
+            for index in range(len(self._series_add)):
+                if not(hasattr(self._series_add[index][2], "__iter__")) or\
+                   (type(self._series_add[index][2]) == str) or\
+                   (type(self._series_add[index][2]) == dict):
+                    # Check if the type is a tuple
+                    if (type(self._series_add[index]) != tuple):
+                        self._series_add[index][2]=[self._series_add[index][2]]
+                    else:
+                        # We are dealing with tuples
+                        # Cast to list
+                        self._series_add[index] = list(self._series_add[index])
+                        self._series_add[index][2]=[self._series_add[index][2]]
+                        # Recast to tuple
+                        self._series_add[index] = tuple(self._series_add[index])
+
             # Collect all second indices
             second_indices = [elems[2] for elems in self._series_add]
             # Find the length of the second indices
@@ -1114,6 +1150,10 @@ class basic_runner(object):
             # Set a success variable that will fail if anything goes
             # wrong
             success = True
+            # If we need to change the elements, make sure that the
+            # input element is not a tuple
+            if type(input_member[0]) == tuple:
+                success = False
             # Loop through all elements in input_member
             for elem in input_member[0]:
                 # Check if self._addition is iterable, but not a string
