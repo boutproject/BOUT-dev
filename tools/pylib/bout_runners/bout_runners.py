@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0001'
-__date__    = '15.07.2015'
+__version__ = '1.0002'
+__date__    = '17.07.2015'
 
 import os
 import re
@@ -1309,9 +1309,14 @@ class basic_runner(object):
         for size_nr in range(len(self._nx)):
             print("Checking nx=" + str(self._nx[size_nr]) +\
                   " and ny=" + str(self._ny[size_nr]))
-            split_found = False
+            # Check to see if succeeded
+            init_split_found = False
+            cur_split_found  = False
             add_number = 1
-            while split_found == False:
+            # Counter to see how many times the while loop has been
+            # called
+            count = 0
+            while cur_split_found == False:
                 # The same check as below is performed internally in
                 # BOUT++ (see boutmesh.cxx)
                 for i in range(1, self._nproc+1, 1):
@@ -1320,37 +1325,55 @@ class basic_runner(object):
                        (MX % i == 0) and \
                        (self._ny[size_nr] % (self._nproc/i) == 0):
                         # If the test passes
-                        split_found = True
+                        cur_split_found = True
 
                 # If the value tried is not a good value
-                if split_found == False:
-                    # If modification is allowed
-                    if self._allow_size_modification and self._grid_file == None:
-                        # Produce a warning
-                        produce_warning = True
-                        self._nx[size_nr] += add_number
-                        self._ny[size_nr] += add_number
-                        print("Mismatch, trying "+ str(self._nx[size_nr]) +\
-                              "*" + str(self._ny[size_nr]))
-                        add_number = (-1)**(abs(add_number))\
-                                     *(abs(add_number) + 1)
+                if cur_split_found == False:
+                    # Produce a warning
+                    produce_warning = True
+                    self._nx[size_nr] += add_number
+                    self._ny[size_nr] += add_number
+                    print("Mismatch, trying "+ str(self._nx[size_nr]) +\
+                          "*" + str(self._ny[size_nr]))
+                    add_number = (-1)**(abs(add_number))\
+                                 *(abs(add_number) + 1)
+
+                # Check if the split was found the first go. This will
+                # be used if self_allow_size_modification is off, or if
+                # we are using a grid file
+                if count == 0 and cur_split_found:
+                    init_split_found = True
+
+                # Add one to the counter
+                count += 1
+
+            # If the initial split did not succeed
+            if not(init_split_found):
+                # If modification is allowed
+                if not(self._allow_size_modification) and\
+                      (self._grid_file != None):
+                    # If the split fails and the a grid file is given
+                    if self._grid_file != None:
+                        self._errors.append("RuntimeError")
+                        message = "The grid can not be split using the"+\
+                                  " current number of nproc.\n"+\
+                                  "Suggest using nx = " +\
+                                  str(self._nx[size_nr]) +\
+                                  " and ny = " +\
+                                  str(self._ny[size_nr])+\
+                                  " with the current nproc"
+                        raise RuntimeError(message)
+                    # If the split fails and no grid file is given
                     else:
-                        # If the split fails and the a grid file is given
-                        if self._grid_file != None:
-                            self._errors.append("RuntimeError")
-                            message = "The grid can not be split using the"+\
-                                      " current number of nproc"
-                            raise RuntimeError(message)
-                        # If the split fails and no grid file is given
-                        else:
-                            self._errors.append("RuntimeError")
-                            message  = "The grid can not be split using the"+\
-                                       " current number of nproc.\n"
-                            message += "Setting allow_size_modification=True"+\
-                                       " will allow modification of the grid"+\
-                                       " so that it can be split with the"+\
-                                       " current number of nproc"
-                            raise RuntimeError(message)
+                        self._errors.append("RuntimeError")
+                        message  = "The grid can not be split using the"+\
+                                   " current number of nproc.\n"
+                        message += "Setting allow_size_modification=True"+\
+                                   " will allow modification of the grid"+\
+                                   " so that it can be split with the"+\
+                                   " current number of nproc"
+                        raise RuntimeError(message)
+
             # When the good value is found
             print("Successfully found the following good values for the mesh:")
             print("nx=" + str(self._nx[size_nr]) +\
