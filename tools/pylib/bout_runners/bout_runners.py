@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0002'
-__date__    = '17.07.2015'
+__version__ = '1.0003'
+__date__    = '18.07.2015'
 
 import os
 import re
@@ -1350,7 +1350,7 @@ class basic_runner(object):
             # If the initial split did not succeed
             if not(init_split_found):
                 # If modification is allowed
-                if not(self._allow_size_modification) and\
+                if not(self._allow_size_modification) or\
                       (self._grid_file != None):
                     # If the split fails and the a grid file is given
                     if self._grid_file != None:
