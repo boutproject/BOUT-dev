@@ -60,7 +60,8 @@ class BOUTOptions(object):
 		try:
 			inpfile = open(os.path.join(inp_path, 'BOUT.inp'),'r')
 		except:
-			raise TypeError("ERROR: Could not read file "+inp_path+"BOUT.inp")
+			raise TypeError("ERROR: Could not read file "+\
+                                        os.path.join(inp_path, "BOUT.inp"))
 
 		current_section = 'root'
 		inplines = inpfile.read().splitlines()

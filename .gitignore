@@ -25,6 +25,7 @@ manual/coordinates.pdf
 manual/developer_manual.pdf
 manual/preconditioning.pdf
 manual/user_manual.pdf
+bin/bout-config
 data_*
 test*.py
 *.o
