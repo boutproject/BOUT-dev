@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0003'
-__date__    = '18.07.2015'
+__version__ = '1.0004'
+__date__    = '21.07.2015'
 
 import os
 import re
@@ -77,6 +77,7 @@ class basic_runner(object):
                  dz         = None,\
                  MXG        = None,\
                  MYG        = None,\
+                 NXPE       = None,\
                  ixseps1    = None,\
                  ixseps2    = None,\
                  jyseps1_1  = None,\
@@ -141,6 +142,7 @@ class basic_runner(object):
                          (int)
         MYG         -    The number of guard cells in the y direction
                          (int)
+        NXPE        -    Numbers of processors in the x direction
         ixseps1     -    Separatrix location for 'upper' divertor (int
                          or iterable)
         ixseps2     -    Separatrix location for 'lower' divertor (int
@@ -240,6 +242,7 @@ class basic_runner(object):
         self._dz         = self._set_member_data(dz)
         self._MXG        = MXG
         self._MYG        = MYG
+        self._NXPE       = self._set_member_data(NXPE)
         self._ixseps1    = self._set_member_data(ixseps1)
         self._ixseps2    = self._set_member_data(ixseps2)
         self._jyseps1_1  = self._set_member_data(jyseps1_1)
@@ -287,6 +290,21 @@ class basic_runner(object):
                 self._errors.append("TypeError")
                 raise TypeError("make must be boolean if set")
 
+        # Set self._program_name from the *.o file. Make the program if
+        # the *.o file is not found
+        self._set_program_name()
+
+        # Make the file if make is True
+        if self._make:
+            self._run_make()
+
+        # Obtain the MPIRUN
+        self._MPIRUN = getmpirun()
+
+        # The run type is going to be written in the run.log file
+        self._run_type = 'basic'
+
+        #{{{ Set self._additional and self._series_add correctly
         # self._additional must be on a special form (see
         # basic_error_checker).
         if self._additional != None:
@@ -314,20 +332,42 @@ class basic_runner(object):
                    (type(self._series_add) == dict):
                     # Put self._series_add as an iterable
                     self._series_add = [self._series_add]
+        #}}}
 
-        # Set self._program_name from the *.o file. Make the program if
-        # the *.o file is not found
-        self._set_program_name()
+        # Check that nproc is given correctly
+        if type(self._nproc) != int:
+            message  = "nproc is of wrong type\n"+\
+                       "nproc must be given as an int"
+            self._errors.append("TypeError")
+            raise TypeError(message)
 
-        # Make the file if make is True
-        if self._make:
-            self._run_make()
 
-        # Obtain the MPIRUN
-        self._MPIRUN = getmpirun()
+        #{{{ Set NYPE from NXPE and nproc
+        if self._NXPE != None:
+            # Make self._NYPE as an appendable list
+            self._NYPE = []
 
-        # The run type is going to be written in the run.log file
-        self._run_type = 'basic'
+            # Check that NXPE is of correct type
+            check_if_int = [\
+                    (self._NXPE,  'NXPE'),\
+                   ]
+            self._check_for_correct_type(var = check_if_int,\
+                                          the_type = int,\
+                                          allow_iterable = True)
+
+            #Check that NXPE and nproc is consistent
+            for cur_NXPE in self._NXPE:
+                if (self._nproc % cur_NXPE) != 0:
+                    self._errors.append("RuntimeError")
+                    message = "nproc =" + self._nproc + " not divisible by"+\
+                              " NXPE = " + cur_NXPE +\
+                              " (the number of processors in the x direction)"
+                    raise RuntimeError(message)
+
+                # Append NYPE
+                self._NYPE.append(int(self._nproc/cur_NXPE))
+        #}}}
+
 
         # Check if the instance is set correctly
         self._check_for_basic_instance_error()
@@ -559,9 +599,7 @@ class basic_runner(object):
     def _check_for_basic_instance_error(self):
         """Check if there are any type errors when creating the object"""
 
-        #{{{Check if nproc and directory has the correct type
-        # nproc and directory is set by default, however, we must check that
-        # the user has not given them as wrong input
+        #{{{Check if directory has the correct type
         if type(self._nproc) != int:
             message  = "nproc is of wrong type\n"+\
                        "nproc must be given as an int"
@@ -581,8 +619,8 @@ class basic_runner(object):
         # because it in principle could be incompatible with the method
         # (first, second etc.) used
         check_if_int = [\
-                        (self._MXG, 'MXG'),\
-                        (self._MYG, 'MYG'),\
+                        (self._MXG,  'MXG'),\
+                        (self._MYG,  'MYG'),\
                        ]
         self._check_for_correct_type(var = check_if_int,\
                                       the_type = int,\
@@ -925,6 +963,8 @@ class basic_runner(object):
                     (self._dz       , "dz")               ,\
                     (self._MXG      , "MXG")              ,\
                     (self._MYG      , "MYG")              ,\
+                    (self._NXPE     , "NXPE")              ,\
+                    (self._NYPE     , "NYPE")              ,\
                     (self._ixseps1  , "ixseps1")          ,\
                     (self._ixseps2  , "ixseps2")          ,\
                     (self._jyseps1_1, "jyseps1_1")        ,\
@@ -1190,7 +1230,7 @@ class basic_runner(object):
         #}}}
 #}}}
 
-#{{{ Functions called by the run function
+#{{{ Functions called by the execute_runs function
 #{{{_error_check_for_run_input
     def _error_check_for_run_input(self                        ,\
                                    remove_old                  ,\
@@ -1292,7 +1332,7 @@ class basic_runner(object):
         # Flag which is True when a warning should be produce
         produce_warning = False
 
-        # First we check if self._MXG is given
+        #{{{First we check if self._MXG is given
         if self._MXG == None:
             # We need to find MXG in BOUT.inp. We use BOUTOption for
             # this
@@ -1304,87 +1344,120 @@ class basic_runner(object):
             local_MXG = eval(local_MXG)
         else:
             local_MXG = self._MXG
+        #}}}
 
+        # If NXPE is not set, we will try to find a optimal grid size
         print("\nChecking the grid split for the meshes\n")
-        for size_nr in range(len(self._nx)):
-            print("Checking nx=" + str(self._nx[size_nr]) +\
-                  " and ny=" + str(self._ny[size_nr]))
-            # Check to see if succeeded
-            init_split_found = False
-            cur_split_found  = False
-            add_number = 1
-            # Counter to see how many times the while loop has been
-            # called
-            count = 0
-            while cur_split_found == False:
-                # The same check as below is performed internally in
-                # BOUT++ (see boutmesh.cxx)
-                for i in range(1, self._nproc+1, 1):
+        if self._NXPE == None:
+            #{{{ If NXPE is not set
+            for size_nr in range(len(self._nx)):
+                print("Checking nx=" + str(self._nx[size_nr]) +\
+                      " and ny=" + str(self._ny[size_nr]))
+                # Check to see if succeeded
+                init_split_found = False
+                cur_split_found  = False
+                add_number = 1
+                # Counter to see how many times the while loop has been
+                # called
+                count = 0
+
+                #{{{While cur_split_found == False
+                while cur_split_found == False:
+                    # The same check as below is performed internally in
+                    # BOUT++ (see boutmesh.cxx under
+                    # if(options->isSet("NXPE")))
+                    for i in range(1, self._nproc+1, 1):
+                        MX = self._nx[size_nr] - 2*local_MXG
+                        # self._nproc is called NPES in boutmesh
+                        if (self._nproc % i == 0) and \
+                           (MX % i == 0) and \
+                           (self._ny[size_nr] % (self._nproc/i) == 0):
+                            # If the test passes
+                            cur_split_found = True
+
+                    # Check if cur_split_found is true, eventually
+                    # update the add_number
+                    add_number = self._check_cur_split_found(cur_split_found,\
+                                                             using_nx = True,\
+                                                             using_ny = True)
+
+                    #{{{ Check if the split was found the first go.
+                    # This will be used if self_allow_size_modification is
+                    # off, or if we are using a grid file
+                    if count == 0 and cur_split_found:
+                        init_split_found = True
+                    #}}}
+
+                    # Add one to the counter
+                    count += 1
+                #}}}
+
+                # Check if initial split succeeded
+                self._check_init_split_found(init_split_found, size_nr,\
+                                             test_nx = True, test_ny = True,
+                                             produce_warning = produce_warning)
+            #}}}
+        else:
+            #{{{ If NXPE is set
+            self._check_NXPE_or_NYPE()
+    # FIXME: YOU ARE HERE, IMPLIMENT THE FUNCTION AND ADD TO THE RUN
+    #        STRING. TEST
+    #{{{_check_NXPE_or_NYPE
+    def _check_NXPE_or_NYPE(self, type_txt):
+            for size_nr in range(len(self._nx)):
+                # Check NXPE
+                print("Checking nx =" + str(self._nx[size_nr]) +\
+                      " with NXPE = " + str(self._NXPE[size_nr]))
+                # Check to see if succeeded
+                init_split_found = False
+                cur_split_found  = False
+                add_number = 1
+                # Counter to see how many times the while loop has been
+                # called
+                count = 0
+
+                #{{{While cur_split_found == False
+                while cur_split_found == False:
+                    # The same check as below is performed internally in
+                    # BOUT++ (see boutmesh.cxx under
+                    # if((MX % NXPE) != 0)
                     MX = self._nx[size_nr] - 2*local_MXG
-                    if (self._nproc % i == 0) and \
-                       (MX % i == 0) and \
-                       (self._ny[size_nr] % (self._nproc/i) == 0):
+                    # self._nproc is called NPES in boutmesh
+                    if (MX % self._NXPE[size_nr]) == 0:
                         # If the test passes
                         cur_split_found = True
 
-                # If the value tried is not a good value
-                if cur_split_found == False:
-                    # Produce a warning
-                    produce_warning = True
-                    self._nx[size_nr] += add_number
-                    self._ny[size_nr] += add_number
-                    print("Mismatch, trying "+ str(self._nx[size_nr]) +\
-                          "*" + str(self._ny[size_nr]))
-                    add_number = (-1)**(abs(add_number))\
-                                 *(abs(add_number) + 1)
+                    # Check if cur_split_found is true, eventually
+                    # update the add_number
+                    add_number = self._check_cur_split_found(cur_split_found,\
+                                                             using_nx = True,\
+                                                             using_ny = False)
 
-                # Check if the split was found the first go. This will
-                # be used if self_allow_size_modification is off, or if
-                # we are using a grid file
-                if count == 0 and cur_split_found:
-                    init_split_found = True
+                    #{{{ Check if the split was found the first go.
+                    # This will be used if self_allow_size_modification is
+                    # off, or if we are using a grid file
+                    if count == 0 and cur_split_found:
+                        init_split_found = True
+                    #}}}
 
-                # Add one to the counter
-                count += 1
+                    # Add one to the counter
+                    count += 1
+                #}}}
 
-            # If the initial split did not succeed
-            if not(init_split_found):
-                # If modification is allowed
-                if not(self._allow_size_modification) or\
-                      (self._grid_file != None):
-                    # If the split fails and the a grid file is given
-                    if self._grid_file != None:
-                        self._errors.append("RuntimeError")
-                        message = "The grid can not be split using the"+\
-                                  " current number of nproc.\n"+\
-                                  "Suggest using nx = " +\
-                                  str(self._nx[size_nr]) +\
-                                  " and ny = " +\
-                                  str(self._ny[size_nr])+\
-                                  " with the current nproc"
-                        raise RuntimeError(message)
-                    # If the split fails and no grid file is given
-                    else:
-                        self._errors.append("RuntimeError")
-                        message  = "The grid can not be split using the"+\
-                                   " current number of nproc.\n"
-                        message += "Setting allow_size_modification=True"+\
-                                   " will allow modification of the grid"+\
-                                   " so that it can be split with the"+\
-                                   " current number of nproc"
-                        raise RuntimeError(message)
+                # Check if initial split succeeded
+                self._check_init_split_found(init_split_found, size_nr,\
+                                             test_nx = True, test_ny = False,
+                                             produce_warning = produce_warning)
+    #}}}
+            #}}}
 
-            # When the good value is found
-            print("Successfully found the following good values for the mesh:")
-            print("nx=" + str(self._nx[size_nr]) +\
-                  " ny=" + str(self._ny[size_nr]) +\
-                  "\n")
+  MY = ny;
+  MYSUB = MY / NYPE;
+  if((MY % NYPE) != 0) {
+    throw BoutException("\tERROR: Cannot split %d Y points equally between %d processors\n",
+                        MY, NYPE);
+  }
 
-            # Make the warning if produced
-            if produce_warning:
-                message = "The mesh was changed to allow the split given by nproc"
-                self._warning_printer(message)
-                self._warnings.append(message)
 #}}}
 
 #{{{_get_possibilities
@@ -1692,7 +1765,16 @@ class basic_runner(object):
 
 #{{{_check_if_run_already_performed
     def _check_if_run_already_performed(self):
-        """Checks if the run has been run previously"""
+        """
+        Checks if the run has been run previously.
+
+        If restart is set, and no files are found, a warning will be
+        printed.
+
+        Returns
+        True    - The run will be performed
+        False   - The run will NOT be performed
+        """
 
         dmp_files = glob.glob(self._dmp_folder + '/BOUT.dmp.*')
         # If no BOUT.inp files are found or if self._restart is not set
@@ -1703,7 +1785,15 @@ class basic_runner(object):
             print('To overwrite old files, run with'+\
                   ' self.execute_runs(remove_old=True)\n')
             return False
+        # Either no files are found, or restart is set
         else:
+            if len(dmp_files) == 0 and self._restart != None:
+                message = "Restart was set to " +self._restart+\
+                          ", but no dmp files were found."+\
+                          " restart set to None"
+                self._restart = None
+                self._warning_printer(message)
+                self._warnings.append(message)
             return True
 #}}}
 
@@ -1723,8 +1813,11 @@ class basic_runner(object):
 #{{{Function called by _set_program_name
 #{{{_run_make
     def _run_make(self):
-        """Makes the .cxx program, saves the make.log and make.err"""
+        """Make cleans and makes the .cxx program"""
 
+        print("Make clean eventually previously compiled\n")
+        command = "make clean"
+        status, output = shell(command, pipe=True)
         print("Making the .cxx program\n")
         command = "make"
         status, output = shell(command, pipe=True)
@@ -1840,6 +1933,113 @@ class basic_runner(object):
             self._errors.append("RuntimeError")
             raise RuntimeError (message)
 #}}}
+#}}}
+
+#{{{ Functions called by _get_correct_domain_split
+    #{{{_check_cur_split_found
+    def _check_cur_split_found(self, cur_split_found,\
+                               add_number,\
+                               using_nx = None, using_ny = None):
+        #{{{docstring
+        """
+        Checks if the current split is found.
+
+        Will add a number if not found.
+
+        Input:
+        cur_split_found     -   whether or not the current split was
+                                found
+        add_number          -   the number added to nx and/or ny
+        using_nx            -   if add_number should be added to nx
+        using_ny            -   if add_number should be added to ny
+
+        Output:
+        add_number          -   the number to eventually be added the
+                                next time
+        """
+        #}}}
+
+        # If the value tried is not a good value
+        if cur_split_found == False:
+            # Produce a warning
+            produce_warning = True
+            self._nx[size_nr] += add_number
+            self._ny[size_nr] += add_number
+            print("Mismatch, trying "+ str(self._nx[size_nr]) +\
+                  "*" + str(self._ny[size_nr]))
+            add_number = (-1)**(abs(add_number))\
+                         *(abs(add_number) + 1)
+
+        return add_number
+    #}}}
+
+    #{{{_check_init_spilt_found
+    def _check_init_split_found(self, init_split_found, size_nr,\
+                                test_nx = None, test_ny = None):
+        #{{{docstring
+        """
+        Check if the initial split was a good choice when checking the grids.
+
+        Will raise eventual errors.
+        Input:
+        init_split_found    -   boolean revealing whether or not a good
+                                split was found on the first trial
+        size_nr             -   the index of the current nx, ny or NXPE
+                                under consideration
+        test_nx             -   whether or not the test was run on nx
+        test_ny             -   whether or not the test was run on ny
+        produce_warning     -   whether or not a warning should be
+                                produced
+        """
+        #}}}
+
+        #{{{ If the initial split did not succeed
+        if not(init_split_found):
+            # If modification is allowed
+            if not(self._allow_size_modification) or\
+                  (self._grid_file != None):
+                # If the split fails and the a grid file is given
+                if self._grid_file != None:
+                    self._errors.append("RuntimeError")
+                    message = "The grid can not be split using the"+\
+                              " current number of nproc.\n"+\
+                              "Suggest using "
+                    if test_nx:
+                        message += "nx = " + str(self._nx[size_nr]) + " "
+                    if test_ny:
+                        message += "ny = " + str(self._ny[size_nr]) + " "
+                    message += " with the current nproc"
+                    raise RuntimeError(message)
+                # If the split fails and no grid file is given
+                else:
+                    self._errors.append("RuntimeError")
+                    message  = "The grid can not be split using the"+\
+                               " current number of nproc.\n"
+                    message += "Setting allow_size_modification = True"+\
+                               " will allow modification of the grid"+\
+                               " so that it can be split with the"+\
+                               " current number of nproc"
+                    raise RuntimeError(message)
+        #}}}
+
+        #{{{ When the good value is found
+        print("Successfully found the following good values for the mesh:")
+        message = ''
+        if test_nx:
+            message += "nx = " + str(self._nx[size_nr]) + " "
+        if test_ny:
+            message += "ny = " + str(self._ny[size_nr])
+
+        print(message + "\n")
+        #}}}
+
+        #{{{ Make the warning if produced
+        if produce_warning:
+            message = "The mesh was changed to allow the split given by nproc"
+            self._warning_printer(message)
+            self._warnings.append(message)
+        #}}}
+    #}}}
 #}}}
 
 #{{{Function called by _prepare_dmp_folder
