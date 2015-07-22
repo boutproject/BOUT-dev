@@ -28,6 +28,7 @@ manual/user_manual.pdf
 bin/bout-config
 data_*
 test*.py
+tools/vagrant/.vagrant
 *.o
 *.svn/
 *.CVS/
