@@ -40,6 +40,8 @@
 
 static char help[] = "BOUT++: Uses finite difference methods to solve plasma fluid problems in curvilinear coordinates";
 
+string formatEig(BoutReal reEig, BoutReal imEig);
+
 //The callback function for the shell matrix-multiply operation
 //A simple wrapper around the SlepcSolver advanceStep routine
 PetscErrorCode advanceStepWrapper(Mat matOperator, Vec inData, Vec outData){
@@ -54,8 +56,8 @@ PetscErrorCode advanceStepWrapper(Mat matOperator, Vec inData, Vec outData){
 PetscErrorCode compareEigsWrapper(PetscScalar ar, PetscScalar ai, PetscScalar br, PetscScalar bi,
 				  PetscInt *res, void *ctx){
   PetscFunctionBegin;
+
   //Cast context as SlepcSolver and call the actual compare routine
-  //  tmpCompare=(static_cast<SlepcSolver *>(ctx))->compareEigs(ar,ai,br,bi);
   SlepcSolver* myCtx;
   myCtx=(SlepcSolver*)ctx;
   myCtx->compareState=myCtx->compareEigs(ar,ai,br,bi);
@@ -77,6 +79,45 @@ PetscErrorCode monitorWrapper(EPS eps, PetscInt its, PetscInt nconv,
   myCtx->monitor(its,nconv,eigr,eigi,errest,nest);
   PetscFunctionReturn(0);
 }
+
+//The callback function for applying the shell spectral transformation
+PetscErrorCode stApplyWrapper(ST st, Vec vecIn, Vec vecOut){
+  PetscFunctionBegin;
+
+  //First get the context of the st object, cast to correct type
+  SlepcSolver* myCtx;
+  STShellGetContext(st,(void**)&myCtx);
+
+  //Do the matrix vector multiply -- same as STSHIFT with zero shift
+  //Use the advanceStepWrapper so any mods made in advanceStep are
+  //taken into account
+  advanceStepWrapper(myCtx->shellMat,vecIn,vecOut);
+
+  //Note an alternative  approach, which would allow shellMat to remain
+  //private, would be to extract the ST object during createEPS and set
+  //the operator their. We could then use STGetOperators to obtain a
+  //reference to the shell mat.
+  PetscFunctionReturn(0);
+}
+
+//The callback function for transforming the eigenvalues in the
+//custom shell spectral transformation
+PetscErrorCode stBackTransformWrapper(ST st, PetscInt nEig, PetscScalar *eigr, 
+				      PetscScalar *eigi){
+  PetscFunctionBegin;
+  //First get the context of the st object and cast to correct type
+  SlepcSolver* myCtx;
+  STShellGetContext(st,(void **)&myCtx);
+
+  //Convert to bout eigenvalue
+  BoutReal tmpR, tmpI;
+  for(PetscInt iEig=0;iEig<nEig;iEig++){
+    myCtx->slepcToBout(eigr[iEig],eigi[iEig],tmpR,tmpI,true);
+    eigr[iEig]=tmpR; eigi[iEig]=tmpI;
+  };
+  PetscFunctionReturn(0);
+}
+
 
 //Helper function
 string formatEig(BoutReal reEig, BoutReal imEig){
@@ -122,6 +163,7 @@ SlepcSolver::SlepcSolver(Options *options){
   options->get("targIm",targIm,0.0); // Target growth rate when using user eig comparison
 
   //Convert bout targs to slepc
+  bool userWhichDefault=false;
   if(targRe==0.0 && targIm==0.0){
     target=999.0;
   }else{
@@ -129,13 +171,22 @@ SlepcSolver::SlepcSolver(Options *options){
     boutToSlepc(targRe,targIm,slepcRe,slepcIm);
     dcomplex tmp(slepcRe,slepcIm);
     target=abs(tmp);
+    //If we've set a target then we change the default
+    //for the userWhich variable as targets work best with this
+    userWhichDefault=true;
   }
   options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
 
-  options->get("userWhich",userWhich,false);
+  options->get("userWhich",userWhich,userWhichDefault);
+  options->get("ddtMode", ddtMode, true);
 
   //Generic settings
-  options->get("useInitial",useInitial,true);
+  bool useInitialDefault = true;
+  if(ddtMode){
+    //If ddtMode then we probably don't want to useInitial
+    useInitialDefault = false;
+  };
+  options->get("useInitial",useInitial,useInitialDefault);
   options->get("debugMonitor",debugMonitor,false);
 
   // Solver to advance the state of the system
@@ -172,7 +223,6 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     //If no advanceSolver then can only advance one step at a time
     NOUT=1;
   }
-  
 
   //Save for use later
   nout = NOUT;
@@ -182,7 +232,7 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   comm=PETSC_COMM_WORLD;
 
   //Initialise advanceSolver if not self
-  if(!selfSolve){
+  if( !selfSolve && !ddtMode ){
     advanceSolver->init(restarting,NOUT,TIMESTEP);
   }
 
@@ -278,7 +328,7 @@ void SlepcSolver::vecToFields(Vec &inVec){
   //fields we can use the SlepcSolver load_vars even if we're
   //not using selfSolve=True
 
-  if(!selfSolve){
+  if(!selfSolve && !ddtMode){
     //Solver class used must support this procedure which resets any internal state
     //data such that it now holds the same data as the fields
     advanceSolver->resetInternalFields(); 
@@ -295,7 +345,11 @@ void SlepcSolver::fieldsToVec(Vec &outVec){
   VecGetArray(outVec,&point);
 
   //Copy fields into point
-  save_vars(point);
+  if(!ddtMode){
+    save_vars(point);
+  }else{
+    save_derivs(point);
+  };
   //Note as the solver instances only have pointers to the
   //fields we can use the SlepcSolver save_vars even if we're
   //not using selfSolve=True
@@ -345,7 +399,6 @@ void SlepcSolver::createEPS(){
   
   //Probably want to read options and set EPS properties
   //at this point.
-  
   EPSSetDimensions(eps,nEig,PETSC_DECIDE,mpd);
   EPSSetTolerances(eps,tol,maxIt);
   if(! (target==999)){
@@ -364,6 +417,27 @@ void SlepcSolver::createEPS(){
   //Register a monitor
   EPSMonitorSet(eps,&monitorWrapper,this,NULL);
 
+  //Initialize shell spectral transformation if selected by user
+  //Note currently the only way to select this is with the
+  //"-st_type shell" command line option, should really add a 
+  //BOUT input flag to force it
+  EPSGetST(eps,&st);
+  PetscObjectTypeCompare((PetscObject)st,STSHELL,&stIsShell);
+  if(stIsShell){
+    //Set the user-defined routine for applying the operator
+    STShellSetApply(st,&stApplyWrapper);
+    
+    //Set the STShell context to be the slepcSolver so we can access
+    //the solver internals from within the spectral transform routines
+    STShellSetContext(st,this);
+    
+    //Set the routine to transform the eigenvalues back
+    STShellSetBackTransform(st,stBackTransformWrapper);
+    
+    //Define the transformations name (optional)
+    PetscObjectSetName((PetscObject)st,"Exponential Linear ST");
+  };
+
   //Should probably call a routine here which interrogates eps
   //to determine the important settings that have been used and dump
   //the settings to screen/file/dmp?
@@ -371,10 +445,14 @@ void SlepcSolver::createEPS(){
   //but not sure if we can force this is the code (without messing with argv).
 
   //Set initial space i.e. first guess
-  if(useInitial){
+  if(useInitial){ //Doesn't seem to help the ddtMode very much so recommend off
     Vec initVec, rightVec;
+    bool ddtModeBackup=ddtMode;
+
     MatGetVecs(shellMat,&rightVec,&initVec);
+    ddtMode=false; //Temporarily disable as initial ddt values not set
     fieldsToVec(initVec);
+    ddtMode=ddtModeBackup; //Restore state
     EPSSetInitialSpace(eps,1,&initVec);
     VecDestroy(&initVec); 
     VecDestroy(&rightVec);
@@ -393,23 +471,28 @@ int SlepcSolver::advanceStep(Mat &matOperator, Vec &inData, Vec &outData){
   //Now advance
   int retVal;
 
-  //Here we actually advance one (big) step
-  if(selfSolve){
-    //If we don't have an external solver then we have to advance the solution
-    //ourself. This is currently done using Euler and only advances by a small step
-    //Not recommended!
-    retVal=run_rhs(0.0);
-    //Here we add dt*ddt(Fields) to fields to advance solution (cf. Euler)
-    save_vars(f0);
-    save_derivs(f1);
-    for(int iVec=0;iVec<localSize;iVec++){
-      f0[iVec]+=f1[iVec]*tstep;
-    }
-    load_vars(f0);
+  if(ddtMode){
+    //In ddtMode we just want the time derivative of the fields
+    retVal = run_rhs(0.0);
   }else{
-    //Here we exploit one of the built in solver implementations to advance the
-    //prescribed fields by a big (tstep*nstep) step.
-    retVal=advanceSolver->run();
+    //Here we actually advance one (big) step
+    if(selfSolve){
+      //If we don't have an external solver then we have to advance the solution
+      //ourself. This is currently done using Euler and only advances by a small step
+      //Not recommended!
+      retVal=run_rhs(0.0);
+      //Here we add dt*ddt(Fields) to fields to advance solution (cf. Euler)
+      save_vars(f0);
+      save_derivs(f1);
+      for(int iVec=0;iVec<localSize;iVec++){
+	f0[iVec]+=f1[iVec]*tstep;
+      }
+      load_vars(f0);
+    }else{
+      //Here we exploit one of the built in solver implementations to advance the
+      //prescribed fields by a big (tstep*nstep) step.
+      retVal=advanceSolver->run();
+    }
   }
 
   //Now pack evolved fields into output
@@ -435,23 +518,8 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
   da=sqrt(pow(arBout-targRe,2)+pow(aiBout-targIm,2));
   db=sqrt(pow(brBout-targRe,2)+pow(biBout-targIm,2));
 
-  // output<<"Picking between "<<ar<<"+i"<<ai<<" and "<<br<<"+i"<<bi<<endl;
-  // output<<"(targRe="<<targRe<<", targIm="<<targIm<<")"<<endl;
-  // output<<"   da : "<<da<<endl;
-  // output<<"   db : "<<db<<endl;
   //Now we decide which eigenvalue is preferred.
   int retVal;
-
-  //Largest growth rate
-  // if(aiBout>biBout){
-  //   retVal=-1;
-  // }else if(biBout>aiBout){
-  //   retVal=1;
-  // }else{
-  //   retVal=0;
-  // }
-  // return retVal;
-
 
   //Smallest distance from complex target
   //If prefer B we return +ve
@@ -464,14 +532,19 @@ int SlepcSolver::compareEigs(PetscScalar ar, PetscScalar ai, PetscScalar br, Pet
   }else{
     retVal=0;
   };
-  //output<<"--> Return "<<retVal<<endl;
+
   return retVal;
 }
 
 //This is an example of a custom monitor which Slepc can call (not directly) to report the current
 //status of the run.
 //Note we could see how many new eigenpairs have been found since last called and then write their
-//data to file so that we get progressive output rather than waiting until the end to write everything
+//data to file so that we get progressive output rather than waiting until the end to write everything.
+//Unfortunately it seems that currently SLEPc does not support using EPSGetEigenvector or 
+//EPSGetEigenpair before EPSSolve has finished. As such it's not possible to write out the eigenvectors
+//from this monitor routine. It should still be possible to write the eigenvalues here, but to then
+//get the eigenvectors at the correct time indices later would require resetting the time index. I'm
+//not sure if the Datafile object supports this.
 //Note must be wrapped by non-member function to be called by Slepc
 void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], PetscScalar eigi[], PetscReal errest[], PetscInt nest){
   static int nConvPrev=0;
@@ -480,8 +553,9 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
   if(its<1){return;}
 
   BoutReal reEigBout, imEigBout;
-  string joinNum, joinNumSlepc;
   slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
+
+  string joinNum, joinNumSlepc;
   if(imEigBout<0){
     joinNum="";
   }else{
@@ -490,16 +564,17 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
 
   //This line more or less replicates the normal slepc output (when using -eps_monitor)
   //but reports Bout eigenvalues rather than the Slepc values. Note we haven't changed error estimate.
-  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) "<<formatEig(reEigBout,imEigBout)<<"\t ("<<errest[nconv]<<")"<<endl;
+  output<<" "<<its<<" nconv="<<nconv<<"\t first unconverged value (error) ";
+  output<<formatEig(reEigBout,imEigBout)<<"\t ("<<errest[nconv]<<")"<<endl;
 
   //The following can be quite noisy so may want to add a flag to disable/enable.
   int newConv=nconv-nConvPrev;
   if(newConv>0){
     output<<"Found "<<newConv<<" new converged eigenvalues:"<<endl;
-
     for (PetscInt i=nConvPrev;i<nconv;i++){
       slepcToBout(eigr[i],eigi[i],reEigBout,imEigBout);
-      output<<"\t"<<i<<"\t: "<<formatEig(eigr[i],eigi[i])<<" --> "<<formatEig(reEigBout,imEigBout)<<endl;
+      output<<"\t"<<i<<"\t: "<<formatEig(eigr[i],eigi[i])<<" --> ";
+      output<<formatEig(reEigBout,imEigBout)<<endl;
     }
   }
 
@@ -509,16 +584,44 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
 
 //Convert a slepc eigenvalue to a BOUT one
 void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
-			      BoutReal &reEigOut, BoutReal &imEigOut){
+			      BoutReal &reEigOut, BoutReal &imEigOut, bool force){
 
-  //The slepc eigenvalue is actually
-  //Exp(-i*Eig_Bout*tstep)
-  //where Eig_BOUT is the actual eigenvalue and tstep is the time step
+  //If not stIsShell then the slepc eigenvalue is actually
+  //Exp(-i*Eig_Bout*tstep) for ddtMode = false
+  //-i*Eig_Bout for ddtMode = true
+  //where Eig_Bout is the actual eigenvalue and tstep is the time step
   //the solution is evolved over.
+  //This routine returns Eig_Bout
+  
+  //The optional input force is used by the shell spectral transform
+  //in the back transform to force a conversion, which allows us to 
+  //otherwise skip any transformation when in shell mode (i.e. the back
+  //transform routine is the only place we deal with the raw slepc eigenvalue
+  //in shell ST mode).
+
+  //If shellST and not forcing we just set the input and output eigenvalues
+  //equal and return.
+  if(stIsShell && !force){
+    reEigOut=reEigIn;
+    imEigOut=imEigIn;
+    return;
+  }
+
   dcomplex slepcEig(reEigIn,imEigIn), ci(0.0,1.0);
   dcomplex boutEig;
-  boutEig=ci*log(slepcEig)/(tstep*nout);
   
+  if(ddtMode){
+    boutEig=slepcEig*ci;
+  }else{
+    //Protect against the 0,0 trivial eigenvalue
+    if(abs(slepcEig)<1.0e-10){
+      reEigOut=0.0;
+      imEigOut=0.0;
+      return;
+    }
+    boutEig=ci*log(slepcEig)/(tstep*nout);
+  };
+
   //Set return values
   reEigOut=boutEig.real();
   imEigOut=boutEig.imag();
@@ -526,12 +629,24 @@ void SlepcSolver::slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
 
 //Convert a BOUT++ eigenvalue to a Slepc one
 void SlepcSolver::boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
-			      PetscScalar &reEigOut, PetscScalar &imEigOut){
+			      PetscScalar &reEigOut, PetscScalar &imEigOut,
+			      bool force){
+
+  //If shellST and not forcing we just set the input and output eigenvalues
+  //equal and return.
+  if(stIsShell && !force){
+    reEigOut=reEigIn;
+    imEigOut=imEigIn;
+    return;
+  }
 
   dcomplex boutEig(reEigIn,imEigIn), ci(0.0,1.0);
   dcomplex slepcEig;
-
-  slepcEig=exp(-ci*boutEig* static_cast<BoutReal>(tstep*nout));
+  if(ddtMode){
+    slepcEig=-ci*boutEig;
+  }else{
+    slepcEig=exp(-ci*boutEig* static_cast<BoutReal>(tstep*nout));
+  };
 
   //Set return values
   reEigOut=slepcEig.real();
@@ -562,13 +677,20 @@ void SlepcSolver::analyseResults(){
     extern BoutReal simtime;
 
     for(PetscInt iEig=0; iEig<nEigFound; iEig++){
+      //Get slepc eigenvalue
       PetscScalar reEig, imEig;
-      BoutReal reEigBout, imEigBout;
       EPSGetEigenvalue(eps,iEig,&reEig,&imEig);
       dcomplex slepcEig(reEig,imEig);
+
+      //Report
       output<<"\t"<<iEig<<"\t"<<formatEig(reEig,imEig)<<"\t("<<abs(slepcEig)<<")";
+
+      //Get BOUT eigenvalue
+      BoutReal reEigBout, imEigBout;
       slepcToBout(reEig,imEig,reEigBout,imEigBout);
       dcomplex boutEig(reEigBout,imEigBout);
+
+      //Report
       output<<"\t"<<formatEig(reEigBout,imEigBout)<<"\t("<<abs(boutEig)<<")"<<endl;
 
       //Get eigenvector

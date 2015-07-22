@@ -140,10 +140,19 @@ class SlepcSolver : public Solver {
   BoutReal getCurrentTimestep(){return advanceSolver->getCurrentTimestep();}
 
   int compareState;
+
+  void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
+		   BoutReal &reEigOut, BoutReal &imEigOut,
+		   bool force=false);
+
+  Mat shellMat; //"Shell" matrix operator
 private:
   MPI_Comm comm;
   EPS eps; //Slepc solver handle
-  Mat shellMat; //"Shell" matrix operator
+
+  ST st; //Spectral transform object
+  PetscBool stIsShell; //Is the ST a shell object?
+
   Solver* advanceSolver; //Pointer to actual solver used to advance fields
 
   void vecToFields(Vec &inVec);
@@ -153,13 +162,12 @@ private:
   void createEPS();
 
   void analyseResults();
-  void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
-		   BoutReal &reEigOut, BoutReal &imEigOut);
   void boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
-		   PetscScalar &reEigOut, PetscScalar &imEigOut);
+		   PetscScalar &reEigOut, PetscScalar &imEigOut,
+		   bool force=false);
 
   SlepcLib slib;// Handles initialize / finalize
-
+  bool ddtMode; //If true then slepc deals with the ddt operator
   bool selfSolve; //If true then we don't create an advanceSolver
   //For selfSolve=true
   BoutReal *f0;
