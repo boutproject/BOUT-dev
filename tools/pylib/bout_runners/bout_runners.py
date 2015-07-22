@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0004'
-__date__    = '21.07.2015'
+__version__ = '1.001'
+__date__    = '22.07.2015'
 
 import os
 import re
@@ -341,7 +341,6 @@ class basic_runner(object):
             self._errors.append("TypeError")
             raise TypeError(message)
 
-
         #{{{ Set NYPE from NXPE and nproc
         if self._NXPE != None:
             # Make self._NYPE as an appendable list
@@ -366,8 +365,9 @@ class basic_runner(object):
 
                 # Append NYPE
                 self._NYPE.append(int(self._nproc/cur_NXPE))
+        else:
+            self._NYPE = None
         #}}}
-
 
         # Check if the instance is set correctly
         self._check_for_basic_instance_error()
@@ -1030,6 +1030,22 @@ class basic_runner(object):
             self._check_if_same_len((self._ny, 'ny'), (self._nz, 'nz'))
         #}}}
 
+        #{{{Check that NXPE and NYPE are of the same length as nx, ny, nz
+        if self._nx != None and self._NXPE != None:
+            self._check_if_same_len((self._nx, 'nx'), (self._NXPE, 'NXPE'))
+        if self._ny != None and self._NXPE != None:
+            self._check_if_same_len((self._ny, 'ny'), (self._NXPE, 'NXPE'))
+        if self._nz != None and self._NXPE != None:
+            self._check_if_same_len((self._nz, 'nz'), (self._NXPE, 'NXPE'))
+
+        if self._nx != None and self._NYPE != None:
+            self._check_if_same_len((self._nx, 'nx'), (self._NYPE, 'NYPE'))
+        if self._ny != None and self._NYPE != None:
+            self._check_if_same_len((self._ny, 'ny'), (self._NYPE, 'NYPE'))
+        if self._nz != None and self._NYPE != None:
+            self._check_if_same_len((self._nz, 'nz'), (self._NYPE, 'NYPE'))
+        #}}}
+
         #{{{Check (zperiod), (zmin, zmax) and (dz) is not set simultaneously
         if (self._zperiod != None and\
            (self._zmin != None or self._zmax != None)):
@@ -1329,9 +1345,6 @@ class basic_runner(object):
         """Checks that the grid can be split in the correct number of
         processors. If not, vary the number of points until value is found."""
 
-        # Flag which is True when a warning should be produce
-        produce_warning = False
-
         #{{{First we check if self._MXG is given
         if self._MXG == None:
             # We need to find MXG in BOUT.inp. We use BOUTOption for
@@ -1347,6 +1360,8 @@ class basic_runner(object):
         #}}}
 
         # If NXPE is not set, we will try to find a optimal grid size
+        # Flag to determine if a warning should be printed
+        produce_warning = False
         print("\nChecking the grid split for the meshes\n")
         if self._NXPE == None:
             #{{{ If NXPE is not set
@@ -1377,9 +1392,14 @@ class basic_runner(object):
 
                     # Check if cur_split_found is true, eventually
                     # update the add_number
-                    add_number = self._check_cur_split_found(cur_split_found,\
+                    add_number, produce_warning = self._check_cur_split_found(\
+                                                             cur_split_found,\
+                                                             produce_warning,\
+                                                             add_number,\
+                                                             size_nr,\
                                                              using_nx = True,\
                                                              using_ny = True)
+
 
                     #{{{ Check if the split was found the first go.
                     # This will be used if self_allow_size_modification is
@@ -1399,65 +1419,10 @@ class basic_runner(object):
             #}}}
         else:
             #{{{ If NXPE is set
-            self._check_NXPE_or_NYPE()
-    # FIXME: YOU ARE HERE, IMPLIMENT THE FUNCTION AND ADD TO THE RUN
-    #        STRING. TEST
-    #{{{_check_NXPE_or_NYPE
-    def _check_NXPE_or_NYPE(self, type_txt):
-            for size_nr in range(len(self._nx)):
-                # Check NXPE
-                print("Checking nx =" + str(self._nx[size_nr]) +\
-                      " with NXPE = " + str(self._NXPE[size_nr]))
-                # Check to see if succeeded
-                init_split_found = False
-                cur_split_found  = False
-                add_number = 1
-                # Counter to see how many times the while loop has been
-                # called
-                count = 0
-
-                #{{{While cur_split_found == False
-                while cur_split_found == False:
-                    # The same check as below is performed internally in
-                    # BOUT++ (see boutmesh.cxx under
-                    # if((MX % NXPE) != 0)
-                    MX = self._nx[size_nr] - 2*local_MXG
-                    # self._nproc is called NPES in boutmesh
-                    if (MX % self._NXPE[size_nr]) == 0:
-                        # If the test passes
-                        cur_split_found = True
-
-                    # Check if cur_split_found is true, eventually
-                    # update the add_number
-                    add_number = self._check_cur_split_found(cur_split_found,\
-                                                             using_nx = True,\
-                                                             using_ny = False)
-
-                    #{{{ Check if the split was found the first go.
-                    # This will be used if self_allow_size_modification is
-                    # off, or if we are using a grid file
-                    if count == 0 and cur_split_found:
-                        init_split_found = True
-                    #}}}
-
-                    # Add one to the counter
-                    count += 1
-                #}}}
-
-                # Check if initial split succeeded
-                self._check_init_split_found(init_split_found, size_nr,\
-                                             test_nx = True, test_ny = False,
-                                             produce_warning = produce_warning)
-    #}}}
+            # Check if NXPE and NYPE is set consistently with nproc
+            self._check_NXPE_or_NYPE(type_txt = 'NXPE', local_MXG = local_MXG)
+            self._check_NXPE_or_NYPE(type_txt = 'NYPE')
             #}}}
-
-  MY = ny;
-  MYSUB = MY / NYPE;
-  if((MY % NYPE) != 0) {
-    throw BoutException("\tERROR: Cannot split %d Y points equally between %d processors\n",
-                        MY, NYPE);
-  }
-
 #}}}
 
 #{{{_get_possibilities
@@ -1606,6 +1571,8 @@ class basic_runner(object):
             (self._mxstep,     "solver", "mxstep")           ,\
             (self._MXG,        "",       "MXG")              ,\
             (self._MYG,        "",       "MYG")              ,\
+            (self._NXPE,       "",       "NXPE")             ,\
+            (self._NYPE,       "",       "NYPE")             ,\
             (self._grid_file,  "",       "grid")             ,\
             (self._ddx_first,  "ddx",    "first")            ,\
             (self._ddx_second, "ddx",    "second")           ,\
@@ -1938,7 +1905,8 @@ class basic_runner(object):
 #{{{ Functions called by _get_correct_domain_split
     #{{{_check_cur_split_found
     def _check_cur_split_found(self, cur_split_found,\
-                               add_number,\
+                               produce_warning,\
+                               add_number, size_nr,\
                                using_nx = None, using_ny = None):
         #{{{docstring
         """
@@ -1949,13 +1917,17 @@ class basic_runner(object):
         Input:
         cur_split_found     -   whether or not the current split was
                                 found
+        produce_warning     -   if a warning should be produced
         add_number          -   the number added to nx and/or ny
+        size_nr             -   index of the current nx and/or ny
         using_nx            -   if add_number should be added to nx
         using_ny            -   if add_number should be added to ny
 
         Output:
         add_number          -   the number to eventually be added the
                                 next time
+        produce_warning     -   whether or not a warning should be
+                                produced
         """
         #}}}
 
@@ -1963,19 +1935,27 @@ class basic_runner(object):
         if cur_split_found == False:
             # Produce a warning
             produce_warning = True
-            self._nx[size_nr] += add_number
-            self._ny[size_nr] += add_number
+            if using_nx:
+                self._nx[size_nr] += add_number
+            if using_ny:
+                self._ny[size_nr] += add_number
+
             print("Mismatch, trying "+ str(self._nx[size_nr]) +\
                   "*" + str(self._ny[size_nr]))
             add_number = (-1)**(abs(add_number))\
                          *(abs(add_number) + 1)
+        else:
+            # If no warnings has been produced so far
+            if not(produce_warning):
+                produce_warning = False
 
-        return add_number
+        return add_number, produce_warning
     #}}}
 
-    #{{{_check_init_spilt_found
+    #{{{_check_init_split_found
     def _check_init_split_found(self, init_split_found, size_nr,\
-                                test_nx = None, test_ny = None):
+                                test_nx = None, test_ny = None,\
+                                produce_warning = None):
         #{{{docstring
         """
         Check if the initial split was a good choice when checking the grids.
@@ -2039,6 +2019,99 @@ class basic_runner(object):
             self._warning_printer(message)
             self._warnings.append(message)
         #}}}
+    #}}}
+
+    #{{{_check_NXPE_or_NYPE
+    def _check_NXPE_or_NYPE(self, type_txt  = None,\
+                            local_MXG       = None,\
+                            produce_warning = None\
+                            ):
+        """
+        Check if NXPE or NYPE is consistent with nproc
+
+        Input
+        type_txt        -   can be either 'NXPE' or 'NYPE' and is specifying
+                            whether NXPE or NYPE should be checked
+        local_MXG       -   the current MXG
+        produce_warning -   whether or not a warning should be produced
+        """
+
+        for size_nr in range(len(self._nx)):
+            # Check the type
+            if type_txt == 'NXPE':
+                print("Checking nx =" + str(self._nx[size_nr]) +\
+                      " with NXPE = " + str(self._NXPE[size_nr]))
+            elif type_txt == 'NYPE':
+                print("Checking ny =" + str(self._nx[size_nr]) +\
+                      " with NYPE = " + str(self._NYPE[size_nr]))
+            # Check to see if succeeded
+            init_split_found = False
+            cur_split_found  = False
+            add_number = 1
+            # Counter to see how many times the while loop has been
+            # called
+            count = 0
+
+            #{{{While cur_split_found == False
+            while cur_split_found == False:
+                # The same check as below is performed internally in
+                # BOUT++ (see boutmesh.cxx under
+                # if((MX % NXPE) != 0)
+                # and
+                # if((MY % NYPE) != 0)
+                if type_txt == 'NXPE':
+                    MX = self._nx[size_nr] - 2*local_MXG
+                    # self._nproc is called NPES in boutmesh
+                    if (MX % self._NXPE[size_nr]) == 0:
+                        # If the test passes
+                        cur_split_found = True
+                    # Check if cur_split_found is true, eventually
+                    # update the add_number
+                    add_number, produce_warning = self._check_cur_split_found(\
+                                                             cur_split_found,\
+                                                             produce_warning,\
+                                                             add_number,\
+                                                             size_nr,\
+                                                             using_nx = True,\
+                                                             using_ny = False)
+                elif type_txt == 'NYPE':
+                    MY = self._ny[size_nr]
+                    # self._nproc is called NPES in boutmesh
+                    if (MY % self._NYPE[size_nr]) == 0:
+                        # If the test passes
+                        cur_split_found = True
+                    # Check if cur_split_found is true, eventually
+                    # update the add_number
+                    add_number, produce_warning = self._check_cur_split_found(\
+                                                             cur_split_found,\
+                                                             produce_warning,\
+                                                             add_number,\
+                                                             size_nr,\
+                                                             using_nx = True,\
+                                                             using_ny = False)
+
+
+
+                #{{{ Check if the split was found the first go.
+                # This will be used if self_allow_size_modification is
+                # off, or if we are using a grid file
+                if count == 0 and cur_split_found:
+                    init_split_found = True
+                #}}}
+
+                # Add one to the counter
+                count += 1
+            #}}}
+
+            # Check if initial split succeeded
+            if type_txt == 'NXPE':
+                self._check_init_split_found(init_split_found, size_nr,\
+                                             test_nx = True, test_ny = False,
+                                             produce_warning = produce_warning)
+            elif type_txt == 'NYPE':
+                self._check_init_split_found(init_split_found, size_nr,\
+                                             test_nx = True, test_ny = False,
+                                             produce_warning = produce_warning)
     #}}}
 #}}}
 
