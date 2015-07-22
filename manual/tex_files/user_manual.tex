@@ -62,6 +62,7 @@
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
 
 \newcommand{\bb}[1]{\mathbf{#1}}
+\newcommand{\ve}[1]{\ensuremath{\boldsymbol{#1}}}
 
 %% commands for boxes with important notes
 \newlength{\notewidth}
@@ -1294,8 +1295,8 @@ This is a list of the differential methods for each direction. These are set in
 the BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but
 can be overridden for individual operators. For each direction, numerical
 methods can be specified for first and second central difference terms,
-upwinding terms of the form $\deriv{f}{t} = \underline{v}\cdot\nabla f$, and
-flux terms of the form $\deriv{f}{t} = \nabla\cdot\left(\underline{v}f\right)$.
+upwinding terms of the form $\deriv{f}{t} = \ve{v}\cdot\nabla f$, and
+flux terms of the form $\deriv{f}{t} = \nabla\cdot\left(\ve{v}f\right)$.
 By default the flux terms are just split into a central and an upwinding term.
 
 In brackets are the code used to specify the method in BOUT.inp. A list of
@@ -1517,9 +1518,11 @@ spent in different parts of the code.
 \begin{itemize}
 \item \code{Calc} is the time spent doing calculations such as multiplications,
     derivatives etc
-\item \code{Inv} is the time spent in inversion code (i.e. inverting Laplacians), including any communication
+\item \code{Inv} is the time spent in inversion code (i.e. inverting 
+Laplacians), including any communication
 which may be needed to do the inversion.
-\item \code{Comm} is the time spent communicating variables (outside the inversion routine)
+\item \code{Comm} is the time spent communicating variables (outside the 
+inversion routine)
 \item \code{I/O} is the time spent writing dump and restart files to disk. Most
     of the time this should not be an issue
 \item \code{SOLVER} is the time spent in the implicit solver code.
@@ -1927,7 +1930,8 @@ may be very large). To read in only a subset, there are several optional
 keywords with \code{[min,max]} ranges:
 %
 \begin{verbatim}
-IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], tind=[300,399])
+IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], 
+tind=[300,399])
 Reading from .//BOUT.dmp.0.nc: [10-20][4-4] -> [10-20][2-2]
 IDL> help, ni
 NI              FLOAT     = Array[11, 1, 32, 100]
@@ -2021,7 +2025,8 @@ has been read into IDL as a 4D [x,y,z,t] variable:
 \begin{itemize}
 \item \code{fft\_deriv} and \code{fft\_integrate} which differentiate and
     integrate periodic functions.
-\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request integers, floats and a yes/no answer from the user respectively.
+\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request 
+integers, floats and a yes/no answer from the user respectively.
 \item \code{showdata} animates 1 or 2-dimensional variables. Useful for quickly
     displaying results in different ways. This is useful for taking a quick
     look at the data, but can also produce bitmap outputs for turning into a
@@ -2061,7 +2066,9 @@ image of the resulting plot.
 \item \code{moment\_xyzt} takes a 4D variable (such as those from
     \code{collect}), and calculates RMS, DC and AC components in the Z
     direction.
-\item \code{safe\_colors} A general routine for IDL which arranges the color table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue). Useful for plotting, and
+\item \code{safe\_colors} A general routine for IDL which arranges the color 
+table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue). 
+Useful for plotting, and
 used by many other routines in this library.
 \end{itemize}
 %
@@ -2699,7 +2706,9 @@ q2\pi i\right)
 \includegraphics[width=0.48\textwidth,
 keepaspectratio]{figs/init_noballoon.png}
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning transform, showing discontinuity at the matching location {\bf Right}: with ballooning transform}
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning 
+transform, showing discontinuity at the matching location {\bf Right}: with 
+ballooning transform}
 %
 \label{fig:ballooning}
 %
@@ -2799,14 +2808,16 @@ Name & Description \\
 \hline
 abs(x) & Absolute value $\left|x\right|$\\
 asin(x), acos(x), atan(x), atan(y,x) & Inverse trigonometric functions \\
-ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, fig~\ref{fig:ballooning}) \\
+ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, 
+fig~\ref{fig:ballooning}) \\
 ballooning(x,n) & Ballooning transform, using $n$ terms (default 3) \\
 cos(x) & Cosine\\
 cosh(x) & Hyperbolic cosine\\
 exp(x) & Exponential \\
 tanh(x) & Hyperbolic tangent \\
 gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
-gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / \left(w\sqrt{2\pi}\right)$\\
+gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / 
+\left(w\sqrt{2\pi}\right)$\\
 H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 log(x) & Natural logarithm \\
 max(x,y,...) & Maximum (variable arguments) \\
@@ -2992,7 +3003,8 @@ Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
 \begin{lstlisting}[firstnumber=100]
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   if(args.size() != 1) {
-    output << "FieldFactory error: Incorrect number of arguments to sinh function. Expecting 1, got " << args.size() << endl;
+    output << "FieldFactory error: Incorrect number of arguments to sinh 
+function. Expecting 1, got " << args.size() << endl;
     return NULL;
   }
 
@@ -3119,7 +3131,8 @@ This returns the next token, and setting the variable
 \lstinline!BoutReal curval!
 %
  is set to the value of the token
-\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything which starts with a letter, and
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything 
+which starts with a letter, and
   contains only letters, numbers, and underscores. The string is stored in the
   variable
 %
@@ -3653,8 +3666,10 @@ variables
 \begin{align}
 \mathcal{J} = \left(%
 \begin{array}{cc}
-\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
-\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
+\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & 
+\frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
+\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & 
+\frac{\partial}{\partial v}\frac{\partial v}{\partial t}
 \end{array}
 %
 \right) = \left(%
@@ -4117,15 +4132,16 @@ Currently implemented boundary conditions are:
 \item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
 \item \code{zerolaplace2} - Laplacian = 0, using coefficients from the
     Laplacian inversion and Delp2 operator.
-\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries only)
+\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries 
+only)
 \end{itemize}
 %
 The zero- or constant-Laplacian boundary conditions works as follows:
 %
-\begin{eqnarray*}
+\begin{align*}
 \nabla_\perp^2 f =& 0 \\ &\simeq& g^{xx}\frac{\partial^2 f}{\partial x^2} +
     g^{zz}\frac{\partial^2 f}{\partial z^2}
-\end{eqnarray*}
+\end{align*}
 %
 which when Fourier transformed in $z$ becomes:
 %
@@ -4150,9 +4166,11 @@ one modifier can be used. Currently the following are available:
 \begin{itemize}
 \item \code{relax} - Relaxing boundaries. Evolve the variable towards the given
     boundary condition at a given rate
-\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates, rather than
+\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates, 
+rather than
   field-aligned
-\item \code{width} - Modifies the width of the region over which the boundary condition is applied
+\item \code{width} - Modifies the width of the region over which the boundary 
+condition is applied
 \end{itemize}
 %
 These are described in the following subsections.
@@ -4369,10 +4387,12 @@ class BoundaryRegion {
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
 
   virtual void first() = 0;
-  virtual void next() = 0; // Loop over every element from inside out (in X or Y first)
+  virtual void next() = 0; // Loop over every element from inside out (in X or 
+Y first)
   virtual void nextX() = 0; // Just loop over X
   virtual void nextY() = 0; // Just loop over Y
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this with nested nextX, nextY
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this 
+with nested nextX, nextY
 };
 \end{lstlisting}
 %
@@ -4486,7 +4506,8 @@ void BoundaryNeumann::apply(Field2D &f) {
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - bndry->by][z];
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - 
+bndry->by][z];
 }
 \end{lstlisting}
 %
@@ -4645,7 +4666,8 @@ to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
 \index{BoundaryDirichlet}
 %
 \begin{lstlisting}[firstnumber=13]
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> &args) {
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> 
+&args) {
   if(!args.empty()) {
     // First argument should be a value
     stringstream ss;
@@ -4769,14 +4791,17 @@ will be printed and the default values used.
 \item X and Y grid sizes (integers) \code{nx} and \code{ny} {\bf REQUIRED}
 \item Differencing quantities in 2D arrays \code{dx[nx][ny]} and
     \code{dy[nx][ny]}.  If these are not found they will be set to 1.
-\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]}, \code{g22[nx][ny]},
+\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]}, 
+\code{g22[nx][ny]},
   and \code{g33[nx][ny]}. If not found, these will be set to 1.
 %
 \index{metric tensor}
 %
-\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]}, \code{g13[nx][ny]},
+\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]}, 
+\code{g13[nx][ny]},
   and \code{g23[nx][ny]}. If not found, these will be set to 0.
-\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for dpsi derivatives
+\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for 
+dpsi derivatives
   in sheared coordinates. If not found, set to zero.
 \end{itemize}
 %
@@ -4789,9 +4814,11 @@ situations.
     given, both are set to nx (i.e. all points in closed ``core'' region). If
     only \code{ixseps1} is found, \code{ixseps2} is set to nx, and if only
     ixseps2 is found, ixseps1 is set to -1.
-\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and
+\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2}, 
+\code{jyseps2\_1}, and
   \code{jyseps2\_2}
-\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in the ``core''
+\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in 
+the ``core''
   region between indices \code{jyseps2\_2}, and \code{jyseps1\_1 + 1}, if
   enabled in the options file. If not given, this is set to zero.
 \end{itemize}
@@ -4820,7 +4847,8 @@ output from different codes and converting into input to BOUT++.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/grid_gen.pdf}
-\caption{Generation of BOUT++ grid files. In red are the file formats, and in black the conversion routines. Blue are external codes.}
+\caption{Generation of BOUT++ grid files. In red are the file formats, and in 
+black the conversion routines. Blue are external codes.}
 %
 \label{fig:gridgen}
 %
@@ -4879,7 +4907,9 @@ configuration.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/topology_cross_section.pdf}
-\caption{Deconstruction of a poloidal tokamak cross-section into logical domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
+\caption{Deconstruction of a poloidal tokamak cross-section into logical 
+domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, 
+\code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
 %
 \label{fig:topology_cross_section}
 %
@@ -4917,7 +4947,8 @@ boundaries.}
 \begin{figure}[htbp!]
 \centering \includegraphics[width=\textwidth,
 keepaspectratio]{figs/topology_schematic.pdf}
-\caption{Schematic illustration of domain decomposition and communication in BOUT++ with \code{ixseps1 = ixseps2}.}
+\caption{Schematic illustration of domain decomposition and communication in 
+BOUT++ with \code{ixseps1 = ixseps2}.}
 %
 \label{fig:topology_schematic}
 %
@@ -5247,7 +5278,7 @@ When going through this section, it may help to refer to the finished code,
 which is given in the file \texttt{mhd.cxx} in the BOUT++ examples directory.
 The equations to be solved are:
 %
-\begin{eqnarray*}
+\begin{align*}
 \deriv{\rho}{t} =& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
     \deriv{p}{t} =& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
     \deriv{\mathbf{v}}{t} =& -\mathbf{v}\cdot\nabla\mathbf{v} +
@@ -5255,7 +5286,7 @@ The equations to be solved are:
     \left(\nabla\times\mathbf{B}\right)\times\mathbf{B}\right) \\
     \deriv{\mathbf{B}}{t} =&
     \nabla\times\left(\mathbf{v}\times\mathbf{B}\right)
-\end{eqnarray*}
+\end{align*}
 %
 There are two ways to specify a set of equations to solve in BOUT++. For
 advanced users, an object-oriented interface is available and described in
@@ -5918,7 +5949,8 @@ e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
 \item Add variables to the file
 %
 \begin{lstlisting}
-mydata.add(variable, "name") ;  // Not evolving. Every time the file is written, this will be overwritten
+mydata.add(variable, "name") ;  // Not evolving. Every time the file is 
+written, this will be overwritten
 mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
 \end{lstlisting}
 %
@@ -5959,17 +5991,17 @@ will be illustrated using the \texttt{reconnect-2field} example. This is
 solving equations for $A_{||}$ and vorticity $U$
 
 %
-\begin{eqnarray*}
+\begin{align*}
 \deriv{U}{t} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
     \nabla_{||}\left(j_{||} / B\right) \\ \deriv{A_{||}}{t} =&
     -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}
-\end{eqnarray*}
+\end{align*}
 %
 with $\phi$ and $j_{||}$ given by
 %
-\begin{eqnarray*}
+\begin{align*}
 U =& \frac{1}{B}\nabla_\perp^2\phi \\ j_{||} =& -\nabla_\perp^2 A_{||}
-\end{eqnarray*}
+\end{align*}
 %
 First create the variables which are going to be evolved, ensure they're
 communicated
@@ -6211,14 +6243,20 @@ lap->setFlags(Flags_Value);
 \hline
 Name & Meaning & Default value\\
 \hline
-\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} (parallel) \\
-\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, if using Fourier solver & 0\\
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} 
+(parallel) \\
+\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, 
+if using Fourier solver & 0\\
 \code{maxmode} & Fi􏰀lter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
 \code{all\_terms} & Include fi􏰀rst derivative terms & \code{true}\\
-\code{global\_flags} & Sets global inversion options See table \ref{tab:laplaceglobalflags}& \code{0}\\
-\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  See table \ref{tab:laplaceBCflags} & \code{0}\\
-\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  See table \ref{tab:laplaceBCflags}& \code{0}\\
-\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
+\code{global\_flags} & Sets global inversion options See table 
+\ref{tab:laplaceglobalflags}& \code{0}\\
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  
+See table \ref{tab:laplaceBCflags} & \code{0}\\
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  
+See table \ref{tab:laplaceBCflags}& \code{0}\\
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  
+See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
 \code{include\_yguards} & Perform inversion in $y$-boundary guard
 cells & \code{true}\\
 \hline
@@ -6241,8 +6279,10 @@ Flag & Meaning \\
 0 &  No global option set \\
 1 &  zero DC component (Fourier solvers) \\
 2 &  set initial guess to 0 (iterative solvers) \\
-4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 128}\\
-8 & Use 4th order differencing (Apparently not actually implemented anywhere!!!) \\
+4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 
+128}\\
+8 & Use 4th order differencing (Apparently not actually implemented 
+anywhere!!!) \\
 16 & Set constant component ($k_x = k_z = 0$) to zero \\
 \hline
 \end{tabular}
@@ -6264,19 +6304,26 @@ Flag & Meaning \\
 0 &  Dirichlet (Set boundary to 0) \\
 1 &  Neumann on DC component (set gradient to 0) \\
 2 &  Neumann on AC component (set gradient to 0) \\
-4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial x^2}+k_z^2$ vanishes/decays)\\
-8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order now) \\
-16 & Set boundary condition to values in boundary guard cells of second argument, \code{x0}, of
+4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial 
+x^2}+k_z^2$ vanishes/decays)\\
+8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order 
+now) \\
+16 & Set boundary condition to values in boundary guard cells of second 
+argument, \code{x0}, of
 %
 \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
 %
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
-32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} in
+.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
+Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
+32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} 
+in
 %
 \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
 %
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
-64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial x^2}$ vanishes/decays) \\
+.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
+Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
+64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial 
+x^2}$ vanishes/decays) \\
 128 &  Assert that there is only one guard cell in the
 $x$-boundary \\
 256 &  DC value is set to parallel gradient, $\nabla_\parallel f$ \\
@@ -6307,7 +6354,8 @@ Flag & Meaning \\
 32 & Not used currently \\
 64 & Set width of boundary to 1 (default is \code{MXG}) \\
 128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
-256 & Attempt to set zero laplacian AC component on inner boundary by combining \\
+256 & Attempt to set zero laplacian AC component on inner boundary by combining 
+\\
     & 2nd and 4th-order differencing at the boundary. \\
     & Ignored if tridiagonal solver used. \\
 512 & Zero laplacian AC on outer boundary \\
@@ -6568,12 +6616,14 @@ categories:
       (WENO)\cite{jiang-1997}
   \end{itemize}
 %
-\item Flux conserving and limiting methods for terms of the form $\frac{d}{dx}\left(v_x f\right)$
+\item Flux conserving and limiting methods for terms of the form 
+$\frac{d}{dx}\left(v_x f\right)$
   %
   \begin{itemize}
   \item \texttt{SPLIT}: split into upwind and central terms
       $\frac{d}{dx}\left(v_x f\right) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}$
-  \item \texttt{NND}: Non-oscillatory, containing No free parameters and Dissipative (NND) scheme\cite{nnd-2010}
+  \item \texttt{NND}: Non-oscillatory, containing No free parameters and 
+Dissipative (NND) scheme\cite{nnd-2010}
   \end{itemize}
 %
 \end{itemize}
@@ -6675,7 +6725,7 @@ The correction factor is then calculated from \texttt{d2x} using
 
 
 
-\subsection{Operators}
+\subsection{General operators}
 %
 These are differential operators which are for a general coordinate system.
 %
@@ -6684,8 +6734,10 @@ These are differential operators which are for a general coordinate system.
 \begin{array}{rclrcl}
 \mathbf{v} =& \nabla f &\qquad \code{Vector} =& \code{Grad(Field)} \\
 f =& \nabla\cdot\mathbf{a} &\qquad \code{Field} =& \code{Div(Vector)} \\
-\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =& \code{Curl(Vector)} \\
-f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector, Field)} \\
+\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =& 
+\code{Curl(Vector)} \\
+f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector, 
+Field)} \\
 \mathbf{v} =& \mathbf{a}\cdot\nabla\mathbf{c} &\qquad \code{Vector} =&
 \code{V\_dot\_Grad(Vector, Vector)} \\
 f =& \nabla^2 f &\qquad \code{Field} =& \code{Laplace(Field)}
@@ -6693,13 +6745,13 @@ f =& \nabla^2 f &\qquad \code{Field} =& \code{Laplace(Field)}
 %
 \end{align}
 %
-\begin{eqnarray*}
+\begin{align*}
 \nabla\phi =& \deriv{\phi}{u^i}\nabla u^i \Rightarrow \left(\nabla\phi\right)_i
     = \deriv{\phi}{u^i} \\ \nabla\cdot A =& =
     \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}A_j\right) \\ \nabla^2\phi =&
     \Gamma^i\deriv{\phi}{u^i} + g^{ij}\frac{\partial^2\phi}{\partial
     u^i\partial u^j} \\
-\end{eqnarray*}
+\end{align*}
 %
 where we have defined
 %
@@ -6708,7 +6760,11 @@ where we have defined
 \end{align*}
 %
 \textbf{not} to be confused with the Cristoffel symbol of the second kind
+%
 
+
+
+\subsection{Clebsch operators}
 Another set of operators assume that the equilibrium magnetic field is written
 in Clebsch form as
 %
@@ -6726,7 +6782,7 @@ where
 %
 is the background \emph{equilibrium} magnetic field.
 %
-\begin{table}[htb!]
+\begin{table}[h!]
 \centering
 \caption{Clebsch operators}
 %
@@ -6751,40 +6807,72 @@ B_0\partial^0_{||}\left(\frac{f}{B_0}\right)$ \\
 \\
 \code{Delp2} & Perpendicular Laplacian, neglecting all $y$ derivatives \\
              & The \code{Laplacian} solver performs the inverse operation \\
+\\
+\code{brackets} & Poisson brackets \\
+                & The Arakawa option, neglects the parallel $y$ derivatives\\
 \hline
 \end{tabular}
 %
 \end{table}
 %
-\begin{eqnarray*}
+\newpage
+
+We have that
+%
+\begin{align*}
 \mathbf{b}_0\cdot\nabla\phi\times\nabla A =&
     \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} -
         g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x}
         - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} +
         \left(g_{xy}\deriv{\phi}{y} -
     g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
-\end{eqnarray*}
+\end{align*}
 %
 \begin{align}
-\nabla_\perp \equiv \nabla - \underline{b}\left(\underline{b}\cdot\nabla\right)
-\qquad \underline{b}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
+\nabla_\perp \equiv \nabla - \ve{b}\left(\ve{b}\cdot\nabla\right)
+\qquad \ve{b}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
 \end{align}
 %
 \begin{align}
-\underline{b} = \frac{1}{JB}\underline{e}_y = \frac{1}{JB}\left[g_{xy}\nabla x
+\ve{b} = \frac{1}{JB}\ve{e}_y = \frac{1}{JB}\left[g_{xy}\nabla x
 + g_{yy}\nabla y + g_{yz}\nabla z\right]
 \end{align}
 %
-In a Clebsch coordinate system $\underline{B} = \nabla z \times \nabla x =
-\frac{1}{J}\underline{e}_y$, $g_{yy} = \underline{e}_y\cdot\underline{e}_y =
+In a Clebsch coordinate system $\ve{B} = \nabla z \times \nabla x =
+\frac{1}{J}\ve{e}_y$, $g_{yy} = \ve{e}_y\cdot\ve{e}_y =
 J^2B^2$, and so the $\nabla y$ term cancels out:
 %
-\begin{eqnarray*}
+\begin{align*}
 \nabla_\perp =& \nabla x\left(\deriv{}{x} -
-\frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) \\ &+& \nabla
+\frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) + \nabla
     z\left(\deriv{}{z} - \frac{g_{yz}}{\left(JB\right)^2}\deriv{}{y}\right)
-\end{eqnarray*}
+\end{align*}
 %
+
+
+
+\subsection{The bracket operators}
+%
+The bracket operator \verb@brackets(phi, f, method)@ aims to differentiate 
+equations on the form
+%
+\begin{align*}
+    -\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f
+\end{align*}
+
+
+\note{
+The bracket operators in BOUT++ are using Clebsch coordinates, and 
+returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather 
+than $-\nabla\phi\times\ve{b}\cdot\nabla f$.
+}
+\\
+\\
+Notice that when we use the Arakawa scheme, $y$-derivatives are neglected. 
+An example of usage of the brackets can be found in for example 
+\file{examples/MMS/advection} or \file{examples/blob2d}.
+
+
 
 
 

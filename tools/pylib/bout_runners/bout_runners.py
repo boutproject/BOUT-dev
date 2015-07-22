@@ -1147,7 +1147,7 @@ class basic_runner(object):
             if not(lengths.count(lengths[0]) == len(lengths)):
                 message = "The length of the second index of the elements"+\
                           " of series_add must be the same"
-                self._errors.append(message)
+                self._errors.append("TypeError")
                 raise TypeError(message)
         #}}}
 
@@ -3158,7 +3158,7 @@ class PBS_runner(basic_runner):
                 print("\nSubmission failed, printing output\n")
                 print(output)
                 self._errors.append("RuntimeError")
-                message = "The submission failed with exit code" + str(status) +\
+                message = "The submission failed with exit code " + str(status) +\
                           ", see the output above"
                 raise RuntimeError(message)
 
