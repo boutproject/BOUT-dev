@@ -191,7 +191,7 @@ SlepcSolver::SlepcSolver(Options *options){
 
   // Solver to advance the state of the system
   options->get("selfSolve", selfSolve, false); 
-  if(!selfSolve) {
+  if(!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
   }

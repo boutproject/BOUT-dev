@@ -106,7 +106,7 @@ class SlepcSolver : public Solver {
   }
 
   //Set operations
-  void setJacobian(Jacobian j){advanceSolver->setJacobian(j);}
+  void setJacobian(Jacobian j){if(!selfSolve){advanceSolver->setJacobian(j);}}
   void setSplitOperator(rhsfunc fC, rhsfunc fD){
     if(selfSolve){Solver::setSplitOperator(fC,fD);}else{advanceSolver->setSplitOperator(fC,fD);}
   }
@@ -116,16 +116,16 @@ class SlepcSolver : public Solver {
     if(selfSolve){return false;}else{return advanceSolver->constraints();}
   }
   void constraint(Field2D &v, Field2D &C_v, const char* name){
-    advanceSolver->constraint(v,C_v,name);
+    if(!selfSolve){advanceSolver->constraint(v,C_v,name);}
   }
   void constraint(Field3D &v, Field3D &C_v, const char* name){
-    advanceSolver->constraint(v,C_v,name);
+    if(!selfSolve){advanceSolver->constraint(v,C_v,name);}
   }
   void constraint(Vector2D &v, Vector2D &C_v, const char* name){
-    advanceSolver->constraint(v,C_v,name);
+    if(!selfSolve){advanceSolver->constraint(v,C_v,name);}
   }
   void constraint(Vector3D &v, Vector3D &C_v, const char* name){
-    advanceSolver->constraint(v,C_v,name);
+    if(!selfSolve){advanceSolver->constraint(v,C_v,name);}
   }
 
   //Override count operations
@@ -136,8 +136,12 @@ class SlepcSolver : public Solver {
     if(selfSolve){return Solver::n3Dvars();}else{return advanceSolver->n3Dvars();}
   }
   //Time steps
-  void setMaxTimestep(BoutReal dt){advanceSolver->setMaxTimestep(dt);}
-  BoutReal getCurrentTimestep(){return advanceSolver->getCurrentTimestep();}
+  void setMaxTimestep(BoutReal dt){
+    if(selfSolve){Solver::setMaxTimestep(dt);}else{advanceSolver->setMaxTimestep(dt);}
+  }
+  BoutReal getCurrentTimestep(){
+    if(selfSolve){return Solver::max_dt;}{return advanceSolver->getCurrentTimestep();}
+  }
 
   int compareState;
 
