@@ -274,16 +274,17 @@ class DataFile_netCDF(DataFile):
         try:
             var = self.handle.variables[varname]
         except KeyError:
-            return None
+            raise ValueError("No such variable")
         return var.dimensions
         
     def ndims(self, varname):
         """Number of dimensions for a variable."""
-        if self.handle == None: return None
+        if self.handle is None:
+           raise ValueError("File not open")
         try:
             var = self.handle.variables[varname]
         except KeyError:
-            return None
+            raise ValueError("No such variable")
         return len(var.dimensions)
     
     def size(self, varname):
@@ -563,7 +564,7 @@ class DataFile_HDF5(DataFile):
         try:
             var = self.handle[varname]
         except KeyError:
-            return None
+            raise ValueError("Variable not found")
         return len(var.shape)
     
     def size(self, varname):
