@@ -149,6 +149,7 @@ SlepcSolver::SlepcSolver(Options *options){
   initialised = false;
   f0=NULL;
   f1=NULL;
+  stIsShell=PETSC_FALSE;
 
   // Slepc settings in the Solver section
   
@@ -158,6 +159,8 @@ SlepcSolver::SlepcSolver(Options *options){
   options->get("maxIt",maxIt,PETSC_DECIDE);
 
   options->get("mpd", mpd, PETSC_DECIDE);
+
+  options->get("ddtMode", ddtMode, true);
 
   options->get("targRe",targRe,0.0); // Target frequency when using user eig comparison
   options->get("targIm",targIm,0.0); // Target growth rate when using user eig comparison
@@ -178,7 +181,6 @@ SlepcSolver::SlepcSolver(Options *options){
   options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
 
   options->get("userWhich",userWhich,userWhichDefault);
-  options->get("ddtMode", ddtMode, true);
 
   //Generic settings
   bool useInitialDefault = true;
@@ -191,6 +193,15 @@ SlepcSolver::SlepcSolver(Options *options){
 
   // Solver to advance the state of the system
   options->get("selfSolve", selfSolve, false); 
+  if(ddtMode && !selfSolve){
+    //We need to ensure this so that we don't try to use
+    //advanceSolver elsewhere. The other option would be to
+    //create advanceSolver below in ddtMode but we just don't
+    //use it.
+    output<<"Overridding selfSolve as ddtMode = true"<<endl;
+    selfSolve = true;
+  }
+
   if(!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
@@ -217,7 +228,7 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   //Report initialisation
   output.write("Initialising SLEPc-3.4 solver\n");  
-  if(selfSolve){
+  if(selfSolve && !ddtMode){
     Solver::init(restarting,NOUT,TIMESTEP);
     
     //If no advanceSolver then can only advance one step at a time
@@ -240,7 +251,7 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   localSize=getLocalN();
 
   //Also create vector for derivs etc. if SLEPc in charge of solving
-  if(selfSolve){    
+  if(selfSolve && !ddtMode){    
     // Allocate memory
     f0 = new BoutReal[localSize];
     f1 = new BoutReal[localSize];
