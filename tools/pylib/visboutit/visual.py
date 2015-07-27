@@ -310,12 +310,12 @@ def z_shift_tol(nx,ny,zshift,tol):
 
 # Return spacial part of 4d specified variable
 def var3d(name,t):
-	var = collect(name,path='../data')[t,:]
+	var = collect(name)[t,:]
 	return var
 
 # Collect specified variable and return number of time slices
 def time_max(name):
-	var = collect(name, path='../data')
+	var = collect(name)
 	max_t = var.shape[0]
 	return max_t
 
@@ -415,8 +415,8 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
     if min_imp == False:
         min_imp = 0
     #Set Width and Height of image ###### CHANGE TO READ FROM SETUP FILE? #####
-    width = set.img_width
-    height = set.img_height
+    width = 500
+    height = 500
     #Launch visit
     sys.path.insert(0,visit_dir)
     import visit
