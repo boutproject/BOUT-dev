@@ -2,26 +2,24 @@
 # Create image seqeuence from VisIt Session File
 import visual
 import sys
-import os
-import visit
+import os 
 import numpy as np
+import ConfigParser as cp
 
 name = str(raw_input('Please enter variable name: '))
 session_name = str(raw_input('Please Enter session name: '))
 use_max = int(raw_input('Use max from max input file? (0 for No, 1 for Yes): '))
 use_min = int(raw_input('Use min from min input file? (0 for No, 1 for Yes): '))
 
-#Change working directory to Parent of VisBOUTIt
-work_dir = os.getcwd()
-os.chdir(work_dir + '/../')
+#Get the working directory
 work_dir = os.getcwd()
 
 #Get end time variable
 i = 0
-path = os.path.exists("batch/" + name + "_batch_%d.vts" % i)
+path = os.path.exists(work_dir + "/batch/" + name + "_batch_%d.vts" % i)
 while path == True:
         i +=1
-        path = os.path.exists("batch/" + name + "_batch_%d.vts" % i)
+        path = os.path.exists(work_dir + "/batch/" + name + "_batch_%d.vts" % i)
 
 t = i
 
@@ -33,9 +31,9 @@ if not os.path.exists("images"):
 img_dir = work_dir + "/images"
 
 #Launch VisIt
-sys.path.insert(0,"/hwdisks/home/pcn500/Downloads/visit2_9_2.linux-x86_64/2.9.2/linux-x86_64/lib/site-packages")
+sys.path.insert(0,visual.visit_dir)
 import visit
-visit.Launch(vdir="/hwdisks/home/pcn500/Downloads/visit2_9_2.linux-x86_64/bin")
+visit.Launch(vdir=visual.visit_bin)
 
 #Max min
 if use_max == 0:

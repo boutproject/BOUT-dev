@@ -26,10 +26,14 @@ name = 'P'
 #Get the working dir
 work_dir = os.getcwd()
 
-#Set the working dir to the Parent of the VisBOUTIt folder
-os.chdir(work_dir +'/../')
+
+'''
+#Not needed;; Set the working dir to the Parent of the VisBOUTIt folder
+#os.chdir(work_dir +'/../')
 #Update the working dir
 work_dir = os.getcwd()
+'''
+
 
 # Find the max time value
 max_t = visual.time_max(name)

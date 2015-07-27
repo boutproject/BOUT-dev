@@ -1,15 +1,16 @@
 '''
 visual.py
-
 This file contains a library of functions used commonly by the various Scripts
-
 '''
 
-#Import the relevant library
+#==============================================================================
+# Import section
+#==============================================================================
+
 from boututils import DataFile
 from boutdata import collect
 
-from numpy import shape
+from numpy import shape #Get rid of this import?
 from scipy.io import netcdf
 from math import sin, cos, pi
 import numpy as np
@@ -17,19 +18,32 @@ import sys
 import os
 from scipy import interpolate
 #Import the  evtk library
-from evtk.hl import gridToVTK
+#from evtk.hl import gridToVTK
 
 #Import settings
-import settings as set
+import ConfigParser as cp
 
-#Import the VisIt library
-# Find a way to generalise path
-sys.path.insert(0,set.visit_dir)
+# Read the setup file
+bout_path = os.path.expanduser('~') + '/BOUT-dev' #Initial BOUT dir
+if os.path.exists(bout_path):
+    bout_path = bout_path
+if not os.path.exists(bout_path):
+    bout_path = str(raw_input('\n BOUT-dev folder not found, please enter path to BOUT-dev: '))
+
+visboutit_path = bout_path + '/tools/pylib/visboutit/'
+parser = cp.ConfigParser()
+parser.read(visboutit_path + "visit.ini")
+visit_dir = parser.get("file_locations","visit_dir")
+visit_bin = parser.get("file_locations","visit_bin")
+
+# Import the VisIt library
+sys.path.insert(0,visit_dir)
 import visit
 
+#==============================================================================
+# Start of the Functions
+#==============================================================================
 
-#sys.path.insert(0,"/hwdisks/home/pcn500/Downloads/visit2_9_2.linux-x86_64/2.9.2/linux-x86_64/lib/site-packages")
-#import visit
 
 # collect a 4d variable
 def var4d(name):
@@ -37,8 +51,6 @@ def var4d(name):
         return var
 
 # NetCDF format
-
-
 
 # collect a variable from particular .nc file
 def nc_var(fname,vname):
@@ -155,7 +167,7 @@ def zshift_interp2d(nx,ny,zshift,z_tol, var):
 
 
 # New zshift_interp3d funct
-def zshift_interp3d(nx,ny,nz,zshift,z_tol,var):
+def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol,var):
 	# Input array var[nx,ny,nz]
 	# Determin how many points to interpret between y and y+1
 	# Using zshift[nx,ny]
@@ -228,13 +240,13 @@ def torus(r, z, nx, ny, nz):
 #Input Rxy,Zxy,zShift from gridfile, size of grid, and periodicity
 #Output x,y,z coordinates
 def elm(Rxy, Zxy, zshift, nx, ny, nz, period=1):
-	dz = 2.*pi / (period*(nz-1)) # Change in z
-	phi0 = np.linspace(0,2.*pi / period, nz) # Initial Phi_0 values?
+    dz = 2.*pi / (period*(nz-1)) # Change in z
+    phi0 = np.linspace(0,2.*pi / period, nz) # Initial Phi_0 values?
 
 	#Create empty x,y,z coordinate arraays
-	xcoord = np.empty((nx,ny,nz), dtype=float)
-        ycoord = np.empty((nx,ny,nz), dtype=float)
-        zcoord = np.empty((nx,ny,nz), dtype=float)
+    xcoord = np.empty((nx,ny,nz), dtype=float)
+    ycoord = np.empty((nx,ny,nz), dtype=float)
+    zcoord = np.empty((nx,ny,nz), dtype=float)
 	#Assign the points
 #	start = 0
 #	for y_i in range(ny):
@@ -242,28 +254,16 @@ def elm(Rxy, Zxy, zshift, nx, ny, nz, period=1):
 #		phi = zshift[:,y_i] + phi0[:,None]
 #	        r = Rxy[:,y_i] + (np.zeros([nz]))[:,None]
 #	        xz_points = points[start:end]
-	for i in range(nx):
-		for j in range(ny):
-			for k in range(nz):
-		#		phi = zshift[i,j] + phi0[j]
-				phi = (k * dz) + zshift[i,j]
-				r = Rxy[i,j]
-				xcoord[i,j,k] = (r*cos(phi))  # X
-				ycoord[i,j,k] = (r*sin(phi))  # Y
-				zcoord[i,j,k] = (Zxy[i,j])    # Z
-#	        start = end
-	
-	return xcoord,ycoord,zcoord
-
-
-
-def dimd(name):
-        t = 0
-        var_0 = var3d(name,t)
-        nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
-	return nx,ny,nz
-
-
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                #phi = zshift[i,j] + phi0[j]
+                phi = (k * dz) + zshift[i,j]
+                r = Rxy[i,j]
+                xcoord[i,j,k] = (r*cos(phi))  # X
+                ycoord[i,j,k] = (r*sin(phi))  # Y
+                zcoord[i,j,k] = (Zxy[i,j])    # Z
+    return xcoord,ycoord,zcoord
 
 
 #Find the maximum and minimum zshift values from zshift file
@@ -327,7 +327,13 @@ def dimd(name):
 	nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
 	return nx,ny,nz
 
-
+# Find the maximum time of data, the initial value and shape (nx,ny,nz)
+def dim_all(name):
+    var = collect(name)
+    max_t = var.shape[0]
+    var_0 = var[0,:]
+    nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
+    return max_t, var_0, nx, ny, nz
 
 
 # create the vtk variable
@@ -374,76 +380,76 @@ def write_vtk_2(name,pts,vrbl_r,vrbl_i,eig_num):
 #Draw vtk file and let user orientate view and then save session file
 # returns the VisIt session name and location
 def view_vtk(work_dir,name,max,min):
-	vtk_path = work_dir + "/batch/" + name + "_batch_*.vts database" #Set vtkfile path
-        visit.OpenDatabase(vtk_path) # Open database
-        visit.AddPlot("Pseudocolor",name) #Draw a Pseudocolor Plot of the variable
-	# If user would like fixed max and min then assign max and min
-	#Set the max and min values for the data
-        PseudocolorAtts = visit.PseudocolorAttributes()
-	if max != False:
-		PseudocolorAtts.max = max
-		PseudocolorAtts.maxFlag = 1
-		visit.SetPlotOptions(PseudocolorAtts)
-	if min != False:
-		PseudocolorAtts.min = min
-		PseudocolorAtts.minFlag = 1
-		visit.SetPlotOptions(PseudocolorAtts)
+    vtk_path = work_dir + "/batch/" + name + "_batch_*.vts database" #Set vtkfile path
+    visit.OpenDatabase(vtk_path) # Open database
+    visit.AddPlot("Pseudocolor",name) #Draw a Pseudocolor Plot of the variable
+    # If user would like fixed max and min then assign max and min
+    #Set the max and min values for the data
+    PseudocolorAtts = visit.PseudocolorAttributes()
+    if max != False:
+        PseudocolorAtts.max = max
+        PseudocolorAtts.maxFlag = 1
+        visit.SetPlotOptions(PseudocolorAtts)
+    if min != False:
+        PseudocolorAtts.min = min
+        PseudocolorAtts.minFlag = 1
+        visit.SetPlotOptions(PseudocolorAtts)
         visit.DrawPlots() #Draw the plots
-	#Save the Visit Session
-	session_name = raw_input('Enter a session file name:')
-	session_path = work_dir+ "/" + session_name + ".session"
-	visit.SaveSession(session_path)
-	#Close visit session
-	visit.DeleteAllPlots()
-	visit.CloseDatabase(vtk_path)
-	return session_path,session_name
+    #Save the Visit Session
+    session_name = raw_input('Enter a session file name:')
+    session_path = work_dir+ "/" + session_name + ".session"
+    visit.SaveSession(session_path)
+    #Close visit session
+    visit.DeleteAllPlots()
+    visit.CloseDatabase(vtk_path)
+    return session_path,session_name
 
 #Export an image sequence of the plot across the entire time range
 def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
-	#Make dir for storing image sequence
-	outputdir = img_dir + '/' + session_name
-	if not os.path.exists(outputdir):
-		os.makedirs(outputdir)
-	if max_imp == False:
-		max_imp = 0
-	if min_imp == False:
-		min_imp = 0
-	#Set Width and Height of image
-        width = set.img_width
-        height = set.img_height
-	#Launch visit
-	sys.path.insert(0,set.visit_dir)
-	import visit
-	#Load session and initialise at time 0
-	visit.RestoreSession(session_path,0)
-	visit.SetTimeSliderState(0)
-	#Export an Image sequence of the variable for every time base
-	i = 0
-	for i in range(t):
-		visit.SetTimeSliderState(i) #Change timer slider
-		#Make this more general to different plots!?
-		PseudocolorAtts = visit.PseudocolorAttributes()
-		# If user would like fixed max and mind then assign max and min values
-		if max_imp != 0:
-			PseudocolorAtts.max = max_imp
-			PseudocolorAtts.maxFlag = 1
-		if max_imp == 0:
-			PseudocolorAtts.maxFlag = 0
-		if min_imp != 0:
-			PseudocolorAtts.min = min_imp
-			PseudocolorAtts.minFlag = 1
-		if min_imp == 0:
-			PseudocolorAtts.minFlag = 0
-		visit.SetPlotOptions(PseudocolorAtts)
-		visit.DrawPlots() # Draw plot
-		# Save a png of the plot
-		s = visit.SaveWindowAttributes()
-		s.outputToCurrentDirectory = 0
-		s.outputDirectory = outputdir
-		s.family = 0
-		s.fileName = '%s_%s_image_%04d' % (name,session_name,i)
-		s.format = s.PNG
-		s.width = width
-		s.height = height
-		visit.SetSaveWindowAttributes(s)
-		visit.SaveWindow()
+    #Make dir for storing image sequence
+    outputdir = img_dir + '/' + session_name
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
+    if max_imp == False:
+        max_imp = 0
+    if min_imp == False:
+        min_imp = 0
+    #Set Width and Height of image ###### CHANGE TO READ FROM SETUP FILE? #####
+    width = set.img_width
+    height = set.img_height
+    #Launch visit
+    sys.path.insert(0,visit_dir)
+    import visit
+    #Load session and initialise at time 0
+    visit.RestoreSession(session_path,0)
+    visit.SetTimeSliderState(0)
+    #Export an Image sequence of the variable for every time base
+    i = 0
+    for i in range(t):
+        visit.SetTimeSliderState(i) #Change timer slider
+        #Make this more general to different plots!?
+        PseudocolorAtts = visit.PseudocolorAttributes()
+        # If user would like fixed max and mind then assign max and min values
+        if max_imp != 0:
+            PseudocolorAtts.max = max_imp
+            PseudocolorAtts.maxFlag = 1
+            if max_imp == 0:
+                PseudocolorAtts.maxFlag = 0
+            if min_imp != 0:
+                PseudocolorAtts.min = min_imp
+                PseudocolorAtts.minFlag = 1
+            if min_imp == 0:
+                PseudocolorAtts.minFlag = 0
+            visit.SetPlotOptions(PseudocolorAtts)
+            visit.DrawPlots() # Draw plot
+            # Save a png of the plot
+            s = visit.SaveWindowAttributes()
+            s.outputToCurrentDirectory = 0
+            s.outputDirectory = outputdir
+            s.family = 0
+            s.fileName = '%s_%s_image_%04d' % (name,session_name,i)
+            s.format = s.PNG
+            s.width = width
+            s.height = height
+            visit.SetSaveWindowAttributes(s)
+            visit.SaveWindow()
