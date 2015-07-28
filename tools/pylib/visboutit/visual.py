@@ -2,12 +2,21 @@
 visual.py
 This file contains a library of functions used commonly by the various Scripts
 '''
+#==============================================================================
+# Check if PyEVTK libary is present
+# Numpy, os, sys,boututils.DataFile are handled when importing boutdata.collect
+#==============================================================================
+
+try:
+    from evtk.hl import gridToVTK
+except:
+    print('No PyEVTK library present')
 
 #==============================================================================
 # Import section
 #==============================================================================
 
-from boututils import DataFile
+from boututils import DataFile #Does this need to be imported?
 from boutdata import collect
 
 from numpy import shape #Get rid of this import?
@@ -16,14 +25,15 @@ from math import sin, cos, pi
 import numpy as np
 import sys
 import os
-from scipy import interpolate
+from scipy import interpolate #Does this need to be imported?
+
 #Import the  evtk library
-#from evtk.hl import gridToVTK
+from evtk.hl import gridToVTK
 
 #Import settings
 import ConfigParser as cp
 
-# Read the setup file
+# Read variables from the setup file
 bout_path = os.path.expanduser('~') + '/BOUT-dev' #Initial BOUT dir
 if os.path.exists(bout_path):
     bout_path = bout_path
@@ -35,6 +45,10 @@ parser = cp.ConfigParser()
 parser.read(visboutit_path + "visit.ini")
 visit_dir = parser.get("file_locations","visit_dir")
 visit_bin = parser.get("file_locations","visit_bin")
+
+img_height = int(parser.get("image_settings",'img_height'))
+img_width = int(parser.get("image_settings",'img_width'))
+
 
 # Import the VisIt library
 sys.path.insert(0,visit_dir)
@@ -166,10 +180,10 @@ def zshift_interp2d(nx,ny,zshift,z_tol, var):
 	return var2, ny2
 
 
-# New zshift_interp3d funct
-def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol,var):
+# zshift_interp3d funct
+def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol, var):
 	# Input array var[nx,ny,nz]
-	# Determin how many points to interpret between y and y+1
+	# Determine how many points to interpret between y and y+1
 	# Using zshift[nx,ny]
 	
 	ninsert = np.zeros((ny,) , dtype=np.int)
@@ -306,8 +320,6 @@ def z_shift_tol(nx,ny,zshift,tol):
 	return z_tol
 
 
-
-
 # Return spacial part of 4d specified variable
 def var3d(name,t):
 	var = collect(name)[t,:]
@@ -340,15 +352,9 @@ def dim_all(name):
 def vtk_var(var, nx, ny, nz):
 	vrbl = np.empty((nx,ny,nz),dtype=float)
 	for i in range(nx): # latitude
-#		print 'i = ',i
     		for k in range(nz): # longtitude
-#			print 'k =',k
         		for j in range(ny): # level
-#				print 'j = ',j
 				vrbl[i,j,k] = var[i,j,k]
-	# vrbl to np.array and reshape to size of grid
-#	vrbl = np.array(vrbl)
-#	vrbl = vrbl.reshape(nx,ny,nz)
 	return vrbl
 
 # Writes data to vtk file for every time slice
@@ -415,8 +421,8 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
     if min_imp == False:
         min_imp = 0
     #Set Width and Height of image ###### CHANGE TO READ FROM SETUP FILE? #####
-    width = 500
-    height = 500
+    img_width = 500
+    img_height = 500
     #Launch visit
     sys.path.insert(0,visit_dir)
     import visit

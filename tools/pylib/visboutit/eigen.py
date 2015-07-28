@@ -1,3 +1,10 @@
+#==============================================================================
+# eigen.py 
+# Contains the function to plot the eigenvals on a graph then on the user clicking
+# a value the eigenvalues associated with that point are written to a file.
+#==============================================================================
+
+
 # import relevant libraries
 from boutdata import collect
 import matplotlib.pyplot as plt
@@ -90,9 +97,11 @@ def plot_eigenvals(eigs, nx, ny, nz ,zshift, z_tol, ny2, name, pts ,data=None):
   
   cid = fig.canvas.mpl_connect('button_press_event', onclick)
   plt.show()
-  
-if __name__ == "__main__":
-    name = str(raw_input('Enter variable name : '))
+      
+# Draw function calls the previous functions and collects the eigenvalue data,
+# writes x,y graph of the eigenvectors and then on clicking an eigen value the
+# eigenvalues are written to the vtk format.
+def draw(name,zshift_tol = 0.25):    
     grid_file = str(raw_input('Enter Grid File : '))
     eigs = collect("t_array")
     data = collect(name)
@@ -104,14 +113,37 @@ if __name__ == "__main__":
     z = visual.nc_var(grid_file,'Zxy') # Z
     #  print r.shape,z.shape
     zshift = visual.nc_var(grid_file, 'zShift')	 # zShift
-    tol = 0.25 # Set the tolerance value (change this to be imported from settings?
-    z_tol = visual.z_shift_tol(nx,ny,zshift,tol)
+    z_tol = visual.z_shift_tol(nx,ny,zshift,zshift_tol)
     #Interpolate r,z,zshift values
-    r2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,r)
-    z2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,z)
-    zshift2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,zshift)
+    r2, ny2 = visual.zshift_interp2d(nx,ny,zshift,zshift_tol,r)
+    z2, ny2 = visual.zshift_interp2d(nx,ny,zshift,zshift_tol,z)
+    zshift2, ny2 = visual.zshift_interp2d(nx,ny,zshift,zshift_tol,zshift)
 
     pts2 = visual.elm(r2,z2,zshift2,nx,ny2,nz)
-    #Package variables
-    #  data_variables = nx,ny,nz,zshift,z_tol,ny2,name,pts
+#    Plot eigen values and wri
     plot_eigenvals(eigs, nx, ny, nz ,zshift, z_tol, ny2, name, pts2, data=data)
+      
+      
+#        name = str(raw_input('Enter variable name : '))
+#        grid_file = str(raw_input('Enter Grid File : '))
+#        eigs = collect("t_array")
+#        data = collect(name)
+#        #import the variable, set the nx,ny,nz values
+#        #write the pts variable
+#        nx,ny,nz = visual.dimd(name)
+#        #Import the R,Z values from the grid file
+#        r = visual.nc_var(grid_file,'Rxy') # R
+#        z = visual.nc_var(grid_file,'Zxy') # Z
+#        #  print r.shape,z.shape
+#        zshift = visual.nc_var(grid_file, 'zShift')	 # zShift
+#        tol = 0.25 # Set the tolerance value (change this to be imported from settings?
+#        z_tol = visual.z_shift_tol(nx,ny,zshift,tol)
+#        #Interpolate r,z,zshift values
+#        r2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,r)
+#        z2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,z)
+#        zshift2, ny2 = visual.zshift_interp2d(nx,ny,zshift,z_tol,zshift)
+#    
+#        pts2 = visual.elm(r2,z2,zshift2,nx,ny2,nz)
+#        #Package variables
+#        #  data_variables = nx,ny,nz,zshift,z_tol,ny2,name,pts
+#        plot_eigenvals(eigs, nx, ny, nz ,zshift, z_tol, ny2, name, pts2, data=data)

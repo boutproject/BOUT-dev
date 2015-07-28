@@ -20,8 +20,11 @@ Inputs: variable name and end time
 ========
 Need to add zShift interpolation percent
 '''
-def elm(name,time,gridfile,zShift_interpolation_percent):
-    
+def elm(name ,time ,zShf_int_p = 0.25):
+    if zShf_int_p > 1:
+        print 'zShift Interpolation percent is set tp greater than 100%'
+        break
+        
     #Get the working dir
     work_dir = os.getcwd()
     grid_file = str(raw_input('Enter the full filename of the gridfile: '))
@@ -38,7 +41,7 @@ def elm(name,time,gridfile,zShift_interpolation_percent):
     
     
     max_z,min_z = visual.z_shift_mm(nx,ny,zshift) #Find the max and minimum zshift values
-    z_tol = min_z + (max_z * 0.25) # Set tolerance value ##CHANGE TO IMPORT PERCENT !!##
+    z_tol = min_z + (max_z * zShf_int_p) # Set tolerance value ##CHANGE TO IMPORT PERCENT !!##
     
     
     #Interpolate the Rxy and Zxy values
@@ -104,17 +107,6 @@ def elm(name,time,gridfile,zShift_interpolation_percent):
     	
     	var2,ny3 = visual.zshift_interp3d(nx,ny,nz,zshift,z_tol,var)
     
-    	'''
-    	#Interpolate section for all y values
-    	for i in range(nx):
-    		for k in range(nz):
-    			var_y = var[i,:,k]
-    	                y = np.arange(0,ny) # Arrange y values in array
-            	        f = interpolate.interp1d(y,var_y) # Interpolate the data
-    	                y_new = np.arange(0,(ny-1),step) # Arrange new y values 
-            	        var_y_new = f(y_new) # interpolate y values
-    	                var_new[i,:,k] = var_y_new # Store values in new variable
-    	'''
     	#Convert coordinate section
     	vrbl = visual.vtk_var(var2,nx,ny2,nz) #vtk variable
     #	vrbl = visual.vtk_var(var,nx,ny,nz) # vtk variable
@@ -123,8 +115,7 @@ def elm(name,time,gridfile,zShift_interpolation_percent):
     
     #Write the Max and min values to file
     mm_array = np.array((max,min))
-    np.savetxt('max_min_' + name + '.txt',mm_array)
-    return 
+    np.savetxt('max_min_' + name + '.txt',mm_array) 
 
 '''
 Torus
@@ -132,24 +123,17 @@ Torus
 Torus coordinate system
 '''
 
-def torus(name,time,gridfile):
+def torus(name, time, step = 0.5):    
+    #Get the working dir
+    work_dir = os.getcwd()
+    
     grid_file = str(raw_input('Enter the full filename of the gridfile: '))
     grid_dir = work_dir + '/' + grid_file
     
-    #Get the working dir
-    work_dir = os.getcwd()
-    ''' 
-    not needed
-    #Set the working dir to the Parent of the VisBOUTIt folder
-    os.chdir(work_dir +'/../')
-    #Update the working dir
-    work_dir = os.getcwd()
-    '''
     # Find the max_t, initial value and shape of variable
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
 
     #Interpolate setup
-    step = 0.5 #interval for new points
     #Get number of new points
     num_new = len(np.arange(0,(ny-1),step))
     #Define empty array with increased number of y values
@@ -224,7 +208,7 @@ Cylinder
 =======
 This function contains the cylinder format
 '''
-def cylinder(name, time, gridfile):
+def cylinder(name, time, step = 0.5):
     #Get the working dir
     work_dir = os.getcwd()
     grid_file = str(raw_input('Enter the full filename of the gridfile: '))
@@ -239,7 +223,6 @@ def cylinder(name, time, gridfile):
     pts = visual.cylinder(r, z, nx, ny, nz)  # vtk grid points
     
     #Interpolate setup
-    step = 0.5 #interval for new points
     #Get number of new points
     num_new = len(np.arange(0,(ny-1),step))
     #Define empty array with increased number of y values
