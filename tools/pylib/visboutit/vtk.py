@@ -20,15 +20,19 @@ Inputs: variable name and end time
 ========
 Need to add zShift interpolation percent
 '''
-def elm(name ,time ,zShf_int_p = 0.25):
-    if zShf_int_p > 1:
-        print 'zShift Interpolation percent is set tp greater than 100%'
-        break
-        
+def elm(name ,time ,zShf_int_p = 0.25, path = None):
+    #Add error for zShf_int_p > 1
+
     #Get the working dir
-    work_dir = os.getcwd()
-    grid_file = str(raw_input('Enter the full filename of the gridfile: '))
-    grid_dir = work_dir + '/' + grid_file
+    if path == None:
+        work_dir = os.getcwd()
+    if path != None:
+        work_dir = os.chdir(path)
+        work_dir = os.getcwd()
+    
+    grid_file = visual.get("BOUT.inp","grid")
+#    grid_file = str(raw_input('Enter the filename of the gridfile: '))
+    grid_dir = work_dir + '/' + grid_file + '.nc'
 
     # Get the dimensions and initial value of the variable data.    
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
@@ -116,19 +120,24 @@ def elm(name ,time ,zShf_int_p = 0.25):
     #Write the Max and min values to file
     mm_array = np.array((max,min))
     np.savetxt('max_min_' + name + '.txt',mm_array) 
+    return
 
 '''
-Torus
+Torus: Convert to Torodial Coordinate system
 =========
 Torus coordinate system
 '''
 
-def torus(name, time, step = 0.5):    
+def torus(name, time, step = 0.5, path = None):
     #Get the working dir
-    work_dir = os.getcwd()
-    
-    grid_file = str(raw_input('Enter the full filename of the gridfile: '))
-    grid_dir = work_dir + '/' + grid_file
+    if path == None:
+        work_dir = os.getcwd()
+    if path != None:
+        work_dir = os.chdir(path)
+        work_dir = os.getcwd()
+        
+#    grid_file = str(raw_input('Enter the full filename of the gridfile: '))
+#    grid_dir = work_dir + '/' + grid_file
     
     # Find the max_t, initial value and shape of variable
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
@@ -201,6 +210,7 @@ def torus(name, time, step = 0.5):
     #Write the Max and min values to file
     mm_array = np.array((max,min))
     np.savetxt('max_min_' + name + '.txt',mm_array)
+    return
 
 
 '''
@@ -208,26 +218,37 @@ Cylinder
 =======
 This function contains the cylinder format
 '''
-def cylinder(name, time, step = 0.5):
+def cylinder(name, time, step = 0.5, path = None):
     #Get the working dir
-    work_dir = os.getcwd()
-    grid_file = str(raw_input('Enter the full filename of the gridfile: '))
-    grid_path = work_dir + '/' + grid_file
+    if path == None:
+        work_dir = os.getcwd()
+    if path != None:
+        work_dir = os.chdir(path)
+        work_dir = os.getcwd()
+    
+    # Prompt for grid file name
+    grid_file = visual.get("BOUT.inp","grid")
+#    grid_file = str(raw_input('Enter the filename of the gridfile: '))
+    if os.path.exists(work_dir + '/' + grid_file + '.nc'):
+        grid_path = work_dir + '/' + grid_file + '.nc'
+    if os.path.exists(work_dir + '/' + grid_file + '.grd.nc'):
+        grid_path = work_dir + '/' + grid_file + '.grd.nc'
 
-    #Find dimensions of data
+    # Find dimensions of data
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
 
     # Import coordinates from gridfile
     r = visual.nc_var(grid_path,'Rxy') # toroidal coordinates
     z = visual.nc_var(grid_path,'Zxy') # toroidal coordinates
-    pts = visual.cylinder(r, z, nx, ny, nz)  # vtk grid points
+#    pts = visual.cylinder(r, z, nx, ny, nz)  # vtk grid points
     
     #Interpolate setup
     #Get number of new points
-    num_new = len(np.arange(0,(ny-1),step))
+    ny_new = len(np.arange(0,(ny-1),step))
     #Define empty array with increased number of y values
-    var_new = np.empty((nx,num_new,nz),dtype=float)
+    var_new = np.empty((nx,ny_new,nz),dtype=float)
     
+    pts = visual.cylinder(r, z, nx, ny_new, nz) # vtk grid points
     #Set time from input
     t = time
     
@@ -280,11 +301,13 @@ def cylinder(name, time, step = 0.5):
                             var_y_new = f(y_new) # interpolate y values
                             var_new[i,:,k] = var_y_new # Store values in new variable
     
-            #Convert coordinate section             
-            vrbl = visual.vtk_var(var_new,nx,num_new,nz) # vtk variable
-            vtk_path = visual.write_vtk(name,pts,vrbl,q,nx,num_new,nz) # write vtk file
+            #Convert coordinate section        
+#            vrbl = visual.vtk_var(var, nx, ny, nz)     
+            vrbl = visual.vtk_var(var_new,nx,ny_new,nz) # vtk variable
+            vtk_path = visual.write_vtk(name,pts,vrbl,q,nx,ny,nz) # write vtk file
             print "At t = %d, %d Steps remaining" % (q,t-(q+1)) # Progress indicator
     
     #Write the Max and min values to file
     mm_array = np.array((max,min))
     np.savetxt('max_min_' + name + '.txt',mm_array)
+    return

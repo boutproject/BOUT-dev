@@ -6,17 +6,21 @@ import os
 import numpy as np
 #import ConfigParser as cp
 
-def image():
+def image(path = None):
     name = str(raw_input('Please enter variable name: '))
     session_name = str(raw_input('Please Enter session name: '))
     use_max = int(raw_input('Use max from max input file? (0 for No, 1 for Yes): '))
     use_min = int(raw_input('Use min from min input file? (0 for No, 1 for Yes): '))
 
     #Get the working directory
-    work_dir = os.getcwd()
+    if path == None:
+        work_dir = os.getcwd()
+    if path != None:
+        work_dir = os.chdir(path)
+        work_dir = os.getcwd()
+        
     #Get end time variable
     i = 0
-    
     path = os.path.exists(work_dir + "/batch/" + name + "_batch_%d.vts" % i)
     while path == True:
         i +=1
@@ -50,7 +54,8 @@ def image():
     if use_min == 1:
         min = mm_array[1]
 
+#    Launch Visit Session
     session_path = work_dir + '/' + session_name + '.session'
-    # Export an image sequence of the orientated data
+    # Export an image sequence of data
     visual.draw_vtk(session_path,img_dir,name,t,session_name,max,min)
 

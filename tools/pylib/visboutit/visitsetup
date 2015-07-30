@@ -16,7 +16,6 @@ except:
 import os
 import ConfigParser as cp
 
-print "\n"
 home_dir = os.path.expanduser('~') # Get the home directory
 
 cfgfile = open("visit.ini",'w') #Create setup file for VisIt

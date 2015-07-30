@@ -2,15 +2,6 @@
 visual.py
 This file contains a library of functions used commonly by the various Scripts
 '''
-#==============================================================================
-# Check if PyEVTK libary is present
-# Numpy, os, sys,boututils.DataFile are handled when importing boutdata.collect
-#==============================================================================
-
-try:
-    from evtk.hl import gridToVTK
-except:
-    print('No PyEVTK library present')
 
 #==============================================================================
 # Import section
@@ -29,6 +20,13 @@ from scipy import interpolate #Does this need to be imported?
 
 #Import the  evtk library
 from evtk.hl import gridToVTK
+#linux Version
+
+#==============================================================================
+# # Import the vtk library mac version
+# from pyevtk.hl import gridToVTK
+#==============================================================================
+
 
 #Import settings
 import ConfigParser as cp
@@ -57,6 +55,67 @@ import visit
 #==============================================================================
 # Start of the Functions
 #==============================================================================
+
+# Get returns the grid file name
+    
+def get(filename, name, section=None):
+    
+    with open(filename, "rt") as f:
+        if section is not None:
+            # First find the section
+            found = False
+            for line in f:
+                # Strip spaces from left
+                line = line.lstrip(' \t\n\r')
+                if len(line) < 1:
+                    continue  # Empty line
+                    
+                # if line starts with '[' then this is a section
+                if line[0] == '[':
+                    # Split on ']'
+                    head, _ = line[1:].split(']', 1)
+                    # head is now the section name
+                    if head == section:
+                        found = True
+                        break
+            if not found:
+                raise ValueError("Section '%s' not found" % (section))
+        
+        # Now in the correct section
+        
+        for line in f:
+            # Strip spaces from left
+            line = line.lstrip(' \t\n\r')
+            if len(line) < 1:
+                continue  # Empty line
+                
+            # if line starts with '[' then this is a section
+            if line[0] == '[':
+                raise ValueError("Name '%s' not found in section '%s'" % (name,section))
+            # Check if this line contains an '='
+            if '=' in line:
+                # Check if contains comment
+                comment = ''
+                if '#' in line:
+                    line, comment = line.split('#', 1)
+                # Split on '='
+                key, value = line.split('=',1)
+                # Strip whitespace
+                key   = key.strip(' \t\n\r')
+                value = value.strip(' \t\n\r')
+                
+                if '.' in line:
+                    value, extension = value.split('.',1)
+                
+                # Strip out quotes if present
+                if value[0] == '"' or value[0] == "'": 
+                    value = value[1:]
+                if value[-1] == '"' or value[-1] == "'":
+                    value = value[:-1]
+                
+                #print("'%s' = '%s'" % (key, value))
+                if key.lower() == name.lower(): # Case insensitive
+                    return value
 
 
 # collect a 4d variable
@@ -221,16 +280,17 @@ def zshift_interp3d(nx ,ny ,nz ,zshift ,z_tol, var):
 # Returns x,y,z coordinates as np arrays
 def cylinder(r, z, nx, ny, nz):
         xcoord = np.empty((nx,ny,nz),dtype=float)
-	ycoord = np.empty((nx,ny,nz),dtype=float)
-	zcoord = np.empty((nx,ny,nz),dtype=float)
+        ycoord = np.empty((nx,ny,nz),dtype=float)
+        zcoord = np.empty((nx,ny,nz),dtype=float)
         # Transform Rxyz, Zxyz coordinates to cartesian
         for i in range(nx): # latitude
                 for k in range(nz): # longtitude
                         phi = (2./3.)*pi*(float(k)/float(nz-1)) # (2/3)pi cylinder revolution
                         for j in range(ny): # level
                                 xcoord[i,j,k] = float(r[i,j]*cos(phi))
-				ycoord[i,j,k] = float(r[i,j]*sin(phi))
-				zcoord[i,j,k] = float(z[i,j])
+                                ycoord[i,j,k] = float(r[i,j]*sin(phi))
+                                zcoord[i,j,k] = float(z[i,j])
+                                
         return xcoord,ycoord,zcoord
 
 # Creates torus mesh from coordinates r,z and size of grid
@@ -334,10 +394,10 @@ def time_max(name):
 #Find the Dimensions of the variable data
 #input: name,
 def dimd(name):
-	t = 0
-	var_0 = var3d(name,t)
-	nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
-	return nx,ny,nz
+    var = collect(name)
+    var_0 = var[0,:]
+    nx,ny,nz = len(var_0[:,0,0]), len(var_0[0,:,0]), len(var_0[0,0,:])
+    return nx,ny,nz
 
 # Find the maximum time of data, the initial value and shape (nx,ny,nz)
 def dim_all(name):
@@ -350,12 +410,12 @@ def dim_all(name):
 
 # create the vtk variable
 def vtk_var(var, nx, ny, nz):
-	vrbl = np.empty((nx,ny,nz),dtype=float)
-	for i in range(nx): # latitude
-    		for k in range(nz): # longtitude
-        		for j in range(ny): # level
-				vrbl[i,j,k] = var[i,j,k]
-	return vrbl
+    vrbl = np.empty((nx,ny,nz),dtype=float)
+    for i in range(nx): # latitude
+        for k in range(nz): # longtitude
+            for j in range(ny): # level
+                vrbl[i,j,k] = var[i,j,k] #i,j,k or i,k,j?
+    return vrbl
 
 # Writes data to vtk file for every time slice
 # Returns the vtk file path
@@ -420,9 +480,7 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
         max_imp = 0
     if min_imp == False:
         min_imp = 0
-    #Set Width and Height of image ###### CHANGE TO READ FROM SETUP FILE? #####
-    img_width = 500
-    img_height = 500
+
     #Launch visit
     sys.path.insert(0,visit_dir)
     import visit
@@ -439,23 +497,26 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
         if max_imp != 0:
             PseudocolorAtts.max = max_imp
             PseudocolorAtts.maxFlag = 1
-            if max_imp == 0:
-                PseudocolorAtts.maxFlag = 0
-            if min_imp != 0:
-                PseudocolorAtts.min = min_imp
-                PseudocolorAtts.minFlag = 1
-            if min_imp == 0:
-                PseudocolorAtts.minFlag = 0
-            visit.SetPlotOptions(PseudocolorAtts)
-            visit.DrawPlots() # Draw plot
-            # Save a png of the plot
-            s = visit.SaveWindowAttributes()
-            s.outputToCurrentDirectory = 0
-            s.outputDirectory = outputdir
-            s.family = 0
-            s.fileName = '%s_%s_image_%04d' % (name,session_name,i)
-            s.format = s.PNG
-            s.width = width
-            s.height = height
-            visit.SetSaveWindowAttributes(s)
-            visit.SaveWindow()
+        if max_imp == 0:
+            PseudocolorAtts.maxFlag = 0
+        if min_imp != 0:
+            PseudocolorAtts.min = min_imp
+            PseudocolorAtts.minFlag = 1
+        if min_imp == 0:
+            PseudocolorAtts.minFlag = 0
+        visit.SetPlotOptions(PseudocolorAtts)
+        visit.DrawPlots() # Draw plot
+        # Save a png of the plot
+        s = visit.SaveWindowAttributes()
+        s.outputToCurrentDirectory = 0
+        s.outputDirectory = outputdir
+        s.family = 0
+        s.fileName = '%s_%s_image_%04d' % (name,session_name,i)
+        s.format = s.PNG
+        s.width = img_width
+        s.height = img_height
+        visit.SetSaveWindowAttributes(s)
+        visit.SaveWindow()
+    #Close visit session
+    visit.DeleteAllPlots()
+    visit.Close()
