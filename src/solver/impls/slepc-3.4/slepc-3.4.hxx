@@ -173,6 +173,8 @@ private:
   SlepcLib slib;// Handles initialize / finalize
   bool ddtMode; //If true then slepc deals with the ddt operator
   bool selfSolve; //If true then we don't create an advanceSolver
+  bool eigenValOnly;
+
   //For selfSolve=true
   BoutReal *f0;
   BoutReal *f1;

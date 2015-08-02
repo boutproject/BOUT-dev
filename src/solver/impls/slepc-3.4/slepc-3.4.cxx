@@ -168,14 +168,22 @@ SlepcSolver::SlepcSolver(Options *options){
   //Convert bout targs to slepc
   bool userWhichDefault=false;
   if(targRe==0.0 && targIm==0.0){
-    target=999.0;
+    target = 999.0;
   }else{
-    PetscScalar slepcRe,slepcIm;
-    boutToSlepc(targRe,targIm,slepcRe,slepcIm);
-    dcomplex tmp(slepcRe,slepcIm);
-    target=abs(tmp);
+    //Ideally we'd set the target here from
+    //targRe and targIm (using boutToSlepc) to
+    //convert to slepc target. Unfortunately
+    //when not in ddtMode the boutToSlepc routine
+    //requires tstep and nout to be set but these
+    //aren't available until ::init so for now just
+    //set target to -1 to signal we need to set it
+    //later.
+    target = -1.0;
+
     //If we've set a target then we change the default
     //for the userWhich variable as targets work best with this
+    //Note this means we only use target in the case where we
+    //specify targRe/targIm *and* explicitly set userWhich=false
     userWhichDefault=true;
   }
   options->get("target",target,target); //If 999 we don't set the target. This is SLEPc eig target
@@ -201,10 +209,12 @@ SlepcSolver::SlepcSolver(Options *options){
     output<<"Overridding selfSolve as ddtMode = true"<<endl;
     selfSolve = true;
   }
-
+  options->get("eigenValOnly", eigenValOnly, false);
   if(!selfSolve && !ddtMode) {
     // Use a sub-section called "advance"
     advanceSolver=SolverFactory::getInstance()->createSolver(options->getSection("advance"));
+  }else{
+    advanceSolver=NULL;
   }
 }
 
@@ -228,7 +238,7 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
   //Report initialisation
   output.write("Initialising SLEPc-3.4 solver\n");  
-  if(selfSolve && !ddtMode){
+  if(selfSolve){
     Solver::init(restarting,NOUT,TIMESTEP);
     
     //If no advanceSolver then can only advance one step at a time
@@ -238,6 +248,14 @@ int SlepcSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   //Save for use later
   nout = NOUT;
   tstep = TIMESTEP;
+
+  //Now we can calculate the slepc target (see ::SlepcSolver for details)
+  if(target == -1.0){
+    PetscScalar slepcRe,slepcIm;
+    boutToSlepc(targRe,targIm,slepcRe,slepcIm);
+    dcomplex tmp(slepcRe,slepcIm);
+    target=abs(tmp);
+  }
 
   //Read options
   comm=PETSC_COMM_WORLD;
@@ -299,8 +317,12 @@ int SlepcSolver::run() {
   EPSView(eps,PETSC_VIEWER_STDOUT_WORLD);
 
   //Analyse and dump to file
-  analyseResults();
-
+  if(!eigenValOnly) {
+    //if(debug) output<<"Writing eigenpairs"<<endl;
+    analyseResults();
+    //if(debug) output<<"-- Done"<<endl;
+  }
+  //if(debug) output<<"Finished run"<<endl;
   //Return ok
   return 0;
 }
@@ -563,6 +585,12 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
   //No output until after first iteration
   if(its<1){return;}
 
+  extern BoutReal simtime;
+  static bool first=true;
+  if(eigenValOnly && first){
+    first=false;
+    iteration=0;
+  }
   BoutReal reEigBout, imEigBout;
   slepcToBout(eigr[nconv],eigi[nconv],reEigBout,imEigBout);
 
@@ -586,6 +614,14 @@ void SlepcSolver::monitor(PetscInt its, PetscInt nconv, PetscScalar eigr[], Pets
       slepcToBout(eigr[i],eigi[i],reEigBout,imEigBout);
       output<<"\t"<<i<<"\t: "<<formatEig(eigr[i],eigi[i])<<" --> ";
       output<<formatEig(reEigBout,imEigBout)<<endl;
+      if(eigenValOnly){
+	simtime=reEigBout;
+	dump.write();
+	iteration++;
+	simtime=imEigBout;
+	dump.write();
+	iteration++;
+      }
     }
   }
 
