@@ -4,10 +4,8 @@ import visual
 import sys
 import os 
 import numpy as np
-#import ConfigParser as cp
 
-def image(path = None):
-    name = str(raw_input('Please enter variable name: '))
+def image(name, path = None):
     session_name = str(raw_input('Please Enter session name: '))
     use_max = int(raw_input('Use max from max input file? (0 for No, 1 for Yes): '))
     use_min = int(raw_input('Use min from min input file? (0 for No, 1 for Yes): '))
@@ -27,11 +25,11 @@ def image(path = None):
         path = os.path.exists(work_dir + "/batch/" + name + "_batch_%d.vts" % i)
     t = i
     
-    #Make dir for storing images
+    # Make dir for storing images
     if not os.path.exists("images"):
         os.makedirs("images")
 
-    #Set the image dir
+    # Set the image dir
     img_dir = work_dir + "/images"
     
     #Launch VisIt
@@ -54,7 +52,7 @@ def image(path = None):
     if use_min == 1:
         min = mm_array[1]
 
-#    Launch Visit Session
+    # Launch Visit Session
     session_path = work_dir + '/' + session_name + '.session'
     # Export an image sequence of data
     visual.draw_vtk(session_path,img_dir,name,t,session_name,max,min)
