@@ -649,8 +649,8 @@ then
   # Check for the rest of the files
   FFTLIBPATH=''
   # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
-  AC_CHECK_FILES( $FFTPATH/lib/libfftw3.a   ,FFTLIBPATH="$FFTPATH/lib" ,  )
-  AC_CHECK_FILES( $FFTPATH/lib64/libfftw3.a ,FFTLIBPATH="$FFTPATH/lib64" ,  )
+  AC_CHECK_FILES( $FFTPATH/lib/libfftw3.a   ,FFTLIBPATH="$FFTPATH/lib" ,  
+  AC_CHECK_FILES( $FFTPATH/lib64/libfftw3.a ,FFTLIBPATH="$FFTPATH/lib64" ,  ))
   if test $FFTLIBPATH == ""
   then
       FFTPATH=""
@@ -664,12 +664,7 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  if test $FFTLIBPATH
-  then
-      EXTRA_LIBS="$EXTRA_LIBS -L$FFTLIBPATH -lfftw3"
-  else
-      EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
-  fi
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTLIBPATH -lfftw3"
 fi
 echo ""
 
@@ -721,7 +716,7 @@ then
     done
     
     # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h $HDFPATH/lib/libhdf5.a ,, [
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
         echo " -> Can't find HDF5 files"
         HDFPATH=""
       ] )
@@ -730,12 +725,19 @@ then
     HDFPATH=$with_hdf5  # Configure given path
     
     # Check for include and library files
-    AC_CHECK_FILES($HDFPATH/include/hdf5.h $HDFPATH/lib/libhdf5.a ,, [
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
         echo " ERROR: Given HDF5 path not correct."
         exit
       ] )
   fi
 
+  if test $HDFPATH
+  then
+      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH=$$HDFPATH/lib,
+      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH=$$HDFPATH/lib64,))
+      test $HDFLIBPATH || ((echo " -> Can't find HDF5 files" ; HDFPATH=''))
+  fi
+  
   # Check if found valid path
   if test "$HDFPATH" != ""
   then
@@ -748,7 +750,7 @@ then
     fi
     
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS $HDFPATH/lib/libhdf5.a -lz"
+    EXTRA_LIBS="$EXTRA_LIBS $HDFLIBPATH/libhdf5.a -lz"
 
     file_formats="$file_formats HDF5"
   else
