@@ -598,6 +598,8 @@ fi
 
 echo "Searching for FFTW library"
 
+# first only look for header files
+
 if test "$with_fftw" = ""
 then
   # No path specified
@@ -605,7 +607,7 @@ then
   echo " -> Path not given. Searching for library..."
 else
   FFTPATH=$with_fftw
-  AC_CHECK_FILES( $FFTPATH/include/fftw3.h $FFTPATH/lib/libfftw3.a ,, [
+  AC_CHECK_FILES( $FFTPATH/include/fftw3.h ,, [
     echo " -> Given path not correct. Finding..."
     FFTPATH=""
   ] )
@@ -616,7 +618,7 @@ if test "$FFTPATH" = ""
 then
   if test "$FFTW_ROOT" != ""
   then
-    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h $FFTW_ROOT/lib/libfftw3.a , FFTPATH=$FFTW_ROOT, )
+    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h , FFTPATH=$FFTW_ROOT, )
   fi
 fi
 
@@ -626,7 +628,8 @@ if type fftw-wisdom > /dev/null 2>&1; then
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
   FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
   # Check if the files are there
-  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h $FFTWISDOM/lib/libfftw3.a , FFTPATH=$FFTWISDOM, )
+  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h , FFTPATH=$FFTWISDOM, )
+  #AC_CHECK_FILES( $FFTWISDOM/lib/libfftw3.a  , FFTPATH=$FFTWISDOM, )
 fi
 
 # Try some known paths
@@ -638,13 +641,20 @@ then
   AC_CHECK_FILE($HOME/local/include/fftw3.h, FFTPATH=$HOME/local,
   ))))
 
-  if test "$FFTPATH" != ""
-  then
-    # Check for the rest of the files
+fi
 
-    # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
-    AC_CHECK_FILES( $FFTPATH/lib/libfftw3.a , , FFTPATH="" )
-    fi
+
+if test "$FFTPATH" != ""
+then
+  # Check for the rest of the files
+  FFTLIBPATH=''
+  # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
+  AC_CHECK_FILES( $FFTPATH/lib/libfftw3.a   ,FFTLIBPATH="$FFTPATH/lib" ,  )
+  AC_CHECK_FILES( $FFTPATH/lib64/libfftw3.a ,FFTLIBPATH="$FFTPATH/lib64" ,  )
+  if test $FFTLIBPATH == ""
+  then
+      FFTPATH=""
+  fi
 fi
 
 if test "$FFTPATH" = ""
@@ -654,7 +664,12 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
+  if test $FFTLIBPATH
+  then
+      EXTRA_LIBS="$EXTRA_LIBS -L$FFTLIBPATH -lfftw3"
+  else
+      EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
+  fi
 fi
 echo ""
 
