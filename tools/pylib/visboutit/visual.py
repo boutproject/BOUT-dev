@@ -1,6 +1,6 @@
 """
 visual.py
-This file contains a library of functions used commonly by the various Scripts
+This file contains a library of functions used by various scripts in the VisBOUTIt package
 """
 
 #==============================================================================
@@ -403,7 +403,7 @@ def time_max(name):
 	return max_t
 
 # Find the Dimensions of the variable data
-# input: name,
+# input: name
 def dimd(name):
     var = collect(name)
     var_0 = var[0,:]
@@ -429,7 +429,7 @@ def vtk_var(var, nx, ny, nz):
 
 # Writes data to vtk file for every time slice
 # Returns the vtk file path
-def write_vtk(name,pts,vrbl,t,nx,ny,nz):
+def write_vtk(name,pts,vrbl,t):
 	i,j,k = pts
 	vrbl = np.array(vrbl)
 	vtk_file_path = gridToVTK("./batch/" + name + "_batch_%d" % t, i, j, k, pointData = {str(name) : vrbl})
@@ -437,7 +437,7 @@ def write_vtk(name,pts,vrbl,t,nx,ny,nz):
 
 # Write the real and imaginary data to vtk file
 # Inputs:
-# name: name of variable
+# name: name of variables
 # pts: grid points
 # vrbl_r: real eigenvalues
 # vrbl_i: imaginary eigenvalues
@@ -446,6 +446,17 @@ def write_vtk_2(name,pts,vrbl_r,vrbl_i,eig_num):
 	i,j,k = pts
 	vtk_file_path = gridToVTK( name + "_eigen_%d" % eig_num,i,j,k, pointData = {str(name + '_r'): vrbl_r , str(name + '_i') : vrbl_i})
 	return vtk_file_path
+
+def write_vtk_vector(name,pts,vectorx,vectory,vectorz,t):
+    i,j,k = pts
+    vtk_file_path = gridToVTK("./batch/" + name + "_vector_%d" % t , i , j , k , pointData = {str(name): (vectorx,vectory,vectorz)})
+    return vtk_file_path
+
+def write_vtk_vector2(name,pts,vector,vectorx,vectory,vectorz,t):
+    i,j,k = pts
+    vtk_file_path = gridToVTK("./batch/" + name + "_vector_%d" % t , i , j , k , pointData = {str(name):vector, str(name + '_vector'): (vectorx,vectory,vectorz)})
+    return vtk_file_path
+
 
 # Draw vtk file and let user orientate view and then save session file
 # returns the VisIt session name and location

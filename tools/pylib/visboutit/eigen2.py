@@ -1,8 +1,8 @@
-#==============================================================================
-# eigen.py 
-# Contains the function to plot the eigenvals on a graph then on the user clicking
-# a value the eigenvalues associated with that point are written to a file.
-#==============================================================================
+"""
+ eigen.py 
+ Contains the function to plot the eigenvals on a graph then on the user clicking
+ a value the eigenvalues associated with that point are written to a file.
+"""
 
 # import relevant libraries
 from boutdata import collect

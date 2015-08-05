@@ -1,7 +1,13 @@
-#==============================================================================
-#  draw.py 
-#  Create image sequence from batch files
-#==============================================================================
+"""
+draw.py 
+Create image sequence from batch files
+
+Useage:
+draw(name,path)
+Imports data and displays a Pseudocolor plot in a VisIt session
+Prompts for a session name
+Renders out the image sequence
+"""
 import visual
 import sys
 import os

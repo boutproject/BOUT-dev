@@ -1,5 +1,14 @@
-# image.py
-# Create image seqeuence from VisIt Session File
+"""
+image.py
+Export an image seqeuence from VisIt Session File
+
+useage:
+image(name,path)
+Script prompts for session name and options for using the maximum and minimum values, for a Pseudocolor plot.
+the script then renders out the image sequence.
+"""
+
+ 
 import visual
 import sys
 import os 
