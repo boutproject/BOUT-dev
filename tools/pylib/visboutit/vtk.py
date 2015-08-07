@@ -13,7 +13,7 @@ import numpy as np
 from scipy import interpolate
 
 
-def elm(name , time ,zShf_int_p = 0.25, path = None):
+def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
     """
        
     elm function: convert the spacial variables to EML coordinate system for a range of time
@@ -91,7 +91,8 @@ def elm(name , time ,zShf_int_p = 0.25, path = None):
         add_p = True
     
      #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
-    for q in range(t):
+    q = 0
+    while q <= t-1:
         var = visual.var3d(name,q) # collect variable
     
         #Find the min and max values
@@ -116,8 +117,9 @@ def elm(name , time ,zShf_int_p = 0.25, path = None):
         #Convert coordinate section
         vrbl = visual.vtk_var(var2,nx,ny2,nz) #vtk variable
         vtk_path = visual.write_vtk(name,pts2,vrbl,q) # write vtk file
-        print "At t = %d, %d Steps remaining" % (q,t-(q+1)) # Progress indicator
-    
+        print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
+        q += skip
+        
     #Write the Max and min values to file
     mm_array = np.array((max,min))
     np.savetxt('max_min_' + name + '.txt',mm_array) 
@@ -198,7 +200,7 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
     
     q = 0 
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
-    while q <= t:
+    while q <= t-1:
         var = visual.var3d(name,q) # collect variable
         
         #Find the min and max values
@@ -235,7 +237,7 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
     return
 
 
-def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None):
+def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
     """
         
     Cylinder
@@ -311,7 +313,7 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None):
     
     q = 0
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
-    for q in range(t):
+    while q <= t-1:
             var = visual.var3d(name,q) # collect variable
     
             #Find the min and max values
@@ -339,7 +341,7 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None):
             #Convert coordinate section        
             vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
             vtk_path = visual.write_vtk(name,pts,vrbl,q) # write vtk file
-            print "At t = %d, %d Steps remaining" % (q,t-(q+1)) # Progress indicator
+            print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
     
     #Write the Max and min values to file
     mm_array = np.array((max,min))
@@ -379,7 +381,7 @@ def elm_t(name ,time ,zShf_int_p = 0.25, path = None):
 
     # Get the dimensions and initial value of the variable data.    
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
-  
+      
     # ELM
     # Import r,z and zshift from grid file
     r = visual.nc_var(grid_file,'Rxy') # ELM Coordinates
@@ -447,7 +449,7 @@ def torus_t(name, time, step = 0.5, path = None, R = None, r = None , dr = None 
     # Find the max_t, initial value and shape of variable
     max_t, var_0, nx, ny, nz = visual.dim_all(name)
     ny_work = ny
-
+    
     # Interpolate setup
     # Get number of new points
     if step != 0:
@@ -455,7 +457,7 @@ def torus_t(name, time, step = 0.5, path = None, R = None, r = None , dr = None 
     # Define empty array with increased number of y values
     var_new = np.empty((nx,ny_work,nz),dtype=float)
     
-#  ISTTOK specifications        R,r,dr,Bt,q = 0.46, 0.085, 0.02, 0.5, 5
+    #  ISTTOK specifications        R,r,dr,Bt,q = 0.46, 0.085, 0.02, 0.5, 5
     # Import coordinates from function in circle library
     r,z = circle.coordinates(nx,ny_work,nz,R,r,dr,Bt,q) # toroidal coordinates
     pts = visual.torus(r, z, nx, ny_work, nz)  # vtk grid points
