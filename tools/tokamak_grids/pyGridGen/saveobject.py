@@ -1,4 +1,6 @@
-import cPickle as pickle
+from future import standard_library
+standard_library.install_aliases()
+import pickle as pickle
 
 
 def saveobject(obj, filename):

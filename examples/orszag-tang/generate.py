@@ -1,3 +1,7 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 # the Scientific Python netCDF 3 interface
 # http://dirac.cnrs-orleans.fr/ScientificPython/
 #from Scientific.IO.NetCDF import NetCDFFile as Dataset
@@ -29,7 +33,7 @@ Jeff Whitaker <jeffrey.s.whitaker@noaa.gov> 20070202
 ny = 100; nx = ny + 4
 
 # dy of grid
-dy = 1.0 / np.float(ny)
+dy = old_div(1.0, np.float(ny))
 dx = dy
 # create grid
 dxarr=np.zeros((nx,ny),dtype='float32')+dx
@@ -40,11 +44,11 @@ yarr=np.arange(0.,np.float(ny),1.,dtype='float32')*dy
 
 # compute initial variables
 
-rho=np.zeros((nx,ny),dtype='float32')+25./(36.*np.pi)
-p=np.zeros((nx,ny),dtype='float32')+5./(12.*np.pi)
+rho=np.zeros((nx,ny),dtype='float32')+old_div(25.,(36.*np.pi))
+p=np.zeros((nx,ny),dtype='float32')+old_div(5.,(12.*np.pi))
 
 rho=1.
-p=rho/3.
+p=old_div(rho,3.)
 
 v_x=np.zeros((nx,ny),dtype='float32')
 Bx=np.zeros((nx,ny),dtype='float32')
@@ -123,4 +127,4 @@ B0y[:,:]=By
 
 
 ncfile.close()
-print '*** SUCCESS writing file otv.grd.py.nc!'
+print('*** SUCCESS writing file otv.grd.py.nc!')

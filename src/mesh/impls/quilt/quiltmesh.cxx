@@ -564,6 +564,14 @@ bool QuiltMesh::lastY() {
   throw BoutException("lastY() is not implemented in QuiltMesh");
 }
 
+bool QuiltMesh::firstY(int xpos) {
+  throw BoutException("firstY() is not implemented in QuiltMesh");
+}
+
+bool QuiltMesh::lastY(int xpos) {
+  throw BoutException("lastY() is not implemented in QuiltMesh");
+}
+
 int QuiltMesh::UpXSplitIndex() {
   throw BoutException("UpXSplitIndex() is not implemented in QuiltMesh");
 }

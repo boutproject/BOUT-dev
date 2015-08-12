@@ -1,9 +1,10 @@
+from __future__ import print_function
 # Routines for manipulating grid files
 
 try:
     from boututils import DataFile
 except ImportError:
-    print "ERROR: restart module needs DataFile"
+    print("ERROR: restart module needs DataFile")
     raise
 
 def slice(infile, outfile, region = None, xind=None, yind=None):
@@ -70,7 +71,7 @@ def slice(infile, outfile, region = None, xind=None, yind=None):
     outdf["ShiftAngle"] = indf["ShiftAngle"][xind[0]:xind[1]]
     
     # Loop over all variables
-    for v in indf.keys():
+    for v in list(indf.keys()):
         if v in special:
             continue # Skip these variables
         

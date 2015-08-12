@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
+from builtins import object
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 # Follow the gradient from a given point to a target f
 # 
@@ -13,11 +18,11 @@ from bunch import Bunch
 try:
     from ode.lsode import lsode
 except ImportError:
-    print "No ode.lsode available. Trying scipy.integrate.odeint"
+    print("No ode.lsode available. Trying scipy.integrate.odeint")
     from scipy.integrate import odeint 
     
     # Define a class to emulate lsode behavior
-    class lsode:
+    class lsode(object):
         def __init__(self, func, f0, rz0):
             # Function for odeint needs to have reversed inputs
             self._func = lambda pos, fcur : func(fcur, pos)
@@ -32,7 +37,7 @@ except ImportError:
 
 from local_gradient import local_gradient
 from itertools import chain
-from support import deriv
+from boututils  import deriv
 from saveobject import saveobject
 
 global rd_com, idata, lastgoodf, lastgoodpos, Rpos, Zpos, ood, tol, Ri, Zi, dR, dZ
@@ -81,8 +86,8 @@ def radial_differential( fcur, pos):
       
 
   # Check mismatch between fcur and f ? 
-    Br = dfdz/dZdi
-    Bz = -dfdr/dRdi
+    Br = old_div(dfdz,dZdi)
+    Bz = old_div(-dfdr,dRdi)
     B2 = Br**2 + Bz**2
 
     return [-Bz/B2/dRdi, Br/B2/dZdi]
@@ -128,7 +133,7 @@ def follow_gradient( interp_data, R, Z, ri0, zi0, ftarget, ri, zi, status=0,
   
     ood = 0
 
-    if ftarget==None : print ftarget
+    if ftarget==None : print(ftarget)
 
   # Get starting f
     out=local_gradient( interp_data, ri0, zi0, status=status, f=0., dfdr=None, dfdz=None)
@@ -341,8 +346,8 @@ def line_crossings( r1, z1, period1, r2, z2, period2, ncross=0,
       
       # Get location along the line segments
             if numpy.abs(det) > 1.e-6 :
-                alpha = (d*dr - b*dz)/det
-                beta =  (a*dz - c*dr)/det
+                alpha = old_div((d*dr - b*dz),det)
+                beta =  old_div((a*dz - c*dr),det)
             else: 
                 alpha = -1.
                 beta = -1.

@@ -4,18 +4,21 @@ Contour calculation routines
 http://members.bellatlantic.net/~vze2vrva/thesis.html
 
 """
+from __future__ import print_function
+from __future__ import division
+from past.utils import old_div
 
 try:
     import numpy as np
 except ImportError:
-    print "ERROR: NumPy module not available"
+    print("ERROR: NumPy module not available")
     raise
 
 def contour(f, level):
     """Return a list of contours matching the given level"""
 
     if len(f.shape) != 2:
-        print "Contour only works on 2D data"
+        print("Contour only works on 2D data")
         return None
     nx,ny = f.shape
     
@@ -40,7 +43,7 @@ def contour(f, level):
                     # One of the corners is > level, and the other is <= level
                     ncross += 1
                     # Find location
-                    return (level - a) / (b - a)
+                    return old_div((level - a), (b - a))
                 else:
                     return None
             

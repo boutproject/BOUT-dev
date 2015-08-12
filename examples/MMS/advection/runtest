@@ -6,6 +6,8 @@
 #
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -51,7 +53,7 @@ for opts,label,sym in options:
 
         dx = 2.*pi / (nx)
 
-        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) +" solver:timestep="+str(dt0/nx)
+        args = opts + " mesh:nx="+str(nx+4)+" mesh:dx="+str(dx)+" MZ="+str(nx) #+" solver:timestep="+str(dt0/nx)
         
         print("  Running with " + args)
 
@@ -70,7 +72,7 @@ for opts,label,sym in options:
         
         # Collect data
         E_f = collect("E_f", tind=[1,1], info=False, path="data")
-        #E_f = E_f[0,2:-2,0,:]
+        #E_f = E_f[0,1:-1,0,:]
         
         # Average error over domain
         l2 = sqrt(mean(E_f**2))
@@ -168,8 +170,8 @@ plt.close()
 
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

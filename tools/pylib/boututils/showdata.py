@@ -4,7 +4,17 @@ Visualisation and animation routines
 Written by Luke Easy
 le590@york.ac.uk
 Last Updated 19/3/2015
+Additional functionality by George Breyiannis 26/12/2014
+
 """
+from __future__ import print_function
+from __future__ import division
+try:
+    from builtins import str
+    from builtins import chr
+    from builtins import range
+except:
+    pass
 
 #import numpy as np
 from mpl_toolkits.mplot3d import axes3d
@@ -16,7 +26,9 @@ from boutdata import collect
 
 
 ####################################################################
-# Create FFMpeg writer
+# Specify manually ffmpeg path
+#plt.rcParams['animation.ffmpeg_path'] = '/usr/bin/ffmpeg'
+
 FFwriter = animation.FFMpegWriter()
 ####################################################################
 
@@ -287,12 +299,17 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                  
     # Collect time data from file
     if (tslice == 0):           # Only wish to collect time data if it matches 
-        t = collect('t_array')
-        if t == None:
+        try:
+            t = collect('t_array')
+            if t == None:
+                raise ValueError("t_array is None")
+            if len(t) != Nt[0][0]:
+                raise ValueError("t_array is wrong size")
+        except:
             t = linspace(0,Nt[0][0], Nt[0][0])
     
     # Obtain number of frames
-    Nframes = Nt[0][0]/intv
+    Nframes = int(Nt[0][0]/intv)
 
     # Generate grids for plotting
     x = []
@@ -538,14 +555,14 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
     # Save movie with given name
-    if ((isinstance(movie,basestring)==1)):
+    if ((isinstance(movie,str)==1)):
         try:
             anim.save(movie+'.mp4',writer = FFwriter, fps=30, extra_args=['-vcodec', 'libx264'])
         except Exception:
             print("Save failed: Check ffmpeg path")
 
     # Save movie with default name
-    if ((isinstance(movie,basestring)==0)):
+    if ((isinstance(movie,str)==0)):
         if (movie != 0):
             try:
                 anim.save('animation.mp4',writer = FFwriter, fps=28, extra_args=['-vcodec', 'libx264'])

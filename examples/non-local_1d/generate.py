@@ -4,6 +4,8 @@
 # Generate an input mesh
 #
 
+from __future__ import division
+from past.utils import old_div
 from boututils import DataFile # Wrapper around NetCDF4 libraries
 from math import pow
 from sys import argv
@@ -16,8 +18,8 @@ if len(argv)>1:
 else:
   ny = 256  # Minimum 5. Should be divisible by number of processors (so powers of 2 nice)
 #dy = [[1.]*ny]*nx # distance between points in y, in m/g22/lengthunit
-g22 = [[pow(float(ny-1)/length,2)]*ny]*nx
-g_22 = [[pow(length/float(ny-1),2)]*ny]*nx
+g22 = [[pow(old_div(float(ny-1),length),2)]*ny]*nx
+g_22 = [[pow(old_div(length,float(ny-1)),2)]*ny]*nx
 ixseps1 = -1
 ixseps2 = 0
 
