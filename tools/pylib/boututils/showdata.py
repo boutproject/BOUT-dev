@@ -29,7 +29,7 @@ pause = False
 ###################
 
 
-def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False):
+def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False):
     """
     A Function to animate time dependent data from BOUT++
     Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
@@ -60,6 +60,9 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
     During animation click once to stop in the current frame. Click again to continue.
 
+    global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars. 
+    
+    symmetric_colors = True: colorlevels are symmetric.  
     """
     plt.ioff()
     
@@ -321,11 +324,20 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         for j in range(0,Nlines[i]):
             dummymax[i].append(max(vars[i][j]))
             dummymin[i].append(min(vars[i][j]))
+        
         fmax.append(max(dummymax[i]))
         fmin.append(min(dummymin[i]))
+        
+        if(symmetric_colors):
+            absmax = max(abs(fmax[i]),abs(fmin[i]))
+            fmax[i] = absmax
+            fmin[i] = -absmax
+            
         for j in range(0,Nlines[i]):
             dummymax[i][j] = max(x[i][j])
         xmax.append(max(dummymax[i]))
+        
+             
         if not (global_colors):
             clevels.append(linspace(fmin[i], fmax[i], Ncolors))
     if(global_colors): 
