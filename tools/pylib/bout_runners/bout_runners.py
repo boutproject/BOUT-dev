@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.001'
-__date__    = '22.07.2015'
+__version__ = '1.002'
+__date__    = '13.08.2015'
 
 import os
 import re
@@ -1755,9 +1755,9 @@ class basic_runner(object):
         # Either no files are found, or restart is set
         else:
             if len(dmp_files) == 0 and self._restart != None:
-                message = "Restart was set to " +self._restart+\
-                          ", but no dmp files were found."+\
-                          " restart set to None"
+                message = "'restart' was set to " +self._restart+\
+                          ", but no dmp files found."+\
+                          " Setting 'restart' to None"
                 self._restart = None
                 self._warning_printer(message)
                 self._warnings.append(message)
@@ -2529,7 +2529,56 @@ class basic_runner(object):
         # If the run is restarted with initial values from the last run
         if self._restart != None:
             if self._restart == 'overwrite':
+                print("Moving old runs\n")
+                # Put restart to the arguments
                 arg += ' restart'
+                #{{{Save old runs
+                # Check for folders in the dmp directory
+                directories = [\
+                               name for name in\
+                               os.listdir(self._dmp_folder) if\
+                               os.path.isdir(os.path.join(\
+                                            self._dmp_folder, name))\
+                              ]
+                # Find occurences of 'run' in these folders
+                prev_runs = [name for name in directories if 'run' in name]
+                # Check that the list is not empty
+                if len(prev_runs) != 0:
+                    # Sort the folders alphabethically
+                    prev_runs.sort()
+                    # Pick the last of prev_runs
+                    prev_runs = prev_runs[-1]
+                    # Pick the number from the last run
+                    # First split the string
+                    overwrite_nr = prev_runs.split('_')
+                    # Pick the last element of overwrite_nr, and cast it
+                    # to an integer
+                    overwrite_nr = int(overwrite_nr[-1])
+                    # Add one to the overwrite_nr, as we want to create
+                    # a new directory
+                    overwrite_nr += overwrite_nr
+                else:
+                    # Set the overwrite_nr
+                    overwrite_nr = 1
+                # Create the folder for the previous runs
+                self._create_folder(\
+                        os.path.join(self._dmp_folder, 'run_' +\
+                                     str(overwrite_nr)))
+                # Move the dmp files
+                command = "mv ./" + self._dmp_folder +\
+                          "/*.dmp.* ./" + self._dmp_folder +\
+                          "/run_" + str(overwrite_nr) + "/"
+                # Execute the command
+                shell(command)
+
+                # Move the log files
+                command = "mv ./" + self._dmp_folder +\
+                          "/*.log.* ./" + self._dmp_folder +\
+                          "/run_" + str(overwrite_nr) + "/"
+                # Execute the command
+                shell(command)
+                #}}}
+
             elif self._restart == 'append':
                 arg += ' restart append'
             else:
