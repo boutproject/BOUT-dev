@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Classes for running several mpi-runs with BOUT++ at once.
+"""Classes for running one or several mpi-runs with BOUT++ at once.
    Read the docstring of 'basic_runner', or refer to the user manual of
    BOUT++ for more info. Examples can be found in
    BOUT/examples/bout_runners_example."""
@@ -10,7 +10,7 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.002'
+__version__ = '1.0021'
 __date__    = '13.08.2015'
 
 import os
@@ -2039,10 +2039,10 @@ class basic_runner(object):
         for size_nr in range(len(self._nx)):
             # Check the type
             if type_txt == 'NXPE':
-                print("Checking nx =" + str(self._nx[size_nr]) +\
+                print("Checking nx = " + str(self._nx[size_nr]) +\
                       " with NXPE = " + str(self._NXPE[size_nr]))
             elif type_txt == 'NYPE':
-                print("Checking ny =" + str(self._nx[size_nr]) +\
+                print("Checking ny = " + str(self._ny[size_nr]) +\
                       " with NYPE = " + str(self._NYPE[size_nr]))
             # Check to see if succeeded
             init_split_found = False
@@ -2090,8 +2090,6 @@ class basic_runner(object):
                                                              using_nx = True,\
                                                              using_ny = False)
 
-
-
                 #{{{ Check if the split was found the first go.
                 # This will be used if self_allow_size_modification is
                 # off, or if we are using a grid file
@@ -2110,7 +2108,7 @@ class basic_runner(object):
                                              produce_warning = produce_warning)
             elif type_txt == 'NYPE':
                 self._check_init_split_found(init_split_found, size_nr,\
-                                             test_nx = True, test_ny = False,
+                                             test_nx = False, test_ny = True,
                                              produce_warning = produce_warning)
     #}}}
 #}}}
@@ -2204,10 +2202,12 @@ class basic_runner(object):
                 # nout_timestep folder
                 nout_timestep.append(elem.replace('=','_'))
 
-            # If mesh, MXG or MYG is in the combination
+            # If any quantity related to mesh is in the combination
             elif ('mesh' in elem) or\
                  ('MXG' in elem) or\
                  ('MYG' in elem) or\
+                 ('NXPE' in elem) or\
+                 ('NYPE' in elem) or\
                  ('zperiod' in elem) or\
                  ('zmin' in elem) or\
                  ('zmax' in elem) or\
@@ -2221,8 +2221,9 @@ class basic_runner(object):
 
             # If a grid file is in the combination
             elif (elem[0:4] == 'grid'):
-                # Remove .nc and =
-                cur_grid = elem.replace('.nc','')
+                # Remove .grd .nc and =
+                cur_grid = elem.replace('.grd','')
+                cur_grid = cur_grid.replace('.nc','')
                 cur_grid = cur_grid.replace('=','_')
                 grid_file.append(cur_grid)
 
@@ -2540,11 +2541,11 @@ class basic_runner(object):
                                os.path.isdir(os.path.join(\
                                             self._dmp_folder, name))\
                               ]
-                # Find occurences of 'run' in these folders
+                # Find occurrences of 'run' in these folders
                 prev_runs = [name for name in directories if 'run' in name]
                 # Check that the list is not empty
                 if len(prev_runs) != 0:
-                    # Sort the folders alphabethically
+                    # Sort the folders alphabetically
                     prev_runs.sort()
                     # Pick the last of prev_runs
                     prev_runs = prev_runs[-1]
