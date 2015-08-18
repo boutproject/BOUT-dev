@@ -393,9 +393,16 @@ int BoutMesh::load() {
     output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
-  
-  zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/(ngz-1);
+  if(get(dz, "dz")) {
+    // No dz in input
+    zlength = (ZMAX-ZMIN)*TWOPI;
+    dz = zlength/(ngz-1);
+  }else {
+    // Read dz from input
+    zlength = dz * (ngz-1);
+    ZMIN = 0.0;
+    ZMAX = zlength / TWOPI;
+  }
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   
