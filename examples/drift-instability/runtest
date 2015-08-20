@@ -6,9 +6,19 @@
 
 from __future__ import print_function
 from __future__ import division
-from builtins import str
-from builtins import range
-from past.utils import old_div
+
+try:
+  from builtins import str
+  from builtins import range
+except:
+  pass
+
+try:
+  from past.utils import old_div
+except:
+  def old_div(a,b):
+    return a / b
+
 nproc = 2       # Number of processors to run on
 
 # Relative tolerance in frequency and growth rate
@@ -92,7 +102,7 @@ for zeff in zlist:
     
     ##### Calculate geometric and physical quantities
     lZeta  = 1e2*zmax*2*np.pi*grid['R0']    # toroidal range [cm]
-    lbNorm = lZeta*(old_div((grid['Bpxy'])[0,old_div(ny,2)],(grid['Bxy'])[0,old_div(ny,2)]))  # binormal coord range [cm]
+    lbNorm = lZeta*((grid['Bpxy'])[0,old_div(ny,2)] / (grid['Bxy'])[0,old_div(ny,2)])  # binormal coord range [cm]
     zPerp  = lbNorm*np.arange(nz)/(nz-1)    # binormal coordinate [cm]
     
     cLight = 3e10                        # speed of light [cm/s]
@@ -101,17 +111,17 @@ for zeff in zlist:
     wce    = 1.76e7*1e4*grid['bmag']     # electron cyclotron frequency, [rad/s]
     
     # Ni scale length [cm]
-    Ln = np.mean(np.abs(old_div((grid['Ni0'])[:,old_div(ny,2)], 
-                      deriv( (grid['Rxy'])[:,old_div(ny,2)]*1e2, (grid['Ni0'])[:,old_div(ny,2)])))) 
+    Ln = np.mean(np.abs((grid['Ni0'])[:,old_div(ny,2)] / 
+                      deriv( (grid['Rxy'])[:,old_div(ny,2)]*1e2, (grid['Ni0'])[:,old_div(ny,2)]))) 
     
-    vPe   = old_div((vTe)**2,(wce*Ln)) # electron diamagnetic drift speed [cm/s]
+    vPe   = (vTe)**2 / (wce*Ln) # electron diamagnetic drift speed [cm/s]
     wstar = vPe*kperp 
     
-    logLam = 24. - np.log(old_div(np.sqrt(grid['Ni_x']*1e14),grid['Te_x']))
+    logLam = 24. - np.log(np.sqrt(grid['Ni_x']*1e14 / grid['Te_x']))
     nuei   = zeff*2.91e-6*(grid['Ni_x']*1e14)*logLam/(grid['Te_x'])**1.5
     #wci=9.58e3*(1./d.AA)*1e4*du.Bmag
     
-    lpar = old_div(np.sum((old_div(grid['Bxy'],grid['Bpxy']))*grid['dlthe']),grid['nx']) # [m], average over flux surfaces
+    lpar = np.sum(((grid['Bxy']/grid['Bpxy']))*grid['dlthe']) / grid['nx'] # [m], average over flux surfaces
     kpar = 2*np.pi/(1e2*lpar) # cm-1
     spar = (old_div(kpar,kperp))**2 * wci * wce / (0.51 * nuei) # [1/s]
     sparn = old_div(spar, wstar)

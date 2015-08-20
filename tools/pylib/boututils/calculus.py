@@ -6,8 +6,17 @@ B.Dudson, University of York, Nov 2009
 """
 from __future__ import print_function
 from __future__ import division
-from builtins import range
-from past.utils import old_div
+
+try:
+  from builtins import range
+except:
+  pass
+
+try:
+  from past.utils import old_div
+except:
+  def old_div(a,b):
+    return a / b
 
 try:
     from numpy import zeros, arange, pi, ones, array, transpose, sum, where, arange, multiply
@@ -182,7 +191,7 @@ def integrate(var, periodic=False):
                 return 3.*(f[0] + 3.*f[1] + 3.*f[2] + f[3])/8.
             elif n == 3:
                 # 4th-order Simpson's rule
-                return old_div((f[0] + 4.*f[1] + f[2]),3.)
+                return (f[0] + 4.*f[1] + f[2])/3.
             elif n == 2:
                 # 2nd-order Trapezium rule
                 return 0.5*(f[0] + f[1])
@@ -222,7 +231,7 @@ def simpson_integrate(data,dx,dy,kernel=0.0,weight=1.0):
   if len(kernel)==1:
     kernel = simpson_matrix(Nx,Ny,dx,dy)
 
-  return old_div(sum(multiply(multiply(weight,kernel),data)),sum(multiply(weight,kernel)))
+  return sum(multiply(multiply(weight,kernel),data))/sum(multiply(weight,kernel))
 
 
 def simpson_matrix(Nx,Ny,dx,dy):
