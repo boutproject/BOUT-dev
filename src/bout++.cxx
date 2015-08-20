@@ -397,7 +397,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   int ncalls            = solver->rhs_ncalls;
   int ncalls_e		= solver->rhs_ncalls_e;
   int ncalls_i		= solver->rhs_ncalls_i;
-  bool output_split     = solver->split_monitor;
+  bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)
