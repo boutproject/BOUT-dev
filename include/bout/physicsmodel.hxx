@@ -160,6 +160,33 @@ private:
     return 0;                                         \
   }
 
+/// Macro to replace solver->add, passing variable name
+#define SOLVE_FOR(var) solver->add(var, #var)
+#define SOLVE_FOR2(var1, var2) { \
+  solver->add(var1, #var1);       \
+  solver->add(var2, #var2);}
+#define SOLVE_FOR3(var1, var2, var3) { \
+  solver->add(var1, #var1);             \
+  solver->add(var2, #var2);             \
+  solver->add(var3, #var3);}
+#define SOLVE_FOR4(var1, var2, var3, var4) { \
+  solver->add(var1, #var1);             \
+  solver->add(var2, #var2);             \
+  solver->add(var3, #var3);             \
+  solver->add(var4, #var4);}
+#define SOLVE_FOR5(var1, var2, var3, var4, var5) { \
+  solver->add(var1, #var1);             \
+  solver->add(var2, #var2);             \
+  solver->add(var3, #var3);             \
+  solver->add(var4, #var4);             \
+  solver->add(var5, #var5);}
+#define SOLVE_FOR6(var1, var2, var3, var4, var5, var6) { \
+  solver->add(var1, #var1);             \
+  solver->add(var2, #var2);             \
+  solver->add(var3, #var3);             \
+  solver->add(var4, #var4);             \
+  solver->add(var5, #var5);             \
+  solver->add(var6, #var6);}
 
 #endif // __PHYSICS_MODEL_H__
 
