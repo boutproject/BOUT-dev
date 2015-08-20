@@ -173,7 +173,7 @@ class DataFile_netCDF(DataFile):
     def __init__(self, filename=None, write=False, create=False,
                  format='NETCDF3_CLASSIC'):
         if not has_netCDF:
-            print("DataFile: No supported NetCDF modules available")
+            print("DataFile: No supported NetCDF python-modules available")
             raise ImportError
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
@@ -464,7 +464,7 @@ class DataFile_HDF5(DataFile):
     def __init__(self, filename=None, write=False, create=False,
                  format=None):
         if not has_h5py:
-            print("DataFile: No supported HDF5 modules available")
+            print("DataFile: No supported HDF5 python-modules available")
             raise ImportError
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
