@@ -1,4 +1,4 @@
-\# Copyright 2010 B D Dudson, S Farley
+# Copyright 2010 B D Dudson, S Farley
 #
 # Contact Ben Dudson, bd512@york.ac.uk
 #
