@@ -688,7 +688,7 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTLIBPATH -lfftw3"
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
 fi
 echo ""
 
@@ -769,8 +769,8 @@ then
 
   if test $HDFPATH
   then
-      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH=$$HDFPATH/lib,
-      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH=$$HDFPATH/lib64, HDFPATH=''))
+      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH=$HDFPATH/lib,
+      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH=$HDFPATH/lib64, HDFPATH=''))
       test $HDFLIBPATH || echo " -> Can't find HDF5 files" 
   fi
   
@@ -786,7 +786,7 @@ then
     fi
     
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS $HDFLIBPATH/libhdf5.a -lz"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
 
     file_formats="$file_formats HDF5"
   else

@@ -5487,7 +5487,7 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTLIBPATH -lfftw3"
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
 fi
 echo ""
 
@@ -5739,7 +5739,7 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$HDFPATH/lib/libhdf5.a" | $as_tr_cpp` 1
 _ACEOF
-HDFLIBPATH=$$HDFPATH/lib
+HDFLIBPATH=$HDFPATH/lib
 else
   as_ac_File=`$as_echo "ac_cv_file_$HDFPATH/lib64/libhdf5.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HDFPATH/lib64/libhdf5.a" >&5
@@ -5763,7 +5763,7 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$HDFPATH/lib64/libhdf5.a" | $as_tr_cpp` 1
 _ACEOF
-HDFLIBPATH=$$HDFPATH/lib64
+HDFLIBPATH=$HDFPATH/lib64
 else
   HDFPATH=''
 fi
@@ -5785,7 +5785,7 @@ fi
     fi
 
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS $HDFLIBPATH/libhdf5.a -lz"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
 
     file_formats="$file_formats HDF5"
   else
