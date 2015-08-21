@@ -55,9 +55,8 @@ import visit
 #==============================================================================
 # Start of the Functions
 #==============================================================================
-"""
-Get returns the a variable in a text file
-""" 
+#Get returns the a variable in a text file
+
 def get(filename, name, section=None):
     
     with open(filename, "rt") as f:
@@ -213,18 +212,18 @@ def intrp_grd(ny,var,ny_work,step):
         var_new[i,:] = var_y_new
     return var_new
 
-"""
-Interpolation of 2D arrays (i.e. Rxy,Zxy) taking into account zshift
-and performing irregular number of inserts
-Inputs:
-nx,ny: number of (x,y)  points in original data
-zshift: Imported from grid file, shift in z for each (x,y) point
-z_tol: z_shift tolerance
-var: variable to interpolate
-Outputs:
-var2:  variable that has been interpolated (using linear Interpolation)
-ny2: new length of the y array
-"""
+
+#Interpolation of 2D arrays (i.e. Rxy,Zxy) taking into account zshift
+#and performing irregular number of inserts
+#Inputs:
+#nx,ny: number of (x,y)  points in original data
+#zshift: Imported from grid file, shift in z for each (x,y) point
+#z_tol: z_shift tolerance
+#var: variable to interpolate
+#Outputs:
+#var2:  variable that has been interpolated (using linear Interpolation)
+#ny2: new length of the y array
+
 
 def zshift_interp2d(nx,ny,zshift,z_tol, var):
 	# Input array Rxy[nx, ny]
@@ -337,7 +336,7 @@ def torus(r, z, nx, ny, nz):
 # Output x,y,z coordinates
 def elm(Rxy, Zxy, zshift, nx, ny, nz, period=1):
     dz = 2.*pi / (period*(nz-1)) # Change in z
-    phi0 = np.linspace(0,2.*pi / period, nz) # Initial Phi_0 values?
+    phi0 = np.linspace(0,2.*pi / period, nz) # Initial Phi_0 value
     # Create empty x,y,z coordinate arraays
     xcoord = np.empty((nx,ny,nz), dtype=float)
     ycoord = np.empty((nx,ny,nz), dtype=float)
@@ -444,7 +443,7 @@ def write_vtk(name,pts,vrbl,t):
 # eig_num: eigen number,
 def write_vtk_2(name,pts,vrbl_r,vrbl_i,eig_num):
 	i,j,k = pts
-	vtk_file_path = gridToVTK( name + "_eigen_%d" % eig_num,i,j,k, pointData = {str(name + '_r'): vrbl_r , str(name + '_i') : vrbl_i})
+	vtk_file_path = gridToVTK("./batch/" + name + "_eigen_%d" % eig_num,i,j,k, pointData = {str(name + '_r'): vrbl_r , str(name + '_i') : vrbl_i})
 	return vtk_file_path
 
 def write_vtk_vector(name,pts,vectorx,vectory,vectorz,t):
@@ -486,7 +485,7 @@ def view_vtk(work_dir,name,max,min):
     return session_path,session_name
 
 # Export an image sequence of the plot across the entire time range
-def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
+def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp,skip):
     # Make dir for storing image sequence
     outputdir = img_dir + '/' + session_name
     if not os.path.exists(outputdir):
@@ -496,6 +495,9 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
     if min_imp == False:
         min_imp = 0
 
+    # Create index of number of time slices (used for keeping time in the filenames and navigating in VisIt)
+    indicies = np.arange(0,len(t))
+        
     # Launch visit
     sys.path.insert(0,visit_dir)
     import visit
@@ -503,8 +505,8 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
     visit.RestoreSession(session_path,0)
     visit.SetTimeSliderState(0)
     # Export an Image sequence of the variable for every time base
-    i = 0
-    for i in range(t):
+    for i in indicies:
+        time = i * skip
         visit.SetTimeSliderState(i) # Change timer slider
         PseudocolorAtts = visit.PseudocolorAttributes()
         # If user would like fixed max and mind then assign max and min values
@@ -525,7 +527,7 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
         s.outputToCurrentDirectory = 0
         s.outputDirectory = outputdir
         s.family = 0
-        s.fileName = '%s_%s_image_%04d' % (name,session_name,i)
+        s.fileName = '%s_%s_image_%04d' % (name,session_name,time)
         s.format = s.PNG
         s.width = img_width
         s.height = img_height
@@ -533,4 +535,126 @@ def draw_vtk(session_path,img_dir,name,t,session_name,max_imp,min_imp):
         visit.SaveWindow()
     # Close visit session
     visit.DeleteAllPlots()
+    visit.Close()
+    
+# Draw vtk file and let user orientate view and then save session file
+# returns the VisIt session name and location
+def view_eigen(work_dir,name):
+    vtk_path = work_dir + "/batch/" + name + "_eigen_*.vts database" # Set vtkfile path
+    visit.OpenDatabase(vtk_path) # Open database
+    # Create two windows for real and imaginary values
+    visit.SetWindowLayout(2)
+    visit.SetActiveWindow(1)
+    visit.AddPlot("Pseudocolor",name + '_r', 1 , 1) #Draw a Pseudocolor Plot of the real eigen variable
+    visit.DrawPlots() #Draw real plot
+    visit.SetActiveWindow(2)
+    visit.AddPlot("Pseudocolor",name + '_i', 1 , 1) #Draw a Pseudocolor Plot of the imaginary eigen variable
+    visit.DrawPlots() #Draw imaginary plot       
+        
+    # Save the Visit Session
+    session_name = raw_input('Enter a session file name:')
+    
+    #Detect if 2D or 3D 
+    visit.SetActiveWindow(1)
+    dim_1 = visit.GetWindowInformation().viewDimension
+    visit.SetActiveWindow(2)
+    dim_2 = visit.GetWindowInformation().viewDimension
+    
+    # Return error if dimensions of the plots are not the same
+    if dim_1 != dim_2:
+        print 'Error plots do not have the same dimensions'
+        sys.exit()
+    
+    # Set dimension variable
+    if dim_1 == dim_2:
+        dim = dim_1
+        
+    # Set both windows to have the same orientation as window 1, 2D
+    if dim == 2:
+        visit.SetActiveWindow(1)
+        view = visit.View2DAttributes(1)
+        visit.SetActiveWindow(2)
+        visit.SetVeiew2D(view)
+    
+
+    # Set both windows to have the same orientation as window 1, 3D
+    if dim == 3: 
+        visit.SetActiveWindow(1)
+        view = visit.View3DAttributes(1)
+        visit.SetActiveWindow(2)
+        visit.SetView3D(view)
+    
+    # Save the session
+    session_path = work_dir + "/" + session_name + ".session"
+    visit.SaveSession(session_path)
+    
+    # Delete plots
+    for i in (1,2):
+        visit.SetActiveWindow(i)
+        visit.DeleteAllPlots()
+    
+    visit.CloseDatabase(vtk_path)
+    return session_path,session_name
+    
+    
+# Function that renders an image sequence of a session with two windows (designed for eigen values)
+#==============================================================================
+# Create an image sequence of eigen data
+#==============================================================================
+def image_eigen(session_path,img_dir,name,t,session_name):
+    # Make dir for storing image sequence
+    outputdir = img_dir + '/' + session_name
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
+
+
+    # Create index of number of time slices (used for keeping time in the filenames and navigating in VisIt)
+    index = np.arange(0,len(t))
+        
+    # Launch visit
+    sys.path.insert(0,visit_dir)
+    import visit
+    # Load session and initialise at time 0
+    visit.RestoreSession(session_path,0)
+    visit.SetTimeSliderState(0)
+    
+    # Export an Image sequence of the real variable for every time base
+    for i in index:
+        visit.SetActiveWindow(1)
+        visit.SetTimeSliderState(i) # Change timer slider
+        visit.DrawPlots() # Draw plot
+        # Save a png of the plot
+        s = visit.SaveWindowAttributes()
+        s.outputToCurrentDirectory = 0
+        s.outputDirectory = outputdir
+        s.family = 0
+        s.fileName = '%s_%s_image_%04d' % (name + '_r',session_name,t[i])
+        s.format = s.PNG
+        s.width = img_width
+        s.height = img_height
+        visit.SetSaveWindowAttributes(s)
+        visit.SaveWindow()
+        
+    # Export an image sequence of the real variable for every time base
+    for i in index:
+        visit.SetActiveWindow(2)
+        visit.SetTimeSliderState(i)
+        
+        visit.DrawPlots()
+        s = visit.SaveWindowAttributes()
+        s.outputToCurrentDirectory = 0
+        s.outputDirectory = outputdir
+        s.family = 0
+        s.fileName = '%s_%s_image_%04d' % (name + '_i',session_name,t[i])
+        s.format = s.PNG
+        s.width = img_width
+        s.height = img_height
+        visit.SetSaveWindowAttributes(s)
+        visit.SaveWindow()
+        
+    # Close visit session
+    for i in (1,2):
+        visit.SetActiveWindow(i)
+        visit.DeleteAllPlots()
+        
     visit.Close()

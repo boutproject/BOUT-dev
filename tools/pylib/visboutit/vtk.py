@@ -2,7 +2,7 @@
 
 """
 vtk.py
-This python file contains functions required to convert to cylindercal, torodial and ELM systems.
+This python file contains functions required to convert to cylinder, torus and ELM coordinate systems.
 """
 
 #Import libraries
@@ -15,18 +15,18 @@ from scipy import interpolate
 
 def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
     """
-       
-    elm function: convert the spacial variables to EML coordinate system for a range of time
+    This functions converts data to the ELM coordinate system.
     
     Inputs
         name: variable name imported from BOUT.dmp files
         time: The end time slice that will be converted, if -1 entire dataset is imported
         zShift Interpolation Percentage: This is used to set the tolerance values for the linear interpolation.
         path: File path to data, if blank then the current working directory is used to look for data
-    
-    Output
+        skip: The gap between time slices to convert.
+        
+    Outputs
         Timestamped vtk files of the specified variable.
-        A text file with the maximum and minimum files.
+        A text file with the maximum and minimum values.
                 
     """
     zShf_int_p = visual.zShf_p_check(zShf_int_p)
@@ -79,11 +79,8 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         os.makedirs("images")
     
     #Initial max and min values
-    var_x, var_y, var_z = var_0[:,0,0], var_0[0,:,0], var_0[0,0,:]
-    max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-    min_x, min_y, min_z = np.amin(var_x), np.amin(var_y),np.amin(var_z)
-    max = np.amax((max_x, max_y, max_z))
-    min = np.amin((min_x, min_y, min_z))
+    max = np.zeros(t , dtype = float)
+    min = np.zeros(t , dtype = float)
     
     #If the variable is pressure, import and add the P0 variable to this
     if name == 'P':
@@ -96,15 +93,8 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         var = visual.var3d(name,q) # collect variable
     
         #Find the min and max values
-        var_x, var_y, var_z = var[:,0,0], var[0,:,0], var[0,0,:]
-        max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-        min_x, min_y, min_z = np.amin(var_x), np.amin(var_y), np.amin(var_z)
-        max_i = np.amax(np.array((max_x,max_y,max_z)))
-        min_i = np.amin(np.array((min_x,min_y,min_z)))
-        if max_i >= max:
-            max = max_i
-        if min_i <= min:
-            min = min_i
+        max[q] = np.amax(var)
+        min[q] = np.amin(var)
     
         #Adding p0
         if add_p == True:#Adding P0
@@ -121,33 +111,31 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         q += skip
         
     #Write the Max and min values to file
-    mm_array = np.array((max,min))
+    mm_array = np.array((np.amax(max) , np.amin(min)))
     np.savetxt('max_min_' + name + '.txt',mm_array) 
     return
 
-def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr = None , Bt = None, q = None , isttok = False):
+def torus(name, time, step = 0.5, skip = 1 , path = None, R = None, r = None , dr = None , Bt = None, q = None , isttok = False , default = False):
     """
-       
-    Torus function: Convert to Torodial Coordinate system
+    This function converts data to the torus coordinate system.
     
     Inputs
         name: variable name to import (str)
         time: end time slice to convert to (int), if -1 entire dataset is imported
         step: The gap between the y slices for the y interpolation (float < 1) if 0 then raw data displayed.
         path: File path to data, if blank then the current working directory is used to look for data
-        
+        skip: The gap between time slices to convert.
         Torus settings, if left blank defaults are used all are floats.
         R: Major radius
         r: Minor radius
         dr: Radial width of domain
         Bt: Toroidal magnetic field
         q: Safety factor
-        
         isttok: Use the ISTTOK specifications, (Boolean)
         
     Outputs
         Timestamped vtk files of the specified variable.
-        A text file with the maximum and minimum files.   
+        A text file with the maximum and minimum values.   
         
     """
     
@@ -170,6 +158,10 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
     
     if isttok == True: # Use ISTTOK specifications?
         R,r,dr,Bt,q = 0.46, 0.085, 0.02, 0.5, 5
+        
+    if default == True: # Use default values?
+        R,r,dr,Bt,q = 2.0 , 0.2 , 0.05, 1.0, 5.0
+        
     # Import coordinates from function in circle library
     r,z = circle.coordinates(nx,ny_work,nz,R,r,dr,Bt,q) # toroidal coordinates
     pts = visual.torus(r, z, nx, ny_work, nz)  # vtk grid points
@@ -192,11 +184,8 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
         os.makedirs("images")
     
     #Initial max and min values
-    var_x, var_y, var_z = var_0[:,0,0], var_0[0,:,0], var_0[0,0,:]
-    max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-    min_x, min_y, min_z = np.amin(var_x), np.amin(var_y),np.amin(var_z)
-    max = np.amax((max_x, max_y, max_z))
-    min = np.amin((min_x, min_y, min_z))
+    max = np.zeros(t , dtype = float)
+    min = np.zeros(t , dtype = float)
     
     q = 0 
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
@@ -204,15 +193,8 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
         var = visual.var3d(name,q) # collect variable
         
         #Find the min and max values
-        var_x, var_y, var_z = var[:,0,0], var[0,:,0], var[0,0,:]
-        max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-        min_x, min_y, min_z = np.amin(var_x), np.amin(var_y), np.amin(var_z)
-        max_i = np.amax(np.array((max_x,max_y,max_z)))
-        min_i = np.amin(np.array((min_x,min_y,min_z)))
-        if max_i >= max:
-            max = max_i
-        if min_i <= min:
-            min = min_i
+        max[q] = np.amax(var)
+        min[q] = np.amin(var)
         
         if ny != ny_work: #Interpolate section for all y values
             for i in range(nx):
@@ -232,27 +214,26 @@ def torus(name, time, step = 0.5, skip = 1,path = None, R = None, r = None , dr 
         q += skip
     
     #Write the Max and min values to file
-    mm_array = np.array((max,min))
+    mm_array = np.array((np.amax(max) , np.amin(min)))
     np.savetxt('max_min_' + name + '.txt',mm_array)
     return
 
 
 def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
     """
-        
-    Cylinder
-    This function contains the cylinder format
+    This function converts data to the cylinder coordinate system.
     
     Inputs
         name: variable name to be imported (string)
         time: End time slice to be converted (int) , if -1 entire dataset is imported
-        pi_fr: Fraction of rotation of the cylinder, float between 0 and 2, 2./3. default option, 
+        pi_fr: Fraction of rotation of the cylinder, float between 0 and 2, 2./3. default option.
         step: The gap between the y slices for the y interpolation (float < 1) if 0 then raw data displayed.
         path: File path to data, if blank then the current working directory is used to look for data
+        skip: The gap between time slices to convert.
         
     Outputs
         Timestamped vtk files of the specified variable.
-        A text file with the maximum and minimum files.
+        A text file with the maximum and minimum values.
 
 
     """    
@@ -305,11 +286,8 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
         os.makedirs("images")
     
     #Initial max and min values
-    var_x, var_y, var_z = var_0[:,0,0], var_0[0,:,0], var_0[0,0,:]
-    max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-    min_x, min_y, min_z = np.amin(var_x), np.amin(var_y),np.amin(var_z)
-    max = np.amax((max_x, max_y, max_z))
-    min = np.amin((min_x, min_y, min_z))
+    max = np.zeros(t , dtype = float)
+    min = np.zeros(t , dtype = float)
     
     q = 0
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
@@ -317,15 +295,8 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
             var = visual.var3d(name,q) # collect variable
     
             #Find the min and max values
-            var_x, var_y, var_z = var[:,0,0], var[0,:,0], var[0,0,:]
-            max_x, max_y, max_z = np.amax(var_x), np.amax(var_y), np.amax(var_z)
-            min_x, min_y, min_z = np.amin(var_x), np.amin(var_y), np.amin(var_z)
-            max_i = np.amax(np.array((max_x,max_y,max_z)))
-            min_i = np.amin(np.array((min_x,min_y,min_z)))
-            if max_i >= max:
-                    max = max_i
-            if min_i <= min:
-                    min = min_i
+            max[q] = np.amax(var)
+            min[q] = np.amin(var)
             
             if ny != ny_work: #Interpolate section for all y values
                 for i in range(nx):
@@ -342,9 +313,10 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
             vrbl = visual.vtk_var(var_new,nx,ny_work,nz) # vtk variable
             vtk_path = visual.write_vtk(name,pts,vrbl,q) # write vtk file
             print "At t = %d, %d Steps remaining" % (q,((t- q)/skip)) # Progress indicator
-    
+            q+= skip
+            
     #Write the Max and min values to file
-    mm_array = np.array((max,min))
+    mm_array = np.array((np.amax(max) , np.amin(min)))
     np.savetxt('max_min_' + name + '.txt',mm_array)
     return
     
@@ -359,12 +331,12 @@ def elm_t(name ,time ,zShf_int_p = 0.25, path = None):
     The function elm_t converts a specified time slice and returns the mesh and variable
     
     Inputs
-        name: variable name imported from BOUT.dmp files
-        time: The end time slice that will be converted, if -1 entire dataset is imported
+        name: name of variable to import
+        time: The end time slice that will be converted
         zShift Interpolation Percentage: This is used to set the tolerance values for the linear interpolation.
         path: File path to data, if blank then the current working directory is used to look for data
     
-    Outputs
+    Output
         Returns the converted variable and the mesh
         
     """
@@ -423,7 +395,7 @@ def torus_t(name, time, step = 0.5, path = None, R = None, r = None , dr = None 
     The function torus_t converts a specified time slice and returns the mesh and variable
     
     Inputs
-        name: variable name imported from BOUT.dmp files
+        name: name of variable to import
         time: The end time slice that will be converted, if -1 entire dataset is imported
         step: The gap between the y slices for the y interpolation (float < 1) if 0 then raw data displayed.
         path: File path to data, if blank then the current working directory is used to look for data
@@ -435,7 +407,7 @@ def torus_t(name, time, step = 0.5, path = None, R = None, r = None , dr = None 
         Bt: Toroidal magnetic field
         q: Safety factor
     
-    Outputs
+    Output
         Returns the converted variable and the mesh
     """
     
@@ -493,17 +465,15 @@ def torus_t(name, time, step = 0.5, path = None, R = None, r = None , dr = None 
 
 def cylinder_t(name, time, pi_fr = (2./3.), step = 0.5, path = None):
     """
-
-    cylinder_t
-    The function cylinder_t converts a specified time slice to cylinderical geometry and returns the variable and mesh
+    The function cylinder_t converts a specified time slice to cylinderical geometry.
     
     Inputs
-        name: variable name imported from BOUT.dmp files
-        time: The end time slice that will be converted, if -1 entire dataset is imported
-        pi_fr:
+        name: name of variable to import
+        time: Time slice to convert
+        pi_fr: Fraction of rotation of the cylinder, float between 0 and 2, 2./3. default option.
         path: File path to data, if blank then the current working directory is used to look for data
     
-    Outputs
+    Output
         Returns the converted variable and the mesh
     """    
     
