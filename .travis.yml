@@ -5,4 +5,4 @@ before_install:
   - sudo apt-get install -y mpich2 libmpich2-dev
   - sudo apt-get install -y libfftw3-dev libnetcdf-dev
 script:
-  - ./configure && make && ./examples/test_suite_make && ./examples/test_suite
+  - ./configure && make && ./.travis_script.sh
