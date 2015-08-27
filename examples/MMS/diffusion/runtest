@@ -65,32 +65,35 @@ for nx in nxlist:
 # Calculate grid spacing
 dx = 1. / (array(nxlist) - 2.)
 
-# plot errors
-
-import matplotlib.pyplot as plt
-
-plt.plot(dx, error_2, '-o', label=r'$l^2$')
-plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
-
-
 order = log(error_2[-1] / error_2[-2]) / log(dx[-1] / dx[-2])
 print("Convergence order = %f" % (order))
 
-plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
+# Attempt to plot errors
+try:
+  import matplotlib.pyplot as plt
 
-plt.legend(loc="upper left")
-plt.grid()
+  plt.plot(dx, error_2, '-o', label=r'$l^2$')
+  plt.plot(dx, error_inf, '-x', label=r'$l^\infty$')
+  plt.plot(dx, error_2[-1]*(dx/dx[-1])**order, '--', label="Order %.1f"%(order))
 
-plt.yscale('log')
-plt.xscale('log')
+  plt.legend(loc="upper left")
+  plt.grid()
 
-plt.xlabel(r'Mesh spacing $\delta x$')
-plt.ylabel("Error norm")
+  plt.yscale('log')
+  plt.xscale('log')
 
-plt.savefig("norm.pdf")
+  plt.xlabel(r'Mesh spacing $\delta x$')
+  plt.ylabel("Error norm")
 
-#plt.show()
-plt.close()
+  plt.savefig("norm.pdf")
+
+  #plt.show()
+  plt.close()
+except:
+  # Plotting could fail for any number of reasons, and the actual
+  # error raised may depend on, among other things, the current
+  # matplotlib backend, so catch everything
+  pass
 
 if order > 1.8:
   print(" => Test passed")
