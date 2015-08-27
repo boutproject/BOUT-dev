@@ -15,6 +15,7 @@
 #include "impls/power/power.hxx"
 #include "impls/imex-bdf2/imex-bdf2.hxx"
 #include "impls/snes/snes.hxx"
+#include "impls/rkgeneric/rkgeneric.hxx"
 
 #include <boutexception.hxx>
 
@@ -86,6 +87,8 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new IMEXBDF2(options);
   } else if(!strcasecmp(type, SOLVERSNES)) {
     return new SNESSolver(options);
+  } else if(!strcasecmp(type, SOLVERRKGENERIC)){
+    return new RKGenericSolver(options);
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found

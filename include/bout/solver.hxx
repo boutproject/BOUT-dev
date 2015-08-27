@@ -84,6 +84,7 @@ using std::string;
 #define SOLVERARKODE	  "arkode"
 #define SOLVERIMEXBDF2    "imexbdf2"
 #define SOLVERSNES        "snes"
+#define SOLVERRKGENERIC   "rkgeneric"
 
 enum SOLVER_VAR_OP {LOAD_VARS, LOAD_DERIVS, SET_ID, SAVE_VARS, SAVE_DERIVS};
 
