@@ -7161,6 +7161,30 @@ See the example \file{examples/test-globalfield} for more examples.
 
 
 
+\section{Eigenvalue solver}
+
+By using the SLEPc library, BOUT++ can be used as an eigenvalue solver
+to find the eigenvectors and eigenvalues of sets of equations.
+
+\subsection{Configuring with SLEPc}
+
+The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with 
+PETSc 3.4.2. SLEPc version 3.4 should work, but other versions will not yet.
+
+
+\subsection{SLEPc options}
+
+
+Time derivatives can be taken directly from the RHS function,
+or by advancing the simulation in time by a relatively large increment.
+This second method acts to damp high frequency components
+
+\subsection{Examples}
+
+\subsubsection{Wave in a box}
+
+\texttt{examples/eigen-box}
+
 
 
 \section{Testing}
@@ -7192,8 +7216,6 @@ tests before committing changes. A few minutes or less on a typical desktop,
 and ideally only a few seconds. If you have a large simulation which you want
 to stop anyone breaking, find starting parameters which are as sensitive as
 possible so that the simulation can be run quickly.
-
-
 
 \subsection{Method of Manufactured Solutions}
 %

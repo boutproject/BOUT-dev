@@ -53,6 +53,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   // Set flags to defaults
   has_constraints = false;
   initialised = false;
+  canReset = false;
 
   // Zero timing
   rhs_ncalls = 0;
@@ -478,7 +479,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  bool dump_on_restart = false;
+  dump_on_restart = false;
   bool append = false;
   if(NOUT < 0) {
     /// Get options

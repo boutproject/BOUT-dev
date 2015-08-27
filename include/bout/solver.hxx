@@ -36,6 +36,7 @@
 class Solver;
 
 #include <bout_types.hxx>
+#include <boutexception.hxx>
 
 ///////////////////////////////////////////////////////////////////
 // C function pointer types
@@ -76,6 +77,7 @@ using std::string;
 #define SOLVERPVODE       "pvode"
 #define SOLVERIDA         "ida"
 #define SOLVERPETSC       "petsc"
+#define SOLVERSLEPC       "slepc"
 #define SOLVERKARNIADAKIS "karniadakis"
 #define SOLVERRK4         "rk4"
 #define SOLVEREULER       "euler"
@@ -98,12 +100,12 @@ class Solver {
   /////////////////////////////////////////////
   // New API
   
-  void setModel(PhysicsModel *model); ///< Specify physics model to solve
+  virtual void setModel(PhysicsModel *model); ///< Specify physics model to solve
 
   /////////////////////////////////////////////
   // Old API
   
-  void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
+  virtual void setRHS(rhsfunc f) { phys_run = f; } ///< Set the RHS function
   void setPrecon(PhysicsPrecon f) {prefunc = f;} ///< Specify a preconditioner (optional)
   virtual void setJacobian(Jacobian j) {} ///< Specify a Jacobian (optional)
   virtual void setSplitOperator(rhsfunc fC, rhsfunc fD); ///< Split operator solves
@@ -146,7 +148,10 @@ class Solver {
 
   /// Run the solver, calling monitors nout times, at intervals of tstep
   virtual int run() = 0;
-  
+
+  //Should wipe out internal field vector and reset from current field object data
+  virtual void resetInternalFields(){throw BoutException("resetInternalFields not supported by this Solver");}
+
   // Solver status. Optional functions used to query the solver
   virtual int n2Dvars() const {return f2d.size();}  ///< Number of 2D variables. Vectors count as 3
   virtual int n3Dvars() const {return f3d.size();}  ///< Number of 3D variables. Vectors count as 3
@@ -155,6 +160,7 @@ class Solver {
   
   bool splitOperator() {return split_operator;}
 
+  bool canReset;
   void setRestartDir(const string &dir);
   void setRestartDir(const char* dir) {string s = string(dir); setRestartDir(s); }
   
@@ -167,6 +173,7 @@ class Solver {
   static void setArgs(int &c, char **&v) { pargc = &c; pargv = &v;}
 protected:
   bool restarting;
+  bool dump_on_restart;  // True if initial values should be written to file
   
   // Command-line arguments
   static int* pargc;
@@ -231,9 +238,10 @@ protected:
   void save_derivs(BoutReal *dudata);
   
   BoutReal max_dt; ///< Maximum internal timestep
- private:
-  PhysicsModel *model;    ///< physics model being evolved
   
+private:
+  PhysicsModel *model;    ///< physics model being evolved
+
   rhsfunc phys_run;       ///< The user's RHS function
   PhysicsPrecon prefunc;  // Preconditioner
   bool split_operator;

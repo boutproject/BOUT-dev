@@ -43,7 +43,7 @@
 #include <output.hxx>
 
 KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
-  
+  canReset = true;  
 }
 
 KarniadakisSolver::~KarniadakisSolver() {
@@ -156,6 +156,14 @@ int KarniadakisSolver::run() {
   msg_stack.pop(msg_point);
   
   return 0;
+}
+
+void KarniadakisSolver::resetInternalFields(){
+  //Make sure all other fields get reset
+  first_time=true;
+
+  //Copy fields into vector
+  save_vars(f0);
 }
 
 void KarniadakisSolver::take_step(BoutReal dt) {

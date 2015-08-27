@@ -50,10 +50,15 @@ public:
   typedef int (PhysicsModel::*jacobianfunc)(BoutReal t);
   
   PhysicsModel() : solver(0), splitop(false), 
-                   userprecon(0), userjacobian(0) {}
+                   userprecon(0), userjacobian(0), initialised(false) {}
+  
   ~PhysicsModel();
   
   int initialise(Solver *s, bool restarting) {
+    if(initialised)
+      return 0; // Ignore second initialisation
+    initialised = true;
+    
     solver = s;
     return init(restarting); // Call user code
   }
@@ -111,8 +116,15 @@ protected:
   virtual int convective(BoutReal t) {return 1;}
   virtual int diffusive(BoutReal t) {return 1;}
 
-  // Implemented by user code to monitor solution
+  /*!
+   * Implemented by user code to monitor solution at output times
+  */
   virtual int outputMonitor(BoutReal simtime, int iter, int NOUT) {return 0;}
+  
+  /*!
+   * Timestep monitor. If enabled by setting solver:monitor_timestep=true
+   * then this function is called every internal timestep.
+   */
   virtual int timestepMonitor(BoutReal simtime, BoutReal dt) {return 0;}
 
   // Functions called by the user to set callback functions
@@ -131,6 +143,8 @@ private:
   bool splitop;
   preconfunc   userprecon;
   jacobianfunc userjacobian;
+  
+  bool initialised; // True if model already initialised
 };
 
 // Macro to define a simple main() which creates
