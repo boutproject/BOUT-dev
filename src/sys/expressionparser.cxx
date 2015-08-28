@@ -1,10 +1,10 @@
 /**************************************************************************
  * Parses strings containing expressions, returning a tree of generators
- * 
+ *
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -39,9 +39,9 @@ using std::stringstream;
 
 /////////////////////////////////////////////
 namespace { // These classes only visible in this file
-  
+
   // Basic generators: Numerical value, 'x', 'y' and 'z'
-  
+
   class FieldX : public FieldGenerator {
   public:
     FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldX(); }
@@ -50,7 +50,7 @@ namespace { // These classes only visible in this file
     }
     const std::string str() {return std::string("x");}
   };
-  
+
   class FieldY : public FieldGenerator {
   public:
     FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldY(); }
@@ -68,7 +68,7 @@ namespace { // These classes only visible in this file
     }
     const std::string str() {return std::string("z");}
   };
-  
+
   class FieldT : public FieldGenerator {
   public:
     FieldGenerator* clone(const list<FieldGenerator*> args) { return new FieldT(); }
@@ -82,7 +82,7 @@ namespace { // These classes only visible in this file
   class FieldUnary : public FieldGenerator {
   public:
     FieldUnary(FieldGenerator* g) : gen(g) {}
-  
+
     FieldGenerator* clone(const list<FieldGenerator*> args) {
       if(args.size() != 1) {
         throw ParseException("Incorrect number of arguments to unary minus. Expecting 1, got %d", args.size());
@@ -101,7 +101,7 @@ namespace { // These classes only visible in this file
 FieldGenerator* FieldBinary::clone(const list<FieldGenerator*> args) {
   if(args.size() != 2)
     throw ParseException("Binary operator expecting 2 arguments. Got '%d'", args.size());
-  
+
   return new FieldBinary(args.front(), args.back(), op);
 }
 
@@ -128,7 +128,7 @@ ExpressionParser::ExpressionParser() {
   addBinaryOp('*', new FieldBinary(NULL, NULL, '*'), 20);
   addBinaryOp('/', new FieldBinary(NULL, NULL, '/'), 20);
   addBinaryOp('^', new FieldBinary(NULL, NULL, '^'), 30);
-  
+
   // Add standard generators
   addGenerator("x", new FieldX());
   addGenerator("y", new FieldY());
@@ -140,10 +140,10 @@ ExpressionParser::~ExpressionParser() {
   // Free memory
   for(map<string, FieldGenerator*>::iterator it = gen.begin(); it != gen.end(); it++)
     delete it->second;
-  
+
   for(map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.begin(); it != bin_op.end(); it++)
     delete it->second.first;
-  
+
   // Delete allocated generators
   for(list<FieldGenerator*>::iterator it = genheap.begin(); it != genheap.end(); it++)
     delete *it;
@@ -160,10 +160,10 @@ void ExpressionParser::addBinaryOp(char sym, FieldGenerator* b, int precedence) 
 FieldGenerator* ExpressionParser::parseString(const string &input) {
   // Allocate a new lexer
   LexInfo lex(input);
-  
+
   // Parse
   FieldGenerator *expr = parseExpression(lex);
-  
+
   return expr;
 }
 
@@ -173,17 +173,17 @@ FieldGenerator* ExpressionParser::parseString(const string &input) {
 FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
   string name = lowercase(lex.curident);
   lex.nextToken();
-  
+
   if(lex.curtok == '(') {
     // Argument list. Find if a generator or function
-    
+
     map<string, FieldGenerator*>::iterator it = gen.find(name);
     if(it == gen.end())
       throw ParseException("Couldn't find generator '%s'", name.c_str());
-    
+
     // Parse arguments (if any)
     list<FieldGenerator*> args;
-    
+
     lex.nextToken();
     if(lex.curtok == ')') {
       // Empty list
@@ -194,13 +194,13 @@ FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
       // Should be an expression
       FieldGenerator *a = parseExpression(lex);
       if(!a) {
-	throw ParseException("Couldn't parse argument %d to function '%s'", 
+        throw ParseException("Couldn't parse argument %d to function '%s'",
                              args.size()+1, name.c_str());
       }
       args.push_back(a);
-      
+
       // Now either a comma or ')'
-      
+
       if(lex.curtok == ')') {
         // Finished list
         lex.nextToken();
@@ -212,7 +212,7 @@ FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
       }
       lex.nextToken();
     }while(true);
-    
+
   }else {
     // No arguments. Search in generator list
     map<string, FieldGenerator*>::iterator it = gen.find(name);
@@ -230,11 +230,11 @@ FieldGenerator* ExpressionParser::parseIdentifierExpr(LexInfo &lex) {
 
 FieldGenerator* ExpressionParser::parseParenExpr(LexInfo &lex) {
   lex.nextToken(); // eat '('
-  
+
   FieldGenerator* g = parseExpression(lex);
   if(!g)
     return NULL;
-  
+
   if((lex.curtok != ')') && (lex.curtok != ']'))
     return NULL;
   lex.nextToken(); // eat ')'
@@ -265,52 +265,52 @@ FieldGenerator* ExpressionParser::parsePrimary(LexInfo &lex) {
 }
 
 FieldGenerator* ExpressionParser::parseBinOpRHS(LexInfo &lex, int ExprPrec, FieldGenerator* lhs) {
-  
+
   while(true) {
     // Check for end of input
     if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ','))
       return lhs;
-    
+
     // Next token should be a binary operator
     map<char, pair<FieldGenerator*, int> >::iterator it = bin_op.find(lex.curtok);
-    
+
     if(it == bin_op.end())
       throw ParseException("Unexpected binary operator '%c'", lex.curtok);
-    
+
     FieldGenerator* op = it->second.first;
     int TokPrec = it->second.second;
-  
+
     if (TokPrec < ExprPrec)
       return lhs;
-    
+
     lex.nextToken(); // Eat binop
-    
+
     FieldGenerator* rhs = parsePrimary(lex);
     if(!rhs)
       return NULL;
-    
+
     if((lex.curtok == 0) || (lex.curtok == ')') || (lex.curtok == ',')) {
       // Done
-    
+
       list<FieldGenerator*> args;
       args.push_front(lhs);
       args.push_back(rhs);
       return record( op->clone(args) );
     }
-    
+
     // Find next binop
     it = bin_op.find(lex.curtok);
-    
+
     if(it == bin_op.end())
       throw ParseException("Unexpected character '%c'", lex.curtok);
-    
+
     int NextPrec = it->second.second;
     if (TokPrec < NextPrec) {
       rhs = parseBinOpRHS(lex, TokPrec+1, rhs);
       if(!rhs)
-	return 0;
+        return 0;
     }
-    
+
     // Merge lhs and rhs into new lhs
     list<FieldGenerator*> args;
     args.push_front(lhs);
@@ -333,7 +333,7 @@ ExpressionParser::LexInfo::LexInfo(string input) {
   ss.clear();
   ss.str(input); // Set the input stream
   ss.seekg(0, ios_base::beg);
-  
+
   LastChar = ss.get(); // First char from stream
   nextToken(); // Get first token
 }
@@ -341,12 +341,12 @@ ExpressionParser::LexInfo::LexInfo(string input) {
 char ExpressionParser::LexInfo::nextToken() {
   while(isspace(LastChar))
     LastChar = ss.get();
-  
+
   if(!ss.good()) {
     curtok = 0;
     return 0;
   }
-  
+
   if (isalpha(LastChar)) { // identifier: [a-zA-Z][a-zA-Z0-9_:]*
     curident.clear();
     do {
@@ -356,13 +356,13 @@ char ExpressionParser::LexInfo::nextToken() {
     curtok = -2;
     return curtok;
   }
-  
+
   // Handle numbers
 
   if (isdigit(LastChar) || (LastChar == '.')) {   // Number: [0-9.]+
     bool gotdecimal = false, gotexponent = false;
     std::string NumStr;
-    
+
     while(true) {
       if(LastChar == '.') {
         if(gotdecimal || gotexponent) {
@@ -382,16 +382,16 @@ char ExpressionParser::LexInfo::nextToken() {
         }
       }else if(!isdigit(LastChar))
         break;
-      
+
       NumStr += LastChar;
       LastChar = ss.get();
     }
-    
+
     curval = strtod(NumStr.c_str(), 0);
     curtok = -1;
     return curtok;
   }
-  
+
   curtok = LastChar;
   LastChar = ss.get();
   return curtok;
@@ -410,12 +410,12 @@ ParseException::ParseException(const char *s, ...) {
 
   if(s == (const char*) NULL)
     return;
-  
+
   char buffer[1024];
   va_start(ap, s);
-    vsprintf(buffer, s, ap);
+  vsprintf(buffer, s, ap);
   va_end(ap);
-  
+
   message.assign(buffer);
 }
 

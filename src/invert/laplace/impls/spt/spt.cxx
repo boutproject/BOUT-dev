@@ -5,7 +5,7 @@
  *
  * Changelog
  * ---------
- * 
+ *
  * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
  *     * Removed static variables in functions, changing to class members.
  *
@@ -13,7 +13,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -40,11 +40,11 @@
 #include "spt.hxx"
 
 LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
-  
+
   if(mesh->periodicX) {
-      throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-    }
-	
+    throw BoutException("LaplaceSPT does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+  }
+
   // Get start and end indices
   ys = mesh->ystart;
   ye = mesh->yend;
@@ -52,7 +52,7 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY() && include_yguards)
     ye = mesh->ngy-1; // Contains upper boundary
-  
+
   alldata = new SPT_data[ye - ys + 1];
   alldata -= ys; // Re-number indices to start at ys
   for(int jy=ys;jy<=ye;jy++) {
@@ -67,7 +67,7 @@ LaplaceSPT::LaplaceSPT(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
 LaplaceSPT::~LaplaceSPT() {
   alldata += ys; // Return to index from 0
   delete[] alldata;
-  
+
   delete[] dc1d;
 }
 
@@ -78,10 +78,10 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b) {
 const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   FieldPerp x;
   x.allocate();
-  
+
   if( (inner_boundary_flags & INVERT_SET) || (outer_boundary_flags & INVERT_SET) ) {
     FieldPerp bs = copy(b);
-    
+
     int xbndry = 2;
     if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
@@ -101,7 +101,7 @@ const FieldPerp LaplaceSPT::solve(const FieldPerp &b, const FieldPerp &x0) {
   }else
     start(b, slicedata);
   finish(slicedata, x);
-  
+
   return x;
 }
 
@@ -115,16 +115,16 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   Timer timer("invert");
   Field3D x;
   x.allocate();
-  
+
   for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
     start(b.slice(jy), alldata[jy]);
-    
+
     // Move each calculation along one processor
-    for(int jy2=ys; jy2 < jy; jy2++) 
+    for(int jy2=ys; jy2 < jy; jy2++)
       next(alldata[jy2]);
   }
-  
+
   bool running = true;
   do {
     // Move each calculation along until the last one is finished
@@ -134,15 +134,15 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
 
   FieldPerp xperp;
   xperp.allocate();
-  
+
   // All calculations finished. Get result
   for(int jy=ys; jy <= ye; jy++) {
     finish(alldata[jy], xperp);
     x = xperp;
   }
-  
+
   x.setLocation(b.getLocation());
-  
+
   x.setLocation(b.getLocation());
 
   return x;
@@ -152,11 +152,11 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
   if(  ((inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
        ((outer_boundary_flags & INVERT_SET) && mesh->lastX()) ) {
     Field3D bs = copy(b);
-    
+
     int xbndry = 2;
     if(global_flags & INVERT_BOTH_BNDRY_ONE)
       xbndry = 1;
-    
+
     if((inner_boundary_flags & INVERT_SET) && mesh->firstX()) {
       // Copy x0 inner boundary into bs
       for(int ix=0;ix<xbndry;ix++)
@@ -173,7 +173,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
     }
     return solve(bs);
   }
-  
+
   return solve(b);
 }
 
@@ -195,11 +195,11 @@ const Field3D LaplaceSPT::solve(const Field3D &b, const Field3D &x0) {
  * @param[in] start
  */
 void LaplaceSPT::tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
-                                dcomplex *r, dcomplex *u, int n,
-                                dcomplex *gam,
-                                dcomplex &bet, dcomplex &um, bool start) {
+                               dcomplex *r, dcomplex *u, int n,
+                               dcomplex *gam,
+                               dcomplex &bet, dcomplex &um, bool start) {
   int j;
-  
+
   if(start) {
     bet = b[0];
     u[0] = r[0] / bet;
@@ -208,13 +208,13 @@ void LaplaceSPT::tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
     bet = b[0] - a[0]*gam[0];
     u[0] = (r[0]-a[0]*um)/bet;
   }
-  
+
   for(j=1;j<n;j++) {
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
     if(bet == 0.0)
       throw BoutException("Tridag: Zero pivot\n");
-    
+
     u[j] = (r[j]-a[j]*u[j-1])/bet;
   }
 
@@ -230,7 +230,7 @@ void LaplaceSPT::tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
  * @param[inout] up   u from processor mesh->PE_XIND + 1, and returned to mesh->PE_XIND - 1
  */
 void LaplaceSPT::tridagBack(dcomplex *u, int n,
-                             dcomplex *gam, dcomplex &gp, dcomplex &up) {
+                            dcomplex *gam, dcomplex &gp, dcomplex &up) {
   int j;
 
   u[n-1] = u[n-1] - gp*up;
@@ -270,27 +270,27 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 
   int mm = (mesh->ngz - 1)/2 + 1;
   data.allocate(mm, mesh->ngx); // Make sure data is allocated. Already allocated -> does nothing
-  
+
   /// Take FFTs of data
 
   int ncz = mesh->ngz-1;
-  
+
   for(int ix=0; ix < mesh->ngx; ix++) {
     ZFFT(b[ix], mesh->zShift[ix][data.jy], dc1d);
     for(int kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = dc1d[kz];
   }
-  
+
   /// Set matrix elements
   tridagMatrix(data.avec, data.bvec, data.cvec,
                data.bk, data.jy, global_flags, inner_boundary_flags, outer_boundary_flags, &A, &C, &D);
-  
+
   data.proc = 0; //< Starts at processor 0
   data.dir = 1;
-  
+
   if(mesh->firstX()) {
     dcomplex bet, u0;
-    #pragma omp parallel for
+#pragma omp parallel for
     for(int kz = 0; kz <= maxmode; kz++) {
       // Start tridiagonal solve
       tridagForward(data.avec[kz], data.bvec[kz], data.cvec[kz],
@@ -303,19 +303,19 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
       data.buffer[4*kz + 2] = u0.real();
       data.buffer[4*kz + 3] = u0.imag();
     }
-    
+
     // Send data
     mesh->sendXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
-    
+
   }else if(mesh->PE_XIND == 1) {
     // Post a receive
     data.recv_handle = mesh->irecvXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
   }
-  
+
   data.proc++; // Now moved onto the next processor
-  if(mesh->NXPE == 2)	
+  if(mesh->NXPE == 2)
     data.dir = -1; // Special case. Otherwise reversal handled in spt_continue
-  
+
   return 0;
 }
 
@@ -328,7 +328,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
 int LaplaceSPT::next(SPT_data &data) {
   if(data.proc < 0) // Already finished
     return 1;
-  
+
   if(mesh->PE_XIND == data.proc) {
     /// This processor's turn to do inversion
 
@@ -337,105 +337,105 @@ int LaplaceSPT::next(SPT_data &data) {
 
     if(mesh->lastX()) {
       // Last processor, turn-around
-      
-      #pragma omp parallel for
+
+#pragma omp parallel for
       for(int kz = 0; kz <= maxmode; kz++) {
         dcomplex bet, u0;
         dcomplex gp, up;
-	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	tridagForward(data.avec[kz]+mesh->xstart,
-                      data.bvec[kz]+mesh->xstart, 
+        bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+        u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+        tridagForward(data.avec[kz]+mesh->xstart,
+                      data.bvec[kz]+mesh->xstart,
                       data.cvec[kz]+mesh->xstart,
-                      data.bk[kz]+mesh->xstart, 
+                      data.bk[kz]+mesh->xstart,
                       data.xk[kz]+mesh->xstart, mesh->xend+1,
                       data.gam[kz]+mesh->xstart,
                       bet, u0);
-	
-	// Back-substitute
-	gp = 0.0;
-	up = 0.0;
-	tridagBack(data.xk[kz]+mesh->xstart, mesh->ngx-mesh->xstart, 
+
+        // Back-substitute
+        gp = 0.0;
+        up = 0.0;
+        tridagBack(data.xk[kz]+mesh->xstart, mesh->ngx-mesh->xstart,
                    data.gam[kz]+mesh->xstart, gp, up);
-	data.buffer[4*kz]     = gp.real();
-	data.buffer[4*kz + 1] = gp.imag();
-	data.buffer[4*kz + 2] = up.real();
-	data.buffer[4*kz + 3] = up.imag();
+        data.buffer[4*kz]     = gp.real();
+        data.buffer[4*kz + 1] = gp.imag();
+        data.buffer[4*kz + 2] = up.real();
+        data.buffer[4*kz + 3] = up.imag();
       }
 
     }else if(data.dir > 0) {
       // In the middle of X, forward direction
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for(int kz = 0; kz <= maxmode; kz++) {
-	dcomplex bet, u0;
-	bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
-	tridagForward(data.avec[kz]+mesh->xstart, 
-                      data.bvec[kz]+mesh->xstart, 
+        dcomplex bet, u0;
+        bet = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+        u0 = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+        tridagForward(data.avec[kz]+mesh->xstart,
+                      data.bvec[kz]+mesh->xstart,
                       data.cvec[kz]+mesh->xstart,
-                      data.bk[kz]+mesh->xstart, 
-                      data.xk[kz]+mesh->xstart, 
+                      data.bk[kz]+mesh->xstart,
+                      data.xk[kz]+mesh->xstart,
                       mesh->xend - mesh->xstart+1,
                       data.gam[kz]+mesh->xstart,
                       bet, u0);
-	// Load intermediate values into buffers
-	data.buffer[4*kz]     = bet.real();
-	data.buffer[4*kz + 1] = bet.imag();
-	data.buffer[4*kz + 2] = u0.real();
-	data.buffer[4*kz + 3] = u0.imag();
+        // Load intermediate values into buffers
+        data.buffer[4*kz]     = bet.real();
+        data.buffer[4*kz + 1] = bet.imag();
+        data.buffer[4*kz + 2] = u0.real();
+        data.buffer[4*kz + 3] = u0.imag();
       }
-      
+
     }else if(mesh->firstX()) {
       // Back to the start
-      
+
       dcomplex gp, up;
       for(int kz = 0; kz <= maxmode; kz++) {
-	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+        gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+        up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	tridagBack(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
+        tridagBack(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
       }
 
     }else {
       // Middle of X, back-substitution stage
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for(int kz = 0; kz <= maxmode; kz++) {
-	dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+        dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+        dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
-	tridagBack(data.xk[kz]+mesh->xstart, 
-                   mesh->xend-mesh->xstart+1, 
+        tridagBack(data.xk[kz]+mesh->xstart,
+                   mesh->xend-mesh->xstart+1,
                    data.gam[kz]+mesh->xstart, gp, up);
-	
-	data.buffer[4*kz]     = gp.real();
-	data.buffer[4*kz + 1] = gp.imag();
-	data.buffer[4*kz + 2] = up.real();
-	data.buffer[4*kz + 3] = up.imag();
+
+        data.buffer[4*kz]     = gp.real();
+        data.buffer[4*kz + 1] = gp.imag();
+        data.buffer[4*kz + 2] = up.real();
+        data.buffer[4*kz + 3] = up.imag();
       }
     }
 
     if(mesh->PE_XIND != 0) { // If not finished yet
       /// Send data
-      
+
       if(data.dir > 0) {
-	mesh->sendXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
+        mesh->sendXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
       }else
-	mesh->sendXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
+        mesh->sendXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
     }
 
   }else if(mesh->PE_XIND == data.proc + data.dir) {
     // This processor is next, post receive
-    
+
     if(data.dir > 0) {
       data.recv_handle = mesh->irecvXIn(data.buffer, 4*(maxmode+1), data.comm_tag);
     }else
       data.recv_handle = mesh->irecvXOut(data.buffer, 4*(maxmode+1), data.comm_tag);
   }
-  
+
   data.proc += data.dir;
-  
+
   if(data.proc == mesh->NXPE-1)
     data.dir = -1; // Reverses direction at the end
 
@@ -462,9 +462,9 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
   while(next(data) == 0) {}
 
   // Have result in Fourier space. Convert back to real space
-  
+
   for(int ix=0; ix<=ncx; ix++){
-    
+
     for(int kz = 0; kz<= maxmode; kz++) {
       dc1d[kz] = data.xk[kz][ix];
     }
@@ -475,7 +475,7 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
       dc1d[0] = 0.0;
 
     ZFFT_rev(dc1d, mesh->zShift[ix][data.jy], xdata[ix]);
-    
+
     xdata[ix][ncz] = xdata[ix][0]; // enforce periodicity
   }
 
@@ -483,14 +483,14 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     // Set left boundary to zero (Prevent unassigned values in corners)
     for(int ix=0; ix<mesh->xstart; ix++){
       for(int kz=0;kz<mesh->ngz;kz++)
-	xdata[ix][kz] = 0.0;
+        xdata[ix][kz] = 0.0;
     }
   }
   if(!mesh->lastX()) {
     // Same for right boundary
     for(int ix=mesh->xend+1; ix<mesh->ngx; ix++){
       for(int kz=0;kz<mesh->ngz;kz++)
-	xdata[ix][kz] = 0.0;
+        xdata[ix][kz] = 0.0;
     }
   }
 }
@@ -501,33 +501,33 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
 void LaplaceSPT::SPT_data::allocate(int mm, int nx) {
   if(bk != NULL)
     return; // Already allocated
-  
+
   bk = cmatrix(mm, nx);
   xk = cmatrix(mm, nx);
-  
+
   gam = cmatrix(mm, nx);
-  
+
   // Matrix to be solved
   avec = cmatrix(mm, nx);
   bvec = cmatrix(mm, nx);
   cvec = cmatrix(mm, nx);
-  
+
   buffer  = new BoutReal[4*mm];
 }
 
 LaplaceSPT::SPT_data::~SPT_data() {
   if( bk == NULL )
     return;
-    
+
   free_cmatrix(bk);
   free_cmatrix(xk);
-  
+
   free_cmatrix(gam);
-  
+
   free_cmatrix(avec);
   free_cmatrix(bvec);
   free_cmatrix(cvec);
-  
+
   delete[] buffer;
 }
 

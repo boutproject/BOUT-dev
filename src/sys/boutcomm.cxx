@@ -9,7 +9,7 @@ BoutComm::BoutComm() : pargc(0), pargv(0), hasBeenSet(false), comm(MPI_COMM_NULL
 BoutComm::~BoutComm() {
   if(comm != MPI_COMM_NULL)
     MPI_Comm_free(&comm);
-  
+
   if(!isSet()) {
     // If BoutComm was set, then assume that MPI_Finalize is called elsewhere
     // but might need to revisit if that isn't the case
@@ -28,7 +28,7 @@ MPI_Comm BoutComm::getComm() {
   if(comm == MPI_COMM_NULL) {
     // No communicator set. Initialise MPI
     MPI_Init(pargc,pargv);
-    
+
     // Duplicate MPI_COMM_WORLD
     MPI_Comm_dup(MPI_COMM_WORLD, &comm);
   }

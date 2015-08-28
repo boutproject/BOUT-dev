@@ -14,9 +14,9 @@ class QuiltDomain : public Domain {
 public:
   QuiltDomain(int NX, int NY) : Domain(NX,NY) {}
   ~QuiltDomain();
-  
+
   int proc;
-  
+
   QuiltDomain *parent;
 };
 

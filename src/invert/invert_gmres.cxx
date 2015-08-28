@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -34,12 +34,12 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *data);
 
 typedef struct {
   opfunc2D op;
-  
+
   int y;
 
   BoutReal **b2d, **x2d;
   FieldPerp *bp, *xp;
-  
+
   int flags;
   void *data;
 }iter2d;
@@ -73,7 +73,7 @@ int iter_solve(FieldPerp &b, FieldPerp &x, opfunc2D A, void *extra)
   data.op = A;
   data.y = jy;
   data.data = extra;
-  
+
   // Solve with GMRES
   ret = gmres_solve(b[0], x[0], n, ITER_RESTART, operator_2d, ITER_ITMAX, ITER_TOL, (void*) &data);
 
@@ -104,22 +104,22 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
 
   // FFT FILTER INPUT
   fft_filter_2d(b);
-  
+
   data.op = A;
   data.y = jy;
   data.flags = flags;
   data.data = extra;
-  
+
   /* Set boundaries to zero */
   for(jx=0;jx<mesh->ngx;jx++) {
     b[jx][ncz] = 0.0;
   }
-  
+
   for(jx=0;jx<MXG;jx++) {
     for(jz=0;jz<=ncz;jz++) {
       /* Inner boundary */
       b[jx][jz] = 0.0;
-      
+
       /* Outer boundary */
       b[ncx-jx][jz] = 0.0;
     }
@@ -130,11 +130,11 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
     for(jx=MXG;jx<(mesh->ngx-MXG);jx++) {
       dc = 0.0;
       for(jz=0;jz<ncz;jz++) {
-	dc += b[jx][jz];
+        dc += b[jx][jz];
       }
       dc /= (BoutReal) ncz;
       for(jz=0;jz<ncz;jz++) {
-	b[jx][jz] -= dc;
+        b[jx][jz] -= dc;
       }
     }
   }
@@ -148,12 +148,12 @@ int iter_solve_bndry(FieldPerp &b, FieldPerp &x, opfunc2D A, int flags, void *ex
 int iter_solve(Field3D &b, Field3D &x, opfunc2D A, void *extra)
 {
   // Solve each perpendicular slice separately
-  
+
 }
 
 int iter_solve_bndry(Field3D &b, Field3D &x, opfunc2D A, int flags, void *extra)
 {
-  
+
 }
 
 /*******************************************************************************
@@ -161,7 +161,7 @@ int iter_solve_bndry(Field3D &b, Field3D &x, opfunc2D A, int flags, void *extra)
  *******************************************************************************/
 
 int operator_2d(BoutReal *b, BoutReal *x, void *extra)
-{ 
+{
   iter2d *data;
   int i;
   int ret;
@@ -189,7 +189,7 @@ int operator_2d(BoutReal *b, BoutReal *x, void *extra)
 }
 
 int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
-{ 
+{
   iter2d *data;
   int ret;
   int i, j;
@@ -208,7 +208,7 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
   }
   data->bp->setData(data->b2d);
   data->xp->setData(data->x2d);
-  
+
   /* Call 2D operator */
 
   ret = data->op(*(data->bp), *(data->xp), data->data);
@@ -221,11 +221,11 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
     for(i=MXG;i<(mesh->ngx-MXG);i++) {
       dc1 = 0.0;
       for(j=0;j<ncz;j++) {
-	dc1 += data->b2d[i][j];
+        dc1 += data->b2d[i][j];
       }
       dc1 /= (BoutReal) ncz;
       for(j=0;j<ncz;j++) {
-	data->b2d[i][j] -= dc1;
+        data->b2d[i][j] -= dc1;
       }
     }
   }
@@ -242,25 +242,25 @@ int operator_2d_bndry(BoutReal *b, BoutReal *x, void *extra)
   for(i=0;i<MXG;i++) {
     if(data->flags & (INVERT_AC_IN_GRAD | INVERT_DC_IN_GRAD)) {
       for(j=0;j<ncz;j++) {
-	data->b2d[i][j] = data->x2d[i][j] - data->x2d[i+1][j];
+        data->b2d[i][j] = data->x2d[i][j] - data->x2d[i+1][j];
       }
     }else {
       for(j=0;j<ncz;j++) {
-	data->b2d[i][j] = data->x2d[i][j];
+        data->b2d[i][j] = data->x2d[i][j];
       }
     }
   }
- 
+
   /***** Outer Radial *****/
 
   for(i=ncx;i>(ncx-MXG);i--) {
     if(data->flags & (INVERT_AC_OUT_GRAD | INVERT_DC_OUT_GRAD)) {
       for(j=0;j<ncz;j++) {
-	data->b2d[i][j] = data->x2d[i][j] - data->x2d[i-1][j];
+        data->b2d[i][j] = data->x2d[i][j] - data->x2d[i-1][j];
       }
     }else {
       for(j=0;j<ncz;j++) {
-	data->b2d[i][j] = data->x2d[i][j];
+        data->b2d[i][j] = data->x2d[i][j];
       }
     }
   }
@@ -279,7 +279,7 @@ BoutReal norm_vector(BoutReal *b, int n)
 
   for(i=0;i<n;i++)
     val += b[i]*b[i];
-  
+
   return(sqrt(val));
 }
 
@@ -297,12 +297,12 @@ BoutReal dot_product(BoutReal *a, BoutReal *b, int n)
 void Update(BoutReal *x, int it, BoutReal **h, BoutReal *s, BoutReal *y, BoutReal **v, int n)
 {
   int i, j, p;
-  
+
   /* y = s */
   for(i=0;i!=(it+1);i++) {
     y[i] = s[i];
   }
-  
+
   /* backsolve */
   for(i = it; i >= 0; i--) {
     y[i] /= h[i][i];
@@ -349,19 +349,19 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
   int i;
   int it, itt, p;
   BoutReal normb, beta, resid;
-  
+
   /* Problem array storage */
   static int size = 0, msize = 0;
   static BoutReal *y, *s, *cs, *sn;
   static BoutReal **H;
   static BoutReal *r, *w;
   static BoutReal **v;
-  
+
   if((n < 1) || (m < 1))
     return(1);
 
   /************************************/
-  
+
   /*.allocate memory if problem size increased */
   if((size < n) || (msize < m)) {
     if(size != 0) {
@@ -369,15 +369,15 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
       free(s);
       free(cs);
       free(sn);
-      
+
       free_rmatrix(H);
-      
+
       free(r);
       free(w);
-      
+
       free_rmatrix(v);
     }
-    
+
     size = n;
     msize = m;
 
@@ -385,7 +385,7 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
     s  = rarray(m+1);
     cs = rarray(m+1);
     sn = rarray(m+1);
-    
+
     H  = rmatrix(m+1, m+1);
 
     r = rarray(n);
@@ -408,13 +408,13 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
 
   /* beta = |r| */
   beta = norm_vector(r, n);
-  
+
   if((resid = beta / normb) <= tol) {
     iterations = 0;
     residual = resid;
     return(0);
   }
-  
+
   it = 1;
 
   while(it <= itmax) {
@@ -423,27 +423,27 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
       v[0][i] = r[i] / beta;
 
     s[0] = beta;
-    
+
     for(itt=0; (itt < m) && (it <= itmax); itt++, it++) {
       /* w = A*v_(itt) */
       A(w, v[itt], data);
-      
+
       for(p=0;p<=itt;p++) {
-	H[p][itt] = dot_product(w, v[p], n);
-	/* w = w - H[p][itt] * v[p] */
-	for(i=0;i<n;i++)
-	  w[i] -= H[p][itt] * v[p][i];
+        H[p][itt] = dot_product(w, v[p], n);
+        /* w = w - H[p][itt] * v[p] */
+        for(i=0;i<n;i++)
+          w[i] -= H[p][itt] * v[p][i];
       }
-      
+
       /* H[itt+1][itt] = |w| */
       H[itt+1][itt] = norm_vector(w, n);
-      
+
       /* v[itt+1] = w / |w| */
       for(i=0;i<n;i++)
-	v[itt+1][i] = w[i] / H[itt+1][itt];
-      
+        v[itt+1][i] = w[i] / H[itt+1][itt];
+
       for(p=0; p < itt; p++) {
-	ApplyPlaneRotation(&(H[p][itt]), &(H[p+1][itt]), cs[p], sn[p]);
+        ApplyPlaneRotation(&(H[p][itt]), &(H[p+1][itt]), cs[p], sn[p]);
       }
       GeneratePlaneRotation(H[itt][itt], H[itt+1][itt], &(cs[itt]), &(sn[itt]));
       ApplyPlaneRotation(&(H[itt][itt]), &(H[itt+1][itt]), cs[itt], sn[itt]);
@@ -451,19 +451,19 @@ int gmres_solve(BoutReal *b, BoutReal *x, int n, int m, opfunc1D A, int itmax, B
       ApplyPlaneRotation(&(s[itt]), &(s[itt+1]), cs[itt], sn[itt]);
 
       if((resid = fabs(s[itt+1] / normb)) < tol) {
-	Update(x, itt, H, s, y, v, n);
-	iterations = it;
-	residual = resid;
-	return(0);
+        Update(x, itt, H, s, y, v, n);
+        iterations = it;
+        residual = resid;
+        return(0);
       }
     }
-   
+
     Update(x, itt-1, H, s, y, v, n);
     /* r = b - Ax */
     A(r, x, data);
     for(i=0;i<n;i++)
       r[i] = b[i] - r[i];
-    
+
     beta = norm_vector(r, n);
     if((resid = beta / normb) < tol) {
       iterations = it;

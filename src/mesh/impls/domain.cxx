@@ -12,7 +12,7 @@ DomainIterator::DomainIterator(Domain &d) : dom(&d) {
 }
 
 DomainIterator& DomainIterator::operator++() {
-  // Depth-first search of domains, using a list of visited 
+  // Depth-first search of domains, using a list of visited
   // This algorithm is pretty slow, but should only be run during setup
 
   if(dom == NULL) // Already at the end
@@ -21,7 +21,7 @@ DomainIterator& DomainIterator::operator++() {
   while(!stack.empty()) {
     // Most recently visited first
     Domain* d = stack.front();
-    
+
     // Go through all boundaries of this domain
     for(list<Domain::Bndry*>::iterator bit = d->boundary.begin(); bit != d->boundary.end(); bit++) {
       Domain::Bndry* b = *bit;
@@ -53,7 +53,7 @@ Domain::~Domain() {
       b->from = NULL;
     if(b->to == this)
       b->to = NULL;
-    
+
     // If boundary doesn't connect to anything, delete
     if( (b->from == NULL) && (b->to == NULL) )
       delete b;
@@ -62,13 +62,13 @@ Domain::~Domain() {
   boundary.clear();
 }
 
-void Domain::addNeighbour(Domain *d, 
-                          BndrySide side, 
-                          int first, int last, 
+void Domain::addNeighbour(Domain *d,
+                          BndrySide side,
+                          int first, int last,
                           int shift, int zshift) {
   // Create a new boundary
   Bndry *b = new Bndry(side, this, d, first, last, shift, zshift);
-  
+
   // Add to both domains
   addBoundary(b);
   if((d != NULL) && (d != this))
@@ -103,7 +103,7 @@ void Domain::addBoundary(Bndry *b) {
   for(list<Bndry*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
     if( ((*it)->side != b->side) && ((*it)->side != reverse(b->side)) )
       continue;
-    
+
     BndrySide s = b->side;
     if((*it)->onSide(this, s) && b->onSide(this, s)) {
       // Same side as an existing boundary
@@ -122,7 +122,7 @@ void Domain::addBoundary(Bndry *b) {
         throw BoutException("Boundary ranges overlap");
     }
   }
-  
+
   // Add to list of boundaries
   boundary.push_back(b);
 }
@@ -142,37 +142,37 @@ void Domain::removeBoundary(list<Bndry*>::iterator &it) {
 Domain* Domain::splitX(int xind) {
 
   cout << "SplitX " << this << " (" << nx << "," << ny << ") " << xind << "\n" ;
-  
+
   Domain *d = create(xind, ny); // New domain on the right
   nx -= xind;
-  
+
   cout << "   " << this << " (" << nx << "," << ny << ")\n";
   cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
-  
+
   // Copy the list of boundaries so not iterating over a changing list
   list<Bndry*> oldboundary(boundary);
-  
+
   for(list<Bndry*>::iterator it=oldboundary.begin(); it != oldboundary.end(); it++) {
     Bndry *b = *it;
-    
+
     if(b->onSide(this, xhigh)) {
       // Move to new domain
       b->setNeighbour(xlow, d);
     }else if(b->onSide(this, ylow)) {
       int start = b->getMin(ylow);
       int end   = b->getMax(ylow);
-      
+
       if(start >= nx) {
         // Move to new domain
         b->shiftInds(ylow, -nx);
         b->setNeighbour(yhigh, d);
       }else if(end >= nx) {
         // Crosses cut, so need to split into two
-        
+
         b->end -= end - nx + 1;  // Make boundary smaller
-        
+
         // Create a new boundary
-        d->addNeighbour(b->getNeighbour(this), 
+        d->addNeighbour(b->getNeighbour(this),
                         ylow,
                         0, end - nx,
                         b->getShift(ylow)+nx, b->zshift);
@@ -180,7 +180,7 @@ Domain* Domain::splitX(int xind) {
     }else if(b->onSide(this, yhigh)) {
       int start = b->getMin(yhigh);
       int end   = b->getMax(yhigh);
-      
+
       if(start >= nx) {
         // Move to new domain
         b->shiftInds(yhigh, -nx);
@@ -188,37 +188,37 @@ Domain* Domain::splitX(int xind) {
       }else if(end >= nx) {
         // Crosses cut, so need to split into two
         b->end -= end - nx + 1;      // Make boundary smaller
-        
+
         // Create a new boundary
-        d->addNeighbour(b->getNeighbour(this), 
+        d->addNeighbour(b->getNeighbour(this),
                         yhigh,
                         0, end - nx,
                         b->getShift(yhigh)+nx, b->zshift);
       }
     }
   }
-  
+
   // Add boundary between domains
   addNeighbour(d, xhigh, 0, ny-1);
-  
+
   return d;
 }
 
 Domain* Domain::splitY(int yind) {
-  
+
   assert( (yind > 0) && (yind < ny) );
 
   cout << "SplitY " << this << " (" << nx << "," << ny << ") " << yind << "\n";
 
   Domain *d = create(nx, yind);
   ny -= yind;
-  
+
   cout << "   " << this << " (" << nx << "," << ny << ")\n";
   cout << "   " << d << " (" << d->nx << "," << d->ny << ")\n";
 
   // Copy the list of boundaries
   list<Bndry*> oldboundary(boundary);
-  
+
   for(list<Bndry*>::iterator it=oldboundary.begin(); it != oldboundary.end(); it++) {
     Bndry *b = *it;
     if(b->onSide(this, yhigh)) {
@@ -227,7 +227,7 @@ Domain* Domain::splitY(int yind) {
     }else if(b->onSide(this, xlow)) {
       int start = b->getMin(xlow);
       int end   = b->getMax(xlow);
-      
+
       if(start >= ny) {
         // Move to new domain
         b->shiftInds(xlow, -ny);
@@ -237,9 +237,9 @@ Domain* Domain::splitY(int yind) {
         Domain* neighbour = b->getNeighbour(this);
 
         b->end -= end - ny + 1;  // Make boundary smaller
-        
+
         // Create a new boundary
-        d->addNeighbour(neighbour, 
+        d->addNeighbour(neighbour,
                         xlow,
                         0, end-ny,
                         b->getShift(xlow)+ny, b->zshift);
@@ -248,28 +248,28 @@ Domain* Domain::splitY(int yind) {
     }else if(b->onSide(this, xhigh)) {
       int start = b->getMin(xhigh);
       int end   = b->getMax(xhigh);
-      
+
       if(start >= ny) {
         // Move to new domain
         b->shiftInds(xhigh, -ny);
         b->setNeighbour(xlow, d);
       }else if(end >= ny) {
         // Crosses cut, so need to split into two
-        
+
         b->end -= end - ny + 1; // Make boundary smaller
 
         // Create a new boundary
-        d->addNeighbour(b->getNeighbour(this), 
+        d->addNeighbour(b->getNeighbour(this),
                         xhigh,
                         0, end - ny,
                         b->getShift(xhigh)+ny, b->zshift);
       }
     }
   }
-  
+
   // Add boundary between domains
   addNeighbour(d, yhigh, 0, nx-1);
-  
+
   return d;
 }
 
@@ -316,13 +316,13 @@ BoutException::BoutException(const char* s, ...) {}
 const char* BoutException::what() const throw() {std::cout << "ERROR\n";}
 
 int main() {
-  
+
   Domain d(10,10);
-  
+
   std::cout << d;
-  
+
   d.addNeighbour(&d, Domain::ylow, 0, 9);
-  
+
   std::cout << d;
 
   Domain *e = d.splitX(5);

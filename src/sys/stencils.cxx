@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -37,7 +37,7 @@ typedef double BoutReal;
  **************************************************************************/
 
 // Operators
-  
+
 bvalue & bvalue::operator=(const bvalue &rhs)
 {
   val = rhs.val;
@@ -85,7 +85,7 @@ bvalue & bvalue::operator/=(const BoutReal rhs)
 }
 
 // Binary operators
-  
+
 const bvalue bvalue::operator+(const bvalue &other) const
 {
   bvalue result = *this;
@@ -174,7 +174,7 @@ stencil & stencil::operator=(const stencil &s)
   // Check for self-assignment
   if(this == &s)
     return(*this); // skip this assignment
-  
+
   jx = s.jx;
   jy = s.jy;
   jz = s.jz;
@@ -184,7 +184,7 @@ stencil & stencil::operator=(const stencil &s)
   m = s.m;
   pp = s.pp;
   mm = s.mm;
-  
+
   return *this;
 }
 
@@ -377,7 +377,7 @@ const stencil operator+(const BoutReal &lhs, const stencil &rhs)
 const stencil operator-(const BoutReal &lhs, const stencil &rhs)
 {
   stencil result;
-  
+
   result.c = lhs - rhs.c;
   result.p = lhs - rhs.p;
   result.m = lhs - rhs.m;
@@ -395,7 +395,7 @@ const stencil operator*(const BoutReal &lhs, const stencil &rhs)
 const stencil operator/(const BoutReal &lhs, const stencil &rhs)
 {
   stencil result;
-  
+
   result.c = lhs / rhs.c;
   result.p = lhs / rhs.p;
   result.m = lhs / rhs.m;
@@ -440,7 +440,7 @@ BoutReal stencil::max() const
 const stencil stencil::abs() const
 {
   stencil result;
-  
+
   result.c = fabs(c);
   result.p = fabs(p);
   result.m = fabs(m);
@@ -515,7 +515,7 @@ bstencil & bstencil::operator+=(const bstencil &rhs)
   // Should check that jx,jy and jz are the same
 
   cc += rhs.cc;
-  
+
   xp += rhs.xp; xm += rhs.xm;
   yp += rhs.yp; ym += rhs.ym;
   zp += rhs.zp; zm += rhs.zm;
@@ -530,7 +530,7 @@ bstencil & bstencil::operator+=(const bstencil &rhs)
 bstencil & bstencil::operator-=(const bstencil &rhs)
 {
   cc -= rhs.cc;
-  
+
   xp -= rhs.xp; xm -= rhs.xm;
   yp -= rhs.yp; ym -= rhs.ym;
   zp -= rhs.zp; zm -= rhs.zm;
@@ -545,7 +545,7 @@ bstencil & bstencil::operator-=(const bstencil &rhs)
 bstencil & bstencil::operator*=(const bstencil &rhs)
 {
   cc *= rhs.cc;
-  
+
   xp *= rhs.xp; xm *= rhs.xm;
   yp *= rhs.yp; ym *= rhs.ym;
   zp *= rhs.zp; zm *= rhs.zm;
@@ -560,7 +560,7 @@ bstencil & bstencil::operator*=(const bstencil &rhs)
 bstencil & bstencil::operator*=(const BoutReal rhs)
 {
   cc *= rhs;
-  
+
   xp *= rhs; xm *= rhs;
   yp *= rhs; ym *= rhs;
   zp *= rhs; zm *= rhs;
@@ -575,7 +575,7 @@ bstencil & bstencil::operator*=(const BoutReal rhs)
 bstencil & bstencil::operator/=(const bstencil &rhs)
 {
   cc /= rhs.cc;
-  
+
   xp /= rhs.xp; xm *= rhs.xm;
   yp /= rhs.yp; ym *= rhs.ym;
   zp /= rhs.zp; zm *= rhs.zm;
@@ -590,7 +590,7 @@ bstencil & bstencil::operator/=(const bstencil &rhs)
 bstencil & bstencil::operator/=(const BoutReal rhs)
 {
   cc /= rhs;
-  
+
   xp /= rhs; xm /= rhs;
   yp /= rhs; ym /= rhs;
   zp /= rhs; zm /= rhs;
@@ -598,14 +598,14 @@ bstencil & bstencil::operator/=(const BoutReal rhs)
   x2p /= rhs; x2m /= rhs;
   y2p /= rhs; y2m /= rhs;
   z2p /= rhs; z2m /= rhs;
-  
+
   return(*this);
 }
 
 bstencil & bstencil::operator^=(const bstencil &rhs)
 {
   cc = pow(cc, rhs.cc);
-  
+
   xp = pow(xp, rhs.xp); xm = pow(xm, rhs.xm);
   yp = pow(yp, rhs.yp); ym = pow(ym, rhs.ym);
   zp = pow(zp, rhs.zp); zm = pow(zm, rhs.zm);
@@ -620,7 +620,7 @@ bstencil & bstencil::operator^=(const bstencil &rhs)
 bstencil & bstencil::operator^=(const BoutReal rhs)
 {
   cc = pow(cc, rhs);
-  
+
   xp = pow(xp, rhs); xm = pow(xm, rhs);
   yp = pow(yp, rhs); ym = pow(ym, rhs);
   zp = pow(zp, rhs); zm = pow(zm, rhs);
@@ -628,7 +628,7 @@ bstencil & bstencil::operator^=(const BoutReal rhs)
   x2p = pow(x2p, rhs); x2m = pow(x2m, rhs);
   y2p = pow(y2p, rhs); y2m = pow(y2m, rhs);
   z2p = pow(z2p, rhs); z2m = pow(z2m, rhs);
-  
+
   return(*this);
 }
 
@@ -700,11 +700,11 @@ const bstencil operator/(const BoutReal lhs, const bstencil &rhs)
 {
   bstencil result = rhs;
   result.cc = lhs / rhs.cc;
-  
+
   result.xp = lhs / rhs.xp; result.xm = lhs / rhs.xm;
   result.yp = lhs / rhs.yp; result.ym = lhs / rhs.ym;
   result.zp = lhs / rhs.zp; result.zm = lhs / rhs.zm;
-  
+
   result.x2p = lhs / rhs.x2p; result.x2m = lhs / rhs.x2m;
   result.y2p = lhs / rhs.y2p; result.y2m = lhs / rhs.y2m;
   result.z2p = lhs / rhs.z2p; result.z2m = lhs / rhs.z2m;
@@ -739,7 +739,7 @@ void calc_index(bindex *bx)
   bx->jxp = bx->jx+1;
   if(bx->jxp >= mesh->ngx)
     bx->jxp = mesh->ngx-1;
-  
+
   bx->jxm = bx->jx-1;
   if(bx->jxm < 0)
     bx->jxm = 0;
@@ -753,7 +753,7 @@ void calc_index(bindex *bx)
   if (bx->jy>mesh->ystart || mesh->ystart>1) bx->jy2m = bx->jy-2; else bx->jy2m=bx->jy-1;
 
   int ncz = mesh->ngz-1;
-  
+
   bx->jzp  = (bx->jz+1)%ncz;
   bx->jzm  = (bx->jz+ncz-1)%ncz;
   bx->jz2p = (bx->jzp+1)%ncz;
@@ -764,29 +764,29 @@ void calc_index(bindex *bx)
 
   /* Twist-Shift boundary condition */
   /*
-  if(TwistShift && (mesh->TwistOrder != 0)) {
+    if(TwistShift && (mesh->TwistOrder != 0)) {
     if( (TS_down_in  && (DDATA_INDEST  != -1) && (bx->jx <  DDATA_XSPLIT)) ||
-	(TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
-      
-      bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==mesh->ystart) {
-	bx->ym_shift = bx->y2m_shift = true;
-	
-      }else if (bx->jy==mesh->ystart+1) {
-	bx->y2m_shift = true;
-      }
+    (TS_down_out && (DDATA_OUTDEST != -1) && (bx->jx >= DDATA_XSPLIT)) ) {
+
+    bx->ym_offset = -ShiftAngle[bx->jx] / mesh->dz;
+    if (bx->jy==mesh->ystart) {
+    bx->ym_shift = bx->y2m_shift = true;
+
+    }else if (bx->jy==mesh->ystart+1) {
+    bx->y2m_shift = true;
+    }
     }
     if( (TS_up_in  && (UDATA_INDEST  != -1) && (bx->jx <  UDATA_XSPLIT)) ||
-	(TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
-      
-      bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
-      if (bx->jy==mesh->yend) {
-	bx->yp_shift = bx->y2p_shift = true;
-      } else if (bx->jy==mesh->yend-1) {
-	bx->y2m_shift = true;
-      }
+    (TS_up_out && (UDATA_OUTDEST != -1) && (bx->jx >= UDATA_XSPLIT)) ) {
+
+    bx->yp_offset = ShiftAngle[bx->jx] / mesh->dz;
+    if (bx->jy==mesh->yend) {
+    bx->yp_shift = bx->y2p_shift = true;
+    } else if (bx->jy==mesh->yend-1) {
+    bx->y2m_shift = true;
     }
-  }
+    }
+    }
   */
 
   /* shifted z-indices for x differencing */
@@ -806,12 +806,12 @@ void calc_index(bindex *bx)
 /* Resets the index bx */
 void start_index(bindex *bx, REGION region)
 {
-	// Initialize it to something
+  // Initialize it to something
   bx->jx = 0;
 
   if((region == RGN_NOBNDRY) || (region == RGN_NOX))
     bx->jx = mesh->xstart;
-  
+
   bx->jy = mesh->ystart;
   bx->jz = 0;
 
@@ -825,30 +825,30 @@ int next_index3(bindex *bx)
 {
   bx->jz++;
   if(bx->jz >= mesh->ngz-1) {
-    
+
     bx->jz = 0;
     bx->jy++;
-    
+
     if(bx->jy > mesh->yend) {
       bx->jy =mesh->ystart;
       bx->jx++;
-      
+
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-	// Missing out X boundary
-	if(bx->jx > mesh->xend) {
-	  bx->jx = mesh->xstart;
-	  return(0);
-	}
+        // Missing out X boundary
+        if(bx->jx > mesh->xend) {
+          bx->jx = mesh->xstart;
+          return(0);
+        }
       }else {
-	// Including X boundary regions
-	if(bx->jx >= mesh->ngx) {
-	  bx->jx = 0;
-	  return(0);
-	}
+        // Including X boundary regions
+        if(bx->jx >= mesh->ngx) {
+          bx->jx = 0;
+          return(0);
+        }
       }
     }
   }
-  
+
   calc_index(bx);
 
   return(1);
@@ -858,23 +858,23 @@ int next_index3(bindex *bx)
 int next_index2(bindex *bx)
 {
   bx->jy++;
-    
+
   if(bx->jy > mesh->yend) {
     bx->jy =mesh->ystart;
     bx->jx++;
-    
+
     if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
       if(bx->jx > mesh->xend) {
-	bx->jx = mesh->xstart;
-	return(0);
+        bx->jx = mesh->xstart;
+        return(0);
       }
     }else
       if(bx->jx >= mesh->ngx) {
-	bx->jx = 0;
-	return(0);
+        bx->jx = 0;
+        return(0);
       }
   }
-  
+
   calc_index(bx);
 
   return(1);
@@ -885,16 +885,16 @@ int next_indexperp(bindex *bx)
 {
   bx->jz++;
   if(bx->jz >= mesh->ngz-1) {
-    
+
     bx->jz = 0;
     bx->jx++;
-      
+
     if(bx->jx > mesh->xend) {
       bx->jx = mesh->xstart;
       return(0);
     }
   }
-  
+
   calc_index(bx);
 
   return(1);
@@ -903,12 +903,12 @@ int next_indexperp(bindex *bx)
 /* Resets the index bx to the end of the region*/
 void reverse_start_index(bindex *bx, REGION region)
 {
-	// Initialize it to something
+  // Initialize it to something
   bx->jx = mesh->ngx-1;
 
   if((region == RGN_NOBNDRY) || (region == RGN_NOX))
     bx->jx = mesh->xend;
-  
+
   bx->jy = mesh->yend;
   bx->jz = mesh->ngz-2;
 
@@ -920,12 +920,12 @@ void reverse_start_index(bindex *bx, REGION region)
 /* Resets the index bx to the first x and z but last y values */
 void start_index_lasty(bindex *bx, REGION region)
 {
-	// Initialize it to something
+  // Initialize it to something
   bx->jx = 0;
 
   if((region == RGN_NOBNDRY) || (region == RGN_NOX))
     bx->jx = mesh->xstart;
-  
+
   bx->jy = mesh->yend;
   bx->jz = 0;
 
@@ -939,30 +939,30 @@ int reverse_next_index3(bindex *bx)
 {
   bx->jz--;
   if(bx->jz < 0) {
-    
+
     bx->jz = mesh->ngz-2;
     bx->jy--;
-    
+
     if(bx->jy < mesh->ystart) {
       bx->jy =mesh->yend;
       bx->jx--;
-      
+
       if((bx->region == RGN_NOBNDRY) || (bx->region == RGN_NOX)) {
-	// Missing out X boundary
-	if(bx->jx < mesh->xstart) {
-	  bx->jx = mesh->xend;
-	  return(0);
-	}
+        // Missing out X boundary
+        if(bx->jx < mesh->xstart) {
+          bx->jx = mesh->xend;
+          return(0);
+        }
       }else {
-	// Including X boundary regions
-	if(bx->jx < 0) {
-	  bx->jx = mesh->ngx-1;
-	  return(0);
-	}
+        // Including X boundary regions
+        if(bx->jx < 0) {
+          bx->jx = mesh->ngx-1;
+          return(0);
+        }
       }
     }
   }
-  
+
   calc_index(bx);
 
   return(1);
@@ -976,7 +976,7 @@ int next_index_y(bindex *bx)
     bx->jy--;
     return(0);
   }
-  
+
   calc_index(bx);
 
   return(1);
@@ -990,7 +990,7 @@ int previous_index_y(bindex *bx)
     bx->jy++;
     return(0);
   }
-  
+
   calc_index(bx);
 
   return(1);

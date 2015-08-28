@@ -31,7 +31,7 @@ private:
 class FieldSin : public FieldGenerator {
 public:
   FieldSin(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
   const std::string str() {return std::string("sin(")+gen->str()+std::string(")");}
@@ -42,10 +42,10 @@ private:
 class FieldCos : public FieldGenerator {
 public:
   FieldCos(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
-  
+
   const std::string str() {return std::string("cos(")+gen->str()+std::string(")");}
 private:
   FieldGenerator *gen;
@@ -113,7 +113,7 @@ private:
 class FieldSinh : public FieldGenerator {
 public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -123,7 +123,7 @@ private:
 class FieldCosh : public FieldGenerator {
 public:
   FieldCosh(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -133,7 +133,7 @@ private:
 class FieldTanh : public FieldGenerator {
 public:
   FieldTanh(FieldGenerator* g=NULL) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -143,7 +143,7 @@ private:
 class FieldGaussian : public FieldGenerator {
 public:
   FieldGaussian(FieldGenerator *xin, FieldGenerator *sin) : X(xin), s(sin) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -153,7 +153,7 @@ private:
 class FieldAbs : public FieldGenerator {
 public:
   FieldAbs(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -163,7 +163,7 @@ private:
 class FieldSqrt : public FieldGenerator {
 public:
   FieldSqrt(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
 private:
@@ -173,7 +173,7 @@ private:
 class FieldHeaviside : public FieldGenerator {
 public:
   FieldHeaviside(FieldGenerator* g) : gen(g) {}
-  
+
   FieldGenerator* clone(const list<FieldGenerator*> args);
   BoutReal generate(double x, double y, double z, double t);
   const std::string str() {return std::string("H(")+gen->str()+std::string(")");}
@@ -263,7 +263,7 @@ private:
   /// Generate a random number between 0 and 1
   /// given an arbitrary seed value
   BoutReal genRand(BoutReal seed);
-  
+
   FieldGenerator *arg;
   BoutReal phase[14];
 };

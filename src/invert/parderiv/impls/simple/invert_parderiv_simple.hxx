@@ -1,10 +1,10 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * A + B * Grad2_par2
- * 
+ *
  * Stages:
  * - Problem trivially parallel in X, so gather all data for fixed X onto
  *   a single processor. Split MXSUB locations between NYPE processors
@@ -12,10 +12,10 @@
  *   This splits the problem into one or more (cyclic) tridiagonal problems
  *   (number depends on the q value)
  * - Solve each of these tridiagonal systems O(Nz*Ny)
- * - Scatter data back 
+ * - Scatter data back
  *
  * Author: Ben Dudson, University of York, June 2009
- * 
+ *
  * Known issues:
  * ------------
  *
@@ -29,7 +29,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -55,16 +55,16 @@
 class InvertParSimple : public InvertPar {
 public:
   const Field3D solve(const Field3D &f);
-  
+
   void setCoefA(const Field2D &f) {A = f;}
   void setCoefB(const Field2D &f) {B = f;}
-  
+
 private:
   Field2D A, B;
-  
-  void cyclicSolve(int ysize, int xpos, BoutReal *data, 
+
+  void cyclicSolve(int ysize, int xpos, BoutReal *data,
                    BoutReal *result, bool coef3d = false);
-  
+
 };
 
 #endif // __INV_PAR_SIMPLE_H__

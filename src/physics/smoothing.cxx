@@ -4,12 +4,12 @@
  *
  * 2010-05-17 Ben Dudson <bd512@york.ac.uk>
  *    * Added nonlinear filter
- * 
+ *
  **************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -41,10 +41,10 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   if(BoutRealspace) {
     fs = f.shiftZ(true); // Shift into BoutReal space
   }else
-    fs = f; 
+    fs = f;
 
   result.allocate();
-  
+
   // Copy boundary region
   for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<mesh->ngz;jz++) {
@@ -57,7 +57,7 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   for(int jx=1;jx<mesh->ngx-1;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	result[jx][jy][jz] = 0.5*fs[jx][jy][jz] + 0.25*( fs[jx-1][jy][jz] + fs[jx+1][jy][jz] );
+        result[jx][jy][jz] = 0.5*fs[jx][jy][jz] + 0.25*( fs[jx-1][jy][jz] + fs[jx+1][jy][jz] );
       }
 
   if(BoutRealspace)
@@ -74,25 +74,25 @@ const Field3D smooth_y(const Field3D &f) {
   Field3D result;
 
   result.allocate();
-  
+
   // Copy boundary region
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz;jz++) {
       result[jx][0][jz] = f[jx][0][jz];
       result[jx][mesh->ngy-1][jz] = f[jx][mesh->ngy-1][jz];
     }
-  
+
   // Smooth using simple 1-2-1 filter
 
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=1;jy<mesh->ngy-1;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	result[jx][jy][jz] = 0.5*f[jx][jy][jz] + 0.25*( f[jx][jy-1][jz] + f[jx][jy+1][jz] );
+        result[jx][jy][jz] = 0.5*f[jx][jy][jz] + 0.25*( f[jx][jy-1][jz] + f[jx][jy+1][jz] );
       }
 
   // Need to communicate boundaries
   mesh->communicate(result);
-  
+
   return result;
 }
 
@@ -124,7 +124,7 @@ const Field3D smoothXY(const Field3D &f) {
                                                    0.5*f[x][y-1][z] + 0.125*(f[x+1][y-1][z] + f[x-1][y-1][z] + f[x][y-2][z] + f[x][y][z]) +
                                                    0.5*f[x][y+1][z] + 0.125*(f[x+1][y+1][z] + f[x-1][y+1][z] + f[x][y][z] + f[x][y+2][z]));
       }
-  
+
   return result;
 }
 
@@ -135,30 +135,30 @@ const Field3D smoothXY(const Field3D &f) {
   W.Shyy et. al. JCP 102 (1) September 1992 page 49
 
   "On the Suppression of Numerical Oscillations Using a Non-Linear Filter"
-  
- */
+
+*/
 void nl_filter(rvec &f, BoutReal w) {
   for(size_t i=1; i<f.size()-1; i++) {
-    
+
     BoutReal dp = f[i+1] - f[i];
     BoutReal dm = f[i-1] - f[i];
     if(dp*dm > 0.) {
       // Local extrema - adjust
       BoutReal ep, em, e; // Amount to adjust by
       if(fabs(dp) > fabs(dm)) {
-	ep = w*0.5*dp;
-	em = w*dm;
-	e = (fabs(ep) < fabs(em)) ? ep : em; // Pick smallest absolute
-	// Adjust
-	f[i+1] -= e;
-	f[i] += e;
+        ep = w*0.5*dp;
+        em = w*dm;
+        e = (fabs(ep) < fabs(em)) ? ep : em; // Pick smallest absolute
+        // Adjust
+        f[i+1] -= e;
+        f[i] += e;
       }else {
-	ep = w*0.5*dm;
-	em = w*dp;
-	e = (fabs(ep) < fabs(em)) ? ep : em; // Pick smallest absolute
-	// Adjust
-	f[i-1] -= e;
-	f[i] += e;
+        ep = w*0.5*dm;
+        em = w*dp;
+        e = (fabs(ep) < fabs(em)) ? ep : em; // Pick smallest absolute
+        // Adjust
+        f[i-1] -= e;
+        f[i] += e;
       }
     }
   }
@@ -168,19 +168,19 @@ const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
 #endif
-  
+
   Field3D fs;
   fs = f.shiftZ(true); // Shift into BoutReal space
   Field3D result;
   rvec v;
-  
+
   for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getXArray(jy, jz, v);
       nl_filter(v, w);
       result.setXArray(jy, jz, v);
     }
-  
+
   result = result.shiftZ(false); // Shift back
 
 #ifdef CHECK
@@ -193,17 +193,17 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
 #ifdef CHECK
   msg_stack.push("nl_filter_x( Field3D )");
 #endif
-  
+
   Field3D result;
   rvec v;
-  
+
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jz=0;jz<mesh->ngz-1;jz++) {
       fs.getYArray(jx, jz, v);
       nl_filter(v, w);
       result.setYArray(jx, jz, v);
     }
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -214,10 +214,10 @@ const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
 #ifdef CHECK
   msg_stack.push("nl_filter_z( Field3D )");
 #endif
-  
+
   Field3D result;
   rvec v;
-  
+
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=0;jy<mesh->ngy;jy++) {
       fs.getZArray(jx, jy, v);

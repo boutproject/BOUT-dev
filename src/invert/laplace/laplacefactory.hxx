@@ -7,12 +7,12 @@ class LaplaceFactory;
 #include <invert_laplace.hxx>
 
 class LaplaceFactory {
- public:
+public:
   /// Return a pointer to the only instance
   static LaplaceFactory* getInstance();
-  
+
   Laplacian* createLaplacian(Options *options = NULL);
-  
+
 private:
   LaplaceFactory() {} // Prevent instantiation of this class
   static LaplaceFactory* instance; ///< The only instance of this class (Singleton)

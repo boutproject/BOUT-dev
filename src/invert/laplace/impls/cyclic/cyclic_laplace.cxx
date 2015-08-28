@@ -59,11 +59,11 @@ LaplaceCyclic::LaplaceCyclic(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1
 
   xs = mesh->xstart; // Starting X index
   if(mesh->firstX() && !mesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xs = 0;
+    xs = 0;
   }
   xe = mesh->xend;   // Last X index
   if(mesh->lastX() && !mesh->periodicX){ // Only want to include guard cells at boundaries (unless periodic in x)
-	  xe = mesh->ngx-1;
+    xe = mesh->ngx-1;
   }
   int n = xe - xs + 1;  // Number of X points on this processor,
                         // including boundaries but not guard cells
@@ -127,7 +127,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
         // Use the values in x0 in the boundary
         DST(x0[ix]+1, mesh->ngz-3 , k1d);
       }else {
-        //	  int length = sizeof(*rhs[ix])/sizeof(FieldPerp);
+        //    int length = sizeof(*rhs[ix])/sizeof(FieldPerp);
         DST(rhs[ix]+1, mesh->ngz-3 , k1d);
       }
 
@@ -178,8 +178,8 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     for(int ix=xs; ix <= xe; ix++) {
       // Take FFT in Z direction, apply shift, and put result in k1d
 
-    if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
-       ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
+      if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
+         ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
         ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
       }else {

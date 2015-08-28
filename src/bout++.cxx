@@ -7,7 +7,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -104,7 +104,7 @@ char get_spin();                    // Produces a spinning bar
   less than zero, the exit status from BOUT++ is 0, otherwise it is the return
   value of BoutInitialise.
 
- */
+*/
 int BoutInitialise(int &argc, char **&argv) {
 
   string dump_ext; ///< Extensions for restart and dump files
@@ -126,16 +126,16 @@ int BoutInitialise(int &argc, char **&argv) {
   /// Check for help flag separately
   for (int i=1;i<argc;i++) {
     if (string(argv[i]) == "-h" ||
-    	string(argv[i]) == "--help") {
+        string(argv[i]) == "--help") {
       // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
       fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
       fprintf(stdout, "\n"
-	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
-	      "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
-	      "  -h, --help\t\tThis message\n"
-	      "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
-	      "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
-	      "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
+              "  -d <data directory>\tLook in <data directory> for input/output files\n"
+              "  -f <options filename>\tUse OPTIONS given in <options filename>\n"
+              "  -h, --help\t\tThis message\n"
+              "  restart [append]\tRestart the simulation. If append is specified, append to the existing output files, otherwise overwrite them\n"
+              "  VAR=VALUE\t\tSpecify a VALUE for input parameter VAR\n"
+              "\nFor all possible input parameters, see the user manual and/or the physics model source (e.g. %s.cxx)\n", argv[0]);
 
       return -1;
     }
@@ -278,10 +278,10 @@ int BoutInitialise(int &argc, char **&argv) {
     }
 
     ///////////////////////////////////////////////
-    
+
     mesh = Mesh::create();  ///< Create the mesh
     mesh->load();           ///< Load from sources. Required for Field initialisation
-    
+
     ////////////////////////////////////////////
 
     // Set up the "dump" data output file
@@ -291,7 +291,7 @@ int BoutInitialise(int &argc, char **&argv) {
       options->getSection("output")->set("floats", true, "default"); // by default output floats
 
     dump = Datafile(options->getSection("output"));
-    
+
     /// Open a file for the output
     if(append) {
       dump.opena("%s/BOUT.dmp.%s", data_dir, dump_ext.c_str());
@@ -307,7 +307,7 @@ int BoutInitialise(int &argc, char **&argv) {
     ////////////////////////////////////////////
 
     mesh->outputVars(dump); ///< Save mesh configuration into output file
-    
+
   }catch(BoutException &e) {
     output.write("Error encountered during initialisation: %s\n", e.what());
     BoutComm::cleanup();
@@ -317,10 +317,10 @@ int BoutInitialise(int &argc, char **&argv) {
 }
 
 int bout_run(Solver *solver, rhsfunc physics_run) {
-  
+
   /// Set the RHS function
   solver->setRHS(physics_run);
-  
+
   /// Add the monitor function
   solver->addMonitor(bout_monitor, Solver::BACK);
 
@@ -329,13 +329,13 @@ int bout_run(Solver *solver, rhsfunc physics_run) {
 }
 
 int BoutFinalise() {
-  
+
   // Delete the mesh
   delete mesh;
 
   // Close the output file
   dump.close();
-  
+
   // Make sure all processes have finished writing before exit
   MPI_Barrier(BoutComm::get());
 
@@ -348,7 +348,7 @@ int BoutFinalise() {
 
   // Cleanup boundary factory
   BoundaryFactory::cleanup();
-  
+
   // Cleanup timer
   Timer::cleanup();
 
@@ -364,13 +364,13 @@ int BoutFinalise() {
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
-    
+
   // Logging output
   Output::cleanup();
 
   // MPI communicator, including MPI_Finalize()
   BoutComm::cleanup();
-  
+
   return 0;
 }
 
@@ -400,8 +400,8 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   /// Collect timing information
   BoutReal wtime        = Timer::resetTime("run");
   int ncalls            = solver->rhs_ncalls;
-  int ncalls_e		= solver->rhs_ncalls_e;
-  int ncalls_i		= solver->rhs_ncalls_i;
+  int ncalls_e      = solver->rhs_ncalls_e;
+  int ncalls_i      = solver->rhs_ncalls_i;
   bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
@@ -425,31 +425,31 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
 
     /// Print the column header for timing info
     if(!output_split){
-	    output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+      output.write("Sim Time  |  RHS evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
     }else{
-	    output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
+      output.write("Sim Time  |  RHS_e evals  | RHS_I evals  | Wall Time |  Calc    Inv   Comm    I/O   SOLVER\n\n");
     }
   }
-  
- 
+
+
   if(!output_split){
-    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n", 
-               simtime, ncalls, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+    output.write("%.3e      %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
+                 simtime, ncalls, wtime,
+                 100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+                 100.*wtime_invert/wtime,  // Inversions
+                 100.0*wtime_comms/wtime,  // Communications
+                 100.* wtime_io / wtime,      // I/O
+                 100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }else{
     output.write("%.3e      %5d            %5d       %.2e   %5.1f  %5.1f  %5.1f  %5.1f  %5.1f\n",
-               simtime, ncalls_e, ncalls_i, wtime,
-               100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
-               100.*wtime_invert/wtime,  // Inversions
-               100.0*wtime_comms/wtime,  // Communications
-               100.* wtime_io / wtime,      // I/O
-               100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
+                 simtime, ncalls_e, ncalls_i, wtime,
+                 100.0*(wtime_rhs - wtime_comms - wtime_invert)/wtime,
+                 100.*wtime_invert/wtime,  // Inversions
+                 100.0*wtime_comms/wtime,  // Communications
+                 100.* wtime_io / wtime,      // I/O
+                 100.*(wtime - wtime_io - wtime_rhs)/wtime); // Everything else
   }
-  
+
   // This bit only to screen, not log file
 
   BoutReal t_elapsed = MPI_Wtime() - mpi_start_time;
@@ -472,7 +472,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
       output.print(" Wall %s", (time_to_hms(t_remain)).c_str());
     }
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -546,7 +546,7 @@ char get_spin() {
   char c = '|'; // Doesn't need to be assigned; squash warning
 
   switch(i) {
-  case 0: 
+  case 0:
     c = '|'; break;
   case 1:
     c = '/'; break;

@@ -21,17 +21,17 @@ class Laplace3DPetsc : public Laplace3D {
 public:
   Laplace3DPetsc(Options *opt = NULL);
   ~Laplace3DPetsc();
-  
+
   void setCoefA(const Field2D &f) {A = f;}
   void setCoefB(const Field2D &f) {B = f;}
   void setCoefC(const Field2D &f) {C = f;}
   void setCoefD(const Field2D &f) {D = f;}
-  
+
   void setCoefA(const Field3D &f) {A = f;}
   void setCoefB(const Field3D &f) {B = f;}
   void setCoefC(const Field3D &f) {C = f;}
   void setCoefD(const Field3D &f) {D = f;}
-  
+
   const Field3D solve(const Field3D &b);
 private:
   Field3D A,B,C,D; // Coefficients

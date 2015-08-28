@@ -9,14 +9,14 @@
  * a[0...(n-1)][0...(m1+m2)]
  * and the rhs vector
  * b[0...(n-1)]
- * 
+ *
  * a is overwritten, and b is replaced by the solution
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -52,7 +52,7 @@ extern "C" {
   /// Complex tridiagonal inversion
   void zgtsv_(int *n, int *nrhs, fcmplx *dl, fcmplx *d, fcmplx *du, fcmplx * b, int *ldb, int *info);
   /// BoutReal (double) tridiagonal inversion
-  void dgtsv_(int *n, int *nrhs, BoutReal *dl, BoutReal *d, BoutReal *du, BoutReal *b, int *ldb, int *info); 
+  void dgtsv_(int *n, int *nrhs, BoutReal *dl, BoutReal *d, BoutReal *du, BoutReal *b, int *ldb, int *info);
   /// Complex band solver
   void zgbsv_(int *n, int *kl, int *ku, int *nrhs, fcmplx *ab, int *ldab, int *ipiv, fcmplx *b, int *ldb, int *info);
 };
@@ -76,7 +76,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     d = dl + n;
     du = d + n;
     x = du + n;
-    
+
     len = n;
   }
 
@@ -84,12 +84,12 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     // Diagonal
     d[i].r = b[i].real();
     d[i].i = b[i].imag();
-    
+
     // Off-diagonal terms
     if(i != (n-1)) {
       dl[i].r = a[i+1].real();
       dl[i].i = a[i+1].imag();
-      
+
       du[i].r = c[i].real();
       du[i].i = c[i].imag();
     }
@@ -99,8 +99,8 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   }
 
   /* LAPACK ZGTSV routine.
-     
-     n - Size of the array 
+
+     n - Size of the array
      nrhs - Number of RHS vectors to solve
      dl - lower band
      d - diagonal values
@@ -114,7 +114,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
   if(info != 0) {
     // Some sort of problem
     output.write("Problem in LAPACK ZGTSV routine\n");
-     return 1;
+    return 1;
   }
 
   // Copy result back
@@ -126,7 +126,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 }
 
 /* Real tridiagonal solver
- * 
+ *
  * Returns true on success
  */
 bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *u, int n)
@@ -147,18 +147,18 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
     d = dl + n;
     du = d + n;
     x = du + n;
-    
+
     len = n;
   }
 
   for(int i=0;i<n;i++) {
     // Diagonal
     d[i] = b[i];
-    
+
     // Off-diagonal terms
     if(i != (n-1)) {
       dl[i] = a[i+1];
-      
+
       du[i] = c[i];
     }
 
@@ -166,8 +166,8 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
   }
 
   /* LAPACK DGTSV routine.
-     
-     n - Size of the array 
+
+     n - Size of the array
      nrhs - Number of RHS vectors to solve
      dl - lower band
      d - diagonal values
@@ -193,17 +193,17 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
 }
 
 /* Real cyclic tridiagonal solver
- * 
+ *
  * Uses Sherman-Morrison formula
  */
 void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal *x, int n)
 {
   if(n <= 2)
     throw BoutException("n too small in cyclic_tridag");
-  
+
   static int len = 0;
   static BoutReal *u, *z;
-  
+
   if(n > len) {
     if(len > 0) {
       delete[] u;
@@ -213,43 +213,43 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
     z = new BoutReal[n];
     len = n;
   }
-  
+
   BoutReal gamma = -b[0];
-  
+
   // Save original values of b (restore after)
   BoutReal b0 = b[0];
   BoutReal bn = b[n-1];
-  
+
   // Modify b
   b[0] = b[0] - gamma;
   b[n-1] = b[n-1] - c[n-1]*a[0]/gamma;
-  
+
   // Solve tridiagonal system Ax=r
   if(!tridag(a, b, c, r, x, n))
     bout_error("ERROR: first tridag call failed in cyclic_tridag\n");
-  
+
   u[0] = gamma;
   u[n-1] = c[n-1];
   for(int i=1;i<(n-1);i++)
     u[i] = 0.;
-  
+
   // Solve Az = u
   if(!tridag(a, b, c, u, z, n))
     bout_error("ERROR: second tridag call failed in cyclic_tridag\n");
-  
+
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) /
-    (1.0 + z[0] + a[0]*z[n-1]/gamma); 
-  
+    (1.0 + z[0] + a[0]*z[n-1]/gamma);
+
   for(int i=0;i<n;i++)
     x[i] -= fact*z[i];
-  
+
   // Restore coefficients
   b[0] = b0;
   b[n-1] = bn;
 }
 
 /*! Complex band solver using ZGBSV
- * 
+ *
  * n      Size of the matrix (number of equations)
  * kl     Number of subdiagonals
  * ku     Number of superdiagonals
@@ -269,7 +269,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
   int kl, ku, nrhs;
   int ldab, ldb;
   int info;
-  
+
   nrhs = 1;
   kl = m1;
   ku = m2;
@@ -278,7 +278,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 
   static int *ipiv;
   static int len = 0, alen = 0;
-  static fcmplx *x, *AB; 
+  static fcmplx *x, *AB;
 
   if(alen < ldab*n) {
     if(alen > 0)
@@ -291,7 +291,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
       delete[] ipiv;
       delete[] x;
     }
-    
+
     ipiv = new int[n];
     x = new fcmplx[n];
     len = n;
@@ -308,16 +308,16 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
   for(int j=0;j<n;j++) {
     for(int i=0;i<=(ku+kl); i++) {
       // AB(kl + i, j) = A[j - ku + i][kl+ku - i]
-      
+
       if( ((j - ku + i) >= 0) && ((j - ku + i) < n) ) {
-	AB[j*ldab + kl + i].r = a[j - ku + i][kl+ku - i].real();
-	AB[j*ldab + kl + i].i = a[j - ku + i][kl+ku - i].imag();
+        AB[j*ldab + kl + i].r = a[j - ku + i][kl+ku - i].real();
+        AB[j*ldab + kl + i].i = a[j - ku + i][kl+ku - i].imag();
       }
     }
   }
 
   zgbsv_(&n, &kl, &ku, &nrhs, AB, &ldab, ipiv, x, &ldb, &info);
-  
+
   // Copy result back
   for(int i=0;i<n;i++) {
     b[i] = dcomplex(x[i].r, x[i].i);
@@ -336,7 +336,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 /// Tri-diagonal complex matrix inversion (from Numerical Recipes)
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)
 {
-  int j;  
+  int j;
 
   dcomplex bet;
   static dcomplex *gam;
@@ -348,7 +348,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
     gam = new dcomplex[n];
     len = n;
   }
-  
+
   if(b[0] == 0.0) {
     printf("Tridag: Rewrite equations\n");
     return 1;
@@ -356,7 +356,7 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 
   bet = b[0];
   u[0] = r[0] / bet;
-  
+
   for(j=1;j<n;j++) {
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
@@ -377,27 +377,27 @@ int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcompl
 /// Tri-diagonal matrix inversion (BoutReal)
 bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutReal *r, BoutReal *x, int n)
 {
-  int j;  
-  
+  int j;
+
   BoutReal bet;
   static BoutReal *gam;
   static int len = 0;
-  
+
   if(n > len) {
     if(len > 0)
       delete [] gam;
     gam = new BoutReal[n];
     len = n;
   }
-  
+
   if(b[0] == 0.0) {
     output.write("Tridag: Rewrite equations\n");
     return false;
   }
-  
+
   bet = b[0];
   x[0] = r[0] / bet;
-  
+
   for(j=1;j<n;j++) {
     gam[j] = c[j-1]/bet;
     bet = b[j]-a[j]*gam[j];
@@ -407,11 +407,11 @@ bool tridag(const BoutReal *a, const BoutReal *b, const BoutReal *c, const BoutR
     }
     x[j] = (r[j]-a[j]*x[j-1])/bet;
   }
-  
+
   for(j=n-2;j>=0;j--) {
     x[j] = x[j]-gam[j+1]*x[j+1];
   }
-  
+
   return true;
 }
 
@@ -420,10 +420,10 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
 {
   if(n <= 2)
     throw BoutException("ERROR: n too small in cyclic_tridag(BoutReal)");
-  
+
   static int len = 0;
   static BoutReal *u, *z;
-  
+
   if(n > len) {
     if(len > 0) {
       delete[] u;
@@ -433,36 +433,36 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
     z = new BoutReal[n];
     len = n;
   }
-  
+
   BoutReal gamma = -b[0];
-  
+
   // Save original values of b (restore after)
   BoutReal b0 = b[0];
   BoutReal bn = b[n-1];
-  
+
   // Modify b
   b[0] = b[0] - gamma;
   b[n-1] = b[n-1] - c[n-1]*a[0]/gamma;
-  
+
   // Solve tridiagonal system Ax=r
   if(!tridag(a, b, c, r, x, n))
     throw BoutException("First tridag call failed in cyclic_tridag(BoutReal)");
-  
+
   u[0] = gamma;
   u[n-1] = c[n-1];
   for(int i=1;i<(n-1);i++)
     u[i] = 0.;
-  
+
   // Solve Az = u
   if(!tridag(a, b, c, u, z, n))
     throw BoutException("ERROR: second tridag call failed in cyclic_tridag(BoutReal)\n");
-  
+
   BoutReal fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
-    (1.0 + z[0] + a[0]*z[n-1]/gamma); 
-  
+    (1.0 + z[0] + a[0]*z[n-1]/gamma);
+
   for(int i=0;i<n;i++)
     x[i] -= fact*z[i];
-  
+
   // Restore coefficients
   b[0] = b0;
   b[n-1] = bn;
@@ -472,7 +472,7 @@ void cyclic_tridag(BoutReal *a, BoutReal *b, BoutReal *c, BoutReal *r, BoutReal 
 const BoutReal TINY = 1.0e-20;
 
 void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex *d)
+             dcomplex **al, unsigned long indx[], dcomplex *d)
 {
   unsigned long i,j,k,l;
   unsigned int mm;
@@ -494,8 +494,8 @@ void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
     if (l < n) l++;
     for (j=k+1;j<=l;j++) {
       if (abs(a[j-1][0]) > abs(dum)) {
-	dum=a[j-1][0];
-	i=j;
+        dum=a[j-1][0];
+        i=j;
       }
     }
     indx[k-1]=i;
@@ -514,12 +514,12 @@ void cbandec(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
 }
 
 void cbanbks(dcomplex **a, unsigned long n, unsigned int m1, unsigned int m2,
-	     dcomplex **al, unsigned long indx[], dcomplex b[])
+             dcomplex **al, unsigned long indx[], dcomplex b[])
 {
   unsigned long i,k,l;
   unsigned int mm;
   dcomplex dum;
-  
+
   mm=m1+m2+1;
   l=m1;
   for (k=1;k<=n;k++) {
@@ -543,7 +543,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
   static unsigned long *indx;
   static int an = 0, am1 = 0; //.allocated sizes
   dcomplex d;
-  
+
   if(an < n) {
     if(an != 0) {
       free_cmatrix(al);
@@ -554,7 +554,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
     an = n;
     am1 = m1;
   }
-  
+
   if(am1 < m1) {
     if(am1 != 0)
       free_cmatrix(al);
@@ -578,10 +578,10 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
 {
   if(n <= 2)
     throw BoutException("n too small in cyclic_tridag(dcomplex)");
-  
+
   static int len = 0;
   static dcomplex *u, *z;
-  
+
   if(n > len) {
     if(len > 0) {
       delete[] u;
@@ -591,36 +591,36 @@ void cyclic_tridag(dcomplex *a, dcomplex *b, dcomplex *c, dcomplex *r, dcomplex 
     z = new dcomplex[n];
     len = n;
   }
-  
+
   dcomplex gamma = -b[0];
-  
+
   // Save original values of b (restore after)
   dcomplex b0 = b[0];
   dcomplex bn = b[n-1];
-  
+
   // Modify b
   b[0] = b[0] - gamma;
   b[n-1] = b[n-1] - c[n-1]*a[0]/gamma;
-  
+
   // Solve tridiagonal system Ax=r
   if(tridag(a, b, c, r, x, n))
     throw BoutException("First tridag call failed in cyclic_tridag(dcomplex)");
-  
+
   u[0] = gamma;
   u[n-1] = c[n-1];
   for(int i=1;i<(n-1);i++)
     u[i] = 0.;
-  
+
   // Solve Az = u
   if(tridag(a, b, c, u, z, n))
     throw BoutException("Second tridag call failed in cyclic_tridag(dcomplex)\n");
-  
+
   dcomplex fact = (x[0] + a[0]*x[n-1]/gamma) / // v.x / (1 + v.z)
-    (1.0 + z[0] + a[0]*z[n-1]/gamma); 
-  
+    (1.0 + z[0] + a[0]*z[n-1]/gamma);
+
   for(int i=0;i<n;i++)
     x[i] -= fact*z[i];
-  
+
   // Restore coefficients
   b[0] = b0;
   b[n-1] = bn;

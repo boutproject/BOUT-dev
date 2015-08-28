@@ -1,9 +1,9 @@
 /**
- * @file	BoutIfc.cpp
+ * @file    BoutIfc.cpp
  *
- * @brief	Implementation of calling BOUT through FACETS
+ * @brief   Implementation of calling BOUT through FACETS
  *
- * @version	$Id: BoutIfc.cpp 1436 2010-12-23 00:34:12Z cary $
+ * @version $Id: BoutIfc.cpp 1436 2010-12-23 00:34:12Z cary $
  */
 
 // std includes
@@ -140,7 +140,7 @@ BoutIfc::complete() {
 // This is physics from advect1d, just an example
 // If different physics is wanted, place it here
 
-// Evolving variables 
+// Evolving variables
 Field3D N, P; // Density, Pressure
 Vector3D V;   // velocity
 
@@ -205,7 +205,7 @@ int physics_run(BoutReal t)
 
   ddt(N) = -V_dot_Grad(V, N) - N*Div(V);
 
-  // Velocity 
+  // Velocity
 
   ddt(V) = -V_dot_Grad(V, V) - Grad(P)/N + g;
 

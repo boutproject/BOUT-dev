@@ -3,8 +3,8 @@
  *
  * Uses GMRES to solve problems of form F(x)=b, either on a single processor
  * or in parallel
- * 
- * Changelog: 
+ *
+ * Changelog:
  *
  * 2007-10 Ben Dudson <bd512@york.ac.uk>
  *    * Initial version. Not working yet.
@@ -13,7 +13,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -52,7 +52,7 @@ Inverter::Inverter()
 
 Inverter::~Inverter()
 {
-  
+
 }
 
 /**************************************************************************
@@ -63,27 +63,27 @@ int Inverter::solve(const FieldPerp &b, FieldPerp &x, int flags, int restart, in
 {
   int iterations;
   BoutReal residual;
-  
-  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->ngx*mesh->ngz, 
-			   restart, itmax, tol, iterations, residual);
-  
+
+  int status = gmres_solve(*(b.getData()), *(x.getData()), mesh->ngx*mesh->ngz,
+                           restart, itmax, tol, iterations, residual);
+
   // Iterations and residual now set by GMRES method
-  
+
   return status;
 }
 
-int Inverter::solve(const Field3D &b, Field3D &x, 
-		    int flags, 
-		    int restart, int itmax,
-		    BoutReal tol)
+int Inverter::solve(const Field3D &b, Field3D &x,
+                    int flags,
+                    int restart, int itmax,
+                    BoutReal tol)
 {
   int ys = 0, ye = mesh->ngy-1;
   // NOTE: REFINE THIS TO ONLY SOLVE IN BOUNDARY Y CELLS
-  
+
   FieldPerp xperp;
   for(int jy=ys; jy <= ye; jy++) {
     xperp = x.slice(jy); // For starting values
-    
+
     int ret;
     if((ret = solve(b.slice(jy), xperp, flags, restart, itmax, tol)))
       return ret;
@@ -95,15 +95,15 @@ int Inverter::solve(const Field3D &b, Field3D &x,
 void Inverter::A(BoutReal *b, BoutReal *x)
 {
   FieldPerp Fb, Fx;
-  
+
   Fb.setData(&b);
   Fx.setData(&x);
-  
+
   if(parallel) {
     // Communicate Fx
     mesh->communicate(Fx);
   }
-  
+
   // Need to set boundary conditions on x
   applyBoundary(Fx, bndry_flags);
 
@@ -144,15 +144,15 @@ const int INVERT_DC_IN_GRADPARINV = 2097152;
 
 /// NOTE: This should be changed/merged with Field2D/3D boundary system
 void Inverter::applyBoundary(FieldPerp &f, int flags)
-{ 
+{
   // Set boundaries in Fourier space (to be compatible with
   // invert_laplace)
-  
+
   int nin = mesh->xstart; // Number of inner points
   int nout = mesh->ngx-mesh->xend-1; // Number of outer points
-  
+
   int ncz = mesh->ngz-1;
-  
+
   int jy = f.getIndex();
 
   // Allocate working memory
@@ -163,33 +163,33 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
     cdata = cmatrix(size, ncz/2 + 1);
     h = new BoutReal[size];
   }
-  
+
   //////////////////////////////////////
   // Inner boundary
-  
+
   ZFFT(f[nin+1], mesh->zShift[nin+1][jy], cdata[0]);
   ZFFT(f[nin], mesh->zShift[nin][jy], cdata[1]);
   for(int i=0;i<=nin+1;i++)
     h[i] = mesh->dx[nin+1-i][jy];
-  
+
   int mask = INVERT_DC_IN_GRAD | INVERT_AC_IN_GRAD | INVERT_AC_IN_LAP;
   calcBoundary(cdata, nin, h, flags & mask);
-  
+
   for(int i=0;i<nin;i++)
     ZFFT_rev(cdata[2+i], mesh->zShift[nin-1-i][jy], f[nin-1-i]);
-  
+
   //////////////////////////////////////
   // Outer boundary
-  
+
   int xe = mesh->xend;
   ZFFT(f[xe-1], mesh->zShift[xe-1][jy], cdata[0]);
   ZFFT(f[xe], mesh->zShift[xe][jy], cdata[1]);
   for(int i=0;i<=nout+1;i++)
     h[i] = mesh->dx[xe-1+i][jy];
-  
+
   mask = INVERT_DC_OUT_GRAD | INVERT_AC_OUT_GRAD | INVERT_AC_OUT_LAP;
   calcBoundary(cdata, nout, h, flags & mask);
-  
+
   for(int i=0;i<nout;i++)
     ZFFT_rev(cdata[2+i], mesh->zShift[xe+1+i][jy], f[xe+1+i]);
 }
@@ -197,7 +197,7 @@ void Inverter::applyBoundary(FieldPerp &f, int flags)
 void Inverter::calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags)
 {
   int ncz = mesh->ngz-1;
-  
+
   // DC component
   if(flags & (INVERT_DC_IN_GRAD | INVERT_DC_OUT_GRAD)) {
     // Zero gradient
@@ -208,22 +208,22 @@ void Inverter::calcBoundary(dcomplex **cdata, int n, BoutReal *h, int flags)
     for(int i=0;i<n;i++)
       cdata[2+i][0] = 0.0;
   }
-  
+
   // AC component
   if(flags & (INVERT_AC_IN_GRAD | INVERT_AC_OUT_GRAD)) {
     // Zero gradient
     for(int i=0;i<n;i++)
       for(int k=1;k<=ncz/2;k++)
-	cdata[2+i][k] = cdata[1][k];
-    
+        cdata[2+i][k] = cdata[1][k];
+
   }else if(flags & (INVERT_AC_IN_LAP | INVERT_AC_OUT_LAP)) {
     // Zero Laplacian
-    
+
   }else {
     // Zero value
     for(int i=0;i<n;i++)
       for(int k=1;k<=ncz/2;k++)
-	cdata[2+i][k] = 0.0;
+        cdata[2+i][k] = 0.0;
   }
 }
 
@@ -239,10 +239,10 @@ BoutReal Inverter::norm_vector(BoutReal *b, int n)
 
   for(i=0;i<n;i++)
     val += b[i]*b[i];
-  
+
   if(parallel) {
     // Add together across processors in X
-    
+
   }
 
   return(sqrt(val));
@@ -258,21 +258,21 @@ BoutReal Inverter::dot_product(BoutReal *a, BoutReal *b, int n)
 
   if(parallel) {
     // Add together across processors in X
-    
+
   }
-  
+
   return(val);
 }
 
 void Inverter::Update(BoutReal *x, int it, BoutReal **h, BoutReal *s, BoutReal *y, BoutReal **v, int n)
 {
   int i, j, p;
-  
+
   /* y = s */
   for(i=0;i!=(it+1);i++) {
     y[i] = s[i];
   }
-  
+
   /* backsolve */
   for(i = it; i >= 0; i--) {
     y[i] /= h[i][i];
@@ -319,19 +319,19 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
   int i;
   int it, itt, p;
   BoutReal normb, beta, resid;
-  
+
   /* Problem array storage */
   static int size = 0, msize = 0;
   static BoutReal *y, *s, *cs, *sn;
   static BoutReal **H;
   static BoutReal *r, *w;
   static BoutReal **v;
-  
+
   if((n < 1) || (m < 1))
     return(1);
 
   /************************************/
-  
+
   /*.allocate memory if problem size increased */
   if((size < n) || (msize < m)) {
     if(size != 0) {
@@ -339,15 +339,15 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
       free(s);
       free(cs);
       free(sn);
-      
+
       free_rmatrix(H);
-      
+
       free(r);
       free(w);
-      
+
       free_rmatrix(v);
     }
-    
+
     size = n;
     msize = m;
 
@@ -355,7 +355,7 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
     s  = rvector(m+1);
     cs = rvector(m+1);
     sn = rvector(m+1);
-    
+
     H  = rmatrix(m+1, m+1);
 
     r = rvector(n);
@@ -378,13 +378,13 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
 
   /* beta = |r| */
   beta = norm_vector(r, n);
-  
+
   if((resid = beta / normb) <= tol) {
     iterations = 0;
     residual = resid;
     return(0);
   }
-  
+
   it = 1;
 
   while(it <= itmax) {
@@ -393,27 +393,27 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
       v[0][i] = r[i] / beta;
 
     s[0] = beta;
-    
+
     for(itt=0; (itt < m) && (it <= itmax); itt++, it++) {
       /* w = A*v_(itt) */
       A(w, v[itt]);
-      
+
       for(p=0;p<=itt;p++) {
-	H[p][itt] = dot_product(w, v[p], n);
-	/* w = w - H[p][itt] * v[p] */
-	for(i=0;i<n;i++)
-	  w[i] -= H[p][itt] * v[p][i];
+        H[p][itt] = dot_product(w, v[p], n);
+        /* w = w - H[p][itt] * v[p] */
+        for(i=0;i<n;i++)
+          w[i] -= H[p][itt] * v[p][i];
       }
-      
+
       /* H[itt+1][itt] = |w| */
       H[itt+1][itt] = norm_vector(w, n);
-      
+
       /* v[itt+1] = w / |w| */
       for(i=0;i<n;i++)
-	v[itt+1][i] = w[i] / H[itt+1][itt];
-      
+        v[itt+1][i] = w[i] / H[itt+1][itt];
+
       for(p=0; p < itt; p++) {
-	ApplyPlaneRotation(&(H[p][itt]), &(H[p+1][itt]), cs[p], sn[p]);
+        ApplyPlaneRotation(&(H[p][itt]), &(H[p+1][itt]), cs[p], sn[p]);
       }
       GeneratePlaneRotation(H[itt][itt], H[itt+1][itt], &(cs[itt]), &(sn[itt]));
       ApplyPlaneRotation(&(H[itt][itt]), &(H[itt+1][itt]), cs[itt], sn[itt]);
@@ -421,19 +421,19 @@ int Inverter::gmres_solve(BoutReal *b, BoutReal *x, int n, int m, int itmax, Bou
       ApplyPlaneRotation(&(s[itt]), &(s[itt+1]), cs[itt], sn[itt]);
 
       if((resid = fabs(s[itt+1] / normb)) < tol) {
-	Update(x, itt, H, s, y, v, n);
-	iterations = it;
-	residual = resid;
-	return(0);
+        Update(x, itt, H, s, y, v, n);
+        iterations = it;
+        residual = resid;
+        return(0);
       }
     }
-   
+
     Update(x, itt-1, H, s, y, v, n);
     /* r = b - Ax */
     A(r, x);
     for(i=0;i<n;i++)
       r[i] = b[i] - r[i];
-    
+
     beta = norm_vector(r, n);
     if((resid = beta / normb) < tol) {
       iterations = it;

@@ -14,7 +14,7 @@ PetscLogEvent SlepcLib::USER_EVENT = 0;
 SlepcLib::SlepcLib() {
   if(count == 0) {
     // Initialise SLEPc
-    
+
     output << "Initialising SLEPc\n";
     SlepcInitialize(pargc,pargv,PETSC_NULL,help);
     PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
@@ -40,7 +40,7 @@ void SlepcLib::cleanup() {
   output << "Finalising SLEPCc. Warning: Instances of SlepcLib still exist.\n";
   PetscLogEventEnd(USER_EVENT,0,0,0,0);
   SlepcFinalize();
-  
+
   count = 0; // ensure that finalise is not called again later
 }
 

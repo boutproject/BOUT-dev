@@ -12,11 +12,11 @@ class FormatFactory : private Uncopyable {
 public:
   /// Return a pointer to the only instance
   static FormatFactory* getInstance();
-  
+
   DataFormat* createDataFormat(const char *filename = NULL, bool parallel=true);
 private:
   static FormatFactory* instance; ///< The only instance of this class (Singleton)
-  
+
   int matchString(const char *str, int n, const char **match);
 };
 

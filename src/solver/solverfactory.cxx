@@ -33,15 +33,15 @@ SolverFactory* SolverFactory::getInstance() {
 inline SolverType SolverFactory::getDefaultSolverType() {
   SolverType type = NULL;
 
-  #if defined BOUT_HAS_CVODE
-    type = SOLVERCVODE;
-  #elif defined BOUT_HAS_IDA
-    type = SOLVERIDA;
-    //#elif defined BOUT_HAS_PETSC
-    //type = SOLVERPETSC;
-  #else
-    type = SOLVERPVODE;
-  #endif
+#if defined BOUT_HAS_CVODE
+  type = SOLVERCVODE;
+#elif defined BOUT_HAS_IDA
+  type = SOLVERIDA;
+  //#elif defined BOUT_HAS_PETSC
+  //type = SOLVERPETSC;
+#else
+  type = SOLVERPVODE;
+#endif
 
   return type;
 }
@@ -49,9 +49,9 @@ inline SolverType SolverFactory::getDefaultSolverType() {
 Solver* SolverFactory::createSolver(Options *options) {
   SolverType type = getDefaultSolverType();
 
-  if(options == NULL) 
+  if(options == NULL)
     options = Options::getRoot()->getSection("solver");
-  
+
   string solver_option;
   options->get("type", solver_option, "");
 
@@ -63,7 +63,7 @@ Solver* SolverFactory::createSolver(Options *options) {
 Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
-  
+
   if(!strcasecmp(type, SOLVERPVODE)) {
     return new PvodeSolver(options);
   } else if(!strcasecmp(type, SOLVERCVODE)) {
@@ -71,7 +71,7 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
   } else if(!strcasecmp(type, SOLVERIDA)) {
     return new IdaSolver(options);
   } else if(!strcasecmp(type, SOLVERPETSC)) {
-    return new PetscSolver(options); 
+    return new PetscSolver(options);
   } else if(!strcasecmp(type, SOLVERSLEPC)) {
     return new SlepcSolver(options);
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {

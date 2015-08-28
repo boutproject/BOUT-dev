@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -37,18 +37,18 @@ class LaplaceSerialBand : public Laplacian {
 public:
   LaplaceSerialBand(Options *opt = NULL);
   ~LaplaceSerialBand();
-  
+
   void setCoefA(const Field2D &val) { Acoef = val; }
   void setCoefC(const Field2D &val) { Ccoef = val; }
   void setCoefD(const Field2D &val) { Dcoef = val; }
   void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
   void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
-  
+
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
 private:
   Field2D Acoef, Ccoef, Dcoef;
-  
+
   dcomplex **bk, *bk1d;
   dcomplex **xk, *xk1d;
 

@@ -1,18 +1,18 @@
 /**************************************************************************
  * 2nd order IMEX-BDF scheme
- * 
+ *
  * Scheme taken from this paper: http://homepages.cwi.nl/~willem/DOCART/JCP07.pdf
  * W.Hundsdorfer, S.J.Ruuth "IMEX extensions of linear multistep methods with general
  * monotonicity and boundedness properties" JCP 225 (2007) 2016-2042
- *  
- * 
+ *
+ *
  * Uses PETSc for the SNES interface
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -48,39 +48,39 @@ class IMEXBDF2;
 #include <petscsnes.h>
 
 class IMEXBDF2 : public Solver {
- public:
+public:
   IMEXBDF2(Options *opt = NULL);
   ~IMEXBDF2();
-  
+
   BoutReal getCurrentTimestep() {return timestep; }
-  
+
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
   int run();
-  
+
   PetscErrorCode snes_function(Vec x, Vec f); // Nonlinear function
- private:
+private:
   int mxstep; // Maximum number of internal steps between outputs
-  
+
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
-  
+
   BoutReal timestep; // The internal timestep
   int ninternal;     // Number of internal steps per output
-  
+
   int nlocal, neq; // Number of variables on local processor and in total
-  
+
   // Startup step
   void startup(BoutReal curtime, BoutReal dt);
-  
+
   // Take a full step
-  void take_step(BoutReal curtime, BoutReal dt); 
-  
+  void take_step(BoutReal curtime, BoutReal dt);
+
   // Working memory
   BoutReal *u, *u_1, *u_2; // System state at n, n-1 and n-2
   BoutReal *f_1, *f_2;     // F(u_1) and F(u_2)
   BoutReal *rhs;
-  
+
   // Implicit solver
   PetscErrorCode solve_implicit(BoutReal curtime, BoutReal gamma);
   BoutReal implicit_gamma;
@@ -91,10 +91,10 @@ class IMEXBDF2 : public Solver {
   Vec      snes_x;  // Result of SNES
   SNES     snes;    // SNES context
   Mat      Jmf;     // Matrix-free Jacobian
-  
+
   template< class Op >
   void loopVars(BoutReal *u);
-  
+
   void saveVars(BoutReal *u);
   void loadVars(BoutReal *u);
   void saveDerivs(BoutReal *u);

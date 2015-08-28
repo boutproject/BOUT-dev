@@ -1,12 +1,12 @@
 /*!************************************************************************
- * Provides a message stack to print more useful error 
+ * Provides a message stack to print more useful error
  * messages.
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -64,9 +64,9 @@ int MsgStack::push(const char *s, ...)
   if(s != NULL) {
 
     va_start(ap, s);
-      vsprintf(buffer, s, ap);
+    vsprintf(buffer, s, ap);
     va_end(ap);
-    
+
     strncpy(m->str, buffer, MSG_MAX_SIZE);
     m->str[MSG_MAX_SIZE] = '\0';
 

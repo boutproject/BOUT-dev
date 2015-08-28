@@ -1,11 +1,11 @@
 /************************************************************************
  * Inversion of parallel derivatives
  * Intended for use in preconditioner for reduced MHD
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * (A + B * Grad2_par2) x = r
- * 
+ *
  * Stages:
  * - Problem trivially parallel in X, so gather all data for fixed X onto
  *   a single processor. Split MXSUB locations between NYPE processors
@@ -13,10 +13,10 @@
  *   This splits the problem into one or more (cyclic) tridiagonal problems
  *   (number depends on the q value)
  * - Solve each of these tridiagonal systems O(Nz*Ny)
- * - Scatter data back 
+ * - Scatter data back
  *
  * Author: Ben Dudson, University of York, June 2009
- * 
+ *
  * Known issues:
  * ------------
  *
@@ -25,12 +25,12 @@
  *   (i.e. Np > Nx) then efficiency will fall.
  * - When higher-order interpolation is used at the twist-shift location,
  *   errors can become large
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -57,7 +57,7 @@
 #include <comm_group.hxx> // Gather/scatter operations
 
 #include <lapack_routines.hxx> // For tridiagonal inversions
- 
+
 /// Parallel inversion routine
 const Field3D InvertParSimple::solve(const Field3D &rc) {
   static BoutReal *senddata;
@@ -76,14 +76,14 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
   int xs = (mesh->firstX()) ? 0 : 2;
   int xe = (mesh->lastX()) ? mesh->ngx-1 : (mesh->ngx-3);
 
-  int nxsolve = xe - xs + 1; // Number of X points to solve    
+  int nxsolve = xe - xs + 1; // Number of X points to solve
   int nylocal = mesh->yend - mesh->ystart + 1;
 
   if(max_size == 0) {
     //.allocate working memory
     senddata = new BoutReal[nxsolve * nylocal * (2 + mesh->ngz) ]; // Problem data sent out
   }
-    
+
   // coefficients for derivative term
   Field2D coeff1;
   coeff1.allocate();
@@ -93,9 +93,9 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
       // See Grad2_par2 in difops.cpp for these coefficients
       coeff1[i][j] = (1./sg[i][j+1] - 1./sg[i][j-1])/(4.*SQ(mesh->dy[i][j])) / sg[i][j];
     }
-    
+
   Field2D coeff2 = 1. / (mesh->g_22 * SQ(mesh->dy)); // Second derivative
-    
+
   // coefficients in tridiagonal matrix
   Field2D acoeff = B * (coeff2 - coeff1); // a coefficient (y-1)
   Field2D bcoeff = A + -2.*B*coeff2; // b coefficient (diagonal)
@@ -107,7 +107,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
   sendfields.add(bcoeff);
   sendfields.add(ccoeff);
   sendfields.add(r);
-    
+
   // Create a field for the result
   Field3D result;
 
@@ -117,7 +117,7 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
   // Iterate over the surfaces
   for(surf->first(); !surf->isDone(); surf->next()) {
     int ysize = surf->ySize(); // Size of this surface
-      
+
     // Make sure our arrays are big enough
     if(ysize > max_size) {
       // Need to allocate more memory
@@ -129,10 +129,10 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
       resultdata = new BoutReal[ysize*mesh->ngz];  // Inverted result
       max_size = ysize;
     }
-      
+
     // Gather data
     surf->gather(sendfields, recvdata);
-      
+
     // Check that this processor still has something to do
     if(ysize > 0) {
       // Perform inversion
@@ -147,11 +147,11 @@ const Field3D InvertParSimple::solve(const Field3D &rc) {
         bout_error("Sorry; invertParSimple can't cope with open field lines yet\n");
       }
     }
-      
+
     // Scatter the result back
     surf->scatter(resultdata, result);
   }
-    
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -178,16 +178,16 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
   BoutReal ts; // Twist-shift angle
   if(!mesh->periodicY(xpos,ts))
     ts = 0.; // Should be an error, but just separate field-lines
-    
+
   int tshift = ROUND(ts / mesh->dz); // Nearest neighbour
 
   static int ylen = 0;
   static bool *done; // Record whether a particular location has been inverted
   static BoutReal *avec, *bvec, *cvec; // Matrix coefficients
   static BoutReal *rvec, *xvec;
-    
+
   int ncz = mesh->ngz-1;
-    
+
   if(ysize > ylen) {
     // Initialise
     if(ylen > 0) {
@@ -211,34 +211,34 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
 
   for(int i=0;i<ncz;i++)
     done[i] = false;
-    
+
   int z0 = 0; // Starting z location
   do {
     /////////////////////////////////////////////
     // Get the matrix coefficients. Could invert
     // everything in-place, but simpler to use new arrays
-      
+
     int zpos = z0;
     int ind = 0; // Index in matrix
     do {
       if(coef3d) {
         // Matrix coefficients depend on Z
         for(int y=0;y<ysize;y++) {
-          avec[ind] = data[(4*ncz)*y         + zpos]; 
+          avec[ind] = data[(4*ncz)*y         + zpos];
           bvec[ind] = data[(4*ncz)*y + ncz   + zpos];
           cvec[ind] = data[(4*ncz)*y + 2*ncz + zpos];
-	    
+
           rvec[ind] = data[(4*ncz)*y + 3*ncz + zpos];
-	    
+
           ind++;
         }
       }else {
         // Matrix coefficients 2D. Each y location has [a,b,c,<RHS>]
         for(int y=0;y<ysize;y++) {
-          avec[ind] = data[(3+ncz)*y]; 
+          avec[ind] = data[(3+ncz)*y];
           bvec[ind] = data[(3+ncz)*y+1];
           cvec[ind] = data[(3+ncz)*y+2];
-	    
+
           rvec[ind] = data[(3+ncz)*y + 3 + zpos];
           ind++;
         }
@@ -253,17 +253,17 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
         // Somehow hit a different fieldline. Should never happen
         bout_error("ERROR: Crossed streams in invpar::cyclic_solve!\n");
       }
-	
+
     }while(zpos != z0);
-      
+
     /////////////////////////////////////////////
     // Solve cyclic tridiagonal system
-      
+
     cyclic_tridag(avec, bvec, cvec, rvec, xvec, ind);
-      
+
     /////////////////////////////////////////////
     // Copy result back
-      
+
     zpos = z0;
     ind = 0;
     do {
@@ -283,7 +283,7 @@ void InvertParSimple::cyclicSolve(int ysize, int xpos, BoutReal *data, BoutReal 
         z0 = i;
     }
   }while(z0 != -1); // Keep going until everything's been inverted
-    
+
 #ifdef CHECK
   msg_stack.pop();
 #endif

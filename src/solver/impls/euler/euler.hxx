@@ -1,13 +1,13 @@
 /**************************************************************************
  * Euler explicit method
- * 
+ *
  * Always available, since doesn't depend on external library
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -36,31 +36,31 @@ class EulerSolver;
 #include <bout/solver.hxx>
 
 class EulerSolver : public Solver {
- public:
+public:
   EulerSolver(Options *options);
   ~EulerSolver();
-  
+
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
-  
+
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
   int run();
- private:
+private:
   int mxstep; // Maximum number of internal steps between outputs
   BoutReal cfl_factor; // Factor by which timestep must be smaller than maximum
 
   BoutReal *f0, *f1;
-  
+
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
-  
+
   BoutReal timestep; // The internal timestep
   bool timestep_reduced; // Set true if the timestep is reduced during RHS call
-  
+
   int nlocal; // Number of variables on local processor
-  
-  void take_step(BoutReal curtime, BoutReal dt, 
+
+  void take_step(BoutReal curtime, BoutReal dt,
                  BoutReal *start, BoutReal *result); // Take a single step to calculate f1
 };
 

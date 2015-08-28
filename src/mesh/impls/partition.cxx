@@ -26,22 +26,22 @@ void V(Domain* d, int m, int k, int j) {
   // Check inputs
   if( (d == NULL) || (m < 1) || (k < 0) || (j < 0) || ((k+j) < 1) )
     throw BoutException("Invalid inputs to partition V: %u, %d, %d, %d\n", d, m, k, j);
-  
+
   int nx = d->xSize();
   int ny = d->ySize();
-  
+
   // Work out sizes
   int nxm = roundi( D(nx) / (  D(k) + D(j)*D(m+1)/D(m) ) );
   if(nxm < 1)
     nxm = 1;
-  
+
   int limit = (j>0) ? k : k-1;
   for(int x=0; x < limit; x++) {
     // Split into an m strip
     if(nxm == d->xSize())
       nxm--;
     Domain* strip = d->splitX(nxm);
-    
+
     // Split strip into m pieces
     int nym = roundi( D(ny) / D(m) );
     if(nym < 1)
@@ -60,7 +60,7 @@ void V(Domain* d, int m, int k, int j) {
     if(nxm == d->xSize())
       nxm--;
     Domain* strip = d->splitX(nxm);
-    
+
     // Split into (m+1) pieces
     int nym = roundi( D(ny) / D(m+1) );
     if(nym < 1)
@@ -71,7 +71,7 @@ void V(Domain* d, int m, int k, int j) {
       strip->splitY(nym);
     }
   }
-  
+
   // Split final strip
   int n = (j == 0) ? m : m+1;
   int nym = roundi( D(ny) / D(n) );
@@ -89,20 +89,20 @@ void H(Domain* d, int m, int k, int j) {
   // Check inputs
   if( (d == NULL) || (m < 1) || (k < 0) || (j < 0) || ((k+j) < 1) )
     throw BoutException("Invalid inputs to partition H: %u, %d, %d, %d\n", d, m, k, j);
-  
+
   int nx = d->xSize();
   int ny = d->ySize();
-  
+
   // Work out sizes
   int nym = roundi( D(ny) / (  D(k) + D(j)*D(m+1)/D(m) ) );
-  
+
   int limit = (j>0) ? k : k-1;
   for(int y=0; y < limit; y++) {
     // Split into an m strip
     if(nym == d->ySize())
       nym--;
     Domain* strip = d->splitY(nym);
-    
+
     // Split strip into m pieces
     int nxm = roundi( D(nx) / D(m) );
     for(int x=0;x<m-1;x++) {
@@ -115,7 +115,7 @@ void H(Domain* d, int m, int k, int j) {
   for(int y=0;y < j-1; y++) {
     // Split into an (m+1) strip
     Domain* strip = d->splitY(nym);
-    
+
     // Split into (m+1) pieces
     int nxm = roundi( D(nx) / D(m+1) );
     for(int x=0;x<m;x++) {
@@ -124,7 +124,7 @@ void H(Domain* d, int m, int k, int j) {
       strip->splitX(nxm);
     }
   }
-  
+
   // Split final strip
   int n = (j == 0) ? m : m+1;
   int nxm = roundi( D(nx) / D(n) );
@@ -144,7 +144,7 @@ void partition(Domain* d, int n) {
 
   int alpha = d->xSize(); // Length of horizontal side
   int beta  = d->ySize(); // Length of vertical side
-  
+
   bool swapped = false;
   if(beta > alpha) {
     swapped = true;
@@ -152,10 +152,10 @@ void partition(Domain* d, int n) {
   }
   // Now satisfies beta <= alpha
   double val = D(beta) * n / alpha;
-  
+
   // Find an integer s such that s(s-1) < val <= s(s+1)
   int s = (int) ( 0.5 + 0.5*sqrt(1. + 4.*val) );
-  
+
   // Check value
   if( s*(s-1) > val )
     s--;
@@ -167,7 +167,7 @@ void partition(Domain* d, int n) {
 
   int r = n - floor( D(n) / D(s) ) * s;
   int t = floor( D(n) / D(s) ) - r;
-  
+
   if( D(s+1)/D(t + r + 1) < D(beta)/D(alpha) ) {
     // V(s, t, r) is minimal equidissection
     if(swapped) {
@@ -192,11 +192,11 @@ void partition(Domain* d, int n) {
 void partitionAll(Domain* d, int n) {
   if( (d == NULL) || (n < 1) )
     throw BoutException("Invalid inputs to partitionAll: %u, %d\n", d, n);
-  
+
   // Get a list of domains to partition
   list<Domain*> domains;
   vector<int> size;
-  
+
   int total = 0;
   int ndomains = 0;
   for(Domain::iterator it = d->begin(); it != d->end(); it++) {

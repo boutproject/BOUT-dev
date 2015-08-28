@@ -1,11 +1,11 @@
 /**************************************************************************
  * Generic Runge Kutta explicit method with adaptive timestepping
- * 
+ *
  * Always available, since doesn't depend on external library
- * 
+ *
  **************************************************************************
  * Written by D Dickinson 2015
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -35,10 +35,10 @@ class RKGenericSolver;
 #include <bout/rkscheme.hxx>
 
 class RKGenericSolver : public Solver {
- public:
+public:
   RKGenericSolver(Options *options);
   ~RKGenericSolver();
-  
+
   //Utilities only used by the CTU bracket approach
   void setMaxTimestep(BoutReal dt);
   BoutReal getCurrentTimestep() {return timestep; }
@@ -49,10 +49,10 @@ class RKGenericSolver : public Solver {
   //Actually evolve
   int run();
 
- private:
+private:
   //Take a step using the scheme
-  BoutReal take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
-		     BoutReal *resultFollow);
+  BoutReal take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start,
+                     BoutReal *resultFollow);
 
   //Used for storing current state and next step
   BoutReal *f0, *f2;
@@ -69,7 +69,7 @@ class RKGenericSolver : public Solver {
   int nsteps; // Number of output steps
   BoutReal timestep; // The internal timestep
   int nlocal, neq; // Number of variables on local processor and in total
-  
+
   //Pointer to the actual scheme used
   RKScheme *scheme;
 

@@ -3,15 +3,15 @@
 
 #include <bout/sys/range.hxx>
 
-RangeIterator::RangeIterator(int start, int end, RangeIterator* join) 
+RangeIterator::RangeIterator(int start, int end, RangeIterator* join)
   : is(start), ie(end), n(join) {
-  
+
   cur = this;
   if(start > end) {
     // Null range
     cur = n;
   }
-  
+
   if(cur != 0) {
     ind = cur->is;
     curend = cur->ie;
@@ -20,16 +20,16 @@ RangeIterator::RangeIterator(int start, int end, RangeIterator* join)
 
 RangeIterator::RangeIterator(int start, int end, const RangeIterator& join)
   : is(start), ie(end) {
-  
+
   cur = this;
 
   n = new RangeIterator(join);
-  
+
   if(start > end) {
     // Null range
     cur = n;
   }
-  
+
   if(cur != 0) {
     ind = cur->is;
     curend = cur->ie;
@@ -51,7 +51,7 @@ void RangeIterator::first() {
   cur = this;
   ind = is;
   curend = ie;
-  
+
   if(is > ie) {
     // Null range, skip to next
     cur = cur->n;
@@ -106,7 +106,7 @@ RangeIterator& RangeIterator::operator=(const RangeIterator &r) {
   if(cur == &r)
     cur = this;
   curend = r.curend;
-  
+
   return *this;
 }
 
@@ -129,7 +129,7 @@ RangeIterator& RangeIterator::operator-=(const RangeIterator &r) {
       // Check if it and itr overlap
       if( it->intersects(*itr, false) ){
         // Overlap
-        
+
         if( (itr->is <= it->is) && (itr->ie >= it->ie) ) {
           // Total overlap
           is = 1; ie = 0; // Make invalid

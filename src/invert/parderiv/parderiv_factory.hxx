@@ -7,14 +7,14 @@ class ParDerivFactory;
 #include <options.hxx>
 
 class ParDerivFactory {
- public:
+public:
   /// Return a pointer to the only instance
   static ParDerivFactory* getInstance();
-  
+
   InvertPar* createInvertPar();
   InvertPar* createInvertPar(const char* type, Options *opt = NULL);
   InvertPar* createInvertPar(Options *opts);
- private:
+private:
   ParDerivFactory() {} // Prevent instantiation of this class
   static ParDerivFactory* instance; ///< The only instance of this class (Singleton)
 };

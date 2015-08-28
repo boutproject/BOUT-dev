@@ -9,13 +9,13 @@
  * Records: In netCDF, the time dimension for each dimension must be
  * the same. Hence when a record is appended to a variable, the size
  * of all variables is increased. To work out which record to write to,
- * a map of variable names to record number is kept. 
- * 
+ * a map of variable names to record number is kept.
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -56,33 +56,33 @@ using std::string;
 using std::map;
 
 class NcFormat : public DataFormat {
- public:
+public:
   NcFormat();
   NcFormat(const char *name);
   NcFormat(const string &name);
   ~NcFormat();
-  
+
   bool openr(const string &name);
   bool openr(const char *name);
   bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
-  
+
   bool is_valid();
-  
+
   void close();
-  
+
   void flush();
 
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);
   const vector<int> getSize(const string &var);
-  
+
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
   bool setRecord(int t); // negative -> latest
-  
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -106,16 +106,16 @@ class NcFormat : public DataFormat {
   bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  
+
   void setLowPrecision() { lowPrecision = true; }
 
- private:
+private:
 
   char *fname; ///< Current file name
 
   /// Pointer to netCDF file
   NcFile *dataFile;
-  
+
   /// Dimensions
   NcDim *xDim, *yDim, *zDim, *tDim;
   const NcDim **dimList; ///< List of dimensions (x,y,z)
@@ -130,7 +130,7 @@ class NcFormat : public DataFormat {
   int default_rec;  // Starting record. Useful when appending to existing file
 
   void checkName(const char* name); ///< Check if a name contains invalid characters
-  
+
 };
 
 #endif // __NCFORMAT_H__

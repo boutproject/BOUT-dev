@@ -104,7 +104,7 @@ RK4SIMPLEScheme::RK4SIMPLEScheme(Options *options):RKScheme(options){
 
 RK4SIMPLEScheme::~RK4SIMPLEScheme(){
   //Do my cleanup
-  
+
 };
 
 BoutReal RK4SIMPLEScheme::setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow){
@@ -112,31 +112,31 @@ BoutReal RK4SIMPLEScheme::setOutputStates(const BoutReal *start, const BoutReal 
   if(followHighOrder){
     for(int i=0;i<nlocal;i++){
       if(adaptive){
-	resultAlt[i]=start[i]+dt*(resultCoeffs[0][1]*steps[0][i]+resultCoeffs[1][1]*steps[1][i]
-				  +resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
+        resultAlt[i]=start[i]+dt*(resultCoeffs[0][1]*steps[0][i]+resultCoeffs[1][1]*steps[1][i]
+                                  +resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
       }
 
       resultFollow[i]=start[i]+dt*(resultCoeffs[0][0]*steps[0][i]+resultCoeffs[4][0]*steps[4][i]
-				   +resultCoeffs[5][0]*steps[5][i]+resultCoeffs[6][0]*steps[6][i]);
+                                   +resultCoeffs[5][0]*steps[5][i]+resultCoeffs[6][0]*steps[6][i]);
 
       resultFollow[i]=resultFollow[i]+dt*(resultCoeffs[7][0]*steps[7][i]+resultCoeffs[8][0]*steps[8][i]
-				   +resultCoeffs[9][0]*steps[9][i]+resultCoeffs[10][0]*steps[10][i]);
+                                          +resultCoeffs[9][0]*steps[9][i]+resultCoeffs[10][0]*steps[10][i]);
     }
   }else{
     for(int i=0;i<nlocal;i++){
 
       resultFollow[i]=start[i]+dt*(resultCoeffs[0][1]*steps[0][i]+resultCoeffs[1][1]*steps[1][i]
-				   +resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
+                                   +resultCoeffs[2][1]*steps[2][i]+resultCoeffs[3][1]*steps[3][i]);
 
       if(adaptive) {
-	resultAlt[i]=start[i]+dt*(resultCoeffs[0][0]*steps[0][i]+resultCoeffs[4][0]*steps[4][i]
-				  +resultCoeffs[5][0]*steps[5][i]+resultCoeffs[6][0]*steps[6][i]);
-	
-	resultAlt[i]=resultAlt[i]+dt*(resultCoeffs[7][0]*steps[7][i]+resultCoeffs[8][0]*steps[8][i]
-				      +resultCoeffs[9][0]*steps[9][i]+resultCoeffs[10][0]*steps[10][i]);
+        resultAlt[i]=start[i]+dt*(resultCoeffs[0][0]*steps[0][i]+resultCoeffs[4][0]*steps[4][i]
+                                  +resultCoeffs[5][0]*steps[5][i]+resultCoeffs[6][0]*steps[6][i]);
+
+        resultAlt[i]=resultAlt[i]+dt*(resultCoeffs[7][0]*steps[7][i]+resultCoeffs[8][0]*steps[8][i]
+                                      +resultCoeffs[9][0]*steps[9][i]+resultCoeffs[10][0]*steps[10][i]);
       }
     }
   }
-  
+
   return getErr(resultFollow,resultAlt);
 }

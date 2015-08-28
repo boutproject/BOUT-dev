@@ -93,7 +93,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
   if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
     // for fixed ix,jy set a complex vector rho(z)
 
@@ -129,10 +129,10 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     // tridagMatrix also sets the boundary (by setting avec, bvec, cvec and bk
     // for the boundary points) according to the given flags.
     tridagMatrix(avec, bvec, cvec, bk1d, jy,
-		 kz, // wave number index
-		 kz*2.0*PI/mesh->zlength, // kwave (inverse wave length)
-		 global_flags, inner_boundary_flags, outer_boundary_flags,
-		 &A, &C, &D);
+                 kz, // wave number index
+                 kz*2.0*PI/mesh->zlength, // kwave (inverse wave length)
+                 global_flags, inner_boundary_flags, outer_boundary_flags,
+                 &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if(!mesh->periodicX) {

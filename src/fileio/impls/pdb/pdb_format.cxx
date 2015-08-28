@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -66,7 +66,7 @@ bool PdbFormat::openr(const string &name)
 bool PdbFormat::openr(const char *name)
 {
   if(fp != NULL) // Already open. Close then re-open
-    close(); 
+    close();
 
   if((fp = PD_open((char*) name, (char*)"r")) == NULL)
     return false;
@@ -84,8 +84,8 @@ bool PdbFormat::openw(const string &name, bool append)
 bool PdbFormat::openw(const char *name, bool append)
 {
   if(fp != NULL) // Already open. Close then re-open
-    close(); 
-  
+    close();
+
   appending = append;
 
   if(append) {
@@ -116,7 +116,7 @@ void PdbFormat::close() {
 void PdbFormat::flush() {
   if(!is_valid())
     return;
-  
+
   PD_flush(fp);
 }
 
@@ -128,7 +128,7 @@ const char* PdbFormat::filename()
 const vector<int> PdbFormat::getSize(const char *var)
 {
   vector<int> size;
-  
+
   syment* ep = PD_query_entry(fp, (char*) var, NULL);
 
   if(ep == NULL)
@@ -143,7 +143,7 @@ const vector<int> PdbFormat::getSize(const char *var)
 
   while(dims != NULL) {
     size.push_back(dims->index_max - dims->index_min + 1);
-    
+
     dims = dims->next;
   }
 
@@ -160,7 +160,7 @@ bool PdbFormat::setGlobalOrigin(int x, int y, int z)
   x0 = x;
   y0 = y;
   z0 = z;
-  
+
   return true;
 }
 
@@ -189,7 +189,7 @@ bool PdbFormat::read(int *var, const char *name, int lx, int ly, int lz)
   if(PD_read_as_alt(fp, (char*) name, (char*)"integer", var, inds) == 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -216,7 +216,7 @@ bool PdbFormat::read(BoutReal *var, const char *name, int lx, int ly, int lz)
   if(PD_read_as_alt(fp, (char*) name, REALSTR, var, inds) == 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -244,7 +244,7 @@ bool PdbFormat::write(int *var, const char *name, int lx, int ly, int lz)
   if(lz != 0) nd = 3;
 
   long inds[9];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = x0; inds[1] = x0 + lx - 1; inds[2] = 1L;
   inds[3] = y0; inds[4] = y0 + ly - 1; inds[5] = 1L;
@@ -281,7 +281,7 @@ bool PdbFormat::write(BoutReal *var, const char *name, int lx, int ly, int lz)
   if(lz != 0) nd = 3;
 
   long inds[9];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = x0; inds[1] = x0 + lx - 1; inds[2] = 1L;
   inds[3] = y0; inds[4] = y0 + ly - 1; inds[5] = 1L;
@@ -306,18 +306,18 @@ bool PdbFormat::read_rec(int *var, const char *name, int lx, int ly, int lz)
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int nt, t;
-  
-  if((nt = nrecs(name)) < 1) // Number of time-points 
+
+  if((nt = nrecs(name)) < 1) // Number of time-points
     return false;
 
   t = t0;
   if((t < 0) || (t > (nt-1)))
     t = nt-1; // Reading the last time-point
-  
+
   long inds[12];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = t;  inds[1] = t;           inds[2] = 1L; // Just reading one time-slice
   inds[3] = x0; inds[4] = x0 + lx - 1; inds[5] = 1L;
@@ -327,7 +327,7 @@ bool PdbFormat::read_rec(int *var, const char *name, int lx, int ly, int lz)
   if(PD_read_as_alt(fp, (char*) name, (char*)"integer", var, inds) == 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -343,18 +343,18 @@ bool PdbFormat::read_rec(BoutReal *var, const char *name, int lx, int ly, int lz
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int nt, t;
-  
-  if((nt = nrecs(name)) < 1) // Number of time-points 
+
+  if((nt = nrecs(name)) < 1) // Number of time-points
     return false;
 
   t = t0;
   if((t < 0) || (t > (nt-1)))
     t = nt-1; // Reading the last time-point
-  
+
   long inds[12];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = t;  inds[1] = t;           inds[2] = 1L; // Just reading one time-slice
   inds[3] = x0; inds[4] = x0 + lx - 1; inds[5] = 1L;
@@ -364,7 +364,7 @@ bool PdbFormat::read_rec(BoutReal *var, const char *name, int lx, int ly, int lz
   if(PD_read_as_alt(fp, (char*) name, REALSTR, var, inds) == 0) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -383,7 +383,7 @@ bool PdbFormat::write_rec(int *var, const char *name, int lx, int ly, int lz)
 
   int t = 0;
   long inds[12];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = t;  inds[1] = t;           inds[2] = 1L;
   inds[3] = x0; inds[4] = x0 + lx - 1; inds[5] = 1L;
@@ -398,7 +398,7 @@ bool PdbFormat::write_rec(int *var, const char *name, int lx, int ly, int lz)
   if(appending) {
     return (PD_append_alt(fp, (char*) name, var, nd, inds) == TRUE);
   }
-  
+
   return (PD_write_alt(fp, (char*) name, (char*)"integer", var, nd, inds) == TRUE);
 }
 
@@ -412,7 +412,7 @@ bool PdbFormat::write_rec(BoutReal *var, const char *name, int lx, int ly, int l
   char *vartype = REALSTR;
   if(lowPrecision)
     vartype = LOWPRECSTR;
-  
+
   if(!is_valid())
     return false;
 
@@ -421,7 +421,7 @@ bool PdbFormat::write_rec(BoutReal *var, const char *name, int lx, int ly, int l
 
   int t = 0;
   long inds[12];
-  
+
   // Indices in the format [min, max, step, ...]
   inds[0] = t;  inds[1] = t;           inds[2] = 1L;
   inds[3] = x0; inds[4] = x0 + lx - 1; inds[5] = 1L;
@@ -436,7 +436,7 @@ bool PdbFormat::write_rec(BoutReal *var, const char *name, int lx, int ly, int l
   if(appending) {
     return (PD_append_as_alt(fp, (char*) name, REALSTR, var, nd, inds) == TRUE);
   }
-  
+
   return (PD_write_as_alt(fp, (char*) name, REALSTR, vartype, var, nd, inds) == TRUE);
 }
 
@@ -457,20 +457,20 @@ int PdbFormat::nrecs(const char *name)
   int nd;
   long *dims;
   int nt;
-  
+
   if((ep = PD_query_entry(fp, (char*) name, NULL)) == NULL)
     return 0;
-  
+
   if(!PD_get_entry_info(ep, &type, &size, &nd, &dims))
     return 0;
-  
+
   if(nd < 1) {
     nt = 0;
   }else
     nt = dims[1] - dims[0] + 1;
-  
+
   //PD_free_entry_info(type, dims);
-  
+
   return nt;
 }
 

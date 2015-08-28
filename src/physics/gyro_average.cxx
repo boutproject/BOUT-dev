@@ -4,12 +4,12 @@
  *
  * 2010-09-03 Ben Dudson <bd512@york.ac.uk>
  *    * Initial version, simple averaging operator
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -40,10 +40,10 @@ const Field3D gyroTaylor0(const Field3D &f, const Field3D &rho) {
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
 const Field3D gyroPade0(const Field3D &f, BoutReal rho, int flags) {
   /// Have to use Z average of rho for efficient inversion
-  
+
   Field2D a = 1.0;
   Field2D d = -rho*rho;
-  
+
   /// Invert, leaving boundaries unchanged
   return invert_laplace(f, flags, &a, NULL, &d);
 }
@@ -51,10 +51,10 @@ const Field3D gyroPade0(const Field3D &f, BoutReal rho, int flags) {
 /// Pade approximation G_0 = (1 - rho^2*Delp2)g = f
 const Field3D gyroPade0(const Field3D &f, const Field2D &rho, int flags) {
   /// Have to use Z average of rho for efficient inversion
-  
+
   Field2D a = 1.0;
   Field2D d = -rho*rho;
-  
+
   /// Invert, leaving boundaries unchanged
   return invert_laplace(f, flags, &a, NULL, &d);
 }
@@ -69,7 +69,7 @@ const Field3D gyroPade0(const Field3D &f, const Field3D &rho, int flags) {
 const Field3D gyroPade1(const Field3D &f, BoutReal rho, int flags) {
   Field2D a = 1.0;
   Field2D d = -0.5*rho*rho;
-  
+
   /// Invert, leaving boundaries unchanged
   return invert_laplace(f, flags, &a, NULL, &d);
 }
@@ -78,7 +78,7 @@ const Field3D gyroPade1(const Field3D &f, BoutReal rho, int flags) {
 const Field3D gyroPade1(const Field3D &f, const Field2D &rho, int flags) {
   Field2D a = 1.0;
   Field2D d = -0.5*rho*rho;
-  
+
   /// Invert, leaving boundaries unchanged
   return invert_laplace(f, flags, &a, NULL, &d);
 }

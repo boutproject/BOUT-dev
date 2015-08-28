@@ -52,7 +52,7 @@ void Options::set(const string &key, const string &val, const string &source) {
   opt.value = val;
   opt.source = source;
   opt.used = false;
-  
+
   options[lowercase(key)] = opt;
 }
 
@@ -70,14 +70,14 @@ void Options::get(const string &key, int &val, const int &def, bool log) {
     }
     return;
   }
-  
+
   stringstream ss;
   ss << it->second.value;
   if(!(ss >> val)) {
     // Parse failed. Can't read integer
     throw BoutException("Can't read '%s' as an integer (%s)", it->second.value.c_str(), key.c_str());
   }
-  
+
   it->second.used = true;
   if(log) {
     output << "\tOption " << sectionName << "/" << it->first << " = " << val;
@@ -97,12 +97,12 @@ void Options::get(const string &key, BoutReal &val, const BoutReal &def, bool lo
       output << "\tOption " << sectionName << "/" << key << " = " << def << " (default)" << endl;
     return;
   }
-  
+
   stringstream ss;
   ss << it->second.value;
   ss >> val;
   it->second.used = true;
-  
+
   if(log) {
     output << "\tOption " << sectionName << "/" << it->first << " = " << val;
     if(!it->second.source.empty()) {
@@ -125,9 +125,9 @@ void Options::get(const string &key, bool &val, const bool &def, bool log) {
     }
     return;
   }
-  
+
   it->second.used = true;
-  
+
   char c = toupper((it->second.value)[0]);
   if((c == 'Y') || (c == 'T') || (c == '1')) {
     val = true;
@@ -138,7 +138,7 @@ void Options::get(const string &key, bool &val, const bool &def, bool log) {
     if(log)
       output << "\tOption " << sectionName << "/" << it->first << " = false";
   } else
-    throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n", 
+    throw BoutException("\tOption '%s': Boolean expected. Got '%s'\n",
                         it->first.c_str(), it->second.value.c_str());
   if(!it->second.source.empty() && log) {
     // Specify the source of the setting
@@ -156,10 +156,10 @@ void Options::get(const string &key, string &val, const string &def, bool log) {
       output << "\tOption " << sectionName << "/" << key << " = " << def << " (default)" << endl;
     return;
   }
-  
+
   val = it->second.value;
   it->second.used = true;
-  
+
   if(log) {
     output << "\tOption " << sectionName << "/" << it->first << " = " << val;
     if(!it->second.source.empty()) {
@@ -177,7 +177,7 @@ Options* Options::getSection(const string &name) {
   map<string, Options*>::iterator it(sections.find(lowercase(name)));
   if(it != sections.end())
     return it->second;
-  
+
   // Doesn't exist yet, so add
   string secname = name;
   if(!sectionName.empty()) // prepend the section name
@@ -212,10 +212,10 @@ void Options::printUnused() {
     output << "Unused options:\n";
     for(map<string,OptionValue>::iterator it=options.begin(); it != options.end(); it++) {
       if(!it->second.used) {
-	output << "\t" << sectionName << "/" << it->first << " = " << it->second.value;
-	if(!it->second.source.empty())
-	  output << " (" << it->second.source << ")";
-	output << endl;
+        output << "\t" << sectionName << "/" << it->first << " = " << it->second.value;
+        if(!it->second.source.empty())
+          output << " (" << it->second.source << ")";
+        output << endl;
       }
     }
   }

@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -103,13 +103,13 @@ T **matrix(int xsize, int ysize) {
   T **m;
 
   if(xsize == 0)
-     xsize = 1;
+    xsize = 1;
   if(ysize == 0)
-     ysize = 1;
+    ysize = 1;
 
   if((m = new T*[xsize]) == NULL)
     throw BoutException("Error: could not allocate memory:%d\n", xsize);
-  
+
   if((m[0] = new T[xsize*ysize]) == NULL)
     throw BoutException("Error: could not allocate memory\n");
 
@@ -266,35 +266,35 @@ BoutReal MINMOD(BoutReal a, BoutReal b) {
 // integer power
 BoutReal operator^(BoutReal lhs, int n)
 {
-  BoutReal result;
-  
-  if(n == 0)
-    return 1.0;
-  
-  if(n < 0) {
-    lhs = 1.0 / lhs;
-    n *= -1;
-  }
-  
-  result = 1.0;
-  
-  while(n > 1) {
-    if( (n & 1) == 0 ) {
-      lhs *= lhs;
-      n /= 2;
-    }else {
-      result *= lhs;
-      n--;
-    }
-  }
-  result *= lhs;
+BoutReal result;
 
-  return result;
+if(n == 0)
+return 1.0;
+
+if(n < 0) {
+lhs = 1.0 / lhs;
+n *= -1;
+}
+
+result = 1.0;
+
+while(n > 1) {
+if( (n & 1) == 0 ) {
+lhs *= lhs;
+n /= 2;
+}else {
+result *= lhs;
+n--;
+}
+}
+result *= lhs;
+
+return result;
 }
 
 BoutReal operator^(BoutReal lhs, const BoutReal &rhs)
 {
-  return pow(lhs, rhs);
+return pow(lhs, rhs);
 }
 */
 
@@ -376,17 +376,17 @@ int stringToInt(const std::string &s) {
 }
 
 std::list<std::string> &strsplit(const std::string &s, char delim, std::list<std::string> &elems) {
-    std::stringstream ss(s);
-    std::string item;
-    while(std::getline(ss, item, delim)) {
-        elems.push_back(item);
-    }
-    return elems;
+  std::stringstream ss(s);
+  std::string item;
+  while(std::getline(ss, item, delim)) {
+    elems.push_back(item);
+  }
+  return elems;
 }
 
 std::list<std::string> strsplit(const std::string &s, char delim) {
-    std::list<std::string> elems;
-    return strsplit(s, delim, elems);
+  std::list<std::string> elems;
+  return strsplit(s, delim, elems);
 }
 
 // Strips leading and trailing spaces from a string

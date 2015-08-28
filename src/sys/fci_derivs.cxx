@@ -56,73 +56,73 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
   // Load the floating point indices from the grid file
   // Future, higher order parallel derivatives could require maps to +/-2 slices
   if (dir == +1) {
-	mesh.get(xt_prime, "forward_xt_prime");
-	mesh.get(zt_prime, "forward_zt_prime");
+    mesh.get(xt_prime, "forward_xt_prime");
+    mesh.get(zt_prime, "forward_zt_prime");
   } else if (dir == -1) {
-	mesh.get(xt_prime, "backward_xt_prime");
-	mesh.get(zt_prime, "backward_zt_prime");
+    mesh.get(xt_prime, "backward_xt_prime");
+    mesh.get(zt_prime, "backward_zt_prime");
   } else {
-	// Definitely shouldn't be called
-	throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
+    // Definitely shouldn't be called
+    throw BoutException("FCIMap called with strange direction: %d. Only +/-1 currently supported.", dir);
   }
 
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
-	for(int y=mesh.ystart; y<=mesh.yend;y++) {
-	  for(int z=0;z<ncz;z++) {
-		// The integer part of xt_prime, zt_prime are the indices of the cell
-		// containing the field line end-point
-		i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<ncz;z++) {
+        // The integer part of xt_prime, zt_prime are the indices of the cell
+        // containing the field line end-point
+        i_corner[x][y][z] = (int)(xt_prime[x][y][z]);
 
-		// z is periodic, so make sure the z-index wraps around
-		zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
+        // z is periodic, so make sure the z-index wraps around
+        zt_prime[x][y][z] = zt_prime[x][y][z] - ncz * ( (int) (zt_prime[x][y][z] / ((BoutReal) ncz)) );
 
-		if(zt_prime[x][y][z] < 0.0)
-		  zt_prime[x][y][z] += ncz;
+        if(zt_prime[x][y][z] < 0.0)
+          zt_prime[x][y][z] += ncz;
 
-		k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
+        k_corner[x][y][z] = (int)(zt_prime[x][y][z]);
 
-		// t_x, t_z are the normalised coordinates \in [0,1) within the cell
-		// calculated by taking the remainder of the floating point index
-		t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
-		t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
+        // t_x, t_z are the normalised coordinates \in [0,1) within the cell
+        // calculated by taking the remainder of the floating point index
+        t_x = xt_prime[x][y][z] - (BoutReal)i_corner[x][y][z];
+        t_z = zt_prime[x][y][z] - (BoutReal)k_corner[x][y][z];
 
-		// Check that t_x and t_z are in range
-		if( (t_x < 0.0) || (t_x > 1.0) )
-		  throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
+        // Check that t_x and t_z are in range
+        if( (t_x < 0.0) || (t_x > 1.0) )
+          throw BoutException("t_x=%e out of range at (%d,%d,%d)", t_x, x,y,z);
 
-		if( (t_z < 0.0) || (t_z > 1.0) )
-		  throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
+        if( (t_z < 0.0) || (t_z > 1.0) )
+          throw BoutException("t_z=%e out of range at (%d,%d,%d)", t_z, x,y,z);
 
-		// NOTE: A (small) hack to avoid one-sided differences
-		if( i_corner[x][y][z] == mesh.xend ) {
-		  i_corner[x][y][z] -= 1;
-		  t_x = 1.0;
-		}
+        // NOTE: A (small) hack to avoid one-sided differences
+        if( i_corner[x][y][z] == mesh.xend ) {
+          i_corner[x][y][z] -= 1;
+          t_x = 1.0;
+        }
 
-		temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
-		h00_x.setData(x, y, z, &temp);
-		temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
-		h00_z.setData(x, y, z, &temp);
+        temp = 2.*t_x*t_x*t_x - 3.*t_x*t_x + 1.;
+        h00_x.setData(x, y, z, &temp);
+        temp = 2.*t_z*t_z*t_z - 3.*t_z*t_z + 1.;
+        h00_z.setData(x, y, z, &temp);
 
-		temp = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
-		h01_x.setData(x, y, z, &temp);
-		temp = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
-		h01_z.setData(x, y, z, &temp);
+        temp = -2.*t_x*t_x*t_x + 3.*t_x*t_x;
+        h01_x.setData(x, y, z, &temp);
+        temp = -2.*t_z*t_z*t_z + 3.*t_z*t_z;
+        h01_z.setData(x, y, z, &temp);
 
-		temp = t_x*(1.-t_x)*(1.-t_x);
-		h10_x.setData(x, y, z, &temp);
-		temp = t_z*(1.-t_z)*(1.-t_z);
-		h10_z.setData(x, y, z, &temp);
+        temp = t_x*(1.-t_x)*(1.-t_x);
+        h10_x.setData(x, y, z, &temp);
+        temp = t_z*(1.-t_z)*(1.-t_z);
+        h10_z.setData(x, y, z, &temp);
 
-		temp = t_x*t_x*t_x - t_x*t_x;
-		h11_x.setData(x, y, z, &temp);
-		temp = t_z*t_z*t_z - t_z*t_z;
-		h11_z.setData(x, y, z, &temp);
-	  }
-	}
+        temp = t_x*t_x*t_x - t_x*t_x;
+        h11_x.setData(x, y, z, &temp);
+        temp = t_z*t_z*t_z - t_z*t_z;
+        h11_z.setData(x, y, z, &temp);
+      }
+    }
   }
 }
 
@@ -132,13 +132,13 @@ FCIMap::FCIMap(Mesh& mesh, int dir) {
 void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir) {
 
   if(!mesh.FCI)
-	return; // Not using FCI method. Print error / warning?
+    return; // Not using FCI method. Print error / warning?
 
   Field3D fx, fz, fxz;
 
   // If f_next has already been computed, don't bother doing it again
   if (f_next.isAllocated())
-	return;
+    return;
 
   // Derivatives are used for tension and need to be on dimensionless
   // coordinates
@@ -152,47 +152,47 @@ void FCI::interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir
   f_next = 0;
 
   for(int x=mesh.xstart;x<=mesh.xend;x++) {
-	for(int y=mesh.ystart; y<=mesh.yend;y++) {
-	  for(int z=0;z<mesh.ngz-1;z++) {
+    for(int y=mesh.ystart; y<=mesh.yend;y++) {
+      for(int z=0;z<mesh.ngz-1;z++) {
 
-		// Due to lack of guard cells in z-direction, we need to ensure z-index
-		// wraps around
-		int ncz = mesh.ngz-1;
-		int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
-		int z_mod_p1 = (z_mod + 1) % ncz;
+        // Due to lack of guard cells in z-direction, we need to ensure z-index
+        // wraps around
+        int ncz = mesh.ngz-1;
+        int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
+        int z_mod_p1 = (z_mod + 1) % ncz;
 
-		// Interpolate f in X at Z
-		BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+        // Interpolate f in X at Z
+        BoutReal f_z = f(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
+          + f(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
+          + fx( fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
+          + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
 
-		// Interpolate f in X at Z+1
-		BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+        // Interpolate f in X at Z+1
+        BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
+          + f( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
+          + fx( fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
+          + fx( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
 
-		// Interpolate fz in X at Z
-		BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
+        // Interpolate fz in X at Z
+        BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h00_x[x][y][z]
+          + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h01_x[x][y][z]
+          + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod)*fcimap.h10_x[x][y][z]
+          + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod)*fcimap.h11_x[x][y][z];
 
-		// Interpolate fz in X at Z+1
-		BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
-		  + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
-		  + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
+        // Interpolate fz in X at Z+1
+        BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h00_x[x][y][z]
+          + fz( fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h01_x[x][y][z]
+          + fxz(fcimap.i_corner[x][y][z], y + dir, z_mod_p1)*fcimap.h10_x[x][y][z]
+          + fxz(fcimap.i_corner[x][y][z]+1, y + dir, z_mod_p1)*fcimap.h11_x[x][y][z];
 
-		// Interpolate in Z
-		f_next(x,y + dir,z) =
-		  + f_z    * fcimap.h00_z[x][y][z]
-		  + f_zp1  * fcimap.h01_z[x][y][z]
-		  + fz_z   * fcimap.h10_z[x][y][z]
-		  + fz_zp1 * fcimap.h11_z[x][y][z];
-	  }
-	}
+        // Interpolate in Z
+        f_next(x,y + dir,z) =
+          + f_z    * fcimap.h00_z[x][y][z]
+          + f_zp1  * fcimap.h01_z[x][y][z]
+          + fz_z   * fcimap.h10_z[x][y][z]
+          + fz_zp1 * fcimap.h11_z[x][y][z];
+      }
+    }
   }
 }
 
@@ -221,15 +221,15 @@ const Field3D FCI::Grad_par(Field3D &f, bool keep) {
   interpolate(f, *ydown, backward_map, -1);
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
-	  }
-	}
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
+        result(x,y,z) = ((*yup)(x,y+1,z) - (*ydown)(x,y-1,z))/(2*mesh.dy(x,y)*sqrt(mesh.g_22(x,y)));
+      }
+    }
   }
 
   if (!keep) {
-	f.resetFCI();
+    f.resetFCI();
   }
 
 #ifdef TRACK
@@ -270,15 +270,15 @@ const Field3D FCI::Grad2_par2(Field3D &f, bool keep) {
   interpolate(f, *ydown, backward_map, -1);
 
   for (int x=mesh.xstart;x<=mesh.xend;++x) {
-	for (int y=mesh.ystart;y<=mesh.yend;++y) {
-	  for (int z=0;z<mesh.ngz-1;++z) {
-		result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
-	  }
-	}
+    for (int y=mesh.ystart;y<=mesh.yend;++y) {
+      for (int z=0;z<mesh.ngz-1;++z) {
+        result(x,y,z) = ((*yup)(x,y+1,z) - 2*f(x,y,z) + (*ydown)(x,y-1,z))/(mesh.dy(x,y) * mesh.dy(x,y) * mesh.g_22(x,y));
+      }
+    }
   }
 
   if (!keep) {
-	f.resetFCI();
+    f.resetFCI();
   }
 
 #ifdef TRACK

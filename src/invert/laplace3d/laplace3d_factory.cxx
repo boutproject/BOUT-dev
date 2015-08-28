@@ -21,7 +21,7 @@ Laplace3DFactory* Laplace3DFactory::getInstance() {
 Laplace3D* Laplace3DFactory::createLaplace3D(Options *options) {
   if(!options)
     options = Options::getRoot()->getSection("laplace3d");
-  
+
   string type;
   options->get("type", type, "petsc");
 
@@ -29,6 +29,6 @@ Laplace3D* Laplace3DFactory::createLaplace3D(Options *options) {
   if(strcasecmp(type.c_str(), "petsc") == 0) {
     return new Laplace3DPetsc(options);
   }
-  
+
   throw BoutException("Unknown Laplace3D solver type '%s'", type.c_str());
 }

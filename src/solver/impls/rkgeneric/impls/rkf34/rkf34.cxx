@@ -41,7 +41,7 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
   //Level 2
   stageCoeffs[2][0] = 4.0/81.0; stageCoeffs[2][1] = 32.0/81.0;
   //Level 3
-  stageCoeffs[3][0] = 57.0/98.0; stageCoeffs[3][1] = -432.0/343.0; 
+  stageCoeffs[3][0] = 57.0/98.0; stageCoeffs[3][1] = -432.0/343.0;
   stageCoeffs[3][2] = 1053.0/686.0;
   //Level 4
   stageCoeffs[4][0] = 1.0/6.0; stageCoeffs[4][1] = 0.0;
@@ -79,6 +79,6 @@ RKF34Scheme::RKF34Scheme(Options *options):RKScheme(options){
 
 RKF34Scheme::~RKF34Scheme(){
   //Do my cleanup
-  
+
 };
 

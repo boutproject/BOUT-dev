@@ -1,16 +1,16 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           PARALLEL CODE - SIMPLE ALGORITHM
- * 
+ *
  * I'm just calling this Simple Parallel Tridag. Naive parallelisation of
  * the serial code. For use as a reference case.
- * 
+ *
  * Overlap calculation / communication of poloidal slices to achieve some
  * parallelism.
  *
  * Changelog
  * ---------
- * 
+ *
  * 2014-06  Ben Dudson <benjamin.dudson@york.ac.uk>
  *     * Removed static variables in functions, changing to class members.
  *
@@ -18,7 +18,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -67,21 +67,21 @@ class LaplaceSPT : public Laplacian {
 public:
   LaplaceSPT(Options *opt = NULL);
   ~LaplaceSPT();
-  
+
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C = val; }
   void setCoefD(const Field2D &val) { D = val; }
   void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
   void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
-  
+
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
-  
+
   const Field3D solve(const Field3D &b);
   const Field3D solve(const Field3D &b, const Field3D &x0);
 private:
   enum { SPT_DATA = 1123 }; ///< 'magic' number for SPT MPI messages
-  
+
   Field2D A, C, D;
 
   /// Data structure for SPT algorithm
@@ -89,26 +89,26 @@ private:
     SPT_data() : bk(NULL), comm_tag(SPT_DATA) {}
     void allocate(int mm, int nx); // Allocates memory
     ~SPT_data(); // Free memory
-    
+
     int jy; ///< Y index
-    
+
     dcomplex **bk;  ///< b vector in Fourier space
     dcomplex **xk;
 
     dcomplex **gam;
-  
+
     dcomplex **avec, **bvec, **cvec; ///< Diagonal bands of matrix
 
     int proc; // Which processor has this reached?
     int dir;  // Which direction is it going?
-  
+
     comm_handle recv_handle; // Handle for receives
-  
+
     int comm_tag; // Tag for communication
-  
+
     BoutReal *buffer;
   };
-  
+
   int ys, ye;         // Range of Y indices
   SPT_data slicedata; // Used to solve for a single FieldPerp
   SPT_data* alldata;  // Used to solve a Field3D
@@ -116,16 +116,16 @@ private:
   dcomplex *dc1d; ///< 1D in Z for taking FFTs
 
   void tridagForward(dcomplex *a, dcomplex *b, dcomplex *c,
-                      dcomplex *r, dcomplex *u, int n,
-                      dcomplex *gam,
-                      dcomplex &bet, dcomplex &um, bool start=false);
+                     dcomplex *r, dcomplex *u, int n,
+                     dcomplex *gam,
+                     dcomplex &bet, dcomplex &um, bool start=false);
   void tridagBack(dcomplex *u, int n,
-                   dcomplex *gam, dcomplex &gp, dcomplex &up);
-  
+                  dcomplex *gam, dcomplex &gp, dcomplex &up);
+
   int start(const FieldPerp &b, SPT_data &data);
-  
+
   int next(SPT_data &data);
-  
+
   void finish(SPT_data &data, FieldPerp &x);
 
 };

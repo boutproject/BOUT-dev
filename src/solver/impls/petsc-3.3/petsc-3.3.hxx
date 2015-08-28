@@ -65,7 +65,7 @@ typedef struct snes_info {
 } snes_info;
 
 class PetscSolver : public Solver {
- public:
+public:
   PetscSolver(Options *opts = NULL);
   ~PetscSolver();
 
@@ -87,9 +87,9 @@ class PetscSolver : public Solver {
   friend PetscErrorCode solver_ijacobian(TS,PetscReal,Vec,Vec,PetscReal,Mat*,Mat*,MatStructure*,void*);
 
   PetscLogEvent solver_event, loop_event, init_event;
- private:
+private:
   PetscLib lib; // Handles initialize / finalize
-  
+
   Jacobian jacfunc; // Jacobian - vector function
 
   BoutReal shift;   // Shift (alpha) parameter from TS

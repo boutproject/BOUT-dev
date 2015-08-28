@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -44,23 +44,23 @@ class PdbFormat;
 #include "pdb.h"
 
 class PdbFormat : public DataFormat {
- public:
+public:
   PdbFormat();
   PdbFormat(const char *name);
   PdbFormat(const string &name);
   ~PdbFormat();
-  
+
   bool openr(const string &name);
   bool openr(const char *name);
   bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
-  
+
   virtual bool is_valid();
-  
+
   void close();
-  
+
   void flush();
-  
+
   const char* filename();
 
   const vector<int> getSize(const char *var);
@@ -69,9 +69,9 @@ class PdbFormat : public DataFormat {
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
-  
+
   bool setRecord(int t); // negative -> latest
-  
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -95,15 +95,15 @@ class PdbFormat : public DataFormat {
   bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  
+
   void setLowPrecision() { lowPrecision = true; }
 
- private:
+private:
   PDBfile *fp;
   char *fname;
   bool appending;
   bool lowPrecision; ///< When writing, down-convert to floats
-  
+
   int x0, y0, z0, t0; // Data origins
 
   int nrecs(const char *name); // Returns the number of records
