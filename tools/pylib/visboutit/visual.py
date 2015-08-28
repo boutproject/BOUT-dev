@@ -7,7 +7,7 @@ This file contains a library of functions used by various scripts in the VisBOUT
 # Import section
 #==============================================================================
 
-from boututils import DataFile
+from boututils.datafile import DataFile
 from boutdata import collect
 from scipy.io import netcdf
 from math import sin, cos, pi
@@ -116,6 +116,12 @@ def get(filename, name, section=None):
                 
                 if key.lower() == name.lower(): # Case insensitive
                     return value
+
+def var_list():
+    d = DataFile('BOUT.dmp.0.nc')
+    var_list = d.list()
+    return var_list
+
 
 def zShf_p_check(zShf_int_p):
     while zShf_int_p > 1:
@@ -456,6 +462,13 @@ def write_vtk_vector2(name,pts,vector,vectorx,vectory,vectorz,t):
     vtk_file_path = gridToVTK("./batch/" + name + "_vector_%d" % t , i , j , k , pointData = {str(name):vector, str(name + '_vector'): (vectorx,vectory,vectorz)})
     return vtk_file_path
 
+def write_vtk_vector3(name, pts, vectora, vectorb, vectorc):
+    i,j,k = pts
+    vectora_i, vectora_j, vectora_k = vectora
+    vectorb_i, vectorb_j, vectorb_k = vectorb
+    vectorc_i, vectorc_j, vectorc_k = vectorc
+    vtk_file_path = gridToVTK("./batch/" + name + "_vector" , i , j , k , pointData = {str(name+ '_a'): (vectora_i, vectora_j, vectora_k), str(name + '_b'): (vectorb_i, vectorb_j, vectorb_k), str(name + '_c'): (vectorc_i, vectorc_j, vectorc_k)})
+    return vtk_file_path
 
 # Draw vtk file and let user orientate view and then save session file
 # returns the VisIt session name and location

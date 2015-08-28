@@ -87,10 +87,12 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
         p0 = visual.collect("P0") #Import P0
         add_p = True
     
+    var_all = visual.collect(name) # Import variable 
+    
      #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     q = 0
     while q <= t-1:
-        var = visual.var3d(name,q) # collect variable
+        var = var_all[q] # Set specific time values
     
         #Find the min and max values
         max[q] = np.amax(var)
@@ -187,10 +189,13 @@ def torus(name, time, step = 0.5, skip = 1 , path = None, R = None, r = None , d
     max = np.zeros(t , dtype = float)
     min = np.zeros(t , dtype = float)
     
+    # Collect variable
+    var_all = visual.collect(name)    
+    
     q = 0 
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     while q <= t-1:
-        var = visual.var3d(name,q) # collect variable
+        var = var_all[q] # collect variable
         
         #Find the min and max values
         max[q] = np.amax(var)
@@ -289,10 +294,12 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 ,path = None, skip = 1):
     max = np.zeros(t , dtype = float)
     min = np.zeros(t , dtype = float)
     
+    var_all = visual.collect(name)       
+    
     q = 0
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     while q <= t-1:
-            var = visual.var3d(name,q) # collect variable
+            var = var_all[q] # collect variable
     
             #Find the min and max values
             max[q] = np.amax(var)

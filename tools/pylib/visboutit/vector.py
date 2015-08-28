@@ -39,7 +39,7 @@ def torus_y_unit(ny):
 
 def elm_field_vector(pts,nx,ny,nz):
     """
-    elm_field_vector function returns the uni vectors along the field line of an ELM mesh
+    elm_field_vector function returns the unit vectors along the field line of an ELM mesh
     
     """
     xcoord, ycoord, zcoord = pts
@@ -70,7 +70,14 @@ def elm_field_vector(pts,nx,ny,nz):
 
 def y_unit_vector(pts , nx , ny , nz ):
     """
-    y_unit_vector function returns the y unit vectors along the field line of a mesh
+    y_unit_vector function returns the y unit vectors for a given mesh
+    
+    Inputs:
+        pts: mesh of for the coordinate system
+        nx, ny ,nz: size of the mesh
+        
+    Output:
+        unit vector in y direction in components
     
     """
     xcoord, ycoord, zcoord = pts
@@ -82,10 +89,10 @@ def y_unit_vector(pts , nx , ny , nz ):
     # For every x,y,z point calculate a unit vector along the field line
     # by calculating the vector between two points from mesh (this already accounts for zShift)
     print 'Creating vector map:'
-    for i in range(nx-1):
-        percent = (float(i)/(float(nx - 2)))*100
-        print '%d %% Complete' % percent, "   \r", # Progress percent
+    for i in range(nx-1):        
         for j in range(ny-1):
+            percent = (float(i)/(float(nx - 2)))*100
+            print '%d %% Complete' % percent, "   \r", # Progress percent
             for k in range(nz-1):
                 r1 = np.array((xcoord[ i , j , k ] , ycoord[ i , j , k ] , zcoord[ i , j , k ])) # Vector of initial point
                 r2 = np.array((xcoord[ i , j+1 , k ] , ycoord[ i , j+1 , k ]  , zcoord[ i , j+1 , k ])) # Vector of secondary point
@@ -597,11 +604,12 @@ def cylinder(name, time, pi_fr = (2./3.), step = 0.5 , path = None, skip = 1):
     vectory = np.zeros((nx,ny_work,nz),dtype = float)
     vectorz = np.zeros((nx,ny_work,nz),dtype = float)
     
+    var_all = visual.collect(name)    
     
     q = 0
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     while q <= t-1:
-            var = visual.var3d(name,q) # collect variable
+            var = var_all[q] # collect variable
     
             #Find the min and max values
             max[q] = np.amax(var)
@@ -725,10 +733,12 @@ def torus(name, time, step = 0.5, path = None, skip = 1, R = None, r = None , dr
     #Find the y_unit vectors
     y_unit = torus_y_unit(ny_work)
     
+    var_all = visual.collect(name)
+    
     q = 0 
     #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     while q <= t-1:
-        var = visual.var3d(name,q) # collect variable
+        var = var_all[q] # collect variable
 #        var = np.zeros((nx,ny_work,nz))
 #        for i in range(nx):
 #            for j in range(ny):
@@ -858,8 +868,11 @@ def elm(name , time ,zShf_int_p = 0.25, path = None, skip = 1):
     vectorz = np.zeros((nx,ny2,nz),dtype = float)
      #For the entire t range import the spacial values, find min max values, interpolate y, coordinate transform, write to vtk
     q = 0 
+
+    var_all = visual.collect(name)    
+    
     while q <= t-1:
-        var = visual.var3d(name,q) # collect variable
+        var = var_all[q] # collect variable
 
         # Find min and max values
         max[q] = np.amax(var)

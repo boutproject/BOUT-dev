@@ -24,9 +24,9 @@ def view_vector(work_dir,name,max,min):
     visit.OpenDatabase(vtk_path) # Open database
     visit.AddPlot("Vector",name + "_vector", 1, 1) #Draw a Pseudocolor Plot of the variable
 
-    VectorAtts = visit.VectorAttributes()
-    VectorAtts.nVectors = 4000 # Increase the number of vectors
-    visit.SetPlotOptions(VectorAtts)
+#    VectorAtts = visit.VectorAttributes()
+#    VectorAtts.nVectors = 4000 # Increase the number of vectors
+#    visit.SetPlotOptions(VectorAtts)
     visit.DrawPlots() # Draw the Plots
     
     # Save the Visit Session
@@ -37,7 +37,6 @@ def view_vector(work_dir,name,max,min):
     visit.DeleteAllPlots()
     visit.CloseDatabase(vtk_path)
     return session_path,session_name
-
 
 #==============================================================================
 # Export an image sequence of the vector plot across the entire time range
@@ -67,8 +66,8 @@ def image_vector(session_path,img_dir,name,t,session_name,max_imp,min_imp,skip):
         time = i * skip
         visit.SetTimeSliderState(i) # Change timer slider
         VectorAtts = visit.VectorAttributes()
-        VectorAtts.nVectors = 4000 # Increase the number of vectors
-        visit.SetPlotOptions(VectorAtts)
+#        VectorAtts.nVectors = 4000 # Increase the number of vectors
+#        visit.SetPlotOptions(VectorAtts)
         # If user would like fixed max and mind then assign max and min values
         if max_imp != 0:
             VectorAtts.max = max_imp

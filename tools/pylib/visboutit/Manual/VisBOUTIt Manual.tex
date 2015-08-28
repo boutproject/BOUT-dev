@@ -25,6 +25,8 @@
 }
 
 
+
+
 %%% SET HEADERS AND FOOTERS
 %\pagestyle{fancy}
 %\fancyfoot{}
@@ -42,7 +44,7 @@
 %\newcommand{\ve}[1]{\ensuremath{\boldsymbol{#1}}}
 
 
-\author{P. Naylor , University of York}
+\author{Peter Naylor , University of York}
 \title{VisBOUTIt Users Manual}
 \date{August 2015}
 \begin{document}
@@ -94,8 +96,8 @@ The Torus coordinate system $(\Psi, \Omega, \theta)$ , detailed in Figure (\ref{
 The ELM coordinate system $(\Psi,\Omega, \Phi)$ , detailed in Figure (\ref{fig:elmmesh}) where:
 \begin{itemize}
 	\item{$\Psi$ Radial coordinate}
-	\item{$\Omega$ Field parallel coordinate (Poloidal coordinate)}
-	\item{$\Phi$ Toroidal coordinate}
+	\item{$\Omega$ Field parallel coordinate (Poloidal angle)}
+	\item{$\Phi$ Toroidal angle}
 \end{itemize}
 		
 \section{How the package works}
@@ -192,7 +194,7 @@ The script will also prompt for the image dimensions for the image sequences, th
 	
 	
 \section{Scalar Variables}
-\label{sec:scalar} VisBOUTIt can be used like the showdata and plotdata functions. This section details the procedures for the package. Examples on how to use these functions are contained within this section and in Appendix (\ref{example:scalar}).
+\label{sec:scalar} This section details the procedures for converting and plotting scalar values from BOUT++. Examples on how to use these functions are contained within this section and in Appendix (\ref{example:scalar}).
 	
 	\subsection{Converting Scalar data:}
 	
@@ -536,7 +538,6 @@ Once the fuction is called it will import, convert and write the vector variable
 	$ vector.torus('Vi', -1 , isttok = True , skip = 20)
 \end{verbatim} 
 
-
 \subsubsection{ELM}
 \paragraph{}
 The elm function within the \textbf{vector.py} library converts a scalar variable from BOUT++ data into field parallel vectors. Which is achieved by creating a mesh of unit vectors along the field lines. Then creates the vector at the points on the mesh by dotting the unit vector with the imported scalar value. The function \textbf{vector.elm} has the below arguments. The arguments \textbf{Name, time, path} and \textbf{skip} are the same as in the Cylinder and Torus functions.
@@ -606,6 +607,102 @@ The manual method allows the user to utilise advanced features within VisIt. Whi
 	Use min from min input file? (0 for No, 1 for Yes):
 \end{verbatim}
 
+\subsection{Velocity Vectors}
+\label{sec:velocity}
+\paragraph{}
+The VisBOUTIt pacakge can also calculate and write the velocity vectors of particles using Equation (\ref{eqn:vel}). An example can be found within Appendix (\ref{example:velocity}).
+
+\begin{equation}
+\label{eqn:vel}
+\vec{V} = \hat{b} \ {V_{\parallel}} + \frac{\hat{b} \times\bigtriangledown \phi}{B}
+\end{equation}
+
+The \textbf{velocity.py} library contains all the functions to calculate and write the velocity vectors to the VTK format ready to be plotted using VisIt. The gradient function within the velocity library calculates the componenets of the gradient for a point using the matrix in Equation (\ref{eqn:grad_matrix}). The algorithm calculates $\bigtriangledown\phi$ from a point in the positive direction and negative direction and then averages the gradient and stores the gradient for that point.
+
+\begin{equation}
+\label{eqn:grad_matrix}
+\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+1 & (x_{1} - x_{0}) & (y_{1} - y_{0}) & (z_{1} - z_{0}) \\
+1 & (x_{2} - x_{0}) & (y_{2} - y_{0}) & (z_{2} - z_{0}) \\
+1 & (x_{3} - x_{0}) & (y_{3} - y_{0}) & (z_{3} - z_{0}) 
+\end{pmatrix}
+\begin{pmatrix}
+\phi_{0} \\
+\frac{\partial \phi}{\partial x} \\
+\frac{\partial \phi}{\partial y} \\
+\frac{\partial \phi}{\partial z}
+\end{pmatrix}
+=
+\begin{pmatrix}
+\phi(r_{0}) \\
+\phi(r_{1}) \\
+\phi(r_{2}) \\
+\phi(r_{3}) \\
+\end{pmatrix}
+\end{equation}
+
+The velocity vector writing functions import the normalisation variables for $V_{\parallel}$ and $\phi$ to ensure the vectors have standard units. Plotting the vectors using VisIt can be achieved with the \textit{vector} function within the \textbf{draw.py} library with the variable name set to 'velocity'. An image sequence of an existing velocity section can be rendered using the \textit{vector} function within the \textbf{image.py} library, again with the variable name set to 'velocity'.
+
+\subsubsection{Cylinder}
+\label{sec:vel_cylinder}
+\paragraph{}
+To convert cylindrical data the \textit{cylinder} function is used. The agruments are detailed below.
+
+\begin{verbatim}
+cylinder(time = -1, pi_fr = (2./3.), step = 0.5 , path = None, skip = 1):
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{Time:} end time slice to convert to (integer), if -1 entire dataset is imported}
+	\item{\textbf{pi\_fr:} The fraction of $\pi$ that the cylinder has been rotated through, i.e. 2$\pi$ is a full cylinder. The default value for this is $2/3$ . If the value given is above 2$\pi$ then interger values of 2$\pi$ are subtracted until the value is between zero and 2$\pi$ then this value is used.(Float)}
+	\item{\textbf{Step:} The gap between the y slices for the y interpolation, (float  $ 0 \leq Step \leq 1$), if Step = 0 then  the raw data displayed.}
+	\item{\textbf{Path:} File path to data, if blank then the current working directory is used to look for data}
+	\item{\textbf{Skip:} The gap between the time slices. For example a skip value of 10 will convert the t = 0, 10, 20, etc slices. (Integer)}
+\end{itemize}
+
+The variable names from Equation (\ref{eqn:vel}) are automatically imported from a variable list of the data. If the script cannot find the variables then the script will prompt for the relevant variable  and normalisation factor names.
+
+\subsubsection{Torus}
+\label{sec:vel_torus}
+\paragraph{}
+To convert cylindrical data the \textit{torus} function is used. The agruments are detailed below. The arguments \textbf{Time, Step, skip} and \textbf{path} are the same as for the cylinder function. And the variables names from Equation (\ref{eqn:vel}) are again automatically imported like for the cylinder function. 
+
+\begin{verbatim}
+torus(time = -1, step = 0.5, skip = 1 , path = None, R = None, r = None , 
+dr = None , Bt = None, q = None , isttok = True , default = False)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{R, r, dr, Bt, q:} Torus settings if left blank defaults in Equation (\ref{eqn:torusdefault}) are used.
+		R: Major radius
+		r: Minor radius
+		dr: Radial width of domain
+		Bt: Toroidal magnetic field
+		q: Safety factor. (All are floats)}
+	\item{\textbf{isttok:} Use the ISTTOK specifications in Equation (\ref{eqn:isttok}), (Boolean)}
+	\item{\textbf{default:} Use the default sepcifications in Equation (\ref{eqn:torusdefault}) , (Boolean)}
+\end{itemize}
+
+\subsubsection{ELM}
+\label{sec:vel_elm}
+\paragraph{}
+To convert ELM data the \textit{elm} function is used. The agruments are detailed below. The arguments \textbf{Time, skip} and \textbf{path} are the same as for the cylinder function. And the variables names from Equation (\ref{eqn:vel}) are again automatically imported like for the cylinder function. 
+
+\begin{verbatim}
+elm(time = -1, zShf_int_p = 0.25, path = None, skip = 1)
+\end{verbatim}
+
+\begin{itemize}
+	\item{\textbf{zShf\_int\_p:} The zshift interpolation percentage (float, $0\leq zShf\_int\_p \leq 1 $) , zShf\_int\_p is 25\% by default. This value is used to find the tolerance between the maximum and minimum zshift for linear interpolation in the y direction only. The larger the percentage the higher the tolerance value becomes therefore fewer interpolations are performed. The zshift tolerance is calculated by Equation (\ref{ztol}). The linear interpolation is performed when an array element set by the Pseudocode below is greater than zero. The integer determines how many points are to be inserted between the two original y slices.
+					
+					
+	\begin{verbatim}
+		int(abs( (zshift[y] - zshift[y+1] / z_tol ))
+	\end{verbatim}} 
+				
+\end{itemize}
+
 
 \section{Acknowledgements}
 The author would like to acknowledge Dr B. Dudson for his work and guidance during the project. Also Michail Anastopoulos for his previous work on the project.
@@ -623,13 +720,13 @@ The author would like to acknowledge Dr B. Dudson for his work and guidance duri
 		\end{verbatim}}
 	\item{Create a VisIt session of the data either using the automatic method or manual method.}
 	\begin{enumerate}
-		\item{Automatic method uses the draw function within the \textbf{draw.py} library. The automatic method will render the image sequence after creating the VisIt window.
+		\item{Automatic method uses the \textit{draw} function within the \textbf{draw.py} library. The automatic method will render the image sequence after creating the VisIt window.
 			\begin{verbatim}
 			$ from visboutit import draw
 			$ draw.draw('Vort' , skip = 20)
 			\end{verbatim}
 		}
-		\item{Manually loading the data within VisIt and creating a session. After the session has been saved the image function within the \textbf{image.py} library can be used to render out an image sequence of the converted files. The code below will open a session and render out the image sequence.
+		\item{Manually loading the data within VisIt and creating a session. After the session has been saved the \textit{image} function within the \textbf{image.py} library can be used to render out an image sequence of the converted files. The code below will open a session and render out the image sequence.
 			\begin{verbatim}
 			$ from visboutit import image
 			$ image.image('Vort' , skip = 20)
@@ -773,20 +870,59 @@ This section demonstrates how to import and plot scalar data from the BOUT++ eig
 	\centering
 	\begin{minipage}[H]{0.75\textwidth}
 		\fbox{\includegraphics[width=\textwidth]{"./images/eigen real"}}
-		\caption{Real}
+		\caption{Real Eigenvalues}
 		\label{fig:eigen_real}
 	\end{minipage}%
 	\hfill
 	\begin{minipage}[H]{0.75\textwidth}
 		\fbox{\includegraphics[width=\textwidth]{"./images/eigen imaginary"}}
-		\caption{Imaginary}
+		\caption{Imaginary Eigenvalues}
 		\label{fig:eigen_imaginary}
 	\end{minipage}
 	\caption{A plot of real Fig(\ref{fig:eigen_real}) and imaginary Fig(\ref{fig:eigen_imaginary}) eigenvalues from the BOUT++ eigensolver}
 	\label{fig:eigen_graphs}
 \end{figure}
 
+\section{Velocity Data Example}
+\label{example:velocity}
+This section demonstrates how to import and plot velocity vectors, as outlined in Section (\ref{sec:velocity}).
 
+\begin{enumerate}
+	\item{Call the function relevant function for the coordinate system from the \textbf{velocity} library, with the variable name and path if required. Like below;
+		\begin{verbatim}
+		$ from visboutit import velocity
+		$ velocity.cylinder(-1, skip = 20)
+		\end{verbatim}}
+	\item{The function will import the variables from Equation (\ref{eqn:vel}), if the function cannot find the variables it will prompt for the variale names.}
+	\item{The function then converts the data and exports the vectors to time stamped VTK files within the batch directory. After this the vectors are ready to be plotted with VisIt.}
+	\item{After converting the data, a plot of the data can be created automatically or manually by the methods detailed below.}
+	\begin{enumerate}
+		\item{\textbf{Automatic} The automatic method uses the  \textit{vector} function within the \textbf{draw.py} library. This function creates a vector plot of the data, within the VisIt window. The function allows the user to modify the plot before saving the session of the VisIt window. After the VisIt session has been saved the image sequence is then rendered out. The commands below call the function and render out the images:
+			\begin{verbatim}
+			$ from visboutit import draw
+			draw.velocity('velocity', skip = 20)
+			\end{verbatim}}
+		
+		\item{\textbf{Manual} The manual method involves the user manually loading the data into a VisIt window and saving a session of the desired orientation of the plot. The function \textit{vector} within the \textbf{image.py} library can load the session and render out all the images avaliable.}
+		
+	\end{enumerate}
+	\item{Figures (\ref{fig:cylinder_velocity},\ref{fig:velocity_torus}) are examples of the images that can be produced from the VisBOUTIt package.}
+\end{enumerate}
+
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.6\textwidth]{"./images/Cylinder velocity example"}}
+	\caption{Cylinder Geometry plot of the velocity field from BOUT++ data.}
+	\label{fig:cylinder_velocity}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\fbox{\includegraphics[width=0.6\textwidth]{"./images/Torus velocity example"}}
+	\caption{Torus Geometry plot of the velocity field from BOUT++ data.}
+	\label{fig:velocity_torus}
+\end{figure}
 
 
 \end{document}

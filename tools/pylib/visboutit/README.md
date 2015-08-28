@@ -13,7 +13,7 @@ The packages must be installed for the Tools to work:
 
 Available routines
 ==================
-This package has routines to convert; scalar, field parallel vector and eigensolver data from BOUT++ files.
+This package has routines to convert; scalar, field parallel vector, eigensolver and velocity data from BOUT++ files.
 This package also contains routines to plot the data using the VisIt package from the LLNL and render out image sequences of the VisIt plots.
 
 Please refer to the manual for examples.
