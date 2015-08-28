@@ -26,9 +26,9 @@ inline RKSchemeType RKSchemeFactory::getDefaultRKSchemeType() {
 RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
   RKSchemeType type = getDefaultRKSchemeType();
 
-  if(options == NULL) 
+  if(options == NULL)
     options = Options::getRoot()->getSection("solver");
-  
+
   string scheme;
   options->get("scheme", scheme, "");
 
@@ -40,7 +40,7 @@ RKScheme* RKSchemeFactory::createRKScheme(Options *options) {
 RKScheme* RKSchemeFactory::createRKScheme(RKSchemeType &type, Options *options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("solver");
-  
+
   if(!strcasecmp(type, RKSCHEME_RKF45)) {
     return new RKF45Scheme(options);
   }else if(!strcasecmp(type, RKSCHEME_CASHKARP)) {

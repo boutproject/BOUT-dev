@@ -36,7 +36,7 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
   //Level 2
   stageCoeffs[2][0] = 3.0/40.0; stageCoeffs[2][1] = 9.0/40.0;
   //Level 3
-  stageCoeffs[3][0] = 3.0/10.0; stageCoeffs[3][1] = -9.0/10.0; 
+  stageCoeffs[3][0] = 3.0/10.0; stageCoeffs[3][1] = -9.0/10.0;
   stageCoeffs[3][2] = 6.0/5.0;
   //Level 4
   stageCoeffs[4][0] = -11.0/54.0; stageCoeffs[4][1] = 5.0/2.0;
@@ -82,6 +82,6 @@ CASHKARPScheme::CASHKARPScheme(Options *options):RKScheme(options){
 
 CASHKARPScheme::~CASHKARPScheme(){
   //Do my cleanup
-  
+
 };
 

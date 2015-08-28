@@ -1,26 +1,26 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * A + B * Grad2_par2
- * 
+ *
  * - Each flux surface can be solved independently
  * - By taking FFT in Z direction, toroidal modes can be
  *   solved independently
  * - Result is a set of complex band-diagonal matrices to invert
- * 
+ *
  * Author: Ben Dudson, University of York, Oct 2011
- * 
+ *
  * Known issues:
  * ------------
- * 
- * 
+ *
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -55,21 +55,21 @@ public:
   ~InvertParHypre();
   const Field3D solve(const Field3D &f);
   const Field3D solve(const Field3D &f, const Field3D &start);
-  
+
   void setCoefA(const Field2D &f) {A = f;}
   void setCoefB(const Field2D &f) {B = f;}
-  
+
 private:
   Field2D A, B;
-  
+
   Mesh *m;
   dcomplex **crhs; ///< Array for storing FFT of RHS
   dcomplex **cresult; ///< Result array
-  
+
   HYPRE_StructGrid *grid; // Array of grids, one per surface
   HYPRE_StructStencil stencil; // Only one stencil needed
   HYPRE_StructMatrix **mat; // One per surface, per Z mode
-  
+
 };
 
 #endif // __INV_PAR_HYPRE_H__

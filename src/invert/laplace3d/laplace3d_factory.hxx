@@ -8,12 +8,12 @@ class Laplace3DFactory;
 #include <options.hxx>
 
 class Laplace3DFactory {
- public:
+public:
   /// Return a pointer to the only instance
   static Laplace3DFactory* getInstance();
-  
+
   Laplace3D* createLaplace3D(Options *options = NULL);
-  
+
 private:
   Laplace3DFactory() {} // Prevent instantiation of this class
   static Laplace3DFactory* instance; ///< The only instance of this class (Singleton)

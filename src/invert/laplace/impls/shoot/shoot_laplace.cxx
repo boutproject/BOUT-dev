@@ -2,18 +2,18 @@
  * \file shoot_laplace.cxx
  *
  * \brief Laplacian solver using shooting method
- *  
+ *
  * CHANGELOG
  * =========
- * 
+ *
  * Feb 2014: Ben Dudson <benjamin.dudson@york.ac.uk>
  *         * Initial version
- * 
+ *
  **************************************************************************
  * Copyright 2014 B.D.Dudson
  *
  * Contact: Ben Dudson, benjamin.dudson@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -38,18 +38,18 @@
 
 LaplaceShoot::LaplaceShoot(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
   if(mesh->periodicX) {
-        throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+    throw BoutException("LaplaceShoot does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
   }
 
-	
+
   nmode = maxmode + 1; // Number of Z modes. maxmode set in invert_laplace.cxx from options
-  
+
   // Allocate memory
   int size = (mesh->ngz-1)/2 + 1;
   km = new dcomplex[size];
   kc = new dcomplex[size];
   kp = new dcomplex[size];
-  
+
   for(int i=0;i<size;i++) {
     km[i] = 0.0;
     kc[i] = 0.0;
@@ -65,21 +65,21 @@ LaplaceShoot::~LaplaceShoot() {
   delete[] km;
   delete[] kc;
   delete[] kp;
-  
+
   delete[] rhsk;
-  
+
   delete[] buffer;
 }
 
 const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   FieldPerp x;  // Result
   x.allocate();
-  
+
   int jy = rhs.getIndex();  // Get the Y index
   x.setIndex(jy);
-  
+
   // Get the width of the boundary
-  
+
   int inbndry = 2, outbndry=2;
   if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
@@ -88,7 +88,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     inbndry = 1;
   if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
-  
+
   int xs, xe;
   xs = mesh->xstart; // Starting X index
   if(mesh->firstX())
@@ -100,60 +100,60 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
   if(mesh->lastX()) {
     // Set initial value and gradient to zero
     // by setting kc and kp
-    
+
     for(int i=0;i<maxmode;i++) {
       kc[i] = 0.0;
       kp[i] = 0.0;
     }
-    
+
     for(int ix=xe;ix<mesh->ngx;ix++)
       for(int iz=0;iz<mesh->ngz-1;iz++) {
         x[ix][iz] = 0.0;
       }
-      
+
   }else {
     // Wait for processor outer X
     comm_handle handle = mesh->irecvXOut(buffer, 4*maxmode, jy);
     mesh->wait(handle);
-    
+
     // Copy into kc, kp
     for(int i=0;i<maxmode;i++) {
       kc[i] = dcomplex(buffer[4*i], buffer[4*i+1]);
       kp[i] = dcomplex(buffer[4*i+2], buffer[4*i+3]);
     }
-    
+
     // Calculate solution at xe using kc
     ZFFT_rev(kc, mesh->zShift(xe, jy), x[xe]);
   }
-  
+
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
   for(int ix=xe; ix >= xs; ix--) {
     ZFFT(rhs[ix], mesh->zShift(ix, jy), rhsk);
-    
+
     for(int kz=0; kz<maxmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(mesh->zlength); // wave number is 1/[rad]
-      
+
       // Get the coefficients
       dcomplex a,b,c;
       tridagCoefs(ix, jy, kwave, a, b, c, &C, &D);
       b += A(ix,jy);
-      
+
       // a*km + b*kc + c*kp = rhsk
-      
+
       km[kz] = (rhsk[kz] - b*kc[kz] - c*kp[kz]) / a;
     }
-    
+
     // Inverse FFT to get x[ix-1]
     ZFFT_rev(km, mesh->zShift(ix, jy), x[ix-1]);
-    
+
     // Cycle km->kc->kp
-    
+
     dcomplex *tmp;
     tmp = kp; kp = kc; kc = km; km = tmp;
   }
-  
+
   // Finished on this processor. Send data to next inner processor
   if(!mesh->firstX()) {
     // Should be able to send dcomplex buffers. For now copy into BoutReal buffer
@@ -172,6 +172,6 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
       }
     }
   }
-  
+
   return x;
 }

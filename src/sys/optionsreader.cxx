@@ -54,30 +54,30 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
     // Test if name starts with a '-', and remove if found
     if (buffer[0] == '-')
       buffer = buffer.substr(1);  // Remove the first character (-)
-    
+
     // Test to see if the user put spaces around the '=' sign
     if (i < argc-1) {
       if(buffer[buffer.length()-1] == '=') {
         // Space after '=' sign
-        
+
         i++;
         buffer.append(argv[i]);
-        
+
       }else if(argv[i+1][0] == '=') {
         // Space before '=' sign
-        
+
         i++;
         buffer.append(argv[i]);
-        
+
         if((argv[i][1] == 0) && (i < argc-2)) {
           // End of string, so space after '=' sign too
-          
+
           i++;
           buffer.append(argv[i]);
         }
       }
     }
-    
+
     size_t startpos = buffer.find_first_of("=");
 
     if (startpos == string::npos) {
@@ -92,15 +92,15 @@ void OptionsReader::parseCommandLine(Options *options, int argc, char **argv) {
 
       string key = trim(buffer.substr(0, startpos));
       string value = trim(buffer.substr(startpos+1));
-      
+
       size_t scorepos;
       while((scorepos = key.find_first_of(":")) != string::npos) {
-	// sub-section
-	string section = key.substr(0,scorepos);
-	key = trim(key.substr(scorepos+1));
-	options = options->getSection(section);
+        // sub-section
+        string section = key.substr(0,scorepos);
+        key = trim(key.substr(scorepos+1));
+        options = options->getSection(section);
       }
-      
+
       if(key.empty() || value.empty()) throw BoutException("\tEmpty key or value in command line '%s'\n", buffer.c_str());
 
       options->set(key, value, "Command line");

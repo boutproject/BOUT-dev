@@ -1,15 +1,15 @@
 /************************************************************************
  * Inversion of parallel derivatives
- * 
- * Inverts a matrix of the form 
+ *
+ * Inverts a matrix of the form
  *
  * (A + B * Grad2_par2) x = r
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -36,9 +36,9 @@ InvertPar* InvertPar::Create() {
 
 const Field2D InvertPar::solve(const Field2D &f) {
   Field3D var(f);
-  
+
   var = solve(var);
   return var.DC();
 }
 
-  
+

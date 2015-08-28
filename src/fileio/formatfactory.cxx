@@ -29,7 +29,7 @@ FormatFactory* FormatFactory::getInstance() {
 DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel) {
   if((filename == NULL) || (strcasecmp(filename, "default") == 0)) {
     // Return default file format
-    
+
 
 #ifdef PNCDF
     if(parallel)
@@ -68,15 +68,15 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
 
   int len = strlen(filename);
 
-  int ind = len-1;  
+  int ind = len-1;
   while((ind != -1) && (filename[ind] != '.')) {
     ind--;
   }
-  
+
   const char *s = filename + ind+1;
 
   // Match strings
-  
+
 #ifdef PDBF
   const char *pdb_match[] = {"pdb"};
   if(matchString(s, 1, pdb_match) != -1) {
@@ -90,7 +90,7 @@ DataFormat* FormatFactory::createDataFormat(const char *filename, bool parallel)
     const char *pncdf_match[] = {"cdl", "nc", "ncdf"};
     if(matchString(s, 3, pncdf_match) != -1) {
       output.write("\tUsing Parallel NetCDF format for file '%s'\n", filename);
-    return new PncFormat;
+      return new PncFormat;
     }
   }
 #endif

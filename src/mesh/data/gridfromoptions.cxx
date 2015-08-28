@@ -16,16 +16,16 @@ bool GridFromOptions::hasVar(const string &name) {
 /*!
  * Reads integers from options. Assumes that integers are not
  * expressions.
- * 
+ *
  * Inputs
  * ======
  *
  * m      [Mesh pointer] Not used
  * name   [string] containing name of variable
- * 
+ *
  * Outputs
  * =======
- * 
+ *
  * ival    [integer] Always given a value, defaults to 0
  *
  * Returns
@@ -38,7 +38,7 @@ bool GridFromOptions::get(Mesh *m, int &ival,      const string &name) {
     ival = 0;
     return false;
   }
-  
+
   options->get(name, ival, 0);
   return true;
 }
@@ -48,8 +48,8 @@ bool GridFromOptions::get(Mesh *m, BoutReal &rval, const string &name) {
     rval = 0.0;
     return false;
   }
-  
-  // Fetch expression as a string 
+
+  // Fetch expression as a string
   std::string expr;
   options->get(name, expr, "0");
 
@@ -97,20 +97,20 @@ bool GridFromOptions::get(Mesh *m, vector<int> &var,      const string &name, in
 }
 
 bool GridFromOptions::get(Mesh *m, vector<BoutReal> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
-  
+
   if(!hasVar(name)) {
     return false;
   }
-  
-  // Fetch expression as a string 
+
+  // Fetch expression as a string
   std::string expr;
   options->get(name, expr, "0");
-  
+
   // Parse, and evaluate with x,y,z,t = 0
   FieldGenerator* gen = FieldFactory::get()->parse(expr, options);
 
   var.resize(len);
-  
+
   switch(dir) {
   case GridDataSource::X: {
     for(int x=0;x<var.size();x++){

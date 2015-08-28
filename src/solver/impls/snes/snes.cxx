@@ -15,7 +15,7 @@
 #include "petscsnes.h"
 
 SNESSolver::SNESSolver(Options *opt) : Solver(opt) {
-  
+
 }
 
 SNESSolver::~SNESSolver() {
@@ -27,7 +27,7 @@ SNESSolver::~SNESSolver() {
  *
  * This function assumes the context void pointer is a pointer
  * to an SNESSolver object.
- */ 
+ */
 static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
   return static_cast<SNESSolver*>(ctx)->snes_function(x, f);
 }
@@ -35,51 +35,51 @@ static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
 int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising SNES solver");
-  
+
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
-  
+
   output << "\n\tSNES steady state solver\n";
-  
+
   // Calculate number of variables
   nlocal = getLocalN();
-  
+
   // Get total problem size
   int ntmp;
   if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, nlocal);
-  
+               n3Dvars(), n2Dvars(), neq, nlocal);
+
   // Get options
   OPTION(options, mxstep, 500); // Maximum number of steps between outputs
-  
+
   // Initialise PETSc components
   int ierr;
-  
+
   // Vectors
   ierr = VecCreate(BoutComm::get(), &snes_x);CHKERRQ(ierr);
   ierr = VecSetSizes(snes_x, nlocal, PETSC_DECIDE);CHKERRQ(ierr);
   ierr = VecSetFromOptions(snes_x);CHKERRQ(ierr);
-  
+
   VecDuplicate(snes_x,&snes_f);
-  
+
   // Set initial guess at the solution from variables
   BoutReal *xdata;
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
   save_vars(xdata);
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
+
   // Nonlinear solver interface (SNES)
   SNESCreate(BoutComm::get(),&snes);
-  
+
   // Set the callback function
   SNESSetFunction(snes,snes_f,FormFunction,this);
-  
+
   // Set up the Jacobian
   //MatCreateSNESMF(snes,&Jmf);
   //SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
@@ -89,7 +89,7 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
                3,   // Number of nonzero entries in diagonal portion of local submatrix
                PETSC_NULL,
                0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
-               PETSC_NULL, 
+               PETSC_NULL,
                &Jmf);
 #ifdef BOUT_HAS_PETSC_3_3
   // Before 3.4
@@ -104,10 +104,10 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
   SNESSetTolerances(snes,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
-  
+
   // Get runtime options
   SNESSetFromOptions(snes);
-  
+
   msg_stack.pop(msg_point);
 
   return 0;
@@ -115,18 +115,18 @@ int SNESSolver::init(bool restarting, int nout, BoutReal tstep) {
 
 int SNESSolver::run() {
   int msg_point = msg_stack.push("SNESSolver::run()");
-  
+
   /*
-  output << "Computing Jacobian\n";
-  MatStructure  flag;
-  implicit_curtime = curtime;
-  implicit_gamma = gamma;
-  SNESComputeFunction(snes, snes_x, snes_f);
-  SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
-  MatView(Jmf, 	PETSC_VIEWER_STDOUT_SELF);
+    output << "Computing Jacobian\n";
+    MatStructure  flag;
+    implicit_curtime = curtime;
+    implicit_gamma = gamma;
+    SNESComputeFunction(snes, snes_x, snes_f);
+    SNESComputeJacobian(snes,snes_x,&Jmf,&Jmf,&flag);
+    MatView(Jmf,    PETSC_VIEWER_STDOUT_SELF);
   */
   SNESSolve(snes,NULL,snes_x);
-  
+
   // Find out if converged
   SNESConvergedReason reason;
   SNESGetConvergedReason(snes,&reason);
@@ -134,29 +134,29 @@ int SNESSolver::run() {
     // Diverged
     throw BoutException("SNES failed to converge. Reason: %d\n", reason);
   }
-  
+
   int its;
   SNESGetIterationNumber(snes,&its);
-  
+
   //output << "Number of SNES iterations: " << its << endl;
-  
+
   // Put the result into variables
   BoutReal *xdata;
   int ierr;
   ierr = VecGetArray(snes_x,&xdata);CHKERRQ(ierr);
   load_vars(xdata);
   ierr = VecRestoreArray(snes_x,&xdata);CHKERRQ(ierr);
-  
+
   run_rhs(0.0); // Run RHS to calculate auxilliary variables
-    
+
   /// Call the monitor function
-  
+
   if(call_monitors(0.0, 1, 1)) {
     // User signalled to quit
   }
-  
+
   msg_stack.pop(msg_point);
-  
+
   return 0;
 }
 
@@ -164,20 +164,20 @@ int SNESSolver::run() {
 PetscErrorCode SNESSolver::snes_function(Vec x, Vec f) {
   BoutReal *xdata, *fdata;
   int ierr;
-  
+
   // Get data from PETSc into BOUT++ fields
   ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
-  load_vars(xdata);  
+  load_vars(xdata);
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
 
   // Call RHS function
   run_rhs(0.0);
-  
+
   // Copy derivatives back
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
   save_derivs(fdata);
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
-  
+
   return 0;
 }
 

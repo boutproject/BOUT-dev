@@ -8,7 +8,7 @@
 //#define NR_END 1
 
 #define IJKth_index(ivar,ix,jy,kz,NVARS,NSMX,NSMXY) \
- ((ivar-1) + (ix)*NVARS + (jy)*NSMX + (kz)*NSMXY)
+  ((ivar-1) + (ix)*NVARS + (jy)*NSMX + (kz)*NSMXY)
 
 //-neighbors on 3D stencil
 #if 0
@@ -92,7 +92,7 @@ int Map2sv(int ivar, long ixgrid, long iygrid, long izgrid, long NVARS, long NSM
 
 void Neighbor(enum neib_type neib, long ix1, long iy1, long iz1, long *ix2, long *iy2, long *iz2)
 /*
-  For given grid point (ix1,iy1,iz1) calculate indices of 
+  For given grid point (ix1,iy1,iz1) calculate indices of
   neighbor grid point (ix2,iy2,iz2)
 */
 {
@@ -238,51 +238,51 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
   for (ivar1=1;ivar1<=NVARS;ivar1++)
   {
     for (ivar2=1;ivar2<=NVARS;ivar2++)
-  	{
-  	  for (ix1=0;ix1<mesh->ngx;ix1++)
-	    {
+    {
+      for (ix1=0;ix1<mesh->ngx;ix1++)
+      {
         for (iy1=0;iy1<MYSUB;iy1++)
-    		{
-    		  for (iz1=0;iz1<MZ;iz1++) 
-  		    {
-	     	      
-  		      //-find 1D index for 1st variable at this grid point
-  		      ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
+        {
+          for (iz1=0;iz1<MZ;iz1++)
+          {
 
-		      
-  		      //-loop over the stencil
-  		      //for (neib=0;neib<NNEIB;neib++)
+            //-find 1D index for 1st variable at this grid point
+            ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
+
+
+            //-loop over the stencil
+            //for (neib=0;neib<NNEIB;neib++)
             for (neib_tmp=0;neib_tmp<NNEIB;neib_tmp++)
-      			{
+            {
 
-      			  //-find 3D indices for 2nd variable for neighbor grid points
+              //-find 3D indices for 2nd variable for neighbor grid points
               neib = (neib_type)neib_tmp;
-      			  Neighbor(neib, ix1, iy1, iz1, &ix2, &iy2, &iz2);
+              Neighbor(neib, ix1, iy1, iz1, &ix2, &iy2, &iz2);
 
-			  
-      			  //if (ij2>=0){ //-neighbor exists... 
-	     
+
+              //if (ij2>=0){ //-neighbor exists...
+
               //-find 1D index for 2nd variable at this neighbor point
               ij2=Map2sv(ivar2,ix2,iy2,iz2, NVARS,NSMX,NSMXY);
               if (ij2>=0) //-neighbor exists..
               {
-    			      //-record an entry in the Jacobian
-    			      output << "Coupling of " << ij1 << " to " << ij2 << endl;
+                //-record an entry in the Jacobian
+                output << "Coupling of " << ij1 << " to " << ij2 << endl;
                 if (ij1<0 || ij2 <0) SETERRQ2(1,"1st: ij1 %d, ij2 %d",ij1, ij2);
-    			      jmatr[ij1][ij2]=1; 
-    			    }
-                        
-	   			  
+                jmatr[ij1][ij2]=1;
+              }
+
+
             }
 
 
 
-  		    } //-iz1
-    		} //-iy1
+          } //-iz1
+        } //-iy1
       } //-ix1
-  	} //-ivar2
+    } //-ivar2
   } //-ivar1
- 
+
 
 
 
@@ -297,46 +297,46 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
       {
         for (iy1=0;iy1<MYSUB;iy1++)
         {
-          for (iz1=0;iz1<MZ;iz1++) 
+          for (iz1=0;iz1<MZ;iz1++)
           {
-	     	      
-  		      //-find 1D index for 1st variable at this grid point
-  		      ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
+
+            //-find 1D index for 1st variable at this grid point
+            ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
 
 
-		      
-  		      //-loop over radial neigbors on the stencil (2 or 4 first items in the list)
-  		      for (neib_tmp=0;neib_tmp<2;neib_tmp++)
-      			{
-      			  //-find 3D indices for 2nd variable for neighbor grid points
+
+            //-loop over radial neigbors on the stencil (2 or 4 first items in the list)
+            for (neib_tmp=0;neib_tmp<2;neib_tmp++)
+            {
+              //-find 3D indices for 2nd variable for neighbor grid points
               neib = (neib_type)neib_tmp;
-      			  Neighbor(neib, ix1, iy1, iz1, &ix2, &iy2, &iz2);
+              Neighbor(neib, ix1, iy1, iz1, &ix2, &iy2, &iz2);
 
-      			  //-instead of this iz2 use whole toroidal line for this (ix2,iy2)
-      			  for (iz2=0;iz2<MZ;iz2++)
-    			    {
+              //-instead of this iz2 use whole toroidal line for this (ix2,iy2)
+              for (iz2=0;iz2<MZ;iz2++)
+              {
 
-    			      //if (ij2>=0) //-neighbor exists... 
-        				//{
-        				  //-find 1D index for 2nd variable at this neighbor point
-                  ij2=Map2sv(ivar2,ix2,iy2,iz2, NVARS,NSMX,NSMXY);
-                  if (ij2>=0) { //-neighbor exists...
-                    //-record an entry in the Jacobian
-                    output << "Coupling of " << ij1 << " to " << ij2 << endl;
-                    if (ij1<0 || ij2 <0) SETERRQ2(1,"2nd: ij1 %d, ij2 %d",ij1, ij2);
-                    jmatr[ij1][ij2]=1; 
-                  }
-			      
-    			    }
-	   			  
-      			}
+                //if (ij2>=0) //-neighbor exists...
+                //{
+                //-find 1D index for 2nd variable at this neighbor point
+                ij2=Map2sv(ivar2,ix2,iy2,iz2, NVARS,NSMX,NSMXY);
+                if (ij2>=0) { //-neighbor exists...
+                  //-record an entry in the Jacobian
+                  output << "Coupling of " << ij1 << " to " << ij2 << endl;
+                  if (ij1<0 || ij2 <0) SETERRQ2(1,"2nd: ij1 %d, ij2 %d",ij1, ij2);
+                  jmatr[ij1][ij2]=1;
+                }
+
+              }
+
+            }
 
 
 
-  		    } //-iz1
-    		} //-iy1
-	    } //-ix1
-  	} //-ivar2
+          } //-iz1
+        } //-iy1
+      } //-ix1
+    } //-ivar2
   } //-ivar1
 
 
@@ -351,32 +351,32 @@ int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG,
     {
       for (iy1=0;iy1<MYSUB;iy1++)
       {
-        for (iz1=0;iz1<MZ;iz1++) 
+        for (iz1=0;iz1<MZ;iz1++)
         {
-		  
-    		  //-find 1D index for 1st variable at this grid point
-    		  ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
-		  
-		    
-    		  for (ix2=0;ix2<mesh->ngx;ix2++)
-  		    {
-  		      for (iz2=0;iz2<MZ;iz2++) 
-      			{
-      			  //-find 1D index for 2nd variable at this neighbor point
-      			  ivar2=1; //-vorticity
-      			  ij2=Map2sv(ivar2,ix2,iy2,iz2, NVARS,NSMX,NSMXY);
-			  
-      			  //-record an entry in the Jacobian
+
+          //-find 1D index for 1st variable at this grid point
+          ij1=Map2sv(ivar1,ix1,iy1,iz1, NVARS,NSMX,NSMXY);
+
+
+          for (ix2=0;ix2<mesh->ngx;ix2++)
+          {
+            for (iz2=0;iz2<MZ;iz2++)
+            {
+              //-find 1D index for 2nd variable at this neighbor point
+              ivar2=1; //-vorticity
+              ij2=Map2sv(ivar2,ix2,iy2,iz2, NVARS,NSMX,NSMXY);
+
+              //-record an entry in the Jacobian
               if (ij2>=0){
                 output << "Coupling of " << ij1 << " to " << ij2 << endl;
                 if (ij1<0 || ij2 <0) SETERRQ2(1,"3rd: ij1 %d, ij2 %d",ij1, ij2);
-                jmatr[ij1][ij2]=1; 
+                jmatr[ij1][ij2]=1;
               }
-      			}
-  		    }			
-    		} //-iz1
-	    } //-iy1
-  	} //-ix1
+            }
+          }
+        } //-iz1
+      } //-iy1
+    } //-ix1
   } //-ivar1
 
   return 0;

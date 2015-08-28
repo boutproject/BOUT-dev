@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -40,12 +40,12 @@ void Output::disable() {
 
 int Output::open(const char* fname, ...) {
   va_list ap;  // List of arguments
-  
+
   if(fname == (const char*) NULL)
     return 1;
 
   va_start(ap, fname);
-    vsprintf(buffer, fname, ap);
+  vsprintf(buffer, fname, ap);
   va_end(ap);
 
   close();
@@ -65,7 +65,7 @@ int Output::open(const char* fname, ...) {
 void Output::close() {
   if(!file.is_open())
     return;
-  
+
   remove(file);
   file.close();
 }
@@ -75,9 +75,9 @@ void Output::write(const char* string, ...) {
 
   if(string == (const char*) NULL)
     return;
-  
+
   va_start(ap, string);
-    vsprintf(buffer, string, ap);
+  vsprintf(buffer, string, ap);
   va_end(ap);
 
   multioutbuf_init::buf()->sputn(buffer, strlen(buffer));
@@ -91,11 +91,11 @@ void Output::print(const char* string, ...) {
 
   if(string == (const char*) NULL)
     return;
-  
+
   va_start(ap, string);
-    vprintf(string, ap);
+  vprintf(string, ap);
   va_end(ap);
-  
+
   fflush(stdout);
 }
 
@@ -113,7 +113,7 @@ Output* Output::getInstance() {
 void Output::cleanup() {
   if(instance == NULL)
     return;
-  
+
   delete instance;
   instance = NULL;
 }

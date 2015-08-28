@@ -1,6 +1,6 @@
 /**************************************************************************
  * Interface to SUNDIALS IDA
- * 
+ *
  * IdaSolver for DAE systems (so can handle constraints)
  *
  * NOTE: Only one solver can currently be compiled in
@@ -9,7 +9,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@
 
 #include "../emptysolver.hxx"
 typedef EmptySolver IdaSolver;
- 
+
 #else
 class IdaSolver;
 
@@ -55,26 +55,26 @@ class IdaSolver;
 using std::vector;
 
 class IdaSolver : public Solver {
- public:
+public:
   IdaSolver(Options *opts = NULL);
   ~IdaSolver();
 
   void setPrecon(PhysicsPrecon f) {prefunc = f;}
-  
+
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
   int run();
   BoutReal run(BoutReal tout);
 
   // These functions used internally (but need to be public)
   void res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rdata);
   void pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
- private:
+private:
   int NOUT; // Number of outputs. Specified in init, needed in run
   BoutReal TIMESTEP; // Time between outputs
-  
+
   PhysicsPrecon prefunc; // Preconditioner
-  
+
   N_Vector uvec, duvec, id; // Values, time-derivatives, and equation type
   void *idamem;
 

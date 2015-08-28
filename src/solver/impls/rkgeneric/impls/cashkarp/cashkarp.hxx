@@ -8,10 +8,10 @@ class CASHKARPScheme;
 #include <utils.hxx>
 
 class CASHKARPScheme : public RKScheme{
- public:
+public:
   CASHKARPScheme(Options *options);
   ~CASHKARPScheme();
- private:
+private:
 
 };
 

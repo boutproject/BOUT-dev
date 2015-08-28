@@ -25,7 +25,7 @@ ParDerivFactory* ParDerivFactory::getInstance() {
 InvertPar* ParDerivFactory::createInvertPar() {
   int NPES;
   MPI_Comm_size(BoutComm::get(), &NPES);
-  
+
   Options *opt = Options::getRoot()->getSection(default_section);
 
   if(NPES > 1) {
@@ -39,7 +39,7 @@ InvertPar* ParDerivFactory::createInvertPar() {
 InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {
   int NPES;
   MPI_Comm_size(BoutComm::get(), &NPES);
-  
+
   if(opt == NULL)
     opt = Options::getRoot()->getSection(default_section);
 
@@ -48,13 +48,13 @@ InvertPar* ParDerivFactory::createInvertPar(const char* type, Options *opt) {
   }else if(!strcasecmp(type, PARDERIVCYCLIC)) {
     return new InvertParCR(opt);
   }
-  
+
   throw BoutException("No such ParDeriv solver exists in this build, type: %s", type);
 }
 
 InvertPar* ParDerivFactory::createInvertPar(Options *opts) {
   string type;
   opts->get("type", type, "cyclic");
-  
+
   return createInvertPar(type.c_str(), opts);
 }

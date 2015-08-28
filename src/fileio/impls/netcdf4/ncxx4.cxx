@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -94,11 +94,11 @@ bool Ncxx4::openr(const char *name) {
 #endif
 
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: openr(%s)\n", name); 
+  output.write("Ncxx4:: openr(%s)\n", name);
 #endif
 
   if(dataFile != NULL) // Already open. Close then re-open
-    close(); 
+    close();
 
   dataFile = new NcFile(name, NcFile::read);
 
@@ -113,11 +113,11 @@ bool Ncxx4::openr(const char *name) {
   xDim = dataFile->getDim("x");
   if(xDim.isNull())
     output.write("WARNING: NetCDF file should have an 'x' dimension\n");
-  
+
   yDim = dataFile->getDim("y");
   if(yDim.isNull())
     output.write("WARNING: NetCDF file should have a 'y' dimension\n");
-  
+
   zDim = dataFile->getDim("z");
   if(zDim.isNull()) {
     // Z dimension optional, and could be any size (Fourier harmonics)
@@ -125,7 +125,7 @@ bool Ncxx4::openr(const char *name) {
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
-  
+
   tDim = dataFile->getDim("t");
   if(tDim.isNull()) {
     // T dimension optional
@@ -133,7 +133,7 @@ bool Ncxx4::openr(const char *name) {
     output.write("INFO: NetCDF file has no 't' coordinate\n");
 #endif
   }
-  
+
   recDimList[0] = &tDim;
   recDimList[1] = &xDim;
   recDimList[2] = &yDim;
@@ -156,13 +156,13 @@ bool Ncxx4::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("Ncxx4::openw");
 #endif
-  
+
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: openw(%s, %d)\n", name, static_cast<int>(append)); 
+  output.write("Ncxx4:: openw(%s, %d)\n", name, static_cast<int>(append));
 #endif
 
   if(dataFile != NULL) // Already open. Close then re-open
-    close(); 
+    close();
 
   if(append) {
     dataFile = new NcFile(name, NcFile::write);
@@ -208,7 +208,7 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     /// Test they're the right size (and t is unlimited)
-    
+
     if((xDim.getSize() != mesh->ngx) || (yDim.getSize() != mesh->ngy) || (zDim.getSize() != mesh->ngz)
        || (!tDim.isUnlimited()) ) {
       delete dataFile;
@@ -218,11 +218,11 @@ bool Ncxx4::openw(const char *name, bool append) {
 
     // Get the size of the 't' dimension for records
     default_rec = tDim.getSize();
-    
+
   }else {
     //dataFile = new NcFile(name, NcFile::replace, NcFile::classic64); // Broken support for classic64
     dataFile = new NcFile(name, NcFile::replace);
-    
+
     if(dataFile->isNull()) {
       delete dataFile;
       dataFile = NULL;
@@ -230,28 +230,28 @@ bool Ncxx4::openw(const char *name, bool append) {
     }
 
     /// Add the dimensions
-    
+
     xDim = dataFile->addDim("x", mesh->ngx);
     if(xDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
-  
+
     yDim = dataFile->addDim("y", mesh->ngy);
     if(yDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
-    
+
     zDim = dataFile->addDim("z", mesh->ngz);
     if(zDim.isNull()) {
       delete dataFile;
       dataFile = NULL;
       return false;
     }
-    
+
     tDim = dataFile->addDim("t");
     if(tDim.isNull()) { // unlimited dimension
       delete dataFile;
@@ -284,7 +284,7 @@ bool Ncxx4::is_valid() {
 
 void Ncxx4::close() {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: close()\n"); 
+  output.write("Ncxx4:: close()\n");
 #endif
 
   if(dataFile == NULL)
@@ -293,10 +293,10 @@ void Ncxx4::close() {
 #ifdef CHECK
   msg_stack.push("Ncxx4::close");
 #endif
-  
+
   delete dataFile;
   dataFile = NULL;
-  
+
   free(fname);
   fname = NULL;
 
@@ -310,7 +310,7 @@ void Ncxx4::flush() {
 
 const vector<int> Ncxx4::getSize(const char *name) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: getSize(%s)\n", name); 
+  output.write("Ncxx4:: getSize(%s)\n", name);
 #endif
   vector<int> size;
 
@@ -322,21 +322,21 @@ const vector<int> Ncxx4::getSize(const char *name) {
 #endif
 
   NcVar var;
-  
+
   var = dataFile->getVar(name);
   if(var.isNull())
     return size;
-  
+
   if(var.getDimCount() == 0) {
     size.push_back(1);
     return size;
   }
-  
+
   vector<NcDim> dims = var.getDims();
   for(vector<NcDim>::iterator it = dims.begin(); it != dims.end(); it++) {
     size.push_back(it->getSize());
   }
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -352,7 +352,7 @@ bool Ncxx4::setGlobalOrigin(int x, int y, int z) {
   x0 = x;
   y0 = y;
   z0 = z;
-  
+
   return true;
 }
 
@@ -364,7 +364,7 @@ bool Ncxx4::setRecord(int t) {
 
 bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: read(int, %s)\n", name); 
+  output.write("Ncxx4:: read(int, %s)\n", name);
 #endif
 
   if(!is_valid())
@@ -372,11 +372,11 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
 #ifdef CHECK
   msg_stack.push("Ncxx4::read(int)");
 #endif
-  
+
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
 #ifdef NCDF_VERBOSE
@@ -387,14 +387,14 @@ bool Ncxx4::read(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     return false;
   }
-  
+
   vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
   vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
-  
+
   var.getVar(start, counts, data);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -408,7 +408,7 @@ bool Ncxx4::read(int *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: read(BoutReal, %s)\n", name); 
+  output.write("Ncxx4:: read(BoutReal, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
@@ -419,9 +419,9 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef CHECK
   msg_stack.push("Ncxx4::read(BoutReal)");
 #endif
-  
+
   NcVar var = dataFile->getVar(name);
-  
+
   if(var.isNull()) {
 #ifdef CHECK
     msg_stack.pop();
@@ -433,9 +433,9 @@ bool Ncxx4::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
   start[0] = x0; start[1] = y0; start[2] = z0;
   vector<size_t> counts(3);
   counts[0] = lx; counts[1] = ly; counts[2] = lz;
-  
+
   var.getVar(start, counts, data);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -449,14 +449,14 @@ bool Ncxx4::read(BoutReal *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write(int, %s)\n", name); 
+  output.write("Ncxx4:: write(int, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -468,39 +468,39 @@ bool Ncxx4::write(int *data, const char *name, int lx, int ly, int lz) {
 
   if(nd == 0) {
     // Zero-dimensional attribute
-    
+
     NcGroupAtt att  = dataFile->putAtt(name, ncInt, 1, data);
   }else {
     // Multi-dimensional variables
-    
+
     NcVar var = dataFile->getVar(name);
     if(var.isNull()) {
 #ifdef NCDF_VERBOSE
-      output.write("Ncxx4:: write { Adding Variable %d } \n", nd); 
+      output.write("Ncxx4:: write { Adding Variable %d } \n", nd);
 #endif
       // Variable not in file, so add it.
-    
+
       var = dataFile->addVar(name, ncInt, getDimVec(nd));
       if(var.isNull()) {
         output.write("ERROR: NetCDF could not add int '%s' to file '%s'\n", name, fname);
         return false;
       }
     }
-    
+
 #ifdef NCDF_VERBOSE
-    output.write("Ncxx4:: write { Writing Variable } \n"); 
+    output.write("Ncxx4:: write { Writing Variable } \n");
 #endif
-    
+
     vector<size_t> start(3);
     start[0] = x0; start[1] = y0; start[2] = z0;
     vector<size_t> counts(3);
     counts[0] = lx; counts[1] = ly; counts[2] = lz;
-    
+
     var.putVar(start, counts, data);
   }
 
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write { Done } \n"); 
+  output.write("Ncxx4:: write { Done } \n");
 #endif
 
 #ifdef CHECK
@@ -516,14 +516,14 @@ bool Ncxx4::write(int *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write(BoutReal, %s)\n", name); 
+  output.write("Ncxx4:: write(BoutReal, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
 #ifdef CHECK
   msg_stack.push("Ncxx4::write(BoutReal)");
 #endif
@@ -545,7 +545,7 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
       output.write("ERROR: NetCDF could not add BoutReal '%s' to file '%s'\n", name, fname);
       return false;
     }
-  }  
+  }
 
   vector<size_t> start(3);
   start[0] = x0; start[1] = y0; start[2] = z0;
@@ -556,15 +556,15 @@ bool Ncxx4::write(BoutReal *data, const char *name, int lx, int ly, int lz) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
-    
+
     for(int i=0;i<lx*ly*lz;i++) {
       if(data[i] > 1e20)
-	data[i] = 1e20;
+        data[i] = 1e20;
       if(data[i] < -1e20)
-	data[i] = -1e20;
+        data[i] = -1e20;
     }
   }
-  
+
   for(int i=0;i<lx*ly*lz;i++) {
     if(!finite(data[i]))
       data[i] = 0.0;
@@ -589,7 +589,7 @@ bool Ncxx4::write(BoutReal *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::read_rec(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: read_rec(int, %s)\n", name); 
+  output.write("Ncxx4:: read_rec(int, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
@@ -598,19 +598,19 @@ bool Ncxx4::read_rec(int *data, const char *name, int lx, int ly, int lz) {
     return false;
 
   NcVar var = dataFile->getVar(name);
-  
+
   if(var.isNull())
     return false;
-  
+
   // NOTE: Probably should do something here to check t0
 
   vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
   vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
-  
+
   var.getVar(start, counts, data);
-  
+
   return true;
 }
 
@@ -620,7 +620,7 @@ bool Ncxx4::read_rec(int *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: read_rec(BoutReal, %s)\n", name); 
+  output.write("Ncxx4:: read_rec(BoutReal, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
@@ -629,19 +629,19 @@ bool Ncxx4::read_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
     return false;
 
   NcVar var = dataFile->getVar(name);
-  
+
   if(var.isNull())
     return false;
-  
+
   // NOTE: Probably should do something here to check t0
 
   vector<size_t> start(4);
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
   vector<size_t> counts(4);
   counts[0] = 1; counts[1] = lx; counts[2] = ly; counts[3] = lz;
-  
+
   var.getVar(start, counts, data);
-  
+
   return true;
 }
 
@@ -651,7 +651,7 @@ bool Ncxx4::read_rec(BoutReal *var, const string &name, int lx, int ly, int lz) 
 
 bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4:: write_rec(int, %s)\n", name); 
+  output.write("Ncxx4:: write_rec(int, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
@@ -663,14 +663,14 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  
+
   // Try to find variable
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
     // Need to add to file
 
 #ifdef NCDF_VERBOSE
-    output.write("Ncxx4:: write_rec { Adding Variable %d } \n", nd); 
+    output.write("Ncxx4:: write_rec { Adding Variable %d } \n", nd);
 #endif
 
     if(nd == 1) {
@@ -693,7 +693,7 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
       rec_nr[name] = default_rec;
     }
   }
-  
+
   vector<size_t> start(1);
   start[0] = rec_nr[name];// start[1] = x0; start[2] = y0; start[3] = z0;
   vector<size_t> counts(1);
@@ -704,7 +704,7 @@ bool Ncxx4::write_rec(int *data, const char *name, int lx, int ly, int lz) {
 #endif
 
   var.putVar(start, counts, data);
-  
+
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
 
@@ -717,7 +717,7 @@ bool Ncxx4::write_rec(int *var, const string &name, int lx, int ly, int lz) {
 
 bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef NCDF_VERBOSE
-  output.write("Ncxx4::write_rec(BoutReal, %s)\n", name); 
+  output.write("Ncxx4::write_rec(BoutReal, %s)\n", name);
 #endif
   if(!is_valid())
     return false;
@@ -738,13 +738,13 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
   NcVar var = dataFile->getVar(name);
   if(var.isNull()) {
     // Need to add to file
-    
+
     if(lowPrecision) {
       var = dataFile->addVar(name, ncFloat, getRecDimVec(nd));
     }else {
       var = dataFile->addVar(name, ncDouble, getRecDimVec(nd));
     }
-    
+
     rec_nr[name] = default_rec; // Starting record
 
     if(var.isNull()) {
@@ -752,7 +752,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
       output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
 #endif
 #ifdef CHECK
-  msg_stack.pop();
+      msg_stack.pop();
 #endif
       return false;
     }
@@ -763,26 +763,26 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
       rec_nr[name] = default_rec;
     }
   }
-  
+
   int t = rec_nr[name];
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname);
 #endif
 
   if(lowPrecision) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
-    
+
     for(int i=0;i<lx*ly*lz;i++) {
       if(data[i] > 1e20)
-	data[i] = 1e20;
+        data[i] = 1e20;
       if(data[i] < -1e20)
-	data[i] = -1e20;
+        data[i] = -1e20;
     }
   }
-  
+
   for(int i=0;i<lx*ly*lz;i++) {
     if(!finite(data[i]))
       data[i] = 0.0;
@@ -795,7 +795,7 @@ bool Ncxx4::write_rec(BoutReal *data, const char *name, int lx, int ly, int lz) 
 
   // Add the record
   var.putVar(start, counts, data);
-  
+
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
 

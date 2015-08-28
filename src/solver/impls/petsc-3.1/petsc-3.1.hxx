@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -57,10 +57,10 @@ EXTERN PetscErrorCode PostStep(TS);
 EXTERN int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
 class PetscSolver : public Solver {
- public:
+public:
   PetscSolver();
   ~PetscSolver();
-  
+
   int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run();
@@ -70,9 +70,9 @@ class PetscSolver : public Solver {
   friend PetscErrorCode PreStep(TS);
   friend PetscErrorCode PostStep(TS);
 
- private:
+private:
   PetscLib lib; // Handles initialisation and finalisation
-  
+
   Vec           u;
   TS            ts;
   Mat           J;

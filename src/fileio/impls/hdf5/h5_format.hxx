@@ -9,13 +9,13 @@
  * Records: In netCDF, the time dimension for each dimension must be
  * the same. Hence when a record is appended to a variable, the size
  * of all variables is increased. To work out which record to write to,
- * a map of variable names to record number is kept. 
- * 
+ * a map of variable names to record number is kept.
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -56,33 +56,33 @@ using std::string;
 using std::map;
 
 class H5Format : public DataFormat {
- public:
+public:
   H5Format(bool parallel_in = false);
   H5Format(const char *name, bool parallel_in = false);
   H5Format(const string &name, bool parallel_in = false);
   ~H5Format();
-  
+
   bool openr(const string &name);
   bool openr(const char *name);
   bool openw(const string &name, bool append=false);
   bool openw(const char *name, bool append=false);
-  
+
   bool is_valid();
-  
+
   void close();
-  
+
   void flush();
 
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);
   const vector<int> getSize(const string &var);
-  
+
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setLocalOrigin(int x = 0, int y = 0, int z = 0, int offset_x = 0, int offset_y = 0, int offset_z = 0);
   bool setRecord(int t); // negative -> latest
-  
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -106,13 +106,13 @@ class H5Format : public DataFormat {
   bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  
+
   void setLowPrecision() { lowPrecision = true; }
 
- private:
+private:
 
   char *fname; ///< Current file name
-  
+
   hid_t dataFile;
   hid_t dataFile_plist;
   hid_t dataSet_plist;
@@ -123,10 +123,10 @@ class H5Format : public DataFormat {
 
   int x0, y0, z0, t0; ///< Data origins for file access
   int x0_local, y0_local, z0_local, t0_local; ///< Data origins for memory access
-  
+
   hsize_t chunk_length;
   bool is_open;
-  
+
   bool read(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
   bool write(void *var, hid_t mem_hdf5_type, hid_t write_hdf5_type, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool read_rec(void *var, hid_t hdf5_type, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -136,7 +136,7 @@ class H5Format : public DataFormat {
 //   int default_rec;  // Starting record. Useful when appending to existing file
 
 //   void checkName(const char* name); ///< Check if a name contains invalid characters
-  
+
 };
 
 #endif // __H5FORMAT_H__

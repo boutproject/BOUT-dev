@@ -9,13 +9,13 @@
  * Records: In netCDF, the time dimension for each dimension must be
  * the same. Hence when a record is appended to a variable, the size
  * of all variables is increased. To work out which record to write to,
- * a map of variable names to record number is kept. 
- * 
+ * a map of variable names to record number is kept.
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -54,33 +54,33 @@ class Ncxx4;
 #include <vector>
 
 class Ncxx4 : public DataFormat {
- public:
+public:
   Ncxx4();
   Ncxx4(const char *name);
   Ncxx4(const std::string &name);
   ~Ncxx4();
-  
+
   bool openr(const std::string &name);
   bool openr(const char *name);
   bool openw(const std::string &name, bool append=false);
   bool openw(const char *name, bool append=false);
-  
+
   bool is_valid();
-  
+
   void close();
-  
+
   void flush();
 
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);
   const vector<int> getSize(const string &var);
-  
+
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setLocalOrigin(int x = 0, int y = 0, int z = 0) { return setGlobalOrigin(x,y,z); }
   bool setRecord(int t); // negative -> latest
-  
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -104,16 +104,16 @@ class Ncxx4 : public DataFormat {
   bool write_rec(int *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const std::string &name, int lx = 0, int ly = 0, int lz = 0);
-  
+
   void setLowPrecision() { lowPrecision = true; }
 
- private:
+private:
 
   char *fname; ///< Current file name
 
   /// Pointer to netCDF file
   netCDF::NcFile *dataFile;
-  
+
   /// Dimensions
   netCDF::NcDim xDim, yDim, zDim, tDim;
   const netCDF::NcDim **dimList; ///< List of dimensions (x,y,z)
@@ -126,7 +126,7 @@ class Ncxx4 : public DataFormat {
 
   std::map<std::string, int> rec_nr; // Record number for each variable (bit nasty)
   int default_rec;  // Starting record. Useful when appending to existing file
-  
+
   std::vector<netCDF::NcDim> getDimVec(int nd);
   std::vector<netCDF::NcDim> getRecDimVec(int nd);
 };

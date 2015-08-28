@@ -1,12 +1,12 @@
 /**************************************************************************
- * Perpendicular Laplacian inversion. 
+ * Perpendicular Laplacian inversion.
  *                           Using MUMPS Solver
  *
  **************************************************************************
  * Copyright 2013 Copyright 2013 J. Omotani (based on petsc_laplace (C) J. Buchan)
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,23 +31,23 @@ class LaplaceMumps;
 #include <invert_laplace.hxx>
 
 #ifndef BOUT_HAS_MUMPS
- 
+
 #include <boutexception.hxx>
- 
+
 class LaplaceMumps : public Laplacian {
- public:
+public:
   LaplaceMumps(Options *opt = NULL) { throw BoutException("Mumps library not available"); }
-  
+
   void setCoefA(const Field2D &val) {}
   void setCoefB(const Field2D &val) {}
   void setCoefC(const Field2D &val) {}
   void setCoefD(const Field2D &val) {}
   void setCoefEx(const Field2D &val) {}
   void setCoefEz(const Field2D &val) {}
-  
+
   const FieldPerp solve(const FieldPerp &b) {throw BoutException("PETSc not available");}
 };
- 
+
 #else
 
 #include <globals.hxx>
@@ -81,7 +81,7 @@ public:
     delete [] localrhs_size_array;
     delete [] rhs_positions;
   }
-  
+
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C1 = val; C2 = val; issetC = true; }
   void setCoefC1(const Field2D &val) { C1 = val; issetC = true; }
@@ -97,9 +97,9 @@ public:
   void setCoefD(const Field3D &val) { D = val; issetD = true; }
   void setCoefEx(const Field3D &val) { Ex = val; issetE = true; }
   void setCoefEz(const Field3D &val) { Ez = val; issetE = true; }
-  
+
   void setFlags(int f) {throw BoutException("May not change the value of flags during run in LaplaceMumps as it might change the number of non-zero matrix elements: flags may only be set in the options file.");}
-  
+
   const FieldPerp solve(const FieldPerp &b);
   const FieldPerp solve(const FieldPerp &b, const FieldPerp &x0);
 //   const Field3D solve(const Field3D &b);
@@ -108,7 +108,7 @@ public:
 private:
   void solve(BoutReal* rhs, int y);
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
-  
+
   Field3D A, C1, C2, D, Ex, Ez;
 
   bool issetD;
@@ -116,7 +116,7 @@ private:
   bool issetE;
 //   int repeat_analysis; // Repeat analysis step after this many iterations
 //   int iteration_count; // Use this to count the number of iterations since last analysis
-  
+
   BoutReal* rhs; // Array to collect rhs field onto host processor
 //   BoutReal* rhs_slice; // Array to pass xz-slice of rhs to solve
   BoutReal* localrhs;
@@ -124,9 +124,9 @@ private:
   int* localrhs_size_array;
   int* rhs_positions;
   FieldPerp sol;              // solution Field
-  
+
   // Istart is the first row of MatA owned by the process, Iend is 1 greater than the last row.
-  int Istart, Iend; 
+  int Istart, Iend;
 
   int meshx, meshz, size, localN, nxguards;
   MPI_Comm comm;
@@ -134,11 +134,11 @@ private:
   Options *opts;              // Laplace Section Options Object
   bool fourth_order;
 
-  #ifdef CHECK
-    int implemented_flags;
-    int implemented_boundary_flags;
-  #endif
-  
+#ifdef CHECK
+  int implemented_flags;
+  int implemented_boundary_flags;
+#endif
+
   DMUMPS_STRUC_C mumps_struc;
 };
 

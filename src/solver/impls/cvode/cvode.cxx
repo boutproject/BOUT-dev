@@ -1,12 +1,12 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
- * 
+ *
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -49,23 +49,23 @@ typedef int CVODEINT;
 #endif
 
 static int cvode_rhs(BoutReal t, N_Vector u, N_Vector du, void *user_data);
-static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du, 
-			 void *user_data);
+static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, N_Vector u, N_Vector du,
+                         void *user_data);
 
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp);
+                     N_Vector rvec, N_Vector zvec,
+                     BoutReal gamma, BoutReal delta, int lr,
+                     void *user_data, N_Vector tmp);
 
 static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp);
+                     realtype t, N_Vector y, N_Vector fy,
+                     void *user_data, N_Vector tmp);
 
 CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
-  
+
   jacfunc = NULL;
-  
+
   canReset = true;
 }
 
@@ -106,7 +106,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   msg_stack.pop();
 
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-                n3Dvars(), n2Dvars(), neq, local_N);
+               n3Dvars(), n2Dvars(), neq, local_N);
 
   // Allocate memory
 
@@ -185,11 +185,11 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     // By default use functional iteration for Adams-Moulton
     lmm = CV_ADAMS;
     output.write("\tUsing Adams-Moulton implicit multistep method\n");
-    options->get("func_iter", func_iter, true); 
+    options->get("func_iter", func_iter, true);
   }else {
     output.write("\tUsing BDF method\n");
     // Use Newton iteration for BDF
-    options->get("func_iter", func_iter, false); 
+    options->get("func_iter", func_iter, false);
   }
 
   int iter = CV_NEWTON;
@@ -218,18 +218,18 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     if ( CVodeSetMaxOrd(cvode_mem, max_order) < 0)
       throw BoutException("CVodeSetMaxOrder failed\n");
   }
-  
+
   msg_stack.push("Calling CVodeSetstabLimDet");
   if (stablimdet) {
     if ( CVodeSetStabLimDet(cvode_mem, stablimdet) < 0)
       throw BoutException("CVodeSetstabLimDet failed\n");
   }
-  
+
   if (use_vector_abstol) {
     msg_stack.push("Calling CVodeSStolerances");
     if( CVodeSVtolerances(cvode_mem, reltol, abstolvec) < 0 )
       throw BoutException("CVodeSStolerances failed\n");
-  msg_stack.pop();
+    msg_stack.pop();
   }
   else {
     if( CVodeSStolerances(cvode_mem, reltol, abstol) < 0 )
@@ -248,7 +248,7 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
     // Setting a user-supplied initial guess for the appropriate timestep
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
-  
+
   if(start_timestep > 0.0) {
     CVodeSetInitStep(cvode_mem, start_timestep);
   }
@@ -270,15 +270,15 @@ int CvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
       options->get("rightprec", rightprec, false);
       if(rightprec)
         prectype = PREC_RIGHT;
-      
+
       if( CVSpgmr(cvode_mem, prectype, maxl) != CVSPILS_SUCCESS )
         bout_error("ERROR: CVSpgmr failed\n");
 
       if(!have_user_precon()) {
         output.write("\tUsing BBD preconditioner\n");
 
-        if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq, 
-              mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
+        if( CVBBDPrecInit(cvode_mem, local_N, mudq, mldq,
+                          mukeep, mlkeep, ZERO, cvode_bbd_rhs, NULL) )
           bout_error("ERROR: CVBBDPrecInit failed\n");
 
       } else {
@@ -343,24 +343,24 @@ int CvodeSolver::run() {
     if(simtime < 0.0) {
       // Step failed
       output.write("Timestep failed. Aborting\n");
-      
+
       throw BoutException("SUNDIALS timestep failed\n");
     }
-    
+
     if(diagnose) {
       // Print additional diagnostics
       long int nsteps, nfevals, nniters, npevals, nliters;
-      
+
       CVodeGetNumSteps(cvode_mem, &nsteps);
       CVodeGetNumRhsEvals(cvode_mem, &nfevals);
       CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
       CVSpilsGetNumPrecEvals(cvode_mem, &npevals);
       CVSpilsGetNumLinIters(cvode_mem, &nliters);
 
-      output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
+      output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n",
                    nsteps, nfevals, nniters, npevals, nliters);
-      
-      output.write("    -> Newton iterations per step: %e\n", 
+
+      output.write("    -> Newton iterations per step: %e\n",
                    ((double) nniters) / ((double) nsteps));
       output.write("    -> Linear iterations per Newton iteration: %e\n",
                    ((double) nliters) / ((double) nniters));
@@ -389,7 +389,7 @@ BoutReal CvodeSolver::run(BoutReal tout) {
 #endif
 
   MPI_Barrier(BoutComm::get());
-  
+
   rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
@@ -407,12 +407,12 @@ BoutReal CvodeSolver::run(BoutReal tout) {
       // Run another step
       BoutReal last_time = internal_time;
       flag = CVode(cvode_mem, tout, uvec, &internal_time, CV_ONE_STEP);
-      
+
       if(flag < 0) {
         output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
-      
+
       // Call timestep monitor
       call_timestep_monitors(internal_time, internal_time - last_time);
     }
@@ -454,7 +454,7 @@ void CvodeSolver::rhs(BoutReal t, BoutReal *udata, BoutReal *dudata) {
   // Get the current timestep
   // Note: CVodeGetCurrentStep updated too late in older versions
   CVodeGetLastStep(cvode_mem, &hcur);
-  
+
   // Call RHS function
   run_rhs(t);
 
@@ -478,7 +478,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
   BoutReal tstart = MPI_Wtime();
 
   int N = NV_LOCLENGTH_P(uvec);
-  
+
   if(!have_user_precon()) {
     // Identity (but should never happen)
     for(int i=0;i<N;i++)
@@ -491,7 +491,7 @@ void CvodeSolver::pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udat
 
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
-  
+
   run_precon(t, gamma, delta);
 
   // Save the solution from F_vars
@@ -513,16 +513,16 @@ void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jv
 #ifdef CHECK
   int msg_point = msg_stack.push("Running Jacobian: CvodeSolver::jac(%e)", t);
 #endif
-  
+
   if(jacfunc == NULL)
     bout_error("ERROR: No jacobian function supplied!\n");
-  
+
   // Load state from ydate
   load_vars(ydata);
-  
+
   // Load vector to be multiplied into F_vars
   load_derivs(vdata);
-  
+
   // Call function
   (*jacfunc)(t);
 
@@ -538,15 +538,15 @@ void CvodeSolver::jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jv
  * CVODE RHS functions
  **************************************************************************/
 
-static int cvode_rhs(BoutReal t, 
-		     N_Vector u, N_Vector du, 
-		     void *user_data) {
-  
+static int cvode_rhs(BoutReal t,
+                     N_Vector u, N_Vector du,
+                     void *user_data) {
+
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
-  
+
   CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
   // Calculate RHS function
   int rhs_status = 0;
   try {
@@ -559,23 +559,23 @@ static int cvode_rhs(BoutReal t,
 }
 
 /// RHS function for BBD preconditioner
-static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t, 
-			 N_Vector u, N_Vector du, 
-			 void *user_data)
+static int cvode_bbd_rhs(CVODEINT Nlocal, BoutReal t,
+                         N_Vector u, N_Vector du,
+                         void *user_data)
 {
   return cvode_rhs(t, u, du, user_data);
 }
 
 /// Preconditioner function
 static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
-		     N_Vector rvec, N_Vector zvec,
-		     BoutReal gamma, BoutReal delta, int lr,
-		     void *user_data, N_Vector tmp)
+                     N_Vector rvec, N_Vector zvec,
+                     BoutReal gamma, BoutReal delta, int lr,
+                     void *user_data, N_Vector tmp)
 {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
+
   CvodeSolver *s = (CvodeSolver*) user_data;
 
   // Calculate residuals
@@ -586,17 +586,17 @@ static int cvode_pre(BoutReal t, N_Vector yy, N_Vector yp,
 
 /// Jacobian-vector multiplication function
 static int cvode_jac(N_Vector v, N_Vector Jv,
-		     realtype t, N_Vector y, N_Vector fy,
-		     void *user_data, N_Vector tmp)
+                     realtype t, N_Vector y, N_Vector fy,
+                     void *user_data, N_Vector tmp)
 {
   BoutReal *ydata = NV_DATA_P(y);   ///< System state
   BoutReal *vdata = NV_DATA_P(v);   ///< Input vector
   BoutReal *Jvdata = NV_DATA_P(Jv);  ///< Jacobian*vector output
-  
+
   CvodeSolver *s = (CvodeSolver*) user_data;
-  
+
   s->jac(t, ydata, vdata, Jvdata);
-  
+
   return 0;
 }
 
@@ -614,7 +614,7 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   if(mesh->firstX() && !mesh->periodicX) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols, true);
+        loop_abstol_values_op(jx, jy+mesh->ystart, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 
   // Lower Y boundary region
@@ -627,7 +627,7 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   for (jx=mesh->xstart; jx <= mesh->xend; jx++)
     for (jy=mesh->ystart; jy <= mesh->yend; jy++)
       loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, false);
-  
+
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
@@ -638,7 +638,7 @@ void CvodeSolver::set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &
   if(mesh->lastX() && !mesh->periodicX) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
+        loop_abstol_values_op(jx, jy, abstolvec_data, p, f2dtols, f3dtols, true);
   }
 }
 
@@ -650,26 +650,26 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
     abstolvec_data[p] = f2dtols[i];
     p++;
   }
-  
+
   for (int jz=0; jz < mesh->ngz-1; jz++) {
     // Loop over 3D variables
     for(int i=0;i<f3dtols.size();i++) {
       if(bndry && !f3d[i].evolve_bndry)
-	continue;
+        continue;
       abstolvec_data[p] = f3dtols[i];
       p++;
-    }  
+    }
   }
 }
 
 void CvodeSolver::resetInternalFields() {
-  
+
   if (save_vars(NV_DATA_P(uvec)))
     throw BoutException("\tERROR: resetting variable values failed\n");
-  
+
   if ( CVodeReInit(cvode_mem, simtime, uvec) < 0 )
     throw BoutException("CVodeReInit failed\n");
-  
+
 }
 
 #endif

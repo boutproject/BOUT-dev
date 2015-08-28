@@ -15,7 +15,7 @@ PetscLogEvent PetscLib::USER_EVENT = 0;
 PetscLib::PetscLib() {
   if(count == 0) {
     // Initialise PETSc
-    
+
     output << "Initialising PETSc\n";
     PetscInitialize(pargc,pargv,PETSC_NULL,help);
     PetscLogEventRegister("Total BOUT++",0,&USER_EVENT);
@@ -41,7 +41,7 @@ void PetscLib::cleanup() {
   output << "Finalising PETSc. Warning: Instances of PetscLib still exist.\n";
   PetscLogEventEnd(USER_EVENT,0,0,0,0);
   PetscFinalize();
-  
+
   count = 0; // ensure that finalise is not called again later
 }
 

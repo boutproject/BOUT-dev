@@ -9,13 +9,13 @@
  * Records: In netCDF, the time dimension for each dimension must be
  * the same. Hence when a record is appended to a variable, the size
  * of all variables is increased. To work out which record to write to,
- * a map of variable names to record number is kept. 
- * 
+ * a map of variable names to record number is kept.
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -54,12 +54,12 @@ using std::string;
 using std::map;
 
 class PncFormat : public DataFormat {
- public:
+public:
   PncFormat();
   PncFormat(const char *name);
   PncFormat(const string &name);
   ~PncFormat();
-  
+
   bool openr(const string &name) { return openr(name.c_str()); }
   bool openr(const char *name);
   bool openr(const string &name, int mype) {return openr(name);}
@@ -69,20 +69,20 @@ class PncFormat : public DataFormat {
   bool openw(const string &name, int mype, bool append=false) {return openw(name, append);}
 
   bool is_valid() { return fname != NULL;}
-  
+
   void close();
-  
+
   void flush();
 
   const char* filename() { return fname; };
 
   const vector<int> getSize(const char *var);
   const vector<int> getSize(const string &var) { return getSize(var.c_str()); }
-  
+
   // Set the origin for all subsequent calls
   bool setGlobalOrigin(int x = 0, int y = 0, int z = 0);
   bool setRecord(int t); // negative -> latest
-  
+
   // Read / Write simple variables up to 3D
 
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0);
@@ -106,17 +106,17 @@ class PncFormat : public DataFormat {
   bool write_rec(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0);
   bool write_rec(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0);
-  
+
   void setLowPrecision() { lowPrecision = true; }
 
- private:
-  
+private:
+
   char *fname; ///< Current file name
 
   /// ID of netCDF file
   int ncfile;
   bool valid; // True if the file is valid
-  
+
   /// Dimensions
   int xDim, yDim, zDim, tDim;
 

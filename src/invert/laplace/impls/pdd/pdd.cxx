@@ -1,6 +1,6 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion
- * 
+ *
  * This code uses the Parallel Diagonally Dominant algorithm. This is very efficient
  * (constant number of communications), but achieves this by neglecting "small"
  * corrections. For ELM simulations these seem to be non-negligable, hence:
@@ -11,7 +11,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -44,14 +44,14 @@ const FieldPerp LaplacePDD::solve(const FieldPerp &b) {
     data.bk = NULL;
     allocated = true;
   }
-  
+
   FieldPerp x;
   x.allocate();
-  
+
   start(b, data);
   next(data);
   finish(data, x);
-  
+
   return x;
 }
 
@@ -60,13 +60,13 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
   x.allocate();
   FieldPerp xperp;
   xperp.allocate();
-  
+
   int ys = mesh->ystart, ye = mesh->yend;
   if(mesh->hasBndryLowerY())
     ys = 0; // Mesh contains a lower boundary
   if(mesh->hasBndryUpperY())
     ye = mesh->ngy-1; // Contains upper boundary
-  
+
   if(low_mem) {
     // Solve one slice at a time
     for(int jy=ys; jy <= ye; jy++) {
@@ -74,9 +74,9 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
     }
   }else {
     // Overlap multiple inversions
-    
+
     static PDD_data *data = NULL;
-    
+
     if(data == NULL) {
       data = new PDD_data[ye - ys + 1];
       data -= ys; // Re-number indices to start at jstart
@@ -84,20 +84,20 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
         data[jy].bk = NULL; // Mark as unallocated for PDD routine
     }
     /// PDD algorithm communicates twice, so done in 3 stages
-      
+
     for(int jy=ys; jy <= ye; jy++)
       start(b.slice(jy), data[jy]);
-    
+
     for(int jy=ys; jy <= ye; jy++)
       next(data[jy]);
-    
+
     for(int jy=ys; jy <= ye; jy++) {
       finish(data[jy], xperp);
       x = xperp;
     }
   }
 
-  x.setLocation(b.getLocation()); 
+  x.setLocation(b.getLocation());
 
   return x;
 }
@@ -117,29 +117,29 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
  */
 void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
   int ix, kz;
-  
+
   int ncz = mesh->ngz-1;
 
   data.jy = b.getIndex();
 
   if(mesh->firstX() && mesh->lastX())
     throw BoutException("Error: PDD method only works for NXPE > 1\n");
-  
+
   if(mesh->periodicX) {
-      throw BoutException("LaplacePDD does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
-    }
+    throw BoutException("LaplacePDD does not work with periodicity in the x direction (mesh->PeriodicX == true). Change boundary conditions or use serial-tri or cyclic solver instead");
+  }
 
   if(data.bk == NULL) {
     // Need to allocate working memory
-    
+
     // RHS vector
     data.bk = cmatrix(maxmode + 1, mesh->ngx);
-    
+
     // Matrix to be solved
     data.avec = cmatrix(maxmode + 1, mesh->ngx);
     data.bvec = cmatrix(maxmode + 1, mesh->ngx);
     data.cvec = cmatrix(maxmode + 1, mesh->ngx);
-    
+
     // Working vectors
     data.v = cmatrix(maxmode + 1, mesh->ngx);
     data.w = cmatrix(maxmode + 1, mesh->ngx);
@@ -181,81 +181,81 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     if(e == NULL) {
       e = new dcomplex[mesh->ngx];
       for(ix=0;ix<mesh->ngx;ix++)
-	e[ix] = 0.0;
+        e[ix] = 0.0;
     }
 
     dcomplex v0, x0; // Values to be sent to processor i-1
 
     if(mesh->firstX()) {
       // Domain includes inner boundary
-      tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
-	     data.bk[kz], data.xk[kz], mesh->xend+1);
-      
+      tridag(data.avec[kz], data.bvec[kz], data.cvec[kz],
+             data.bk[kz], data.xk[kz], mesh->xend+1);
+
       // Add C (row m-1) from next processor
-      
+
       e[mesh->xend] = data.cvec[kz][mesh->xend];
-      tridag(data.avec[kz], data.bvec[kz], data.cvec[kz], 
-	     e, data.w[kz], mesh->xend+1);
+      tridag(data.avec[kz], data.bvec[kz], data.cvec[kz],
+             e, data.w[kz], mesh->xend+1);
 
     }else if(mesh->lastX()) {
       // Domain includes outer boundary
-      tridag(data.avec[kz]+mesh->xstart, 
-	     data.bvec[kz]+mesh->xstart, 
-	     data.cvec[kz]+mesh->xstart, 
-	     data.bk[kz]+mesh->xstart, 
-	     data.xk[kz]+mesh->xstart, 
-	     mesh->xend - mesh->xend + 1);
-      
+      tridag(data.avec[kz]+mesh->xstart,
+             data.bvec[kz]+mesh->xstart,
+             data.cvec[kz]+mesh->xstart,
+             data.bk[kz]+mesh->xstart,
+             data.xk[kz]+mesh->xstart,
+             mesh->xend - mesh->xend + 1);
+
       // Add A (row 0) from previous processor
       e[0] = data.avec[kz][mesh->xstart];
-      tridag(data.avec[kz]+mesh->xstart, 
-	     data.bvec[kz]+mesh->xstart, 
-	     data.cvec[kz]+mesh->xstart, 
-	     e, data.v[kz]+mesh->xstart,
-	     mesh->xend+1);
-      
+      tridag(data.avec[kz]+mesh->xstart,
+             data.bvec[kz]+mesh->xstart,
+             data.cvec[kz]+mesh->xstart,
+             e, data.v[kz]+mesh->xstart,
+             mesh->xend+1);
+
       x0 = data.xk[kz][mesh->xstart];
       v0 = data.v[kz][mesh->xstart];
 
     }else {
       // No boundaries
       tridag(data.avec[kz]+mesh->xstart,
-	     data.bvec[kz]+mesh->xstart,
-	     data.cvec[kz]+mesh->xstart, 
-	     data.bk[kz]+mesh->xstart, 
-	     data.xk[kz]+mesh->xstart, 
-	     mesh->xend - mesh->xstart + 1);
+             data.bvec[kz]+mesh->xstart,
+             data.cvec[kz]+mesh->xstart,
+             data.bk[kz]+mesh->xstart,
+             data.xk[kz]+mesh->xstart,
+             mesh->xend - mesh->xstart + 1);
 
       // Add A (row 0) from previous processor
       e[0] = data.avec[kz][mesh->xstart];
       tridag(data.avec[kz]+mesh->xstart,
-	     data.bvec[kz]+mesh->xstart,
-	     data.cvec[kz]+mesh->xstart, 
-	     e+mesh->xstart,
-	     data.v[kz]+mesh->xstart,
-	     mesh->xend - mesh->xstart + 1);
+             data.bvec[kz]+mesh->xstart,
+             data.cvec[kz]+mesh->xstart,
+             e+mesh->xstart,
+             data.v[kz]+mesh->xstart,
+             mesh->xend - mesh->xstart + 1);
       e[0] = 0.0;
-      
+
       // Add C (row m-1) from next processor
       e[mesh->xend] = data.cvec[kz][mesh->xend];
       tridag(data.avec[kz]+mesh->xstart,
-	     data.bvec[kz]+mesh->xstart,
-	     data.cvec[kz]+mesh->xstart, 
-	     e+mesh->xstart,
-	     data.v[kz]+mesh->xstart, 
-	     mesh->xend - mesh->xstart + 1);
+             data.bvec[kz]+mesh->xstart,
+             data.cvec[kz]+mesh->xstart,
+             e+mesh->xstart,
+             data.v[kz]+mesh->xstart,
+             mesh->xend - mesh->xstart + 1);
       e[mesh->xend] = 0.0;
     }
-    
+
     // Put values into communication buffers
     data.snd[4*kz]   = x0.real();
     data.snd[4*kz+1] = x0.imag();
     data.snd[4*kz+2] = v0.real();
     data.snd[4*kz+3] = v0.imag();
   }
-  
+
   // Stage 3: Communicate x0, v0 from node i to i-1
-  
+
   if(!mesh->lastX()) {
     // All except the last processor expect to receive data
     // Post async receive
@@ -264,7 +264,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 
   if(!mesh->firstX()) {
     // Send the data
-    
+
     mesh->sendXIn(data.snd, 4*(maxmode+1), PDD_COMM_XV);
   }
 }
@@ -273,43 +273,43 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
 /// Middle part of the PDD algorithm
 void LaplacePDD::next(PDD_data &data) {
   // Wait for x0 and v0 to arrive from processor i+1
-  
+
   if(!mesh->lastX()) {
     mesh->wait(data.recv_handle);
 
     /*! Now solving on all except the last processor
-     * 
+     *
      * |    1       w^(i)_(m-1) | | y_{2i}   | = | x^(i)_{m-1} |
      * | v^(i+1)_0       1      | | y_{2i+1} |   | x^(i+1)_0   |
      *
      * Only interested in the value of y_2i however
      */
-    
+
     for(int kz = 0; kz <= maxmode; kz++) {
       dcomplex v0, x0;
-      
+
       // Get x and v0 from processor
       x0 = dcomplex(data.rcv[4*kz], data.rcv[4*kz+1]);
       v0 = dcomplex(data.rcv[4*kz+2], data.rcv[4*kz+3]);
-      
+
       data.y2i[kz] = (data.xk[kz][mesh->xend] - data.w[kz][mesh->xend]*x0) / (1. - data.w[kz][mesh->xend]*v0);
-      
+
     }
   }
-  
+
   if(!mesh->firstX()) {
     // All except pe=0 receive values from i-1. Posting async receive
     data.recv_handle = mesh->irecvXIn(data.rcv, 2*(maxmode+1), PDD_COMM_Y);
   }
-  
+
   if(mesh->PE_XIND != (mesh->NXPE-1)) {
     // Send value to the (i+1)th processor
-    
+
     for(int kz = 0; kz <= maxmode; kz++) {
       data.snd[2*kz]   = data.y2i[kz].real();
       data.snd[2*kz+1] = data.y2i[kz].imag();
     }
-    
+
     mesh->sendXOut(data.snd, 2*(maxmode+1), PDD_COMM_Y);
   }
 }
@@ -320,25 +320,25 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
 
   x.allocate();
   x.setIndex(data.jy);
-  
+
   if(!mesh->lastX()) {
     for(kz = 0; kz <= maxmode; kz++) {
       for(ix=0; ix < mesh->ngx; ix++)
-	data.xk[kz][ix] -= data.w[kz][ix] * data.y2i[kz];
+        data.xk[kz][ix] -= data.w[kz][ix] * data.y2i[kz];
     }
   }
 
   if(!mesh->firstX()) {
     mesh->wait(data.recv_handle);
-  
+
     for(kz = 0; kz <= maxmode; kz++) {
       dcomplex y2m = dcomplex(data.rcv[2*kz], data.rcv[2*kz+1]);
-      
+
       for(ix=0; ix < mesh->ngx; ix++)
-	data.xk[kz][ix] -= data.v[kz][ix] * y2m;
+        data.xk[kz][ix] -= data.v[kz][ix] * y2m;
     }
   }
-  
+
   // Have result in Fourier space. Convert back to BoutReal space
 
   static dcomplex *xk1d = NULL; ///< 1D in Z for taking FFTs
@@ -352,7 +352,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
   }
 
   for(ix=0; ix<mesh->ngx; ix++){
-    
+
     for(kz = 0; kz <= maxmode; kz++) {
       xk1d[kz] = data.xk[kz][ix];
     }
@@ -361,7 +361,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
       xk1d[0] = 0.0;
 
     ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], x[ix]);
-    
+
     x[ix][ncz] = x[ix][0]; // enforce periodicity
   }
 }

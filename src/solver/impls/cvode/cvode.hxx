@@ -1,13 +1,13 @@
 /**************************************************************************
  * Interface to SUNDIALS CVODE
- * 
+ *
  * NOTE: Only one solver can currently be compiled in
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@
 
 #include "../emptysolver.hxx"
 typedef EmptySolver CvodeSolver;
- 
+
 #else
 class CvodeSolver;
 
@@ -55,41 +55,41 @@ class CvodeSolver;
 using std::vector;
 
 class CvodeSolver : public Solver {
-  public:
-    CvodeSolver(Options *opts = NULL);
-    ~CvodeSolver();
+public:
+  CvodeSolver(Options *opts = NULL);
+  ~CvodeSolver();
 
-    void setJacobian(Jacobian j) {jacfunc = j; }
-    
-    BoutReal getCurrentTimestep() { return hcur; }
+  void setJacobian(Jacobian j) {jacfunc = j; }
 
-    int init(bool restarting, int nout, BoutReal tstep);
+  BoutReal getCurrentTimestep() { return hcur; }
 
-    int run();
-    BoutReal run(BoutReal tout);
-    
-    void resetInternalFields();
+  int init(bool restarting, int nout, BoutReal tstep);
 
-    // These functions used internally (but need to be public)
-    void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
-    void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
-    void jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata);
-  private:
-    int NOUT; // Number of outputs. Specified in init, needed in run
-    BoutReal TIMESTEP; // Time between outputs
-    BoutReal hcur; // Current internal timestep
-  
-    Jacobian jacfunc; // Jacobian - vector function
-    bool diagnose; // Output additional diagnostics
-  
-    N_Vector uvec; // Values
-    void *cvode_mem;
+  int run();
+  BoutReal run(BoutReal tout);
 
-    BoutReal pre_Wtime; // Time in preconditioner
-    BoutReal pre_ncalls; // Number of calls to preconditioner
-    
-    void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
-    void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
+  void resetInternalFields();
+
+  // These functions used internally (but need to be public)
+  void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);
+  void pre(BoutReal t, BoutReal gamma, BoutReal delta, BoutReal *udata, BoutReal *rvec, BoutReal *zvec);
+  void jac(BoutReal t, BoutReal *ydata, BoutReal *vdata, BoutReal *Jvdata);
+private:
+  int NOUT; // Number of outputs. Specified in init, needed in run
+  BoutReal TIMESTEP; // Time between outputs
+  BoutReal hcur; // Current internal timestep
+
+  Jacobian jacfunc; // Jacobian - vector function
+  bool diagnose; // Output additional diagnostics
+
+  N_Vector uvec; // Values
+  void *cvode_mem;
+
+  BoutReal pre_Wtime; // Time in preconditioner
+  BoutReal pre_ncalls; // Number of calls to preconditioner
+
+  void set_abstol_values(BoutReal* abstolvec_data, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols);
+  void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
 #endif // __SUNDIAL_SOLVER_H__

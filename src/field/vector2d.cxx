@@ -2,7 +2,7 @@
  * Class for 2D vectors. Built on the Field2D class,
  * all operators relating to vectors are here (none in Field classes)
  *
- * As with Field2D, Vector2D are constant in z (toroidal angle) 
+ * As with Field2D, Vector2D are constant in z (toroidal angle)
  *
  * B.Dudson, October 2007
  *
@@ -10,7 +10,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -45,13 +45,13 @@ Vector2D::~Vector2D() {
     x.deriv = NULL;
     y.deriv = NULL;
     z.deriv = NULL;
-    
+
     // Now delete them as part of the ddt vector
     delete deriv;
   }
 }
 
-void Vector2D::toCovariant() {  
+void Vector2D::toCovariant() {
   if(!covariant) {
     Field2D gx, gy, gz;
 
@@ -63,15 +63,15 @@ void Vector2D::toCovariant() {
     x = gx;
     y = gy;
     z = gz;
-    
+
     covariant = true;
   }
 }
 
-void Vector2D::toContravariant() {  
+void Vector2D::toContravariant() {
   if(covariant) {
     // multiply by g^{ij}
-    
+
     Field2D gx, gy, gz;
 
     gx = mesh->g11*x + mesh->g12*y + mesh->g13*z;
@@ -81,7 +81,7 @@ void Vector2D::toContravariant() {
     x = gx;
     y = gy;
     z = gz;
-    
+
     covariant = false;
   }
 }
@@ -89,10 +89,10 @@ void Vector2D::toContravariant() {
 Vector2D* Vector2D::timeDeriv() {
   if(deriv == NULL) {
     deriv = new Vector2D();
-    
+
     // Check if the components have a time-derivative
     // Need to make sure that ddt(v.x) = ddt(v).x
-    
+
     if(x.deriv != NULL) {
       // already set. Copy across then delete
       deriv->x = *(x.deriv);
@@ -114,7 +114,7 @@ Vector2D* Vector2D::timeDeriv() {
 }
 
 /***************************************************************
- *                         OPERATORS 
+ *                         OPERATORS
  ***************************************************************/
 
 /////////////////// ASSIGNMENT ////////////////////
@@ -145,7 +145,7 @@ Vector2D & Vector2D::operator+=(const Vector2D &rhs) {
   }else {
     toContravariant();
   }
-  
+
   x += rhs.x;
   y += rhs.y;
   z += rhs.z;
@@ -171,7 +171,7 @@ Vector2D & Vector2D::operator-=(const Vector2D &rhs) {
   }else {
     toContravariant();
   }
-  
+
   x -= rhs.x;
   y -= rhs.y;
   z -= rhs.z;
@@ -185,7 +185,7 @@ Vector2D & Vector2D::operator*=(const BoutReal rhs) {
   x *= rhs;
   y *= rhs;
   z *= rhs;
-  
+
   return *this;
 }
 
@@ -193,7 +193,7 @@ Vector2D & Vector2D::operator*=(const Field2D &rhs) {
   x *= rhs;
   y *= rhs;
   z *= rhs;
-  
+
   return *this;
 }
 
@@ -203,7 +203,7 @@ Vector2D & Vector2D::operator/=(const BoutReal rhs) {
   x /= rhs;
   y /= rhs;
   z /= rhs;
-  
+
   return *this;
 }
 
@@ -229,7 +229,7 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
   result.x = (y*rco.z - z*rco.y)/mesh->J;
   result.y = (z*rco.x - x*rco.z)/mesh->J;
   result.z = (x*rco.y - y*rco.x)/mesh->J;
-  
+
   result.covariant = false;
 
   *this = result;
@@ -238,7 +238,7 @@ Vector2D & Vector2D::operator^=(const Vector2D &rhs) {
 }
 
 /***************************************************************
- *                      BINARY OPERATORS 
+ *                      BINARY OPERATORS
  ***************************************************************/
 
 ////////////////// ADDITION //////////////////////
@@ -324,14 +324,14 @@ const Field2D Vector2D::operator*(const Vector2D &rhs) const {
       // Both covariant
       result = x*rhs.x*mesh->g11 + y*rhs.y*mesh->g22 + z*rhs.z*mesh->g33;
       result += (x*rhs.y + y*rhs.x)*mesh->g12
-	+ (x*rhs.z + z*rhs.x)*mesh->g13
-	+ (y*rhs.z + z*rhs.y)*mesh->g23;
+        + (x*rhs.z + z*rhs.x)*mesh->g13
+        + (y*rhs.z + z*rhs.y)*mesh->g23;
     }else {
       // Both contravariant
       result = x*rhs.x*mesh->g_11 + y*rhs.y*mesh->g_22 + z*rhs.z*mesh->g_33;
       result += (x*rhs.y + y*rhs.x)*mesh->g_12
-	+ (x*rhs.z + z*rhs.x)*mesh->g_13
-	+ (y*rhs.z + z*rhs.y)*mesh->g_23;
+        + (x*rhs.z + z*rhs.x)*mesh->g_13
+        + (y*rhs.z + z*rhs.y)*mesh->g_23;
     }
   }
 
@@ -395,7 +395,7 @@ int Vector2D::getData(int jx, int jy, int jz, void *vptr) const {
   *ptr = x[jx][jy]; ptr++;
   *ptr = y[jx][jy]; ptr++;
   *ptr = z[jx][jy];
-  
+
   return 3*sizeof(BoutReal);
 }
 
@@ -412,7 +412,7 @@ int Vector2D::getData(int jx, int jy, int jz, BoutReal *rptr) const
   *rptr = x[jx][jy]; rptr++;
   *rptr = y[jx][jy]; rptr++;
   *rptr = z[jx][jy];
-  
+
   return 3;
 }
 
@@ -446,7 +446,7 @@ int Vector2D::setData(int jx, int jy, int jz, BoutReal *rptr)
   x[jx][jy] = *rptr; rptr++;
   y[jx][jy] = *rptr; rptr++;
   z[jx][jy] = *rptr;
-  
+
   return 3;
 }
 

@@ -60,7 +60,7 @@ PetscSolver::PetscSolver(Options *opts) : Solver(opts) {
   interpolate = PETSC_TRUE;
   initialised = false;
   bout_snes_time = .0;
-  
+
   jacfunc = NULL;
 
   output_flag = PETSC_FALSE;
@@ -665,8 +665,8 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
-   return 0;
- }
+  return 0;
+}
 
 /**************************************************************************
  * User-supplied Jacobian function J(state) * x = y

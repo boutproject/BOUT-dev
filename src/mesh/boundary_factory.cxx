@@ -60,37 +60,37 @@ BoundaryFactory* BoundaryFactory::getInstance() {
 void BoundaryFactory::cleanup() {
   if(instance == NULL)
     return;
-  
+
   // Just delete the instance
   delete instance;
   instance = NULL;
 }
 
 BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) {
-  
-  // Search for a string of the form: modifier(operation)  
+
+  // Search for a string of the form: modifier(operation)
   int pos = name.find('(');
   if(pos == string::npos) {
     // No more (opening) brackets. Should be a boundary operation
     // Need to strip whitespace
-    
+
     if( (name == "null") || (name == "none") )
       return NULL;
 
     BoundaryOp *op = findBoundaryOp(trim(name));
     if(op == NULL)
       throw BoutException("Could not find boundary condition '%s'",  name.c_str());
-    
+
     // Clone the boundary operation, passing the region to operate over and an empty args list
     list<string> args;
-    return op->clone(region, args); 
+    return op->clone(region, args);
   }
   // Contains a bracket. Find the last bracket and remove
   int pos2 = name.rfind(')');
   if(pos2 == string::npos) {
-    output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl; 
+    output << "\tWARNING: Unmatched brackets in boundary condition: " << name << endl;
   }
-  
+
   // Find the function name before the bracket
   string func = trim(name.substr(0,pos));
   // And the argument inside the bracket
@@ -115,9 +115,9 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
       break;
     case ',': {
       if(level == 0) {
-	string s = arg.substr(start, i);
-	arglist.push_back(trim(s));
-	start = i+1;
+        string s = arg.substr(start, i);
+        arglist.push_back(trim(s));
+        start = i+1;
       }
       break;
     }
@@ -125,13 +125,13 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
   }
   string s = arg.substr(start, arg.length());
   arglist.push_back(trim(s));
-  
+
   /*
-  list<string> arglist = strsplit(arg, ',');
-  for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
+    list<string> arglist = strsplit(arg, ',');
+    for(list<string>::iterator it=arglist.begin(); it != arglist.end(); it++) {
     // Trim each argument
     (*it) = trim(*it);
-  }
+    }
   */
 
   // Test if func is a modifier
@@ -141,22 +141,22 @@ BoundaryOp* BoundaryFactory::create(const string &name, BoundaryRegion *region) 
     BoundaryOp *op = create(arglist.front(), region);
     if(op == NULL)
       return NULL;
-    
+
     // Remove the first element (name of operation)
     arglist.pop_front();
-    
+
     // Clone the modifier, passing in the operator and remaining strings as argument
     return mod->cloneMod(op, arglist);
   }
-  
+
   BoundaryOp *op = findBoundaryOp(trim(func));
   if(op != NULL) {
     // An operation with arguments
-    return op->clone(region, arglist); 
+    return op->clone(region, arglist);
   }
   // Otherwise nothing matches
   output << "  Boundary setting is neither an operation nor modifier: " << func << endl;
-  
+
   return NULL;
 }
 
@@ -167,11 +167,11 @@ BoundaryOp* BoundaryFactory::create(const char* name, BoundaryRegion *region) {
 BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRegion *region) {
   if(region == NULL)
     return NULL;
-  
+
   output << "\t" << region->label << " region: ";
-  
+
   string prefix("bndry_");
-  
+
   string side("all");
   switch(region->location) {
   case BNDRY_XIN: {
@@ -191,32 +191,32 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
     break;
   }
   }
-  
+
   // Get options
   Options *options = Options::getRoot();
-  
+
   // Get variable options
   Options *varOpts = options->getSection(varname);
   string set;
-  
+
   /// First try looking for (var, region)
   if(varOpts->isSet(prefix+region->label)) {
     varOpts->get(prefix+region->label, set, "");
     return create(set, region);
   }
-  
+
   /// Then (var, side)
   if(varOpts->isSet(prefix+side)) {
     varOpts->get(prefix+side, set, "");
     return create(set, region);
   }
-  
+
   /// Then (var, all)
   if(varOpts->isSet(prefix+"all")) {
     varOpts->get(prefix+"all", set, "");
     return create(set, region);
   }
-  
+
   // Get the "all" options
   varOpts = options->getSection("All");
 
@@ -225,13 +225,13 @@ BoundaryOp* BoundaryFactory::createFromOptions(const string &varname, BoundaryRe
     varOpts->get(prefix+region->label, set, "");
     return create(set, region);
   }
-  
+
   /// Then (all, side)
   if(varOpts->isSet(prefix+side)) {
     varOpts->get(prefix+side, set, "");
     return create(set, region);
   }
-  
+
   /// Then (all, all)
   varOpts->get(prefix+"all", set, "dirichlet");
   return create(set, region);

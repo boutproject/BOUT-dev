@@ -6,7 +6,7 @@
 #include <field_factory.hxx>
 
 FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
-  
+
 }
 
 FieldData::~FieldData() {
@@ -20,7 +20,7 @@ FieldData::~FieldData() {
 void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
-  
+
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
 
@@ -40,9 +40,9 @@ void FieldData::setBoundary(const string &name) {
 void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   /// Get the mesh boundary regions
   vector<BoundaryRegion*> reg = mesh->getBoundaries();
- 
+
   /// Find the region
-  
+
 
   /// Find if we're replacing an existing boundary
   for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++) {
@@ -82,6 +82,6 @@ FieldGenerator* FieldData::getBndryGenerator(BndryLoc location) {
   std::map<BndryLoc,FieldGenerator*>::iterator it = bndry_generator.find(location);
   if(it == bndry_generator.end())
     return 0;
-  
+
   return it->second;
 }

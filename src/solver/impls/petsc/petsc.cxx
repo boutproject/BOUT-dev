@@ -200,7 +200,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     output.write("\tUsing BDF method\n");
     ierr = TSSundialsSetType(ts, SUNDIALS_BDF);CHKERRQ(ierr);
   }
-#endif 
+#endif
 
   // Initial time and timestep. By default just use TIMESTEP
   BoutReal start_timestep;
@@ -666,8 +666,8 @@ PetscErrorCode PetscSolver::pre(PC pc, Vec x, Vec y) {
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
-   return 0;
- }
+  return 0;
+}
 
 /**************************************************************************
  * User-supplied Jacobian function J(state) * x = y

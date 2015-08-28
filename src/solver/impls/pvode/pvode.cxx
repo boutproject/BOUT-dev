@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  **************************************************************************/
 
 #include "pvode.hxx"
@@ -55,7 +55,7 @@ PvodeSolver::PvodeSolver(Options *options) : Solver(options) {
 PvodeSolver::~PvodeSolver() {
   if(initialised) {
     // Free CVODE memory
-    
+
     N_VFree(u);
     PVBBDFree(pdata);
     CVodeFree(cvode_mem);
@@ -83,7 +83,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
-  
+
   // Save nout and tstep for use in run
   NOUT = nout;
   TIMESTEP = tstep;
@@ -91,15 +91,15 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();
-  
+
   // Get total problem size
   int neq;
   if(MPI_Allreduce(&local_N, &neq, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("\tERROR: MPI_Allreduce failed!\n");
   }
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3d, n2d, neq, local_N);
+               n3d, n2d, neq, local_N);
 
   // Set machEnv block
   machEnv = (machEnvType) PVecInitMPI(BoutComm::get(), local_N, neq, pargc, pargv);
@@ -116,7 +116,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int pvode_mxstep;
   int MXSUB = mesh->xend - mesh->xstart + 1;
-  
+
   options->get("mudq", mudq, n3d*(MXSUB+2));
   options->get("mldq", mldq, n3d*(MXSUB+2));
   options->get("mukeep", mukeep, 0);
@@ -128,9 +128,9 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   options->get("precon_tol", precon_tol, 1.0e-4);
   options->get("mxstep", pvode_mxstep, 500);
 
-  pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO, 
+  pdata = PVBBDAlloc(local_N, mudq, mldq, mukeep, mlkeep, ZERO,
                      solver_gloc, solver_cfn, (void*) this);
-  
+
   if (pdata == NULL) {
     throw BoutException("\tError: PVBBDAlloc failed.\n");
   }
@@ -142,9 +142,9 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   if(save_vars(udata)) {
     throw BoutException("\tError: Initial variable value not set\n");
   }
-  
-  /* Call CVodeMalloc to initialize CVODE: 
-     
+
+  /* Call CVodeMalloc to initialize CVODE:
+
      neq     is the problem size = number of equations
      f       is the user's right hand side function in y'=f(t,y)
      T0      is the initial time
@@ -160,9 +160,9 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
 
      A pointer to CVODE problem memory is returned and stored in cvode_mem.  */
 
-  optIn = TRUE; for(i=0;i<OPT_SIZE;i++)iopt[i]=0; 
-                for(i=0;i<OPT_SIZE;i++)ropt[i]=ZERO;
-		iopt[MXSTEP]=pvode_mxstep;
+  optIn = TRUE; for(i=0;i<OPT_SIZE;i++)iopt[i]=0;
+  for(i=0;i<OPT_SIZE;i++)ropt[i]=ZERO;
+  iopt[MXSTEP]=pvode_mxstep;
 
   cvode_mem = CVodeMalloc(neq, solver_f, simtime, u, BDF, NEWTON, SS, &reltol,
                           &abstol, this, NULL, optIn, iopt, ropt, machEnv);
@@ -170,7 +170,7 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   if(cvode_mem == NULL) {
     throw BoutException("\tError: CVodeMalloc failed.\n");
   }
-  
+
   /* Call CVSpgmr to specify the CVODE linear solver CVSPGMR with
      left preconditioning, modified Gram-Schmidt orthogonalization,
      default values for the maximum Krylov dimension maxl and the tolerance
@@ -184,9 +184,9 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   }
 
   /*  CVSpgmr(cvode_mem, NONE, MODIFIED_GS, 10, 0.0, PVBBDPrecon, PVBBDPSol, pdata); */
-  
+
   msg_stack.pop(msg_point);
-  
+
   return(0);
 }
 
@@ -198,12 +198,12 @@ int PvodeSolver::run() {
 #ifdef CHECK
   int msg_point = msg_stack.push("PvodeSolver::run()");
 #endif
-  
+
   if(!initialised)
     throw BoutException("PvodeSolver not initialised\n");
-  
+
   for(int i=0;i<NOUT;i++) {
-    
+
     /// Run the solver for one output timestep
     simtime = run(simtime + TIMESTEP);
     iteration++;
@@ -212,18 +212,18 @@ int PvodeSolver::run() {
     if(simtime < 0.0) {
       // Step failed
       output.write("Timestep failed. Aborting\n");
-      
+
       throw BoutException("PVODE timestep failed\n");
     }
-    
+
     /// Call the monitor function
-    
+
     if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
       break;
     }
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -237,7 +237,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
-  
+
   rhs_ncalls = 0;
 
   // Set pointer to data array in vector u.
@@ -252,7 +252,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
     // Run in single step mode, to call timestep monitors
     BoutReal internal_time = ((CVodeMem) cvode_mem)->cv_tn;
     //CvodeGetCurrentTime(cvode_mem, &internal_time);
-    
+
     while(internal_time < tout) {
       // Run another step
       BoutReal last_time = internal_time;
@@ -261,7 +261,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
         output.write("ERROR CVODE solve failed at t = %e, flag = %d\n", internal_time, flag);
         return -1.0;
       }
-      
+
       // Call timestep monitor
       call_timestep_monitors(internal_time, internal_time - last_time);
     }
@@ -272,7 +272,7 @@ BoutReal PvodeSolver::run(BoutReal tout) {
 
   // Copy variables
   load_vars(udata);
-  
+
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
 
@@ -330,7 +330,7 @@ void PvodeSolver::gloc(int N, BoutReal t, BoutReal *udata, BoutReal *dudata) {
 
   // Save derivatives to CVODE
   save_derivs(dudata);
-  
+
   rhs_ncalls++;
 
 #ifdef CHECK
@@ -349,7 +349,7 @@ void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
 
   udata = N_VDATA(u);
   dudata = N_VDATA(udot);
-  
+
   s = (PvodeSolver*) f_data;
 
   s->rhs(N, t, udata, dudata);
@@ -359,7 +359,7 @@ void solver_f(integer N, BoutReal t, N_Vector u, N_Vector udot, void *f_data)
 void solver_gloc(integer N, BoutReal t, BoutReal* u, BoutReal* udot, void *f_data)
 {
   PvodeSolver *s;
-  
+
   s = (PvodeSolver*) f_data;
 
   s->gloc(N, t, u, udot);
@@ -371,4 +371,4 @@ void solver_cfn(integer N, BoutReal t, N_Vector u, void *f_data)
   // doesn't do anything at the moment
 }
 
-#endif 
+#endif

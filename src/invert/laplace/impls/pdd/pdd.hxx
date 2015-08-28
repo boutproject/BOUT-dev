@@ -1,6 +1,6 @@
 /**************************************************************************
  * Perpendicular Laplacian inversion
- * 
+ *
  * This code uses the Parallel Diagonally Dominant algorithm. This is very efficient
  * (constant number of communications), but achieves this by neglecting "small"
  * corrections. For ELM simulations these seem to be non-negligable, hence:
@@ -11,7 +11,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -41,40 +41,40 @@ class LaplacePDD : public Laplacian {
 public:
   LaplacePDD(Options *opt = NULL) : Laplacian(opt), A(0.0), C(1.0), D(1.0), PDD_COMM_XV(123), PDD_COMM_Y(456) {}
   ~LaplacePDD() {}
-  
+
   void setCoefA(const Field2D &val) { A = val; }
   void setCoefC(const Field2D &val) { C = val; }
   void setCoefD(const Field2D &val) { D = val; }
   void setCoefEx(const Field2D &val) { bout_error("LaplaceSPT does not have Ex coefficient"); }
   void setCoefEz(const Field2D &val) { bout_error("LaplaceSPT does not have Ez coefficient"); }
-  
+
   const FieldPerp solve(const FieldPerp &b);
   const Field3D solve(const Field3D &b);
 private:
   Field2D A, C, D;
-  
+
   const int PDD_COMM_XV; // First message tag
   const int PDD_COMM_Y;  // Second tag
-  
+
   /// Data structure for PDD algorithm
   typedef struct {
     dcomplex **bk;  ///< b vector in Fourier space
 
     dcomplex **avec, **bvec, **cvec; ///< Diagonal bands of matrix
-  
+
     int jy; ///< Y index
-  
+
     dcomplex **xk;
     dcomplex **v, **w;
 
     BoutReal *snd; // send buffer
     BoutReal *rcv; // receive buffer
-  
+
     comm_handle recv_handle;
 
     dcomplex *y2i;
   }PDD_data;
-  
+
   void start(const FieldPerp &b, PDD_data &data);
   void next(PDD_data &data);
   void finish(PDD_data &data, FieldPerp &x);

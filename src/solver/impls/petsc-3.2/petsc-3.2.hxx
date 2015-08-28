@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -56,21 +56,21 @@ extern PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 extern int jstruc(int NVARS, int NXPE, int MXSUB, int NYPE, int MYSUB, int MZ, int MYG, int MXG);
 
 class PetscSolver: public Solver {
- public:
+public:
   PetscSolver();
   ~PetscSolver();
-  
+
   int init(bool restarting, int NOUT, BoutReal TIMESTEP);
 
   int run();
 
   // These functions used internally (but need to be public)
-  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);  
+  PetscErrorCode rhs(TS ts,PetscReal t,Vec globalin,Vec globalout);
   friend PetscErrorCode PetscMonitor(TS,PetscInt,PetscReal,Vec,void *ctx);
 
- private:
-  PetscLib lib; 
-  
+private:
+  PetscLib lib;
+
   Vec           u;
   TS            ts;
   Mat           J,Jmf;

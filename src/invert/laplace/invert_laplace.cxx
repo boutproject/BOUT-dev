@@ -343,7 +343,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  // Loop through the entire domain. The boundaries will be set according to 
+  // Loop through the entire domain. The boundaries will be set according to
   // the if-statements below.
   for(int ix=0;ix<=ncx;ix++) {
 

@@ -2,15 +2,15 @@
  * Base class for Physics Models
  *
  * Changelog:
- * 
+ *
  * 2013-08 Ben Dudson <benjamin.dudson@york.ac.uk>
  *    * Initial version
- * 
+ *
  **************************************************************************
  * Copyright 2013 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify

@@ -12,7 +12,7 @@ public:
   void setCoefB(const Field2D &f) {}
   void setCoefC(const Field2D &f) {}
   void setCoefD(const Field2D &f) {}
- 
+
   const Field3D solve(const Field3D &b) {return b;}
 };
 

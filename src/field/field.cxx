@@ -5,7 +5,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -49,18 +49,18 @@ void Field::error(const char *s, ...) const {
   if(s == (const char*) NULL) {
     output.write("Unspecified error in field\n");
   }else {
-  
+
     va_start(ap, s);
-      vsprintf(err_buffer, s, ap);
-      va_end(ap);
+    vsprintf(err_buffer, s, ap);
+    va_end(ap);
 
 #ifdef TRACK
-      output.write("Error in '%s': %s", name.c_str(), err_buffer);
+    output.write("Error in '%s': %s", name.c_str(), err_buffer);
 #else
-      output.write("Error in field: %s", err_buffer);
+    output.write("Error in field: %s", err_buffer);
 #endif
   }
-  
+
   throw BoutException("Error in field: %s", err_buffer);
 }
 

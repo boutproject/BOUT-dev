@@ -7,7 +7,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -27,17 +27,17 @@
 
 BoutReal norm_vector(const Field3D &b)
 {
-  
+
 }
 
 BoutReal dot_product(const Field3D &a, const Field3D &b)
 {
-  
+
 }
 
 void Update(Field3D &x, int it, BoutReal **h, BoutReal *s, BoutReal *y, Field3D *v)
 {
-  
+
 }
 
 int full_gmres(const Field3D &b, fgfunc A, Field3D &x, void *extra, int m)
@@ -67,13 +67,13 @@ int full_gmres(const Field3D &b, fgfunc A, Field3D &x, void *extra, int m)
 
   while(it < itmax) {
     v[0] = r / beta;
-    
+
     s[0] = beta;
 
     for(itt=0; (itt < m) && (it <= itmax); itt++, it++) {
       w = A(v[itt], extra);
 
-      
+
     }
   }
 }

@@ -32,7 +32,7 @@ RKGenericSolver::~RKGenericSolver() {
 void RKGenericSolver::setMaxTimestep(BoutReal dt) {
   if(dt > timestep)
     return; // Already less than this
-  
+
   if(adaptive)
     timestep = dt; // Won't be used this time, but next
 }
@@ -40,7 +40,7 @@ void RKGenericSolver::setMaxTimestep(BoutReal dt) {
 int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising RKGeneric solver");
-  
+
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
@@ -54,20 +54,20 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
   max_dt = tstep;
-  
+
   // Calculate number of variables
   nlocal = getLocalN();
-  
+
   // Get total problem size
   int ntmp;
   if(MPI_Allreduce(&nlocal, &ntmp, 1, MPI_INT, MPI_SUM, BoutComm::get())) {
     throw BoutException("MPI_Allreduce failed!");
   }
   neq = ntmp;
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3Dvars(), n2Dvars(), neq, nlocal);
-  
+               n3Dvars(), n2Dvars(), neq, nlocal);
+
   // Get options
   OPTION(options, atol, 1.e-5); // Absolute tolerance
   OPTION(options, rtol, 1.e-3); // Relative tolerance
@@ -94,10 +94,10 @@ int RKGenericSolver::init(bool restarting, int nout, BoutReal tstep) {
 
 int RKGenericSolver::run() {
   int msg_point = msg_stack.push("RKGenericSolver::run()");
-  
+
   for(int s=0;s<nsteps;s++) {
     BoutReal target = simtime + out_timestep;
-    
+
     BoutReal dt;
     bool running = true;
     int internal_steps = 0;
@@ -109,37 +109,37 @@ int RKGenericSolver::run() {
         dt = timestep;
         running = true;
         if((simtime + dt) >= target) {
-          dt = target - simtime; // Make sure the last timestep is on the output 
+          dt = target - simtime; // Make sure the last timestep is on the output
           running = false;
         }
 
-	BoutReal err;
+        BoutReal err;
 
-	//Take a step
-	err = take_step(simtime, dt, f0, f2);
+        //Take a step
+        err = take_step(simtime, dt, f0, f2);
 
-	//Calculate and check error if adaptive
+        //Calculate and check error if adaptive
         if(adaptive) {
-	  //Really the following should apply to both adaptive and non-adaptive
-	  //approaches, but the non-adaptive can be determined without needing
-	  //to do any solves so could perhaps be check during init instead.
+          //Really the following should apply to both adaptive and non-adaptive
+          //approaches, but the non-adaptive can be determined without needing
+          //to do any solves so could perhaps be check during init instead.
           internal_steps++;
           if(internal_steps > mxstep)
             throw BoutException("ERROR: MXSTEP exceeded. timestep = %e, err=%e\n", timestep, err);
 
-	  //Update the time step if required, note we ignore increases to the timestep
-	  //when on the last internal step as here we may have an artificially small dt
-	  if((err > rtol) || ((err < 0.1*rtol) && running)) {
-	    
-	    //Get new timestep
-	    timestep=scheme->updateTimestep(dt,err);
+          //Update the time step if required, note we ignore increases to the timestep
+          //when on the last internal step as here we may have an artificially small dt
+          if((err > rtol) || ((err < 0.1*rtol) && running)) {
 
-	    //Limit timestep to specified maximum
+            //Get new timestep
+            timestep=scheme->updateTimestep(dt,err);
+
+            //Limit timestep to specified maximum
             if((max_timestep > 0) && (timestep > max_timestep))
               timestep = max_timestep;
           }
 
-	  //If accuracy ok then break
+          //If accuracy ok then break
           if(err < rtol) break;
 
         }else {
@@ -147,7 +147,7 @@ int RKGenericSolver::run() {
           break;
         }
       }while(true);
-      
+
       // Taken a step, swap buffers to put result into f0
       swap(f2, f0);
       simtime += dt;
@@ -156,26 +156,26 @@ int RKGenericSolver::run() {
       call_timestep_monitors(simtime, dt);
 
     }while(running);
-    
+
     load_vars(f0); // Put result into variables
 
     iteration++; // Advance iteration number
-    
+
     /// Call the output step monitor function
     if(call_monitors(simtime, s, nsteps)) break; // Stop simulation
-    
+
     // Reset iteration and wall-time count
     rhs_ncalls = 0;
   }
-  
+
   msg_stack.pop(msg_point);
-  
+
   return 0;
 }
 
 //Returns the evolved state vector along with an error estimate
-BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start, 
-				BoutReal *resultFollow){
+BoutReal RKGenericSolver::take_step(const BoutReal timeIn, const BoutReal dt, const BoutReal *start,
+                                    BoutReal *resultFollow){
 
   //Calculate the intermediate stages
   for(int curStage=0;curStage<scheme->getStageCount();curStage++){

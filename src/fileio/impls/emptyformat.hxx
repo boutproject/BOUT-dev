@@ -1,12 +1,12 @@
 /**************************************************************************
  * Empty format class for throwing errors
- * 
+ *
  *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -34,30 +34,30 @@ class EmptyFormat;
 
 class EmptyFormat {
   EmptyFormat() {throw BoutException("File format not enabled!");}
-  
+
   bool openr(const string &name) {return false; }
   bool openw(const string &name, bool append) {return false; }
-  
+
   bool is_valid() {return false;}
-  
+
   void close() {}
-  
+
   const vector<int> getSize(const char *var) {vector<int> tmp; return tmp;}
   const vector<int> getSize(const string &var) {vector<int> tmp; return tmp;}
-  
+
   bool setOrigin(int x = 0, int y = 0, int z = 0) {return false;}
   bool setRecord(int t) {return false;}
-  
+
   bool read(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0)        {return false;}
   bool read(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0)      {return false;}
   bool read(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0)   {return false;}
   bool read(BoutReal *var, const string &name, int lx = 1, int ly = 0, int lz = 0) {return false;}
-  
+
   bool write(int *var, const char *name, int lx = 0, int ly = 0, int lz = 0) {return false;}
   bool write(int *var, const string &name, int lx = 0, int ly = 0, int lz = 0) {return false;}
   bool write(BoutReal *var, const char *name, int lx = 0, int ly = 0, int lz = 0) {return false;}
   bool write(BoutReal *var, const string &name, int lx = 0, int ly = 0, int lz = 0) {return false;}
-  
+
   bool read_rec(int *var, const char *name, int lx = 1, int ly = 0, int lz = 0) {return false;}
   bool read_rec(int *var, const string &name, int lx = 1, int ly = 0, int lz = 0) {return false;}
   bool read_rec(BoutReal *var, const char *name, int lx = 1, int ly = 0, int lz = 0) {return false;}

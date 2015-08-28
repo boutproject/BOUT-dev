@@ -53,7 +53,7 @@ class SlepcSolver;
 using std::vector;
 
 class SlepcSolver : public Solver {
- public:
+public:
   SlepcSolver(Options *options);
   ~SlepcSolver();
 
@@ -68,23 +68,23 @@ class SlepcSolver : public Solver {
   ////////////////////////////////////////
   /// OVERRIDE
   ///      Here we override *all* other
-  ///      virtual functions in order to 
-  ///      pass through control to the 
+  ///      virtual functions in order to
+  ///      pass through control to the
   ///      actual solver (advanceSolver)
   ///      This is only required if allow
   ///      use of additional solver
   ////////////////////////////////////////
-  
+
   void setModel(PhysicsModel *model) { // New API
     Solver::setModel(model);
     if(!selfSolve){advanceSolver->setModel(model);}
   }
-  
+
   void setRHS(rhsfunc f) {  // Old API
     Solver::setRHS(f);
     if(!selfSolve){advanceSolver->setRHS(f);}
   }
-  
+
   //////Following overrides all just pass through to advanceSolver
 
   //Override virtual add functions in order to pass through to advanceSolver
@@ -146,8 +146,8 @@ class SlepcSolver : public Solver {
   int compareState;
 
   void slepcToBout(PetscScalar &reEigIn, PetscScalar &imEigIn,
-		   BoutReal &reEigOut, BoutReal &imEigOut,
-		   bool force=false);
+                   BoutReal &reEigOut, BoutReal &imEigOut,
+                   bool force=false);
 
   Mat shellMat; //"Shell" matrix operator
 private:
@@ -161,14 +161,14 @@ private:
 
   void vecToFields(Vec &inVec);
   void fieldsToVec(Vec &outVec);
-  
+
   void createShellMat();
   void createEPS();
 
   void analyseResults();
   void boutToSlepc(BoutReal &reEigIn, BoutReal &imEigIn,
-		   PetscScalar &reEigOut, PetscScalar &imEigOut,
-		   bool force=false);
+                   PetscScalar &reEigOut, PetscScalar &imEigOut,
+                   bool force=false);
 
   SlepcLib slib;// Handles initialize / finalize
   bool ddtMode; //If true then slepc deals with the ddt operator

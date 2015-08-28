@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -83,26 +83,26 @@ bool PncFormat::openr(const char *name) {
 #endif
 
   if(is_valid()) // Already open. Close then re-open
-    close(); 
+    close();
 
   int ret;
   MPI_Comm comm = BoutComm::get();
-  
+
   /// Open file for reading
-  
+
   ret = ncmpi_open(comm, name, NC_NOWRITE, MPI_INFO_NULL, &ncfile); CHKERR(ret);
-  
+
   /// Get the dimensions from the file
   ret = ncmpi_inq_dimid(ncfile, "x", &xDim);
   if(ret != NC_NOERR) {
     output.write("WARNING: NetCDF file should have an 'x' dimension\n");
   }
-  
+
   ret = ncmpi_inq_dimid(ncfile, "y", &yDim);
   if(ret != NC_NOERR) {
     output.write("WARNING: NetCDF file should have an 'y' dimension\n");
   }
-  
+
   // z and t dimensions less crucial
   ret = ncmpi_inq_dimid(ncfile, "z", &zDim);
   if(ret != NC_NOERR) {
@@ -116,7 +116,7 @@ bool PncFormat::openr(const char *name) {
     output.write("INFO: NetCDF file has no 'z' coordinate\n");
 #endif
   }
-  
+
   recDimList[0] = tDim;
   recDimList[1] = xDim;
   recDimList[2] = yDim;
@@ -135,25 +135,25 @@ bool PncFormat::openw(const char *name, bool append) {
 #ifdef CHECK
   msg_stack.push("PncFormat::openw");
 #endif
-  
+
   if(is_valid()) // Already open. Close then re-open
-    close(); 
+    close();
 
   int ret; // Return status
   MPI_Comm comm = BoutComm::get();
 
   if(append) {
     ret = ncmpi_open(comm, name, NC_WRITE, MPI_INFO_NULL, &ncfile); CHKERR(ret);
-    
+
     /// Get the dimensions from the file
-    
+
     ret = ncmpi_inq_dimid(ncfile, "x", &xDim); CHKERR(ret);
     ret = ncmpi_inq_dimid(ncfile, "y", &yDim); CHKERR(ret);
     ret = ncmpi_inq_dimid(ncfile, "z", &zDim); CHKERR(ret);
     ret = ncmpi_inq_dimid(ncfile, "t", &tDim); CHKERR(ret);
-    
+
     /// Test they're the right size (and t is unlimited)
-    
+
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, xDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNx)
@@ -162,15 +162,15 @@ bool PncFormat::openw(const char *name, bool append) {
     ret = ncmpi_inq_dimlen(ncfile, yDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNy)
       throw new BoutException("ERROR: y dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNy);
-    
+
     ret = ncmpi_inq_dimlen(ncfile, zDim, &len); CHKERR(ret);
     if(len != mesh->GlobalNz)
       throw new BoutException("ERROR: z dimension length (%d) incompatible with mesh size (%d)", (int) len, mesh->GlobalNz);
-    
+
     // Get the size of the 't' dimension for records
     ret = ncmpi_inq_dimlen(ncfile, tDim, &len); CHKERR(ret);
     default_rec = (int) len;
-    
+
   }else {
     /// Create file using collective operation
     ret = ncmpi_create(comm,
@@ -178,23 +178,23 @@ bool PncFormat::openw(const char *name, bool append) {
                        NC_WRITE|NC_64BIT_OFFSET,
                        MPI_INFO_NULL,
                        &ncfile); CHKERR(ret);
-    
+
     /// Add the dimensions
-    
+
     ret = ncmpi_def_dim(ncfile, "x", mesh->GlobalNx, &xDim); CHKERR(ret);
-    
+
     ret = ncmpi_def_dim(ncfile, "y", mesh->GlobalNy, &yDim); CHKERR(ret);
-    
+
     ret = ncmpi_def_dim(ncfile, "z", mesh->GlobalNz, &zDim); CHKERR(ret);
-    
-    ret = ncmpi_def_dim(ncfile, "t", NC_UNLIMITED, &tDim); CHKERR(ret); // Unlimited 
-    
+
+    ret = ncmpi_def_dim(ncfile, "t", NC_UNLIMITED, &tDim); CHKERR(ret); // Unlimited
+
     /// Finish define mode
     ret = ncmpi_enddef(ncfile); CHKERR(ret);
 
     default_rec = 0; // Starting at record 0
   }
-  
+
   recDimList[0] = tDim;
   recDimList[1] = xDim;
   recDimList[2] = yDim;
@@ -213,7 +213,7 @@ void PncFormat::close() {
 #ifdef CHECK
   msg_stack.push("PncFormat::close");
 #endif
-  
+
   if(!is_valid())
     return; // Already closed
 
@@ -247,29 +247,29 @@ const vector<int> PncFormat::getSize(const char *name) {
     // Variable not in file
     return size;
   }
-  
+
   // Number of dimensions
   int nd;
-  if(ret = ncmpi_inq_varndims (ncfile, var, &nd)) 
+  if(ret = ncmpi_inq_varndims (ncfile, var, &nd))
     return size; // Not valid
 
   if(nd == 0) {
     size.push_back(1);
     return size;
   }
-  
+
   // Get the dimension IDs
   int dimid[nd];
-  
+
   ret = ncmpi_inq_vardimid(ncfile, var, dimid); CHKERR(ret);
-  
+
   for(int i=0;i<nd;i++) {
     // Get length of each dimension
     MPI_Offset len;
     ret = ncmpi_inq_dimlen(ncfile, dimid[i], &len); CHKERR(ret);
     size.push_back((int) len);
   }
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -296,7 +296,7 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
 #ifdef CHECK
   msg_stack.push("PncFormat::read(int)");
 #endif
@@ -313,11 +313,11 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     return false;
   }
-  
+
   // Number of dimensions
   int nd;
   ret = ncmpi_inq_varndims(ncfile, var, &nd); CHKERR(ret);
-  
+
   if(nd == 0) {
     ret = ncmpi_get_var_int_all(ncfile, var, data); CHKERR(ret);
 #ifdef CHECK
@@ -325,13 +325,13 @@ bool PncFormat::read(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     return true;
   }
-  
+
   MPI_Offset start[3], count[3];
   start[0] = x0; start[1] = y0; start[2] = z0;
   count[0] = lx; count[1] = ly; count[2] = lz;
-  
+
   ret = ncmpi_get_vara_int_all(ncfile, var, start, count, data);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -370,7 +370,7 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #ifdef CHECK
   msg_stack.push("PncFormat::read(BoutReal)");
 #endif
-  
+
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
@@ -383,11 +383,11 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #endif
     return false;
   }
-  
+
   // Number of dimensions
   int nd;
   ret = ncmpi_inq_varndims(ncfile, var, &nd); CHKERR(ret);
-  
+
   if(nd == 0) {
     ret = pnc_get_var_all(ncfile, var, data); CHKERR(ret);
 #ifdef CHECK
@@ -395,14 +395,14 @@ bool PncFormat::read(BoutReal *data, const char *name, int lx, int ly, int lz) {
 #endif
     return true;
   }
-  
-  
+
+
   MPI_Offset start[3], count[3];
   start[0] = x0; start[1] = y0; start[2] = z0;
   count[0] = lx; count[1] = ly; count[2] = lz;
 
   ret = pnc_get_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -420,7 +420,7 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int nd = 0; // Number of dimensions
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
@@ -434,15 +434,15 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
-    
+
     // Put into define mode
-    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    ret = ncmpi_redef(ncfile); CHKERR(ret);
     // Define variable
     ret = ncmpi_def_var(ncfile, name, NC_INT, nd, dimList, &var); CHKERR(ret);
     // Back out of define mode
     ret = ncmpi_enddef(ncfile); CHKERR(ret);
   }
-  
+
   if(nd == 0) {
     // Writing a scalar
     ret = ncmpi_put_var_int_all(ncfile, var, data); CHKERR(ret);
@@ -451,15 +451,15 @@ bool PncFormat::write(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     return true;
   }
-  
+
   // An array of values
-  
+
   MPI_Offset start[3], count[3];
   start[0] = x0; start[1] = y0; start[2] = z0;
   count[0] = lx; count[1] = ly; count[2] = lz;
-  
+
   ret = ncmpi_put_vara_int_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -495,7 +495,7 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
 #ifdef CHECK
   msg_stack.push("PncFormat::write(BoutReal)");
 #endif
@@ -504,14 +504,14 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
   if(lx != 0) nd = 1;
   if(ly != 0) nd = 2;
   if(lz != 0) nd = 3;
-  
+
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
-    
+
     // Put into define mode
-    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    ret = ncmpi_redef(ncfile); CHKERR(ret);
 
     nc_type type = (lowPrecision) ? NC_FLOAT : NC_DOUBLE;
 
@@ -520,7 +520,7 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
     // Back out of define mode
     ret = ncmpi_enddef(ncfile); CHKERR(ret);
   }
-  
+
   if(nd == 0) {
     // Writing a scalar
     ret = pnc_put_var_all(ncfile, var, data); CHKERR(ret);
@@ -529,20 +529,20 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
 #endif
     return true;
   }
-  
+
   if(lowPrecision) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
-    
+
     for(int i=0;i<lx*ly*lz;i++) {
       if(data[i] > 1e20)
-	data[i] = 1e20;
+        data[i] = 1e20;
       if(data[i] < -1e20)
-	data[i] = -1e20;
+        data[i] = -1e20;
     }
   }
-  
+
   // Similarly, non-finite numbers can have nasty effects
   for(int i=0;i<lx*ly*lz;i++) {
     if(!finite(data[i]))
@@ -552,9 +552,9 @@ bool PncFormat::write(BoutReal *data, const char *name, int lx, int ly, int lz) 
   MPI_Offset start[3], count[3];
   start[0] = x0; start[1] = y0; start[2] = z0;
   count[0] = lx; count[1] = ly; count[2] = lz;
-  
+
   ret = pnc_put_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
 #ifdef CHECK
   msg_stack.pop();
 #endif
@@ -576,7 +576,7 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
@@ -586,15 +586,15 @@ bool PncFormat::read_rec(int *data, const char *name, int lx, int ly, int lz) {
 #endif
     return false;
   }
-  
+
   // NOTE: Probably should do something here to check t0
 
   MPI_Offset start[4], count[4];
   start[0] = t0; start[1] = x0; start[2] = y0; start[3] = z0;
   count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
-  
+
   ret = ncmpi_get_vara_int_all(ncfile, var, start, count, data);
-  
+
   return true;
 }
 
@@ -608,7 +608,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
 
   if((lx < 0) || (ly < 0) || (lz < 0))
     return false;
-  
+
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
@@ -618,7 +618,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
 #endif
     return false;
   }
-  
+
   // NOTE: Probably should do something here to check t0
 
   MPI_Offset start[4], count[4];
@@ -626,7 +626,7 @@ bool PncFormat::read_rec(BoutReal *data, const char *name, int lx, int ly, int l
   count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
 
   ret = pnc_get_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
   return true;
 }
 
@@ -645,19 +645,19 @@ bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
   if(lx != 0) nd = 2;
   if(ly != 0) nd = 3;
   if(lz != 0) nd = 4;
-  
+
   int ret;
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
-    
+
     // Put into define mode
-    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    ret = ncmpi_redef(ncfile); CHKERR(ret);
     // Define variable
     ret = ncmpi_def_var(ncfile, name, NC_INT, nd, recDimList, &var); CHKERR(ret);
     // Back out of define mode
     ret = ncmpi_enddef(ncfile); CHKERR(ret);
-    
+
     rec_nr[name] = default_rec; // Starting record
   }else {
     // Get record number
@@ -666,13 +666,13 @@ bool PncFormat::write_rec(int *data, const char *name, int lx, int ly, int lz) {
       rec_nr[name] = default_rec;
     }
   }
-  
+
   MPI_Offset start[4], count[4];
   start[0] = rec_nr[name]; start[1] = x0; start[2] = y0; start[3] = z0;
   count[0] = 1;  count[1] = lx; count[2] = ly; count[3] = lz;
-  
+
   ret = ncmpi_put_vara_int_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
   // Increment record number
   rec_nr[name] += 1;
 
@@ -703,15 +703,15 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   int var;
   if(ret = ncmpi_inq_varid(ncfile, name, &var)) {
     // Variable not in file
-    
+
     // Put into define mode
-    ret = ncmpi_redef(ncfile); CHKERR(ret); 
+    ret = ncmpi_redef(ncfile); CHKERR(ret);
     // Define variable
     nc_type type = (lowPrecision) ? NC_FLOAT : NC_DOUBLE;
     ret = ncmpi_def_var(ncfile, name, type, nd, recDimList, &var); CHKERR(ret);
     // Back out of define mode
     ret = ncmpi_enddef(ncfile); CHKERR(ret);
-    
+
     rec_nr[name] = default_rec; // Starting record
   }else {
     // Get record number
@@ -722,22 +722,22 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   }
 
 #ifdef NCDF_VERBOSE
-  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname); 
+  output.write("INFO: NetCDF writing record %d of '%s' in '%s'\n",t, name, fname);
 #endif
 
   if(lowPrecision) {
     // An out of range value can make the conversion
     // corrupt the whole dataset. Make sure everything
     // is in the range of a float
-    
+
     for(int i=0;i<lx*ly*lz;i++) {
       if(data[i] > 1e20)
-	data[i] = 1e20;
+        data[i] = 1e20;
       if(data[i] < -1e20)
-	data[i] = -1e20;
+        data[i] = -1e20;
     }
   }
-  
+
   for(int i=0;i<lx*ly*lz;i++) {
     if(!finite(data[i]))
       data[i] = 0.0;
@@ -750,7 +750,7 @@ bool PncFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int 
   // Add the record
 
   ret = pnc_put_vara_all(ncfile, var, start, count, data); CHKERR(ret);
-  
+
   // Increment record number
   rec_nr[name] += 1;
 

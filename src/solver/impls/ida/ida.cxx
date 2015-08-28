@@ -1,6 +1,6 @@
 /**************************************************************************
  * Interface to SUNDIALS IDA
- * 
+ *
  * IdaSolver for DAE systems (so can handle constraints)
  *
  * NOTE: Only one solver can currently be compiled in
@@ -9,7 +9,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -54,18 +54,18 @@ typedef int IDAINT;
 #endif
 
 static int idares(BoutReal t, N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
-		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp);
+static int ida_bbd_res(IDAINT Nlocal, BoutReal t,
+                       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
+static int ida_pre(BoutReal t, N_Vector yy,
+                   N_Vector yp, N_Vector rr,
+                   N_Vector rvec, N_Vector zvec,
+                   BoutReal cj, BoutReal delta,
+                   void *user_data, N_Vector tmp);
 
 IdaSolver::IdaSolver(Options *opts) : Solver(opts)
 {
   has_constraints = true; ///< This solver has constraints
-  
+
   prefunc = NULL;
 }
 
@@ -73,9 +73,9 @@ IdaSolver::~IdaSolver()
 {
   if(initialised) {
     // Free IDA memory
-    
-    
-    
+
+
+
   }
 }
 
@@ -83,18 +83,18 @@ IdaSolver::~IdaSolver()
  * Initialise
  **************************************************************************/
 
- int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
+int IdaSolver::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising IDA solver");
 
   /// Call the generic initialisation first
   if(Solver::init(restarting, nout, tstep))
     return 1;
-  
+
   // Save nout and tstep for use in run
   NOUT = nout;
   TIMESTEP = tstep;
-  
+
   output.write("Initialising IDA solver\n");
 
   // Calculate number of variables
@@ -108,32 +108,32 @@ IdaSolver::~IdaSolver()
     output.write("\tERROR: MPI_Allreduce failed!\n");
     return 1;
   }
-  
+
   output.write("\t3d fields = %d, 2d fields = %d neq=%d, local_N=%d\n",
-	       n3d, n2d, neq, local_N);
+               n3d, n2d, neq, local_N);
 
   // Allocate memory
-  
+
   if((uvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   if((duvec = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
   if((id = N_VNew_Parallel(BoutComm::get(), local_N, neq)) == NULL)
     throw BoutException("ERROR: SUNDIALS memory allocation failed\n");
-  
+
   // Put the variables into uvec
   if(save_vars(NV_DATA_P(uvec)))
     throw BoutException("\tERROR: Initial variable value not set\n");
-  
+
   // Get the starting time derivative
   run_rhs(simtime);
-  
+
   // Put the time-derivatives into duvec
   save_derivs(NV_DATA_P(duvec));
-  
+
   // Set the equation type in id(Differential or Algebraic. This is optional)
   set_id(NV_DATA_P(id));
-  
+
   /// Get options
   int MXSUB = mesh->xend - mesh->xstart + 1;
 
@@ -161,7 +161,7 @@ IdaSolver::~IdaSolver()
 
   if((idamem = IDACreate()) == NULL)
     throw BoutException("ERROR: IDACreate failed\n");
-  
+
   if( IDASetUserData(idamem, this) < 0 ) // For callbacks, need pointer to solver object
     throw BoutException("ERROR: IDASetUserData failed\n");
 
@@ -170,7 +170,7 @@ IdaSolver::~IdaSolver()
 
   if( IDAInit(idamem, idares, simtime, uvec, duvec) < 0 )
     throw BoutException("ERROR: IDAInit failed\n");
-  
+
   if( IDASStolerances(idamem, reltol, abstol) < 0 )
     throw BoutException("ERROR: IDASStolerances failed\n");
 
@@ -183,13 +183,13 @@ IdaSolver::~IdaSolver()
   if(use_precon) {
     if(prefunc == NULL) {
       output.write("\tUsing BBD preconditioner\n");
-      if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep, 
-			 ZERO, ida_bbd_res, NULL) )
-	throw BoutException("ERROR: IDABBDPrecInit failed\n");
+      if( IDABBDPrecInit(idamem, local_N, mudq, mldq, mukeep, mlkeep,
+                         ZERO, ida_bbd_res, NULL) )
+        throw BoutException("ERROR: IDABBDPrecInit failed\n");
     }else {
       output.write("\tUsing user-supplied preconditioner\n");
       if( IDASpilsSetPreconditioner(idamem, NULL, ida_pre) )
-	throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
+        throw BoutException("ERROR: IDASpilsSetPreconditioner failed\n");
     }
   }
 
@@ -214,12 +214,12 @@ int IdaSolver::run() {
 #ifdef CHECK
   int msg_point = msg_stack.push("IDA IdaSolver::run()");
 #endif
-  
+
   if(!initialised)
     throw BoutException("IdaSolver not initialised\n");
 
   for(int i=0;i<NOUT;i++) {
-    
+
     /// Run the solver for one output timestep
     simtime = run(simtime + TIMESTEP);
     iteration++;
@@ -229,9 +229,9 @@ int IdaSolver::run() {
       // Step failed
       throw BoutException("SUNDIALS IDA timestep failed\n");
     }
-    
+
     /// Call the monitor function
-    
+
     if(call_monitors(simtime, i, NOUT)) {
       // User signalled to quit
       break;
@@ -252,7 +252,7 @@ BoutReal IdaSolver::run(BoutReal tout) {
 #ifdef CHECK
   int msg_point = msg_stack.push("Running solver: solver::run(%e)", tout);
 #endif
-  
+
   rhs_ncalls = 0;
 
   pre_Wtime = 0.0;
@@ -265,12 +265,12 @@ BoutReal IdaSolver::run(BoutReal tout) {
 
   // Call rhs function to get extra variables at this time
   run_rhs(simtime);
-  
+
   if(flag < 0) {
     output.write("ERROR IDA solve failed at t = %e, flag = %d\n", simtime, flag);
     return -1.0;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_point);
 #endif
@@ -287,16 +287,16 @@ void IdaSolver::res(BoutReal t, BoutReal *udata, BoutReal *dudata, BoutReal *rda
 #ifdef CHECK
   int msg_point = msg_stack.push("Running RHS: IdaSolver::res(%e)", t);
 #endif
-  
+
   // Load state from udata
   load_vars(udata);
-  
+
   // Call RHS function
   run_rhs(t);
-  
+
   // Save derivatives to rdata (residual)
   save_derivs(rdata);
-  
+
   // If a differential equation, subtract dudata
   int N = NV_LOCLENGTH_P(id);
   BoutReal *idd = NV_DATA_P(id);
@@ -322,7 +322,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
   BoutReal tstart = MPI_Wtime();
 
   int N = NV_LOCLENGTH_P(id);
-  
+
   if(prefunc == NULL) {
     // Identity (but should never happen)
     for(int i=0;i<N;i++)
@@ -335,7 +335,7 @@ void IdaSolver::pre(BoutReal t, BoutReal cj, BoutReal delta, BoutReal *udata, Bo
 
   // Load vector to be inverted into F_vars
   load_derivs(rvec);
-  
+
   (*prefunc)(t, cj, delta);
 
   // Save the solution from F_vars
@@ -359,122 +359,122 @@ void IdaSolver::loop_vars_op(int jx, int jy, BoutReal *udata, int &p, SOLVER_VAR
   BoutReal **d2d, ***d3d;
   int i;
   int jz;
- 
+
   int n2d = f2d.size();
   int n3d = f3d.size();
 
   switch(op) {
   case LOAD_VARS: {
     /// Load variables from IDA into BOUT++
-    
+
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
       d2d = f2d[i].var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
     }
-    
+
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
+
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
-      }  
+        d3d = f3d[i].var->getData(); // Get pointer to data
+        d3d[jx][jy][jz] = udata[p];
+        p++;
+      }
     }
     break;
   }
   case LOAD_DERIVS: {
     /// Load derivatives from IDA into BOUT++
     /// Used for preconditioner
-    
+
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
       d2d = f2d[i].F_var->getData(); // Get pointer to data
       d2d[jx][jy] = udata[p];
       p++;
     }
-    
+
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
+
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	d3d[jx][jy][jz] = udata[p];
-	p++;
-      }  
+        d3d = f3d[i].F_var->getData(); // Get pointer to data
+        d3d[jx][jy][jz] = udata[p];
+        p++;
+      }
     }
-    
+
     break;
   }
   case SET_ID: {
     /// Set the type of equation (Differential or Algebraic)
-    
+
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
       if(f2d[i].constraint) {
-	udata[p] = ZERO;
+        udata[p] = ZERO;
       }else {
-	udata[p] = ONE;
+        udata[p] = ONE;
       }
       p++;
     }
-    
+
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
+
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	if(f3d[i].constraint) {
-	  udata[p] = ZERO;
-	}else {
-	  udata[p] = ONE;
-	}
-	p++;
+        if(f3d[i].constraint) {
+          udata[p] = ZERO;
+        }else {
+          udata[p] = ONE;
+        }
+        p++;
       }
     }
-    
+
     break;
   }
   case SAVE_VARS: {
     /// Save variables from BOUT++ into IDA (only used at start of simulation)
-    
+
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
       d2d = f2d[i].var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
     }
-    
+
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
+
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
-      }  
+        d3d = f3d[i].var->getData(); // Get pointer to data
+        udata[p] = d3d[jx][jy][jz];
+        p++;
+      }
     }
     break;
   }
     /// Save time-derivatives from BOUT++ into CVODE (returning RHS result)
   case SAVE_DERIVS: {
-    
+
     // Loop over 2D variables
     for(i=0;i<n2d;i++) {
       d2d = f2d[i].F_var->getData(); // Get pointer to data
       udata[p] = d2d[jx][jy];
       p++;
     }
-    
+
     for (jz=0; jz < mesh->ngz-1; jz++) {
-      
+
       // Loop over 3D variables
       for(i=0;i<n3d;i++) {
-	d3d = f3d[i].F_var->getData(); // Get pointer to data
-	udata[p] = d3d[jx][jy][jz];
-	p++;
-      }  
+        d3d = f3d[i].F_var->getData(); // Get pointer to data
+        udata[p] = d3d[jx][jy][jz];
+        p++;
+      }
     }
     break;
   }
@@ -493,7 +493,7 @@ void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   if(mesh->firstX()) {
     for(jx=0;jx<mesh->xstart;jx++)
       for(jy=0;jy<MYSUB;jy++)
-	loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
+        loop_vars_op(jx, jy+mesh->ystart, udata, p, op);
   }
 
   // Lower Y boundary region
@@ -501,7 +501,7 @@ void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
     for(jy=0;jy<mesh->ystart;jy++)
       loop_vars_op(*xi, jy, udata, p, op);
   }
-  
+
   // Upper Y boundary condition
   for(RangeIterator xi = mesh->iterateBndryUpperY(); !xi.isDone(); xi++) {
     for(jy=mesh->yend+1;jy<mesh->ngy;jy++)
@@ -517,14 +517,14 @@ void IdaSolver::loop_vars(BoutReal *udata, SOLVER_VAR_OP op)
   if(mesh->lastX()) {
     for(jx=mesh->xend+1;jx<mesh->ngx;jx++)
       for(jy=mesh->ystart;jy<=mesh->yend;jy++)
-	loop_vars_op(jx, jy, udata, p, op);
+        loop_vars_op(jx, jy, udata, p, op);
   }
 }
 
 void IdaSolver::load_vars(BoutReal *udata)
 {
   unsigned int i;
-  
+
   // Make sure data is allocated
   for(i=0;i<f2d.size();i++)
     f2d[i].var->allocate();
@@ -546,7 +546,7 @@ void IdaSolver::load_vars(BoutReal *udata)
 void IdaSolver::load_derivs(BoutReal *udata)
 {
   unsigned int i;
-  
+
   // Make sure data is allocated
   for(i=0;i<f2d.size();i++)
     f2d[i].F_var->allocate();
@@ -582,7 +582,7 @@ int IdaSolver::save_vars(BoutReal *udata)
   for(i=0;i<f3d.size();i++)
     if(f3d[i].var->getData() == (BoutReal***) NULL)
       return(1);
-  
+
   // Make sure vectors in correct basis
   for(i=0;i<v2d.size();i++) {
     if(v2d[i].covariant) {
@@ -635,14 +635,14 @@ void IdaSolver::save_derivs(BoutReal *dudata)
  * IDA res function
  **************************************************************************/
 
-static int idares(BoutReal t, 
-                  N_Vector u, N_Vector du, N_Vector rr, 
+static int idares(BoutReal t,
+                  N_Vector u, N_Vector du, N_Vector rr,
                   void *user_data)
 {
   BoutReal *udata = NV_DATA_P(u);
   BoutReal *dudata = NV_DATA_P(du);
   BoutReal *rdata = NV_DATA_P(rr);
-  
+
   IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals
@@ -652,24 +652,24 @@ static int idares(BoutReal t,
 }
 
 /// Residual function for BBD preconditioner
-static int ida_bbd_res(IDAINT Nlocal, BoutReal t, 
-		       N_Vector u, N_Vector du, N_Vector rr, 
-		       void *user_data)
+static int ida_bbd_res(IDAINT Nlocal, BoutReal t,
+                       N_Vector u, N_Vector du, N_Vector rr,
+                       void *user_data)
 {
   return idares(t, u, du, rr, user_data);
 }
 
 // Preconditioner function
-static int ida_pre(BoutReal t, N_Vector yy, 	 
-		   N_Vector yp, N_Vector rr, 	 
-		   N_Vector rvec, N_Vector zvec, 	 
-		   BoutReal cj, BoutReal delta, 
-		   void *user_data, N_Vector tmp)
+static int ida_pre(BoutReal t, N_Vector yy,
+                   N_Vector yp, N_Vector rr,
+                   N_Vector rvec, N_Vector zvec,
+                   BoutReal cj, BoutReal delta,
+                   void *user_data, N_Vector tmp)
 {
   BoutReal *udata = NV_DATA_P(yy);
   BoutReal *rdata = NV_DATA_P(rvec);
   BoutReal *zdata = NV_DATA_P(zvec);
-  
+
   IdaSolver *s = (IdaSolver*) user_data;
 
   // Calculate residuals

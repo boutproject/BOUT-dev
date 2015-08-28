@@ -1,18 +1,18 @@
 /**************************************************************************
  * Karniadakis split-operator solver
  *   J. Comput. Phys. 97 (1991) p414-443
- * 
+ *
  * Always available, since doesn't depend on external library
- * 
+ *
  * Solves a system df/dt = S(f) + D(f)
- * 
+ *
  * where S is the RHS of each equation, and D is the diffusion terms
- * 
+ *
  **************************************************************************
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -41,33 +41,33 @@ class KarniadakisSolver;
 #include <bout/solver.hxx>
 
 class KarniadakisSolver : public Solver {
- public:
+public:
   KarniadakisSolver(Options *options);
   ~KarniadakisSolver();
 
   BoutReal getCurrentTimestep() {return timestep; }
 
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
   int run();
   void resetInternalFields();
 
- private:
-  
+private:
+
   BoutReal *f1, *f0, *fm1, *fm2; // System state at current, and two previous time points
   BoutReal *S0, *Sm1, *Sm2; // Convective part of the RHS equations
   BoutReal *D0;             // Dissipative part of the RHS
-  
+
   bool first_time; // Need to initialise values
 
   BoutReal out_timestep; // The output timestep
   int nsteps; // Number of output steps
-  
+
   BoutReal timestep; // The internal timestep
   int nsubsteps; // Number of sub steps
-  
+
   int nlocal; // Number of variables on local processor
-  
+
   void take_step(BoutReal dt); // Take a single step to calculate f1
 };
 

@@ -36,7 +36,7 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
   //Level 2
   stageCoeffs[2][0] = 3.0/32.0; stageCoeffs[2][1] = 9.0/32.0;
   //Level 3
-  stageCoeffs[3][0] = 1932.0/2197.0; stageCoeffs[3][1] = -7200.0/2197.0; 
+  stageCoeffs[3][0] = 1932.0/2197.0; stageCoeffs[3][1] = -7200.0/2197.0;
   stageCoeffs[3][2] = 7296.0/2197.0;
   //Level 4
   stageCoeffs[4][0] = 439.0/216.0; stageCoeffs[4][1] = -8.0;
@@ -82,6 +82,6 @@ RKF45Scheme::RKF45Scheme(Options *options):RKScheme(options){
 
 RKF45Scheme::~RKF45Scheme(){
   //Do my cleanup
-  
+
 };
 

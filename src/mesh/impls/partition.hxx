@@ -3,7 +3,7 @@
  * whilst minimising the length of the boundary
  *
  * Algorithm from:
- * 
+ *
  * Michelle L Wachs "Minimum Cost Partitions of a Rectangle"
  *        Discrete Mathematics 36 (1981) 305-324
  *

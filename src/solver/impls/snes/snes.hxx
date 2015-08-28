@@ -1,13 +1,13 @@
 /**************************************************************************
- * 
+ *
  * Finds the steady-state solution of a set of equations
  * using PETSc for the SNES interface
- * 
+ *
  **************************************************************************
  * Copyright 2015 B.D.Dudson
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -43,26 +43,26 @@ class SNESSolver;
 #include <petscsnes.h>
 
 class SNESSolver : public Solver {
- public:
+public:
   SNESSolver(Options *opt = NULL);
   ~SNESSolver();
-  
+
   int init(bool restarting, int nout, BoutReal tstep);
-  
+
   int run();
-  
+
   PetscErrorCode snes_function(Vec x, Vec f); // Nonlinear function
- private:
+private:
   int mxstep; // Maximum number of internal steps between outputs
-  
+
   int nlocal, neq; // Number of variables on local processor and in total
-  
+
   PetscLib lib;     // Handles initialising, finalising PETSc
   Vec      snes_f;  // Used by SNES to store function
   Vec      snes_x;  // Result of SNES
   SNES     snes;    // SNES context
   Mat      Jmf;     // Matrix-free Jacobian
-  
+
 };
 
 #endif // __SNES_SOLVER_H__

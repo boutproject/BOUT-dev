@@ -26,7 +26,7 @@ RKScheme::RKScheme(Options *opts){
 RKScheme::~RKScheme(){
   ///These arrays are allocated in the derived class, should
   ///we really free them there as well?
-  
+
   //stageCoeffs
   free_rmatrix(stageCoeffs);
 
@@ -38,13 +38,13 @@ RKScheme::~RKScheme(){
 
   //timeCoeffs
   delete[] timeCoeffs;
-  
+
   if(adaptive) delete[] resultAlt;
 };
 
 //Finish generic initialisation
-void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn, 
-		    const BoutReal rtolIn, Options *options){
+void RKScheme::init(const int nlocalIn, const int neqIn, const bool adaptiveIn, const BoutReal atolIn,
+                    const BoutReal rtolIn, Options *options){
 
   bool diagnose;
   OPTION(options, dtfac, dtfac); //Time step adjustment factor
@@ -77,8 +77,8 @@ BoutReal RKScheme::setCurTime(const BoutReal timeIn, const BoutReal dt, const in
 };
 
 //Get the state vector at given stage
-void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curStage, 
-			   const BoutReal dt){
+void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curStage,
+                           const BoutReal dt){
 
   //Set the initial stage
   for(int i=0;i<nlocal;i++){
@@ -87,7 +87,7 @@ void RKScheme::setCurState(const BoutReal *start, BoutReal *out, const int curSt
 
   //If on the first stage we don't need to modify the state
   if(curStage==0) return;//Don't realy need this as below loop won't execute
-  
+
   //Construct the current state from previous results -- This is expensive
   for(int j=0;j<curStage;j++){
     if(abs(stageCoeffs[curStage][j]) < atol) continue;
@@ -115,13 +115,13 @@ BoutReal RKScheme::setOutputStates(const BoutReal *start, const BoutReal dt, Bou
   //      we want both solutions, but it's faster when not adaptive.
   //      To get the best of both worlds we could probably do something
   //      like:
-  /*      
-	  if(adapative){
-	    constructOutputs;
-	  }else{
-            constructOutput;
-	  };
-   */
+  /*
+          if(adapative){
+          constructOutputs;
+          }else{
+          constructOutput;
+          };
+  */
 
   //Get the result
   constructOutput(start,dt,followInd,resultFollow);
@@ -161,12 +161,12 @@ BoutReal RKScheme::getErr(BoutReal *solA, BoutReal *solB){
   }
   //Normalise by number of values
   err /= (BoutReal) neq;
-  
+
   return err;
 };
 
-void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt, 
-			       const int index, BoutReal *sol){
+void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt,
+                               const int index, BoutReal *sol){
   //Initialise the return data
   for(int i=0;i<nlocal;i++){
     sol[i]=start[i];
@@ -180,12 +180,12 @@ void RKScheme::constructOutput(const BoutReal *start, const BoutReal dt,
       sol[i]=sol[i]+fac*steps[curStage][i];
     }
   }
-  
+
 };
 
-void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt, 
-				const int indexFollow, const int indexAlt, 
-				BoutReal *solFollow, BoutReal *solAlt){
+void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt,
+                                const int indexFollow, const int indexAlt,
+                                BoutReal *solFollow, BoutReal *solAlt){
   //Initialise the return data
   for(int i=0;i<nlocal;i++){
     solFollow[i]=start[i];
@@ -202,7 +202,7 @@ void RKScheme::constructOutputs(const BoutReal *start, const BoutReal dt,
       solAlt[i]=solAlt[i]+facAlt*steps[curStage][i];
     }
   }
-  
+
 };
 
 //Check that the coefficients are consistent
@@ -263,7 +263,7 @@ void RKScheme::printButcherTableau(){
   int width=15;
   int totalWidth=width*(1+getStageCount())+3;
   output<<endl;
-  
+
   //Header
   output<<string(totalWidth,'-')<<endl;
   output<<"Butcher Tableau"<<endl;

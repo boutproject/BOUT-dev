@@ -81,7 +81,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
   PetscMPIInt     rank;
 
   int msg_point = msg_stack.push("Initialising PETSc 3.2 solver");
-  
+
   /// Call the generic initialisation first
   Solver::init(restarting, NOUT, TIMESTEP);
 
@@ -169,7 +169,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 #ifdef PETSC_HAS_SUNDIALS
   // Set Sundials tolerances
   //printf("abstol %g, reltol %g\n",abstol,reltol); why reltol=1.e-7?
-  
+
   ierr = TSSundialsSetTolerance(ts, abstol, reltol);CHKERRQ(ierr);
 
   // Select Sundials Adams-Moulton or BDF method
@@ -274,7 +274,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
     ierr = MatCreate(comm,&J);CHKERRQ(ierr);
     ierr = MatSetType(J, MATBAIJ);CHKERRQ(ierr);
-    ierr = MatSetSizes(J,local_N, local_N, neq,neq);CHKERRQ(ierr); 
+    ierr = MatSetSizes(J,local_N, local_N, neq,neq);CHKERRQ(ierr);
     ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
     // Get nonzero pattern of J - color_none !!!
@@ -283,7 +283,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     ierr = MatMPIAIJSetPreallocation(J,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
     prealloc = cols; // why nonzeros=295900, allocated nonzeros=2816000/12800000 (*dof*dof), number of mallocs used during MatSetValues calls =256?
-    ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);   
+    ierr = MatSeqBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL);CHKERRQ(ierr);
     ierr = MatMPIBAIJSetPreallocation(J,dof,prealloc,PETSC_NULL,prealloc,PETSC_NULL);CHKERRQ(ierr);
 
     ierr = PetscOptionsHasName(PETSC_NULL,"-J_slowfd",&J_slowfd);CHKERRQ(ierr);
@@ -295,7 +295,7 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
 
       ierr = TSComputeRHSJacobian(ts,simtime,u,&J,&J,&flg);CHKERRQ(ierr);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"compute J by slow fd is done.\n");CHKERRQ(ierr);
-      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr); 
+      //ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);CHKERRQ(ierr);
     } else { // get sparse pattern of the Jacobian
       ierr = PetscPrintf(PETSC_COMM_WORLD,"get sparse pattern of the Jacobian...\n");CHKERRQ(ierr);
 
@@ -446,9 +446,9 @@ int PetscSolver::init(bool restarting, int NOUT, BoutReal TIMESTEP) {
     }
   }
 
-  // Create coloring context of J to be used during time stepping 
+  // Create coloring context of J to be used during time stepping
   ierr = PetscPrintf(PETSC_COMM_WORLD," Create coloring ...\n");
-  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr); 
+  ierr = MatGetColoring(J,MATCOLORINGSL,&iscoloring);CHKERRQ(ierr);
   ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
   ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
   ierr = ISColoringDestroy(&iscoloring);CHKERRQ(ierr);
@@ -537,7 +537,7 @@ PetscErrorCode PetscSolver::rhs(TS ts, BoutReal t, Vec udata, Vec dudata) {
 /**************************************************************************
  * Static functions which can be used for PETSc callbacks
  **************************************************************************/
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_f"
 PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_data) {
   PetscSolver *s;
@@ -551,7 +551,7 @@ PetscErrorCode solver_f(TS ts, BoutReal t, Vec globalin, Vec globalout, void *f_
 /*
   FormIFunction = Udot - RHSFunction
 */
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_if"
 PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec globalout, void *f_data) {
   PetscErrorCode ierr;
@@ -569,7 +569,7 @@ PetscErrorCode solver_if(TS ts, BoutReal t, Vec globalin,Vec globalindot, Vec gl
   PetscFunctionReturn(0);
 }
 
-#undef __FUNCT__  
+#undef __FUNCT__
 #define __FUNCT__ "solver_rhsjacobian"
 PetscErrorCode solver_rhsjacobian(TS ts,BoutReal t,Vec globalin,Mat *J,Mat *Jpre,MatStructure *str,void *f_data) {
   PetscErrorCode ierr;

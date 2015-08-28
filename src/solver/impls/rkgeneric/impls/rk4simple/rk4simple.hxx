@@ -8,13 +8,13 @@ class RK4SIMPLEScheme;
 #include <utils.hxx>
 
 class RK4SIMPLEScheme : public RKScheme{
- public:
+public:
   RK4SIMPLEScheme(Options *options);
   ~RK4SIMPLEScheme();
-  
+
   BoutReal setOutputStates(const BoutReal *start, const BoutReal dt, BoutReal *resultFollow);
- private:
-  
+private:
+
 };
 
 #endif // __RK4SIMPLE_SCHEME_H__

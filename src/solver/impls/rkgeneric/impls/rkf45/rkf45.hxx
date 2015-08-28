@@ -8,10 +8,10 @@ class RKF45Scheme;
 #include <utils.hxx>
 
 class RKF45Scheme : public RKScheme{
- public:
+public:
   RKF45Scheme(Options *options);
   ~RKF45Scheme();
- private:
+private:
 
 };
 

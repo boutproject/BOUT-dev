@@ -1,6 +1,6 @@
 /*********************************************************
  * Data file class
- * 
+ *
  * Changelog:
  *
  * 2009-08 Ben Dudson <bd512@york.ac.uk>
@@ -16,7 +16,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public License
  * along with BOUT++.  If not, see <http://www.gnu.org/licenses/>.
- * 
+ *
  *********************************************************/
 //#include "mpi.h" // For MPI_Wtime()
 
@@ -47,25 +47,25 @@
 Datafile::Datafile(Options *opt) : parallel(false), flush(true), guards(true), floats(false), openclose(true), enabled(true), file(NULL) {
   if(opt == NULL)
     return; // To allow static initialisation
-  
+
   // Read options
-  
+
   OPTION(opt, parallel, false); // By default no parallel formats for now
   OPTION(opt, flush, true);     // Safer. Disable explicitly if required
   OPTION(opt, guards, true);    // Compatible with old behavior
   OPTION(opt, floats, false); // High precision by default
   OPTION(opt, openclose, true); // Open and close every write or read
   OPTION(opt, enabled, true);
-  
+
 }
 
-Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards), 
-                                            floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz), 
-                                            enabled(other.enabled), file(NULL), int_arr(other.int_arr), 
-                                            BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr), 
+Datafile::Datafile(const Datafile &other) : parallel(other.parallel), flush(other.flush), guards(other.guards),
+                                            floats(other.floats), openclose(other.openclose), Lx(Lx), Ly(Ly), Lz(Lz),
+                                            enabled(other.enabled), file(NULL), int_arr(other.int_arr),
+                                            BoutReal_arr(other.BoutReal_arr), f2d_arr(other.f2d_arr),
                                             f3d_arr(other.f3d_arr), v2d_arr(other.v2d_arr), v3d_arr(other.v3d_arr) {
-  
-  // Same added variables, but the file not the same 
+
+  // Same added variables, but the file not the same
 }
 
 Datafile& Datafile::operator=(const Datafile &rhs) {
@@ -93,15 +93,15 @@ bool Datafile::openr(const char *format, ...) {
   if(format == (const char*) NULL)
     return 1;
   va_start(ap, format);
-    vsprintf(filename, format, ap);
+  vsprintf(filename, format, ap);
   va_end(ap);
-  
+
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
-  
+
   if(!file)
     return false;
-  
+
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
@@ -109,7 +109,7 @@ bool Datafile::openr(const char *format, ...) {
   else {
     file->setGlobalOrigin(0,0,0);
   }
-  
+
   if(!openclose) {
     // Open the file now. Otherwise defer until later
     int MYPE;
@@ -117,27 +117,27 @@ bool Datafile::openr(const char *format, ...) {
     if(!file->openr(filename, MYPE))
       return false;
   }
-  
+
   return true;
 }
 
 bool Datafile::openw(const char *format, ...) {
   if(!enabled)
     return true;
-  
+
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
-  
+
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
-  
+
   if(!file)
     return false;
-  
+
   // If parallel do not want to write ghost points, and it is easier then to ignore the boundary guard cells as well
   if (parallel) {
     file->setLocalOrigin(0, 0, 0, mesh->xstart, mesh->ystart, 0);
@@ -151,7 +151,7 @@ bool Datafile::openw(const char *format, ...) {
     Ly = mesh->ngy;
     Lz = mesh->ngz;
   }
-  
+
   appending = false;
   if(!openclose) {
     // Open the file
@@ -160,24 +160,24 @@ bool Datafile::openw(const char *format, ...) {
     if(!file->openw(filename, MYPE))
       return false;
   }
-  
+
   return true;
 }
 
 bool Datafile::opena(const char *format, ...) {
   if(!enabled)
     return true;
-  
+
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return 1;
   va_start(ap, format);
   vsprintf(filename, format, ap);
   va_end(ap);
-  
+
   // Get the data format
   file = FormatFactory::getInstance()->createDataFormat(filename, parallel);
-  
+
   if(!file)
     return false;
 
@@ -194,7 +194,7 @@ bool Datafile::opena(const char *format, ...) {
     Ly = mesh->ngy;
     Lz = mesh->ngz;
   }
-  
+
   appending = true;
   if(!openclose) {
     // Open the file
@@ -209,10 +209,10 @@ bool Datafile::opena(const char *format, ...) {
 bool Datafile::isValid() {
   if(!enabled)
     return true; // Pretend to be valid
-  
+
   if(!file)
     return false;
-  
+
   return file->is_valid();
 }
 
@@ -241,74 +241,74 @@ void Datafile::add(int &i, const char *name, int grow) {
   d.ptr = &i;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
-  
+
   int_arr.push_back(d);
 }
 
 void Datafile::add(BoutReal &r, const char *name, int grow) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
-  
+
   VarStr<BoutReal> d;
 
   d.ptr = &r;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
-  
+
   BoutReal_arr.push_back(d);
 }
 
 void Datafile::add(Field2D &f, const char *name, int grow) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
-  
+
   VarStr<Field2D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
-  
+
   f2d_arr.push_back(d);
 }
 
 void Datafile::add(Field3D &f, const char *name, int grow) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
-  
+
   VarStr<Field3D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
-  
+
   f3d_arr.push_back(d);
 }
 
 void Datafile::add(Vector2D &f, const char *name, int grow) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
-  
+
   VarStr<Vector2D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
   d.covar = f.covariant;
-  
+
   v2d_arr.push_back(d);
 }
 
 void Datafile::add(Vector3D &f, const char *name, int grow) {
   if(varAdded(string(name)))
     throw BoutException("Variable '%s' already added to Datafile", name);
-  
+
   VarStr<Vector3D> d;
 
   d.ptr = &f;
   d.name = string(name);
   d.grow = (grow > 0) ? true : false;
   d.covar = f.covariant;
-  
+
   v3d_arr.push_back(d);
 }
 
@@ -322,9 +322,9 @@ bool Datafile::read() {
     if(!file->openr(filename, MYPE))
       return false;
   }
-  
+
   if(!file->is_valid())
-    return false;  
+    return false;
 
   file->setRecord(-1); // Read the latest record
 
@@ -333,15 +333,15 @@ bool Datafile::read() {
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name.c_str())) {
-	output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
-	continue;
+        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
+        continue;
       }
     }else {
       if(!file->read(it->ptr, it->name.c_str())) {
-	output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
-	continue;
+        output.write("\tWARNING: Could not read integer %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
+        continue;
       }
     }
   }
@@ -351,33 +351,33 @@ bool Datafile::read() {
   for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
     if(it->grow) {
       if(!file->read_rec(it->ptr, it->name)) {
-	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
-	continue;
+        output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
+        continue;
       }
     }else {
       if(!file->read(it->ptr, it->name)) {
-	output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
-	*(it->ptr) = 0;
-	continue;
+        output.write("\tWARNING: Could not read BoutReal %s. Setting to zero\n", it->name.c_str());
+        *(it->ptr) = 0;
+        continue;
       }
     }
   }
-  
+
   // Read 2D fields
-  
+
   for(std::vector< VarStr<Field2D> >::iterator it = f2d_arr.begin(); it != f2d_arr.end(); it++) {
     read_f2d(it->name, it->ptr, it->grow);
   }
 
   // Read 3D fields
-  
+
   for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
     read_f3d(it->name, it->ptr, it->grow);
   }
 
   // 2D vectors
-  
+
   for(std::vector< VarStr<Vector2D> >::iterator it = v2d_arr.begin(); it != v2d_arr.end(); it++) {
     if(it->covar) {
       // Reading covariant vector
@@ -394,7 +394,7 @@ bool Datafile::read() {
   }
 
   // 3D vectors
-  
+
   for(std::vector< VarStr<Vector3D> >::iterator it = v3d_arr.begin(); it != v3d_arr.end(); it++) {
     if(it->covar) {
       // Reading covariant vector
@@ -421,10 +421,10 @@ bool Datafile::read() {
 bool Datafile::write() {
   if(!enabled)
     return true; // Just pretend it worked
-  
+
   if(!file)
     return false;
-  
+
   if(openclose) {
     // Open the file
     int MYPE;
@@ -434,22 +434,22 @@ bool Datafile::write() {
     appending = true;
   }
 
-  
+
   if(!file->is_valid())
     return false;
 
   if(floats)
     file->setLowPrecision();
-  
+
   Timer timer("io");
-  
+
   file->setRecord(-1); // Latest record
 
   // Write integers
   for(std::vector< VarStr<int> >::iterator it = int_arr.begin(); it != int_arr.end(); it++) {
     write_int(it->name, it->ptr, it->grow);
   }
-  
+
   // Write BoutReals
   for(std::vector< VarStr<BoutReal> >::iterator it = BoutReal_arr.begin(); it != BoutReal_arr.end(); it++) {
     if(it->grow) {
@@ -460,25 +460,25 @@ bool Datafile::write() {
   }
 
   // Write 2D fields
-  
+
   for(std::vector< VarStr<Field2D> >::iterator it = f2d_arr.begin(); it != f2d_arr.end(); it++) {
     write_f2d(it->name, it->ptr, it->grow);
   }
 
   // Write 3D fields
-  
+
   for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
     write_f3d(it->name, it->ptr, it->grow);
   }
-  
+
   // 2D vectors
-  
+
   for(std::vector< VarStr<Vector2D> >::iterator it = v2d_arr.begin(); it != v2d_arr.end(); it++) {
     if(it->covar) {
       // Writing covariant vector
       Vector2D v  = *(it->ptr);
       v.toCovariant();
-      
+
       write_f2d(it->name+string("_x"), &(v.x), it->grow);
       write_f2d(it->name+string("_y"), &(v.y), it->grow);
       write_f2d(it->name+string("_z"), &(v.z), it->grow);
@@ -486,7 +486,7 @@ bool Datafile::write() {
       // Writing contravariant vector
       Vector2D v  = *(it->ptr);
       v.toContravariant();
-      
+
       write_f2d(it->name+string("x"), &(v.x), it->grow);
       write_f2d(it->name+string("y"), &(v.y), it->grow);
       write_f2d(it->name+string("z"), &(v.z), it->grow);
@@ -494,13 +494,13 @@ bool Datafile::write() {
   }
 
   // 3D vectors
-  
+
   for(std::vector< VarStr<Vector3D> >::iterator it = v3d_arr.begin(); it != v3d_arr.end(); it++) {
     if(it->covar) {
       // Writing covariant vector
       Vector3D v  = *(it->ptr);
       v.toCovariant();
-      
+
       write_f3d(it->name+string("_x"), &(v.x), it->grow);
       write_f3d(it->name+string("_y"), &(v.y), it->grow);
       write_f3d(it->name+string("_z"), &(v.z), it->grow);
@@ -508,13 +508,13 @@ bool Datafile::write() {
       // Writing contravariant vector
       Vector3D v  = *(it->ptr);
       v.toContravariant();
-      
+
       write_f3d(it->name+string("x"), &(v.x), it->grow);
       write_f3d(it->name+string("y"), &(v.y), it->grow);
       write_f3d(it->name+string("z"), &(v.z), it->grow);
     }
   }
-  
+
   if(openclose)
     file->close();
 
@@ -524,7 +524,7 @@ bool Datafile::write() {
 bool Datafile::write(const char *format, ...) const {
   if(!enabled)
     return true;
-  
+
   va_list ap;  // List of arguments
   if(format == (const char*) NULL)
     return false;
@@ -535,11 +535,11 @@ bool Datafile::write(const char *format, ...) const {
 
   // Create a new datafile
   Datafile tmp(*this);
-  
+
   tmp.openw(filename);
   bool ret = tmp.write();
   tmp.close();
-  
+
   return ret;
 }
 
@@ -562,7 +562,7 @@ bool Datafile::writeVar(const BoutReal &r, const char *name) {
 
 bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
   f->allocate();
-  
+
   if(grow) {
     if(!file->read_rec(*(f->getData()), name, mesh->ngx, mesh->ngy)) {
       output.write("\tWARNING: Could not read 2D field %s. Setting to zero\n", name.c_str());
@@ -581,7 +581,7 @@ bool Datafile::read_f2d(const string &name, Field2D *f, bool grow) {
 
 bool Datafile::read_f3d(const string &name, Field3D *f, bool grow) {
   f->allocate();
-  
+
   if(grow) {
     if(!file->read_rec(**(f->getData()), name, mesh->ngx, mesh->ngy, mesh->ngz)) {
       output.write("\tWARNING: Could not read 3D field %s. Setting to zero\n", name.c_str());
@@ -617,7 +617,7 @@ bool Datafile::write_real(const string &name, BoutReal *f, bool grow) {
 bool Datafile::write_f2d(const string &name, Field2D *f, bool grow) {
   if(!f->isAllocated())
     return false; // No data allocated
-  
+
   if(grow) {
     return file->write_rec(*(f->getData()), name, Lx, Ly);
   }else {
@@ -630,7 +630,7 @@ bool Datafile::write_f3d(const string &name, Field3D *f, bool grow) {
     //output << "Datafile: unallocated: " << name << endl;
     return false; // No data allocated
   }
-  
+
   if(grow) {
     return file->write_rec(**(f->getData()), name, Lx, Ly, Lz);
   }else {
@@ -653,12 +653,12 @@ bool Datafile::varAdded(const string &name) {
     if(name == it->name)
       return true;
   }
-  
+
   for(std::vector< VarStr<Field3D> >::iterator it = f3d_arr.begin(); it != f3d_arr.end(); it++) {
     if(name == it->name)
       return true;
   }
-  
+
   for(std::vector< VarStr<Vector2D> >::iterator it = v2d_arr.begin(); it != v2d_arr.end(); it++) {
     if(name == it->name)
       return true;
