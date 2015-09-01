@@ -331,9 +331,11 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
   else if (pctypeoption == "ml") pctype = PCML;
   else if (pctypeoption == "galerkin") pctype = PCGALERKIN;
   else if (pctypeoption == "exotic") pctype = PCEXOTIC;
+#ifndef BOUT_HAS_PETSC_3_5
   else if (pctypeoption == "hmpi") pctype = PCHMPI;
   else if (pctypeoption == "supportgraph") pctype = PCSUPPORTGRAPH;
   else if (pctypeoption == "asa") pctype = PCASA;
+#endif
   else if (pctypeoption == "cp") pctype = PCCP;
   else if (pctypeoption == "bfbt") pctype = PCBFBT;
   else if (pctypeoption == "lsc") pctype = PCLSC;
@@ -750,8 +752,11 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   VecAssemblyEnd(xs);
 
   // Configure Linear Solver               
+#ifdef BOUT_HAS_PETSC_3_5
+  KSPSetOperators( ksp,MatA,MatA);
+#else
   KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
-
+#endif
   PC pc;
  
   if(direct) {
