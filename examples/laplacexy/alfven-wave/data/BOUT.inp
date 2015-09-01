@@ -1,0 +1,32 @@
+
+NOUT = 100
+TIMESTEP = 1
+
+grid = "d3d_119919.nc"
+
+MZ = 1
+
+[laplacexy]  # 2D solver in X-Y
+pctype = sor    # Preconditioner
+
+[laplace]    # 2D solver in X-Z
+
+
+[Alfven]
+
+split_n0 = true    # Split phi into n=0 and n~=0 components?
+
+
+[Vort]
+scale = 0.0
+
+bndry_all = dirichlet
+
+[Apar]
+scale = 1e-2
+function = gauss(x-0.5,0.2)*sin(y)
+
+bndry_all = dirichlet
+
+[jpar] 
+bndry_all = dirichlet
