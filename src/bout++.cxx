@@ -57,6 +57,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <invert_laplace.hxx>
 
+#include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -88,14 +89,21 @@ char get_spin();                    // Produces a spinning bar
 
 /*!
   Initialise BOUT++
-  
+
   Inputs
   ------
-  
+
   The command-line arguments argc and argv are passed by
   reference, and pointers to these will be stored in various
   places in BOUT++.
-  
+
+  Outputs
+  -------
+
+  Any non-zero return value should halt the simulation. If the return value is
+  less than zero, the exit status from BOUT++ is 0, otherwise it is the return
+  value of BoutInitialise.
+
  */
 int BoutInitialise(int &argc, char **&argv) {
 
@@ -158,6 +166,7 @@ int BoutInitialise(int &argc, char **&argv) {
   Options::getRoot()->set("optionfile", string(opt_file));
 
   // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
@@ -268,6 +277,11 @@ int BoutInitialise(int &argc, char **&argv) {
       return 1;
     }
 
+    ///////////////////////////////////////////////
+    
+    mesh = Mesh::create();  ///< Create the mesh
+    mesh->load();           ///< Load from sources. Required for Field initialisation
+    
     ////////////////////////////////////////////
 
     // Set up the "dump" data output file
@@ -290,10 +304,8 @@ int BoutInitialise(int &argc, char **&argv) {
     dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
     dump.add(iteration, "iteration", 0);
 
-    ///////////////////////////////////////////////
-    
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
+    ////////////////////////////////////////////
+
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
@@ -346,6 +358,9 @@ int BoutFinalise() {
 
   // Debugging message stack
   msg_stack.clear();
+
+  // Call SlepcFinalize if not already called
+  SlepcLib::cleanup();
 
   // Call PetscFinalize if not already called
   PetscLib::cleanup();

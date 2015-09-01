@@ -24,11 +24,13 @@ pythonpath="@PYTHONCONFIGPATH@"
 has_pdb="@HAS_PDB@"
 has_netcdf="@HAS_NETCDF@"
 has_pnetcdf="@HAS_PNETCDF@"
+has_hdf5="@HAS_HDF5@"
 has_pvode="@HAS_PVODE@"
 has_cvode="@HAS_CVODE@"
 has_ida="@HAS_IDA@"
 has_lapack="@HAS_LAPACK@"
 has_petsc="@HAS_PETSC@"
+has_slepc="@HAS_SLEPC@"
 has_hypre="@HAS_HYPRE@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
@@ -64,11 +66,13 @@ Available values for OPTION include:
   --has-pdb     PDB file support
   --has-netcdf  NetCDF file support
   --has-pnetcdf Parallel NetCDF file support
+  --has-hdf5    HDF5 file support
   --has-pvode   PVODE solver support
   --has-cvode   SUNDIALS CVODE solver support
   --has-ida     SUNDIALS IDA solver support
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
+  --has-slepc   SLEPc support
   --has-hypre   Hypre support
   --has-mumps   MUMPS support
 
@@ -101,11 +105,13 @@ all()
         echo "  --has-pdb     -> $has_pdb"
         echo "  --has-netcdf  -> $has_netcdf"
         echo "  --has-pnetcdf -> $has_pnetcdf"
+        echo "  --has-hdf5    -> $has_hdf5"
         echo "  --has-pvode   -> $has_pvode"
         echo "  --has-cvode   -> $has_cvode"
         echo "  --has-ida     -> $has_ida"
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
+        echo "  --has-slepc   -> $has_slepc"
         echo "  --has-hypre   -> $has_hypre"
         echo "  --has-mumps   -> $has_mumps"
 	echo "  --has-arkode  -> $has_arkode"
@@ -195,6 +201,10 @@ while test $# -gt 0; do
         echo $has_pnetcdf
         ;;
 
+    --has-hdf5)
+        echo $has_hdf5
+        ;;
+
     --has-pvode)
         echo $has_pvode
         ;;
@@ -213,6 +223,10 @@ while test $# -gt 0; do
 
     --has-petsc)
         echo $has_petsc
+        ;;
+
+    --has-slepc)
+        echo $has_slepc
         ;;
 
     --has-hypre)

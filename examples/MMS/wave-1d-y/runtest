@@ -4,8 +4,11 @@
 
 from __future__ import division
 from __future__ import print_function
-from builtins import zip
-from builtins import str
+try:
+  from builtins import zip
+  from builtins import str
+except:
+  pass
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect

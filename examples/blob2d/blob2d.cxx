@@ -21,11 +21,14 @@ Field3D phi;                                    // Electrostatic potential
 BoutReal rho_s,Omega_i,c_s,n0;                  // Bohm gyro radius, Ion cyclotron frequency, Bohm sound speed
 
 //Constants to calculate the parameters
-BoutReal Te0,e,B0,D_n,D_vort,R_c,L_par,m_i,m_e;
+BoutReal Te0,e,B0,D_n,D_vort,m_i,m_e;
+BoutReal R_c;   // Radius of curvature
+BoutReal L_par; // Parallel connection length
 
 //Model options 
 bool boussinesq;                                // Use the Boussinesq approximation in vorticity
 bool compressible;                              // If allow inclusion of n grad phi term in density evolution
+bool sheath;                                    // Sheath connected?
 
 Laplacian *phiSolver;
 
@@ -46,13 +49,15 @@ int physics_init(bool restarting) {
   options->get("D_vort",D_vort,0);      // Viscous diffusion coefficient
   options->get("D_n",D_n,0);            // Density diffusion coefficient
   
-  options->get("R_c",R_c,1.5);          // Radius of curvature
+  options->get("R_c",   R_c,  1.5);     // Radius of curvature
+  options->get("L_par", L_par, 10);     // Parallel connection length 
   OPTION(options, B0, 0.35);            // Value of magnetic field strength
 
   // System option switches
   
-  OPTION(options,compressible,false);   // Include compressible ExB term in density equation
-  OPTION(options,boussinesq,true);      // Use Boussinesq approximation in vorticity
+  OPTION(options, compressible,false);   // Include compressible ExB term in density equation
+  OPTION(options, boussinesq,true);      // Use Boussinesq approximation in vorticity
+  OPTION(options, sheath, true);         // Sheath closure
   
   /***************Calculate the Parameters **********/
   
@@ -63,6 +68,9 @@ int physics_init(bool restarting) {
   output.write("\n\n\t----------Parameters: ------------ \n\tOmega_i = %e /s,\n\tc_s = %e m/s,\n\trho_s = %e m\n",
                Omega_i, c_s, rho_s);
 
+  // Calculate delta_*, blob size scaling
+  output.write("\tdelta_* = rho_s * (dn/n) * %e ", pow( L_par*L_par / (R_c * rho_s), 1./5) );
+  
   /************ Create a solver for potential ********/
 
   if(boussinesq) {
@@ -111,11 +119,17 @@ int physics_run(BoutReal t) {
   // Density Evolution
   /////////////////////////////////////////////////////////////////////////////
   
-  ddt(n) = -vE_Grad(n,phi)                                              // ExB term
-         + 2*DDZ(n)*(rho_s/R_c)                                         // Curvature term
+  ddt(n) = -vE_Grad(n,phi)                    // ExB term
+         + 2*DDZ(n)*(rho_s/R_c)               // Curvature term
          + D_n*Delp2(n)
-    ;                                                                   // Diffusion term
-  if(compressible){ddt(n) -= 2*n*DDZ(phi)*(rho_s/R_c);}                 // ExB Compression term
+    ;                                         // Diffusion term
+  if(compressible){
+    ddt(n) -= 2*n*DDZ(phi)*(rho_s/R_c);       // ExB Compression term
+  }
+
+  if(sheath) {
+    ddt(n) += n*phi*(rho_s/L_par); // - (n - 1)*(rho_s/L_par);      // Sheath closure
+  }
 
   // Vorticity evolution
   /////////////////////////////////////////////////////////////////////////////
@@ -124,6 +138,10 @@ int physics_run(BoutReal t) {
              + 2*DDZ(n)*(rho_s/R_c)/n                                   // Curvature term
              + D_vort*Delp2(omega)/n                                    // Viscous diffusion term
     ;
+
+  if(sheath) {
+    ddt(omega) += phi * (rho_s/L_par);
+  }
   
   return 0;
 }

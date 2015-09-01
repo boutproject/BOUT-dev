@@ -37,7 +37,7 @@ class Datafile {
  public:
   Datafile(Options *opt = NULL);
   Datafile(const Datafile &other);
-  ~Datafile();
+//   ~Datafile(); Default destructor is adequate
   
   Datafile& operator=(const Datafile &rhs);
 
@@ -78,6 +78,7 @@ class Datafile {
   DataFormat *file;
   char filename[512];
   bool appending;
+  int Lx,Ly,Lz; // The sizes in the x-, y- and z-directions of the arrays to be written
 
   /// A structure to hold a pointer to a class, and associated name and flags
   template <class T>
@@ -99,6 +100,8 @@ class Datafile {
   bool read_f2d(const string &name, Field2D *f, bool grow);
   bool read_f3d(const string &name, Field3D *f, bool grow);
 
+  bool write_int(const string &name, int *f, bool grow);
+  bool write_real(const string &name, BoutReal *f, bool grow);
   bool write_f2d(const string &name, Field2D *f, bool grow);
   bool write_f3d(const string &name, Field3D *f, bool grow);
 

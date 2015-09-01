@@ -233,6 +233,9 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
     if(fft_measure)
       flags = FFTW_MEASURE;
     
+    // fftw call
+    // Plan a real-input/complex-output discrete Fourier transform (DFT)
+    // in 1 dimensions. Returns a fftw_plan (containing pointers etc.)
     p = fftw_plan_dft_r2c_1d(length, fin, fout, flags);
     
     n = length;
@@ -241,6 +244,7 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
   for(int i=0;i<n;i++)
     fin[i] = in[i];
   
+  // fftw call executing the fft
   fftw_execute(p);
 
   for(int i=0;i<(n/2)+1;i++)
@@ -568,7 +572,8 @@ void irfft(dcomplex *in, int length, BoutReal *out)
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
   }
-  
+
+  // fftw call executing the fft
   fftw_execute(p);
 
   for(int i=0;i<n;i++)
@@ -915,6 +920,9 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
         flags = FFTW_MEASURE;
       
       for(int i=0;i<n_th;i++)
+        // fftw call
+        // Plan a real-input/complex-output discrete Fourier transform (DFT)
+        // in 1 dimensions. Returns a fftw_plan (containing pointers etc.)
         p[i] = fftw_plan_dft_r2c_1d(length, finall+i*length, 
                                     foutall+i*(length/2 + 1), flags);
       size = length;
@@ -928,7 +936,8 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
   
   for(int i=0;i<length;i++)
     fin[i] = in[i];
-  
+
+  // fftw call executing the fft
   fftw_execute(p[th_id]);
 
   for(int i=0;i<(length/2)+1;i++)
@@ -986,6 +995,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
     fin[i][1] = in[i].imag();
   }
   
+  // fftw call executing the fft
   fftw_execute(p[th_id]);
 
   for(int i=0;i<length;i++)
@@ -1000,6 +1010,7 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 
   int ncz = mesh->ngz-1;
 
+  // Taking the fft of the real input in, and storing the output in cv
   rfft(in, ncz, cv);
 
   if((mesh->ShiftXderivs) && shift) {
@@ -1261,6 +1272,9 @@ void DST(BoutReal *in, int length, dcomplex *out) {
     if(fft_measure)
       flags = FFTW_MEASURE;
 
+    // fftw call
+    // Plan a real-input/complex-output discrete Fourier transform (DFT)
+    // in 1 dimensions. Returns a fftw_plan (containing pointers etc.)
     p = fftw_plan_dft_r2c_1d(2*(length-1), fin, fout, flags);
 
     n = length;
@@ -1276,6 +1290,7 @@ void DST(BoutReal *in, int length, dcomplex *out) {
       fin[2*(length-1)-j] = - in[j];
   }
  
+  // fftw call executing the fft 
   fftw_execute(p);
 
   out[0]=0.0;
@@ -1326,6 +1341,7 @@ void DST_rev(dcomplex *in, int length, BoutReal *out) {
     fin[2*(length-1)-j][0] = 0.; fin[2*(length-1)-j][1] =  in[j].real()/2.;
   }
 
+  // fftw call executing the fft
   fftw_execute(p);
 
   out[0]=0.0;

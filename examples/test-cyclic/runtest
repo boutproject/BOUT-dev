@@ -5,7 +5,10 @@
 #
 
 from __future__ import print_function
-from builtins import str
+try:
+  from builtins import str
+except:
+  pass
 from boututils import shell,launch,getmpirun
 from boutdata import collect
 from sys import stdout, exit

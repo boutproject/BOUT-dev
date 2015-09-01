@@ -67,6 +67,8 @@ class CvodeSolver : public Solver {
 
     int run();
     BoutReal run(BoutReal tout);
+    
+    void resetInternalFields();
 
     // These functions used internally (but need to be public)
     void rhs(BoutReal t, BoutReal *udata, BoutReal *dudata);

@@ -37,6 +37,8 @@ AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
 AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
 AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
+AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files])
+AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
@@ -46,6 +48,7 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
+AC_ARG_WITH(slepc,  [  --with-slepc                Enable SLEPc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
@@ -280,6 +283,64 @@ then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
 fi
+
+echo
+
+#############################################################
+# SLEPc library
+#############################################################
+HAS_SLEPC="no"
+SLEPC_VARS=""
+
+if test "$with_slepc" != "" && test "$with_slepc" != "no"
+then
+  #PETSC_ARCH = ${PETSC_ARCH}
+  #SLEPC_DIR = ${SLEPC_DIR}
+  
+  echo "Searching for SLEPc"
+
+  if test "$SLEPC_DIR" == ""
+  then
+    echo "Error - SLEPC_DIR not set"
+    exit
+  fi
+ 
+  # Check that the config directory exists 
+  AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
+    echo "Error - can't find SLEPc distribution"
+    exit)
+ 
+  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+ 
+  # Find version number
+
+  AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
+    echo "Error - can't read include/slepcversion.h"
+    exit)
+
+  SLEPC_VERSION_MAJOR="0"
+  SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+  SLEPC_VERSION_MINOR="0"
+  SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4" 
+  then
+    # Version 3.4
+    echo "  -> Using interface for SLEPc 3.4"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
+    HAS_SLEPC="yes"
+    
+    EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+    EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+  else
+    echo "Error - Unknown SLEPc version"
+    echo "  -> No SLEPc support"
+    HAS_SLEPC="no"
+  fi
+  
+fi
+AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
 
 echo
 
@@ -668,6 +729,80 @@ then
   CXXFLAGS="$CXXFLAGS -DLAPACK"	
   HAS_LAPACK="yes"
 fi
+
+#############################################################
+# HDF5 library
+#############################################################
+HDFPATH=""  # Indicates not found
+HAS_PHDF5="no"
+
+if test "$with_parallelhdf5" != "no" && test "$with_parallelhdf5" != ""
+then
+  with_hdf5="$with_parallelhdf5"
+fi
+
+if test "$with_hdf5" != "no"
+then
+  ##########################################
+  # Try to find a valid HDF5 configuration 
+  
+  if (test "$with_hdf5" = "yes") || (test "$with_hdf5" = "")
+  then
+    # No path specified
+    echo "Searching for HDF5 configuration"
+    
+    # Try some common HDF5 utilities
+    for i in h5cc h5pcc h5diff h5ls
+    do
+      printf "  -> Looking for $i..."
+      if type $i > /dev/null 2>&1; then
+        printf "yes\n"
+        # Remove 'h5cc' then bin
+        HDFPATH=`which $i | xargs -0 dirname | xargs -0 dirname`
+        break
+      fi
+      printf "no\n"
+    done
+    
+    # Check for include and library files
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h $HDFPATH/lib/libhdf5.a ,, [
+        echo " -> Can't find HDF5 files"
+        HDFPATH=""
+      ] )
+      
+  else
+    HDFPATH=$with_hdf5  # Configure given path
+    
+    # Check for include and library files
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h $HDFPATH/lib/libhdf5.a ,, [
+        echo " ERROR: Given HDF5 path not correct."
+        exit
+      ] )
+  fi
+
+  # Check if found valid path
+  if test "$HDFPATH" != ""
+  then
+    echo "HDF5 path: $HDFPATH"
+    CXXFLAGS="$CXXFLAGS -DHDF5"
+    if test "$with_phdf5" != "no" && test "$with_parallelhdf5" != ""
+    then
+      CXXFLAGS="$CXXFLAGS -DPHDF5"
+      HAS_PHDF5="yes"
+    fi
+    
+    EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS $HDFPATH/lib/libhdf5.a -lz"
+
+    file_formats="$file_formats HDF5"
+  else
+    printf "HDF5 library not found\n\n"
+  fi
+else
+  printf "HDF5 support disabled\n"
+fi
+
+echo ""
 
 #############################################################
 # netCDF support
@@ -1467,6 +1602,12 @@ then
   HAS_PNETCDF="no"
 fi
 
+HAS_HDF5="yes"
+if test "$HDFPATH" = ""
+then
+  HAS_HDF5="no"
+fi
+
 HAS_PDB="yes"
 if test "$PACT" = ""
 then
@@ -1515,6 +1656,7 @@ else
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
+echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
 
 echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
@@ -1525,6 +1667,8 @@ echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
 echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
+
+echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 
@@ -1590,11 +1734,13 @@ AC_SUBST(HAS_CVODE)
 AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
+AC_SUBST(HAS_HDF5)
 AC_SUBST(HAS_PDB)
 AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
+AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)
