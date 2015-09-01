@@ -7,6 +7,8 @@
 
 #include <bout/assert.hxx>
 
+#include <boutcomm.hxx>
+
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
   if(opt == NULL) {
@@ -15,7 +17,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   }
   
   // Get MPI communicator
-  MPI_Comm comm = communicator();
+  MPI_Comm comm = BoutComm::get();
   
   // Local size
   int localN = localSize();
@@ -30,22 +32,17 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   MatCreate( comm, &MatA );                                
   MatSetSizes( MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE );
   MatSetFromOptions(MatA);
-
-  // Determine which row/columns of the matrix are locally owned
-  int Istart, Iend;
-  MatGetOwnershipRange( MatA, &Istart, &Iend );
   
   //////////////////////////////////////////////////
-  // Specify global indices. This creates a mapping
-  // from local indices to global index, using a Field2D object
+  // Specify local indices. This creates a mapping
+  // from local indices to index, using a Field2D object
 
   indexXY = -1;  // Set all points to -1, indicating out of domain
 
-  int ind = Istart;
+  int ind = 0;
   
   // Y boundaries
   for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    
     indexXY(it.ind, mesh->ystart-1) = ind++;
   }
   for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
@@ -63,11 +60,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       indexXY(x,y) = ind++;
     }
   
-  ASSERT0(ind == Iend+1); // Reached end of range
-  
-  // Now communicate to fill guard cells
-  mesh->communicate(indexXY);
-  
+  ASSERT1(ind == localN); // Reached end of range
+
   //////////////////////////////////////////////////
   // Pre-allocate storage
   
@@ -86,7 +80,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(mesh->firstX()) {
     // Lower X boundary
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int localIndex = globalIndex(mesh->xstart-1,y) - Istart;
+      int localIndex = indexXY(mesh->xstart-1,y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
@@ -94,7 +89,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   }else {
     // On another processor
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int localIndex = globalIndex(mesh->xstart,y) - Istart;
+      int localIndex = indexXY(mesh->xstart,y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
     }
@@ -102,54 +98,77 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   if(mesh->lastX()) {
     // Upper X boundary
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int localIndex = globalIndex(mesh->xend+1,y) - Istart;
+      int localIndex = indexXY(mesh->xend+1,y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] = 2; // Diagonal sub-matrix
       o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     }
   }else {
     // On another processor
     for(int y=mesh->ystart;y<=mesh->yend;y++) {
-      int localIndex = globalIndex(mesh->xend,y) - Istart;
+      int localIndex = indexXY(mesh->xend,y);
+      ASSERT1( (localIndex >= 0) && (localIndex < localN) );
       d_nnz[localIndex] -= 1;
       o_nnz[localIndex] += 1;
     }
   }
   // Y boundaries
+  
   for(int x=mesh->xstart; x <=mesh->xend; x++) {
     // Default to no boundary
-    int localIndex = globalIndex(x, mesh->ystart) - Istart;
-    d_nnz[localIndex] -= 1;
+    // NOTE: This assumes that communications in Y are to other
+    //   processors. If Y is communicated with this processor (e.g. NYPE=1)
+    //   then this will result in PETSc warnings about out of range allocations
+    
+    int localIndex = indexXY(x, mesh->ystart);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+    //d_nnz[localIndex] -= 1;  // Note: Slightly inefficient
     o_nnz[localIndex] += 1;
     
-    localIndex = globalIndex(x, mesh->yend) - Istart;
-    d_nnz[localIndex] -= 1;
+    localIndex = indexXY(x, mesh->yend);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
+    //d_nnz[localIndex] -= 1; // Note: Slightly inefficient
     o_nnz[localIndex] += 1;
   }
+  
   for(RangeIterator it=mesh->iterateBndryLowerY(); !it.isDone(); it++) {
-    int localIndex = globalIndex(it.ind, mesh->ystart-1) - Istart;
+    int localIndex = indexXY(it.ind, mesh->ystart-1);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     d_nnz[localIndex] = 2; // Diagonal sub-matrix
     o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     
-    localIndex = globalIndex(it.ind, mesh->ystart) - Istart;
+    localIndex = indexXY(it.ind, mesh->ystart);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     d_nnz[localIndex] += 1;
     o_nnz[localIndex] -= 1;
   }
   for(RangeIterator it=mesh->iterateBndryUpperY(); !it.isDone(); it++) {
-    int localIndex = globalIndex(it.ind, mesh->yend+1) - Istart;
+    int localIndex = indexXY(it.ind, mesh->yend+1);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     d_nnz[localIndex] = 2; // Diagonal sub-matrix
     o_nnz[localIndex] = 0; // Off-diagonal sub-matrix
     
-    localIndex = globalIndex(it.ind, mesh->yend) - Istart;
+    localIndex = indexXY(it.ind, mesh->yend);
+    ASSERT1( (localIndex >= 0) && (localIndex < localN) );
     d_nnz[localIndex] += 1;
     o_nnz[localIndex] -= 1;
   }
-  
   // Pre-allocate
   MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
   MatSetUp(MatA); 
   
   PetscFree( d_nnz );
   PetscFree( o_nnz );
+  
+  // Determine which row/columns of the matrix are locally owned
+  int Istart, Iend;
+  MatGetOwnershipRange( MatA, &Istart, &Iend );
+  
+  // Convert indexXY from local index to global index
+  indexXY += Istart;
+  
+  // Now communicate to fill guard cells
+  mesh->communicate(indexXY);
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -249,7 +268,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       PetscScalar val = 0.5;
       MatSetValues(MatA,1,&row,1,&row,&val,INSERT_VALUES);
       
-      int col = globalIndex(mesh->xstart,y);
+      int col = globalIndex(mesh->xend,y);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
     }
   }

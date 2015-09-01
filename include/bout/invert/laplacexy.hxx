@@ -32,7 +32,7 @@
 #ifndef BOUT_HAS_PETSC
 // If no PETSc
 
-#error LaplaceXY requires PETSc
+#warning LaplaceXY requires PETSc. No LaplaceXY available
 
 #else // BOUT_HAS_PETSC
 
