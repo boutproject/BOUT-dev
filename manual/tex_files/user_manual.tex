@@ -7159,7 +7159,41 @@ or by getting a pointer to the underlying data, which is stored as a 1D array:
 %
 See the example \file{examples/test-globalfield} for more examples.
 
+\subsection{LaplaceXY}
 
+Perpendicular Laplacian solver in X-Y.
+
+\begin{eqnarray*}
+\nabla_\perp f &=& \nabla f - \mathbf{b}\left(\mathbf{b}\cdot\nabla\right) \\
+&=& \left(\frac{\partial f}{\partial x} - \frac{g_{xy}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla x + \left(\frac{\partial f}{\partial z} - \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)\nabla z
+\end{eqnarray*}
+In 2D (X-Y), the $g_{xy}$ component can be dropped since this depends on integrated shear $I$ which will cancel with the $g_{xz}$ component. The $z$ derivative is zero and so this simplifies to 
+\[
+\nabla_\perp f = \frac{\partial f}{\partial x}\nabla x - \frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\nabla z
+\]
+The divergence operator in conservative form is
+\[
+\nabla\cdot\mathbf{A} = \frac{1}{J}\frac{\partial}{\partial u^i}\left(Jg^{ij}A_j\right)
+\]
+and so the perpendicular Laplacian in X-Y is
+\[
+\nabla_\perp^2 = \frac{1}{J}\frac{\partial}{\partial x}\left(Jg^{xx}\frac{\partial f}{\partial x}\right) - \frac{1}{J}\frac{\partial}{\partial y}\left(Jg^{yz}\frac{g_{yz}}{g_{yy}}\frac{\partial f}{\partial y}\right)
+\]
+
+In field-aligned coordinates, the metrics in the $y$ derivative term become:
+\[
+g^{yz}\frac{g_{yz}}{g_{yy}} = \frac{B_{tor}}{B^2}\frac{1}{h_\theta^2}
+\]
+
+In the LaplaceXY operator this is implemented in terms of fluxes at cell faces. 
+\begin{eqnarray*}
+\frac{1}{J}\frac{\partial}{\partial x}\left(Jg^{xx}\frac{\partial f}{\partial x}\right) &\rightarrow& \frac{1}{J_i\mathrm{dx_i}}\left[J_{i+1/2}g^{xx}_{i+1/2}\left(\frac{f_{i+1} - f_{i}}{\mathrm{dx}_{i+1/2}}\right) - J_{i-1/2}g^{xx}_{i-1/2}\left(\frac{f_{i} - f_{i-1}}{\mathrm{dx}_{i-1/2}}\right)\right]
+\end{eqnarray*}
+
+Notes:
+\begin{itemize}
+\item The ShiftXderivs option must be true for this to work, since it assumes that $g^{xz} = 0$
+\end{itemize}
 
 \section{Eigenvalue solver}
 
@@ -7184,7 +7218,6 @@ This second method acts to damp high frequency components
 \subsubsection{Wave in a box}
 
 \texttt{examples/eigen-box}
-
 
 
 \section{Testing}

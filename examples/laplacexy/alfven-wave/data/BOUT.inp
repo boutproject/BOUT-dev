@@ -4,6 +4,8 @@ TIMESTEP = 1
 
 grid = "d3d_119919.nc"
 
+ShiftXderivs = true
+
 MZ = 1
 
 [laplacexy]  # 2D solver in X-Y
@@ -11,6 +13,7 @@ pctype = sor    # Preconditioner
 
 [laplace]    # 2D solver in X-Z
 
+inner_boundary_flags = 1 # Zero gradient on inner boundary
 
 [Alfven]
 

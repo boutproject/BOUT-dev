@@ -204,19 +204,23 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       
       // Metrics at y+1/2
       J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
-      BoutReal g22 = 0.5*(mesh->g22(x,y) + mesh->g22(x,y+1));
-      BoutReal dy = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
+      BoutReal g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y+1));
+      BoutReal g23  = 0.5*(mesh->g23(x,y) + mesh->g23(x,y+1));
+      BoutReal g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y+1));
+      BoutReal dy   = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
       
-      val = J * g22 / (mesh->J(x,y) * dy * mesh->dy(x,y));
+      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
       yp = val;
       c -= val;
       
       // Metrics at y-1/2
-      J = 0.5*(mesh->J(x,y) + mesh->J(x,y-1));
-      g22 = 0.5*(mesh->g22(x,y) + mesh->g22(x,y-1));
-      dy = 0.5*(mesh->dy(x,y) + mesh->dy(x,y-1));
+      J    = 0.5*(mesh->J(x,y)    + mesh->J(x,y-1));
+      g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y-1));
+      g23  = 0.5*(mesh->g23(x,y)  + mesh->g23(x,y-1));
+      g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y-1));
+      dy   = 0.5*(mesh->dy(x,y)   + mesh->dy(x,y-1));
       
-      val = J * g22 / (mesh->J(x,y) * dy * mesh->dy(x,y));
+      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
       ym = val;
       c -= val;
       
