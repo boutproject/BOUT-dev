@@ -38,6 +38,7 @@
 
 #include <bout/mesh.hxx>
 #include <bout/petsclib.hxx>
+#include <cyclic_reduction.hxx>
 
 class LaplaceXY {
 public:
@@ -68,6 +69,13 @@ public:
    * 
    */
   const Field2D solve(const Field2D &rhs, const Field2D &x0);
+
+  /*!
+   * Preconditioner function
+   * This is called by PETSc via a static function.
+   * and should not be called by external users
+   */
+  int precon(Vec x, Vec y);
 private:
   
   PetscLib lib;     ///< Requires PETSc library
@@ -77,6 +85,12 @@ private:
   PC pc;            ///< Preconditioner
 
   Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
+  
+  // Preconditioner
+  int xstart, xend;
+  int nloc, nsys;
+  BoutReal **acoef, **bcoef, **ccoef, **xvals, **bvals;
+  CyclicReduce<BoutReal> *cr; ///< Tridiagonal solver
   
   /*!
    * Number of grid points on this processor

@@ -8,6 +8,19 @@
 #include <bout/assert.hxx>
 
 #include <boutcomm.hxx>
+#include <utils.hxx>
+
+#undef __FUNCT__
+#define __FUNCT__ "laplacePCapply"
+static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
+  int ierr;
+  
+  // Get the context
+  LaplaceXY *s;
+  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+  
+  PetscFunctionReturn(s->precon(x, y));
+}
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
@@ -49,10 +62,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
     indexXY(it.ind, mesh->yend+1) = ind++;
   }
   
-  int xstart = mesh->xstart;
+  xstart = mesh->xstart;
   if(mesh->firstX())
     xstart -= 1; // Include X guard cells
-  int xend = mesh->xend;
+  xend = mesh->xend;
   if(mesh->lastX())
     xend += 1;
   for(int x=xstart;x<=xend;x++)
@@ -63,7 +76,22 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   ASSERT1(ind == localN); // Reached end of range
 
   //////////////////////////////////////////////////
-  // Pre-allocate storage
+  // Allocate storage for preconditioner
+  
+  nloc    = xend - xstart + 1; // Number of X points on this processor
+  nsys = mesh->yend - mesh->ystart + 1; // Number of separate Y slices
+  
+  acoef = matrix<BoutReal>(nsys, nloc);
+  bcoef = matrix<BoutReal>(nsys, nloc);
+  ccoef = matrix<BoutReal>(nsys, nloc);
+  xvals = matrix<BoutReal>(nsys, nloc);
+  bvals = matrix<BoutReal>(nsys, nloc);
+
+  // Create a cyclic reduction object
+  cr = new CyclicReduce<BoutReal>(mesh->getXcomm(), nloc);
+
+  //////////////////////////////////////////////////
+  // Pre-allocate PETSc storage
   
   PetscInt *d_nnz, *o_nnz;
   PetscMalloc( (localN)*sizeof(PetscInt), &d_nnz );
@@ -200,8 +228,12 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       xm = val;
       c  -= val;
       
+      // Put values into the preconditioner, X derivatives only
+      acoef[y - mesh->ystart][x - xstart] = xm;
+      bcoef[y - mesh->ystart][x - xstart] = c;
+      ccoef[y - mesh->ystart][x - xstart] = xp;
+
       // YY component
-      
       // Metrics at y+1/2
       J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
       BoutReal g_22 = 0.5*(mesh->g_22(x,y) + mesh->g_22(x,y+1));
@@ -247,6 +279,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       // Y - 1
       col = globalIndex(x, y-1);
       MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
+
+      
     }
   }
   
@@ -262,6 +296,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       int col = globalIndex(mesh->xstart,y);
       val = -1.0;
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      
+      // Preconditioner
+      bcoef[y-mesh->ystart][0] =  1.0;
+      ccoef[y-mesh->ystart][0] = -1.0;
     }
   }
   if(mesh->lastX()) {
@@ -274,6 +312,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       
       int col = globalIndex(mesh->xend,y);
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
+      
+      // Preconditioner
+      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = -0.5;
+      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] =  0.5;
     }
   }
   
@@ -299,6 +341,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   // Assemble Matrix
   MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
+
+  // Set coefficients for preconditioner
+  cr->setCoefs(nsys, acoef, bcoef, ccoef);
 
   //////////////////////////////////////////////////
   // Set up KSP
@@ -343,6 +388,19 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
     
     KSPGetPC(ksp,&pc);
     PCSetType(pc, pctype.c_str());
+
+    if(pctype == "shell") {
+      // Using tridiagonal solver as preconditioner
+      PCShellSetApply(pc,laplacePCapply);
+      PCShellSetContext(pc,this);
+      
+      bool rightprec;
+      OPTION(opt, rightprec, true);
+      if(rightprec) {
+        KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+      }else
+        KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+    }
   }
   
   KSPSetFromOptions( ksp );
@@ -353,6 +411,16 @@ LaplaceXY::~LaplaceXY() {
   VecDestroy( &xs );
   VecDestroy( &bs );
   MatDestroy( &MatA );
+
+  // Free memory for preconditioner
+  free_matrix(acoef);
+  free_matrix(bcoef);
+  free_matrix(ccoef);
+  free_matrix(xvals);
+  free_matrix(bvals);
+  
+  // Delete tridiagonal solver
+  delete cr;
 }
 
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
@@ -488,6 +556,45 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
   }
   
   return result;
+}
+
+/*! Preconditioner
+ * NOTE: For efficiency, this routine does not use globalIndex() 
+ * in the inner loop. Instead, the indexing must be ordered in
+ * exactly the same way as in the construction of indexXY
+ */
+int LaplaceXY::precon(Vec input, Vec output) {
+  
+  // Starting index
+  int ind0 = globalIndex(xstart,mesh->ystart);
+
+  // Load vector x into bvals array
+  
+  int ind = ind0;
+  for(int x=xstart;x<=xend;x++) {
+    for(int y=mesh->ystart; y<=mesh->yend;y++) {
+      PetscScalar val;
+      VecGetValues(input, 1, &ind, &val ); 
+      bvals[y-mesh->ystart][x-xstart] = val;
+      ind++;
+    }
+  }
+  
+  // Solve tridiagonal systems using CR solver
+  cr->solve(nsys, bvals, xvals);
+
+  // Save result xvals into y array
+  ind = ind0;
+  for(int x=xstart;x<=xend;x++) {
+    for(int y=mesh->ystart; y<=mesh->yend;y++) {
+      PetscScalar val = xvals[y-mesh->ystart][x-xstart];
+      VecSetValues(output, 1, &ind, &val, INSERT_VALUES );
+      ind++;
+    }
+  }
+  VecAssemblyBegin(output);
+  VecAssemblyEnd(output);
+  return 0;
 }
 
 ///////////////////////////////////////////////////////////////

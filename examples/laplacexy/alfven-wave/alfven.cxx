@@ -78,6 +78,7 @@ protected:
 
     // Set boundary condition on jpar from input file
     jpar.setBoundary("jpar");
+    phi.setBoundary("phi");
     
     SAVE_REPEAT2(jpar,phi);
 
@@ -105,6 +106,7 @@ protected:
     }else {
       // Solve all components using X-Z solver
       phi = phiSolver->solve(Vort, phi);
+      phi.applyBoundary(); // Apply Y boundaries
     }
     
     // Communicate jpar and phi
