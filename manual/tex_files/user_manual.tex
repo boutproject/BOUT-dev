@@ -721,92 +721,69 @@ solver.  Whilst no serious bugs have been found in this code (as far as the
 authors are aware of), several features such as user-supplied preconditioners
 and constraints cannot be used with this solver. Currently, BOUT++ also
 supports the SUNDIALS solvers CVODE, IDA and ARKODE which are available from
-\code{https://computation.llnl.gov/casc/sundials/main.html}.
+\url{https://computation.llnl.gov/casc/sundials/main.html}.
 
 SUNDIALS is only downloadable from the home page, as submitting your name and
 e-mail is required for the download. As for the date of this typing, SUNDIALS
 version $2.6.2$ is the newest. In order for a smooth install it is recommended
 to install SUNDIALS from an install directory. The full installation guide is
-found in the downloaded \verb@.tar.gz@, but we will provide a step-by-step
+found in the downloaded \texttt{.tar.gz}, but we will provide a step-by-step
 guide to install it and make it comatible with BOUT++ here.
-
-\begin{note}
+\\
+\\
+\note{
 It is important to note that if you do configure PETSc with SUNDIALS then BOUT
 must use/link the same version of SUNDIALS
-\end{note}
+}
 
-YOU ARE HERE
-
-
-move the downloaded \verb@.tar.gz@
-The SUNDIALS library needs to have MPI enabled, so after configuring, check the
-output and look for something like this:
 %
 \begin{verbatim}
-MPI-C Settings
---------------
+cd ~
+mkdir local
+cd local
+mkdir examples
+cd ..
+mkdir install
+cd install
+mkdir sundials-install
+cd sundials-install
+# Move the downloaded sundials-2.6.2.tar.gz to sundials-install
+tar -xzvf sundials-2.6.2.tar.gz
+mkdir build
+cd build
 
-checking if using MPI-C script... yes
-checking if absolute path to mpicc was given... no
-checking for mpicc... none
-configure: WARNING: cannot find MPI-C compiler
-\end{verbatim}
-%
-If you see this warning, you need to tell CVODE which MPI compiler to use.
-This happens on machines where the MPI compilers are given non-standard names.
-For IBM AIX machines, use
-%
-\begin{verbatim}
-$ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
-\end{verbatim}
-%
-On NERSC's Franklin, SUNDIALS needs to be compiled with ``--with-mpicc=cc'' to
-force it to build the parallel libraries
+cmake \
+-DCMAKE_INSTALL_PREFIX=$HOME/local \
+-DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
+-DCMAKE_LINKER=$HOME/local/lib \
+-DLAPACK_ENABLE=ON \
+-DOPENMP_ENABLE=ON \
+-DMPI_ENABLE=ON \
+../sundials-2.6.2
 
-The modern SUNDIALS CVODE solver is essentially the same as the 1998 CVODE
-(with some tweaking, re-arranging etc.), but this solver allows users to supply
-their own preconditioner and Jacobian functions. To use this solver, use
-%
-\begin{verbatim}
-./configure --with-cvode
+make
+make install
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-cvode=/path/to/cvode/
-\end{verbatim}
-%
-if your CVODE library is in a non-standard place.
-
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE) solver,
 which evolves a system of the form $\mathbf{f}\left(\mathbf{u},
 \dot{\mathbf{u}}, t\right) = 0$. This allows algebraic constraints on variables
-to be specified. If you want this functionality, compile in the IDA library
-using
+to be specified.
+
+To configure BOUT++ with SUNDIALS only (see section \ref{sec:PETSc} on how to
+build PETSc with SUNDIALS), go to the root directory of BOUT++ and type
 %
 \begin{verbatim}
-./configure --with-ida
+./configure --with-sundials
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-ida=/path/to/ida/
-\end{verbatim}
-%
-You can compile in several of these libraries, for example
-%
-\begin{verbatim}
-./configure --with-cvode --with-ida
-\end{verbatim}
-%
-is valid. This will allow you to select at run-time which solver to use. See
+SUNDIALS will allow you to select at run-time which solver to use. See
 section~\ref{sec:timeoptions} for more details on how to do this.
 
 
 
 \subsection{PETSc}
+\label{sec:PETSc}
 %
 BOUT++ can use PETSc \url{http://www.mcs.anl.gov/petsc/} for time-integration
 and for solving elliptic problems, such as inverting Poisson and Helmholtz
@@ -815,50 +792,81 @@ equations.
 Currently, BOUT++ supports PETSc version $3.1$, $3.2$, $3.3$ and $3.4$ (support
 for newer versions are planned for the future). To install PETSc version
 $3.4.5$, use the following steps
-
-\subsection{PETSc with SUNDIALS}
 %
-FIXME: YOU ARE HERE
-PETSc can be built with SUNDIALS (see section \ref{sec:sundials} for).
-
+\begin{verbatim}
+cd ~
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
+tar -xzvf petsc-3.4.5.tar.gz
+# Optional
+# rm petsc-3.4.5.tar.gz
+cd petsc-3.4.5
+\end{verbatim}
+%
+To build PETSc without SUNDIALS, configure with
+%
+\begin{verbatim}
+./configure \
+--with-clanguage=cxx \
+--with-mpi=yes \
+--with-precision=double \
+--with-scalar-type=real \
+--with-shared-libraries=0 \
+--with-debugging=yes
+\end{verbatim}
+%
+To build PETSc with SUNDIALS, install SUNDIALS as explained in section
+\ref{sec:sundials}, and append \texttt{./configure} with
+\texttt{--with-sundials-dir=\$HOME/local}
+%
+\\
+\\
+\note{
+It is important to note that if you do configure PETSc with SUNDIALS then BOUT
+must use/link the same version of SUNDIALS
+}
+\\
+\\
+%
+It is also possible to get PETSc to download and install MUMPS
+(see section \ref{sec:MUMPS}), by adding
+%
+\begin{verbatim}
+--download-mumps \
+--download-scalapack \
+--download-blacs \
+--download-f-blas-lapack=1 \
+--download-parmetis \
+--download-ptscotch \
+--download-metis
+\end{verbatim}
+%
+to \texttt{./configure}
+%
+To make PETSc, type
+%
+\begin{verbatim}
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
+\end{verbatim}
+%
+Should blas, lapack or any other packages be missing, you will get an error,
+and a suggestion that you can append \texttt{--download-name-of-package} to the
+\texttt{./configure} line.  You may want to test that everything is configured
+properly. To do this, type
+%
+\begin{verbatim}
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+\end{verbatim}
+%
 To configure BOUT++ with PETSc, go to the BOUT++ root directory, and type
 %
 \begin{verbatim}
-./configure --with-petsc
+./configure --with-petsc=$HOME/petsc-3.4.5
 \end{verbatim}
 %
-The development version of PETSc has the latest and greatest, and is needed for
-some shiny features like time stepping. To install it, follow the instructions
-here: \url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the
-time of writing, this consisted of fetching the latest version ({\bf NB} needs
-Mercurial 'hg' to be installed):
+To configure BOUT++ with PETSc and sundials, type instead
 %
 \begin{verbatim}
-hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
-cd petsc-dev
-hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
-\end{verbatim}
-%
-then configure PETSc, making sure to enable C++.
-%
-\begin{verbatim}
-./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
-            --with-sundials=1 --with-sundials-dir=$HOME/local/
-\end{verbatim}
-%
-You can add SUNDIALS support, but it is not required. To do this, add the
-following to the end of the configure command:
-%
-\begin{verbatim}
---with-sundials=1 --with-sundials-dir=$HOME/local/
-\end{verbatim}
-%
-replacing \texttt{\$HOME/local/} with the location of your SUNDIALS
-installation.  It is also useful to get PETSc to download and install MUMPS
-(see below), by adding
-%
-\begin{verbatim}
---download-mumps
+./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
 \end{verbatim}
 %
 Finally compile PETSc:
@@ -868,11 +876,16 @@ make
 \end{verbatim}
 %
 To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to
-the petsc-dev directory so add something like this to your startup file
-\texttt{\$HOME/.bashrc}
+the petsc directory, type
 %
 \begin{verbatim}
-export PETSC_DIR=$HOME/petsc-dev
+export PETSC_DIR=$HOME/petsc-3.4.5
+\end{verbatim}
+%
+and add to your startup file \texttt{\$HOME/.bashrc}
+%
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-3.4.5
 \end{verbatim}
 %
 
@@ -902,6 +915,7 @@ and to specify a non-standard path
 
 
 \subsection{MUMPS}
+\label{sec:MUMPS}
 %
 This is still experimental, but does work on at least some systems at York.
 The PETSc library can be used to call MUMPS for directly solving matrices (e.g.
@@ -1638,7 +1652,7 @@ BOUT++ has its own makefile system. These can be used to
  \item Adding a feature to BOUT++ (see section~\ref{sec:modules})
 \end{enumerate}
 %
-In all makefiles, \verb@BOUT_TOP@ is required!
+In all makefiles, \texttt{BOUT\_TOP} is required!
 
 
 \subsubsection{Executables example}
@@ -1656,11 +1670,11 @@ SOURCEC		= <filename>.cpp
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-where \verb@BOUT_TOP@ - refers to the relative (or absolute) location of the
-BOUT directory (the one that includes \verb@/lib@ and \verb@/src@) and
-\verb@SOURCEC@  is the name of your file, e.g. \verb@gas_compress.cpp@.
+where \texttt{BOUT\_TOP} - refers to the relative (or absolute) location of the
+BOUT directory (the one that includes \texttt{/lib} and \texttt{/src}) and
+\texttt{SOURCEC}  is the name of your file, e.g. \texttt{gas\_compress.cxx}.
 
-Optionally, it is possible to specify \verb@TARGET@ which defines what the
+Optionally, it is possible to specify \texttt{TARGET} which defines what the
 executable should be called (e.g. if you have multiple source files). That's
 it!
 
@@ -1684,16 +1698,16 @@ TARGET		= lib
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-\verb@TARGET@ - must be \verb@lib@ to signify you are adding to
-\verb@libbout++.a@.
+\texttt{TARGET} - must be \texttt{lib} to signify you are adding to
+\texttt{libbout++.a}.
 
 The other variables should be pretty self explanatory.
 
 
 \subsubsection{Adding a new subdirectory to 'src'}
 %
-No worries, just make sure to edit \verb@src/makefile@ to add it to the
-\verb@DIRS@ variable.
+No worries, just make sure to edit \texttt{src/makefile} to add it to the
+\texttt{DIRS} variable.
 
 
 
@@ -6883,7 +6897,7 @@ J^2B^2$, and so the $\nabla y$ term cancels out:
 
 \subsection{The bracket operators}
 %
-The bracket operator \verb@brackets(phi, f, method)@ aims to differentiate
+The bracket operator \texttt{brackets(phi, f, method)} aims to differentiate
 equations on the form
 %
 \begin{align*}
