@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0021'
-__date__    = '13.08.2015'
+__version__ = '1.0022'
+__date__    = '03.09.2015'
 
 import os
 import re
@@ -358,8 +358,8 @@ class basic_runner(object):
             for cur_NXPE in self._NXPE:
                 if (self._nproc % cur_NXPE) != 0:
                     self._errors.append("RuntimeError")
-                    message = "nproc =" + self._nproc + " not divisible by"+\
-                              " NXPE = " + cur_NXPE +\
+                    message = "nproc =" + str(self._nproc) + " not divisible by"+\
+                              " NXPE = " + str(cur_NXPE) +\
                               " (the number of processors in the x direction)"
                     raise RuntimeError(message)
 
