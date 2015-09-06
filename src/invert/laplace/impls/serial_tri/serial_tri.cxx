@@ -172,11 +172,9 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(!mesh->periodicX) {
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
-
     } else {
       // Periodic in X, so cyclic tridiagonal
       cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->ngx-4);
-
       // Copy boundary regions
       for(int ix=0;ix<2;ix++) {
         xk1d[ix] = xk1d[mesh->ngx-4+ix];
@@ -184,6 +182,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       }
     }
 
+    // If the global flag is set to INVERT_KX_ZERO
     if((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
@@ -193,7 +192,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         bk1d[ix] -= offset;
     }
 
-    // Set the answer xk for the current fourier mode
+    // Store the solution xk for the current fourier mode in a 2D array
     for (int ix=0; ix<=ncx; ix++){
       xk[ix][kz]=xk1d[ix];
     }
@@ -214,5 +213,5 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
   }
 
-  return x;
+  return x; // Result of the inversion
 }

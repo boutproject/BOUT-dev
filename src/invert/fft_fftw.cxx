@@ -219,6 +219,7 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
    *
    * Input:
    * *in      - Pointer to the 1D array to take the fourier transform of
+   * length   - Number of points in the input array
    *
    * Output:
    * *out      - Pointer to the complex 1D array which is the FFT of *in
@@ -271,20 +272,36 @@ void rfft(BoutReal *in, int length, dcomplex *out) {
   // fftw call executing the fft
   fftw_execute(p);
 
-  // Put the output in out, and normalize
+  // Store the output in out, and normalize
   for(int i=0;i<(n/2)+1;i++)
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
 }
 
 void irfft(dcomplex *in, int length, BoutReal *out)
 {
+  /* Function: irfft
+   * Purpose:  Take the inverse FFT of a complex variable using fftw_backward.
+   *           That is
+   *           out_k = sum_{j=0}^(length-1) in_j*exp(2*pi*j*k*sqrt(-1)/length)
+   *
+   * Input:
+   * *in      - Pointer to the 1D array to take the fourier transform of
+   * length   - Number of points in the output array
+   *
+   * Output:
+   * *out      - Pointer to the complex 1D array which is the FFT of *in
+   */
+  // static variables initialized once
   static fftw_complex *fin;
   static double *fout;
   static fftw_plan p;
   static int n = 0;
 
+  // If the current length mismatches n
   if(length != n) {
+    // If n has been used before
     if(n > 0) {
+      // Free the previously initialized data
       fftw_destroy_plan(p);
       fftw_free(fin);
       fftw_free(fout);
@@ -292,18 +309,30 @@ void irfft(dcomplex *in, int length, BoutReal *out)
 
     fft_init();
 
+    // Initilaize the input for the inverse fourier transformation
+    /* NOTE: Only the non-redundant input is given
+     *       I.e the offset and the positive frequencies (so no mirroring
+     *       around the Nyquist frequency)
+     */
     fin = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (length/2 + 1));
+    // Initialize the output of the fourier transformation
     fout = (double*) fftw_malloc(sizeof(double) * length);
 
     unsigned int flags = FFTW_ESTIMATE;
     if(fft_measure)
       flags = FFTW_MEASURE;
 
+    /* fftw call
+     * Plan a complex-input/real-output discrete Fourier transform (DFT)
+     * in 1 dimensions. Returns a fftw_plan (containing pointers etc.)
+     * c2r = complex to real
+     */
     p = fftw_plan_dft_c2r_1d(length, fin, fout, flags);
 
     n = length;
   }
 
+  // Store the real and imaginary parts in the proper way
   for(int i=0;i<(n/2)+1;i++) {
     fin[i][0] = in[i].real();
     fin[i][1] = in[i].imag();
@@ -312,6 +341,7 @@ void irfft(dcomplex *in, int length, BoutReal *out)
   // fftw call executing the fft
   fftw_execute(p);
 
+  // Store the output of the fftw to the out
   for(int i=0;i<n;i++)
     out[i] = fout[i];
 }
@@ -472,20 +502,37 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
 
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
 {
+  /* Function: ZFFT_rev
+   * Purpose:  Take the FFT of a real variable, and add an eventual offset from
+   *           the shifted metric
+   *
+   * Input:
+   * *cv      - Pointer to the 1D array to take the inverse fourier transform of
+   * zoffset  - The offset
+   * shift    - Whether or not a shift should be added to the wave
+   *
+   * Output:
+   * *out      - Pointer to the complex 1D array which is the inverse FFT of *cv
+   */
   int jz;
   BoutReal kwave;
 
-  int ncz = mesh->ngz-1;
+  int ncz = mesh->ngz-1; // Number of points in z (counting from 1)
 
+  // If there are shifted derivates and a specified shift
   if((mesh->ShiftXderivs) && shift) {
-    for(jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
-      kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    // Only do positive (non-redunant) frequencies
+    for(jz=0;jz<=ncz/2;jz++) {
+      // Wave number (will be different than the index only if we are taking a
+      // part of the z-domian [and not from 0 to 2*pi])
+      kwave=jz*2.0*PI/mesh->zlength;
 
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
     }
   }
 
+  // Taking the inverse fft of the complex input cv, and storing it in out
   irfft(cv, ncz, out);
 }
 

@@ -221,7 +221,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   x.setLocation(b.getLocation());
 
-  return x;
+  return x; // Return the result of the inversion
 }
 
 const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
@@ -254,9 +254,16 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    *
    *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
    *
-   *             for each fourier component
+   *             for each fourier component.
+   *             NOTE: A in the equation above is not added here.
+   *             For calculations of the coefficients, please refer to the user
+   *             manual
    *
    * Input:
+   * jx        - The current x index
+   * jy        - The current y index
+   * kwave     - The mode number multiplied with (2*pi)/mesh->zlength, where
+   *             zlength is the length of the full z domain (usually 2*pi)
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
@@ -276,6 +283,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   coef4 = 0.0;
   coef5 = 0.0;
+  // If global flag all_terms are set (true by default)
   if(all_terms) {
     coef4 = mesh->G1[jx][jy]; // X 1st derivative
     coef5 = mesh->G3[jx][jy]; // Z 1st derivative
@@ -300,7 +308,6 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   if(ccoef != NULL) {
     // A first order derivative term
-
     if((jx > 0) && (jx < (mesh->ngx-1)))
       coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
   }
@@ -392,7 +399,7 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       xe = mesh->xend; // Outer edge is a guard cell
   }
 
-  int ncx = xe - xs; // Total number of x-points to be used
+  int ncx = xe - xs; // Total number of points in x to be used
 
   // Setting the width of the boundary.
   // NOTE: The default is a width of 2 guard cells
@@ -413,24 +420,24 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
     // Actually set the metric coefficients
     tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
     if(a != (Field2D*) NULL)
-      // Add A to bvec
+      // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)[xs+ix][jy];
   }
 
+  // Set the boundary conditions if x is not periodic
   if(!mesh->periodicX) {
-    // Boundary conditions
-
     if(mesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
 
+      // If no user specified value is set on inner boundary, set the first
+      // element in b (in the equation AX=b) to 0
       if(!(inner_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for(int ix=0;ix<inbndry;ix++)
-          // Set inner the boundary to zero
           bk[ix] = 0.;
       }
 
+      // DC i.e. kz = 0 (the offset mode)
       if(kz == 0) {
-        // DC i.e. kz = 0
 
         if(inner_boundary_flags & INVERT_DC_GRAD && (inner_boundary_flags & INVERT_SET || inner_boundary_flags & INVERT_RHS)) {
           // Zero gradient at inner boundary
@@ -499,8 +506,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           }
         }
       }
+      // AC i.e. kz =/= 0 (all other modes than the offset mode)
       else {
-        // AC
 
         if(inner_boundary_flags & INVERT_AC_GRAD && (inner_boundary_flags & INVERT_SET || inner_boundary_flags & INVERT_RHS)) {
           // Zero gradient at inner boundary
@@ -556,17 +563,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
     if(mesh->lastX()) {
-      // OUTER BOUNDARY
+      // OUTER BOUNDARY ON THIS PROCESSOR
 
+      // If no user specified value is set on outer boundary, set the last
+      // element in b (in the equation AX=b) to 0
       if(!(outer_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for (int ix=0;ix<outbndry;ix++) {
-          // Set outer the boundary to zero
           bk[ncx-ix] = 0.;
         }
       }
 
+      // DC i.e. kz = 0 (the offset mode)
       if(kz==0) {
-        // DC
 
         if(outer_boundary_flags & INVERT_DC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary
@@ -623,8 +631,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           }
         }
       }
+      // AC i.e. kz =/= 0 (all other modes than the offset mode)
       else {
-        // AC
 
         if(outer_boundary_flags & INVERT_AC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary
