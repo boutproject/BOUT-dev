@@ -59,6 +59,7 @@
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
+\newcommand{\defi}[4]{\int_{#1}^{#2} {#3} \; \text{d} {#4}} %Definite integral
 
 %% commands for boxes with important notes
 \newlength{\notewidth}
@@ -346,7 +347,7 @@ whilst the parallel divergence is given by
 \nabla^0_{||}f = B_0\partial^0_{||}\L(\frac{f}{B_0}\R)
 \end{align*}
 %
-Using equation (\ref{eq:general_laplacian}), the laplacian operator is given by
+Using equation (\ref{eq:general_laplacian}), the Laplacian operator is given by
 %
 \begin{align*}
 \nabla^2 = &\frac{\partial^2}{\partial x^2}\L|\nabla x\R|^2 +
@@ -1280,8 +1281,8 @@ I\deriv{\phi}{z}\deriv{A}{z}\R)\L(-B^2\R) \\ &-
 
 \section{Differential geometry}
 %
-{\color{red} \textbf{WARNING: Several mistakes have been found (and is now 
-corrected) in this section, so it should be proof read before removing this 
+{\color{red} \textbf{WARNING: Several mistakes have been found (and is now
+corrected) in this section, so it should be proof read before removing this
 warning!}}\\
 %
 The following is notes from \cite{haeseler-1}.
@@ -1363,12 +1364,12 @@ $g_{ii} = h_i^2$}
 For a general set of coordinates, the nabla operator can be expressed as
 %
 \begin{align*}
-\nabla = \nabla u^i\frac{\partial}{\partial u^i} = 
+\nabla = \nabla u^i\frac{\partial}{\partial u^i} =
 \ve{e}^i\frac{\partial}{\partial u^i}
 \end{align*}
 %
 and for a general set of (differentiable) coordinates $\L\{u^i\R\}$, the
-laplacian is given by
+Laplacian is given by
 %
 \begin{align}
 \nabla^2\phi = \frac{1}{J}\frac{\partial}{\partial
@@ -1385,10 +1386,10 @@ u^i}\L(Jg^{ij}\R)}_{G^j}\frac{\partial\phi}{\partial u^j}
 \label{eq:laplace_expand}
 \end{align}
 %
-where $G^j$ must \textbf{not} be mistaken as the so called connection 
+where $G^j$ must \textbf{not} be mistaken as the so called connection
 coefficients (i.e. the Christoffel symbols of second kind).
-Setting $\phi = u^k$ in equation (\ref{eq:laplacegen}) gives $\nabla^2u^k = 
-G^k$. Expanding (\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x, 
+Setting $\phi = u^k$ in equation (\ref{eq:laplacegen}) gives $\nabla^2u^k =
+G^k$. Expanding (\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x,
 y, z\R\}$ gives
 %
 \begin{align}
@@ -1455,9 +1456,63 @@ Further on
 
 
 
+\subsection{The parallel and perpendicular gradients}
+%
+We have that
+%
+\begin{align*}
+    \Grad =& \ve{e}^i \partial_i
+          = \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z \partial_z
+\end{align*}
+%
+and that
+%
+\begin{align*}
+    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b}
+             = \ve{b} \ve{b} \cdot \Grad
+             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad
+             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i
+             = \frac{\ve{e}_y}{g_{yy}} \partial_y
+\end{align*}
+%
+so that
+%
+\begin{align*}
+    \Grad_\perp =& \Grad - \Grad_\|\\
+%
+                =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
+                   \partial_z - \frac{\ve{e}_y}{g_{yy}} \partial_y\\
+%
+                =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
+                   \partial_z - \frac{g_{2i}\ve{e}^i}{g_{22}} \partial_y\\
+%
+                =& \ve{e}^x \partial_x + \ve{e}^y \partial_y + \ve{e}^z
+                   \partial_z
+                   - \frac{g_{21}\ve{e}^x
+                          +g_{22}\ve{e}^y
+                          +g_{23}\ve{e}^z
+                          }{g_{22}}\partial_y\\
+%
+                =& \ve{e}^x \L(\partial_x - \frac{g_{21}}{g_{22}}\partial_y\R)
+                +  \ve{e}^z \L(\partial_z - \frac{g_{23}}{g_{22}}\partial_y\R)
+\end{align*}
+%
+\subsection{The perpendicular gradients in Laplacian inversion}
+In the Laplacian inversion BOUT++ currently neglects the parallel derivatives,
+thus
+%
+\begin{align*}
+    \Grad_\perp \simeq&
+        \ve{e}^x \partial_x
+     +  \ve{e}^z \partial_z
+\end{align*}
+
+
+
+
 \subsection{The Laplacian}
 %
-We would here like to find an expression for the laplacian
+We would here like to find an expression for the Laplacian
 %
 \begin{align*}
     \Grad^2 = \Div \Grad
@@ -1632,7 +1687,7 @@ so that by equation (\ref{eq:divA}),
 
 
 \subsection{The perpendicular Laplacian}
-For the perpendicular laplacian, we have that
+For the perpendicular Laplacian, we have that
 %
 \begin{align*}
     \Grad_\perp^2 =& \Grad^2 - \Grad_\|^2\\
@@ -1671,8 +1726,13 @@ For the perpendicular laplacian, we have that
             &- \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
 \end{align*}
 %
-Notice that BOUT++ for now assumes small parallel gradients in the laplacian
-inversion, so that
+
+
+
+\subsubsection{The perpendicular Laplacian in Laplacian inversion}
+%
+Notice that BOUT++ currently assumes small parallel gradients in the dependent
+variable in Laplacian inversion, so that
 %
 \begin{align*}
     \Grad_\perp^2 \simeq& \quad \,
@@ -1680,6 +1740,7 @@ inversion, so that
                + \L(
                     \frac{1}{J} \L[
                       \partial_x \L\{J g^{xx} \R\}
+                    + \partial_y \L\{J g^{yx} \R\}
                     + \partial_z \L\{J g^{zx} \R\}
                     \R]
                     \partial_x\R)\\
@@ -1687,13 +1748,301 @@ inversion, so that
                + \L(
                     \frac{1}{J} \L[
                       \partial_x \L\{J g^{xz} \R\}
+                    + \partial_y \L\{J g^{yz} \R\}
                     + \partial_z \L\{J g^{zz} \R\}
                     \R]
                     \partial_z\R)\\
-            &+ 2\L(g^{xz} \partial_x \partial_z\R)
+            &+ 2\L(g^{xz} \partial_x \partial_z\R)\\
+%
+%
+           =&
+               \L(g^{xx} \partial_x^2\R)
+               +
+                    G^x\partial_x
+            + \L(g^{zz} \partial_z^2\R)
+               + G^z \partial_z
+            + 2\L(g^{xz} \partial_x \partial_z\R)
 \end{align*}
 %
-for the laplacian inversion.
+
+
+
+\subsection{The Laplacian inversion}
+%
+We will here go through the calulations of the laplacian inversion algorithm,
+as it is performed in BOUT++. We would like to solve the following equation
+for $f$
+%
+\begin{align}
+    d&\Grad_\perp^2f + \frac{1}{c}(\Grad_\perp c)\cdot\Grad_\perp f + af = b
+    \label{eq:to_invert}
+\end{align}
+%
+
+
+\subsubsection{Using tridiagonal solvers}
+%
+In order to use a tridiagonal solver to solve equation (\ref{eq:to_invert}), we
+will first assume that the parallel derivatives are small. This means that we
+will only have derivatives of $x$ and $z$ for the dependent variable. The hope
+is that the modes in the periodic $z$ direction will decouple, so that we in the
+end only have to invert for the $x$ coordinate. Neglecting the parallel
+derivatives yields
+%
+\begin{align*}
+    \, &d
+    \L(    g^{xx} \partial_x^2
+         + G^x \partial_x
+         + g^{zz} \partial_z^2
+         + G^z \partial_z
+         + 2g^{xz} \partial_x \partial_z
+    \R)
+    f
+    \\
+%
+    +& \frac{1}{c}\L(
+          \ve{e}^x \partial_x
+       +  \ve{e}^z \partial_z
+    \R)
+    c
+    \cdot
+       \L(
+          \ve{e}^x \partial_x
+       +  \ve{e}^z \partial_z
+       \R)
+       f
+       \\
+%
+    +& af = b
+    \numberthis
+    \label{eq:invert_expanded}
+\end{align*}
+%
+If the modes decouples when fourier transforming equation
+(\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
+equation for each fourier mode.
+
+Using the discrete fourier transform
+%
+\begin{align}
+    F(x,y)_{k} =
+    \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k Z}{N}\R)
+\end{align}
+%
+we see that the modes will not decouple if a term consist of a product of two
+terms which depends on $z$, as this would give terms like
+%
+\begin{align*}
+    \frac{1}{N}\sum_{Z=0}^{N-1}
+        a(x,y)_Z
+        f(x,y)_Z
+        \exp\L(\frac{-2\pi i k Z}{N}\R)
+\end{align*}
+%
+Thus, in order to use a tridiagonal solver, $a$, $c$ and $d$ cannot be
+functions of $z$. Because of this, the $\ve{e}^z \partial_z c$ term in equation
+(\ref{eq:invert_expanded}) is zero. In principle the modes would still decouple
+if the $\ve{e}^z \partial_z f$ part of equation (\ref{eq:invert_expanded}) was
+kept, but currently this part is also neglected in solvers using a tridiagonal
+matrix. Thus the tridiagonal solvers are solving equations on the form
+%
+\begin{align*}
+    \, &d(x,y)
+    \L(    g^{xx}(x,y) \partial_x^2
+         + G^x(x,y) \partial_x
+         + g^{zz}(x,y) \partial_z^2
+         + G^z(x,y) \partial_z
+         + 2g^{xz}(x,y) \partial_x \partial_z
+    \R)
+    f(x,y,z)
+    \\
+%
+    +& \frac{1}{c(x,y)}\L(
+          \ve{e}^x \partial_x
+    \R)
+    c(x,y)
+    \cdot
+       \L(
+          \ve{e}^x \partial_x
+       \R)
+       f(x,y,z)
+       \\
+%
+   +& a(x,y)f(x,y,z) = b(x,y,z)
+\end{align*}
+%
+after using the discrete fourier transform (see section \ref{sec:deriv_of_FT}),
+we get
+%
+\begin{align*}
+    \, &d
+    \L(    g^{xx} \partial_x^2F_z
+         + G^x \partial_xF_z
+         + g^{zz} [i k]^2F_z
+         + G^z [i k]F_z
+         + 2g^{xz} \partial_x[i k]F_z
+    \R)
+    \\
+%
+    +& \frac{1}{c}\L(
+          \ve{e}^x \partial_x
+    \R)
+    c
+    \cdot
+       \L(
+          \ve{e}^x \partial_xF_z
+       \R)
+       \\
+%
+    +& aF_z = B_z
+\end{align*}
+%
+which gives
+%
+\begin{align*}
+    \, &d
+    \L(    g^{xx} \partial_x^2
+         + G^x \partial_x
+         - k^2 g^{zz}
+         + i kG^z
+         + i k2g^{xz} \partial_x
+    \R)F_z
+    \\
+%
+    +& \frac{g^{xx}}{c}
+    \L(
+        \partial_x c
+    \R)
+     \partial_xF_z
+       \\
+%
+    +& aF_z = B_z
+    \numberthis
+    \label{eq:FT_laplace_inversion}
+\end{align*}
+%
+As nothing in equation (\ref{eq:FT_laplace_inversion}) couples points in $y$
+togehter (since we have neglected the $y$-derivatives). Also, as the modes are
+decoupled, we may solve equation (\ref{eq:FT_laplace_inversion})  $k$ mode by
+$k$ mode in addition to $y$-point by $y$-point.
+
+The second order centered approximation of the first and second derivatives in
+$x$ reads
+%
+\begin{align*}
+    &&\partial_x f \simeq \frac{-f_{n-1} + f_{n+1}}{2\text{d}x}&&
+    &&\partial_x^2 f \simeq \frac{f_{n-1} - f_{n} + f_{n+1}}{\text{d}x^2}&&
+\end{align*}
+%
+This gives
+%
+\begin{align*}
+    \, &d
+    \L(    g^{xx} \frac{F_{z,n-1} - 2F_{z,n} + F_{z, n+1}}{\text{d}x^2}
+         + G^x \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
+         - k^2 g^{zz}F_{z,n}
+         \R.\\
+         &\quad\L.
+         + i kG^zF_{z,n}
+         + i k2g^{xz} \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
+    \R)
+    \\
+%
+    +& \frac{g^{xx}}{c}
+    \L(
+        \frac{-c_{n-1} + c_{n+1}}{2\text{d}x}
+    \R)
+     \frac{-F_{z,n-1} + F_{z,n+1}}{2\text{d}x}
+       \\
+%
+    +& aF_{z,n} = B_{z,n}
+\end{align*}
+%
+collecting point by point
+%
+\begin{align*}
+    &\L(
+          \frac{dg^{xx}}{\text{d}x^2}
+        - \frac{dG^x}{2\text{d}x}
+        - \frac{g^{xx}}{c_{n}}
+          \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2}
+        - i\frac{d k2g^{xz}}{2\text{d}x}
+    \R)
+    F_{z,n-1}
+    \\
+    %
+    &\L(
+       - \frac{ dg^{xx} }{\text{d}x^2}
+       - dk^2 g^{zz}
+       + a
+       + idkG^z
+    \R)
+    F_{z,n}
+    \\
+    %
+    &\L(
+          \frac{dg^{xx}}{\text{d}x^2}
+        + \frac{dG^x}{2\text{d}x}
+        + \frac{g^{xx}}{c_{n}}
+          \frac{-c_{n-1} + c_{n+1}}{4\text{d}x^2}
+        + i\frac{dk2g^{xz}}{2\text{d}x}
+    \R)
+    F_{z, n+1}
+    \\
+%
+     =& B_{z,n}
+    \numberthis
+    \label{eq:discretized_laplace}
+\end{align*}
+%
+We now introduce
+%
+\begin{align*}
+    &c_1 = \frac{dg^{xx}}{\text{d}x^2}&
+    &c_2 = dg^{zz}&
+    &c_3 = \frac{2dg^{xz}}{2\text{d}x}& &&
+    \\
+    &c_4 = \frac{dG^x + g^{xx}\frac{-c_{n-1} + c_{n+1}}{2c_n\text{d}x}}{2\text{d}x}&
+    &c_5 = dG^z&
+    &&
+\end{align*}
+%
+which inserted in equation (\ref{eq:discretized_laplace}) gives
+%
+\begin{align*}
+    &\L(
+        c_1 - c_4
+        -ikc_3
+    \R)
+    F_{z,n-1}
+    \\
+    %
+    &\L(
+       -2c_1 - k^2c_2
+       +ikc_5
+       + a
+    \R)
+    F_{z,n}
+    \\
+    %
+    &\L(
+        c_1 + c_4
+        + ikc_3
+    \R)
+    F_{z, n+1}
+    \\
+%
+     =& B_{z,n}
+\end{align*}
+%
+This can be formulated as the matrix equation
+%
+\begin{align*}
+    AF_z=B_z
+\end{align*}
+%
+where the matrix $A$ is tridiagonal. The boundary conditions are set by
+setting the first and last rows in $A$ and $B_z$.
 %
 
 
@@ -1904,6 +2253,81 @@ terms (the $y$-derivative terms), so for the Arakawa brackets BOUT++ returns
     =& \partial_z\phi\partial_x - \partial_x\phi\partial_z
 \end{align*}
 %
+
+
+
+
+
+\section{Derivates of the fourier transform}
+\label{sec:deriv_of_FT}
+By using the definition of the fourier transformed, we have
+%
+\begin{align*}
+    F(x,y,\xi) = \defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}
+\end{align*}
+%
+this gives
+%
+\begin{align*}
+    &\defi{-\infty}{\infty}{\L(\partial_zf[x,y,z]\R)\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& \defi{-\infty}{\infty}{\partial_z\L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)}{z}
+     - \defi{-\infty}{\infty}{f(x,y,z)\partial_z\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& \L(f[x,y,z]\exp\L[-2\pi iz\xi\R]\R)\bigg|_{-\infty}^{\infty}
+     - \L(-2\pi i\xi\R)\defi{-\infty}{\infty}{f(x,y,z)\exp\L(-2\pi iz\xi\R)}{z}\\
+%
+    =& 2\pi i\xi F(x,y,\xi)
+    \numberthis
+    \label{eq:f_derivative}
+\end{align*}
+%
+where we have used that $f(x,y,\pm\infty)=0$ in order to have a well defined
+fourier transform. This means that
+%
+\begin{align*}
+    \partial_z^n F(x,y,\xi) = (2\pi i \xi)^n F(x,y,\xi)
+\end{align*}
+%
+In our case, we are dealing with periodic boundary conditions. Strictly
+speaking, the fourier transform does not exist in such cases, but it is
+possible to define a fourier transform in the limit which in the end lead to
+the fourier series%
+\footnote{For more detail see Bracewell, R. N. - The Fourier Transform and Its
+Applications 3rd Edition chapter $10$}%
+%
+By discretizing the spatial domain, it is no longer possible to represent the
+infinite amount of fourier modes, but only $N+1$ number of modes, where $N$ is
+the number of points (this includes the modes with negative frequencies, and
+the zeroth offset mode). For the discrete fourier transform, we have
+%
+\begin{align}
+    F(x,y)_{k} =
+    \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L(\frac{-2\pi i k Z}{N}\R)
+    \label{eq:DFT}
+\end{align}
+%
+where $k$ is the mode number, $N$ is the number of points in $z$. If we call
+the sampling points of $z$ for $z_Z$, where $Z = 0, 1 \ldots N-1$, we have
+that $z_Z = Z \text{d}z$. As our domain goes from $[0, 2\pi[$, we have that
+(since we have one less line segment than point) $\text{d}z (N-1) = L_z
+= 2\pi - \text{d}z$, which gives $\text{d}z = \frac{2\pi}{N}$. Inserting this
+is equation (\ref{eq:DFT}) yields
+%
+\begin{align*}
+    F(x,y)_{k}
+    = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k Z\text{d}z\R)
+    = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)
+    \label{eq:DFT}
+\end{align*}
+%
+The discrete verison of equation (\ref{eq:f_derivative}) thus gives
+%
+\begin{align*}
+    \partial_z^n F(x,y)_k = (i k)^n F(x,y)_k
+\end{align*}
+%
+
 
 
 

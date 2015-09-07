@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0022'
-__date__    = '03.09.2015'
+__version__ = '1.003'
+__date__    = '07.09.2015'
 
 import os
 import re
@@ -1723,9 +1723,10 @@ class basic_runner(object):
 
         print("Removing old data")
         # Make the command
-        command = "rm -f ./" + self._dmp_folder +\
+        command = "rm -rf ./" + self._dmp_folder +\
                   "/*.nc ./" + self._dmp_folder +\
-                  "/*.log.*"
+                  "/*.log.* " + self._dmp_folder +\
+                  "/run*/"
         # Execute the command
         shell(command)
 #}}}
