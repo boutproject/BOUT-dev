@@ -29,9 +29,5 @@ test*.py
 /externalpackages/
 /include/pvode
 /lib/
-/manual/BOUT_Gradperp_op.pdf
-/manual/coordinates.pdf
-/manual/developer_manual.pdf
-/manual/preconditioning.pdf
-/manual/user_manual.pdf
+/manual/*.pdf
 /tools/vagrant/.vagrant
