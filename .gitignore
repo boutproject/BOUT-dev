@@ -25,7 +25,7 @@
 autom4te.cache/
 data_*
 test*.py
-/bin/
+/bin/bout-config
 /externalpackages/
 /include/pvode
 /lib/
