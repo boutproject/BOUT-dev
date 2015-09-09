@@ -58,10 +58,10 @@ protected:
     output.write("\t Cs=%e, rho_s=%e, Omega_ci=%e\n", Cs0, rho_s0, Omega_ci);
     SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
     
-    OPTION(opt, mu_epar, 1e7); // Electron parallel viscosity [m^2/s]
+    OPTION(opt, mu_epar, -1e7); // Electron parallel viscosity [m^2/s]
     mu_epar /= rho_s0*rho_s0*Omega_ci * mi_me; // Normalise
 
-    OPTION(opt, resistivity, 0.01);
+    OPTION(opt, resistivity, 1e-7);
 
     // Load metric tensor from the mesh, passing length and B field normalisations
     LoadMetric(rho_s0, Bnorm);
