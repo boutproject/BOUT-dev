@@ -41,7 +41,7 @@
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Interpolation object
-  HermiteSpline spline;
+  Interpolation *interp;
 
   // Private constructor - must be initialised with mesh
   FCIMap();
@@ -57,7 +57,7 @@ public:
 
   BoundaryRegionPar* boundary;			/**< boundary region */
 
-  const Field3D interpolate(Field3D &f) const { return spline.interpolate(f); }
+  const Field3D interpolate(Field3D &f) const { return interp->interpolate(f); }
 };
 
 // A class for performing flux-coordinate independent parallel derivatives

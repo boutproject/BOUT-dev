@@ -27,7 +27,7 @@
 #include <vector>
 
 Lagrange4pt::Lagrange4pt(int y_offset) :
-  y_offset(y_offset) {
+  Interpolation(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->ngx, mesh->ngy, mesh->ngz-1);
@@ -58,7 +58,7 @@ void Lagrange4pt::calcWeights(const Field3D &delta_x, const Field3D &delta_z) {
         // NOTE: A (small) hack to avoid one-sided differences
         if( i_corner[x][y][z] == mesh->xend ) {
           i_corner[x][y][z] -= 1;
-          t_x = 1.0;
+          t_x(x,y,z) = 1.0;
         }
 
         // Check that t_x and t_z are in range
@@ -104,28 +104,30 @@ const Field3D Lagrange4pt::interpolate(const Field3D& f) const {
         // Interpolate in Z first
         BoutReal xvals[4];
 
-        xvals[0] = lagrange_4pt(f(jx2mnew,y,jz2mnew),
-                                f(jx2mnew,y,k_corner[x][y][z]),
-                                f(jx2mnew,y,jzpnew),
-                                f(jx2mnew,y,jz2pnew),
+        int y_next = y + y_offset;
+
+        xvals[0] = lagrange_4pt(f(jx2mnew,y_next,jz2mnew),
+                                f(jx2mnew,y_next,k_corner[x][y][z]),
+                                f(jx2mnew,y_next,jzpnew),
+                                f(jx2mnew,y_next,jz2pnew),
                                 t_z(x,y,z));
-        xvals[1] = lagrange_4pt(f(i_corner[x][y][z],y,jz2mnew),
-                                f(i_corner[x][y][z],y,k_corner[x][y][z]),
-                                f(i_corner[x][y][z],y,jzpnew),
-                                f(i_corner[x][y][z],y,jz2pnew),
+        xvals[1] = lagrange_4pt(f(i_corner[x][y][z],y_next,jz2mnew),
+                                f(i_corner[x][y][z],y_next,k_corner[x][y][z]),
+                                f(i_corner[x][y][z],y_next,jzpnew),
+                                f(i_corner[x][y][z],y_next,jz2pnew),
                                 t_z(x,y,z));
-        xvals[2] = lagrange_4pt(f(jxpnew,y,jz2mnew),
-                                f(jxpnew,y,k_corner[x][y][z]),
-                                f(jxpnew,y,jzpnew),
-                                f(jxpnew,y,jz2pnew),
+        xvals[2] = lagrange_4pt(f(jxpnew,y_next,jz2mnew),
+                                f(jxpnew,y_next,k_corner[x][y][z]),
+                                f(jxpnew,y_next,jzpnew),
+                                f(jxpnew,y_next,jz2pnew),
                                 t_z(x,y,z));
-        xvals[3] = lagrange_4pt(f(jx2pnew,y,jz2mnew),
-                                f(jx2pnew,y,k_corner[x][y][z]),
-                                f(jx2pnew,y,jzpnew),
-                                f(jx2pnew,y,jz2pnew),
+        xvals[3] = lagrange_4pt(f(jx2pnew,y_next,jz2mnew),
+                                f(jx2pnew,y_next,k_corner[x][y][z]),
+                                f(jx2pnew,y_next,jzpnew),
+                                f(jx2pnew,y_next,jz2pnew),
                                 t_z(x,y,z));
         // Then in X
-        f_interp(x,y,z) = lagrange_4pt(xvals, t_x(x,y,z));
+        f_interp(x,y_next,z) = lagrange_4pt(xvals, t_x(x,y,z));
 
       }
     }

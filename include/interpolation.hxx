@@ -54,8 +54,9 @@ protected:
   // 3D vector of points to skip (true -> skip this point)
   BoutMask skip_mask;
 public:
-  Interpolation() {}
-  Interpolation(BoutMask mask) : skip_mask(mask) {}
+  Interpolation(int y_offset=0) : y_offset(y_offset) {}
+  Interpolation(BoutMask mask, int y_offset=0) : Interpolation(y_offset) {
+    skip_mask = mask;}
   virtual ~Interpolation() {}
 
   virtual void calcWeights(const Field3D &delta_x, const Field3D &delta_z) = 0;
@@ -66,14 +67,15 @@ public:
   virtual const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask) = 0;
 
   void setMask(BoutMask mask) { skip_mask = mask; }
+
+  // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
+  int y_offset;
+  void setYOffset(int offset) { y_offset = offset; }
 };
 
 class HermiteSpline : public Interpolation {
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
-
-  // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  int y_offset;
 
   // Basis functions for cubic Hermite spline interpolation
   //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
@@ -119,9 +121,6 @@ public:
 class Lagrange4pt : public Interpolation {
   int*** i_corner;      // x-index of bottom-left grid point
   int*** k_corner;      // z-index of bottom-left grid point
-
-  // Interpolate using the field at (x,y+y_offset,z), rather than (x,y,z)
-  int y_offset;
 
   Field3D t_x, t_z;
 

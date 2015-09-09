@@ -27,7 +27,7 @@
 #include <vector>
 
 HermiteSpline::HermiteSpline(int y_offset) :
-  y_offset(y_offset) {
+  Interpolation(y_offset) {
 
   // Index arrays contain guard cells in order to get subscripts right
   i_corner = i3tensor(mesh->ngx, mesh->ngy, mesh->ngz-1);
@@ -65,8 +65,8 @@ void HermiteSpline::calcWeights(const Field3D &delta_x, const Field3D &delta_z) 
         t_z = delta_z(x,y,z) - static_cast<BoutReal>(k_corner[x][y][z]);
 
         // NOTE: A (small) hack to avoid one-sided differences
-        if( i_corner[x][y][z] == mesh->xend ) {
-          i_corner[x][y][z] -= 1;
+        if( i_corner[x][y][z] >= mesh->xend ) {
+          i_corner[x][y][z] = mesh->xend-1;
           t_x = 1.0;
         }
 

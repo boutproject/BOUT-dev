@@ -37,6 +37,7 @@
  *
  **************************************************************************/
 
+#include "interpolation_factory.hxx"
 #include "parallel_boundary_region.hxx"
 #include "parallel_boundary_op.hxx"
 #include <fci_derivs.hxx>
@@ -54,7 +55,10 @@ inline BoutReal sgn(BoutReal val) {
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
-  dir(dir), spline(dir), boundary_mask(mesh) {
+  dir(dir), boundary_mask(mesh) {
+
+  interp = InterpolationFactory::getInstance()->create();
+  interp->setYOffset(dir);
 
   // Index arrays contain guard cells in order to get subscripts right
   // x-index of bottom-left grid point
@@ -86,7 +90,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
   // Add the boundary region to the mesh's vector of parallel boundaries
   mesh.addBoundaryPar(boundary);
 
-  spline.calcWeights(xt_prime, zt_prime);
+  interp->calcWeights(xt_prime, zt_prime);
 
   int ncz = mesh.ngz-1;
   BoutReal t_x, t_z, temp;
@@ -270,7 +274,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) :
     }
   }
 
-  spline.setMask(boundary_mask);
+  interp->setMask(boundary_mask);
 
   free_i3tensor(i_corner);
   free_i3tensor(k_corner);
