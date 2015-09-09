@@ -10,6 +10,7 @@ InterpolationFactory* InterpolationFactory::instance = nullptr;
 InterpolationFactory::InterpolationFactory() {
   add(HermiteSpline::CreateHermiteSpline, "hermitespline");
   add(Lagrange4pt::CreateLagrange4pt, "lagrange4pt");
+  add(Bilinear::CreateBilinear, "bilinear");
 }
 
 /**
@@ -72,7 +73,7 @@ Interpolation* InterpolationFactory::create(Options *options) {
     options = Options::getRoot()->getSection("interpolation");
 
   string interp_option;
-  options->get("type", interp_option, "");
+  options->get("type", interp_option, type);
 
   if (!interp_option.empty()) type = interp_option.c_str();
 

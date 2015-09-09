@@ -151,4 +151,29 @@ public:
   const BoutReal lagrange_4pt(const BoutReal v[], const BoutReal offset) const;
 };
 
+class Bilinear : public Interpolation {
+  Field3D w0, w1, w2, w3;
+
+public:
+  Bilinear(int y_offset=0);
+  Bilinear(BoutMask mask, int y_offset=0) : Bilinear(y_offset) {
+    skip_mask = mask;}
+
+  ~Bilinear() {}
+
+  /// Callback function for InterpolationFactory
+  static Interpolation* CreateBilinear() {
+    return new Bilinear;
+  }
+
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z);
+  void calcWeights(const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+
+  // Use precalculated weights
+  const Field3D interpolate(const Field3D& f) const;
+  // Calculate weights and interpolate
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z);
+  const Field3D interpolate(const Field3D& f, const Field3D &delta_x, const Field3D &delta_z, BoutMask mask);
+};
+
 #endif // __INTERP_H__
