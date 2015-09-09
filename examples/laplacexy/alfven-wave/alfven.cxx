@@ -25,7 +25,9 @@ private:
   BoutReal Cs0, Omega_ci, rho_s0, mi_me, beta_e;
 
   BoutReal mu_epar; // Electron parallel viscosity
+  BoutReal resistivity;
 
+  bool laplace_perp;    // Use Laplace_perp or Delp2?
   bool split_n0;        // Split solve into n=0 and n~=0?
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
   Laplacian *phiSolver; // Laplacian in X-Z
@@ -57,14 +59,17 @@ protected:
     SAVE_ONCE3(Cs0, rho_s0, Omega_ci);
     
     OPTION(opt, mu_epar, 1e7); // Electron parallel viscosity [m^2/s]
-    mu_epar /= rho_s0*rho_s0*Omega_ci; // Normalise
+    mu_epar /= rho_s0*rho_s0*Omega_ci * mi_me; // Normalise
+
+    OPTION(opt, resistivity, 0.01);
 
     // Load metric tensor from the mesh, passing length and B field normalisations
     LoadMetric(rho_s0, Bnorm);
 
     // Specify evolving variables
     SOLVE_FOR2(Vort, Apar);
-    
+   
+    OPTION(opt, laplace_perp, true);  // Use Laplace_perp rather than Delp2
     OPTION(opt, split_n0, true); // Split into n=0 and n~=0
 
     if(split_n0) {
@@ -90,8 +95,12 @@ protected:
     mesh->communicate(Vort, Apar);
     
     // Calculate parallel current from Apar
-    jpar = Laplace_perp(Apar / (0.5*beta_e));
-    
+    if(laplace_perp) {
+      jpar = Laplace_perp(Apar / (0.5*beta_e));
+    }else {
+      jpar = Delp2(Apar / (0.5*beta_e));
+    }    
+
     // Apply boundary condition on jpar and phi
     jpar.applyBoundary(time);
     
@@ -117,9 +126,13 @@ protected:
     
     // Parallel electric field
     ddt(Apar) = Grad_par(phi);
-    
+
+    if(resistivity > 0.0) {
+      ddt(Apar) += resistivity * jpar; 
+    }   
+
     if(mu_epar > 0.0) {
-      ddt(Apar) += mu_epar * Laplace_par(Apar); // Parallel electron viscosity
+      ddt(Apar) -= mu_epar * Laplace_par(jpar); // Parallel electron viscosity
     }
     
     return 0;
