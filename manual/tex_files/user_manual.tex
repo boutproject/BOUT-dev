@@ -713,123 +713,160 @@ Appendix~\ref{apx:pact}.
 
 
 \subsection{SUNDIALS}
+\label{sec:sundials}
 %
 The BOUT++ distribution includes a 1998 version of CVODE (then called PVODE) by
 Scott D. Cohen and Alan C.  Hindmarsh, which is the default time integration
-solver.  Whilst no serious bugs have been found in this code (as far as I am
-aware), several features such as user-supplied preconditioners and constraints
-cannot be used with this solver. Currently, BOUT++ also supports the SUNDIALS
-solvers CVODE and IDA, which are available from
-\code{https://computation.llnl.gov/casc/sundials/main.html}.
+solver.  Whilst no serious bugs have been found in this code (as far as the
+authors are aware of), several features such as user-supplied preconditioners
+and constraints cannot be used with this solver. Currently, BOUT++ also
+supports the SUNDIALS solvers CVODE, IDA and ARKODE which are available from
+\url{https://computation.llnl.gov/casc/sundials/main.html}.
 
-The SUNDIALS library needs to have MPI enabled, so after configuring, check the
-output and look for something like this:
+SUNDIALS is only downloadable from the home page, as submitting your name and
+e-mail is required for the download. As for the date of this typing, SUNDIALS
+version $2.6.2$ is the newest. In order for a smooth install it is recommended
+to install SUNDIALS from an install directory. The full installation guide is
+found in the downloaded \texttt{.tar.gz}, but we will provide a step-by-step
+guide to install it and make it comatible with BOUT++ here.
+\\
+\\
+\note{
+It is important to note that if you do configure PETSc with SUNDIALS then BOUT
+must use/link the same version of SUNDIALS
+}
+
 %
 \begin{verbatim}
-MPI-C Settings
---------------
+cd ~
+mkdir local
+cd local
+mkdir examples
+cd ..
+mkdir install
+cd install
+mkdir sundials-install
+cd sundials-install
+# Move the downloaded sundials-2.6.2.tar.gz to sundials-install
+tar -xzvf sundials-2.6.2.tar.gz
+mkdir build
+cd build
 
-checking if using MPI-C script... yes
-checking if absolute path to mpicc was given... no
-checking for mpicc... none
-configure: WARNING: cannot find MPI-C compiler
-\end{verbatim}
-%
-If you see this warning, you need to tell CVODE which MPI compiler to use.
-This happens on machines where the MPI compilers are given non-standard names.
-For IBM AIX machines, use
-%
-\begin{verbatim}
-$ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
-\end{verbatim}
-%
-On NERSC's Franklin, SUNDIALS needs to be compiled with ``--with-mpicc=cc'' to
-force it to build the parallel libraries
+cmake \
+-DCMAKE_INSTALL_PREFIX=$HOME/local \
+-DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
+-DCMAKE_LINKER=$HOME/local/lib \
+-DLAPACK_ENABLE=ON \
+-DOPENMP_ENABLE=ON \
+-DMPI_ENABLE=ON \
+../sundials-2.6.2
 
-The modern SUNDIALS CVODE solver is essentially the same as the 1998 CVODE
-(with some tweaking, re-arranging etc.), but this solver allows users to supply
-their own preconditioner and Jacobian functions. To use this solver, use
-%
-\begin{verbatim}
-./configure --with-cvode
+make
+make install
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-cvode=/path/to/cvode/
-\end{verbatim}
-%
-if your CVODE library is in a non-standard place.
-
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE) solver,
 which evolves a system of the form $\mathbf{f}\left(\mathbf{u},
 \dot{\mathbf{u}}, t\right) = 0$. This allows algebraic constraints on variables
-to be specified. If you want this functionality, compile in the IDA library
-using
+to be specified.
+
+To configure BOUT++ with SUNDIALS only (see section \ref{sec:PETSc} on how to
+build PETSc with SUNDIALS), go to the root directory of BOUT++ and type
 %
 \begin{verbatim}
-./configure --with-ida
+./configure --with-sundials
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-ida=/path/to/ida/
-\end{verbatim}
-%
-You can compile in several of these libraries, for example
-%
-\begin{verbatim}
-./configure --with-cvode --with-ida
-\end{verbatim}
-%
-is valid. This will allow you to select at run-time which solver to use. See
+SUNDIALS will allow you to select at run-time which solver to use. See
 section~\ref{sec:timeoptions} for more details on how to do this.
 
 
 
 \subsection{PETSc}
+\label{sec:PETSc}
 %
-BOUT++ can use PETSc for time-integration and for solving elliptic problems,
-such as inverting Poisson and Helmholtz equations.
+BOUT++ can use PETSc \url{http://www.mcs.anl.gov/petsc/} for time-integration
+and for solving elliptic problems, such as inverting Poisson and Helmholtz
+equations.
+
+Currently, BOUT++ supports PETSc version $3.1$, $3.2$, $3.3$ and $3.4$ (support
+for newer versions are planned for the future). To install PETSc version
+$3.4.5$, use the following steps
 %
 \begin{verbatim}
-./configure --with-petsc
+cd ~
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
+tar -xzvf petsc-3.4.5.tar.gz
+# Optional
+# rm petsc-3.4.5.tar.gz
+cd petsc-3.4.5
 \end{verbatim}
 %
-The development version of PETSc has the latest and greatest, and is needed for
-some shiny features like time stepping. To install it, follow the instructions
-here: \url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the
-time of writing, this consisted of fetching the latest version ({\bf NB} needs
-Mercurial 'hg' to be installed):
+To build PETSc without SUNDIALS, configure with
 %
 \begin{verbatim}
-hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
-cd petsc-dev
-hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
+./configure \
+--with-clanguage=cxx \
+--with-mpi=yes \
+--with-precision=double \
+--with-scalar-type=real \
+--with-shared-libraries=0 \
+--with-debugging=yes
 \end{verbatim}
 %
-then configure PETSc, making sure to enable C++.
+To build PETSc with SUNDIALS, install SUNDIALS as explained in section
+\ref{sec:sundials}, and append \texttt{./configure} with
+\texttt{--with-sundials-dir=\$HOME/local}
+%
+\\
+\\
+\note{
+It is important to note that if you do configure PETSc with SUNDIALS then BOUT
+must use/link the same version of SUNDIALS
+}
+\\
+\\
+%
+It is also possible to get PETSc to download and install MUMPS
+(see section \ref{sec:MUMPS}), by adding
 %
 \begin{verbatim}
-./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
-            --with-sundials=1 --with-sundials-dir=$HOME/local/
+--download-mumps \
+--download-scalapack \
+--download-blacs \
+--download-f-blas-lapack=1 \
+--download-parmetis \
+--download-ptscotch \
+--download-metis
 \end{verbatim}
 %
-You can add SUNDIALS support, but it is not required. To do this, add the
-following to the end of the configure command:
+to \texttt{./configure}
+%
+To make PETSc, type
 %
 \begin{verbatim}
---with-sundials=1 --with-sundials-dir=$HOME/local/
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
 \end{verbatim}
 %
-replacing \texttt{\$HOME/local/} with the location of your SUNDIALS
-installation.  It is also useful to get PETSc to download and install MUMPS
-(see below), by adding
+Should blas, lapack or any other packages be missing, you will get an error,
+and a suggestion that you can append \texttt{--download-name-of-package} to the
+\texttt{./configure} line.  You may want to test that everything is configured
+properly. To do this, type
 %
 \begin{verbatim}
---download-mumps
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+\end{verbatim}
+%
+To configure BOUT++ with PETSc, go to the BOUT++ root directory, and type
+%
+\begin{verbatim}
+./configure --with-petsc=$HOME/petsc-3.4.5
+\end{verbatim}
+%
+To configure BOUT++ with PETSc and sundials, type instead
+%
+\begin{verbatim}
+./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
 \end{verbatim}
 %
 Finally compile PETSc:
@@ -839,11 +876,16 @@ make
 \end{verbatim}
 %
 To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to
-the petsc-dev directory so add something like this to your startup file
-\texttt{\$HOME/.bashrc}
+the petsc directory, type
 %
 \begin{verbatim}
-export PETSC_DIR=$HOME/petsc-dev
+export PETSC_DIR=$HOME/petsc-3.4.5
+\end{verbatim}
+%
+and add to your startup file \texttt{\$HOME/.bashrc}
+%
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-3.4.5
 \end{verbatim}
 %
 
@@ -873,6 +915,7 @@ and to specify a non-standard path
 
 
 \subsection{MUMPS}
+\label{sec:MUMPS}
 %
 This is still experimental, but does work on at least some systems at York.
 The PETSc library can be used to call MUMPS for directly solving matrices (e.g.
@@ -1518,10 +1561,10 @@ spent in different parts of the code.
 \begin{itemize}
 \item \code{Calc} is the time spent doing calculations such as multiplications,
     derivatives etc
-\item \code{Inv} is the time spent in inversion code (i.e. inverting 
+\item \code{Inv} is the time spent in inversion code (i.e. inverting
 Laplacians), including any communication
 which may be needed to do the inversion.
-\item \code{Comm} is the time spent communicating variables (outside the 
+\item \code{Comm} is the time spent communicating variables (outside the
 inversion routine)
 \item \code{I/O} is the time spent writing dump and restart files to disk. Most
     of the time this should not be an issue
@@ -1609,7 +1652,7 @@ BOUT++ has its own makefile system. These can be used to
  \item Adding a feature to BOUT++ (see section~\ref{sec:modules})
 \end{enumerate}
 %
-In all makefiles, \verb@BOUT_TOP@ is required!
+In all makefiles, \texttt{BOUT\_TOP} is required!
 
 
 \subsubsection{Executables example}
@@ -1627,11 +1670,11 @@ SOURCEC		= <filename>.cpp
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-where \verb@BOUT_TOP@ - refers to the relative (or absolute) location of the
-BOUT directory (the one that includes \verb@/lib@ and \verb@/src@) and
-\verb@SOURCEC@  is the name of your file, e.g. \verb@gas_compress.cpp@.
+where \texttt{BOUT\_TOP} - refers to the relative (or absolute) location of the
+BOUT directory (the one that includes \texttt{/lib} and \texttt{/src}) and
+\texttt{SOURCEC}  is the name of your file, e.g. \texttt{gas\_compress.cxx}.
 
-Optionally, it is possible to specify \verb@TARGET@ which defines what the
+Optionally, it is possible to specify \texttt{TARGET} which defines what the
 executable should be called (e.g. if you have multiple source files). That's
 it!
 
@@ -1655,16 +1698,16 @@ TARGET		= lib
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-\verb@TARGET@ - must be \verb@lib@ to signify you are adding to
-\verb@libbout++.a@.
+\texttt{TARGET} - must be \texttt{lib} to signify you are adding to
+\texttt{libbout++.a}.
 
 The other variables should be pretty self explanatory.
 
 
 \subsubsection{Adding a new subdirectory to 'src'}
 %
-No worries, just make sure to edit \verb@src/makefile@ to add it to the
-\verb@DIRS@ variable.
+No worries, just make sure to edit \texttt{src/makefile} to add it to the
+\texttt{DIRS} variable.
 
 
 
@@ -1930,7 +1973,7 @@ may be very large). To read in only a subset, there are several optional
 keywords with \code{[min,max]} ranges:
 %
 \begin{verbatim}
-IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], 
+IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31],
 tind=[300,399])
 Reading from .//BOUT.dmp.0.nc: [10-20][4-4] -> [10-20][2-2]
 IDL> help, ni
@@ -2025,7 +2068,7 @@ has been read into IDL as a 4D [x,y,z,t] variable:
 \begin{itemize}
 \item \code{fft\_deriv} and \code{fft\_integrate} which differentiate and
     integrate periodic functions.
-\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request 
+\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request
 integers, floats and a yes/no answer from the user respectively.
 \item \code{showdata} animates 1 or 2-dimensional variables. Useful for quickly
     displaying results in different ways. This is useful for taking a quick
@@ -2066,8 +2109,8 @@ image of the resulting plot.
 \item \code{moment\_xyzt} takes a 4D variable (such as those from
     \code{collect}), and calculates RMS, DC and AC components in the Z
     direction.
-\item \code{safe\_colors} A general routine for IDL which arranges the color 
-table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue). 
+\item \code{safe\_colors} A general routine for IDL which arranges the color
+table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue).
 Useful for plotting, and
 used by many other routines in this library.
 \end{itemize}
@@ -2706,8 +2749,8 @@ q2\pi i\right)
 \includegraphics[width=0.48\textwidth,
 keepaspectratio]{figs/init_noballoon.png}
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning 
-transform, showing discontinuity at the matching location {\bf Right}: with 
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
+transform, showing discontinuity at the matching location {\bf Right}: with
 ballooning transform}
 %
 \label{fig:ballooning}
@@ -2808,7 +2851,7 @@ Name & Description \\
 \hline
 abs(x) & Absolute value $\left|x\right|$\\
 asin(x), acos(x), atan(x), atan(y,x) & Inverse trigonometric functions \\
-ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, 
+ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform},
 fig~\ref{fig:ballooning}) \\
 ballooning(x,n) & Ballooning transform, using $n$ terms (default 3) \\
 cos(x) & Cosine\\
@@ -2816,7 +2859,7 @@ cosh(x) & Hyperbolic cosine\\
 exp(x) & Exponential \\
 tanh(x) & Hyperbolic tangent \\
 gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
-gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / 
+gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] /
 \left(w\sqrt{2\pi}\right)$\\
 H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 log(x) & Natural logarithm \\
@@ -3003,7 +3046,7 @@ Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
 \begin{lstlisting}[firstnumber=100]
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   if(args.size() != 1) {
-    output << "FieldFactory error: Incorrect number of arguments to sinh 
+    output << "FieldFactory error: Incorrect number of arguments to sinh
 function. Expecting 1, got " << args.size() << endl;
     return NULL;
   }
@@ -3131,7 +3174,7 @@ This returns the next token, and setting the variable
 \lstinline!BoutReal curval!
 %
  is set to the value of the token
-\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything 
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything
 which starts with a letter, and
   contains only letters, numbers, and underscores. The string is stored in the
   variable
@@ -3666,9 +3709,9 @@ variables
 \begin{align}
 \mathcal{J} = \left(%
 \begin{array}{cc}
-\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & 
+\frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
 \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
-\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & 
+\frac{\partial}{\partial u}\frac{\partial v}{\partial t} &
 \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
 \end{array}
 %
@@ -4132,7 +4175,7 @@ Currently implemented boundary conditions are:
 \item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
 \item \code{zerolaplace2} - Laplacian = 0, using coefficients from the
     Laplacian inversion and Delp2 operator.
-\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries 
+\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries
 only)
 \end{itemize}
 %
@@ -4166,10 +4209,10 @@ one modifier can be used. Currently the following are available:
 \begin{itemize}
 \item \code{relax} - Relaxing boundaries. Evolve the variable towards the given
     boundary condition at a given rate
-\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates, 
+\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates,
 rather than
   field-aligned
-\item \code{width} - Modifies the width of the region over which the boundary 
+\item \code{width} - Modifies the width of the region over which the boundary
 condition is applied
 \end{itemize}
 %
@@ -4387,11 +4430,11 @@ class BoundaryRegion {
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
 
   virtual void first() = 0;
-  virtual void next() = 0; // Loop over every element from inside out (in X or 
+  virtual void next() = 0; // Loop over every element from inside out (in X or
 Y first)
   virtual void nextX() = 0; // Just loop over X
   virtual void nextY() = 0; // Just loop over Y
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this 
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this
 with nested nextX, nextY
 };
 \end{lstlisting}
@@ -4506,7 +4549,7 @@ void BoundaryNeumann::apply(Field2D &f) {
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - 
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y -
 bndry->by][z];
 }
 \end{lstlisting}
@@ -4666,7 +4709,7 @@ to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
 \index{BoundaryDirichlet}
 %
 \begin{lstlisting}[firstnumber=13]
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> 
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string>
 &args) {
   if(!args.empty()) {
     // First argument should be a value
@@ -4791,16 +4834,16 @@ will be printed and the default values used.
 \item X and Y grid sizes (integers) \code{nx} and \code{ny} {\bf REQUIRED}
 \item Differencing quantities in 2D arrays \code{dx[nx][ny]} and
     \code{dy[nx][ny]}.  If these are not found they will be set to 1.
-\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]}, 
+\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]},
 \code{g22[nx][ny]},
   and \code{g33[nx][ny]}. If not found, these will be set to 1.
 %
 \index{metric tensor}
 %
-\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]}, 
+\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]},
 \code{g13[nx][ny]},
   and \code{g23[nx][ny]}. If not found, these will be set to 0.
-\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for 
+\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for
 dpsi derivatives
   in sheared coordinates. If not found, set to zero.
 \end{itemize}
@@ -4814,10 +4857,10 @@ situations.
     given, both are set to nx (i.e. all points in closed ``core'' region). If
     only \code{ixseps1} is found, \code{ixseps2} is set to nx, and if only
     ixseps2 is found, ixseps1 is set to -1.
-\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2}, 
+\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2},
 \code{jyseps2\_1}, and
   \code{jyseps2\_2}
-\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in 
+\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in
 the ``core''
   region between indices \code{jyseps2\_2}, and \code{jyseps1\_1 + 1}, if
   enabled in the options file. If not given, this is set to zero.
@@ -4847,7 +4890,7 @@ output from different codes and converting into input to BOUT++.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/grid_gen.pdf}
-\caption{Generation of BOUT++ grid files. In red are the file formats, and in 
+\caption{Generation of BOUT++ grid files. In red are the file formats, and in
 black the conversion routines. Blue are external codes.}
 %
 \label{fig:gridgen}
@@ -4907,8 +4950,8 @@ configuration.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/topology_cross_section.pdf}
-\caption{Deconstruction of a poloidal tokamak cross-section into logical 
-domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, 
+\caption{Deconstruction of a poloidal tokamak cross-section into logical
+domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1},
 \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
 %
 \label{fig:topology_cross_section}
@@ -4947,7 +4990,7 @@ boundaries.}
 \begin{figure}[htbp!]
 \centering \includegraphics[width=\textwidth,
 keepaspectratio]{figs/topology_schematic.pdf}
-\caption{Schematic illustration of domain decomposition and communication in 
+\caption{Schematic illustration of domain decomposition and communication in
 BOUT++ with \code{ixseps1 = ixseps2}.}
 %
 \label{fig:topology_schematic}
@@ -5949,7 +5992,7 @@ e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
 \item Add variables to the file
 %
 \begin{lstlisting}
-mydata.add(variable, "name") ;  // Not evolving. Every time the file is 
+mydata.add(variable, "name") ;  // Not evolving. Every time the file is
 written, this will be overwritten
 mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
 \end{lstlisting}
@@ -6243,19 +6286,19 @@ lap->setFlags(Flags_Value);
 \hline
 Name & Meaning & Default value\\
 \hline
-\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} 
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt}
 (parallel) \\
-\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, 
+\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$,
 if using Fourier solver & 0\\
 \code{maxmode} & Fi􏰀lter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
 \code{all\_terms} & Include fi􏰀rst derivative terms & \code{true}\\
-\code{global\_flags} & Sets global inversion options See table 
+\code{global\_flags} & Sets global inversion options See table
 \ref{tab:laplaceglobalflags}& \code{0}\\
-\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.
 See table \ref{tab:laplaceBCflags} & \code{0}\\
-\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.
 See table \ref{tab:laplaceBCflags}& \code{0}\\
-\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.
 See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
 \code{include\_yguards} & Perform inversion in $y$-boundary guard
 cells & \code{true}\\
@@ -6279,9 +6322,9 @@ Flag & Meaning \\
 0 &  No global option set \\
 1 &  zero DC component (Fourier solvers) \\
 2 &  set initial guess to 0 (iterative solvers) \\
-4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 
+4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags =
 128}\\
-8 & Use 4th order differencing (Apparently not actually implemented 
+8 & Use 4th order differencing (Apparently not actually implemented
 anywhere!!!) \\
 16 & Set constant component ($k_x = k_z = 0$) to zero \\
 \hline
@@ -6304,25 +6347,25 @@ Flag & Meaning \\
 0 &  Dirichlet (Set boundary to 0) \\
 1 &  Neumann on DC component (set gradient to 0) \\
 2 &  Neumann on AC component (set gradient to 0) \\
-4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial 
+4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial
 x^2}+k_z^2$ vanishes/decays)\\
-8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order 
+8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order
 now) \\
-16 & Set boundary condition to values in boundary guard cells of second 
+16 & Set boundary condition to values in boundary guard cells of second
 argument, \code{x0}, of
 %
 \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
 %
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
+.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
 Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
-32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} 
+32 & Set boundary condition to values in boundary guard cells of RHS, \code{b}
 in
 %
 \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
 %
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
+.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
 Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
-64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial 
+64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial
 x^2}$ vanishes/decays) \\
 128 &  Assert that there is only one guard cell in the
 $x$-boundary \\
@@ -6354,7 +6397,7 @@ Flag & Meaning \\
 32 & Not used currently \\
 64 & Set width of boundary to 1 (default is \code{MXG}) \\
 128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
-256 & Attempt to set zero laplacian AC component on inner boundary by combining 
+256 & Attempt to set zero laplacian AC component on inner boundary by combining
 \\
     & 2nd and 4th-order differencing at the boundary. \\
     & Ignored if tridiagonal solver used. \\
@@ -6616,13 +6659,13 @@ categories:
       (WENO)\cite{jiang-1997}
   \end{itemize}
 %
-\item Flux conserving and limiting methods for terms of the form 
+\item Flux conserving and limiting methods for terms of the form
 $\frac{d}{dx}\left(v_x f\right)$
   %
   \begin{itemize}
   \item \texttt{SPLIT}: split into upwind and central terms
       $\frac{d}{dx}\left(v_x f\right) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}$
-  \item \texttt{NND}: Non-oscillatory, containing No free parameters and 
+  \item \texttt{NND}: Non-oscillatory, containing No free parameters and
 Dissipative (NND) scheme\cite{nnd-2010}
   \end{itemize}
 %
@@ -6734,9 +6777,9 @@ These are differential operators which are for a general coordinate system.
 \begin{array}{rclrcl}
 \mathbf{v} =& \nabla f &\qquad \code{Vector} =& \code{Grad(Field)} \\
 f =& \nabla\cdot\mathbf{a} &\qquad \code{Field} =& \code{Div(Vector)} \\
-\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =& 
+\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =&
 \code{Curl(Vector)} \\
-f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector, 
+f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector,
 Field)} \\
 \mathbf{v} =& \mathbf{a}\cdot\nabla\mathbf{c} &\qquad \code{Vector} =&
 \code{V\_dot\_Grad(Vector, Vector)} \\
@@ -6759,7 +6802,7 @@ where we have defined
 G^j =& \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}\right)
 \end{align*}
 %
-\textbf{not} to be confused with the Cristoffel symbol of the second kind (see 
+\textbf{not} to be confused with the Cristoffel symbol of the second kind (see
 the coordinates manual for more details).
 %
 
@@ -6854,7 +6897,7 @@ J^2B^2$, and so the $\nabla y$ term cancels out:
 
 \subsection{The bracket operators}
 %
-The bracket operator \verb@brackets(phi, f, method)@ aims to differentiate 
+The bracket operator \texttt{brackets(phi, f, method)} aims to differentiate
 equations on the form
 %
 \begin{align*}
@@ -6863,14 +6906,14 @@ equations on the form
 
 
 \note{
-The bracket operators in BOUT++ are using Clebsch coordinates, and 
-returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather 
+The bracket operators in BOUT++ are using Clebsch coordinates, and
+returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather
 than $-\nabla\phi\times\ve{b}\cdot\nabla f$.
 }
 \\
 \\
-Notice that when we use the Arakawa scheme, $y$-derivatives are neglected. 
-An example of usage of the brackets can be found in for example 
+Notice that when we use the Arakawa scheme, $y$-derivatives are neglected.
+An example of usage of the brackets can be found in for example
 \file{examples/MMS/advection} or \file{examples/blob2d}.
 
 
@@ -7168,7 +7211,7 @@ to find the eigenvectors and eigenvalues of sets of equations.
 
 \subsection{Configuring with SLEPc}
 
-The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with 
+The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with
 PETSc 3.4.2. SLEPc version 3.4 should work, but other versions will not yet.
 
 
@@ -8355,4 +8398,3 @@ function.}
 
 \end{document}
 %
-
