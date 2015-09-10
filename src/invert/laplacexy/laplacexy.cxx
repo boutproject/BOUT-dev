@@ -10,6 +10,9 @@
 #include <boutcomm.hxx>
 #include <utils.hxx>
 
+// Include derivatives in the Y direction?
+#define INCLUDE_Y_DERIVS 1
+
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"
 static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
@@ -232,7 +235,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       acoef[y - mesh->ystart][x - xstart] = xm;
       bcoef[y - mesh->ystart][x - xstart] = c;
       ccoef[y - mesh->ystart][x - xstart] = xp;
-
+#ifdef INCLUDE_Y_DERIVS
       // YY component
       // Metrics at y+1/2
       J = 0.5*(mesh->J(x,y) + mesh->J(x,y+1));
@@ -255,6 +258,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
       ym = val;
       c -= val;
+#endif // INCLUDE_Y_DERIVS
       
       /////////////////////////////////////////////////
       // Now have a 5-point stencil for the Laplacian
@@ -272,6 +276,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       col = globalIndex(x-1, y);
       MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
       
+#ifdef INCLUDE_Y_DERIVS
       // Y + 1
       col = globalIndex(x, y+1);
       MatSetValues(MatA,1,&row,1,&col,&yp,INSERT_VALUES);
@@ -279,7 +284,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       // Y - 1
       col = globalIndex(x, y-1);
       MatSetValues(MatA,1,&row,1,&col,&ym,INSERT_VALUES);
-
+#endif // INCLUDE_Y_DERIVS
       
     }
   }
