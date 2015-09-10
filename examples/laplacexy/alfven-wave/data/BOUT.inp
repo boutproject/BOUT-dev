@@ -23,7 +23,9 @@ nonuniform = true
 [Alfven]
 
 laplace_perp = false  # Use Laplace_perp rather than Delp2?
-split_n0 = true    # Split phi into n=0 and n~=0 components?
+split_n0 = false    # Split phi into n=0 and n~=0 components?
+newXZsolver = true   # Use LaplaceXZ solver
+
 
 mu_epar = -1e7
 

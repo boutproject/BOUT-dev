@@ -33,10 +33,10 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift = true);
 
 // more optimised code (for BoutReals)
 
-void rfft(BoutReal *in, int length, dcomplex *out);
+void rfft(const BoutReal *in, int length, dcomplex *out);
 void irfft(dcomplex *in, int length, BoutReal *out);
 
-void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
+void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift = true);
 void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift = true);
 // Discrete Sine Transform
 void DST(BoutReal *in, int length, dcomplex *out);

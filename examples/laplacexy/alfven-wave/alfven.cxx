@@ -1,6 +1,7 @@
 
 #include <bout/physicsmodel.hxx>
 #include <bout/invert/laplacexy.hxx>
+#include <bout/invert/laplacexz.hxx>
 #include <invert_laplace.hxx>
 #include <field_factory.hxx>
 
@@ -30,7 +31,10 @@ private:
   bool laplace_perp;    // Use Laplace_perp or Delp2?
   bool split_n0;        // Split solve into n=0 and n~=0?
   LaplaceXY *laplacexy; // Laplacian solver in X-Y (n=0)
-  Laplacian *phiSolver; // Laplacian in X-Z
+  
+  bool newXZsolver; 
+  Laplacian *phiSolver; // Old Laplacian in X-Z
+  LaplaceXZ *newSolver; // New Laplacian in X-Z
 protected:
   
   int init(bool restarting) {
@@ -77,8 +81,16 @@ protected:
       laplacexy = new LaplaceXY(mesh);
       phi2D = 0.0; // Starting guess
     }
+    
     // Create an XZ solver
-    phiSolver  = Laplacian::create();
+    OPTION(opt, newXZsolver, false);
+    if(newXZsolver) {
+      // Test new LaplaceXZ solver
+      newSolver = LaplaceXZ::create(mesh);
+    }else {
+      // Use older Laplacian solver
+      phiSolver  = Laplacian::create();
+    }
     phi = 0.0;
 
     // Set boundary condition on jpar from input file
@@ -111,10 +123,20 @@ protected:
       phi2D = laplacexy->solve(Vort2D, phi2D);
       
       // Solve non-axisymmetric part using X-Z solver
-      phi = phi2D + phiSolver->solve(Vort-Vort2D, phi);
+      if(newXZsolver) {
+        phi = phi2D + newSolver->solve(Vort-Vort2D, phi);
+      }else {
+        phi = phi2D + phiSolver->solve(Vort-Vort2D, phi);
+      }
     }else {
       // Solve all components using X-Z solver
-      phi = phiSolver->solve(Vort, phi);
+      if(newXZsolver) {
+        // Use the new LaplaceXY solver
+        phi = newSolver->solve(Vort, phi);
+      }else {
+        // Use older Laplacian solver
+        phi = phiSolver->solve(Vort, phi);
+      }
       phi.applyBoundary(); // Apply Y boundaries
     }
     
