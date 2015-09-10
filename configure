@@ -5739,7 +5739,7 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$HDFPATH/lib/libhdf5.a" | $as_tr_cpp` 1
 _ACEOF
-HDFLIBPATH=$HDFPATH/lib
+HDFLIBPATH='lib'
 else
   as_ac_File=`$as_echo "ac_cv_file_$HDFPATH/lib64/libhdf5.a" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $HDFPATH/lib64/libhdf5.a" >&5
@@ -5763,7 +5763,7 @@ if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
 cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$HDFPATH/lib64/libhdf5.a" | $as_tr_cpp` 1
 _ACEOF
-HDFLIBPATH=$HDFPATH/lib64
+HDFLIBPATH='lib64'
 else
   HDFPATH=''
 fi
