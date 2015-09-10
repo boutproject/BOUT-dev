@@ -56,7 +56,7 @@ RTOL = 1.0e-5  # relative tolerance
 
 [gas]
 
-include_viscosity = false
+include_viscosity = true
 viscosity = 5e-4
 
 sub_initial = true

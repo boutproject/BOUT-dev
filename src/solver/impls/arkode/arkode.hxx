@@ -34,8 +34,8 @@ typedef EmptySolver ArkodeSolver;
 #else
 class ArkodeSolver;
 
-#ifndef __SUNDIAL_SOLVER_H__
-#define __SUNDIAL_SOLVER_H__
+#ifndef __ARKODE_SOLVER_H__
+#define __ARKODE_SOLVER_H__
 
 // NOTE: MPI must be included before SUNDIALS, otherwise complains
 #include "mpi.h"
@@ -93,7 +93,7 @@ class ArkodeSolver : public Solver {
     void loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data, int &p, vector<BoutReal> &f2dtols, vector<BoutReal> &f3dtols, bool bndry);
 };
 
-#endif // __SUNDIAL_SOLVER_H__
+#endif // __ARKODE_SOLVER_H__
 
 #endif
 

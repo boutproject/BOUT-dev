@@ -6,7 +6,10 @@
 
 # Variables to compare
 from __future__ import print_function
-from builtins import str
+try:
+  from builtins import str
+except:
+  pass
 vars = ['yavg2d', 'yavg3d', 'sm3d']
 tol = 1e-10                  # Absolute tolerance
 

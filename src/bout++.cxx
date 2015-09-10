@@ -57,6 +57,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <invert_laplace.hxx>
 
+#include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -165,6 +166,7 @@ int BoutInitialise(int &argc, char **&argv) {
   Options::getRoot()->set("optionfile", string(opt_file));
 
   // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
@@ -357,6 +359,9 @@ int BoutFinalise() {
   // Debugging message stack
   msg_stack.clear();
 
+  // Call SlepcFinalize if not already called
+  SlepcLib::cleanup();
+
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
     
@@ -397,7 +402,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   int ncalls            = solver->rhs_ncalls;
   int ncalls_e		= solver->rhs_ncalls_e;
   int ncalls_i		= solver->rhs_ncalls_i;
-  bool output_split     = solver->split_monitor;
+  bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)

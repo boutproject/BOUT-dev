@@ -30,6 +30,7 @@ has_cvode="@HAS_CVODE@"
 has_ida="@HAS_IDA@"
 has_lapack="@HAS_LAPACK@"
 has_petsc="@HAS_PETSC@"
+has_slepc="@HAS_SLEPC@"
 has_hypre="@HAS_HYPRE@"
 has_mumps="@HAS_MUMPS@"
 has_arkode="@HAS_ARKODE@"
@@ -71,6 +72,7 @@ Available values for OPTION include:
   --has-ida     SUNDIALS IDA solver support
   --has-lapack  LAPACK support
   --has-petsc   PETSc support
+  --has-slepc   SLEPc support
   --has-hypre   Hypre support
   --has-mumps   MUMPS support
 
@@ -109,6 +111,7 @@ all()
         echo "  --has-ida     -> $has_ida"
         echo "  --has-lapack  -> $has_lapack"
         echo "  --has-petsc   -> $has_petsc"
+        echo "  --has-slepc   -> $has_slepc"
         echo "  --has-hypre   -> $has_hypre"
         echo "  --has-mumps   -> $has_mumps"
 	echo "  --has-arkode  -> $has_arkode"
@@ -220,6 +223,10 @@ while test $# -gt 0; do
 
     --has-petsc)
         echo $has_petsc
+        ;;
+
+    --has-slepc)
+        echo $has_slepc
         ;;
 
     --has-hypre)

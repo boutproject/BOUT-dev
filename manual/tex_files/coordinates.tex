@@ -49,12 +49,13 @@
 %% SET HEADERS AND FOOTERS
 
 \pagestyle{fancy}
-\fancyfoot{}
-\renewcommand{\sectionmark}[1]{         % Lower case Section marker style
-  \markright{\thesection.\ #1}}
-\fancyhead[LE,RO]{\bfseries\thepage}    % Page number (boldface) in left on even
-                                        % pages and right on odd pages
+\fancyhf{}
+\lhead{\rightmark}
+\rhead{\thepage}
+\renewcommand{\sectionmark}[1]{\markright{#1}{}}
 \renewcommand{\headrulewidth}{0.3pt}
+\setlength{\headheight}{15pt} 		% Avoids getting warning about to small
+					% header
 
 \newcommand{\code}[1]{\texttt{#1}}
 \newcommand{\bfile}[1]{\texttt{\bf 1}}
@@ -84,6 +85,7 @@
 \newcommand{\deriv}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
 \newcommand{\dderiv}[2]{\ensuremath{\frac{\partial^2 #1}{\partial {#2}^2}}}
 \newcommand{\Vpar}{\ensuremath{V_{||}}}
+\newcommand{\Grad}{\ensuremath{\nabla}}
 \newcommand{\Gradpar}{\ensuremath{\partial_{||}}}
 \newcommand{\Divpar}{\ensuremath{\nabla_{||}}}
 \newcommand{\DivXnablaX}[2]{\ensuremath{\nabla_\psi\L(#1\partial_\psi#2\R)}}
@@ -356,7 +358,7 @@ Using equation (\ref{eq:general_laplacian}), the laplacian operator is given by
 y}\nabla^2y + \frac{\partial}{\partial z}\nabla^2z \nonumber
 \end{align*}
 %
-Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = -\Gamma^x$ etc, the
+Using equation (\ref{eq:laplace_expand}) for $\nabla^2x = G^x$ etc, the
 values are
 %
 \begin{align*}
@@ -388,7 +390,7 @@ The second derivative along the equilibrium field
 \phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}
 \end{align*}
 %
-A common expression (the Poisson bracket in reduced MHD) is (from equation 
+A common expression (the Poisson bracket in reduced MHD) is (from equation
 (\ref{eq:brackets})):
 %
 \begin{align*}
@@ -1278,7 +1280,11 @@ I\deriv{\phi}{z}\deriv{A}{z}\R)\L(-B^2\R) \\ &-
 
 \section{Differential geometry}
 %
-The following is notes from \cite{hazeltine-2003}.
+{\color{red} \textbf{WARNING: Several mistakes have been found (and is now 
+corrected) in this section, so it should be proof read before removing this 
+warning!}}\\
+%
+The following is notes from \cite{haeseler-1}.
 
 Sets of vectors $\L\{\mathbf{A, B, C}\R\}$ and $\L\{\mathbf{a, b,
 c}\R\}$ are {\bf reciprocal} if
@@ -1357,7 +1363,8 @@ $g_{ii} = h_i^2$}
 For a general set of coordinates, the nabla operator can be expressed as
 %
 \begin{align*}
-\nabla = \frac{\partial}{\partial u_i}\nabla u_i
+\nabla = \nabla u^i\frac{\partial}{\partial u^i} = 
+\ve{e}^i\frac{\partial}{\partial u^i}
 \end{align*}
 %
 and for a general set of (differentiable) coordinates $\L\{u^i\R\}$, the
@@ -1374,14 +1381,15 @@ which can be expanded as
 \begin{align}
 \nabla^2\phi = g^{ij}\frac{\partial^2\phi}{\partial u^i\partial u^j} +
 \underbrace{\frac{1}{J}\frac{\partial}{\partial
-u^i}\L(Jg^{ij}\R)}_{-\Gamma^j}\frac{\partial\phi}{\partial u^j}
+u^i}\L(Jg^{ij}\R)}_{G^j}\frac{\partial\phi}{\partial u^j}
 \label{eq:laplace_expand}
 \end{align}
 %
-where $\Gamma^j$ are the {\bf connection coefficients}. Setting $\phi = u^k$ in
-equation (\ref{eq:laplacegen}) gives $\nabla^2u^k = -\Gamma^k$. Expanding
-(\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x, y, z\R\}$
-gives
+where $G^j$ must \textbf{not} be mistaken as the so called connection 
+coefficients (i.e. the Christoffel symbols of second kind).
+Setting $\phi = u^k$ in equation (\ref{eq:laplacegen}) gives $\nabla^2u^k = 
+G^k$. Expanding (\ref{eq:laplacegen}) and setting $\L\{u^i\R\} = \L\{x, 
+y, z\R\}$ gives
 %
 \begin{align}
 \nabla^2f = \nabla\cdot\nabla f = \nabla\cdot\L(\frac{\partial}{\partial
@@ -1416,9 +1424,7 @@ J\L(\ve{e}^j \times \ve{e}^k\R) \qquad i,j,k \texttt{ cyc } 1,2,3
 
 
 
-
-
-\section{The Poisson bracket operator}
+\section{Derivation of operators in the BOUT++ Clebsch system}
 %
 The Clebsch system in BOUT++ goes like this
 %
@@ -1445,12 +1451,262 @@ Further on
           =\frac{J^{-1}\ve{e}_y}{J^{-1}\sqrt{g_{yy}}}
           =\frac{\ve{e}_y}{\sqrt{g_{yy}}}
 \end{align*}
-
-
-\subsection{The electrostatic \texorpdfstring{$E\times B$}{ExB} velocity}
 %
-Under electrostatic conditions, we have that $\ve{v}_E = 
--\frac{\nabla\phi\times\ve{b}}{B}$, which is similar to 
+
+
+
+\subsection{The Laplacian}
+%
+We would here like to find an expression for the laplacian
+%
+\begin{align*}
+    \Grad^2 = \Div \Grad
+\end{align*}
+%
+In general we have (using equation (2.6.39) in D'Haeseleer \cite{haeseler-1})
+%
+\begin{align}
+    \Div \ve{A} = \frac{1}{J} \partial_i \L(JA^i\R)
+    \label{eq:divA}
+\end{align}
+%
+and that
+%
+\begin{align*}
+    A^i = \ve{A}\cdot \ve{e}^i
+\end{align*}
+%
+In our case $A \to \Grad$, so that
+%
+\begin{align*}
+    \Grad^i = \L(\Grad\R)\cdot \ve{e}^i
+             = \ve{e}^i \cdot \L(\Grad\R)
+             = \ve{e}^i \cdot \L(\ve{e}^j \partial_j\R)
+             = g^{ij} \partial_j
+\end{align*}
+%
+Thus
+%
+\begin{align*}
+    \Grad^2 =& \frac{1}{J} \partial_i \L(J g^{ij} \partial_j\R)\\
+            =& \frac{1}{J} g^{ij} J \partial_i \partial_j
+             + \frac{1}{J} \partial_i \L(J g^{ij} \R) \partial_j\\
+            =& g^{ij} \partial_i \partial_j
+             + G^j \partial_j\\
+\end{align*}
+%
+where we have defined%
+%
+\footnote{%
+Notice that $G^i$ is \textbf{not} the same as the \emph{Christoffel symbols of
+second kind} (also known as the \emph{connection coefficients} or
+$\Gamma^i_{jk}=\ve{e}^i\cdot\partial_k \ve{e}_j$), although the derivation of
+the two are quite similar.\\
+We find that $\Gamma^i_{ji}=\ve{e}^i\cdot\partial_i \ve{e}_j = \Div \ve{e}_j$,
+whereas using equation \ref{eq:divA} leads to
+$G^i=\ve{e}^i\cdot\partial_i \ve{e}^j = \Div \ve{e}^j$, since $g^{ji}=g^{ij}$
+due to
+symmetry.
+}%
+%
+\begin{align*}
+    G^j =& \frac{1}{J} \partial_i \L(J g^{ij} \R)\\
+        =& \frac{1}{J} \L(
+           \partial_x \L[J g^{xj} \R]
+         + \partial_y \L[J g^{yj} \R]
+         + \partial_z \L[J g^{zj} \R]
+         \R)
+\end{align*}
+%
+By writing the terms out, we get
+%
+\begin{align*}
+    \Grad^2 =& g^{ij} \partial_i \partial_j + G^j \partial_j\\
+%
+            =& \L(  g^{xj} \partial_x \partial_j
+                  + g^{yj} \partial_y \partial_j
+                  + g^{zj} \partial_z \partial_j\R)
+               + \L(G^j \partial_j\R)\\
+%
+            =& \quad \,
+               \L(  g^{xx} \partial_x^2
+                  + g^{yx} \partial_y \partial_x
+                  + g^{zx} \partial_z \partial_x\R)
+               + \L(G^x \partial_x\R)\\
+            &+ \L(  g^{xy} \partial_x \partial_y
+                  + g^{yy} \partial_y^2
+                  + g^{zy} \partial_z \partial_y\R)
+               + \L(G^y \partial_y\R)\\
+            &+ \L(  g^{xz} \partial_x \partial_z
+                  + g^{yz} \partial_y \partial_z
+                  + g^{zz} \partial_z^y\R)
+               + \L(G^z \partial_z\R)
+\end{align*}
+%
+We now use that the metric tensor is symmetric (by definition), so that
+$g^{ij}=g^{ji}$, and $g_{ij}=g_{ji}$, and that the partial derivatives
+commutes for smooth functions $\partial_i\partial_j=\partial_j\partial_i$.
+This gives
+%
+\begin{align*}
+    \Grad^2 =&\quad \,
+               \L(g^{xx} \partial_x^2 \R)
+               + \L(G^x \partial_x\R)\\
+            &+ \L(g^{yy} \partial_y^2 \R)
+               + \L(G^y \partial_y\R)\\
+            &+ \L(g^{zz} \partial_z^2\R)
+               + \L(G^z \partial_z\R)\\
+            &+ 2\L( g^{xy} \partial_x \partial_y
+                  + g^{xz} \partial_x \partial_z
+                  + g^{yz} \partial_y \partial_z
+                  \R)\\
+%
+	   =&\quad \,
+               \L(g^{xx} \partial_x^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xx} \R\}
+                    + \partial_y \L\{J g^{yx} \R\}
+                    + \partial_z \L\{J g^{zx} \R\}
+                    \R]
+                    \partial_x\R)\\
+            &+ \L(g^{yy} \partial_y^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xy} \R\}
+                    + \partial_y \L\{J g^{yy} \R\}
+                    + \partial_z \L\{J g^{zy} \R\}
+                    \R]
+                    \partial_y\R)\\
+            &+ \L(g^{zz} \partial_z^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xz} \R\}
+                    + \partial_y \L\{J g^{yz} \R\}
+                    + \partial_z \L\{J g^{zz} \R\}
+                    \R]
+                    \partial_z\R)\\
+            &+ 2\L( g^{xy} \partial_x \partial_y
+                  + g^{xz} \partial_x \partial_z
+                  + g^{yz} \partial_y \partial_z
+                  \R)
+\end{align*}
+%
+Notice that $G^i$ does not operate on $\partial_i$, but rather that the two are
+multiplied together.
+%
+
+
+
+\subsection{The parallel Laplacian}
+%
+We have that
+%
+\begin{align*}
+    \Grad_\| =& \L(\ve{b} \cdot \Grad\R) \ve{b}\
+             = \ve{b} \ve{b} \cdot \Grad
+             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \Grad
+             = \frac{\ve{e}_y \ve{e}_y}{g_{yy}} \cdot \ve{e}^i \partial_i
+             = \frac{\ve{e}_y}{g_{yy}} \partial_y
+\end{align*}
+%
+we have that
+%
+\begin{align*}
+    \Grad_\|^i =& \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)\cdot \ve{e}^i
+               = \ve{e}^i \cdot \L(\frac{\ve{e}_y}{g_{yy}} \partial_y\R)
+\end{align*}
+%
+so that by equation (\ref{eq:divA}),
+%
+\begin{align*}
+    \Grad_\|^2 =& \Div\L(\ve{b} \ve{b} \cdot \Grad\R)\\
+               =& \Div\L(\frac{\ve{e}_y}{g_{yy}} \cdot \partial_y\R)\\
+               =& \frac{1}{J} \partial_i \L(
+		      J\ve{e}^i \cdot \L[\frac{\ve{e}_y}{g_{yy}} \partial_y\R]
+		  \R)\\
+               =& \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
+\end{align*}
+%
+
+
+
+\subsection{The perpendicular Laplacian}
+For the perpendicular laplacian, we have that
+%
+\begin{align*}
+    \Grad_\perp^2 =& \Grad^2 - \Grad_\|^2\\
+                  =& g^{ij} \partial_i \partial_j + G^j \partial_j
+                    -\frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)\\
+%
+            =& \quad \,
+               \L(g^{xx} \partial_x^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xx} \R\}
+                    + \partial_y \L\{J g^{yx} \R\}
+                    + \partial_z \L\{J g^{zx} \R\}
+                    \R]
+                    \partial_x\R)\\
+            &+ \L(g^{yy} \partial_y^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xy} \R\}
+                    + \partial_y \L\{J g^{yy} \R\}
+                    + \partial_z \L\{J g^{zy} \R\}
+                    \R]
+                    \partial_y\R)\\
+            &+ \L(g^{zz} \partial_z^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xz} \R\}
+                    + \partial_y \L\{J g^{yz} \R\}
+                    + \partial_z \L\{J g^{zz} \R\}
+                    \R]
+                    \partial_z\R)\\
+            &+ 2\L( g^{xy} \partial_x \partial_y
+                  + g^{xz} \partial_x \partial_z
+                  + g^{yz} \partial_y \partial_z
+                  \R)\\
+            &- \frac{1}{J} \partial_y \L(\frac{J}{g_{yy}} \partial_y\R)
+\end{align*}
+%
+Notice that BOUT++ for now assumes small parallel gradients in the laplacian
+inversion, so that
+%
+\begin{align*}
+    \Grad_\perp^2 \simeq& \quad \,
+               \L(g^{xx} \partial_x^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xx} \R\}
+                    + \partial_z \L\{J g^{zx} \R\}
+                    \R]
+                    \partial_x\R)\\
+            &+ \L(g^{zz} \partial_z^2\R)
+               + \L(
+                    \frac{1}{J} \L[
+                      \partial_x \L\{J g^{xz} \R\}
+                    + \partial_z \L\{J g^{zz} \R\}
+                    \R]
+                    \partial_z\R)\\
+            &+ 2\L(g^{xz} \partial_x \partial_z\R)
+\end{align*}
+%
+for the laplacian inversion.
+%
+
+
+
+\subsection{The Poisson bracket operator}
+%
+We will here derive the bracket operators, as they are used in BOUT++.
+
+\subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
+	       velocity}
+%
+Under electrostatic conditions, we have that $\ve{v}_E =
+-\frac{\nabla\phi\times\ve{b}}{B}$, which is similar to
 $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
 %
 \begin{align*}
@@ -1470,7 +1726,7 @@ $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
 	       \L(g_{yx}\ve{e}^x + g_{yy}\ve{e}^y + g_{yz}\ve{e}^z\R)
 	       \times
 	       \L(\ve{e}^x\partial_x +
-	          \ve{e}^y\partial_y + 
+	          \ve{e}^y\partial_y +
                   \ve{e}^z\partial_z\R)\phi\\
              %
 	     =&\frac{J}{g_{yy}}
@@ -1523,7 +1779,8 @@ $\ve{v}=\ve{k}\times\nabla\psi$ found in incompressible fluid flow
 \end{align*}
 
 
-\subsection{The electrostatic \texorpdfstring{$E\times B$}{ExB} advection}
+\subsubsection{The electrostatic \texorpdfstring{$\ve{E}\times \ve{B}$}{ExB}
+	       advection}
 %
 The electrostatic $E\times B$ advection operator thus becomes
 %
@@ -1626,13 +1883,13 @@ The pure solenoidal advection is thus
 \end{align*}
 
 
-\subsection{The brackets operator in BOUT++}
+\subsubsection{The brackets operator in BOUT++}
 %
-Notice that the \verb@brackets(phi,f)@ operators in BOUT++ returns 
-$-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather than 
+Notice that the \verb@brackets(phi,f)@ operators in BOUT++ returns
+$-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather than
 $-\nabla\phi\times\ve{b}\cdot\nabla f$.
 
-Notice also that the Arakawa brackets neglects the $\partial_y$ derivative 
+Notice also that the Arakawa brackets neglects the $\partial_y$ derivative
 terms (the $y$-derivative terms), so for the Arakawa brackets BOUT++ returns
 %
 \begin{align*}

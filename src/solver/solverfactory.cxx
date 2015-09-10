@@ -1,3 +1,4 @@
+
 #include "solverfactory.hxx"
 
 #include "impls/cvode/cvode.hxx"
@@ -5,7 +6,10 @@
 #include "impls/petsc-3.1/petsc-3.1.hxx"
 #include "impls/petsc-3.2/petsc-3.2.hxx"
 #include "impls/petsc-3.3/petsc-3.3.hxx"
+#include "impls/petsc-3.4/petsc-3.4.hxx"
+#include "impls/petsc-3.5/petsc-3.5.hxx"
 #include "impls/petsc/petsc.hxx"
+#include "impls/slepc-3.4/slepc-3.4.hxx"
 #include "impls/ida/ida.hxx"
 #include "impls/pvode/pvode.hxx"
 #include "impls/karniadakis/karniadakis.hxx"
@@ -13,6 +17,9 @@
 #include "impls/euler/euler.hxx"
 #include "impls/rk3-ssp/rk3-ssp.hxx"
 #include "impls/power/power.hxx"
+#include "impls/imex-bdf2/imex-bdf2.hxx"
+#include "impls/snes/snes.hxx"
+#include "impls/rkgeneric/rkgeneric.hxx"
 
 #include <boutexception.hxx>
 
@@ -67,7 +74,9 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
   } else if(!strcasecmp(type, SOLVERIDA)) {
     return new IdaSolver(options);
   } else if(!strcasecmp(type, SOLVERPETSC)) {
-    return new PetscSolver(options);
+    return new PetscSolver(options); 
+  } else if(!strcasecmp(type, SOLVERSLEPC)) {
+    return new SlepcSolver(options);
   } else if(!strcasecmp(type, SOLVERKARNIADAKIS)) {
     return new KarniadakisSolver(options);
   } else if(!strcasecmp(type, SOLVERRK4)) {
@@ -80,6 +89,12 @@ Solver* SolverFactory::createSolver(SolverType &type, Options *options) {
     return new PowerSolver;
   } else if(!strcasecmp(type, SOLVERARKODE)){
     return new ArkodeSolver(options);
+  } else if(!strcasecmp(type, SOLVERIMEXBDF2)) {
+    return new IMEXBDF2(options);
+  } else if(!strcasecmp(type, SOLVERSNES)) {
+    return new SNESSolver(options);
+  } else if(!strcasecmp(type, SOLVERRKGENERIC)){
+    return new RKGenericSolver(options);
   }
 
   // Need to throw an error saying 'Supplied option "type"' was not found

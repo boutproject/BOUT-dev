@@ -43,7 +43,7 @@
 #include <output.hxx>
 
 KarniadakisSolver::KarniadakisSolver(Options *options) : Solver(options) {
-  
+  canReset = true;  
 }
 
 KarniadakisSolver::~KarniadakisSolver() {
@@ -58,8 +58,6 @@ int KarniadakisSolver::init(bool restarting, int nout, BoutReal tstep) {
     return 1;
   
   output << "\n\tKarniadakis solver\n";
-  
-  split_monitor=true;
  
   nsteps = nout; // Save number of output steps
   out_timestep = tstep;
@@ -160,6 +158,14 @@ int KarniadakisSolver::run() {
   return 0;
 }
 
+void KarniadakisSolver::resetInternalFields(){
+  //Make sure all other fields get reset
+  first_time=true;
+
+  //Copy fields into vector
+  save_vars(f0);
+}
+
 void KarniadakisSolver::take_step(BoutReal dt) {
   // S0 = S(f0)
   
@@ -191,5 +197,5 @@ void KarniadakisSolver::take_step(BoutReal dt) {
   // f1 = f1 + dt*D0
   #pragma omp parallel for
   for(int i=0;i<nlocal;i++)
-    f1[i] += dt*D0[i];
+    f1[i] += (6./11.) * dt*D0[i];
 }

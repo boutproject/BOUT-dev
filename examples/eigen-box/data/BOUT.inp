@@ -1,0 +1,49 @@
+# Eigenvalue test case
+
+NOUT = 1
+TIMESTEP = 0.2
+
+MYG = 0
+
+[mesh]
+
+length = 1  # Length of the domain
+
+nx = 36
+ny = 1
+nz = 1
+
+dx = length / (nx - 4)
+dy = 1
+
+[solver]
+type = "slepc"
+
+neig = 4
+
+mpd = 64
+
+useInitial=true
+maxit=10000
+tol=1.0e-4
+
+userWhich = false
+targRe=6.2
+targIm=0
+
+selfSolve = false
+timestep = 0.01
+
+[solver:advance]
+type = karniadakis
+timestep = 0.001
+
+[f]
+bndry_all = dirichlet_o2
+
+scale = 1
+function = sin(2*pi*x)
+
+[g]
+bndry_all = none
+scale = 0.0

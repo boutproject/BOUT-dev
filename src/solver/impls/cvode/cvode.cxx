@@ -65,6 +65,8 @@ CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
   
   jacfunc = NULL;
+  
+  canReset = true;
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -658,6 +660,16 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
       p++;
     }  
   }
+}
+
+void CvodeSolver::resetInternalFields() {
+  
+  if (save_vars(NV_DATA_P(uvec)))
+    throw BoutException("\tERROR: resetting variable values failed\n");
+  
+  if ( CVodeReInit(cvode_mem, simtime, uvec) < 0 )
+    throw BoutException("CVodeReInit failed\n");
+  
 }
 
 #endif

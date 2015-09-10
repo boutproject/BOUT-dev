@@ -1,9 +1,13 @@
-from builtins import str
 # Determine the number of CPUs on a system
 #
 # Taken from a post on stackoverflow:
 # http://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
 #
+
+try:
+  from builtins import str
+except:
+  pass
 
 import os,re,subprocess
 def  determineNumberOfCPUs():

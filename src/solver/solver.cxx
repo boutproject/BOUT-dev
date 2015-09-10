@@ -53,6 +53,7 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
   // Set flags to defaults
   has_constraints = false;
   initialised = false;
+  canReset = false;
 
   // Zero timing
   rhs_ncalls = 0;
@@ -76,7 +77,6 @@ Solver::Solver(Options *opts) : options(opts), model(0), prefunc(0) {
 
   // Split operator
   split_operator = false;
-  split_monitor = false;    //flag for runtime output with split operator
   max_dt = -1.0;
 
   // Output monitor
@@ -479,7 +479,7 @@ void Solver::constraint(Vector3D &v, Vector3D &C_v, const char* name) {
 
 int Solver::solve(int NOUT, BoutReal TIMESTEP) {
   
-  bool dump_on_restart = false;
+  dump_on_restart = false;
   bool append = false;
   if(NOUT < 0) {
     /// Get options
@@ -762,6 +762,11 @@ int Solver::call_monitors(BoutReal simtime, int iter, int NOUT) {
     output.write("Monitor signalled to quit. Returning\n");
     return 1;
   }
+  
+  // Reset iteration and wall-time count
+  rhs_ncalls = 0;
+  rhs_ncalls_i = 0;
+  rhs_ncalls_e = 0;
   
   return 0;
 }
