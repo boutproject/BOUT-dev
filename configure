@@ -2533,6 +2533,93 @@ else
       IDALIBS=""
 
 fi
+
+    as_ac_File=`echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_ida/lib/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $with_ida/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_ida/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_ida/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $with_ida/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_ida/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$with_ida/lib64/libsundials_ida.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_ida/lib64/libsundials_ida.a" >&5
+echo $ECHO_N "checking for $with_ida/lib64/libsundials_ida.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_ida/lib64/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_ida/lib64/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 as_ac_File=`echo "ac_cv_file_$with_ida/lib/libsundials_ida.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $with_ida/lib/libsundials_ida.a" >&5
 echo $ECHO_N "checking for $with_ida/lib/libsundials_ida.a... $ECHO_C" >&6
@@ -2557,15 +2644,11 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$with_ida/lib/libsundials_ida.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+IDALIBSLIB='lib'
 else
-
-      IDALIBS=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $with_ida/lib/libsundials_nvecparallel.a" >&5
-echo $ECHO_N "checking for $with_ida/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+  as_ac_File=`echo "ac_cv_file_$with_ida/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_ida/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $with_ida/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2573,7 +2656,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$with_ida/lib/libsundials_nvecparallel.a"; then
+if test -r "$with_ida/lib64/libsundials_nvecparallel.a"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2584,20 +2667,50 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$with_ida/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+#define `echo "HAVE_$with_ida/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+IDALIBSLIB='lib64'
 else
+  IDALIBS=""
 
-      IDALIBS=""
+fi
+as_ac_File=`echo "ac_cv_file_$with_ida/lib64/libsundials_ida.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_ida/lib64/libsundials_ida.a" >&5
+echo $ECHO_N "checking for $with_ida/lib64/libsundials_ida.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_ida/lib64/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_ida/lib64/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
 
 fi
 
     if test "$IDALIBS" != ""
     then
 	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
 	echo "=> Using SUNDIALS IDA solver, path $with_ida"
     else
       echo " -> Given path not correct. Finding..."
@@ -2872,6 +2985,93 @@ else
       	  IDALIBS=""
 
 fi
+
+    	as_ac_File=`echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $IDALIBS/lib/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $IDALIBS/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$IDALIBS/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $IDALIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $IDALIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $IDALIBS/lib64/libsundials_ida.a" >&5
+echo $ECHO_N "checking for $IDALIBS/lib64/libsundials_ida.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$IDALIBS/lib64/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
+
+fi
 as_ac_File=`echo "ac_cv_file_$IDALIBS/lib/libsundials_ida.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $IDALIBS/lib/libsundials_ida.a" >&5
 echo $ECHO_N "checking for $IDALIBS/lib/libsundials_ida.a... $ECHO_C" >&6
@@ -2896,15 +3096,11 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$IDALIBS/lib/libsundials_ida.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+IDALIBSLIB='lib'
 else
-
-      	  IDALIBS=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $IDALIBS/lib/libsundials_nvecparallel.a" >&5
-echo $ECHO_N "checking for $IDALIBS/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+  as_ac_File=`echo "ac_cv_file_$IDALIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $IDALIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $IDALIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2912,7 +3108,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$IDALIBS/lib/libsundials_nvecparallel.a"; then
+if test -r "$IDALIBS/lib64/libsundials_nvecparallel.a"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2923,13 +3119,43 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$IDALIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+#define `echo "HAVE_$IDALIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+IDALIBSLIB='lib64'
 else
+  IDALIBS=""
 
-      	  IDALIBS=""
+fi
+as_ac_File=`echo "ac_cv_file_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $IDALIBS/lib64/libsundials_ida.a" >&5
+echo $ECHO_N "checking for $IDALIBS/lib64/libsundials_ida.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$IDALIBS/lib64/libsundials_ida.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$IDALIBS/lib64/libsundials_ida.a" | $as_tr_cpp` 1
+_ACEOF
+
+IDALIBSLIB='lib64'
+else
+  IDALIBS=""
+
+fi
 
 fi
 
@@ -2938,7 +3164,7 @@ fi
     if test "$IDALIBS" != ""
     then
 	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
     fi
   fi
 
@@ -3095,7 +3321,8 @@ else
       CVODELIBS=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$with_cvode/lib/libsundials_cvode.a" | $as_tr_sh`
+
+    as_ac_File=`echo "ac_cv_file_$with_cvode/lib/libsundials_cvode.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $with_cvode/lib/libsundials_cvode.a" >&5
 echo $ECHO_N "checking for $with_cvode/lib/libsundials_cvode.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -3119,10 +3346,68 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$with_cvode/lib/libsundials_cvode.a" | $as_tr_cpp` 1
 _ACEOF
 
+CVODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$with_cvode/lib64/libsundials_cvode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_cvode/lib64/libsundials_cvode.a" >&5
+echo $ECHO_N "checking for $with_cvode/lib64/libsundials_cvode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_cvode/lib64/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_cvode/lib64/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
 else
 
       CVODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$with_cvode/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_cvode/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $with_cvode/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_cvode/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_cvode/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
+else
+
+      CVODELIBS=""
+
+fi
 
 fi
 as_ac_File=`echo "ac_cv_file_$with_cvode/lib/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -3149,18 +3434,77 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$with_cvode/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
 _ACEOF
 
+CVODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$with_cvode/lib64/libsundials_cvode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_cvode/lib64/libsundials_cvode.a" >&5
+echo $ECHO_N "checking for $with_cvode/lib64/libsundials_cvode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_cvode/lib64/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_cvode/lib64/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
+else
+
+      CVODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$with_cvode/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $with_cvode/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $with_cvode/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$with_cvode/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$with_cvode/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
 else
 
       CVODELIBS=""
 
 fi
 
+fi
+
+
 
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$with_cvode/include"
-      CVODELIBS="-L$with_cvode/lib -lsundials_cvode -lsundials_nvecparallel"
+      CVODELIBS="-L$with_cvode/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
       echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
     else
       echo " -> Given path not correct. Finding..."
@@ -3375,7 +3719,8 @@ else
 	  CVODELIBS=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib/libsundials_cvode.a" | $as_tr_sh`
+
+        as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib/libsundials_cvode.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $CVODELIBS/lib/libsundials_cvode.a" >&5
 echo $ECHO_N "checking for $CVODELIBS/lib/libsundials_cvode.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -3399,10 +3744,68 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$CVODELIBS/lib/libsundials_cvode.a" | $as_tr_cpp` 1
 _ACEOF
 
+CVODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib64/libsundials_cvode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $CVODELIBS/lib64/libsundials_cvode.a" >&5
+echo $ECHO_N "checking for $CVODELIBS/lib64/libsundials_cvode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$CVODELIBS/lib64/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$CVODELIBS/lib64/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
 else
 
-	  CVODELIBS=""
+            CVODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $CVODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $CVODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$CVODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$CVODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
+else
+
+            CVODELIBS=""
+
+fi
 
 fi
 as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -3429,10 +3832,68 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$CVODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
 _ACEOF
 
+CVODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib64/libsundials_cvode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $CVODELIBS/lib64/libsundials_cvode.a" >&5
+echo $ECHO_N "checking for $CVODELIBS/lib64/libsundials_cvode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$CVODELIBS/lib64/libsundials_cvode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$CVODELIBS/lib64/libsundials_cvode.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
 else
 
-	  CVODELIBS=""
+            CVODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$CVODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $CVODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $CVODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$CVODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$CVODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+CVODELIBSLIB='lib64'
+else
+
+            CVODELIBS=""
+
+fi
 
 fi
 
@@ -3440,7 +3901,7 @@ fi
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$CVODELIBS/include"
-      CVODELIBS="-L$CVODELIBS/lib -lsundials_cvode -lsundials_nvecparallel"
+      CVODELIBS="-L$CVODELIBS/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
     fi
   fi
 
@@ -3601,9 +4062,10 @@ else
       ARKODELIBS=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$with_arkode/lib/libsundials_arkode.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $with_arkode/lib/libsundials_arkode.a" >&5
-echo $ECHO_N "checking for $with_arkode/lib/libsundials_arkode.a... $ECHO_C" >&6
+
+    as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib/libsundials_arkode.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib/libsundials_arkode.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3611,7 +4073,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$with_arkode/lib/libsundials_arkode.a"; then
+if test -r "$ARKODELIBS/lib/libsundials_arkode.a"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -3622,18 +4084,14 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$with_arkode/lib/libsundials_arkode.a" | $as_tr_cpp` 1
+#define `echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+ARKODELIBSLIB='lib'
 else
-
-      ARKODELIBS=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$with_arkode/lib/libsundials_nvecparallel.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $with_arkode/lib/libsundials_nvecparallel.a" >&5
-echo $ECHO_N "checking for $with_arkode/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+  as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_arkode.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_arkode.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -3641,7 +4099,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "$with_arkode/lib/libsundials_nvecparallel.a"; then
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.a"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -3652,13 +4110,133 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$with_arkode/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+ARKODELIBSLIB='lib64'
 else
 
-      ARKODELIBS=""
+        ARKODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
+else
+
+        ARKODELIBS=""
+
+fi
+
+fi
+as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_arkode.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_arkode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
+else
+
+        ARKODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
+else
+
+        ARKODELIBS=""
+
+fi
 
 fi
 
@@ -3666,7 +4244,7 @@ fi
     if test "$ARKODELIBS" != ""
     then
       ARKODEINCS="-I$with_arkode/include"
-      ARKODELIBS="-L$with_arkode/lib -lsundials_arkode -lsundials_nvecparallel"
+      ARKODELIBS="-L$with_arkode/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
       echo "=> Using SUNDIALS ARKODE solver, path $with_arkode"
     else
       echo " -> Given path not correct. Finding..."
@@ -3881,7 +4459,8 @@ else
           ARKODELIBS=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.a" | $as_tr_sh`
+
+        as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib/libsundials_arkode.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ARKODELIBS/lib/libsundials_arkode.a" >&5
 echo $ECHO_N "checking for $ARKODELIBS/lib/libsundials_arkode.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -3905,10 +4484,68 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ARKODELIBS/lib/libsundials_arkode.a" | $as_tr_cpp` 1
 _ACEOF
 
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_arkode.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_arkode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
 else
 
-          ARKODELIBS=""
+            ARKODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
 
 fi
 as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_sh`
@@ -3935,10 +4572,68 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$ARKODELIBS/lib/libsundials_nvecparallel.a" | $as_tr_cpp` 1
 _ACEOF
 
+ARKODELIBSLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_arkode.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_arkode.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_arkode.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_arkode.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
 else
 
-          ARKODELIBS=""
+            ARKODELIBS=""
+
+fi
+as_ac_File=`echo "ac_cv_file_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a" >&5
+echo $ECHO_N "checking for $ARKODELIBS/lib64/libsundials_nvecparallel.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$ARKODELIBS/lib64/libsundials_nvecparallel.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ARKODELIBS/lib64/libsundials_nvecparallel.a" | $as_tr_cpp` 1
+_ACEOF
+
+ARKODELIBSLIB='lib64'
+else
+
+            ARKODELIBS=""
+
+fi
 
 fi
 
@@ -3947,7 +4642,7 @@ fi
     if test "$ARKODELIBS" != ""
     then
       ARKODEINCS="-I$ARKODELIBS/include"
-      ARKODELIBS="-L$ARKODELIBS/lib -lsundials_arkode -lsundials_nvecparallel"
+      ARKODELIBS="-L$ARKODELIBS/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
     fi
   fi
   if test "$ARKODELIBS" = ""
@@ -3974,6 +4669,8 @@ fi
 
 echo "Searching for FFTW library"
 
+# first only look for header files
+
 if test "$with_fftw" = ""
 then
   # No path specified
@@ -3981,6 +4678,7 @@ then
   echo " -> Path not given. Searching for library..."
 else
   FFTPATH=$with_fftw
+  # look only for header file, later search for library ($FFTPATH/lib/libfftw3.a)
   as_ac_File=`echo "ac_cv_file_$FFTPATH/include/fftw3.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $FFTPATH/include/fftw3.h" >&5
 echo $ECHO_N "checking for $FFTPATH/include/fftw3.h... $ECHO_C" >&6
@@ -4003,37 +4701,6 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$FFTPATH/include/fftw3.h" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-    echo " -> Given path not correct. Finding..."
-    FFTPATH=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $FFTPATH/lib/libfftw3.a" >&5
-echo $ECHO_N "checking for $FFTPATH/lib/libfftw3.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$FFTPATH/lib/libfftw3.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$FFTPATH/lib/libfftw3.a" | $as_tr_cpp` 1
 _ACEOF
 
 
@@ -4077,32 +4744,6 @@ _ACEOF
 
 FFTPATH=$FFTW_ROOT
 fi
-as_ac_File=`echo "ac_cv_file_$FFTW_ROOT/lib/libfftw3.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $FFTW_ROOT/lib/libfftw3.a" >&5
-echo $ECHO_N "checking for $FFTW_ROOT/lib/libfftw3.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$FFTW_ROOT/lib/libfftw3.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$FFTW_ROOT/lib/libfftw3.a" | $as_tr_cpp` 1
-_ACEOF
-
-FFTPATH=$FFTW_ROOT
-fi
 
   fi
 fi
@@ -4139,33 +4780,8 @@ _ACEOF
 
 FFTPATH=$FFTWISDOM
 fi
-as_ac_File=`echo "ac_cv_file_$FFTWISDOM/lib/libfftw3.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $FFTWISDOM/lib/libfftw3.a" >&5
-echo $ECHO_N "checking for $FFTWISDOM/lib/libfftw3.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$FFTWISDOM/lib/libfftw3.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
 
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$FFTWISDOM/lib/libfftw3.a" | $as_tr_cpp` 1
-_ACEOF
-
-FFTPATH=$FFTWISDOM
-fi
-
+  #AC_CHECK_FILES( $FFTWISDOM/lib/libfftw3.a  , FFTPATH=$FFTWISDOM, )
 fi
 
 # Try some known paths
@@ -4251,6 +4867,27 @@ echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   FFTPATH=$HOME/local
+else
+  as_ac_File=`echo "ac_cv_file_$HOME/include/fftw3.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HOME/include/fftw3.h" >&5
+echo $ECHO_N "checking for $HOME/include/fftw3.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HOME/include/fftw3.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  FFTPATH=$HOME/
 fi
 
 fi
@@ -4259,13 +4896,16 @@ fi
 
 fi
 
+fi
 
-  if test "$FFTPATH" != ""
-  then
-    # Check for the rest of the files
 
-    # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
-    as_ac_File=`echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
+fi
+
+
+#Test for library
+if test "$FFTPATH" != ""
+then
+  as_ac_File=`echo "ac_cv_file_$FFTPATH/lib/libfftw3.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $FFTPATH/lib/libfftw3.a" >&5
 echo $ECHO_N "checking for $FFTPATH/lib/libfftw3.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -4289,12 +4929,40 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$FFTPATH/lib/libfftw3.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+FFTPATHLIB='lib'
 else
-  FFTPATH=""
+  as_ac_File=`echo "ac_cv_file_$FFTPATH/lib64/libfftw3.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $FFTPATH/lib64/libfftw3.a" >&5
+echo $ECHO_N "checking for $FFTPATH/lib64/libfftw3.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$FFTPATH/lib64/libfftw3.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$FFTPATH/lib64/libfftw3.a" | $as_tr_cpp` 1
+_ACEOF
+
+FFTPATHLIB='lib64'
+else
+  FFTPATH=''
 fi
 
-    fi
+fi
+
+
 fi
 
 if test "$FFTPATH" = ""
@@ -4304,7 +4972,7 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
 fi
 echo ""
 
@@ -4387,37 +5055,6 @@ else
         HDFPATH=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$HDFPATH/lib/libhdf5.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $HDFPATH/lib/libhdf5.a" >&5
-echo $ECHO_N "checking for $HDFPATH/lib/libhdf5.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$HDFPATH/lib/libhdf5.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$HDFPATH/lib/libhdf5.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-        echo " -> Can't find HDF5 files"
-        HDFPATH=""
-
-fi
 
 
   else
@@ -4455,7 +5092,129 @@ else
         exit
 
 fi
-as_ac_File=`echo "ac_cv_file_$HDFPATH/lib/libhdf5.a" | $as_tr_sh`
+
+  fi
+
+
+  # Try some known paths
+  if test "$HDFPATH" = ""
+  then
+    echo "$as_me:$LINENO: checking for /usr/include/hdf5.h" >&5
+echo $ECHO_N "checking for /usr/include/hdf5.h... $ECHO_C" >&6
+if test "${ac_cv_file__usr_include_hdf5_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "/usr/include/hdf5.h"; then
+  ac_cv_file__usr_include_hdf5_h=yes
+else
+  ac_cv_file__usr_include_hdf5_h=no
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_file__usr_include_hdf5_h" >&5
+echo "${ECHO_T}$ac_cv_file__usr_include_hdf5_h" >&6
+if test $ac_cv_file__usr_include_hdf5_h = yes; then
+  HDFPATH=/usr
+else
+  echo "$as_me:$LINENO: checking for /usr/local/include/hdf5.h" >&5
+echo $ECHO_N "checking for /usr/local/include/hdf5.h... $ECHO_C" >&6
+if test "${ac_cv_file__usr_local_include_hdf5_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "/usr/local/include/hdf5.h"; then
+  ac_cv_file__usr_local_include_hdf5_h=yes
+else
+  ac_cv_file__usr_local_include_hdf5_h=no
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_file__usr_local_include_hdf5_h" >&5
+echo "${ECHO_T}$ac_cv_file__usr_local_include_hdf5_h" >&6
+if test $ac_cv_file__usr_local_include_hdf5_h = yes; then
+  HDFPATH=/usr/local
+else
+  echo "$as_me:$LINENO: checking for /opt/local/include/hdf5.h" >&5
+echo $ECHO_N "checking for /opt/local/include/hdf5.h... $ECHO_C" >&6
+if test "${ac_cv_file__opt_local_include_hdf5_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "/opt/local/include/hdf5.h"; then
+  ac_cv_file__opt_local_include_hdf5_h=yes
+else
+  ac_cv_file__opt_local_include_hdf5_h=no
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_file__opt_local_include_hdf5_h" >&5
+echo "${ECHO_T}$ac_cv_file__opt_local_include_hdf5_h" >&6
+if test $ac_cv_file__opt_local_include_hdf5_h = yes; then
+  HDFPATH=/opt/local
+else
+  as_ac_File=`echo "ac_cv_file_$HOME/local/include/hdf5.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HOME/local/include/hdf5.h" >&5
+echo $ECHO_N "checking for $HOME/local/include/hdf5.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HOME/local/include/hdf5.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HDFPATH=$HOME/local
+else
+  as_ac_File=`echo "ac_cv_file_$HOME/include/hdf5.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HOME/include/hdf5.h" >&5
+echo $ECHO_N "checking for $HOME/include/hdf5.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HOME/include/hdf5.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HDFPATH=$HOME
+fi
+
+fi
+
+fi
+
+fi
+
+fi
+
+  fi
+
+  if test $HDFPATH
+  then
+      as_ac_File=`echo "ac_cv_file_$HDFPATH/lib/libhdf5.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $HDFPATH/lib/libhdf5.a" >&5
 echo $ECHO_N "checking for $HDFPATH/lib/libhdf5.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -4479,14 +5238,40 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$HDFPATH/lib/libhdf5.a" | $as_tr_cpp` 1
 _ACEOF
 
-
+HDFLIBPATH=$HDFPATH/lib
 else
+  as_ac_File=`echo "ac_cv_file_$HDFPATH/lib64/libhdf5.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HDFPATH/lib64/libhdf5.a" >&5
+echo $ECHO_N "checking for $HDFPATH/lib64/libhdf5.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HDFPATH/lib64/libhdf5.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
-        echo " ERROR: Given HDF5 path not correct."
-        exit
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$HDFPATH/lib64/libhdf5.a" | $as_tr_cpp` 1
+_ACEOF
+
+HDFLIBPATH=$HDFPATH/lib64
+else
+  HDFPATH=''
+fi
 
 fi
 
+      test $HDFLIBPATH || echo " -> Can't find HDF5 files"
   fi
 
   # Check if found valid path
@@ -4501,7 +5286,7 @@ fi
     fi
 
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS $HDFPATH/lib/libhdf5.a -lz"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
 
     file_formats="$file_formats HDF5"
   else
@@ -4736,6 +5521,26 @@ echo "${ECHO_T}$ac_cv_file__usr_local_include_netcdfcpp_h" >&6
 if test $ac_cv_file__usr_local_include_netcdfcpp_h = yes; then
   NCPATH=/usr/local/
 else
+  echo "$as_me:$LINENO: checking for /opt/local/include/netcdfcpp.h" >&5
+echo $ECHO_N "checking for /opt/local/include/netcdfcpp.h... $ECHO_C" >&6
+if test "${ac_cv_file__opt_local_include_netcdfcpp_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "/opt/local/include/netcdfcpp.h"; then
+  ac_cv_file__opt_local_include_netcdfcpp_h=yes
+else
+  ac_cv_file__opt_local_include_netcdfcpp_h=no
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_file__opt_local_include_netcdfcpp_h" >&5
+echo "${ECHO_T}$ac_cv_file__opt_local_include_netcdfcpp_h" >&6
+if test $ac_cv_file__opt_local_include_netcdfcpp_h = yes; then
+  NCPATH=/opt/local/
+else
   as_ac_File=`echo "ac_cv_file_$HOME/local/include/netcdfcpp.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $HOME/local/include/netcdfcpp.h" >&5
 echo $ECHO_N "checking for $HOME/local/include/netcdfcpp.h... $ECHO_C" >&6
@@ -4756,6 +5561,31 @@ echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   NCPATH=$HOME/local
+else
+  as_ac_File=`echo "ac_cv_file_$HOME/include/netcdfcpp.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HOME/include/netcdfcpp.h" >&5
+echo $ECHO_N "checking for $HOME/include/netcdfcpp.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HOME/include/netcdfcpp.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  NCPATH=$HOME
+fi
+
+fi
+
 fi
 
 fi
@@ -4790,9 +5620,65 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$NCPATH/lib/libnetcdf_c++.a" | $as_tr_cpp` 1
 _ACEOF
 
+NCPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCPATH/lib64/libnetcdf_c++.a" >&5
+echo $ECHO_N "checking for $NCPATH/lib64/libnetcdf_c++.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCPATH/lib64/libnetcdf_c++.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
 else
   NCPATH=""
+fi
+as_ac_File=`echo "ac_cv_file_$NCPATH/lib64/libnetcdf.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCPATH/lib64/libnetcdf.a" >&5
+echo $ECHO_N "checking for $NCPATH/lib64/libnetcdf.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCPATH/lib64/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCPATH/lib64/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
+else
+  NCPATH=""
+fi
+
 fi
 as_ac_File=`echo "ac_cv_file_$NCPATH/lib/libnetcdf.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $NCPATH/lib/libnetcdf.a" >&5
@@ -4818,9 +5704,65 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$NCPATH/lib/libnetcdf.a" | $as_tr_cpp` 1
 _ACEOF
 
+NCPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCPATH/lib64/libnetcdf_c++.a" >&5
+echo $ECHO_N "checking for $NCPATH/lib64/libnetcdf_c++.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCPATH/lib64/libnetcdf_c++.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCPATH/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
 else
   NCPATH=""
+fi
+as_ac_File=`echo "ac_cv_file_$NCPATH/lib64/libnetcdf.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCPATH/lib64/libnetcdf.a" >&5
+echo $ECHO_N "checking for $NCPATH/lib64/libnetcdf.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCPATH/lib64/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCPATH/lib64/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
+else
+  NCPATH=""
+fi
+
 fi
 
       fi
@@ -4862,7 +5804,8 @@ NCPATH=$NCFILE
 else
   with_netcdf="no"
 fi
-as_ac_File=`echo "ac_cv_file_$NCFILE/lib/libnetcdf_c++.a" | $as_tr_sh`
+
+        as_ac_File=`echo "ac_cv_file_$NCFILE/lib/libnetcdf_c++.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $NCFILE/lib/libnetcdf_c++.a" >&5
 echo $ECHO_N "checking for $NCFILE/lib/libnetcdf_c++.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -4886,9 +5829,65 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$NCFILE/lib/libnetcdf_c++.a" | $as_tr_cpp` 1
 _ACEOF
 
-NCPATH=$NCFILE
+NCPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCFILE/lib64/libnetcdf_c++.a" >&5
+echo $ECHO_N "checking for $NCFILE/lib64/libnetcdf_c++.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCFILE/lib64/libnetcdf_c++.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
 else
   with_netcdf="no"
+fi
+as_ac_File=`echo "ac_cv_file_$NCFILE/lib64/libnetcdf.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCFILE/lib64/libnetcdf.a" >&5
+echo $ECHO_N "checking for $NCFILE/lib64/libnetcdf.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCFILE/lib64/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCFILE/lib64/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
+else
+  with_netcdf="no"
+fi
+
 fi
 as_ac_File=`echo "ac_cv_file_$NCFILE/lib/libnetcdf.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $NCFILE/lib/libnetcdf.a" >&5
@@ -4914,9 +5913,65 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$NCFILE/lib/libnetcdf.a" | $as_tr_cpp` 1
 _ACEOF
 
-NCPATH=$NCFILE
+NCPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCFILE/lib64/libnetcdf_c++.a" >&5
+echo $ECHO_N "checking for $NCFILE/lib64/libnetcdf_c++.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCFILE/lib64/libnetcdf_c++.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCFILE/lib64/libnetcdf_c++.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
 else
   with_netcdf="no"
+fi
+as_ac_File=`echo "ac_cv_file_$NCFILE/lib64/libnetcdf.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $NCFILE/lib64/libnetcdf.a" >&5
+echo $ECHO_N "checking for $NCFILE/lib64/libnetcdf.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$NCFILE/lib64/libnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$NCFILE/lib64/libnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+NCPATHLIB='lib64'
+else
+  with_netcdf="no"
+fi
+
 fi
 
       else
@@ -4935,7 +5990,7 @@ fi
       if test "$NCPATH" != ""; then
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
-        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/$NCPATHLIB"
         LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
@@ -4991,32 +6046,6 @@ _ACEOF
 
 PNCPATH=$with_pnetcdf
 fi
-as_ac_File=`echo "ac_cv_file_$with_pnetcdf/lib/libpnetcdf.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $with_pnetcdf/lib/libpnetcdf.a" >&5
-echo $ECHO_N "checking for $with_pnetcdf/lib/libpnetcdf.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$with_pnetcdf/lib/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$with_pnetcdf/lib/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-
-PNCPATH=$with_pnetcdf
-fi
 
     if test "$PNCPATH" == ""
     then
@@ -5058,32 +6087,6 @@ _ACEOF
 
 PNCPATH=$path
 fi
-as_ac_File=`echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $path/lib/libpnetcdf.a" >&5
-echo $ECHO_N "checking for $path/lib/libpnetcdf.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$path/lib/libpnetcdf.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
-_ACEOF
-
-PNCPATH=$path
-fi
 
     fi
   fi
@@ -5121,7 +6124,14 @@ _ACEOF
 
 PNCPATH=$path
 fi
-as_ac_File=`echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
+
+    fi
+  fi
+fi
+
+if test "$PNCPATH" != ""
+then
+  as_ac_File=`echo "ac_cv_file_$path/lib/libpnetcdf.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $path/lib/libpnetcdf.a" >&5
 echo $ECHO_N "checking for $path/lib/libpnetcdf.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -5145,11 +6155,39 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$path/lib/libpnetcdf.a" | $as_tr_cpp` 1
 _ACEOF
 
-PNCPATH=$path
+PNCPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$path/lib64/libpnetcdf.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $path/lib64/libpnetcdf.a" >&5
+echo $ECHO_N "checking for $path/lib64/libpnetcdf.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$path/lib64/libpnetcdf.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$path/lib64/libpnetcdf.a" | $as_tr_cpp` 1
+_ACEOF
+
+PNCPATHLIB='lib64'
+else
+  PNCPATH=''
 fi
 
-    fi
-  fi
+fi
+
 fi
 
 if test "$PNCPATH" == ""
@@ -5159,7 +6197,7 @@ else
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/lib -lpnetcdf"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
 
   file_formats="$file_formats Parallel-NetCDF"
   echo "Parallel-NetCDF support enabled"
@@ -5213,99 +6251,6 @@ else
       PACT=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpdb.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpdb.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "PACT library location not correct. Finding..."
-      PACT=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpml.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpml.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "PACT library location not correct. Finding..."
-      PACT=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libscore.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libscore.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "PACT library location not correct. Finding..."
-      PACT=""
-
-fi
 
   else
     echo "PACT variable not set. Searching for library..."
@@ -5315,7 +6260,6 @@ fi
   then
     # could be a path
     PACT=$with_pdb
-
     as_ac_File=`echo "ac_cv_file_$PACT/include/pdb.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $PACT/include/pdb.h" >&5
 echo $ECHO_N "checking for $PACT/include/pdb.h... $ECHO_C" >&6
@@ -5338,99 +6282,6 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 
 cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$PACT/include/pdb.h" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "with-pdb library location not correct. Finding..."
-      PACT=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpdb.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpdb.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "with-pdb library location not correct. Finding..."
-      PACT=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpml.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpml.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo "with-pdb library location not correct. Finding..."
-      PACT=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libscore.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libscore.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libscore.a" | $as_tr_cpp` 1
 _ACEOF
 
 
@@ -5486,6 +6337,26 @@ echo "${ECHO_T}$ac_cv_file__usr_local_include_pdb_h" >&6
 if test $ac_cv_file__usr_local_include_pdb_h = yes; then
   PACT=/usr/local/
 else
+  echo "$as_me:$LINENO: checking for /opt/local/include/pdb.h" >&5
+echo $ECHO_N "checking for /opt/local/include/pdb.h... $ECHO_C" >&6
+if test "${ac_cv_file__opt_local_include_pdb_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "/opt/local/include/pdb.h"; then
+  ac_cv_file__opt_local_include_pdb_h=yes
+else
+  ac_cv_file__opt_local_include_pdb_h=no
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_file__opt_local_include_pdb_h" >&5
+echo "${ECHO_T}$ac_cv_file__opt_local_include_pdb_h" >&6
+if test $ac_cv_file__opt_local_include_pdb_h = yes; then
+  PACT=/opt/local/
+else
   as_ac_File=`echo "ac_cv_file_$HOME/local/include/pdb.h" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $HOME/local/include/pdb.h" >&5
 echo $ECHO_N "checking for $HOME/local/include/pdb.h... $ECHO_C" >&6
@@ -5535,97 +6406,9 @@ fi
 
 fi
 
-
-  if test "$PACT" != ""
-  then
-    # Check the rest of the PACT libraries exist
-    as_ac_File=`echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpdb.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpdb.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-  PACT=""
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libpml.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libpml.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-  PACT=""
-fi
-as_ac_File=`echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACT/lib/libscore.a" >&5
-echo $ECHO_N "checking for $PACT/lib/libscore.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACT/lib/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACT/lib/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-  PACT=""
 fi
 
-    fi
-  fi
+
 
   ## Try to find using locate
   if test "$PACT" = ""
@@ -5663,93 +6446,352 @@ PACT=$PACTFILE
 else
   PACT=""
 fi
-as_ac_File=`echo "ac_cv_file_$PACTFILE/lib/libpdb.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACTFILE/lib/libpdb.a" >&5
-echo $ECHO_N "checking for $PACTFILE/lib/libpdb.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACTFILE/lib/libpdb.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACTFILE/lib/libpdb.a" | $as_tr_cpp` 1
-_ACEOF
-
-PACT=$PACTFILE
-else
-  PACT=""
-fi
-as_ac_File=`echo "ac_cv_file_$PACTFILE/lib/libpml.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACTFILE/lib/libpml.a" >&5
-echo $ECHO_N "checking for $PACTFILE/lib/libpml.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACTFILE/lib/libpml.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACTFILE/lib/libpml.a" | $as_tr_cpp` 1
-_ACEOF
-
-PACT=$PACTFILE
-else
-  PACT=""
-fi
-as_ac_File=`echo "ac_cv_file_$PACTFILE/lib/libscore.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $PACTFILE/lib/libscore.a" >&5
-echo $ECHO_N "checking for $PACTFILE/lib/libscore.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$PACTFILE/lib/libscore.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$PACTFILE/lib/libscore.a" | $as_tr_cpp` 1
-_ACEOF
-
-PACT=$PACTFILE
-else
-  PACT=""
-fi
 
     else
       echo "checking locate... no"
+    fi
+  fi
+
+  if test "$PACT" != ""
+  then
+    # Check the rest of the PACT libraries exist
+    as_ac_File=`echo "ac_cv_file_$PACT/lib/libpdb.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib/libpdb.a" >&5
+echo $ECHO_N "checking for $PACT/lib/libpdb.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib/libpdb.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib/libpdb.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpdb.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpdb.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpdb.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpml.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpml.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpml.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libscore.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libscore.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libscore.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib/libpml.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib/libpml.a" >&5
+echo $ECHO_N "checking for $PACT/lib/libpml.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib/libpml.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib/libpml.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpdb.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpdb.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpdb.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpml.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpml.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpml.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libscore.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libscore.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libscore.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib/libscore.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib/libscore.a" >&5
+echo $ECHO_N "checking for $PACT/lib/libscore.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib/libscore.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib/libscore.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpdb.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpdb.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpdb.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpdb.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpdb.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libpml.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libpml.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libpml.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libpml.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libpml.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+as_ac_File=`echo "ac_cv_file_$PACT/lib64/libscore.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $PACT/lib64/libscore.a" >&5
+echo $ECHO_N "checking for $PACT/lib64/libscore.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$PACT/lib64/libscore.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$PACT/lib64/libscore.a" | $as_tr_cpp` 1
+_ACEOF
+
+PACTPATHLIB='lib64'
+else
+  PACT=''
+fi
+
+fi
+
     fi
   fi
 
@@ -5760,7 +6802,7 @@ fi
 
     # Set include and library paths
     EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/lib"
+    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/$PACTPATHLIB"
   fi
 
   ## Add PDB support if available
@@ -5839,7 +6881,8 @@ else
       HYPREPATH=""
 
 fi
-as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
+
+    as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $HYPREPATH/lib/libHYPRE.a" >&5
 echo $ECHO_N "checking for $HYPREPATH/lib/libHYPRE.a... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
@@ -5863,11 +6906,39 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
 _ACEOF
 
+HYPREPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib64/libHYPRE.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HYPREPATH/lib64/libHYPRE.a" >&5
+echo $ECHO_N "checking for $HYPREPATH/lib64/libHYPRE.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HYPREPATH/lib64/libHYPRE.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$HYPREPATH/lib64/libHYPRE.a" | $as_tr_cpp` 1
+_ACEOF
+
+HYPREPATHLIB='lib64'
 else
 
       echo " -> Given path not correct. Finding..."
       HYPREPATH=""
+
+fi
 
 fi
 
@@ -5956,6 +7027,29 @@ echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   HYPREPATH=$HOME/local
+else
+  as_ac_File=`echo "ac_cv_file_$HOME/include/HYPRE.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HOME/include/HYPRE.h" >&5
+echo $ECHO_N "checking for $HOME/include/HYPRE.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HOME/include/HYPRE.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HYPREPATH=$HOME
+fi
+
 fi
 
 fi
@@ -5992,10 +7086,38 @@ cat >>confdefs.h <<_ACEOF
 #define `echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
 _ACEOF
 
+HYPREPATHLIB='lib'
+else
+  as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib64/libHYPRE.a" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $HYPREPATH/lib64/libHYPRE.a" >&5
+echo $ECHO_N "checking for $HYPREPATH/lib64/libHYPRE.a... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "$HYPREPATH/lib64/libHYPRE.a"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
 
+cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$HYPREPATH/lib64/libHYPRE.a" | $as_tr_cpp` 1
+_ACEOF
+
+HYPREPATHLIB='lib64'
 else
 
-        HYPREPATH=""
+          HYPREPATH=""
+
+fi
 
 fi
 
@@ -6006,234 +7128,14 @@ fi
   then
     echo "Support for Hypre enabled"
     EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
 
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo ""
-fi
-
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    as_ac_File=`echo "ac_cv_file_$HYPREPATH/include/HYPRE.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $HYPREPATH/include/HYPRE.h" >&5
-echo $ECHO_N "checking for $HYPREPATH/include/HYPRE.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$HYPREPATH/include/HYPRE.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$HYPREPATH/include/HYPRE.h" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-
-fi
-as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $HYPREPATH/lib/libHYPRE.a" >&5
-echo $ECHO_N "checking for $HYPREPATH/lib/libHYPRE.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$HYPREPATH/lib/libHYPRE.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-
-fi
-
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    echo "$as_me:$LINENO: checking for /usr/include/HYPRE.h" >&5
-echo $ECHO_N "checking for /usr/include/HYPRE.h... $ECHO_C" >&6
-if test "${ac_cv_file__usr_include_HYPRE_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/usr/include/HYPRE.h"; then
-  ac_cv_file__usr_include_HYPRE_h=yes
-else
-  ac_cv_file__usr_include_HYPRE_h=no
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_file__usr_include_HYPRE_h" >&5
-echo "${ECHO_T}$ac_cv_file__usr_include_HYPRE_h" >&6
-if test $ac_cv_file__usr_include_HYPRE_h = yes; then
-  HYPREPATH=/usr/
-else
-  echo "$as_me:$LINENO: checking for /usr/local/include/HYPRE.h" >&5
-echo $ECHO_N "checking for /usr/local/include/HYPRE.h... $ECHO_C" >&6
-if test "${ac_cv_file__usr_local_include_HYPRE_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/usr/local/include/HYPRE.h"; then
-  ac_cv_file__usr_local_include_HYPRE_h=yes
-else
-  ac_cv_file__usr_local_include_HYPRE_h=no
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_file__usr_local_include_HYPRE_h" >&5
-echo "${ECHO_T}$ac_cv_file__usr_local_include_HYPRE_h" >&6
-if test $ac_cv_file__usr_local_include_HYPRE_h = yes; then
-  HYPREPATH=/usr/local/
-else
-  echo "$as_me:$LINENO: checking for /opt/local/include/HYPRE.h" >&5
-echo $ECHO_N "checking for /opt/local/include/HYPRE.h... $ECHO_C" >&6
-if test "${ac_cv_file__opt_local_include_HYPRE_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "/opt/local/include/HYPRE.h"; then
-  ac_cv_file__opt_local_include_HYPRE_h=yes
-else
-  ac_cv_file__opt_local_include_HYPRE_h=no
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_file__opt_local_include_HYPRE_h" >&5
-echo "${ECHO_T}$ac_cv_file__opt_local_include_HYPRE_h" >&6
-if test $ac_cv_file__opt_local_include_HYPRE_h = yes; then
-  HYPREPATH=/opt/local/
-else
-  as_ac_File=`echo "ac_cv_file_$HOME/local/include/HYPRE.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $HOME/local/include/HYPRE.h" >&5
-echo $ECHO_N "checking for $HOME/local/include/HYPRE.h... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$HOME/local/include/HYPRE.h"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-  HYPREPATH=$HOME/local
-fi
-
-fi
-
-fi
-
-fi
-
-
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      as_ac_File=`echo "ac_cv_file_$HYPREPATH/lib/libHYPRE.a" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $HYPREPATH/lib/libHYPRE.a" >&5
-echo $ECHO_N "checking for $HYPREPATH/lib/libHYPRE.a... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "$HYPREPATH/lib/libHYPRE.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-if test `eval echo '${'$as_ac_File'}'` = yes; then
-
-cat >>confdefs.h <<_ACEOF
-#define `echo "HAVE_$HYPREPATH/lib/libHYPRE.a" | $as_tr_cpp` 1
-_ACEOF
-
-
-else
-
-        HYPREPATH=""
-
-fi
-
-    fi
-  fi
-
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
-
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
-  echo ""
+  echo
 fi
 
 #############################################################
