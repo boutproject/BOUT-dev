@@ -836,8 +836,8 @@ then
 
   if test $HDFPATH
   then
-      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH=$HDFPATH/lib,
-      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH=$HDFPATH/lib64, HDFPATH=''))
+      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH='lib',
+      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH='lib64', HDFPATH=''))
       test $HDFLIBPATH || echo " -> Can't find HDF5 files" 
   fi
   
