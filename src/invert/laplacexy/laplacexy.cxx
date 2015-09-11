@@ -10,8 +10,10 @@
 #include <boutcomm.hxx>
 #include <utils.hxx>
 
+#include <output.hxx>
+
 // Include derivatives in the Y direction?
-#define INCLUDE_Y_DERIVS 1
+//#define INCLUDE_Y_DERIVS 1
 
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"
@@ -276,6 +278,10 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       col = globalIndex(x-1, y);
       MatSetValues(MatA,1,&row,1,&col,&xm,INSERT_VALUES);
       
+      if(y == mesh->ystart) {
+        output << x - xstart << ": " << xm << ", " << c << ", " << xp << endl; 
+      }
+      
 #ifdef INCLUDE_Y_DERIVS
       // Y + 1
       col = globalIndex(x, y+1);
@@ -319,8 +325,8 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       MatSetValues(MatA,1,&row,1,&col,&val,INSERT_VALUES);
       
       // Preconditioner
-      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = -0.5;
-      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] =  0.5;
+      acoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
+      bcoef[y-mesh->ystart][mesh->xend+1 - xstart] = 0.5;
     }
   }
   
@@ -568,14 +574,42 @@ const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
  * in the inner loop. Instead, the indexing must be ordered in
  * exactly the same way as in the construction of indexXY
  */
-int LaplaceXY::precon(Vec input, Vec output) {
+int LaplaceXY::precon(Vec input, Vec result) {
   
   // Starting index
-  int ind0 = globalIndex(xstart,mesh->ystart);
-
-  // Load vector x into bvals array
+  int ind = -1;
   
-  int ind = ind0;
+  RangeIterator itdwn=mesh->iterateBndryLowerY();
+  if(!itdwn.isDone()) {
+    ind = globalIndex(itdwn.ind, mesh->ystart-1);
+    
+    for(; !itdwn.isDone(); itdwn++) {
+      PetscScalar val;
+      VecGetValues(input, 1, &ind, &val ); 
+      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+      ind++;
+    }
+  }
+  RangeIterator itup=mesh->iterateBndryUpperY();
+  if(!itup.isDone()) {
+    if(ind == -1) {
+      // No lower boundary
+      ind = globalIndex(itup.ind, mesh->yend+1);
+    }
+    for(; !itup.isDone(); itup++) {
+      PetscScalar val;
+      VecGetValues(input, 1, &ind, &val ); 
+      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
+      ind++;
+    }
+  }
+  if(ind == -1) {
+    // No Y boundaries
+    ind = globalIndex(xstart, mesh->ystart);
+  }
+    
+  int ind0 = ind;
+  // Load vector x into bvals array
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       PetscScalar val;
@@ -593,12 +627,12 @@ int LaplaceXY::precon(Vec input, Vec output) {
   for(int x=xstart;x<=xend;x++) {
     for(int y=mesh->ystart; y<=mesh->yend;y++) {
       PetscScalar val = xvals[y-mesh->ystart][x-xstart];
-      VecSetValues(output, 1, &ind, &val, INSERT_VALUES );
+      VecSetValues(result, 1, &ind, &val, INSERT_VALUES );
       ind++;
     }
   }
-  VecAssemblyBegin(output);
-  VecAssemblyEnd(output);
+  VecAssemblyBegin(result);
+  VecAssemblyEnd(result);
   return 0;
 }
 

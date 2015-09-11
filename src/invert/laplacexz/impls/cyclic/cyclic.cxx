@@ -4,7 +4,7 @@
 #include <fft.hxx>
 #include <bout/constants.hxx>
 
-//#include <output.hxx>
+#include <output.hxx>
 
 LaplaceXYcyclic::LaplaceXYcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
   
@@ -72,7 +72,7 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         
         acoef[ind][0] =  0.0;
         bcoef[ind][0] =  1.0;
-        ccoef[ind][0] =  1.0;
+        ccoef[ind][0] =  -1.0;
       }
       
       // Bulk of the domain
@@ -123,11 +123,11 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         ccoef[ind][nloc-1] =  0.0;
       }
       
-      /*
-      for(int i=0;i<nloc;i++) {
-        output << i << ": " <<  acoef[ind][i] << ", " << bcoef[ind][i] << ", " << ccoef[ind][i] << endl;
+      if(y == mesh->ystart) {
+        for(int i=0;i<nloc;i++) {
+          output << i << ": " <<  acoef[ind][i] << ", " << bcoef[ind][i] << ", " << ccoef[ind][i] << endl;
+        }
       }
-      */
 
       ind++;
     }

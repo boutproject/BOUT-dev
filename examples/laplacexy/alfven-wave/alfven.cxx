@@ -98,7 +98,8 @@ protected:
     phi.setBoundary("phi");
     
     SAVE_REPEAT2(jpar,phi);
-
+    
+    //SAVE_REPEAT(phi2D);
     return 0;
   }
 
@@ -116,6 +117,9 @@ protected:
     // Apply boundary condition on jpar and phi
     jpar.applyBoundary(time);
     
+    //Field2D Vort2D = Vort.DC(); // n=0 component
+    //phi2D = laplacexy->solve(Vort2D, phi2D);
+
     // Calculate phi from potential
     if(split_n0) {
       // Split into axisymmetric and non-axisymmetric components
@@ -124,10 +128,12 @@ protected:
       
       // Solve non-axisymmetric part using X-Z solver
       if(newXZsolver) {
-        phi = phi2D + newSolver->solve(Vort-Vort2D, phi);
+        phi = newSolver->solve(Vort-Vort2D, phi);
       }else {
-        phi = phi2D + phiSolver->solve(Vort-Vort2D, phi);
+        phi = phiSolver->solve(Vort-Vort2D, phi);
       }
+      phi.applyBoundary(time); // Apply Y boundaries
+      phi += phi2D; // Add axisymmetric part
     }else {
       // Solve all components using X-Z solver
       if(newXZsolver) {
@@ -137,7 +143,7 @@ protected:
         // Use older Laplacian solver
         phi = phiSolver->solve(Vort, phi);
       }
-      phi.applyBoundary(); // Apply Y boundaries
+      phi.applyBoundary(time); // Apply Y boundaries
     }
     
     // Communicate jpar and phi

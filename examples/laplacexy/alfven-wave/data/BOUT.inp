@@ -11,19 +11,24 @@ MZ = 1
 [solver]
 
 mxstep = 10000
+atol = 1e-9
+rtol = 1e-7
 
 [laplacexy]  # 2D solver in X-Y
-pctype = sor    # Preconditioner
+pctype = shell    # Preconditioner
+
+atol = 1e-12
+rtol = 1e-8
 
 [laplace]    # 2D solver in X-Z
 
-inner_boundary_flags = 0 # Zero gradient on inner boundary
+inner_boundary_flags = 1 # Zero gradient on inner boundary
 nonuniform = true
 
 [Alfven]
 
 laplace_perp = false  # Use Laplace_perp rather than Delp2?
-split_n0 = false    # Split phi into n=0 and n~=0 components?
+split_n0 = true    # Split phi into n=0 and n~=0 components?
 newXZsolver = true   # Use LaplaceXZ solver
 
 
