@@ -249,8 +249,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
   /* Function: Laplacian::tridagCoef
-   * Purpose:  - Set the matrix components of A in Ax=b by calling tridagCoef,
-   *             solving
+   * Purpose:  - Set the matrix components of A in Ax=b, solving
    *
    *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
    *

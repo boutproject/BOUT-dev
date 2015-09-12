@@ -96,6 +96,12 @@ private:
   void Element(int i, int x, int z, int xshift, int zshift, PetscScalar ele, Mat &MatA );
   void Coeffs( int x, int y, int z, BoutReal &A1, BoutReal &A2, BoutReal &A3, BoutReal &A4, BoutReal &A5 );
 
+  /* Ex and Ez
+   * Additional 1st derivative terms to allow for solution field to be
+   * components of a vector
+   *
+   * See LaplacePetsc::Coeffs for details an potential pit falls
+   */
   Field3D A, C1, C2, D, Ex, Ez;
 // Metrics are not constant in y-direction, so matrix always changes as you loop over the grid
 // Hence using coefchanged switch to avoid recomputing the mmatrix is not a useful thing to do (unless maybe in a cylindrical machine, but not worth implementing just for that)
