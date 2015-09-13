@@ -516,6 +516,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 
 	      val=0; // Initialize val
 
+	      // Set Components of RHS
               // If the inner boundary value should be set by b or x0
 	      if( inner_boundary_flags & INVERT_RHS )         val = b[x][z];
 	      else if( inner_boundary_flags & INVERT_SET )    val = x0[x][z];
@@ -536,7 +537,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	}
     }
 
-  // Set the values for the main domain with Laplacian operator
+  // Set the values for the main domain
   for(int x=mesh->xstart; x <= mesh->xend; x++) {
       for(int z=0; z<mesh->ngz-1; z++) {
           // NOTE: Only A0 is the A from setCoefA ()
@@ -712,8 +713,9 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	      PetscScalar val = 1;
 	      Element(i,x,z, 0, 0, val, MatA );
 
-	      // Set values corresponding to nodes adjacent in x if Neumann Boundary Conditions are required.
+              // If Neumann Boundary Conditions are set.
 	      if(outer_boundary_flags & INVERT_AC_GRAD) {
+	          // Set values corresponding to nodes adjacent in x
 		  if( fourth_order ) {
 		      // Fourth Order Accuracy on Boundary
 		      Element(i,x,z,  0, 0, 25.0 / (12.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA );
@@ -753,11 +755,19 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	      }
 
 	      // Set Components of RHS
+              // If the inner boundary value should be set by b or x0
 	      val=0;
 	      if( outer_boundary_flags & INVERT_RHS )        val = b[x][z];
 	      else if( outer_boundary_flags & INVERT_SET )   val = x0[x][z];
+
+	      // Set components of the RHS (the PETSc vector bs)
+              // 1 element is being set in row i to val
+              // INSERT_VALUES replaces existing entries with new values
 	      VecSetValues( bs, 1, &i, &val, INSERT_VALUES );
 
+              // Set components of the and trial solution (the PETSc vector xs)
+              // 1 element is being set in row i to val
+              // INSERT_VALUES replaces existing entries with new values
 	      val = x0[x][z];
 	      VecSetValues( xs, 1, &i, &val, INSERT_VALUES );
 
@@ -793,12 +803,15 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 #endif
   PC pc; // The preconditioner option
 
-  if(direct) {
+  if(direct) { // If a direct solver has been chosen
+    // Get the preconditioner
     KSPGetPC(ksp,&pc);
+    // Set the preconditioner
     PCSetType(pc,PCLU);
+    // Set the solver type
     PCFactorSetMatSolverPackage(pc,"mumps");
-  }else {
-    KSPSetType( ksp, ksptype );
+  }else { // If a iterative solver has been chosen
+    KSPSetType( ksp, ksptype ); // Set the type of the solver
 
     if( ksptype == KSPRICHARDSON )     KSPRichardsonSetScale( ksp, richardson_damping_factor );
 #ifdef KSPCHEBYSHEV
@@ -806,13 +819,20 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 #endif
     else if( ksptype == KSPGMRES )     KSPGMRESSetRestart( ksp, gmres_max_steps );
 
+    // Set the relative and absolute tolerances
     KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
 
+    // If the initial guess is not set to zero
     if( !( global_flags & INVERT_START_NEW ) ) KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
 
+    // Get the preconditioner
     KSPGetPC(ksp,&pc);
 
+    // Set the type of the preconditioner
     PCSetType(pc, pctype);
+
+    // If pctype = user in BOUT.inp, it will be translated to PCSHELL upon
+    // construction of the object
     if(pctype == PCSHELL) {
       // User-supplied preconditioner function
       PCShellSetApply(pc,laplacePCapply);
@@ -830,6 +850,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   }
   }
 
+  // Call the actual solver
   { Timer timer("petscsolve");
     KSPSolve( ksp, bs, xs ); // Call the solver to solve the system
   }
@@ -846,6 +867,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 
   // Add data to FieldPerp Object
   i = Istart;
+  // Set the inner boundary values
   if(mesh->firstX()) {
       for(int x=0; x<mesh->xstart; x++) {
 	  for(int z=0; z<mesh->ngz-1; z++) {
@@ -857,6 +879,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	}
     }
 
+  // Set the main domain values
   for(int x=mesh->xstart; x <= mesh->xend; x++) {
       for(int z=0; z<mesh->ngz-1; z++) {
 	  PetscScalar val = 0;
@@ -866,6 +889,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 	}
     }
 
+  // Set the outer boundary values
   if(mesh->lastX()) {
       for(int x=mesh->xend+1; x<mesh->ngx; x++) {
 	  for(int z=0;z < mesh->ngz-1; z++) {
@@ -881,6 +905,7 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
     throw BoutException("Petsc index sanity check 2 failed");
   }
 
+  // Return the solution
   return sol;
 }
 
