@@ -22,12 +22,12 @@
 # Process this file with autoconf to produce a configure script.
 #
 # Changelog:
-# 
+#
 # 2010-03-09 Ben Dudson <bd512@york.ac.uk>
 #    * Changing to always require FFTW (removing NR routines)
 # 2015-08-08 David Schwörer <schword2@mail.dcu.ie>
 #    * Searching for libs in lib and lib64
-# 
+#
 
 BOUT_VERSION="2.0"
 
@@ -45,7 +45,7 @@ AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF l
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
-AC_ARG_WITH(sundials, [  --with-sundals              Use CVODE and IDA])
+AC_ARG_WITH(sundials, [  --with-sundials           Use CVODE and IDA])
 AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
@@ -183,7 +183,7 @@ then
   if test "$with_petsc" != "yes"
   then
     PETSC_DIR="$with_petsc"
-    
+
   else
     AC_CHECK_FILE($PETSC_DIR/$PETSC_ARCH/conf, ,
     echo "Error - can't find PETSc distribution"
@@ -247,15 +247,15 @@ MFILE
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_2"
     echo "Using PETSc 3.2 interface"
-  elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1" 
+  elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
     echo "Using PETSc 3.3 interface"
-  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1" 
+  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
     echo "Using PETSc 3.4 interface"
-  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1" 
+  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
     echo "Using PETSc 3.5 interface"
@@ -287,7 +287,7 @@ then
   PRECON_SOURCE="$PRECON_SOURCE jstruc.cxx"
   EXTRA_INCS="$EXTRA_INCS \$(PETSC_CC_INCLUDES)"
   EXTRA_LIBS="$EXTRA_LIBS \$(PETSC_LIB)"
-  
+
   if test "$PETSC_HAS_SUNDIALS" == "yes"
   then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
@@ -306,7 +306,7 @@ if test "$with_slepc" != "" && test "$with_slepc" != "no"
 then
   #PETSC_ARCH = ${PETSC_ARCH}
   #SLEPC_DIR = ${SLEPC_DIR}
-  
+
   echo "Searching for SLEPc"
 
   if test "$SLEPC_DIR" == ""
@@ -314,14 +314,14 @@ then
     echo "Error - SLEPC_DIR not set"
     exit
   fi
- 
-  # Check that the config directory exists 
+
+  # Check that the config directory exists
   AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
     echo "Error - can't find SLEPc distribution"
     exit)
- 
+
   echo " -> using SLEPC_DIR=$SLEPC_DIR"
- 
+
   # Find version number
 
   AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
@@ -333,13 +333,13 @@ then
   SLEPC_VERSION_MINOR="0"
   SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
 
-  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4" 
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4"
   then
     # Version 3.4
     echo "  -> Using interface for SLEPc 3.4"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
     HAS_SLEPC="yes"
-    
+
     EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
     EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
     SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
@@ -348,7 +348,7 @@ then
     echo "  -> No SLEPc support"
     HAS_SLEPC="no"
   fi
-  
+
 fi
 AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
 
@@ -366,31 +366,31 @@ then
   then
     # User specified a directory
     MUMPS="$with_mumps"
-    
+
     # Check for libraries
-      
+
     MUMPS_INC=$MUMPS/include
     MUMPS_LIB=$MUMPS/lib
   fi
-  
+
   if test "$MUMPS" == ""
   then
     # Look in some standard locations
     AC_CHECK_FILE(/usr/include/dmumps_c.h, MUMPS="/usr/".
     AC_CHECK_FILE($HOME/local/include/dmumps_c.h, MUMPS="$HOME/local/",))
-    
+
     # Check for libraries
-    
+
     MUMPS_INC=$MUMPS/include
     MUMPS_LIB=$MUMPS/lib
   fi
-  
+
   if test "$MUMPS" == "" && test "$PETSC_DIR" != ""
   then
     # Try PETSc installation
-    
+
     mumps_dir=`ls $PETSC_DIR/externalpackages/ | grep MUMPS`
-    
+
     if test "$mumps_dir" != ""
     then
       # PETSc has a MUMPS installation
@@ -399,13 +399,13 @@ then
       MUMPS=$PETSC_DIR/externalpackages/$mumps_dir
     fi
   fi
-  
+
   if test "$MUMPS" != ""
   then
     # Check all files needed
     AC_CHECK_FILES( $MUMPS_INC/dmumps_c.h $MUMPS_LIB/libdmumps.a $MUMPS_LIB/libmumps_common.a $MUMPS_LIB/libpord.a $MUMPS_LIB/libscalapack.a $MUMPS_LIB/libblacs.a $MUMPS_LIB/libparmetis.a $MUMPS_LIB/libmetis.a $MUMPS_LIB/libptscotch.a $MUMPS_LIB/libptesmumps.a, ,[ MUMPS="" ])
   fi
-  
+
   if test "$MUMPS" == ""
   then
     echo " -> MUMPS not found"
@@ -413,7 +413,7 @@ then
     echo " -> MUMPS support enabled"
     echo "   Includes : $MUMPS_INC"
     echo "   Libraries: $MUMPS_LIB"
-    
+
     EXTRA_INCS="$EXTRA_INCS -I$MUMPS_INC"
     EXTRA_LIBS="$EXTRA_LIBS -L$MUMPS_LIB -ldmumps -lmumps_common -lpord -lscalapack -lblacs -lparmetis -lmetis -lptscotch -lptesmumps"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_MUMPS"
@@ -428,7 +428,7 @@ fi
 if ( ( test "$with_sundials" != "" ) && ( test "$with_sundials" != "no" ) )
 then
   # Set both IDA and CVODE if not set already
-  
+
   if test "$with_ida" = ""
   then
     with_ida=$with_sundials
@@ -462,8 +462,8 @@ then
     AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h , , [
       IDALIBS=""
     ] )
-    AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib', 
-      AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64', 
+    AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib',
+      AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
         IDALIBS=""
     ) )
     if test "$IDALIBS" != ""
@@ -475,7 +475,7 @@ then
       echo " -> Given path not correct. Finding..."
     fi
   fi
-  
+
   if test "$IDALIBS" = ""
   then
     # Try some known paths
@@ -485,26 +485,26 @@ then
     AC_CHECK_FILE(/usr/local/include/ida/ida.h, IDALIBS=/usr/local,
     AC_CHECK_FILE(/opt/local/include/ida/ida.h, IDALIBS=/opt/local,
     )))))
-    
+
     if test "$IDALIBS" != ""
     then
 	# Check the rest of the files
 	AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
       	  IDALIBS=""
       	] )
-    	AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib', 
-      	  AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64', 
+    	AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib',
+      	  AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64',
            IDALIBS=""
 	) )
     fi
-    
+
     if test "$IDALIBS" != ""
     then
 	IDAINCS="-I$IDALIBS/include"
 	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
     fi
   fi
-  
+
   if test "$IDALIBS" = ""
   then
     echo "=> IDA solver not available"
@@ -541,12 +541,12 @@ then
     AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h, , [
       CVODELIBS=""
     ] )
-    AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib', 
+    AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
       AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
       CVODELIBS=""
     ]) )
-     
-    
+
+
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$with_cvode/include"
@@ -556,7 +556,7 @@ then
       echo " -> Given path not correct. Finding..."
     fi
   fi
-  
+
   if test "$CVODELIBS" = ""
   then
     # Try some known paths
@@ -566,14 +566,14 @@ then
     AC_CHECK_FILE(/usr/local/include/cvode/cvode_spgmr.h, CVODELIBS=/usr/local,
     AC_CHECK_FILE(/opt/local/include/cvode/cvode_spgmr.h, CVODELIBS=/opt/local,
     )))))
-    
+
     if test "$CVODELIBS" != ""
     then
 	# Check the rest of the files
 	AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
 	  CVODELIBS=""
 	])
-        AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib', 
+        AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib',
           AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
             CVODELIBS=""
           ]) )
@@ -584,7 +584,7 @@ then
       CVODELIBS="-L$CVODELIBS/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
     fi
   fi
-	
+
   if test "$CVODELIBS" = ""
   then
     echo "=> CVODE solver not available"
@@ -596,7 +596,7 @@ then
     EXTRA_LIBS="$EXTRA_LIBS $CVODELIBS"
     EXTRA_INCS="$EXTRA_INCS $CVODEINCS"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_CVODE"
-    
+
 
   fi
 fi
@@ -625,7 +625,7 @@ then
     AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h , , [
       ARKODELIBS=""
     ] )
-    AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib', 
+    AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
       AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
         ARKODELIBS=""
       ]) )
@@ -656,7 +656,7 @@ then
         AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h, , [
           ARKODELIBS=""
         ])
-        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib', 
+        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib',
           AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
             ARKODELIBS=""
           ]) )
@@ -683,7 +683,7 @@ then
 
   fi
 fi
-                                           
+
 
 
 #############################################################
@@ -768,7 +768,7 @@ if ( ( test "$with_lapack" != "" ) && ( test "$with_lapack" != "no" ) )
 then
   echo "Using LAPACK"
   EXTRA_LIBS="$EXTRA_LIBS -llapack -lblas"
-  CXXFLAGS="$CXXFLAGS -DLAPACK"	
+  CXXFLAGS="$CXXFLAGS -DLAPACK"
   HAS_LAPACK="yes"
 fi
 
@@ -786,13 +786,13 @@ fi
 if test "$with_hdf5" != "no"
 then
   ##########################################
-  # Try to find a valid HDF5 configuration 
-  
+  # Try to find a valid HDF5 configuration
+
   if (test "$with_hdf5" = "yes") || (test "$with_hdf5" = "")
   then
     # No path specified
     echo "Searching for HDF5 configuration"
-    
+
     # Try some common HDF5 utilities
     for i in h5cc h5pcc h5diff h5ls
     do
@@ -805,16 +805,16 @@ then
       fi
       printf "no\n"
     done
-    
+
     # Check for include and library files
     AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
         echo " -> Can't find HDF5 files"
         HDFPATH=""
       ] )
-      
+
   else
     HDFPATH=$with_hdf5  # Configure given path
-    
+
     # Check for include and library files
     AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
         echo " ERROR: Given HDF5 path not correct."
@@ -838,9 +838,9 @@ then
   then
       AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH='lib',
       AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH='lib64', HDFPATH=''))
-      test $HDFLIBPATH || echo " -> Can't find HDF5 files" 
+      test $HDFLIBPATH || echo " -> Can't find HDF5 files"
   fi
-  
+
   # Check if found valid path
   if test "$HDFPATH" != ""
   then
@@ -851,7 +851,7 @@ then
       CXXFLAGS="$CXXFLAGS -DPHDF5"
       HAS_PHDF5="yes"
     fi
-    
+
     EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
     EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
 
@@ -874,7 +874,7 @@ NCCONF="" # Configuration script
 if test "$with_netcdf" != "no"
 then
   ##########################################
-  # Try to find a valid NetCDF configuration 
+  # Try to find a valid NetCDF configuration
 
   echo "Searching for NetCDF configuration"
 
@@ -901,7 +901,7 @@ then
     fi
   else
     # see if configure scripts are in path
-    
+
     if type $with_netcdf/ncxx4-config > /dev/null 2>&1; then
       NCCONF="$with_netcdf/ncxx4-config"
     elif type $with_netcdf/bin/ncxx4-config > /dev/null 2>&1; then
@@ -912,14 +912,14 @@ then
     elif type $with_netcdf/bin/nc-config > /dev/null 2>&1; then
       NCCONF="$with_netcdf/bin/nc-config"
       OLDNCDF="1"
-    fi    
+    fi
   fi
-  
+
   ##########################################
   # Get configuration
   if test "$NCCONF" != ""; then
     echo " -> NetCDF config script found: $NCCONF"
-    
+
     NCINC=`$NCCONF --cflags`
     EXTRA_INCS="$EXTRA_INCS $NCINC"
 
@@ -931,7 +931,7 @@ then
       echo " -> NetCDF support enabled"
     else
       NCLIB=`$NCCONF --libs`
-      
+
       CXXFLAGS="$CXXFLAGS -DNCDF4"
       echo " -> NetCDF-4 support enabled"
     fi
@@ -941,9 +941,9 @@ then
     NCPATH="found"
   else
     # No configuration script. Check the NetCDF path manually
-    
+
     NCPATH=$with_netcdf
-    
+
     if test "$NCPATH" != ""
     then
       # Path set, so check if libraries present
@@ -968,7 +968,7 @@ then
       if test "$NCPATH" != ""
       then
         # Check for the rest of the files
-        AC_CHECK_FILES( $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a, NCPATHLIB='lib', 
+        AC_CHECK_FILES( $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a, NCPATHLIB='lib',
           AC_CHECK_FILES( $NCPATH/lib64/libnetcdf_c++.a $NCPATH/lib64/libnetcdf.a, NCPATHLIB='lib64', NCPATH=""))
       fi
     fi
@@ -982,7 +982,7 @@ then
         NCFILE=`dirname $NCFILE`
         NCFILE=$NCFILE/..
         AC_CHECK_FILES( $NCFILE/include/netcdfcpp.h , NCPATH=$NCFILE, with_netcdf="no")
-        AC_CHECK_FILES( $NCFILE/lib/libnetcdf_c++.a $NCFILE/lib/libnetcdf.a , NCPATHLIB='lib', 
+        AC_CHECK_FILES( $NCFILE/lib/libnetcdf_c++.a $NCFILE/lib/libnetcdf.a , NCPATHLIB='lib',
           AC_CHECK_FILES( $NCFILE/lib64/libnetcdf_c++.a $NCFILE/lib64/libnetcdf.a , NCPATHLIB='lib64', with_netcdf="no"))
       else
         echo "checking locate... no"
@@ -1036,7 +1036,7 @@ then
       echo "parallel-netcdf not found in given directory"
     fi
   fi
-  
+
   # Find the utilities included with pnetcdf
   if test "$PNCPATH" == ""
   then
@@ -1048,7 +1048,7 @@ then
       AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
     fi
   fi
-  
+
   # Try locate
   if test "$PNCPATH" == ""
   then
@@ -1075,7 +1075,7 @@ else
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
   EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
-  
+
   file_formats="$file_formats Parallel-NetCDF"
   echo "Parallel-NetCDF support enabled"
 fi
@@ -1102,7 +1102,7 @@ else
       PACT=""
     ] )
   else
-    echo "PACT variable not set. Searching for library..." 
+    echo "PACT variable not set. Searching for library..."
   fi
 
   if ( test "$with_pdb" != "" ) && ( test "$with_pdb" != "yes" ) && ( test "$with_pdb" != "no" )
@@ -1225,7 +1225,7 @@ then
     AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
     AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
     )))))
-    
+
     if test "$HYPREPATH" = ""
     then
       # Check for the other files
@@ -1235,13 +1235,13 @@ then
         ] ))
     fi
   fi
-  
+
   if test "$HYPREPATH" != ""
   then
     echo "Support for Hypre enabled"
     EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
     EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
-    
+
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
@@ -1348,7 +1348,7 @@ AC_FUNC_VPRINTF
 if test "$CVODELIBS" != ""
 then
   echo "checking CVODE types..." | tee -a config-build.log
-  
+
   cat > test_cvode_compile.cxx <<MYEOF
     #include <cvode/cvode_bbdpre.h>
 
@@ -1367,9 +1367,9 @@ MYEOF
 
   # Try to compile
   echo "Trying to compile test_cvode_compile.cxx" >> config-build.log
-  
+
   $CXX -c test_cvode_compile.cxx $CVODEINCS -DCVODEINT=int  >> config-build.log 2>&1
-  
+
   # Check return value
   if test "$?" = "0"
   then
@@ -1385,23 +1385,23 @@ MYEOF
     fi
   fi
   echo "  CVODE BBD uses '$CVODEINT' type" | tee -a config-build.log
-  
+
   CXXFLAGS="$CXXFLAGS -DCVODEINT=$CVODEINT"
 fi
 
 if test "$IDALIBS" != ""
 then
   echo "checking IDA types..." | tee -a config-build.log
-  
+
   cat > test_ida_compile.cxx <<MYEOF
     #include <ida/ida_bbdpre.h>
 
     #include <stdlib.h>
-    extern int ida_bbd_res(IDAINT Nlocal, double, 
+    extern int ida_bbd_res(IDAINT Nlocal, double,
 		       N_Vector u, N_Vector du, N_Vector rr, void *user_data);
 
     int main() {
-      IDABBDPrecInit(NULL, 0, 0, 0, 0, 0, 
+      IDABBDPrecInit(NULL, 0, 0, 0, 0, 0,
 			 0, ida_bbd_res, NULL);
       exit (0);
     }
@@ -1409,9 +1409,9 @@ MYEOF
 
   # Try to compile
   echo "Trying to compile test_ida_compile.cxx" >> config-build.log
-  
+
   $CXX -c test_ida_compile.cxx $IDAINCS -DIDAINT=int  >> config-build.log 2>&1
-  
+
   # Check return value
   if test "$?" = "0"
   then
@@ -1427,7 +1427,7 @@ MYEOF
     fi
   fi
   echo "  IDA BBD uses '$IDAINT' type" | tee -a config-build.log
-  
+
   CXXFLAGS="$CXXFLAGS -DIDAINT=$IDAINT"
 fi
 
@@ -1542,12 +1542,12 @@ then
    # Clean PVODE
    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
    CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make clean -C externalpackages/PVODE/source/ >> config-build.log 2>&1
-    
+
    #make -C externalpackages/PVODE/ clean
 
     echo "* Building PVODE" | tee -a config-build.log
     echo "*************************************************************" >> config-build.log
-    
+
     CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/precon/ >> config-build.log 2>&1
     CXX="$MPICXX" CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS" MKDIR="$MKDIR" RANLIB="$RANLIB" make -C externalpackages/PVODE/source/ >> config-build.log 2>&1
 
@@ -1673,7 +1673,7 @@ fi
 # Print configuration info
 #############################################################
 
-echo 
+echo
 echo "Configuration summary"  | tee -a config-build.log
 echo
 

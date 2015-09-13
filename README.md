@@ -1,6 +1,7 @@
 #BOUT++
 <!---Build nice shields at shields.io-->
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://img.shields.io/badge/license-GPL-blue.svg)
+[![py3comp](https://img.shields.io/badge/py3-compatible-brightgreen.svg)](https://img.shields.io/badge/py3-compatible-brightgreen.svg)
 > ```
 > .______     ______    __    __  .___________.
 > |   _  \   /  __  \  |  |  |  | |           |  _     _
@@ -18,6 +19,8 @@ almost any curvilinear coordinate system.
 Developed by B.Dudson (University of York) and M.Umansky (LLNL)
 based on the original BOUT code by X.Xu (LLNL)
 Further development by S.Farley (ANL) for coupling to PETSc and FACETS
+
+Homepage found at [http://boutproject.github.io/](http://boutproject.github.io/)
 
 ## Table of Contents
 * [Usage and installation](#usage-and-installation)
