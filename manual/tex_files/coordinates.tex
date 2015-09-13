@@ -402,7 +402,7 @@ A common expression (the Poisson bracket in reduced MHD) is (from equation
 g_{yy}\deriv{\phi}{x}\R)\deriv{A}{z}\R]
 \end{align*}
 %
-The perpendicular nablaient operator:
+The perpendicular nabla operator:
 %
 \begin{align*}
 \nabla_\perp \equiv& \nabla - \ve{b}\L(\ve{b}\cdot\nabla\R) \\ =& \nabla
@@ -1497,7 +1497,7 @@ so that
                 +  \ve{e}^z \L(\partial_z - \frac{g_{23}}{g_{22}}\partial_y\R)
 \end{align*}
 %
-\subsection{The perpendicular gradients in Laplacian inversion}
+\subsubsection{The perpendicular gradients in Laplacian inversion}
 In the Laplacian inversion BOUT++ currently neglects the parallel derivatives,
 thus
 %
@@ -1774,20 +1774,12 @@ as it is performed in BOUT++. We would like to solve the following equation
 for $f$
 %
 \begin{align}
-    d&\Grad_\perp^2f + \frac{1}{c}(\Grad_\perp c)\cdot\Grad_\perp f + af = b
+    d&\Grad_\perp^2f + \frac{1}{c_1}(\Grad_\perp c_2)\cdot\Grad_\perp f + af = b
     \label{eq:to_invert}
 \end{align}
 %
-
-
-\subsubsection{Using tridiagonal solvers}
-%
-In order to use a tridiagonal solver to solve equation (\ref{eq:to_invert}), we
-will first assume that the parallel derivatives are small. This means that we
-will only have derivatives of $x$ and $z$ for the dependent variable. The hope
-is that the modes in the periodic $z$ direction will decouple, so that we in the
-end only have to invert for the $x$ coordinate. Neglecting the parallel
-derivatives yields
+In all currently implemented solvers, the paralle derivatives are neglected.
+Thus, equation (\ref{eq:to_invert}) becomes
 %
 \begin{align*}
     \, &d
@@ -1800,11 +1792,11 @@ derivatives yields
     f
     \\
 %
-    +& \frac{1}{c}\L(
+    +& \frac{1}{c_1}\L(
           \ve{e}^x \partial_x
        +  \ve{e}^z \partial_z
     \R)
-    c
+    c_2
     \cdot
        \L(
           \ve{e}^x \partial_x
@@ -1818,6 +1810,27 @@ derivatives yields
     \label{eq:invert_expanded}
 \end{align*}
 %
+
+
+\subsubsection{Using tridiagonal solvers}
+%
+When using the tridiagonal solvers, $c_1 = c_2$ in equation
+(\ref{eq:to_invert_tri}), hence, it is rather solving
+%
+%
+\begin{align}
+    d&\Grad_\perp^2f + \frac{1}{c}(\Grad_\perp c)\cdot\Grad_\perp f + af = b
+    \label{eq:to_invert_tri}
+\end{align}
+%
+%
+In order to use a tridiagonal solver to solve equation
+(\ref{eq:to_invert_tri}), we will first assume that the parallel derivatives
+are small. This means that we will only have derivatives of $x$ and $z$ for the
+dependent variable. The hope is that the modes in the periodic $z$ direction
+will decouple, so that we in the end only have to invert for the $x$
+coordinate.
+
 If the modes decouples when fourier transforming equation
 (\ref{eq:invert_expanded}), we can use a tridiagonal solver to solve the
 equation for each fourier mode.
@@ -2046,6 +2059,254 @@ setting the first and last rows in $A$ and $B_z$.
 %
 
 
+\subsubsection{Using PETSc solvers}
+%
+When using PETSc, all terms of equation (\ref{eq:invert_expanded}) is being
+used when inverting to find $f$. Note that when using PETSc, we are not fourier
+decomposing in the $z$-direction, so it may take substantially longer time to
+find the solution.  As with the tridiagonal solver, the fields are being sliced
+in the $y$-direction, and a solution is being found for one $y$ plane at the
+time.
+
+Before solving, equation (\ref{eq:invert_expanded}) is rewritten to the form
+$A\ve{x} =\ve{b}$ (however, the full $A$ is not expanded in memory). To do
+this, a row $i$ in the matrix $A$ is indexed from bottom left of the two
+dimensional field $= (0,0) = 0$ to top right $= (\texttt{meshx}-1,
+\texttt{meshz}-1) = \texttt{meshx}\cdot\texttt{meshz}-1$ of the two dimensional
+field. This is done in such a way so that a row $i$ in $A$ increments by $1$
+for an increase of $1$ in the $z-$direction, and by $\texttt{meshz}$ for an
+increase of $1$ in the $x-$direction, where the variables $\texttt{meshx}$ and
+$\texttt{meshz}$ represents the highest value of the field in the given
+direction.
+
+Similarly to equation (\ref{eq:discretized_laplace}), the discretized version
+of equation (\ref{eq:invert_expanded}) can be written. Doing the same for the
+full two dimensional case yields\\
+%
+\begin{minipage}{0.45\textwidth}
+Second order approximation
+%
+\begin{align*}
+    \;
+    &
+    c_{i,j}
+    f_{i,j}
+    \\
+    %
+    &+
+    c_{i-1,j-1}
+    f_{i-1,j-1}
+    +
+    c_{i-1,j}
+    f_{i-1,j}
+    \\
+    %
+    &+
+    c_{i-1,j+1}
+    f_{i-1,j+1}
+    +
+    c_{i,j-1}
+    f_{i,j-1}
+    \\
+    %
+    &+
+    c_{i,j+1}
+    f_{i,j+1}
+    +
+    c_{i+1,j-1}
+    f_{i+1,j-1}
+    \\
+    %
+    &+
+    c_{i+1,j}
+    f_{i+1,j}
+    +
+    c_{i+1,j+1}
+    f_{i+1,j+1}
+    \\
+%
+    =& b_{i,j}
+\end{align*}
+\end{minipage}
+%
+\hspace{1cm}
+%
+\begin{minipage}{0.45\textwidth}
+Fourth order approximation
+%
+\begin{align*}
+    \;
+    &
+    c_{i,j}
+    f_{i,j}
+    \\
+    %
+    &+
+    c_{i-2,j-2}
+    f_{i-2,j-2}
+    +
+    c_{i-2,j-1}
+    f_{i-2,j-1}
+    \\
+    %
+    &+
+    c_{i-2,j}
+    f_{i-2,j}
+    +
+    c_{i-2,j+1}
+    f_{i-2,j+1}
+    \\
+    %
+    &+
+    c_{i-2,j+2}
+    f_{i-2,j+2}
+    +
+    c_{i-1,j-2}
+    f_{i-1,j-2}
+    \\
+    %
+    &+
+    c_{i-1,j-1}
+    f_{i-1,j-1}
+    +
+    c_{i-1,j}
+    f_{i-1,j}
+    \\
+    %
+    &+
+    c_{i-1,j-1}
+    f_{i-1,j-1}
+    +
+    c_{i-1,j}
+    f_{i-1,j}
+    \\
+    %
+    &+
+    c_{i-1,j+1}
+    f_{i-1,j+1}
+    +
+    c_{i-1,j+2}
+    f_{i-1,j+2}
+    \\
+    %
+    &+
+    c_{i,j-2}
+    f_{i,j-2}
+    +
+    c_{i,j-1}
+    f_{i,j-1}
+    \\
+    %
+    &+
+    c_{i,j+1}
+    f_{i,j+1}
+    +
+    c_{i,j+2}
+    f_{i,j+2}
+    \\
+    %
+    &+
+    c_{i+1,j-2}
+    f_{i+1,j-2}
+    +
+    c_{i+1,j-1}
+    f_{i+1,j-1}
+    \\
+    %
+    &+
+    c_{i+1,j}
+    f_{i+1,j}
+    +
+    c_{i+1,j+1}
+    f_{i+1,j+1}
+    \\
+    %
+    &+
+    c_{i+1,j+2}
+    f_{i+1,j+2}
+    +
+    c_{i+2,j-2}
+    f_{i+2,j-2}
+    \\
+    %
+    &+
+    c_{i+2,j-1}
+    f_{i+2,j-1}
+    +
+    c_{i+2,j}
+    f_{i+2,j}
+    \\
+    %
+    &+
+    c_{i+2,j+1}
+    f_{i+2,j+1}
+    +
+    c_{i+2,j+2}
+    f_{i+2,j+2}
+    \\
+%
+    =& b_{i,j}
+\end{align*}
+\end{minipage}
+\\
+To determine the coefficient for each node point, it is convenient to introduce
+some quantities
+%
+\begin{align*}
+    &A_0 = a(x,y_{\text{current}},z)&
+    &A_1 = dg^{xx}&\\
+    &A_2 = dg^{zz}&
+    &A_3 = 2dg^{xz}&
+\end{align*}
+%
+In addition, we have\\
+%
+\begin{minipage}{0.45\textwidth}
+Second order approximation
+\begin{align*}
+    \texttt{ddx\_c} =
+     \frac{\texttt{c2}_{x+1} - \texttt{c2}_{x-1}
+      }{
+      2\texttt{c1}\text{d}x}\\
+    %
+    \texttt{ddz\_c} =
+     \frac{\texttt{c2}_{z+1} - \texttt{c2}_{z-1}
+      }{
+      2\texttt{c1}\text{d}z}
+\end{align*}
+\end{minipage}
+%
+\hspace{1cm}
+%
+\begin{minipage}{0.45\textwidth}
+Fourth order approximation
+\begin{align*}
+    \texttt{ddx\_c} =
+     \frac{-\texttt{c2}_{x+2} + 8\texttt{c2}_{x+1} - 8\texttt{c2}_{x-1} + \texttt{c2}_{x-1}
+      }{
+      12\texttt{c1}\text{d}x}\\
+    %
+    \texttt{ddz\_c} =
+     \frac{-\texttt{c2}_{z+2} + 8\texttt{c2}_{z+1} - 8\texttt{c2}_{z-1} + \texttt{c2}_{z-1}
+      }{
+      12\texttt{c1}\text{d}z}
+\end{align*}
+\end{minipage}
+\\
+%
+This gives
+%
+\begin{align*}
+    &A_4 = dG^x + g^{xx}\texttt{ddx\_c} + g^{xz}\texttt{ddz\_c}&
+    &A_5 = dG^z + g^{xz}\texttt{ddx\_c} + g^{xx}\texttt{ddz\_c}&
+\end{align*}
+%
+The coefficients $c_{i+m,j+n}$ are finally being set according to the
+appropriate order of discretization. The coefficients can be found in
+the file \texttt{petsc\_laplace.cxx}.
+
+
+
 
 \subsection{The Poisson bracket operator}
 %
@@ -2178,7 +2439,25 @@ The electrostatic $E\times B$ advection operator thus becomes
 	           g_{yx}\partial_y\phi
 	         - g_{yy}\partial_x\phi
 	         \R]\partial_z
-	       \R)
+	       \R)\\
+    %
+    %
+    =& \frac{1}{g_{yy}}
+               \L(
+                 g_{yx}\{\phi, \cdot\}_{y,z}
+                 +
+                 g_{yy}\{\phi, \cdot\}_{z,x}
+                 +
+                 g_{yz}\{\phi, \cdot\}_{x,y}
+               \R)
+\end{align*}
+%
+Where we have used the definition of the Poisson bracket
+%
+\begin{align*}
+    \{a, b\}_{i,j} =
+      \L(\partial_i a\R) \partial_j b
+    - \L(\partial_j a\R) \partial_i b
 \end{align*}
 %
 The pure solenoidal advection is thus
@@ -2192,41 +2471,24 @@ The pure solenoidal advection is thus
     %
     %
     =& \frac{\sqrt{g_{yy}}}{Jg_{yy}}
-	       \L(
-	         \L[
-	           g_{yy}\partial_z\phi
-	         - g_{yz}\partial_y\phi
-	         \R]\partial_x
-	       +
-	         \L[
-	           g_{yz}\partial_x\phi
-	         - g_{yx}\partial_z\phi
-	         \R]\partial_y
-	       +
-	         \L[
-	           g_{yx}\partial_y\phi
-	         - g_{yy}\partial_x\phi
-	         \R]\partial_z
-	       \R)\\
+               \L(
+                 g_{yx}\{\phi, \cdot\}_{y,z}
+                 +
+                 g_{yy}\{\phi, \cdot\}_{z,x}
+                 +
+                 g_{yz}\{\phi, \cdot\}_{x,y}
+               \R)
+               \\
     %
     %
     =& \frac{1}{J\sqrt{g_{yy}}}
-	       \L(
-	         \L[
-	           g_{yy}\partial_z\phi
-	         - g_{yz}\partial_y\phi
-	         \R]\partial_x
-	       +
-	         \L[
-	           g_{yz}\partial_x\phi
-	         - g_{yx}\partial_z\phi
-	         \R]\partial_y
-	       +
-	         \L[
-	           g_{yx}\partial_y\phi
-	         - g_{yy}\partial_x\phi
-	         \R]\partial_z
-	       \R)
+               \L(
+                 g_{yx}\{\phi, \cdot\}_{y,z}
+                 +
+                 g_{yy}\{\phi, \cdot\}_{z,x}
+                 +
+                 g_{yz}\{\phi, \cdot\}_{x,y}
+               \R)
 	       \numberthis
 	       \label{eq:brackets}
 \end{align*}
@@ -2247,7 +2509,7 @@ terms (the $y$-derivative terms), so for the Arakawa brackets BOUT++ returns
     %
     \simeq& \frac{1}{g_{yy}}
 	       \L(
-	         g_{yy}\partial_z\phi\partial_x- g_{yy}\partial_x\phi\partial_z
+                 g_{yy}\{\phi, \cdot\}_{z,x}
 	       \R)\\
     %
     =& \partial_z\phi\partial_x - \partial_x\phi\partial_z
@@ -2318,7 +2580,6 @@ is equation (\ref{eq:DFT}) yields
     F(x,y)_{k}
     = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k Z\text{d}z\R)
     = \frac{1}{N}\sum_{Z=0}^{N-1}f(x,y)_{Z}\exp\L( - i k z_Z\R)
-    \label{eq:DFT}
 \end{align*}
 %
 The discrete verison of equation (\ref{eq:f_derivative}) thus gives
