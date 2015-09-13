@@ -79,6 +79,8 @@
 
 \def\L{\left}
 \def\R{\right}
+\def\Larrow{\leftarrow}
+\def\Rarrow{\rightarrow}
 \newcommand{\pow}{\ensuremath{\wedge} }
 \newcommand{\poweq}{\ensuremath{\wedge =} }
 
@@ -768,9 +770,9 @@ make install
 \end{verbatim}
 %
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE) solver,
-which evolves a system of the form $\mathbf{f}\L(\mathbf{u},
-\dot{\mathbf{u}}, t\R) = 0$. This allows algebraic constraints on variables
-to be specified.
+which evolves a system of the form
+$\mathbf{f}\L(\mathbf{u},\dot{\mathbf{u}}, t\R) = 0$.
+This allows algebraic constraints on variables to be specified.
 
 To configure BOUT++ with SUNDIALS only (see section \ref{sec:PETSc} on how to
 build PETSc with SUNDIALS), go to the root directory of BOUT++ and type
@@ -2596,7 +2598,8 @@ A common problem in plasma models is to solve an equation of the form
 %
 \begin{align}
    d\nabla^2_\perp x
-   + \frac{1}{c}\L(\nabla_\perp c\R)\cdot\nabla_\perp x + a x = b
+   + \frac{1}{c_1}\L(\nabla_\perp c_2\R)\cdot\nabla_\perp x + a x = b
+   \label{eq:full_laplace_inv}
 \end{align}
 %
 For example,
@@ -2607,26 +2610,34 @@ For example,
 %
 appears in reduced MHD for the vorticity inversion and $j_{||}$.
 
-Efficiently inverting this operator is done by taking FFTs in the $z$ direction
-to transform this problem into a set of 1D inversion problems (in $x$) for each
-Fourier mode.  These inversion problems are band-diagonal (tri-diagonal in the
+In BOUT++, these equations can be solved in two ways. Currently, both ways
+neglects the parallel derivatives.\\
+\\
+%
+\note{Current implementations neglects derivatives in the parallel direction}\\
+\\
+%
+By neglecting the $y$-derivatives, one can solve equation
+(\ref{eq:full_laplace_inv}) $y$ point by $y$ point.
+
+The first approach utilizes that it is possible fourier transform the equation
+in $z$ (using some assumptions, see the \code{coordinates} manual for details),
+and solve a tridiagonal system for each mode.
+These inversion problems are band-diagonal (tri-diagonal in the
 case of 2nd-order differencing) and so inversions can be very efficient:
 $O\L(n_z \log n_z\R)$ for the FFTs, $O\L(n_x\R)$ for tridiagonal
 inversion using the Thomas algorithm \cite{press-1999}, where $n_x$ and $n_z$
 are the number of grid-points in the $x$ and $z$ directions respectively.
 
+In the second approach, the full $2$-D system is being solved. This requires
+PETSc to be built with BOUT++
+
 The
 %
 \lstinline!Laplacian!
 %
- class is defined in \texttt{invert\_laplace.hxx} and solves problems of the
- form
-%
-\begin{align}
-      d\nabla_\perp^2 x
-    + \frac{1}{c}\L(\nabla_\perp c\R) \cdot\nabla_\perp x
-    + a x = b
-\end{align}
+ class is defined in \texttt{invert\_laplace.hxx} and solves problems
+ formulated like equation (\label{eq:full_laplace_inv})
 %
 To use this class, first create an instance of it:
 %
