@@ -183,7 +183,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
    * b        - All the y-slices of b_slice, which is the right hand side of
    *            the equation A*x_slice = b_slice
    * x0       - All the y-slices of the variable eventually used to set BC
-   *            Note that in some solvers, this is used as a preconditioner
+   *
    * Output:
    * x        - All the y-slices of x_slice in the equation A*x_slice = b_slice
    */

@@ -86,7 +86,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
    *            mode of this variable is going to be the right hand side of the
    *            equation Ax = b
    * x0       - Variable eventually used to set BC
-   *            Note that in some solvers, this is used as a preconditioner
+   *
    * Output:
    * x        - The inverted variable.
    */
@@ -161,12 +161,12 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     */
     tridagMatrix(avec, bvec, cvec, bk1d, jy,
                  // wave number index
-		 kz,
+                 kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-		 kz*2.0*PI/mesh->zlength,
-		 global_flags, inner_boundary_flags, outer_boundary_flags,
-		 &A, &C, &D);
+                 kz*2.0*PI/mesh->zlength,
+                 global_flags, inner_boundary_flags, outer_boundary_flags,
+                 &A, &C, &D);
 
     ///////// PERFORM INVERSION /////////
     if(!mesh->periodicX) {
