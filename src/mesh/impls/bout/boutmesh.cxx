@@ -137,6 +137,11 @@ int BoutMesh::load() {
   // Get guard cell sizes
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
+
+  // Check that nx is large enough
+  if(nx <= 2*MXG) {
+    throw BoutException("Error: nx must be greater than 2 times MXG (2 * %d)", MXG);
+  }
   
   // Set global grid sizes
   GlobalNx = nx;

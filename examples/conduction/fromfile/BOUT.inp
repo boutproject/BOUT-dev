@@ -1,0 +1,41 @@
+#
+# Input file for conduction case
+#
+
+nout = 100       # Number of output timesteps
+timestep = 0.1  # Time between outputs
+
+MZ = 1          # Number of points in z
+
+dump_format="nc"     # Write NetCDF format files
+
+grid="conduct_grid.nc"
+
+##################################################
+[ddy]   # Methods used for parallel (y) derivative terms
+
+first = C4
+second = C4
+upwind = W3
+flux = U1
+
+##################################################
+[solver] # Solver settings
+
+type = pvode # Which solver to use
+
+atol = 1.0e-10 # absolute tolerance
+rtol = 1.0e-5  # relative tolerance
+
+##################################################
+[conduction]  # Settings for the conduction model
+
+chi = 1.0
+
+##################################################
+[T] # Settings for the T variable
+
+scale = 1.0  # Size of the initial perturbation
+function = gauss(y-pi, 0.2)  # The form of the initial perturbation. y from 0 to 2*pi
+
+bndry_all = dirichlet
