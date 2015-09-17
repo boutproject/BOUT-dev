@@ -2,7 +2,7 @@
  *
  * @mainpage BOUT++
  * 
- * @version 2.0
+ * @version 3.0
  * 
  * @par Description 
  * Framework for the solution of partial differential
@@ -63,7 +63,7 @@
 
 #include "utils.hxx"
 
-const BoutReal BOUT_VERSION = 2;  ///< Version number
+const BoutReal BOUT_VERSION = 3;  ///< Version number
 
 // BOUT++ main functions
 
