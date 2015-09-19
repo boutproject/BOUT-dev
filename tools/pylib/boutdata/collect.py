@@ -144,12 +144,11 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         return data
 
     if ndims > 4:
-        print("ERROR: Too many dimensions")
-        raise CollectError
+        raise ValueError("ERROR: Too many dimensions")
 
     mxsub = f.read("MXSUB")
     if mxsub is None:
-        raise CollectError("Missing MXSUB variable")
+        raise ValueError("Missing MXSUB variable")
     mysub = f.read("MYSUB")
     mz    = f.read("MZ")
     myg   = f.read("MYG")
