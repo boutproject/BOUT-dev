@@ -118,7 +118,7 @@ def collect(varname, xind=None, yind=None, zind=None, tind=None, path=".",yguard
         
     file_list.sort()
     if file_list == []:
-        raise ValueError("ERROR: No data files found")
+        raise IOError("ERROR: No data files found")
 
     nfiles = len(file_list)
 
