@@ -12,12 +12,13 @@ MZ = 1 # Number of points in z
 MYG = 1
 MXG = 0
 
-StaggerGrids = true
-
 [output]
 floats = false #false -> output in doubles
 
 [mesh]  
+
+StaggerGrids = true
+
 ixseps1 = -1     
 ixseps2 = -1             # Set x location of separatrix 2
 

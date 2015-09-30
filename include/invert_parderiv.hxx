@@ -54,23 +54,23 @@ public:
   virtual const Field3D solve(const Field3D &f, const Field3D &start) {return solve(f);}
   
   virtual void setCoefA(const Field2D &f) = 0;
-  virtual void setCoefA(const Field3D &f) {setCoefA(f.DC());}
+  virtual void setCoefA(const Field3D &f) {setCoefA(DC(f));}
   virtual void setCoefA(const BoutReal f) {setCoefA(Field2D(f));}
   
   virtual void setCoefB(const Field2D &f) = 0;
-  virtual void setCoefB(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefB(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefB(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefC(const Field2D &f) = 0;
-  virtual void setCoefC(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefC(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefC(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefD(const Field2D &f) = 0;
-  virtual void setCoefD(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefD(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefD(const BoutReal f) {setCoefB(Field2D(f));}
   
   virtual void setCoefE(const Field2D &f) = 0;
-  virtual void setCoefE(const Field3D &f) {setCoefB(f.DC());}
+  virtual void setCoefE(const Field3D &f) {setCoefB(DC(f));}
   virtual void setCoefE(const BoutReal f) {setCoefB(Field2D(f));}
   
 private:

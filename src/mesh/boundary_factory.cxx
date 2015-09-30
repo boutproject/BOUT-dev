@@ -41,11 +41,11 @@ BoundaryFactory::BoundaryFactory() {
 
 BoundaryFactory::~BoundaryFactory() {
   // Free any boundaries
-  for(map<string, BoundaryOp*>::iterator it = opmap.begin(); it != opmap.end(); it++) {
-    delete it->second;
+  for(const auto& it : opmap) {
+    delete it.second;
   }
-  for(map<string, BoundaryModifier*>::iterator it = modmap.begin(); it != modmap.end(); it++) {
-    delete it->second;
+  for(const auto& it : modmap) {
+    delete it.second;
   }
 }
 

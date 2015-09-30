@@ -192,11 +192,11 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 	o_nnz[localN-1-i]=0;
     }
     
-    if (mesh->getNXPE()>1) {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
-    }
-    else {
+    if (mesh->firstX() && mesh->lastX()) {
+      // Only one processor in X
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    }else {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
     }
   }
   else {
@@ -241,11 +241,10 @@ LaplacePetsc::LaplacePetsc(Options *opt) :
 	o_nnz[localN-1-i]=0;
     }
     
-    if (mesh->getNXPE()>1) {
-      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
-    }
-    else {
+    if (mesh->firstX() && mesh->lastX()) {
       MatSeqAIJSetPreallocation( MatA, 0, d_nnz );
+    } else {
+      MatMPIAIJSetPreallocation( MatA, 0, d_nnz, 0, o_nnz );
     }
   }
   PetscFree( d_nnz );
@@ -395,17 +394,20 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b) {
 
 const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
   #ifdef CHECK
-    if ( global_flags & !implemented_flags) {
-      if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
-      throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
+  if ( global_flags & !implemented_flags) {
+    if (global_flags&INVERT_4TH_ORDER) output<<"For PETSc based Laplacian inverter, use 'fourth_order=true' instead of setting INVERT_4TH_ORDER flag"<<endl;
+    throw BoutException("Attempted to set Laplacian inversion flag that is not implemented in petsc_laplace.cxx");
+  }
+  if ( inner_boundary_flags & ~implemented_boundary_flags ) {
+    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
     }
-    if ( inner_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-    if ( outer_boundary_flags & ~implemented_boundary_flags ) {
-      throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
-    }
-  #endif
+  if ( outer_boundary_flags & ~implemented_boundary_flags ) {
+    throw BoutException("Attempted to set Laplacian inversion boundary flag that is not implemented in petsc_laplace.cxx");
+  }
+#endif
+  
+  // Get the metric tensor
+  Coordinates* coord = mesh->coordinates();
   
   int y = b.getIndex();           // Get the Y index
   sol.setIndex(y);// Initialize the solution field.
@@ -439,23 +441,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 		  if( fourth_order )
 		    {
 		      // Fourth Order Accuracy on Boundary
-		      Element(i,x,z, 0, 0, -25.0 / (12.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, 1, 0,   4.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, 2, 0,  -3.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA );
-		      Element(i,x,z, 3, 0,   4.0 / (3.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, 4, 0,  -1.0 / (4.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA );
+		      Element(i,x,z, 0, 0, -25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, 1, 0,   4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, 2, 0,  -3.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+		      Element(i,x,z, 3, 0,   4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, 4, 0,  -1.0 / (4.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
 		    }
 		  else
 		    {
 // 		      // Second Order Accuracy on Boundary
-// 		      Element(i,x,z, 0, 0, -3.0 / (2.0*mesh->dx[x][y]), MatA ); 
-// 		      Element(i,x,z, 1, 0,  2.0 / mesh->dx[x][y], MatA ); 
-// 		      Element(i,x,z, 2, 0, -1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      Element(i,x,z, 0, 0, -3.0 / (2.0*coord->dx(x,y)), MatA ); 
+// 		      Element(i,x,z, 1, 0,  2.0 / coord->dx(x,y), MatA ); 
+// 		      Element(i,x,z, 2, 0, -1.0 / (2.0*coord->dx(x,y)), MatA ); 
 // // 			Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // // 			Element(i,x,z, 4, 0, 0.0, MatA );
 		      // Second Order Accuracy on Boundary, set half-way between grid points
-		      Element(i,x,z, 0, 0, -1.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, 1, 0,  1.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
+		      Element(i,x,z, 0, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, 1, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
 		      Element(i,x,z, 2, 0, 0.0, MatA ); 
 // 			Element(i,x,z, 3, 0, 0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // 			Element(i,x,z, 4, 0, 0.0, MatA );
@@ -502,14 +504,14 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
       for(int z=0; z<mesh->ngz-1; z++) 
 	{
 	  BoutReal A0, A1, A2, A3, A4, A5;
-	  A0 = A[x][y][z];
+	  A0 = A(x,y,z);
 	  Coeffs( x, y, z, A1, A2, A3, A4, A5 );
 	  
-	  BoutReal dx   = mesh->dx[x][y];
-	  BoutReal dx2  = pow( mesh->dx[x][y] , 2.0 );
-	  BoutReal dz   = mesh->dz;
-	  BoutReal dz2  = pow( mesh->dz, 2.0 );
-	  BoutReal dxdz = mesh->dx[x][y] * mesh->dz;
+	  BoutReal dx   = coord->dx(x,y);
+	  BoutReal dx2  = pow( coord->dx(x,y) , 2.0 );
+	  BoutReal dz   = coord->dz;
+	  BoutReal dz2  = pow( coord->dz, 2.0 );
+	  BoutReal dxdz = coord->dx(x,y) * coord->dz;
 	  
 	  // Set Matrix Elements
 	  PetscScalar val=0.;
@@ -679,23 +681,23 @@ const FieldPerp LaplacePetsc::solve(const FieldPerp &b, const FieldPerp &x0) {
 		  if( fourth_order )
 		    {
 		      // Fourth Order Accuracy on Boundary
-		      Element(i,x,z,  0, 0, 25.0 / (12.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, -1, 0, -4.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, -2, 0,  3.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA );
-		      Element(i,x,z, -3, 0, -4.0 / (3.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, -4, 0,  1.0 / (4.0*mesh->dx[x][y]) / sqrt(mesh->g_11[x][y]), MatA );
+		      Element(i,x,z,  0, 0, 25.0 / (12.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, -1, 0, -4.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, -2, 0,  3.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA );
+		      Element(i,x,z, -3, 0, -4.0 / (3.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, -4, 0,  1.0 / (4.0*coord->dx(x,y)) / sqrt(coord->g_11(x,y)), MatA );
 		    }
 		  else
 		    {
 // 		      // Second Order Accuracy on Boundary
-// 		      Element(i,x,z,  0, 0,  3.0 / (2.0*mesh->dx[x][y]), MatA ); 
-// 		      Element(i,x,z, -1, 0, -2.0 / mesh->dx[x][y], MatA ); 
-// 		      Element(i,x,z, -2, 0,  1.0 / (2.0*mesh->dx[x][y]), MatA ); 
+// 		      Element(i,x,z,  0, 0,  3.0 / (2.0*coord->dx(x,y)), MatA ); 
+// 		      Element(i,x,z, -1, 0, -2.0 / coord->dx(x,y), MatA ); 
+// 		      Element(i,x,z, -2, 0,  1.0 / (2.0*coord->dx(x,y)), MatA ); 
 // // 			Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // // 			Element(i,x,z, -4, 0,  0.0, MatA );
 		      // Second Order Accuracy on Boundary, set half-way between grid points
-		      Element(i,x,z,  0, 0,  1.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
-		      Element(i,x,z, -1, 0, -1.0 / mesh->dx[x][y] / sqrt(mesh->g_11[x][y]), MatA ); 
+		      Element(i,x,z,  0, 0,  1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
+		      Element(i,x,z, -1, 0, -1.0 / coord->dx(x,y) / sqrt(coord->g_11(x,y)), MatA ); 
 		      Element(i,x,z, -2, 0,  0.0, MatA ); 
 // 			Element(i,x,z, -3, 0,  0.0, MatA );  // Reset these elements to 0 in case 4th order flag was used previously: not allowed now
 // 			Element(i,x,z, -4, 0,  0.0, MatA );
@@ -882,15 +884,17 @@ void LaplacePetsc::Element(int i, int x, int z, int xshift, int zshift, PetscSca
 
 void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2, BoutReal &coef3, BoutReal &coef4, BoutReal &coef5 )
 {
-  coef1 = mesh->g11[x][y];     // X 2nd derivative coefficient
-  coef2 = mesh->g33[x][y];     // Z 2nd derivative coefficient
-  coef3 = 2.*mesh->g13[x][y];  // X-Z mixed derivative coefficient
+  Coordinates *coord = mesh->coordinates(); // Get metric tensor
+
+  coef1 = coord->g11(x,y);     // X 2nd derivative coefficient
+  coef2 = coord->g33(x,y);     // Z 2nd derivative coefficient
+  coef3 = 2.*coord->g13(x,y);  // X-Z mixed derivative coefficient
   
   coef4 = 0.0;
   coef5 = 0.0;
   if(all_terms) {
-    coef4 = mesh->G1[x][y]; // X 1st derivative
-    coef5 = mesh->G3[x][y]; // Z 1st derivative
+    coef4 = coord->G1(x,y); // X 1st derivative
+    coef5 = coord->G3(x,y); // Z 1st derivative
   }
   
   if(nonuniform) 
@@ -898,25 +902,25 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
       // non-uniform mesh correction
       if((x != 0) && (x != (mesh->ngx-1))) 
 	{
-	  //coef4 += mesh->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
-	  //coef4 -= 0.5 * ( ( mesh->dx[x+1][y] - mesh->dx[x-1][y] ) / SQ ( mesh->dx[x][y] ) ) * coef1; // BOUT-06 term
-	  coef4 -= 0.5 * ( ( mesh->dx[x+1][y] - mesh->dx[x-1][y] ) / pow( mesh->dx[x][y], 2.0 ) ) * coef1; // BOUT-06 term
+	  //coef4 += coord->g11[jx][jy]*0.25*( (1.0/dx[jx+1][jy]) - (1.0/dx[jx-1][jy]) )/dx[jx][jy]; // SHOULD BE THIS (?)
+	  //coef4 -= 0.5 * ( ( coord->dx[x+1][y] - coord->dx[x-1][y] ) / SQ ( coord->dx(x,y) ) ) * coef1; // BOUT-06 term
+	  coef4 -= 0.5 * ( ( coord->dx(x+1,y) - coord->dx(x-1,y) ) / pow( coord->dx(x,y), 2.0 ) ) * coef1; // BOUT-06 term
 	}
     }
   
   if(mesh->ShiftXderivs && mesh->IncIntShear) {
     // d2dz2 term
-    coef2 += mesh->g11[x][y] * mesh->IntShiftTorsion[x][y] * mesh->IntShiftTorsion[x][y];
+    coef2 += coord->g11(x,y) * coord->IntShiftTorsion(x,y) * coord->IntShiftTorsion(x,y);
     // Mixed derivative
     coef3 = 0.0; // This cancels out
   }
   
   if (issetD) {
-  coef1 *= D[x][y][z];
-  coef2 *= D[x][y][z];
-  coef3 *= D[x][y][z];
-  coef4 *= D[x][y][z];
-  coef5 *= D[x][y][z];
+  coef1 *= D(x,y,z);
+  coef2 *= D(x,y,z);
+  coef3 *= D(x,y,z);
+  coef4 *= D(x,y,z);
+  coef5 *= D(x,y,z);
   }
   
   // A second/fourth order derivative term
@@ -934,24 +938,24 @@ void LaplacePetsc::Coeffs( int x, int y, int z, BoutReal &coef1, BoutReal &coef2
 	    if (zpp > meshz-1) zpp -= meshz;
 	    int zmm = z-2;
 	    if (zmm<0) zmm += meshz;
-	ddx_C = (-C2[x+2][y][z] + 8.*C2[x+1][y][z] - 8.*C2[x-1][y][z] + C2[x-2][y][z]) / (12.*mesh->dx[x][y]*(C1[x][y][z]));
-	ddz_C = (-C2[x][y][zpp] + 8.*C2[x][y][zp] - 8.*C2[x][y][zm] + C2[x][y][zmm]) / (12.*mesh->dz*(C1[x][y][z]));
+            ddx_C = (-C2(x+2,y,z) + 8.*C2(x+1,y,z) - 8.*C2(x-1,y,z) + C2(x-2,y,z)) / (12.*coord->dx(x,y)*(C1(x,y,z)));
+	ddz_C = (-C2(x,y,zpp) + 8.*C2(x,y,zp) - 8.*C2(x,y,zm) + C2(x,y,zmm)) / (12.*coord->dz*(C1(x,y,z)));
 	  }
 	  else {
-	ddx_C = (C2[x+1][y][z] - C2[x-1][y][z]) / (2.*mesh->dx[x][y]*(C1[x][y][z]));
-	ddz_C = (C2[x][y][zp] - C2[x][y][zm]) / (2.*mesh->dz*(C1[x][y][z]));
+            ddx_C = (C2(x+1,y,z) - C2(x-1,y,z)) / (2.*coord->dx(x,y)*(C1(x,y,z)));
+            ddz_C = (C2(x,y,zp) - C2(x,y,zm)) / (2.*coord->dz*(C1(x,y,z)));
 	  }
 	  
-	  coef4 += mesh->g11[x][y] * ddx_C + mesh->g13[x][y] * ddz_C;
-	  coef5 += mesh->g13[x][y] * ddx_C + mesh->g33[x][y] * ddz_C;
+	  coef4 += coord->g11(x,y) * ddx_C + coord->g13(x,y) * ddz_C;
+	  coef5 += coord->g13(x,y) * ddx_C + coord->g33(x,y) * ddz_C;
 	}
     }
   
   // Additional 1st derivative terms to allow for solution field to be component of vector
   // NB multiply by D or Grad_perp(C)/C as appropriate before passing to setCoefEx()/setCoefEz() because both (in principle) are needed and we don't know how to split them up here
   if (issetE) {
-  coef4 += Ex[x][y][z];
-  coef5 += Ez[x][y][z];
+  coef4 += Ex(x,y,z);
+  coef5 += Ez(x,y,z);
   }
   
 }

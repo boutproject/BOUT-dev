@@ -93,7 +93,7 @@ public:
   
   // Bit of a hack: should put the method somewhere more sensible (like in boutmesh.cxx)
   void y_broadcast(void* input_buffer, const int &size, const int &root_processor); // NB Assumes that the mesh is BoutMesh
-  void y_boundary_broadcast(BoutReal* input_buffer, const int &size, const int &root_processor); // NB Assumes that the mesh is BoutMesh
+  
   void rms_over_y(const Field3D &input_field, FieldPerp &output_field);
   void mean_over_y(const Field3D &input_field, FieldPerp &output_field, int exclude_edgecells=0);
   BoutReal interp_to_point_YLOW(const Field3D &input, bindex &position);
@@ -209,7 +209,6 @@ private:
   #endif
   int NONLOCAL_PARALLEL_TAGBASE;
   MPI_Request broadcast_request;
-  MPI_Comm comm_yprocs;
   MPI_Comm comm_yprocs_minusone;
   bindex* position;
   bool fluxes_location_is_ylow;

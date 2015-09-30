@@ -161,7 +161,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     bk1d = new dcomplex[ncz/2 + 1];
 
   for(ix=0; ix < mesh->ngx; ix++) {
-    ZFFT(b[ix], mesh->zShift[ix][data.jy], bk1d);
+    ZFFT(b[ix], mesh->zShift(ix,data.jy), bk1d);
     for(kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = bk1d[kz];
   }
@@ -302,7 +302,7 @@ void LaplacePDD::next(PDD_data &data) {
     data.recv_handle = mesh->irecvXIn(data.rcv, 2*(maxmode+1), PDD_COMM_Y);
   }
   
-  if(mesh->PE_XIND != (mesh->NXPE-1)) {
+  if(!mesh->lastX()) {
     // Send value to the (i+1)th processor
     
     for(int kz = 0; kz <= maxmode; kz++) {
@@ -360,7 +360,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
-    ZFFT_rev(xk1d, mesh->zShift[ix][data.jy], x[ix]);
+    ZFFT_rev(xk1d, mesh->zShift(ix,data.jy), x[ix]);
     
     x[ix][ncz] = x[ix][0]; // enforce periodicity
   }

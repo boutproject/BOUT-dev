@@ -285,16 +285,17 @@ FieldGenerator* FieldFactory::resolve(string &name) {
     // Look up in options
     
     // Check if already looking up this symbol
-    for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++)
-      if( key.compare(*it) == 0 ) {
+    for(const auto& it : lookup) {
+      if( key.compare(it) == 0 ) {
         // Name matches, so already looking up
         output << "ExpressionParser lookup stack:\n";
-        for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++) {
-          output << *it << " -> ";
+        for(const auto& it : lookup) {
+          output << it << " -> ";
         }
         output << name << endl;
         throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
       }
+    }
     
     // Find the option, including traversing sections.
     // Throws exception if not found

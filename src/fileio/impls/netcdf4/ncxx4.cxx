@@ -332,9 +332,8 @@ const vector<int> Ncxx4::getSize(const char *name) {
     return size;
   }
   
-  vector<NcDim> dims = var.getDims();
-  for(vector<NcDim>::iterator it = dims.begin(); it != dims.end(); it++) {
-    size.push_back(it->getSize());
+  for(const auto& dim in var.getDims()) {
+    size.push_back(dim->getSize());
   }
   
 #ifdef CHECK

@@ -97,9 +97,9 @@ class Vector2D : public FieldData {
 
   const Vector2D operator^(const Vector2D &rhs) const; // Cross product
   const Vector3D operator^(const Vector3D &rhs) const;
-
-  // Non-member functions
-  friend const Field2D abs(const Vector2D &v);
+  
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override;
   
   // FieldData virtual functions
   
@@ -150,11 +150,11 @@ class Vector2D : public FieldData {
   BoutReal *getData(int component) {
     switch(component) {
     case 0:
-      return *(x.getData());
+      return &x(0,0);
     case 1:
-      return *(y.getData());
+      return &y(0,0);
     case 2:
-      return *(z.getData());
+      return &z(0,0);
     }
     return NULL;
   }
@@ -181,6 +181,8 @@ class Vector2D : public FieldData {
 const Vector2D operator*(const BoutReal lhs, const Vector2D &rhs);
 const Vector2D operator*(const Field2D &lhs, const Vector2D &rhs);
 const Vector3D operator*(const Field3D &lhs, const Vector2D &rhs);
+
+const Field2D abs(const Vector2D &v);
 
 /*!
  * @brief Time derivative of 2D vector field

@@ -39,8 +39,8 @@ int physics_init(bool restarting) {
   int passed = 1;
   for(int y=2;y<mesh->ngy-2;y++) {
     for(int z=0;z<mesh->ngz-1;z++)  {
-      output.write("result: [%d,%d] : %e, %e, %e\n", y,z, input[2][y][z], result[2][y][z], deriv[2][y][z]);
-      if(abs(input[2][y][z] - deriv[2][y][z]) > tol)
+      output.write("result: [%d,%d] : %e, %e, %e\n", y,z, input(2,y,z), result(2,y,z), deriv(2,y,z));
+      if(abs(input(2,y,z) - deriv(2,y,z)) > tol)
 	passed = 0;
     }
   }

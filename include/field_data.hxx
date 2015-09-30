@@ -31,6 +31,7 @@ class FieldData;
 #define __FIELD_DATA_H__
 
 #include "bout_types.hxx"
+
 #include <string>
 using std::string;
 
@@ -48,6 +49,8 @@ using std::map;
 
 class FieldGenerator; // Forward declaration
 
+class FieldVisitor;
+
 /// Interface used to access data in field classes
 /*!
   Used by communicator, solver and (soon) datafile classes
@@ -58,6 +61,9 @@ class FieldData {
   FieldData();
   virtual ~FieldData();
 
+  // Visitor pattern support
+  virtual void accept(FieldVisitor &v) = 0;
+  
   // Defines interface which must be implemented
   virtual bool isReal() const = 0; ///< Returns true if field consists of BoutReal values
   virtual bool is3D() const = 0;   ///< True if variable is 3D
@@ -108,6 +114,8 @@ class FieldData {
  
  std::map <BndryLoc,FieldGenerator*> bndry_generator;
 };
+
+#include "bout/field_visitor.hxx"
 
 #endif
 

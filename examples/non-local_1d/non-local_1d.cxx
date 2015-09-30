@@ -220,8 +220,8 @@ int physics_run(BoutReal t) {
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jz=0; jz<mesh->ngz-1; jz++)
       for (int jy=0; jy<mesh->ngy; jy++) {
-	  tau_ii[jx][jy][jz] = 3 * pow(PI,1.5) * pow(epsilon_0,2) * sqrt(ion_mass) * pow(2.,1.5) * pow(T_ion[jx][jy][jz],1.5) / n_ion[jx][jy][jz] / pow(ion_charge,4) / logLambda;
-	  tau_ei[jx][jy][jz] = 3 * pow(PI,1.5) * pow(epsilon_0,2) * sqrt(electron_mass) * pow(2.,1.5) * pow(T_electron[jx][jy][jz],1.5) / n_ion[jx][jy][jz] / pow(electron_charge,2) / pow(ion_charge,2) / logLambda;
+	tau_ii(jx,jy,jz) = 3 * pow(PI,1.5) * pow(epsilon_0,2) * sqrt(ion_mass) * pow(2.,1.5) * pow(T_ion(jx,jy,jz),1.5) / n_ion(jx,jy,jz) / pow(ion_charge,4) / logLambda;
+	tau_ei(jx,jy,jz) = 3 * pow(PI,1.5) * pow(epsilon_0,2) * sqrt(electron_mass) * pow(2.,1.5) * pow(T_electron(jx,jy,jz),1.5) / n_ion(jx,jy,jz) / pow(electron_charge,2) / pow(ion_charge,2) / logLambda;
       }
 
   #ifdef CUSTOMBCS
@@ -246,35 +246,35 @@ int physics_run(BoutReal t) {
 	    BoutReal qBrag_over_n = 1./(1./qbc_over_n-1./electron_flux_limiter/( -sqrt(2./electron_mass)*pow(Te_here,1.5) ));
 	    BoutReal gradient_T_electron = qBrag_over_n
 					      /(-3.16*Te_here*tauei_here/electron_mass)
-					      *mesh->dy[rlow.ind][mesh->ystart]*sqrt(mesh->g_22[rlow.ind][mesh->ystart]);
-	  #else
+	      *coord->dy(rlow.ind,mesh->ystart)*sqrt(coord->g_22(rlow.ind,mesh->ystart));
+#else
 	    BoutReal gradient_T_electron = -((2.0-2.5)*Te_here-sheath_potential)
-					      *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass)
-					      /(-3.16*Te_here*tauei_here/electron_mass)
-					      *mesh->dy[rlow.ind][mesh->ystart]*sqrt(mesh->g_22[rlow.ind][mesh->ystart]); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
+	      *sqrt((Te_here+gamma_factor*Ti_here)/ion_mass)
+	      /(-3.16*Te_here*tauei_here/electron_mass)
+	      *coord->dy(rlow.ind,mesh->ystart)*sqrt(coord->g_22(rlow.ind,mesh->ystart)); // -2.5*Te so that we subtract off the convective heat flux to leave just the conductive heat flux, not the total
 	  #endif
 	#else
   //       BoutReal gradient_T_electron = (-11.*T_electron[rlow.ind][mesh->ystart][jz] + 18.*T_electron[rlow.ind][mesh->ystart+1][jz] - 9.*T_electron[rlow.ind][mesh->ystart+2][jz] + 2.*T_electron[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
-	  BoutReal gradient_T_electron = (-T_electron[rlow.ind][mesh->ystart][jz] + T_electron[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length);
+	    BoutReal gradient_T_electron = (-T_electron(rlow.ind,mesh->ystart,jz) + T_electron(rlow.ind,mesh->ystart+boundary_gradient_smoothing_length,jz))/BoutReal(boundary_gradient_smoothing_length);
 	#endif
   //       BoutReal gradient_n = (-11.*n_ion[rlow.ind][mesh->ystart][jz] + 18.*n_ion[rlow.ind][mesh->ystart+1][jz] - 9.*n_ion[rlow.ind][mesh->ystart+2][jz] + 2.*n_ion[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
-	BoutReal gradient_n = (-n_ion[rlow.ind][mesh->ystart][jz] + n_ion[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length);
+	    BoutReal gradient_n = (-n_ion(rlow.ind,mesh->ystart,jz) + n_ion(rlow.ind,mesh->ystart+boundary_gradient_smoothing_length,jz))/BoutReal(boundary_gradient_smoothing_length);
   //       BoutReal gradient_T_ion = (-11.*T_ion[rlow.ind][mesh->ystart][jz] + 18.*T_ion[rlow.ind][mesh->ystart+1][jz] - 9.*T_ion[rlow.ind][mesh->ystart+2][jz] + 2.*T_ion[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
-	BoutReal gradient_T_ion = (-T_ion[rlow.ind][mesh->ystart][jz] + T_ion[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length);
+	    BoutReal gradient_T_ion = (-T_ion(rlow.ind,mesh->ystart,jz) + T_ion(rlow.ind,mesh->ystart+boundary_gradient_smoothing_length,jz))/BoutReal(boundary_gradient_smoothing_length);
 	for (int jy=mesh->ystart-1; jy>=0; jy--) {
-	  n_ion[rlow.ind][jy][jz] = n_ion[rlow.ind][jy+1][jz] - gradient_n;
-  // 	n_ion[rlow.ind][jy][jz] = n_ion[rlow.ind][jy+1][jz];
-	  T_ion[rlow.ind][jy][jz] = T_ion[rlow.ind][jy+1][jz] - gradient_T_ion;
+	  n_ion(rlow.ind,jy,jz) = n_ion(rlow.ind,jy+1,jz) - gradient_n;
+  // 	n_ion(rlow.ind,jy,jz) = n_ion(rlow.ind,jy+1,jz);
+	  T_ion(rlow.ind,jy,jz) = T_ion(rlow.ind,jy+1,jz) - gradient_T_ion;
 	  #ifndef LOCALHEATFLUX
-	    T_electron[rlow.ind][jy][jz] = T_electron[rlow.ind][jy+1][jz] - gradient_T_electron;
+	  T_electron(rlow.ind,jy,jz) = T_electron(rlow.ind,jy+1,jz) - gradient_T_electron;
 	  #endif
 	}
 	#ifdef LOCALHEATFLUX
 	// Set it up so that the fourth-order central finite difference derivative at CELL_YLOW of mesh->ystart is gradient_T_electron
-	  T_electron[rlow.ind][mesh->ystart-1][jz] = T_electron[rlow.ind][mesh->ystart][jz] - gradient_T_electron;
-	  T_electron[rlow.ind][mesh->ystart-2][jz] = T_electron[rlow.ind][mesh->ystart+1][jz] - 3.*gradient_T_electron;
+	T_electron(rlow.ind,mesh->ystart-1,jz) = T_electron(rlow.ind,mesh->ystart,jz) - gradient_T_electron;
+	T_electron(rlow.ind,mesh->ystart-2,jz) = T_electron(rlow.ind,mesh->ystart+1,jz) - 3.*gradient_T_electron;
 	  for (int jy=mesh->ystart-3; jy>=0; jy--)
-	    T_electron[rlow.ind][jy][jz] = T_electron[rlow.ind][jy+1][jz] - gradient_T_electron;
+	    T_electron(rlow.ind,jy,jz) = T_electron(rlow.ind,jy+1,jz) - gradient_T_electron;
 	#endif
       }
 
@@ -434,13 +434,13 @@ int physics_run(BoutReal t) {
     for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
       for (int jz=0; jz<mesh->ngz-1; jz++)
 	for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
-	  if (T_ion[rup.ind][jy][jz]<0.) {
-	    T_ion[rup.ind][jy][jz] = 0.;
-	    tau_ii[rup.ind][jy][jz] = tau_ii[rup.ind][jy-1][jz] + (11.*tau_ii[rup.ind][jy-1][jz] - 18.*tau_ii[rup.ind][jy-2][jz] + 9.*tau_ii[rup.ind][jy-3][jz] - 2.*tau_ii[rup.ind][jy-4][jz])/ 6.;
+	  if (T_ion(rup.ind,jy,jz)<0.) {
+	    T_ion(rup.ind,jy,jz) = 0.;
+	    tau_ii(rup.ind,jy,jz) = tau_ii(rup.ind,jy-1,jz) + (11.*tau_ii(rup.ind,jy-1,jz) - 18.*tau_ii(rup.ind,jy-2,jz) + 9.*tau_ii(rup.ind,jy-3,jz) - 2.*tau_ii(rup.ind,jy-4,jz))/ 6.;
 	  }
-	  if (T_electron[rup.ind][jy][jz]<0.) {
-	    T_electron[rup.ind][jy][jz] = 0.;
-	    tau_ei[rup.ind][jy][jz] = tau_ei[rup.ind][jy-1][jz] + (11.*tau_ei[rup.ind][jy-1][jz] - 18.*tau_ei[rup.ind][jy-2][jz] + 9.*tau_ei[rup.ind][jy-3][jz] - 2.*tau_ei[rup.ind][jy-4][jz])/ 6.;
+	  if (T_electron(rup.ind,jy,jz)<0.) {
+	    T_electron(rup.ind,jy,jz) = 0.;
+	    tau_ei(rup.ind,jy,jz) = tau_ei(rup.ind,jy-1,jz) + (11.*tau_ei(rup.ind,jy-1,jz) - 18.*tau_ei(rup.ind,jy-2,jz) + 9.*tau_ei(rup.ind,jy-3,jz) - 2.*tau_ei(rup.ind,jy-4,jz))/ 6.;
 	  }
       }
   
@@ -577,39 +577,39 @@ int physics_run(BoutReal t) {
     for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
       for (int jz=0; jz<mesh->ngz-1; jz++) {
 	for (int jy=mesh->ystart-1; jy>=0; jy--) {
-	  ddt(n_ion)[rlow.ind][jy][jz] = 0.;
-	  ddt(T_ion)[rlow.ind][jy][jz] = 0.;
-	  ddt(T_electron)[rlow.ind][jy][jz] = 0.;
+	  ddt(n_ion)(rlow.ind,jy,jz) = 0.;
+	  ddt(T_ion)(rlow.ind,jy,jz) = 0.;
+	  ddt(T_electron)(rlow.ind,jy,jz) = 0.;
 	}
       }
     if (mesh->StaggerGrids)
       for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
 	for (int jz=0; jz<mesh->ngz-1; jz++) {
 	  for (int jy=mesh->yend; jy<mesh->ngy; jy++) {
-	      ddt(n_ion)[rup.ind][jy][jz] = 0.;
-	      ddt(T_ion)[rup.ind][jy][jz] = 0.;
-	      ddt(T_electron)[rup.ind][jy][jz] = 0.;
-	    }
+	    ddt(n_ion)(rup.ind,jy,jz) = 0.;
+	    ddt(T_ion)(rup.ind,jy,jz) = 0.;
+	    ddt(T_electron)(rup.ind,jy,jz) = 0.;
 	  }
+	}
     else
       for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
 	for (int jz=0; jz<mesh->ngz-1; jz++) {
 	  for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
-	      ddt(n_ion)[rup.ind][jy][jz] = 0.;
-	      ddt(T_ion)[rup.ind][jy][jz] = 0.;
-	      ddt(T_electron)[rup.ind][jy][jz] = 0.;
-	    }
+	    ddt(n_ion)(rup.ind,jy,jz) = 0.;
+	    ddt(T_ion)(rup.ind,jy,jz) = 0.;
+	    ddt(T_electron)(rup.ind,jy,jz) = 0.;
 	  }
+	}
 
     for (RangeIterator rlow = mesh->iterateBndryLowerY(); !rlow.isDone(); rlow++)
       for (int jz=0; jz<mesh->ngz-1; jz++) {
 	for (int jy=mesh->ystart; jy>=0; jy--)
-	  ddt(Vpar_ion)[rlow.ind][jy][jz] = 0.;
+	  ddt(Vpar_ion)(rlow.ind,jy,jz) = 0.;
       }
     for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
       for (int jz=0; jz<mesh->ngz-1; jz++) {
 	for (int jy=mesh->yend; jy<mesh->ngy; jy++)
-	  ddt(Vpar_ion)[rup.ind][jy][jz] = 0.;
+	  ddt(Vpar_ion)(rup.ind,jy,jz) = 0.;
       }
   #endif
   

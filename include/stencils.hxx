@@ -134,58 +134,6 @@ BoutReal min(const stencil &s);
 BoutReal max(const stencil &s);
 const stencil abs(const stencil &s);
 
-class bstencil {
- public:
-  
-  int jx, jy, jz; // central location
-
-  // Values
-
-  BoutReal cc,  // center
-    
-    // 1st order neigbors
-    xp, xm, /* (+/-) dx */
-    yp, ym, /* (+/-) dy */
-    zp, zm, /* (+/-) dz */
-    
-    // 2nd order neigbors  
-    x2p, x2m, /* (+/-) 2*dx */
-    y2p, y2m, /* (+/-) 2*dy */
-    z2p, z2m; /* (+/-) 2*dz */
-  
-  // Operators
-
-  bstencil & operator=(const bstencil &rhs);
-  
-  bstencil & operator+=(const bstencil &rhs);
-  bstencil & operator-=(const bstencil &rhs);
-  bstencil & operator*=(const bstencil &rhs);
-  bstencil & operator*=(const BoutReal rhs);
-  bstencil & operator/=(const bstencil &rhs);
-  bstencil & operator/=(const BoutReal rhs);
-  bstencil & operator^=(const bstencil &rhs);
-  bstencil & operator^=(const BoutReal rhs);
-
-  // Binary operators
-
-  const bstencil operator+(const bstencil &other) const;
-  const bstencil operator-(const bstencil &other) const;
-  const bstencil operator*(const bstencil &other) const;
-  const bstencil operator*(const BoutReal rhs) const;
-  const bstencil operator/(const bstencil &other) const;
-  const bstencil operator/(const BoutReal rhs) const;
-  const bstencil operator^(const bstencil &other) const;
-  const bstencil operator^(const BoutReal rhs) const;
-  
- private:
-  
-  
-};
-
-const bstencil operator*(const BoutReal lhs, const bstencil &rhs);
-const bstencil operator/(const BoutReal lhs, const bstencil &rhs);
-const bstencil operator^(const BoutReal lhs, const bstencil &rhs);
-
 typedef struct {
   int jx,jy,jz, /* center   */
     
@@ -198,10 +146,6 @@ typedef struct {
     jx2m, jx2p,  /* (+/-) 2*dx */
     jy2m, jy2p,  /* (+/-) 2*dy */
     jz2m, jz2p;  /* (+/-) 2*dz */
-  
-  // Switches for twist-shift condition
-  bool yp_shift, y2p_shift;
-  bool ym_shift, y2m_shift;
 
   BoutReal yp_offset, ym_offset; // Toroidal offset (In index space)
   
