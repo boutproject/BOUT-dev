@@ -24,7 +24,6 @@ class BoutMesh : public Mesh {
   /////////////////////////////////////////////
   // Communicate variables
   
-  int communicate(FieldGroup &g);
   comm_handle send(FieldGroup &g);
   int wait(comm_handle handle);
   
@@ -47,7 +46,7 @@ class BoutMesh : public Mesh {
   comm_handle irecvXOut(BoutReal *buffer, int size, int tag);
   comm_handle irecvXIn(BoutReal *buffer, int size, int tag);
   
-  MPI_Comm getXcomm() const {return comm_x; }
+  MPI_Comm getXcomm(int jy) const {return comm_x; }
   MPI_Comm getYcomm(int jx) const;
   
   bool periodicY(int jx, BoutReal &ts) const;
@@ -73,14 +72,6 @@ class BoutMesh : public Mesh {
   comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag);
   comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag);
   
-  /////////////////////////////////////////////
-  // Y-Z communications
-
-  const Field2D averageY(const Field2D&);
-  const Field3D averageY(const Field3D &f);
-  const Field2D averageX(const Field2D &f);
-  const Field3D averageX(const Field3D &f);
-
   // Boundary iteration
   const RangeIterator iterateBndryLowerY() const;
   const RangeIterator iterateBndryUpperY() const;
@@ -99,7 +90,7 @@ class BoutMesh : public Mesh {
   int YGLOBAL(int yloc) const;
 
   // poloidal lowpass filtering for n=0 mode
-  void slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
+  void slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
   void get_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   void set_ri( dcomplex * ayn, int ncy, BoutReal * ayn_Real, BoutReal * ayn_Imag);
   const Field2D lowPass_poloidal(const Field2D &var,int mmax);
@@ -108,9 +99,6 @@ class BoutMesh : public Mesh {
   const Field3D Switch_YZ(const Field3D &var);
   const Field3D Switch_XZ(const Field3D &var);
   
-  BoutReal Average_XY(const Field2D &var);
-  BoutReal Vol_Integral(const Field2D &var);
-
  private:
   string gridname;
   int nx, ny;        ///< Size of the grid in the input file
@@ -153,12 +141,12 @@ class BoutMesh : public Mesh {
   
   // Settings
   bool TwistShift;   // Use a twist-shift condition in core?
-  //int  TwistOrder;   // Order of twist-shift interpolation
   
   bool symmetricGlobalX; ///< Use a symmetric definition in GlobalX() function
   bool symmetricGlobalY;
 
   int  zperiod; 
+  BoutReal zlength; // Needed for reading 3D variables
   BoutReal ZMIN, ZMAX;   // Range of the Z domain (in fractions of 2pi)
   
   int  MXG, MYG;     // Boundary sizes

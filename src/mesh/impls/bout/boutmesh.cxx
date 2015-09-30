@@ -51,7 +51,7 @@
 
 //#define COMMDEBUG 1   // Uncomment to print communications debugging information
 
-BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s) {
+BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   if(options == NULL)
     options = Options::getRoot()->getSection("mesh");
   
@@ -71,8 +71,8 @@ BoutMesh::~BoutMesh() {
   clear_handles();
   
   // Delete the boundary regions
-  for(vector<BoundaryRegion*>::iterator it = boundary.begin(); it != boundary.end(); it++)
-    delete (*it);
+  for(const auto& bndry : boundary)
+    delete bndry;
   
   if(comm_x != MPI_COMM_NULL)
     MPI_Comm_free(&comm_x);
@@ -148,6 +148,9 @@ int BoutMesh::load() {
   GlobalNy = ny + 2*MYG;
   GlobalNz = MZ;
 
+  if(2*MXG >= nx)
+    throw BoutException("nx must be greater than 2*MXG");
+  
   // separatrix location
   if(Mesh::get(ixseps1, "ixseps1")) {
     ixseps1 = GlobalNx;
@@ -326,14 +329,10 @@ int BoutMesh::load() {
   }
   
   /// Get mesh options
-  OPTION(options, non_uniform,  false);
   OPTION(options, TwistShift,   false);
-  OPTION(options, TwistOrder,   0);
   OPTION(options, ShiftOrder,   0);
   OPTION(options, ShiftXderivs, false);
   OPTION(options, IncIntShear,  false);
-  OPTION(options, BoundaryOnCell, false); // Determine location of boundary
-  OPTION(options, StaggerGrids,   false); // Stagger grids
   OPTION(options, periodicX, false); // Periodic in X
   
   OPTION(options, async_send, false); // Whether to use asyncronous sends
@@ -362,13 +361,10 @@ int BoutMesh::load() {
     
     zperiod = ROUND(1.0 / (ZMAX - ZMIN));
   }
-
+  zlength = (ZMAX-ZMIN)*TWOPI;
+ 
   if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: ");
-    if(TwistOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", TwistOrder);
+    output.write("Applying Twist-Shift condition. Interpolation: FFT");
   }
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
@@ -388,64 +384,10 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
   
-  ///////////////// DIFFERENCING QUANTITIES ///////////////
-  
-  if(get(dx, "dx")) {
-    output.write("\tWARNING: differencing quantity 'dx' not found. Set to 1.0\n");
-    dx = 1.0;
-  }
-  if(get(dy, "dy")) {
-    output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
-    dy = 1.0;
-  }
-  if(get(dz, "dz")) {
-    // No dz in input
-    zlength = (ZMAX-ZMIN)*TWOPI;
-    dz = zlength/(ngz-1);
-  }else {
-    // Read dz from input
-    zlength = dz * (ngz-1);
-    ZMIN = 0.0;
-    ZMAX = zlength / TWOPI;
-  }
-
-  ///////////////// DIFFERENTIAL GEOMETRY /////////////////
-  
-  // Diagonal components of metric tensor g^{ij} (default to 1)
-  get(g11, "g11", 1.0);
-  get(g22, "g22", 1.0);
-  get(g33, "g33", 1.0);
-  
-  // Off-diagonal elements. Default to 0
-  get(g12, "g12", 0.0);
-  get(g13, "g13", 0.0);
-  get(g23, "g23", 0.0);
-  
-  // Check input metrics
-  if((!finite(g11)) || (!finite(g22)) || (!finite(g33))) {
-    throw BoutException("\tERROR: Diagonal metrics are not finite!\n");
-  }
-  if((min(g11) <= 0.0) || (min(g22) <= 0.0) || (min(g33) <= 0.0)) {
-    throw BoutException("\tERROR: Diagonal metrics are negative!\n");
-  }
-  if((!finite(g12)) || (!finite(g13)) || (!finite(g23))) {
-    throw BoutException("\tERROR: Off-diagonal metrics are not finite!\n");
-  }
-
   /// Set shift for radial derivatives
   if(get(zShift, "zShift")) {
     output.write("\tWARNING: Z shift for radial derivatives not found\n");
-    ShiftTorsion = zShift = 0.0;
-  }else if(get(ShiftTorsion, "ShiftTorsion")) {
-    output.write("\tWARNING: No Torsion specified for zShift. Derivatives may not be correct\n");
-    ShiftTorsion = 0.0;
-  }
-  
-  if(IncIntShear) {
-    if(get(IntShiftTorsion, "IntShiftTorsion")) {
-      output.write("\tWARNING: No Integrated torsion specified\n");
-      IntShiftTorsion = 0.0;
-    }
+    zShift = 0.0;
   }
 
   ShiftAngle.resize(ngx);
@@ -464,11 +406,11 @@ int BoutMesh::load() {
 
     if(YPROC(jyseps2_2) == PE_YIND) {
       for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
    
     }else if(YPROC(jyseps1_1+1) == PE_YIND) {
       for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
     }
     
     msg_stack.push("Creating core_comm for ShiftAngle");
@@ -512,51 +454,18 @@ int BoutMesh::load() {
     // Lower PF. Note by default no Twist-Shift used here, so need to switch on
     if(YPROC(jyseps1_1) == PE_YIND) {
       for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift[i][MYG+MYSUB-1] - zShift[i][MYG+MYSUB]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
       }
       TS_up_in = true; // Switch on twist-shift
       
     }else if(YPROC(jyseps2_2+1) == PE_YIND) {
       for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift[i][MYG-1] - zShift[i][MYG]; // Jump across boundary
+	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
       }
       TS_down_in = true;
     }
   }
-
-  /// Calculate contravariant metric components
-  if(calcCovariant())
-    throw BoutException("Error in calcCovariant call");
-
-  /// Calculate Jacobian and Bxy
-  if(jacobian())
-    throw BoutException("Error in jacobian call");
   
-  // Attempt to read J from the grid file
-  Field2D Jcalc = J;
-  if(get(J, "J")) {
-    output.write("\tWARNING: Jacobian 'J' not found. Calculating from metric tensor\n");
-    J = Jcalc;
-  }else {
-    // Compare calculated and loaded values  
-    output.write("\tMaximum difference in J is %e\n", max(abs(J - Jcalc)));
-    
-    // Re-evaluate Bxy using new J
-    Bxy = sqrt(g_22)/J;
-  }
-
-  // Attempt to read Bxy from the grid file
-  Field2D Bcalc = Bxy;
-  if(get(Bxy, "Bxy")) {
-    output.write("\tWARNING: Magnitude of B field 'Bxy' not found. Calculating from metric tensor\n");
-    Bxy = Bcalc;
-  }else {
-    output.write("\tMaximum difference in Bxy is %e\n", max(abs(Bxy - Bcalc)));
-    // Check Bxy
-    if(!finite(Bxy))
-      throw BoutException("\tERROR: Bxy not finite everywhere!\n");
-  }
-
   //////////////////////////////////////////////////////
   /// Communicator
   
@@ -897,36 +806,13 @@ int BoutMesh::load() {
 #endif
 
   //////////////////////////////////////////////////////
-  /// Calculate Christoffel symbols. Needs communication
-  if(geometry()) {
-    throw BoutException("Differential geometry failed\n");
-  }
-
+  
   if(periodicX) {
     FieldGroup g;
-    g.add(zShift, dx);
+    g.add(zShift);
     communicate(g);
   }
-
-  //////////////////////////////////////////////////////
-  /// Non-uniform meshes. Need to use DDX, DDY
   
-  if(non_uniform) {
-    Field2D d2x, d2y; // d^2 x / d i^2
-    // Read correction for non-uniform meshes
-    if(get(d2x, "d2x")) {
-      output.write("\tWARNING: differencing quantity 'd2x' not found. Calculating from dx\n");
-      d1_dx = DDX(1./dx)*dx; // d/di(1/dx)
-    }else
-      d1_dx = -d2x / (dx*dx);
-    
-    if(get(d2y, "d2y")) {
-      output.write("\tWARNING: differencing quantity 'd2y' not found. Calculating from dy\n");
-      d1_dy = DDY(1./dy)*dy; // d/di(1/dy)
-    }else
-      d1_dy = -d2y / (dy*dy);
-  }
-
   //////////////////////////////////////////////////////
   // Boundary regions
   if(!periodicX && (MXG > 0) ) {
@@ -967,8 +853,8 @@ int BoutMesh::load() {
 
   if(!boundary.empty()) {
     output << "Boundary regions in this processor: ";
-    for(vector<BoundaryRegion*>::iterator it=boundary.begin(); it != boundary.end(); it++) {
-      output << (*it)->label << ", ";
+    for(const auto& bndry : boundary) {
+      output << bndry->label << ", ";
     }
     output << endl;
   }else {
@@ -995,18 +881,6 @@ const int OUT_SENT_DOWN = 3;
 // X communication signals
 const int IN_SENT_OUT = 4;
 const int OUT_SENT_IN  = 5;
-
-int BoutMesh::communicate(FieldGroup &g) {
-  msg_stack.push("BoutMesh::communicate");
-  
-  // Send data
-  comm_handle c = send(g);
-  // Wait for data from other processors
-  int status =  wait(c);
-  
-  msg_stack.pop();
-  return status;
-}
 
 void BoutMesh::post_receive(CommHandle &ch) {
   BoutReal *inbuff;
@@ -1249,7 +1123,7 @@ comm_handle BoutMesh::send(FieldGroup &g) {
 int BoutMesh::wait(comm_handle handle) {
   if(handle == NULL)
     return 1;
-  
+
   CommHandle *ch = (CommHandle*) handle;
 
   if(!ch->in_progress)
@@ -1257,18 +1131,18 @@ int BoutMesh::wait(comm_handle handle) {
 
   /// Start timer
   Timer timer("comms");
-  
+
   ///////////// WAIT FOR DATA //////////////
-  
+
   int ind, len;
   MPI_Status status;
 
   if(ch->var_list.size() == 0) {
-    
+
     // Just waiting for a single MPI request
     MPI_Wait(ch->request, &status);
     free_handle(ch);
-    
+
     return 0;
   }
 
@@ -1304,8 +1178,8 @@ int BoutMesh::wait(comm_handle handle) {
     }
     if(ind != MPI_UNDEFINED)
       ch->request[ind] = MPI_REQUEST_NULL;
-  }while(ind != MPI_UNDEFINED);
-  
+  } while(ind != MPI_UNDEFINED);
+
   if(async_send) {
     /// Asyncronous sending: Need to check if sends have completed (frees MPI memory)
     MPI_Status status;
@@ -1325,53 +1199,48 @@ int BoutMesh::wait(comm_handle handle) {
   }
 
   // TWIST-SHIFT CONDITION
-  if(TwistShift && (TwistOrder == 0)) {
+  if(TwistShift) {
     int jx, jy;
-    
-    // Perform Twist-shift using shifting method (rather than in setStencil)
-    for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-      if((*it)->is3D()) {
-	
-	// Lower boundary
 
-	if(TS_down_in && (DDATA_INDEST  != -1)) {
-	  for(jx=0;jx<DDATA_XSPLIT;jx++)
-	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
-      
-	}
-	if(TS_down_out && (DDATA_OUTDEST  != -1)) {
-	  for(jx=DDATA_XSPLIT;jx<ngx; jx++)
-	    for(jy=0;jy != MYG; jy++)
-	      (*it)->shiftZ(jx, jy, ShiftAngle[jx]);
-	  
-	}
-	
-	// Upper boundary
-	
-	if(TS_up_in && (UDATA_INDEST  != -1)) {
-	  for(jx=0;jx<UDATA_XSPLIT; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
-	  
-	}
-	if(TS_up_out && (UDATA_OUTDEST  != -1)) {
-	  for(jx=UDATA_XSPLIT;jx<ngx; jx++)
-	    for(jy=ngy-MYG;jy != ngy; jy++)
-	      (*it)->shiftZ(jx, jy, -ShiftAngle[jx]);
-	  
-	}
+    // Perform Twist-shift using shifting method (rather than in setStencil)
+    for(const auto& var : ch->var_list) {
+      if(var->is3D()) {
+
+        // Lower boundary
+        if(TS_down_in && (DDATA_INDEST  != -1)) {
+          for(jx=0;jx<DDATA_XSPLIT;jx++)
+            for(jy=0;jy != MYG; jy++)
+              var->shiftZ(jx, jy, ShiftAngle[jx]);
+        }
+        if(TS_down_out && (DDATA_OUTDEST  != -1)) {
+          for(jx=DDATA_XSPLIT;jx<ngx; jx++)
+            for(jy=0;jy != MYG; jy++)
+              var->shiftZ(jx, jy, ShiftAngle[jx]);
+        }
+
+        // Upper boundary
+        if(TS_up_in && (UDATA_INDEST  != -1)) {
+          for(jx=0;jx<UDATA_XSPLIT; jx++)
+            for(jy=ngy-MYG;jy != ngy; jy++)
+              var->shiftZ(jx, jy, -ShiftAngle[jx]);
+        }
+        if(TS_up_out && (UDATA_OUTDEST  != -1)) {
+          for(jx=UDATA_XSPLIT;jx<ngx; jx++)
+            for(jy=ngy-MYG;jy != ngy; jy++)
+              var->shiftZ(jx, jy, -ShiftAngle[jx]);
+        }
       }
+    }
   }
 
 #ifdef CHECK
   // Keeping track of whether communications have been done
-  for(std::vector<FieldData*>::iterator it = ch->var_list.begin(); it != ch->var_list.end(); it++)
-    (*it)->doneComms();
+  for(const auto& var : ch->var_list)
+    var->doneComms();
 #endif
 
   free_handle(ch);
-  
+
   return 0;
 }
 
@@ -2240,27 +2109,25 @@ int BoutMesh::pack_data(vector<FieldData*> &var_list, int xge, int xlt, int yge,
   int jx, jy, jz;
   int len = 0;
   std::vector<FieldData*>::iterator it;
-  
+
   for(jx=xge; jx != xlt; jx++) {
-    
+
     /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
-	
-	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < ngz-1;jz++)
-	    len += (*it)->getData(jx,jy,jz,buffer+len);
-	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
-	  len += (*it)->getData(jx,jy,0,buffer+len);
+    for(const auto& var : var_list) {
+      if(var->is3D()) {
+        // 3D variable
+
+        for(jy=yge;jy < ylt;jy++)
+          for(jz=0;jz < ngz-1;jz++)
+            len += var->getData(jx,jy,jz,buffer+len);
+      } else {
+        // 2D variable
+        for(jy=yge;jy < ylt;jy++)
+          len += var->getData(jx,jy,0,buffer+len);
       }
     }
-    
   }
-  
+
   return(len);
 }
 
@@ -2273,24 +2140,21 @@ int BoutMesh::unpack_data(vector<FieldData*> &var_list, int xge, int xlt, int yg
   for(jx=xge; jx != xlt; jx++) {
 
     /// Loop over variables
-    for(it = var_list.begin(); it != var_list.end(); it++) {
-      if((*it)->is3D()) {
-	// 3D variable
-   
-	for(jy=yge;jy < ylt;jy++)
-	  for(jz=0;jz < ngz-1;jz++) {
-	    len += (*it)->setData(jx,jy,jz,buffer+len);
-	  }
-	
-      }else {
-	// 2D variable
-	for(jy=yge;jy < ylt;jy++)
-	  len += (*it)->setData(jx,jy,0,buffer+len);
+    for(const auto& var : var_list) {
+      if(var->is3D()) {
+        // 3D variable
+
+        for(jy=yge;jy < ylt;jy++)
+          for(jz=0;jz < ngz-1;jz++)
+            len += var->setData(jx,jy,jz,buffer+len);
+      } else {
+        // 2D variable
+        for(jy=yge;jy < ylt;jy++)
+          len += var->setData(jx,jy,0,buffer+len);
       }
     }
-    
   }
-  
+
   return(len);
 }
 
@@ -2310,212 +2174,6 @@ bool BoutMesh::periodicY(int jx, BoutReal &ts) const {
     return true;
   }
   return false;
-}
-
-const Field2D BoutMesh::averageX(const Field2D &f) {
-  static BoutReal *input = NULL, *result;
- 
-#ifdef CHECK
-  msg_stack.push("averageX(Field2D)");
-#endif
- 
-  if(input == NULL) {
-    input = new BoutReal[ngy];
-    result = new BoutReal[ngy];
-  }
- 
-  BoutReal **fd = f.getData();
-  
-  // Average on this processor
-  for(int y=0;y<ngy;y++) {
-    input[y] = 0.;
-    // Sum values, not including boundaries
-    for(int x=xstart;x<=xend;x++) {
-      input[y] += fd[x][y];
-    }
-    input[y] /= (xend - xstart + 1);
-  }
-
-  Field2D r;
-  r.allocate();
-  BoutReal **rd = r.getData();
-
-  int np;
-  MPI_Comm_size(comm_x, &np);
-  
-  if(np == 1) {
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        rd[x][y] = input[y];
-  }else {
-    MPI_Allreduce(input, result, ngy, MPI_DOUBLE, MPI_SUM, comm_x);
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        rd[x][y] = result[y] / (BoutReal) np;
-  }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return r;
-}
-
-const Field3D BoutMesh::averageX(const Field3D &f) {
-  static BoutReal **input = NULL, **result;
-
-#ifdef CHECK
-  msg_stack.push("averageX(Field3D)");
-#endif
-
-  if(input == NULL) {
-    input = rmatrix(ngy, ngz);
-    result = rmatrix(ngy, ngz);
-  }
-  
-  BoutReal ***fd = f.getData();
-  
-  // Average on this processor
-  for(int y=0;y<ngy;y++)
-    for(int z=0;z<ngz;z++) {
-      input[y][z] = 0.;
-      // Sum values, not including boundaries
-      for(int x=xstart;x<=xend;x++) {
-        input[y][z] += fd[x][y][z];
-      }
-      input[y][z] /= (xend - xstart + 1);
-    }
-  
-  Field3D r;
-  r.allocate();
-  BoutReal ***rd = r.getData();
-
-  int np;
-  MPI_Comm_size(comm_x, &np);
-  if(np > 1) {
-    MPI_Allreduce(*input, *result, ngy*ngz, MPI_DOUBLE, MPI_SUM, comm_x);
-    
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          rd[x][y][z] = result[y][z] / (BoutReal) np;
-        }
-  }else {
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          rd[x][y][z] = input[y][z];
-        }
-  }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return r;
-}
-
-const Field2D BoutMesh::averageY(const Field2D &f) {
-  static BoutReal *input = NULL, *result;
- 
-#ifdef CHECK
-  msg_stack.push("averageY(Field2D)");
-#endif
- 
-  if(input == NULL) {
-    input = new BoutReal[ngx];
-    result = new BoutReal[ngx];
-  }
- 
-  BoutReal **fd = f.getData();
-  
-  // Average on this processor
-  for(int x=0;x<ngx;x++) {
-    input[x] = 0.;
-    // Sum values, not including boundaries
-    for(int y=ystart;y<=yend;y++) {
-      input[x] += fd[x][y];
-    }
-    input[x] /= (yend - ystart + 1);
-  }
-
-  Field2D r;
-  r.allocate();
-  BoutReal **rd = r.getData();
-
-  int np;
-  MPI_Comm_size(comm_inner, &np);
-  
-  if(np == 1) {
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        rd[x][y] = input[x];
-  }else {
-    MPI_Allreduce(input, result, ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        rd[x][y] = result[x] / (BoutReal) np;
-  }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return r;
-}
-
-const Field3D BoutMesh::averageY(const Field3D &f) {
-  static BoutReal **input = NULL, **result;
-
-#ifdef CHECK
-  msg_stack.push("averageY(Field3D)");
-#endif
-
-  if(input == NULL) {
-    input = rmatrix(ngx, ngz);
-    result = rmatrix(ngx, ngz);
-  }
-  
-  BoutReal ***fd = f.getData();
-  
-  // Average on this processor
-  for(int x=0;x<ngx;x++)
-    for(int z=0;z<ngz;z++) {
-      input[x][z] = 0.;
-      // Sum values, not including boundaries
-      for(int y=ystart;y<=yend;y++) {
-        input[x][z] += fd[x][y][z];
-      }
-      input[x][z] /= (yend - ystart + 1);
-    }
-  
-  Field3D r;
-  r.allocate();
-  BoutReal ***rd = r.getData();
-
-  int np;
-  MPI_Comm_size(comm_inner, &np);
-  if(np > 1) {
-    MPI_Allreduce(*input, *result, ngx*ngz, MPI_DOUBLE, MPI_SUM, comm_inner);
-    
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          rd[x][y][z] = result[x][z] / (BoutReal) np;
-        }
-  }else {
-    for(int x=0;x<ngx;x++)
-      for(int y=0;y<ngy;y++)
-        for(int z=0;z<ngz;z++) {
-          rd[x][y][z] = input[x][z];
-        }
-  }
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
-  return r;
 }
 
 int BoutMesh::ySize(int xpos) const {
@@ -2617,7 +2275,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_inner);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-	  result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]);
+	  result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z));
           //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
@@ -2625,7 +2283,7 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_inner-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-	  result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]);
+	  result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z));
           //result[x][y][z] = f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
@@ -2636,14 +2294,14 @@ const Field3D BoutMesh::smoothSeparatrix(const Field3D &f) {
       int x = XLOCAL(ixseps_outer);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = 0.5*(f[x][y][z] + f[x-1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x-1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
     if(XPROC(ixseps_outer-1) == PE_XIND) {
       int x = XLOCAL(ixseps_outer-1);
       for(int y=0;y<ngy;y++)
         for(int z=0;z<ngz;z++) {
-          result[x][y][z] = 0.5*(f[x][y][z] + f[x+1][y][z]); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
+          result(x,y,z) = 0.5*(f(x,y,z) + f(x+1,y,z)); //f[x-1][y][z] - 2.*f[x][y][z] + f[x+1][y][z];
         }
     }
   }
@@ -2714,25 +2372,7 @@ void BoutMesh::outputVars(Datafile &file) {
   file.add(ZMAX,  "ZMAX",  0);
   file.add(ZMIN,  "ZMIN",  0);
   
-  file.add(dx,    "dx",    0);
-  file.add(dy,    "dy",    0);
-  file.add(dz,    "dz",    0);
-  
-  file.add(g11,   "g11",   0);
-  file.add(g22,   "g22",   0);
-  file.add(g33,   "g33",   0);
-  file.add(g12,   "g12",   0);
-  file.add(g13,   "g13",   0);
-  file.add(g23,   "g23",   0);
-  
-  file.add(g_11,  "g_11",  0);
-  file.add(g_22,  "g_22",  0);
-  file.add(g_33,  "g_33",  0);
-  file.add(g_12,  "g_12",  0);
-  file.add(g_13,  "g_13",  0);
-  file.add(g_23,  "g_23",  0);
-  
-  file.add(J,     "J",     0);
+  coordinates()->outputVars(file);
 }
 
 
@@ -2741,8 +2381,7 @@ void BoutMesh::outputVars(Datafile &file) {
 // Developed by T. Rhee and S. S. Kim
 //================================================================
 
-void BoutMesh::slice_r_y(BoutReal *fori, BoutReal * fxy, int ystart, int ncy)
-{
+void BoutMesh::slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy) {
   int i,j;
   for(i=0;i<ncy;i++)
       fxy[i]=fori[i+ystart];
@@ -2806,8 +2445,8 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 
   for(jx=0;jx<ncx;jx++){ //start x
      //saving the real 2D data
-     slice_r_y(*(var.getData()+jx),f1d,ystart,ncy); // 2d -> 1d
-
+     slice_r_y(&var(jx,0),f1d,ystart,ncy); // 2d -> 1d
+     
      for(jy=0;jy<ncy;jy++)
        ayn[jy]=dcomplex(f1d[jy],0.);
 
@@ -2852,41 +2491,6 @@ const Field2D BoutMesh::lowPass_poloidal(const Field2D &var,int mmax)
 // Developed by T. Rhee and S. S. Kim
 //================================================================*/
 
-//BoutReal Vol_Average(const Field2D &var);
-BoutReal BoutMesh::Average_XY(const Field2D &var)
-{
-  Field2D result;
-  BoutReal Vol_Loc, Vol_Glb;
-  int i;
-  result.allocate();  //initialize
-  result=averageY(var);
-
-  Vol_Loc = 0.;
-  Vol_Glb = 0.;
-
-  for (i=xstart;i<=xend;i++)
-      Vol_Loc +=  result[i][0];
-
-  MPI_Allreduce(&Vol_Loc,&Vol_Glb,1,MPI_DOUBLE,MPI_SUM,comm_x);
-  Vol_Glb /= (BoutReal)(nx - 2*MXG);
-
-  return Vol_Glb;
-}
-BoutReal BoutMesh::Vol_Integral(const Field2D &var)
-{
-  Field2D result;
-  BoutReal Int_Glb;
-  result.allocate();  //initialize
-  result = J * var * dx * dy;
-
-  Int_Glb = 0.;
-  Int_Glb = Average_XY(result);
-  Int_Glb *= (BoutReal) ( (nx - 2*MXG)*ny )*PI * 2.;
-
-  return Int_Glb;
-}
-
-
 const Field3D BoutMesh::Switch_YZ(const Field3D &var)
 {
   static BoutReal **ayz = (BoutReal **) NULL;
@@ -2912,7 +2516,7 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     //Field 3D to rmatrix of local
     for (i=0;i<ncy;i++)
       for(j = 0;j<ncz;j++)
-        ayz[i][j]=var[ix][i+ystart][j];
+        ayz[i][j]=var(ix,i+ystart,j);
 
     //Collect to rmatrix of global from local
     MPI_Allgather(ayz[0],ncy*ncz,MPI_DOUBLE,ayz_all[0],ncy*ncz,
@@ -2921,17 +2525,16 @@ const Field3D BoutMesh::Switch_YZ(const Field3D &var)
     //Y 2 Z switch
     for(i=ystart;i<=yend;i++)
       for(j=0;j<ncz;j++)
-        result[ix][i][j]=ayz_all[j][YGLOBAL(i)];
+        result(ix,i,j)=ayz_all[j][YGLOBAL(i)];
 
     //boundary at ngz
     for(i=0;i<ncy;i++)
-        result[ix][i+ystart][ncz]=result[ix][i+ystart][0];
+      result(ix,i+ystart,ncz)=result(ix,i+ystart,0);
   }
   return result;
 }
 
-const Field3D BoutMesh::Switch_XZ(const Field3D &var)
-{   
+const Field3D BoutMesh::Switch_XZ(const Field3D &var) {   
     if(MX != ngz-1){
         throw new BoutException("X and Z dimension must be the same to use Switch_XZ"); 
     }
@@ -2955,34 +2558,34 @@ const Field3D BoutMesh::Switch_XZ(const Field3D &var)
        
     // Put input data into buffer.  X needs to be contiguous in memory
     for (i=0; i<ncx ; i++){
-        for (j=0; j<ncy ; j++){
-            for (k=0; k<ncz ; k++){
-                buffer[k][j][i] = var[MXG+i][MYG+j][k] ;
-                // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
-            }
-        }
+      for (j=0; j<ncy ; j++){
+	for (k=0; k<ncz ; k++){
+	  buffer[k][j][i] = var(MXG+i,MYG+j,k) ;
+	  // sendbuffer2[i + ncx*j + ncx*ncy*k] = var[MXG+i][MYG+j][k] ;
+	}
+      }
     }
     
     int sendcount = ncx*ncy*ncz/NXPE ;
 
-    MPI_Alltoall(MPI_IN_PLACE, sendcount,  MPI_DOUBLE, buffer[0][0], sendcount , MPI_DOUBLE, getXcomm()) ;
+    MPI_Alltoall(MPI_IN_PLACE, sendcount,  MPI_DOUBLE, buffer[0][0], sendcount , MPI_DOUBLE, Mesh::getXcomm()) ;
 
     // Need to transpose on each process appropriately.  
     for (i=0; i < NXPE; i++){
-        for (j=0; j<ncx ; j++){
-            for (k=0; k<ncy ; k++){
-                for (l=0; l<ncx ; l++){
-                    result[MXG+j][MYG+k][l+i*ncx] = buffer[j+i*ncx][k][l] ;
-                }
-            }
-        }
+      for (j=0; j<ncx ; j++){
+	for (k=0; k<ncy ; k++){
+	  for (l=0; l<ncx ; l++){
+	    result(MXG+j,MYG+k,l+i*ncx) = buffer[j+i*ncx][k][l] ;
+	  }
+	}
+      }
     }
     
     // z boundary at ngz  
     for (i=0; i<ncx ; i++){
-        for (j=0; j<ncy ; j++){
-            result[MXG+i][MYG+j][ncz] = result[MXG+i][MYG+j][0] ;
-        }
+      for (j=0; j<ncy ; j++){
+	result(MXG+i,MYG+j,ncz) = result(MXG+i,MYG+j,0) ;
+      }
     }
 
     return result;

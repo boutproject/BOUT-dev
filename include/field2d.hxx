@@ -36,7 +36,11 @@ class Field3D; //#include "field3d.hxx"
 #include "fieldperp.hxx"
 #include "stencils.hxx"
 
+#include "bout/dataiterator.hxx"
+
 #include "bout/deprecated.hxx"
+
+#include "bout/field_visitor.hxx"
 
 #include <stack>
 using std::stack;
@@ -54,15 +58,16 @@ class Field2D : public Field, public FieldData {
   Field2D(BoutReal val);
   ~Field2D();
 
+  /// Data type
+  using value_type = BoutReal;
+  
   DEPRECATED(Field2D* clone() const);
-
-  BoutReal **getData() const; // Remove this!
   
   static void cleanup(); // Frees all memory
 
   /// Ensure data is allocated
   void allocate();
-  bool isAllocated() { return data !=  NULL; } ///< Test if data is allocated
+  bool isAllocated() const { return data !=  NULL; } ///< Test if data is allocated
 
   /// Return a pointer to the time-derivative field
   Field2D* timeDeriv();
@@ -72,11 +77,57 @@ class Field2D : public Field, public FieldData {
   Field2D & operator=(const Field2D &rhs);
   Field2D & operator=(const BoutReal rhs);
 
-  // Data indexing
-  BoutReal* operator[](int jx) const;
-  BoutReal& operator()(int jx, int jy);
-  const BoutReal& operator()(int jx, int jy) const;
+  /////////////////////////////////////////////////////////
+  // Data access
 
+  const DataIterator iterator() const;
+
+  const DataIterator begin() const;
+  const DataIterator end() const;
+
+  inline BoutReal& operator[](DataIterator &d) {
+    return operator()(d.x, d.y);
+  }
+  inline const BoutReal& operator[](DataIterator &d) const {
+    return operator()(d.x, d.y);
+  }
+  inline BoutReal& operator[](Indices &i) {
+    return operator()(i.x, i.y);
+  }
+  inline const BoutReal& operator[](Indices &i) const {
+    return operator()(i.x, i.y);
+  }
+  
+  inline BoutReal& operator()(int jx, int jy) {
+#if CHECK > 2
+    if(!isAllocated())
+      throw BoutException("Field2D: () operator on empty data");
+    if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                          jx, jy, mesh->ngx, mesh->ngy);
+#endif
+  
+    return data[jx][jy];
+  }
+  inline const BoutReal& operator()(int jx, int jy) const {
+    #if CHECK > 2
+    if(!isAllocated())
+      throw BoutException("Field2D: () operator on empty data");
+    if((jx < 0) || (jx >= mesh->ngx) || (jy < 0) || (jy >= mesh->ngy) )
+      throw BoutException("Field2D: (%d, %d) index out of bounds (%d , %d)\n", 
+                          jx, jy, mesh->ngx, mesh->ngy);
+#endif
+  
+    return data[jx][jy];
+  }
+
+  BoutReal& operator()(int jx, int jy, int jz) {
+    return operator()(jx, jy);
+  }
+  const BoutReal& operator()(int jx, int jy, int jz) const {
+    return operator()(jx, jy);
+  }
+  
   Field2D & operator+=(const Field2D &rhs);
   Field2D & operator+=(const BoutReal rhs);
   Field2D & operator-=(const Field2D &rhs);
@@ -85,8 +136,6 @@ class Field2D : public Field, public FieldData {
   Field2D & operator*=(const BoutReal rhs);
   Field2D & operator/=(const Field2D &rhs);
   Field2D & operator/=(const BoutReal rhs);
-  Field2D & operator^=(const Field2D &rhs);
-  Field2D & operator^=(const BoutReal rhs);
   
   // Binary operators
 
@@ -99,8 +148,6 @@ class Field2D : public Field, public FieldData {
   const Field2D operator*(const BoutReal rhs) const;
   const Field2D operator/(const Field2D &other) const;
   const Field2D operator/(const BoutReal rhs) const;
-  const Field2D operator^(const Field2D &other) const;
-  const Field2D operator^(const BoutReal rhs) const;
 
   // Left binary operators
 
@@ -108,15 +155,12 @@ class Field2D : public Field, public FieldData {
   const Field3D operator-(const Field3D &other) const;
   const Field3D operator*(const Field3D &other) const;
   const Field3D operator/(const Field3D &other) const;
-  const Field3D operator^(const Field3D &other) const;
 
   const FieldPerp operator+(const FieldPerp &other) const;
   const FieldPerp operator-(const FieldPerp &other) const;
   const FieldPerp operator*(const FieldPerp &other) const;
   const FieldPerp operator/(const FieldPerp &other) const;
   friend const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
-  const FieldPerp operator^(const FieldPerp &other) const;
-  friend const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
     
   // Stencils
 
@@ -127,7 +171,7 @@ class Field2D : public Field, public FieldData {
   void setXArray(int y, int z, const rvec &xv);
   void setYArray(int x, int z, const rvec &yv);
 
-  void setStencil(bstencil *fval, bindex *bx) const;
+  //void setStencil(bstencil *fval, bindex *bx) const;
   void setXStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setXStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
@@ -135,30 +179,11 @@ class Field2D : public Field, public FieldData {
   void setYStencil(forward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setYStencil(backward_stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
   void setZStencil(stencil &fval, const bindex &bx, CELL_LOC loc = CELL_DEFAULT) const;
-
-  // Functions
   
-  const Field2D sqrt() const;
-  const Field2D abs() const;
-  BoutReal min(bool allpe=false) const;
-  BoutReal max(bool allpe=false) const;
-  bool finite() const;
-  
-  friend const Field2D exp(const Field2D &f);
-  friend const Field2D log(const Field2D &f);
-  
-  friend const Field2D sin(const Field2D &f);
-  friend const Field2D cos(const Field2D &f);
-  friend const Field2D tan(const Field2D &f);
-
-  friend const Field2D sinh(const Field2D &f);
-  friend const Field2D cosh(const Field2D &f);
-  friend const Field2D tanh(const Field2D &f);
-
-  bool is_const;
-  BoutReal value;
-
   // FieldData virtual functions
+
+  /// Visitor pattern support
+  void accept(FieldVisitor &v) override {v.accept(*this);}
   
   bool isReal() const   { return true; }         // Consists of BoutReal values
   bool is3D() const     { return false; }        // Field is 2D
@@ -171,8 +196,7 @@ class Field2D : public Field, public FieldData {
 
   bool ioSupport() { return true; } ///< This class supports I/O operations
   BoutReal *getData(int component) { 
-    BoutReal **d = getData();
-    return *d;
+    return data[0];
   }
   void zeroComponent(int component){
     *this = 0.0;
@@ -217,16 +241,50 @@ const Field2D operator/(const BoutReal lhs, const Field2D &rhs);
 const Field2D operator^(const BoutReal lhs, const Field2D &rhs);
 
 // Non-member functions
+
+
+/// Square
 const Field2D SQ(const Field2D &f);
+
+/// Square root
 const Field2D sqrt(const Field2D &f);
+
+/// Absolute value
 const Field2D abs(const Field2D &f);
+
+/// Minimum over field. By default only on this processor
 BoutReal min(const Field2D &f, bool allpe=false);
+
+/// Maximum over field. By default only on this processor
 BoutReal max(const Field2D &f, bool allpe=false);
+
+/// Test if all values of this field are finite
 bool finite(const Field2D &f);
 
+/// Exponential
+const Field2D exp(const Field2D &f);
+
+/// Natural logarithm
+const Field2D log(const Field2D &f);
+  
+const Field2D sin(const Field2D &f);
+const Field2D cos(const Field2D &f);
+const Field2D tan(const Field2D &f);
+
+const Field2D sinh(const Field2D &f);
+const Field2D cosh(const Field2D &f);
+const Field2D tanh(const Field2D &f);
+
+/// Make an independent copy of field f
 const Field2D copy(const Field2D &f);
 
+/// Sets a floor on var, so minimum of the return value is >= f
 const Field2D floor(const Field2D &var, BoutReal f);
+
+/// Power, lhs ** rhs
+Field2D pow(const Field2D &lhs, const Field2D &rhs);
+Field2D pow(const Field2D &lhs, BoutReal rhs);
+Field2D pow(BoutReal lhs, const Field2D &rhs);
 
 /*!
  * @brief Returns a reference to the time-derivative of a field

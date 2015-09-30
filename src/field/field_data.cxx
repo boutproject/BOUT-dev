@@ -12,8 +12,8 @@ FieldData::FieldData() : boundaryIsCopy(false), boundaryIsSet(true) {
 FieldData::~FieldData() {
   if(!boundaryIsCopy) {
     // Delete the boundary operations
-    for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++)
-      delete (*it);
+    for(const auto& bndry : bndry_op)
+      delete bndry;
   }
 }
 
@@ -21,13 +21,10 @@ void FieldData::setBoundary(const string &name) {
   /// Get the boundary factory (singleton)
   BoundaryFactory *bfact = BoundaryFactory::getInstance();
   
-  /// Get the mesh boundary regions
-  vector<BoundaryRegion*> reg = mesh->getBoundaries();
-
   output << "Setting boundary for variable " << name << endl;
   /// Loop over the mesh boundary regions
-  for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-    BoundaryOp* op = bfact->createFromOptions(name, (*it));
+  for(const auto& reg : mesh->getBoundaries()) {
+    BoundaryOp* op = bfact->createFromOptions(name, reg);
     if(op != NULL)
       bndry_op.push_back(op);
     output << endl;
@@ -45,8 +42,8 @@ void FieldData::setBoundary(const string &region, BoundaryOp *op) {
   
 
   /// Find if we're replacing an existing boundary
-  for(vector<BoundaryOp*>::iterator it = bndry_op.begin(); it != bndry_op.end(); it++) {
-    if( (*it)->bndry == op->bndry ) {
+  for(const auto& bndry : bndry_op) {
+    if( bndry->bndry == op->bndry ) {
       // Replacing this boundary
       output << "Replacing ";
     }
@@ -68,12 +65,10 @@ void FieldData::addBndryFunction(FuncPtr userfunc, BndryLoc location){
 
 void FieldData::addBndryGenerator(FieldGenerator* gen, BndryLoc location){
   if(location == BNDRY_ALL){
-    vector<BoundaryRegion*> reg = mesh->getBoundaries();
-    for(vector<BoundaryRegion*>::iterator it=reg.begin(); it != reg.end(); it++) {
-      bndry_generator[(*it)->location] = gen;
+    for(const auto& reg : mesh->getBoundaries()) {
+      bndry_generator[reg->location] = gen;
     }
-  }
-  else{
+  } else {
     bndry_generator[location] = gen;
   }
 }

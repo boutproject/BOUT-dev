@@ -97,6 +97,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
   Field3D result;
   result.allocate();
   
+  Coordinates *coord = mesh->coordinates();
   
   // Create cyclic reduction object
   CyclicReduce<dcomplex> *cr = 
@@ -128,23 +129,23 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Take Fourier transform 
     for(int y=0;y<mesh->ngy-4;y++)
-      rfft(f[x][y+2], mesh->ngz-1, rhs[y+y0]);
+      rfft(f(x,y+2), mesh->ngz-1, rhs[y+y0]);
     
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
-      BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      BoutReal kwave=k*2.0*PI/coord->zlength; // wave number is 1/[rad]
       for(int y=0;y<mesh->ngy-4;y++) {
         
 	BoutReal acoef = A(x, y+2);                     // Constant
-	BoutReal bcoef = B(x, y+2) / mesh->g_22(x,y+2); // d2dy2
+	BoutReal bcoef = B(x, y+2) / coord->g_22(x,y+2); // d2dy2
         BoutReal ccoef = C(x, y+2);                     // d2dydz
         BoutReal dcoef = D(x, y+2);                     // d2dz2
         BoutReal ecoef = E(x, y+2);                     // ddy
 	
-        bcoef /= SQ(mesh->dy(x, y+2));
-        ccoef /= mesh->dy(x,y+2)*mesh->dz;
-        dcoef /= SQ(mesh->dz);
-        ecoef /= mesh->dy(x,y+2);
+        bcoef /= SQ(coord->dy(x, y+2));
+        ccoef /= coord->dy(x,y+2)*coord->dz;
+        dcoef /= SQ(coord->dz);
+        ecoef /= coord->dy(x,y+2);
         
         //           const     d2dy2        d2dydz             d2dz2           ddy
         //           -----     -----        ------             -----           ---
@@ -163,14 +164,14 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       MPI_Comm_size(surf.communicator(), &np);
       if(rank == 0) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          BoutReal kwave=k*2.0*PI/coord->zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a[k][0] *= phase;
         }
       }
       if(rank == np-1) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          BoutReal kwave=k*2.0*PI/coord->zlength; // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c[k][mesh->ngy-5] *= phase;
         }
@@ -213,7 +214,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Inverse Fourier transform 
     for(int y=0;y<size;y++)
-      irfft(rhs[y], mesh->ngz-1, result[x][y+2-y0]);
+      irfft(rhs[y], mesh->ngz-1, result(x,y+2-y0));
     
   }
   

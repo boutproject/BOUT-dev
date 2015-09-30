@@ -45,6 +45,11 @@ const Field3D averageY(const Field3D &f);
 const Field2D averageX(const Field2D &f);
 const Field3D averageX(const Field3D &f);
 
+/// Volume integral of Field2D variable
+BoutReal Average_XY(const Field2D &var);
+BoutReal Vol_Integral(const Field2D &var);
+
+
 /// Non-linear filter to remove grid-scale oscillations
 const Field3D nl_filter_x(const Field3D &f, BoutReal w=1.0);
 const Field3D nl_filter_y(const Field3D &f, BoutReal w=1.0);

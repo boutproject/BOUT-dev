@@ -83,6 +83,9 @@ AC_DEFUN([CREATE_DIR],
           fi
         ])
 
+# Enable C++11 support
+CXXFLAGS="$CXXFLAGS -std=c++11"
+
 #############################################################
 # General Options
 #############################################################
@@ -1329,9 +1332,9 @@ AC_CHECK_HEADERS([malloc.h stdlib.h string.h strings.h])
 
 # Checks for library functions.
 #AC_FUNC_ERROR_AT_LINE
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
-AC_FUNC_VPRINTF
+#AC_FUNC_MALLOC
+#AC_FUNC_REALLOC
+#AC_FUNC_VPRINTF
 #AC_CHECK_FUNCS([pow sqrt strcasecmp])
 
 # Check for OpenMP support

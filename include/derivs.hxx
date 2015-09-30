@@ -33,8 +33,6 @@
 
 #include "bout_types.hxx" // See this for codes
 
-int derivs_init();
-
 ////////// FIRST DERIVATIVES //////////
 
 const Field3D DDX(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);

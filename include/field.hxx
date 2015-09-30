@@ -70,7 +70,7 @@ class Field {
     // Does nothing by default
   }
 
-  virtual void setStencil(bstencil *val, bindex *bx) const = 0;
+  //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
 
   // These routines only set a stencil in one dimension
   // Should be faster, and replaces the above SetStencil function.

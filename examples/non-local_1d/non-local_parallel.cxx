@@ -103,7 +103,6 @@ NonLocalParallel::~NonLocalParallel() {
   if (is_lower_boundary) {
     delete [] exp_total_dimensionless_length_over_eigenvalue;
   }
-  MPI_Comm_free(&comm_yprocs);
   MPI_Comm_free(&comm_yprocs_minusone);
 }
 
@@ -543,23 +542,6 @@ void NonLocalParallel::initialise(const BoutReal &pass_electron_charge, const Bo
   {
     MPI_Group group_yprocs;
     
-    int n_yprocs = mesh->getNYPE();
-    int * indices_yprocs = new int[n_yprocs];
-    for (int i=0; i<n_yprocs; i++)
-      indices_yprocs[i] = i * mesh->getNXPE() + mesh->getXProcIndex();
-    
-    MPI_Group group_world;
-    MPI_Comm_group(BoutComm::get(), &group_world); // Get the entire group
-    MPI_Group_incl(group_world, n_yprocs, indices_yprocs, &group_yprocs);
-    MPI_Group_free(&group_world);
-    delete [] indices_yprocs;
-    
-    MPI_Comm_create(BoutComm::get(), group_yprocs, &comm_yprocs);
-    MPI_Group_free(&group_yprocs);
-  }
-  {
-    MPI_Group group_yprocs;
-    
     int n_yprocs = mesh->getNYPE()-1;
     int * indices_yprocs = new int[n_yprocs];
     for (int i=0; i<n_yprocs; i++)
@@ -684,18 +666,21 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_centre(const Field3D &n_
     calc_index(position);
     interp_coefficients = cubic_spline_inverse_lambdaC.coefficients(position);
     // d/dy(delta) = 1/lambdaC = a + b*t + c*t^2 + d*t^3; t=(ind-jy)=(y-y0)/(sqrt(g_22)*dy); ind is a notional continuous variable equal to jy at the gridpoints so at jy+1 t=1
+
+    // Fetch coordinate system
+    Coordinates *coord = mesh->coordinates();
     dimensionless_length_deltas_above[*position] /* = dy/dt*(a + 1/2*b + 1/3*c + 1/4*d) */
-						    = mesh->dy[position->jx][position->jy]*sqrt(0.5*(mesh->g_22[position->jx][position->jy]+mesh->g_22[position->jx][position->jyp]))
-						      *(interp_coefficients[0] + interp_coefficients[1]/2. + interp_coefficients[2]/3. + interp_coefficients[3]/4.);
+      = coord->dy(position->jx,position->jy)*sqrt(0.5*(coord->g_22(position->jx,position->jy)+coord->g_22(position->jx,position->jyp)))
+      *(interp_coefficients[0] + interp_coefficients[1]/2. + interp_coefficients[2]/3. + interp_coefficients[3]/4.);
     next_index_y(position);
     
     do{
       interp_coefficients = cubic_spline_inverse_lambdaC.coefficients(position);
       // d/dy(delta) = 1/lambdaC = a + b*t + c*t^2 + d*t^3; t=(ind-jy)=(y-y0)/(sqrt(g_22)*dy); ind is a notional continuous variable equal to jy at the gridpoints so at jy+1 t=1
       dimensionless_length_deltas_above[*position] /* = dy/dt*(a + 1/2*b + 1/3*c + 1/4*d) */
-						      = mesh->dy[position->jx][position->jy]*sqrt(0.5*(mesh->g_22[position->jx][position->jy]+mesh->g_22[position->jx][position->jyp]))
-							*(interp_coefficients[0] + interp_coefficients[1]/2. + interp_coefficients[2]/3. + interp_coefficients[3]/4.);
-	increasing_dimensionless_length[position->jx][position->jyp][position->jz] = increasing_dimensionless_length[*position] + dimensionless_length_deltas_above[*position];
+	= coord->dy(position->jx,position->jy)*sqrt(0.5*(coord->g_22(position->jx,position->jy)+coord->g_22(position->jx,position->jyp)))
+	*(interp_coefficients[0] + interp_coefficients[1]/2. + interp_coefficients[2]/3. + interp_coefficients[3]/4.);
+      increasing_dimensionless_length(position->jx,position->jyp,position->jz) = increasing_dimensionless_length[*position] + dimensionless_length_deltas_above[*position];
     } while (next_index_y(position));
     
   } while (next_indexperp(position));
@@ -1229,6 +1214,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 								  , const Field3D &viscosity_boundary_condition
 								#endif
 							      ) {
+
+  Coordinates *coord = mesh->coordinates();
   
   lambdaC_inverse = n_electron * pow(electron_charge,4) * logLambda / 12 / pow(PI,1.5) / pow(epsilon_0,2) / (T_electron^2);
   
@@ -1250,8 +1237,8 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     for (int jz=0; jz<mesh->ngz-1; jz++) {
       for (int jy=mesh->ystart-1; jy>=0; jy--) {
 	#ifdef DRIVE_GRADT
-	  gradT_electron[rlow.ind][jy][jz]=(-93.*T_electron[rlow.ind][jy][jz] + 229.*T_electron[rlow.ind][jy+1][jz] - 225.*T_electron[rlow.ind][jy+2][jz] + 111.*T_electron[rlow.ind][jy+3][jz] - 22.*T_electron[rlow.ind][jy+4][jz])/48./mesh->dy[rlow.ind][jy]/sqrt((mesh->g_22[rlow.ind][jy] + mesh->g_22[rlow.ind][jy+1] + mesh->g_22[rlow.ind][jy+2] + mesh->g_22[rlow.ind][jy+3] + mesh->g_22[rlow.ind][jy+4])/5.);
-	  if (abs(gradT_driveterm[rlow.ind][jy][jz])>1.e37 || gradT_driveterm[rlow.ind][jy][jz]!=gradT_driveterm[rlow.ind][jy][jz]) gradT_driveterm[rlow.ind][jy][jz] = 1.e37;
+	gradT_electron(rlow.ind,jy,jz)=(-93.*T_electron(rlow.ind,jy,jz) + 229.*T_electron(rlow.ind,jy+1,jz) - 225.*T_electron(rlow.ind,jy+2,jz) + 111.*T_electron(rlow.ind,jy+3,jz) - 22.*T_electron(rlow.ind,jy+4,jz))/48./coord->dy(rlow.ind,jy)/sqrt((coord->g_22(rlow.ind,jy) + coord->g_22(rlow.ind,jy+1) + coord->g_22(rlow.ind,jy+2) + coord->g_22(rlow.ind,jy+3) + coord->g_22(rlow.ind,jy+4))/5.);
+	if (abs(gradT_driveterm(rlow.ind,jy,jz))>1.e37 || gradT_driveterm(rlow.ind,jy,jz)!=gradT_driveterm(rlow.ind,jy,jz)) gradT_driveterm(rlow.ind,jy,jz) = 1.e37;
 	#endif
 	#ifdef DRIVE_GRADV
 	  // Nothing to be done here: gradV_driveterm is CELL_CENTRE and the guard cell values are not used
@@ -1262,14 +1249,17 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
 	if (abs(lambdaC_inverse[rlow.ind][jy][jz])>1.e37 || lambdaC_inverse[rlow.ind][jy][jz]!=lambdaC_inverse[rlow.ind][jy][jz]) lambdaC_inverse[rlow.ind][jy][jz] = 1.e37;
       }
     }
+
+  
+
   for (RangeIterator rup = mesh->iterateBndryUpperY(); !rup.isDone(); rup++)
     for (int jz=0; jz<mesh->ngz-1; jz++) {
       #ifdef DRIVE_GRADT
-	gradT_electron[rup.ind][mesh->yend][jz] = (T_electron[rup.ind][mesh->yend-2][jz]-27.*T_electron[rup.ind][mesh->yend-1][jz]+27.*T_electron[rup.ind][mesh->yend][jz]-T_electron[rup.ind][mesh->yend+1][jz])/24./mesh->dy[rup.ind][mesh->yend+1]/sqrt((mesh->g_22[rup.ind][mesh->yend-1] + mesh->g_22[rup.ind][mesh->yend] + mesh->g_22[rup.ind][mesh->yend+1] + mesh->g_22[rup.ind][mesh->yend+2])/4.);
+	gradT_electron[rup.ind][mesh->yend][jz] = (T_electron[rup.ind][mesh->yend-2][jz]-27.*T_electron[rup.ind][mesh->yend-1][jz]+27.*T_electron[rup.ind][mesh->yend][jz]-T_electron[rup.ind][mesh->yend+1][jz])/24./coord->dy[rup.ind][mesh->yend+1]/sqrt((coord->g_22[rup.ind][mesh->yend-1] + coord->g_22[rup.ind][mesh->yend] + coord->g_22[rup.ind][mesh->yend+1] + coord->g_22[rup.ind][mesh->yend+2])/4.);
       #endif
       for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
 	#ifdef DRIVE_GRADT
-	  gradT_electron[rup.ind][jy][jz]=(93.*T_electron[rup.ind][jy-1][jz] - 229.*T_electron[rup.ind][jy-2][jz] + 225.*T_electron[rup.ind][jy-3][jz] - 111.*T_electron[rup.ind][jy-4][jz] + 22.*T_electron[rup.ind][jy-5][jz])/48./mesh->dy[rup.ind][jy-1]/sqrt((mesh->g_22[rup.ind][jy-1] + mesh->g_22[rup.ind][jy-2] + mesh->g_22[rup.ind][jy-3] + mesh->g_22[rup.ind][jy-4] + mesh->g_22[rup.ind][jy-5])/5.);
+	gradT_electron[rup.ind][jy][jz]=(93.*T_electron(rup.ind,jy-1,jz) - 229.*T_electron(rup.ind,jy-2,jz) + 225.*T_electron(rup.ind,jy-3,jz) - 111.*T_electron(rup.ind,jy-4,jz) + 22.*T_electron(rup.ind,jy-5,jz))/48./coord->dy(rup.ind,jy-1)/sqrt((coord->g_22[rup.ind][jy-1] + coord->g_22[rup.ind][jy-2] + coord->g_22[rup.ind][jy-3] + coord->g_22[rup.ind][jy-4] + coord->g_22[rup.ind][jy-5])/5.);
 	  if (abs(gradT_driveterm[rup.ind][jy][jz])>1.e37 || gradT_driveterm[rup.ind][jy][jz]!=gradT_driveterm[rup.ind][jy][jz]) gradT_driveterm[rup.ind][jy][jz] = 1.e37;
 	#endif
 	#ifdef DRIVE_GRADV
@@ -1313,20 +1303,24 @@ void NonLocalParallel::calculate_nonlocal_closures_cell_ylow(const Field3D &n_el
     interp_coefficients = cubic_spline_inverse_lambdaC.coefficients(position);
     // dimensionless_length_deltas_above[jy] and dimensionless_length_deltas_below[jy] are the deltaz's for the half-step above and below, respectively, the CELL_CENTRE at jy
     // deltaz between position[jy](CELL_CENTRE), where t=0, and position[jyp](CELL_YLOW), where t=0.5
-    dimensionless_length_deltas_above[position->jx][position->jy][position->jz] = mesh->dy[position->jx][position->jy]*sqrt(mesh->g_22[position->jx][position->jy])
+    
+    Coordinates *coord = mesh->coordinates();
+    
+    dimensionless_length_deltas_above[position->jx][position->jy][position->jz] = coord->dy(position->jx,position->jy)*sqrt(coord->g_22(position->jx,position->jy))
 										    *(interp_coefficients[0]/2. + interp_coefficients[1]/2./4. + interp_coefficients[2]/3./8. + interp_coefficients[3]/4./16.);
     // deltaz between position[jyp](CELL_YLOW), where t=0.5, and position[jyp](CELL_CENTRE), where t=1
-    dimensionless_length_deltas_below[position->jx][position->jyp][position->jz] = mesh->dy[position->jx][position->jy]*sqrt(mesh->g_22[position->jx][position->jyp])
+    dimensionless_length_deltas_below[position->jx][position->jyp][position->jz] = coord->dy(position->jx,position->jy)*sqrt(coord->g_22(position->jx,position->jyp))
 										    *(interp_coefficients[0]/2. + interp_coefficients[1]/2.*3./4. + interp_coefficients[2]/3.*7./8. + interp_coefficients[3]/4.*15./16.);
     next_index_y(position);
     
     do{
       interp_coefficients = cubic_spline_inverse_lambdaC.coefficients(position);
       // deltaz between position[jy](CELL_CENTRE), where t=0, and position[jyp](CELL_YLOW), where t=0.5
-      dimensionless_length_deltas_above[position->jx][position->jy][position->jz] = mesh->dy[position->jx][position->jy]*sqrt(mesh->g_22[position->jx][position->jy])
+      
+      dimensionless_length_deltas_above[position->jx][position->jy][position->jz] = coord->dy(position->jx,position->jy)*sqrt(coord->g_22(position->jx,position->jy))
 										      *(interp_coefficients[0]/2. + interp_coefficients[1]/2./4. + interp_coefficients[2]/3./8. + interp_coefficients[3]/4./16.);
       // deltaz between position[jyp](CELL_YLOW), where t=0.5, and position[jyp](CELL_CENTRE), where t=1
-      dimensionless_length_deltas_below[position->jx][position->jyp][position->jz] = mesh->dy[position->jx][position->jyp]*sqrt(mesh->g_22[position->jx][position->jyp])
+      dimensionless_length_deltas_below[position->jx][position->jyp][position->jz] = coord->dy(position->jx,position->jyp)*sqrt(coord->g_22(position->jx,position->jyp))
 										      *(interp_coefficients[0]/2. + interp_coefficients[1]/2.*3./4. + interp_coefficients[2]/3.*7./8. + interp_coefficients[3]/4.*15./16.);
       increasing_dimensionless_length[position->jx][position->jyp][position->jz] = increasing_dimensionless_length[*position] + dimensionless_length_deltas_below[*position] + dimensionless_length_deltas_above[*position];
       } while (next_index_y(position));
@@ -1852,17 +1846,17 @@ void NonLocalParallel::set_boundary_gradients() {
     for (int jz=0; jz<mesh->ngz-1; jz++) {
       #ifdef CALCULATE_HEATFLUX
 //       BoutReal heat_flux_boundarygradient = (electron_heat_flux[rlow.ind][mesh->ystart][jz]-27.*electron_heat_flux[rlow.ind][mesh->ystart+1][jz]+27.*electron_heat_flux[rlow.ind][mesh->ystart+2][jz]-electron_heat_flux[rlow.ind][mesh->ystart+3][jz])/24.; // NB gradient in index space
-//       BoutReal heat_flux_boundarygradient = (-11.*electron_heat_flux[rlow.ind][mesh->ystart][jz] + 18.*electron_heat_flux[rlow.ind][mesh->ystart+1][jz] - 9.*electron_heat_flux[rlow.ind][mesh->ystart+2][jz] + 2.*electron_heat_flux[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
+//       BoutReal heat_flux_boundarygradient = (-11.*electron_heat_flux[rlow.ind][mesh->ystart][jz] + 18.*electron_heat_flux[rlow.ind][mesh->ystart+1][jz] - 9.*electron_heat_flux[rlow.ind][mesh->ystart+2][jz] + 2.*electron_heat_flux[rlow.ind][mesh->ystart+3][jz]) / 6. / coord->dy[rlow.ind][mesh->ystart] / sqrt((coord->g_22[rlow.ind][mesh->ystart]+coord->g_22[rlow.ind][mesh->ystart+1]+coord->g_22[rlow.ind][mesh->ystart+2]+coord->g_22[rlow.ind][mesh->ystart+3])/4.);
 	BoutReal heat_flux_boundarygradient = (-electron_heat_flux[rlow.ind][mesh->ystart][jz] + electron_heat_flux[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       #ifdef CALCULATE_VISCOSITY
 //       BoutReal viscosity_boundarygradient = (electron_viscosity[rlow.ind][mesh->ystart][jz]-27.*electron_viscosity[rlow.ind][mesh->ystart+1][jz]+27.*electron_viscosity[rlow.ind][mesh->ystart+2][jz]-electron_viscosity[rlow.ind][mesh->ystart+3][jz])/24.; // NB gradient in index space
-//       BoutReal viscosity_boundarygradient = (-11.*electron_viscosity[rlow.ind][mesh->ystart][jz] + 18.*electron_viscosity[rlow.ind][mesh->ystart+1][jz] - 9.*electron_viscosity[rlow.ind][mesh->ystart+2][jz] + 2.*electron_viscosity[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
+//       BoutReal viscosity_boundarygradient = (-11.*electron_viscosity[rlow.ind][mesh->ystart][jz] + 18.*electron_viscosity[rlow.ind][mesh->ystart+1][jz] - 9.*electron_viscosity[rlow.ind][mesh->ystart+2][jz] + 2.*electron_viscosity[rlow.ind][mesh->ystart+3][jz]) / 6. / coord->dy[rlow.ind][mesh->ystart] / sqrt((coord->g_22[rlow.ind][mesh->ystart]+coord->g_22[rlow.ind][mesh->ystart+1]+coord->g_22[rlow.ind][mesh->ystart+2]+coord->g_22[rlow.ind][mesh->ystart+3])/4.);
 	BoutReal viscosity_boundarygradient = (-electron_viscosity[rlow.ind][mesh->ystart][jz] + electron_viscosity[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       #ifdef CALCULATE_FRICTION
 //       BoutReal friction_boundarygradient = (electron_friction[rlow.ind][mesh->ystart][jz]-27.*electron_friction[rlow.ind][mesh->ystart+1][jz]+27.*electron_friction[rlow.ind][mesh->ystart+2][jz]-electron_friction[rlow.ind][mesh->ystart+3][jz])/24.; // NB gradient in index space
-//       BoutReal friction_boundarygradient = (-11.*electron_friction[rlow.ind][mesh->ystart][jz] + 18.*electron_friction[rlow.ind][mesh->ystart+1][jz] - 9.*electron_friction[rlow.ind][mesh->ystart+2][jz] + 2.*electron_friction[rlow.ind][mesh->ystart+3][jz]) / 6. / mesh->dy[rlow.ind][mesh->ystart] / sqrt((mesh->g_22[rlow.ind][mesh->ystart]+mesh->g_22[rlow.ind][mesh->ystart+1]+mesh->g_22[rlow.ind][mesh->ystart+2]+mesh->g_22[rlow.ind][mesh->ystart+3])/4.);
+//       BoutReal friction_boundarygradient = (-11.*electron_friction[rlow.ind][mesh->ystart][jz] + 18.*electron_friction[rlow.ind][mesh->ystart+1][jz] - 9.*electron_friction[rlow.ind][mesh->ystart+2][jz] + 2.*electron_friction[rlow.ind][mesh->ystart+3][jz]) / 6. / coord->dy[rlow.ind][mesh->ystart] / sqrt((coord->g_22[rlow.ind][mesh->ystart]+coord->g_22[rlow.ind][mesh->ystart+1]+coord->g_22[rlow.ind][mesh->ystart+2]+coord->g_22[rlow.ind][mesh->ystart+3])/4.);
 	BoutReal friction_boundarygradient = (-electron_friction[rlow.ind][mesh->ystart][jz] + electron_friction[rlow.ind][mesh->ystart+boundary_gradient_smoothing_length][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       for (int jy=mesh->ystart-1; jy>=0; jy--) {
@@ -1881,17 +1875,17 @@ void NonLocalParallel::set_boundary_gradients() {
     for (int jz=0; jz<mesh->ngz-1; jz++) {
       #ifdef CALCULATE_HEATFLUX
 // 	BoutReal heat_flux_boundarygradient = (electron_heat_flux[rup.ind][mesh->yend-3][jz]-27.*electron_heat_flux[rup.ind][mesh->yend-2][jz]+27.*electron_heat_flux[rup.ind][mesh->yend-1][jz]-electron_heat_flux[rup.ind][mesh->yend][jz])/24.; // NB gradient in index space
-//       BoutReal heat_flux_boundarygradient = (11.*electron_heat_flux[rup.ind][mesh->yend][jz] - 18.*electron_heat_flux[rup.ind][mesh->yend-1][jz] + 9.*electron_heat_flux[rup.ind][mesh->yend-2][jz] - 2.*electron_heat_flux[rup.ind][mesh->yend-3][jz]) / 6. / mesh->dy[rup.ind][mesh->yend] / sqrt((mesh->g_22[rup.ind][mesh->yend]+mesh->g_22[rup.ind][mesh->yend-1]+mesh->g_22[rup.ind][mesh->yend-2]+mesh->g_22[rup.ind][mesh->yend-3])/4.);
+//       BoutReal heat_flux_boundarygradient = (11.*electron_heat_flux[rup.ind][mesh->yend][jz] - 18.*electron_heat_flux[rup.ind][mesh->yend-1][jz] + 9.*electron_heat_flux[rup.ind][mesh->yend-2][jz] - 2.*electron_heat_flux[rup.ind][mesh->yend-3][jz]) / 6. / coord->dy[rup.ind][mesh->yend] / sqrt((coord->g_22[rup.ind][mesh->yend]+coord->g_22[rup.ind][mesh->yend-1]+coord->g_22[rup.ind][mesh->yend-2]+coord->g_22[rup.ind][mesh->yend-3])/4.);
 	BoutReal heat_flux_boundarygradient = (-electron_heat_flux[rup.ind][mesh->yend-boundary_gradient_smoothing_length][jz] + electron_heat_flux[rup.ind][mesh->yend][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       #ifdef CALCULATE_VISCOSITY
 // 	BoutReal viscosity_boundarygradient = (electron_viscosity[rup.ind][mesh->yend-3][jz]-27.*electron_viscosity[rup.ind][mesh->yend-2][jz]+27.*electron_viscosity[rup.ind][mesh->yend-1][jz]-electron_viscosity[rup.ind][mesh->yend][jz])/24.; // NB gradient in index space
-//       BoutReal viscosity_boundarygradient = (11.*electron_viscosity[rup.ind][mesh->yend][jz] - 18.*electron_viscosity[rup.ind][mesh->yend-1][jz] + 9.*electron_viscosity[rup.ind][mesh->yend-2][jz] - 2.*electron_viscosity[rup.ind][mesh->yend-3][jz]) / 6. / mesh->dy[rup.ind][mesh->yend] / sqrt((mesh->g_22[rup.ind][mesh->yend]+mesh->g_22[rup.ind][mesh->yend-1]+mesh->g_22[rup.ind][mesh->yend-2]+mesh->g_22[rup.ind][mesh->yend-3])/4.);
+//       BoutReal viscosity_boundarygradient = (11.*electron_viscosity[rup.ind][mesh->yend][jz] - 18.*electron_viscosity[rup.ind][mesh->yend-1][jz] + 9.*electron_viscosity[rup.ind][mesh->yend-2][jz] - 2.*electron_viscosity[rup.ind][mesh->yend-3][jz]) / 6. / coord->dy[rup.ind][mesh->yend] / sqrt((coord->g_22[rup.ind][mesh->yend]+coord->g_22[rup.ind][mesh->yend-1]+coord->g_22[rup.ind][mesh->yend-2]+coord->g_22[rup.ind][mesh->yend-3])/4.);
 	BoutReal viscosity_boundarygradient = (-electron_viscosity[rup.ind][mesh->yend-boundary_gradient_smoothing_length][jz] + electron_viscosity[rup.ind][mesh->yend][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       #ifdef CALCULATE_FRICTION
 // 	BoutReal friction_boundarygradient = (electron_friction[rup.ind][mesh->yend-3][jz]-27.*electron_friction[rup.ind][mesh->yend-2][jz]+27.*electron_friction[rup.ind][mesh->yend-1][jz]-electron_friction[rup.ind][mesh->yend][jz])/24.; // NB gradient in index space
-//       BoutReal friction_boundarygradient = (11.*electron_friction[rup.ind][mesh->yend][jz] - 18.*electron_friction[rup.ind][mesh->yend-1][jz] + 9.*electron_friction[rup.ind][mesh->yend-2][jz] - 2.*electron_friction[rup.ind][mesh->yend-3][jz]) / 6. / mesh->dy[rup.ind][mesh->yend] / sqrt((mesh->g_22[rup.ind][mesh->yend]+mesh->g_22[rup.ind][mesh->yend-1]+mesh->g_22[rup.ind][mesh->yend-2]+mesh->g_22[rup.ind][mesh->yend-3])/4.);
+//       BoutReal friction_boundarygradient = (11.*electron_friction[rup.ind][mesh->yend][jz] - 18.*electron_friction[rup.ind][mesh->yend-1][jz] + 9.*electron_friction[rup.ind][mesh->yend-2][jz] - 2.*electron_friction[rup.ind][mesh->yend-3][jz]) / 6. / coord->dy[rup.ind][mesh->yend] / sqrt((coord->g_22[rup.ind][mesh->yend]+coord->g_22[rup.ind][mesh->yend-1]+coord->g_22[rup.ind][mesh->yend-2]+coord->g_22[rup.ind][mesh->yend-3])/4.);
 	BoutReal friction_boundarygradient = (-electron_friction[rup.ind][mesh->yend-boundary_gradient_smoothing_length][jz] + electron_friction[rup.ind][mesh->yend][jz])/BoutReal(boundary_gradient_smoothing_length); // NB gradient in index space
       #endif
       for (int jy=mesh->yend+1; jy<mesh->ngy; jy++) {
@@ -1941,40 +1935,12 @@ void NonLocalParallel::y_broadcast(void* input_buffer, const int &size, const in
   // NB Assumes that the mesh is BoutMesh
   Timer timer("comms");
   
+  /// NOTE: This only works if there are no branch-cuts
+  MPI_Comm comm_inner = mesh->getYcomm(0);
+  
 //  MPI_Bcast(input_buffer, size, PVEC_REAL_MPI_TYPE, root_processor, comm_yprocs);
-  MPI_Bcast(input_buffer, size, MPI_DOUBLE, root_processor, comm_yprocs);
+  MPI_Bcast(input_buffer, size, MPI_DOUBLE, root_processor, comm_inner);
 // Should use commented out version if method is transferred to boutmesh.cxx
-}
-
-void NonLocalParallel::y_boundary_broadcast(BoutReal* input_buffer, const int &size, const int &root_processor) {
-  // NB Assumes that the mesh is BoutMesh
-  Timer timer("comms");
-  #ifdef CHECK
-    int root_processor_yindex = (root_processor - mesh->getXProcIndex())/mesh->getNXPE();
-    if (root_processor_yindex!=0)
-      bout_error("y_boundary_broadcast: it has been assumed that root_processor_yindex==0, but this is not the case here");
-    if (root_processor_yindex==mesh->getNYPE()-1)
-      bout_error("y_boundary_broadcast: sends to root_processor+1 but root_processor is the last one");
-  #endif
-  int processor = mesh->getYProcIndex() * mesh->getNXPE() + mesh->getXProcIndex();
-  
-  if (mesh->getNYPE()==1)
-    return;
-  
-  if (mesh->getYProcIndex()==0) {
-    MPI_Wait(&broadcast_request, MPI_STATUS_IGNORE);
-    broadcast_request = mesh->sendToProc(mesh->getXProcIndex(),1,input_buffer,size,NONLOCAL_PARALLEL_TAGBASE);
-  }
-  else {
-    if (mesh->getYProcIndex()==1) {
-      mesh->wait(mesh->receiveFromProc(mesh->getXProcIndex(),0,input_buffer,size,NONLOCAL_PARALLEL_TAGBASE));
-    }
-    
-  //  MPI_Bcast(input_buffer, size, PVEC_REAL_MPI_TYPE, root_processor, comm_yprocs);
-  if (mesh->getNYPE()>2)
-    MPI_Bcast(input_buffer, size, MPI_DOUBLE, root_processor+1, comm_yprocs_minusone);
-  // Should use commented out version if method is transferred to boutmesh.cxx
-  }
 }
 
 void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_field) {
@@ -1985,15 +1951,21 @@ void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jz=0; jz<mesh->ngz-1; jz++)
       for (int jy=mesh->ystart; jy<=ye; jy++) {
-	tempsum[jx][jz]+=pow(input_field[jx][jy][jz],2);
+	tempsum(jx,jz) += SQ(input_field(jx,jy,jz));
       }
+  
+  /// NOTE: This only works if there are no branch-cuts
+  MPI_Comm comm_inner = mesh->getYcomm(0);
+  
   MPI_Reduce(*tempsum.getData(),
 	     *output_field.getData(),
 	     mesh->ngx*mesh->ngz,
 	     MPI_DOUBLE,
 	     MPI_SUM,
-	     mesh->getXProcIndex(),
-	     comm_yprocs);
+	     mesh->getXProcIndex(), // Why?
+	     comm_inner);
+
+  // Don't really understand what this bit is supposed to do.
   if (mesh->getYProcIndex()==0) {
     int ny = mesh->GlobalNy;
     if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE) ny--;
@@ -2007,6 +1979,11 @@ void NonLocalParallel::rms_over_y(const Field3D &input_field, FieldPerp &output_
   }
 }
 
+/*
+  Calculates a mean over the Y (parallel) direction. 
+  
+  Should probably be replaced by a call to averageY (src/physics/smoothing.cxx)
+ */
 void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output_field, int exclude_edgecells) {
   FieldPerp tempsum;
   tempsum = 0.;
@@ -2018,15 +1995,19 @@ void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output
   for (int jx=mesh->xstart; jx<=mesh->xend; jx++)
     for (int jz=0; jz<mesh->ngz-1; jz++)
       for (int jy=ys; jy<=ye; jy++) {
-	tempsum[jx][jz]+=input_field[jx][jy][jz];
+	tempsum(jx,jz)+=input_field(jx,jy,jz);
       }
+  
+  /// NOTE: This only works if there are no branch-cuts
+  MPI_Comm comm_inner = mesh->getYcomm(0);
+
   MPI_Reduce(*tempsum.getData(),
 	     *output_field.getData(),
 	     mesh->ngx*mesh->ngz,
 	     MPI_DOUBLE,
 	     MPI_SUM,
-	     mesh->getXProcIndex(),
-	     comm_yprocs);
+	     mesh->getXProcIndex(),  // Why? 
+	     comm_inner);
   if (mesh->getYProcIndex()==0) {
     int ny = mesh->GlobalNy;
     if (mesh->StaggerGrids && input_field.getLocation()==CELL_CENTRE) ny--;
@@ -2043,7 +2024,7 @@ void NonLocalParallel::mean_over_y(const Field3D &input_field, FieldPerp &output
 
 BoutReal NonLocalParallel::interp_to_point_YLOW(const Field3D &input, bindex &position) {
    if(mesh->StaggerGrids)
-     return (9.*(input[position.jx][position.jym][position.jz]+input[position.jx][position.jy][position.jz])-(input[position.jx][position.jy2m][position.jz]+input[position.jx][position.jyp][position.jz]))/16.;
+     return (9.*(input(position.jx,position.jym,position.jz)+input(position.jx,position.jy,position.jz))-(input(position.jx,position.jy2m,position.jz)+input(position.jx,position.jyp,position.jz)))/16.;
    else
      return input[position];
 }

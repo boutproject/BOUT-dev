@@ -33,7 +33,7 @@ bool GridFromOptions::hasVar(const string &name) {
  *
  * True if option is set, false if ival is default (0)
  */
-bool GridFromOptions::get(Mesh *m, int &ival,      const string &name) {
+bool GridFromOptions::get(Mesh *m, int &ival, const string &name) {
   if(!hasVar(name)) {
     ival = 0;
     return false;
@@ -60,7 +60,7 @@ bool GridFromOptions::get(Mesh *m, BoutReal &rval, const string &name) {
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, Field2D &var,   const string &name, BoutReal def) {
+bool GridFromOptions::get(Mesh *m, Field2D &var, const string &name, BoutReal def) {
   if(!hasVar(name)) {
     output.write("Variable '%s' not in mesh options. Setting to %e\n", name.c_str(), def);
     var = def;
@@ -71,7 +71,7 @@ bool GridFromOptions::get(Mesh *m, Field2D &var,   const string &name, BoutReal 
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, Field3D &var,   const string &name, BoutReal def) {
+bool GridFromOptions::get(Mesh *m, Field3D &var, const string &name, BoutReal def) {
   if(!hasVar(name)) {
     var = def;
     return false;
@@ -81,7 +81,7 @@ bool GridFromOptions::get(Mesh *m, Field3D &var,   const string &name, BoutReal 
   return true;
 }
 
-bool GridFromOptions::get(Mesh *m, vector<int> &var,      const string &name, int len, int offset, GridDataSource::Direction dir) {
+bool GridFromOptions::get(Mesh *m, vector<int> &var, const string &name, int len, int offset, GridDataSource::Direction dir) {
   // Integers not expressions yet
 
   int ival;

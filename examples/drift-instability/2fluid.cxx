@@ -58,12 +58,13 @@ int solve_apar_tridag(Field3D &aj, Field3D &ap, int flags);
 
 FieldGroup comms; // Group of variables for communications
 
-int physics_init(bool restarting)
-{
+Coordinates *coord; // Coordinate system
+
+int physics_init(bool restarting) {
   Field2D I; // Shear factor 
   
   output.write("Solving 6-variable 2-fluid equations\n");
-
+  
   /************* LOAD DATA FROM GRID FILE ****************/
 
   // Load 2D profiles (set to zero if not found)
@@ -80,12 +81,15 @@ int physics_init(bool restarting)
   b0xcv.covariant = false; // Read contravariant components
   mesh->get(b0xcv, "bxcv"); // b0xkappa terms
 
+  // Coordinate system
+  coord = mesh->coordinates();
+
   // Load metrics
   GRID_LOAD(Rxy);
   GRID_LOAD(Bpxy);
   GRID_LOAD(Btxy);
   GRID_LOAD(hthe);
-  mesh->get(mesh->dx,   "dpsi");
+  mesh->get(coord->dx,   "dpsi");
   mesh->get(I,    "sinty");
   mesh->get(mesh->zShift, "qinty");
 
@@ -193,12 +197,12 @@ int physics_init(bool restarting)
   Rxy /= rho_s;
   hthe /= rho_s;
   I *= rho_s*rho_s*(bmag/1e4)*ShearFactor;
-  mesh->dx /= rho_s*rho_s*(bmag/1e4);
+  coord->dx /= rho_s*rho_s*(bmag/1e4);
 
   // Normalise magnetic field
   Bpxy /= (bmag/1.e4);
   Btxy /= (bmag/1.e4);
-  mesh->Bxy  /= (bmag/1.e4);
+  coord->Bxy  /= (bmag/1.e4);
 
   // calculate pressures
   pei0 = (Ti0 + Te0)*Ni0;
@@ -206,23 +210,23 @@ int physics_init(bool restarting)
 
   /**************** CALCULATE METRICS ******************/
 
-  mesh->g11 = (Rxy*Bpxy)^2;
-  mesh->g22 = 1.0 / (hthe^2);
-  mesh->g33 = (I^2)*mesh->g11 + (mesh->Bxy^2)/mesh->g11;
-  mesh->g12 = 0.0;
-  mesh->g13 = -I*mesh->g11;
-  mesh->g23 = -Btxy/(hthe*Bpxy*Rxy);
+  coord->g11 = SQ(Rxy*Bpxy);
+  coord->g22 = 1.0 / SQ(hthe);
+  coord->g33 = SQ(I)*coord->g11 + SQ(coord->Bxy)/coord->g11;
+  coord->g12 = 0.0;
+  coord->g13 = -I*coord->g11;
+  coord->g23 = -Btxy/(hthe*Bpxy*Rxy);
   
-  mesh->J = hthe / Bpxy;
+  coord->J = hthe / Bpxy;
   
-  mesh->g_11 = 1.0/mesh->g11 + ((I*Rxy)^2);
-  mesh->g_22 = (mesh->Bxy*hthe/Bpxy)^2;
-  mesh->g_33 = Rxy*Rxy;
-  mesh->g_12 = Btxy*hthe*I*Rxy/Bpxy;
-  mesh->g_13 = I*Rxy*Rxy;
-  mesh->g_23 = Btxy*hthe*Rxy/Bpxy;
+  coord->g_11 = 1.0/coord->g11 + SQ(I*Rxy);
+  coord->g_22 = SQ(coord->Bxy*hthe/Bpxy);
+  coord->g_33 = Rxy*Rxy;
+  coord->g_12 = Btxy*hthe*I*Rxy/Bpxy;
+  coord->g_13 = I*Rxy*Rxy;
+  coord->g_23 = Btxy*hthe*Rxy/Bpxy;
 
-  mesh->geometry();
+  coord->geometry();
   
   /**************** SET EVOLVING VARIABLES *************/
 
@@ -301,7 +305,7 @@ int physics_init(bool restarting)
 }
 
 // just define a macro for V_E dot Grad
-#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / mesh->Bxy )
+#define vE_Grad(f, p) ( b0xGrad_dot_Grad(p, f) / coord->Bxy )
 
 int physics_run(BoutReal t)
 {
@@ -327,10 +331,10 @@ int physics_run(BoutReal t)
   Vit = Vi0; // + Vi;
 
   // Update non-linear coefficients on the mesh
-  nu      = nu_hat * Nit / (Tet^1.5);
-  mu_i    = mui_hat * Nit / (Tit^0.5);
-  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*(Tet^2.5);
-  kapa_Ti = 3.9*(wci/nuiix)*(Tit^2.5);
+  nu      = nu_hat * Nit / pow(Tet,1.5);
+  mu_i    = mui_hat * Nit / sqrt(Tit);
+  kapa_Te = 3.2*(1./fmei)*(wci/nueix)*pow(Tet,2.5);
+  kapa_Ti = 3.9*(wci/nuiix)*pow(Tit,2.5);
   
   // note: nonlinear terms are not here
   pei = (Te0+Ti0)*Ni + (Te + Ti)*Ni0;
@@ -346,7 +350,7 @@ int physics_run(BoutReal t)
 	for(int jz=0;jz<mesh->ngz;jz++) {
 	  jpar[jx][jy][jz] = ( (Te0[jx][jy] * (Ni[jx][jy+1][jz] - Ni[jx][jy][jz]))
 			       - (Ni0[jx][jy] * (phi[jx][jy+1][jz] - phi[jx][jy][jz])) )
-	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	    / (fmei * 0.51 * nu[jx][jy][jz] * dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
 			       
 	}
       }
@@ -425,13 +429,13 @@ int physics_run(BoutReal t)
     
     //ddt(rho) += 2.0*Bnorm*V_dot_Grad(b0xcv, pei);
 
-    ddt(rho) += mesh->Bxy*mesh->Bxy*Div_par(jpar, CELL_CENTRE);
+    ddt(rho) += coord->Bxy*coord->Bxy*Div_par(jpar, CELL_CENTRE);
 
     /*
     for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
       for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
 	for(int jz=0;jz<mesh->ngz;jz++) {
-	  ddt(rho)[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	  ddt(rho)[jx][jy][jz] = Bxy[jx][jy]*Bxy[jx][jy] * (jpar[jx][jy+1][jz] - jpar[jx][jy][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
 	}
       }
     }
@@ -452,8 +456,8 @@ int physics_run(BoutReal t)
     for(int jx=MXG;jx<mesh->ngx-MXG;jx++) {
       for(int jy=MYG;jy<mesh->ngy-MYG;jy++) {
 	for(int jz=0;jz<mesh->ngz;jz++) {
-	  ddt(Ajpar)[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
-	  ddt(Ajpar)[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(mesh->g_22[jx][jy]));
+	  ddt(Ajpar)[jx][jy][jz] += (1./fmei) * (phi[jx][jy][jz] - phi[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
+	  ddt(Ajpar)[jx][jy][jz] -= (1./fmei)*(Te0[jx][jy]/Ni0[jx][jy])*(Ni[jx][jy][jz] - Ni[jx][jy-1][jz]) / (dy[jx][jy] * sqrt(coord->g_22[jx][jy]));
 	}
       }
     }
