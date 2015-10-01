@@ -2542,6 +2542,7 @@ supported by the collect routines.
 
 
 \subsection{Laplacian inversion}
+\label{sec:laplacian}
 %
 \index{Laplacian inversion}
 %
@@ -7194,6 +7195,44 @@ Notes:
 \begin{itemize}
 \item The ShiftXderivs option must be true for this to work, since it assumes that $g^{xz} = 0$
 \end{itemize}
+
+\subsection{LaplaceXZ}
+
+This is a Laplacian inversion code in X-Z, similar to the \texttt{Laplacian} solver described in section~\ref{sec:laplacian}. 
+The difference is in the form of the Laplacian equation solved, and the approach used to derive the finite difference formulae.
+The equation solved is:
+\begin{equation}
+  \nabla\cdot\left( A \nabla_\perp x \right) + Bx = b
+\end{equation}
+where $A$ and $B$ are coefficients, $b$ is the known RHS vector (e.g. vorticity), and $x$ is the unknown quantity to be calculated (e.g. potential). The
+Laplacian is written in conservative form like the \texttt{LaplaceXY} solver,
+and discretised in terms of fluxes through cell faces.
+
+The header file is \texttt{include/bout/invert/laplacexz.hxx}. The solver is
+constructed by using the \texttt{LaplaceXZ::create} function:
+\begin{lstlisting}
+  LaplaceXZ *lap = LaplaceXZ::create(mesh);
+\end{lstlisting}
+Note that a pointer to a \texttt{Mesh} object must be given, which for now is the global variable \lstinline!mesh!. 
+
+The coefficients must be set using \lstinline!setCoefs!. All coefficients must be set at the same time:
+\begin{lstlisting}
+  lap->setCoefs(1.0, 0.0);
+\end{lstlisting}
+Constants, \lstinline!Field2D! or \lstinline!Field3D! values can be passed.
+If the implementation doesn't support \lstinline!Field3D! values then 
+the average over $z$ will be used as a \lstinline!Field2D! value.
+
+To perform the inversion, call the \lstinline!solve! function:
+\begin{lstlisting}
+  Field3D vort = ...;
+
+  Field3D phi = lap->solve(vort, 0.0);
+\end{lstlisting}
+The second input to \lstinline!solve! is an initial guess for the solution,
+which can be used by iterative schemes e.g. using PETSc.
+
+Currently there is only one implementation, which uses the \texttt{CyclicReduction} solver. The code for this is in \texttt{src/invert/laplacexz/impls/cyclic/cyclic.cxx}. This sets coefficients for a tridiagonal solver. Currently only the $g^{xx}$ component is included for testing of axisymmetric modes.
 
 \section{Eigenvalue solver}
 
