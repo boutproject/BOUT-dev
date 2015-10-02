@@ -66,8 +66,8 @@ BoundaryOp* BndDirichlet_O2::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O2::apply(Field2D &f){
-	output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
-	output << "applying boundary condition for t = 0.!!!!!\n";
+	//output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field2D::applyBoundary(BoutReal t); \n ";
+	//output << "applying boundary condition for t = 0.!!!!!\n";
   
 	BndDirichlet_O2::apply(f,0.);
 
@@ -261,8 +261,8 @@ void BndDirichlet_O2::apply(Field2D &f,BoutReal t) {
 
 void BndDirichlet_O2::apply(Field3D &f) {
 	//BndDirichlet_O2::apply(f,0.);
-	output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-	output << "applying boundary condition for t = 0.!!!!!\n";
+	//output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+	//output << "applying boundary condition for t = 0.!!!!!\n";
   
 	BndDirichlet_O2::apply(f,0.);
 }
@@ -547,8 +547,8 @@ BoundaryOp* BndDirichlet_O3::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O3::apply(Field2D &f){
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field2D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field2D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O3::apply(f,0.);
 
@@ -736,8 +736,8 @@ void BndDirichlet_O3::apply(Field2D &f,BoutReal t) {
 
 void BndDirichlet_O3::apply(Field3D &f) {
   //BndDirichlet_O3::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O3 using Field3D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O3::apply(f,0.);
 }
@@ -1031,8 +1031,8 @@ BoundaryOp* BndDirichlet_O4::clone(BoundaryRegion *region, const list<string> &a
 }
 
 void BndDirichlet_O4::apply(Field2D &f){
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field2D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field2D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O4::apply(f,0.);
 
@@ -1234,8 +1234,8 @@ void BndDirichlet_O4::apply(Field2D &f,BoutReal t) {
 
 void BndDirichlet_O4::apply(Field3D &f) {
   //BndDirichlet_O4::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndDirichlet_O4 using Field3D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   
   BndDirichlet_O4::apply(f,0.);
 }
@@ -1778,8 +1778,8 @@ BoundaryOp* BndNeumann_O2::clone(BoundaryRegion *region, const list<string> &arg
 
 void BndNeumann_O2::apply(Field2D &f) {
   //BndDirichlet_O2::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   BndNeumann_O2::apply(f,0.);
 }
 
@@ -2006,8 +2006,8 @@ void BndNeumann_O2::apply(Field2D &f,BoutReal t) {
 
 void BndNeumann_O2::apply(Field3D &f) {
   //BndDirichlet_O2::apply(f,0.);
-  output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
-  output << "applying boundary condition for t = 0.!!!!!\n";
+  //output << "Time t from physics_run must be passed to boundary operator\n BndNeumann_O2 using Field3D::applyBoundary(BoutReal t); \n ";
+  //output << "applying boundary condition for t = 0.!!!!!\n";
   BndNeumann_O2::apply(f,0.);
 }
 
