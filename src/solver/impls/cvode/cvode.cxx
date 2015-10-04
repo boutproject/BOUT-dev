@@ -354,7 +354,7 @@ int CvodeSolver::run() {
       CVodeGetNumSteps(cvode_mem, &nsteps);
       CVodeGetNumRhsEvals(cvode_mem, &nfevals);
       CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
-      CVSpilsGetNumPrecEvals(cvode_mem, &npevals);
+      CVSpilsGetNumPrecSolves(cvode_mem, &npevals);
       CVSpilsGetNumLinIters(cvode_mem, &nliters);
 
       output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
