@@ -6,6 +6,7 @@
 #define __FIELDGENERATORS_H__
 
 #include <field_factory.hxx>
+#include <boutexception.hxx>
 
 #include <cmath>
 
