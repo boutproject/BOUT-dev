@@ -85,17 +85,23 @@ with open("wave.pkl", "wb") as output:
 dy = 1. / array(nylist)
 
 # plot errors
-
-import matplotlib.pyplot as plt
+try:
+  import matplotlib.pyplot as plt
+  plotting=True
+except:
+  plotting=False
 
 # Calculate convergence order
 success = True
 for var,mark,label in zip(varlist, markers, labels):
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dy[-1] / dy[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
-
-    plt.plot(dy, error_2[var], '-'+mark, label="%s order=%.2f" % (label, order))
-    plt.plot(dy, error_inf[var], '--'+mark)
+    
+    try:
+      plt.plot(dy, error_2[var], '-'+mark, label="%s order=%.2f" % (label, order))
+      plt.plot(dy, error_inf[var], '--'+mark)
+    except:
+      plotting=False
     
     if order < 1.5: # Should be second order accurate
         print("............ FAIL")
@@ -103,19 +109,20 @@ for var,mark,label in zip(varlist, markers, labels):
     else:
         print("............ PASS")
 
-plt.legend(loc="upper left")
-plt.grid()
+if plotting:
+  plt.legend(loc="upper left")
+  plt.grid()
 
-plt.yscale('log')
-plt.xscale('log')
+  plt.yscale('log')
+  plt.xscale('log')
 
-plt.xlabel(r'Mesh spacing $\delta y$')
-plt.ylabel("Error norm")
+  plt.xlabel(r'Mesh spacing $\delta y$')
+  plt.ylabel("Error norm")
 
-plt.savefig("norm.pdf")
+  plt.savefig("norm.pdf")
 
-#plt.show()
-plt.close()
+  #plt.show()
+  plt.close()
 
 if success:
   print(" => Test passed")

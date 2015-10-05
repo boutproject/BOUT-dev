@@ -1,6 +1,17 @@
 from __future__ import division
-from builtins import range
-from past.utils import old_div
+try:
+    from builtins import range
+except:
+    pass
+try:
+    from past.utils import old_div
+except:
+    import sys
+    if sys.version_info[0]==2:
+        def old_div(a,b):
+            return a/b
+    else:
+        raise
 import numpy
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
