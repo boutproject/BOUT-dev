@@ -1,6 +1,6 @@
 #BOUT++
 <!---Build nice shields at shields.io-->
-[![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=travis)](https://travis-ci.org/boutproject/BOUT-dev)
+[![Build Status](https://travis-ci.org/boutproject/BOUT-dev.svg?branch=master)](https://travis-ci.org/boutproject/BOUT-dev)
 [![License](https://img.shields.io/badge/license-GPL-blue.svg)](https://img.shields.io/badge/license-GPL-blue.svg)
 > ```
 > .______     ______    __    __  .___________.
