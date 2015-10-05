@@ -231,6 +231,25 @@ private:
   list<FieldGenerator*> input;
 };
 
+class FieldRound : public FieldGenerator {
+public:
+  FieldRound(FieldGenerator* g) : gen(g) {}
+  
+  FieldGenerator* clone(const list<FieldGenerator*> args) {
+    if(args.size() != 1)
+      throw BoutException("round function must have one input");
+    return new FieldRound(args.front());
+  }
+  BoutReal generate(double x, double y, double z, double t) {
+    BoutReal val = gen->generate(x,y,z,t);
+    if(val > 0.0) {
+      return static_cast<int>(val + 0.5);
+    }
+    return static_cast<int>(val - 0.5);
+  }
+private:
+  FieldGenerator *gen;
+};
 
 //////////////////////////////////////////////////////////
 // Ballooning transform
