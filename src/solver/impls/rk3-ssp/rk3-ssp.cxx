@@ -109,6 +109,8 @@ int RK3SSP::run() {
     }while(running);
     
     load_vars(f); // Put result into variables
+    // Call rhs function to get extra variables at this time
+    run_rhs(simtime);
  
     iteration++; // Advance iteration number
     

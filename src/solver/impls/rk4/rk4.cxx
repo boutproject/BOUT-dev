@@ -163,7 +163,9 @@ int RK4Solver::run() {
     }while(running);
     
     load_vars(f0); // Put result into variables
-
+    // Call rhs function to get extra variables at this time
+    run_rhs(simtime);
+    
     iteration++; // Advance iteration number
     
     /// Call the monitor function
