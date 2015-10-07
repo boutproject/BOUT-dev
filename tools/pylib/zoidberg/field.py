@@ -4,7 +4,7 @@ from past.utils import old_div
 # from math import pi, atan, cos, sin
 
 import numpy as np
-from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, sqrt, lambdify
+from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lambdify
 
 # from . import grid
 
@@ -127,7 +127,7 @@ class Slab(object):
         self.Bpprime = Bpprime
 
         # Effective major radius
-        R = old_div(self.grid.Ly, (2.*pi))
+        R = old_div(self.grid.Ly, (2.*np.pi))
 
         # Set poloidal magnetic field
         Bpx = self.Bp + (self.grid.xarray-old_div(self.grid.Lx,2)) * self.Bpprime
@@ -176,7 +176,9 @@ class Stellarator(object):
         self.radius = radius * ((grid.Lx + grid.Lz)*0.5)
         self.grid = grid
 
-        self.coil_list = [self.coil(radius, n*pi, iota, I_coil) for n in np.arange(4)/2.]
+        # Four coils equally spaced, alternating direction for current
+        self.coil_list = [self.coil(self.radius, n*pi, iota, ((-1)**np.mod(i,2))*I_coil)
+                          for i, n in enumerate(np.arange(4)/2.)]
 
         A = 0.0
         Bx = 0.0
