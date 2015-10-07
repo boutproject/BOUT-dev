@@ -23,30 +23,6 @@ import field
 import fieldtracer
 from .progress import update_progress
 
-def plot_poincare():
-    nplot=3
-    sym=[".k", ".b", ".r", ".g"]
-    phivals = np.arange(100*rot_transf * nplot)*2.*np.pi/(rot_transf*nplot)
-
-    for xpos in xcenter + np.linspace(0, 0.5*np.max(xarray),10):
-        pos = (xpos, zcenter)
-        result = odeint(field_direction, pos, phivals)
-        # import pdb; pdb.set_trace()
-        for p in range(nplot):
-            plt.plot(result[p::nplot,0], result[p::nplot,1], sym[p])
-
-    plt.xlabel("Radius [m]", fontsize=20)
-    plt.ylabel("Height [m]", fontsize=20)
-    plt.tick_params(axis='both', labelsize=15)
-
-    for p in range(nplot):
-        plt.plot([], [], sym[p], label=r'$Y = \left(%d * L/%d\right)$' % (p, nplot*rot_transf))
-
-    plt.legend()
-
-    plt.savefig("flux_surfaces.eps")
-
-    plt.show()
 def make_maps(grid, magnetic_field, quiet=False):
     """Make the forward and backward FCI maps
 
