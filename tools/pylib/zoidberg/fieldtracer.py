@@ -19,7 +19,7 @@ class FieldTracer(object):
         self.grid = grid
         self.field_direction = field.field_direction
 
-    def follow_field_line(self, phi, dphi):
+    def follow_all_field_lines(self, phi, dphi):
         """
         Uses field_direction to follow the magnetic field
         from every grid (x,z) point at toroidal angle phi
@@ -40,12 +40,14 @@ class FieldTracer(object):
 
         """
 
-        x2d, z2d = np.meshgrid(self.grid.xarray, self.grid.zarray)
-        grid_vector = np.column_stack((x2d.flatten(), z2d.flatten())).flatten()
+        x2d, z2d = np.meshgrid(self.grid.xarray, self.grid.zarray, indexing='ij')
+        result = self.follow_single_field_line(x2d.flatten(), z2d.flatten(), [phi, phi+dphi])
 
-        result = odeint(self.field_direction,         # Function to integrate
-                        grid_vector,  # x [m], z[m]
-                        [phi, phi+dphi],
-                        args=(True,))[1,:]
+        return result.reshape( (2, self.grid.nx, self.grid.nz, 2) )[1,...]
 
-        return result.reshape( (self.grid.nx, self.grid.nz, 2) )
+    def follow_single_field_line(self, x_values, z_values, phi_values):
+
+        position = np.column_stack((x_values, z_values)).flatten()
+        result = odeint(self.field_direction, position, phi_values, args=(True,))
+
+        return result.reshape((-1, 2))

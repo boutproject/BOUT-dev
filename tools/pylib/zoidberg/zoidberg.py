@@ -46,17 +46,18 @@ def make_maps(grid, magnetic_field, quiet=False):
 
     field_tracer = fieldtracer.FieldTracer(grid, magnetic_field)
 
+    # TODO: if axisymmetric, don't loop, do one slice and copy
     for j in range(ny):
         if not quiet:
             update_progress(float(j)/float(ny-1))
 
         # Go forwards from yarray[j] by an angle delta_y
-        coord = field_tracer.follow_field_line(grid.yarray[j], grid.delta_y)
+        coord = field_tracer.follow_all_field_lines(grid.yarray[j], grid.delta_y)
         forward_xt_prime[:,j,:] = coord[:,:,0] / grid.delta_x # X index
         forward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
         # Go backwards from yarray[j] by an angle -delta_y
-        coord = field_tracer.follow_field_line(grid.yarray[j], -grid.delta_y)
+        coord = field_tracer.follow_all_field_lines(grid.yarray[j], -grid.delta_y)
         backward_xt_prime[:,j,:] = coord[:,:,0] / grid.delta_x # X index
         backward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
