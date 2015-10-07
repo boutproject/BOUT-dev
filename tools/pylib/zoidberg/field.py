@@ -148,7 +148,7 @@ class Slab(object):
         self.Bxy = np.sqrt(self.Bpxy**2 + self.Bt**2)
 
         def Bxfunc(x, z, phi):
-            return 0.
+            return np.zeros(x.shape)
         def Bzfunc(x, z, phi):
             return self.Bp + (x - self.grid.xcentre)*self.Bpprime
 
