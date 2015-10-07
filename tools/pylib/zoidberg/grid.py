@@ -47,3 +47,7 @@ class Grid(object):
 
         # How to do this properly?
         self.Rmaj = 1.0
+
+    def __repr__(self):
+        return "Grid(nx={nx}, ny={ny}, nz={nz}, Lx={Lx}, Ly={Ly}, Lz={Lz}, name='{name}')".format(
+            nx=self.nx, ny=self.ny, nz=self.nz, Lx=self.Lx, Ly=self.Ly, Lz=self.Lz, name=self.name)
