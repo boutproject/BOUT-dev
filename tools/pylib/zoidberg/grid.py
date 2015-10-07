@@ -33,7 +33,7 @@ class Grid(object):
         self.Ly = float(Ly)
         self.Lz = float(Lz)
 
-        self.delta_x = old_div(Lx,nx)
+        self.delta_x = old_div(Lx,nx-1)
         self.delta_y = old_div(Ly,ny)
         self.delta_z = old_div(Lz,nz)
 
