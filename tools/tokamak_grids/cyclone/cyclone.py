@@ -2,9 +2,13 @@
 
 from __future__ import print_function
 from __future__ import division
-from builtins import str
-from builtins import range
-from past.utils import old_div
+
+try:
+  from builtins import str
+  from builtins import range
+except:
+  print("Warning: No builtins module")
+
 try:
     from numpy import *
     from scipy.integrate import quad
@@ -47,13 +51,13 @@ Mi = 2.*1.67262158e-27   # Ion mass [kg]. Deuterium
 def eps_integral(eps, theta=None):
     if theta == None:
         theta = 2.*pi
-    return (quad(lambda t: old_div(1.,((1. - eps*cos(t))**2)), 0., theta))[0]
+    return (quad(lambda t: 1./((1. - eps*cos(t))**2), 0., theta))[0]
 
 rminor = Rmaj * epsilon  # Minor radius [m]
-L_T = old_div(Rmaj, Rnorm)       # Temp. length scale [m]
+L_T = Rmaj / Rnorm       # Temp. length scale [m]
 L_n = eta_i * L_T        # Density length scale [m]
 rho_i = rho_norm * L_T   # Ion Larmor radius [m]
-Bt0 = old_div(sqrt(2.*Ti*Mi / 1.602e-19), rho_i) # Toroidal field from rho_i [T]
+Bt0 = sqrt(2.*Ti*Mi / 1.602e-19)/rho_i # Toroidal field from rho_i [T]
 Bp = rminor * Bt0 * eps_integral(epsilon)/ (q * Rmaj) # Poloidal field [T]
 
 dr = r_wid * rho_i       # Width of domain [m]
@@ -75,7 +79,7 @@ print("Toroidal field varies from "+str(Bt0*Rmaj/(Rmaj + rminor)) + \
     " to "+str(Bt0*Rmaj/(Rmaj - rminor)))
 
 # Minor radius offset
-drprof = dr*((old_div(arange(nx), float(nx-1))) - 0.5)
+drprof = dr*((arange(nx)/float(nx-1)) - 0.5)
 
 # q profile
 qprof = q + (s*q/rminor) * drprof
@@ -94,18 +98,18 @@ else:
     # Constant Bp, but shift angle varies
     Bpxy += Bp
 
-dx = Bp * (old_div(dr, float(nx-1))) * Rxy
+dx = Bp * (dr/float(nx-1)) * Rxy
 
 Bxy = sqrt(Btxy**2 + Bpxy**2)
 
 zShift = zeros([nx, ny])
 qint = eps_integral(epsilon)
 
-for y in range(1,ny):
+for i in range(1,ny):
     zShift[:,i] = ShiftAngle * eps_integral(epsilon, theta=theta[i]) / qint
 
 # Make zShift = 0 on outboard midplane (for plotting mainly)
-y0 = int(old_div(ny,2))
+y0 = int(ny/2)
 zs0 = zShift[:,y0]
 for i in range(ny):
     zShift[:,i] -= zs0
@@ -113,8 +117,8 @@ for i in range(ny):
 Ni0 = zeros([nx, ny])
 Ti0 = Ni0
 for i in range(ny):
-    Ni0[:,i] = Ni * exp(old_div(-drprof, L_n))
-    Ti0[:,i] = Ti * exp(old_div(-drprof, L_T))
+    Ni0[:,i] = Ni * exp(-drprof / L_n)
+    Ti0[:,i] = Ti * exp(-drprof / L_T)
 Te0 = Ti0
 
 pressure = Ni0 * (Ti0 + Te0) * 1.602e-19*1.0e20 # In Pascals
@@ -136,7 +140,7 @@ logB = zeros([nx, ny])
 
 for x in range(nx):
     for y in range(ny):
-        rpos = (old_div(float(x),float(nx-1)) - 0.5) * dr
+        rpos = (float(x)/float(nx-1) - 0.5) * dr
         R = Rmaj - (rminor + rpos)*cos(theta[y])
         Bt = Bt0 * Rmaj / R
         logB[x,y] = log(sqrt(Bt**2 + Bp**2))
@@ -147,7 +151,7 @@ for x in range(nx):
 ixseps1 = nx
 ixseps2 = nx
 jyseps1_1 = -1
-jyseps1_2 = int(old_div(ny,2))
+jyseps1_2 = int(ny/2)
 jyseps2_1 = jyseps1_2
 jyseps2_2 = ny-1
 ny_inner = jyseps1_2
