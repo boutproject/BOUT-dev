@@ -39,13 +39,13 @@ class FieldTracer(object):
         result[x,z,1] = z end location [m] from start index (x,z)
 
         """
-        result = np.zeros( (self.grid.nx, self.grid.nz, 2) )
 
-        # TODO: flatten loop
-        for i in np.arange(0,self.grid.nx):
-            for k in np.arange(0,self.grid.nz):
-                result[i,k,:] = odeint(self.field_direction,         # Function to integrate
-                                       [self.grid.xarray[i], self.grid.zarray[k]],  # x [m], z[m]
-                                       [phi, phi+dphi])[1,:]
+        x2d, z2d = np.meshgrid(self.grid.xarray, self.grid.zarray)
+        grid_vector = np.column_stack((x2d.flatten(), z2d.flatten())).flatten()
 
-        return result
+        result = odeint(self.field_direction,         # Function to integrate
+                        grid_vector,  # x [m], z[m]
+                        [phi, phi+dphi],
+                        args=(True,))[1,:]
+
+        return result.reshape( (self.grid.nx, self.grid.nz, 2) )

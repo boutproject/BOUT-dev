@@ -27,7 +27,7 @@ class MagneticField(object):
         #   2. from data
 
 
-    def field_direction(self, pos, phi):
+    def field_direction(self, pos, phi, flatten=False):
         """
         Calculate the direction of the magnetic field
         Returns the change in x with phi and change in z with phi
@@ -43,14 +43,24 @@ class MagneticField(object):
         (dx/dphi, dz/dphi) = ( R*Bx/Bphi, R*Bz/Bphi )
         """
 
-        x,z = pos
+        if flatten:
+            position = pos.reshape((-1, 2))
+            x = position[:,0]
+            z = position[:,1]
+        else:
+            x,z = pos
 
         # Rate of change of x location [m] with y angle [radians]
         dxdphi =  self.grid.Rmaj * self.Bxfunc(x,z,phi) / self.Byfunc(x,z,phi)
         # Rate of change of z location [m] with y angle [radians]
         dzdphi =  self.grid.Rmaj * self.Bzfunc(x,z,phi) / self.Byfunc(x,z,phi)
 
-        return [dxdphi, dzdphi]
+        if flatten:
+            result = np.column_stack((dxdphi, dzdphi)).flatten()
+        else:
+            result = [dxdphi, dzdphi]
+
+        return result
 
     def smooth_field_line(xa,za):
         """Linearly damp the field to be parallel to the edges of the box
