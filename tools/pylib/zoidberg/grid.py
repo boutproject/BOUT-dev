@@ -39,7 +39,7 @@ class Grid(object):
 
         # Coord arrays
         self.xarray = np.linspace(0,Lx,nx)
-        self.yarray = np.linspace(0,Ly,ny)
+        self.yarray = np.linspace(0,Ly,ny,endpoint=False)
         self.zarray = np.linspace(0,Lz,nz,endpoint=False)
 
         self.xcentre = 0.5*max(self.xarray)
