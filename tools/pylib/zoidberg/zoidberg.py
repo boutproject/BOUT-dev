@@ -140,24 +140,25 @@ def fci_to_vtk(infile, outfile, scale=5):
         return
 
     with bdata.DataFile(infile, write=False, create=False) as f:
+        dx = f.read('dx')
+        dy = f.read('dy')
+
         bx = f.read('bx')
+        by = np.ones(bx.shape)
         bz = f.read('bz')
         if bx is None:
             xt_prime = f.read('forward_xt_prime')
             zt_prime = f.read('forward_zt_prime')
             array_indices = indices(xt_prime.shape)
             bx = xt_prime - array_indices[0,...]
+            by = by * dy
             bz = zt_prime - array_indices[2,...]
-        by = np.ones(bx.shape)
 
         nx, ny, nz = bx.shape
-
-        dx = f.read('dx')
-        dy = f.read('dy')
         dz = nx*dx / nz
 
     x = np.linspace(0, nx*dx, nx)
     y = np.linspace(0, ny*dy, ny)
     z = np.linspace(0, nz*dz, nz)
 
-    gridToVTK(outfile, x*scale, y, z*scale, pointData={'B' : (bx*scale, by*dy, bz*scale)})
+    gridToVTK(outfile, x*scale, y, z*scale, pointData={'B' : (bx*scale, by, bz*scale)})
