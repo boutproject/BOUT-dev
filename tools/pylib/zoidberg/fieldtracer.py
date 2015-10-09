@@ -7,17 +7,18 @@ from scipy.integrate import odeint
 # from . import field
 
 class FieldTracer(object):
-    def __init__(self, grid, field):
+    def __init__(self, field, grid=None):
         """Create a FieldTracer object
 
         Inputs
         ------
-        grid - An FCI grid
         field - A function specifying the magnetic field function
+        grid - An FCI grid
         """
 
-        self.grid = grid
         self.field_direction = field.field_direction
+        if grid is not None:
+            self.grid = grid
 
     def follow_all_field_lines(self, phi, dphi):
         """

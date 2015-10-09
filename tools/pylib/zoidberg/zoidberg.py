@@ -45,7 +45,7 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
     backward_xt_prime = np.zeros( (nx, ny, nz) )
     backward_zt_prime = np.zeros( (nx, ny, nz) )
 
-    field_tracer = fieldtracer.FieldTracer(grid, magnetic_field)
+    field_tracer = fieldtracer.FieldTracer(magnetic_field, grid)
 
     # TODO: if axisymmetric, don't loop, do one slice and copy
     for j in range(ny):
