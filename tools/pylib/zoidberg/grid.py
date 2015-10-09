@@ -7,7 +7,7 @@ import numpy as np
 class Grid(object):
     def __init__(self, nx, ny, nz,
                  Lx=0.1, Ly=10., Lz = 1.,
-                 name="fci_grid"):
+                 name="fci_grid", MXG=2):
         """Initialise a grid object
 
         Inputs
@@ -21,7 +21,11 @@ class Grid(object):
         Lz  - Poloidal domain size [m]
 
         name - Grid name (default "fci_grid")
+
+        MXG - Number of x guard cells
         """
+
+        self.MXG = MXG
 
         self.name = name
 
@@ -33,16 +37,16 @@ class Grid(object):
         self.Ly = float(Ly)
         self.Lz = float(Lz)
 
-        self.delta_x = old_div(Lx,nx-1)
+        self.delta_x = old_div(Lx,(nx-2.*MXG))
         self.delta_y = old_div(Ly,ny)
         self.delta_z = old_div(Lz,nz)
 
         # Coord arrays
-        self.xarray = np.linspace(0,Lx,nx)
-        self.yarray = np.linspace(0,Ly,ny,endpoint=False)
+        self.xarray = Lx * (np.arange(nx) - MXG + 0.5)/(nx - 2.*MXG)  # 0 and 1 half-way between cells
+        self.yarray = np.linspace(0,Ly,ny)
         self.zarray = np.linspace(0,Lz,nz,endpoint=False)
 
-        self.xcentre = 0.5*max(self.xarray)
+        self.xcentre = old_div(Lx, 2.)#0.5*max(self.xarray)
         self.zcentre = 0.5*max(self.zarray)
 
         # How to do this properly?

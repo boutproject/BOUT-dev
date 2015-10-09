@@ -57,14 +57,14 @@ def make_maps(grid, magnetic_field, quiet=False, **kwargs):
         y_coords = [grid.yarray[j], grid.yarray[j]+grid.delta_y]
         # We only want the end point, as [0,...] is the initial position
         coord = field_tracer.follow_field_lines(x2d, z2d, y_coords)[1,...]
-        forward_xt_prime[:,j,:] = coord[:,:,0] / grid.delta_x # X index
+        forward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
         forward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
         # Go backwards from yarray[j] by an angle -delta_y
         y_coords = [grid.yarray[j], grid.yarray[j]-grid.delta_y]
         # We only want the end point, as [0,...] is the initial position
         coord = field_tracer.follow_field_lines(x2d, z2d, y_coords)[1,...]
-        backward_xt_prime[:,j,:] = coord[:,:,0] / grid.delta_x # X index
+        backward_xt_prime[:,j,:] = (grid.MXG - 0.5) + coord[:,:,0] / grid.delta_x # X index
         backward_zt_prime[:,j,:] = coord[:,:,1] / grid.delta_z # Z index
 
     maps = {
