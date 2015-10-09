@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
 
-def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
+def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100,
+                  interactive=False):
     """Plot a Poincare graph of the field lines.
 
     Inputs
@@ -16,6 +17,9 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
     nplot          - Number of equally spaced phi-slices to plot [3]
     phi_slices     - List of phi-slices to plot; overrides nplot
     revs           - Number of revolutions (times around phi) [40]
+    interactive    - Left-click on the plot to trace a field-line from that point
+                     Right-click to add an additional trace
+                     Middle-click to clear added traces
     """
 
     colours = ["k", "b", "r", "g", "c", "m"]
@@ -77,6 +81,36 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
 
     ax.legend()
 
+    overplot, = ax.plot([], [], 'ok')
+
+    def onclick(event):
+        # Check if user clicked inside the plot
+        if event.xdata is None:
+            return
+
+        # Middle mouse
+        if event.button is 2:
+            x_ = []
+            z_ = []
+        else:
+            result = field_tracer.follow_field_lines(event.xdata, event.ydata, phi_values)
+            # Right mouse
+            if event.button is 3:
+                x_, z_ = overplot.get_data()
+                x_ = np.append(x_, result[:,0])
+                z_ = np.append(z_, result[:,1])
+            # Left mouse
+            else:
+                x_ = result[:,0]
+                z_ = result[:,1]
+
+        overplot.set_data(x_, z_)
+        ax.relim()
+        ax.autoscale_view()
+        fig.canvas.draw()
+
+    if interactive:
+        fig.canvas.mpl_connect('button_press_event', onclick)
     plt.show()
 
     return fig, ax
