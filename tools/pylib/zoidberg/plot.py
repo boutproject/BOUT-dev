@@ -5,7 +5,6 @@ import matplotlib.animation as anim
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
-from itertools import cycle
 
 def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
     """Plot a Poincare graph of the field lines.
@@ -19,7 +18,7 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
     revs           - Number of revolutions (times around phi) [40]
     """
 
-    colours = cycle(["k", "b", "r", "g", "c", "m"])
+    colours = ["k", "b", "r", "g", "c", "m"]
 
     # Check arguments are ok
     if nplot is None and phi_slices is None:
@@ -37,6 +36,9 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
     # nplot equally spaced phi slices
     if phi_slices is None:
         phi_slices = np.linspace(0, grid.Ly, nplot, endpoint=False)
+
+    if nplot > len(colours):
+        colours += colours * floor(nplot/len(colours))
 
     ########################################################
     # Extend the domain from [0,grid.Ly] to [0,revs*grid.Ly]
@@ -59,14 +61,19 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
 
     fig, ax = plt.subplots(1,1)
     for index, colour in zip(phi_indices, colours):
-        ax.scatter(result[index,:,0], result[index,:,1], marker='.', color=colour)
+        style = {
+            'marker'    : '.',
+            'color'     : colour,
+            'linestyle' : 'None',
+            }
+        ax.plot(result[index,:,0], result[index,:,1], **style)
 
     ax.set_xlabel("Radius [m]", fontsize=20)
     ax.set_ylabel("Height [m]", fontsize=20)
     ax.tick_params(axis='both', labelsize=15)
 
     for phi, colour in zip(phi_slices, colours):
-        ax.scatter([], [], color=colour, label=r'$Y = {0:.2f}$'.format(phi))
+        ax.plot([], [], color=colour, label=r'$Y = {0:.2f}$'.format(phi))
 
     ax.legend()
 
