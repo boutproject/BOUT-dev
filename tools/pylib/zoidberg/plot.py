@@ -5,33 +5,68 @@ import matplotlib.animation as anim
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.integrate import odeint
+from itertools import cycle
 
-def plot_poincare(grid, magnetic_field, nplot=3):
+def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
+    """Plot a Poincare graph of the field lines.
 
-    sym=[".k", ".b", ".r", ".g"]
-    phivals = np.arange(100 * nplot)*2.*np.pi/(nplot)
-    # phivals = np.linspace(0, 100*2*np.pi, 1000)
+    Inputs
+    ------
+    grid           - Grid object
+    magnetic_field - Magnetic field object
+    nplot          - Number of equally spaced phi-slices to plot [3]
+    phi_slices     - List of phi-slices to plot; overrides nplot
+    revs           - Number of revolutions (times around phi) [40]
+    """
 
-    fig, ax = plt.subplots(1,1)
+    colours = cycle(["k", "b", "r", "g", "c", "m"])
+
+    # Check arguments are ok
+    if nplot is None and phi_slices is None:
+        raise ValueError("nplot and phi_slices cannot both be None")
+    if phi_slices is not None:
+        if min(phi_slices) < 0.0 or max(phi_slices) > grid.Ly:
+            raise ValueError("phi_slices must all be between 0.0 and grid.Ly ({Ly})"
+                             .format(Ly=grid.Ly))
+        # Make sure phi_slices is monotonically increasing
+        phi_slices = np.array(phi_slices)
+        phi_slices.sort()
+        # If phi_slices is given, then nplot is the number of slices
+        nplot = len(phi_slices)
+
+    # nplot equally spaced phi slices
+    if phi_slices is None:
+        phi_slices = np.linspace(0, grid.Ly, nplot, endpoint=False)
+
+    ########################################################
+    # Extend the domain from [0,grid.Ly] to [0,revs*grid.Ly]
+
+    phi_values = phi_slices[:]
+    for n in np.arange(1, revs):
+        phi_values = np.append(phi_values, n*grid.Ly + phi_values[:nplot])
+
+    phi_indices = np.arange(0, nplot * revs)
+    phi_indices = phi_indices.reshape( (revs, nplot) ).T
+
+    #######################################################
+    # Plotting
 
     xpos = grid.xcentre + np.linspace(0, 0.5*np.max(grid.xarray), 10)
     zpos = grid.zcentre + np.zeros(xpos.shape)
 
-    position = np.column_stack((xpos, zpos)).flatten()
+    field_tracer = fieldtracer.FieldTracer(magnetic_field)
+    result = field_tracer.follow_field_lines(xpos, zpos, phi_values)
 
-    # for xpos in grid.xcentre + np.linspace(0, 0.5*np.max(grid.xarray),10):
-    #     pos = (xpos, grid.zcentre)
-    result = odeint(magnetic_field.field_direction, position, phivals, args=(True,))
-    result = result.reshape((-1,2))
-    for p in range(nplot):
-        ax.plot(result[p::nplot,0], result[p::nplot,1],sym[p])
+    fig, ax = plt.subplots(1,1)
+    for index, colour in zip(phi_indices, colours):
+        ax.scatter(result[index,:,0], result[index,:,1], marker='.', color=colour)
 
     ax.set_xlabel("Radius [m]", fontsize=20)
     ax.set_ylabel("Height [m]", fontsize=20)
     ax.tick_params(axis='both', labelsize=15)
 
-    for p in range(nplot):
-        ax.plot([], [], sym[p], label=r'$Y = \left({0} * L/{1}\right)$'.format(p, nplot))
+    for phi, colour in zip(phi_slices, colours):
+        ax.scatter([], [], color=colour, label=r'$Y = {0:.2f}$'.format(phi))
 
     ax.legend()
 
