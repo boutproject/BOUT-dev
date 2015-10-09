@@ -81,22 +81,31 @@ def plot_poincare(grid, magnetic_field, nplot=3, phi_slices=None, revs=100):
 
     return fig, ax
 
-def plot_3d_field_line(grid, magnetic_field, cycles=20):
-    # Go round toroidally 20 times
-    phivals_hires = np.linspace(0, cycles*2*np.pi, num=50*cycles)
+def plot_3d_field_line(grid, magnetic_field, cycles=20, y_res=50):
+    """Make a 3D plot of field lines
+
+    Inputs
+    ------
+    grid           - Grid object
+    magnetic_field - Magnetic field object
+    cycles         - Number of times to go round in y [20]
+    y_res          - Number of points in y in each cycle [50]
+    """
+    # Go round toroidally cycles times
+    phivals_hires = np.linspace(0, cycles*2*np.pi, num=y_res*cycles)
 
     xpos = grid.xcentre + 0.5*np.max(grid.xarray)
+
     result_hires = odeint(magnetic_field.field_direction, (xpos, grid.zcentre), phivals_hires)
-    # Get phivals_hires into [0,2pi]
-    phivals_hires_mod = np.mod(phivals_hires, 2*np.pi)
-    # There are 20 sets of field lines 50 points long each
+    # Get phivals_hires into [0,Ly]
+    phivals_hires_mod = np.mod(phivals_hires, grid.Ly)
+    # There are cycles sets of field lines y_res points long each
     # and we also need to transpose for reasons
-    phivals_hires_mod = phivals_hires_mod.reshape( (cycles, 50) ).T
+    phivals_hires_mod = phivals_hires_mod.reshape( (cycles, y_res) ).T
     # Same for the result, but only swap first and second indices
-    result_hires_mod = result_hires.reshape( (cycles,50,2) ).transpose(1,0,2)
+    result_hires_mod = result_hires.reshape( (cycles,y_res,2) ).transpose(1,0,2)
 
     fig = plt.figure()
-
     ax = fig.gca(projection='3d')
     for n in xrange(cycles):
         ax.plot(result_hires_mod[:,n,0], result_hires_mod[:,n,1], phivals_hires_mod[:,n])
