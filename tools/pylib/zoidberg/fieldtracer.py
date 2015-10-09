@@ -7,22 +7,18 @@ from scipy.integrate import odeint
 # from . import field
 
 class FieldTracer(object):
-    def __init__(self, field, grid=None):
+    def __init__(self, field):
         """Create a FieldTracer object
 
         Inputs
         ------
         field - A function specifying the magnetic field function
-        grid - An FCI grid
         """
 
         self.field_direction = field.field_direction
-        if grid is not None:
-            self.grid = grid
 
-    def follow_all_field_lines(self, phi, dphi):
-        """
-        Uses field_direction to follow the magnetic field
+    def follow_field_lines(self, x_values, z_values, phi_values):
+        """Uses field_direction to follow the magnetic field
         from every grid (x,z) point at toroidal angle phi
         through a change in toroidal angle dphi
 
@@ -40,15 +36,8 @@ class FieldTracer(object):
         result[x,z,1] = z end location [m] from start index (x,z)
 
         """
-
-        x2d, z2d = np.meshgrid(self.grid.xarray, self.grid.zarray, indexing='ij')
-        result = self.follow_single_field_line(x2d.flatten(), z2d.flatten(), [phi, phi+dphi])
-
-        return result.reshape( (2, self.grid.nx, self.grid.nz, 2) )[1,...]
-
-    def follow_single_field_line(self, x_values, z_values, phi_values):
-
+        # Check len(x) == len(z)
         position = np.column_stack((x_values, z_values)).flatten()
         result = odeint(self.field_direction, position, phi_values, args=(True,))
 
-        return result.reshape((-1, 2))
+        return result.reshape((len(phi_values), len(x_values), 2))
