@@ -141,7 +141,7 @@ def plot_3d_field_line(grid, magnetic_field, cycles=20, y_res=50):
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    for n in xrange(cycles):
+    for n in range(cycles):
         ax.plot(result_hires_mod[:,n,0], result_hires_mod[:,n,1], phivals_hires_mod[:,n])
 
     plt.show()
