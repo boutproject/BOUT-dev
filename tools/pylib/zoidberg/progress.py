@@ -63,7 +63,7 @@ def update_progress(progress, barLength=10, ascii=False, **kwargs):
                 right_claw = open_claw
 
             zb = left_claw+face+right_claw
-            zb_middle = len(zb)/2
+            zb_middle = int(len(zb)/2)
             start = int(round((barLength-zb_middle)*progress))
             text = u"\rProgress: [{start}{zb}{rest}] {perc:6.2f}% {stat}".format(
                 start=ink*start, zb=zb, perc=progress*100, rest='-'*(barLength-start-zb_middle), stat=status)
