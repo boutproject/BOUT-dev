@@ -1,7 +1,7 @@
 import zoidberg
-import grid
-import field
-import fieldtracer
-import plot
+from . import grid
+from . import field
+from . import fieldtracer
+from . import plot
 
-from zoidberg import make_maps, write_maps
+from .zoidberg import make_maps, write_maps

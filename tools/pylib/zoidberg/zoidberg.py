@@ -18,9 +18,9 @@ except ImportError:
 
 import matplotlib.pyplot as plt
 
-import grid
-import field
-import fieldtracer
+from . import grid
+from . import field
+from . import fieldtracer
 from .progress import update_progress
 
 def make_maps(grid, magnetic_field, quiet=False, **kwargs):
