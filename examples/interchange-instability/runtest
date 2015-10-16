@@ -9,8 +9,10 @@ from __future__ import division
 nproc = 2       # Number of processors to run on
 reltol = 1.e-3  # Allowed relative tolerance in growth-rate
 
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.shell import shell
+from boututils.launch import launch
+from boututils.getmpirun import getmpirun
+from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 

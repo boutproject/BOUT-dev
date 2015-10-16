@@ -4,7 +4,7 @@ from builtins import str
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from boututils import file_import
+from boututils.file_import import file_import
 import sys
 
 if sys.version_info[0]>=3:

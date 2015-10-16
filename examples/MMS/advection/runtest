@@ -9,8 +9,10 @@ from __future__ import division
 from __future__ import print_function
 from builtins import str
 
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.shell import shell
+from boututils.launch import launch
+from boututils.getmpirun import getmpirun
+from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
 

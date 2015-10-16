@@ -13,8 +13,10 @@ from builtins import range
 from past.utils import old_div
 
 
-from boutdata import collect
+from boutdata.collect import collect
 import numpy as np
+
+import sys
 
 if sys.version_info[0]>=3:
     message = "View3D uses the VTK library through mayavi, which"+\
@@ -24,10 +26,10 @@ else:
     from mayavi import mlab
 
 from .read_geqdsk import read_geqdsk
-from boututils import View2D
+from boututils.View2D import View2D
 from scipy import interpolate
 from .boutgrid import *
-from boututils import file_import
+from boututils.file_import import file_import
 
 
 def View3D(g,path=None, gb=None):

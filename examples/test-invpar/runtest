@@ -9,8 +9,10 @@ try:
   from builtins import str
 except:
   pass
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.shell import shell
+from boututils.launch import launch
+from boututils.getmpirun import getmpirun
+from boutdata.collect import collect
 from sys import stdout, exit
 
 MPIRUN=getmpirun()

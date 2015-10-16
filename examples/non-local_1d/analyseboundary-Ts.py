@@ -5,8 +5,10 @@ from __future__ import division
 from builtins import str
 from builtins import range
 from past.utils import old_div
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.shell import shell
+from boututils.launch import launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 from math import sqrt, log, pi
@@ -44,8 +46,8 @@ if end_index<0:
 Te_left = []
 Ti_left = []
 for i in range(end_index):
-	Te_left.append(old_div((Te[i,0,2,0]+Te[i,0,3,0]),2))
-	Ti_left.append(old_div((Ti[i,0,2,0]+Ti[i,0,3,0]),2))
+        Te_left.append(old_div((Te[i,0,2,0]+Te[i,0,3,0]),2))
+        Ti_left.append(old_div((Ti[i,0,2,0]+Ti[i,0,3,0]),2))
 
 # Make plot
 if len(argv)>2:

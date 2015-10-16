@@ -17,8 +17,10 @@ vars = ['flag0', 'flag3', 'flagis', 'flagos',
         'flag0ad', 'flag3ad', 'flagisad', 'flagosad']  
 tol = 1e-5                  # Absolute tolerance
 
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.shell import shell
+from boututils.launch import launch
+from boututils.getmpirun import getmpirun
+from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 

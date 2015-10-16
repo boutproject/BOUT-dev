@@ -17,7 +17,7 @@ except ImportError:
     raise
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
     raise

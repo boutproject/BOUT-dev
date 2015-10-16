@@ -21,7 +21,7 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
 from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
-from boutdata import collect
+from boutdata.collect import collect
 #import pdb
 
 
