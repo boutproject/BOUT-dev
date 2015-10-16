@@ -77,6 +77,8 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   
   addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
   
+  addGenerator("round", new FieldRound(NULL));
+  
   // Ballooning transform
   addGenerator("ballooning", new FieldBallooning(fieldmesh));
   
