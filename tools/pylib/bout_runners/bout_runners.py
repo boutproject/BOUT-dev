@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.003'
-__date__    = '07.09.2015'
+__version__ = '1.0031'
+__date__    = '16.10.2015'
 
 import os
 import re
@@ -21,7 +21,9 @@ import timeit
 import datetime
 from numbers import Number
 import numpy as np
-from boututils import shell, launch, getmpirun
+from boututils.shell import shell
+from boututils.launch import launch
+from boututils.getmpirun import getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
 
