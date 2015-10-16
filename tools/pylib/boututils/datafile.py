@@ -42,7 +42,7 @@ try:
     has_netCDF = True
 except ImportError:
     #print "netcdf4-python module not found"
-    
+
     try:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
         from Scientific.N import Int, Float, Float32
@@ -91,27 +91,27 @@ class DataFile:
             self.impl = DataFile_HDF5(filename=filename, write=write, create=create, format=format)
         else:
             self.impl = DataFile_netCDF(filename=filename, write=write, create=create, format=format)
-    
+
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
       self.impl.open(filename, write=write, create=create,
                   format=format)
     def close(self):
         self.impl.close()
-    
+
     def __del__(self):
         self.impl.__del__()
-    
+
     def __enter__(self):
         return self.impl.__enter__()
-    
+
     def __exit__(self, type, value, traceback):
         self.impl.__exit__(type, value, traceback)
-    
+
     def read(self, name, ranges=None):
         """Read a variable from the file."""
         return self.impl.read(name, ranges=ranges)
-   
+
     def list(self):
         """List all variables in the file."""
         return self.impl.list()
@@ -119,11 +119,11 @@ class DataFile:
     def dimensions(self, varname):
         """Array of dimension names"""
         return self.impl.dimensions(varname)
-        
+
     def ndims(self, varname):
         """Number of dimensions for a variable."""
         return self.impl.ndims(varname)
-    
+
     def size(self, varname):
         """List of dimension sizes for a variable."""
         return self.impl.size(varname)
@@ -150,7 +150,7 @@ class DataFile_netCDF(DataFile):
                 self.handle = Dataset(filename, "r")
         elif create:
             if library == "Scientific":
-                self.handle = Dataset(filename, "w", 
+                self.handle = Dataset(filename, "w",
                                       'Created ' + time.ctime(time.time())
                                       + ' by ' + getUserName())
             elif library == "scipy":
@@ -211,17 +211,17 @@ class DataFile_netCDF(DataFile):
                 if len(ranges) != 2*ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
-                
+
                 if library == "Scientific":
                     # Passing ranges to var[] doesn't seem to work
                     data = var[:]
                     if ndims == 1:
                         data = data[ranges[0]:ranges[1]]
                     elif ndims == 2:
-                        data = data[ranges[0]:ranges[1], 
+                        data = data[ranges[0]:ranges[1],
                                     ranges[2]:ranges[3]]
                     elif ndims == 3:
-                        data = data[ranges[0]:ranges[1], 
+                        data = data[ranges[0]:ranges[1],
                                     ranges[2]:ranges[3],
                                     ranges[4]:ranges[5]]
                     elif ndims == 4:
@@ -233,10 +233,10 @@ class DataFile_netCDF(DataFile):
                     if ndims == 1:
                         data = var[ranges[0]:ranges[1]]
                     elif ndims == 2:
-                        data = var[ranges[0]:ranges[1], 
+                        data = var[ranges[0]:ranges[1],
                                    ranges[2]:ranges[3]]
                     elif ndims == 3:
-                        data = var[ranges[0]:ranges[1], 
+                        data = var[ranges[0]:ranges[1],
                                    ranges[2]:ranges[3],
                                    ranges[4]:ranges[5]]
                     elif ndims == 4:
@@ -276,7 +276,7 @@ class DataFile_netCDF(DataFile):
         except KeyError:
             raise ValueError("No such variable")
         return var.dimensions
-        
+
     def ndims(self, varname):
         """Number of dimensions for a variable."""
         if self.handle is None:
@@ -286,7 +286,7 @@ class DataFile_netCDF(DataFile):
         except KeyError:
             raise ValueError("No such variable")
         return len(var.dimensions)
-    
+
     def size(self, varname):
         """List of dimension sizes for a variable."""
         if self.handle == None: return []
@@ -294,7 +294,7 @@ class DataFile_netCDF(DataFile):
             var = self.handle.variables[varname]
         except KeyError:
             return []
-        
+
         def dimlen(d):
             dim = self.handle.dimensions[d]
             if dim != None:
@@ -305,21 +305,21 @@ class DataFile_netCDF(DataFile):
             return 0
         return [dimlen(d) for d in var.dimensions]
 
-    def write(self, name, data):
+    def write(self, name, data, info = False):
         """Writes a variable to file, making guesses for the dimensions"""
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
-        
+
         s = np.shape(data)
 
         # Get the variable type
         t = type(data).__name__
-        
+
         if t == 'NoneType':
             print("DataFile: None passed as data to write. Ignoring")
             return
-            
+
         if t == 'ndarray':
             # Numpy type. Get the data type
             t = data.dtype.str
@@ -333,7 +333,7 @@ class DataFile_netCDF(DataFile):
             # NetCDF 3 does not support type int64
             data = np.int32(data)
             t = data.dtype.str
-            
+
         try:
             # See if the variable already exists
             var = self.handle.variables[name]
@@ -387,7 +387,8 @@ class DataFile_netCDF(DataFile):
                             # Already exists, so keep going
                         except KeyError:
                             # Not found. Create
-                            print("Defining dimension "+ dn + " of size %d" % size)
+                            if info:
+                                print("Defining dimension "+ dn + " of size %d" % size)
                             try:
                                 self.handle.createDimension(dn, size)
                             except AttributeError:
@@ -395,22 +396,23 @@ class DataFile_netCDF(DataFile):
                                 self.handle.create_dimension(dn, size)
                             return dn
                         i = i + 1
-                    
+
                 except KeyError:
                     # Doesn't exist, so add
-                    print("Defining dimension "+ name + " of size %d" % size)
+                    if info:
+                        print("Defining dimension "+ name + " of size %d" % size)
                     try:
                         self.handle.createDimension(name, size)
                     except AttributeError:
                         self.handle.create_dimension(name, size)
-                    
+
                 return name
-                
+
             # List of (size, 'name') tuples
             dlist = list(zip(s, defdims[len(s)]))
             # Get new list of variables, and turn into a tuple
             dims = tuple( map(find_dim, dlist) )
-            
+
             # Create the variable
             if library == "Scientific":
                 if t == 'int' or t == '<i4' or t == 'int32':
@@ -420,7 +422,7 @@ class DataFile_netCDF(DataFile):
                 else:
                     tc = Float
                 var = self.handle.createVariable(name, tc, dims)
-                    
+
             elif library == "scipy":
                 try:
                     # New style functions
@@ -433,7 +435,7 @@ class DataFile_netCDF(DataFile):
 
             if var == None:
                 raise Exception("Couldn't create variable")
-            
+
         # Write the data
 
         try:
@@ -442,7 +444,7 @@ class DataFile_netCDF(DataFile):
         except:
             # And some others only this
             var[:] = data
-            
+
 class DataFile_HDF5(DataFile):
     handle = None
 
@@ -502,14 +504,14 @@ class DataFile_HDF5(DataFile):
                 if len(ranges) != 2*ndims:
                     print("Incorrect number of elements in ranges argument")
                     return None
-                
+
                 if ndims == 1:
                     data = var[ranges[0]:ranges[1]]
                 elif ndims == 2:
-                    data = var[ranges[0]:ranges[1], 
+                    data = var[ranges[0]:ranges[1],
                                 ranges[2]:ranges[3]]
                 elif ndims == 3:
-                    data = var[ranges[0]:ranges[1], 
+                    data = var[ranges[0]:ranges[1],
                                 ranges[2]:ranges[3],
                                 ranges[4]:ranges[5]]
                 elif ndims == 4:
@@ -557,7 +559,7 @@ class DataFile_HDF5(DataFile):
             return ()
         else:
             raise ValueError("Variable type not recognized")
-        
+
     def ndims(self, varname):
         """Number of dimensions for a variable."""
         if self.handle == None: return None
@@ -566,7 +568,7 @@ class DataFile_HDF5(DataFile):
         except KeyError:
             raise ValueError("Variable not found")
         return len(var.shape)
-    
+
     def size(self, varname):
         """List of dimension sizes for a variable."""
         if self.handle == None: return None
@@ -581,5 +583,5 @@ class DataFile_HDF5(DataFile):
 
         if not self.writeable:
             raise Exception("File not writeable. Open with write=True keyword")
-        
+
         self.handle.create_dataset(name, data=data)
