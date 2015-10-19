@@ -25,12 +25,10 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils.shell import shell
-from boututils.launch import launch
+from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.file_import import file_import
 from boututils.calculus import deriv
 from boututils.linear_regression import linear_regression
-from boututils.getmpirun import getmpirun
 
 from boutdata.collect import collect
 import numpy as np

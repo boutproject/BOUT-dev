@@ -9,8 +9,7 @@ from builtins import str
 from builtins import range
 from past.utils import old_div
 
-from boututils.shell import shell
-from boututils.launch import launch
+from boututils.run_wrapper import shell, launch
 from boutdata.plotdata import plotdata
 from boutdata.collect import collect
 

@@ -19,9 +19,7 @@ vars = ['var0_2D', 'var0_3D',
         'var4_2D', 'var4_3D']
 tol = 1e-10                  # Absolute tolerance
 
-from boututils.shell import shell
-from boututils.launch import launch
-from boututils.getmpirun import getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit

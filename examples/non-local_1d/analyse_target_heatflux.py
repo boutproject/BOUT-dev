@@ -10,8 +10,7 @@ from builtins import str
 from builtins import range
 nproc = 1  # Number of processors to use
 
-from boututils.shell import shell
-from boututils.launch import launch
+from boututils.run_wrapper import shell, launch
 from boutdata.plotdata import plotdata
 from boutdata.collect import collect
 import numpy as np

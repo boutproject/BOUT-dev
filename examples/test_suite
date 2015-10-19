@@ -20,7 +20,7 @@ tests = ['test-io', 'test-fieldfactory', 'test-laplace',
 ##################################################################
 
 import os
-from boututils.shell import shell
+from boututils.run_wrapper import shell
 
 savepath = os.getcwd() # Save current working directory
 npassed = 0

@@ -11,13 +11,11 @@ for_all_versions = [\
                     'fft_deriv',\
                     'fft_integrate',\
                     'file_import',\
-                    'getmpirun',\
                     'int_func',\
-                    'launch',\
                     'linear_regression',\
                     'mode_structure',\
                     # 'moment_xyzt',\   # bunch pkg requried
-                    'ncpus',\
+                    'run_wrapper',\
                     'shell',\
                     'showdata',\
                     # 'surface_average',\

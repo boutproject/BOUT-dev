@@ -9,7 +9,7 @@
 
 from __future__ import print_function
 import os
-from boututils.shell import shell
+from boututils.run_wrapper import shell
 
 failed = []
 passed = []

@@ -21,9 +21,7 @@ import timeit
 import datetime
 from numbers import Number
 import numpy as np
-from boututils.shell import shell
-from boututils.launch import launch
-from boututils.getmpirun import getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
 

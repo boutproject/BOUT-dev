@@ -16,8 +16,7 @@ from boutdata.collect import collect
 from numpy.fft import rfftn
 from numpy import argmax
 
-from boututils.shell import shell
-from boututils.launch import launch
+from boututils.run_wrapper import shell, launch
 
 def analyse(path="test"):
   """

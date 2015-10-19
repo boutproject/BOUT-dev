@@ -7,9 +7,7 @@ try:
 except:
   pass
 
-from boututils.shell import shell
-from boututils.launch import launch
-from boututils.getmpirun import getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun
 from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
