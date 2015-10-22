@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.003'
-__date__    = '07.09.2015'
+__version__ = '1.004'
+__date__    = '22.10.2015'
 
 import os
 import re
@@ -2252,6 +2252,8 @@ class basic_runner(object):
                     # additional folder
                     cur_additional = elem.replace(':','_')
                     cur_additional = cur_additional.replace('=','_')
+                    cur_additional = cur_additional.replace('(',',')
+                    cur_additional = cur_additional.replace(')',',')
                     additional.append(cur_additional)
 
         # We sort the elements in the various folders alphabetically,
@@ -2353,6 +2355,19 @@ class basic_runner(object):
             self._errors.append("RuntimeError")
             message =  "An error occurred the run."
             message += " Please see the output above for details."
+            if ('(' in out) or (')' in out):
+                message =  'A "(" symbol seem to have appeared in the'
+                message += " command line.\nIf this true, you can avoid"
+                message += " this problem by adding an extra set of"
+                message += " quotation marks. For example\n\n"
+                message += "additional=('variable', 'bndry_xin',"
+                message += " '\"dirichlet_o4(0.0)\")'\n"
+                message += "rather than\n"
+                message += "additional=('variable', 'bndry_xin',"
+                message += " 'dirichlet_o4(0.0))'"
+            else:
+                message =  "An error occurred the run."
+                message += " Please see the output above for details."
             raise RuntimeError(message)
 
         # Estimate elapsed time
