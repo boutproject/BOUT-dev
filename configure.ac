@@ -744,7 +744,9 @@ fi
 if test "$FFTPATH" != ""
 then
   AC_CHECK_FILES($FFTPATH/lib/libfftw3.a, FFTPATHLIB='lib',
-    AC_CHECK_FILES($FFTPATH/lib64/libfftw3.a, FFTPATHLIB='lib64', FFTPATH='' ) )
+    AC_CHECK_FILES($FFTPATH/lib64/libfftw3.a, FFTPATHLIB='lib64',
+      AC_CHECK_FILES($FFTPATH/lib/libfftw3.so, FFTPATHLIB='lib',
+        AC_CHECK_FILES($FFTPATH/lib64/libfftw3.so, FFTPATHLIB='lib64', FFTPATH='' ) ) ) )
 
 fi
 
