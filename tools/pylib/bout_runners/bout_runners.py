@@ -2252,6 +2252,8 @@ class basic_runner(object):
                     # additional folder
                     cur_additional = elem.replace(':','_')
                     cur_additional = cur_additional.replace('=','_')
+                    cur_additional = cur_additional.replace('"','-')
+                    cur_additional = cur_additional.replace("'",'-')
                     cur_additional = cur_additional.replace('(',',')
                     cur_additional = cur_additional.replace(')',',')
                     additional.append(cur_additional)
