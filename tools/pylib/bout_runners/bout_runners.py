@@ -2357,8 +2357,14 @@ class basic_runner(object):
             self._errors.append("RuntimeError")
             message =  "An error occurred the run."
             message += " Please see the output above for details."
-            if ('(' in out) or (')' in out):
-                message =  'A "(" symbol seem to have appeared in the'
+            # Search if parantheses are present, but without ' or "
+            if     ('(' in combination and\
+                   not(    re.search(r'\"(.*)\(', combination)\
+                        or re.search(r"\'(.*)\(", combination)))\
+                or (')' in combination and\
+                   not(   re.search(r'\)(.*)\"', combination)
+                       or re.search(r"\)(.*)\'", combination))):
+                message = 'A "(" and/or ")" symbol seem to have appeared in the'
                 message += " command line.\nIf this true, you can avoid"
                 message += " this problem by adding an extra set of"
                 message += " quotation marks. For example\n\n"
