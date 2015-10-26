@@ -1366,7 +1366,7 @@ Optional Packages:
   --with-debug            	   Enable all debugging flags
   --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver
   --with-cvode            	   Use the SUNDIALS CVODE solver
-  --with-sundals              Use CVODE and IDA
+  --with-sundials              Use CVODE and IDA
   --with-facets           	   Build the interface to FACETS
   --with-fftw             	   Set directory of FFTW3 library
   --with-lapack           	   Use the LAPACK library

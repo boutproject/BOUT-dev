@@ -45,7 +45,7 @@ AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF l
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
 AC_ARG_WITH(cvode,  [  --with-cvode            	   Use the SUNDIALS CVODE solver])
-AC_ARG_WITH(sundials, [  --with-sundals              Use CVODE and IDA])
+AC_ARG_WITH(sundials, [  --with-sundials              Use CVODE and IDA])
 AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS])
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
