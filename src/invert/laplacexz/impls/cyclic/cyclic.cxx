@@ -112,7 +112,7 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         bcoef[ind][x-xstart] -= val;
         
 	// ZZ component
-	bcoef[ind][x-xstart] -= SQ(kwave) * mesh->g33(x,y);
+	bcoef[ind][x-xstart] -= A2D(x,y) * SQ(kwave) * mesh->g33(x,y);
 	
       }
       
