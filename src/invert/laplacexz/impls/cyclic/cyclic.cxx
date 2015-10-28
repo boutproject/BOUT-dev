@@ -111,7 +111,9 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         acoef[ind][x-xstart] += val;
         bcoef[ind][x-xstart] -= val;
         
-        
+	// ZZ component
+	bcoef[ind][x-xstart] -= SQ(kwave) * mesh->g33(x,y);
+	
       }
       
       // Outer X boundary
@@ -122,12 +124,14 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
         bcoef[ind][nloc-1] =  1.0;
         ccoef[ind][nloc-1] =  0.0;
       }
-      
+
+      /*
       if(y == mesh->ystart) {
         for(int i=0;i<nloc;i++) {
           output << i << ": " <<  acoef[ind][i] << ", " << bcoef[ind][i] << ", " << ccoef[ind][i] << endl;
         }
       }
+      */
 
       ind++;
     }
