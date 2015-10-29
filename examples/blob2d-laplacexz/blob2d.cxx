@@ -32,6 +32,11 @@ bool sheath;                                    // Sheath connected?
 
 LaplaceXZ *phiSolver;
 
+
+int boussinesq_reuse; // Determines how long between updates of the density in the vorticity
+int boussinesq_used;  // How many times has it been reused
+
+
 int physics_init(bool restarting) { 
  
   /******************Reading options *****************/
@@ -58,6 +63,10 @@ int physics_init(bool restarting) {
   OPTION(options, compressible,false);   // Include compressible ExB term in density equation
   OPTION(options, boussinesq,true);      // Use Boussinesq approximation in vorticity
   OPTION(options, sheath, true);         // Sheath closure
+
+  OPTION(options, boussinesq_reuse, 0);  // How many times to reuse n in vorticity?
+  boussinesq_used = boussinesq_reuse + 1; // Ensure updated first time
+  
   
   /***************Calculate the Parameters **********/
   
@@ -69,7 +78,7 @@ int physics_init(bool restarting) {
                Omega_i, c_s, rho_s);
 
   // Calculate delta_*, blob size scaling
-  output.write("\tdelta_* = rho_s * (dn/n) * %e ", pow( L_par*L_par / (R_c * rho_s), 1./5) );
+  output.write("\tdelta_* = rho_s * (dn/n) * %e\n", pow( L_par*L_par / (R_c * rho_s), 1./5) );
   
   /************ Create a solver for potential ********/
 
@@ -109,8 +118,13 @@ int physics_run(BoutReal t) {
   //////////////////////////////////////////////////////////////////////////// 
 
   if(!boussinesq) {
-    // Including full density in vorticit inversion
-    phiSolver->setCoefs(n,0.0);
+    // Including full density in vorticity inversion
+    boussinesq_used++;
+    if(boussinesq_used > boussinesq_reuse) {
+      // Update density
+      phiSolver->setCoefs(n,0.0);
+      boussinesq_used = 0;
+    }
     phi = phiSolver->solve(omega, phi);  // Use previous solution as guess
   }else {
     // Background density only (1 in normalised units)
