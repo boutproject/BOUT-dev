@@ -1,4 +1,5 @@
-#include "impls/cyclic/cyclic.hxx"
+#include "impls/cyclic/laplacexz-cyclic.hxx"
+#include "impls/petsc/laplacexz-petsc.hxx"
 
 #include <boutexception.hxx>
 #include <bout/invert/laplacexz.hxx>
@@ -13,7 +14,9 @@ LaplaceXZ* LaplaceXZ::create(Mesh *m, Options *options) {
   options->get("type", type, "cyclic");
 
   if(strcasecmp(type.c_str(), "cyclic") == 0) {
-    return new LaplaceXYcyclic(m, options);
+    return new LaplaceXZcyclic(m, options);
+  }else if(strcasecmp(type.c_str(), "petsc") == 0) {
+    return new LaplaceXZpetsc(m, options);
   }else {
     throw BoutException("Unknown LaplaceXZ solver type '%s'", type.c_str());
   }

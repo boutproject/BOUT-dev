@@ -39,32 +39,40 @@ public:
    * Destructor
    */
   ~LaplaceXZpetsc();
-  
-  void setCoefs(const Field2D &A, const Field2D &B);
 
+  
+  
+  void setCoefs(const Field3D &A, const Field3D &B);
+  
+  void setCoefs(const Field2D &A, const Field2D &B) {
+    setCoefs(Field3D(A), Field3D(B));
+  }
+  
   /*!
    * Solve Laplacian in X-Z
    */
   Field3D solve(const Field3D &b, const Field3D &x0);
   
 private:
-  PetscLib lib;     ///< Requires PETSc library
-  Mat MatA;         ///< Matrix to be inverted
-  Vec xs, bs;       ///< Solution and RHS vectors
-  KSP ksp;          ///< Krylov Subspace solver
-  PC pc;            ///< Preconditioner
+  PetscLib lib;      ///< Requires PETSc library
+
+  /*!
+   * Data for a single Y slice
+   */
+  struct YSlice {
+    int yindex; /// Y index
+    Mat MatA;  ///< Matrix to be inverted
+    Mat MatP;  ///< Matrix for preconditioner
+    KSP ksp;   ///< Krylov Subspace solver context
+  };
+  vector<YSlice> slice;
+  
+  Vec xs, bs;        ///< Solution and RHS vectors
 
   Mesh *mesh;   ///< The mesh this operates on, provides metrics and communication
 
-  /*!
-   * Number of grid points on this processor
-   */
-  int localSize();
-
-  /*!
-   * Return the communicator
-   */
-  MPI_Comm communicator();
+  int reuse_limit; ///< How many times can the preconditioner be reused?
+  int reuse_count; ///< How many times has it been reused?
 };
 
 

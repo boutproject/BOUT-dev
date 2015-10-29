@@ -1,4 +1,4 @@
-#include "cyclic.hxx"
+#include "laplacexz-cyclic.hxx"
 
 #include <utils.hxx>
 #include <fft.hxx>
@@ -6,7 +6,7 @@
 
 #include <output.hxx>
 
-LaplaceXYcyclic::LaplaceXYcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
+LaplaceXZcyclic::LaplaceXZcyclic(Mesh *m, Options *options) : LaplaceXZ(m, options), mesh(m) {
   
   // Number of Z Fourier modes, including DC
   nmode = (mesh->ngz-1)/2 + 1;
@@ -44,7 +44,7 @@ LaplaceXYcyclic::LaplaceXYcyclic(Mesh *m, Options *options) : LaplaceXZ(m, optio
   setCoefs(1.0, 0.0);
 }
 
-LaplaceXYcyclic::~LaplaceXYcyclic() {
+LaplaceXZcyclic::~LaplaceXZcyclic() {
   // Free coefficient arrays
   free_matrix(acoef);
   free_matrix(bcoef);
@@ -58,7 +58,7 @@ LaplaceXYcyclic::~LaplaceXYcyclic() {
   delete cr;
 }
 
-void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
+void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   
   // Set coefficients
   
@@ -140,7 +140,7 @@ void LaplaceXYcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
-Field3D LaplaceXYcyclic::solve(const Field3D &rhs, const Field3D &x0) {
+Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   
   // Create the rhs array
   int ind = 0;

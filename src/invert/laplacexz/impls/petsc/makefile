@@ -1,7 +1,7 @@
 
 BOUT_TOP = ../../../../..
 
-SOURCEC		= laplacexz-cyclic.cxx
+SOURCEC		= laplacexz-petsc.cxx
 TARGET		= lib
 
 include $(BOUT_TOP)/make.config

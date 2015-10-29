@@ -7202,21 +7202,30 @@ This is a Laplacian inversion code in X-Z, similar to the \texttt{Laplacian} sol
 The difference is in the form of the Laplacian equation solved, and the approach used to derive the finite difference formulae.
 The equation solved is:
 \begin{equation}
-  \nabla\cdot\left( A \nabla_\perp x \right) + Bx = b
+  \nabla\cdot\left( A \nabla_\perp f \right) + Bf = b
 \end{equation}
-where $A$ and $B$ are coefficients, $b$ is the known RHS vector (e.g. vorticity), and $x$ is the unknown quantity to be calculated (e.g. potential). The
+where $A$ and $B$ are coefficients, $b$ is the known RHS vector (e.g. vorticity), and $f$ is the unknown quantity to be calculated (e.g. potential). The
 Laplacian is written in conservative form like the \texttt{LaplaceXY} solver,
 and discretised in terms of fluxes through cell faces.
+\begin{equation}
+  \frac{1}{J}\left(J A g^{xx}\frac{\partial f}{\partial x}\right) + \frac{1}{J}\left(J A g^{zz}\frac{\partial f}{\partial z}\right) + B f = b
+\end{equation}
 
 The header file is \texttt{include/bout/invert/laplacexz.hxx}. The solver is
 constructed by using the \texttt{LaplaceXZ::create} function:
-\begin{lstlisting}
+\begin{lstlisting}[numbers=none]
   LaplaceXZ *lap = LaplaceXZ::create(mesh);
 \end{lstlisting}
 Note that a pointer to a \texttt{Mesh} object must be given, which for now is the global variable \lstinline!mesh!. 
+By default the options section \texttt{laplacexz} is used, so to set the type of solver created, set in the options
+\begin{lstlisting}[numbers=none]
+  [laplacexz]
+  type = petsc  # Set LaplaceXZ type
+\end{lstlisting}
+or on the command-line \lstinline!laplacexz:type=petsc!.
 
 The coefficients must be set using \lstinline!setCoefs!. All coefficients must be set at the same time:
-\begin{lstlisting}
+\begin{lstlisting}[numbers=none]
   lap->setCoefs(1.0, 0.0);
 \end{lstlisting}
 Constants, \lstinline!Field2D! or \lstinline!Field3D! values can be passed.
@@ -7224,7 +7233,7 @@ If the implementation doesn't support \lstinline!Field3D! values then
 the average over $z$ will be used as a \lstinline!Field2D! value.
 
 To perform the inversion, call the \lstinline!solve! function:
-\begin{lstlisting}
+\begin{lstlisting}[numbers=none]
   Field3D vort = ...;
 
   Field3D phi = lap->solve(vort, 0.0);
@@ -7232,7 +7241,151 @@ To perform the inversion, call the \lstinline!solve! function:
 The second input to \lstinline!solve! is an initial guess for the solution,
 which can be used by iterative schemes e.g. using PETSc.
 
-Currently there is only one implementation, which uses the \texttt{CyclicReduction} solver. The code for this is in \texttt{src/invert/laplacexz/impls/cyclic/cyclic.cxx}. This sets coefficients for a tridiagonal solver. Currently only the $g^{xx}$ component is included for testing of axisymmetric modes.
+\subsection{Implementations}
+
+The currently available implementations are:
+\begin{itemize}
+\item \texttt{cyclic}: This implementation assumes coefficients
+  are constant in $Z$, and uses FFTs in $z$ and a complex tridiagonal solver in $x$ for each $z$ mode
+  (the \texttt{CyclicReduction} solver). Code in \texttt{src/invert/laplacexz/impls/cyclic/}.
+\item \texttt{petsc}: This uses the PETSc KSP interface to solve a matrix with coefficients varying in both $x$
+  and $z$. To improve efficiency of direct solves, a different matrix is used for preconditioning. When the
+  coefficients are updated the preconditioner matrix is not usually updated. This means that LU factorisations
+  of the preconditioner can be re-used. Since this factorisation is a large part of the cost of direct solves,
+  this should greatly reduce the run-time.
+\end{itemize}
+
+\subsection{Test case}
+
+The code in \texttt{examples/test-laplacexz} is a simple test case for \lstinline!LaplaceXZ!.
+First it creates a \lstinline!LaplaceXZ! object:
+\begin{lstlisting}[numbers=none]
+  LaplaceXZ *inv = LaplaceXZ::create(mesh);
+\end{lstlisting}
+For this test the \texttt{petsc} implementation is the default:
+\begin{verbatim}
+  [laplacexz]
+  type = petsc
+  ksptype = gmres # Iterative method
+  pctype  = lu  # Preconditioner
+\end{verbatim}
+By default the LU preconditioner is used. PETSc's built-in factorisation only works
+in serial, so for parallel solves a different package is needed. This is set using:
+\begin{verbatim}
+  factor_package = superlu_dist
+\end{verbatim}
+This setting can be ``petsc'' for the built-in (serial) code, or one of "superlu",
+"superlu\_dist", "mumps", or "cusparse".
+
+Then we set the coefficients:
+\begin{lstlisting}[numbers=none]
+  inv->setCoefs(Field3D(1.0),Field3D(0.0));
+\end{lstlisting}
+Note that the scalars need to be cast to fields (Field2D or Field3D) otherwise the call is
+ambiguous. Using the PETSc command-line flag \texttt{-mat\_view ::ascii\_info}
+information on the assembled matrix is printed:
+\begin{verbatim}
+  $ mpirun -np 2 ./test-laplacexz -mat_view ::ascii_info
+  ...
+  Matrix Object: 2 MPI processes
+  type: mpiaij
+  rows=1088, cols=1088
+  total: nonzeros=5248, allocated nonzeros=5248
+  total number of mallocs used during MatSetValues calls =0
+    not using I-node (on process 0) routines
+  ...
+\end{verbatim}
+which confirms that the matrix element pre-allocation is setting the correct number of non-zero elements,
+since no additional memory allocation was needed.
+
+A field to invert is created using FieldFactory:
+\begin{lstlisting}[numbers=none]
+  Field3D rhs = FieldFactory::get()->create3D("rhs",
+                                              Options::getRoot(),
+                                              mesh);
+\end{lstlisting}
+which is currently set to a simple function in the options:
+\begin{lstlisting}[numbers=none]
+  rhs = sin(x - z)
+\end{lstlisting}
+and then the system is solved:
+\begin{lstlisting}[numbers=none]
+  Field3D x = inv->solve(rhs, 0.0);
+\end{lstlisting}
+Using the PETSc command-line flags \texttt{-ksp\_monitor} to monitor the iterative solve, and
+\texttt{-mat\_superlu\_dist\_statprint} to monitor SuperLU\_dist we get:
+\begin{verbatim}
+       Nonzeros in L       19984
+        Nonzeros in U       19984
+        nonzeros in L+U     38880
+        nonzeros in LSUB    11900
+        NUMfact space (MB) sum(procs):  L\U     0.45    all     0.61
+        Total highmark (MB):  All       0.62    Avg     0.31    Max     0.36
+        Mat conversion(PETSc->SuperLU_DIST) time (max/min/avg): 
+                              4.69685e-05 / 4.69685e-05 / 4.69685e-05
+        EQUIL time             0.00
+        ROWPERM time           0.00
+        COLPERM time           0.00
+        SYMBFACT time          0.00
+        DISTRIBUTE time        0.00
+        FACTOR time            0.00
+        Factor flops    1.073774e+06    Mflops    222.08
+        SOLVE time             0.00
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     28.67
+  0 KSP Residual norm 5.169560044060e+02 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     60.50
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     49.86
+  1 KSP Residual norm 1.359142853145e-12
+\end{verbatim}
+So after the initial setup and factorisation, the system is solved in one iteration
+using the LU direct solve. 
+
+As a test of re-using the preconditoner, the coefficients are then modified:
+\begin{lstlisting}[numbers=none]
+  inv->setCoefs(Field3D(2.0),Field3D(0.1));
+\end{lstlisting}
+and solved again:
+\begin{verbatim}
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     84.15
+  0 KSP Residual norm 5.169560044060e+02 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     90.42
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     98.51
+  1 KSP Residual norm 2.813291076609e+02 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     94.88
+  2 KSP Residual norm 1.688683980433e+02 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     87.27
+  3 KSP Residual norm 7.436784980024e+01 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     88.77
+  4 KSP Residual norm 1.835640800835e+01 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     89.55
+  5 KSP Residual norm 2.431147365563e+00 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     88.00
+  6 KSP Residual norm 5.386963293959e-01 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     93.50
+  7 KSP Residual norm 2.093714782067e-01 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     91.91
+  8 KSP Residual norm 1.306701698197e-02 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     89.44
+  9 KSP Residual norm 5.838501185134e-04 
+        SOLVE time             0.00
+        Solve flops     8.245800e+04    Mflops     81.47
+\end{verbatim}
+Note that this time there is no factorisation step, but the direct solve
+is still very effective.
 
 \section{Eigenvalue solver}
 

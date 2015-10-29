@@ -3,10 +3,10 @@
 #include <cyclic_reduction.hxx>
 #include <dcomplex.hxx>
 
-class LaplaceXYcyclic : public LaplaceXZ {
+class LaplaceXZcyclic : public LaplaceXZ {
 public:
-  LaplaceXYcyclic(Mesh *m, Options *options);
-  ~LaplaceXYcyclic();
+  LaplaceXZcyclic(Mesh *m, Options *options);
+  ~LaplaceXZcyclic();
   
   void setCoefs(const Field2D &A, const Field2D &B);
   
