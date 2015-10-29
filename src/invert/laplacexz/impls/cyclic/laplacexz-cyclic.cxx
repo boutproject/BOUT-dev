@@ -3,6 +3,7 @@
 #include <utils.hxx>
 #include <fft.hxx>
 #include <bout/constants.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <output.hxx>
 
@@ -59,6 +60,7 @@ LaplaceXZcyclic::~LaplaceXZcyclic() {
 }
 
 void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
+  Timer timer("invert");
   
   // Set coefficients
   
@@ -141,6 +143,7 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
 }
 
 Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
+  Timer timer("invert");
   
   // Create the rhs array
   int ind = 0;

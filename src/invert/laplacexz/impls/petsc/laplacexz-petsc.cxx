@@ -5,9 +5,12 @@
  */
 #include "laplacexz-petsc.hxx"
 #include <bout/assert.hxx>
+#include <bout/sys/timer.hxx>
+
+#include <output.hxx>
 
 LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
-  : LaplaceXZ(m, opt), mesh(m) {
+  : LaplaceXZ(m, opt), mesh(m), coefs_set(false) {
 
   if(opt == NULL) {
     // If no options supplied, use default
@@ -139,6 +142,7 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 }
 
 void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
+  Timer timer("invert");
   // Set coefficients
   
   // Each Y slice is handled as a separate set of matrices and KSP context
@@ -283,28 +287,43 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
     // Modifying preconditioner matrix
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
       // Copy matrix into preconditioner
+      if(coefs_set) {
+        // Preconditioner already set
+        MatDestroy(&it->MatP);
+      }
       MatConvert(it->MatA,MATSAME,MAT_INITIAL_MATRIX,&it->MatP);
       
       // Don't re-use preconditioner
       //KSPSetReusePreconditioner(it->ksp, PETSC_FALSE); // PETSc >= 3.5
     }
+
+    // Set operators
+    for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+      
+      //KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
+      // Note: This is a hack to force update of the preconditioner matrix
+      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_NONZERO_PATTERN);
+      
+      //KSPSetOperators(it->ksp, it->MatA, it->MatP); // PETSc >= 3.5
+    }
   }else {
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
       /// Reuse the preconditioner, even if the operator changes
-      
+
+      KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
       //KSPSetReusePreconditioner(it->ksp, PETSC_TRUE);  // PETSc >= 3.5
     }
   }
 
-  // Set operators
-  for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
-    
-    KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
-    //KSPSetOperators(it->ksp, it->MatA, it->MatP); // PETSc >= 3.5
-  }
+  coefs_set = true;
 }
 
 Field3D LaplaceXZpetsc::solve(const Field3D &b, const Field3D &x0) {
+  if(!coefs_set) {
+    throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
+  }
+  
+  Timer timer("invert");
   Field3D result;
   result.allocate();
   

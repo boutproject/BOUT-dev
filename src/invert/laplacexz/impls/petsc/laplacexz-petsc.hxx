@@ -73,6 +73,8 @@ private:
 
   int reuse_limit; ///< How many times can the preconditioner be reused?
   int reuse_count; ///< How many times has it been reused?
+
+  bool coefs_set; ///< Have coefficients been set?
 };
 
 

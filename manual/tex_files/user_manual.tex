@@ -7241,7 +7241,7 @@ To perform the inversion, call the \lstinline!solve! function:
 The second input to \lstinline!solve! is an initial guess for the solution,
 which can be used by iterative schemes e.g. using PETSc.
 
-\subsection{Implementations}
+\subsubsection{Implementations}
 
 The currently available implementations are:
 \begin{itemize}
@@ -7255,7 +7255,7 @@ The currently available implementations are:
   this should greatly reduce the run-time.
 \end{itemize}
 
-\subsection{Test case}
+\subsubsection{Test case}
 
 The code in \texttt{examples/test-laplacexz} is a simple test case for \lstinline!LaplaceXZ!.
 First it creates a \lstinline!LaplaceXZ! object:
@@ -7386,6 +7386,70 @@ and solved again:
 \end{verbatim}
 Note that this time there is no factorisation step, but the direct solve
 is still very effective.
+
+\subsubsection{Blob2d comparison}
+
+The example \texttt{examples/blob2d-laplacexz} is the same as \texttt{examples/blob2d} but with
+\texttt{LaplaceXZ} rather than \texttt{Laplacian}. 
+
+Tests on one processor:
+Using Boussinesq approximation, so that the matrix elements are not changed, the cyclic solver
+produces output
+\begin{verbatim}
+1.000e+02        125       8.28e-01    71.8    8.2    0.4    0.6   18.9
+2.000e+02         44       3.00e-01    69.4    8.1    0.4    2.1   20.0
+\end{verbatim}
+whilst the PETSc solver with LU preconditioner outputs
+\begin{verbatim}
+1.000e+02        146       1.15e+00    61.9   20.5    0.5    0.9   16.2
+2.000e+02         42       3.30e-01    58.2   20.2    0.4    3.7   17.5
+\end{verbatim}
+so the PETSc direct solver seems to take only slightly longer than the cyclic solver.
+For comparison, GMRES with Jacobi preconditioning gives:
+\begin{verbatim}
+1.000e+02        130       2.66e+00    24.1   68.3    0.2    0.8    6.6
+2.000e+02         78       1.16e+00    33.8   54.9    0.3    1.1    9.9
+\end{verbatim}
+and with SOR preconditioner
+\begin{verbatim}
+1.000e+02        124       1.54e+00    38.6   50.2    0.3    0.4   10.5
+2.000e+02         45       4.51e-01    46.8   37.8    0.3    1.7   13.4
+\end{verbatim}
+
+When the Boussinesq approximation is not used, the PETSc solver with LU preconditioning,
+re-setting the preconditioner every 100 solves gives:
+\begin{verbatim}
+1.000e+02        142       3.06e+00    23.0   70.7    0.2    0.2    6.0
+2.000e+02         41       9.47e-01    21.0   72.1    0.3    0.6    6.1
+\end{verbatim}
+i.e. around three times slower than the Boussinesq case. When using jacobi preconditioner:
+\begin{verbatim}
+1.000e+02        128       2.59e+00    22.9   70.8    0.2    0.2    5.9
+2.000e+02         68       1.18e+00    26.5   64.6    0.2    0.6    8.1
+\end{verbatim}
+For comparison, the \texttt{Laplacian} solver using the tridiagonal solver as preconditioner gives:
+\begin{verbatim}
+1.000e+02        222       5.70e+00    17.4   77.9    0.1    0.1    4.5
+2.000e+02        172       3.84e+00    20.2   74.2    0.2    0.2    5.2
+\end{verbatim}
+or with Jacobi preconditioner:
+\begin{verbatim}
+1.000e+02        107       3.13e+00    15.8   79.5    0.1    0.2    4.3
+2.000e+02        110       2.14e+00    23.5   69.2    0.2    0.3    6.7
+\end{verbatim}
+
+The \texttt{LaplaceXZ} solver does not appear to be dramatically faster {\bf in serial} than
+the \texttt{Laplacian} solver when the matrix coefficients are modified every solve. When
+matrix elements are not modified then the solve time is competitive with the tridiagonal
+solver.
+
+As a test, timing only the \texttt{setCoefs} call for the non-Boussinesq case gives
+\begin{verbatim}
+1.000e+02        142       1.86e+00    83.3    9.5    0.2    0.3    6.7
+2.000e+02         41       5.04e-01    83.1    8.0    0.3    1.2    7.3
+\end{verbatim}
+so around 9\% of the run-time is in setting the coefficients, and the remaining $\sim 60$\% in the solve
+itself.
 
 \section{Eigenvalue solver}
 
