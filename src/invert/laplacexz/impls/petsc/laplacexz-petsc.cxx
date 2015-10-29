@@ -1,8 +1,13 @@
 /*
- *
+ * LaplaceXZ implementation using PETSc
+ *  
+ * Ben Dudson, October 2015
+ * 
+ * Based on:
  * PETSc example of reusing preconditioner matrix (in Fortran):
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
  */
+
 #include "laplacexz-petsc.hxx"
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>
@@ -139,6 +144,15 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
   
+  for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
+    MatDestroy(&it->MatA);
+    MatDestroy(&it->MatP);
+
+    KSPDestroy(&it->ksp);
+  }
+
+  VecDestroy(&bs);
+  VecDestroy(&xs);
 }
 
 void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
@@ -318,12 +332,27 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
   coefs_set = true;
 }
 
-Field3D LaplaceXZpetsc::solve(const Field3D &b, const Field3D &x0) {
+Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   if(!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
   
   Timer timer("invert");
+
+  // Shift b into orthogonal X-Z coordinates
+  Field3D b = bin;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT
+    b = bin.shiftZ(true); // Shift into real space
+  }
+
+  // Shift x0 into orthogonal X-Z coordinates
+  Field3D x0 = x0in;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT
+    x0 = x0in.shiftZ(true); // Shift into real space
+  }
+  
   Field3D result;
   result.allocate();
   
@@ -435,7 +464,12 @@ Field3D LaplaceXZpetsc::solve(const Field3D &b, const Field3D &x0) {
     }
     ASSERT1(ind == Iend); // Reached end of range
   }
-   
+
+  // Shift result from orthogonal X-Z coordinates
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT
+    result = result.shiftZ(false);
+  }
   return result;
 }
 
