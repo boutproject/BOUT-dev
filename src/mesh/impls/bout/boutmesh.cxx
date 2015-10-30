@@ -539,10 +539,11 @@ int BoutMesh::load() {
     get(g_12, "g_12");
     get(g_13, "g_13");
     get(g_23, "g_23");
+    output.write("WARNING! Covariant components of metric tensor set manually. Contravariant components NOT recalculated\n");
   }
   else
   {
-    output.write("Not all covariant components found. Finding them from calculation!\n");
+    output.write("Not all covariant components of metric tensor found. Calculating all from the contravariant tensor\n");
     /// Calculate contravariant metric components if not found
     if(calcCovariant())
       throw BoutException("Error in calcCovariant call");
