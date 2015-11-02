@@ -3,6 +3,12 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
+from __future__ import print_function
+try:
+  from builtins import zip
+  from builtins import str
+except:
+  pass
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -78,42 +84,47 @@ with open("wave.pkl", "wb") as output:
 # Calculate grid spacing
 dy = 1. / array(nylist)
 
-# plot errors
-
-import matplotlib.pyplot as plt
-
 # Calculate convergence order
 success = True
-for var,mark,label in zip(varlist, markers, labels):
-    order = log(error_2[var][-1] / error_2[var][-2]) / log(dy[-1] / dy[-2])
-    stdout.write("%s Convergence order = %f" % (var, order))
+for var in varlist:
+  order = log(error_2[var][-1] / error_2[var][-2]) / log(dy[-1] / dy[-2])
+  stdout.write("%s Convergence order = %f" % (var, order))
 
+  if order < 1.5: # Should be second order accurate
+    print("............ FAIL")
+    success = False
+  else:
+    print("............ PASS")
+
+# plot errors
+try:
+  import matplotlib.pyplot as plt
+  for var,mark,label in zip(varlist, markers, labels):
     plt.plot(dy, error_2[var], '-'+mark, label="%s order=%.2f" % (label, order))
     plt.plot(dy, error_inf[var], '--'+mark)
-    
-    if order < 1.5: # Should be second order accurate
-        print("............ FAIL")
-        success = False 
-    else:
-        print("............ PASS")
 
-plt.legend(loc="upper left")
-plt.grid()
+  plt.legend(loc="upper left")
+  plt.grid()
 
-plt.yscale('log')
-plt.xscale('log')
+  plt.yscale('log')
+  plt.xscale('log')
 
-plt.xlabel(r'Mesh spacing $\delta y$')
-plt.ylabel("Error norm")
+  plt.xlabel(r'Mesh spacing $\delta y$')
+  plt.ylabel("Error norm")
 
-plt.savefig("norm.pdf")
+  plt.savefig("norm.pdf")
 
-#plt.show()
-plt.close()
+  #plt.show()
+  plt.close()
+except:
+  # Plotting could fail for any number of reasons, and the actual
+  # error raised may depend on, among other things, the current
+  # matplotlib backend, so catch everything
+  pass
 
 if success:
-  print " => Test passed"
+  print(" => Test passed")
   exit(0)
 else:
-  print " => Test failed"
+  print(" => Test failed")
   exit(1)

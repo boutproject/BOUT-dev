@@ -1,3 +1,4 @@
+from __future__ import division
 #
 # Perform a linear regression fit
 #

@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -37,21 +37,21 @@
 #include <output.hxx>
 
 LaplaceSerialTri::LaplaceSerialTri(Options *opt) : Laplacian(opt), A(0.0), C(1.0), D(1.0) {
-  
+
   if(!mesh->firstX() || !mesh->lastX()) {
     throw BoutException("LaplaceSerialTri only works for mesh->NXPE = 1");
   }
-  
+
   // Allocate memory
 
   int ncz = mesh->ngz-1;
 
   bk = cmatrix(mesh->ngx, ncz/2 + 1);
   bk1d = new dcomplex[mesh->ngx];
-  
+
   xk = cmatrix(mesh->ngx, ncz/2 + 1);
   xk1d = new dcomplex[mesh->ngx];
-  
+
   avec = new dcomplex[mesh->ngx];
   bvec = new dcomplex[mesh->ngx];
   cvec = new dcomplex[mesh->ngx];
@@ -62,28 +62,48 @@ LaplaceSerialTri::~LaplaceSerialTri() {
   delete[] bk1d;
   free_cmatrix(xk);
   delete[] xk1d;
-  
+
   delete[] avec;
   delete[] bvec;
   delete[] cvec;
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b) {
-  return solve(b,b);
+  return solve(b,b);   // Call the solver below
 }
 
 const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0) {
+  /* Function: LaplaceSerialTri::solve
+   * Purpose:  - Take the fourier transform of the y-slice given in the input
+   *           - For each fourier mode
+   *             - Set up the tridiagonal matrix
+   *             - Call the solver which inverts the matrix Ax_mode = b_mode
+   *           - Collect all the modes in a 2D array
+   *           - Back transform the y-slice
+   *
+   * Input:
+   * b        - A 2D variable that will be fourier decomposed, each fourier
+   *            mode of this variable is going to be the right hand side of the
+   *            equation Ax = b
+   * x0       - Variable eventually used to set BC
+   *
+   * Output:
+   * x        - The inverted variable.
+   */
   FieldPerp x;
   x.allocate();
 
   int jy = b.getIndex();
   x.setIndex(jy);
-  
-  int ncz = mesh->ngz-1;
-  int ncx = mesh->ngx-1;
-  
+
+  int ncz = mesh->ngz-1; // No of z pnts (counts from 1 to easily convert to kz)
+  int ncx = mesh->ngx-1; // No of x pnts (counts from 0)
+
+  // Setting the width of the boundary.
+  // NOTE: The default is a width of 2 guard cells
   int inbndry = 2, outbndry=2;
-  
+
+  // If the flags to assign that only one guard cell should be used is set
   if(global_flags & INVERT_BOTH_BNDRY_ONE) {
     inbndry = outbndry = 1;
   }
@@ -91,54 +111,79 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     inbndry = 1;
   if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
-  
+
   #pragma omp parallel for
   for(int ix=0;ix<mesh->ngx;ix++) {
-    // for fixed ix,jy set a complex vector rho(z)
-    
+    /* This for loop will set the bk (initialized by the constructor)
+     * bk is the z fourier modes of b in z
+     * If the INVERT_SET flag is set (meaning that x0 will be used to set the
+     * bounadry values),
+     */
     if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET)) ||
        ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
+
+      // x0 and mesh->zShift are the inputs
+      // bk is the output
       ZFFT(x0[ix], mesh->zShift[ix][jy], bk[ix]);
-      
+
     }else
+      // b and mesh->zShift are the inputs
+      // bk is the output
       ZFFT(b[ix], mesh->zShift[ix][jy], bk[ix]);
   }
 
-  for(int iz=0;iz<=ncz/2;iz++) {
-    // solve differential equation in x
+  /* Solve differential equation in x for each fourier mode
+   * Note that only the non-degenerate fourier modes are being used (i.e. the
+   * offset and all the modes up to the Nyquist frequency)
+   */
+  for(int kz=0;kz<=ncz/2;kz++) {
 
     // set bk1d
     BoutReal flt;
-    if (iz>maxmode) flt=0.0; else flt=1.0;
-      
+    if (kz>maxmode) flt=0.0; else flt=1.0;
+
     for(int ix=0;ix<=ncx;ix++)
-      bk1d[ix] = bk[ix][iz] * flt;
-    
+      // Get bk of the current fourier mode
+      bk1d[ix] = bk[ix][kz] * flt;
+
+    /* Set the matrix A used in the inversion of Ax=b
+     * by calling tridagCoef and setting the BC
+     *
+     * Note that A, C and D in
+     *
+     * D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+     *
+     * has nothing to do with
+     * avec - the lower diagonal of the tridiagonal matrix
+     * bvec - the main diagonal
+     * cvec - the upper diagonal
+    */
+    tridagMatrix(avec, bvec, cvec, bk1d, jy,
+                 // wave number index
+                 kz,
+                 // wave number (different from kz only if we are taking a part
+                 // of the z-domain [and not from 0 to 2*pi])
+                 kz*2.0*PI/mesh->zlength,
+                 global_flags, inner_boundary_flags, outer_boundary_flags,
+                 &A, &C, &D);
+
     ///////// PERFORM INVERSION /////////
-    
-    tridagMatrix(avec, bvec, cvec, bk1d, jy, 
-		 iz == 0, // DC?
-		 iz*2.0*PI/mesh->zlength, // kwave
-		 global_flags, inner_boundary_flags, outer_boundary_flags,
-		 &A, &C, &D);
-    
     if(!mesh->periodicX) {
       // Call tridiagonal solver
       tridag(avec, bvec, cvec, bk1d, xk1d, mesh->ngx);
-      
     } else {
       // Periodic in X, so cyclic tridiagonal
       cyclic_tridag(avec+2, bvec+2, cvec+2, bk1d+2, xk1d+2, mesh->ngx-4);
-	
       // Copy boundary regions
       for(int ix=0;ix<2;ix++) {
         xk1d[ix] = xk1d[mesh->ngx-4+ix];
         xk1d[mesh->ngx-2+ix] = xk1d[2+ix];
       }
     }
-      
-    if((global_flags & INVERT_KX_ZERO) && (iz == 0)) {
+
+    // If the global flag is set to INVERT_KX_ZERO
+    if((global_flags & INVERT_KX_ZERO) && (kz == 0)) {
       dcomplex offset(0.0);
       for(int ix=0;ix<=ncx;ix++)
         offset += bk1d[ix];
@@ -146,29 +191,27 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
       for(int ix=0;ix<=ncx;ix++)
         bk1d[ix] -= offset;
     }
-      
-    // Fill xk
-      
+
+    // Store the solution xk for the current fourier mode in a 2D array
     for (int ix=0; ix<=ncx; ix++){
-      xk[ix][iz]=xk1d[ix];
+      xk[ix][kz]=xk1d[ix];
     }
   }
 
   // Done inversion, transform back
-  
   for(int ix=0; ix<=ncx; ix++){
-    
+
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
-    
+
     ZFFT_rev(xk[ix], mesh->zShift[ix][jy], x[ix]);
-    
+
     x[ix][mesh->ngz-1] = x[ix][0]; // enforce periodicity
-    
+
     for(int kz=0;kz<mesh->ngz;kz++)
       if(!finite(x[ix][kz]))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
   }
 
-  return x;
+  return x; // Result of the inversion
 }

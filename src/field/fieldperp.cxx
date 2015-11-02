@@ -31,6 +31,7 @@
 #include <fieldperp.hxx>
 #include <utils.hxx>
 #include <boutexception.hxx>
+#include <msg_stack.hxx>
 
 extern BoutReal** rmatrix(int nx, int ny);
 
@@ -42,6 +43,11 @@ FieldPerp::FieldPerp() {
 FieldPerp::FieldPerp(const FieldPerp &f) {
   data = (BoutReal**) NULL;
   *this = f;
+}
+
+FieldPerp::FieldPerp(BoutReal val) : data(NULL) {
+  yindex = 0;
+  *this = val;
 }
 
 FieldPerp::~FieldPerp() {
@@ -728,6 +734,168 @@ const FieldPerp FieldPerp::operator^(const BoutReal other) const
   result ^= other;
   return(result);
 }
+
+/////////////////////////////////////////////////
+// Friend functions
+
+const FieldPerp exp(const FieldPerp &f) {
+#ifdef CHECK
+  msg_stack.push("exp(FieldPerp)");
+#endif
+
+  FieldPerp result;
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::exp(f.data[jx][jz]);
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
+
+const FieldPerp log(const FieldPerp &f) {
+#ifdef CHECK
+  msg_stack.push("log(FieldPerp)");
+#endif
+
+  FieldPerp result;
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++) {
+#ifdef CHECK
+      if(f.data[jx][jz] < 0.)
+        throw BoutException("log(FieldPerp) has negative argument at [%d][%d]\n", jx, jz);
+#endif
+      result.data[jx][jz] = ::log(f.data[jx][jz]);
+    }
+  
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+  return result;
+}
+
+const FieldPerp sin(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "sin("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::sin(f.data[jx][jz]);
+
+  return result;
+}
+
+const FieldPerp cos(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "cos("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::cos(f.data[jx][jz]);
+
+  return result;
+}
+
+const FieldPerp tan(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "tan("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::tan(f.data[jx][jz]);
+
+  return result;
+}
+
+const FieldPerp sinh(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "sinh("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::sinh(f.data[jx][jz]);
+
+  return result;
+}
+
+const FieldPerp cosh(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "cosh("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::cosh(f.data[jx][jz]);
+
+  return result;
+}
+
+const FieldPerp tanh(const FieldPerp &f) {
+  FieldPerp result;
+  
+#ifdef TRACK
+  result.name = "tanh("+f.name+")";
+#endif
+
+  result.allocate();
+  
+  result.yindex = f.yindex;
+  
+  #pragma omp parallel for
+  for(int jx=0;jx<mesh->ngx;jx++)
+    for(int jz=0;jz<mesh->ngz-1;jz++)
+      result.data[jx][jz] = ::tanh(f.data[jx][jz]);
+
+  return result;
+}
+
 
 ////////////////////// STENCILS //////////////////////////
 

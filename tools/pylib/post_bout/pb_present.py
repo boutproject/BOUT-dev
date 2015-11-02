@@ -1,6 +1,10 @@
-from pb_draw import LinResDraw,subset
-from pb_corral import LinRes
-from pb_nonlinear import NLinResDraw
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import range
+from .pb_draw import LinResDraw,subset
+from .pb_corral import LinRes
+from .pb_nonlinear import NLinResDraw
 from pb_transport import Transport
 
 import numpy as np
@@ -64,7 +68,7 @@ class LinResPresent(LinResDraw,NLinResDraw,Transport):
          
 
       except:
-         print 'no scatter'
+         print('no scatter')
       #2D true NM spectrum with color code and boxes around spectral res regions log scale
       
                    
@@ -87,7 +91,7 @@ class LinResPresent(LinResDraw,NLinResDraw,Transport):
       try:
          plt.savefig(pp, format='pdf')
       except:
-         print 'FAILED TO save 1st part'
+         print('FAILED TO save 1st part')
        
       plt.close() 
   
@@ -103,11 +107,11 @@ class LinResPresent(LinResDraw,NLinResDraw,Transport):
       for elem in self.meta['evolved']:
          s.plotmodes(pp,yscale='symlog',comp='phase',linestyle='.',field=elem,summary=False)
          s.plotmodes(pp,yscale='symlog',field=elem,summary=False)
-         print elem
+         print(elem)
          try:
             s.plotmodes(pp,yscale='symlog',field=elem,comp='gamma_i',summary=False)
          except:
-            print 'gamma_i plot for '+elem+' failed'
+            print('gamma_i plot for '+elem+' failed')
 
       #s.plotmodes(pp,yscale='symlog',summary=False)
       
@@ -134,7 +138,7 @@ class LinResPresent(LinResDraw,NLinResDraw,Transport):
       ss.plotmodes(pp,yscale='log',debug=True,summary=False)
       ss.plotmodes(pp,yscale='symlog',comp='phase',summary=False)
       ss.plotmodes(pp,yscale='symlog',comp='phase',field='rho',summary=False)
-      print dir(ss)
+      print(dir(ss))
       
       #ss.plotmodes(pp,yscale='log',comp='phase',clip=True)
        
@@ -167,7 +171,7 @@ class LinResPresent(LinResDraw,NLinResDraw,Transport):
        
          #s.plotfreq2(pp,xscale='log',yscale='linear')
       except:
-         print 'something terrible'
+         print('something terrible')
 
       s.plotradeigen(pp,yscale='linear')
          #s.plotradeigen(pp,field ='Vi',yscale='linear')

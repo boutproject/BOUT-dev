@@ -1,3 +1,4 @@
+from builtins import range
 from read_grid import read_grid
 from ordereddict import OrderedDict
 import numpy as np

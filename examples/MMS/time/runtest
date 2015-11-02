@@ -6,6 +6,8 @@
 #
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -27,6 +29,7 @@ options = [
     ,("solver:type=karniadakis", "Karniadakis", "-x")
     ,("solver:type=rk3ssp", "RK3-SSP", "-s")
     ,("solver:type=rk4", "RK4", "-o")
+    ,("solver:type=imexbdf2", "IMEX-BDF2", "-+")
     ]
 
 # List of NX values to use
@@ -124,8 +127,8 @@ plt.close()
 
 
 if success:
-  print " => All tests passed"
+  print(" => All tests passed")
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)

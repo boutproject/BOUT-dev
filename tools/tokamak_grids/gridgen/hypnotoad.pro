@@ -156,7 +156,8 @@ PRO event_handler, event
   CASE uvalue OF
     'aandg': BEGIN
       PRINT, "Open G-eqdsk (neqdsk) file"
-      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="neqdsk", /read)
+      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="neqdsk", /read, path=info.path, get_path=newpath)
+      info.path=newpath
       IF STRLEN(filename) EQ 0 THEN BEGIN
         WIDGET_CONTROL, info.status, set_value="   *** Cancelled open file ***"
         RETURN ;BREAK
@@ -219,7 +220,8 @@ PRO event_handler, event
     END
     'restorerz': BEGIN
       ; Restore a file containing rz_grid
-      filename = DIALOG_PICKFILE(dialog_parent=event.top, /read)
+      filename = DIALOG_PICKFILE(dialog_parent=event.top, /read, path=info.path, get_path=newpath)
+      info.path = newpath
       
       RESTORE, filename
       
@@ -257,7 +259,8 @@ PRO event_handler, event
         BREAK
       ENDIF
       PRINT, "Read boundary from G-eqdsk (neqdsk) file"
-      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="neqdsk", /read)
+      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="neqdsk", /read, path=info.path, get_path=newpath)
+      info.path = newpath
       IF STRLEN(filename) EQ 0 THEN BEGIN
         WIDGET_CONTROL, info.status, set_value="   *** Cancelled open file ***"
         BREAK
@@ -420,7 +423,8 @@ PRO event_handler, event
       ; Process mesh to produce output
       PRINT, "Write output file"
       filename = DIALOG_PICKFILE(dialog_parent=event.top, file="bout.grd.nc", $
-                                 /write, /overwrite_prompt)
+                                 /write, /overwrite_prompt, path=info.path, get_path=newpath)
+      info.path=newpath
       
       IF STRLEN(filename) EQ 0 THEN BEGIN
         WIDGET_CONTROL, info.status, set_value="   *** Cancelled process mesh ***"
@@ -450,7 +454,8 @@ PRO event_handler, event
     'print': BEGIN
       IF info.rz_grid_valid THEN BEGIN
         filename = DIALOG_PICKFILE(dialog_parent=event.top, file="bout.grd.ps", $
-                                 /write, /overwrite_prompt)
+                                 /write, /overwrite_prompt, path=info.path, get_path=newpath)
+        info.path=newpath
         
         IF STRLEN(filename) EQ 0 THEN BEGIN
           WIDGET_CONTROL, info.status, set_value="   *** Cancelled printing ***"
@@ -460,6 +465,16 @@ PRO event_handler, event
         DEVICE, file=filename
         plot_mesh, *(info.flux_mesh), xtitle="Major radius [m]", $
           ytitle="Height [m]", title="Generated: "+SYSTIME()
+
+        ; Plot boundary
+        IF in_struct(*info.rz_grid, "nlim") THEN BEGIN
+          data = *info.rz_grid
+          IF data.nlim GT 2 THEN BEGIN
+            OPLOT, [REFORM(data.rlim), data.rlim[0]], [REFORM(data.zlim), data.zlim[0]], $
+                   thick=2,color=2
+          ENDIF
+        ENDIF
+        
         DEVICE, /close
         SET_PLOT, 'X'
         WIDGET_CONTROL, info.status, set_value="Plotted mesh to file "+filename
@@ -745,12 +760,14 @@ PRO event_handler, event
     END
     'save': BEGIN
       filename = DIALOG_PICKFILE(dialog_parent=event.top, file="hypnotoad.idl", $
-                                 /write, /overwrite_prompt)
+                                 /write, /overwrite_prompt, path=info.path, get_path=newpath)
+      info.path = newpath
       SAVE, info, file=filename
       WIDGET_CONTROL, info.status, set_value="Saved state to "+filename
     END
     'restore': BEGIN
-      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="hypnotoad.idl", /read)
+      filename = DIALOG_PICKFILE(dialog_parent=event.top, file="hypnotoad.idl", /read, path=info.path, get_path=newpath)
+      info.path=newpath
       IF STRLEN(filename) EQ 0 THEN BEGIN
         WIDGET_CONTROL, info.status, set_value="   *** Cancelled restore ***"
         RETURN
@@ -824,6 +841,8 @@ PRO event_handler, event
         str_set, info, "fast_check", oldinfo.fast_check, /over
         str_set, info, "fast", oldinfo.fast
         Widget_Control, info.fast_check, Set_Button=info.fast
+        
+        str_set, info, "path", oldinfo.path, /over
         
         IF info.rz_grid_valid THEN BEGIN
           plot_rz_equil, *info.rz_grid
@@ -998,6 +1017,12 @@ PRO hypnotoad
                               uvalue='mesh2', tooltip="Generate a new non-orthogonal mesh")
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ; Profiles tab
+
+  tab3 = WIDGET_BASE(tab_base, title="Profiles", /COLUMN, EVENT_PRO = 'event_handler')
+  
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ; Output tab
   
   tab2 = WIDGET_BASE(tab_base, title="Output", /COLUMN, EVENT_PRO = 'event_handler')
@@ -1068,6 +1093,9 @@ PRO hypnotoad
 
   widget_control, status_box, set_value="Hypnotoad flux grid generator. Read equilibrium G-EQDSK file to begin"
 
+  ; Get current working directory
+  CD, current=path
+
   ; Create a structure for storing the state
   ; This is shared 
 
@@ -1112,7 +1140,9 @@ PRO hypnotoad
            calcjpar_check:calcjpar_check, $
            calcjpar:calcjpar_default, $
            fast_check:fast_check, $
-           fast:0 $
+           fast:0, $
+           $;;;
+           path:path $
          } 
 
   ; Store this in the base UVALUE

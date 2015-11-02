@@ -333,7 +333,7 @@ void cband_solve(dcomplex **a, int n, int m1, int m2, dcomplex *b)
 
 #include <utils.hxx>
 
-/// Tri-diagonal complex matrix inversion
+/// Tri-diagonal complex matrix inversion (from Numerical Recipes)
 int tridag(const dcomplex *a, const dcomplex *b, const dcomplex *c, const dcomplex *r, dcomplex *u, int n)
 {
   int j;  

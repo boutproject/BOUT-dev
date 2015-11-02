@@ -3,6 +3,8 @@
 # Python script to run and analyse MMS test
 
 from __future__ import division
+from __future__ import print_function
+from builtins import str
 	
 from boututils import shell,launch,getmpirun
 from boutdata import collect
@@ -114,7 +116,6 @@ for dir in inputs:
 	tot_error[i,:] = error_2
 	i = i + 1
 
-plt.xlabel(r'Mesh spacing $\delta x$')
 plt.ylabel("Error norm")
 plt.grid()
 plt.yscale('log')
@@ -133,10 +134,8 @@ pickle.dump(dx,f)
 pickle.dump(inputs,f)
 f.close()
 
-if success:
-  print " => All tests passed"
   exit(0)
 else:
-  print " => Some failed tests"
+  print(" => Some failed tests")
   exit(1)
 

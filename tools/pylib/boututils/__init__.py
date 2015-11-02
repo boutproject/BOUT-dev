@@ -1,9 +1,12 @@
+from __future__ import print_function
 ##################################################
 #            Data utilities package
 #
 # Generic routines, useful for all data
 ##################################################
+
 import sys
+
 print("Loading data utilities")
 
 # Load routines from separate files
@@ -11,7 +14,6 @@ print("Loading data utilities")
 #    from plotdata import plotdata
 #except:
 #    print "No plotdata"
-
 try:
     from boututils.datafile import DataFile
 except:
@@ -51,7 +53,7 @@ try:
     from boututils.getmpirun import getmpirun
 except:
     print("No getmpirun command")
- 
+
 try:
     from boututils.fft_integrate import fft_integrate
 except:
@@ -63,12 +65,13 @@ except:
     print("No mode_structure command")
 
 try:
-    from boututils.plotpolslice import plotpolslice
+    if sys.version_info[0]==3:
+        print("polplotslice uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from boututils.plotpolslice import plotpolslice
 except:
     print("No plotpolslice command")
-    if sys.version_info[0]==3:
-        print("polplotslice uses the VTK library through mayavi, which",
-              "is currently only available in python 2")
 
 try:
     from boututils.moment_xyzt import moment_xyzt
@@ -89,3 +92,55 @@ try:
     from boututils.showdata import showdata
 except:
     print("No showdata")
+
+try:
+    from boututils.closest_line import closest_line
+except:
+    print("No closest_line")
+
+try:
+    from boututils.fft_deriv import fft_deriv
+except:
+    print("No fft_deriv")
+
+try:
+    from boututils.int_func  import int_func
+except:
+    print("No int_func")
+
+try:
+    from boututils.surface_average import surface_average
+except:
+    print("No surface_average ")
+
+try:
+    from boututils.efit_analyzer import View2D
+except:
+    print("No View2D ")
+
+try:
+    if sys.version_info[0]==3:
+        print("mlab uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from mayavi import mlab
+except:
+    print("No mlab")
+
+try:
+    if sys.version_info[0]==3:
+        print("anim uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from boututils.anim import anim
+except:
+    print("No anim")
+
+try:
+    if sys.version_info[0]==3:
+        print("View3D uses the VTK library through mayavi, which"+\
+              " is currently only available in python 2")
+    else:
+        from boututils.View3D import View3D
+except:
+    print("No View3D")

@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 # Generate the test case using SymPy
 #

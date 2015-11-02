@@ -31,6 +31,10 @@ written by: Jarrod Leddy
 updated:    4/10/2013
 
 """
+from __future__ import print_function
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 
 try:
 	from numpy import arange,zeros,exp,power,transpose,sin,cos,linspace,min,max

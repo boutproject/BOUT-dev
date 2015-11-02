@@ -137,6 +137,11 @@ int BoutMesh::load() {
   // Get guard cell sizes
   options->get("MXG", MXG, 2);
   options->get("MYG", MYG, 2);
+
+  // Check that nx is large enough
+  if(nx <= 2*MXG) {
+    throw BoutException("Error: nx must be greater than 2 times MXG (2 * %d)", MXG);
+  }
   
   // Set global grid sizes
   GlobalNx = nx;
@@ -393,9 +398,16 @@ int BoutMesh::load() {
     output.write("\tWARNING: differencing quantity 'dy' not found. Set to 1.0\n");
     dy = 1.0;
   }
-  
-  zlength = (ZMAX-ZMIN)*TWOPI;
-  dz = zlength/(ngz-1);
+  if(get(dz, "dz")) {
+    // No dz in input
+    zlength = (ZMAX-ZMIN)*TWOPI;
+    dz = zlength/(ngz-1);
+  }else {
+    // Read dz from input
+    zlength = dz * (ngz-1);
+    ZMIN = 0.0;
+    ZMAX = zlength / TWOPI;
+  }
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////
   
@@ -1524,6 +1536,42 @@ bool BoutMesh::firstY() {
 
 bool BoutMesh::lastY() {
   return PE_YIND == NYPE-1;
+}
+
+bool BoutMesh::firstY(int xpos) {
+  int xglobal = XGLOBAL(xpos);
+  int rank;
+  
+  if(xglobal < ixseps_inner) {
+    MPI_Comm_rank(comm_inner,&rank);
+  }
+  else if(xglobal < ixseps_outer) {
+    MPI_Comm_rank(comm_middle,&rank);
+  }
+  else {
+    MPI_Comm_rank(comm_outer,&rank);
+  }
+  return rank == 0;
+}
+
+bool BoutMesh::lastY(int xpos) {
+  int xglobal = XGLOBAL(xpos);
+  int rank;
+  int size;
+  
+  if(xglobal < ixseps_inner) {
+    MPI_Comm_size(comm_inner,&size);
+    MPI_Comm_rank(comm_inner,&rank);
+  }
+  else if(xglobal < ixseps_outer) {
+    MPI_Comm_size(comm_middle,&size);
+    MPI_Comm_rank(comm_middle,&rank);
+  }
+  else {
+    MPI_Comm_size(comm_outer,&size);
+    MPI_Comm_rank(comm_outer,&rank);
+  }
+  return rank == size-1;
 }
 
 int BoutMesh::UpXSplitIndex() {

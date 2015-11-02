@@ -25,6 +25,8 @@
 # 
 # 2010-03-09 Ben Dudson <bd512@york.ac.uk>
 #    * Changing to always require FFTW (removing NR routines)
+# 2015-08-08 David Schwörer <schword2@mail.dcu.ie>
+#    * Searching for libs in lib and lib64
 # 
 
 BOUT_VERSION="2.0"
@@ -37,6 +39,8 @@ AC_ARG_WITH(signal, [  --with-signal=no        	   Disable SEGFAULT handling])
 AC_ARG_WITH(track,  [  --with-track            	   Enable variable tracking])
 AC_ARG_WITH(pdb,    [  --with-pdb              	   Enable support for PDB files])
 AC_ARG_WITH(netcdf, [  --with-netcdf           	   Enable support for netCDF files])
+AC_ARG_WITH(hdf5,   [  --with-hdf5                 Enable support for HDF5 files])
+AC_ARG_WITH(parallelhdf5,[  --with-parallelhdf5    Enable support for parallel HDF5 files])
 AC_ARG_WITH(pnetcdf,[  --with-pnetcdf              Set path to Parallel NetCDF library])
 AC_ARG_WITH(debug,  [  --with-debug            	   Enable all debugging flags])
 AC_ARG_WITH(ida,    [  --with-ida=/path/to/ida 	   Use the SUNDIALS IDA solver])
@@ -46,6 +50,7 @@ AC_ARG_WITH(facets, [  --with-facets           	   Build the interface to FACETS
 AC_ARG_WITH(fftw,   [  --with-fftw             	   Set directory of FFTW3 library])
 AC_ARG_WITH(lapack, [  --with-lapack           	   Use the LAPACK library])
 AC_ARG_WITH(petsc,  [  --with-petsc            	   Enable PETSc interface])
+AC_ARG_WITH(slepc,  [  --with-slepc                Enable SLEPc interface])
 AC_ARG_WITH(pvode,  [  --with-pvode	  	   Build and enable PVODE 98 (DEFAULT)])
 AC_ARG_WITH(hypre,  [  --with-hypre                Link to the Hypre library])
 AC_ARG_WITH(mumps,  [  --with-mumps                Link with MUMPS library for direct matrix inversions])
@@ -246,7 +251,15 @@ MFILE
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_3"
     echo "Using PETSc 3.3 interface"
-  elif test "$PETSC_VERSION_MINOR" = "3" && test "$PETSC_VERSION_RELEASE" = "0"
+  elif test "$PETSC_VERSION_MINOR" = "4" && test "$PETSC_VERSION_RELEASE" = "1" 
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_4"
+    echo "Using PETSc 3.4 interface"
+  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "1" 
+  then
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_3_5"
+    echo "Using PETSc 3.5 interface"
+  elif test "$PETSC_VERSION_MINOR" = "5" && test "$PETSC_VERSION_RELEASE" = "0"
   then
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_PETSC -DBOUT_HAS_PETSC_DEV"
     echo "Using PETSc-dev interface"
@@ -280,6 +293,64 @@ then
     CXXFLAGS="$CXXFLAGS -DPETSC_HAS_SUNDIALS "
   fi
 fi
+
+echo
+
+#############################################################
+# SLEPc library
+#############################################################
+HAS_SLEPC="no"
+SLEPC_VARS=""
+
+if test "$with_slepc" != "" && test "$with_slepc" != "no"
+then
+  #PETSC_ARCH = ${PETSC_ARCH}
+  #SLEPC_DIR = ${SLEPC_DIR}
+  
+  echo "Searching for SLEPc"
+
+  if test "$SLEPC_DIR" == ""
+  then
+    echo "Error - SLEPC_DIR not set"
+    exit
+  fi
+ 
+  # Check that the config directory exists 
+  AC_CHECK_FILE($SLEPC_DIR/$PETSC_ARCH/conf, ,
+    echo "Error - can't find SLEPc distribution"
+    exit)
+ 
+  echo " -> using SLEPC_DIR=$SLEPC_DIR"
+ 
+  # Find version number
+
+  AC_CHECK_FILE(${SLEPC_DIR}/include/slepcversion.h, ,
+    echo "Error - can't read include/slepcversion.h"
+    exit)
+
+  SLEPC_VERSION_MAJOR="0"
+  SLEPC_VERSION_MAJOR=`grep 'define SLEPC_VERSION_MAJOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+  SLEPC_VERSION_MINOR="0"
+  SLEPC_VERSION_MINOR=`grep 'define SLEPC_VERSION_MINOR' $SLEPC_DIR/include/slepcversion.h | awk '{print \$3;}'`
+
+  if test "$SLEPC_VERSION_MAJOR" = "3" && test "$SLEPC_VERSION_MINOR" = "4" 
+  then
+    # Version 3.4
+    echo "  -> Using interface for SLEPc 3.4"
+    CXXFLAGS="$CXXFLAGS -DBOUT_HAS_SLEPC -DBOUT_HAS_SLEPC_3_4"
+    HAS_SLEPC="yes"
+    
+    EXTRA_INCS="$EXTRA_INCS \$(SLEPC_INCLUDE)"
+    EXTRA_LIBS="$EXTRA_LIBS \$(SLEPC_LIB)"
+    SLEPC_VARS="include \${SLEPC_DIR}/conf/slepc_variables"
+  else
+    echo "Error - Unknown SLEPc version"
+    echo "  -> No SLEPc support"
+    HAS_SLEPC="no"
+  fi
+  
+fi
+AC_SUBST(SLEPC_VARS, $SLEPC_VARS)
 
 echo
 
@@ -388,13 +459,17 @@ then
     # Specified with path
     echo "Checking given path to SUNDIALS' IDA solver"
     IDALIBS=$with_ida
-    AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h $with_ida/lib/libsundials_ida.a $with_ida/lib/libsundials_nvecparallel.a, , [
+    AC_CHECK_FILES( $with_ida/include/ida/ida.h $with_ida/include/ida/ida_spgmr.h $with_ida/include/ida/ida_bbdpre.h $with_ida/include/nvector/nvector_parallel.h $with_ida/include/sundials/sundials_types.h , , [
       IDALIBS=""
     ] )
+    AC_CHECK_FILES( $with_ida/lib/libsundials_nvecparallel.a $with_ida/lib/libsundials_ida.a, IDALIBSLIB='lib', 
+      AC_CHECK_FILES( $with_ida/lib64/libsundials_nvecparallel.a $with_ida/lib64/libsundials_ida.a, IDALIBSLIB='lib64', 
+        IDALIBS=""
+    ) )
     if test "$IDALIBS" != ""
     then
 	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
 	echo "=> Using SUNDIALS IDA solver, path $with_ida"
     else
       echo " -> Given path not correct. Finding..."
@@ -414,15 +489,19 @@ then
     if test "$IDALIBS" != ""
     then
 	# Check the rest of the files
-	AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h $IDALIBS/lib/libsundials_ida.a $IDALIBS/lib/libsundials_nvecparallel.a, , [
+	AC_CHECK_FILES( $IDALIBS/include/ida/ida.h $IDALIBS/include/ida/ida_spgmr.h $IDALIBS/include/ida/ida_bbdpre.h $IDALIBS/include/nvector/nvector_parallel.h $IDALIBS/include/sundials/sundials_types.h , , [
       	  IDALIBS=""
       	] )
+    	AC_CHECK_FILES( $IDALIBS/lib/libsundials_nvecparallel.a $IDALIBS/lib/libsundials_ida.a, IDALIBSLIB='lib', 
+      	  AC_CHECK_FILES( $IDALIBS/lib64/libsundials_nvecparallel.a $IDALIBS/lib64/libsundials_ida.a, IDALIBSLIB='lib64', 
+           IDALIBS=""
+	) )
     fi
     
     if test "$IDALIBS" != ""
     then
 	IDAINCS="-I$IDALIBS/include"
-	IDALIBS="-L$IDALIBS/lib -lsundials_ida -lsundials_nvecparallel"
+	IDALIBS="-L$IDALIBS/$IDALIBSLIB -lsundials_ida -lsundials_nvecparallel"
     fi
   fi
   
@@ -459,14 +538,19 @@ then
     # Specified with path
     echo "Checking given path to SUNDIALS' CVODE solver"
     CVODELIBS=$with_cvode
-    AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, , [
+    AC_CHECK_FILES( $with_cvode/include/cvode/cvode.h $with_cvode/include/cvode/cvode_spgmr.h $with_cvode/include/cvode/cvode_bbdpre.h $with_cvode/include/nvector/nvector_parallel.h, , [
       CVODELIBS=""
     ] )
+    AC_CHECK_FILES( $with_cvode/lib/libsundials_cvode.a $with_cvode/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib', 
+      AC_CHECK_FILES( $with_cvode/lib64/libsundials_cvode.a $with_cvode/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
+      CVODELIBS=""
+    ]) )
+     
     
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$with_cvode/include"
-      CVODELIBS="-L$with_cvode/lib -lsundials_cvode -lsundials_nvecparallel"
+      CVODELIBS="-L$with_cvode/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
       echo "=> Using SUNDIALS CVODE solver, path $with_cvode"
     else
       echo " -> Given path not correct. Finding..."
@@ -486,14 +570,18 @@ then
     if test "$CVODELIBS" != ""
     then
 	# Check the rest of the files
-	AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, , [
+	AC_CHECK_FILES( $CVODELIBS/include/cvode/cvode.h $CVODELIBS/include/cvode/cvode_bbdpre.h $CVODELIBS/include/nvector/nvector_parallel.h , , [
 	  CVODELIBS=""
 	])
+        AC_CHECK_FILES( $CVODELIBS/lib/libsundials_cvode.a $CVODELIBS/lib/libsundials_nvecparallel.a, CVODELIBSLIB='lib', 
+          AC_CHECK_FILES( $CVODELIBS/lib64/libsundials_cvode.a $CVODELIBS/lib64/libsundials_nvecparallel.a, CVODELIBSLIB='lib64',  [
+            CVODELIBS=""
+          ]) )
     fi
     if test "$CVODELIBS" != ""
     then
       CVODEINCS="-I$CVODELIBS/include"
-      CVODELIBS="-L$CVODELIBS/lib -lsundials_cvode -lsundials_nvecparallel"
+      CVODELIBS="-L$CVODELIBS/$CVODELIBSLIB -lsundials_cvode -lsundials_nvecparallel"
     fi
   fi
 	
@@ -534,14 +622,18 @@ then
     # Specified with path
     echo "Checking given path to SUNDIALS' ARKODE solver"
     ARKODELIBS=$with_arkode
-    AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h $with_arkode/lib/libsundials_arkode.a $with_arkode/lib/libsundials_nvecparallel.a, , [
+    AC_CHECK_FILES( $with_arkode/include/arkode/arkode.h $with_arkode/include/arkode/arkode_spgmr.h $with_arkode/include/arkode/arkode_bbdpre.h $with_arkode/include/nvector/nvector_parallel.h , , [
       ARKODELIBS=""
     ] )
+    AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib', 
+      AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
+        ARKODELIBS=""
+      ]) )
 
     if test "$ARKODELIBS" != ""
     then
       ARKODEINCS="-I$with_arkode/include"
-      ARKODELIBS="-L$with_arkode/lib -lsundials_arkode -lsundials_nvecparallel"
+      ARKODELIBS="-L$with_arkode/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
       echo "=> Using SUNDIALS ARKODE solver, path $with_arkode"
     else
       echo " -> Given path not correct. Finding..."
@@ -561,15 +653,19 @@ then
     if test "$ARKODELIBS" != ""
     then
         # Check the rest of the files
-        AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, , [
+        AC_CHECK_FILES( $ARKODELIBS/include/arkode/arkode.h $ARKODELIBS/include/arkode/arkode_bbdpre.h $ARKODELIBS/include/nvector/nvector_parallel.h, , [
           ARKODELIBS=""
         ])
+        AC_CHECK_FILES( $ARKODELIBS/lib/libsundials_arkode.a $ARKODELIBS/lib/libsundials_nvecparallel.a, ARKODELIBSLIB='lib', 
+          AC_CHECK_FILES( $ARKODELIBS/lib64/libsundials_arkode.a $ARKODELIBS/lib64/libsundials_nvecparallel.a, ARKODELIBSLIB='lib64',  [
+            ARKODELIBS=""
+          ]) )
     fi
 
     if test "$ARKODELIBS" != ""
     then
       ARKODEINCS="-I$ARKODELIBS/include"
-      ARKODELIBS="-L$ARKODELIBS/lib -lsundials_arkode -lsundials_nvecparallel"
+      ARKODELIBS="-L$ARKODELIBS/$ARKODELIBSLIB -lsundials_arkode -lsundials_nvecparallel"
     fi
   fi
   if test "$ARKODELIBS" = ""
@@ -596,6 +692,8 @@ fi
 
 echo "Searching for FFTW library"
 
+# first only look for header files
+
 if test "$with_fftw" = ""
 then
   # No path specified
@@ -603,7 +701,8 @@ then
   echo " -> Path not given. Searching for library..."
 else
   FFTPATH=$with_fftw
-  AC_CHECK_FILES( $FFTPATH/include/fftw3.h $FFTPATH/lib/libfftw3.a ,, [
+  # look only for header file, later search for library ($FFTPATH/lib/libfftw3.a)
+  AC_CHECK_FILES( $FFTPATH/include/fftw3.h ,, [
     echo " -> Given path not correct. Finding..."
     FFTPATH=""
   ] )
@@ -614,7 +713,7 @@ if test "$FFTPATH" = ""
 then
   if test "$FFTW_ROOT" != ""
   then
-    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h $FFTW_ROOT/lib/libfftw3.a , FFTPATH=$FFTW_ROOT, )
+    AC_CHECK_FILES( $FFTW_ROOT/include/fftw3.h , FFTPATH=$FFTW_ROOT, )
   fi
 fi
 
@@ -624,7 +723,8 @@ if type fftw-wisdom > /dev/null 2>&1; then
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
   FFTWISDOM=`which fftw-wisdom | xargs -0 dirname | xargs -0 dirname`
   # Check if the files are there
-  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h $FFTWISDOM/lib/libfftw3.a , FFTPATH=$FFTWISDOM, )
+  AC_CHECK_FILES( $FFTWISDOM/include/fftw3.h , FFTPATH=$FFTWISDOM, )
+  #AC_CHECK_FILES( $FFTWISDOM/lib/libfftw3.a  , FFTPATH=$FFTWISDOM, )
 fi
 
 # Try some known paths
@@ -634,15 +734,20 @@ then
   AC_CHECK_FILE(/usr/local/include/fftw3.h, FFTPATH=/usr/local,
   AC_CHECK_FILE(/opt/local/include/fftw3.h, FFTPATH=/opt/local,
   AC_CHECK_FILE($HOME/local/include/fftw3.h, FFTPATH=$HOME/local,
-  ))))
+  AC_CHECK_FILE($HOME/include/fftw3.h, FFTPATH=$HOME/,
+  )))))
 
-  if test "$FFTPATH" != ""
-  then
-    # Check for the rest of the files
+fi
 
-    # NOTE: AC_CHECK_FILES works here, but AC_CHECK_FILE doesn't (?!)
-    AC_CHECK_FILES( $FFTPATH/lib/libfftw3.a , , FFTPATH="" )
-    fi
+
+#Test for library
+if test "$FFTPATH" != ""
+then
+  AC_CHECK_FILES($FFTPATH/lib/libfftw3.a, FFTPATHLIB='lib',
+    AC_CHECK_FILES($FFTPATH/lib64/libfftw3.a, FFTPATHLIB='lib64',
+      AC_CHECK_FILES($FFTPATH/lib/libfftw3.so, FFTPATHLIB='lib',
+        AC_CHECK_FILES($FFTPATH/lib64/libfftw3.so, FFTPATHLIB='lib64', FFTPATH='' ) ) ) )
+
 fi
 
 if test "$FFTPATH" = ""
@@ -652,7 +757,7 @@ then
 else
   echo " -> path $FFTPATH"
   EXTRA_INCS="$EXTRA_INCS -I$FFTPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/lib -lfftw3"
+  EXTRA_LIBS="$EXTRA_LIBS -L$FFTPATH/$FFTPATHLIB -lfftw3"
 fi
 echo ""
 
@@ -668,6 +773,99 @@ then
   CXXFLAGS="$CXXFLAGS -DLAPACK"	
   HAS_LAPACK="yes"
 fi
+
+#############################################################
+# HDF5 library
+#############################################################
+HDFPATH=""  # Indicates not found
+HAS_PHDF5="no"
+
+if test "$with_parallelhdf5" != "no" && test "$with_parallelhdf5" != ""
+then
+  with_hdf5="$with_parallelhdf5"
+fi
+
+if test "$with_hdf5" != "no"
+then
+  ##########################################
+  # Try to find a valid HDF5 configuration 
+  
+  if (test "$with_hdf5" = "yes") || (test "$with_hdf5" = "")
+  then
+    # No path specified
+    echo "Searching for HDF5 configuration"
+    
+    # Try some common HDF5 utilities
+    for i in h5cc h5pcc h5diff h5ls
+    do
+      printf "  -> Looking for $i..."
+      if type $i > /dev/null 2>&1; then
+        printf "yes\n"
+        # Remove 'h5cc' then bin
+        HDFPATH=`which $i | xargs -0 dirname | xargs -0 dirname`
+        break
+      fi
+      printf "no\n"
+    done
+    
+    # Check for include and library files
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
+        echo " -> Can't find HDF5 files"
+        HDFPATH=""
+      ] )
+      
+  else
+    HDFPATH=$with_hdf5  # Configure given path
+    
+    # Check for include and library files
+    AC_CHECK_FILES($HDFPATH/include/hdf5.h ,, [
+        echo " ERROR: Given HDF5 path not correct."
+        exit
+      ] )
+  fi
+
+
+  # Try some known paths
+  if test "$HDFPATH" = ""
+  then
+    AC_CHECK_FILE(/usr/include/hdf5.h, HDFPATH=/usr,
+    AC_CHECK_FILE(/usr/local/include/hdf5.h, HDFPATH=/usr/local,
+    AC_CHECK_FILE(/opt/local/include/hdf5.h, HDFPATH=/opt/local,
+    AC_CHECK_FILE($HOME/local/include/hdf5.h, HDFPATH=$HOME/local,
+    AC_CHECK_FILE($HOME/include/hdf5.h, HDFPATH=$HOME,
+    )))))
+  fi
+
+  if test $HDFPATH
+  then
+      AC_CHECK_FILES($HDFPATH/lib/libhdf5.a   , HDFLIBPATH='lib',
+      AC_CHECK_FILES($HDFPATH/lib64/libhdf5.a , HDFLIBPATH='lib64', HDFPATH=''))
+      test $HDFLIBPATH || echo " -> Can't find HDF5 files" 
+  fi
+  
+  # Check if found valid path
+  if test "$HDFPATH" != ""
+  then
+    echo "HDF5 path: $HDFPATH"
+    CXXFLAGS="$CXXFLAGS -DHDF5"
+    if test "$with_phdf5" != "no" && test "$with_parallelhdf5" != ""
+    then
+      CXXFLAGS="$CXXFLAGS -DPHDF5"
+      HAS_PHDF5="yes"
+    fi
+    
+    EXTRA_INCS="$EXTRA_INCS -I$HDFPATH/include"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HDFPATH/$HDFLIBPATH -lhdf5 -lz"
+
+    file_formats="$file_formats HDF5"
+  else
+    printf "HDF5 library not found\n\n"
+  fi
+else
+  printf "HDF5 support disabled\n"
+fi
+
+echo ""
 
 #############################################################
 # netCDF support
@@ -764,13 +962,16 @@ then
     then
       AC_CHECK_FILE(/usr/include/netcdfcpp.h, NCPATH=/usr/,
       AC_CHECK_FILE(/usr/local/include/netcdfcpp.h, NCPATH=/usr/local/,
+      AC_CHECK_FILE(/opt/local/include/netcdfcpp.h, NCPATH=/opt/local/,
       AC_CHECK_FILE($HOME/local/include/netcdfcpp.h, NCPATH=$HOME/local,
-      )))
+      AC_CHECK_FILE($HOME/include/netcdfcpp.h, NCPATH=$HOME,
+      )))))
 
       if test "$NCPATH" != ""
       then
         # Check for the rest of the files
-        AC_CHECK_FILES( $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a, , NCPATH="")
+        AC_CHECK_FILES( $NCPATH/lib/libnetcdf_c++.a $NCPATH/lib/libnetcdf.a, NCPATHLIB='lib', 
+          AC_CHECK_FILES( $NCPATH/lib64/libnetcdf_c++.a $NCPATH/lib64/libnetcdf.a, NCPATHLIB='lib64', NCPATH=""))
       fi
     fi
 
@@ -782,7 +983,9 @@ then
       then
         NCFILE=`dirname $NCFILE`
         NCFILE=$NCFILE/..
-        AC_CHECK_FILES( $NCFILE/include/netcdfcpp.h $NCFILE/lib/libnetcdf_c++.a $NCFILE/lib/libnetcdf.a , NCPATH=$NCFILE, with_netcdf="no")
+        AC_CHECK_FILES( $NCFILE/include/netcdfcpp.h , NCPATH=$NCFILE, with_netcdf="no")
+        AC_CHECK_FILES( $NCFILE/lib/libnetcdf_c++.a $NCFILE/lib/libnetcdf.a , NCPATHLIB='lib', 
+          AC_CHECK_FILES( $NCFILE/lib64/libnetcdf_c++.a $NCFILE/lib64/libnetcdf.a , NCPATHLIB='lib64', with_netcdf="no"))
       else
         echo "checking locate... no"
         with_netcdf="no"
@@ -799,7 +1002,7 @@ then
       if test "$NCPATH" != ""; then
         echo " -> path $NCPATH"
         EXTRA_INCS="$EXTRA_INCS -I$NCPATH/include"
-        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/lib"
+        EXTRA_LIBS="$EXTRA_LIBS -L$NCPATH/$NCPATHLIB"
         LDFLAGS="$LDFLAGS -Wl,-rpath,$NCPATH/lib"
       fi
 
@@ -829,7 +1032,7 @@ then
   if test "$with_pnetcdf" != ""
   then
     # Given a path to the library
-    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h $with_pnetcdf/lib/libpnetcdf.a, PNCPATH=$with_pnetcdf,)
+    AC_CHECK_FILES($with_pnetcdf/include/pnetcdf.h, PNCPATH=$with_pnetcdf,)
     if test "$PNCPATH" == ""
     then
       echo "parallel-netcdf not found in given directory"
@@ -844,10 +1047,10 @@ then
     then
       path=`dirname $path`
       path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h $path/lib/libpnetcdf.a, PNCPATH=$path,)
+      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
     fi
   fi
-
+  
   # Try locate
   if test "$PNCPATH" == ""
   then
@@ -855,9 +1058,15 @@ then
     if test "$path" != ""
     then
       path=$path/..
-      AC_CHECK_FILES($path/include/pnetcdf.h $path/lib/libpnetcdf.a, PNCPATH=$path,)
+      AC_CHECK_FILES($path/include/pnetcdf.h , PNCPATH=$path,)
     fi
   fi
+fi
+
+if test "$PNCPATH" != ""
+then
+  AC_CHECK_FILES($path/lib/libpnetcdf.a, PNCPATHLIB='lib',
+    AC_CHECK_FILES($path/lib64/libpnetcdf.a, PNCPATHLIB='lib64', PNCPATH=''))
 fi
 
 if test "$PNCPATH" == ""
@@ -867,7 +1076,7 @@ else
   # Set a compile-time flag
   CXXFLAGS="$CXXFLAGS -DPNCDF"
   EXTRA_INCS="$EXTRA_INCS -I$PNCPATH/include"
-  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/lib -lpnetcdf"
+  EXTRA_LIBS="$EXTRA_LIBS -L$PNCPATH/$PNCPATHLIB -lpnetcdf"
   
   file_formats="$file_formats Parallel-NetCDF"
   echo "Parallel-NetCDF support enabled"
@@ -890,7 +1099,7 @@ else
   if test "$PACT" != ""
   then
     # Path set, check it's correct
-    AC_CHECK_FILES( $PACT/include/pdb.h $PACT/lib/libpdb.a $PACT/lib/libpml.a $PACT/lib/libscore.a ,, [
+    AC_CHECK_FILES( $PACT/include/pdb.h  ,, [
       echo "PACT library location not correct. Finding..."
       PACT=""
     ] )
@@ -902,8 +1111,7 @@ else
   then
     # could be a path
     PACT=$with_pdb
-
-    AC_CHECK_FILES( $PACT/include/pdb.h $PACT/lib/libpdb.a $PACT/lib/libpml.a $PACT/lib/libscore.a ,, [
+    AC_CHECK_FILES( $PACT/include/pdb.h ,, [
       echo "with-pdb library location not correct. Finding..."
       PACT=""
     ] )
@@ -914,16 +1122,11 @@ else
   then
     AC_CHECK_FILE(/usr/include/pdb.h, PACT=/usr/,
     AC_CHECK_FILE(/usr/local/include/pdb.h, PACT=/usr/local/,
+    AC_CHECK_FILE(/opt/local/include/pdb.h, PACT=/opt/local/,
     AC_CHECK_FILE($HOME/local/include/pdb.h, PACT=$HOME/local/,
     AC_CHECK_FILE($HOME/local/include/pdb.h, PACT=$HOME/local/,
-    ))))
+    )))))
 
-  if test "$PACT" != ""
-  then
-    # Check the rest of the PACT libraries exist
-    AC_CHECK_FILES( $PACT/lib/libpdb.a $PACT/lib/libpml.a $PACT/lib/libscore.a, , PACT="")
-    fi
-  fi
 
   ## Try to find using locate
   if test "$PACT" = ""
@@ -933,11 +1136,19 @@ else
     then
       PACTFILE=`dirname $PACTFILE`
       PACTFILE=$PACTFILE/..
-      AC_CHECK_FILES( $PACTFILE/include/pdb.h $PACTFILE/lib/libpdb.a $PACTFILE/lib/libpml.a $PACTFILE/lib/libscore.a,
+      AC_CHECK_FILES( $PACTFILE/include/pdb.h ,
         PACT=$PACTFILE,
         PACT="")
     else
       echo "checking locate... no"
+    fi
+  fi
+
+  if test "$PACT" != ""
+  then
+    # Check the rest of the PACT libraries exist
+    AC_CHECK_FILES( $PACT/lib/libpdb.a   $PACT/lib/libpml.a   $PACT/lib/libscore.a,   PACTPATHLIB='lib',
+      AC_CHECK_FILES( $PACT/lib64/libpdb.a $PACT/lib64/libpml.a $PACT/lib64/libscore.a, PACTPATHLIB='lib64', PACT='' ) )
     fi
   fi
 
@@ -948,7 +1159,7 @@ else
 
     # Set include and library paths
     EXTRA_INCS="$EXTRA_INCS -I$PACT/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/lib"
+    EXTRA_LIBS="$EXTRA_LIBS -L$PACT/$PACTPATHLIB"
   fi
 
   ## Add PDB support if available
@@ -996,10 +1207,15 @@ then
     # Path specified. Check that needed files exist
     HYPREPATH=$with_hypre
     echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h $HYPREPATH/lib/libHYPRE.a ,, [
+    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h ,, [
       echo " -> Given path not correct. Finding..."
       HYPREPATH=""
     ] )
+    AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,   HYPREPATHLIB='lib',
+    AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
+      echo " -> Given path not correct. Finding..."
+      HYPREPATH=""
+    ] ))
   fi
 
   if test "$HYPREPATH" = ""
@@ -1009,14 +1225,16 @@ then
     AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
     AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
     AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    ))))
+    AC_CHECK_FILE($HOME/include/HYPRE.h, HYPREPATH=$HOME,
+    )))))
     
     if test "$HYPREPATH" = ""
     then
       # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,, [
-        HYPREPATH=""
-        ] )
+      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a , HYPREPATHLIB='lib',
+        AC_CHECK_FILES( $HYPREPATH/lib64/libHYPRE.a , HYPREPATHLIB='lib64', [
+          HYPREPATH=""
+        ] ))
     fi
   fi
   
@@ -1024,64 +1242,14 @@ then
   then
     echo "Support for Hypre enabled"
     EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
+    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/$HYPREPATHLIB -lHYPRE"
     
     CFLAGS="$CFLAGS -DBOUT_HAS_HYPRE"
-  else
-    echo "Support for Hypre disabled"
-  fi
-  echo ""
-fi
-
-#############################################################
-# Hypre
-#############################################################
-
-if test "$with_hypre" != "no"
-then
-  # Try to find a valid Hypre installation
-
-  HYPREPATH=""
-  if test "$with_hypre" != "yes"
-  then
-    # Path specified. Check that needed files exist
-    HYPREPATH=$with_hypre
-    echo "Looking for HYPRE in $HYPREPATH"
-    AC_CHECK_FILES( $HYPREPATH/include/HYPRE.h $HYPREPATH/lib/libHYPRE.a ,, [
-      echo " -> Given path not correct. Finding..."
-      HYPREPATH=""
-    ] )
-  fi
-
-  if test "$HYPREPATH" = ""
-  then
-    # try some known paths
-    AC_CHECK_FILE(/usr/include/HYPRE.h, HYPREPATH=/usr/,
-    AC_CHECK_FILE(/usr/local/include/HYPRE.h, HYPREPATH=/usr/local/,
-    AC_CHECK_FILE(/opt/local/include/HYPRE.h, HYPREPATH=/opt/local/,
-    AC_CHECK_FILE($HOME/local/include/HYPRE.h, HYPREPATH=$HOME/local,
-    ))))
-    
-    if test "$HYPREPATH" = ""
-    then
-      # Check for the other files
-      AC_CHECK_FILES( $HYPREPATH/lib/libHYPRE.a ,, [
-        HYPREPATH=""
-        ] )
-    fi
-  fi
-  
-  if test "$HYPREPATH" != ""
-  then
-    echo "Support for Hypre enabled"
-    EXTRA_INCS="$EXTRA_INCS -I$HYPREPATH/include"
-    EXTRA_LIBS="$EXTRA_LIBS -L$HYPREPATH/lib -lHYPRE"
-    
     CXXFLAGS="$CXXFLAGS -DBOUT_HAS_HYPRE"
   else
     echo "Support for Hypre disabled"
   fi
-  echo ""
+  echo
 fi
 
 #############################################################
@@ -1467,6 +1635,12 @@ then
   HAS_PNETCDF="no"
 fi
 
+HAS_HDF5="yes"
+if test "$HDFPATH" = ""
+then
+  HAS_HDF5="no"
+fi
+
 HAS_PDB="yes"
 if test "$PACT" = ""
 then
@@ -1515,6 +1689,7 @@ else
   echo "  PETSc has SUNDIALS support: $PETSC_HAS_SUNDIALS" | tee -a config-build.log
 fi
 
+echo "  SLEPc support: $HAS_SLEPC" | tee -a config-build.log
 
 echo "  IDA support: $HAS_IDA" | tee -a config-build.log
 
@@ -1525,6 +1700,8 @@ echo "  ARKODE support: $HAS_ARKODE" | tee -a config-build.log
 echo "  NetCDF support: $HAS_NETCDF" | tee -a config-build.log
 
 echo "  Parallel-NetCDF support: $HAS_PNETCDF" | tee -a config-build.log
+
+echo "  HDF5 support: $HAS_HDF5 (parallel: $HAS_PHDF5)" | tee -a config-build.log
 
 echo "  PDB support: $HAS_PDB" | tee -a config-build.log
 
@@ -1590,11 +1767,13 @@ AC_SUBST(HAS_CVODE)
 AC_SUBST(HAS_ARKODE)
 AC_SUBST(HAS_NETCDF)
 AC_SUBST(HAS_PNETCDF)
+AC_SUBST(HAS_HDF5)
 AC_SUBST(HAS_PDB)
 AC_SUBST(HAS_HYPRE)
 AC_SUBST(HAS_MUMPS)
 AC_SUBST(HAS_LAPACK)
 AC_SUBST(HAS_PETSC)
+AC_SUBST(HAS_SLEPC)
 AC_SUBST(PETSC_VERSION)
 AC_SUBST(PETSC_RELEASE)
 AC_SUBST(PETSC_HAS_SUNDIALS)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Plot a data set
 
 try:
@@ -7,7 +8,7 @@ try:
     import matplotlib.mlab as mlab
     import matplotlib.pyplot as plt
 except ImportError:
-    print "ERROR: plotdata needs numpy and matplotlib to work"
+    print("ERROR: plotdata needs numpy and matplotlib to work")
     raise
 
 matplotlib.rcParams['xtick.direction'] = 'out'
@@ -59,7 +60,7 @@ def plotdata(data, x=None, y=None,
             CB = plt.colorbar(shrink=0.8, extend='both')
         
     else:
-        print "Sorry, can't handle %d-D variables" % ndims
+        print("Sorry, can't handle %d-D variables" % ndims)
         return
     
     if title != None:

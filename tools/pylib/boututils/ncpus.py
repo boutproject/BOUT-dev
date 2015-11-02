@@ -4,6 +4,11 @@
 # http://stackoverflow.com/questions/1006289/how-to-find-out-the-number-of-cpus-in-python
 #
 
+try:
+  from builtins import str
+except:
+  pass
+
 import os,re,subprocess
 def  determineNumberOfCPUs():
     """ Number of virtual or physical CPUs on this system, i.e.

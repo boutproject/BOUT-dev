@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import division
+from builtins import input
+from builtins import range
+from past.utils import old_div
 # Takes the original R-Z data (from G-EQDSK), and the flux mesh
 # from create_grid.pro
 #
@@ -32,7 +37,12 @@ from scipy.optimize import curve_fit
 from gen_surface import gen_surface
 from scipy import interpolate
 from pylab import plot, figure, show, title, subplots_adjust, subplot, ylim, get_current_fig_manager
-from support import DDX, DDY, int_func, int_y, deriv
+
+from ddx import DDX
+from ddy import DDY
+from int_y import int_y
+from boututils import deriv, int_func
+
 from ask import query_yes_no
 from surface import SURFACE
 from scipy.optimize import root
@@ -81,7 +91,7 @@ def solve_f ( Rxy, psixy, pxy, Bpxy, hthe):
     nx = s[0]
     ny = s[1]
   
-    a = -DDX(psixy, Rxy) / Rxy
+    a = old_div(-DDX(psixy, Rxy), Rxy)
     b = -MU*DDX(psixy, pxy) - Bpxy*DDX(Bpxy*hthe)/hthe
   
 #    CATCH, theError
@@ -96,10 +106,10 @@ def solve_f ( Rxy, psixy, pxy, Bpxy, hthe):
 def force_balance ( psixy, Rxy, Bpxy, Btxy, hthe, pxy):
     MU =4.e-7*numpy.pi
   
-    a = DDX(psixy, Rxy) / Rxy
+    a = old_div(DDX(psixy, Rxy), Rxy)
     b = MU*DDX(psixy, pxy) - Bpxy*DDX(psixy, Bpxy*hthe)/hthe
   
-    return DDX(psixy, Btxy) + a*Btxy + b/Btxy
+    return DDX(psixy, Btxy) + a*Btxy + old_div(b,Btxy)
  
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,7 +120,7 @@ def force_balance ( psixy, Rxy, Bpxy, Btxy, hthe, pxy):
 def Bt_func ( Bt , psi, a, b):
     #global  psi, a, b
     
-    return deriv( Bt, psi ) + a*Bt + b / Bt
+    return deriv( psi, Bt ) + a*Bt + old_div(b, Bt)
  
 
 def newton_Bt ( psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh):
@@ -121,7 +131,7 @@ def newton_Bt ( psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh):
     nx = s[0]
     ny = s[1]
   
-    axy = DDX(psixy, Rxy) / Rxy
+    axy = old_div(DDX(psixy, Rxy), Rxy)
     bxy = MU*DDX(psixy, pxy) - Bpxy*DDX(psixy, Bpxy*hthe)/hthe
         
     Btxy2 = numpy.zeros((nx, ny))
@@ -129,7 +139,7 @@ def newton_Bt ( psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh):
         psi = psixy[:,i]
         a = axy[:,i]
         b = bxy[:,i]
-        print "Solving f for y=", i
+        print("Solving f for y=", i)
         sol=root(Bt_func, Btxy[:,i], args=(psi, a, b) )
         Btxy2[:,i] = sol.x
         
@@ -138,7 +148,7 @@ def newton_Bt ( psixy, Rxy, Btxy, Bpxy, pxy, hthe, mesh):
     # Average f over flux surfaces
     fxy = surface_average(Btxy2*Rxy, mesh)
     
-    return fxy / Rxy
+    return old_div(fxy, Rxy)
  
 
 #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -279,7 +289,7 @@ def new_hfunc ( h, psi, a, b, h0, fixpos ):
     else:
         h2 = numpy.append(numpy.append(h[0:(fixpos)], h0), h[fixpos::])
     
-    f = a*h2 + b*deriv( h2, psi)
+    f = a*h2 + b*deriv( psi, h2)
   
     if fixpos == 0 :
         f = f[1::]
@@ -306,7 +316,7 @@ def correct_hthe ( Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=None):
     if fixhthe > nx-1 : fixhthe = nx-1
 
     fixpos = fixhthe
-    print "FIX = ", fixhthe
+    print("FIX = ", fixhthe)
   
     axy =( Btxy*DDX(psixy, Btxy) + Bpxy*DDX(psixy, Bpxy)  
         + Btxy**2*DDX(psixy, Rxy)/Rxy + MU*DDX(psixy, pressure))
@@ -315,7 +325,7 @@ def correct_hthe ( Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=None):
     nh = numpy.zeros((nx, ny))
     nh[fixhthe,:] = hthe[fixhthe,:]
     for i in range (ny) : 
-        print "Correcting y index ", i
+        print("Correcting y index ", i)
         xarr = psixy[:,i]
         a = axy[:,i]
         b = bxy[:,i]
@@ -345,7 +355,7 @@ def correct_hthe ( Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=None):
          
         w = numpy.size(numpy.where(nh[:,i] < 0.0))
         if w > 0 :
-            print "Error in hthe solver: Negative solution at y = ", i
+            print("Error in hthe solver: Negative solution at y = ", i)
             #sys.exit()
          
    
@@ -496,8 +506,8 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   
     # Add a minimum amount
     if numpy.min(pressure) < 1.0e-2*numpy.max(pressure) :
-        print "****Minimum pressure is very small:", numpy.min(pressure)
-        print  "****Setting minimum pressure to 1% of maximum"
+        print("****Minimum pressure is very small:", numpy.min(pressure))
+        print("****Setting minimum pressure to 1% of maximum")
         pressure = pressure + 1e-2*numpy.max(pressure)
          
   
@@ -539,10 +549,10 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
      
 
     if numpy.min(pressure) < 0.0 :
-        print ""
-        print "============= WARNING =============="
-        print "Poor quality equilibrium: Pressure is negative"
-        print ""
+        print("")
+        print("============= WARNING ==============")
+        print("Poor quality equilibrium: Pressure is negative")
+        print("")
         poorquality = 1
      
   
@@ -582,8 +592,8 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     # core to edge results in Bp clockwise in the poloidal plane
     # i.e. in the positive Grad Theta direction.
   
-    Brxy = mesh.dpsidZ / Rxy
-    Bzxy = -mesh.dpsidR / Rxy
+    Brxy = old_div(mesh.dpsidZ, Rxy)
+    Bzxy = old_div(-mesh.dpsidR, Rxy)
     Bpxy = numpy.sqrt(Brxy**2 + Bzxy**2)
     
 
@@ -594,7 +604,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
             ) 
   
     if dot < 0. :
-        print "**** Poloidal field is in opposite direction to Grad Theta -> Bp negative"
+        print("**** Poloidal field is in opposite direction to Grad Theta -> Bp negative")
         Bpxy = -Bpxy
         if bpsign > 0 : sys.exit() # Should be negative
         bpsign = -1.0
@@ -606,7 +616,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   # Get toroidal field from poloidal current function fpol
     Btxy = numpy.zeros((nx, ny))
     fprime = numpy.zeros((nx, ny))
-    fp = deriv(rz_grid.fpol, rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx))
+    fp = deriv(rz_grid.npsigrid*(rz_grid.sibdry - rz_grid.simagx), rz_grid.fpol)
     
     
     status = gen_surface(mesh=mesh) # Start generator
@@ -631,7 +641,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
             fpol = rz_grid.fpol[numpy.size(rz_grid.fpol)-1]
             fprime[xi,yi] = 0.
          
-        Btxy[xi,yi] = fpol / Rxy[xi,yi]
+        Btxy[xi,yi] = old_div(fpol, Rxy[xi,yi])
         
         if last ==1 : break
   
@@ -716,7 +726,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
                 dldi = SMOOTH(dldi, 5)[2:n+2]
         
     
-        hthe[xi, yi] = dldi / dtheta # First estimate of hthe
+        hthe[xi, yi] = old_div(dldi, dtheta) # First estimate of hthe
     
         # Get outboard midplane
         if period and xi == 0 :
@@ -725,10 +735,10 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
          
         if last == 1 : break
 
-    print "Midplane index ", ymidplane
+    print("Midplane index ", ymidplane)
 
     fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, hthe, pressure)
-    print "Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0))
+    print("Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0)))
 
     
 
@@ -736,12 +746,12 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   # Correct pressure using hthe
   
-    print "Calculating pressure profile from force balance"
+    print("Calculating pressure profile from force balance")
 
     try:
 
     # Calculate force balance
-        dpdx = ( -Bpxy*DDX(xcoord, Bpxy * hthe) - Btxy*hthe*DDX(xcoord, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(xcoord, Rxy) ) / (MU*hthe)
+        dpdx = old_div(( -Bpxy*DDX(xcoord, Bpxy * hthe) - Btxy*hthe*DDX(xcoord, Btxy) - (Btxy*Btxy*hthe/Rxy)*DDX(xcoord, Rxy) ), (MU*hthe))
     
         # Surface average
         dpdx2 = surface_average(dpdx, mesh)
@@ -773,7 +783,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   
   
         fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, hthe, pres)
-        print "Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0))
+        print("Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0)))
   
   
        #!P.MULTI=[0,0,2,0,0]
@@ -805,7 +815,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
             
          
     except Exception:
-        print "WARNING: Pressure profile calculation failed: "#, !ERROR_STATE.MSG 
+        print("WARNING: Pressure profile calculation failed: ")#, !ERROR_STATE.MSG 
         pass
 
     #CATCH, /cancel
@@ -820,7 +830,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         new_Btxy = newton_Bt(psixy, Rxy, Btxy, Bpxy, pres, hthe, mesh)
     
         fb0 = force_balance(psixy, Rxy, Bpxy, new_Btxy, hthe, pressure)
-        print "force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0))
+        print("force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0)))
     
     
         fig=figure(figsize=(7, 11))
@@ -858,14 +868,14 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     if calchthe == -1 : calchthe = query_yes_no("Adjust hthe using force balance?")#, gui=gui, dialog_parent=parent) 
     if calchthe == 1 :
         # This doesn't behave well close to the x-points
-        fixhthe = numpy.int(nx / 2)
+        fixhthe = numpy.int(old_div(nx, 2))
         nh = correct_hthe(Rxy, psixy, Btxy, Bpxy, hthe, pressure, fixhthe=fixhthe)
     
         fb0 = force_balance(psixy, Rxy, Bpxy, Btxy, nh, pressure)
-        print "Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0))
+        print("Force imbalance: ", numpy.mean(numpy.abs(fb0)), numpy.max(numpy.abs(fb0)))
     
-        print "numpy.maximum difference in hthe: ", numpy.max(numpy.abs(hthe - nh))
-        print "numpy.maximum percentage difference: ", 100.*numpy.max(numpy.abs((hthe - nh)/hthe))
+        print("numpy.maximum difference in hthe: ", numpy.max(numpy.abs(hthe - nh)))
+        print("numpy.maximum percentage difference: ", 100.*numpy.max(numpy.abs(old_div((hthe - nh),hthe))))
 
        #!P.multi=[0,0,1,0,0]
         fig=figure(figsize=(7, 4))
@@ -947,7 +957,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   #;;;;;;;;;;;;;;;;;;; THETA_ZERO ;;;;;;;;;;;;;;;;;;;;;;
   # re-set zshift to be zero at the outboard midplane
   
-    print "MIDPLANE INDEX = ", ymidplane
+    print("MIDPLANE INDEX = ", ymidplane)
   
     status = gen_surface(mesh=mesh) # Start generator
     while True:
@@ -966,15 +976,15 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
      
         if last ==1 : break
   
-    print ""
-    print "==== Calculating curvature ===="
+    print("")
+    print("==== Calculating curvature ====")
   
   #;;;;;;;;;;;;;;;;;;; CURVATURE ;;;;;;;;;;;;;;;;;;;;;;;
   # Calculating b x kappa
   
     if curv == None :
     
-        print "*** Calculating curvature in toroidal coordinates"
+        print("*** Calculating curvature in toroidal coordinates")
     
         thetaxy = numpy.zeros((nx, ny))
         status = gen_surface(mesh=mesh) # Start generator
@@ -1008,14 +1018,14 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         # Calculate on R-Z mesh and then interpolate onto grid
         # ( cylindrical coordinates)
 
-        print "*** Calculating curvature in cylindrical coordinates"
+        print("*** Calculating curvature in cylindrical coordinates")
     
         bxcv = rz_curvature(rz_grid)
     
         # DCT methods cause spurious oscillations
         # Linear interpolation seems to be more robust
         bxcv_psi = numpy.interp(bxcv.psi, mesh.Rixy, mesh.Zixy)
-        bxcv_theta = numpy.interp(bxcv.theta, mesh.Rixy, mesh.Zixy) / hthe
+        bxcv_theta = old_div(numpy.interp(bxcv.theta, mesh.Rixy, mesh.Zixy), hthe)
         bxcv_phi = numpy.interp(bxcv.phi, mesh.Rixy, mesh.Zixy)
     
         # If Bp is reversed, then Grad x = - Grad psi
@@ -1025,14 +1035,14 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     elif curv == 2 :
         # Curvature from Curl(b/B)
     
-        bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
+        bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(old_div(1., Bxy), mesh) / hthe)
         bxcvy = -bpsign*Bxy*Bpxy * DDX(xcoord, Btxy*Rxy/Bxy^2) / (2.*hthe)
-        bxcvz = Bpxy^3 * DDX(xcoord, hthe/Bpxy) / (2.*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, Btxy/Rxy) / (2.*Bxy) - sinty*bxcvx
+        bxcvz = Bpxy^3 * DDX(xcoord, old_div(hthe,Bpxy)) / (2.*hthe*Bxy) - Btxy*Rxy*DDX(xcoord, old_div(Btxy,Rxy)) / (2.*Bxy) - sinty*bxcvx
     
     else:
         # calculate in flux coordinates.
     
-        print "*** Calculating curvature in flux coordinates"
+        print("*** Calculating curvature in flux coordinates")
     
         dpb = numpy.zeros((nx, ny))      # quantity used for y and z components
     
@@ -1041,7 +1051,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
          
         dpb = dpb + DDX(xcoord, Bxy)
 
-        bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(1. / Bxy, mesh) / hthe)
+        bxcvx = bpsign*(Bpxy * Btxy*Rxy * DDY(old_div(1., Bxy), mesh) / hthe)
         bxcvy = bpsign*(Bpxy*Btxy*Rxy*dpb / (hthe*Bxy^2))
         bxcvz = -dpb - sinty*bxcvx
      
@@ -1055,11 +1065,11 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     
         bz = bxcvz + sinty * bxcvx
     
-        print "Smoothing bxcvx..."
+        print("Smoothing bxcvx...")
         bxcvx = 0.#smooth_nl(bxcvx, mesh)
-        print "Smoothing bxcvy..."
+        print("Smoothing bxcvy...")
         bxcvy = 0.#smooth_nl(bxcvy, mesh)
-        print "Smoothing bxcvz..."
+        print("Smoothing bxcvz...")
         bz = 0.#smooth_nl(bz, mesh)
     
         bxcvz = bz - sinty * bxcvx
@@ -1077,8 +1087,8 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
   #
   #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-    print ""
-    print "==== Calculating parallel current ===="
+    print("")
+    print("==== Calculating parallel current ====")
     
     jpar0 = - Bxy * fprime / MU - Rxy*Btxy * dpdpsi / Bxy
      
@@ -1178,7 +1188,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
             if (ip <= i0) or (ip >= i1) :
       
       # Now preserve starting and end points, and peak value
-                div = numpy.int((i1-i0)/10)+1 # reduce number of points by this factor
+                div = numpy.int(old_div((i1-i0),10))+1 # reduce number of points by this factor
       
                 inds = [i0] # first point
                 for i in [i0+div, ip-div, div] : inds = [inds, i]
@@ -1208,19 +1218,19 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     nr = numpy.size(mesh.nrad)
     np = numpy.size(mesh.npol)
     if (nr == 2) and (np == 3) :
-        print "Single null equilibrium"
+        print("Single null equilibrium")
     
         ixseps1 = mesh.nrad[0]
         ixseps2 = nx
     
         jyseps1_1 = mesh.npol[0]-1
-        jyseps1_2 = mesh.npol[0] + numpy.int(mesh.npol[1]/2)
+        jyseps1_2 = mesh.npol[0] + numpy.int(old_div(mesh.npol[1],2))
         ny_inner = jyseps1_2
         jyseps2_1 = jyseps1_2
         jyseps2_2 = ny - mesh.npol[2]-1
 
     elif (nr == 3) and (np == 6) :
-        print "Double null equilibrium"
+        print("Double null equilibrium")
     
         ixseps1 = mesh.nrad[0]
         ixseps2 = ixseps1 + mesh.nrad[1]
@@ -1235,58 +1245,58 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     
     elif (nr == 1) and (np == 1) :
     
-        print "Single domain"
+        print("Single domain")
     
         ixseps1 = nx
         ixseps2 = nx
     
         jyseps1_1 = -1
-        jyseps1_2 = numpy.int(ny/2)
-        jyseps2_1 = numpy.int(ny/2)
-        ny_inner = numpy.int(ny/2)
+        jyseps1_2 = numpy.int(old_div(ny,2))
+        jyseps2_1 = numpy.int(old_div(ny,2))
+        ny_inner = numpy.int(old_div(ny,2))
         jyseps2_2 = ny - 1
     
     else:
-        print  "***************************************" 
-        print  "* WARNING: Equilibrium not recognised *"
-        print  "*                                     *"
-        print  "*  Check mesh carefully!              *"
-        print  "*                                     *"
-        print  "*  Contact Ben Dudson                 *"
-        print  "*      benjamin.dudson@york.ac.uk     *"
-        print  "***************************************" 
+        print("***************************************") 
+        print("* WARNING: Equilibrium not recognised *")
+        print("*                                     *")
+        print("*  Check mesh carefully!              *")
+        print("*                                     *")
+        print("*  Contact Ben Dudson                 *")
+        print("*      benjamin.dudson@york.ac.uk     *")
+        print("***************************************") 
         ixseps1 = -1
         ixseps2 = -1
     
         jyseps1_1 = -1
-        jyseps1_2 = numpy.int(ny/2)
-        jyseps2_1 = numpy.int(ny/2)
-        ny_inner = numpy.int(ny/2)
+        jyseps1_2 = numpy.int(old_div(ny,2))
+        jyseps2_1 = numpy.int(old_div(ny,2))
+        ny_inner = numpy.int(old_div(ny,2))
         jyseps2_2 = ny - 1
    
 
-    print "Generating plasma profiles:"
+    print("Generating plasma profiles:")
           
-    print "  1. Flat temperature profile"
-    print "  2. Flat density profile"
-    print "  3. Te proportional to density"
+    print("  1. Flat temperature profile")
+    print("  2. Flat density profile")
+    print("  3. Te proportional to density")
     while True:
-        opt = raw_input("Profile option:")
+        opt = input("Profile option:")
         if eval(opt) >= 1 and eval(opt) <= 3 : break
 
   
-    if opt == 1 :
+    if eval(opt) == 1 :
         # flat temperature profile
     
-        print "Setting flat temperature profile"
+        print("Setting flat temperature profile")
         while True:
-            Te_x = eval(raw_input("Temperature (eV):"))
+            Te_x = eval(input("Temperature (eV):"))
                 
       
         # get density
-            Ni = pressure / (2.* Te_x* 1.602e-19*1.0e20)
+            Ni = old_div(pressure, (2.* Te_x* 1.602e-19*1.0e20))
       
-            print "numpy.maximum density (10^20 m^-3):", numpy.max(Ni)
+            print("numpy.maximum density (10^20 m^-3):", numpy.max(Ni))
       
             done = query_yes_no("Is this ok?")
             if done == 1 : break
@@ -1295,16 +1305,16 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         Ti = Te
         Ni_x = numpy.max(Ni)
         Ti_x = Te_x
-    elif opt == 2 :
-        print "Setting flat density profile"
+    elif eval(opt) == 2 :
+        print("Setting flat density profile")
     
         while True:
-            Ni_x = eval(raw_input("Density [10^20 m^-3]:"))
+            Ni_x = eval(input("Density [10^20 m^-3]:"))
       
             # get temperature
-            Te = pressure / (2.* Ni_x * 1.602e-19*1.0e20)
+            Te = old_div(pressure, (2.* Ni_x * 1.602e-19*1.0e20))
       
-            print "numpy.maximum temperature (eV):", numpy.max(Te)
+            print("numpy.maximum temperature (eV):", numpy.max(Te))
             if query_yes_no("Is this ok?") == 1 : break
     
         Ti = Te
@@ -1312,15 +1322,15 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
         Te_x = numpy.max(Te)
         Ti_x = Te_x
     else:
-        print "Setting te proportional to density"
+        print("Setting te proportional to density")
     
         while True:
-            Te_x = eval(raw_input("Maximum temperature [eV]:"))
+            Te_x = eval(input("Maximum temperature [eV]:"))
             
             
-            Ni_x = numpy.max(pressure) / (2.*Te_x * 1.602e-19*1.0e20)
+            Ni_x = old_div(numpy.max(pressure), (2.*Te_x * 1.602e-19*1.0e20))
       
-            print "Maximum density [10^20 m^-3]:", Ni_x
+            print("Maximum density [10^20 m^-3]:", Ni_x)
       
             Te = Te_x * pressure / numpy.max(pressure)
             Ni = Ni_x * pressure / numpy.max(pressure)
@@ -1330,17 +1340,17 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
    
   
     rmag = numpy.max(numpy.abs(Rxy))
-    print "Setting rmag = ", rmag
+    print("Setting rmag = ", rmag)
   
     bmag = numpy.max(numpy.abs(Bxy))
-    print "Setting bmag = ", bmag
+    print("Setting bmag = ", bmag)
 
     #;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     # save to file
     # open a new netCDF file for writing.
     handle = file_open(output) 
 
-    print "Writing grid to file "+output
+    print("Writing grid to file "+output)
 
     # Size of the grid
 
@@ -1412,7 +1422,7 @@ def process_grid( rz_grid, mesh, output=None, poorquality=None,
     s = file_write(handle, "psi_bndry", psi_bndry)
 
     file_close, handle
-    print "DONE"
+    print("DONE")
   
     #!P.multi=[0,0,1,0,0]
 

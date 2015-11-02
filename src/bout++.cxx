@@ -57,6 +57,7 @@ const char DEFAULT_OPT[] = "BOUT.inp";
 
 #include <invert_laplace.hxx>
 
+#include <bout/slepclib.hxx>
 #include <bout/petsclib.hxx>
 
 #include <time.h>
@@ -88,14 +89,21 @@ char get_spin();                    // Produces a spinning bar
 
 /*!
   Initialise BOUT++
-  
+
   Inputs
   ------
-  
+
   The command-line arguments argc and argv are passed by
   reference, and pointers to these will be stored in various
   places in BOUT++.
-  
+
+  Outputs
+  -------
+
+  Any non-zero return value should halt the simulation. If the return value is
+  less than zero, the exit status from BOUT++ is 0, otherwise it is the return
+  value of BoutInitialise.
+
  */
 int BoutInitialise(int &argc, char **&argv) {
 
@@ -117,9 +125,9 @@ int BoutInitialise(int &argc, char **&argv) {
   /// NB: "restart" and "append" are now caught by options
   /// Check for help flag separately
   for (int i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "-h", 2) == 0 ||
-    	strncasecmp(argv[i], "--help", 6) == 0) {
-      // Print help message
+    if (string(argv[i]) == "-h" ||
+    	string(argv[i]) == "--help") {
+      // Print help message -- note this will be displayed once per processor as we've not started MPI yet.
       fprintf(stdout, "Usage: %s [-d <data directory>] [-f <options filename>] [restart [append]] [VAR=VALUE]\n", argv[0]);
       fprintf(stdout, "\n"
 	      "  -d <data directory>\tLook in <data directory> for input/output files\n"
@@ -133,7 +141,7 @@ int BoutInitialise(int &argc, char **&argv) {
     }
   }
   for (int i=1;i<argc;i++) {
-    if (strncasecmp(argv[i], "-d", 2) == 0) {
+    if (string(argv[i]) == "-d") {
       // Set data directory
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -d <data directory>\n", argv[0]);
@@ -142,7 +150,7 @@ int BoutInitialise(int &argc, char **&argv) {
       i++;
       data_dir = argv[i];
     }
-    if (strncasecmp(argv[i], "-f", 2) == 0) {
+    if (string(argv[i]) == "-f") {
       // Set options file
       if (i+1 >= argc) {
         fprintf(stderr, "Usage is %s -f <options filename>\n", argv[0]);
@@ -158,6 +166,7 @@ int BoutInitialise(int &argc, char **&argv) {
   Options::getRoot()->set("optionfile", string(opt_file));
 
   // Set the command-line arguments
+  SlepcLib::setArgs(argc, argv); // SLEPc initialisation
   PetscLib::setArgs(argc, argv); // PETSc initialisation
   Solver::setArgs(argc, argv);   // Solver initialisation
   BoutComm::setArgs(argc, argv); // MPI initialisation
@@ -268,6 +277,11 @@ int BoutInitialise(int &argc, char **&argv) {
       return 1;
     }
 
+    ///////////////////////////////////////////////
+    
+    mesh = Mesh::create();  ///< Create the mesh
+    mesh->load();           ///< Load from sources. Required for Field initialisation
+    
     ////////////////////////////////////////////
 
     // Set up the "dump" data output file
@@ -290,10 +304,8 @@ int BoutInitialise(int &argc, char **&argv) {
     dump.add(simtime, "t_array", 1); // Appends the time of dumps into an array
     dump.add(iteration, "iteration", 0);
 
-    ///////////////////////////////////////////////
-    
-    mesh = Mesh::create();  ///< Create the mesh
-    mesh->load();           ///< Load from sources. Required for Field initialisation
+    ////////////////////////////////////////////
+
     mesh->outputVars(dump); ///< Save mesh configuration into output file
     
   }catch(BoutException &e) {
@@ -347,6 +359,9 @@ int BoutFinalise() {
   // Debugging message stack
   msg_stack.clear();
 
+  // Call SlepcFinalize if not already called
+  SlepcLib::cleanup();
+
   // Call PetscFinalize if not already called
   PetscLib::cleanup();
     
@@ -387,7 +402,7 @@ int bout_monitor(Solver *solver, BoutReal t, int iter, int NOUT) {
   int ncalls            = solver->rhs_ncalls;
   int ncalls_e		= solver->rhs_ncalls_e;
   int ncalls_i		= solver->rhs_ncalls_i;
-  bool output_split     = solver->split_monitor;
+  bool output_split     = solver->splitOperator();
   BoutReal wtime_rhs    = Timer::resetTime("rhs");
   BoutReal wtime_invert = Timer::resetTime("invert");
   BoutReal wtime_comms  = Timer::resetTime("comms");  // Time spent communicating (part of RHS)

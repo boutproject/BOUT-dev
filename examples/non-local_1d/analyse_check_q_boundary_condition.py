@@ -5,6 +5,10 @@
 # Runs the conduction example, produces some output
 # 
 
+from __future__ import division
+from builtins import str
+from builtins import range
+from past.utils import old_div
 nproc = 1  # Number of processors to use
 
 from boututils import shell, launch, plotdata
@@ -35,12 +39,12 @@ q_electron_right = []
 right_index = len(Te[0,2,:,0])-4
 
 for i in range(len(Te[:,2,0,0])):
-  Te_left = (Te[i,2,2,0]+Te[i,2,1,0])/2.
-  Ti_left = (Ti[i,2,2,0]+Ti[i,2,1,0])/2.
-  n_left = (n[i,2,2,0]+n[i,2,1,0])/2.
-  Te_right = (Te[i,2,right_index,0]+Te[i,2,right_index+1,0])/2
-  Ti_right = (Ti[i,2,right_index,0]+Ti[i,2,right_index+1,0])/2
-  n_right = (n[i,2,right_index,0]+n[i,2,right_index+1,0])/2
+  Te_left = old_div((Te[i,2,2,0]+Te[i,2,1,0]),2.)
+  Ti_left = old_div((Ti[i,2,2,0]+Ti[i,2,1,0]),2.)
+  n_left = old_div((n[i,2,2,0]+n[i,2,1,0]),2.)
+  Te_right = old_div((Te[i,2,right_index,0]+Te[i,2,right_index+1,0]),2)
+  Ti_right = old_div((Ti[i,2,right_index,0]+Ti[i,2,right_index+1,0]),2)
+  n_right = old_div((n[i,2,right_index,0]+n[i,2,right_index+1,0]),2)
   sheath_potential = 0.5*Te_left*log(2*pi*electron_mass/ion_mass*(1+gamma*Ti_left/Te_left))
   q_electron_left.append((2.0*Te_left-sheath_potential)*n_left*V[i,2,2,0]) # in W/m^2
   

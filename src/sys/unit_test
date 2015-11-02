@@ -4,26 +4,27 @@
 # Run the test, return status
 #
 
+from __future__ import print_function
 from boututils import shell,launch
 from sys import exit
 
-print "Making test"
+print("Making test")
 status, out = shell("make -f unit_makefile")
 
 if status != 0:
-  print "FAILED: Could not make!"
+  print("FAILED: Could not make!")
   exit(status)
 
-print "Running test"
+print("Running test")
 
 status, out = shell("./test")
 
 shell("rm test")
 
 if status == 0:
-  print "PASSED"
+  print("PASSED")
 else:
-  print "FAILED"
+  print("FAILED")
 
 exit(status)
 

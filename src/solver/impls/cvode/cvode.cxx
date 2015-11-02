@@ -65,6 +65,8 @@ CvodeSolver::CvodeSolver(Options *opts) : Solver(opts) {
   has_constraints = false; ///< This solver doesn't have constraints
   
   jacfunc = NULL;
+  
+  canReset = true;
 }
 
 CvodeSolver::~CvodeSolver() {
@@ -352,7 +354,7 @@ int CvodeSolver::run() {
       CVodeGetNumSteps(cvode_mem, &nsteps);
       CVodeGetNumRhsEvals(cvode_mem, &nfevals);
       CVodeGetNumNonlinSolvIters(cvode_mem, &nniters);
-      CVSpilsGetNumPrecEvals(cvode_mem, &npevals);
+      CVSpilsGetNumPrecSolves(cvode_mem, &npevals);
       CVSpilsGetNumLinIters(cvode_mem, &nliters);
 
       output.write("\nCVODE: nsteps %ld, nfevals %ld, nniters %ld, npevals %ld, nliters %ld\n", 
@@ -658,6 +660,16 @@ void CvodeSolver::loop_abstol_values_op(int jx, int jy, BoutReal* abstolvec_data
       p++;
     }  
   }
+}
+
+void CvodeSolver::resetInternalFields() {
+  
+  if (save_vars(NV_DATA_P(uvec)))
+    throw BoutException("\tERROR: resetting variable values failed\n");
+  
+  if ( CVodeReInit(cvode_mem, simtime, uvec) < 0 )
+    throw BoutException("CVodeReInit failed\n");
+  
 }
 
 #endif
