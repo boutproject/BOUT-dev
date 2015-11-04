@@ -48,7 +48,6 @@ function calc_angle, x1, x2, x3, y1, y2, y3
 end
 
 function calc_beta_withgrid, r, z, x
-
 	nx = size(r,/dimensions)
 	ny = nx[1]
 	nx = nx[0]

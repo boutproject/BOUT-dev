@@ -364,6 +364,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
        ENDIF ELSE sep_line = FLTARR(2,2)
        weight = ((2.*i/(npar-1))-1)^1.35
     ENDIF ELSE BEGIN
+;        PRINT, "***** DOWN *****" 
        IF KEYWORD_SET(vec_in_down) THEN vec_in = vec_in_down
        IF KEYWORD_SET(vec_out_down) THEN vec_out = vec_out_down
 
@@ -381,9 +382,9 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
     ENDELSE
     
     ; Refine the location of the starting point
-    follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
-    rii[i] = ri1
-    zii[i] = zi1
+;     follow_gradient_nonorth, interp_data, R, Z, rii[i], zii[i], f0, ri1, zi1, vec=vec_in, weight=weight
+;     rii[i] = ri1
+;     zii[i] = zi1
 
     IF sind GE 0 THEN BEGIN
       rixy[nin, i] = rii[i]
@@ -402,7 +403,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
       
       IF (fvals[nin+j] LT sep) AND (ftarg GE sep) THEN BEGIN
          ; Line going across separatrix. Split into two pieces
-         
+;          PRINT, "FOLLOWING INNER i, j = ", i, j
          follow_gradient_nonorth, interp_data, R, Z, rixy[nin+j, i], zixy[nin+j, i], $
                           sep, rinext, zinext, status=status, $
                           boundary=sep_line, fbndry=fbndry, vec=vec_in, weight=weight, /bndry_noperiodic
@@ -410,6 +411,7 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
          ; the separatrix line
          OPLOT, [INTERPOLATE(R, rinext)], [INTERPOLATE(Z, zinext)], psym=4, color=5
          
+;          PRINT, "FOLLOWING OUTER"
          follow_gradient_nonorth, interp_data, R, Z, rinext, zinext, $
                           ftarg, rinext, zinext, status=status, $
                           boundary=boundary, fbndry=fbndry, vec=vec_out, weight=weight
@@ -871,7 +873,15 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
   IF KEYWORD_SET(fast) THEN BEGIN
     PRINT, "Using Fast settings"
     interp_data.method = 2
-  ENDIF
+  ENDIF ELSE BEGIN
+    dct = DCT2D(F)
+
+    ; Create a structure containing interpolation settings and data
+    interp_data = {nx:nx, ny:ny, $
+                   method:0, $
+                   f: F, $       ; Always include function
+                   dct: dct} ; Pass the DCT coefficients
+  ENDELSE
   
   ;;;;;;;;;;;;;;;; First plot ;;;;;;;;;;;;;;;;
 
@@ -2014,6 +2024,8 @@ FUNCTION create_nonorthogonal, F, R, Z, in_settings, critical=critical, $
       vec_out_up2 = TRANSPOSE(vec1[xpt2,*])
 
       sp_loc = 0
+
+;       PRINT, "HERE ******************************************************"
 
       a = grid_region_nonorth(interp_data, R, Z, $
                       (*sol_info[solid]).ri, (*sol_info[solid]).zi, $
