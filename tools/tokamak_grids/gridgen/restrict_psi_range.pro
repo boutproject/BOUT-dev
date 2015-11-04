@@ -24,8 +24,8 @@ FUNCTION restrict_psi_range, critical, psi_outer
     inner_sep = 0
   ENDIF ELSE BEGIN
     ; Need to update inner_sep
-    w2 = WHERE(w EQ critical.inner_sep, count)
-    IF count EQ 1 THEN BEGIN
+    w2 = WHERE(w EQ critical.inner_sep, count2)
+    IF count2 EQ 1 THEN BEGIN
       inner_sep = w2[0]
     ENDIF ELSE BEGIN
       w = [critical.inner_sep]
@@ -38,5 +38,6 @@ FUNCTION restrict_psi_range, critical, psi_outer
             inner_sep:inner_sep, $
             opt_ri:critical.opt_ri, opt_zi:critical.opt_zi, opt_f:critical.opt_f, $
             xpt_ri:critical.xpt_ri[w], xpt_zi:critical.xpt_zi[w], xpt_f:critical.xpt_f[w]}
+  
   RETURN, result
 END
