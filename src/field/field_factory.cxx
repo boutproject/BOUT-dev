@@ -2,7 +2,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ FieldGenerator* generator(BoutReal *ptr) {
 // FieldFactory public functions
 
 FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
-  
+
   if(options == NULL)
     options = Options::getRoot();
 
@@ -56,11 +56,11 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   addGenerator("sin", new FieldSin(NULL));
   addGenerator("cos", new FieldCos(NULL));
   addGenerator("tan", new FieldGenOneArg<tan>(NULL));
-  
+
   addGenerator("acos", new FieldGenOneArg<acos>(NULL));
   addGenerator("asin", new FieldGenOneArg<asin>(NULL));
   addGenerator("atan", new FieldATan(NULL));
-  
+
   addGenerator("sinh", new FieldSinh(NULL));
   addGenerator("cosh", new FieldCosh(NULL));
   addGenerator("tanh", new FieldTanh());
@@ -71,33 +71,37 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
   addGenerator("abs", new FieldAbs(NULL));
   addGenerator("sqrt", new FieldSqrt(NULL));
   addGenerator("h", new FieldHeaviside(NULL));
+  addGenerator("erf", new FieldErf(NULL));
 
   addGenerator("min", new FieldMin());
   addGenerator("max", new FieldMax());
-  
+
   addGenerator("power", new FieldGenTwoArg<pow>(NULL,NULL));
-  
+
   addGenerator("round", new FieldRound(NULL));
-  
+
   // Ballooning transform
   addGenerator("ballooning", new FieldBallooning(fieldmesh));
-  
+
   // Mixmode function
   addGenerator("mixmode", new FieldMixmode());
+
+  // TanhHat function
+  addGenerator("tanhhat", new FieldTanhHat(NULL, NULL, NULL, NULL));
 }
 
 FieldFactory::~FieldFactory() {
-  
+
 }
 
 const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field2D result = 0.;
-  
+
   if(mesh->StaggerGrids == false){
-  	loc = CELL_CENTRE ; 
+        loc = CELL_CENTRE ;
   }
   result.setLocation(loc);
-  
+
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
@@ -110,7 +114,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
            << "'" << endl;
     return result;
   }
-  
+
   switch(loc)  {
   case CELL_XLOW: {
       for(int x=0;x<m->ngx;x++) {
@@ -143,7 +147,7 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
                                     t); // T
   }
   };
-  
+
   // Don't delete the generator, as will be cached
 
   return result;
@@ -151,12 +155,12 @@ const Field2D FieldFactory::create2D(const string &value, Options *opt, Mesh *m,
 
 const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m, CELL_LOC loc, BoutReal t) {
   Field3D result = 0.;
-  
+
   if(mesh->StaggerGrids == false){
-  	loc = CELL_CENTRE ; 
+        loc = CELL_CENTRE ;
   }
   result.setLocation(loc);
-  
+
   if(m == NULL)
     m = fieldmesh;
   if(m == NULL)
@@ -213,7 +217,7 @@ const Field3D FieldFactory::create3D(const string &value, Options *opt, Mesh *m,
                                           t); // T
     }
   };
-  
+
   // Don't delete generator
 
   return result;
@@ -223,23 +227,23 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
   // Find an Options object which contains the given name
 
   Options *result = opt;
-  
+
   // Check if name contains a section separator ':'
   size_t pos = name.find(':');
   if(pos == string::npos) {
     // No separator. Try this section, and then go through parents
-    
+
     while(!result->isSet(name)) {
       result = result->getParent();
       if(result == NULL)
         throw ParseException("Cannot find variable '%s'", name.c_str());
     }
     result->get(name, val, "");
-    
+
   }else {
     // Go to the root, and go up through sections
     result = Options::getRoot();
-    
+
     size_t lastpos = 0;
     while(pos != string::npos) {
       string sectionname = name.substr(lastpos,pos);
@@ -250,17 +254,17 @@ Options* FieldFactory::findOption(Options *opt, const string &name, string &val)
       pos = name.find(':', lastpos);
     }
     // Now look for the name in this section
-    
+
     string varname = name.substr(lastpos);
 
     if(!result->isSet(varname)) {
       // Not in this section
       throw ParseException("Cannot find variable '%s'", name.c_str());
     }
-    
+
     result->get(varname, val, "");
   }
-  
+
   return result;
 }
 
@@ -277,15 +281,15 @@ FieldGenerator* FieldFactory::resolve(string &name) {
         key += string(":");
       key += name;
     }
-    
+
     map<string, FieldGenerator*>::iterator it = cache.find(key);
     if(it != cache.end()) {
       // Found in cache
       return it->second;
     }
-    
+
     // Look up in options
-    
+
     // Check if already looking up this symbol
     for(list<string>::const_iterator it=lookup.begin(); it != lookup.end(); it++)
       if( key.compare(*it) == 0 ) {
@@ -297,7 +301,7 @@ FieldGenerator* FieldFactory::resolve(string &name) {
         output << name << endl;
         throw BoutException("ExpressionParser: Infinite recursion in parsing '%s'", name.c_str());
       }
-    
+
     // Find the option, including traversing sections.
     // Throws exception if not found
     string value;
@@ -305,16 +309,16 @@ FieldGenerator* FieldFactory::resolve(string &name) {
 
     // Add to lookup list
     lookup.push_back(key);
-      
+
     // Parse
     FieldGenerator *g = parse(value, section);
-    
+
     // Cache
     cache[key] = g;
 
     // Remove from lookup list
     lookup.pop_back();
-      
+
     return g;
   }
   output << "ExpressionParser error: Can't find generator '" << name << "'" << endl;
@@ -326,11 +330,11 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
   //output.write("FieldFactory::parse('%s')", input.c_str());
 
   // Check if in the cache
-  
+
   string key = string("#") + input;
   if(opt)
     key = opt->str()+key; // Include options context in key
-  
+
   map<string, FieldGenerator*>::iterator it = cache.find(key);
   if(it != cache.end()) {
     // Found in cache
@@ -343,21 +347,21 @@ FieldGenerator* FieldFactory::parse(const string &input, Options *opt) {
   // Store the options tree for token lookups
   if(opt)
     options = opt;
-  
+
   // Parse
   FieldGenerator *expr = parseString(input);
-  
+
   // Add to cache
   cache[key] = expr;
 
   // Restore the old options
   options = oldoptions;
-  
+
   return expr;
 }
 
 FieldFactory* FieldFactory::get() {
   static FieldFactory instance(NULL, Options::getRoot());
-  
+
   return &instance;
 }

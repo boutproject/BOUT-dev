@@ -3222,6 +3222,10 @@ sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
+erf(x) & The error function \\
+TanhHat(x, width, center, steepness) & The hat function\\
+        &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
+          + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
 \end{tabular}
 %
@@ -3355,9 +3359,9 @@ To add a new function to the FieldFactory, a new
  takes either one or two.  Study these after reading this to see how these are
  handled.
 
-First, edit \file{include/field\_factory.hxx} and add a class definition:
+First, edit \file{src/field/fieldgenerators.hxx} and add a class definition:
 %
-\begin{lstlisting}[firstnumber=122]
+\begin{lstlisting}[firstnumber=114]
 class FieldSinh : public FieldGenerator {
  public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
@@ -3383,7 +3387,7 @@ stored in the member \lstinline!gen!
 %
 .
 
-Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
+Next edit \file{src/field/fieldgenerators.cxx} and add the implementation of the
 %
 \lstinline!clone!
 %
@@ -3393,19 +3397,17 @@ Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
 %
  functions:
 %
-\begin{lstlisting}[firstnumber=100]
+\begin{lstlisting}[firstnumber=33]
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   if(args.size() != 1) {
-    output << "FieldFactory error: Incorrect number of arguments to sinh
-function. Expecting 1, got " << args.size() << endl;
-    return NULL;
+    throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
   }
 
   return new FieldSinh(args.front());
 }
 
-BoutReal FieldSinh::generate(int x, int y, int z) {
-  return sinh(gen->generate(x,y,z));
+BoutReal FieldSinh::generate(double x, double y, double z, double t) {
+  return sinh(gen->generate(x,y,z,t));
 }
 \end{lstlisting}
 %
@@ -3418,10 +3420,11 @@ The
 %
 \lstinline!FieldGaussian!
 %
- to handle different numbers of input, but in this case we print an error
- message and return
+ to handle different numbers of input, but in this case we throw a
 %
-\lstinline!NULL! if the number of inputs isn't one. \lstinline!clone!
+\lstinline!ParseException!
+%
+if the number of inputs isn't one. \lstinline!clone!
 %
  then creates a new
 %
@@ -3460,7 +3463,7 @@ class an instance of this new generator. Edit the
 %
  in \file{src/field/field\_factory.cxx} and add the line:
 %
-\begin{lstlisting}[firstnumber=196]
+\begin{lstlisting}[firstnumber=64]
 addGenerator("sinh", new FieldSinh(NULL));
 \end{lstlisting}
 %
