@@ -1,6 +1,7 @@
 import numpy as np
-from boutdata import collect
-from boututils import moment_xyzt, file_import
+from boutdata.collect import collect
+from boututils.moment_xyzt import moment_xyzt
+from boututils.file_import import file_import
 from pylab import save, figure, plot, title, xlabel, ylabel, show, tight_layout
 from elm_size import elm_size
 
@@ -45,4 +46,3 @@ save('phi.dat', phi)
 res=moment_xyzt( phi, 'DC', 'RMS')
 save('dcphi.dat',res.dc)
 save('rmsphi.dat', res.rms)
-

@@ -10,7 +10,7 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.004'
+__version__ = '1.0041'
 __date__    = '22.10.2015'
 
 import os
@@ -21,7 +21,7 @@ import timeit
 import datetime
 from numbers import Number
 import numpy as np
-from boututils import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
 
@@ -2357,8 +2357,14 @@ class basic_runner(object):
             self._errors.append("RuntimeError")
             message =  "An error occurred the run."
             message += " Please see the output above for details."
-            if ('(' in out) or (')' in out):
-                message =  'A "(" symbol seem to have appeared in the'
+            # Search if parantheses are present, but without ' or "
+            if     ('(' in combination and\
+                   not(    re.search(r'\"(.*)\(', combination)\
+                        or re.search(r"\'(.*)\(", combination)))\
+                or (')' in combination and\
+                   not(   re.search(r'\)(.*)\"', combination)
+                       or re.search(r"\)(.*)\'", combination))):
+                message = 'A "(" and/or ")" symbol seem to have appeared in the'
                 message += " command line.\nIf this true, you can avoid"
                 message += " this problem by adding an extra set of"
                 message += " quotation marks. For example\n\n"

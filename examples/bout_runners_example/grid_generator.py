@@ -2,7 +2,7 @@
 
 """Generate an input mesh"""
 
-from boututils import DataFile
+from boututils.datafile import DataFile
 from boututils.options import BOUTOptions
 import numpy as np
 

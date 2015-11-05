@@ -11,15 +11,15 @@
 
 # List of directories containing test cases
 from __future__ import print_function
-tests = ['test-io', 'test-fieldfactory', 'test-laplace', 
+import os
+from boututils.run_wrapper import shell
+
+tests = ['test-io', 'test-fieldfactory', 'test-laplace',
          "test-cyclic", "test-invpar", "test-smooth", "test-gyro",
          "test-delp2",
          "drift-instability", 'interchange-instability']
 
 ##################################################################
-
-import os
-from boututils import shell
 
 savepath = os.getcwd() # Save current working directory
 npassed = 0
@@ -28,9 +28,9 @@ total = len(tests)
 failed = []
 for t in tests:
     os.chdir(t)
-    
+
     status,out = shell("make")
-    
+
     if status != 0:
         print("Make test failed")
         nfailed = nfailed + 1

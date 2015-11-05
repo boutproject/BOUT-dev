@@ -7,8 +7,9 @@ from __future__ import print_function
 from builtins import zip
 from builtins import str
 
-from boututils import shell,launch,getmpirun, DataFile
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.datafile import DataFile
+from boutdata.collect import collect
 
 from numpy import sqrt, max, abs, mean, array, log, pi
 
@@ -42,36 +43,36 @@ for var in varlist:
     error_inf[var] = []  # The maximum error
 
 for n in nlist:
-    
+
     # Generate grid file
     generate.slab(nx, n, n, Bpprime=0.1, Bp=0.05)
-    
+
     args = " -d "+directory+" MZ="+str(n)
-    
+
     # Command to run
     cmd = "./fci_slab "+args
-    
+
     # Launch using MPI
     s, out = launch(cmd, runcmd=MPIRUN, nproc=nproc, pipe=True)
-    
+
     # Save output to log file
-    with open("run.log."+str(n), "w") as f: 
+    with open("run.log."+str(n), "w") as f:
         f.write(out)
-    
+
     for var in varlist:
         # Collect data
         E = collect("E_"+var, tind=[1,1], info=False, path=directory)
         E = E[:,2:-2, :,:]
-        
+
         # Average error over domain
         l2 = sqrt(mean(E**2))
         linf = max(abs( E ))
-        
+
         error_2[var].append( l2 )
         error_inf[var].append( linf )
-        
+
         print("%s : l-2 %f l-inf %f" % (var, l2, linf))
-        
+
 dx = 1. / array(nlist)
 
 # Save data
@@ -90,23 +91,23 @@ for var,mark,label in zip(varlist, markers, labels):
 
     order = log(error_2[var][-1] / error_2[var][-2]) / log(dx[-1] / dx[-2])
     stdout.write("%s Convergence order = %f" % (var, order))
-    
+
     if order < 1.5: # Should be second order accurate
         print("............ FAIL")
-        success = False 
+        success = False
     else:
         print("............ PASS")
 
 
 plt.legend(loc="upper left")
 plt.grid()
-    
+
 plt.yscale('log')
 plt.xscale('log')
-        
+
 plt.xlabel(r'Mesh spacing $\delta x$')
 plt.ylabel("Error norm")
-    
+
 plt.savefig("fci-norm.pdf")
 
 plt.show()

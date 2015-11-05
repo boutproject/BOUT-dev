@@ -2,8 +2,9 @@
 
 from __future__ import print_function
 from builtins import str
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 
@@ -33,8 +34,8 @@ if end_index<0:
 # n has dimensions [Time, X, Y, Z]
 # Make contour plot
 if len(argv)>1:
-  plotdata.plotdata(n[:end_index,0,:,0],title="n")
+  plotdata(n[:end_index,0,:,0],title="n")
 else:
-  plotdata.plotdata(n[:,0,:,0],title="n")
+  plotdata(n[:,0,:,0],title="n")
 
 #print(n[204,:,:,:])

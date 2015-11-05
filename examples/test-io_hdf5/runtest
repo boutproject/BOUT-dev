@@ -4,8 +4,8 @@
 # Run the test, compare results against the benchmark
 #
 
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 

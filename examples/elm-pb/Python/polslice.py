@@ -1,11 +1,11 @@
 from builtins import range
 ####################################
-# computes polslice for time series 
+# computes polslice for time series
 ####################################
 
 import numpy as np
-from boutdata import collect
-from boututils import plotpolslice
+from boutdata.collect import collect
+from boututils.plotpolslice import plotpolslice
 
 ###########################
 # Specify parameters
@@ -22,7 +22,7 @@ period=15
 grid='../cbm18_dens8.grid_nx68ny64.nc'
 
 ########################################################
-# Call plotpolslice once to get extended poloidal grid 
+# Call plotpolslice once to get extended poloidal grid
 
 r,z,fun=plotpolslice(p[0,:,:,:],grid,period=period,rz=1)
 
@@ -37,5 +37,5 @@ fm=np.zeros((nt,nx,ny)) # array to store the time sequence of the poloidal cross
 
 for k in range(nt):
     fm[k,:,:]=plotpolslice(p[k,:,:,:],grid,period=period,rz=0)
-    
+
 np.savez('pslice',fm=fm, z=z, r=r)

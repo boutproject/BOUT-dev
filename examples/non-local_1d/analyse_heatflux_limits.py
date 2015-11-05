@@ -3,7 +3,7 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import print_function
 from __future__ import division
@@ -11,8 +11,9 @@ from builtins import range
 from past.utils import old_div
 nproc = 1  # Number of processors to use
 
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv, exit
 from math import sqrt, log10, pow, pi
@@ -58,7 +59,7 @@ try:
     q = [[0.]*ylength for i in range(0,old_div(tlength,t_interval)+1)]
     for i in range(0,tlength,t_interval):
       for j in range(2,ylength-2):
-	q[old_div(i,t_interval)][j] = qin[i,2,j,0]
+        q[old_div(i,t_interval)][j] = qin[i,2,j,0]
 except TypeError:
   print("Calculating Braginskii heat flux")
   q = [[0.]*ylength for i in range(0,old_div(tlength,t_interval)+1)]
@@ -70,7 +71,7 @@ except TypeError:
       gradT = (Te[i,2,j-2,0] - 8.*Te[i,2,j-1,0] + 8.*Te[i,2,j+1,0] - Te[i,2,j+2,0])/12./dy[2][j]/sqrt(g_22[2][j])
       q[old_div(i,t_interval)][j] = -3.16*n[i,2,j,0]*Te[i,2,j,0]*tau_ei/electron_mass*gradT
   stagger = False
-      
+
 Temax = [0.]*(old_div(tlength,t_interval)+1)
 for i in range(0,tlength,t_interval):
   Temax[old_div(i,t_interval)] = max(Te[i,2,:,0])
@@ -84,12 +85,12 @@ freestreammax = [0.]*(old_div(tlength,t_interval)+1)
 for i in range(old_div(tlength,t_interval)+1):
   freestreammax[i]=3./2.*nmax[i]*Temax[i]*sqrt(old_div((Temax[i]+Timax[i]),ion_mass))
   #freestreammax[i]=3./2.*nmax[i]*Temax[i]*sqrt(2*Temax[i]/electron_mass)
-  
+
 #freestream = [[i]*ylength for i in range(tlength/t_interval+1)]
 #for i in range(0,tlength,t_interval):
   #for j in range(2,ylength-2):
     #freestream[i/t_interval][j] = sign(j-ylength/2)*3./2.*n[i,2,j,0]*Te[i,2,j,0]*sqrt((Te[i,2,j,0]+Ti[i,2,j,0])/ion_mass)
-    
+
 #freestream = [[i]*ylength for i in range(tlength/t_interval+1)]
 #for i in range(0,tlength,t_interval):
   #for j in range(2,ylength-2):

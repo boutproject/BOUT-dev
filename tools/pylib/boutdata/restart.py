@@ -8,7 +8,7 @@ except:
 # Routines for manipulating restart files
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: restart module needs DataFile")
     raise
