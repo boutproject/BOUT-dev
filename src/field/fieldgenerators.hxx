@@ -298,4 +298,24 @@ private:
   BoutReal phase[14];
 };
 
+//////////////////////////////////////////////////////////
+// TanhHat
+class FieldTanhHat : public FieldGenerator {
+public:
+  // Constructor
+  FieldTanhHat(FieldGenerator *xin,
+               FieldGenerator *widthin,
+               FieldGenerator *centerin,
+               FieldGenerator *steepnessin)
+        : X(xin), width(widthin), center(centerin), steepness(steepnessin) {};
+  // Clone containing the list of arguments
+  FieldGenerator* clone(const list<FieldGenerator*> args);
+  BoutReal generate(double x, double y, double z, double t);
+private:
+  // The (x,y,z,t) field
+  FieldGenerator *X;
+  // Other input arguments to the FieldTanhHat
+  FieldGenerator *width, *center, *steepness;
+};
+
 #endif // __FIELDGENERATORS_H__

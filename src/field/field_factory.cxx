@@ -85,6 +85,9 @@ FieldFactory::FieldFactory(Mesh *m, Options *opt) : fieldmesh(m), options(opt) {
 
   // Mixmode function
   addGenerator("mixmode", new FieldMixmode());
+
+  // TanhHat function
+  addGenerator("tanhhat", new FieldTanhHat(NULL, NULL, NULL, NULL));
 }
 
 FieldFactory::~FieldFactory() {

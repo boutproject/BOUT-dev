@@ -242,3 +242,39 @@ BoutReal FieldMixmode::genRand(BoutReal seed) {
 
   return x;
 }
+
+//////////////////////////////////////////////////////////
+// TanhHat
+FieldGenerator* FieldTanhHat::clone(const list<FieldGenerator*> args) {
+  if(args.size() != 4) {
+    throw ParseException("Incorrect number of arguments to TanhHat function. Expecting 4, got %d", args.size());
+  }
+
+  // As lists are not meant to be indexed, we may use an iterator to get the
+  // input arguments instead
+  // Create the iterator
+  list<FieldGenerator*>::const_iterator it = args.begin();
+  // Assign the input arguments to the input of the constructor and advance the
+  // iterator
+  FieldGenerator *xin = *it;
+  std::advance(it, 1);
+  FieldGenerator *widthin = *it;
+  std::advance(it, 1);
+  FieldGenerator *centerin = *it;
+  std::advance(it, 1);
+  FieldGenerator *steepnessin = *it;
+
+  // Call the constructor
+  return new FieldTanhHat(xin, widthin, centerin, steepnessin);
+}
+
+BoutReal FieldTanhHat::generate(double x, double y, double z, double t) {
+  // The following are constants
+  BoutReal w = width    ->generate(0,0,0,0);
+  BoutReal c = center   ->generate(0,0,0,0);
+  BoutReal s = steepness->generate(0,0,0,0);
+  return 0.5*(
+                 tanh(  s*(X->generate(x,y,z,t) - (c - 0.5*w)) )
+               + tanh( -s*(X->generate(x,y,z,t) - (c + 0.5*w)) )
+             );
+}
