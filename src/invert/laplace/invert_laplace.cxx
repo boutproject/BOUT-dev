@@ -238,7 +238,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
 
-  BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+  BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
@@ -261,8 +261,8 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
    * Input:
    * jx        - The current x index
    * jy        - The current y index
-   * kwave     - The mode number multiplied with (2*pi)/mesh->zlength, where
-   *             zlength is the length of the full z domain (usually 2*pi)
+   * kwave     - The mode number multiplied with (2*pi)/mesh->zlength(), where
+   *             zlength() is the length of the full z domain (usually 2*pi)
    * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
    * b         - The main diagonal
    * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
@@ -336,7 +336,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
   for(int kz = 0; kz <= maxmode; kz++) {
-    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    BoutReal kwave=kz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
 
     tridagMatrix(avec[kz], bvec[kz], cvec[kz],

@@ -164,7 +164,7 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
                  kz,
                  // wave number (different from kz only if we are taking a part
                  // of the z-domain [and not from 0 to 2*pi])
-                 kz*2.0*PI/mesh->zlength,
+                 kz*2.0*PI/mesh->zlength(),
                  global_flags, inner_boundary_flags, outer_boundary_flags,
                  &A, &C, &D);
 
