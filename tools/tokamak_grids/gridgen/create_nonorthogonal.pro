@@ -476,10 +476,42 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
         IF (fvals[1] - fvals[0])*(ffirst - fbndry) LT 0 THEN ffirst = 0.95*fbndry + 0.05*f0
         BREAK
       ENDIF
-    ENDFOR
+   ENDFOR
+
+   ; Finished calculating point locations
+   ; Starting position rixy[nin,i], zixy[nin, i] may not be correct
+    
+   ; One line going through last point in core, along line vec_in
+   ;r1 = [ rixy[nin-1,i] - 1000*vec_in[0], rixy[nin-1,i] + 1000*vec_in[0] ]
+   ;z1 = [ zixy[nin-1,i] - 1000*vec_in[1], zixy[nin-1,i] + 1000*vec_in[1] ]
+
+    dr = rixy[nin-1,i] - rixy[nin-2,i]
+    dz = zixy[nin-1,i] - zixy[nin-2,i]
+    r1 = [ rixy[nin-1,i] - 1000*dr, rixy[nin-1,i] + 1000*dr ]
+    z1 = [ zixy[nin-1,i] - 1000*dz, zixy[nin-1,i] + 1000*dz ]
+   
+   ; Second line going through first point in SOL, along line vec_out
+   ;r2 = [ rixy[nin+1,i] - 1000*vec_out[0], rixy[nin+1,i] + 1000*vec_out[0] ]
+   ;z2 = [ zixy[nin+1,i] - 1000*vec_out[1], zixy[nin+1,i] + 1000*vec_out[1] ]
+
+    dr = rixy[nin+1,i] - rixy[nin+2,i]
+    dz = zixy[nin+1,i] - zixy[nin+2,i]
+    r2 = [ rixy[nin+1,i] - 1000*dr, rixy[nin+1,i] + 1000*dr ]
+    z2 = [ zixy[nin+1,i] - 1000*dz, zixy[nin+1,i] + 1000*dz ]
+
+   ; Find intersection of the two lines
+   cross = line_crossings(r1,z1, 0, r2,z2, 0, ncross=ncross)
+   
+   ; If no intersection, something odd.. Panic?
+   IF ncross EQ 1 THEN BEGIN
+     ; Set location to be half-way between the intersection
+     ; and the first core point
+     rixy[nin,i] = 0.5*(cross[0,0] + rixy[nin-1,i])
+     zixy[nin,i] = 0.5*(cross[1,0] + zixy[nin-1,i])
+   ENDIF
     IF KEYWORD_SET(oplot) THEN BEGIN
       OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
-    ENDIF
+    ENDIF 
   ENDFOR
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
