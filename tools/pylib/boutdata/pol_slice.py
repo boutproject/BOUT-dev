@@ -1,9 +1,6 @@
 from __future__ import print_function
 from __future__ import division
-try:
-    from past.utils import old_div
-except:
-    pass
+
 # Takes a 3D variable, and returns a 2D slice at fixed toroidal angle
 #
 # N sets the number of times the data must be repeated for a full
@@ -71,8 +68,7 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
 
     ######################################
     # Perform 2D slice
-
-    zind = old_div((zangle - zShift), dz)
+    zind = (zangle - zShift) / dz
     z0f = np.floor(zind)
     z0 = z0f.astype(int)
     p = zind - z0f
