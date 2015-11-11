@@ -481,38 +481,58 @@ FUNCTION grid_region_nonorth, interp_data, R, Z, $
    ; Finished calculating point locations
    ; Starting position rixy[nin,i], zixy[nin, i] may not be correct
     
-   ; One line going through last point in core, along line vec_in
-   ;r1 = [ rixy[nin-1,i] - 1000*vec_in[0], rixy[nin-1,i] + 1000*vec_in[0] ]
-   ;z1 = [ zixy[nin-1,i] - 1000*vec_in[1], zixy[nin-1,i] + 1000*vec_in[1] ]
 
     dr = rixy[nin-1,i] - rixy[nin-2,i]
     dz = zixy[nin-1,i] - zixy[nin-2,i]
     r1 = [ rixy[nin-1,i] - 1000*dr, rixy[nin-1,i] + 1000*dr ]
     z1 = [ zixy[nin-1,i] - 1000*dz, zixy[nin-1,i] + 1000*dz ]
-   
-   ; Second line going through first point in SOL, along line vec_out
-   ;r2 = [ rixy[nin+1,i] - 1000*vec_out[0], rixy[nin+1,i] + 1000*vec_out[0] ]
-   ;z2 = [ zixy[nin+1,i] - 1000*vec_out[1], zixy[nin+1,i] + 1000*vec_out[1] ]
+    
+    ; Second line going through first point in SOL, along line vec_out
+    ;r2 = [ rixy[nin+1,i] - 1000*vec_out[0], rixy[nin+1,i] + 1000*vec_out[0] ]
+    ;z2 = [ zixy[nin+1,i] - 1000*vec_out[1], zixy[nin+1,i] + 1000*vec_out[1] ]
 
     dr = rixy[nin+1,i] - rixy[nin+2,i]
     dz = zixy[nin+1,i] - zixy[nin+2,i]
     r2 = [ rixy[nin+1,i] - 1000*dr, rixy[nin+1,i] + 1000*dr ]
     z2 = [ zixy[nin+1,i] - 1000*dz, zixy[nin+1,i] + 1000*dz ]
-
-   ; Find intersection of the two lines
-   cross = line_crossings(r1,z1, 0, r2,z2, 0, ncross=ncross)
-   
-   ; If no intersection, something odd.. Panic?
-   IF ncross EQ 1 THEN BEGIN
-     ; Set location to be half-way between the intersection
-     ; and the first core point
-     rixy[nin,i] = 0.5*(cross[0,0] + rixy[nin-1,i])
-     zixy[nin,i] = 0.5*(cross[1,0] + zixy[nin-1,i])
-   ENDIF
+    
+    ; Check the angle between the two lines
+    dr1 = r1[1] - r1[0]
+    dr2 = r2[1] - r2[0]
+    dz1 = z1[1] - z1[0]
+    dz2 = z2[1] - z2[0]
+    costheta = ABS( dr1*dr2 + dz1*dz2 ) / ( SQRT(dr1^2 + dz1^2)*SQRT(dr2^2 + dz2^2) )
+    
+    ncross = 0
+    IF costheta LT 0.7 THEN BEGIN ; Angle greater than 45 degrees    
+       ; Find intersection of the two lines
+       cross = line_crossings(r1,z1, 0, r2,z2, 0, ncross=ncross)
+      
+       ; If no intersection, something odd.. Panic?
+       IF ncross EQ 1 THEN BEGIN
+          ; Set location to be half-way between the intersection
+          ; and the first core point
+          rixy[nin,i] = 0.5*(cross[0,0] + rixy[nin-1,i])
+          zixy[nin,i] = 0.5*(cross[1,0] + zixy[nin-1,i])
+       ENDIF
+    ENDIF ELSE BEGIN
+       ; Probably not near an X-point. Follow gradient to refine location
+       follow_gradient_nonorth, interp_data, R, Z, rixy[nin,i], zixy[nin,i], f0, ri1, zi1, vec=vec_in, weight=weight
+       rixy[nin,i] = ri1
+       zixy[nin,i] = zi1
+    ENDELSE
+    
     IF KEYWORD_SET(oplot) THEN BEGIN
-      OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
+       OPLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=4
     ENDIF 
-  ENDFOR
+    
+    ;PLOT, INTERPOLATE(R, rixy[*, i]), INTERPOLATE(Z, zixy[*, i]), color=1,psym=1
+    ;OPLOT, [INTERPOLATE(R, rixy[nin, i])], [INTERPOLATE(Z, zixy[nin, i])], color=4,psym=4
+    ;IF ncross EQ 1 THEN BEGIN
+    ;   OPLOT, [INTERPOLATE(R, cross[0,0])], [INTERPOLATE(Z, cross[1,0])],psym=2,color=2
+    ;ENDIF
+    ;CURSOR, ax,by, /down
+ ENDFOR
 
   RETURN, {rixy:rixy, zixy:zixy, rxy:INTERPOLATE(R, rixy), zxy:INTERPOLATE(Z, zixy)}
 END
