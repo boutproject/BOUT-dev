@@ -47,6 +47,10 @@
 
 #include <algorithm>
 
+inline int sgn(BoutReal val) {
+    return (BoutReal(0) < val) - (val < BoutReal(0));
+}
+
 // Calculate all the coefficients needed for the spline interpolation
 // dir MUST be either +1 or -1
 FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
@@ -162,19 +166,25 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
         BoutReal s_intersect_y;
         BoutReal s_intersect_z;
 
+        // Total (signed) distance (in index space) from this point
+        BoutReal p_x = xt_prime(x, y, z) - x;
+        BoutReal p_z = zt_prime(x, y, z) - z;
+
         // Field line leaves through x boundary
-        if (xt_prime(x,y,z) < 0 ||
-            xt_prime(x,y,z) >= mesh.GlobalNx - 1) {
+        bool x_lower = (mesh.firstX() && (xt_prime(x,y,z) <= mesh.xstart - 0.5));
+        bool x_upper = (mesh.lastX()  && (xt_prime(x,y,z) >= mesh.xend + 0.5));
+        if (x_lower || x_upper) {
           x_boundary = true;
-          s_intersect_x = 1. / (2.*t_x);
+          s_intersect_x = 1. / (2.*abs(p_x));
         } else {
           x_boundary = false;
         }
 
         // Field line leaves through y boundary
         // Only add this point if the domain is NOT periodic in y
-        if ((y + dir < 0 ||
-             y + dir > mesh.GlobalNy - 1) && !yperiodic) {
+        bool y_lower = !yperiodic && (mesh.firstY() && (y + dir <= mesh.ystart - 0.5));
+        bool y_upper = !yperiodic && (mesh.lastY()  && (y + dir >= mesh.yend + 0.5));
+        if (y_lower || y_upper) {
           y_boundary = true;
           s_intersect_y = 0.5;
         } else {
@@ -183,10 +193,11 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
 
         // Field line leaves through z boundary
         // Only add this point if the domain is NOT periodic in Z
-        if ((zt_prime(x,y,z) < 0 ||
-             zt_prime(x,y,z) > ncz-1) && !zperiodic) {
+        bool z_lower = !zperiodic && (zt_prime(x,y,z) <= -0.5);
+        bool z_upper = !zperiodic && (zt_prime(x,y,z) >= ncz-0.5);
+        if (z_lower || z_upper) {
           z_boundary = true;
-          s_intersect_z = 1. / (2.*t_z);
+          s_intersect_z = 1. / (2.*abs(p_z));
         } else {
           z_boundary = false;
         }
@@ -227,11 +238,11 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
           // s_intersect is set to that of the closest boundary, so set the normal
           // based on that
           if (s_intersect == s_intersect_x) {
-            norm = {1., 0., 0.};
+            norm = {sgn(p_x), 0., 0.};
           } else if (s_intersect == s_intersect_y) {
-            norm = {0., 1., 0.};
+            norm = {0., dir, 0.};
           } else if (s_intersect == s_intersect_z) {
-            norm = {0., 0., 1.};
+            norm = {0., 0., sgn(p_z)};
           } else {
             // Shouldn't reach here - boundary set, but s_intersect not
             // equal to a boundary s_intersect_(x|y|z)
@@ -242,9 +253,9 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
           BoutReal y_prime = coord.dy(x,y) * s_intersect;
 
           // Index-space coordinates of intersection
-          BoutReal s_x = x + s_intersect*t_x;
-          BoutReal s_y = y + s_intersect;
-          BoutReal s_z = z + s_intersect*t_z;
+          BoutReal s_x = x + s_intersect*p_x;
+          BoutReal s_y = y + s_intersect*dir;
+          BoutReal s_z = z + s_intersect*p_z;
 
           // Angle between field line and boundary
           BoutReal angle = asin( dot(norm, b_hat) / length );
