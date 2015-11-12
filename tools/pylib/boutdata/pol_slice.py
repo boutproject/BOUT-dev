@@ -20,8 +20,11 @@ except ImportError:
     print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
     raise SystemExit
 
-def pol_slice(var3d, gridfile, n=1, zangle=0.0):
-    """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0) """
+def pol_slice(var3d, gridfile, n=1, zangle=0.0, withRepeat=False):
+    """ data2d = pol_slice(data3d, 'gridfile', n=1, zangle=0.0) 
+    By default data3d will not include the repeated z point. If it does
+    contain this point one should set withRepeat=True to get the correct result
+    """
     n = int(n)
     zangle = float(zangle)
 
@@ -31,6 +34,10 @@ def pol_slice(var3d, gridfile, n=1, zangle=0.0):
         return None
 
     nx, ny, nz = s
+
+    #Fix to account for repeat point which is now usually dropped
+    if not withRepeat:
+        nz = nz+1 #Increase the nz value to include the repeated point, which is not present in var3d
 
     dz = 2.*np.pi / float(n * (nz-1))
 
