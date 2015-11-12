@@ -15,23 +15,23 @@
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
-	backgroundcolor=\color{lbcolor},
+        backgroundcolor=\color{lbcolor},
         language=C++,
-	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
-	identifierstyle=\ttfamily,
-	commentstyle=\color[rgb]{0.133,0.545,0.133},
-	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
-	showstringspaces=false,
-	basicstyle=\small,
-	numberstyle=\footnotesize,
-	numbers=left,
-	stepnumber=1,
-	numbersep=10pt,
-	tabsize=2,
-	breaklines=true,
-	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-	breakatwhitespace=false,
-	aboveskip={0.5\baselineskip},
+        keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+        identifierstyle=\ttfamily,
+        commentstyle=\color[rgb]{0.133,0.545,0.133},
+        stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+        showstringspaces=false,
+        basicstyle=\small,
+        numberstyle=\footnotesize,
+        numbers=left,
+        stepnumber=1,
+        numbersep=10pt,
+        tabsize=2,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        breakatwhitespace=false,
+        aboveskip={0.5\baselineskip},
         columns=fixed,
         upquote=true,
         extendedchars=true,
@@ -1173,14 +1173,14 @@ The equivalent commands in Python are as follows. To print a list of variables
 in a file:
 %
 \begin{verbatim}
->>> from boututils import DataFile
+>>> from boututils.datafile import DataFile
 >>> DataFile("BOUT.dmp.0.nc").list()
 \end{verbatim}
 %
 To collect a variable,
 %
 \begin{verbatim}
->>> from boutdata import collect
+>>> from boutdata.collect import collect
 >>> T = collect("T")
 >>> T.shape
 \end{verbatim}
@@ -1189,8 +1189,8 @@ Note that the order of the indices is different in Python and IDL: In Python,
 4D variables are arranged as \code{[t, x, y, z]}.  To show an animation
 %
 \begin{verbatim}
->>> from boututils import showdata
->>> showdata.showdata(T[:,:,:,0])
+>>> from boututils.showdata import showdata
+>>> showdata(T[:,:,:,0])
 \end{verbatim}
 %
 The next example to look at is \file{test-wave}, which is solving a wave
@@ -1285,10 +1285,10 @@ Next comes the compile-time options, which depend on how BOUT++ was configured
 %
 \begin{verbatim}
 Compile-time options:
-	Checking enabled, level 2
-	Signal handling enabled
-	PDB support disabled
-	netCDF support enabled
+        Checking enabled, level 2
+        Signal handling enabled
+        PDB support disabled
+        netCDF support enabled
 \end{verbatim}
 %
 Thins says that some run-time checking of values is enabled, that the code will
@@ -1306,15 +1306,15 @@ processor '0' is sent to the terminal. After this the core BOUT++ code reads
 some options:
 %
 \begin{verbatim}
-	Option /nout = 50 (data/BOUT.inp)
-	Option /timestep = 100 (data/BOUT.inp)
-	Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
-	Option /dump_float = true   (default)
-	Option /non_uniform = false (data/BOUT.inp)
-	Option /restart = false  (default)
-	Option /append = false  (default)
-	Option /dump_format = nc (data/BOUT.inp)
-	Option /StaggerGrids = false  (default)
+        Option /nout = 50 (data/BOUT.inp)
+        Option /timestep = 100 (data/BOUT.inp)
+        Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
+        Option /dump_float = true   (default)
+        Option /non_uniform = false (data/BOUT.inp)
+        Option /restart = false  (default)
+        Option /append = false  (default)
+        Option /dump_format = nc (data/BOUT.inp)
+        Option /StaggerGrids = false  (default)
 \end{verbatim}
 %
 This lists each option and the value it has been assigned.  For every option
@@ -1324,20 +1324,20 @@ the command line then \texttt{(command line)} would appear after the option.
 %
 \begin{verbatim}
 Setting X differencing methods
-	First       :  Second order central (C2)
-	Second      :  Second order central (C2)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  Second order central (C2)
+        Second      :  Second order central (C2)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 Setting Y differencing methods
-	First       :  Fourth order central (C4)
-	Second      :  Fourth order central (C4)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  Fourth order central (C4)
+        Second      :  Fourth order central (C4)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 Setting Z differencing methods
-	First       :  FFT (FFT)
-	Second      :  FFT (FFT)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  FFT (FFT)
+        Second      :  FFT (FFT)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 \end{verbatim}
 %
 This is a list of the differential methods for each direction. These are set in
@@ -1355,25 +1355,25 @@ page~\pageref{sec:diffmethod}.
 %
 \begin{verbatim}
 Setting grid format
-	Option /grid_format =  (default)
-	Using NetCDF format for file 'slab.6b5.r1.cdl'
+        Option /grid_format =  (default)
+        Using NetCDF format for file 'slab.6b5.r1.cdl'
 Loading mesh
-	Grid size: 10 by 64
-	Option /mxg = 2 (data/BOUT.inp)
-	Option /myg = 2 (data/BOUT.inp)
-	Option /NXPE = 1 (default)
-	Option /mz = 65 (data/BOUT.inp)
-	Option /twistshift = false (data/BOUT.inp)
-	Option /TwistOrder = 0 (default)
-	Option /ShiftOrder = 0 (default)
-	Option /shiftxderivs = false (data/BOUT.inp)
-	Option /IncIntShear = false  (default)
-	Option /BoundaryOnCell = false  (default)
-	Option /StaggerGrids = false  (default)
-	Option /periodicX = false  (default)
-	Option /async_send = false  (default)
-	Option /zmin = 0 (data/BOUT.inp)
-	Option /zmax = 0.0028505 (data/BOUT.inp)
+        Grid size: 10 by 64
+        Option /mxg = 2 (data/BOUT.inp)
+        Option /myg = 2 (data/BOUT.inp)
+        Option /NXPE = 1 (default)
+        Option /mz = 65 (data/BOUT.inp)
+        Option /twistshift = false (data/BOUT.inp)
+        Option /TwistOrder = 0 (default)
+        Option /ShiftOrder = 0 (default)
+        Option /shiftxderivs = false (data/BOUT.inp)
+        Option /IncIntShear = false  (default)
+        Option /BoundaryOnCell = false  (default)
+        Option /StaggerGrids = false  (default)
+        Option /periodicX = false  (default)
+        Option /async_send = false  (default)
+        Option /zmin = 0 (data/BOUT.inp)
+        Option /zmax = 0.0028505 (data/BOUT.inp)
 \end{verbatim}
 %
 \begin{verbatim}
@@ -1384,12 +1384,12 @@ Optional quantities (such as \code{ny\_inner} in this case) which are not
 specified are given a default (best-guess) value, and a warning is printed.
 %
 \begin{verbatim}
-	EQUILIBRIUM IS SINGLE NULL (SND)
-	MYPE_IN_CORE = 0
-	DXS = 0, DIN = -1. DOUT = -1
-	UXS = 0, UIN = -1. UOUT = -1
-	XIN = -1, XOUT = -1
-	Twist-shift:
+        EQUILIBRIUM IS SINGLE NULL (SND)
+        MYPE_IN_CORE = 0
+        DXS = 0, DIN = -1. DOUT = -1
+        UXS = 0, UIN = -1. UOUT = -1
+        XIN = -1, XOUT = -1
+        Twist-shift:
 \end{verbatim}
 %
 At this point, BOUT++ reads the grid file, and works out the topology of the
@@ -1397,12 +1397,12 @@ grid, and connections between processors.  BOUT++ then tries to read the metric
 coefficients from the grid file:
 %
 \begin{verbatim}
-	WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
-	WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
-	WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
 \end{verbatim}
 %
 These warnings are printed because the coefficients have not been specified in
@@ -1410,8 +1410,8 @@ the grid file, and so the metric tensor is set to the default identity matrix.
 
 %
 \begin{verbatim}
-	WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
-	WARNING: Z shift for radial derivatives not found
+        WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
+        WARNING: Z shift for radial derivatives not found
 \end{verbatim}
 %
 To get radial derivatives, the quasi-ballooning coordinate method is used
@@ -1422,13 +1422,13 @@ needed. This should also always be set to FFT.
 
 %
 \begin{verbatim}
-	WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
-	Option /twistshift_pf = false  (default)
+        WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
+        Option /twistshift_pf = false  (default)
 \end{verbatim}
 %
 \begin{verbatim}
-	Maximum error in diagonal inversion is 0.000000e+00
-	Maximum error in off-diagonal inversion is 0.000000e+00
+        Maximum error in diagonal inversion is 0.000000e+00
+        Maximum error in off-diagonal inversion is 0.000000e+00
 \end{verbatim}
 %
 If only the contravariant components (\code{g11} etc.) of the metric tensor are
@@ -1439,42 +1439,42 @@ input, the metric tensor was set to the identity matrix, making inversion easy
 and the error tiny.
 %
 \begin{verbatim}
-	WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
-	WARNING: Jacobian 'J' not found. Calculating from metric tensor
+        WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
+        WARNING: Jacobian 'J' not found. Calculating from metric tensor
 \end{verbatim}
 %
 \begin{verbatim}
-	Maximum difference in Bxy is 1.444077e-02
+        Maximum difference in Bxy is 1.444077e-02
 Calculating differential geometry terms
-	Communicating connection terms
+        Communicating connection terms
 Boundary regions in this processor: core, sol, target, target,
-	done
+        done
 \end{verbatim}
 %
 \begin{verbatim}
 Setting file formats
-	Using NetCDF format for file 'data/BOUT.dmp.0.nc'
+        Using NetCDF format for file 'data/BOUT.dmp.0.nc'
 \end{verbatim}
 %
 The laplacian inversion code is initialised, and prints out the options used.
 %
 \begin{verbatim}
 Initialising Laplacian inversion routines
-	Option comms/async = true   (default)
-	Option laplace/filter = 0.2 (default)
-	Option laplace/low_mem = false  (default)
-	Option laplace/use_pdd = false  (default)
-	Option laplace/all_terms = false  (default)
-	Option laplace/laplace_nonuniform = false  (default)
-	Using serial algorithm
-	Option laplace/max_mode = 26 (default)
+        Option comms/async = true   (default)
+        Option laplace/filter = 0.2 (default)
+        Option laplace/low_mem = false  (default)
+        Option laplace/use_pdd = false  (default)
+        Option laplace/all_terms = false  (default)
+        Option laplace/laplace_nonuniform = false  (default)
+        Using serial algorithm
+        Option laplace/max_mode = 26 (default)
 \end{verbatim}
 %
 After this comes the physics module-specific output:
 %
 \begin{verbatim}
 Initialising physics module
-	Option solver/type =  (default)
+        Option solver/type =  (default)
         .
         .
         .
@@ -1488,57 +1488,57 @@ loaded, the solver can be started
 %
 \begin{verbatim}
 Initialising solver
-	Option /archive = -1 (default)
-	Option /dump_format = nc (data/BOUT.inp)
-	Option /restart_format = nc (default)
-	Using NetCDF format for file 'nc'
+        Option /archive = -1 (default)
+        Option /dump_format = nc (data/BOUT.inp)
+        Option /restart_format = nc (default)
+        Using NetCDF format for file 'nc'
 \end{verbatim}
 %
 \begin{verbatim}
 Initialising PVODE solver
-	Boundary region inner X
-	Boundary region outer X
-	3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
+        Boundary region inner X
+        Boundary region outer X
+        3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
 \end{verbatim}
 %
 This last line gives the number of equations being evolved (in this case
 84992), and the number of these on this processor (here 84992).
 %
 \begin{verbatim}
-	Option solver/mudq = 16 (default)
-	Option solver/mldq = 16 (default)
-	Option solver/mukeep = 0 (default)
-	Option solver/mlkeep = 0 (default)
+        Option solver/mudq = 16 (default)
+        Option solver/mldq = 16 (default)
+        Option solver/mukeep = 0 (default)
+        Option solver/mlkeep = 0 (default)
 \end{verbatim}
 %
 The absolute and relative tolerances come next:
 %
 \begin{verbatim}
-	Option solver/atol = 1e-10 (data/BOUT.inp)
-	Option solver/rtol = 1e-05 (data/BOUT.inp)
+        Option solver/atol = 1e-10 (data/BOUT.inp)
+        Option solver/rtol = 1e-05 (data/BOUT.inp)
 \end{verbatim}
 %
 \begin{verbatim}
-	Option solver/use_precon = false  (default)
-	Option solver/precon_dimens = 50 (default)
-	Option solver/precon_tol = 0.0001 (default)
-	Option solver/mxstep = 500 (default)
+        Option solver/use_precon = false  (default)
+        Option solver/precon_dimens = 50 (default)
+        Option solver/precon_tol = 0.0001 (default)
+        Option solver/mxstep = 500 (default)
 \end{verbatim}
 %
 \begin{verbatim}
-	Option fft/fft_measure = false  (default)
+        Option fft/fft_measure = false  (default)
 \end{verbatim}
 %
 This next option specifies the maximum number of internal timesteps which CVODE
 will take between outputs.
 %
 \begin{verbatim}
-	Option fft/fft_measure = false  (default)
+        Option fft/fft_measure = false  (default)
 Running simulation
 
 Run started at  : Wed May 11 18:23:20 2011
 
-	Option /wall_limit = -1 (default)
+        Option /wall_limit = -1 (default)
 \end{verbatim}
 %
 
@@ -1669,9 +1669,9 @@ If writing an example (or physics module that executes) then the makefile is
 very simple:
 %
 \begin{lstlisting}[language=make,numbers=none]
-BOUT_TOP	= ../..
+BOUT_TOP        = ../..
 
-SOURCEC		= <filename>.cpp
+SOURCEC         = <filename>.cpp
 
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
@@ -1695,11 +1695,11 @@ pretty simple
 \begin{lstlisting}[language=make,numbers=none]
 BOUT_TOP = ../..
 
-SOURCEC		= communicator.cpp difops.cpp geometry.cpp grid.cpp
+SOURCEC         = communicator.cpp difops.cpp geometry.cpp grid.cpp
 interpolation.cpp topology.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
-INCLUDE		= -I../sys -I../field -I../fileio -I../invert
-TARGET		= lib
+SOURCEH         = $(SOURCEC:%.cpp=%.h)
+INCLUDE         = -I../sys -I../field -I../fileio -I../invert
+TARGET          = lib
 
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
@@ -2141,7 +2141,7 @@ HDF5 files through the same interface, using the h5py module.  To open a file
 using DataFile:
 %
 \begin{lstlisting}[language=python,numbers=none]
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 f = DataFile("file.nc")  # Open the file
 var = f.read("variable") # Read a variable from the file
@@ -2151,7 +2151,7 @@ f.close()                # Close the file
 or similarly for an HDF5 file
 %
 \begin{lstlisting}[language=python,numbers=none]
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 f = DataFile("file.hdf5")  # Open the file
 var = f.read("variable")   # Read a variable from the file
@@ -2185,7 +2185,7 @@ To read in all variables in a file into a dictionary there is the
 \texttt{file\_import} function
 %
 \begin{lstlisting}
-from boututils import file_import
+from boututils.file_import import file_import
 
 grid = file_import("grid.nc")
 \end{lstlisting}
@@ -2194,7 +2194,7 @@ As for IDL, there is a \texttt{collect} routine which reads gathers together
 the data from multiple processors
 %
 \begin{lstlisting}
-from boutdata import collect
+from boutdata.collect import collect
 
 Ni = collect("Ni")  # Collect the variable "Ni"
 \end{lstlisting}
@@ -3222,6 +3222,10 @@ sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
+erf(x) & The error function \\
+TanhHat(x, width, center, steepness) & The hat function\\
+        &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
+          + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
 \end{tabular}
 %
@@ -3355,9 +3359,9 @@ To add a new function to the FieldFactory, a new
  takes either one or two.  Study these after reading this to see how these are
  handled.
 
-First, edit \file{include/field\_factory.hxx} and add a class definition:
+First, edit \file{src/field/fieldgenerators.hxx} and add a class definition:
 %
-\begin{lstlisting}[firstnumber=122]
+\begin{lstlisting}[firstnumber=114]
 class FieldSinh : public FieldGenerator {
  public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
@@ -3383,7 +3387,7 @@ stored in the member \lstinline!gen!
 %
 .
 
-Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
+Next edit \file{src/field/fieldgenerators.cxx} and add the implementation of the
 %
 \lstinline!clone!
 %
@@ -3393,19 +3397,17 @@ Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
 %
  functions:
 %
-\begin{lstlisting}[firstnumber=100]
+\begin{lstlisting}[firstnumber=33]
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   if(args.size() != 1) {
-    output << "FieldFactory error: Incorrect number of arguments to sinh
-function. Expecting 1, got " << args.size() << endl;
-    return NULL;
+    throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
   }
 
   return new FieldSinh(args.front());
 }
 
-BoutReal FieldSinh::generate(int x, int y, int z) {
-  return sinh(gen->generate(x,y,z));
+BoutReal FieldSinh::generate(double x, double y, double z, double t) {
+  return sinh(gen->generate(x,y,z,t));
 }
 \end{lstlisting}
 %
@@ -3418,10 +3420,11 @@ The
 %
 \lstinline!FieldGaussian!
 %
- to handle different numbers of input, but in this case we print an error
- message and return
+ to handle different numbers of input, but in this case we throw a
 %
-\lstinline!NULL! if the number of inputs isn't one. \lstinline!clone!
+\lstinline!ParseException!
+%
+if the number of inputs isn't one. \lstinline!clone!
 %
  then creates a new
 %
@@ -3460,7 +3463,7 @@ class an instance of this new generator. Edit the
 %
  in \file{src/field/field\_factory.cxx} and add the line:
 %
-\begin{lstlisting}[firstnumber=196]
+\begin{lstlisting}[firstnumber=64]
 addGenerator("sinh", new FieldSinh(NULL));
 \end{lstlisting}
 %
@@ -8346,7 +8349,7 @@ Here the format is
   It deals with the processor layout, working out which file contains each part of the domain.
   %
   \begin{lstlisting}
-    from boutdata import collect
+    from boutdata.collect import collect
 
     t = collect("t_array")  # Collect the time values
   \end{lstlisting}

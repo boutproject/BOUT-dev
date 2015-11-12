@@ -5,7 +5,7 @@
 #
 
 from __future__ import print_function
-from boututils import shell,launch
+from boututils.run_wrapper import shell, launch
 from sys import exit
 
 print("Making test")

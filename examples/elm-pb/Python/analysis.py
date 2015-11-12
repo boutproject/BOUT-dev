@@ -4,7 +4,7 @@
 
 import numpy as np
 import pylab as plt
-from boutdata import collect
+from boutdata.collect import collect
 
 path='./data/'
 var=collect('P', path=path)

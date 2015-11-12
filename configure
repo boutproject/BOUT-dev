@@ -5591,7 +5591,59 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 FFTPATHLIB='lib64'
 else
+  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib/libfftw3.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib/libfftw3.so" >&5
+$as_echo_n "checking for $FFTPATH/lib/libfftw3.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$FFTPATH/lib/libfftw3.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$FFTPATH/lib/libfftw3.so" | $as_tr_cpp` 1
+_ACEOF
+FFTPATHLIB='lib'
+else
+  as_ac_File=`$as_echo "ac_cv_file_$FFTPATH/lib64/libfftw3.so" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $FFTPATH/lib64/libfftw3.so" >&5
+$as_echo_n "checking for $FFTPATH/lib64/libfftw3.so... " >&6; }
+if eval \${$as_ac_File+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  test "$cross_compiling" = yes &&
+  as_fn_error $? "cannot check for file existence when cross compiling" "$LINENO" 5
+if test -r "$FFTPATH/lib64/libfftw3.so"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+eval ac_res=\$$as_ac_File
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_File"\" = x"yes"; then :
+
+cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$FFTPATH/lib64/libfftw3.so" | $as_tr_cpp` 1
+_ACEOF
+FFTPATHLIB='lib64'
+else
   FFTPATH=''
+fi
+
+fi
+
 fi
 
 fi

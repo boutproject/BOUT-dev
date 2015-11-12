@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# 
+#
 # Run the test, check it completed successfully
 #
 
@@ -9,8 +9,8 @@ try:
   from builtins import str
 except:
   pass
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boutdata.collect import collect
 from sys import stdout, exit
 
 MPIRUN=getmpirun()
@@ -23,21 +23,21 @@ flags = ["", "nsys=2", "nsys=5 periodic", "nsys=7 n=10"]
 code = 0 # Return code
 for nproc in [1,2,4]:
     cmd = "./test_cyclic"
-    
+
     print("   %d processors...." % (nproc))
     r = 0
     for f in flags:
         stdout.write("\tflags '"+f+"' ... ")
-        
+
         shell("rm data/BOUT.dmp.* 2> err.log")
-        
+
         # Run the case
         s, out = launch(cmd+" "+f, runcmd=MPIRUN, nproc=nproc, pipe=True)
         f = open("run.log."+str(nproc)+"."+str(r), "w")
         f.write(out)
         f.close()
         r = r + 1
-        
+
         # Find out if it worked
         allpassed = collect("allpassed", path="data", info=False)
         if allpassed:
@@ -45,7 +45,7 @@ for nproc in [1,2,4]:
         else:
             print("FAILED")
             code = 1
-        
+
 if code == 0:
     print(" => All cyclic reduction tests passed")
 else:

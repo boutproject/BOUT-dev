@@ -32,7 +32,7 @@ except:
     raise SystemExit
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: Missing boututils.Datafile. Add pylib to your PYTHONPATH")
     raise SystemExit
@@ -63,7 +63,7 @@ else:
 
 # Load data file output routines
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: boututils.DataFile not available")
     print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
@@ -195,7 +195,7 @@ if isym == 1:
     # Fill in values for up-down symmetric case
     print("Grid is up-down symmetric. Reflecting grid about midplane")
     ny = tsize = 2*(ntheta - 1) + 1
-    
+
     def reflect(data, mapfunc = lambda x:x):
         """ Reflect a variable about midplane
         Optionally supply a mapping function"""
@@ -208,7 +208,7 @@ if isym == 1:
             t0 = tsize - 1 - i
             data2[i,:] = mapfunc(data[t0,:])
         return data2
-    
+
     xnorm = reflect(xnorm)
     znorm = reflect(znorm, lambda x: 2.*zma - x) # Reflect about zma
     if Br != None:

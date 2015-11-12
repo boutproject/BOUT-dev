@@ -7,11 +7,11 @@ from builtins import range
 # Note it masks the values != Inf
 ###
 import numpy as np
-from boutdata import collect
-from boututils import moment_xyzt
+from boutdata.collect import collect
+from boututils.moment_xyzt import moment_xyzt
 
 def avgrate(p, y=None, tind=None):
-    
+
     if tind == None : tind =0
 
     rmsp_f=moment_xyzt(p, 'RMS').rms
@@ -22,7 +22,7 @@ def avgrate(p, y=None, tind=None):
     growth=np.zeros((ni,nj))
 
     with np.errstate(divide='ignore'):
-        
+
 
         for i in range(ni):
             for j in range(nj):
@@ -31,8 +31,8 @@ def avgrate(p, y=None, tind=None):
     d=np.ma.masked_array(growth,np.isnan(growth))
 
 # masked arrays
-# http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed    
-                        
+# http://stackoverflow.com/questions/5480694/numpy-calculate-averages-with-nans-removed
+
     print('Total average growth rate= ', np.mean(np.ma.masked_array(d,np.isinf(d))))
     if y != None : print('Growth rate in plane', y, '= ', np.mean(np.ma.masked_array(growth[:,y],np.isnan(growth[:,y]))))
 

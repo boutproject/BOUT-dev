@@ -3,8 +3,9 @@ from past.utils import old_div
 
 import matplotlib.pyplot as plt
 import numpy as np
-from boututils import moment_xyzt, file_import
-from boutdata  import collect
+from boututils.moment_xyzt import moment_xyzt
+from boututils.file_import import file_import
+from boutdata.collect import collect
 import os
 from scipy.io import readsav
 
@@ -56,4 +57,3 @@ ymin, ymax = plt.ylim()
 plt.tight_layout()
 
 plt.show()
-

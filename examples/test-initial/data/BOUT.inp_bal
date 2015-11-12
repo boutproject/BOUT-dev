@@ -15,6 +15,9 @@ dump_format = "nc"  # NetCDF format. Alternative is "pdb"
 TwistShift = true
 Ballooning = true
 
+[mesh]
+symmetricGlobalX = false
+
 [All]
 # Boundary options
 # 0 - constant

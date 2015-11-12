@@ -1,6 +1,6 @@
 from builtins import range
 import numpy
-from boututils import deriv
+from boututils.calculus import deriv
 
 # calculates x (psi) derivative for 2D variable
 def DDX( psi, var):

@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.003'
-__date__    = '07.09.2015'
+__version__ = '1.0042'
+__date__    = '11.11.2015'
 
 import os
 import re
@@ -21,7 +21,7 @@ import timeit
 import datetime
 from numbers import Number
 import numpy as np
-from boututils import shell, launch, getmpirun
+from boututils.run_wrapper import shell, launch, getmpirun
 from boututils.options import BOUTOptions
 from boututils.datafile import DataFile
 
@@ -2252,6 +2252,10 @@ class basic_runner(object):
                     # additional folder
                     cur_additional = elem.replace(':','_')
                     cur_additional = cur_additional.replace('=','_')
+                    cur_additional = cur_additional.replace('"','-')
+                    cur_additional = cur_additional.replace("'",'-')
+                    cur_additional = cur_additional.replace('(',',')
+                    cur_additional = cur_additional.replace(')',',')
                     additional.append(cur_additional)
 
         # We sort the elements in the various folders alphabetically,
@@ -2353,6 +2357,25 @@ class basic_runner(object):
             self._errors.append("RuntimeError")
             message =  "An error occurred the run."
             message += " Please see the output above for details."
+            # Search if parantheses are present, but without ' or "
+            if     ('(' in combination and\
+                   not(    re.search(r'\"(.*)\(', combination)\
+                        or re.search(r"\'(.*)\(", combination)))\
+                or (')' in combination and\
+                   not(   re.search(r'\)(.*)\"', combination)
+                       or re.search(r"\)(.*)\'", combination))):
+                message = 'A "(" and/or ")" symbol seem to have appeared in the'
+                message += " command line.\nIf this true, you can avoid"
+                message += " this problem by adding an extra set of"
+                message += " quotation marks. For example\n\n"
+                message += "additional=('variable', 'bndry_xin',"
+                message += " '\"dirichlet_o4(0.0)\")'\n"
+                message += "rather than\n"
+                message += "additional=('variable', 'bndry_xin',"
+                message += " 'dirichlet_o4(0.0))'"
+            else:
+                message =  "An error occurred the run."
+                message += " Please see the output above for details."
             raise RuntimeError(message)
 
         # Estimate elapsed time
@@ -2641,16 +2664,18 @@ class PBS_runner(basic_runner):
 #{{{__init__
     def __init__(self,\
                  BOUT_nodes            = 1         ,\
-                 BOUT_ppn              = 4         ,\
+                 BOUT_ppn              = 1         ,\
                  BOUT_walltime         = None      ,\
                  BOUT_queue            = None      ,\
                  BOUT_mail             = None      ,\
+                 BOUT_run_name         = None      ,\
                  post_process_nproc    = None      ,\
                  post_process_nodes    = None      ,\
                  post_process_ppn      = None      ,\
                  post_process_walltime = None      ,\
                  post_process_queue    = None      ,\
                  post_process_mail     = None      ,\
+                 post_process_run_name = None      ,\
                  **kwargs):
         #{{{docstring
         """The constructor of the PBS_runner.
@@ -2668,6 +2693,8 @@ class PBS_runner(basic_runner):
         BOUT_queue              -    The queue to submit the BOUT jobs
         BOUT_mail               -    Mail address to notify when a BOUT job
                                      has finished
+        BOUT_run_name           -    Name of the BOUT run on the cluster
+                                     (optional)
         post_process_nproc      -    Total number of processors for one
                                      submitted post processing job
         post_process_nodes      -    Number of nodes for one submitted
@@ -2680,6 +2707,8 @@ class PBS_runner(basic_runner):
                                      processing jobs
         post_process_mail       -    Mail address to notify when a post
                                      processing job has finished
+        post_process_run_name   -    Name of the post processing run on the
+                                     cluster (optional)
         **kwargs                -    As the constructor of bout_runners
                                      is called, this additional keyword
                                      makes it possible to specify the
@@ -2708,6 +2737,7 @@ class PBS_runner(basic_runner):
         self._BOUT_walltime         = BOUT_walltime
         self._BOUT_mail             = BOUT_mail
         self._BOUT_queue            = BOUT_queue
+        self._BOUT_run_name         = BOUT_run_name
         # Options set for the post_processing runs
         self._post_process_nproc    = post_process_nproc
         self._post_process_nodes    = post_process_nodes
@@ -2715,6 +2745,7 @@ class PBS_runner(basic_runner):
         self._post_process_walltime = post_process_walltime
         self._post_process_mail     = post_process_mail
         self._post_process_queue    = post_process_queue
+        self._post_process_run_name = post_process_run_name
 
         # Options set for all runs
         self._run_type      = 'basic_PBS'
@@ -2804,12 +2835,14 @@ class PBS_runner(basic_runner):
 
         #{{{Check if walltime, mail and queue is a string if set
         check_if_str = [\
-                        (self._BOUT_walltime,         'BOUT_walltime')     ,\
-                        (self._BOUT_mail,             'BOUT_mail')         ,\
-                        (self._BOUT_queue,            'BOUT_queue')        ,\
-                        (self._post_process_walltime, 'BOUT_walltime')     ,\
-                        (self._post_process_mail,     'post_process_mail') ,\
-                        (self._post_process_queue,    'post_process_queue') \
+                        (self._BOUT_walltime,         'BOUT_walltime')        ,\
+                        (self._BOUT_mail,             'BOUT_mail')            ,\
+                        (self._BOUT_queue,            'BOUT_queue')           ,\
+                        (self._BOUT_run_name,         'BOUT_run_name')        ,\
+                        (self._post_process_walltime, 'BOUT_walltime')        ,\
+                        (self._post_process_mail,     'post_process_mail')    ,\
+                        (self._post_process_queue,    'post_process_queue')   ,\
+                        (self._post_process_run_name, 'post_process_run_name') \
                        ]
         self._check_for_correct_type(var = check_if_str,\
                                       the_type = str,\
@@ -2990,7 +3023,10 @@ class PBS_runner(basic_runner):
 
         #{{{Create and submit the shell script
         # Creating the job string
-        job_name = 'post_process_' + function.__name__ + '_'+ start_time
+        if self._post_process_run_name == None:
+            job_name = 'post_process_' + function.__name__ + '_'+ start_time
+        else:
+            job_name = self._post_process_run_name
 
         # Get core of the job string
         job_string = self._create_PBS_core_string(\
@@ -3036,7 +3072,11 @@ class PBS_runner(basic_runner):
         combination_name = combination_name.replace('=','-')
 
         # Name of job
-        job_name = combination_name + '_' + self._directory + '_' + str(run_no)
+        if self._BOUT_run_name == None:
+            job_name =\
+                combination_name + '_' + self._directory + '_' + str(run_no)
+        else:
+            job_name = self._BOUT_run_name
         #}}}
 
         #{{{Make the main command that will be used in the PBS script

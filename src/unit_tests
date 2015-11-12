@@ -9,7 +9,7 @@
 
 from __future__ import print_function
 import os
-from boututils import shell
+from boututils.run_wrapper import shell
 
 failed = []
 passed = []
@@ -18,13 +18,13 @@ for root, dirs, files in os.walk('.'):
         print("Running unit test in ", root)
         savepath = os.getcwd()
         os.chdir(root)
-        
+
         if not os.access("./unit_test", os.X_OK):
             print("   Test not executable. Skipping.")
         else:
             status,out = shell("./unit_test")
             os.chdir(savepath)
-            
+
             if status != 0:
                 print("Unit test failed")
                 failed.append(root)

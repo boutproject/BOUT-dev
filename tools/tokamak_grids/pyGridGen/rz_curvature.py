@@ -4,7 +4,7 @@ from builtins import range
 from past.utils import old_div
 from bunch import Bunch
 import numpy
-from boututils import deriv
+from boututils.calculus import deriv
 from create_grid import local_gradient
 from scipy import interpolate
 

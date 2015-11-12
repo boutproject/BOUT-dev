@@ -3,7 +3,7 @@ from builtins import range
 from past.utils import old_div
 import numpy as np
 import matplotlib.pyplot as plt
-from boututils import file_import
+from boututils.file_import import file_import
 from matplotlib.ticker import FixedFormatter, FormatStrFormatter, AutoLocator, AutoMinorLocator
 
 g = file_import("./cbm18_dens8.grid_nx68ny64.nc")
