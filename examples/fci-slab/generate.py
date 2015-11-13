@@ -86,8 +86,6 @@ def slab(nx, ny, nz,
         for i in np.arange(0,nx):
             for k in np.arange(0,nz):
                 result[i,k,:] = odeint(b_field, [x[i], z[k]], [0, delta_tor*direction])[1,:]
-                result[i,k,1] = np.mod(result[i,k,1], Lz)
-                
                 map_list.append(Mappoint(result[i,k,0],result[i,k,1]))
                 
         return result
