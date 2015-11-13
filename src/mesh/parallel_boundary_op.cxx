@@ -47,6 +47,7 @@ BoutReal BoundaryOpPar::getValue(const BoundaryRegionPar &bndry, BoutReal t) {
     znorm = bndry.s_z/(mesh->ngz-1);
     return gen_values->generate(xnorm, TWOPI*ynorm, TWOPI*znorm, t);
   case FIELD:
+    // FIXME: Interpolate to s_x, s_y, s_z...
     value = (*field_values)(bndry.x,bndry.y,bndry.z);
     return value;
   case REAL:
@@ -98,7 +99,58 @@ void BoundaryOpPar_dirichlet::apply(Field3D &f, BoutReal t) {
 
     f_next(x, y+bndry->dir, z) = value - f2;
   }
+}
 
+//////////////////////////////////////////
+// Dirichlet boundary - Third order
+
+BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, const list<string> &args) {
+  if(!args.empty()) {
+    try {
+      real_value = stringToReal(args.front());
+      return new BoundaryOpPar_dirichlet_O3(region, real_value);
+    } catch (BoutException e) {
+      FieldGenerator* newgen = 0;
+      // First argument should be an expression
+      newgen = FieldFactory::get()->parse(args.front());
+      return new BoundaryOpPar_dirichlet_O3(region, newgen);
+    }
+  }
+  return new BoundaryOpPar_dirichlet_O3(region);
+}
+
+BoundaryOpPar* BoundaryOpPar_dirichlet_O3::clone(BoundaryRegionPar *region, Field3D *f) {
+  return new BoundaryOpPar_dirichlet_O3(region, f);
+}
+
+void BoundaryOpPar_dirichlet_O3::apply(Field3D &f, BoutReal t) {
+
+  Field3D& f_next = f.ynext(bndry->dir);
+  Field3D& f_prev = f.ynext(-bndry->dir);
+
+  Coordinates& coord = *(mesh->coordinates());
+
+  // Loop over grid points If point is in boundary, then fill in
+  // f_next such that the field would be VALUE on the boundary
+  for (bndry->first(); !bndry->isDone(); bndry->next()) {
+    // temp variables for convenience
+    int x = bndry->x; int y = bndry->y; int z = bndry->z;
+
+    // Generate the boundary value
+    BoutReal fb = getValue(*bndry, t);
+    BoutReal f1 = f_prev(x, y-bndry->dir, z);
+    BoutReal f2 = f(x,y,z);
+    BoutReal l1 = coord.dy(x, y);
+    BoutReal l2 = bndry->length;
+    BoutReal l3 = coord.dy(x, y) - l2;
+
+    BoutReal denom = (l1*l1*l2 + l1*l2*l2);
+    BoutReal term1 = (l2*l2*l3 + l2*l3*l3);
+    BoutReal term2 = l1*(l1+l2+l3)*(l2+l3);
+    BoutReal term3 = l3*((l1+l2)*l3 + (l1+l2)*(l1+l2));
+
+    f_next(x, y+bndry->dir, z) = (term1*f1 + term2*fb - term3*f2)/denom;
+  }
 }
 
 //////////////////////////////////////////

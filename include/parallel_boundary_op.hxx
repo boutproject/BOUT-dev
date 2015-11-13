@@ -86,6 +86,26 @@ public:
 
 };
 
+class BoundaryOpPar_dirichlet_O3 : public BoundaryOpPar {
+public:
+  BoundaryOpPar_dirichlet_O3() :
+    BoundaryOpPar(NULL, 0.) {}
+  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region) :
+    BoundaryOpPar(region, 0.) {}
+  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, FieldGenerator* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, Field3D* value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar_dirichlet_O3(BoundaryRegionPar *region, BoutReal value) :
+    BoundaryOpPar(region, value) {}
+  BoundaryOpPar* clone(BoundaryRegionPar *region, const list<string> &args);
+  BoundaryOpPar* clone(BoundaryRegionPar *region, Field3D *f);
+
+  void apply(Field3D &f) {return apply(f, 0);}
+  void apply(Field3D &f, BoutReal t);
+
+};
+
 class BoundaryOpPar_dirichlet_interp : public BoundaryOpPar {
 public:
   BoundaryOpPar_dirichlet_interp() :
