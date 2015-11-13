@@ -17,7 +17,7 @@ from sys import stdout
 
 import generate
 
-nx = 34 # Not changed for these tests
+nx = 5 # Not changed for these tests
 
 # Resolution in y and z
 nlist = [8,16,32,64,128,256]

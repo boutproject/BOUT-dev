@@ -318,22 +318,17 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
 
   Field3D fx, fz, fxz;
 
-  // Derivatives are used for tension and need to be on dimensionless
-  // coordinates
-  fx = mesh.indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
-  mesh.communicate(fx);
-  fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
-  mesh.communicate(fz);
-  fxz = mesh.indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
-  mesh.communicate(fxz);
-
   Field3D& f_next = f.ynext(fcimap.dir);
   f_next = 0;
 
-  for(int x=mesh.xstart;x<=mesh.xend;x++) {
+  // HACK: If only one point in x, don't bother interpolating that way!
+  if (mesh.xstart == mesh.xend) {
+    fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+    mesh.communicate(fz);
+
+    int x = mesh.xstart;
     for(int y=mesh.ystart; y<=mesh.yend;y++) {
       for(int z=0;z<mesh.ngz-1;z++) {
-
         // If this field line leaves the domain through the
         // x-boundary, or through the z-boundary and the domain is not
         // periodic, skip it
@@ -345,36 +340,71 @@ void FCI::interpolate(Field3D &f, const FCIMap &fcimap) {
         int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
         int z_mod_p1 = (z_mod + 1) % ncz;
 
-        // Interpolate f in X at Z
-        BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-          + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-          + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-          + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
-
-        // Interpolate f in X at Z+1
-        BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-          + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-          + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-          + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
-
-        // Interpolate fz in X at Z
-        BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
-          + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
-          + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
-          + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
-
-        // Interpolate fz in X at Z+1
-        BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
-          + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
-          + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
-          + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
-
         // Interpolate in Z
         f_next(x,y + fcimap.dir,z) =
-          + f_z    * fcimap.h00_z(x,y,z)
-          + f_zp1  * fcimap.h01_z(x,y,z)
-          + fz_z   * fcimap.h10_z(x,y,z)
-          + fz_zp1 * fcimap.h11_z(x,y,z);
+          + f(x,  y + fcimap.dir, z_mod)    * fcimap.h00_z(x,y,z)
+          + f(x,  y + fcimap.dir, z_mod_p1) * fcimap.h01_z(x,y,z)
+          + fz(x, y + fcimap.dir, z_mod)    * fcimap.h10_z(x,y,z)
+          + fz(x, y + fcimap.dir, z_mod_p1) * fcimap.h11_z(x,y,z);
+      }
+    }
+  } else {
+
+    // Derivatives are used for tension and need to be on dimensionless
+    // coordinates
+    fx = mesh.indexDDX(f, CELL_DEFAULT, DIFF_DEFAULT);
+    mesh.communicate(fx);
+    fz = mesh.indexDDZ(f, CELL_DEFAULT, DIFF_DEFAULT, true);
+    mesh.communicate(fz);
+    fxz = mesh.indexDDX(fz, CELL_DEFAULT, DIFF_DEFAULT);
+    mesh.communicate(fxz);
+
+    for(int x=mesh.xstart;x<=mesh.xend;x++) {
+      for(int y=mesh.ystart; y<=mesh.yend;y++) {
+        for(int z=0;z<mesh.ngz-1;z++) {
+
+          // If this field line leaves the domain through the
+          // x-boundary, or through the z-boundary and the domain is not
+          // periodic, skip it
+          if (fcimap.boundary_mask[x][y][z]) continue;
+
+          // Due to lack of guard cells in z-direction, we need to ensure z-index
+          // wraps around
+          int ncz = mesh.ngz-1;
+          int z_mod = ((fcimap.k_corner[x][y][z] % ncz) + ncz) % ncz;
+          int z_mod_p1 = (z_mod + 1) % ncz;
+
+          // Interpolate f in X at Z
+          BoutReal f_z = f(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+            + f(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+            + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+            + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
+
+          // Interpolate f in X at Z+1
+          BoutReal f_zp1 = f( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+            + f( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+            + fx( fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+            + fx( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
+
+          // Interpolate fz in X at Z
+          BoutReal fz_z = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h00_x(x,y,z)
+            + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h01_x(x,y,z)
+            + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod)*fcimap.h10_x(x,y,z)
+            + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod)*fcimap.h11_x(x,y,z);
+
+          // Interpolate fz in X at Z+1
+          BoutReal fz_zp1 = fz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h00_x(x,y,z)
+            + fz( fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h01_x(x,y,z)
+            + fxz(fcimap.i_corner[x][y][z], y + fcimap.dir, z_mod_p1)*fcimap.h10_x(x,y,z)
+            + fxz(fcimap.i_corner[x][y][z]+1, y + fcimap.dir, z_mod_p1)*fcimap.h11_x(x,y,z);
+
+          // Interpolate in Z
+          f_next(x,y + fcimap.dir,z) =
+            + f_z    * fcimap.h00_z(x,y,z)
+            + f_zp1  * fcimap.h01_z(x,y,z)
+            + fz_z   * fcimap.h10_z(x,y,z)
+            + fz_zp1 * fcimap.h11_z(x,y,z);
+        }
       }
     }
   }
