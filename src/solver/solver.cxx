@@ -515,7 +515,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
-    if (run_rhs(0.0)) {
+    if (run_rhs(simtime)) {
       output.write("Physics RHS call failed\n");
       return 1;
     }
