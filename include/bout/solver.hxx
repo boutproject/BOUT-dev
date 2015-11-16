@@ -226,7 +226,7 @@ protected:
 
   int run_rhs(BoutReal t); ///< Run the user's RHS function
   int run_convective(BoutReal t); ///< Calculate only the convective parts
-  int run_diffusive(BoutReal t); ///< Calculate only the diffusive parts
+  int run_diffusive(BoutReal t, bool linear=true); ///< Calculate only the diffusive parts
   
   int call_monitors(BoutReal simtime, int iter, int NOUT); ///< Calls all monitor functions
   

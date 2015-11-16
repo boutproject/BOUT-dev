@@ -67,7 +67,7 @@ public:
   
   bool splitOperator();
   int runConvective(BoutReal time);
-  int runDiffusive(BoutReal time);
+  int runDiffusive(BoutReal time, bool linear);
   
   bool hasPrecon();
   int runPrecon(BoutReal t, BoutReal gamma, BoutReal delta);
@@ -115,7 +115,8 @@ protected:
    */
   virtual int convective(BoutReal t) {return 1;}
   virtual int diffusive(BoutReal t) {return 1;}
-
+  virtual int diffusive(BoutReal t, bool linear) { return diffusive(t); }
+  
   /*!
    * Implemented by user code to monitor solution at output times
   */
