@@ -2346,7 +2346,7 @@ void BoundaryZeroLaplace::apply(Field3D &f) {
       // kz != 0 solution
       BoutReal coef = -1.0*sqrt(mesh->g33[x][y] / mesh->g11[x][y])*mesh->dx[x][y];
       for(int jz=1;jz<=ncz/2;jz++) {
-        BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+        BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wavenumber in [rad^-1]
         c0[jz] *= exp(coef*kwave); // The decaying solution only
       }
       // Reverse FFT
@@ -2534,7 +2534,7 @@ void BoundaryConstLaplace::apply(Field3D &f) {
       // kz != 0 solution
       BoutReal coef = -1.0*sqrt(mesh->g33[x-bx][y] / mesh->g11[x-bx][y])*mesh->dx[x-bx][y];
       for(int jz=1;jz<=ncz/2;jz++) {
-        BoutReal kwave=jz*2.0*PI/mesh->zlength; // wavenumber in [rad^-1]
+        BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wavenumber in [rad^-1]
         c0[jz] *= exp(coef*kwave); // The decaying solution only
         // Add the particular solution
         c2[jz] = c0[jz] - c1[jz]/(mesh->g33[x-bx][y]*kwave*kwave); 

@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
   int nguard = mesh->xstart;
   mesh->dx = Lx/(mesh->GlobalNx - 2*nguard);
   mesh->dz = TWOPI*Lx/(mesh->ngz-1);
-  mesh->zlength = TWOPI*Lx;
   /////
 
   // Create a Laplacian inversion solver

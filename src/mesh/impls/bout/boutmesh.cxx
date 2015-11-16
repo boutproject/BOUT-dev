@@ -400,13 +400,11 @@ int BoutMesh::load() {
   }
   if(get(dz, "dz")) {
     // No dz in input
-    zlength = (ZMAX-ZMIN)*TWOPI;
-    dz = zlength/(ngz-1);
+    dz = (ZMAX-ZMIN)*TWOPI/(ngz-1);
   }else {
     // Read dz from input
-    zlength = dz * (ngz-1);
     ZMIN = 0.0;
-    ZMAX = zlength / TWOPI;
+    ZMAX = zlength() / TWOPI;
   }
 
   ///////////////// DIFFERENTIAL GEOMETRY /////////////////

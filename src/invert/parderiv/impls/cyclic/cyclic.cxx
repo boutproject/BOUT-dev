@@ -132,7 +132,7 @@ const Field3D InvertParCR::solve(const Field3D &f) {
     
     // Set up tridiagonal system
     for(int k=0; k<nsys; k++) {
-      BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      BoutReal kwave=k*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
       for(int y=0;y<mesh->ngy-4;y++) {
         
 	BoutReal acoef = A(x, y+2);                     // Constant
@@ -163,14 +163,14 @@ const Field3D InvertParCR::solve(const Field3D &f) {
       MPI_Comm_size(surf.communicator(), &np);
       if(rank == 0) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          BoutReal kwave=k*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , -sin(kwave*ts));
           a[k][0] *= phase;
         }
       }
       if(rank == np-1) {
         for(int k=0; k<nsys; k++) {
-          BoutReal kwave=k*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          BoutReal kwave=k*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
           dcomplex phase(cos(kwave*ts) , sin(kwave*ts));
           c[k][mesh->ngy-5] *= phase;
         }
