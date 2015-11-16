@@ -51,9 +51,9 @@ class MagneticField(object):
             x,z = pos
 
         # Rate of change of x location [m] with y angle [radians]
-        dxdphi =  self.grid.Rmaj * self.Bxfunc(x,z,phi) / self.Byfunc(x,z,phi)
+        dxdphi =  self.grid.Rmaj(x,z,phi) * self.Bxfunc(x,z,phi) / self.Byfunc(x,z,phi)
         # Rate of change of z location [m] with y angle [radians]
-        dzdphi =  self.grid.Rmaj * self.Bzfunc(x,z,phi) / self.Byfunc(x,z,phi)
+        dzdphi =  self.grid.Rmaj(x,z,phi) * self.Bzfunc(x,z,phi) / self.Byfunc(x,z,phi)
 
         if flatten:
             result = np.column_stack((dxdphi, dzdphi)).flatten()
@@ -218,7 +218,7 @@ class VMEC(object):
     """Read a VMEC equilibrium file
     """
 
-    def __weird_average(self, field):
+    def __rolling_average(self, field):
         result = np.zeros_like(field)
         result[:,0]    = field[:,1] - 0.5*field[:,2]
         result[:,2:-2] = 0.5 * (field[:,2:-2] + field[:,3:-1])
@@ -226,6 +226,8 @@ class VMEC(object):
         return result
 
     def cfunct(self, field):
+        """VMEC DCT
+        """
         ns = field.shape[0]
         lt = self.theta.size
         lz = self.zeta.size
@@ -251,6 +253,8 @@ class VMEC(object):
         return f
 
     def sfunct(self, field):
+        """VMEC DST
+        """
         ns = field.shape[0]
         lt = self.theta.size
         lz = self.zeta.size
@@ -273,11 +277,10 @@ class VMEC(object):
             f[k,:,:] = b + d
         return f
 
-    def __init__(self, grid, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
-        # Only needed here
+    def read_vmec_file(self, vmec_file, ntheta=None, nzeta=None):
+        """Read a VMEC equilibrium file
+        """
         from boututils.datafile import DataFile
-        from scipy.interpolate import griddata, RegularGridInterpolator
-        
         # Read necessary stuff
         with DataFile(vmec_file, write=False) as f:
             self.xm = f['xm'].T
@@ -299,11 +302,11 @@ class VMEC(object):
             if iasym:
                 rumnc = -f['rmns'].T*xm_big
                 rvmnc = -f['rmns'].T*xn_big
-                zumns = f['zmnc'].T*xm_big 
-                zvmns = f['zmnc'].T*xn_big 
+                zumns = f['zmnc'].T*xm_big
+                zvmns = f['zmnc'].T*xn_big
 
-            bsupumnc = self.__weird_average(f['bsupumnc'].T).T
-            bsupvmnc = self.__weird_average(f['bsupvmnc'].T).T
+            bsupumnc = self.__rolling_average(f['bsupumnc'].T).T
+            bsupvmnc = self.__rolling_average(f['bsupvmnc'].T).T
 
             if ntheta is None:
                 self.ntheta = int(f['mpol'])
@@ -340,19 +343,54 @@ class VMEC(object):
         self.br = bu*drdu + bv*drdv
         self.bphi = self.r_stz*bv
         self.bz = bu*dzdu + bv*dzdv
-        # self.br_pol = bu*drdu;
-        # self.bz_pol = bu*dzdu;
+
+    def adjust_grid(self, grid):
+        """Adjust grid to be consistent with the VMEC grid
+        """
+        grid.nx = self.nr
+        grid.ny = self.nzeta
+        grid.nz = self.nz
+
+        grid.xarray = self.r_1D
+        grid.yarray = self.zeta
+        grid.zarray = self.z_1D
+
+        grid.delta_x = grid.xarray[1] - grid.xarray[0]
+        grid.delta_y = grid.yarray[1] - grid.yarray[0]
+        grid.delta_z = grid.zarray[1] - grid.zarray[0]
+
+        grid.Lx = grid.xarray[-1] - grid.xarray[0]
+        grid.Ly = 2.*np.pi
+        grid.Lz = grid.zarray[-1] - grid.zarray[0]
+
+        grid.xcentre = grid.xarray[0] + 0.5*grid.Lx
+        grid.zcentre = grid.zarray[0] + 0.5*grid.Lz
+
+        def Rmaj(x,z,phi):
+            return x
+
+        grid.Rmaj = Rmaj
+
+
+    def __init__(self, grid, vmec_file, ntheta=None, nzeta=None, nr=32, nz=32):
+        # Only needed here
+        from scipy.interpolate import griddata, RegularGridInterpolator
+
+        self.read_vmec_file(vmec_file, ntheta, nzeta)
+
+        self.nr = nr
+        self.nz = nz
 
         # Make a new rectangular grid in (R,Z)
         self.r_1D = np.linspace(self.r_stz.min(), self.r_stz.max(), nr)
         self.z_1D = np.linspace(self.z_stz.min(), self.z_stz.max(), nr)
         self.R_2D, self.Z_2D = np.meshgrid(self.r_1D, self.z_1D, indexing='ij')
 
-        # Interpolate 
+        # First, interpolate the magnetic field components onto (R,Z)
         self.br_rz = np.zeros( (nr, nz, self.nzeta) )
         self.bz_rz = np.zeros( (nr, nz, self.nzeta) )
         self.bphi_rz = np.zeros( (nr, nz, self.nzeta) )
-
+        # No need to interpolate in zeta, so do this one slice at a time
         for k, (br, bz, bphi, r, z) in enumerate(zip(self.br.T, self.bz.T, self.bphi.T, self.r_stz.T, self.z_stz.T)):
             points = np.column_stack( (r.flatten(), z.flatten()) )
             self.br_rz[...,k] = griddata(points, br.flatten(), (self.R_2D, self.Z_2D),
@@ -362,8 +400,8 @@ class VMEC(object):
             self.bphi_rz[...,k] = griddata(points, bphi.flatten(), (self.R_2D, self.Z_2D),
                                            method='linear', fill_value=1.0)
 
-        # zeta_grid = np.repeat(self.zeta[np.newaxis, :], self.R[1], axis=0)
-        # zeta_grid = np.repeat(zeta_grid[np.newaxis, :, :], ns, axis=0)
+        # Now we have a regular grid in (R,Z,phi) (as zeta==phi), so
+        # we can get an interpolation function in 3D
         points = ( self.r_1D, self.z_1D, self.zeta )
         self.br_interp = RegularGridInterpolator(points, self.br_rz, bounds_error=False, fill_value=0.0)
         self.bz_interp = RegularGridInterpolator(points, self.bz_rz, bounds_error=False, fill_value=0.0)
@@ -377,9 +415,10 @@ class VMEC(object):
             phi = np.mod(phi, 2.*np.pi)
             return self.bz_interp((x, z, phi))
 
-        def bphifunc(x, z, phi):
+        def Byfunc(x, z, phi):
             phi = np.mod(phi, 2.*np.pi)
             return self.bphi_interp((x, z, phi))
 
-        self.magnetic_field = MagneticField(grid, Bxfunc, Bzfunc)
-======= end
+        self.adjust_grid(grid)
+
+        self.magnetic_field = MagneticField(grid, Bxfunc, Bzfunc, Byfunc=Byfunc)

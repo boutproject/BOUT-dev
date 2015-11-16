@@ -50,7 +50,10 @@ class Grid(object):
         self.zcentre = 0.5*max(self.zarray)
 
         # How to do this properly?
-        self.Rmaj = 1.0
+        def Rmaj(x,z,phi):
+            return 1.0
+
+        self.Rmaj = Rmaj
 
     def __repr__(self):
         return "Grid(nx={nx}, ny={ny}, nz={nz}, Lx={Lx}, Ly={Ly}, Lz={Lz}, name='{name}')".format(
