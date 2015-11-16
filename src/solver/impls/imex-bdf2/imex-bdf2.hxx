@@ -58,7 +58,7 @@ class IMEXBDF2 : public Solver {
   
   int run();
   
-  PetscErrorCode snes_function(Vec x, Vec f); // Nonlinear function
+  PetscErrorCode snes_function(Vec x, Vec f, bool linear); // Nonlinear function
  private:
   int mxstep; // Maximum number of internal steps between outputs
   

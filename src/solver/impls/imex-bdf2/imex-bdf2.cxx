@@ -34,7 +34,7 @@ IMEXBDF2::~IMEXBDF2() {
   }
 }
 
-/*
+/*!
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
  *
@@ -42,7 +42,16 @@ IMEXBDF2::~IMEXBDF2() {
  * to an IMEXBDF2 object.
  */ 
 static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f);
+  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
+}
+
+/*!
+ * PETSc callback function for forming Jacobian
+ * 
+ * This function can be a linearised form of FormFunction
+ */
+static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
+  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
 
 int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
@@ -111,26 +120,56 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   
   // Set the callback function
   SNESSetFunction(snes,snes_f,FormFunction,this);
-  
-  // Set up the Jacobian
-  //MatCreateSNESMF(snes,&Jmf);
-  //SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
-  MatCreateAIJ(BoutComm::get(),
-               nlocal,nlocal,  // Local sizes
-               PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
-               3,   // Number of nonzero entries in diagonal portion of local submatrix
-               PETSC_NULL,
-               0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
-               PETSC_NULL, 
-               &Jmf);
-#ifdef BOUT_HAS_PETSC_3_3
-  // Before 3.4
-  SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
-#else
-  SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
-#endif
-  MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
 
+  /////////////////////////////////////////////////////
+  // Set up the Jacobian
+  
+  bool matrix_free;
+  OPTION(options, matrix_free, true); // Default is matrix free
+  if(matrix_free) {
+    /*!
+      PETSc SNES matrix free Jacobian, using a different
+      operator for differencing.
+      
+      See PETSc examples
+      http://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tests/ex7.c.html
+      and this thread:
+      http://lists.mcs.anl.gov/pipermail/petsc-users/2014-January/020075.html
+      
+     */
+    MatCreateSNESMF(snes,&Jmf);
+
+    // Set a function to be called for differencing
+    // This can be a linearised form of the SNES function
+    MatMFFDSetFunction(Jmf,FormFunctionForDifferencing,this);
+
+    // Calculate Jacobian matrix free using FormFunctionForDifferencing
+    SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);
+  }else {
+    /*!
+     * Calculate Jacobian using finite differences.
+     * NOTE: Slow!
+     */
+    MatCreateAIJ(BoutComm::get(),
+                 nlocal,nlocal,  // Local sizes
+                 PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
+                 3,   // Number of nonzero entries in diagonal portion of local submatrix
+                 PETSC_NULL,
+                 0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
+                 PETSC_NULL, 
+                 &Jmf);
+  
+#ifdef BOUT_HAS_PETSC_3_3
+    // Before 3.4
+    SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
+#else
+    SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
+#endif
+    
+    MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+  }
+  
+  /////////////////////////////////////////////////////
   // Set tolerances
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
@@ -373,7 +412,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
 }
 
 // f = (x - gamma*G(x)) - rhs
-PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
+PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   BoutReal *xdata, *fdata;
   int ierr;
   
@@ -383,7 +422,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   loadVars(xdata);
   
   // Call RHS function
-  run_diffusive(implicit_curtime);
+  run_diffusive(implicit_curtime, linear);
   
   // Copy derivatives back
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
