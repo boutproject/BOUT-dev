@@ -40,7 +40,9 @@ IMEXBDF2::~IMEXBDF2() {
  *
  * This function assumes the context void pointer is a pointer
  * to an IMEXBDF2 object.
- */ 
+ */
+#undef __FUNCT__
+#define __FUNCT__ "FormFunction"
 static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
 }
@@ -50,10 +52,29 @@ static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
  * 
  * This function can be a linearised form of FormFunction
  */
+#undef __FUNCT__
+#define __FUNCT__ "FormFunctionForDifferencing"
 static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
   return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
 }
 
+#undef __FUNCT__
+#define __FUNCT__ "imexbdf2PCapply"
+static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
+  int ierr;
+
+  // Get the context
+  IMEXBDF2 *s;
+  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+
+  PetscFunctionReturn(s->precon(x, y));
+}
+
+
+/*!
+ * Initialisation routine. Called once before solve.
+ *
+ */
 int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising IMEX-BDF2 solver");
@@ -176,9 +197,36 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   options->get("rtol", rtol, 1e-10);
   SNESSetTolerances(snes,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
 
+  /////////////////////////////////////////////////////
   // Predictor method
   options->get("predictor", predictor, 1);
-  
+
+  /////////////////////////////////////////////////////
+  // Preconditioner
+
+  bool use_precon;
+  OPTION(options, use_precon,   false);
+  if(use_precon && have_user_precon()) {
+    output.write("\tUsing user-supplied preconditioner\n");
+    
+    // Get KSP context from SNES
+    KSP ksp;
+    SNESGetKSP(snes, &ksp);
+
+    // Get PC context from KSP
+    PC pc;
+    KSPGetPC(ksp,&pc);
+
+    // Set a Shell (matrix-free) preconditioner type
+    PCSetType(pc, PCSHELL);
+
+    // Specify the preconditioner function
+    PCShellSetApply(pc,imexbdf2PCapply);
+    // Context used to supply object pointer
+    PCShellSetContext(pc,this);
+  }
+
+  /////////////////////////////////////////////////////
   // Get runtime options
   SNESSetFromOptions(snes);
   
@@ -439,6 +487,43 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
   
+  return 0;
+}
+
+/*
+ * Preconditioner function
+ */
+PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
+  if(!have_user_precon()) {
+    // No user preconditioner
+    throw BoutException("No user preconditioner");
+  }
+  
+  int ierr;
+  
+  // Get data from PETSc into BOUT++ fields
+  Vec solution;
+  SNESGetSolution(snes, &solution);
+  BoutReal *soldata;
+  ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
+  load_vars(soldata);
+  ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
+  
+  // Load vector to be inverted into ddt() variables
+  BoutReal *xdata;
+  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
+  load_derivs(xdata);
+  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+
+  // Run the preconditioner
+  run_precon(implicit_curtime, implicit_gamma, 0.0);
+
+  // Save the solution from F_vars
+  BoutReal *fdata;
+  ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
+  save_derivs(fdata);
+  ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
+
   return 0;
 }
 
