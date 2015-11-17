@@ -116,7 +116,6 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   // Get options
   OPTION(options, timestep, tstep); // Internal timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   
   ninternal = (int) (out_timestep / timestep);
   
