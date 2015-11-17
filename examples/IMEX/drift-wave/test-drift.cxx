@@ -9,6 +9,8 @@ protected:
     // Specify evolving variables
     solver->add(Vort, "Vort"); // Vorticity
     solver->add(Ne, "Ne");     // Electron density
+
+    SAVE_REPEAT(phi);
     
     // Get the normalised resistivity
     Options::getRoot()->getSection("drift")->get("nu", nu, 1.0);
@@ -32,8 +34,11 @@ protected:
     phi = phiSolver->solve(Vort);
     mesh->communicate(phi, Vort, Ne);
     
+    // Linear advection
+    ddt(Ne) = -bracket(phi, Ne0, BRACKET_ARAKAWA);
+    
     // Non-linear advection of density and vorticity
-    ddt(Ne) = -bracket(phi, Ne, BRACKET_ARAKAWA);
+    ddt(Ne) -= bracket(phi, Ne, BRACKET_ARAKAWA);
     
     ddt(Vort) = -bracket(phi, Vort, BRACKET_ARAKAWA);
     
@@ -41,7 +46,7 @@ protected:
   }
   
   int diffusive(BoutReal time) {
-    // Stiff parts, treated implicitly
+    // Parallel dynamics treated implicitly
     
     // Solve for potential
     phi = phiSolver->solve(Vort);
@@ -50,15 +55,12 @@ protected:
     Ve = ( Grad_par(phi) - Grad_par(Ne) ) / nu;
     mesh->communicate(Ve);
     
-    // Linear advection
-    ddt(Ne) = -bracket(phi, Ne0, BRACKET_ARAKAWA);
-    
-    ddt(Ne) -= Grad_par(Ve);
-    
+    ddt(Ne) = -Div_par(Ve);
     ddt(Vort) = -Div_par(Ve);
     
     return 0;
   }
+  
 private:
   Field2D Ne0; // Background density profile
   
