@@ -34,17 +34,47 @@ IMEXBDF2::~IMEXBDF2() {
   }
 }
 
-/*
+/*!
  * PETSc callback function, which evaluates the nonlinear
  * function to be solved by SNES.
  *
  * This function assumes the context void pointer is a pointer
  * to an IMEXBDF2 object.
- */ 
+ */
+#undef __FUNCT__
+#define __FUNCT__ "FormFunction"
 static PetscErrorCode FormFunction(SNES snes,Vec x, Vec f, void* ctx) {
-  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f);
+  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, false);
 }
 
+/*!
+ * PETSc callback function for forming Jacobian
+ * 
+ * This function can be a linearised form of FormFunction
+ */
+#undef __FUNCT__
+#define __FUNCT__ "FormFunctionForDifferencing"
+static PetscErrorCode FormFunctionForDifferencing(void* ctx, Vec x, Vec f) {
+  return static_cast<IMEXBDF2*>(ctx)->snes_function(x, f, true);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "imexbdf2PCapply"
+static PetscErrorCode imexbdf2PCapply(PC pc,Vec x,Vec y) {
+  int ierr;
+
+  // Get the context
+  IMEXBDF2 *s;
+  ierr = PCShellGetContext(pc,(void**)&s);CHKERRQ(ierr);
+
+  PetscFunctionReturn(s->precon(x, y));
+}
+
+
+/*!
+ * Initialisation routine. Called once before solve.
+ *
+ */
 int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   int msg_point = msg_stack.push("Initialising IMEX-BDF2 solver");
@@ -86,7 +116,6 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
 
   // Get options
   OPTION(options, timestep, tstep); // Internal timestep
-  OPTION(options, mxstep, 500); // Maximum number of steps between outputs
   
   ninternal = (int) (out_timestep / timestep);
   
@@ -111,35 +140,92 @@ int IMEXBDF2::init(bool restarting, int nout, BoutReal tstep) {
   
   // Set the callback function
   SNESSetFunction(snes,snes_f,FormFunction,this);
-  
-  // Set up the Jacobian
-  //MatCreateSNESMF(snes,&Jmf);
-  //SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
-  MatCreateAIJ(BoutComm::get(),
-               nlocal,nlocal,  // Local sizes
-               PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
-               3,   // Number of nonzero entries in diagonal portion of local submatrix
-               PETSC_NULL,
-               0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
-               PETSC_NULL, 
-               &Jmf);
-#ifdef BOUT_HAS_PETSC_3_3
-  // Before 3.4
-  SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
-#else
-  SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
-#endif
-  MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
 
+  /////////////////////////////////////////////////////
+  // Set up the Jacobian
+  
+  bool matrix_free;
+  OPTION(options, matrix_free, true); // Default is matrix free
+  if(matrix_free) {
+    /*!
+      PETSc SNES matrix free Jacobian, using a different
+      operator for differencing.
+      
+      See PETSc examples
+      http://www.mcs.anl.gov/petsc/petsc-current/src/snes/examples/tests/ex7.c.html
+      and this thread:
+      http://lists.mcs.anl.gov/pipermail/petsc-users/2014-January/020075.html
+      
+     */
+    MatCreateSNESMF(snes,&Jmf);
+
+    // Set a function to be called for differencing
+    // This can be a linearised form of the SNES function
+    MatMFFDSetFunction(Jmf,FormFunctionForDifferencing,this);
+
+    // Calculate Jacobian matrix free using FormFunctionForDifferencing
+    SNESSetJacobian(snes,Jmf,Jmf,MatMFFDComputeJacobian,this);
+  }else {
+    /*!
+     * Calculate Jacobian using finite differences.
+     * NOTE: Slow!
+     */
+    MatCreateAIJ(BoutComm::get(),
+                 nlocal,nlocal,  // Local sizes
+                 PETSC_DETERMINE, PETSC_DETERMINE, // Global sizes
+                 3,   // Number of nonzero entries in diagonal portion of local submatrix
+                 PETSC_NULL,
+                 0,   // Number of nonzeros per row in off-diagonal portion of local submatrix
+                 PETSC_NULL, 
+                 &Jmf);
+  
+#ifdef BOUT_HAS_PETSC_3_3
+    // Before 3.4
+    SNESSetJacobian(snes,Jmf,Jmf,SNESDefaultComputeJacobian,this);
+#else
+    SNESSetJacobian(snes,Jmf,Jmf,SNESComputeJacobianDefault,this);
+#endif
+    
+    MatSetOption(Jmf,MAT_NEW_NONZERO_ALLOCATION_ERR,PETSC_FALSE);
+  }
+  
+  /////////////////////////////////////////////////////
   // Set tolerances
   BoutReal atol, rtol; // Tolerances for SNES solver
   options->get("atol", atol, 1e-16);
   options->get("rtol", rtol, 1e-10);
   SNESSetTolerances(snes,atol,rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
 
+  /////////////////////////////////////////////////////
   // Predictor method
   options->get("predictor", predictor, 1);
-  
+
+  /////////////////////////////////////////////////////
+  // Preconditioner
+
+  bool use_precon;
+  OPTION(options, use_precon,   false);
+  if(use_precon && have_user_precon()) {
+    output.write("\tUsing user-supplied preconditioner\n");
+    
+    // Get KSP context from SNES
+    KSP ksp;
+    SNESGetKSP(snes, &ksp);
+
+    // Get PC context from KSP
+    PC pc;
+    KSPGetPC(ksp,&pc);
+
+    // Set a Shell (matrix-free) preconditioner type
+    PCSetType(pc, PCSHELL);
+
+    // Specify the preconditioner function
+    PCShellSetApply(pc,imexbdf2PCapply);
+    // Context used to supply object pointer
+    PCShellSetContext(pc,this);
+  }
+
+  /////////////////////////////////////////////////////
   // Get runtime options
   SNESSetFromOptions(snes);
   
@@ -373,7 +459,7 @@ PetscErrorCode IMEXBDF2::solve_implicit(BoutReal curtime, BoutReal gamma) {
 }
 
 // f = (x - gamma*G(x)) - rhs
-PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
+PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f, bool linear) {
   BoutReal *xdata, *fdata;
   int ierr;
   
@@ -383,7 +469,7 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   loadVars(xdata);
   
   // Call RHS function
-  run_diffusive(implicit_curtime);
+  run_diffusive(implicit_curtime, linear);
   
   // Copy derivatives back
   ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
@@ -400,6 +486,43 @@ PetscErrorCode IMEXBDF2::snes_function(Vec x, Vec f) {
   ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
   ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
   
+  return 0;
+}
+
+/*
+ * Preconditioner function
+ */
+PetscErrorCode IMEXBDF2::precon(Vec x, Vec f) {
+  if(!have_user_precon()) {
+    // No user preconditioner
+    throw BoutException("No user preconditioner");
+  }
+  
+  int ierr;
+  
+  // Get data from PETSc into BOUT++ fields
+  Vec solution;
+  SNESGetSolution(snes, &solution);
+  BoutReal *soldata;
+  ierr = VecGetArray(x,&soldata);CHKERRQ(ierr);
+  load_vars(soldata);
+  ierr = VecRestoreArray(solution,&soldata);CHKERRQ(ierr);
+  
+  // Load vector to be inverted into ddt() variables
+  BoutReal *xdata;
+  ierr = VecGetArray(x,&xdata);CHKERRQ(ierr);
+  load_derivs(xdata);
+  ierr = VecRestoreArray(x,&xdata);CHKERRQ(ierr);
+
+  // Run the preconditioner
+  run_precon(implicit_curtime, implicit_gamma, 0.0);
+
+  // Save the solution from F_vars
+  BoutReal *fdata;
+  ierr = VecGetArray(f,&fdata);CHKERRQ(ierr);
+  save_derivs(fdata);
+  ierr = VecRestoreArray(f,&fdata);CHKERRQ(ierr);
+
   return 0;
 }
 
