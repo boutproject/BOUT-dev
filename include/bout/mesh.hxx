@@ -193,7 +193,7 @@ class Mesh {
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
   BoutReal dz;    // Grid spacing in the Z direction
-  BoutReal zlength() { return dz * (ngz-1); } // Length of the Z domain. Used for FFTs
+  BoutReal zlength() const { return dz * (ngz-1); } // Length of the Z domain. Used for FFTs
   
   bool ShiftXderivs; // Use shifted X derivatives
   int  ShiftOrder;   // Order of shifted X derivative interpolation

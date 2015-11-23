@@ -174,10 +174,10 @@ BoutReal FieldBallooning::generate(double x, double y, double z, double t) {
 
     for(int i=1; i<= ball_n; i++) {
       // y - i * 2pi
-      value += arg->generate(x,y - i*TWOPI,z + i*ts,t);
+      value += arg->generate(x,y - i*TWOPI,z + i*ts*TWOPI/mesh->zlength(),t);
 
       // y + i * 2pi
-      value += arg->generate(x,y + i*TWOPI,z - i*ts,t);
+      value += arg->generate(x,y + i*TWOPI,z - i*ts*TWOPI/mesh->zlength(),t);
     }
     return value;
   }

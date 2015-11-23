@@ -8,6 +8,8 @@ int main(int argc, char** argv) {
   
   initial_profile("var0", var0);
   initial_profile("var1", var1);
+
+  mesh->communicate(var0, var1);
   
   SAVE_ONCE2(var0, var1);
   dump.write();
