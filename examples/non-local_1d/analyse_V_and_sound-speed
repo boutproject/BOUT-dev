@@ -2,15 +2,15 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import print_function
 from builtins import str
 from builtins import range
 nproc = 1  # Number of processors to use
-
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 from math import sqrt
@@ -43,8 +43,7 @@ for i in range(2,len(V[0,0,:,0])-3):
 for index, item in enumerate(V[slice_index,0,:,0]):
 	print(index, item)
 # Make contour plot
-#plotdata.plotdata(V[slice_index,0,2:-2,0],title="Velocity Profile and (collisionless, adiabatic) Sound Speed at t="+str(argv[1]))
+#plotdata(V[slice_index,0,2:-2,0],title="Velocity Profile and (collisionless, adiabatic) Sound Speed at t="+str(argv[1]))
 pyplot.plot(V[slice_index,0,2:-2,0],'b',cellcentreposition,sound_speed,'r',cellcentreposition,minus_sound_speed,'r')
 pyplot.title("Velocity Profile and (collisionless, adiabatic) Sound Speed at t="+str(argv[1]))
 pyplot.show()
-

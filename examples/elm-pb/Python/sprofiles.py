@@ -3,20 +3,22 @@ from builtins import zip
 from builtins import range
 from past.utils import old_div
 import numpy as np
-from boututils import file_import, surface_average, showdata
-from boutdata import collect
+from boututils.file_import import file_import
+from boututils.surface_average import surface_average
+from boututils.showdata import showdata
+from boutdata.collect import collect
 from pylab import plot, show, annotate, xlabel, ylabel, figure, xlim, ylim, legend, gca
 import os
 
- 
+
 path='./data'
 
 gfile='../cbm18_dens8.grid_nx68ny64.nc'
-  
+
 g = file_import(gfile)
-   
-var=collect("P", path=path)   
-   
+
+var=collect("P", path=path)
+
 sol=surface_average(var, g)
 #sol=np.mean(var,axis=3)
 
@@ -26,17 +28,17 @@ q=np.zeros(sol.shape)
 
 for i in range(sol.shape[1]):
     q[:,i]=sol[:,i]+p0av[:,0]
-    
-    
+
+
 psixy=g.get('psixy')
 psi0=g.get('psi_axis')
 psix=g.get('psi_bndry')
 
 xarr = psixy[:,0]
 xarr = old_div((xarr - psi0), (-psi0 + psix)) #for this grid
-    
-    
-fig=figure()    
+
+
+fig=figure()
 
 nt=q.shape[1]
 
@@ -69,6 +71,5 @@ fig.set_tight_layout(True)
 
 
 show()
-#showdata.showdata(q.T, tslice=1)
-#showdata.showdata(q.T, tslice=1, movie=1)
-
+#showdata(q.T, tslice=1)
+#showdata(q.T, tslice=1, movie=1)

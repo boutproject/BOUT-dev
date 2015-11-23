@@ -19,10 +19,12 @@ all: user_manual.pdf \
 	pdflatex $(@F:.pdf=) &&\
 	pdflatex $(@F:.pdf=) &&\
 	mv *.pdf ./..
+	@cd $(TEXDIR) &&\
+	rm -f *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg
 
 .PHONY:clean
 
-clean: 
+clean:
 	@echo "Cleaning up..."
 	@cd $(TEXDIR) &&\
 	rm -f *.pdf *.dvi *.aux *.out *.log *.toc *.idx *.ilg *.ind *.bbl *.blg

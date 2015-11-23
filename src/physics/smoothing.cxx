@@ -39,7 +39,7 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   Field3D fs, result;
 
   if(BoutRealspace) {
-    fs = f.shiftZ(true); // Shift into BoutReal space
+    fs = f.shiftZ(true); // Shift into real space
   }else
     fs = f; 
 

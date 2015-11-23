@@ -25,8 +25,12 @@ nproc = 2       # Number of processors to run on
 omega_tol = 1e-2
 gamma_tol = 1e-2
 
-from boututils import shell, launch, file_import, deriv, linear_regression, getmpirun
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boututils.file_import import file_import
+from boututils.calculus import deriv
+from boututils.linear_regression import linear_regression
+
+from boutdata.collect import collect
 import numpy as np
 from sys import stdout, exit
 
@@ -74,7 +78,7 @@ for zeff in zlist:
     if zeff < 128:
         # reduce time-step. At large times these cases produce noise
         timestep = 1e3
-    
+
     # Delete old output files
     shell("rm data/BOUT.dmp.*.nc")
 
@@ -85,61 +89,61 @@ for zeff in zlist:
     f = open("run.log."+str(zeff), "w")
     f.write(out)
     f.close()
-    
+
     # Collect data
     Ni = collect("Ni", path="data", xind=2, yind=20, info=False)
     phi = collect("phi", path="data", xind=2, yind=20, info=False)
-    
+
     zmax     = collect("ZMAX", path="data", info=False)
     rho_s    = collect("rho_s", path="data", info=False)
     wci      = collect("wci", path="data", info=False)
     t_array  = collect("t_array", path="data", info=False)
-    
+
     dims = np.shape(Ni)
     nt = dims[0]
     ny = dims[2]
     nz = dims[3]
-    
+
     ##### Calculate geometric and physical quantities
     lZeta  = 1e2*zmax*2*np.pi*grid['R0']    # toroidal range [cm]
     lbNorm = lZeta*((grid['Bpxy'])[0,old_div(ny,2)] / (grid['Bxy'])[0,old_div(ny,2)])  # binormal coord range [cm]
     zPerp  = lbNorm*np.arange(nz)/(nz-1)    # binormal coordinate [cm]
-    
+
     cLight = 3e10                        # speed of light [cm/s]
     vTe    = 4.2e7*np.sqrt(grid['Te_x']) # electron thermal speed [cm/s]
     kperp  = 2*np.pi/lbNorm              # binormal wavenumber, [cm-1]
     wce    = 1.76e7*1e4*grid['bmag']     # electron cyclotron frequency, [rad/s]
-    
+
     # Ni scale length [cm]
-    Ln = np.mean(np.abs((grid['Ni0'])[:,old_div(ny,2)] / 
-                      deriv( (grid['Rxy'])[:,old_div(ny,2)]*1e2, (grid['Ni0'])[:,old_div(ny,2)]))) 
-    
+    Ln = np.mean(np.abs((grid['Ni0'])[:,old_div(ny,2)] /
+                      deriv( (grid['Rxy'])[:,old_div(ny,2)]*1e2, (grid['Ni0'])[:,old_div(ny,2)])))
+
     vPe   = (vTe)**2 / (wce*Ln) # electron diamagnetic drift speed [cm/s]
-    wstar = vPe*kperp 
-    
+    wstar = vPe*kperp
+
     logLam = 24. - np.log(np.sqrt(grid['Ni_x']*1e14 / grid['Te_x']))
     nuei   = zeff*2.91e-6*(grid['Ni_x']*1e14)*logLam/(grid['Te_x'])**1.5
     #wci=9.58e3*(1./d.AA)*1e4*du.Bmag
-    
+
     lpar = np.sum(((grid['Bxy']/grid['Bpxy']))*grid['dlthe']) / grid['nx'] # [m], average over flux surfaces
     kpar = 2*np.pi/(1e2*lpar) # cm-1
     spar = (old_div(kpar,kperp))**2 * wci * wce / (0.51 * nuei) # [1/s]
     sparn = old_div(spar, wstar)
-    
+
     wpe   = 5.64e4*np.sqrt(1e14*grid['Ni_x']) # electron plasma frequency, [rad/s]
-    mu    = (cLight*kperp/wpe)**2 
+    mu    = (cLight*kperp/wpe)**2
     sperp = (0.51 * nuei) * mu # [1/s]
-    
+
     ##### Analyse data
-    
+
     nt0 = 15  # Skip initial part of the curve (transients)
-    
+
     # Measure exponential growth-rate using maximum value
     maxVal = np.zeros(nt - nt0)
-    
+
     # Track the motion of the peak to infer phase velocity
     peak = np.zeros(nt-nt0)
-    
+
     for t in range(nt0, nt):
         ind = np.argmax(Ni[t,0,0,:])  # Index of maximum value
         maxVal[t-nt0] = Ni[t,0,0,ind] # Store maximum value (for gamma)
@@ -150,8 +154,8 @@ for zeff in zlist:
         # Fit y = c + ax + bx**2
         a = 0.5*(p-m)
         b = p - (c + a)
-        peak[t-nt0] = ind - 0.5*a/b # Maximum 
-    
+        peak[t-nt0] = ind - 0.5*a/b # Maximum
+
     # Check for periodic recurrence
     if peak[1] > peak[0]:
         # Increasing; watch for wrapping around the top
@@ -166,23 +170,23 @@ for zeff in zlist:
 
     # Fit y = a + gamma*x
     a, gamma = linear_regression(old_div(t_array[nt0:nt],wci), np.log(maxVal))
-    
+
     # Get phase velocity
     a, Vphase = linear_regression(old_div(t_array[nt0:nt],wci), peak*lbNorm/(nz-1))
-    
+
     # Calculate normalised quantities
     omega=np.abs(Vphase)*kperp/wstar
     gamma=old_div(gamma,wstar)
-    
+
     # Calculate analytic result
     t = 0.5*( np.sqrt(sparn**4 + 16*sparn**2) - sparn**2 )
     wr = 0.5*np.sqrt(t)
     wi = old_div(sparn,np.sqrt(t)) - 0.5*sparn
-    
+
     try:
         origr = omega_orig[zeff]
         origi = gamma_orig[zeff]
-        
+
         omegadiff = old_div(abs(omega - origr), origr)
         gammadiff = old_div(abs(gamma - origi), origi)
     except:
@@ -190,10 +194,10 @@ for zeff in zlist:
         origi = None
         omegadiff = None
         gammadiff = None
-    
+
     print("  Normalised omega = ", omega, " analytic = ", wr, " original = ", origr, " (", 100.*omegadiff,"%)")
     print("  Normalised gamma = ", gamma, " analytic = ", wi, " original = ", origi, " (",100.*gammadiff,"%)")
-    
+
     if omegadiff != None:
         if (omegadiff > omega_tol) or (gammadiff > gamma_tol):
             code = 1 # Failed test
@@ -202,5 +206,5 @@ for zeff in zlist:
             print("  => PASSED")
     else:
         print("  => No original to compare against")
-    
-exit(code)    
+
+exit(code)

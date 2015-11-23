@@ -1,5 +1,5 @@
 
-from boutdata import collect
+from boutdata.collect import collect
 
 import matplotlib.pyplot as plt
 

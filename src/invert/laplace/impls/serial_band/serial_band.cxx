@@ -112,7 +112,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     ///////// PERFORM INVERSION /////////
       
     // shift freqs according to FFT convention
-    kwave=iz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    kwave=iz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
       
     if (iz>maxmode) flt=0.0; else flt=1.0;
 

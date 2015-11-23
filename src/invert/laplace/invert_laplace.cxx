@@ -176,11 +176,23 @@ const Field2D Laplacian::solve(const Field2D &b) {
 }
 
 const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
+  /* Function: Laplacian::solve
+   * Purpose:  Performs the laplacian inversion y-slice by y-slice
+   *
+   * Input:
+   * b        - All the y-slices of b_slice, which is the right hand side of
+   *            the equation A*x_slice = b_slice
+   * x0       - All the y-slices of the variable eventually used to set BC
+   *
+   * Output:
+   * x        - All the y-slices of x_slice in the equation A*x_slice = b_slice
+   */
   Timer timer("invert");
 #ifdef CHECK
   msg_stack.push("Laplacian::solve(Field3D, Field3D)");
 #endif
 
+  // Setting the start and end range of the y-slices
   int ys = mesh->ystart, ye = mesh->yend;
   if(mesh->hasBndryLowerY() && include_yguards)
     ys = 0; // Mesh contains a lower boundary
@@ -209,7 +221,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
 
   x.setLocation(b.getLocation());
 
-  return x;
+  return x; // Return the result of the inversion
 }
 
 const Field2D Laplacian::solve(const Field2D &b, const Field2D &x0) {
@@ -226,7 +238,7 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
 
-  BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+  BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
   tridagCoefs(jx, jy, kwave,
               a, b, c,
@@ -236,7 +248,32 @@ void Laplacian::tridagCoefs(int jx, int jy, int jz,
 void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
                             dcomplex &a, dcomplex &b, dcomplex &c,
                             const Field2D *ccoef, const Field2D *d) {
-
+  /* Function: Laplacian::tridagCoef
+   * Purpose:  - Set the matrix components of A in Ax=b, solving
+   *
+   *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *
+   *             for each fourier component.
+   *             NOTE: A in the equation above is not added here.
+   *             For calculations of the coefficients, please refer to the user
+   *             manual
+   *
+   * Input:
+   * jx        - The current x index
+   * jy        - The current y index
+   * kwave     - The mode number multiplied with (2*pi)/mesh->zlength(), where
+   *             zlength() is the length of the full z domain (usually 2*pi)
+   * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
+   * b         - The main diagonal
+   * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   * ccoef     - C in the equation above. DO NOT CONFUSE WITH c
+   * d         - D in the equation above
+   *
+   * Output:
+   * a         - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
+   * b         - The main diagonal
+   * c         - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   */
   BoutReal coef1, coef2, coef3, coef4, coef5;
 
   coef1=mesh->g11[jx][jy];     ///< X 2nd derivative coefficient
@@ -245,6 +282,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   coef4 = 0.0;
   coef5 = 0.0;
+  // If global flag all_terms are set (true by default)
   if(all_terms) {
     coef4 = mesh->G1[jx][jy]; // X 1st derivative
     coef5 = mesh->G3[jx][jy]; // Z 1st derivative
@@ -269,7 +307,6 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
 
   if(ccoef != NULL) {
     // A first order derivative term
-
     if((jx > 0) && (jx < (mesh->ngx-1)))
       coef4 += mesh->g11[jx][jy] * ((*ccoef)[jx+1][jy] - (*ccoef)[jx-1][jy]) / (2.*mesh->dx[jx][jy]*((*ccoef)[jx][jy]));
   }
@@ -299,7 +336,7 @@ void Laplacian::tridagMatrix(dcomplex **avec, dcomplex **bvec, dcomplex **cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d) {
   for(int kz = 0; kz <= maxmode; kz++) {
-    BoutReal kwave=kz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    BoutReal kwave=kz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
 
     tridagMatrix(avec[kz], bvec[kz], cvec[kz],
@@ -317,24 +354,57 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
                              const Field2D *a, const Field2D *ccoef,
                              const Field2D *d,
                              bool includeguards) {
+  /* Function: Laplacian::tridagMatrix
+   * Purpose:  - Set the matrix components of A in Ax=b by calling tridagCoef,
+   *             solving
+   *
+   *             D*Laplace_perp(x) + (1/C)Grad_perp(C)*Grad_perp(x) + Ax = B
+   *
+   *             for each fourier component
+   *           - Set the boundary conditions by setting the first and last rows
+   *             properly
+   *
+   * Input:
+   * avec      - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
+   * bvec      - The main diagonal
+   * cvec      - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   * bk        - The b in Ax = b
+   * jy        - Index of the current y-slice
+   * kz        - The mode number index
+   * kwave     - The mode number (different from kz only if we are taking a part
+   *             of the z-domain [and not from 0 to 2*pi])
+   * global_flags          - Global flags of the inversion
+   * inner_boundary_flags  - Flags used to set the inner boundary
+   * outer_boundary_flags  - Flags used to set the outer boundary
+   * a         - A in the equation above. DO NOT CONFUSE WITH avec
+   * ccoef     - C in the equation above. DO NOT CONFUSE WITH cvec
+   * d         - D in the equation above
+   * includeguards - Whether or not the guard points in x should be used
+   *
+   * Output:
+   * avec      - Lower diagonal of the tridiagonal matrix. DO NOT CONFUSE WITH A
+   * bvec      - The main diagonal
+   * cvec      - The upper diagonal. DO NOT CONFUSE WITH C (called ccoef here)
+   */
+  int xs = 0;            // xstart set to the start of x on this processor (including ghost points)
+  int xe = mesh->ngx-1;  // xend set to the end of x on this processor (including ghost points)
 
-  int xs = 0;
-  int xe = mesh->ngx-1;
-
+  // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
+  // works with periodicX is serial_tri, which uses includeguards==true, so the below isn't called.
   if(!includeguards) {
     if(!mesh->firstX() || mesh->periodicX)
       xs = mesh->xstart; // Inner edge is a guard cell
     if(!mesh->lastX() || mesh->periodicX)
       xe = mesh->xend; // Outer edge is a guard cell
   }
-  // Do not want boundary cells if x is periodic for cyclic solver. Only other solver which
-  // works with periodicX is serial_tri, which uses includeguards==true, so the above isn't called.
 
+  int ncx = xe - xs; // Total number of points in x to be used
 
-  int ncx = xe - xs;
-
+  // Setting the width of the boundary.
+  // NOTE: The default is a width of 2 guard cells
   int inbndry = 2, outbndry=2;
 
+  // If the flags to assign that only one guard cell should be used is set
   if((global_flags & INVERT_BOTH_BNDRY_ONE) || (mesh->xstart < 2))  {
     inbndry = outbndry = 1;
   }
@@ -343,31 +413,30 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
   if(outer_boundary_flags & INVERT_BNDRY_ONE)
     outbndry = 1;
 
-  // Loop through the entire domain. The boundaries will be set according to 
-  // the if-statements below.
+  // Loop through our specified x-domain.
+  // The boundaries will be set according to the if-statements below.
   for(int ix=0;ix<=ncx;ix++) {
-
     // Actually set the metric coefficients
     tridagCoefs(xs+ix, jy, kwave, avec[ix], bvec[ix], cvec[ix], ccoef, d);
-
     if(a != (Field2D*) NULL)
+      // Add A to bvec (the main diagonal in the matrix)
       bvec[ix] += (*a)[xs+ix][jy];
   }
 
+  // Set the boundary conditions if x is not periodic
   if(!mesh->periodicX) {
-    // Boundary conditions
-
     if(mesh->firstX()) {
       // INNER BOUNDARY ON THIS PROCESSOR
 
+      // If no user specified value is set on inner boundary, set the first
+      // element in b (in the equation AX=b) to 0
       if(!(inner_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for(int ix=0;ix<inbndry;ix++)
-          // Set inner the boundary to zero
           bk[ix] = 0.;
       }
 
+      // DC i.e. kz = 0 (the offset mode)
       if(kz == 0) {
-        // DC i.e. kz = 0
 
         if(inner_boundary_flags & INVERT_DC_GRAD && (inner_boundary_flags & INVERT_SET || inner_boundary_flags & INVERT_RHS)) {
           // Zero gradient at inner boundary
@@ -436,8 +505,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           }
         }
       }
+      // AC i.e. kz =/= 0 (all other modes than the offset mode)
       else {
-        // AC
 
         if(inner_boundary_flags & INVERT_AC_GRAD && (inner_boundary_flags & INVERT_SET || inner_boundary_flags & INVERT_RHS)) {
           // Zero gradient at inner boundary
@@ -493,17 +562,18 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
       }
     }
     if(mesh->lastX()) {
-      // OUTER BOUNDARY
+      // OUTER BOUNDARY ON THIS PROCESSOR
 
+      // If no user specified value is set on outer boundary, set the last
+      // element in b (in the equation AX=b) to 0
       if(!(outer_boundary_flags & (INVERT_RHS | INVERT_SET))) {
         for (int ix=0;ix<outbndry;ix++) {
-          // Set outer the boundary to zero
           bk[ncx-ix] = 0.;
         }
       }
 
+      // DC i.e. kz = 0 (the offset mode)
       if(kz==0) {
-        // DC
 
         if(outer_boundary_flags & INVERT_DC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary
@@ -560,8 +630,8 @@ void Laplacian::tridagMatrix(dcomplex *avec, dcomplex *bvec, dcomplex *cvec,
           }
         }
       }
+      // AC i.e. kz =/= 0 (all other modes than the offset mode)
       else {
-        // AC
 
         if(outer_boundary_flags & INVERT_AC_GRAD && ( outer_boundary_flags & INVERT_SET || outer_boundary_flags & INVERT_RHS)) {
           // Zero gradient at outer boundary

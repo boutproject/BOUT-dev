@@ -12,7 +12,7 @@ from bunch import Bunch
 from .radial_grid import radial_grid
 from .analyse_equil_2 import analyse_equil
 from pylab import figure, show, draw, plot, contour, setp, clabel, title, streamplot, cm, gca, annotate, subplot2grid, Rectangle, tight_layout, text, subplots_adjust, figaspect, setp, legend, tick_params
-from boututils import closest_line
+from boututils.closest_line import closest_line
 from .ask import query_yes_no
 from .read_geqdsk import read_geqdsk
 from scipy import interpolate
@@ -37,7 +37,7 @@ def View2D(g, option=0):
     ax.yaxis.label.set_rotation('horizontal')
 
     ax.set_aspect('equal')
-      
+
    # fig.suptitle('Efit Analysis', fontsize=20)
    # title('Efit Analysis', fontsize=20)
     text(0.5, 1.08, 'Efit Analysis',
@@ -45,7 +45,7 @@ def View2D(g, option=0):
          fontsize=20,
          transform = ax.transAxes)
 
-   
+
     draw()
     if option == 0 : show(block=False)
 
@@ -54,34 +54,34 @@ def View2D(g, option=0):
     draw()
 
     csb=contour( g.r, g.z, g.psi,  levels=[g.sibdry])
-    
+
     clabel(csb, [g.sibdry],  # label the level
             inline=1,
             fmt='%9.6f',
             fontsize=14)
-            
+
     csb.collections[0].set_label('boundary')
 
   # pl1=plot(g.rbdry,g.zbdry,'b-',marker='x', label='$\psi=$'+ np.str(g.sibdry))
   #  legend(bbox_to_anchor=(0., 1.05, 1., .105), loc='upper left')
 
-    
+
 
     draw()
-    
+
    # fig.set_tight_layout(True)
-    
+
   #  show(block=False)
 
 # Function fpol and qpsi are given between simagx (psi on the axis) and sibdry (
-# psi on limiter or separatrix). So the toroidal field (fpol/R) and the q profile are within these boundaries 
+# psi on limiter or separatrix). So the toroidal field (fpol/R) and the q profile are within these boundaries
 
     npsigrid=old_div(np.arange(np.size(g.pres)).astype(float),(np.size(g.pres)-1))
 
     fpsi = np.zeros((2, np.size(g.fpol)), np.float64)
     fpsi[0,:] = (g.simagx + npsigrid * ( g.sibdry -g.simagx ))
     fpsi[1,:] = g.fpol
-    
+
 
 
     boundary = np.array([g.xlim, g.ylim])
@@ -113,12 +113,12 @@ def View2D(g, option=0):
     xpt_f  = critical.xpt_f
 
 
-    psi_inner=0.6 
+    psi_inner=0.6
     psi_outer=0.8,
-    nrad=68 
-    npol=64 
+    nrad=68
+    npol=64
     rad_peaking=[0.0]
-    pol_peaking=[0.0] 
+    pol_peaking=[0.0]
     parweight=0.0
 
 
@@ -127,15 +127,15 @@ def View2D(g, option=0):
   # Psi normalisation factors
 
     faxis = critical.opt_f[critical.primary_opt]
-        
+
     fnorm = critical.xpt_f[critical.inner_sep] - critical.opt_f[critical.primary_opt]
-    
+
 
 
   # From normalised psi, get range of f
     f_inner = faxis + np.min(psi_inner)*fnorm
     f_outer = faxis + np.max(psi_outer)*fnorm
-    
+
 
     fvals = radial_grid(nrad, f_inner, f_outer, 1, 1, [xpt_f[inner_sep]], rad_peaking)
 
@@ -143,49 +143,49 @@ def View2D(g, option=0):
     ## Create a starting surface
     #sind = np.int(nrad / 2)
     #start_f = 0. #fvals[sind]
-    
-    
+
+
     # Find where we have rational surfaces
     # define an interpolation of psi(q)
 
     psiq = np.arange(np.float(g.qpsi.size))*(g.sibdry-g.simagx)/np.float(g.qpsi.size-1) + g.simagx
     fpsiq=interpolate.interp1d(g.qpsi, psiq)
-    
+
     # Find how many rational surfaces we have within the boundary and locate x,y position of curves
 
-    nmax=g.qpsi.max().astype(int)  
-    nmin=g.qpsi.min().astype(int)  
+    nmax=g.qpsi.max().astype(int)
+    nmin=g.qpsi.min().astype(int)
 
     nr=np.arange(nmin+1,nmax+1)
     psi=fpsiq(nr)
-    
+
     cs=contour( g.r, g.z, g.psi,  levels=psi)
     labels = ['$q='+np.str(x)+'$\n' for x in range(nr[0],nr[-1]+1)]
-    
+
     for i in range(len(labels)):
-        cs.collections[i].set_label(labels[i]) 
+        cs.collections[i].set_label(labels[i])
 
     style=['--', ':', '--', ':','-.' ]
-    
+
 
 #    gca().set_color_cycle(col)
-        
-#    proxy = [Rectangle((0,0),1,1, fc=col[:i+1]) 
+
+#    proxy = [Rectangle((0,0),1,1, fc=col[:i+1])
 #        for pc in cs.collections]
 #
 #    l2=legend(proxy, textstr[:i)
 #
 #    gca().add_artist(l1)
 
-    
+
     x=[]
     y=[]
     for i in range(psi.size):
         xx,yy=surface(cs, i, psi[i],opt_ri[primary_opt], opt_zi[primary_opt], style, option)
         x.append(xx)
         y.append(yy)
-        
-   
+
+
     #props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     #textstr = ['$q='+np.str(x)+'$\n' for x in range(psi.size)]
     #
@@ -199,18 +199,18 @@ def View2D(g, option=0):
 
     #compute B - field
 
-    Bp=np.gradient(g.psi)  
+    Bp=np.gradient(g.psi)
 
     dr=old_div((np.max(g.r[:,0])-np.min(g.r[:,0])),np.size(g.r[:,0]))
     dz=old_div((np.max(g.z[0,:])-np.min(g.z[0,:])),np.size(g.z[0,:]))
-    
+
     dpsidr=Bp[0]
     dpsidz=Bp[1]
-    
+
     Br=-dpsidz/dz/g.r
-    Bz=dpsidr/dr/g.r    
-    
-    Bprz=np.sqrt(Br*Br+Bz*Bz)   
+    Bz=dpsidr/dr/g.r
+
+    Bprz=np.sqrt(Br*Br+Bz*Bz)
 
     # plot Bp field
     if option == 0 :
@@ -219,8 +219,8 @@ def View2D(g, option=0):
             lw = 50*Bprz/Bprz.max()
             streamplot(g.r.T,g.z.T, Br.T,Bz.T, color=Bprz, linewidth=2, cmap=cm.bone)#density =[.5, 1], color='k')#, linewidth=lw)
             draw()
-    
-    
+
+
     # plot toroidal field
 
     ax = subplot2grid((3,3), (0,1), colspan=2, rowspan=1)
@@ -230,21 +230,21 @@ def View2D(g, option=0):
     ax.set_ylabel('$fpol$')
     ax.yaxis.label.set_size(20)
     #ax.xaxis.label.set_size(20)
-  
+
     ax.set_xticks([])
 
     ax.yaxis.label.set_rotation('horizontal')
     #ax.xaxis.labelpad = 10
     ax.yaxis.labelpad = 20
-    
+
     #props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     #ax.text(0.85, 0.95, '$B_t$', transform=ax.transAxes, fontsize=14,
     #    verticalalignment='top', bbox=props)
 
-    
+
     #
     draw()
-    
+
         # plot pressure
 
     ax = subplot2grid((3,3), (1,1), colspan=2, rowspan=1)
@@ -254,26 +254,26 @@ def View2D(g, option=0):
     ax.set_ylabel('$P$')
     ax.yaxis.label.set_size(20)
     #ax.xaxis.label.set_size(20)
-  
+
     ax.set_xticks([])
 
     ax.yaxis.label.set_rotation('horizontal')
     #ax.xaxis.labelpad = 10
     ax.yaxis.labelpad = 20
-    
+
     #props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
     #ax.text(0.85, 0.95, '$B_t$', transform=ax.transAxes, fontsize=14,
     #    verticalalignment='top', bbox=props)
 
-    
+
     #
     draw()
 
-    
+
     # plot qpsi
-    
+
     ax = subplot2grid((3,3), (2,1), colspan=2, rowspan=1)
-    
+
     ax.plot(psiq,g.qpsi)
     ax.set_xlabel('$\psi$')
     ax.set_ylabel('$q$')
@@ -289,21 +289,21 @@ def View2D(g, option=0):
     which='both',      # both major and minor ticks are affected
     bottom='on',      # ticks along the bottom edge are off
     top='off',         # ticks along the top edge are off
-    labelbottom='on') 
+    labelbottom='on')
 
-    
+
     draw()
-    
-    
+
+
     # Compute and draw Jpar
-#    
+#
 #    MU = 4.e-7*np.pi
 #
 #    jpar0 = - Bxy * fprime / MU - Rxy*Btxy * dpdpsi / Bxy
-#    
-    
+#
+
    # fig.set_tight_layout(True)
-    
+
 
     fig.subplots_adjust(left=0.2, top=0.9, hspace=0.1, wspace=0.5)
 
@@ -311,7 +311,7 @@ def View2D(g, option=0):
 
     if option == 0 : show(block=False)
 
-    
+
 
     if option != 0:
         return Br,Bz, x, y, psi
@@ -347,36 +347,36 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
 
   #  contour_lines( F, np.arange(nx).astype(float), np.arange(ny).astype(float), levels=[start_f])
 #    cs=contour( g.r, g.z, g.psi,  levels=[f])
-#    proxy = [Rectangle((0,0),1,1,fc = 'b') 
+#    proxy = [Rectangle((0,0),1,1,fc = 'b')
 #        for pc in cs.collections]
 #
 #    legend(proxy, ["q="+np.str(i)])
-    
+
 
 
     p = cs.collections[i].get_paths()
  #
- #  You might get more than one contours for the same start_f. We need to keep the closed one  
+ #  You might get more than one contours for the same start_f. We need to keep the closed one
     vn=np.zeros(np.size(p))
-    
+
  # find the closed contour
- 
+
     for k in range(np.size(p)):
           v=p[k].vertices
           vx=v[:,0]
           vy=v[:,1]
-          if [vx[0], vy[0]] == [vx[-1],vy[-1]] :             
+          if [vx[0], vy[0]] == [vx[-1],vy[-1]] :
               xx=vx
               yy=vy
-        
-                
+
+
     x=xx
-    y=yy  
+    y=yy
     #v = p[0].vertices
     #vn[0]=np.shape(v)[0]
     #xx=v[:,0]
     #yy=v[:,1]
-        
+
     #if np.shape(vn)[0] > 1:
     #    for i in xrange(1,np.shape(vn)[0]):
     #        v = p[i].vertices
@@ -393,10 +393,10 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
     #    ind = 0
     #    x=xx
     #    y=yy
-    #      
+    #
     if(iplot == 0):
 
-    # plot the start_f line     
+    # plot the start_f line
         zc = cs.collections[i]
         setp(zc, linewidth=4, linestyle=style[i])
 
@@ -404,12 +404,12 @@ def surface(cs, i, f, opt_ri, opt_zi, style, iplot=0):
             inline=1,
             fmt='%9.6f',
             fontsize=14)
-        
+
     #    annotate('q= '+np.str(i+1),(x[0]+.1,y[0]+.1))
-     
-        draw()             
-    
-        show(block=False) 
+
+        draw()
+
+        show(block=False)
 
     return x,y
 

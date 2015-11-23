@@ -108,8 +108,8 @@ def view3d(sgrid):
     e.add_module(g)
 
 if __name__ == '__main__':
-    from boutdata import collect
-    from boututils import file_import
+    from boutdata.collect import collect
+    from boututils.file_import import file_import
     
     #path = "/media/449db594-b2fe-4171-9e79-2d9b76ac69b6/runs/data_33/"
     path="../data"

@@ -1,8 +1,8 @@
 /*
  * LaplaceXZ implementation using PETSc
- *  
+ *
  * Ben Dudson, October 2015
- * 
+ *
  * Based on:
  * PETSc example of reusing preconditioner matrix (in Fortran):
  * http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex6f.F.html
@@ -29,22 +29,22 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
   // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
   BoutReal rtol, atol, dtol;
   int maxits; ///< Maximum iterations
-  OPTION(opt, rtol, 1e-5);     // Relative tolerance 
+  OPTION(opt, rtol, 1e-5);     // Relative tolerance
   OPTION(opt, atol, 1e-10);    // Absolute tolerance
   OPTION(opt, dtol, 1e3);      // Diverged threshold
   OPTION(opt, maxits, 100000); // Maximum iterations
-  
+
   // Get KSP Solver Type
   string ksptype;
   opt->get("ksptype", ksptype, "gmres");
-  
+
   // Get PC type
   string pctype;
   opt->get("pctype", pctype, "lu", true);
 
   string factor_package;
   opt->get("factor_package", factor_package, "petsc", true);
-  
+
   // Get MPI communicator
   MPI_Comm comm = mesh->getXcomm();
 
@@ -56,23 +56,23 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
   if(mesh->lastX()) {
     localN += mesh->ngz-1;
   }
-  
-  // Create Vectors 
+
+  // Create Vectors
   VecCreate( comm, &xs );
   VecSetSizes( xs, localN, PETSC_DETERMINE );
   VecSetFromOptions( xs );
   VecDuplicate( xs , &bs );
-  
+
   for(int y = mesh->ystart; y <= mesh->yend; y++) {
     YSlice data;
 
     data.yindex = y;
-    
+
     // Set size of Matrix on each processor to localN x localN
-    MatCreate( comm, &data.MatA );                                
+    MatCreate( comm, &data.MatA );
     MatSetSizes( data.MatA, localN, localN, PETSC_DETERMINE, PETSC_DETERMINE );
     MatSetFromOptions(data.MatA);
-    
+
     //////////////////////////////////////////////////
     // Pre-allocate space for matrix elements
 
@@ -118,10 +118,10 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
     MatSetUp(data.MatA);
     PetscFree( d_nnz );
     PetscFree( o_nnz );
-    
+
     //////////////////////////////////////////////////
-    // Declare KSP Context 
-    KSPCreate( comm, &data.ksp ); 
+    // Declare KSP Context
+    KSPCreate( comm, &data.ksp );
 
     // Set KSP type
     KSPSetType( data.ksp, ksptype.c_str() );
@@ -133,17 +133,17 @@ LaplaceXZpetsc::LaplaceXZpetsc(Mesh *m, Options *opt)
     KSPGetPC(data.ksp,&pc);
     PCSetType(pc, pctype.c_str());
     PCFactorSetMatSolverPackage(pc,factor_package.c_str());
-    
+
     KSPSetFromOptions( data.ksp );
-    
+
     /// Add to slice vector
     slice.push_back(data);
   }
-  
+
 }
 
 LaplaceXZpetsc::~LaplaceXZpetsc() {
-  
+
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     MatDestroy(&it->MatA);
     MatDestroy(&it->MatP);
@@ -158,18 +158,18 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
 void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
   Timer timer("invert");
   // Set coefficients
-  
+
   // Each Y slice is handled as a separate set of matrices and KSP context
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     // Get Y index
     int y = it->yindex;
-    
+
     int Istart, Iend;
     MatGetOwnershipRange( it->MatA, &Istart, &Iend );
-    
+
     ////////////////////////////////////////////////
     // Inner X boundary
-    
+
     int row = Istart;
     if(mesh->firstX()) {
       // Neumann on inner X boundary
@@ -177,11 +177,11 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
       for(int z=0; z < mesh->ngz-1; z++) {
         PetscScalar val = 1.0;
         MatSetValues(it->MatA,1,&row,1,&row,&val,INSERT_VALUES);
-        
+
         int col = row + (mesh->ngz-1); // +1 in X
         val = -1.0;
         MatSetValues(it->MatA,1,&row,1,&col,&val,INSERT_VALUES);
-        
+
         row++;
       }
     }
@@ -190,12 +190,12 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
     // Set matrix elements
     //
     // (1/J) d/dx ( A * J * g11 d/dx ) + (1/J) d/dz ( A * J * g33 d/dz ) + B
-    
+
     for(int x=mesh->xstart; x <= mesh->xend; x++) {
       for(int z=0; z < mesh->ngz-1; z++) {
         // stencil entries
         PetscScalar c, xm, xp, zm, zp;
-        
+
         // XX component
 
         // Metrics on x+1/2 boundary
@@ -207,17 +207,17 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
         BoutReal val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
         xp = val;
         c  = -val;
-      
+
         // Metrics on x-1/2 boundary
         J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
         g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
         dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
         Acoef = 0.5*(A(x,y,z) + A(x-1,y,z));
-        
+
         val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
         xm = val;
         c  -= val;
-        
+
         // ZZ component
         // Note that because metrics are constant in Z many terms cancel
 
@@ -229,6 +229,7 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
         c -= val;
 
         // Metrics on z-1/2 boundary
+        throw BoutException("DELME: Line 233 in laplacexz-petsc.cxx throws operator out of bound data as z counts from 0 in this loop");
         Acoef = 0.5*(A(x,y,z) + A(x,y,z-1));
 
         val = Acoef * mesh->g33(x,y) / (mesh->dz*mesh->dz);
@@ -237,42 +238,42 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
 
         // B term
         c += B(x,y,z);
-        
+
         /////////////////////////////////////////////////
         // Now have a 5-point stencil for the Laplacian
-        
+
         // Set the centre (diagonal)
         MatSetValues(it->MatA,1,&row,1,&row,&c,INSERT_VALUES);
-        
+
         // X + 1
         int col = row + (mesh->ngz-1);
         MatSetValues(it->MatA,1,&row,1,&col,&xp,INSERT_VALUES);
-        
+
         // X - 1
         col = row - (mesh->ngz-1);
         MatSetValues(it->MatA,1,&row,1,&col,&xm,INSERT_VALUES);
-        
+
         // Z + 1
         col = row + 1;
         if(z == mesh->ngz-2) {
           col -= mesh->ngz-1;  // Wrap around
         }
         MatSetValues(it->MatA,1,&row,1,&col,&zp,INSERT_VALUES);
-        
+
         // Z - 1
         col = row - 1;
         if(z == 0) {
           col += mesh->ngz-1;  // Wrap around
         }
         MatSetValues(it->MatA,1,&row,1,&col,&zm,INSERT_VALUES);
-        
+
         row++;
       }
     }
-    
+
     ////////////////////////////////////////////////
     // Outer X boundary
-    
+
     if(mesh->lastX()) {
       // Dirichlet on outer X boundary
       PetscScalar val = 0.5;
@@ -286,18 +287,18 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
       }
     }
     ASSERT1(row == Iend);
-    
+
     // Assemble Matrix
     MatAssemblyBegin( it->MatA, MAT_FINAL_ASSEMBLY );
     MatAssemblyEnd( it->MatA, MAT_FINAL_ASSEMBLY );
   }
-  
+
   // Increase reuse count
   reuse_count++;
   if(reuse_count > reuse_limit) {
     // Reuse limit exceeded. Reset count
     reuse_count = 0;
-    
+
     // Modifying preconditioner matrix
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
       // Copy matrix into preconditioner
@@ -306,18 +307,18 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
         MatDestroy(&it->MatP);
       }
       MatConvert(it->MatA,MATSAME,MAT_INITIAL_MATRIX,&it->MatP);
-      
+
       // Don't re-use preconditioner
       //KSPSetReusePreconditioner(it->ksp, PETSC_FALSE); // PETSc >= 3.5
     }
 
     // Set operators
     for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
-      
+
       //KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_PRECONDITIONER); // PETSc <= 3.4
       // Note: This is a hack to force update of the preconditioner matrix
       KSPSetOperators(it->ksp, it->MatA, it->MatP, SAME_NONZERO_PATTERN);
-      
+
       //KSPSetOperators(it->ksp, it->MatA, it->MatP); // PETSc >= 3.5
     }
   }else {
@@ -336,7 +337,7 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   if(!coefs_set) {
     throw BoutException("LaplaceXZpetsc: solve called before setCoefs");
   }
-  
+
   Timer timer("invert");
 
   // Shift b into orthogonal X-Z coordinates
@@ -352,14 +353,14 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
     // Shift in Z using FFT
     x0 = x0in.shiftZ(true); // Shift into real space
   }
-  
+
   Field3D result;
   result.allocate();
-  
+
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     /// Get y index
     int y = it->yindex;
-    
+
     /// Specify non-zero starting guess for solution (from input x0)
     KSPSetInitialGuessNonzero(it->ksp, PETSC_TRUE);
 
@@ -370,24 +371,24 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
 
     // Starting index
     int ind = Istart;
-    
+
     // Inner X boundary (Neumann)
     if(mesh->firstX()) {
       for(int z=0; z < mesh->ngz-1; z++) {
         PetscScalar val = x0(mesh->xstart-1,y,z);
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-      
+
         val = x0(mesh->xstart-1,y,z) - x0(mesh->xstart,y,z);
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
         ind++;
       }
     }
-    
+
     for(int x=mesh->xstart;x<= mesh->xend;x++) {
       for(int z=0; z < mesh->ngz-1; z++) {
         PetscScalar val = x0(x,y,z);
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-        
+
         val = b(x,y,z);
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
         ind++;
@@ -399,33 +400,33 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
       for(int z=0; z < mesh->ngz-1; z++) {
         PetscScalar val = x0(mesh->xend+1,y,z);
         VecSetValues( xs, 1, &ind, &val, INSERT_VALUES );
-        
+
         val = 0.5*(x0(mesh->xend,y,z) + x0(mesh->xend+1,y,z));
         VecSetValues( bs, 1, &ind, &val, INSERT_VALUES );
 
         ind++;
       }
     }
-    
+
     ASSERT1(ind == Iend); // Reached end of range
 
     // Assemble RHS Vector
     VecAssemblyBegin(bs);
     VecAssemblyEnd(bs);
-    
+
     // Assemble Trial Solution Vector
     VecAssemblyBegin(xs);
     VecAssemblyEnd(xs);
-    
+
     //////////////////////////
     // Solve the system
-    
+
     KSPSolve( it->ksp, bs, xs );
 
     // Check if the solve converged
     KSPConvergedReason reason;
     KSPGetConvergedReason( it->ksp, &reason );
-    
+
     if(reason <= 0) {
       throw BoutException("LaplaceXZ failed to converge. Reason %d", reason);
     }
@@ -472,5 +473,3 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   }
   return result;
 }
-
-

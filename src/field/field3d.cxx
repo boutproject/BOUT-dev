@@ -1866,7 +1866,7 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
 
   // Apply phase shift
   for(jz=1;jz<=ncz/2;jz++) {
-    kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+    kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
     v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
   }
 

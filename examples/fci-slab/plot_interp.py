@@ -1,7 +1,7 @@
 
 import matplotlib.pyplot as plt
 
-from boutdata import collect
+from boutdata.collect import collect
 
 f = collect("f", path="data")
 yup = collect("yup", path="data")

@@ -2,14 +2,15 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import print_function
 from builtins import str
 nproc = 1  # Number of processors to use
 
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 
@@ -26,4 +27,4 @@ T = collect("Vpar_ion", path=data_path, xind=2, info=True, yguards=True)
 for index, item in enumerate(T[slice_index,0,:,0]):
 	print(index, item)
 # Make contour plot
-plotdata.plotdata(T[slice_index,0,:,0],title="Velocity Profile at t="+str(argv[1]))
+plotdata(T[slice_index,0,:,0],title="Velocity Profile at t="+str(argv[1]))

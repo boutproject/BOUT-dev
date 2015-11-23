@@ -8,7 +8,7 @@ except:
 # Routines for manipulating restart files
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: restart module needs DataFile")
     raise
@@ -180,7 +180,7 @@ def addnoise(path=".", var=None, scale=1e-5):
     file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
     nfiles = len(file_list)
 
-    print("Number of data files: ", nfiles)
+    print("Number of restart files: %d" % (nfiles,))
 
     for file in file_list:
         print(file)
@@ -198,6 +198,33 @@ def addnoise(path=".", var=None, scale=1e-5):
                 data += normal(scale=scale, size=data.shape)
                 d.write(var, data)
 
+def scalevar(var, factor, path="."):
+    """
+    Scales a variable by a given factor, modifying
+    restart files in place
+    
+    Inputs
+    ------
+    
+    var      Name of the variable  (string)
+    factor   Factor to multiply    (float)
+    path     Path to the restart files
+    
+    Returns
+    -------
+    None
+    """
+    
+    file_list = glob.glob(os.path.join(path, "BOUT.restart.*"))
+    nfiles = len(file_list)
+
+    print("Number of restart files: %d" % (nfiles,))
+    for file in file_list:
+        print(file)
+        with DataFile(file, write=True) as d:
+            d[var] = d[var] * factor
+
+            
 
 def create(averagelast=1, final=-1, path="data", output="./", informat="nc", outformat=None):
     """

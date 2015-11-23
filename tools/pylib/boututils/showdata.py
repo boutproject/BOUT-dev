@@ -21,8 +21,7 @@ from mpl_toolkits.mplot3d import axes3d
 from matplotlib import pyplot as plt
 from matplotlib import animation
 from numpy import linspace, meshgrid, array, min, max, floor, pi
-from boutdata import collect
-#import pdb
+from boutdata.collect import collect
 
 
 ####################################################################
@@ -44,25 +43,25 @@ pause = False
 def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice = 0, movie = 0, intv = 1, Ncolors = 25, x = [], y = [], global_colors = False, symmetric_colors = False):
     """
     A Function to animate time dependent data from BOUT++
-    Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.  
-    
+    Requires numpy, mpl_toolkits, matplotlib, boutdata libaries.
+
     To animate multiple variables on different axes:
     showdata([var1, var2, var3])
-    
+
     To animate more than one line on a single axes:
     showdata([[var1, var2, var3]])
-    
+
     The default graph types are:
     2D (time + 1 spatial dimension) arrays = animated line plot
     3D (time + 2 spatial dimensions) arrays = animated contour plot.
-    
+
     To use surface or polar plots:
     showdata(var, surf = 1)
     showdata(var, polar = 1)
-    
+
     Can plot different graph types on different axes.  Default graph types will be used depending on the dimensions of the input arrays.  To specify polar/surface plots on different axes:
     showdata([var1,var2], surf = [1,0], polar = [0,1])
-    
+
     Movies require FFmpeg to be installed.
 
     The tslice variable is used to control the time value that is printed on each
@@ -72,12 +71,12 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
     During animation click once to stop in the current frame. Click again to continue.
 
-    global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars. 
-    
-    symmetric_colors = True: colorlevels are symmetric.  
+    global_colors = True: if "vars" is a list the colorlevels are determined from the mximum of the maxima and and the minimum of the  minima in all fields in vars.
+
+    symmetric_colors = True: colorlevels are symmetric.
     """
     plt.ioff()
-    
+
     # Check to see whether vars is a list or not.
     if isinstance(vars, list):
         Nvar = len(vars)
@@ -95,12 +94,12 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             Nlines.append(len(vars[i]))
         else:
             Nlines.append(1)
-            vars[i] = [vars[i]] 
+            vars[i] = [vars[i]]
 
     # Sort out titles
     if len(titles) == 0:
         for i in range(0,Nvar):
-            titles.append(('Var' + str(i+1))) 
+            titles.append(('Var' + str(i+1)))
     elif len(titles) != Nvar:
         raise ValueError('The length of the titles input list must match the length of the vars list.')
 
@@ -181,7 +180,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             print('Warning, length of surf list does not match number of variables.  Will default to no polar plots')
             for i in range(0,Nvar):
                 surf.append(0)
-            
+
     else:
         surf = [surf]
         if surf[0] >= 1:
@@ -191,7 +190,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         if (Nvar > 1):
             for i in range(1,Nvar):
                 surf.append(surf[0])
-                
+
     # Sort out polar list
     if isinstance(polar, list):
         if (len(polar) == Nvar):
@@ -233,7 +232,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     for i in range(0,Nvar):
         dims.append([])
         Ndims.append([])
-        for j in range(0, Nlines[i]):   
+        for j in range(0, Nlines[i]):
             dims[i].append(array((vars[i][j].shape)))
             Ndims[i].append(dims[i][j].shape[0])
             # Perform check to make sure that data is either 2D or 3D
@@ -251,11 +250,11 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
 
             if ((Ndims[i][j] == 3) & (Nlines[i] != 1)):
                 raise ValueError('cannot have multiple sets of 3D (time + 2 spatial dimensions) on each subplot')
-                
+
 
             if ((Ndims[i][j] != Ndims[i][0])):
                 raise ValueError('Error, Number of dimensions must be the same for all variables on each plot.')
-                
+
         if (Ndims[i][0] == 2): # Set polar and surf list entries to 0
             polar[i] = 0
             surf[i] = 0
@@ -283,22 +282,22 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         Nt.append([])
         Nx.append([])
         Ny.append([])
-        for j in range(0, Nlines[i]): 
+        for j in range(0, Nlines[i]):
             Nt[i].append(vars[i][j].shape[0])
             Nx[i].append(vars[i][j].shape[1])
             if (Nt[i][j] != Nt[0][0]):
                 raise ValueError('time dimensions must be the same for all variables.')
-                
+
             #if (Nx[i][j] != Nx[i][0]):
-            #    raise ValueError('Dimensions must be the same for all variables on each plot.')  
-                
+            #    raise ValueError('Dimensions must be the same for all variables on each plot.')
+
             if (Ndims[i][j] == 3):
                 Ny[i].append(vars[i][j].shape[2])
                 #if (Ny[i][j] != Ny[i][0]):
                 #    raise ValueError('Dimensions must be the same for all variables.')
-                 
+
     # Collect time data from file
-    if (tslice == 0):           # Only wish to collect time data if it matches 
+    if (tslice == 0):           # Only wish to collect time data if it matches
         try:
             t = collect('t_array')
             if t == None:
@@ -307,7 +306,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
                 raise ValueError("t_array is wrong size")
         except:
             t = linspace(0,Nt[0][0], Nt[0][0])
-    
+
     # Obtain number of frames
     Nframes = int(Nt[0][0]/intv)
 
@@ -318,13 +317,13 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         x.append([])
         for j in range(0, Nlines[i]):
             x[i].append(linspace(0,Nx[i][j]-1, Nx[i][j]))
-            
+
         #x.append(linspace(0,Nx[i][0]-1, Nx[i][0]))
         if (Ndims[i][0] == 3):
             y.append(linspace(0, Ny[i][0]-1, Ny[i][0]))
         else:
             y.append(0)
-    
+
     # Determine range of data.  Used to ensure constant colour map and
     # to set y scale of line plot.
     fmax = []
@@ -335,36 +334,36 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
     clevels = []
 
     for i in range(0,Nvar):
-        
+
         dummymax.append([])
         dummymin.append([])
         for j in range(0,Nlines[i]):
             dummymax[i].append(max(vars[i][j]))
             dummymin[i].append(min(vars[i][j]))
-        
+
         fmax.append(max(dummymax[i]))
         fmin.append(min(dummymin[i]))
-        
+
         if(symmetric_colors):
             absmax = max(abs(fmax[i]),abs(fmin[i]))
             fmax[i] = absmax
             fmin[i] = -absmax
-            
+
         for j in range(0,Nlines[i]):
             dummymax[i][j] = max(x[i][j])
         xmax.append(max(dummymax[i]))
-        
-             
+
+
         if not (global_colors):
             clevels.append(linspace(fmin[i], fmax[i], Ncolors))
-    if(global_colors): 
+    if(global_colors):
         fmaxglobal = max(fmax)
         fminglobal = min(fmin)
         for i in range(0,Nvar):
             fmax[i]  = fmaxglobal
-            fmin[i]  = fminglobal	
-            clevels.append(linspace(fmin[i], fmax[i], Ncolors))	
-        
+            fmin[i]  = fminglobal
+            clevels.append(linspace(fmin[i], fmax[i], Ncolors))
+
     # Create figures for animation plotting
     if (Nvar < 2):
         row = 1
@@ -381,13 +380,13 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         col = 2
         h = 8.0
         w = 12.0
-        
+
     elif (Nvar < 7):
         row = 2
         col = 3
         h = 8.0
         w = 14.0
-        
+
     elif (Nvar < 10) :
         row = 3
         col = 3
@@ -395,7 +394,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         w = 14.0
     else:
         raise ValueError('too many variables...')
-        
+
 
     fig = plt.figure(figsize=(w,h))
     title = fig.suptitle(r' ', fontsize=14  )
@@ -424,7 +423,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ax[i].set_xlabel(r'x')
             ax[i].set_ylabel(titles[i])
             if (Nlines[i] != 1):
-                legendneeded = 1 
+                legendneeded = 1
                 for k in range(0,i):
                     if (Nlines[i] == Nlines[k]):
                         legendneeded = 0
@@ -438,7 +437,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ystride.append(0)
             r.append(0)
             theta.append(0)
-            
+
         elif (contour[i] == 1):
             ax.append(fig.add_subplot(row,col,i+1))
             ax[i].set_xlim((0,Nx[i][0]-1))
@@ -455,7 +454,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             ystride.append(0)
             r.append(0)
             theta.append(0)
-            
+
         elif (surf[i] == 1):
             x[i][0],y[i] = meshgrid(x[i][0],y[i])
             if (Nx[i][0]<= 20):
@@ -477,7 +476,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             cbars.append(0)
             r.append(0)
             theta.append(0)
-            
+
         elif (polar[i] == 1):
             r.append(linspace(1,Nx[i][0], Nx[i][0]))
             theta.append(linspace(0,2*pi, Ny[i][0]))
@@ -493,7 +492,7 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
             xstride.append(0)
             ystride.append(0)
 
-   
+
 
     def onClick(event):
         global pause
@@ -505,17 +504,17 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         if j == Nframes-1 : j = -1
         if not pause:
             j=j+1
-        
+
         return j
 
 
     # Animation function
     def animate(i):
         j=control()
-        
+
         index = j*intv
 
-        for j in range(0,Nvar):            
+        for j in range(0,Nvar):
                 if (lineplot[j] == 1):
                     for k in range(0,Nlines[j]):
                         lines[j][k].set_data(x[j][k], vars[j][k][index,:])
@@ -545,12 +544,12 @@ def showdata(vars, titles=[], legendlabels = [], surf = [], polar = [], tslice =
         return animate(0)
 
 
-   
-   
-   
-   
+
+
+
+
     # Call Animation function
-    
+
     fig.canvas.mpl_connect('button_press_event', onClick)
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=Nframes)
 
@@ -581,4 +580,3 @@ To do list
 3. Log axes, colorbars
 4. Figureplot
 """
-

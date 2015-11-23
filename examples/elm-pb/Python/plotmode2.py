@@ -7,7 +7,7 @@ from past.utils import old_div
 from numpy import *;
 #from scipy.io import readsav;
 import matplotlib.pyplot as plt;
-from boutdata import collect
+from boutdata.collect import collect
 
 # Dynamic matplotlib settings
 from matplotlib import rcParams;
@@ -64,4 +64,3 @@ plt.savefig('image/plotmodenorm.png');
 plt.savefig('image/plotmodenorm.eps');
 
 plt.show();
-

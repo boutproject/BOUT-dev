@@ -3,15 +3,16 @@
 
 #
 # Runs the conduction example, produces some output
-# 
+#
 
 from __future__ import print_function
 from builtins import str
 from builtins import range
 nproc = 1  # Number of processors to use
 
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 from math import sqrt, log10, log, pi
@@ -76,11 +77,11 @@ for i in range(len(Te[:end_index,2,0,0])):
   q_electron_left.append((2.0*Te_here-sheath_potential)*n_here*1.602176565e-19*sqrt((Te_here+gamma*Ti_here)/3.34358348e-27*1.602176565e-19)) # in W/m^2
   q_ion_left.append(n_here*((2.5+0.5*gamma)*Ti_here+0.5*Te_here)*1.602176565e-19*sqrt((Te_here+gamma*Ti_here)/3.34358348e-27*1.602176565e-19)) # in W/m^2
   q_total_left.append(q_electron_left[i]+q_ion_left[i]) # in W/m^2
-  
+
   q_target_electron_left.append((2.0*Te_here)*n_here*1.602176565e-19*sqrt((Te_here+gamma*Ti_here)/3.34358348e-27*1.602176565e-19)) # in W/m^2
   q_target_ion_left.append(n_here*((2.5+0.5*gamma)*Ti_here+0.5*Te_here-sheath_potential)*1.602176565e-19*sqrt((Te_here+gamma*Ti_here)/3.34358348e-27*1.602176565e-19)) # in W/m^2
   q_target_total_left.append(q_target_electron_left[i]+q_target_ion_left[i]) # in W/m^2
-  
+
   Te_here = (Te[i,2,right_index,0]+Te[i,2,right_index+1,0])
   n_here = (n[i,2,right_index,0]+n[i,2,right_index+1,0])
   Ti_here = (Ti[i,2,right_index,0]+Ti[i,2,right_index+1,0])

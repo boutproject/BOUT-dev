@@ -2,7 +2,7 @@
 
 """Post processing which performs MMS"""
 
-from boutdata import collect
+from boutdata.collect import collect
 from boututils.showdata import showdata
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator

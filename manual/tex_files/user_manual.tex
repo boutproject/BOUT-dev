@@ -15,23 +15,23 @@
 \definecolor{listinggray}{gray}{0.9}
 \definecolor{lbcolor}{rgb}{0.95,0.95,0.95}
 \lstset{
-	backgroundcolor=\color{lbcolor},
+        backgroundcolor=\color{lbcolor},
         language=C++,
-	keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
-	identifierstyle=\ttfamily,
-	commentstyle=\color[rgb]{0.133,0.545,0.133},
-	stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
-	showstringspaces=false,
-	basicstyle=\small,
-	numberstyle=\footnotesize,
-	numbers=left,
-	stepnumber=1,
-	numbersep=10pt,
-	tabsize=2,
-	breaklines=true,
-	prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
-	breakatwhitespace=false,
-	aboveskip={0.5\baselineskip},
+        keywordstyle=\bfseries\ttfamily\color[rgb]{0,0,1},
+        identifierstyle=\ttfamily,
+        commentstyle=\color[rgb]{0.133,0.545,0.133},
+        stringstyle=\ttfamily\color[rgb]{0.627,0.126,0.941},
+        showstringspaces=false,
+        basicstyle=\small,
+        numberstyle=\footnotesize,
+        numbers=left,
+        stepnumber=1,
+        numbersep=10pt,
+        tabsize=2,
+        breaklines=true,
+        prebreak = \raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+        breakatwhitespace=false,
+        aboveskip={0.5\baselineskip},
         columns=fixed,
         upquote=true,
         extendedchars=true,
@@ -77,6 +77,10 @@
 %
 }}
 
+\def\L{\left}
+\def\R{\right}
+\def\Larrow{\leftarrow}
+\def\Rarrow{\rightarrow}
 \newcommand{\pow}{\ensuremath{\wedge} }
 \newcommand{\poweq}{\ensuremath{\wedge =} }
 
@@ -713,123 +717,162 @@ Appendix~\ref{apx:pact}.
 
 
 \subsection{SUNDIALS}
+\label{sec:sundials}
 %
 The BOUT++ distribution includes a 1998 version of CVODE (then called PVODE) by
 Scott D. Cohen and Alan C.  Hindmarsh, which is the default time integration
-solver.  Whilst no serious bugs have been found in this code (as far as I am
-aware), several features such as user-supplied preconditioners and constraints
-cannot be used with this solver. Currently, BOUT++ also supports the SUNDIALS
-solvers CVODE and IDA, which are available from
-\code{https://computation.llnl.gov/casc/sundials/main.html}.
+solver.  Whilst no serious bugs have been found in this code (as far as the
+authors are aware of), several features such as user-supplied preconditioners
+and constraints cannot be used with this solver. Currently, BOUT++ also
+supports the SUNDIALS solvers CVODE, IDA and ARKODE which are available from
+\url{https://computation.llnl.gov/casc/sundials/main.html}.
 
-The SUNDIALS library needs to have MPI enabled, so after configuring, check the
-output and look for something like this:
+SUNDIALS is only downloadable from the home page, as submitting your name and
+e-mail is required for the download. As for the date of this typing, SUNDIALS
+version $2.6.2$ is the newest. In order for a smooth install it is recommended
+to install SUNDIALS from an install directory. The full installation guide is
+found in the downloaded \texttt{.tar.gz}, but we will provide a step-by-step
+guide to install it and make it comatible with BOUT++ here.
+\\
+\\
+\note{
+It is important to note that if you do configure PETSc with SUNDIALS then BOUT
+must use/link the same version of SUNDIALS
+}
+
 %
 \begin{verbatim}
-MPI-C Settings
---------------
+cd ~
+mkdir local
+cd local
+mkdir examples
+cd ..
+mkdir install
+cd install
+mkdir sundials-install
+cd sundials-install
+# Move the downloaded sundials-2.6.2.tar.gz to sundials-install
+tar -xzvf sundials-2.6.2.tar.gz
+mkdir build
+cd build
 
-checking if using MPI-C script... yes
-checking if absolute path to mpicc was given... no
-checking for mpicc... none
-configure: WARNING: cannot find MPI-C compiler
-\end{verbatim}
-%
-If you see this warning, you need to tell CVODE which MPI compiler to use.
-This happens on machines where the MPI compilers are given non-standard names.
-For IBM AIX machines, use
-%
-\begin{verbatim}
-$ ./configure --prefix=$HOME/local/ --with-mpicc=xlC
-\end{verbatim}
-%
-On NERSC's Franklin, SUNDIALS needs to be compiled with ``--with-mpicc=cc'' to
-force it to build the parallel libraries
+cmake \
+-DCMAKE_INSTALL_PREFIX=$HOME/local \
+-DEXAMPLES_INSTALL_PATH=$HOME/local/examples \
+-DCMAKE_LINKER=$HOME/local/lib \
+-DLAPACK_ENABLE=ON \
+-DOPENMP_ENABLE=ON \
+-DMPI_ENABLE=ON \
+../sundials-2.6.2
 
-The modern SUNDIALS CVODE solver is essentially the same as the 1998 CVODE
-(with some tweaking, re-arranging etc.), but this solver allows users to supply
-their own preconditioner and Jacobian functions. To use this solver, use
-%
-\begin{verbatim}
-./configure --with-cvode
+make
+make install
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-cvode=/path/to/cvode/
-\end{verbatim}
-%
-if your CVODE library is in a non-standard place.
-
 The SUNDIALS IDA solver is a Differential-Algebraic Equation (DAE) solver,
-which evolves a system of the form $\mathbf{f}\left(\mathbf{u},
-\dot{\mathbf{u}}, t\right) = 0$. This allows algebraic constraints on variables
-to be specified. If you want this functionality, compile in the IDA library
-using
+which evolves a system of the form
+$\mathbf{f}\L(\mathbf{u},\dot{\mathbf{u}}, t\R) = 0$.
+This allows algebraic constraints on variables to be specified.
+
+To configure BOUT++ with SUNDIALS only (see section \ref{sec:PETSc} on how to
+build PETSc with SUNDIALS), go to the root directory of BOUT++ and type
 %
 \begin{verbatim}
-./configure --with-ida
+./configure --with-sundials
 \end{verbatim}
 %
-or
-%
-\begin{verbatim}
-./configure --with-ida=/path/to/ida/
-\end{verbatim}
-%
-You can compile in several of these libraries, for example
-%
-\begin{verbatim}
-./configure --with-cvode --with-ida
-\end{verbatim}
-%
-is valid. This will allow you to select at run-time which solver to use. See
+SUNDIALS will allow you to select at run-time which solver to use. See
 section~\ref{sec:timeoptions} for more details on how to do this.
 
 
 
 \subsection{PETSc}
+\label{sec:PETSc}
 %
-BOUT++ can use PETSc for time-integration and for solving elliptic problems,
-such as inverting Poisson and Helmholtz equations.
+BOUT++ can use PETSc \url{http://www.mcs.anl.gov/petsc/} for time-integration
+and for solving elliptic problems, such as inverting Poisson and Helmholtz
+equations.
+
+Currently, BOUT++ supports PETSc version $3.1$, $3.2$, $3.3$ and $3.4$ (support
+for newer versions are planned for the future). To install PETSc version
+$3.4.5$, use the following steps
 %
 \begin{verbatim}
-./configure --with-petsc
+cd ~
+wget http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-3.4.5.tar.gz
+tar -xzvf petsc-3.4.5.tar.gz
+# Optional
+# rm petsc-3.4.5.tar.gz
+cd petsc-3.4.5
 \end{verbatim}
 %
-The development version of PETSc has the latest and greatest, and is needed for
-some shiny features like time stepping. To install it, follow the instructions
-here: \url{http://www.mcs.anl.gov/petsc/petsc-as/developers/index.html}. At the
-time of writing, this consisted of fetching the latest version ({\bf NB} needs
-Mercurial 'hg' to be installed):
+To build PETSc without SUNDIALS, configure with
 %
 \begin{verbatim}
-hg clone http://petsc.cs.iit.edu/petsc/petsc-dev
-cd petsc-dev
-hg clone http://petsc.cs.iit.edu/petsc/BuildSystem config/BuildSystem
+./configure \
+--with-clanguage=cxx \
+--with-mpi=yes \
+--with-precision=double \
+--with-scalar-type=real \
+--with-shared-libraries=0
 \end{verbatim}
 %
-then configure PETSc, making sure to enable C++.
+Add \texttt{--with-debugging=yes} to \texttt{./configure} in order to allow
+debugging.
+
+To build PETSc with SUNDIALS, install SUNDIALS as explained in section
+\ref{sec:sundials}, and append \texttt{./configure} with
+\texttt{--with-sundials-dir=\$HOME/local}
+%
+\\
+\\
+\note{
+It is important to note that if you do configure PETSc with SUNDIALS then BOUT
+must use/link the same version of SUNDIALS
+}
+\\
+\\
+%
+It is also possible to get PETSc to download and install MUMPS
+(see section \ref{sec:MUMPS}), by adding
 %
 \begin{verbatim}
-./configure --with-fortran=0 --with-c++-support=1 --with-mpi=1 \
-            --with-sundials=1 --with-sundials-dir=$HOME/local/
+--download-mumps \
+--download-scalapack \
+--download-blacs \
+--download-f-blas-lapack=1 \
+--download-parmetis \
+--download-ptscotch \
+--download-metis
 \end{verbatim}
 %
-You can add SUNDIALS support, but it is not required. To do this, add the
-following to the end of the configure command:
+to \texttt{./configure}
+%
+To make PETSc, type
 %
 \begin{verbatim}
---with-sundials=1 --with-sundials-dir=$HOME/local/
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug all
 \end{verbatim}
 %
-replacing \texttt{\$HOME/local/} with the location of your SUNDIALS
-installation.  It is also useful to get PETSc to download and install MUMPS
-(see below), by adding
+Should blas, lapack or any other packages be missing, you will get an error,
+and a suggestion that you can append \texttt{--download-name-of-package} to the
+\texttt{./configure} line.  You may want to test that everything is configured
+properly. To do this, type
 %
 \begin{verbatim}
---download-mumps
+make PETSC_DIR=$HOME/petsc-3.4.5 PETSC_ARCH=arch-linux2-cxx-debug test
+\end{verbatim}
+%
+To configure BOUT++ with PETSc, go to the BOUT++ root directory, and type
+%
+\begin{verbatim}
+./configure --with-petsc=$HOME/petsc-3.4.5
+\end{verbatim}
+%
+To configure BOUT++ with PETSc and sundials, type instead
+%
+\begin{verbatim}
+./configure --with-petsc=$HOME/petsc-3.4.5 --with-sundials
 \end{verbatim}
 %
 Finally compile PETSc:
@@ -839,11 +882,16 @@ make
 \end{verbatim}
 %
 To use PETSc, you have to define the variable \texttt{PETSC\_DIR} to point to
-the petsc-dev directory so add something like this to your startup file
-\texttt{\$HOME/.bashrc}
+the petsc directory, type
 %
 \begin{verbatim}
-export PETSC_DIR=$HOME/petsc-dev
+export PETSC_DIR=$HOME/petsc-3.4.5
+\end{verbatim}
+%
+and add to your startup file \texttt{\$HOME/.bashrc}
+%
+\begin{verbatim}
+export PETSC_DIR=$HOME/petsc-3.4.5
 \end{verbatim}
 %
 
@@ -873,6 +921,7 @@ and to specify a non-standard path
 
 
 \subsection{MUMPS}
+\label{sec:MUMPS}
 %
 This is still experimental, but does work on at least some systems at York.
 The PETSc library can be used to call MUMPS for directly solving matrices (e.g.
@@ -981,7 +1030,7 @@ to start with is \file{examples/conduction/}. This solves a single equation for
 a 3D scalar field $T$:
 %
 \begin{align}
-\deriv{T}{t} = \nabla_{||}\left(\chi\partial_{||} T\right)
+\deriv{T}{t} = \nabla_{||}\L(\chi\partial_{||} T\R)
 \end{align}
 %
 There are several files involved:
@@ -1124,14 +1173,14 @@ The equivalent commands in Python are as follows. To print a list of variables
 in a file:
 %
 \begin{verbatim}
->>> from boututils import DataFile
+>>> from boututils.datafile import DataFile
 >>> DataFile("BOUT.dmp.0.nc").list()
 \end{verbatim}
 %
 To collect a variable,
 %
 \begin{verbatim}
->>> from boutdata import collect
+>>> from boutdata.collect import collect
 >>> T = collect("T")
 >>> T.shape
 \end{verbatim}
@@ -1140,8 +1189,8 @@ Note that the order of the indices is different in Python and IDL: In Python,
 4D variables are arranged as \code{[t, x, y, z]}.  To show an animation
 %
 \begin{verbatim}
->>> from boututils import showdata
->>> showdata.showdata(T[:,:,:,0])
+>>> from boututils.showdata import showdata
+>>> showdata(T[:,:,:,0])
 \end{verbatim}
 %
 The next example to look at is \file{test-wave}, which is solving a wave
@@ -1236,10 +1285,10 @@ Next comes the compile-time options, which depend on how BOUT++ was configured
 %
 \begin{verbatim}
 Compile-time options:
-	Checking enabled, level 2
-	Signal handling enabled
-	PDB support disabled
-	netCDF support enabled
+        Checking enabled, level 2
+        Signal handling enabled
+        PDB support disabled
+        netCDF support enabled
 \end{verbatim}
 %
 Thins says that some run-time checking of values is enabled, that the code will
@@ -1257,15 +1306,15 @@ processor '0' is sent to the terminal. After this the core BOUT++ code reads
 some options:
 %
 \begin{verbatim}
-	Option /nout = 50 (data/BOUT.inp)
-	Option /timestep = 100 (data/BOUT.inp)
-	Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
-	Option /dump_float = true   (default)
-	Option /non_uniform = false (data/BOUT.inp)
-	Option /restart = false  (default)
-	Option /append = false  (default)
-	Option /dump_format = nc (data/BOUT.inp)
-	Option /StaggerGrids = false  (default)
+        Option /nout = 50 (data/BOUT.inp)
+        Option /timestep = 100 (data/BOUT.inp)
+        Option /grid = slab.6b5.r1.cdl (data/BOUT.inp)
+        Option /dump_float = true   (default)
+        Option /non_uniform = false (data/BOUT.inp)
+        Option /restart = false  (default)
+        Option /append = false  (default)
+        Option /dump_format = nc (data/BOUT.inp)
+        Option /StaggerGrids = false  (default)
 \end{verbatim}
 %
 This lists each option and the value it has been assigned.  For every option
@@ -1275,20 +1324,20 @@ the command line then \texttt{(command line)} would appear after the option.
 %
 \begin{verbatim}
 Setting X differencing methods
-	First       :  Second order central (C2)
-	Second      :  Second order central (C2)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  Second order central (C2)
+        Second      :  Second order central (C2)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 Setting Y differencing methods
-	First       :  Fourth order central (C4)
-	Second      :  Fourth order central (C4)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  Fourth order central (C4)
+        Second      :  Fourth order central (C4)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 Setting Z differencing methods
-	First       :  FFT (FFT)
-	Second      :  FFT (FFT)
-	Upwind      :  Third order WENO (W3)
-	Flux        :  Split into upwind and central (SPLIT)
+        First       :  FFT (FFT)
+        Second      :  FFT (FFT)
+        Upwind      :  Third order WENO (W3)
+        Flux        :  Split into upwind and central (SPLIT)
 \end{verbatim}
 %
 This is a list of the differential methods for each direction. These are set in
@@ -1296,7 +1345,7 @@ the BOUT.inp file (\code{[ddx]}, \code{[ddy]} and \code{[ddz]} sections), but
 can be overridden for individual operators. For each direction, numerical
 methods can be specified for first and second central difference terms,
 upwinding terms of the form $\deriv{f}{t} = \ve{v}\cdot\nabla f$, and
-flux terms of the form $\deriv{f}{t} = \nabla\cdot\left(\ve{v}f\right)$.
+flux terms of the form $\deriv{f}{t} = \nabla\cdot\L(\ve{v}f\R)$.
 By default the flux terms are just split into a central and an upwinding term.
 
 In brackets are the code used to specify the method in BOUT.inp. A list of
@@ -1306,25 +1355,25 @@ page~\pageref{sec:diffmethod}.
 %
 \begin{verbatim}
 Setting grid format
-	Option /grid_format =  (default)
-	Using NetCDF format for file 'slab.6b5.r1.cdl'
+        Option /grid_format =  (default)
+        Using NetCDF format for file 'slab.6b5.r1.cdl'
 Loading mesh
-	Grid size: 10 by 64
-	Option /mxg = 2 (data/BOUT.inp)
-	Option /myg = 2 (data/BOUT.inp)
-	Option /NXPE = 1 (default)
-	Option /mz = 65 (data/BOUT.inp)
-	Option /twistshift = false (data/BOUT.inp)
-	Option /TwistOrder = 0 (default)
-	Option /ShiftOrder = 0 (default)
-	Option /shiftxderivs = false (data/BOUT.inp)
-	Option /IncIntShear = false  (default)
-	Option /BoundaryOnCell = false  (default)
-	Option /StaggerGrids = false  (default)
-	Option /periodicX = false  (default)
-	Option /async_send = false  (default)
-	Option /zmin = 0 (data/BOUT.inp)
-	Option /zmax = 0.0028505 (data/BOUT.inp)
+        Grid size: 10 by 64
+        Option /mxg = 2 (data/BOUT.inp)
+        Option /myg = 2 (data/BOUT.inp)
+        Option /NXPE = 1 (default)
+        Option /mz = 65 (data/BOUT.inp)
+        Option /twistshift = false (data/BOUT.inp)
+        Option /TwistOrder = 0 (default)
+        Option /ShiftOrder = 0 (default)
+        Option /shiftxderivs = false (data/BOUT.inp)
+        Option /IncIntShear = false  (default)
+        Option /BoundaryOnCell = false  (default)
+        Option /StaggerGrids = false  (default)
+        Option /periodicX = false  (default)
+        Option /async_send = false  (default)
+        Option /zmin = 0 (data/BOUT.inp)
+        Option /zmax = 0.0028505 (data/BOUT.inp)
 \end{verbatim}
 %
 \begin{verbatim}
@@ -1335,12 +1384,12 @@ Optional quantities (such as \code{ny\_inner} in this case) which are not
 specified are given a default (best-guess) value, and a warning is printed.
 %
 \begin{verbatim}
-	EQUILIBRIUM IS SINGLE NULL (SND)
-	MYPE_IN_CORE = 0
-	DXS = 0, DIN = -1. DOUT = -1
-	UXS = 0, UIN = -1. UOUT = -1
-	XIN = -1, XOUT = -1
-	Twist-shift:
+        EQUILIBRIUM IS SINGLE NULL (SND)
+        MYPE_IN_CORE = 0
+        DXS = 0, DIN = -1. DOUT = -1
+        UXS = 0, UIN = -1. UOUT = -1
+        XIN = -1, XOUT = -1
+        Twist-shift:
 \end{verbatim}
 %
 At this point, BOUT++ reads the grid file, and works out the topology of the
@@ -1348,12 +1397,12 @@ grid, and connections between processors.  BOUT++ then tries to read the metric
 coefficients from the grid file:
 %
 \begin{verbatim}
-	WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
-	WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
-	WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
-	WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g11' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g22' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g33' from grid. Setting to 1.000000e+00
+        WARNING: Could not read 'g12' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g13' from grid. Setting to 0.000000e+00
+        WARNING: Could not read 'g23' from grid. Setting to 0.000000e+00
 \end{verbatim}
 %
 These warnings are printed because the coefficients have not been specified in
@@ -1361,8 +1410,8 @@ the grid file, and so the metric tensor is set to the default identity matrix.
 
 %
 \begin{verbatim}
-	WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
-	WARNING: Z shift for radial derivatives not found
+        WARNING: Could not read 'zShift' from grid. Setting to 0.000000e+00
+        WARNING: Z shift for radial derivatives not found
 \end{verbatim}
 %
 To get radial derivatives, the quasi-ballooning coordinate method is used
@@ -1373,13 +1422,13 @@ needed. This should also always be set to FFT.
 
 %
 \begin{verbatim}
-	WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
-	Option /twistshift_pf = false  (default)
+        WARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift
+        Option /twistshift_pf = false  (default)
 \end{verbatim}
 %
 \begin{verbatim}
-	Maximum error in diagonal inversion is 0.000000e+00
-	Maximum error in off-diagonal inversion is 0.000000e+00
+        Maximum error in diagonal inversion is 0.000000e+00
+        Maximum error in off-diagonal inversion is 0.000000e+00
 \end{verbatim}
 %
 If only the contravariant components (\code{g11} etc.) of the metric tensor are
@@ -1390,42 +1439,42 @@ input, the metric tensor was set to the identity matrix, making inversion easy
 and the error tiny.
 %
 \begin{verbatim}
-	WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
-	WARNING: Jacobian 'J' not found. Calculating from metric tensor
+        WARNING: Could not read 'J' from grid. Setting to 0.000000e+00
+        WARNING: Jacobian 'J' not found. Calculating from metric tensor
 \end{verbatim}
 %
 \begin{verbatim}
-	Maximum difference in Bxy is 1.444077e-02
+        Maximum difference in Bxy is 1.444077e-02
 Calculating differential geometry terms
-	Communicating connection terms
+        Communicating connection terms
 Boundary regions in this processor: core, sol, target, target,
-	done
+        done
 \end{verbatim}
 %
 \begin{verbatim}
 Setting file formats
-	Using NetCDF format for file 'data/BOUT.dmp.0.nc'
+        Using NetCDF format for file 'data/BOUT.dmp.0.nc'
 \end{verbatim}
 %
 The laplacian inversion code is initialised, and prints out the options used.
 %
 \begin{verbatim}
 Initialising Laplacian inversion routines
-	Option comms/async = true   (default)
-	Option laplace/filter = 0.2 (default)
-	Option laplace/low_mem = false  (default)
-	Option laplace/use_pdd = false  (default)
-	Option laplace/all_terms = false  (default)
-	Option laplace/laplace_nonuniform = false  (default)
-	Using serial algorithm
-	Option laplace/max_mode = 26 (default)
+        Option comms/async = true   (default)
+        Option laplace/filter = 0.2 (default)
+        Option laplace/low_mem = false  (default)
+        Option laplace/use_pdd = false  (default)
+        Option laplace/all_terms = false  (default)
+        Option laplace/laplace_nonuniform = false  (default)
+        Using serial algorithm
+        Option laplace/max_mode = 26 (default)
 \end{verbatim}
 %
 After this comes the physics module-specific output:
 %
 \begin{verbatim}
 Initialising physics module
-	Option solver/type =  (default)
+        Option solver/type =  (default)
         .
         .
         .
@@ -1439,57 +1488,57 @@ loaded, the solver can be started
 %
 \begin{verbatim}
 Initialising solver
-	Option /archive = -1 (default)
-	Option /dump_format = nc (data/BOUT.inp)
-	Option /restart_format = nc (default)
-	Using NetCDF format for file 'nc'
+        Option /archive = -1 (default)
+        Option /dump_format = nc (data/BOUT.inp)
+        Option /restart_format = nc (default)
+        Using NetCDF format for file 'nc'
 \end{verbatim}
 %
 \begin{verbatim}
 Initialising PVODE solver
-	Boundary region inner X
-	Boundary region outer X
-	3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
+        Boundary region inner X
+        Boundary region outer X
+        3d fields = 2, 2d fields = 0 neq=84992, local_N=84992
 \end{verbatim}
 %
 This last line gives the number of equations being evolved (in this case
 84992), and the number of these on this processor (here 84992).
 %
 \begin{verbatim}
-	Option solver/mudq = 16 (default)
-	Option solver/mldq = 16 (default)
-	Option solver/mukeep = 0 (default)
-	Option solver/mlkeep = 0 (default)
+        Option solver/mudq = 16 (default)
+        Option solver/mldq = 16 (default)
+        Option solver/mukeep = 0 (default)
+        Option solver/mlkeep = 0 (default)
 \end{verbatim}
 %
 The absolute and relative tolerances come next:
 %
 \begin{verbatim}
-	Option solver/atol = 1e-10 (data/BOUT.inp)
-	Option solver/rtol = 1e-05 (data/BOUT.inp)
+        Option solver/atol = 1e-10 (data/BOUT.inp)
+        Option solver/rtol = 1e-05 (data/BOUT.inp)
 \end{verbatim}
 %
 \begin{verbatim}
-	Option solver/use_precon = false  (default)
-	Option solver/precon_dimens = 50 (default)
-	Option solver/precon_tol = 0.0001 (default)
-	Option solver/mxstep = 500 (default)
+        Option solver/use_precon = false  (default)
+        Option solver/precon_dimens = 50 (default)
+        Option solver/precon_tol = 0.0001 (default)
+        Option solver/mxstep = 500 (default)
 \end{verbatim}
 %
 \begin{verbatim}
-	Option fft/fft_measure = false  (default)
+        Option fft/fft_measure = false  (default)
 \end{verbatim}
 %
 This next option specifies the maximum number of internal timesteps which CVODE
 will take between outputs.
 %
 \begin{verbatim}
-	Option fft/fft_measure = false  (default)
+        Option fft/fft_measure = false  (default)
 Running simulation
 
 Run started at  : Wed May 11 18:23:20 2011
 
-	Option /wall_limit = -1 (default)
+        Option /wall_limit = -1 (default)
 \end{verbatim}
 %
 
@@ -1518,10 +1567,10 @@ spent in different parts of the code.
 \begin{itemize}
 \item \code{Calc} is the time spent doing calculations such as multiplications,
     derivatives etc
-\item \code{Inv} is the time spent in inversion code (i.e. inverting 
+\item \code{Inv} is the time spent in inversion code (i.e. inverting
 Laplacians), including any communication
 which may be needed to do the inversion.
-\item \code{Comm} is the time spent communicating variables (outside the 
+\item \code{Comm} is the time spent communicating variables (outside the
 inversion routine)
 \item \code{I/O} is the time spent writing dump and restart files to disk. Most
     of the time this should not be an issue
@@ -1609,7 +1658,7 @@ BOUT++ has its own makefile system. These can be used to
  \item Adding a feature to BOUT++ (see section~\ref{sec:modules})
 \end{enumerate}
 %
-In all makefiles, \verb@BOUT_TOP@ is required!
+In all makefiles, \texttt{BOUT\_TOP} is required!
 
 
 \subsubsection{Executables example}
@@ -1620,18 +1669,18 @@ If writing an example (or physics module that executes) then the makefile is
 very simple:
 %
 \begin{lstlisting}[language=make,numbers=none]
-BOUT_TOP	= ../..
+BOUT_TOP        = ../..
 
-SOURCEC		= <filename>.cpp
+SOURCEC         = <filename>.cpp
 
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-where \verb@BOUT_TOP@ - refers to the relative (or absolute) location of the
-BOUT directory (the one that includes \verb@/lib@ and \verb@/src@) and
-\verb@SOURCEC@  is the name of your file, e.g. \verb@gas_compress.cpp@.
+where \texttt{BOUT\_TOP} - refers to the relative (or absolute) location of the
+BOUT directory (the one that includes \texttt{/lib} and \texttt{/src}) and
+\texttt{SOURCEC}  is the name of your file, e.g. \texttt{gas\_compress.cxx}.
 
-Optionally, it is possible to specify \verb@TARGET@ which defines what the
+Optionally, it is possible to specify \texttt{TARGET} which defines what the
 executable should be called (e.g. if you have multiple source files). That's
 it!
 
@@ -1646,25 +1695,25 @@ pretty simple
 \begin{lstlisting}[language=make,numbers=none]
 BOUT_TOP = ../..
 
-SOURCEC		= communicator.cpp difops.cpp geometry.cpp grid.cpp
+SOURCEC         = communicator.cpp difops.cpp geometry.cpp grid.cpp
 interpolation.cpp topology.cpp
-SOURCEH		= $(SOURCEC:%.cpp=%.h)
-INCLUDE		= -I../sys -I../field -I../fileio -I../invert
-TARGET		= lib
+SOURCEH         = $(SOURCEC:%.cpp=%.h)
+INCLUDE         = -I../sys -I../field -I../fileio -I../invert
+TARGET          = lib
 
 include $(BOUT_TOP)/make.config
 \end{lstlisting}
 %
-\verb@TARGET@ - must be \verb@lib@ to signify you are adding to
-\verb@libbout++.a@.
+\texttt{TARGET} - must be \texttt{lib} to signify you are adding to
+\texttt{libbout++.a}.
 
 The other variables should be pretty self explanatory.
 
 
 \subsubsection{Adding a new subdirectory to 'src'}
 %
-No worries, just make sure to edit \verb@src/makefile@ to add it to the
-\verb@DIRS@ variable.
+No worries, just make sure to edit \texttt{src/makefile} to add it to the
+\texttt{DIRS} variable.
 
 
 
@@ -1930,7 +1979,7 @@ may be very large). To read in only a subset, there are several optional
 keywords with \code{[min,max]} ranges:
 %
 \begin{verbatim}
-IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31], 
+IDL> ni = collect(var="Ni", xind=[10,20], yind=[2,2], zind=[0,31],
 tind=[300,399])
 Reading from .//BOUT.dmp.0.nc: [10-20][4-4] -> [10-20][2-2]
 IDL> help, ni
@@ -2025,7 +2074,7 @@ has been read into IDL as a 4D [x,y,z,t] variable:
 \begin{itemize}
 \item \code{fft\_deriv} and \code{fft\_integrate} which differentiate and
     integrate periodic functions.
-\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request 
+\item \code{get\_integer}, \code{get\_float}, and \code{get\_yesno} request
 integers, floats and a yes/no answer from the user respectively.
 \item \code{showdata} animates 1 or 2-dimensional variables. Useful for quickly
     displaying results in different ways. This is useful for taking a quick
@@ -2066,8 +2115,8 @@ image of the resulting plot.
 \item \code{moment\_xyzt} takes a 4D variable (such as those from
     \code{collect}), and calculates RMS, DC and AC components in the Z
     direction.
-\item \code{safe\_colors} A general routine for IDL which arranges the color 
-table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue). 
+\item \code{safe\_colors} A general routine for IDL which arranges the color
+table so that colors are numbered 1 (black), 2 (red), 3 (green), 4 (blue).
 Useful for plotting, and
 used by many other routines in this library.
 \end{itemize}
@@ -2092,7 +2141,7 @@ HDF5 files through the same interface, using the h5py module.  To open a file
 using DataFile:
 %
 \begin{lstlisting}[language=python,numbers=none]
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 f = DataFile("file.nc")  # Open the file
 var = f.read("variable") # Read a variable from the file
@@ -2102,7 +2151,7 @@ f.close()                # Close the file
 or similarly for an HDF5 file
 %
 \begin{lstlisting}[language=python,numbers=none]
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 f = DataFile("file.hdf5")  # Open the file
 var = f.read("variable")   # Read a variable from the file
@@ -2136,7 +2185,7 @@ To read in all variables in a file into a dictionary there is the
 \texttt{file\_import} function
 %
 \begin{lstlisting}
-from boututils import file_import
+from boututils.file_import import file_import
 
 grid = file_import("grid.nc")
 \end{lstlisting}
@@ -2145,7 +2194,7 @@ As for IDL, there is a \texttt{collect} routine which reads gathers together
 the data from multiple processors
 %
 \begin{lstlisting}
-from boutdata import collect
+from boutdata.collect import collect
 
 Ni = collect("Ni")  # Collect the variable "Ni"
 \end{lstlisting}
@@ -2549,36 +2598,380 @@ supported by the collect routines.
 A common problem in plasma models is to solve an equation of the form
 %
 \begin{align}
-d\nabla^2_\perp x + \frac{1}{c}\nabla_\perp c\cdot\nabla_\perp x + a x = b
+   d\nabla^2_\perp x
+   + \frac{1}{c_1}\L(\nabla_\perp c_2\R)\cdot\nabla_\perp x + a x = b
+   \label{eq:full_laplace_inv}
 \end{align}
 %
-where $x$ and $b$ are 3D variables, whilst $a$, $c$ and $d$ are 2D variables.
-BOUT++ includes several routines for solving this equation; see the developer's
-manual for details.
+For example,
+%
+\begin{align}
+\nabla_\perp^2 x + a x = b
+\end{align}
+%
+appears in reduced MHD for the vorticity inversion and $j_{||}$.
 
+In BOUT++, these equations can be solved in two ways. Currently, both ways
+neglects the parallel derivatives.\\
+\\
 %
-\begin{table}[htbp!]
-\caption{Global Laplacian options}
+\note{Current implementations neglects derivatives in the parallel direction}\\
+\\
 %
-\label{tab:lapopts}
+By neglecting the $y$-derivatives, one can solve equation
+(\ref{eq:full_laplace_inv}) $y$ point by $y$ point.
+
+The first approach utilizes that it is possible fourier transform the equation
+in $z$ (using some assumptions, see the \code{coordinates} manual for details),
+and solve a tridiagonal system for each mode.
+These inversion problems are band-diagonal (tri-diagonal in the
+case of 2nd-order differencing) and so inversions can be very efficient:
+$O\L(n_z \log n_z\R)$ for the FFTs, $O\L(n_x\R)$ for tridiagonal
+inversion using the Thomas algorithm \cite{press-1999}, where $n_x$ and $n_z$
+are the number of grid-points in the $x$ and $z$ directions respectively.
+
+In the second approach, the full $2$-D system is being solved. This requires
+PETSc to be built with BOUT++
+
+The
+%
+\lstinline!Laplacian!
+%
+ class is defined in \texttt{invert\_laplace.hxx} and solves problems
+ formulated like equation (\label{eq:full_laplace_inv})
+%
+To use this class, first create an instance of it:
+%
+\begin{lstlisting}
+Laplacian *lap = Laplacian::create();
+\end{lstlisting}
+%
+By default, this will use the options in a section called ``laplace'', but can
+be given a different section as an argument.  By default $d = 1$, $a = 0$, and
+the $c=1$. To set the values of these coefficients, there are the
+%
+\lstinline!setCoefA()!, \lstinline!setCoefC()!, and \lstinline!setCoefD()!
+%
+methods:
+%
+\begin{lstlisting}
+Field2D a = ...;
+lap->setCoefA(a);
+lap->setCoefC(0.5);
+\end{lstlisting}
+%
+arguments can be
+%
+\lstinline!Field2D!, \lstinline!Field3D!
+%
+, or real values.
+
+Settings for the inversion can be set in the input file under the section
+\code{laplace} (default) or whichever settings section name was specified when
+the
+%
+\lstinline!Laplacian!
+%
+ class was created.  Commonly used settings are listed in
+ tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.
+
+In particular boundary conditions on the $x$ boundaries can be set using the
+\path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as
+detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current')
+refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k
+\neq 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC
+ones).  Multiple boundary conditions can be selected by adding together the
+required boundary condition flag values together.  For example,
+%
+\lstinline!inner_boundary_flags = 3!
+%
+ will set a Neumann boundary condition on both AC and DC components.
+
+It is pertinent to note here that the boundary in BOUT++ is defined by default
+to be located half way between the first guard point and first point inside the
+domain.  For example, when a Dirichlet boundary condition is set, using
+%
+\lstinline!inner_boundary_flags = 0!
+%
+, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to
+$f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and
+$v$ is the value to which the boundary is being set to.
+\\
+\\
+\note{The current implementation of the tridiagonal solvers are using $2$
+      points to set the boundaries for the cases where we are not using
+      \texttt{dirichlet} or \texttt{neumann} condition with a non-zero value.
+      In order to just have one point setting the boundary, the
+      \texttt{global\_flags = 4} should be used.}
+\\
+\\
+The \code{global\_flags}, \code{inner\_boundary\_flags},
+\code{outer\_boundary\_flags} and \code{flags} values can also be set from
+within the physics module using
+%
+\lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!,
+\lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!
+%
+.
+%
+\begin{lstlisting}
+lap->setGlobalFlags(Global_Flags_Value);
+lap->setInnerBoundaryFlags(Inner_Flags_Value);
+lap->setOuterBoundaryFlags(Outer_Flags_Value);
+lap->setFlags(Flags_Value);
+\end{lstlisting}
+%
+\begin{table}
+\caption{Laplacian inversion options}
+%
+\label{tab:laplacesettings}
 %
 \centering
 %
-\begin{tabular}[c]{c c c}
+\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
 \hline
-Option & Description & Default \\
+Name & Meaning & Default value\\
 \hline
-\texttt{low\_mem} & Reduces memory usage & \texttt{false} \\
-\texttt{use\_pdd} & Use the PDD algorithm & \texttt{false} \\
-\texttt{all\_terms} & Include all terms & \texttt{false} \\
-\texttt{laplace\_nonuniform} & Non-uniform mesh corrections & \texttt{false} \\
-\texttt{filter} & Fraction of modes to filter & 0.2 \\
-\texttt{max\_mode} & Maximum Z mode & filter \\
+\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt}
+(parallel) \\
+\code{filter} & Filter out modes above $(1-$\code{filter}$)\times k_{max}$,
+if using Fourier solver & 0\\
+\code{maxmode} & Filter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
+\code{all\_terms} & Include first derivative terms & \code{true}\\
+\code{global\_flags} & Sets global inversion options See table
+\ref{tab:laplaceglobalflags}& \code{0}\\
+\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.
+See table \ref{tab:laplaceBCflags} & \code{0}\\
+\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.
+See table \ref{tab:laplaceBCflags}& \code{0}\\
+\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.
+See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
+\code{include\_yguards} & Perform inversion in $y$-boundary guard
+cells & \code{true}\\
 \hline
 \end{tabular}
 %
 \end{table}
 %
+\begin{table}
+\caption{Laplacian inversion \code{global\_flags} values: add the required
+quantities together.}
+%
+\label{tab:laplaceglobalflags}
+%
+\centering
+%
+\begin{tabular}[c]{c|p{10cm}|c}
+\hline
+Flag & Meaning & Code variable\\
+\hline
+    0 &
+    No global option set &
+    $-$
+    \\
+    %
+    1 &
+    zero DC component (Fourier solvers) &
+    \code{INVERT\_ZERO\_DC}
+    \\
+    %
+    2 &
+    set initial guess to 0 (iterative solvers) &
+    \code{INVERT\_START\_NEW}
+    \\
+    %
+    4 &
+    equivalent to
+        % Manual line break
+        & \code{INVERT\_BOTH\_BNDRY\_ONE}
+        \\
+        &
+    \code{outer\_boundary\_flags = 128},
+        % Manual line break
+        &\\
+        &
+    \code{inner\_boundary\_flags = 128} &
+    \\
+    %
+    8 &
+    Use 4th order differencing (Apparently not actually implemented
+    anywhere!!!) &
+    \code{INVERT\_4TH\_ORDER}
+    \\
+    %
+    16 &
+    Set constant component ($k_x = k_z = 0$) to zero &
+    \code{INVERT\_KX\_ZERO}
+    \\
+\hline
+\end{tabular}
+%
+\end{table}
+%
+\begin{table}
+\caption{Laplacian inversion \code{outer\_boundary\_flags} or
+\code{inner\_boundary\_flags} values: add the required quantities together.}
+%
+\label{tab:laplaceBCflags}
+%
+\centering
+%
+\begin{tabular}[c]{c|p{10cm}|c}
+    \hline
+    Flag & Meaning & Code variable\\
+    \hline
+    0 &
+    Dirichlet (Set boundary to 0) &
+    $-$
+    \\
+    %
+    %
+    1 &
+    Neumann on DC component (set gradient to 0) &
+    \code{INVERT\_DC\_GRAD}
+    \\
+    %
+    %
+    2 &
+    Neumann on AC component (set gradient to 0) &
+    \code{INVERT\_AC\_GRAD}
+    \\
+    %
+    %
+    4 &
+    Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial
+    x^2}+k_z^2$ vanishes/decays) &
+    \code{INVERT\_AC\_LAP}
+    \\
+    %
+    %
+    8 &
+    Use symmetry to enforce zero value or gradient (redundant for 2nd order
+    now) &
+    \code{INVERT\_SYM}
+    \\
+    %
+    %
+    16 &
+    Set boundary condition to values in boundary guard cells of second
+    argument, \code{x0}, of
+    %
+    \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
+    %
+    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
+    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
+    \code{INVERT\_SET}
+    \\
+    %
+    %
+    32 &
+    Set boundary condition to values in boundary guard cells of RHS, \code{b}
+    in
+    %
+    \lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
+    %
+    .  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or
+    Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ &
+    \code{INVERT\_RHS}
+    \\
+    %
+    %
+    64 &
+    Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial
+    x^2}$ vanishes/decays) &
+    \code{INVERT\_DC\_LAP}
+    \\
+    %
+    %
+    128 &
+    Assert that there is only one guard cell in the $x$-boundary &
+    \code{INVERT\_BNDRY\_ONE}
+    \\
+    %
+    %
+    256 &
+    DC value is set to parallel gradient, $\nabla_\parallel f$ &
+    \code{INVERT\_DC\_GRADPAR}
+    \\
+    %
+    %
+    512 &
+    DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ &
+    \code{INVERT\_DC\_GRADPARINV}
+    \\
+    %
+    %
+    1024 &
+    Boundary condition for inner `boundary' of cylinder &
+    \code{INVERT\_IN\_CYLINDER}
+    \\
+    \hline
+\end{tabular}
+%
+\end{table}
+%
+\begin{table}
+\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the
+required quantities together.}
+%
+\label{tab:laplaceflags}
+%
+\centering
+%
+\begin{tabular}[c]{c | l}
+\hline
+Flag & Meaning \\
+\hline
+1 & Zero-gradient DC on inner (X) boundary. Default is zero-value \\
+2 & Zero-gradient AC on inner boundary \\
+4 & Zero-gradient DC on outer boundary \\
+8 & Zero-gradient AC on outer boundary \\
+16 & Zero DC component everywhere \\
+32 & Not used currently \\
+64 & Set width of boundary to 1 (default is \code{MXG}) \\
+128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
+256 & Attempt to set zero laplacian AC component on inner boundary by combining
+\\
+    & 2nd and 4th-order differencing at the boundary. \\
+    & Ignored if tridiagonal solver used. \\
+512 & Zero laplacian AC on outer boundary \\
+1024 & Symmetric boundary condition on inner boundary \\
+2048 & Symmetric outer boundary condition \\
+\hline
+\end{tabular}
+%
+\end{table}
+%
+To perform the inversion, there's the
+%
+\lstinline!solve!
+%
+ method
+%
+\begin{lstlisting}
+x = lap->solve(b);
+\end{lstlisting}
+%
+If you prefer, there are functions compatible with older versions of the BOUT++
+code:
+%
+\begin{lstlisting}
+Field2D a, c, d;
+invert_laplace(b, x, flags, &a, &c, &d);
+\end{lstlisting}
+%
+and
+%
+\begin{lstlisting}
+x = invert_laplace(b, flags, &a, &c, &d);
+\end{lstlisting}
+%
+The input \code{b} and output \code{x} are 3D fields, and the coefficients
+\code{a}, \code{c}, and \code{d} are pointers to 2D fields. To omit any of the
+three coefficients, set them to NULL.
+
+
+
 
 
 
@@ -2659,7 +3052,7 @@ to an integer:
 \setcounter{enumi}{-1}
 \item Constant (this is the default)
 \item Gaussian, with a peak location given by \code{xs\_s0}, \code{ys\_s0},
-    \code{zs\_s0} as a fraction of the domain (i.e. $0 \rightarrow 1$.  The
+    \code{zs\_s0} as a fraction of the domain (i.e. $0 \Rarrow 1$.  The
     width is given by \code{*s\_wd}, also as a fraction of the domain size.
 \item Sinusoidal, with the number of periods given by \code{*s\_mode}.
 \item Mix of mode numbers, with pseudo-random phases.
@@ -2696,8 +3089,8 @@ field-lines are matched onto each other. To handle this, a truncated Ballooning
 transformation can be used to construct a smooth initial perturbation:
 %
 \begin{align}
-U_0^{balloon} = \sum_{i=-N}^N F\left(x\right)G\left(y + 2\pi i\right)H\left(z +
-q2\pi i\right)
+U_0^{balloon} = \sum_{i=-N}^N F\L(x\R)G\L(y + 2\pi i\R)H\L(z +
+q2\pi i\R)
 %
 \label{eq:ballooning_transform}
 %
@@ -2707,8 +3100,8 @@ q2\pi i\right)
 \includegraphics[width=0.48\textwidth,
 keepaspectratio]{figs/init_noballoon.png}
 \includegraphics[width=0.48\textwidth, keepaspectratio]{figs/init_balloon.png}
-\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning 
-transform, showing discontinuity at the matching location {\bf Right}: with 
+\caption{Initial profiles in twist-shifted grid. {\bf Left}: Without ballooning
+transform, showing discontinuity at the matching location {\bf Right}: with
 ballooning transform}
 %
 \label{fig:ballooning}
@@ -2807,18 +3200,18 @@ expressions.
 \hline
 Name & Description \\
 \hline
-abs(x) & Absolute value $\left|x\right|$\\
+abs(x) & Absolute value $\L|x\R|$\\
 asin(x), acos(x), atan(x), atan(y,x) & Inverse trigonometric functions \\
-ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform}, 
+ballooning(x) & Ballooning transform (eq~\ref{eq:ballooning_transform},
 fig~\ref{fig:ballooning}) \\
 ballooning(x,n) & Ballooning transform, using $n$ terms (default 3) \\
 cos(x) & Cosine\\
 cosh(x) & Hyperbolic cosine\\
 exp(x) & Exponential \\
 tanh(x) & Hyperbolic tangent \\
-gauss(x) & Gaussian $\exp\left(-x^2/2\right) / \sqrt{2\pi}$\\
-gauss(x, w) & Gaussian $\exp\left[-x^2/\left(2w^2\right)\right] / 
-\left(w\sqrt{2\pi}\right)$\\
+gauss(x) & Gaussian $\exp\L(-x^2/2\R) / \sqrt{2\pi}$\\
+gauss(x, w) & Gaussian $\exp\L[-x^2/\L(2w^2\R)\R] /
+\L(w\sqrt{2\pi}\R)$\\
 H(x) & Heaviside function: $1$ if $x > 0$ otherwise $0$\\
 log(x) & Natural logarithm \\
 max(x,y,...) & Maximum (variable arguments) \\
@@ -2830,6 +3223,10 @@ sin(x) & Sine\\
 sinh(x) & Hyperbolic sine\\
 sqrt(x) & $\sqrt{x}$\\
 tan(x) & Tangent \\
+erf(x) & The error function \\
+TanhHat(x, width, center, steepness) & The hat function\\
+        &$\frac{1}{2}\L(\tanh\L[s \L(x-\L[c-\frac{w}{2}\R]\R)\R]
+          + \tanh\L[s \L(x-\L[c+\frac{w}{2}\R]\R)\R] \R)$ \\
 \hline
 \end{tabular}
 %
@@ -2843,9 +3240,9 @@ methods of setting initial conditions with ballooning transform.
 The \texttt{mixmode(x)} function is a mixture of Fourier modes of the form:
 %
 \begin{align}
-\mathrm{mixmode}\left(x\right) = \sum_{i=1}^{14} \frac{1}{\left(1 +
-\left|i-4\right|\right)^2}\cos\left[ix + \phi\left(i,
-\mathrm{seed}\right)\right]
+\mathrm{mixmode}\L(x\R) = \sum_{i=1}^{14} \frac{1}{\L(1 +
+\L|i-4\R|\R)^2}\cos\L[ix + \phi\L(i,
+\mathrm{seed}\R)\R]
 \end{align}
 %
 where $\phi$ is a random phase between $-\pi$ and $+\pi$, which depends on the
@@ -2963,9 +3360,9 @@ To add a new function to the FieldFactory, a new
  takes either one or two.  Study these after reading this to see how these are
  handled.
 
-First, edit \file{include/field\_factory.hxx} and add a class definition:
+First, edit \file{src/field/fieldgenerators.hxx} and add a class definition:
 %
-\begin{lstlisting}[firstnumber=122]
+\begin{lstlisting}[firstnumber=114]
 class FieldSinh : public FieldGenerator {
  public:
   FieldSinh(FieldGenerator* g) : gen(g) {}
@@ -2991,7 +3388,7 @@ stored in the member \lstinline!gen!
 %
 .
 
-Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
+Next edit \file{src/field/fieldgenerators.cxx} and add the implementation of the
 %
 \lstinline!clone!
 %
@@ -3001,19 +3398,17 @@ Next edit \file{src/field/field\_factory.cxx} and add the implementation of the
 %
  functions:
 %
-\begin{lstlisting}[firstnumber=100]
+\begin{lstlisting}[firstnumber=33]
 FieldGenerator* FieldSinh::clone(const list<FieldGenerator*> args) {
   if(args.size() != 1) {
-    output << "FieldFactory error: Incorrect number of arguments to sinh 
-function. Expecting 1, got " << args.size() << endl;
-    return NULL;
+    throw ParseException("Incorrect number of arguments to sinh function. Expecting 1, got %d", args.size());
   }
 
   return new FieldSinh(args.front());
 }
 
-BoutReal FieldSinh::generate(int x, int y, int z) {
-  return sinh(gen->generate(x,y,z));
+BoutReal FieldSinh::generate(double x, double y, double z, double t) {
+  return sinh(gen->generate(x,y,z,t));
 }
 \end{lstlisting}
 %
@@ -3026,10 +3421,11 @@ The
 %
 \lstinline!FieldGaussian!
 %
- to handle different numbers of input, but in this case we print an error
- message and return
+ to handle different numbers of input, but in this case we throw a
 %
-\lstinline!NULL! if the number of inputs isn't one. \lstinline!clone!
+\lstinline!ParseException!
+%
+if the number of inputs isn't one. \lstinline!clone!
 %
  then creates a new
 %
@@ -3068,7 +3464,7 @@ class an instance of this new generator. Edit the
 %
  in \file{src/field/field\_factory.cxx} and add the line:
 %
-\begin{lstlisting}[firstnumber=196]
+\begin{lstlisting}[firstnumber=64]
 addGenerator("sinh", new FieldSinh(NULL));
 \end{lstlisting}
 %
@@ -3132,7 +3528,7 @@ This returns the next token, and setting the variable
 \lstinline!BoutReal curval!
 %
  is set to the value of the token
-\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything 
+\item -2 for a string (e.g. ``sinh'', ``x'' or ``pi''). This includes anything
 which starts with a letter, and
   contains only letters, numbers, and underscores. The string is stored in the
   variable
@@ -3665,21 +4061,21 @@ derivatives of the time-derivatives with respect to each of the evolving
 variables
 %
 \begin{align}
-\mathcal{J} = \left(%
+\mathcal{J} = \L(%
 \begin{array}{cc}
-\frac{\partial}{\partial u}\frac{\partial u}{\partial t} & 
+\frac{\partial}{\partial u}\frac{\partial u}{\partial t} &
 \frac{\partial}{\partial v}\frac{\partial u}{\partial t}\\
-\frac{\partial}{\partial u}\frac{\partial v}{\partial t} & 
+\frac{\partial}{\partial u}\frac{\partial v}{\partial t} &
 \frac{\partial}{\partial v}\frac{\partial v}{\partial t}
 \end{array}
 %
-\right) = \left(%
+\R) = \L(%
 \begin{array}{cc}
 0 & \partial_{||} \\
 \partial_{||} & 0
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 In this case $\frac{\partial u}{\partial t}$ doesn't depend on $u$ nor
@@ -3687,19 +4083,19 @@ $\frac{\partial v}{\partial t}$ on $v$, so the diagonal is empty. Since the
 equations are linear, the Jacobian doesn't depend on $u$ or $v$ and so
 %
 \begin{align}
-\frac{\partial}{\partial t}\left(%
+\frac{\partial}{\partial t}\L(%
 \begin{array}{c}
 u \\
 v
-\end{array}\right) = \mathcal{J}
+\end{array}\R) = \mathcal{J}
 %
- \left(%
+ \L(%
 \begin{array}{c}
 u \\
 v
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 In general for non-linear functions $\mathcal{J}$ gives the change in
@@ -3716,75 +4112,75 @@ step and method (e.g. $\gamma = \delta t^2$ for backwards Euler method). For
 the simple wave equation problem, this is
 %
 \begin{align}
-\mathcal{I} - \gamma \mathcal{J} = \left(%
+\mathcal{I} - \gamma \mathcal{J} = \L(%
 \begin{array}{cc}
 1 & -\gamma\partial_{||} \\
 -\gamma\partial_{||} & 1
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 This matrix can be block inverted using Schur factorisation\footnote{See paper
 \url{http://arxiv.org/abs/1209.2054} for an application to 2-fluid equations}
 %
 \begin{align}
-\left(%
+\L(%
 \begin{array}{cc}
   \bb{E} & \bb{U} \\
   \bb{L} & \bb{D}
-\end{array}\right)^{-1}
+\end{array}\R)^{-1}
 %
- = \left(%
+ = \L(%
 \begin{array}{cc}
   \bb{I} & -\bb{E}^{-1}\bb{U} \\
   0 & \bb{I}
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{cc}
   \bb{E}^{-1} & 0 \\
   0 & \bb{P}_{Schur}^{-1}
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{cc}
   \bb{I} & 0 \\
   -\bb{L}\bb{E}^{-1} & \bb{I}
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 where $\bb{P}_{Schur} = \bb{D} - \bb{L}\bb{E}^{-1}\bb{U}$ Using this, the wave
 problem becomes:
 %
 \begin{align}
-\left(%
+\L(%
 \begin{array}{cc}
 1 & -\gamma\partial_{||} \\
 -\gamma\partial_{||} & 1
-\end{array}\right)^{-1}
+\end{array}\R)^{-1}
 %
- = \left(%
+ = \L(%
 \begin{array}{cc}
 1 & \gamma\partial_{||} \\
 0 & 1
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{cc}
 1 & 0 \\
-0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+0 & \L(1 - \gamma^2\partial^2_{||}\R)^{-1}
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{cc}
 1 & 0 \\
 \gamma\partial_{||} & 1
 \end{array}
 %
-\right)
+\R)
 %
 \label{eq:precon}
 %
@@ -3826,25 +4222,25 @@ To implement the preconditioner in equation~\ref{eq:precon}, first apply the
 rightmost matrix to the given vector:
 %
 \begin{align}
-\left(%
+\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right) = \left(%
+\R) = \L(%
 \begin{array}{cc}
 1 & 0 \\
 \gamma\partial_{||} & 1
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 \begin{lstlisting}[numbers=none]
@@ -3861,30 +4257,30 @@ it first needs to be communicated to exchange guard cell values.
 The second matrix
 %
 \begin{align}
-\left(%
+\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right) \leftarrow \left(%
+\R) \Larrow \L(%
 \begin{array}{cc}
 1 & 0 \\
-0 & \left(1 - \gamma^2\partial^2_{||}\right)^{-1}
+0 & \L(1 - \gamma^2\partial^2_{||}\R)^{-1}
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 doesn't alter $u$, but solves a parabolic equation in the parallel direction.
 There is a solver class to do this called \texttt{InvertPar} which solves the
-equation $\left(A + B\partial_{||}^2\right)x = b$ where $A$ and $B$ are
+equation $\L(A + B\partial_{||}^2\R)x = b$ where $A$ and $B$ are
 %
 \lstinline!Field2D! or constants\footnote{This \texttt{InvertPar} class can
 handle cases with closed field-lines and twist-shift boundary conditions for
@@ -3909,29 +4305,29 @@ In the preconditioner we then use this solver to update $v$:
   ddt(v) = inv->solve(ddt(v));
 \end{lstlisting}
 %
-which solves $ddt(v) \leftarrow \left(1 - \gamma^2\partial_{||}^2\right)^{-1}
+which solves $ddt(v) \Larrow \L(1 - \gamma^2\partial_{||}^2\R)^{-1}
 ddt(v)$.  The final matrix just updates $u$ using this new solution for $v$
 %
 \begin{align}
-\left(%
+\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right) \leftarrow \left(%
+\R) \Larrow \L(%
 \begin{array}{cc}
 1 & \gamma\partial_{||} \\
 0 & 1
 \end{array}
 %
-\right)\left(%
+\R)\L(%
 \begin{array}{c}
 \texttt{ddt(u)} \\
 \texttt{ddt(v)}
 \end{array}
 %
-\right)
+\R)
 \end{align}
 %
 \begin{lstlisting}[numbers=none]
@@ -4133,7 +4529,7 @@ Currently implemented boundary conditions are:
 \item \code{zerolaplace} - Laplacian = 0, decaying solution (X boundaries only)
 \item \code{zerolaplace2} - Laplacian = 0, using coefficients from the
     Laplacian inversion and Delp2 operator.
-\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries 
+\item \code{constlaplace} - Laplacian = const, decaying solution (X boundaries
 only)
 \end{itemize}
 %
@@ -4167,10 +4563,10 @@ one modifier can be used. Currently the following are available:
 \begin{itemize}
 \item \code{relax} - Relaxing boundaries. Evolve the variable towards the given
     boundary condition at a given rate
-\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates, 
+\item \code{shifted} - Apply boundary conditions in orthogonal X-Z coordinates,
 rather than
   field-aligned
-\item \code{width} - Modifies the width of the region over which the boundary 
+\item \code{width} - Modifies the width of the region over which the boundary
 condition is applied
 \end{itemize}
 %
@@ -4191,7 +4587,7 @@ For example, \code{relax(dirichlet)} will make a field $f$ at point $i$ in the
 boundary follow a point $i-1$ in the domain:
 %
 \begin{align}
-\left.\deriv{f}{t}\right|_i = \left.\deriv{f}{t}\right|_{i-1}  - f_i / \tau
+\L.\deriv{f}{t}\R|_i = \L.\deriv{f}{t}\R|_{i-1}  - f_i / \tau
 \end{align}
 %
 where $\tau$ is a time-scale for the boundary (currently set to 0.1, but will
@@ -4388,11 +4784,11 @@ class BoundaryRegion {
   int bx, by; // Direction of the boundary [x+dx][y+dy] is going outwards
 
   virtual void first() = 0;
-  virtual void next() = 0; // Loop over every element from inside out (in X or 
+  virtual void next() = 0; // Loop over every element from inside out (in X or
 Y first)
   virtual void nextX() = 0; // Just loop over X
   virtual void nextY() = 0; // Just loop over Y
-  virtual bool isDone() = 0; // Returns true if outside domain. Can use this 
+  virtual bool isDone() = 0; // Returns true if outside domain. Can use this
 with nested nextX, nextY
 };
 \end{lstlisting}
@@ -4507,7 +4903,7 @@ void BoundaryNeumann::apply(Field2D &f) {
 void BoundaryNeumann::apply(Field3D &f) {
   for(bndry->first(); !bndry->isDone(); bndry->next())
     for(int z=0;z<mesh->ngz;z++)
-      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y - 
+      f[bndry->x][bndry->y][z] = f[bndry->x - bndry->bx][bndry->y -
 bndry->by][z];
 }
 \end{lstlisting}
@@ -4667,7 +5063,7 @@ to change the value the boundary's set to. In \file{boundary\_standard.cxx}:
 \index{BoundaryDirichlet}
 %
 \begin{lstlisting}[firstnumber=13]
-BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string> 
+BoundaryOp* BoundaryDirichlet::clone(BoundaryRegion *region, const list<string>
 &args) {
   if(!args.empty()) {
     // First argument should be a value
@@ -4792,16 +5188,16 @@ will be printed and the default values used.
 \item X and Y grid sizes (integers) \code{nx} and \code{ny} {\bf REQUIRED}
 \item Differencing quantities in 2D arrays \code{dx[nx][ny]} and
     \code{dy[nx][ny]}.  If these are not found they will be set to 1.
-\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]}, 
+\item Diagonal terms of the metric tensor $g^{ij}$ \code{g11[nx][ny]},
 \code{g22[nx][ny]},
   and \code{g33[nx][ny]}. If not found, these will be set to 1.
 %
 \index{metric tensor}
 %
-\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]}, 
+\item Off-diagonal metric tensor $g^{ij}$ elements \code{g12[nx][ny]},
 \code{g13[nx][ny]},
   and \code{g23[nx][ny]}. If not found, these will be set to 0.
-\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for 
+\item Z shift for sheared grids \code{zshift[nx][ny]}. This is intended for
 dpsi derivatives
   in sheared coordinates. If not found, set to zero.
 \end{itemize}
@@ -4815,10 +5211,10 @@ situations.
     given, both are set to nx (i.e. all points in closed ``core'' region). If
     only \code{ixseps1} is found, \code{ixseps2} is set to nx, and if only
     ixseps2 is found, ixseps1 is set to -1.
-\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2}, 
+\item Branch-cut locations \code{jyseps1\_1}, \code{jyseps1\_2},
 \code{jyseps2\_1}, and
   \code{jyseps2\_2}
-\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in 
+\item Twist-shift matching condition \code{twistshift[nx]}. This is applied in
 the ``core''
   region between indices \code{jyseps2\_2}, and \code{jyseps1\_1 + 1}, if
   enabled in the options file. If not given, this is set to zero.
@@ -4848,7 +5244,7 @@ output from different codes and converting into input to BOUT++.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/grid_gen.pdf}
-\caption{Generation of BOUT++ grid files. In red are the file formats, and in 
+\caption{Generation of BOUT++ grid files. In red are the file formats, and in
 black the conversion routines. Blue are external codes.}
 %
 \label{fig:gridgen}
@@ -4908,8 +5304,8 @@ configuration.
 \begin{figure}[htbp!]
 \centering \includegraphics[width=0.7\paperwidth,
 keepaspectratio]{figs/topology_cross_section.pdf}
-\caption{Deconstruction of a poloidal tokamak cross-section into logical 
-domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1}, 
+\caption{Deconstruction of a poloidal tokamak cross-section into logical
+domains using the parameters \code{ixseps1}, \code{ixseps2}, \code{jyseps1\_1},
 \code{jyseps1\_2}, \code{jyseps2\_1}, and \code{jyseps2\_2}.}
 %
 \label{fig:topology_cross_section}
@@ -4948,7 +5344,7 @@ boundaries.}
 \begin{figure}[htbp!]
 \centering \includegraphics[width=\textwidth,
 keepaspectratio]{figs/topology_schematic.pdf}
-\caption{Schematic illustration of domain decomposition and communication in 
+\caption{Schematic illustration of domain decomposition and communication in
 BOUT++ with \code{ixseps1 = ixseps2}.}
 %
 \label{fig:topology_schematic}
@@ -4980,8 +5376,8 @@ Two representations are now supported for 3D variables:
     stored as
 %
 \begin{align}
-\left[n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2
-(\textrm{real}), n = 2 (\textrm{imag}), \ldots \right]
+\L[n = 0, n = 1 (\textrm{real}), n = 1 (\textrm{imag}), n = 2
+(\textrm{real}), n = 2 (\textrm{imag}), \ldots \R]
 \end{align}
 %
 where $n$ is the toroidal mode number. The size of the array must therefore be
@@ -5283,10 +5679,10 @@ The equations to be solved are:
 \deriv{\rho}{t} =& -\mathbf{v}\cdot\nabla\rho - \rho\nabla\cdot\mathbf{v} \\
     \deriv{p}{t} =& -\mathbf{v}\cdot\nabla p - \gamma p\nabla\cdot\mathbf{v} \\
     \deriv{\mathbf{v}}{t} =& -\mathbf{v}\cdot\nabla\mathbf{v} +
-    \frac{1}{\rho}\left(-\nabla p +
-    \left(\nabla\times\mathbf{B}\right)\times\mathbf{B}\right) \\
+    \frac{1}{\rho}\L(-\nabla p +
+    \L(\nabla\times\mathbf{B}\R)\times\mathbf{B}\R) \\
     \deriv{\mathbf{B}}{t} =&
-    \nabla\times\left(\mathbf{v}\times\mathbf{B}\right)
+    \nabla\times\L(\mathbf{v}\times\mathbf{B}\R)
 \end{align*}
 %
 There are two ways to specify a set of equations to solve in BOUT++. For
@@ -5841,8 +6237,8 @@ advantages for clarity, but has problems numerically: For small perturbations,
 rounding error and tolerances in the time-integration mean that linear
 dispersion relations are not calculated correctly. The solution to this is to
 write all equations in terms of an initial ``background'' quantity and a
-time-evolving perturbation, for example $\rho\left(t\right) \rightarrow \rho_0
-+ \tilde{\rho}\left(t\right)$.  For this reason, {\bf the initialisation of all
+time-evolving perturbation, for example $\rho\L(t\R) \Rarrow \rho_0
++ \tilde{\rho}\L(t\R)$.  For this reason, {\bf the initialisation of all
 variables passed to the \code{bout\_solve} function is a combination of
 small-amplitude gaussians and waves; the user is expected to have performed
 this separation into background and perturbed quantities.}
@@ -5950,7 +6346,7 @@ e.g. src/fileio/impls/netcdf/nc\_format.cxx line 172).
 \item Add variables to the file
 %
 \begin{lstlisting}
-mydata.add(variable, "name") ;  // Not evolving. Every time the file is 
+mydata.add(variable, "name") ;  // Not evolving. Every time the file is
 written, this will be overwritten
 mydata.add(variable2, "name2", 1); // Evolving. Will output a sequence of values
 \end{lstlisting}
@@ -5994,7 +6390,7 @@ solving equations for $A_{||}$ and vorticity $U$
 %
 \begin{align*}
 \deriv{U}{t} =& -\frac{1}{B}\mathbf{b}_0\times\nabla\phi\cdot\nabla U + B^2
-    \nabla_{||}\left(j_{||} / B\right) \\ \deriv{A_{||}}{t} =&
+    \nabla_{||}\L(j_{||} / B\R) \\ \deriv{A_{||}}{t} =&
     -\frac{1}{\hat{\beta}}\nabla_{||}\phi - \eta\frac{1}{\hat{\beta}} j_{||}
 \end{align*}
 %
@@ -6124,276 +6520,6 @@ please use this \code{output} object when writing text output.
 
 
 
-\subsection{Laplacian inversion}
-%
-\index{Laplacian inversion}
-%
-Quite a common problem in plasma simulation codes is to invert an equation of
-the form
-%
-\begin{align}
-\nabla_\perp^2 x + a x = b
-\end{align}
-%
-where $a$ is symmetric in z, and the operator $\nabla_\perp = \nabla -
-\mathbf{b}_0\left(\mathbf{b}_0\cdot\nabla\right) = -\mathbf{b\times}
-\left(\mathbf{b\times}\nabla\right)$. For example, this operator appears in
-reduced MHD for the vorticity inversion and $j_{||}$.
-
-Efficiently inverting this operator is done by taking FFTs in the $z$ direction
-to transform this problem into a set of 1D inversion problems (in $x$) for each
-Fourier mode.  These inversion problems are band-diagonal (tri-diagonal in the
-case of 2nd-order differencing) and so inversions can be very efficient:
-$O\left(n_z \log n_z\right)$ for the FFTs, $O\left(n_x\right)$ for tridiagonal
-inversion using the Thomas algorithm \cite{press-1999}, where $n_x$ and $n_z$
-are the number of grid-points in the $x$ and $z$ directions respectively.
-
-The
-%
-\lstinline!Laplacian!
-%
- class is defined in \texttt{invert\_laplace.hxx} and solves problems of the
- form
-%
-\begin{align}
-d\nabla_\perp^2 x + \frac{1}{c}\nabla_\perp c \cdot\nabla_\perp x + a x = b
-\end{align}
-%
-To use this class, first create an instance of it:
-%
-\begin{lstlisting}
-Laplacian *lap = Laplacian::create();
-\end{lstlisting}
-%
-By default, this will use the options in a section called ``laplace'', but can
-be given a different section as an argument.  By default $d = 1$, $a = 0$, and
-the $c$ term is switched off. To set the values of these coefficients, there
-are the
-%
-\lstinline!setCoefA()!, \lstinline!setCoefC()!, and \lstinline!setCoefD()!
-%
-methods:
-%
-\begin{lstlisting}
-Field2D a = ...;
-lap->setCoefA(a);
-lap->setCoefC(0.5);
-\end{lstlisting}
-%
-arguments can be
-%
-\lstinline!Field2D!, \lstinline!Field3D!
-%
-, or real values.
-
-Settings for the inversion can be set in the input file under the section
-\code{laplace} (default) or whichever settings section name was specified when
-the
-%
-\lstinline!Laplacian!
-%
- class was created.  Commonly used settings are listed in
- tables~\ref{tab:laplacesettings} to \ref{tab:laplaceflags}.
-
-In particular boundary conditions on the $x$ boundaries can be set using the
-\path{inner_boundary_flags} and \code{outer\_boundary\_flags} variables, as
-detailed in table \ref{tab:laplaceBCflags}.  Note that DC (`direct-current')
-refers to $k = 0$ Fourier component, AC (`alternating-current') refers to $k
-\neq 0$ Fourier components.  Non-Fourier solvers use AC options (and ignore DC
-ones).  Multiple boundary conditions can be selected by adding together the
-required boundary condition flag values together.  For example,
-%
-\lstinline!inner_boundary_flags = 3!
-%
- will set a Neumann boundary condition on both AC and DC components.
-
-It is pertinent to note here that the boundary in BOUT++ is defined by default
-to be located half way between the first guard point and first point inside the
-domain.  For example, when a Dirichlet boundary condition is set, using
-%
-\lstinline!inner_boundary_flags = 0!
-%
-, \code{16}, or \code{32}, then the first guard point, $f_{-}$ will be set to
-$f_{-} = 2v - f_+$, where $f_+$ is the first grid point inside the domain, and
-$v$ is the value to which the boundary is being set to.
-
-The \code{global\_flags}, \code{inner\_boundary\_flags},
-\code{outer\_boundary\_flags} and \code{flags} values can also be set from
-within the physics module using
-%
-\lstinline!setGlobalFlags!,  \lstinline!setInnerBoundaryFlags!,
-\lstinline!setOuterBoundaryFlags! and  \lstinline!setFlags!
-%
-.
-%
-\begin{lstlisting}
-lap->setGlobalFlags(Global_Flags_Value);
-lap->setInnerBoundaryFlags(Inner_Flags_Value);
-lap->setOuterBoundaryFlags(Outer_Flags_Value);
-lap->setFlags(Flags_Value);
-\end{lstlisting}
-%
-\begin{table}
-\caption{Laplacian inversion options}
-%
-\label{tab:laplacesettings}
-%
-\centering
-%
-\begin{tabular}[c]{c | p{8cm} | p{2.5cm}}
-\hline
-Name & Meaning & Default value\\
-\hline
-\code{type} & Which implementation to use & \code{tri} (serial),  \code{spt} 
-(parallel) \\
-\code{filter} & Fi􏰀lter out modes above $(1-$\code{filter}$)\times k_{max}$, 
-if using Fourier solver & 0\\
-\code{maxmode} & Fi􏰀lter modes with $n >$\code{maxmode} & \code{MZ}/2 \\
-\code{all\_terms} & Include fi􏰀rst derivative terms & \code{true}\\
-\code{global\_flags} & Sets global inversion options See table 
-\ref{tab:laplaceglobalflags}& \code{0}\\
-\code{inner\_boundary\_flags} & Sets boundary conditions on inner boundary.  
-See table \ref{tab:laplaceBCflags} & \code{0}\\
-\code{outer\_boundary\_flags} & Sets boundary conditions on outer boundary.  
-See table \ref{tab:laplaceBCflags}& \code{0}\\
-\code{flags} & DEPRECATED. Sets global solver options and boundary conditions.  
-See table~\ref{tab:laplaceflags} or \code{invert\_laplace.hxx} & \code{0} \\
-\code{include\_yguards} & Perform inversion in $y$-boundary guard
-cells & \code{true}\\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{global\_flags} values: add the required
-quantities together.}
-%
-\label{tab:laplaceglobalflags}
-%
-\centering
-%
-\begin{tabular}[c]{c|l}
-\hline
-Flag & Meaning \\
-\hline
-0 &  No global option set \\
-1 &  zero DC component (Fourier solvers) \\
-2 &  set initial guess to 0 (iterative solvers) \\
-4 &  equivalent to \code{outer\_boundary\_flags = 128, inner\_boundary\_flags = 
-128}\\
-8 & Use 4th order differencing (Apparently not actually implemented 
-anywhere!!!) \\
-16 & Set constant component ($k_x = k_z = 0$) to zero \\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{outer\_boundary\_flags} or
-\code{inner\_boundary\_flags} values: add the required quantities together.}
-%
-\label{tab:laplaceBCflags}
-%
-\centering
-%
-\begin{tabular}[c]{c|p{14cm}}
-\hline
-Flag & Meaning \\
-\hline
-0 &  Dirichlet (Set boundary to 0) \\
-1 &  Neumann on DC component (set gradient to 0) \\
-2 &  Neumann on AC component (set gradient to 0) \\
-4 &  Zero or decaying Laplacian on AC components ( $\frac{\partial^2}{\partial 
-x^2}+k_z^2$ vanishes/decays)\\
-8 & Use symmetry to enforce zero value or gradient (redundant for 2nd order 
-now) \\
-16 & Set boundary condition to values in boundary guard cells of second 
-argument, \code{x0}, of
-%
-\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
-%
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
-Neumann boundary condition set to values which are $\neq 0$ or $f(y)$ \\
-32 & Set boundary condition to values in boundary guard cells of RHS, \code{b} 
-in
-%
-\lstinline!Laplacian::solve(const Field3D &b, const Field3D &x0)!
-%
-.  May be combined with any combination of 0, 1 and 2, i.e.\ a Dirichlet or 
-Neumann boundary condition set to values which are $\neq 0$ or $f(y)$\\
-64 & Zero or decaying Laplacian on DC components ($\frac{\partial^2}{\partial 
-x^2}$ vanishes/decays) \\
-128 &  Assert that there is only one guard cell in the
-$x$-boundary \\
-256 &  DC value is set to parallel gradient, $\nabla_\parallel f$ \\
-512 &  DC value is set to inverse of parallel gradient $1/\nabla_\parallel f$ \\
-1024 & Boundary condition for inner `boundary' of cylinder \\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-\begin{table}
-\caption{Laplacian inversion \code{flags} values (DEPRECATED!): add the
-required quantities together.}
-%
-\label{tab:laplaceflags}
-%
-\centering
-%
-\begin{tabular}[c]{c | l}
-\hline
-Flag & Meaning \\
-\hline
-1 & Zero-gradient DC on inner (X) boundary. Default is zero-value \\
-2 & Zero-gradient AC on inner boundary \\
-4 & Zero-gradient DC on outer boundary \\
-8 & Zero-gradient AC on outer boundary \\
-16 & Zero DC component everywhere \\
-32 & Not used currently \\
-64 & Set width of boundary to 1 (default is \code{MXG}) \\
-128 & Use 4$^{th}$-order band solver (default is 2$^{nd}$ order tridiagonal) \\
-256 & Attempt to set zero laplacian AC component on inner boundary by combining 
-\\
-    & 2nd and 4th-order differencing at the boundary. \\
-    & Ignored if tridiagonal solver used. \\
-512 & Zero laplacian AC on outer boundary \\
-1024 & Symmetric boundary condition on inner boundary \\
-2048 & Symmetric outer boundary condition \\
-\hline
-\end{tabular}
-%
-\end{table}
-%
-To perform the inversion, there's the
-%
-\lstinline!solve!
-%
- method
-%
-\begin{lstlisting}
-x = lap->solve(b);
-\end{lstlisting}
-%
-If you prefer, there are functions compatible with older versions of the BOUT++
-code:
-%
-\begin{lstlisting}
-Field2D a, c, d;
-invert_laplace(b, x, flags, &a, &c, &d);
-\end{lstlisting}
-%
-and
-%
-\begin{lstlisting}
-x = invert_laplace(b, flags, &a, &c, &d);
-\end{lstlisting}
-%
-The input \code{b} and output \code{x} are 3D fields, and the coefficients
-\code{a}, \code{c}, and \code{d} are pointers to 2D fields. To omit any of the
-three coefficients, set them to NULL.
 
 
 
@@ -6600,8 +6726,8 @@ categories:
   %
   \begin{itemize}
   \item \texttt{C2}: 2$^{nd}$ order $f_{-1} - 2f_0 + f_1$
-  \item \texttt{C4}: 4$^{th}$ order $\left(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 -
-      f_2\right)/12$
+  \item \texttt{C4}: 4$^{th}$ order $\L(-f_{-2} + 16f_{-1} - 30f_0 + 16f_1 -
+      f_2\R)/12$
   \item \texttt{W2}: 2$^{nd}$ order CWENO
   \item \texttt{W3}: 3$^{rd}$ order CWENO
   \item \texttt{FFT}: Fourier Transform method in Z (axisymmetric) direction
@@ -6617,13 +6743,13 @@ categories:
       (WENO)\cite{jiang-1997}
   \end{itemize}
 %
-\item Flux conserving and limiting methods for terms of the form 
-$\frac{d}{dx}\left(v_x f\right)$
+\item Flux conserving and limiting methods for terms of the form
+$\frac{d}{dx}\L(v_x f\R)$
   %
   \begin{itemize}
   \item \texttt{SPLIT}: split into upwind and central terms
-      $\frac{d}{dx}\left(v_x f\right) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}$
-  \item \texttt{NND}: Non-oscillatory, containing No free parameters and 
+      $\frac{d}{dx}\L(v_x f\R) = v_x\frac{df}{dx} + f\frac{dv_x}{dx}$
+  \item \texttt{NND}: Non-oscillatory, containing No free parameters and
 Dissipative (NND) scheme\cite{nnd-2010}
   \end{itemize}
 %
@@ -6668,9 +6794,9 @@ VDDX(f, g) & $f \partial g / \partial x$\\
 VDDY(f, g) & $f \partial g / \partial y$\\
 VDDZ(f, g) & $f \partial g / \partial z$\\
 \hline
-FDDX(f, g) & $\partial/\partial x\left( f * g \right)$ \\
-FDDY(f, g) & $\partial/\partial x\left( f * g \right)$ \\
-FDDZ(f, g) & $\partial/\partial x\left( f * g \right)$ \\
+FDDX(f, g) & $\partial/\partial x\L( f * g \R)$ \\
+FDDY(f, g) & $\partial/\partial x\L( f * g \R)$ \\
+FDDZ(f, g) & $\partial/\partial x\L( f * g \R)$ \\
 \hline
 \end{tabular}
 %
@@ -6705,10 +6831,10 @@ where $i$ is the cell index number. The second derivative is therefore given by
 \begin{align}
 \frac{\partial^2 f}{\partial x^2} \simeq \frac{1}{\Delta x^2}\frac{\partial^2
 f}{\partial i^2} + \frac{1}{\Delta x}\deriv{f}{x} \cdot
-\deriv{}{i}\left(\frac{1}{\Delta x}\right)
+\deriv{}{i}\L(\frac{1}{\Delta x}\R)
 \end{align}
 %
-The correction factor $\partial/\partial i\left(1/\Delta x\right)$ can be
+The correction factor $\partial/\partial i\L(1/\Delta x\R)$ can be
 calculated automatically, but you can also specify \texttt{d2x} in the grid
 file which is
 %
@@ -6719,7 +6845,7 @@ file which is
 The correction factor is then calculated from \texttt{d2x} using
 %
 \begin{align}
-\deriv{}{i}\left(\frac{1}{\Delta x}\right) = -\frac{1}{\Delta x^2}
+\deriv{}{i}\L(\frac{1}{\Delta x}\R) = -\frac{1}{\Delta x^2}
 \deriv{\Delta x}{i}
 \end{align}
 %
@@ -6735,9 +6861,9 @@ These are differential operators which are for a general coordinate system.
 \begin{array}{rclrcl}
 \mathbf{v} =& \nabla f &\qquad \code{Vector} =& \code{Grad(Field)} \\
 f =& \nabla\cdot\mathbf{a} &\qquad \code{Field} =& \code{Div(Vector)} \\
-\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =& 
+\mathbf{v} =& \nabla\times\mathbf{a} &\qquad \code{Vector} =&
 \code{Curl(Vector)} \\
-f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector, 
+f =& \mathbf{v}\cdot\nabla g &\qquad \code{Field} =& \code{V\_dot\_Grad(Vector,
 Field)} \\
 \mathbf{v} =& \mathbf{a}\cdot\nabla\mathbf{c} &\qquad \code{Vector} =&
 \code{V\_dot\_Grad(Vector, Vector)} \\
@@ -6747,9 +6873,9 @@ f =& \nabla^2 f &\qquad \code{Field} =& \code{Laplace(Field)}
 \end{align}
 %
 \begin{align*}
-\nabla\phi =& \deriv{\phi}{u^i}\nabla u^i \Rightarrow \left(\nabla\phi\right)_i
+\nabla\phi =& \deriv{\phi}{u^i}\nabla u^i \Rarrow \L(\nabla\phi\R)_i
     = \deriv{\phi}{u^i} \\ \nabla\cdot A =& =
-    \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}A_j\right) \\ \nabla^2\phi =&
+    \frac{1}{J}\deriv{}{u^i}\L(Jg^{ij}A_j\R) \\ \nabla^2\phi =&
     G^j\deriv{\phi}{u^i} + g^{ij}\frac{\partial^2\phi}{\partial
     u^i\partial u^j} \\
 \end{align*}
@@ -6757,10 +6883,10 @@ f =& \nabla^2 f &\qquad \code{Field} =& \code{Laplace(Field)}
 where we have defined
 %
 \begin{align*}
-G^j =& \frac{1}{J}\deriv{}{u^i}\left(Jg^{ij}\right)
+G^j =& \frac{1}{J}\deriv{}{u^i}\L(Jg^{ij}\R)
 \end{align*}
 %
-\textbf{not} to be confused with the Cristoffel symbol of the second kind (see 
+\textbf{not} to be confused with the Cristoffel symbol of the second kind (see
 the coordinates manual for more details).
 %
 
@@ -6779,7 +6905,7 @@ in Clebsch form as
 where
 %
 \begin{align}
-\mathbf{B}_0 = \left|\mathbf{B}_0\right|\mathbf{b}_0 = B_0 \mathbf{b}_0
+\mathbf{B}_0 = \L|\mathbf{B}_0\R|\mathbf{b}_0 = B_0 \mathbf{b}_0
 \end{align}
 %
 is the background \emph{equilibrium} magnetic field.
@@ -6797,14 +6923,14 @@ Function & Formula \\
 \code{Grad\_par} & $\displaystyle\partial^0_{||} = \mathbf{b}_0\cdot\nabla =
 \frac{1}{\sqrt{g_{yy}}}\deriv{}{y}$ \\
 \code{Div\_par} & $\displaystyle \nabla^0_{||}f =
-B_0\partial^0_{||}\left(\frac{f}{B_0}\right)$ \\
+B_0\partial^0_{||}\L(\frac{f}{B_0}\R)$ \\
 \code{Grad2\_par2} & $\displaystyle \partial^2_{||}\phi =
-\partial^0_{||}\left(\partial^0_{||}\phi\right) =
-\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\left(\frac{1}{\sqrt{g_{yy}}}\right)\deriv{
+\partial^0_{||}\L(\partial^0_{||}\phi\R) =
+\frac{1}{\sqrt{g_{yy}}}\deriv{}{y}\L(\frac{1}{\sqrt{g_{yy}}}\R)\deriv{
 \phi}{y} + \frac{1}{g_{yy}}\frac{\partial^2\phi}{\partial y^2}$ \\
 \code{Laplace\_par} & $\displaystyle \nabla_{||}^2\phi =
 \nabla\cdot\mathbf{b}_0\mathbf{b}_0\cdot\nabla\phi =
-\frac{1}{J}\deriv{}{y}\left(\frac{J}{g_{yy}}\deriv{\phi}{y}\right)$ \\
+\frac{1}{J}\deriv{}{y}\L(\frac{J}{g_{yy}}\deriv{\phi}{y}\R)$ \\
 \code{Laplace\_perp} & $\displaystyle \nabla_\perp^2 = \nabla^2 - \nabla_{||}^2$
 \\
 \code{Delp2} & Perpendicular Laplacian, neglecting all $y$ derivatives \\
@@ -6823,21 +6949,21 @@ We have that
 %
 \begin{align*}
 \mathbf{b}_0\cdot\nabla\phi\times\nabla A =&
-    \frac{1}{J\sqrt{g_{yy}}}\left[\left(g_{yy}\deriv{\phi}{z} -
-        g_{yz}\deriv{\phi}{y}\right)\deriv{A}{x} + \left(g_{yz}\deriv{\phi}{x}
-        - g_{xy}\deriv{\phi}{z}\right)\deriv{A}{y} +
-        \left(g_{xy}\deriv{\phi}{y} -
-    g_{yy}\deriv{\phi}{x}\right)\deriv{A}{z}\right]
+    \frac{1}{J\sqrt{g_{yy}}}\L[\L(g_{yy}\deriv{\phi}{z} -
+        g_{yz}\deriv{\phi}{y}\R)\deriv{A}{x} + \L(g_{yz}\deriv{\phi}{x}
+        - g_{xy}\deriv{\phi}{z}\R)\deriv{A}{y} +
+        \L(g_{xy}\deriv{\phi}{y} -
+    g_{yy}\deriv{\phi}{x}\R)\deriv{A}{z}\R]
 \end{align*}
 %
 \begin{align}
-\nabla_\perp \equiv \nabla - \ve{b}\left(\ve{b}\cdot\nabla\right)
+\nabla_\perp \equiv \nabla - \ve{b}\L(\ve{b}\cdot\nabla\R)
 \qquad \ve{b}\cdot\nabla = \frac{1}{JB}\frac{\partial}{\partial y}
 \end{align}
 %
 \begin{align}
-\ve{b} = \frac{1}{JB}\ve{e}_y = \frac{1}{JB}\left[g_{xy}\nabla x
-+ g_{yy}\nabla y + g_{yz}\nabla z\right]
+\ve{b} = \frac{1}{JB}\ve{e}_y = \frac{1}{JB}\L[g_{xy}\nabla x
++ g_{yy}\nabla y + g_{yz}\nabla z\R]
 \end{align}
 %
 In a Clebsch coordinate system $\ve{B} = \nabla z \times \nabla x =
@@ -6845,9 +6971,9 @@ In a Clebsch coordinate system $\ve{B} = \nabla z \times \nabla x =
 J^2B^2$, and so the $\nabla y$ term cancels out:
 %
 \begin{align*}
-\nabla_\perp =& \nabla x\left(\deriv{}{x} -
-\frac{g_{xy}}{\left(JB\right)^2}\deriv{}{y}\right) + \nabla
-    z\left(\deriv{}{z} - \frac{g_{yz}}{\left(JB\right)^2}\deriv{}{y}\right)
+\nabla_\perp =& \nabla x\L(\deriv{}{x} -
+\frac{g_{xy}}{\L(JB\R)^2}\deriv{}{y}\R) + \nabla
+    z\L(\deriv{}{z} - \frac{g_{yz}}{\L(JB\R)^2}\deriv{}{y}\R)
 \end{align*}
 %
 
@@ -6855,7 +6981,7 @@ J^2B^2$, and so the $\nabla y$ term cancels out:
 
 \subsection{The bracket operators}
 %
-The bracket operator \verb@brackets(phi, f, method)@ aims to differentiate 
+The bracket operator \texttt{brackets(phi, f, method)} aims to differentiate
 equations on the form
 %
 \begin{align*}
@@ -6864,14 +6990,14 @@ equations on the form
 
 
 \note{
-The bracket operators in BOUT++ are using Clebsch coordinates, and 
-returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather 
+The bracket operators in BOUT++ are using Clebsch coordinates, and
+returns $-\frac{\nabla\phi\times\ve{b}}{B}\cdot\nabla f$ rather
 than $-\nabla\phi\times\ve{b}\cdot\nabla f$.
 }
 \\
 \\
-Notice that when we use the Arakawa scheme, $y$-derivatives are neglected. 
-An example of usage of the brackets can be found in for example 
+Notice that when we use the Arakawa scheme, $y$-derivatives are neglected.
+An example of usage of the brackets can be found in for example
 \file{examples/MMS/advection} or \file{examples/blob2d}.
 
 
@@ -7458,7 +7584,7 @@ to find the eigenvectors and eigenvalues of sets of equations.
 
 \subsection{Configuring with SLEPc}
 
-The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with 
+The BOUT++ interface has been tested with SLEPc version 3.4.3, itself compiled with
 PETSc 3.4.2. SLEPc version 3.4 should work, but other versions will not yet.
 
 
@@ -8108,7 +8234,7 @@ documentation, and source code.
   \item \texttt{Field = {\bf Div}(Vector)} \\
     Divergence of a vector
   \item \texttt{Field = {\bf Div\_par}(Field f)} \\
-    Parallel divergence $B_0\mathbf{b}\cdot\nabla\left(f / B_0\right)$
+    Parallel divergence $B_0\mathbf{b}\cdot\nabla\L(f / B_0\R)$
   \item \texttt{{\bf dump.add}(Field, ``name'', 1/0)}
   \item \texttt{Field = {\bf filter}(Field, modenr)}
   \item \texttt{{\bf geometry\_derivs}()} \\ Calculates useful quantities from
@@ -8512,7 +8638,7 @@ Here the format is
   It deals with the processor layout, working out which file contains each part of the domain.
   %
   \begin{lstlisting}
-    from boutdata import collect
+    from boutdata.collect import collect
 
     t = collect("t_array")  # Collect the time values
   \end{lstlisting}
@@ -8644,4 +8770,3 @@ function.}
 
 \end{document}
 %
-

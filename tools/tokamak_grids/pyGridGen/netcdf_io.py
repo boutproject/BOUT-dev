@@ -1,6 +1,6 @@
 import numpy
 
-from boututils import DataFile
+from boututils.datafile import DataFile
 
 def file_open(output, format='NETCDF3_CLASSIC'):
     return DataFile(output, write=True, create=True,format=format)

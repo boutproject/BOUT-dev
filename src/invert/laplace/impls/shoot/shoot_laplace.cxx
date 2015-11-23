@@ -133,7 +133,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     ZFFT(rhs[ix], mesh->zShift(ix, jy), rhsk);
     
     for(int kz=0; kz<maxmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(mesh->zlength); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/(mesh->zlength()); // wave number is 1/[rad]
       
       // Get the coefficients
       dcomplex a,b,c;
