@@ -9,6 +9,9 @@
  */
 
 #include "laplacexz-petsc.hxx"
+
+#ifdef BOUT_HAS_PETSC  // Requires PETSc
+
 #include <bout/assert.hxx>
 #include <bout/sys/timer.hxx>
 
@@ -221,16 +224,19 @@ void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
         // ZZ component
         // Note that because metrics are constant in Z many terms cancel
 
+        // Wrap around z-1 and z+1 indices
+        int zminus = (z - 1 + (mesh->ngz-1)) % (mesh->ngz-1);
+        int zplus = (z + 1) % (mesh->ngz-1);
+        
         // Metrics on z+1/2 boundary
-        Acoef = 0.5*(A(x,y,z) + A(x,y,z+1));
+        Acoef = 0.5*(A(x,y,z) + A(x,y,zplus));
 
         val = Acoef * mesh->g33(x,y) / (mesh->dz*mesh->dz);
         zp = val;
         c -= val;
 
         // Metrics on z-1/2 boundary
-        throw BoutException("DELME: Line 233 in laplacexz-petsc.cxx throws operator out of bound data as z counts from 0 in this loop");
-        Acoef = 0.5*(A(x,y,z) + A(x,y,z-1));
+        Acoef = 0.5*(A(x,y,z) + A(x,y,zminus));
 
         val = Acoef * mesh->g33(x,y) / (mesh->dz*mesh->dz);
         zm = val;
@@ -473,3 +479,5 @@ Field3D LaplaceXZpetsc::solve(const Field3D &bin, const Field3D &x0in) {
   }
   return result;
 }
+
+#endif // BOUT_HAS_PETSC
