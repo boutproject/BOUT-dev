@@ -16,7 +16,7 @@ class LaplaceXZpetsc;
 #include <boutexception.hxx>
 class LaplaceXZpetsc : public LaplaceXZ {
 public:
-  LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, opt) {
+  LaplaceXZpetsc(Mesh *m, Options *options) : LaplaceXZ(m, options) {
     throw BoutException("No PETSc LaplaceXY solver available");
   }
   void setCoefs(const Field2D &A, const Field2D &B) {}
