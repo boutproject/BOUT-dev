@@ -316,9 +316,14 @@ int Mesh::geometry() {
     throw BoutException("\tERROR: Off-diagonal g_ij metrics are not finite!\n");
   }
 
-  // Calculate Christoffel symbol terms (15 independent values)
+  // Calculate Christoffel symbol terms (18 independent values)
   // Note: This calculation is completely general: metric
   // tensor can be 2D or 3D. For 2D, all DDZ terms are zero
+  /* Copy-paste-search-replace template of equation (2.6.25) in D'Haeseleer expanded
+   *    Gi_jk = 0.5 *gi1*(DDk(g_1j) + DDj(g_1k) - DDX(g_jk))
+   *            + 0.5 *gi2*(DDk(g_2j) + DDj(g_2k) - DDY(g_jk))
+   *            + 0.5 *gi3*(DDk(g_3j) + DDj(g_3k) - DDZ(g_jk));
+   */
 
   G1_11 = 0.5*g11*DDX(g_11)
     + g12*(DDX(g_12) - 0.5*DDY(g_11))
@@ -335,6 +340,9 @@ int Mesh::geometry() {
   G1_13 = 0.5*g11*DDZ(g_11)
     + 0.5*g12*(DDZ(g_12) + DDX(g_23) - DDY(g_13))
     + 0.5*g13*DDX(g_33);
+  G1_23 = 0.5 *g11*(DDZ(g_12) + DDY(g_13) - DDX(g_23))
+    + 0.5 *g12*(DDZ(g_22) + DDY(g_23) - DDY(g_23))
+    + 0.5 *g13*(DDZ(g_32) + DDY(g_33) - DDZ(g_23));
 
   G2_11 = 0.5*g12*DDX(g_11)
     + g22*(DDX(g_12) - 0.5*DDY(g_11))
@@ -348,6 +356,9 @@ int Mesh::geometry() {
   G2_12 = 0.5*g12*DDY(g_11)
     + 0.5*g22*DDX(g_22)
     + 0.5*g23*(DDY(g_13) + DDX(g_23) - DDZ(g_12));
+  G2_13 = 0.5 *g21*(DDZ(g_11) + DDX(g_13) - DDX(g_13))
+    + 0.5 *g22*(DDZ(g_21) + DDX(g_23) - DDY(g_13))
+    + 0.5 *g23*(DDZ(g_31) + DDX(g_33) - DDZ(g_13));
   G2_23 = 0.5*g12*(DDZ(g_12) + DDY(g_13) - DDX(g_23))
     + 0.5*g22*DDZ(g_22)
     + 0.5*g23*DDY(g_33);
@@ -361,12 +372,16 @@ int Mesh::geometry() {
   G3_33 = g13*(DDZ(g_13) - 0.5*DDX(g_33))
     + g23*(DDZ(g_23) - 0.5*DDY(g_33))
     + 0.5*g33*DDZ(g_33);
+  G3_12 = 0.5 *g31*(DDY(g_11) + DDX(g_12) - DDX(g_12))
+    + 0.5 *g32*(DDY(g_21) + DDX(g_22) - DDY(g_12))
+    + 0.5 *g33*(DDY(g_31) + DDX(g_32) - DDZ(g_12));
   G3_13 = 0.5*g13*DDZ(g_11)
     + 0.5*g23*(DDZ(g_12) + DDX(g_23) - DDY(g_13))
     + 0.5*g33*DDX(g_33);
   G3_23 = 0.5*g13*(DDZ(g_12) + DDY(g_13) - DDX(g_23))
     + 0.5*g23*DDZ(g_22)
     + 0.5*g33*DDY(g_33);
+
 
   // Note that G1, G2 and G3 has nothing to do with the Cristoffel symbols, but
   // serve as variables which only has to be calculated once
@@ -384,16 +399,19 @@ int Mesh::geometry() {
   com.add(G1_33);
   com.add(G1_12);
   com.add(G1_13);
+  com.add(G1_23);
 
   com.add(G2_11);
   com.add(G2_22);
   com.add(G2_33);
   com.add(G2_12);
+  com.add(G2_13);
   com.add(G2_23);
 
   com.add(G3_11);
   com.add(G3_22);
   com.add(G3_33);
+  com.add(G3_12);
   com.add(G3_13);
   com.add(G3_23);
 
@@ -441,8 +459,8 @@ int Mesh::calcCovariant() {
 
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
 
       // put elements into g_{ij}
@@ -460,32 +478,32 @@ int Mesh::calcCovariant() {
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
-		     g_12*g12 +
-		     g_13*g13)- 1 ));
+                     g_12*g12 +
+                     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
-		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+                      g_22*g22 +
+                      g_23*g23) - 1 ))) > maxerr)
     maxerr = err;
 
   if((err = max(abs( (g_13*g13 +
-		      g_23*g23 +
-		      g_33*g33) - 1 ))) > maxerr)
+                      g_23*g23 +
+                      g_33*g33) - 1 ))) > maxerr)
     maxerr = err;
   output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
 
   maxerr = max(abs(g_11*g12 +
-		   g_12*g22 +
-		   g_13*g23));
+                   g_12*g22 +
+                   g_13*g23));
 
   if((err = max(abs(g_11*g13 +
-		    g_12*g23 +
-		    g_13*g33))) > maxerr)
+                    g_12*g23 +
+                    g_13*g33))) > maxerr)
     maxerr = err;
 
   if((err = max(abs(g_12*g13 +
-		    g_22*g23 +
-		    g_23*g33))) > maxerr)
+                    g_22*g23 +
+                    g_23*g33))) > maxerr)
     maxerr = err;
 
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
@@ -524,8 +542,8 @@ int Mesh::calcContravariant() {
 
       // invert
       if(gaussj(a, 3)) {
-	output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
-	return 1;
+        output.write("\tERROR: metric tensor is singular at (%d, %d)\n", jx, jy);
+        return 1;
       }
 
       // put elements into g_{ij}
@@ -543,32 +561,32 @@ int Mesh::calcContravariant() {
 
   BoutReal maxerr, err;
   maxerr = max(abs( (g_11*g11 +
-		     g_12*g12 +
-		     g_13*g13)- 1 ));
+                     g_12*g12 +
+                     g_13*g13)- 1 ));
   if((err = max(abs( (g_12*g12 +
-		      g_22*g22 +
-		      g_23*g23) - 1 ))) > maxerr)
+                      g_22*g22 +
+                      g_23*g23) - 1 ))) > maxerr)
     maxerr = err;
 
   if((err = max(abs( (g_13*g13 +
-		      g_23*g23 +
-		      g_33*g33) - 1 ))) > maxerr)
+                      g_23*g23 +
+                      g_33*g33) - 1 ))) > maxerr)
     maxerr = err;
   output.write("\tMaximum error in diagonal inversion is %e\n", maxerr);
 
 
   maxerr = max(abs(g_11*g12 +
-		   g_12*g22 +
-		   g_13*g23));
+                   g_12*g22 +
+                   g_13*g23));
 
   if((err = max(abs(g_11*g13 +
-		    g_12*g23 +
-		    g_13*g33))) > maxerr)
+                    g_12*g23 +
+                    g_13*g33))) > maxerr)
     maxerr = err;
 
   if((err = max(abs(g_12*g13 +
-		    g_22*g23 +
-		    g_23*g33))) > maxerr)
+                    g_22*g23 +
+                    g_23*g33))) > maxerr)
     maxerr = err;
 
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
@@ -646,18 +664,18 @@ int Mesh::gaussj(BoutReal **a, int n) {
     irow = icol = -1;
     for(j=0;j<n;j++) { // search for pivot element
       if(ipiv[j] != 1) {
-	for(k=0;k<n;k++) {
-	  if(ipiv[k] == 0) {
-	    if(fabs(a[j][k]) >= big) {
-	      big = fabs(a[j][k]);
-	      irow = j;
-	      icol = k;
-	    }
-	  }else if(ipiv[k] > 1) {
-	    output.write("Error in GaussJ: Singular matrix-1\n");
-	    return 1;
-	  }
-	}
+        for(k=0;k<n;k++) {
+          if(ipiv[k] == 0) {
+            if(fabs(a[j][k]) >= big) {
+              big = fabs(a[j][k]);
+              irow = j;
+              icol = k;
+            }
+          }else if(ipiv[k] > 1) {
+            output.write("Error in GaussJ: Singular matrix-1\n");
+            return 1;
+          }
+        }
       }
     }
 
@@ -672,7 +690,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
     // on the diagonal
     if(irow != icol) {
       for(l=0;l<n;l++)
-	swap(a[irow][l],a[icol][l]);
+        swap(a[irow][l],a[icol][l]);
     }
     indxr[i] = irow;
     indxc[i] = icol;
@@ -688,10 +706,10 @@ int Mesh::gaussj(BoutReal **a, int n) {
 
     for(ll=0;ll<n;ll++) { // reduce rows
       if(ll != icol) {    // except for the pivot one
-	dum = a[ll][icol];
-	a[ll][icol] = 0.0;
-	for(l=0;l<n;l++)
-	  a[ll][l] -= a[icol][l]*dum;
+        dum = a[ll][icol];
+        a[ll][icol] = 0.0;
+        for(l=0;l<n;l++)
+          a[ll][l] -= a[icol][l]*dum;
 
       }
     }
@@ -700,7 +718,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
   for(l=n-1;l>=0;l--) {
     if(indxr[l] != indxc[l])
       for(k=0;k<n;k++)
-	swap(a[k][indxr[l]], a[k][indxc[l]]);
+        swap(a[k][indxr[l]], a[k][indxc[l]]);
   }
   // done.
 
@@ -723,7 +741,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	xy(jx, jy) = f(jx, jy, jz);
+        xy(jx, jy) = f(jx, jy, jz);
       }
     }
 
@@ -731,7 +749,7 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	result(jx, jy, jz) = xy(jx, jy);
+        result(jx, jy, jz) = xy(jx, jy);
       }
     }
   }
@@ -755,7 +773,7 @@ const Field3D Mesh::averageX(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	xy(jx, jy) = f(jx, jy, jz);
+        xy(jx, jy) = f(jx, jy, jz);
       }
     }
 
@@ -763,7 +781,7 @@ const Field3D Mesh::averageX(const Field3D &f) {
 
     for(int jx=0; jx<ngx;jx++) {
       for(int jy=0; jy<ngy;jy++) {
-	result(jx, jy, jz) = xy(jx, jy);
+        result(jx, jy, jz) = xy(jx, jy);
       }
     }
   }

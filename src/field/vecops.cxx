@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -54,7 +54,7 @@ const Vector2D Grad(const Field2D &f, CELL_LOC outloc)
   return result;
 }
 
-const Vector3D Grad(const Field3D &f, 
+const Vector3D Grad(const Field3D &f,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z)
 {
   Vector3D result;
@@ -75,7 +75,7 @@ const Vector3D Grad(const Field3D &f,
   result.z = DDZ(f, outloc_z);
 
   result.covariant = true;
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
@@ -87,12 +87,12 @@ const Vector3D Grad(const Field3D &f, CELL_LOC outloc)
 {
   if(outloc == CELL_VSHIFT)
     return Grad(f, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
-  
+
   return Grad(f, outloc, outloc, outloc);
 }
 
-const Vector3D Grad_perp(const Field3D &f, 
-			 CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
+const Vector3D Grad_perp(const Field3D &f,
+                         CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
   Vector3D result;
 
 #ifdef CHECK
@@ -112,7 +112,7 @@ const Vector3D Grad_perp(const Field3D &f,
   result.z = DDZ(f, outloc_z) - parcoef*mesh->g_23*DDY(f, outloc_z);
 
   result.covariant = true;
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
@@ -131,11 +131,11 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc)
 #ifdef CHECK
   int msg_pos = msg_stack.push("Div( Vector2D )");
 #endif
-  
+
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
-  
+
   result = DDX(mesh->J*vcn.x);
   result += DDY(mesh->J*vcn.y);
   result += DDZ(mesh->J*vcn.z);
@@ -156,13 +156,13 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
   int msg_pos = msg_stack.push("Div( Vector3D )");
 #endif
 
-  if(outloc == CELL_DEFAULT) 
+  if(outloc == CELL_DEFAULT)
     outloc = CELL_CENTRE;
 
   // get contravariant components of v
   Vector3D vcn = v;
   vcn.toContravariant();
-  
+
   result = DDX(mesh->J*vcn.x, outloc);
   result += DDY(mesh->J*vcn.y, outloc);
   result += DDZ(mesh->J*vcn.z, outloc);
@@ -186,11 +186,11 @@ const Field2D Div(const Vector2D &v, const Field2D &f)
 #ifdef CHECK
   int msg_pos = msg_stack.push("Div( Vector2D, Field2D )");
 #endif
-  
+
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
-  
+
   result = FDDX(mesh->J*vcn.x, f);
   result += FDDY(mesh->J*vcn.y, f);
   result += FDDZ(mesh->J*vcn.z, f);
@@ -211,13 +211,13 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_
   int msg_pos = msg_stack.push("Div( Vector3D, Field3D )");
 #endif
 
-  if(outloc == CELL_DEFAULT) 
+  if(outloc == CELL_DEFAULT)
     outloc = CELL_CENTRE;
 
   // get contravariant components of v
   Vector3D vcn = v;
   vcn.toContravariant();
-  
+
   result = FDDX(mesh->J*vcn.x, f, method, outloc);
   result += FDDY(mesh->J*vcn.y, f, method, outloc);
   result += FDDZ(mesh->J*vcn.z, f, method, outloc);
@@ -261,7 +261,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc)
   result.x = (DDY(vco.z) - DDZ(vco.y))/mesh->J;
   result.y = (DDZ(vco.x) - DDX(vco.z))/mesh->J;
   result.z = (DDX(vco.y) - DDY(vco.x))/mesh->J;
-  
+
   if(mesh->ShiftXderivs) {
     result.z -= mesh->ShiftTorsion*vco.z / mesh->J;
   }
@@ -273,7 +273,7 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc)
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v, 
+const Vector3D Curl(const Vector3D &v,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z)
 {
   Vector3D result;
@@ -309,7 +309,7 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc)
 {
   if(outloc == CELL_VSHIFT)
     return Curl(v, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
-  
+
   return Curl(v, outloc, outloc, outloc);
 }
 
@@ -320,7 +320,7 @@ const Vector3D Curl(const Vector3D &v, CELL_LOC outloc)
 const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f)
 {
   Field2D result;
-  
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Field2D )");
 #endif
@@ -341,7 +341,7 @@ const Field2D V_dot_Grad(const Vector2D &v, const Field2D &f)
 const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f)
 {
   Field3D result;
-  
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("V_dot_Grad( Vector2D , Field3D )");
 #endif
@@ -362,7 +362,7 @@ const Field3D V_dot_Grad(const Vector2D &v, const Field3D &f)
 const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f)
 {
   Field3D result;
-  
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Field2D )");
 #endif
@@ -383,7 +383,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field2D &f)
 const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f)
 {
   Field3D result;
-  
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Field3D )");
 #endif
@@ -391,7 +391,7 @@ const Field3D V_dot_Grad(const Vector3D &v, const Field3D &f)
   // Get contravariant components of v
   Vector3D vcn = v;
   vcn.toContravariant();
-  
+
   result = VDDX(vcn.x, f) + VDDY(vcn.y, f) + VDDZ(vcn.z, f);
 
 #ifdef CHECK
@@ -413,43 +413,53 @@ const Vector2D V_dot_Grad(const Vector2D &v, const Vector2D &a)
   vcn.toContravariant();
 
   if(a.covariant) {
-    
+    /* Copy-paste-search-replace template for covariant
+     *  result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *  result.j -= vcn.x*(mesh->G1_j1*a.x + mesh->G2_j1*a.y + mesh->G3_j1*a.z);
+     *  result.j -= vcn.y*(mesh->G1_j2*a.x + mesh->G2_j2*a.y + mesh->G3_j2*a.z);
+     *  result.j -= vcn.z*(mesh->G1_j3*a.x + mesh->G2_j3*a.y + mesh->G3_j3*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(mesh->G1_11*a.x + mesh->G2_11*a.y + mesh->G3_11*a.z);
-    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y);
-    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G3_13*a.z);
+    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
+    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y);
+    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.y -= vcn.y*(mesh->G1_22*a.x + mesh->G2_22*a.y + mesh->G3_22*a.z);
-    result.y -= vcn.z*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.y -= vcn.z*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G3_13*a.z);
-    result.z -= vcn.y*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
+    result.z -= vcn.y*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
     result.z -= vcn.z*(mesh->G1_33*a.x + mesh->G2_33*a.y + mesh->G3_33*a.z);
 
     result.covariant = true;
   }else {
-    
+    /* Copy-paste-search-replace template for contravariant
+     *   result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *   result.j += vcn.x*(mesh->Gj_11*a.x + mesh->Gj_21*a.y + mesh->Gj_31*a.z);
+     *   result.j += vcn.y*(mesh->Gj_12*a.x + mesh->Gj_22*a.y + mesh->Gj_32*a.z);
+     *   result.j += vcn.z*(mesh->Gj_13*a.x + mesh->Gj_23*a.y + mesh->Gj_33*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(mesh->G1_11*a.x + mesh->G1_12*a.y + mesh->G1_13*a.z);
-    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y);
-    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_33*a.z);
-    
+    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y + mesh->G1_23*a.z);
+    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_23*a.y + mesh->G1_33*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y);
+    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y + mesh->G2_13*a.z);
     result.y += vcn.y*(mesh->G2_12*a.x + mesh->G2_22*a.y + mesh->G2_23*a.z);
-    result.y += vcn.z*(mesh->G2_23*a.y + mesh->G2_33*a.z);
-    
+    result.y += vcn.z*(mesh->G2_13*a.x + mesh->G2_23*a.y + mesh->G2_33*a.z);
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_13*a.z);
-    result.z += vcn.y*(mesh->G3_22*a.y + mesh->G3_23*a.z);
+    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_12*a.y + mesh->G3_13*a.z);
+    result.z += vcn.y*(mesh->G3_12*a.x + mesh->G3_22*a.y + mesh->G3_23*a.z);
     result.z += vcn.z*(mesh->G3_13*a.x + mesh->G3_23*a.y + mesh->G3_33*a.z);
 
     result.covariant = false;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
@@ -469,41 +479,53 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a)
   vcn.toContravariant();
 
   if(a.covariant) {
+    /* Copy-paste-search-replace template for covariant
+     *  result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *  result.j -= vcn.x*(mesh->G1_j1*a.x + mesh->G2_j1*a.y + mesh->G3_j1*a.z);
+     *  result.j -= vcn.y*(mesh->G1_j2*a.x + mesh->G2_j2*a.y + mesh->G3_j2*a.z);
+     *  result.j -= vcn.z*(mesh->G1_j3*a.x + mesh->G2_j3*a.y + mesh->G3_j3*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(mesh->G1_11*a.x + mesh->G2_11*a.y + mesh->G3_11*a.z);
-    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y);
-    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G3_13*a.z);
+    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
+    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y);
+    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.y -= vcn.y*(mesh->G1_22*a.x + mesh->G2_22*a.y + mesh->G3_22*a.z);
-    result.y -= vcn.z*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.y -= vcn.z*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G3_13*a.z);
-    result.z -= vcn.y*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
+    result.z -= vcn.y*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
     result.z -= vcn.z*(mesh->G1_33*a.x + mesh->G2_33*a.y + mesh->G3_33*a.z);
 
     result.covariant = true;
   }else {
+    /* Copy-paste-search-replace template for contravariant
+     *   result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *   result.j += vcn.x*(mesh->Gj_11*a.x + mesh->Gj_21*a.y + mesh->Gj_31*a.z);
+     *   result.j += vcn.y*(mesh->Gj_12*a.x + mesh->Gj_22*a.y + mesh->Gj_32*a.z);
+     *   result.j += vcn.z*(mesh->Gj_13*a.x + mesh->Gj_23*a.y + mesh->Gj_33*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(mesh->G1_11*a.x + mesh->G1_12*a.y + mesh->G1_13*a.z);
-    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y);
-    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_33*a.z);
+    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y + mesh->G1_23*a.z);
+    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_23*a.y + mesh->G1_33*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y);
+    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y + mesh->G2_13*a.z);
     result.y += vcn.y*(mesh->G2_12*a.x + mesh->G2_22*a.y + mesh->G2_23*a.z);
-    result.y += vcn.z*(mesh->G2_23*a.y + mesh->G2_33*a.z);
+    result.y += vcn.z*(mesh->G2_13*a.x + mesh->G2_23*a.y + mesh->G2_33*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_13*a.z);
-    result.z += vcn.y*(mesh->G3_22*a.y + mesh->G3_23*a.z);
+    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_12*a.y + mesh->G3_13*a.z);
+    result.z += vcn.y*(mesh->G3_12*a.x + mesh->G3_22*a.y + mesh->G3_23*a.z);
     result.z += vcn.z*(mesh->G3_13*a.x + mesh->G3_23*a.y + mesh->G3_33*a.z);
 
     result.covariant = false;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
@@ -514,7 +536,7 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a)
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a)
 {
   Vector3D result;
-  
+
 #ifdef CHECK
   int msg_pos = msg_stack.push("V_dot_Grad( Vector3D , Vector2D )");
 #endif
@@ -523,41 +545,53 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a)
   vcn.toContravariant();
 
   if(a.covariant) {
+    /* Copy-paste-search-replace template for covariant
+     *  result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *  result.j -= vcn.x*(mesh->G1_j1*a.x + mesh->G2_j1*a.y + mesh->G3_j1*a.z);
+     *  result.j -= vcn.y*(mesh->G1_j2*a.x + mesh->G2_j2*a.y + mesh->G3_j2*a.z);
+     *  result.j -= vcn.z*(mesh->G1_j3*a.x + mesh->G2_j3*a.y + mesh->G3_j3*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(mesh->G1_11*a.x + mesh->G2_11*a.y + mesh->G3_11*a.z);
-    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y);
-    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G3_13*a.z);
+    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
+    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y);
+    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.y -= vcn.y*(mesh->G1_22*a.x + mesh->G2_22*a.y + mesh->G3_22*a.z);
-    result.y -= vcn.z*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.y -= vcn.z*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G3_13*a.z);
-    result.z -= vcn.y*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
+    result.z -= vcn.y*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
     result.z -= vcn.z*(mesh->G1_33*a.x + mesh->G2_33*a.y + mesh->G3_33*a.z);
 
     result.covariant = true;
   }else {
+    /* Copy-paste-search-replace template for contravariant
+     *   result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *   result.j += vcn.x*(mesh->Gj_11*a.x + mesh->Gj_21*a.y + mesh->Gj_31*a.z);
+     *   result.j += vcn.y*(mesh->Gj_12*a.x + mesh->Gj_22*a.y + mesh->Gj_32*a.z);
+     *   result.j += vcn.z*(mesh->Gj_13*a.x + mesh->Gj_23*a.y + mesh->Gj_33*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(mesh->G1_11*a.x + mesh->G1_12*a.y + mesh->G1_13*a.z);
-    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y);
-    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_33*a.z);
+    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y + mesh->G1_23*a.z);
+    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_23*a.y + mesh->G1_33*a.z);
 
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y);
+    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y + mesh->G2_13*a.z);
     result.y += vcn.y*(mesh->G2_12*a.x + mesh->G2_22*a.y + mesh->G2_23*a.z);
-    result.y += vcn.z*(mesh->G2_23*a.y + mesh->G2_33*a.z);
+    result.y += vcn.z*(mesh->G2_13*a.x + mesh->G2_23*a.y + mesh->G2_33*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_13*a.z);
-    result.z += vcn.y*(mesh->G3_22*a.y + mesh->G3_23*a.z);
+    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_12*a.y + mesh->G3_13*a.z);
+    result.z += vcn.y*(mesh->G3_12*a.x + mesh->G3_22*a.y + mesh->G3_23*a.z);
     result.z += vcn.z*(mesh->G3_13*a.x + mesh->G3_23*a.y + mesh->G3_33*a.z);
 
     result.covariant = false;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
@@ -577,46 +611,56 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
   vcn.toContravariant();
 
   if(a.covariant) {
+    /* Copy-paste-search-replace template for covariant
+     *  result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *  result.j -= vcn.x*(mesh->G1_j1*a.x + mesh->G2_j1*a.y + mesh->G3_j1*a.z);
+     *  result.j -= vcn.y*(mesh->G1_j2*a.x + mesh->G2_j2*a.y + mesh->G3_j2*a.z);
+     *  result.j -= vcn.z*(mesh->G1_j3*a.x + mesh->G2_j3*a.y + mesh->G3_j3*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x -= vcn.x*(mesh->G1_11*a.x + mesh->G2_11*a.y + mesh->G3_11*a.z);
-    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y);
-    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G3_13*a.z);
-    
+    result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
+    result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y);
+    result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.y -= vcn.y*(mesh->G1_22*a.x + mesh->G2_22*a.y + mesh->G3_22*a.z);
-    result.y -= vcn.z*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.y -= vcn.z*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
 
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G3_13*a.z);
-    result.z -= vcn.y*(mesh->G2_23*a.y + mesh->G3_23*a.z);
+    result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
+    result.z -= vcn.y*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
     result.z -= vcn.z*(mesh->G1_33*a.x + mesh->G2_33*a.y + mesh->G3_33*a.z);
 
     result.covariant = true;
   }else {
+    /* Copy-paste-search-replace template for contravariant
+     *   result.j = VDDX(vcn.x, a.j) + VDDY(vcn.y, a.j) + VDDZ(vcn.z, a.j);
+     *   result.j += vcn.x*(mesh->Gj_11*a.x + mesh->Gj_21*a.y + mesh->Gj_31*a.z);
+     *   result.j += vcn.y*(mesh->Gj_12*a.x + mesh->Gj_22*a.y + mesh->Gj_32*a.z);
+     *   result.j += vcn.z*(mesh->Gj_13*a.x + mesh->Gj_23*a.y + mesh->Gj_33*a.z);
+     */
     result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
     result.x += vcn.x*(mesh->G1_11*a.x + mesh->G1_12*a.y + mesh->G1_13*a.z);
-    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y);
-    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_33*a.z);
-    
+    result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y + mesh->G1_23*a.z);
+    result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_23*a.y + mesh->G1_33*a.z);
+
     result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
-    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y);
+    result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y + mesh->G2_13*a.z);
     result.y += vcn.y*(mesh->G2_12*a.x + mesh->G2_22*a.y + mesh->G2_23*a.z);
-    result.y += vcn.z*(mesh->G2_23*a.y + mesh->G2_33*a.z);
-    
+    result.y += vcn.z*(mesh->G2_13*a.x + mesh->G2_23*a.y + mesh->G2_33*a.z);
+
     result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
-    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_13*a.z);
-    result.z += vcn.y*(mesh->G3_22*a.y + mesh->G3_23*a.z);
+    result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_12*a.y + mesh->G3_13*a.z);
+    result.z += vcn.y*(mesh->G3_12*a.x + mesh->G3_22*a.y + mesh->G3_23*a.z);
     result.z += vcn.z*(mesh->G3_13*a.x + mesh->G3_23*a.y + mesh->G3_33*a.z);
 
     result.covariant = false;
   }
-  
+
 #ifdef CHECK
   msg_stack.pop(msg_pos);
 #endif
 
   return result;
 }
-
-

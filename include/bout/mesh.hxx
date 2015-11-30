@@ -1,7 +1,7 @@
 /**************************************************************************
  * Interface for mesh classes. Contains standard variables and useful
  * routines.
- * 
+ *
  * Changelog
  * =========
  *
@@ -13,7 +13,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -59,37 +59,37 @@ typedef void* comm_handle;
 
 class Mesh {
  public:
-  
+
   Mesh(GridDataSource *s);
   virtual ~Mesh();
-  
+
   static Mesh* create(GridDataSource *source, Options *opt = NULL); ///< Create a Mesh object
   static Mesh* create(Options *opt = NULL);
-  
+
   // Currently need to create and load mesh in separate calls. Will be removed
   virtual int load() {return 1;}
   virtual void outputVars(Datafile &file) {} ///< Output variables to a data file
 
-  
+
   // Get routines to request data from mesh file
   int get(int &ival, const string &name); ///< Get an integer
   int get(BoutReal &rval, const string &name); ///< Get a BoutReal number
-  
+
   int get(Field2D &var, const string &name, BoutReal def=0.0);
   int get(Field3D &var, const string &name, BoutReal def=0.0);
-  
+
   int get(Vector2D &var, const string &name);
   int get(Vector3D &var, const string &name);
-  
+
   // Communications
-  
+
   int communicate(FieldData &f);  // Returns error code
   int communicate(FieldData &f1, FieldData &f2);
   int communicate(FieldData &f1, FieldData &f2, FieldData &f3);
   int communicate(FieldData &f1, FieldData &f2, FieldData &f3, FieldData &f4);
   virtual int communicate(FieldGroup &g) = 0; // Returns error code
   int communicate(FieldPerp &f); // Communicate an X-Z field
-  
+
   virtual comm_handle send(FieldGroup &g) = 0;  // Return handle
   comm_handle send(FieldData &f);   // Send a single field
   virtual int wait(comm_handle handle) = 0; // Wait for the handle, return error code
@@ -101,7 +101,7 @@ class Mesh {
   virtual int getNYPE() = 0;
   virtual int getXProcIndex() = 0;
   virtual int getYProcIndex() = 0;
-  
+
   // X communications
   virtual bool firstX() = 0;
   virtual bool lastX() = 0;
@@ -119,7 +119,7 @@ class Mesh {
   //virtual bool periodicX() const = 0;                     ///< Test if a surface is periodic in X
   virtual bool periodicY(int jx) const;                   ///< Test if a surface is closed in Y
   virtual bool periodicY(int jx, BoutReal &ts) const = 0; ///< Also get the twist-shift angle
-  
+
   virtual int ySize(int jx) const;
 
   // Y communications
@@ -137,35 +137,35 @@ class Mesh {
   virtual comm_handle irecvYOutOutdest(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvYInIndest(BoutReal *buffer, int size, int tag) = 0;
   virtual comm_handle irecvYInOutdest(BoutReal *buffer, int size, int tag) = 0;
-  
-  
+
+
   virtual const Field2D averageY(const Field2D &f) = 0;
   virtual const Field3D averageY(const Field3D &f);
   virtual const Field2D averageX(const Field2D &f) = 0;
   virtual const Field3D averageX(const Field3D &f);
-  
+
   // Boundary region iteration
   virtual const RangeIterator iterateBndryLowerY() const = 0;
   virtual const RangeIterator iterateBndryUpperY() const = 0;
-  
+
   bool hasBndryLowerY();
   bool hasBndryUpperY();
 
   // Boundary regions
   virtual vector<BoundaryRegion*> getBoundaries() = 0;
-  
+
   // Branch-cut special handling (experimental)
   virtual const Field3D smoothSeparatrix(const Field3D &f) {return f;}
-  
+
   virtual BoutReal GlobalX(int jx) const = 0; ///< Continuous X index between 0 and 1
   virtual BoutReal GlobalY(int jy) const = 0; ///< Continuous Y index (0 -> 1)
-  
+
   //////////////////////////////////////////////////////////
-  
+
   int GlobalNx, GlobalNy, GlobalNz; // Size of the global arrays. Note: can have holes
   int OffsetX, OffsetY, OffsetZ;    // Offset of this mesh within the global array
                                     // so startx on this processor is OffsetX in global
-  
+
   /// Global locator functions
   virtual int XGLOBAL(int xloc) const = 0;
   virtual int YGLOBAL(int yloc) const = 0;
@@ -184,46 +184,46 @@ class Mesh {
 
   /// Size of the mesh on this processor including guard/boundary cells
   int ngx, ngy, ngz;
-  
+
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
 
-  // These used for differential operators 
+  // These used for differential operators
   Field2D dx, dy;      // Read in grid.cpp
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
-  
+
   BoutReal dz;    // Grid spacing in the Z direction
   BoutReal zlength() const { return dz * (ngz-1); } // Length of the Z domain. Used for FFTs
-  
+
   bool ShiftXderivs; // Use shifted X derivatives
   int  ShiftOrder;   // Order of shifted X derivative interpolation
   Field2D zShift; // Z shift for each point (radians)
-  
+
   bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
 
   int  TwistOrder;   // Order of twist-shift interpolation
   bool BoundaryOnCell; // NB: DOESN'T REALLY BELONG HERE
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
-  
+
   Field2D ShiftTorsion; // d <pitch angle> / dx. Needed for vector differentials (Curl)
   Field2D IntShiftTorsion; // Integrated shear (I in BOUT notation)
   bool IncIntShear; // Include integrated shear (if shifting X)
-  
+
   Field2D J; // Jacobian
 
   Field2D Bxy; // Magnitude of B = nabla z times nabla x
-  
+
   // Contravariant metric tensor (g^{ij})
   Field2D g11, g22, g33, g12, g13, g23; // These are read in grid.cpp
-  
+
   // Covariant metric tensor
   Field2D g_11, g_22, g_33, g_12, g_13, g_23;
-  
+
   // Christoffel symbol of the second kind (connection coefficients)
-  Field2D G1_11, G1_22, G1_33, G1_12, G1_13;
-  Field2D G2_11, G2_22, G2_33, G2_12, G2_23;
-  Field2D G3_11, G3_22, G3_33, G3_13, G3_23;
-  
+  Field2D G1_11, G1_22, G1_33, G1_12, G1_13, G1_23;
+  Field2D G2_11, G2_22, G2_33, G2_12, G2_23, G2_13;
+  Field2D G3_11, G3_22, G3_33, G3_13, G3_23, G3_12;
+
   Field2D G1, G2, G3;
 
   /// Calculate differential geometry quantities from the metric tensor
@@ -231,25 +231,24 @@ class Mesh {
   int calcCovariant(); ///< Inverts contravatiant metric to get covariant
   int calcContravariant(); ///< Invert covariant metric to get contravariant
   int jacobian(); // Calculate J and Bxy
-  
+
   bool non_uniform; // Use corrections for non-uniform meshes
-  
+
   bool freeboundary_xin, freeboundary_xout, freeboundary_ydown, freeboundary_yup;
-  
+
  protected:
-  
+
   GridDataSource *source; ///< Source for grid data
 
   /// Read a 1D array of integers
   const vector<int> readInts(const string &name, int n);
-  
+
   /// Calculates the size of a message for a given x and y range
   int msg_len(const vector<FieldData*> &var_list, int xge, int xlt, int yge, int ylt);
-  
+
  private:
   int gaussj(BoutReal **a, int n);
   int *indxc, *indxr, *ipiv, ilen;
 };
 
 #endif // __MESH_H__
-
