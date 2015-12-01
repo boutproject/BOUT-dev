@@ -1696,6 +1696,58 @@ const Field2D DDX(const Field2D &f) {
   return applyXdiff(f, fDDX, fDDX_in, fDDX_out, mesh->dx);
 }
 
+const Vector3D DDX(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
+  Vector3D result;
+
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDX(v.x, outloc, method) - v.x*mesh->G1_11 - v.y*mesh->G2_11 - v.z*mesh->G3_11;
+    result.y = DDX(v.y, outloc, method) - v.x*mesh->G1_12 - v.y*mesh->G2_12 - v.z*mesh->G3_12;
+    result.z = DDX(v.z, outloc, method) - v.x*mesh->G1_13 - v.y*mesh->G2_13 - v.z*mesh->G3_13;
+
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDX(v.x, outloc, method) + v.x*mesh->G1_11 + v.y*mesh->G1_12 + v.z*mesh->G1_13;
+    result.y = DDX(v.y, outloc, method) + v.x*mesh->G2_11 + v.y*mesh->G2_12 + v.z*mesh->G2_13;
+    result.z = DDX(v.z, outloc, method) + v.x*mesh->G3_11 + v.y*mesh->G3_12 + v.z*mesh->G3_13;
+    result.covariant = false;
+  }
+
+  return result;
+}
+
+const Vector3D DDX(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
+  return DDX(v, outloc, method);
+}
+
+const Vector2D DDX(const Vector2D &v) {
+  Vector2D result;
+
+  result.covariant = v.covariant;
+
+  // As vector 2D is constant in the z direction. As there is no z derivatives
+  // taken here, it will have the same form as the Vector3D quantity
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDX(v.x) - v.x*mesh->G1_11 - v.y*mesh->G2_11 - v.z*mesh->G3_11;
+    result.y = DDX(v.y) - v.x*mesh->G1_12 - v.y*mesh->G2_12 - v.z*mesh->G3_12;
+    result.z = DDX(v.z) - v.x*mesh->G1_13 - v.y*mesh->G2_13 - v.z*mesh->G3_13;
+
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDX(v.x) + v.x*mesh->G1_11 + v.y*mesh->G1_12 + v.z*mesh->G1_13;
+    result.y = DDX(v.y) + v.x*mesh->G2_11 + v.y*mesh->G2_12 + v.z*mesh->G2_13;
+    result.z = DDX(v.z) + v.x*mesh->G3_11 + v.y*mesh->G3_12 + v.z*mesh->G3_13;
+    result.covariant = false;
+  }
+
+  return result;
+}
+
 ////////////// Y DERIVATIVE /////////////////
 
 const Field3D DDY(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
@@ -1794,6 +1846,58 @@ const Field3D DDY_MUSCL(const Field3D &F, const Field3D &u, const Field2D &Vmax)
       r[bx.jx][bx.jy][bx.jz] = DDX_KT(fs, us, Vmax[bx.jx][bx.jy]) / mesh->dy(bx.jx, bx.jy);
     }
   }while(next_index2(&bx));
+
+  return result;
+}
+
+const Vector3D DDY(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
+  Vector3D result;
+
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDY(v.x, outloc, method) - v.x*mesh->G1_12 - v.y*mesh->G2_12 - v.z*mesh->G3_12;
+    result.y = DDY(v.y, outloc, method) - v.x*mesh->G1_22 - v.y*mesh->G2_22 - v.z*mesh->G3_22;
+    result.z = DDY(v.z, outloc, method) - v.x*mesh->G1_23 - v.y*mesh->G2_23 - v.z*mesh->G3_23;
+
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDY(v.x, outloc, method) + v.x*mesh->G1_12 + v.y*mesh->G1_22 + v.z*mesh->G1_23;
+    result.y = DDY(v.y, outloc, method) + v.x*mesh->G2_12 + v.y*mesh->G2_22 + v.z*mesh->G2_23;
+    result.z = DDY(v.z, outloc, method) + v.x*mesh->G3_12 + v.y*mesh->G3_22 + v.z*mesh->G3_23;
+    result.covariant = false;
+  }
+
+  return result;
+}
+
+const Vector3D DDY(const Vector3D &v, DIFF_METHOD method, CELL_LOC outloc) {
+  return DDY(v, outloc, method);
+}
+
+const Vector2D DDY(const Vector2D &v) {
+  Vector2D result;
+
+  result.covariant = v.covariant;
+
+  // As vector 2D is constant in the z direction. As there is no z derivatives
+  // taken here, it will have the same form as the Vector3D quantity
+  if(v.covariant){
+    // From equation (2.6.32) in D'Haeseleer
+    result.x = DDY(v.x) - v.x*mesh->G1_12 - v.y*mesh->G2_12 - v.z*mesh->G3_12;
+    result.y = DDY(v.y) - v.x*mesh->G1_22 - v.y*mesh->G2_22 - v.z*mesh->G3_22;
+    result.z = DDY(v.z) - v.x*mesh->G1_23 - v.y*mesh->G2_23 - v.z*mesh->G3_23;
+
+    result.covariant = true;
+  }
+  else{
+    // From equation (2.6.31) in D'Haeseleer
+    result.x = DDY(v.x) + v.x*mesh->G1_12 + v.y*mesh->G1_22 + v.z*mesh->G1_23;
+    result.y = DDY(v.y) + v.x*mesh->G2_12 + v.y*mesh->G2_22 + v.z*mesh->G2_23;
+    result.z = DDY(v.z) + v.x*mesh->G3_12 + v.y*mesh->G3_22 + v.z*mesh->G3_23;
+    result.covariant = false;
+  }
 
   return result;
 }
@@ -1972,17 +2076,17 @@ const Vector3D DDZ(const Vector3D &v, CELL_LOC outloc, DIFF_METHOD method) {
 
   if(v.covariant){
     // From equation (2.6.32) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method) - v.x*G1_13 - v.y*G2_13 - v.z*G3_13;
-    result.y = DDZ(v.y, outloc, method) - v.x*G1_23 - v.y*G2_23 - v.z*G3_23;
-    result.z = DDZ(v.z, outloc, method) - v.x*G1_33 - v.y*G2_33 - v.z*G3_33;
+    result.x = DDZ(v.x, outloc, method) - v.x*mesh->G1_13 - v.y*mesh->G2_13 - v.z*mesh->G3_13;
+    result.y = DDZ(v.y, outloc, method) - v.x*mesh->G1_23 - v.y*mesh->G2_23 - v.z*mesh->G3_23;
+    result.z = DDZ(v.z, outloc, method) - v.x*mesh->G1_33 - v.y*mesh->G2_33 - v.z*mesh->G3_33;
 
     result.covariant = true;
   }
   else{
     // From equation (2.6.31) in D'Haeseleer
-    result.x = DDZ(v.x, outloc, method) + v.x*G1_13 + v.y*G1_23 + v.z*G1_33;
-    result.y = DDZ(v.y, outloc, method) + v.x*G2_13 + v.y*G2_23 + v.z*G2_33;
-    result.z = DDZ(v.z, outloc, method) + v.x*G3_13 + v.y*G3_23 + v.z*G3_33;
+    result.x = DDZ(v.x, outloc, method) + v.x*mesh->G1_13 + v.y*mesh->G1_23 + v.z*mesh->G1_33;
+    result.y = DDZ(v.y, outloc, method) + v.x*mesh->G2_13 + v.y*mesh->G2_23 + v.z*mesh->G2_33;
+    result.z = DDZ(v.z, outloc, method) + v.x*mesh->G3_13 + v.y*mesh->G3_23 + v.z*mesh->G3_33;
     result.covariant = false;
   }
 
