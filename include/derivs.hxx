@@ -111,6 +111,9 @@ const Field2D VDDX(const Field2D &v, const Field2D &f, DIFF_METHOD method);
 const Field3D VDDX(const Field &v, const Field &f,
                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Vector3D VDDX(const Field3D &v, const Vector3D &a,
+                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+const Vector3D VDDX(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
 const Field2D VDDY(const Field2D &v, const Field2D &f,
                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
@@ -118,12 +121,18 @@ const Field2D VDDY(const Field2D &v, const Field2D &f, DIFF_METHOD method);
 const Field3D VDDY(const Field &v, const Field &f,
                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Vector3D VDDY(const Field3D &v, const Vector3D &a,
+                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+const Vector3D VDDY(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
 const Field2D VDDZ(const Field2D &v, const Field2D &f);
 const Field2D VDDZ(const Field3D &v, const Field2D &f);
 const Field3D VDDZ(const Field &v, const Field &f,
                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
+const Vector3D VDDZ(const Field3D &v, const Vector3D &a,
+                    CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
+const Vector3D VDDZ(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc = CELL_DEFAULT);
 
 ///////// FLUX METHODS /////////////
 // for terms of form div(v * f)

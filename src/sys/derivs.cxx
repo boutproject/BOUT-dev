@@ -2770,6 +2770,31 @@ const Field3D VDDX(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC 
   return VDDX(v, f, outloc, method);
 }
 
+/// Wrapper for vectors
+const Vector3D VDDX(const Field3D &v, const Vector3D &a, CELL_LOC outloc, DIFF_METHOD method) {
+  Vector3D result;
+
+  if(a.covariant){
+    // Equation (2.6.32) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDX(v, a.x, outloc, method) - v*(a.x*mesh->G1_11 + a.y*mesh->G2_11 + a.z*mesh->G3_11);
+    result.y = VDDX(v, a.y, outloc, method) - v*(a.x*mesh->G1_12 + a.y*mesh->G2_12 + a.z*mesh->G3_12);
+    result.z = VDDX(v, a.z, outloc, method) - v*(a.x*mesh->G1_13 + a.y*mesh->G2_13 + a.z*mesh->G3_13);
+    result.covariant = true;
+  }
+  else{
+    // Equation (2.6.31) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDX(v, a.x, outloc, method) + v*(a.x*mesh->G1_11 + a.y*mesh->G1_12 + a.z*mesh->G1_13);
+    result.y = VDDX(v, a.y, outloc, method) + v*(a.x*mesh->G2_11 + a.y*mesh->G2_12 + a.z*mesh->G2_13);
+    result.z = VDDX(v, a.z, outloc, method) + v*(a.x*mesh->G3_11 + a.y*mesh->G3_12 + a.z*mesh->G3_13);
+    result.covariant = false;
+  }
+
+  return result;
+}
+
+const Vector3D VDDX(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc) {
+  return VDDX(v, a, outloc, method);
+}
 ////////////// Y DERIVATIVE /////////////////
 
 // special case where both are 2D
@@ -2958,6 +2983,32 @@ const Field3D VDDY(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC 
   return VDDY(v, f, outloc, method);
 }
 
+// Wrapper for vectors
+const Vector3D VDDY(const Field3D &v, const Vector3D &a, CELL_LOC outloc, DIFF_METHOD method) {
+  Vector3D result;
+
+  if(a.covariant){
+    // Equation (2.6.32) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDY(v, a.x, outloc, method) - v*(a.x*mesh->G1_12 + a.y*mesh->G2_12 + a.z*mesh->G3_12);
+    result.y = VDDY(v, a.y, outloc, method) - v*(a.x*mesh->G1_22 + a.y*mesh->G2_22 + a.z*mesh->G3_22);
+    result.z = VDDY(v, a.z, outloc, method) - v*(a.x*mesh->G1_23 + a.y*mesh->G2_23 + a.z*mesh->G3_23);
+
+    result.covariant = true;
+  }
+  else{
+    // Equation (2.6.31) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDY(v, a.x, outloc, method) + v*(a.x*mesh->G1_12 + a.y*mesh->G1_22 + a.z*mesh->G1_23);
+    result.y = VDDY(v, a.y, outloc, method) + v*(a.x*mesh->G2_12 + a.y*mesh->G2_22 + a.z*mesh->G2_23);
+    result.z = VDDY(v, a.z, outloc, method) + v*(a.x*mesh->G3_12 + a.y*mesh->G3_22 + a.z*mesh->G3_23);
+    result.covariant = false;
+  }
+
+  return result;
+}
+
+const Vector3D VDDY(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc) {
+  return VDDY(v, a, outloc, method);
+}
 ////////////// Z DERIVATIVE /////////////////
 
 // special case where both are 2D
@@ -3087,6 +3138,33 @@ const Field3D VDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD 
 
 const Field3D VDDZ(const Field &v, const Field &f, DIFF_METHOD method, CELL_LOC outloc) {
   return VDDZ(v, f, outloc, method);
+}
+
+// Wrapper for vectors
+const Vector3D VDDZ(const Field3D &v, const Vector3D &a, CELL_LOC outloc, DIFF_METHOD method) {
+  Vector3D result;
+
+  if(a.covariant){
+    // Equation (2.6.32) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDZ(v, a.x, outloc, method) - v*(a.x*mesh->G1_13 + a.y*mesh->G2_13 + a.z*mesh->G3_13);
+    result.y = VDDZ(v, a.y, outloc, method) - v*(a.x*mesh->G1_23 + a.y*mesh->G2_23 + a.z*mesh->G3_23);
+    result.z = VDDZ(v, a.z, outloc, method) - v*(a.x*mesh->G1_33 + a.y*mesh->G2_33 + a.z*mesh->G3_33);
+
+    result.covariant = true;
+  }
+  else{
+    // Equation (2.6.31) in D'Haeseleer multiplied with a scalar quantity
+    result.x = VDDZ(v, a.x, outloc, method) + v*(a.x*mesh->G1_13 + a.y*mesh->G1_23 + a.z*mesh->G1_33);
+    result.y = VDDZ(v, a.y, outloc, method) + v*(a.x*mesh->G2_13 + a.y*mesh->G2_23 + a.z*mesh->G2_33);
+    result.z = VDDZ(v, a.z, outloc, method) + v*(a.x*mesh->G3_13 + a.y*mesh->G3_23 + a.z*mesh->G3_33);
+    result.covariant = false;
+  }
+
+  return result;
+}
+
+const Vector3D VDDZ(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc) {
+  return VDDZ(v, a, outloc, method);
 }
 
 /*******************************************************************************
