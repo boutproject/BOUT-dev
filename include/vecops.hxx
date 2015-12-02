@@ -6,7 +6,7 @@
  * Copyright 2010 B.D.Dudson, S.Farley, M.V.Umansky, X.Q.Xu
  *
  * Contact: Ben Dudson, bd512@york.ac.uk
- * 
+ *
  * This file is part of BOUT++.
  *
  * BOUT++ is free software: you can redistribute it and/or modify
@@ -34,13 +34,13 @@
 
 const Vector2D Grad(const Field2D &f, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Grad(const Field3D &f, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D Grad(const Field3D &f, 
+const Vector3D Grad(const Field3D &f,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z = CELL_DEFAULT);
 
-const Vector3D Grad_perp(const Field3D &f, 
-			 CELL_LOC outloc_x = CELL_DEFAULT, 
-			 CELL_LOC outloc_y = CELL_DEFAULT,
-			 CELL_LOC outloc_z = CELL_DEFAULT);
+const Vector3D Grad_perp(const Field3D &f,
+                         CELL_LOC outloc_x = CELL_DEFAULT,
+                         CELL_LOC outloc_y = CELL_DEFAULT,
+                         CELL_LOC outloc_z = CELL_DEFAULT);
 
 const Field2D Div(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Field3D Div(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
@@ -52,7 +52,7 @@ const Field3D Div(const Vector3D &v, const Field3D &f);
 
 const Vector2D Curl(const Vector2D &v, CELL_LOC outloc = CELL_DEFAULT);
 const Vector3D Curl(const Vector3D &v, CELL_LOC outloc = CELL_DEFAULT);
-const Vector3D Curl(const Vector3D &v, 
+const Vector3D Curl(const Vector3D &v,
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z);
 
 // Upwinding routines
@@ -67,4 +67,6 @@ const Vector3D V_dot_Grad(const Vector2D &v, const Vector3D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a);
 
+// Terms of form b0 x Grad(phi) dot Grad(A)
+const Vector3D b0xGrad_dot_Grad(const Field3D &phi, const Vector3D &A, CELL_LOC outloc=CELL_DEFAULT);
 #endif // __VECOPS_H__

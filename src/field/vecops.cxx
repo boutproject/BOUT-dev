@@ -664,3 +664,67 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
 
   return result;
 }
+
+
+/*******************************************************************************
+* b0xGrad_dot_Grad
+* Terms of form b0 x Grad(phi) dot Grad(A)
+*******************************************************************************/
+
+const Vector3D b0xGrad_dot_Grad(const Field3D &phi, const Vector3D &A, CELL_LOC outloc) {
+        Field3D dpdx, dpdy, dpdz;
+        Field3D vx, vy, vz;
+        Vector3D result;
+        Vector3D rx, ry, rz;
+
+#ifdef CHECK
+        int msg_pos = msg_stack.push("b0xGrad_dot_Grad( Field3D , Vector3D )");
+#endif
+
+        // Calculate phi derivatives
+#pragma omp parallel sections
+        {
+#pragma omp section
+                dpdx = DDX(phi, outloc);
+
+#pragma omp section
+                dpdy = DDY(phi, outloc);
+
+#pragma omp section
+                dpdz = DDZ(phi, outloc);
+        }
+
+        // Calculate advection velocity
+#pragma omp parallel sections
+        {
+#pragma omp section
+                vx = mesh->g_22*dpdz - mesh->g_23*dpdy;
+#pragma omp section
+                vy = mesh->g_23*dpdx - mesh->g_12*dpdz;
+#pragma omp section
+                vz = mesh->g_12*dpdy - mesh->g_22*dpdx;
+        }
+
+        if(mesh->ShiftXderivs && mesh->IncIntShear) {
+                // BOUT-06 style differencing
+                vz += mesh->IntShiftTorsion * vx;
+        }
+
+        // Upwind A using these velocities
+#pragma omp parallel sections
+        {
+#pragma omp section
+                rx = VDDX(vx, A);
+#pragma omp section
+                ry = VDDY(vy, A);
+#pragma omp section
+                rz = VDDZ(vz, A);
+        }
+
+        result = (rx + ry + rz) / (mesh->J*sqrt(mesh->g_22));
+
+#ifdef CHECK
+        msg_stack.pop(msg_pos);
+#endif
+        return result;
+}
