@@ -30,7 +30,7 @@ include $(BOUT_TOP)/make.config
 
 linkLib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib lib
 	@echo "Adding objects to $(LIB)"
-	@$(AR) cru $(LIB) $(shell find $(BOUT_TOP)/bld -name \*.o)
+	@$(AR) cru $(LIB) $(shell find $(BLD_DIR) -name \*.o)
 	@$(RANLIB) $(LIB)
 
 # Then set the last two preqrequisites for 'all'
