@@ -23,6 +23,16 @@ all: initial_message
 # Then the config file is included, which has all the other prerequisites for 'all'
 include $(BOUT_TOP)/make.config
 
+#The following target is required in order to ensure that the library is not built
+#until all other jobs are finished. Note that this does not prevent our recursive
+#jobs to be done in parallel.
+.NOTPARALLEL:
+
+linkLib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib lib
+	@echo "Adding objects to $(LIB)"
+	@$(AR) cru $(LIB) $(shell find $(BOUT_TOP)/src -name \*.o)
+	@$(RANLIB) $(LIB)
+
 # Then set the last two preqrequisites for 'all'
 all: lib end_message
 
@@ -40,6 +50,7 @@ initial_message:
 	@echo "INCLUDE  = " $(BOUT_INCLUDE)
 	@rm -f $(BOUT_TOP)/lib/libbout++.a
 
-end_message:
+end_message: linkLib
 	@echo "Finished"
 	@echo ""
+
