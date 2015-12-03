@@ -98,6 +98,9 @@ public:
   MsgStackItem(const char* msg) {
     point = msg_stack.push(msg);
   }
+  MsgStackItem(const char* msg, const char* file, int line) {
+    point = msg_stack.push("%s on line %d of '%s'", msg, line, file);
+  }
   ~MsgStackItem() {
     // If an exception has occurred, don't pop the message
     if(!std::uncaught_exception())
@@ -107,6 +110,14 @@ private:
   int point;
 };
 
+/*!
+ * The TRACE macro provides a convenient way to put messages onto the msg_stack
+ */
+#ifdef CHECK
+#define TRACE(message) MsgStackItem msgTrace_ ## __LINE__(message, __FILE__, __LINE__)
+#else
+#define TRACE(message)
+#endif
 
 #endif // __MSG_STACK_H__
 
