@@ -110,11 +110,15 @@ private:
   int point;
 };
 
+// To concatenate strings for a variable name
+#define CONCATENATE_DIRECT(s1, s2) s1##s2
+#define CONCATENATE(s1, s2) CONCATENATE_DIRECT(s1, s2)
+
 /*!
  * The TRACE macro provides a convenient way to put messages onto the msg_stack
  */
 #ifdef CHECK
-#define TRACE(message) MsgStackItem msgTrace_ ## __LINE__(message, __FILE__, __LINE__)
+#define TRACE(message) MsgStackItem CONCATENATE(msgTrace_ , __LINE__) (message, __FILE__, __LINE__)
 #else
 #define TRACE(message)
 #endif
