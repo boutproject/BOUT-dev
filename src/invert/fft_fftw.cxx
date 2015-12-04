@@ -185,7 +185,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
     // Reverse FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
@@ -198,7 +198,7 @@ void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift)
     // Forward FFT
     for(jz=0;jz<ncz;jz++) {
       if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+      kwave=ikz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
 
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -1088,7 +1088,7 @@ void ZFFT(BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
     for(jz=0;jz<=ncz/2;jz++) {
       // Wave number (will be different than the index only if we are taking a
       // part of the z-domian [and not from 0 to 2*pi])
-      kwave=jz*2.0*PI/mesh->zlength;
+      kwave=jz*2.0*PI/mesh->zlength();
 
       // Multiply by EXP(-ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
@@ -1104,7 +1104,7 @@ void ZFFT(BoutReal *in, int ix, int iy, dcomplex *cv, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -1137,7 +1137,7 @@ void ZFFT(BoutReal **in, int nx, int iy, dcomplex **cv, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -1171,7 +1171,7 @@ void ZFFT(BoutReal ***in, int nx, int ny, dcomplex ***cv, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -1224,7 +1224,7 @@ void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
     for(jz=0;jz<=ncz/2;jz++) {
       // Wave number (will be different than the index only if we are taking a
       // part of the z-domian [and not from 0 to 2*pi])
-      kwave=jz*2.0*PI/mesh->zlength;
+      kwave=jz*2.0*PI/mesh->zlength();
 
       // Multiply by EXP(ik*zoffset)
       cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
@@ -1243,7 +1243,7 @@ void ZFFT_rev(dcomplex *cv, int ix, int iy, BoutReal *out, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -1274,7 +1274,7 @@ void ZFFT_rev(dcomplex **cv, int nx, int iy, BoutReal **out, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -1307,7 +1307,7 @@ void ZFFT_rev(dcomplex ***cv, int nx, int ny, BoutReal ***out, bool shift)
   if(phs == (dcomplex ***) NULL){
     phs=c3tensor(mesh->ngx,mesh->ngy,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<mesh->ngx;jx++){
       for(int jy=0;jy<mesh->ngy;jy++){
 	for(int jz=0;jz<nkz;jz++){

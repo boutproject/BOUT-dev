@@ -91,6 +91,10 @@ int PvodeSolver::init(bool restarting, int nout, BoutReal tstep) {
   output.write("Initialising PVODE solver\n");
 
   int local_N = getLocalN();
+
+  if(local_N == 0) {
+    throw BoutException("No local evolving variables");
+  }
   
   // Get total problem size
   int neq;

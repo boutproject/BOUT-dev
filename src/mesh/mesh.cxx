@@ -280,9 +280,7 @@ bool Mesh::hasBndryUpperY() {
  **************************************************************************/
 
 int Mesh::geometry() {
-#ifdef CHECK
-  msg_stack.push("Mesh::geometry");
-#endif
+  TRACE("Mesh::geometry");
 
   output.write("Calculating differential geometry terms\n");
 
@@ -403,17 +401,11 @@ int Mesh::geometry() {
 
   communicate(com);
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
   return 0;
 }
 
 int Mesh::calcCovariant() {
-#ifdef CHECK
-  msg_stack.push("Mesh::calcCovariant");
-#endif
+  TRACE("Mesh::calcCovariant");
 
   // Make sure metric elements are allocated
   g_11.allocate();
@@ -489,15 +481,13 @@ int Mesh::calcCovariant() {
     maxerr = err;
 
   output.write("\tMaximum error in off-diagonal inversion is %e\n", maxerr);
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
+  
   return 0;
 }
 
 int Mesh::calcContravariant() {
+  TRACE("Mesh::calcContravariant");
+  
   // Make sure metric elements are allocated
   g11.allocate();
   g22.allocate();
@@ -576,25 +566,33 @@ int Mesh::calcContravariant() {
 }
 
 int Mesh::jacobian() {
+  TRACE("Mesh::jacobian");
   // calculate Jacobian using g^-1 = det[g^ij], J = sqrt(g)
-  J = 1. / sqrt(g11*g22*g33 +
-                2.0*g12*g13*g23 -
-                g11*g23*g23 -
-                g22*g13*g13 -
-                g33*g12*g12);
+  
+  Field2D g = g11*g22*g33 +
+    2.0*g12*g13*g23 -
+    g11*g23*g23 -
+    g22*g13*g13 -
+    g33*g12*g12;
+  
+  // Check that g is positive
+  if(min(g) < 0.0) {
+    throw BoutException("The determinant of g^ij is negative");
+  }
+  J = 1. / sqrt(g);
 
   // Check jacobian
-  if(!finite(mesh->J)) {
-    output.write("\tERROR: Jacobian not finite everywhere!\n");
-    return 1;
+  if(!finite(J)) {
+    throw BoutException("\tERROR: Jacobian not finite everywhere!\n");
   }
-  if(min(abs(mesh->J)) < 1.0e-10) {
-    output.write("\tERROR: Jacobian becomes very small\n");
-    return 1;
+  if(min(abs(J)) < 1.0e-10) {
+    throw BoutException("\tERROR: Jacobian becomes very small\n");
   }
-
-  Bxy = sqrt(mesh->g_22)/mesh->J;
-
+  
+  if(min(g_22) < 0.0)
+    throw BoutException("g_22 is negative");
+  Bxy = sqrt(g_22)/J;
+  
   return 0;
 }
 
@@ -621,6 +619,7 @@ const vector<int> Mesh::readInts(const string &name, int n) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Mesh::gaussj(BoutReal **a, int n) {
+  TRACE("Mesh::gaussj");
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;
 
@@ -654,8 +653,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
 	      icol = k;
 	    }
 	  }else if(ipiv[k] > 1) {
-	    output.write("Error in GaussJ: Singular matrix-1\n");
-	    return 1;
+	    throw BoutException("Error in GaussJ: Singular matrix-1\n");
 	  }
 	}
       }
@@ -663,8 +661,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
 
     if(irow == -1) {
       // All elements zero!!
-      output.write("Error in GaussJ: Singular matrix-3\n");
-      return 3;
+      throw BoutException("Error in GaussJ: Singular matrix-3\n");
     }
 
     ++(ipiv[icol]);
@@ -678,8 +675,7 @@ int Mesh::gaussj(BoutReal **a, int n) {
     indxc[i] = icol;
 
     if(a[icol][icol] == 0.0) {
-      output.write("Error in GaussJ: Singular matrix-2\n");
-      return 2;
+      throw BoutException("Error in GaussJ: Singular matrix-2\n");
     }
     pivinv = 1.0 / a[icol][icol];
     a[icol][icol] = 1.0;
@@ -713,6 +709,8 @@ int Mesh::gaussj(BoutReal **a, int n) {
 
 /// Not very efficient version, as a fallback
 const Field3D Mesh::averageY(const Field3D &f) {
+  TRACE("Mesh::averageY");
+  
   Field3D result;
   result.allocate();
 
@@ -745,6 +743,8 @@ const Field3D Mesh::averageY(const Field3D &f) {
 
 /// Not very efficient version, as a fallback
 const Field3D Mesh::averageX(const Field3D &f) {
+  TRACE("Mesh::averageX");
+  
   Field3D result;
   result.allocate();
 

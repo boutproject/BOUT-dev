@@ -1,3 +1,28 @@
+#!/usr/bin/env python
+
+"""
+File I/O class
+A wrapper around various NetCDF libraries, used by
+BOUT++ routines. Creates a consistent interface
+across machines
+
+NOTE: NetCDF includes unlimited dimensions,
+but this library is just for very simple
+I/O operations. Educated guesses are made
+for the dimensions.
+
+Supported libraries:
+-------------------
+
+netCDF4
+
+Scientific.IO.NetCDF
+
+scipy.io.netcdf
+  old version (create_dimension, create_variable)
+  new version (createDimension, createVariable)
+"""
+
 from __future__ import print_function
 try:
     from builtins import map
@@ -6,59 +31,30 @@ try:
     from builtins import object
 except:
     pass
-# File I/O class
-# A wrapper around various NetCDF libraries, used by
-# BOUT++ routines. Creates a consistent interface
-# across machines
-#
-# NOTE: NetCDF includes unlimited dimensions,
-# but this library is just for very simple
-# I/O operations. Educated guesses are made
-# for the dimensions.
-#
-# Supported libraries:
-# -------------------
-#
-# netCDF4
-#
-# Scientific.IO.NetCDF
-#
-# scipy.io.netcdf
-#   old version (create_dimension, create_variable)
-#   new version (createDimension, createVariable)
-#
 
-try:
-    import numpy as np
-except ImportError:
-    print("ERROR: NumPy module not available")
-    raise
+import numpy as np
+import time, getpass
 
-library = None # Record which library to use
+# Record which library to use
+library = None
 
 try:
     from netCDF4 import Dataset
     library = "netCDF4"
     has_netCDF = True
 except ImportError:
-    #print "netcdf4-python module not found"
-
     try:
         from Scientific.IO.NetCDF import NetCDFFile as Dataset
         from Scientific.N import Int, Float, Float32
         library = "Scientific"
-        #print "  => Using Scientific.IO.NetCDF instead"
         has_netCDF = True
     except ImportError:
         try:
             from scipy.io.netcdf import netcdf_file as Dataset
             library = "scipy"
-            # print "Using scipy.io.netcdf library"
             has_netCDF = True
         except:
-            has_netCDF = False
-            #print("DataFile: No supported NetCDF modules available")
-            #raise
+            raise ImportError("DataFile: No supported NetCDF modules available")
 
 try:
     import h5py
@@ -66,18 +62,6 @@ try:
 except ImportError:
     has_h5py = False
 
-import time
-
-def getUserName():
-    try:
-        import os, pwd, string
-    except ImportError:
-        return 'unknown user'
-    pwd_entry = pwd.getpwuid(os.getuid())
-    name = string.strip(string.splitfields(pwd_entry[4], ',')[0])
-    if name == '':
-        name = pwd_entry[0]
-    return name
 
 class DataFile:
     impl = None
@@ -140,6 +124,15 @@ class DataFile:
 
 class DataFile_netCDF(DataFile):
     handle = None
+    # Print warning if netcdf is used without the netcdf library
+    if library != "netCDF4":
+        print("WARNING: netcdf4-python module not found")
+        print("         expect poor performance")
+        if library == "Scientific":
+            print("  => Using Scientific.IO.NetCDF instead")
+        elif library == "scipy":
+            print("  => Using scipy.io.netcdf instead")
+
 
     def open(self, filename, write=False, create=False,
              format='NETCDF3_CLASSIC'):
@@ -152,7 +145,7 @@ class DataFile_netCDF(DataFile):
             if library == "Scientific":
                 self.handle = Dataset(filename, "w",
                                       'Created ' + time.ctime(time.time())
-                                      + ' by ' + getUserName())
+                                      + ' by ' + getpass.getuser())
             elif library == "scipy":
                 self.handle = Dataset(filename, "w")
             else:
@@ -173,8 +166,8 @@ class DataFile_netCDF(DataFile):
     def __init__(self, filename=None, write=False, create=False,
                  format='NETCDF3_CLASSIC'):
         if not has_netCDF:
-            print("DataFile: No supported NetCDF python-modules available")
-            raise ImportError
+            message = "DataFile: No supported NetCDF python-modules available"
+            raise ImportError(message)
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
 
@@ -240,7 +233,6 @@ class DataFile_netCDF(DataFile):
                                    ranges[2]:ranges[3],
                                    ranges[4]:ranges[5]]
                     elif ndims == 4:
-                        #print "Ranges = ", ranges
                         data = var[(ranges[0]):(ranges[1]),
                                    (ranges[2]):(ranges[3]),
                                    (ranges[4]):(ranges[5]),
@@ -341,6 +333,7 @@ class DataFile_netCDF(DataFile):
             # Check the shape of the variable
             if var.shape != s:
                 print("DataFile: Variable already exists with different size: "+ name)
+                # Fallthrough to the exception
                 raise
         except:
             # Not found, so add.
@@ -466,8 +459,8 @@ class DataFile_HDF5(DataFile):
     def __init__(self, filename=None, write=False, create=False,
                  format=None):
         if not has_h5py:
-            print("DataFile: No supported HDF5 python-modules available")
-            raise ImportError
+            message = "DataFile: No supported HDF5 python-modules available"
+            raise ImportError(message)
         if filename != None:
             self.open(filename, write=write, create=create, format=format)
 
@@ -515,7 +508,6 @@ class DataFile_HDF5(DataFile):
                                 ranges[2]:ranges[3],
                                 ranges[4]:ranges[5]]
                 elif ndims == 4:
-                    #print "Ranges = ", ranges
                     data = var[(ranges[0]):(ranges[1]),
                                 (ranges[2]):(ranges[3]),
                                 (ranges[4]):(ranges[5]),

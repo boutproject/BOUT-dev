@@ -1912,7 +1912,7 @@ const Field3D DDZ(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method, bool in
         rfft(f[xge][jy], ncz, cv); // Forward FFT
           
         for(int jz=0;jz<=ncz/2;jz++) {
-          BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+          BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
             
           BoutReal flt;
           if (jz>0.4*ncz) flt=1e-10; else flt=1.0;
@@ -2295,7 +2295,7 @@ const Field3D D2DZ2(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
           rfft(f[jx][jy], ncz, cv); // Forward FFT
 	
           for(int jz=0;jz<=ncz/2;jz++) {
-            BoutReal kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+            BoutReal kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
             
             BoutReal flt;
             if (jz>0.4*ncz) flt=1e-10; else flt=1.0;

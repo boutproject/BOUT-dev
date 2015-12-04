@@ -10,8 +10,8 @@
 # denotes the end of a fold
 __authors__ = 'Michael Loeiten'
 __email__   = 'mmag@fysik.dtu.dk'
-__version__ = '1.0042'
-__date__    = '11.11.2015'
+__version__ = '1.0043'
+__date__    = '2015.11.20'
 
 import os
 import re
@@ -285,7 +285,7 @@ class basic_runner(object):
         self._errors   = []
 
         # Check if make is a boolean
-        if self._make != None:
+        if self._make is not None:
             if type(self._make) != bool:
                 self._errors.append("TypeError")
                 raise TypeError("make must be boolean if set")
@@ -307,7 +307,7 @@ class basic_runner(object):
         #{{{ Set self._additional and self._series_add correctly
         # self._additional must be on a special form (see
         # basic_error_checker).
-        if self._additional != None:
+        if self._additional is not None:
             if not(hasattr(self._additional, "__iter__")) or\
                (type(self._additional) == str) or\
                (type(self._additional) == dict):
@@ -320,7 +320,7 @@ class basic_runner(object):
                     # Put self._additional as an iterable
                     self._additional = [self._additional]
         # Do the same for series_add
-        if self._series_add != None:
+        if self._series_add is not None:
             if not(hasattr(self._series_add, "__iter__")) or\
                (type(self._series_add) == str) or\
                (type(self._series_add) == dict):
@@ -342,7 +342,7 @@ class basic_runner(object):
             raise TypeError(message)
 
         #{{{ Set NYPE from NXPE and nproc
-        if self._NXPE != None:
+        if self._NXPE is not None:
             # Make self._NYPE as an appendable list
             self._NYPE = []
 
@@ -445,7 +445,7 @@ class basic_runner(object):
 
         # We check that the given combination of nx and ny is
         # possible to perform with the given nproc
-        if (self._nx != None) and (self._ny != None):
+        if (self._nx is not None) and (self._ny is not None):
             self._get_correct_domain_split()
 
         # Get the combinations of the member functions
@@ -463,11 +463,11 @@ class basic_runner(object):
 
         # Set self._len_group if post_processing_function is set, but
         # self._sort_by is None
-        if (post_processing_function != None) and\
+        if (post_processing_function is not None) and\
            (not(post_process_after_every_run)) and\
            (self._len_group == None):
                # self._len_group is to a number by _get_swapped_input_list
-               # (which is called if self._sort_by != None)
+               # (which is called if self._sort_by is not None)
                # If there are no sorting, self._len_group will be None
                # We will make self._len_group the length of the
                # number of runs here
@@ -486,7 +486,7 @@ class basic_runner(object):
             # Copy the grid (if any) if cpy_grid files is True We must
             # do this after self._remove_data as this removes all *.nc
             # files
-            if (self._cpy_grid) and (self._grid_file != None):
+            if (self._cpy_grid) and (self._grid_file is not None):
                 combination_list = combination.split()
                 # Loop through all the combinations
                 for elem in combination_list:
@@ -506,7 +506,7 @@ class basic_runner(object):
                 self._run_driver(combination, run_no)
 
             # If we would like to call a post_processing function
-            if post_processing_function != None:
+            if post_processing_function is not None:
                 if post_process_after_every_run:
                     # Call the post processing function
                     self._call_post_processing_function(\
@@ -551,7 +551,7 @@ class basic_runner(object):
 
        # If the input_data is not set, the value in BOUT.inp will
        # be used
-        if input_parameter != None:
+        if input_parameter is not None:
             # If the input_data is not an iterable, or if it is a
             # string: Put it to a list
             if not(hasattr(input_parameter, "__iter__")) or\
@@ -637,7 +637,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check grid_file are strings, that they exsist, and one can sort
-        if self._grid_file != None:
+        if self._grid_file is not None:
             # Set a variable which is has length over one if the test fails
             not_found = []
             if type(self._grid_file) == str:
@@ -659,7 +659,7 @@ class basic_runner(object):
                 message += "\n".join(not_found)
                 self._errors.append("RuntimeError")
                 raise RuntimeError(message)
-            if (self._sort_by != None) and ('grid_file' in self._sort_by):
+            if (self._sort_by is not None) and ('grid_file' in self._sort_by):
                 # Set a success flag
                 success = True
                 # The start name of the files
@@ -762,7 +762,7 @@ class basic_runner(object):
             ]
 
         # Do the check if the solver is set
-        if self._solver != None:
+        if self._solver is not None:
             self._check_if_set_correctly(var = (self._solver, 'solver'),\
                                           possibilities = possible_solvers)
         #}}}
@@ -786,7 +786,7 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var           = var,\
                                               possibilities = possible_method)
 
@@ -801,7 +801,7 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var           = var,\
                                               possibilities = possible_method)
 
@@ -821,7 +821,7 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var          = var,\
                                               possibilities = possible_method)
 
@@ -840,7 +840,7 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var           = var,\
                                               possibilities = possible_method)
         #}}}
@@ -889,13 +889,13 @@ class basic_runner(object):
             ]
 
         for sort_check in sort_checks:
-            if sort_check[0] != None:
+            if sort_check[0] is not None:
                 if not(sort_check[1] in possible_sort_by):
                     possible_sort_by.append(sort_check[1])
 
         # Append the additionals and series_add
         # If additional is set
-        if self._additional != None:
+        if self._additional is not None:
             for additional in self._additional:
                 # The additional now contains a tuple of three elements
                 # We would like to extract the section (if any) and variable
@@ -907,7 +907,7 @@ class basic_runner(object):
                     section = additional[0] + ':'
                 possible_sort_by.append(section + additional[1])
         # Do the same for series_add
-        if self._series_add != None:
+        if self._series_add is not None:
             for series_add in self._series_add:
                 if series_add[0] == '':
                     section = ''
@@ -922,13 +922,13 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var           = var,\
                                               possibilities = possible_sort_by)
         #}}}
 
         #{{{Check if restart is set correctly
-        if self._restart != None:
+        if self._restart is not None:
             if type(self._restart) != str:
                 self._errors.append("TypeError")
                 raise TypeError ("restart must be set as a string when set")
@@ -945,13 +945,13 @@ class basic_runner(object):
 
         for var in the_vars:
             # Do the check if the method is set
-            if var[0] != None:
+            if var[0] is not None:
                 self._check_if_set_correctly(var           = var,\
                                               possibilities = possible_method)
         #}}}
 
         #{{{Check for options set in both member data and in the grid file
-        if self._grid_file != None:
+        if self._grid_file is not None:
             # Check if the following variables are found in the grid
             # file
             check_if_in_grid =[\
@@ -976,7 +976,7 @@ class basic_runner(object):
                     ]
             for var in check_if_in_grid:
                 # If the variable is set
-                if var[0] != None:
+                if var[0] is not None:
                     # Loop through the grid files
                     for grid_file in self._grid_file:
                         # Open (and automatically close) the grid files
@@ -984,7 +984,7 @@ class basic_runner(object):
                         # Search for mesh data in the grid file
                         grid_variable = f.read(var[1])
                         # If the variable is found
-                        if grid_variable != None:
+                        if grid_variable is not None:
                             self._errors.append("TypeError")
                             message  = var[1] + " was specified both in the "
                             message += "driver and in the grid file.\n"
@@ -995,7 +995,7 @@ class basic_runner(object):
         #}}}
 
         #{{{If grid files are set: Use nx, ny and nz values in the grid file
-        if self._grid_file != None:
+        if self._grid_file is not None:
             # Make a dict of appendable lists
             spatial_domain = {'nx':[], 'ny':[], 'nz':[]}
             for grid_file in self._grid_file:
@@ -1006,7 +1006,7 @@ class basic_runner(object):
                 for mesh_type in mesh_types:
                     grid_variable = f.read(mesh_type)
                     # If the variable is found
-                    if grid_variable != None:
+                    if grid_variable is not None:
                         spatial_domain[mesh_type].append(grid_variable)
             # Check that the lengths of nx, ny and nz are the same
             # unless they are not found
@@ -1022,42 +1022,42 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that nx, ny and nz are of the same length
-        if self._nx != None and self._ny != None:
+        if self._nx is not None and self._ny is not None:
             self._check_if_same_len((self._nx, 'nx'), (self._ny, 'ny'))
-        if self._nx != None and self._nz != None:
+        if self._nx is not None and self._nz is not None:
             self._check_if_same_len((self._nx, 'nx'), (self._nz, 'nz'))
-        if self._ny != None and self._nz != None:
+        if self._ny is not None and self._nz is not None:
             self._check_if_same_len((self._ny, 'ny'), (self._nz, 'nz'))
         #}}}
 
         #{{{Check that NXPE and NYPE are of the same length as nx, ny, nz
-        if self._nx != None and self._NXPE != None:
+        if self._nx is not None and self._NXPE is not None:
             self._check_if_same_len((self._nx, 'nx'), (self._NXPE, 'NXPE'))
-        if self._ny != None and self._NXPE != None:
+        if self._ny is not None and self._NXPE is not None:
             self._check_if_same_len((self._ny, 'ny'), (self._NXPE, 'NXPE'))
-        if self._nz != None and self._NXPE != None:
+        if self._nz is not None and self._NXPE is not None:
             self._check_if_same_len((self._nz, 'nz'), (self._NXPE, 'NXPE'))
 
-        if self._nx != None and self._NYPE != None:
+        if self._nx is not None and self._NYPE is not None:
             self._check_if_same_len((self._nx, 'nx'), (self._NYPE, 'NYPE'))
-        if self._ny != None and self._NYPE != None:
+        if self._ny is not None and self._NYPE is not None:
             self._check_if_same_len((self._ny, 'ny'), (self._NYPE, 'NYPE'))
-        if self._nz != None and self._NYPE != None:
+        if self._nz is not None and self._NYPE is not None:
             self._check_if_same_len((self._nz, 'nz'), (self._NYPE, 'NYPE'))
         #}}}
 
         #{{{Check (zperiod), (zmin, zmax) and (dz) is not set simultaneously
-        if (self._zperiod != None and\
+        if (self._zperiod is not None and\
            (self._zmin != None or self._zmax != None)):
             self._errors.append("TypeError")
             message = "zperiod and zmin or zmax cannot be set simultaneously."
             raise TypeError(message)
-        elif (self._dz != None and\
+        elif (self._dz is not None and\
              (self._zmin != None or self._zmax != None)):
             self._errors.append("TypeError")
             message = "dz and zmin or zmax cannot be set simultaneously."
             raise TypeError(message)
-        elif (self._zperiod != None and self._dz):
+        elif (self._zperiod is not None and self._dz):
             self._errors.append("TypeError")
             message = "dz and zperiod cannot be set simultaneously."
             raise TypeError(message)
@@ -1065,7 +1065,7 @@ class basic_runner(object):
 
         #{{{Check that dz is not set
         # dz is currently set throught zmin and zmax
-        if self._dz != None:
+        if self._dz is not None:
             self._errors.append("TypeError")
             message  = "dz can currently just be set through zmin and zmax\n"
             message += "dz = 2*pi*(zmax-zmin)/(MZ-1)"
@@ -1073,25 +1073,25 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that dx, dy and dz are of the same length
-        if self._dx != None and self._dy != None:
+        if self._dx is not None and self._dy is not None:
             self._check_if_same_len((self._dx, 'dx'), (self._dy, 'dy'))
-        if self._dx != None and self._dz != None:
+        if self._dx is not None and self._dz is not None:
             self._check_if_same_len((self._dx, 'dx'), (self._dz, 'dz'))
-        if self._dy != None and self._dz != None:
+        if self._dy is not None and self._dz is not None:
             self._check_if_same_len((self._dy, 'dy'), (self._dz, 'dz'))
         #}}}
 
         #{{{Check that (dx, nx), (dy, ny) and (dz,nz) are of the same length
-        if self._dx != None and self._nx != None:
+        if self._dx is not None and self._nx is not None:
             self._check_if_same_len((self._dx, 'dx'), (self._nx, 'nx'))
-        if self._dy != None and self._ny != None:
+        if self._dy is not None and self._ny is not None:
             self._check_if_same_len((self._dy, 'dy'), (self._ny, 'ny'))
-        if self._nz != None and self._dz != None:
+        if self._nz is not None and self._dz is not None:
             self._check_if_same_len((self._dz, 'dz'), (self._nz, 'nz'))
         #}}}
 
         #{{{ Check that timestep and nout have the same len
-        if self._timestep != None and self._nout != None:
+        if self._timestep is not None and self._nout is not None:
             self._check_if_same_len((self._timestep, 'timestep'),\
                                    (self._nout, 'nout'))
         #}}}
@@ -1102,7 +1102,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that self._series_add[:][2] have the same length
-        if self._series_add != None:
+        if self._series_add is not None:
             # Make the second indices iterable if they are not already
             for index in range(len(self._series_add)):
                 if not(hasattr(self._series_add[index][2], "__iter__")) or\
@@ -1166,7 +1166,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check grid_file == None if cpy_grid==True
-        if (self._grid_file == None) and (self._cpy_grid == True):
+        if (self._grid_file is None) and (self._cpy_grid == True):
             # Raise error
             self._errors.append("TypeError")
             message = "Cannot copy the grid files if none exists in "+\
@@ -1175,7 +1175,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that zmin and zmax has the same length
-        if (self._zmin != None) and (self._zmax != None):
+        if (self._zmin is not None) and (self._zmax is not None):
             self._check_if_same_len((self._zmin, 'zmin'),\
                                      (self._zmax, 'zmax'))
 
@@ -1202,7 +1202,7 @@ class basic_runner(object):
         #}}}
 
         # If input_member is set
-        if input_member[0] != None:
+        if input_member[0] is not None:
             # Set a success variable that will fail if anything goes
             # wrong
             success = True
@@ -1266,14 +1266,14 @@ class basic_runner(object):
         #}}}
 
         #{{{Check if remove_old and restart is set on the same time
-        if remove_old == True and self._restart != None:
+        if remove_old == True and self._restart is not None:
             self._errors.append("RuntimeError")
             raise RuntimeError("You should not remove old data if you"\
                                " want a restart run")
         #}}}
 
         #{{{Check that the post_processing_function is a fuction
-        if (post_processing_function != None) and\
+        if (post_processing_function is not None) and\
            (not(hasattr(post_processing_function, '__call__'))):
             self._errors.append("RuntimeError")
             message = "post_process_after_every_run must be a"+\
@@ -1282,7 +1282,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that the post_process_after_every_run is not set alone
-        if (post_process_after_every_run != None) and\
+        if (post_process_after_every_run is not None) and\
            (type(post_processing_function) == None):
             self._errors.append("RuntimeError")
             message = "post_process_after_every_run can only be set if"+\
@@ -1291,7 +1291,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Check that the post_process_after_every_run is a boolean
-        if (post_process_after_every_run != None) and\
+        if (post_process_after_every_run is not None) and\
            (type(post_process_after_every_run) != bool):
             self._errors.append("RuntimeError")
             message = "post_process_after_every_run must be set to"+\
@@ -1346,7 +1346,7 @@ class basic_runner(object):
         processors. If not, vary the number of points until value is found."""
 
         #{{{First we check if self._MXG is given
-        if self._MXG == None:
+        if self._MXG is None:
             # We need to find MXG in BOUT.inp. We use BOUTOption for
             # this
             # Object initialization
@@ -1363,7 +1363,7 @@ class basic_runner(object):
         # Flag to determine if a warning should be printed
         produce_warning = False
         print("\nChecking the grid split for the meshes\n")
-        if self._NXPE == None:
+        if self._NXPE is None:
             #{{{ If NXPE is not set
             for size_nr in range(len(self._nx)):
                 print("Checking nx=" + str(self._nx[size_nr]) +\
@@ -1434,7 +1434,7 @@ class basic_runner(object):
         #{{{Set combination of nx, ny and nz (if not set in grid_file)
         # Appendable list
         spatial_grid_possibilities = []
-        if (self._grid_file == None):
+        if (self._grid_file is None):
             # Dictionary where
             # - the first element is the variable itself
             # - the second element is the section of the variable
@@ -1455,7 +1455,7 @@ class basic_runner(object):
             # Append the different dimension to the list of strings
             for key in keys:
                 # If the variable is not empty
-                if spatial_grid_str[key][0] != None:
+                if spatial_grid_str[key][0] is not None:
                     # Fill the appendable list with the elements from
                     # the variable
                     for elem in spatial_grid_str[key][0]:
@@ -1482,16 +1482,16 @@ class basic_runner(object):
                 spatial_grid_possibilities.append(' '.join(current_grid))
         #}}}
 
-        #{{{Set the combination of timestep and nout if != None
+        #{{{Set the combination of timestep and nout if is not None
         # Appendable lists
         temporal_grid_possibilities = []
         timestep_str = []
         nout_str     = []
         # Append the different time options to the list of strings
-        if self._timestep != None:
+        if self._timestep is not None:
             for timestep in self._timestep:
                 timestep_str.append('timestep=' + str(timestep))
-        if self._nout != None:
+        if self._nout is not None:
             for nout in self._nout:
                 nout_str.append('nout=' + str(nout))
         # Combine the strings to one string
@@ -1512,10 +1512,10 @@ class basic_runner(object):
             temporal_grid_possibilities.append(' '.join(current_times))
         #}}}
 
-        #{{{Set the combination of the series_add option if != None
+        #{{{Set the combination of the series_add option if is not None
         # Appendable list
         series_add_possibilities = []
-        if self._series_add != None:
+        if self._series_add is not None:
             # Dictionary to handle the data, where the key is going to
             # be the element number in self._series_add, and the values
             # are going to be the sub dictionary defined below
@@ -1550,15 +1550,15 @@ class basic_runner(object):
         #{{{Put non-iterable variables into a list if they are not set to None
         # This makes the member data iterable, and usable in
         # generate_possibilities
-        if self._MXG != None:
+        if self._MXG is not None:
             self._MXG = [self._MXG]
-        if self._MYG != None:
+        if self._MYG is not None:
             self._MYG = [self._MYG]
-        if self._mms != None:
+        if self._mms is not None:
             self._mms = [self._mms]
-        if self._symGlobX != None:
+        if self._symGlobX is not None:
             self._symGlobX = [self._symGlobX]
-        if self._symGlobY != None:
+        if self._symGlobY is not None:
             self._symGlobY = [self._symGlobY]
         #}}}
 
@@ -1598,7 +1598,7 @@ class basic_runner(object):
         #}}}
 
         #{{{Append the additional option to tuple of variables if set
-        if self._additional != None:
+        if self._additional is not None:
             for additional in self._additional:
                 # If the last element of additional is not iterable we need
                 # put them into a list to make them iterable (in order to
@@ -1649,7 +1649,7 @@ class basic_runner(object):
 
         # If we would like to sort the input list (choose which variable
         # to be the fastest varying)
-        if self._sort_by != None:
+        if self._sort_by is not None:
             # Swap the list corresponding to the sort_by statement so
             # that that list will be the last. The itertools.product
             # will then make that list the fastest varying in the list
@@ -1747,7 +1747,7 @@ class basic_runner(object):
         dmp_files = glob.glob(self._dmp_folder + '/BOUT.dmp.*')
         # If no BOUT.inp files are found or if self._restart is not set
         # (meaning that the run will be done even if files are found)
-        if len(dmp_files) != 0 and self._restart == None:
+        if len(dmp_files) != 0 and self._restart is None:
             print('Skipping the run as *.dmp.* files was found in '\
                   + self._dmp_folder)
             print('To overwrite old files, run with'+\
@@ -1755,7 +1755,7 @@ class basic_runner(object):
             return False
         # Either no files are found, or restart is set
         else:
-            if len(dmp_files) == 0 and self._restart != None:
+            if len(dmp_files) == 0 and self._restart is not None:
                 message = "'restart' was set to " +self._restart+\
                           ", but no dmp files found."+\
                           " Setting 'restart' to None"
@@ -1819,7 +1819,7 @@ class basic_runner(object):
         for cur_var in var:
             # There is an option that the variable could be set to None,
             # and that the default value from BOUT.inp will be used
-            if cur_var[0] != None:
+            if cur_var[0] is not None:
                 # Check for the correct type
                 if isinstance(cur_var[0], the_type) == False:
                     # Check if it is an iterable if iterables are
@@ -1980,7 +1980,7 @@ class basic_runner(object):
             if not(self._allow_size_modification) or\
                   (self._grid_file != None):
                 # If the split fails and the a grid file is given
-                if self._grid_file != None:
+                if self._grid_file is not None:
                     self._errors.append("RuntimeError")
                     message = "The grid can not be split using the"+\
                               " current number of nproc.\n"+\
@@ -2165,7 +2165,7 @@ class basic_runner(object):
             for mesh_type in mesh_types:
                 grid_variable = f.read(mesh_type[1])
                 # If the variable is found
-                if grid_variable != None:
+                if grid_variable is not None:
                     # Append it to the combinations list
                     combination.append(mesh_type[0] +\
                                        mesh_type[1] +\
@@ -2416,7 +2416,7 @@ class basic_runner(object):
     def _generate_possibilities(self, variables=None, section=None, name=None):
         """Generate the list of strings of possibilities"""
 
-        if variables != None:
+        if variables is not None:
             # Set the section name correctly
             if section != "":
                 section = section + ":"
@@ -2463,9 +2463,9 @@ class basic_runner(object):
             elif sort_by == 'temporal_domain':
                 # If we are sorting by the temporal domain, we can either
                 # search for timestep or nout
-                if self._timestep != None:
+                if self._timestep is not None:
                     find_in_list = 'timestep'
-                elif self._nout != None:
+                elif self._nout is not None:
                     find_in_list = 'nout'
             #}}}
 
@@ -2552,7 +2552,7 @@ class basic_runner(object):
         arg = " -d " + self._dmp_folder + " " + combination
 
         # If the run is restarted with initial values from the last run
-        if self._restart != None:
+        if self._restart is not None:
             if self._restart == 'overwrite':
                 print("Moving old runs\n")
                 # Put restart to the arguments
@@ -2802,7 +2802,7 @@ class PBS_runner(basic_runner):
         # All elements of check_if_set must be set if any is set
         not_None = 0
         for check in check_if_set:
-            if check != None:
+            if check is not None:
                 not_None += 1
 
         if (not_None != 0) and (not_None != len(check_if_set)):
@@ -2824,7 +2824,7 @@ class PBS_runner(basic_runner):
         #}}}
 
         #{{{Check that post_process_nprocs,nodes,ppn is consistent if set
-        if self._post_process_nproc != None:
+        if self._post_process_nproc is not None:
             if self._post_process_nproc > \
                     (self._post_process_nodes * self._post_process_ppn):
                 message = 'Must have post_process_nproc <= post_process_nodes'+\
@@ -2853,10 +2853,10 @@ class PBS_runner(basic_runner):
         # A list to loop over
         walltimes = []
         # Append the walltimes if set
-        if self._BOUT_walltime != None:
+        if self._BOUT_walltime is not None:
             walltimes.append((self._BOUT_walltime,\
                               'BOUT_walltime'))
-        if self._post_process_walltime != None:
+        if self._post_process_walltime is not None:
             walltimes.append((self._post_process_walltime,\
                               'post_process_walltime'))
 
@@ -2924,8 +2924,8 @@ class PBS_runner(basic_runner):
                                    ):
         """Function which check for errors in a child class."""
 
-        # Check member data is set if post_processing_function != None
-        if post_processing_function != None:
+        # Check member data is set if post_processing_function is not None
+        if post_processing_function is not None:
             check_if_set = [\
                             self._post_process_nproc,\
                             self._post_process_nodes,\
@@ -2934,7 +2934,7 @@ class PBS_runner(basic_runner):
             # All elements of check_if_set must be set if any is set
             not_None = 0
             for check in check_if_set:
-                if check != None:
+                if check is not None:
                     not_None += 1
 
             if (not_None != 0) and (not_None != len(check_if_set)):
@@ -3023,7 +3023,7 @@ class PBS_runner(basic_runner):
 
         #{{{Create and submit the shell script
         # Creating the job string
-        if self._post_process_run_name == None:
+        if self._post_process_run_name is None:
             job_name = 'post_process_' + function.__name__ + '_'+ start_time
         else:
             job_name = self._post_process_run_name
@@ -3072,7 +3072,7 @@ class PBS_runner(basic_runner):
         combination_name = combination_name.replace('=','-')
 
         # Name of job
-        if self._BOUT_run_name == None:
+        if self._BOUT_run_name is None:
             job_name =\
                 combination_name + '_' + self._directory + '_' + str(run_no)
         else:
@@ -3184,18 +3184,18 @@ class PBS_runner(basic_runner):
         job_string += '#PBS -N ' + job_name + '\n'
         job_string += '#PBS -l nodes=' + str(nodes) + ':ppn=' + str(ppn)  + '\n'
         # If walltime is set
-        if walltime != None:
+        if walltime is not None:
             # Wall time, must be in format HOURS:MINUTES:SECONDS
             job_string += '#PBS -l walltime=' + walltime + '\n'
         # If submitting to a specific queue
-        if queue != None:
+        if queue is not None:
             job_string += '#PBS -q ' + queue + '\n'
         job_string += '#PBS -o ' + os.path.join(self._dmp_folder, job_name) +\
                       '.log' + '\n'
         job_string += '#PBS -e ' + os.path.join(self._dmp_folder, job_name) +\
                       '.err' + '\n'
         # If we want to be notified by mail
-        if mail != None:
+        if mail is not None:
             job_string += '#PBS -M e' + mail + '\n'
         # #PBS -m abe
         # a=aborted b=begin e=ended

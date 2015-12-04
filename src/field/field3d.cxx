@@ -1918,7 +1918,7 @@ void Field3D::shiftZ2D(const Field2D zangle, const bool fwd, const bool do2D){
   if(phs == (dcomplex***) NULL) {
     phs = c3tensor(nx,mesh->ngy,nkz);
     cphs = c3tensor(nx,mesh->ngy,nkz);
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jy=0;jy<mesh->ngy;jy++){
       for(int jz=0;jz<nkz;jz++){
 	for(int jx=0;jx<nx;jx++){
@@ -2038,7 +2038,7 @@ void Field3D::shiftZ3D(const Field2D zangle, const bool fwd, const bool do2D){
     phs = c3tensor(nx,ny,nkz);
     cphs = c3tensor(nx,ny,nkz);
     BoutReal kwave;
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int jx=0;jx<nx;jx++){
       for(int jy=0;jy<ny;jy++){
 	for(int jz=0;jz<nkz;jz++){
@@ -2115,7 +2115,7 @@ void Field3D::shiftZ(int jx, int jy, bool fwd)
   if(phs == (dcomplex**) NULL) {
     phs = cmatrix(nx,nkz);
     cphs = cmatrix(nx,nkz);
-    BoutReal fac=2.0*PI/mesh->zlength;
+    BoutReal fac=2.0*PI/mesh->zlength();
     for(int ix=0;ix<nx;ix++){
       BoutReal ts;
       mesh->periodicY(ix,ts);
@@ -2173,8 +2173,8 @@ void Field3D::shiftZ(int jx, int jy, double zangle)
   rfft(block->data[jx][jy], ncz, v); // Forward FFT
 
   // Apply phase shift
-  for(int jz=1;jz<=ncz/2;jz++) {
-    kwave=jz*2.0*PI/mesh->zlength; // wave number is 1/[rad]
+  for(jz=1;jz<=ncz/2;jz++) {
+    kwave=jz*2.0*PI/mesh->zlength(); // wave number is 1/[rad]
     v[jz] *= dcomplex(cos(kwave*zangle) , -sin(kwave*zangle));
   }
 
