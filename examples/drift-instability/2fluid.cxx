@@ -91,7 +91,6 @@ int physics_init(bool restarting) {
   GRID_LOAD(hthe);
   mesh->get(coord->dx,   "dpsi");
   mesh->get(I,    "sinty");
-  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -131,7 +130,9 @@ int physics_init(bool restarting) {
 
   /************* SHIFTED RADIAL COORDINATES ************/
 
-  if(mesh->ShiftXderivs) {
+  bool ShiftXderivs;
+  globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+  if(ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
@@ -300,7 +301,7 @@ int physics_init(bool restarting) {
   dump.add(Ni_x,  "Ni_x", 0);
   dump.add(rho_s, "rho_s", 0);
   dump.add(wci,   "wci", 0);
-  
+
   return(0);
 }
 
@@ -322,7 +323,6 @@ int physics_run(BoutReal t)
 
   // Communicate variables
   mesh->communicate(comms);
-
 
   // Update profiles
   Nit = Ni0;  //+ Ni.DC();
@@ -479,8 +479,8 @@ int physics_run(BoutReal t)
 #include <invert_laplace.hxx>
 
 // Performs inversion of rho (r) to get phi (p)
-int solve_phi_tridag(Field3D &r, Field3D &p, int flags)
-{
+int solve_phi_tridag(Field3D &r, Field3D &p, int flags) {
+  
   //output.write("Solving phi: %e, %e -> %e\n", max(abs(r)), min(Ni0), max(abs(r/Ni0)));
 
   if(invert_laplace(r/Ni0, p, flags, NULL)) {

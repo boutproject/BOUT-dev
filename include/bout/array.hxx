@@ -99,6 +99,19 @@ public:
   }
 
   /*!
+   * Delete all data from the store
+   */
+  static void cleanup() {
+    for(auto &p : store) {
+      auto &v = p.second;
+      for(ArrayData* a : v) {
+        delete a;
+      }
+      v.clear();
+    }
+  }
+  
+  /*!
    * Returns true if the Array is empty
    */
   bool empty() const {
@@ -221,7 +234,7 @@ private:
    * For each data type T, an instance should be declared once (and once only)
    */
   static std::map< int, std::vector<ArrayData* > > store;
-
+  
   /*!
    * Returns a pointer to an ArrayData object with no
    * references. This is either from the store, or newly allocated

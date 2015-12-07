@@ -234,7 +234,7 @@ Field3D & Field3D::operator=(const Field2D &rhs) {
   ASSERT1(rhs.isAllocated());
   
   /// Check that the data is valid
-  checkData(rhs);
+  rhs.checkData();
  
   /// Make sure there's a unique array to copy data into
   allocate();
@@ -256,8 +256,9 @@ Field3D & Field3D::operator=(const FieldPerp &rhs) {
   allocate();
 
   /// Copy data
-  for(auto i : rhs)
+  for(auto i : rhs) {
     (*this)[i] = rhs[i];
+  }
 
   return *this;
 }

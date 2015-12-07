@@ -337,6 +337,7 @@ int BoutFinalise() {
 
   // Delete field memory
   Field2D::cleanup();
+  Array<double>::cleanup();
 
   // Cleanup boundary factory
   BoundaryFactory::cleanup();

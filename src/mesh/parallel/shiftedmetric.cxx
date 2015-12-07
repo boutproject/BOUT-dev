@@ -18,7 +18,10 @@
 ShiftedMetric::ShiftedMetric(Mesh *m) : mesh(m) {
   // Read the zShift angle from the mesh
   
-  mesh->get(zShift, "zShift");
+  if(mesh->get(zShift, "zShift")) {
+    // No zShift variable. Try qinty in BOUT grid files
+    mesh->get(zShift, "qinty");
+  }
 }
 
 /*!

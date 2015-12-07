@@ -41,6 +41,10 @@ Mesh::Mesh(GridDataSource *s, Options* opt) : source(s), coords(0), options(opt)
 
 Mesh::~Mesh() {
   delete source;
+
+  if(coords) {
+    delete coords;
+  }
   
   /*
   // Gaussj working arrays
