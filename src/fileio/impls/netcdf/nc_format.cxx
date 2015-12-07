@@ -804,9 +804,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   // Check the name
   checkName(name);
 
-#ifdef CHECK
-  msg_stack.push("NcFormat::write_rec(BoutReal)");
-#endif
+  MsgStackItem trace("NcFormat::write_rec(BoutReal*)");
 
   int nd = 1; // Number of dimensions
   if(lx != 0) nd = 2;
@@ -828,17 +826,15 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
     NcType vartype = ncDouble;
     if(lowPrecision)
       vartype = ncFloat;
-  
+    
     var = dataFile->add_var(name, vartype, nd, recDimList);
+    ASSERT1(var != 0);
     
     rec_nr[name] = default_rec; // Starting record
-
+    
     if(!var->is_valid()) {
 #ifdef NCDF_VERBOSE
       output.write("ERROR: NetCDF Could not add variable '%s' to file '%s'\n", name, fname);
-#endif
-#ifdef CHECK
-  msg_stack.pop();
 #endif
       return false;
     }
@@ -885,11 +881,7 @@ bool NcFormat::write_rec(BoutReal *data, const char *name, int lx, int ly, int l
   
   // Increment record number
   rec_nr[name] = rec_nr[name] + 1;
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-
+  
   return true;
 }
 

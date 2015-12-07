@@ -47,7 +47,7 @@ Field3D::Field3D(Mesh *msh) : background(NULL), fieldmesh(msh), deriv(NULL), yup
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz-1;
+    nz = fieldmesh->ngz;
   }
   
   location = CELL_CENTRE; // Cell centred variable by default
@@ -71,7 +71,7 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
   if(fieldmesh) {
     nx = fieldmesh->ngx;
     ny = fieldmesh->ngy;
-    nz = fieldmesh->ngz-1;
+    nz = fieldmesh->ngz;
   }
 
   location = f.location;
@@ -82,10 +82,15 @@ Field3D::Field3D(const Field3D& f) : background(NULL),
 Field3D::Field3D(const Field2D& f) : background(NULL), fieldmesh(nullptr), deriv(NULL), yup_field(this), ydown_field(this) {
   
   MsgStackItem trace("Field3D: Copy constructor from Field2D");
-
+  
   location = CELL_CENTRE; // Cell centred variable by default
   
   boundaryIsSet = false;
+
+  fieldmesh = mesh;
+  nx = fieldmesh->ngx;
+  ny = fieldmesh->ngy;
+  nz = fieldmesh->ngz;
   
   *this = f;
 }
@@ -97,6 +102,11 @@ Field3D::Field3D(const BoutReal val) : background(NULL), fieldmesh(nullptr), der
   location = CELL_CENTRE; // Cell centred variable by default
   
   boundaryIsSet = false;
+
+  fieldmesh = mesh;
+  nx = fieldmesh->ngx;
+  ny = fieldmesh->ngy;
+  nz = fieldmesh->ngz;
   
   *this = val;
 }
@@ -120,7 +130,7 @@ void Field3D::allocate() {
       fieldmesh = mesh;
       nx = fieldmesh->ngx;
       ny = fieldmesh->ngy;
-      nz = fieldmesh->ngz-1;
+      nz = fieldmesh->ngz;
     }
     data = Array<BoutReal>(nx*ny*nz);
   }else
@@ -209,6 +219,8 @@ Field3D & Field3D::operator=(const Field3D &rhs) {
   
   // Copy the data and data sizes
   fieldmesh = rhs.fieldmesh;
+  nx = rhs.nx; ny = rhs.ny; nz = rhs.nz; 
+  
   data = rhs.data;
   
   location = rhs.location;
@@ -1309,9 +1321,10 @@ void checkData(const Field3D &f)  {
   if(!f.isAllocated())
     throw BoutException("Field3D: Operation on empty data\n");
   
-  for(auto d : f)
+  for(auto d : f) {
     if(!finite(f[d]))
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
+  }
 }
 #endif
 
