@@ -151,7 +151,7 @@ const Field3D Laplacian::solve(const Field3D &b) {
     for(int jy=ys; jy <= ye; jy++) {
       // 1. Slice b (i.e. take a X-Z plane out of the field)
       // 2. Send it to the solver of the implementation (determined during creation)
-      x = solve(b.slice(jy));
+      x = solve(sliceXZ(b,jy));
     }
   }
   catch (BoutIterationFail itfail) {
@@ -195,7 +195,7 @@ const Field3D Laplacian::solve(const Field3D &b, const Field3D &x0) {
     for(int jy=ys; jy <= ye; jy++) {
       // 1. Slice b and x (i.e. take a X-Z plane out of the field)
       // 2. Send them to the solver of the implementation (determined during creation)
-      x = solve(b.slice(jy), x0.slice(jy));
+      x = solve(sliceXZ(b,jy), sliceXZ(x0,jy));
     }
   }
   catch (BoutIterationFail itfail) {
@@ -277,7 +277,7 @@ void Laplacian::tridagCoefs(int jx, int jy, BoutReal kwave,
       coef4 += coord->g11(jx,jy) * ((*ccoef)(jx+1,jy) - (*ccoef)(jx-1,jy)) / (2.*coord->dx(jx,jy)*((*ccoef)(jx,jy)));
   }
 
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+  if(mesh->IncIntShear) {
     // d2dz2 term
     coef2 += coord->g11(jx,jy) * coord->IntShiftTorsion(jx,jy) * coord->IntShiftTorsion(jx,jy);
     // Mixed derivative

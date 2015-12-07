@@ -66,30 +66,8 @@ private:
   std::vector<dcomplex> cmplx;
   
   const Field3D shiftZ(const Field3D f, const Field2D zangle);
-  void shiftZ(BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
+  void shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out);
 };
 
-/*!
- * Flux Coordinate Independent method
- */
-class FCITransform : public ParallelTransform {
-public:
-  FCITransform(Mesh *m);
-
-  void calcYUpDown(Field3D &f);
-  
-  const Field3D toFieldAligned(const Field3D &f) {
-    throw BoutException("FCI method cannot transform into field aligned grid");
-  }
-
-  const Field3D fromFieldAligned(const Field3D &f) {
-    throw BoutException("FCI method cannot transform into field aligned grid");
-  }
-private:
-  FCITransform();
-  
-  Mesh *mesh;
-  
-};
 
 #endif // __PARALLELTRANSFORM_H__

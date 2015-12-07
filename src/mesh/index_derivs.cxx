@@ -1090,19 +1090,13 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
   Field3D result;
   result.allocate(); // Make sure data allocated
 
-  Field3D vs = var;
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
-    vs = var.shiftZ(true); // Shift into real space
-  }
-  
   bindex bx;
   
   start_index(&bx, RGN_NOX);
   stencil s;
   do {
     for(bx.jz=0;bx.jz<mesh->ngz-1;bx.jz++) {
-      vs.setXStencil(s, bx, loc);
+      var.setXStencil(s, bx, loc);
       result(bx.jx,bx.jy,bx.jz) = func(s);
     }
   }while(next_index2(&bx));
@@ -1118,7 +1112,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
-	  vs.setXStencil(s, bx, loc);
+	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
@@ -1131,7 +1125,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
 	for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	  bx.jx=it.ind;
 	  calc_index(&bx);
-	  vs.setXStencil(s, bx, loc);
+	  var.setXStencil(s, bx, loc);
 	  result(bx.jx,bx.jy,bx.jz) = func(s);
 	}
     #ifdef CHECK
@@ -1145,7 +1139,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
       for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	calc_index(&bx);
-	vs.setXStencil(fs, bx, loc);
+	var.setXStencil(fs, bx, loc);
 	funcs_pair = func_in(fs);
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxm,bx.jy,bx.jz) = funcs_pair.outer;
@@ -1161,7 +1155,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
     for (bx.jy=mesh->ystart; bx.jy<=mesh->yend; bx.jy++)
       for (bx.jz=0; bx.jz<mesh->ngz-1; bx.jz++) {
 	calc_index(&bx);
-	vs.setXStencil(bs, bx, loc);
+	var.setXStencil(bs, bx, loc);
 	funcs_pair = func_out(bs);
 	result(bx.jx,bx.jy,bx.jz) = funcs_pair.inner;
 	result(bx.jxp,bx.jy,bx.jz) = funcs_pair.outer;
@@ -1170,10 +1164,7 @@ const Field3D Mesh::applyXdiff(const Field3D &var, Mesh::deriv_func func, Mesh::
       result.bndry_xout = true;
     #endif
   }
-
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.shiftZ(false); // Shift back
-
+  
   return result;
 }
 
@@ -2137,6 +2128,8 @@ const Field2D Mesh::indexVDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 /// General version for 2 or 3-D objects
 const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexVDDX(Field, Field)");
+  
   Mesh::upwind_func func = fVDDX;
   DiffLookup *table = UpwindTable;
 
@@ -2168,24 +2161,13 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
       // Should be able to do something like:
       //return VDDX(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in Mesh::indexVDDX");
     }
   }
 
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupUpwindFunc(table, method);
-  }
-
-  /// Clone inputs (for shifting)
-  Field *vp = v.clone();
-  Field *fp = f.clone();
-  
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT if needed
-    vp->shiftToReal(true);
-    fp->shiftToReal(true);
   }
   
   Field3D result;
@@ -2196,14 +2178,11 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   start_index(&bx);
   stencil vval, fval;
   do {
-    vp->setXStencil(vval, bx, diffloc);
-    fp->setXStencil(fval, bx); // Location is always the same as input
+    v.setXStencil(vval, bx, diffloc);
+    f.setXStencil(fval, bx); // Location is always the same as input
     
     result(bx.jx, bx.jy, bx.jz) = func(vval, fval);
   }while(next_index3(&bx));
-  
-  if(ShiftXderivs && (ShiftOrder == 0))
-    result = result.shiftZ(false); // Shift back
   
   result.setLocation(inloc);
 
@@ -2212,10 +2191,6 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
   result.bndry_xin = result.bndry_xout = result.bndry_yup = result.bndry_ydown = false;
 #endif
   
-  // Delete clones
-  delete vp;
-  delete fp;
-  
   return interp_to(result, outloc);
 }
 
@@ -2223,6 +2198,7 @@ const Field3D Mesh::indexVDDX(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // special case where both are 2D
 const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexVDDY");
   Mesh::upwind_func func = fVDDY;
   DiffLookup *table = UpwindTable;
 
@@ -2254,8 +2230,8 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
       // Should be able to do something like:
       //return VDDY(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      // Instead, pretend it's been shifted
+      throw BoutException("Unhandled shift in indexVDDY(Field2D, Field2D)");
     }
   }
 
@@ -2289,6 +2265,7 @@ const Field2D Mesh::indexVDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 
 // general case
 const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexVDDY(Field, Field)");
   Mesh::upwind_func func = fVDDY;
   DiffLookup *table = UpwindTable;
 
@@ -2320,8 +2297,7 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
       // Should be able to do something like:
       //return VDDY(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in VDDY(Field, Field)");
     }
   }
   
@@ -2358,6 +2334,8 @@ const Field3D Mesh::indexVDDY(const Field &v, const Field &f, CELL_LOC outloc, D
 
 // general case
 const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexVDDZ");
+  
   Mesh::upwind_func func = fVDDZ;
   DiffLookup *table = UpwindTable;
 
@@ -2389,8 +2367,7 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
       // Should be able to do something like:
       //return VDDY(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in indexVDDZ");
     }
   }
 
@@ -2428,6 +2405,8 @@ const Field3D Mesh::indexVDDZ(const Field &v, const Field &f, CELL_LOC outloc, D
  *******************************************************************************/
 
 const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::::indexFDDX(Field2D, Field2D)");
+  
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2461,6 +2440,8 @@ const Field2D Mesh::indexFDDX(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexFDDX");
+  
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDX == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2498,23 +2479,13 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Should be able to do something like:
       //return VDDX(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in indexFDDX");
     }
   }
 
   if(method != DIFF_DEFAULT) {
     // Lookup function
     func = lookupUpwindFunc(table, method);
-  }
-
-  Field3D vp = v;
-  Field3D fp = f;
-  
-  if(ShiftXderivs && (ShiftOrder == 0)) {
-    // Shift in Z using FFT if needed
-    vp.shiftToReal(true);
-    fp.shiftToReal(true);
   }
   
   Field3D result;
@@ -2525,14 +2496,11 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
   
   start_index(&bx);
   do {
-    vp.setXStencil(vval, bx, diffloc);
-    fp.setXStencil(fval, bx); // Location is always the same as input
+    v.setXStencil(vval, bx, diffloc);
+    f.setXStencil(fval, bx); // Location is always the same as input
     
     result(bx.jx,bx.jy,bx.jz) = func(vval, fval);
   }while(next_index3(&bx));
-  
-  if(ShiftXderivs && (ShiftOrder == 0))
-    result = result.shiftZ(false); // Shift back
   
   result.setLocation(inloc);
 
@@ -2547,6 +2515,8 @@ const Field3D Mesh::indexFDDX(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexFDDY(Field2D, Field2D)");
+  
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2580,6 +2550,7 @@ const Field2D Mesh::indexFDDY(const Field2D &v, const Field2D &f, CELL_LOC outlo
 }
 
 const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexFDDY");
   
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDY == NULL)) ) {
     // Split into an upwind and a central differencing part
@@ -2617,8 +2588,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Should be able to do something like:
       //return VDDX(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in indexFDDY");
     }
   }
 
@@ -2660,6 +2630,7 @@ const Field3D Mesh::indexFDDY(const Field3D &v, const Field3D &f, CELL_LOC outlo
 /////////////////////////////////////////////////////////////////////////
 
 const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
+  MsgStackItem("Mesh::indexFDDZ(Field3D, Field3D)");
   if( (method == DIFF_SPLIT) || ((method == DIFF_DEFAULT) && (fFDDZ == NULL)) ) {
     // Split into an upwind and a central differencing part
     // d/dx(v*f) = v*d/dx(f) + f*d/dx(v)
@@ -2697,8 +2668,7 @@ const Field3D Mesh::indexFDDZ(const Field3D &v, const Field3D &f, CELL_LOC outlo
       // Should be able to do something like:
       //return VDDX(interp_to(v, inloc), f, outloc, method);
       
-      // Instead, pretend it's been shifted FIX THIS
-      diffloc = vloc;
+      throw BoutException("Unhandled shift in indexFDDZ");
     }
   }
 

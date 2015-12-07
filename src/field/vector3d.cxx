@@ -505,22 +505,6 @@ void Vector3D::setLocation(CELL_LOC loc) {
 }
 
 /***************************************************************
- *               Z SHIFTING
- ***************************************************************/
-
-const Vector3D Vector3D::shiftZ(const BoutReal zangle) const {
-  Vector3D result;
-
-  result.covariant = covariant;
-
-  result.x = x.shiftZ(zangle);
-  result.y = y.shiftZ(zangle);
-  result.z = z.shiftZ(zangle);
-
-  return result;
-}
-
-/***************************************************************
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 

@@ -78,7 +78,7 @@ const Field3D ShiftedMetric::shiftZ(const Field3D f, const Field2D zangle) {
   return result;
 }
 
-void ShiftedMetric::shiftZ(BoutReal *in, int len, BoutReal zangle,  BoutReal *out) {
+void ShiftedMetric::shiftZ(const BoutReal *in, int len, BoutReal zangle,  BoutReal *out) {
   int nmodes = len/2 + 1;
 
   // Complex array used for FFTs

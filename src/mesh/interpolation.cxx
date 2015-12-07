@@ -178,17 +178,11 @@ BoutReal lagrange_4pt(BoutReal v[], BoutReal offset)
   return lagrange_4pt(v[0], v[1], v[2], v[3], offset);
 }
 
-const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Field3D &delta_z) {
-  MsgStackItem("Interpolating 3D field");
+const Field3D interpolate(const Field3D &f, const Field3D &delta_x, const Field3D &delta_z) {
+  MsgStackItem trace("Interpolating 3D field");
   
   Field3D result;
   result.allocate();
-
-  Field3D f = var;
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
-    f = var.shiftZ(true); // Shift into BoutReal space
-  }
 
   // Loop over output grid points
   for(int jx=0;jx<mesh->ngx;jx++)
@@ -257,9 +251,6 @@ const Field3D interpolate(const Field3D &var, const Field3D &delta_x, const Fiel
 	result(jx,jy,jz) = lagrange_4pt(xvals, xs);
       }
 
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0))
-    result = result.shiftZ(false); // Shift back
-
   return result;
 }
 
@@ -268,7 +259,7 @@ const Field3D interpolate(const Field2D &f, const Field3D &delta_x, const Field3
 }
 
 const Field3D interpolate(const Field2D &f, const Field3D &delta_x) {
-  MsgStackItem("interpolate(Field2D, Field3D)");
+  MsgStackItem trace("interpolate(Field2D, Field3D)");
   
   Field3D result;
   result.allocate();

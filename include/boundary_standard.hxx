@@ -317,24 +317,6 @@ class BoundaryRelax : public BoundaryModifier {
   BoutReal r;
 };
 
-/// Apply boundary condition in shifted coordinates
-class BoundaryShifted : public BoundaryModifier {
-public:
-  BoundaryShifted() {}
-  BoundaryShifted(BoundaryOp *operation) : BoundaryModifier(operation) {}
-  BoundaryOp* cloneMod(BoundaryOp *op, const list<string> &args);
-  
-  void apply(Field2D &f);
-  void apply(Field3D &f);
-  
-  void apply_ddt(Field2D &f);
-  void apply(Field2D &f, BoutReal t);
-  void apply_ddt(Field3D &f);
-  void apply(Field3D &f, BoutReal t);
-private:
-  
-};
-
 /// Increase the width of a boundary
 class BoundaryWidth : public BoundaryModifier {
 public:

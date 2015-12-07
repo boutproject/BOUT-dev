@@ -91,9 +91,9 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     if(((ix < xbndry) && (inner_boundary_flags & INVERT_SET)) ||
        ((ncx-ix < xbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
-      ZFFT(x0[ix], mesh->zShift(ix,jy), bk[ix]);
+      rfft(x0[ix], ncz, bk[ix]);
     }else
-      ZFFT(b[ix], mesh->zShift(ix,jy), bk[ix]);
+      rfft(b[ix], ncz, bk[ix]);
   }
   
   int xstart, xend;
@@ -403,9 +403,7 @@ const FieldPerp LaplaceSerialBand::solve(const FieldPerp &b, const FieldPerp &x0
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
 
-    ZFFT_rev(xk[ix], mesh->zShift(ix,jy), x[ix]);
-    
-    x(ix,mesh->ngz-1) = x(ix,0); // enforce periodicity
+    irfft(xk[ix], ncz, x[ix]);
   }
 
   return x;

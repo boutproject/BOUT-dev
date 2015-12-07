@@ -62,7 +62,7 @@
 const Field3D DDX(const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   Field3D result =  mesh->indexDDX(f,outloc, method) / mesh->coordinates()->dx;
   
-  if(mesh->ShiftXderivs && mesh->IncIntShear) {
+  if(mesh->IncIntShear) {
     // Using BOUT-06 style shifting
     result += mesh->coordinates()->IntShiftTorsion * DDZ(f, outloc);
   }

@@ -118,7 +118,7 @@ const Field3D LaplaceSPT::solve(const Field3D &b) {
   
   for(int jy=ys; jy <= ye; jy++) {
     // And start another one going
-    start(b.slice(jy), alldata[jy]);
+    start(sliceXZ(b, jy), alldata[jy]);
     
     // Move each calculation along one processor
     for(int jy2=ys; jy2 < jy; jy2++) 
@@ -276,7 +276,7 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   int ncz = mesh->ngz-1;
   
   for(int ix=0; ix < mesh->ngx; ix++) {
-    ZFFT(b[ix], mesh->zShift(ix,data.jy), dc1d);
+    rfft(b[ix], ncz, dc1d);
     for(int kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = dc1d[kz];
   }
@@ -473,7 +473,7 @@ void LaplaceSPT::finish(SPT_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       dc1d[0] = 0.0;
     
-    ZFFT_rev(dc1d, mesh->zShift(ix,data.jy), x[ix]);
+    irfft(dc1d, ncz, x[ix]);
     
     x(ix,ncz) = x(ix,0); // enforce periodicity
   }

@@ -50,25 +50,6 @@ class Field {
  public:
   Field();
   virtual ~Field() { }
-  
-  /// Clone function
-  /*!
-    C++ doesn't support statements like:
-      Field3D a;
-      a = ...
-      Field b = a;  // Error
-    The clone function implements a second-best
-      Field3D a;
-      a = ...
-      Field *b = a.clone();
-    This is useful where a const field must be modified within a function
-    and is used in the deriv.cpp functions.
-  */
-  DEPRECATED(virtual Field* clone() const) = 0;
-
-  virtual void shiftToReal(bool toBoutReal) {
-    // Does nothing by default
-  }
 
   //virtual void setStencil(bstencil *val, bindex *bx) const = 0;
 

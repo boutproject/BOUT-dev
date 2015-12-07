@@ -69,10 +69,6 @@ Field2D::~Field2D() {
     delete deriv;
 }
 
-Field2D* Field2D::clone() const {
-  return new Field2D(*this);
-}
-
 void Field2D::allocate() {
   allocData();
 }

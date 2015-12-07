@@ -103,14 +103,14 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
        ((ncx-ix < outbndry) && (outer_boundary_flags & INVERT_SET))) {
       // Use the values in x0 in the boundary
 
-      // x0 and mesh->zShift are the inputs
+      // x0 is the input
       // bk is the output
-      ZFFT(x0[ix], mesh->zShift(ix,jy), bk[ix]);
+      rfft(x0[ix], ncz, bk[ix]);
 
     }else {
-      // b and mesh->zShift are the inputs
+      // b is the input
       // bk is the output
-      ZFFT(b[ix], mesh->zShift(ix,jy), bk[ix]);
+      rfft(b[ix], ncz, bk[ix]);
     }
   }
 
@@ -175,13 +175,13 @@ const FieldPerp LaplaceSerialTri::solve(const FieldPerp &b, const FieldPerp &x0)
     if(global_flags & INVERT_ZERO_DC)
       xk[ix][0] = 0.0;
     
-    ZFFT_rev(xk[ix], mesh->zShift(ix,jy), x[ix]);
-    
-    x(ix,mesh->ngz-1) = x(ix,0); // enforce periodicity
-    
-    for(int kz=0;kz<mesh->ngz;kz++)
+    irfft(xk[ix], ncz, x[ix]);
+
+#if CHECK > 2
+    for(int kz=0;kz<ncz;kz++)
       if(!finite(x(ix,kz)))
         throw BoutException("Non-finite at %d, %d, %d", ix, jy, kz);
+#endif
   }
 
   return x;

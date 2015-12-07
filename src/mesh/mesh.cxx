@@ -12,6 +12,8 @@
 
 #include <output.hxx>
 
+#include "parallel/fci.hxx"
+
 Mesh* Mesh::create(GridDataSource *s, Options *opt) {
   return MeshFactory::getInstance()->createMesh(s, opt);
 }
@@ -108,7 +110,7 @@ int Mesh::get(Field3D &var, const string &name, BoutReal def) {
   Mesh::communicate(var);
 
   // Check that the data is valid
-  var.checkData(true);
+  checkData(var);
 
   return 0;
 }

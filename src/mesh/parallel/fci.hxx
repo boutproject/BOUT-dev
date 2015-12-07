@@ -1,3 +1,4 @@
+
 /**************************************************************************
  * Flux-coordinate Independent parallel derivatives
  *
@@ -23,14 +24,7 @@
  *
  **************************************************************************/
 
-#ifndef __FCI_DERIVS_H__
-#define __FCI_DERIVS_H__
-
-#include <field3d.hxx>
-#include <bout/mesh.hxx>
-#include <globals.hxx>
-#include <utils.hxx>
-#include <bout_types.hxx> // See this for codes
+#include <bout/paralleltransform.hxx>
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
@@ -59,30 +53,32 @@ public:
   Field3D h11_z;
 };
 
-// A class for performing flux-coordinate independent parallel derivatives
-class FCI {
+class FCITransform : public ParallelTransform {
+public:
+  FCITransform(Mesh *m);
+
+  void calcYUpDown(Field3D &f);
+  
+  const Field3D toFieldAligned(const Field3D &f) {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
+
+  const Field3D fromFieldAligned(const Field3D &f) {
+    throw BoutException("FCI method cannot transform into field aligned grid");
+  }
 private:
+  FCITransform();
+
+  // The FCI object is tied to the mesh it was created on, so the mesh must
+  // not change
+  Mesh &mesh;
+
   // The maps hold the grid indices of the field line end-points and
   // associated interpolation coefficients
   const FCIMap forward_map;
   const FCIMap backward_map;
-
-  // The FCI object is tied to the mesh it was created on, so the mesh must
-  // not change
-  Mesh& mesh;
-
-  // Private constructor - must be initialised with mesh
-  FCI();
-public:
-  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1) {}
-
+  
   // Interpolate field in direction DIR
   void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
-
-  // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, bool keep = false);
-  const Field3D Div_par(Field3D &f, bool keep = false);
 };
 
-#endif // __FCI_DERIVS_H__

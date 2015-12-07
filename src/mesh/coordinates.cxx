@@ -634,7 +634,7 @@ const Field2D Coordinates::Delp2(const Field2D &f) {
 }
 
 const Field3D Coordinates::Delp2(const Field3D &f) {
-  int msg_pos = msg_stack.push("Coordinates::Delp2( Field3D )");
+  MsgStackItem trace("Coordinates::Delp2( Field3D )");
 
   //return mesh->G1*DDX(f) + mesh->G3*DDZ(f) + mesh->g11*D2DX2(f) + mesh->g33*D2DZ2(f); //+ 2.0*mesh->g13*D2DXDZ(f)
 
@@ -658,7 +658,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Take forward FFT
     
     for(int jx=0;jx<mesh->ngx;jx++)
-      ZFFT(&f(jx,jy,0), mesh->zShift(jx, jy), ft[jx]);
+      rfft(&f(jx,jy,0), ncz, ft[jx]);
 
     // Loop over kz
     for(int jz=0;jz<=ncz/2;jz++) {
@@ -677,8 +677,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     // Reverse FFT
     for(int jx=mesh->xstart;jx<=mesh->xend;jx++) {
 
-      ZFFT_rev(delft[jx], mesh->zShift(jx,jy), &result(jx,jy,0));
-      result(jx,jy,ncz) = result(jx,jy,0);
+      irfft(delft[jx], ncz, &result(jx,jy,0));
     }
 
     // Boundaries
@@ -688,8 +687,6 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
     }
   }
   
-  msg_stack.pop(msg_pos);
-
   // Set the output location
   result.setLocation(f.getLocation());
 
@@ -697,7 +694,7 @@ const Field3D Coordinates::Delp2(const Field3D &f) {
 }
 
 const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
-  MsgStackItem("Coordinates::Delp2( FieldPerp )");
+  MsgStackItem trace("Coordinates::Delp2( FieldPerp )");
   
   FieldPerp result;
   result.allocate();
@@ -717,7 +714,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   // Take forward FFT
   for(int jx=0;jx<mesh->ngx;jx++)
-    ZFFT(f[jx], mesh->zShift(jx, jy), ft[jx]);
+    rfft(f[jx], ncz, ft[jx]);
 
   // Loop over kz
   for(int jz=0;jz<=ncz/2;jz++) {
@@ -735,8 +732,7 @@ const FieldPerp Coordinates::Delp2(const FieldPerp &f) {
   
   // Reverse FFT
   for(int jx=1;jx<(mesh->ngx-1);jx++) {
-    ZFFT_rev(delft[jx], mesh->zShift(jx,jy), result[jx]);
-    result(jx,ncz) = result(jx,0);
+    irfft(delft[jx], ncz, result[jx]);
   }
 
   // Boundaries
@@ -759,25 +755,22 @@ const Field3D Coordinates::Laplace_par(const Field3D &f) {
 // Full Laplacian operator on scalar field
 
 const Field2D Coordinates::Laplace(const Field2D &f) {
-  msg_stack.push("Coordinates::Laplace( Field2D )");
+  MsgStackItem trace("Coordinates::Laplace( Field2D )");
 
   Field2D result =  G1*DDX(f) +G2*DDY(f)
     + g11*D2DX2(f) + g22*D2DY2(f)
     + 2.0*g12*D2DXDY(f);
 
-  msg_stack.pop();
-
   return result;
 }
 
 const Field3D Coordinates::Laplace(const Field3D &f) {
-  msg_stack.push("Coordinates::Laplace( Field3D )");
+  MsgStackItem trace("Coordinates::Laplace( Field3D )");
 
   Field3D result  = G1*::DDX(f) + G2*::DDY(f) + G3*::DDZ(f)
     + g11*D2DX2(f) + g22*D2DY2(f) + g33*D2DZ2(f)
     + 2.0*(g12*D2DXDY(f) + g13*D2DXDZ(f) + g23*D2DYDZ(f));
-
-  msg_stack.pop();
+  
   return result;
 }
 
@@ -788,6 +781,8 @@ const Field3D Coordinates::Laplace(const Field3D &f) {
 
 // Invert an nxn matrix using Gauss-Jordan elimination with full pivoting
 int Coordinates::gaussj(BoutReal **a, int n) {
+  MsgStackItem trace("Coordinates::gaussj");
+  
   int i, icol, irow, j, k, l, ll;
   float big, dum, pivinv;
 
@@ -821,8 +816,7 @@ int Coordinates::gaussj(BoutReal **a, int n) {
 	      icol = k;
 	    }
 	  }else if(ipiv[k] > 1) {
-	    output.write("Error in GaussJ: Singular matrix-1\n");
-	    return 1;
+	    throw BoutException("Error in GaussJ: Singular matrix-1\n");
 	  }
 	}
       }
@@ -830,8 +824,7 @@ int Coordinates::gaussj(BoutReal **a, int n) {
     
     if(irow == -1) {
       // All elements zero!!
-      output.write("Error in GaussJ: Singular matrix-3\n");
-      return 3;
+      throw BoutException("Error in GaussJ: Singular matrix-3\n");
     }
 
     ++(ipiv[icol]);
@@ -845,8 +838,7 @@ int Coordinates::gaussj(BoutReal **a, int n) {
     indxc[i] = icol;
 
     if(a[icol][icol] == 0.0) {
-      output.write("Error in GaussJ: Singular matrix-2\n");
-      return 2;
+      throw BoutException("Error in GaussJ: Singular matrix-2\n");
     }
     pivinv = 1.0 / a[icol][icol];
     a[icol][icol] = 1.0;

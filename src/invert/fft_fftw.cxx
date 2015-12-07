@@ -172,38 +172,6 @@ void cfft(dcomplex *cv, int length, int isign)
 }
 #endif
 
-
-void ZFFT(dcomplex *cv, BoutReal zoffset, int isign, bool shift) {
-  int jz, ikz;
-  BoutReal kwave;
-  
-  Coordinates *coord = mesh->coordinates();
-
-  int ncz = mesh->ngz-1;
-  if((isign > 0) && (mesh->ShiftXderivs) && shift) {
-    // Reverse FFT
-    for(jz=0;jz<ncz;jz++) {
-      if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/coord->zlength; // wave number is 1/[rad]
-      
-      // Multiply by EXP(ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
-    }
-  }
-
-  cfft(cv, ncz, isign);
-
-  if((isign < 0) && (mesh->ShiftXderivs) && shift) {
-    // Forward FFT
-    for(jz=0;jz<ncz;jz++) {
-      if (jz <= ncz/2) ikz=jz; else ikz=jz-ncz;
-      kwave=ikz*2.0*PI/coord->zlength; // wave number is 1/[rad]
-      
-      // Multiply by EXP(-ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
-    }
-  }
-}
 /***********************************************************
  * Real FFTs
  ***********************************************************/
@@ -250,8 +218,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) n); // Normalise
 }
 
-void irfft(dcomplex *in, int length, BoutReal *out)
-{
+void irfft(const dcomplex *in, int length, BoutReal *out) {
   static fftw_complex *fin;
   static double *fout;
   static fftw_plan p;
@@ -349,8 +316,7 @@ void rfft(const BoutReal *in, int length, dcomplex *out) {
     out[i] = dcomplex(fout[i][0], fout[i][1]) / ((double) length); // Normalise
 }
 
-void irfft(dcomplex *in, int length, BoutReal *out)
-{
+void irfft(const dcomplex *in, int length, BoutReal *out) {
   static fftw_complex *finall;
   static double *foutall;
   static fftw_plan *p;
@@ -407,53 +373,6 @@ void irfft(dcomplex *in, int length, BoutReal *out)
     out[i] = fout[i];
 }
 #endif
-
-void ZFFT(const BoutReal *in, BoutReal zoffset, dcomplex *cv, bool shift)
-{
-  int jz;
-  BoutReal kwave;
-
-  int ncz = mesh->ngz-1;
-
-  // Taking the fft of the real input in, and storing the output in cv
-  rfft(in, ncz, cv);
-
-  if((mesh->ShiftXderivs) && shift) {
-    
-    Coordinates *coord = mesh->coordinates();
-    
-    // Forward FFT
-    for(jz=0;jz<=ncz/2;jz++) {
-      kwave=jz*2.0*PI/coord->zlength; // wave number is 1/[rad]
-      
-      // Multiply by EXP(-ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , -sin(kwave*zoffset));
-    }
-  }
-}
-
-void ZFFT_rev(dcomplex *cv, BoutReal zoffset, BoutReal *out, bool shift)
-{
-  int jz;
-  BoutReal kwave;
-  
-  int ncz = mesh->ngz-1;
-  
-  if((mesh->ShiftXderivs) && shift) {
-    
-    Coordinates *coord = mesh->coordinates();
-    
-    for(jz=0;jz<=ncz/2;jz++) { // Only do positive frequencies
-      kwave=jz*2.0*PI/coord->zlength; // wave number is 1/[rad]
-      
-      // Multiply by EXP(ik*zoffset)
-      cv[jz] *= dcomplex(cos(kwave*zoffset) , sin(kwave*zoffset));
-    }
-  }
-
-  irfft(cv, ncz, out);
-}
-
 
 //  Discrete sine transforms (B Shanahan)
 

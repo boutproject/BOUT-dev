@@ -31,11 +31,11 @@
 #include "vector2d.hxx"
 #include "vector3d.hxx"
 
-int initial_profile(const char *name, Field3D &var);
-int initial_profile(const char *name, Field2D &var);
+void initial_profile(const string &name, Field3D &var);
+void initial_profile(const string &name, Field2D &var);
 
-int initial_profile(const char *name, Vector2D &var);
-int initial_profile(const char *name, Vector3D &var);
+void initial_profile(const string &name, Vector2D &var);
+void initial_profile(const string &name, Vector3D &var);
 
 // Generate a 3D field with a given Z oscillation
 const Field3D genZMode(int n, BoutReal phase = 0.0);

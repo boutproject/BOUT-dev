@@ -216,12 +216,6 @@ class Mesh {
   /// Local ranges of data (inclusive), excluding guard cells
   int xstart, xend, ystart, yend;
   
-  bool ShiftXderivs; // Use shifted X derivatives
-  int  ShiftOrder;   // Order of shifted X derivative interpolation
-  Field2D zShift; // Z shift for each point (radians)
-  
-  bool FCI; ///< Using Flux Coordinate Independent (FCI) method?
-  
   bool StaggerGrids;    ///< Enable staggered grids (Centre, Lower). Otherwise all vars are cell centred (default).
   
   bool IncIntShear; // Include integrated shear (if shifting X)

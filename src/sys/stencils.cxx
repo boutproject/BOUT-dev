@@ -513,26 +513,15 @@ void calc_index(bindex *bx) {
   bx->jz2p = (bx->jzp+1)%ncz;
   bx->jz2m = (bx->jzm+ncz-1)%ncz;
 
-  /* shifted z-indices for x differencing */
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder != 0)) {
-    Coordinates *coord = mesh->coordinates();
-    
-    bx->xp_offset = (-mesh->zShift(bx->jxp,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
-    bx->x2p_offset = (-mesh->zShift(bx->jx2p,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
-    bx->xm_offset =  (-mesh->zShift(bx->jxm,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
-    bx->x2m_offset = (-mesh->zShift(bx->jx2m,bx->jy) + mesh->zShift(bx->jx,bx->jy)) / coord->dz;
-  }else {
-    bx->xp_offset = 0.0;
-    bx->x2p_offset = 0.0;
-    bx->xm_offset = 0.0;
-    bx->x2m_offset = 0.0;
-  }
+  bx->xp_offset = 0.0;
+  bx->x2p_offset = 0.0;
+  bx->xm_offset = 0.0;
+  bx->x2m_offset = 0.0;
 }
 
 /* Resets the index bx */
-void start_index(bindex *bx, REGION region)
-{
-	// Initialize it to something
+void start_index(bindex *bx, REGION region) {
+  // Initialize it to something
   bx->jx = 0;
 
   if((region == RGN_NOBNDRY) || (region == RGN_NOX))
@@ -547,8 +536,7 @@ void start_index(bindex *bx, REGION region)
 }
 
 /* Loops the index over all points. Returns 0 when no more */
-int next_index3(bindex *bx)
-{
+int next_index3(bindex *bx) {
   bx->jz++;
   if(bx->jz >= mesh->ngz-1) {
     

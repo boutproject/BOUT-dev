@@ -61,8 +61,6 @@ class Field2D : public Field, public FieldData {
   /// Data type
   using value_type = BoutReal;
   
-  DEPRECATED(Field2D* clone() const);
-  
   static void cleanup(); // Frees all memory
 
   /// Ensure data is allocated

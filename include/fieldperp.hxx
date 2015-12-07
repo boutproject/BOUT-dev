@@ -53,12 +53,24 @@ class FieldPerp : public Field {
 				  data(f.data) { }
   ~FieldPerp() {}
 
-  
+  /*!
+   * Assignment operators
+   */
   FieldPerp & operator=(const FieldPerp &rhs);
   FieldPerp & operator=(const BoutReal rhs);
   
-  DEPRECATED(FieldPerp* clone() const);
-  
+  /*!
+   * Iterators and data access
+   */
+  const DataIterator begin() const;
+  const DataIterator end() const;
+
+  inline BoutReal& operator[](DataIterator &d) {
+    return operator()(d.x, d.z);
+  }
+  inline const BoutReal& operator[](DataIterator &d) const {
+    return operator()(d.x, d.z);
+  }
   BoutReal& operator[](const Indices &i) {
     return operator()(i.x, i.z);
   }
@@ -100,7 +112,7 @@ class FieldPerp : public Field {
   BoutReal& operator()(int jx, int jz) {
 #if CHECK > 2
     // Bounds check both indices
-    if(!data)
+    if(data.empty())
       throw BoutException("FieldPerp: () operator on empty data");
     if((jx < 0) || (jx >= nx) || 
        (jz < 0) || (jz >= nz))

@@ -41,10 +41,6 @@ FieldPerp::FieldPerp() {
   yindex = -1;
 }
 
-FieldPerp* FieldPerp::clone() const {
-  return new FieldPerp(*this);
-}
-
 /***************************************************************
  *                         ASSIGNMENT 
  ***************************************************************/
@@ -65,6 +61,23 @@ FieldPerp & FieldPerp::operator=(const BoutReal rhs) {
   
   return *this;
 }
+
+/***************************************************************
+ *                         ITERATORS
+ ***************************************************************/
+
+const DataIterator FieldPerp::begin() const {
+  return DataIterator(0, 0, nx-1,
+                      0, 0, 0,
+                      0, 0, nz-1);
+}
+
+const DataIterator FieldPerp::end() const {
+  return ++DataIterator(nx-1, 0, nx-1,
+                        0, 0, 0,
+                        nz-1, 0, nz-1);
+}
+
 
 /***************************************************************
  *                         OPERATORS 

@@ -70,7 +70,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
   if(low_mem) {
     // Solve one slice at a time
     for(int jy=ys; jy <= ye; jy++) {
-      x = solve(b.slice(jy));
+      x = solve(sliceXZ(b, jy));
     }
   }else {
     // Overlap multiple inversions
@@ -86,7 +86,7 @@ const Field3D LaplacePDD::solve(const Field3D &b) {
     /// PDD algorithm communicates twice, so done in 3 stages
       
     for(int jy=ys; jy <= ye; jy++)
-      start(b.slice(jy), data[jy]);
+      start(sliceXZ(b,jy), data[jy]);
     
     for(int jy=ys; jy <= ye; jy++)
       next(data[jy]);
@@ -161,7 +161,7 @@ void LaplacePDD::start(const FieldPerp &b, PDD_data &data) {
     bk1d = new dcomplex[ncz/2 + 1];
 
   for(ix=0; ix < mesh->ngx; ix++) {
-    ZFFT(b[ix], mesh->zShift(ix,data.jy), bk1d);
+    rfft(b[ix], ncz, bk1d);
     for(kz = 0; kz <= maxmode; kz++)
       data.bk[kz][ix] = bk1d[kz];
   }
@@ -360,8 +360,7 @@ void LaplacePDD::finish(PDD_data &data, FieldPerp &x) {
     if(global_flags & INVERT_ZERO_DC)
       xk1d[0] = 0.0;
 
-    ZFFT_rev(xk1d, mesh->zShift(ix,data.jy), x[ix]);
+    irfft(xk1d, ncz, x[ix]);
     
-    x[ix][ncz] = x[ix][0]; // enforce periodicity
   }
 }

@@ -181,9 +181,9 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     if(((ix < inbndry) && (inner_boundary_flags & INVERT_SET) && mesh->firstX()) ||
        ((xe-ix < outbndry) && (outer_boundary_flags & INVERT_SET) && mesh->lastX())) {
         // Use the values in x0 in the boundary
-        ZFFT(x0[ix], mesh->zShift(ix, jy), k1d);
+        rfft(x0[ix], mesh->ngz-1, k1d);
       }else {
-        ZFFT(rhs[ix], mesh->zShift(ix, jy), k1d);
+        rfft(rhs[ix], mesh->ngz-1, k1d);
       }
 
       // Copy into array, transposing so kz is first index
@@ -218,9 +218,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
       for(int kz=nmode;kz<(mesh->ngz-1)/2 + 1;kz++)
         k1d[kz] = 0.0; // Filtering out all higher harmonics
 
-      ZFFT_rev(k1d, mesh->zShift(ix, jy), x[ix]);
-
-      x[ix][mesh->ngz-1] = x[ix][0]; // probably unnecessary
+      irfft(k1d, mesh->ngz-1, x[ix]);
     }
   }
   return x;

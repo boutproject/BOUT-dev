@@ -125,14 +125,14 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     }
     
     // Calculate solution at xe using kc
-    ZFFT_rev(kc, mesh->zShift(xe, jy), x[xe]);
+    irfft(kc, mesh->ngz-1, x[xe]);
   }
   
   // kc and kp now set to result at x and x+1 respectively
   // Use b at x to get km at x-1
   // Loop inwards from edge
   for(int ix=xe; ix >= xs; ix--) {
-    ZFFT(rhs[ix], mesh->zShift(ix, jy), rhsk);
+    rfft(rhs[ix], mesh->ngz-1, rhsk);
     
     for(int kz=0; kz<maxmode; kz++) {
       BoutReal kwave=kz*2.0*PI/(coord->zlength); // wave number is 1/[rad]
@@ -148,7 +148,7 @@ const FieldPerp LaplaceShoot::solve(const FieldPerp &rhs) {
     }
     
     // Inverse FFT to get x[ix-1]
-    ZFFT_rev(km, mesh->zShift(ix, jy), x[ix-1]);
+    irfft(km, mesh->ngz-1, x[ix-1]);
     
     // Cycle km->kc->kp
     

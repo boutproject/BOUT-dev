@@ -57,8 +57,6 @@ BoutMesh::BoutMesh(GridDataSource *s, Options *options) : Mesh(s, options) {
   
   OPTION(options, symmetricGlobalX,  true);
   OPTION(options, symmetricGlobalY,  false);
-
-  OPTION(options, FCI, false);  // Use Flux Coordinate Independent method
   
   comm_x = MPI_COMM_NULL;
   comm_inner = MPI_COMM_NULL;
@@ -329,9 +327,6 @@ int BoutMesh::load() {
   }
   
   /// Get mesh options
-  OPTION(options, TwistShift,   false);
-  OPTION(options, ShiftOrder,   0);
-  OPTION(options, ShiftXderivs, false);
   OPTION(options, IncIntShear,  false);
   OPTION(options, periodicX, false); // Periodic in X
   
@@ -342,14 +337,6 @@ int BoutMesh::load() {
   OffsetX = PE_XIND*MXSUB;
   OffsetY = PE_YIND*MYSUB;
   OffsetZ = 0;
-  
-  if(ShiftXderivs) {
-    output.write("Using shifted X derivatives. Interpolation: ");
-    if(ShiftOrder == 0) {
-      output.write("FFT\n");
-    }else
-      output.write("%d-point\n", ShiftOrder);
-  }
   
   if(options->isSet("zperiod")) {
     OPTION(options, zperiod, 1);
@@ -363,9 +350,7 @@ int BoutMesh::load() {
   }
   zlength = (ZMAX-ZMIN)*TWOPI;
  
-  if(TwistShift) {
-    output.write("Applying Twist-Shift condition. Interpolation: FFT");
-  }
+  
   
   /// Number of grid cells is ng* = M*SUB + guard/boundary cells
   ngx = MXSUB + 2*MXG;
@@ -384,85 +369,21 @@ int BoutMesh::load() {
   /// Call topology to set layout of grid
   topology();
   
-  /// Set shift for radial derivatives
-  if(get(zShift, "zShift")) {
-    output.write("\tWARNING: Z shift for radial derivatives not found\n");
-    zShift = 0.0;
-  }
-
-  ShiftAngle.resize(ngx);
+  OPTION(options, TwistShift,   false);
   
-  // Try to read the shift angle from the grid file
-  // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
-  if(source->hasVar("ShiftAngle")) {
+  if(TwistShift) {
+    output.write("Applying Twist-Shift condition. Interpolation: FFT");
+    
+    // Try to read the shift angle from the grid file
+    // NOTE: All processors should know the twist-shift angle (for invert_parderiv)
+    
+    ShiftAngle.resize(ngx);
+      
     if(!source->get(this, ShiftAngle,  "ShiftAngle",
-		    ngx, XGLOBAL(0))) {
+                    ngx, XGLOBAL(0))) {
       output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting to zero\n");
       for(int i=0;i<ngx;i++)
         ShiftAngle[i] = 0.0;
-    }
-  }else if(MYG > 0) {
-    output.write("\tWARNING: Twist-shift angle 'ShiftAngle' not found. Setting from zShift\n");
-
-    if(YPROC(jyseps2_2) == PE_YIND) {
-      for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
-   
-    }else if(YPROC(jyseps1_1+1) == PE_YIND) {
-      for(int i=0;i<ngx;i++)
-	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
-    }
-    
-    msg_stack.push("Creating core_comm for ShiftAngle");
-    
-    // In the core, need to set ShiftAngle everywhere for ballooning initial condition
-    MPI_Group groupw;
-    MPI_Comm_group(BoutComm::get(), &groupw); // Group of all processors
-    
-    int *ranks = new int[NYPE];
-    int npcore = 0;
-    for(int p = YPROC(jyseps1_1+1); p <= YPROC(jyseps2_2);p++) {
-      ranks[npcore] = PROC_NUM(PE_XIND, p);
-      npcore++;
-    }
-    
-    MPI_Group grp;
-    MPI_Group_incl(groupw, npcore, ranks, &grp); // Create group
-    
-    MPI_Comm core_comm;
-    MPI_Comm_create(BoutComm::get(), grp, &core_comm); // Create communicator
-    
-    delete[] ranks;
-    
-    if(MYPE_IN_CORE)
-      MPI_Bcast(&ShiftAngle[0], ngx, PVEC_REAL_MPI_TYPE, npcore-1, core_comm);
-    
-    // Free MPI handles
-    if(core_comm != MPI_COMM_NULL)
-      MPI_Comm_free(&core_comm);
-    MPI_Group_free(&grp);
-    MPI_Group_free(&groupw);
-    
-    msg_stack.pop();
-  }
-
-  /// Can have twist-shift in the private flux regions too
-  bool twistshift_pf;
-  OPTION(options, twistshift_pf, false);
-  if(twistshift_pf) {
-    output << "Adding twist-shift in lower PF region" << endl;
-    // Lower PF. Note by default no Twist-Shift used here, so need to switch on
-    if(YPROC(jyseps1_1) == PE_YIND) {
-      for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift(i,MYG+MYSUB-1) - zShift(i,MYG+MYSUB); // Jump across boundary
-      }
-      TS_up_in = true; // Switch on twist-shift
-      
-    }else if(YPROC(jyseps2_2+1) == PE_YIND) {
-      for(int i=0;i<ngx;i++) {
-	ShiftAngle[i] = zShift(i,MYG-1) - zShift(i,MYG); // Jump across boundary
-      }
-      TS_down_in = true;
     }
   }
   
@@ -804,14 +725,6 @@ int BoutMesh::load() {
 #ifdef COMMDEBUG
   output << "Got communicators" << endl;
 #endif
-
-  //////////////////////////////////////////////////////
-  
-  if(periodicX) {
-    FieldGroup g;
-    g.add(zShift);
-    communicate(g);
-  }
   
   //////////////////////////////////////////////////////
   // Boundary regions

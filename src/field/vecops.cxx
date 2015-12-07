@@ -33,35 +33,25 @@
  * Gradient operators
  **************************************************************************/
 
-const Vector2D Grad(const Field2D &f, CELL_LOC outloc)
-{
+const Vector2D Grad(const Field2D &f, CELL_LOC outloc) {
   Vector2D result;
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad( Field2D )");
-#endif
-
+  
+  MsgStackItem trace("Grad( Field2D )");
+  
   result.x = DDX(f);
   result.y = DDY(f);
   result.z = DDZ(f);
 
   result.covariant = true;
 
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
 const Vector3D Grad(const Field3D &f, 
-                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z)
-{
+                    CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
   Vector3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad( Field3D )");
-#endif
+  MsgStackItem trace("Grad( Field3D )");
 
   if(outloc_x == CELL_DEFAULT)
     outloc_x = f.getLocation();
@@ -76,10 +66,6 @@ const Vector3D Grad(const Field3D &f,
 
   result.covariant = true;
   
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
@@ -95,9 +81,7 @@ const Vector3D Grad_perp(const Field3D &f,
 			 CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
   Vector3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Grad_perp( Field3D )");
-#endif
+  MsgStackItem trace("Grad_perp( Field3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -115,10 +99,6 @@ const Vector3D Grad_perp(const Field3D &f,
 
   result.covariant = true;
   
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
@@ -126,13 +106,10 @@ const Vector3D Grad_perp(const Field3D &f,
  * Divergence operators
  **************************************************************************/
 
-const Field2D Div(const Vector2D &v, CELL_LOC outloc)
-{
+const Field2D Div(const Vector2D &v, CELL_LOC outloc) {
   Field2D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Div( Vector2D )");
-#endif
+  MsgStackItem trace("Div( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -144,21 +121,14 @@ const Field2D Div(const Vector2D &v, CELL_LOC outloc)
   result += DDY(metric->J*vcn.y);
   result += DDZ(metric->J*vcn.z);
   result /= metric->J;
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
+  
   return result;
 }
 
-const Field3D Div(const Vector3D &v, CELL_LOC outloc)
-{
+const Field3D Div(const Vector3D &v, CELL_LOC outloc) {
   Field3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Div( Vector3D )");
-#endif
+  MsgStackItem trace("Div( Vector3D )");
   
   Coordinates *metric = mesh->coordinates();
 
@@ -174,10 +144,6 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
   result += DDZ(metric->J*vcn.z, outloc);
   result /= metric->J;
 
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
   return result;
 }
 
@@ -186,37 +152,27 @@ const Field3D Div(const Vector3D &v, CELL_LOC outloc)
  **************************************************************************/
 
 const Field2D Div(const Vector2D &v, const Field2D &f) {
-  Field2D result;
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Div( Vector2D, Field2D )");
-#endif
+  MsgStackItem trace("Div( Vector2D, Field2D )");
   
   Coordinates *metric = mesh->coordinates();
   
   // get contravariant components of v
   Vector2D vcn = v;
   vcn.toContravariant();
-  
+
+  Field2D result;
   result = FDDX(metric->J*vcn.x, f);
   result += FDDY(metric->J*vcn.y, f);
   result += FDDZ(metric->J*vcn.z, f);
   result /= metric->J;
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
+  
   return result;
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc)
-{
-    Field3D result;
-
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Div( Vector3D, Field3D )");
-#endif
+const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_LOC outloc) {
+  Field3D result;
+  
+  MsgStackItem trace("Div( Vector3D, Field3D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -231,21 +187,15 @@ const Field3D Div(const Vector3D &v, const Field3D &f, DIFF_METHOD method, CELL_
   result += FDDY(metric->J*vcn.y, f, method, outloc);
   result += FDDZ(metric->J*vcn.z, f, method, outloc);
   result /= metric->J;
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
-
+  
   return result;
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method)
-{
+const Field3D Div(const Vector3D &v, const Field3D &f, CELL_LOC outloc, DIFF_METHOD method) {
   return Div(v, f, method, outloc);
 }
 
-const Field3D Div(const Vector3D &v, const Field3D &f)
-{
+const Field3D Div(const Vector3D &v, const Field3D &f) {
   return Div(v, f, DIFF_DEFAULT, CELL_DEFAULT);
 }
 
@@ -254,11 +204,8 @@ const Field3D Div(const Vector3D &v, const Field3D &f)
  **************************************************************************/
 
 const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
-  Vector2D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Curl( Vector2D )");
-#endif
+  MsgStackItem trace("Curl( Vector2D )");
   
   Coordinates *metric = mesh->coordinates();
   
@@ -267,29 +214,23 @@ const Vector2D Curl(const Vector2D &v, CELL_LOC outloc) {
   vco.toCovariant();
 
   // get components (curl(v))^j
-
+  Vector2D result;
   result.x = (DDY(vco.z) - DDZ(vco.y))/metric->J;
   result.y = (DDZ(vco.x) - DDX(vco.z))/metric->J;
   result.z = (DDX(vco.y) - DDY(vco.x))/metric->J;
-  
-  if(mesh->ShiftXderivs) {
-    result.z -= metric->ShiftTorsion*vco.z / metric->J;
-  }
+
+  /// Coordinate torsion
+  result.z -= metric->ShiftTorsion*vco.z / metric->J;
 
   result.covariant = false; // result is contravariant
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
+
   return result;
 }
 
 const Vector3D Curl(const Vector3D &v, 
                     CELL_LOC outloc_x, CELL_LOC outloc_y, CELL_LOC outloc_z) {
-  Vector3D result;
 
-#ifdef CHECK
-  int msg_pos = msg_stack.push("Curl( Vector3D )");
-#endif
+  MsgStackItem trace("Curl( Vector3D )");
 
   Coordinates *metric = mesh->coordinates();
 
@@ -298,26 +239,20 @@ const Vector3D Curl(const Vector3D &v,
   vco.toCovariant();
 
   // get components (curl(v))^j
-
+  Vector3D result;
   result.x = (DDY(vco.z, outloc_x) - DDZ(vco.y, outloc_x))/metric->J;
   result.y = (DDZ(vco.x, outloc_y) - DDX(vco.z, outloc_y))/metric->J;
   result.z = (DDX(vco.y, outloc_z) - DDY(vco.x, outloc_z))/metric->J;
 
-  if(mesh->ShiftXderivs) {
-    result.z -= metric->ShiftTorsion*vco.z / metric->J;
-  }
+  // Coordinate torsion
+  result.z -= metric->ShiftTorsion*vco.z / metric->J;
 
   result.covariant = false; // result is contravariant
-
-#ifdef CHECK
-  msg_stack.pop(msg_pos);
-#endif
 
   return result;
 }
 
-const Vector3D Curl(const Vector3D &v, CELL_LOC outloc)
-{
+const Vector3D Curl(const Vector3D &v, CELL_LOC outloc) {
   if(outloc == CELL_VSHIFT)
     return Curl(v, CELL_XLOW, CELL_YLOW, CELL_ZLOW);
   

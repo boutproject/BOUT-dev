@@ -42,20 +42,16 @@
 
 // Smooth using simple 1-2-1 filter
 const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
-  Field3D fs, result;
-
-  if(BoutRealspace) {
-    fs = f.shiftZ(true); // Shift into BoutReal space
-  }else
-    fs = f; 
-
+  MsgStackItem trace("smooth_x");
+  
+  Field3D result;
   result.allocate();
   
   // Copy boundary region
   for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<mesh->ngz;jz++) {
-      result(0,jy,jz) = fs(0,jy,jz);
-      result(mesh->ngx-1,jy,jz) = fs(mesh->ngx-1,jy,jz);
+      result(0,jy,jz) = f(0,jy,jz);
+      result(mesh->ngx-1,jy,jz) = f(mesh->ngx-1,jy,jz);
     }
 
   // Smooth using simple 1-2-1 filter
@@ -63,11 +59,8 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
   for(int jx=1;jx<mesh->ngx-1;jx++)
     for(int jy=0;jy<mesh->ngy;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	result(jx,jy,jz) = 0.5*fs(jx,jy,jz) + 0.25*( fs(jx-1,jy,jz) + fs(jx+1,jy,jz) );
+	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f(jx-1,jy,jz) + f(jx+1,jy,jz) );
       }
-
-  if(BoutRealspace)
-    result = result.shiftZ(false); // Shift back
 
   // Need to communicate boundaries
   mesh->communicate(result);
@@ -77,8 +70,9 @@ const Field3D smooth_x(const Field3D &f, bool BoutRealspace) {
 
 
 const Field3D smooth_y(const Field3D &f) {
+  MsgStackItem trace("smooth_y");
+  
   Field3D result;
-
   result.allocate();
   
   // Copy boundary region
@@ -93,7 +87,7 @@ const Field3D smooth_y(const Field3D &f) {
   for(int jx=0;jx<mesh->ngx;jx++)
     for(int jy=1;jy<mesh->ngy-1;jy++)
       for(int jz=0;jz<mesh->ngz;jz++) {
-	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f(jx,jy-1,jz) + f(jx,jy+1,jz) );
+	result(jx,jy,jz) = 0.5*f(jx,jy,jz) + 0.25*( f.ydown()(jx,jy-1,jz) + f.yup()(jx,jy+1,jz) );
       }
 
   // Need to communicate boundaries
@@ -106,10 +100,6 @@ const Field3D smooth_y(const Field3D &f) {
 
   Issues
   ======
-
-  Creates static arrays
-  
-  Not thread safe
   
   Assumes every processor has the same domain shape
 
@@ -117,17 +107,12 @@ const Field3D smooth_y(const Field3D &f) {
   so no processor/branch cuts in X
  */
 const Field2D averageX(const Field2D &f) {
-  static BoutReal *input = NULL, *result;
- 
-  msg_stack.push("averageX(Field2D)");
+  MsgStackItem trace("averageX(Field2D)");
  
   int ngx = mesh->ngx;
   int ngy = mesh->ngy;
 
-  if(input == NULL) {
-    input = new BoutReal[ngy];
-    result = new BoutReal[ngy];
-  }
+  Array<BoutReal> input(ngy), result(ngy);
   
   // Average on this processor
   for(int y=0;y<ngy;y++) {
@@ -152,13 +137,11 @@ const Field2D averageX(const Field2D &f) {
       for(int y=0;y<ngy;y++)
         r(x,y) = input[y];
   }else {
-    MPI_Allreduce(input, result, ngy, MPI_DOUBLE, MPI_SUM, comm_x);
+    MPI_Allreduce(input.begin(), result.begin(), ngy, MPI_DOUBLE, MPI_SUM, comm_x);
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         r(x,y) = result[y] / (BoutReal) np;
   }
-
-  msg_stack.pop();
   
   return r;
 }
@@ -181,7 +164,7 @@ const Field2D averageX(const Field2D &f) {
 const Field3D averageX(const Field3D &f) {
   static BoutReal **input = NULL, **result;
 
-  msg_stack.push("averageX(Field3D)");
+  MsgStackItem trace("averageX(Field3D)");
 
   int ngx = mesh->ngx;
   int ngy = mesh->ngy;
@@ -225,8 +208,6 @@ const Field3D averageX(const Field3D &f) {
           r(x,y,z) = input[y][z];
         }
   }
-
-  msg_stack.pop();
   
   return r;
 }
@@ -238,27 +219,16 @@ const Field3D averageX(const Field3D &f) {
   
   Important: Only works if there are no branch cuts
 
-  Creates static arrays
-  
-  Not thread safe
-  
   Assumes every processor has the same domain shape
   
  */
 const Field2D averageY(const Field2D &f) {
-  static BoutReal *input = NULL, *result;
- 
-#ifdef CHECK
-  msg_stack.push("averageY(Field2D)");
-#endif
+  MsgStackItem trace("averageY(Field2D)");
  
   int ngx = mesh->ngx;
   int ngy = mesh->ngy;
 
-  if(input == NULL) {
-    input = new BoutReal[ngx];
-    result = new BoutReal[ngx];
-  }
+  Array<BoutReal> input(ngx), result(ngx);
   
   // Average on this processor
   for(int x=0;x<ngx;x++) {
@@ -284,16 +254,12 @@ const Field2D averageY(const Field2D &f) {
       for(int y=0;y<ngy;y++)
         r(x,y) = input[x];
   }else {
-    MPI_Allreduce(input, result, ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
+    MPI_Allreduce(input.begin(), result.begin(), ngx, MPI_DOUBLE, MPI_SUM, comm_inner);
     for(int x=0;x<ngx;x++)
       for(int y=0;y<ngy;y++)
         r(x,y) = result[x] / (BoutReal) np;
   }
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
-  
   return r;
 }
 
@@ -468,34 +434,24 @@ void nl_filter(rvec &f, BoutReal w) {
 }
 
 const Field3D nl_filter_x(const Field3D &f, BoutReal w) {
-#ifdef CHECK
-  msg_stack.push("nl_filter_x( Field3D )");
-#endif
+
+  MsgStackItem trace("nl_filter_x( Field3D )");
   
-  Field3D fs;
-  fs = f.shiftZ(true); // Shift into BoutReal space
-  Field3D result;
+    Field3D result;
   rvec v;
   
   for(int jy=0;jy<mesh->ngy;jy++)
     for(int jz=0;jz<mesh->ngz-1;jz++) {
-      fs.getXArray(jy, jz, v);
+      f.getXArray(jy, jz, v);
       nl_filter(v, w);
       result.setXArray(jy, jz, v);
     }
   
-  result = result.shiftZ(false); // Shift back
-
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   return result;
 }
 
 const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
-#ifdef CHECK
-  msg_stack.push("nl_filter_x( Field3D )");
-#endif
+  MsgStackItem trace("nl_filter_x( Field3D )");
   
   Field3D result;
   rvec v;
@@ -507,16 +463,11 @@ const Field3D nl_filter_y(const Field3D &fs, BoutReal w) {
       result.setYArray(jx, jz, v);
     }
   
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   return result;
 }
 
 const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
-#ifdef CHECK
-  msg_stack.push("nl_filter_z( Field3D )");
-#endif
+  MsgStackItem trace("nl_filter_z( Field3D )");
   
   Field3D result;
   rvec v;
@@ -528,14 +479,10 @@ const Field3D nl_filter_z(const Field3D &fs, BoutReal w) {
       result.setZArray(jx, jy, v);
     }
 
-#ifdef CHECK
-  msg_stack.pop();
-#endif
   return result;
 }
 
-const Field3D nl_filter(const Field3D &f, BoutReal w)
-{
+const Field3D nl_filter(const Field3D &f, BoutReal w) {
   Field3D result;
   /// Perform filtering in Z, Y then X
   result = nl_filter_x(nl_filter_y(nl_filter_z(f, w), w), w);
