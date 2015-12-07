@@ -322,7 +322,7 @@ const Field3D operator*(BoutReal lhs, const Field3D &rhs);
 const Field3D operator/(BoutReal lhs, const Field3D &rhs);
 
 // Unary operators
-const Field3D operator-(const Field3D &f) {return -1.0*f;}
+const Field3D operator-(const Field3D &f);
 
 // Non-member functions
 BoutReal min(const Field3D &f, bool allpe=false);

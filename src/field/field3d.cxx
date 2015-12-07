@@ -912,6 +912,11 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
  *               NON-MEMBER OVERLOADED OPERATORS
  ***************************************************************/
 
+
+const Field3D operator-(const Field3D &f) {
+  return -1.0*f;
+}
+
 #define F3D_OP_FPERP(op)                     	                          \
   const FieldPerp operator op(const Field3D &lhs, const FieldPerp &rhs) { \
     FieldPerp result;                                                     \
