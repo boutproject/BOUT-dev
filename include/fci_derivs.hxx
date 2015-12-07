@@ -31,20 +31,33 @@
 #include <globals.hxx>
 #include <utils.hxx>
 #include <bout_types.hxx> // See this for codes
+#include <vector>
+#include <bout/constants.hxx>
+#include <field_factory.hxx>
+#include "parallel_boundary_region.hxx"
 
 // Field line map - contains the coefficients for interpolation
 class FCIMap {
   // Private constructor - must be initialised with mesh
   FCIMap();
 public:
-  // dir MUST be either +1 or -1
-  FCIMap(Mesh& mesh, int dir);
+  typedef std::vector<std::vector<std::vector<bool>>> B3vec;
 
-  int*** i_corner;				// x-index of bottom-left grid point
-  int*** k_corner;				// z-index of bottom-left grid point
+  // dir MUST be either +1 or -1
+  FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic);
+
+  // Direction of map
+  int dir;
+
+  int*** i_corner;      // x-index of bottom-left grid point
+  int*** k_corner;      // z-index of bottom-left grid point
+  B3vec boundary_mask;  // boundary mask - has the field line left the domain
+  Field3D y_prime;      // distance to intersection with boundary
+
+  BoundaryRegionPar* boundary;			/**< boundary region */
 
   // Basis functions for cubic Hermite spline interpolation
-  //	see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  //    see http://en.wikipedia.org/wiki/Cubic_Hermite_spline
   // The h00 and h01 basis functions are applied to the function itself
   // and the h10 and h11 basis functions are applied to its derivative
   // along the interpolation direction.
@@ -71,18 +84,32 @@ private:
   // not change
   Mesh& mesh;
 
+  // Is the y-direction periodic?
+  bool yperiodic;
+
+  // Is the z-direction periodic?
+  bool zperiodic;
+
   // Private constructor - must be initialised with mesh
   FCI();
 public:
-  FCI(Mesh& m) : mesh(m), forward_map(m, +1), backward_map(m, -1) {}
+  FCI(Mesh& m, bool yperiodic=true, bool zperiodic=true) :
+    mesh(m),
+    forward_map(m, +1, yperiodic, zperiodic),
+    backward_map(m, -1, yperiodic, zperiodic),
+    yperiodic(yperiodic),
+    zperiodic(zperiodic) {}
 
   // Interpolate field in direction DIR
-  void interpolate(Field3D &f, Field3D &f_next, const FCIMap &fcimap, int dir);
+  void interpolate(Field3D &f, const FCIMap &fcimap);
 
   // Parallel derivatives
-  const Field3D Grad_par(Field3D &f, bool keep = false);
-  const Field3D Grad2_par2(Field3D &f, bool keep = false);
-  const Field3D Div_par(Field3D &f, bool keep = false);
+  const Field3D Grad_par(Field3D &f);
+  const Field3D Grad2_par2(Field3D &f);
+  const Field3D Div_par(Field3D &f);
+
+  void calcYUpDown(Field3D &f);
+
 };
 
 #endif // __FCI_DERIVS_H__

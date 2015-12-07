@@ -114,8 +114,18 @@ Field3D::~Field3D() {
   freeData();
   
   /// Delete the time derivative variable if allocated
-  if(deriv != NULL)
+  if(deriv != NULL) {
+    // The ddt of the yup/ydown_fields point to the same place as ddt.yup_field
+    // only delete once
+    // Also need to check that separate yup_field exists
+    if (yup_field != this)
+      yup_field->deriv = NULL;
+    if (ydown_field != this)
+      ydown_field->deriv = NULL;
+
+    // Now delete them as part of the deriv vector
     delete deriv;
+  }
   
   if(yup_field != this)
     delete yup_field;
@@ -135,9 +145,22 @@ void Field3D::allocate() const {
 }
 
 Field3D* Field3D::timeDeriv() {
-  if(deriv == NULL)
+  if(deriv == NULL) {
     deriv = new Field3D();
 
+    // Check if the yup/ydown have a time-derivative
+    // Need to make sure that ddt(f.yup) = ddt(f).yup
+
+    if(yup().deriv != NULL) {
+      deriv->yup_field = yup().deriv;
+    }
+    if(ydown().deriv != NULL) {
+      deriv->ydown_field = ydown().deriv;
+    }
+    // Set the yup/ydown time-derivatives
+    yup().deriv = &(deriv->yup());
+    ydown().deriv = &(deriv->ydown());
+  }
   return deriv;
 }
 
@@ -159,6 +182,28 @@ void Field3D::mergeYupYdown() {
 
   yup_field = this;
   ydown_field = this;
+}
+
+Field3D& Field3D::ynext(int dir) {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
+}
+
+const Field3D& Field3D::ynext(int dir) const {
+  switch(dir) {
+  case +1:
+    return yup();
+  case -1:
+    return ydown();
+  default:
+    throw BoutException("Field3D: Call to ynext with strange direction %d. Only +/-1 currently supported", dir);
+  }
 }
 
 void Field3D::setLocation(CELL_LOC loc)
@@ -1421,13 +1466,13 @@ void Field3D::applyBoundary(bool init) {
 //JMAD
 void Field3D::applyBoundary(BoutReal t) {
 #ifdef CHECK
-  msg_stack.push("Field3D::applyBoundary()");
+  msg_stack.push("Field3D::applyBoundary(t)");
 
   if(block == NULL)
-    output << "WARNING: Empty data in Field3D::applyBoundary()" << endl;
+    output << "WARNING: Empty data in Field3D::applyBoundary(t)" << endl;
 
   if(!boundaryIsSet)
-    output << "WARNING: Call to Field3D::applyBoundary(), but no boundary set." << endl;
+    output << "WARNING: Call to Field3D::applyBoundary(t), but no boundary set." << endl;
 #endif
 
   if(block == NULL)
@@ -1437,7 +1482,7 @@ void Field3D::applyBoundary(BoutReal t) {
     // Apply boundary to the total of this and background
 
     Field3D tot = *this + (*background);
-    tot.applyBoundary();
+    tot.applyBoundary(t);
     *this = tot - (*background);
   }else {
     // Apply boundary to this field
@@ -1497,7 +1542,7 @@ void Field3D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
-    BoundaryOp* op = bfact->create(condition, reg);
+    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
     op->apply(*this);
     delete op;
   }
@@ -1538,7 +1583,7 @@ void Field3D::applyBoundary(const string &region, const string &condition) {
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, reg);
+      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;
@@ -1636,6 +1681,181 @@ void Field3D::setBoundaryTo(const Field3D &f3d) {
       for(int z=0;z<mesh->ngz;z++)
         block->data[reg->x][reg->y][z] = f3d.block->data[reg->x][reg->y][z];
   }
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary() {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary()");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary()" << endl;
+
+  if(!boundaryIsSet)
+    output << "WARNING: Call to Field3D::applyParallelBoundary(), but no boundary set." << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary();
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(vector<BoundaryOpPar*>::iterator it = bndry_op_par.begin(); it != bndry_op_par.end(); it++)
+      (*it)->apply(*this);
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(BoutReal t) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(t)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(t)" << endl;
+
+  if(!boundaryIsSet)
+    output << "WARNING: Call to Field3D::applyParallelBoundary(t), but no boundary set." << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(t);
+    *this = tot - (*background);
+  } else {
+    // Apply boundary to this field
+    for(vector<BoundaryOpPar*>::iterator it = bndry_op_par.begin(); it != bndry_op_par.end(); it++)
+      (*it)->apply(*this, t);
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &condition) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(condition)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(condition)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Get the mesh boundary regions
+    vector<BoundaryRegionPar*> reg = mesh->getBoundariesPar();
+
+    /// Loop over the mesh boundary regions
+    for(vector<BoundaryRegionPar*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, (*it)));
+      op->apply(*this);
+      delete op;
+    }
+  }
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(region, condition)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(region, condition)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Get the mesh boundary regions
+    vector<BoundaryRegionPar*> reg = mesh->getBoundariesPar();
+
+    /// Loop over the mesh boundary regions
+    for(vector<BoundaryRegionPar*>::iterator it=reg.begin(); it != reg.end(); it++) {
+      if((*it)->label.compare(region) == 0) {
+        BoundaryOpPar* op = static_cast<BoundaryOpPar*>(bfact->create(condition, (*it)));
+        op->apply(*this);
+        delete op;
+        break;
+      }
+    }
+  }
+
+#ifdef CHECK
+  msg_stack.pop();
+#endif
+}
+
+void Field3D::applyParallelBoundary(const string &region, const string &condition, Field3D *f) {
+#ifdef CHECK
+  msg_stack.push("Field3D::applyParallelBoundary(region, condition, f)");
+
+  if(block == NULL)
+    output << "WARNING: Empty data in Field3D::applyParallelBoundary(region, condition, f)" << endl;
+#endif
+
+  if(block == NULL)
+    return;
+
+  if(background != NULL) {
+    // Apply boundary to the total of this and background
+    Field3D tot = *this + (*background);
+    tot.applyParallelBoundary(region, condition, f);
+    *this = tot - (*background);
+  } else {
+    /// Get the boundary factory (singleton)
+    BoundaryFactory *bfact = BoundaryFactory::getInstance();
+
+    /// Loop over the mesh boundary regions
+    for(const auto& reg : mesh->getBoundariesPar()) {
+      if(reg->label.compare(region) == 0) {
+        // BoundaryFactory can't create boundaries using Field3Ds, so get temporary
+        // boundary of the right type
+        BoundaryOpPar* tmp = static_cast<BoundaryOpPar*>(bfact->create(condition, reg));
+        // then clone that with the actual argument
+        BoundaryOpPar* op = tmp->clone(reg, f);
+        op->apply(*this);
+        delete tmp;
+        delete op;
+        break;
+      }
+    }
+  }
+
 #ifdef CHECK
   msg_stack.pop();
 #endif

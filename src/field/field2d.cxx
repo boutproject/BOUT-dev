@@ -732,7 +732,7 @@ void Field2D::applyBoundary(const string &condition) {
   
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
-    BoundaryOp* op = bfact->create(condition, reg);
+    BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
     op->apply(*this);
     delete op;
   }
@@ -769,7 +769,7 @@ void Field2D::applyBoundary(const string &region, const string &condition) {
   /// Loop over the mesh boundary regions
   for(const auto& reg : mesh->getBoundaries()) {
     if(reg->label.compare(region) == 0) {
-      BoundaryOp* op = bfact->create(condition, reg);
+      BoundaryOp* op = static_cast<BoundaryOp*>(bfact->create(condition, reg));
       op->apply(*this);
       delete op;
       break;

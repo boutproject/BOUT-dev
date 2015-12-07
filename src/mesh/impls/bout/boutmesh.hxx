@@ -78,16 +78,22 @@ class BoutMesh : public Mesh {
 
   // Boundary regions
   vector<BoundaryRegion*> getBoundaries();
+  vector<BoundaryRegionPar*> getBoundariesPar();
+  void addBoundaryPar(BoundaryRegionPar* bndry);
 
   const Field3D smoothSeparatrix(const Field3D &f);
 
   BoutReal GlobalX(int jx) const;
   BoutReal GlobalY(int jy) const;
+  BoutReal GlobalX(BoutReal jx) const;
+  BoutReal GlobalY(BoutReal jy) const;
 
   void outputVars(Datafile &file);
 
   int XGLOBAL(int xloc) const;
   int YGLOBAL(int yloc) const;
+  int XGLOBAL(BoutReal xloc, BoutReal &xglo) const;
+  int YGLOBAL(BoutReal yloc, BoutReal &yglo) const;
 
   // poloidal lowpass filtering for n=0 mode
   void slice_r_y(const BoutReal *fori, BoutReal * fxy, int ystart, int ncy);
@@ -157,6 +163,7 @@ class BoutMesh : public Mesh {
   void topology();
 
   vector<BoundaryRegion*> boundary; // Vector of boundary regions
+  vector<BoundaryRegionPar*> par_boundary; // Vector of parallel boundary regions
   
   //////////////////////////////////////////////////
   // Communications
