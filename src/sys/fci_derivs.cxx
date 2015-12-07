@@ -47,7 +47,7 @@
 
 #include <algorithm>
 
-inline int sgn(BoutReal val) {
+inline BoutReal sgn(BoutReal val) {
     return (BoutReal(0) < val) - (val < BoutReal(0));
 }
 
@@ -240,7 +240,7 @@ FCIMap::FCIMap(Mesh& mesh, int dir, bool yperiodic, bool zperiodic) : dir(dir) {
           if (s_intersect == s_intersect_x) {
             norm = {sgn(p_x), 0., 0.};
           } else if (s_intersect == s_intersect_y) {
-            norm = {0., dir, 0.};
+            norm = {0., static_cast<BoutReal>(dir), 0.};
           } else if (s_intersect == s_intersect_z) {
             norm = {0., 0., sgn(p_z)};
           } else {
