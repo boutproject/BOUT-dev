@@ -68,8 +68,7 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a);
 const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a);
 
 // Vpar_Grad_par
-const Vector3D Vpar_Grad_par(const Field &v, const Vector3D &a, CELL_LOC outloc, DIFF_METHOD method);
-const Vector3D Vpar_Grad_par(const Field &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc);
+const Vector3D Vpar_Grad_par(const Field3D &v, const Vector3D &a, CELL_LOC outloc = CELL_DEFAULT, DIFF_METHOD method = DIFF_DEFAULT);
 
 // Terms of form b0 x Grad(phi) dot Grad(A)
 const Vector3D b0xGrad_dot_Grad(const Field3D &phi, const Vector3D &A, CELL_LOC outloc=CELL_DEFAULT);
