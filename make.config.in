@@ -69,6 +69,8 @@ ifndef TARGET
 TARGET				= $(SOURCEC:%.cxx=%)
 endif
 
+BLD_DIR = $(BOUT_TOP)/bld
+
 ####################################################################
 # Definining stuff for recursive make
 ####################################################################
@@ -86,7 +88,7 @@ $(DIRS):
 	@$(MAKE) --no-print-directory -s -C $@ all
 
 # Create 'lib' and 'include' incase they don't exist
-$(BOUT_TOP)/include $(BOUT_TOP)/lib:
+$(BOUT_TOP)/include $(BOUT_TOP)/lib $(BLD_DIR):
 	$(MKDIR) $@
 
 ####################################################################
@@ -138,13 +140,7 @@ ifeq ("$(TARGET)", "lib")
 # Builds the library with $(OBJ) which is defined from the SOURCEC variable
 ####################################################################
 
-lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(OBJ)
-ifneq ("$(OBJ)foo", "foo")
-	@echo "Adding $(OBJ) to libbout++.a"
-	@$(AR) cru $(LIB) $(OBJ)
-	@$(RANLIB) $(LIB)
-endif
-
+lib: makefile $(BOUT_TOP)/make.config $(BOUT_TOP)/include $(BOUT_TOP)/lib $(BLD_DIR) $(foreach obj,$(OBJ),$(BLD_DIR)/$(obj))
 #END 'lib'
 else
 
@@ -173,9 +169,16 @@ endif
 
 endif
 
+ifeq ("$(TARGET)", "lib")
+$(BLD_DIR)/%.o: %.o
+	@mv $^ $(BLD_DIR)
+endif
+
 %.o: $(BOUT_TOP)/make.config %.cxx
 	@echo "  Compiling " $(@F:.o=.cxx)
 	@$(CXX) $(BOUT_INCLUDE) $(BOUT_FLAGS) -c $(@F:.o=.cxx) -o $@
+
+
 
 ####################################################################
 # Clean target. Pretty self explanatory.
@@ -185,7 +188,10 @@ endif
 ####################################################################
 
 clean::
-	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET)
+	-@$(RM) -rf $(OBJ) $(DEPS) $(TARGET) 
+ifeq ("$(TARGET)", "lib")
+	-@$(RM) $(BLD_DIR)/*
+endif
 	@for pp in $(DIRS); do echo "  " $$pp cleaned; $(MAKE) --no-print-directory -C $$pp clean; done
 
 distclean: clean
