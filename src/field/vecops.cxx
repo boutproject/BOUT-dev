@@ -665,6 +665,21 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
   return result;
 }
 
+
+/*******************************************************************************
+* Vpar_Grad_par
+* vparallel times the parallel derivative along unperturbed B-field
+*******************************************************************************/
+
+const Vector3D Vpar_Grad_par(const Field3D &v, const Vector3D &a, CELL_LOC outloc, DIFF_METHOD method) {
+    // The division by sqrt(mesh->g_22) comes from b*grad as b=e_2/sqrt(g_22)
+    return VDDY(v, a, outloc, method)/sqrt(mesh->g_22);
+}
+
+const Vector3D Vpar_Grad_par(const Field3D &v, const Vector3D &a, DIFF_METHOD method, CELL_LOC outloc) {
+    return Vpar_Grad_par(v, a, outloc, method);
+}
+
 /*******************************************************************************
 * b0xGrad_dot_Grad
 * Terms of form b0 x Grad(phi) dot Grad(A)
