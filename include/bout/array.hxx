@@ -109,6 +109,8 @@ public:
       }
       v.clear();
     }
+    // Don't use the store anymore
+    use_store = false;
   }
   
   /*!
@@ -234,6 +236,7 @@ private:
    * For each data type T, an instance should be declared once (and once only)
    */
   static std::map< int, std::vector<ArrayData* > > store;
+  static bool use_store; ///< Should the store be used?
   
   /*!
    * Returns a pointer to an ArrayData object with no
@@ -259,8 +262,12 @@ private:
     
     // Reduce reference count, and if zero return to store
     if(!--d->refs) {
-      // Put back into store
-      store[d->len].push_back(d);
+      if(use_store) {
+        // Put back into store
+        store[d->len].push_back(d);
+      }else {
+        delete d;
+      }
     }
   }
   

@@ -1323,6 +1323,9 @@ void checkData(const Field3D &f)  {
     throw BoutException("Field3D: Operation on empty data\n");
   
   for(auto d : f) {
+    if( (d.x < mesh->xstart) or (d.x > mesh->xend) or (d.y < mesh->ystart) or (d.y > mesh->yend) or (d.z >= mesh->ngz-1))
+      continue; // Exclude boundary cells
+    
     if(!finite(f[d]))
       throw BoutException("Field3D: Operation on non-finite data at [%d][%d][%d]\n", d.x, d.y, d.z);
   }

@@ -153,8 +153,8 @@ Field3D MMS_Source(BoutReal t)
 {
   BoutReal x,y,z;
   Field3D result;
-  result.allocate();
-
+  result = 0.0;
+  
   int xi,yj,zk;
 
   for(xi=mesh->xstart;xi<mesh->xend+1;xi++)

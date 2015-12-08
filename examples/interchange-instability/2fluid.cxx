@@ -92,7 +92,6 @@ int physics_init(bool restarting) {
   GRID_LOAD(hthe);
   mesh->get(coord->dx,   "dpsi");
   mesh->get(I,    "sinty");
-  mesh->get(mesh->zShift, "qinty");
 
   // Load normalisation values
   GRID_LOAD(Te_x);
@@ -131,8 +130,9 @@ int physics_init(bool restarting) {
     evolve_ajpar = false; // Don't need ajpar - calculated from ohm's law
 
   /************* SHIFTED RADIAL COORDINATES ************/
-
-  if(mesh->ShiftXderivs) {
+bool ShiftXderivs;
+  globalOptions->get("shiftXderivs", ShiftXderivs, false); // Read global flag
+  if(ShiftXderivs) {
     ShearFactor = 0.0;  // I disappears from metric
     b0xcv.z += I*b0xcv.x;
   }
