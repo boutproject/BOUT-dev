@@ -551,17 +551,17 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a)
      *  result.j -= vcn.y*(mesh->G1_j2*a.x + mesh->G2_j2*a.y + mesh->G3_j2*a.z);
      *  result.j -= vcn.z*(mesh->G1_j3*a.x + mesh->G2_j3*a.y + mesh->G3_j3*a.z);
      */
-    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x);
     result.x -= vcn.x*(mesh->G1_11*a.x + mesh->G2_11*a.y + mesh->G3_11*a.z);
     result.x -= vcn.y*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.x -= vcn.z*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
 
-    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y);
     result.y -= vcn.x*(mesh->G1_12*a.x + mesh->G2_12*a.y + mesh->G3_12*a.z);
     result.y -= vcn.y*(mesh->G1_22*a.x + mesh->G2_22*a.y + mesh->G3_22*a.z);
     result.y -= vcn.z*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
 
-    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z);
     result.z -= vcn.x*(mesh->G1_13*a.x + mesh->G2_13*a.y + mesh->G3_13*a.z);
     result.z -= vcn.y*(mesh->G1_23*a.x + mesh->G2_23*a.y + mesh->G3_23*a.z);
     result.z -= vcn.z*(mesh->G1_33*a.x + mesh->G2_33*a.y + mesh->G3_33*a.z);
@@ -574,17 +574,17 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector2D &a)
      *   result.j += vcn.y*(mesh->Gj_12*a.x + mesh->Gj_22*a.y + mesh->Gj_32*a.z);
      *   result.j += vcn.z*(mesh->Gj_13*a.x + mesh->Gj_23*a.y + mesh->Gj_33*a.z);
      */
-    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x) + VDDZ(vcn.z, a.x);
+    result.x = VDDX(vcn.x, a.x) + VDDY(vcn.y, a.x);
     result.x += vcn.x*(mesh->G1_11*a.x + mesh->G1_12*a.y + mesh->G1_13*a.z);
     result.x += vcn.y*(mesh->G1_12*a.x + mesh->G1_22*a.y + mesh->G1_23*a.z);
     result.x += vcn.z*(mesh->G1_13*a.x + mesh->G1_23*a.y + mesh->G1_33*a.z);
 
-    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y) + VDDZ(vcn.z, a.y);
+    result.y = VDDX(vcn.x, a.y) + VDDY(vcn.y, a.y);
     result.y += vcn.x*(mesh->G2_11*a.x + mesh->G2_12*a.y + mesh->G2_13*a.z);
     result.y += vcn.y*(mesh->G2_12*a.x + mesh->G2_22*a.y + mesh->G2_23*a.z);
     result.y += vcn.z*(mesh->G2_13*a.x + mesh->G2_23*a.y + mesh->G2_33*a.z);
 
-    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z) + VDDZ(vcn.z, a.z);
+    result.z = VDDX(vcn.x, a.z) + VDDY(vcn.y, a.z);
     result.z += vcn.x*(mesh->G3_11*a.x + mesh->G3_12*a.y + mesh->G3_13*a.z);
     result.z += vcn.y*(mesh->G3_12*a.x + mesh->G3_22*a.y + mesh->G3_23*a.z);
     result.z += vcn.z*(mesh->G3_13*a.x + mesh->G3_23*a.y + mesh->G3_33*a.z);
@@ -664,7 +664,6 @@ const Vector3D V_dot_Grad(const Vector3D &v, const Vector3D &a)
 
   return result;
 }
-
 
 /*******************************************************************************
 * b0xGrad_dot_Grad
