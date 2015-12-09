@@ -11,6 +11,13 @@ dump_format="nc"     # Write NetCDF format files
 
 grid="conduct_grid.nc"
 
+
+##################################################
+[mesh]  # Geometry of the mesh
+# These flags make the y-direction non-periodic
+ixseps1 = -1
+ixseps2 = -1
+
 ##################################################
 [ddy]   # Methods used for parallel (y) derivative terms
 
