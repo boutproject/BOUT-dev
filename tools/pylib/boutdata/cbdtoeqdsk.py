@@ -1,5 +1,5 @@
 from __future__ import print_function
-from boututils import file_import
+from boututils.file_import import file_import
 from bunch import Bunch
 import numpy as np
 

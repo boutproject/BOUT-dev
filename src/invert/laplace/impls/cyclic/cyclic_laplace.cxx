@@ -194,7 +194,7 @@ const FieldPerp LaplaceCyclic::solve(const FieldPerp &rhs, const FieldPerp &x0) 
     // Get elements of the tridiagonal matrix
     // including boundary conditions
     for(int kz = 0; kz < nmode; kz++) {
-      BoutReal kwave=kz*2.0*PI/(mesh->zlength); // wave number is 1/[rad]
+      BoutReal kwave=kz*2.0*PI/(mesh->zlength()); // wave number is 1/[rad]
 
       tridagMatrix(a[kz], b[kz], c[kz],
                    bcmplx[kz],

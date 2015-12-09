@@ -5,8 +5,9 @@
 from __future__ import print_function
 from builtins import str
 from builtins import range
-from boututils import shell, launch, plotdata
-from boutdata import collect
+from boututils.run_wrapper import shell, launch
+from boutdata.plotdata import plotdata
+from boutdata.collect import collect
 import numpy as np
 from sys import argv
 from math import log10
@@ -54,4 +55,4 @@ if maxval>0:
       else:
 	    r[i,0,j,0]=0
 
-plotdata.plotdata(r[:end_index,0,2:-2,0])
+plotdata(r[:end_index,0,2:-2,0])

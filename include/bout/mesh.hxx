@@ -192,8 +192,8 @@ class Mesh {
   Field2D dx, dy;      // Read in grid.cpp
   Field2D d1_dx, d1_dy;  // 2nd-order correction for non-uniform meshes d/di(1/dx) and d/di(1/dy)
   
-  
-  BoutReal zlength, dz;    // Derived from options in grid.cpp (in radians)
+  BoutReal dz;    // Grid spacing in the Z direction
+  BoutReal zlength() const { return dz * (ngz-1); } // Length of the Z domain. Used for FFTs
   
   bool ShiftXderivs; // Use shifted X derivatives
   int  ShiftOrder;   // Order of shifted X derivative interpolation

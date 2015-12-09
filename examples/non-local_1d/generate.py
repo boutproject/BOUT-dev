@@ -6,7 +6,7 @@
 
 from __future__ import division
 from past.utils import old_div
-from boututils import DataFile # Wrapper around NetCDF4 libraries
+from boututils.datafile import DataFile # Wrapper around NetCDF4 libraries
 from math import pow
 from sys import argv
 

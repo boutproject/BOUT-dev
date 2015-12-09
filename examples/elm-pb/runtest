@@ -2,8 +2,8 @@
 
 from __future__ import print_function
 from builtins import str
-from boututils import shell,launch,getmpirun
-from boutdata import collect
+from boututils.run_wrapper import shell, launch, getmpirun
+from boutdata.collect import collect
 
 import numpy as np
 
@@ -53,7 +53,7 @@ plt.show()
 plt.figure()
 
 # Take a poloidal slice at fixed toroidal angle
-from boutdata import pol_slice
+from boutdata.pol_slice import pol_slice
 p2d = pol_slice(p[-1,:,:,:], 'cbm18_dens8.grid_nx68ny64.nc', n=15, zangle=0.0)
 
 # Read grid file to get coordinates
@@ -71,4 +71,3 @@ plt.colorbar()   # Plot a bar down the side with a color scale
 plt.savefig("poloidal_slice.pdf")
 
 plt.show()
-

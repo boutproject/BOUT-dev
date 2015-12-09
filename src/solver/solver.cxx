@@ -515,7 +515,7 @@ int Solver::solve(int NOUT, BoutReal TIMESTEP) {
     /// Write initial state as time-point 0
     
     // Run RHS once to ensure all variables set
-    if (run_rhs(0.0)) {
+    if (run_rhs(simtime)) {
       output.write("Physics RHS call failed\n");
       return 1;
     }
@@ -1156,7 +1156,7 @@ int Solver::run_rhs(BoutReal t) {
     save_derivs(tmp); // Save time derivatives
     pre_rhs(t);
     if(model) {
-      status = model->runDiffusive(t);
+      status = model->runDiffusive(t, false);
     }else
       status = (*phys_diff)(t);
     post_rhs(t);
@@ -1210,7 +1210,7 @@ int Solver::run_convective(BoutReal t) {
   return status;
 }
 
-int Solver::run_diffusive(BoutReal t) {
+int Solver::run_diffusive(BoutReal t, bool linear) {
   int status = 0;
   
   Timer timer("rhs");
@@ -1218,7 +1218,7 @@ int Solver::run_diffusive(BoutReal t) {
   if(split_operator) {
 
     if(model) {
-      status = model->runDiffusive(t);
+      status = model->runDiffusive(t, linear);
     }else 
       status = (*phys_diff)(t);
     post_rhs(t);

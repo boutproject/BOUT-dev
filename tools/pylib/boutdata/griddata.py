@@ -2,7 +2,7 @@ from __future__ import print_function
 # Routines for manipulating grid files
 
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: restart module needs DataFile")
     raise

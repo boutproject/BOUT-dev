@@ -2,7 +2,7 @@
 
 """Post processing routine which shows the data"""
 
-from boutdata import collect
+from boutdata.collect import collect
 from boututils.showdata import showdata
 
 # All post processing functions called by bout_runners must accept the

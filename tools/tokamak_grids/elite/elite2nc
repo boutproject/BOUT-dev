@@ -44,7 +44,7 @@ else:
 
 # Load data file output routines
 try:
-    from boututils import DataFile
+    from boututils.datafile import DataFile
 except ImportError:
     print("ERROR: boututils.DataFile not available")
     print("=> Set $PYTHONPATH variable to include BOUT++ pylib")
@@ -99,10 +99,10 @@ while True:
         varname = next(token)
     except:
         break
-    
+
     if (varname == 'R') or (varname == 'Z') or (varname[0] == 'B'):
         # A 2D variable
-        try: 
+        try:
             data = np.zeros([npsi, npol])
             for j in np.arange(npol):
                 for i in np.arange(npsi):
@@ -121,10 +121,10 @@ while True:
         var[varname] = data
 
         print("Read 2D variable " + varname)
-        
+
     else:
         # Assume it's a 1D (psi) variable
-        
+
         try:
             data = np.zeros([npsi])
             for i in np.arange(npsi):
@@ -138,7 +138,7 @@ while True:
         except:
             print("ERROR: Out of cheese. Variable " + varname)
             raise SystemExit
-        
+
         # Add this variable to the dictionary
         var[varname] = data
 
@@ -209,7 +209,7 @@ vnames = {'psi':'psi',
           'Zxy':'Z',
           'Bpxy':'Bp',
           'Btxy':'Bt'}
-          
+
 try:
     of.write("nx", npsi)
     of.write("ny", npol)
