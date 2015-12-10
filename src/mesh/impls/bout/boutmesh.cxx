@@ -1033,6 +1033,9 @@ const int OUT_SENT_IN  = 5;
 int BoutMesh::communicate(FieldGroup &g) {
   msg_stack.push("BoutMesh::communicate");
 
+  //Ensure fieldgroup has unique members
+  g.makeUnique();
+
   // Send data
   comm_handle c = send(g);
   // Wait for data from other processors

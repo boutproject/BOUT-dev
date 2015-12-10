@@ -6,6 +6,8 @@
 #include <vector>
 using std::vector;
 
+#include <algorithm>
+
 /// Group together fields
 class FieldGroup {
  public:
@@ -38,6 +40,7 @@ class FieldGroup {
   
   const vector<FieldData*> get() const {return fvec;} 
   void clear() {fvec.clear();}
+  void makeUnique();
  private:
   vector<FieldData*> fvec; // Vector of fields
 };
