@@ -202,6 +202,71 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   
   // Now communicate to fill guard cells
   mesh->communicate(indexXY);
+
+  //////////////////////////////////////////////////
+  // Set up KSP
+  
+  // Declare KSP Context 
+  KSPCreate( comm, &ksp ); 
+  
+  // Configure Linear Solver
+  
+  bool direct;
+  OPTION(opt, direct, false);
+  
+  if(direct) {
+    KSPGetPC(ksp,&pc);
+    PCSetType(pc,PCLU);
+    PCFactorSetMatSolverPackage(pc,"mumps");
+  }else {
+    
+    // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
+    // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
+    BoutReal rtol, atol, dtol;
+    int maxits; ///< Maximum iterations
+    
+    OPTION(opt, rtol, 1e-5);     // Relative tolerance 
+    OPTION(opt, atol, 1e-10);    // Absolute tolerance
+    OPTION(opt, dtol, 1e3);      // Diverged threshold
+    OPTION(opt, maxits, 100000); // Maximum iterations
+    
+    // Get KSP Solver Type
+    string ksptype;
+    opt->get("ksptype", ksptype, "gmres");
+    
+    // Get PC type
+    string pctype;
+    opt->get("pctype", pctype, "none", true);
+
+    KSPSetType( ksp, ksptype.c_str() );
+    KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
+    
+    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
+    
+    KSPGetPC(ksp,&pc);
+    PCSetType(pc, pctype.c_str());
+
+    if(pctype == "shell") {
+      // Using tridiagonal solver as preconditioner
+      PCShellSetApply(pc,laplacePCapply);
+      PCShellSetContext(pc,this);
+      
+      bool rightprec;
+      OPTION(opt, rightprec, true);
+      if(rightprec) {
+        KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
+      }else
+        KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
+    }
+  }
+  
+  KSPSetFromOptions( ksp );
+
+  // Set the default coefficients
+  setCoefs(1.0, 0.0);
+}
+
+void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -219,8 +284,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       BoutReal J = 0.5*(mesh->J(x,y) + mesh->J(x+1,y));
       BoutReal g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x+1,y));
       BoutReal dx = 0.5*(mesh->dx(x,y) + mesh->dx(x+1,y));
+      BoutReal Acoef = 0.5*(A(x,y) + A(x+1,y));
       
-      BoutReal val = J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      BoutReal val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
       xp = val;
       c  = -val;
       
@@ -228,10 +294,13 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       J = 0.5*(mesh->J(x,y) + mesh->J(x-1,y));
       g11 = 0.5*(mesh->g11(x,y) + mesh->g11(x-1,y));
       dx = 0.5*(mesh->dx(x,y) + mesh->dx(x-1,y));
+      Acoef = 0.5*(A(x,y) + A(x-1,y));
       
-      val = J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
+      val = Acoef * J * g11 / (mesh->J(x,y) * dx * mesh->dx(x,y));
       xm = val;
       c  -= val;
+
+      c += B(x,y);
       
       // Put values into the preconditioner, X derivatives only
       acoef[y - mesh->ystart][x - xstart] = xm;
@@ -245,8 +314,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       BoutReal g23  = 0.5*(mesh->g23(x,y) + mesh->g23(x,y+1));
       BoutReal g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y+1));
       BoutReal dy   = 0.5*(mesh->dy(x,y) + mesh->dy(x,y+1));
+      Acoef = 0.5*(A(x,y+1) + A(x,y));
       
-      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+      val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
       yp = val;
       c -= val;
       
@@ -256,8 +326,9 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
       g23  = 0.5*(mesh->g23(x,y)  + mesh->g23(x,y-1));
       g_23 = 0.5*(mesh->g_23(x,y) + mesh->g_23(x,y-1));
       dy   = 0.5*(mesh->dy(x,y)   + mesh->dy(x,y-1));
+      Acoef = 0.5*(A(x,y-1) + A(x,y));
       
-      val = -J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
+      val = -Acoef * J * g23 * g_23 / (g_22 * mesh->J(x,y) * dy * mesh->dy(x,y));
       ym = val;
       c -= val;
 #endif // INCLUDE_Y_DERIVS
@@ -353,68 +424,11 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
   MatAssemblyBegin( MatA, MAT_FINAL_ASSEMBLY );
   MatAssemblyEnd( MatA, MAT_FINAL_ASSEMBLY );
 
-  // Set coefficients for preconditioner
-  cr->setCoefs(nsys, acoef, bcoef, ccoef);
-
-  //////////////////////////////////////////////////
-  // Set up KSP
-  
-  // Declare KSP Context 
-  KSPCreate( comm, &ksp ); 
-  
-  // Configure Linear Solver               
+  // Set the operator
   KSPSetOperators( ksp,MatA,MatA,DIFFERENT_NONZERO_PATTERN );
   
-  bool direct;
-  OPTION(opt, direct, false);
-  
-  if(direct) {
-    KSPGetPC(ksp,&pc);
-    PCSetType(pc,PCLU);
-    PCFactorSetMatSolverPackage(pc,"mumps");
-  }else {
-    
-    // Convergence Parameters. Solution is considered converged if |r_k| < max( rtol * |b| , atol )
-    // where r_k = b - Ax_k. The solution is considered diverged if |r_k| > dtol * |b|.
-    BoutReal rtol, atol, dtol;
-    int maxits; ///< Maximum iterations
-    
-    OPTION(opt, rtol, 1e-5);     // Relative tolerance 
-    OPTION(opt, atol, 1e-10);    // Absolute tolerance
-    OPTION(opt, dtol, 1e3);      // Diverged threshold
-    OPTION(opt, maxits, 100000); // Maximum iterations
-    
-    // Get KSP Solver Type
-    string ksptype;
-    opt->get("ksptype", ksptype, "gmres");
-    
-    // Get PC type
-    string pctype;
-    opt->get("pctype", pctype, "none", true);
-
-    KSPSetType( ksp, ksptype.c_str() );
-    KSPSetTolerances( ksp, rtol, atol, dtol, maxits );
-    
-    KSPSetInitialGuessNonzero( ksp, (PetscBool) true );
-    
-    KSPGetPC(ksp,&pc);
-    PCSetType(pc, pctype.c_str());
-
-    if(pctype == "shell") {
-      // Using tridiagonal solver as preconditioner
-      PCShellSetApply(pc,laplacePCapply);
-      PCShellSetContext(pc,this);
-      
-      bool rightprec;
-      OPTION(opt, rightprec, true);
-      if(rightprec) {
-        KSPSetPCSide(ksp, PC_RIGHT); // Right preconditioning
-      }else
-        KSPSetPCSide(ksp, PC_LEFT);  // Left preconditioning
-    }
-  }
-  
-  KSPSetFromOptions( ksp );
+  // Set coefficients for preconditioner
+  cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
 LaplaceXY::~LaplaceXY() {
