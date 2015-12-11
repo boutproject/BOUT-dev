@@ -91,18 +91,7 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False)
     nx, ny, nz = (grid.nx, grid.ny, grid.nz)
     xarray, yarray, zarray = (grid.xarray, grid.yarray, grid.zarray)
 
-    g_22 = np.zeros((nx,ny)) + 1./grid.Rmaj**2
-
-    totalbx = np.zeros((nx,ny,nz))
-    totalbz = np.zeros((nx,ny,nz))
-    Bxy = np.zeros((nx,ny,nz))
-    for i in np.arange(0,nx):
-        for j in np.arange(0,ny):
-            for k in np.arange(0,nz):
-                Bxy[i,j,k] = np.sqrt((magnetic_field.Bxfunc(xarray[i],zarray[k],yarray[j])**2
-                                      + magnetic_field.Bzfunc(xarray[i],zarray[k],yarray[j])**2))
-                totalbx[i,j,k] = magnetic_field.Bxfunc(xarray[i],zarray[k],yarray[j])
-                totalbz[i,j,k] = magnetic_field.Bzfunc(xarray[i],zarray[k],yarray[j])
+    g_22 = np.ones((nx,ny))# + 1./grid.Rmaj(grid.xarray,grid.yarray)**2
 
     with bdata.DataFile(gridfile, write=True, create=True) as f:
         ixseps = nx+1
@@ -120,9 +109,9 @@ def write_maps(grid, magnetic_field, maps, gridfile='fci.grid.nc', legacy=False)
 
         f.write("g_22", g_22)
 
-        f.write("Bxy", Bxy[:,:,0])
-        f.write("bx", totalbx)
-        f.write("bz", totalbz)
+        f.write("Bxy", magnetic_field.b_mag[:,:,0])
+        f.write("bx", magnetic_field.bx)
+        f.write("bz", magnetic_field.bz)
 
         # Legacy grid files need to FFT 3D arrays
         if legacy:

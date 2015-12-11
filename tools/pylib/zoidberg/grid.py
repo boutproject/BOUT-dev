@@ -49,6 +49,9 @@ class Grid(object):
         self.xcentre = old_div(Lx, 2.)#0.5*max(self.xarray)
         self.zcentre = 0.5*max(self.zarray)
 
+        self.x_3d, self.y_3d, self.z_3d = np.meshgrid(self.xarray, self.yarray, self.zarray,
+                                                      indexing='ij')
+
         # How to do this properly?
         def Rmaj(x,z,phi):
             return 1.0

@@ -10,7 +10,7 @@ from sympy import Symbol, Derivative, atan, atan2, cos, sin, log, pi, sqrt, lamb
 
 class MagneticField(object):
     def __default_Byfunc(self, x,z,phi):
-        return 1.
+        return np.ones(x.shape)
 
     def __init__(self, grid, Bxfunc, Bzfunc, Byfunc=None):
 
@@ -21,15 +21,14 @@ class MagneticField(object):
         self.Bxfunc = Bxfunc
         self.Byfunc = Byfunc
         self.Bzfunc = Bzfunc
-        # Specifiy the magnetic field somehow
-        # Two choices:
-        #   1. analytic equations
-        #   2. from data
 
+        self.bx = self.Bxfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
+        self.by = self.Byfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
+        self.bz = self.Bzfunc(self.grid.x_3d, self.grid.z_3d, self.grid.y_3d)
+        self.b_mag = np.sqrt(self.bx**2 + self.by**2 + self.bz**2)
 
     def field_direction(self, pos, phi, flatten=False):
-        """
-        Calculate the direction of the magnetic field
+        """Calculate the direction of the magnetic field
         Returns the change in x with phi and change in z with phi
 
         Inputs
