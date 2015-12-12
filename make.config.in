@@ -15,11 +15,13 @@
 
 # Created this variable so that a user won't overwrite the CXXFLAGS variable
 # on the command line, just add to this one
-BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@
+BOUT_FLAGS		= $(CXXFLAGS) @CXXFLAGS@ -fopenmp
 
 # Specify the MPI C++ compiler in CXX
 
-CXX			= @MPICXX@
+#CXX			= @MPICXX@
+CXX			= scorep @MPICXX@
+#CXX			= scalasca -instrument @MPICXX@
 CC                      = $(CXX)
 
 AR			= ar
@@ -31,7 +33,7 @@ MKDIR			= @MKDIR@
 ####################################################################
 
 LD			= $(CXX)
-LDFLAGS = @LDFLAGS@
+LDFLAGS = @LDFLAGS@ -fopenmp
 
 ####################################################################
 # Extra (optional) source files, includes and libs

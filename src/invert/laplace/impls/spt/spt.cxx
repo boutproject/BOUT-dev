@@ -289,9 +289,9 @@ int LaplaceSPT::start(const FieldPerp &b, SPT_data &data) {
   data.dir = 1;
   
   if(mesh->firstX()) {
-    dcomplex bet, u0;
     #pragma omp parallel for
     for(int kz = 0; kz <= maxmode; kz++) {
+      dcomplex bet, u0;
       // Start tridiagonal solve
       tridagForward(data.avec[kz], data.bvec[kz], data.cvec[kz],
                     data.bk[kz], data.xk[kz], mesh->xend+1,
@@ -389,10 +389,17 @@ int LaplaceSPT::next(SPT_data &data) {
     }else if(mesh->firstX()) {
       // Back to the start
       
-      dcomplex gp, up;
+///      dcomplex gp, up;
+///      for(int kz = 0; kz <= maxmode; kz++) {
+///	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+///	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+///
+///	tridagBack(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
+///      }
+      #pragma omp parallel for
       for(int kz = 0; kz <= maxmode; kz++) {
-	gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
-	up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
+	dcomplex gp = dcomplex(data.buffer[4*kz], data.buffer[4*kz + 1]);
+	dcomplex up = dcomplex(data.buffer[4*kz + 2], data.buffer[4*kz + 3]);
 
 	tridagBack(data.xk[kz], mesh->xend+1, data.gam[kz], gp, up);
       }
