@@ -760,7 +760,6 @@ fi
 
 echo "Searching for FFTW library"
 
-# first only look for header file
 if type fftw-wisdom > /dev/null 2>&1; then
   echo " -> Found fftw-wisdom executable"
   # Path to fftw-wisdom, then remove fft-wisdom and bin/
@@ -787,9 +786,9 @@ then
 	dnl echo "\$lapack_pat=$lapack_path"
 	BOUT_ADDPATH_CHECK_LIB(blas, zgemm_ , HAS_BLAS=yes
 		BOUT_ADDPATH_CHECK_LIB(lapack, zgbsv_ , HAS_LAPACK=yes
-																	 echo "Using LAPACK"
-																	 CXXFLAGS="$CXXFLAGS -DLAPACK"
-																	 ,
+			echo "Using LAPACK"
+			CXXFLAGS="$CXXFLAGS -DLAPACK"
+			,
 		  [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ], $lapack_path )
 			, [ AS_IF( [test .$with_lapack = ".yes"], AC_MSG_ERROR("LAPACK requested but not found.")) ] , $lapack_path)
 fi

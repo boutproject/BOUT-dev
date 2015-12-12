@@ -6133,8 +6133,8 @@ $as_echo "no" >&6; }
 	fi
 	if test .$bout_adp_found = .yes; then :
   HAS_LAPACK=yes
-																	 echo "Using LAPACK"
-																	 CXXFLAGS="$CXXFLAGS -DLAPACK"
+			echo "Using LAPACK"
+			CXXFLAGS="$CXXFLAGS -DLAPACK"
 
 else
    if test .$with_lapack = ".yes"; then :
