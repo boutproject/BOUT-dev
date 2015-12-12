@@ -13,7 +13,7 @@
 #include <output.hxx>
 
 // Include derivatives in the Y direction?
-//#define INCLUDE_Y_DERIVS 1
+#define INCLUDE_Y_DERIVS 1
 
 #undef __FUNCT__
 #define __FUNCT__ "laplacePCapply"
