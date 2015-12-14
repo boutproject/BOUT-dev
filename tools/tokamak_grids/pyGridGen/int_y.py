@@ -24,7 +24,7 @@ def int_y( var, mesh, loop=None, nosmooth=None, simple=None):
 
         if period:
             # Add the first point onto the end to complete the loop
-            yi = [yi, yi[0]]
+            yi = numpy.concatenate((yi,[yi[0]]))
         
         f1d = int_func(var[xi,yi], simple=simple)
 
@@ -32,7 +32,7 @@ def int_y( var, mesh, loop=None, nosmooth=None, simple=None):
             print('no smooth yet')
             #f1d = SMOOTH(SMOOTH(f1d, 5, /edge_truncate), 5, /edge_truncate)
 
-        loop[xi] = f1d[-1] - f[0]
+        loop[xi] = f1d[-1] - f1d[0]
 
         if period:
             # Remove the last point
