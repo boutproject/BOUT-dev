@@ -142,23 +142,9 @@ void LaplaceXZcyclic::setCoefs(const Field2D &A2D, const Field2D &B2D) {
   cr->setCoefs(nsys, acoef, bcoef, ccoef);
 }
 
-Field3D LaplaceXZcyclic::solve(const Field3D &rhsin, const Field3D &x0in) {
+Field3D LaplaceXZcyclic::solve(const Field3D &rhs, const Field3D &x0) {
   Timer timer("invert");
-
-  // Shift rhs into orthogonal X-Z coordinates
-  Field3D rhs = rhsin;
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
-    rhs = rhsin.shiftZ(true); // Shift into real space
-  }
-
-  // Shift x0 into orthogonal X-Z coordinates
-  Field3D x0 = x0in;
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
-    x0 = x0in.shiftZ(true); // Shift into real space
-  }
-
+  
   // Create the rhs array
   int ind = 0;
   for(int y=mesh->ystart; y <= mesh->yend; y++) {
@@ -173,7 +159,7 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhsin, const Field3D &x0in) {
 
     // Bulk of the domain
     for(int x=mesh->xstart; x <= mesh->xend; x++) {
-      // Fourier transform RHS
+      // Fourier transform RHS, shifting into X-Z orthogonal coordinates
       ZFFT(&rhs(x,y,0), mesh->zShift(x, y), k1d);
       for(int kz = 0; kz < nmode; kz++) {
         rhscmplx[ind + kz][x-xstart] = k1d[kz];
@@ -206,16 +192,11 @@ Field3D LaplaceXZcyclic::solve(const Field3D &rhsin, const Field3D &x0in) {
         k1d[kz] = xcmplx[ind + kz][x-xstart];
       }
 
+      // This shifts back to field-aligned coordinates
       ZFFT_rev(k1d, mesh->zShift(x, y), &result(x,y,0));
     }
     ind += nmode;
   }
-
-  // Shift result from orthogonal X-Z coordinates
-  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
-    // Shift in Z using FFT
-    result = result.shiftZ(false);
-  }
-
+  
   return result;
 }

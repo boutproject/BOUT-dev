@@ -158,10 +158,19 @@ LaplaceXZpetsc::~LaplaceXZpetsc() {
   VecDestroy(&xs);
 }
 
-void LaplaceXZpetsc::setCoefs(const Field3D &A, const Field3D &B) {
+void LaplaceXZpetsc::setCoefs(const Field3D &Ain, const Field3D &Bin) {
   Timer timer("invert");
   // Set coefficients
 
+  // Shift coefficients into orthogonal X-Z coordinates
+  Field3D A = Ain;
+  Field3D B = Bin;
+  if(mesh->ShiftXderivs && (mesh->ShiftOrder == 0)) {
+    // Shift in Z using FFT
+    A = Ain.shiftZ(true); // Shift into real space
+    B = Bin.shiftZ(true);
+  }
+  
   // Each Y slice is handled as a separate set of matrices and KSP context
   for(vector<YSlice>::iterator it = slice.begin(); it != slice.end(); it++) {
     // Get Y index
