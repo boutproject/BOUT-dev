@@ -7,6 +7,7 @@ timestep = 0.1  # Time between outputs
 
 MXG = 0 # No X communications
 
+##################################################
 [mesh]  # Geometry of the mesh
 
 nx = 1
@@ -15,10 +16,16 @@ nz = 1
 
 dy = 0.2
 
+# These flags make the y-direction non-periodic
+ixseps1 = -1
+ixseps2 = -1
+
+##################################################
 [conduction]  # Settings for the conduction model
 
 chi = 1.0
 
+##################################################
 [T] # Settings for the T variable
 
 scale = 1.0  # Size of the initial perturbation
