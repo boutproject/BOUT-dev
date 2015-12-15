@@ -9,6 +9,7 @@
 
 #include <boutcomm.hxx>
 #include <utils.hxx>
+#include <bout/sys/timer.hxx>
 
 #include <output.hxx>
 
@@ -25,6 +26,7 @@ static PetscErrorCode laplacePCapply(PC pc,Vec x,Vec y) {
 }
 
 LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
+  Timer timer("invert");
   
   if(opt == NULL) {
     // If no options supplied, use default
@@ -281,6 +283,7 @@ LaplaceXY::LaplaceXY(Mesh *m, Options *opt) : mesh(m) {
 }
 
 void LaplaceXY::setCoefs(const Field2D &A, const Field2D &B) {
+  Timer timer("invert");
   
   //////////////////////////////////////////////////
   // Set Matrix elements
@@ -502,6 +505,7 @@ LaplaceXY::~LaplaceXY() {
 }
 
 const Field2D LaplaceXY::solve(const Field2D &rhs, const Field2D &x0) {
+  Timer timer("invert");
   
   // Load initial guess x0 into xs and rhs into bs
   
