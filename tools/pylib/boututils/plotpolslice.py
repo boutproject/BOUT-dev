@@ -57,7 +57,7 @@ def plotpolslice(var3d,gridfile,period=1,zangle=0.0, rz=1, fig=0):
     rxy=g.get('Rxy')
     zxy=g.get('Zxy')
 
-    dz = 2.0*np.pi / float(period*(nz-1))
+    dz = 2.0*np.pi / float(period*nz)
 
     ny2=ny
     nskip=np.zeros(ny-1)
